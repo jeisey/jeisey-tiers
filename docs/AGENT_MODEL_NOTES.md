@@ -1,4 +1,4 @@
-# Frontier Coding-Agent Notes (researched 2026-08-12)
+# Frontier Coding-Agent Notes (researched 2026-08-17)
 
 This file explains why the repository handoff is structured the way it is. It is not a requirement to use a specific model vendor.
 
@@ -38,23 +38,31 @@ OpenAI documents `AGENTS.md` as a way to guide Codex within a repository, includ
 - use nested `AGENTS.md` only if future subtrees truly need different rules;
 - let parallel agents own independent worktrees/files, then integrate/test centrally.
 
-## 3. Claude / Opus status
+## 3. Claude / Opus 5 status
 
-The user mentioned "Opus 5" as an example future coding agent. As of this research date, Anthropic's official model pages/system-card index do **not** list a released `Claude Opus 5`.
+**Claude Opus 5 is a released, current Anthropic model.** Anthropic launched it on **July 24, 2026** for complex agentic coding and enterprise work. The Claude API model ID is `claude-opus-5`.
 
-Current official Opus is **Claude Opus 4.8**, released May 28, 2026. Anthropic describes it as a hybrid-reasoning model for serious coding/agents with a **1M context window**, stronger long-running task autonomy, and adaptive thinking. Anthropic's system-card index separately lists Sonnet 5 and other 5-series models, but not Opus 5 at this date.
+Relevant capabilities at research time:
 
-Do not bake imaginary Opus-5 context/tool claims into the project.
+- **1,000,000-token context window**; 1M is both the default and maximum context size;
+- **128,000 max output tokens**;
+- **thinking is on by default**;
+- Anthropic positions Opus 5 for complex agentic coding, deep reasoning, and long-horizon tasks;
+- current platform guidance highlights stronger instruction following, tool use across long contexts, and multi-agent coordination;
+- **mid-conversation tool changes** are supported in beta, allowing tools to be added or removed while preserving prompt-cache continuity;
+- available through the Claude API and major cloud platforms including Amazon Bedrock, Google Cloud, and Microsoft Foundry.
+
+Anthropic's Opus 5 prompting guidance says existing Opus 4.8 prompts generally transfer well, while recommending explicit task scoping and careful subagent delegation for long-running work.
 
 ### Claude Code capabilities relevant to the handoff
 
-Anthropic documentation describes Claude Code as a terminal coding agent that can inspect/edit/run code, supports model selection, permission modes/planning, MCP, and project memory via `CLAUDE.md`. Anthropic's Claude memory docs support importing another file using `@path` syntax.
+Claude Code is a terminal coding agent that can inspect, edit, and run code; supports model selection, planning/permission modes, MCP, subagents, and project memory via `CLAUDE.md`.
 
-### Implication
+### Implication for this repo
 
 `CLAUDE.md` imports `AGENTS.md`, making the same repository contract available to Claude Code without maintaining a second divergent instruction manual.
 
-If a future Opus 5 is released, use it under the same contract and verify its active capabilities at that time.
+Opus 5's large context and agentic strengths make it suitable for whole-repository orientation and substantial bounded milestones, but the project should still externalize durable state in `TASKS.md`, `SESSION_STATE.md`, tests, ADRs, and model cards. Do not rely on a single long conversation as the source of truth.
 
 ## 4. Recommended reasoning-mode allocation
 
@@ -122,14 +130,14 @@ That last point is a core quality test of this handoff bundle.
 
 ## 7. Sources used for these notes
 
-Research date: 2026-08-12.
+Research date: 2026-08-17.
 
 - OpenAI GPT-5.6 Sol model documentation: https://developers.openai.com/api/docs/models/gpt-5.6-sol
 - OpenAI GPT-5.6 launch/model guidance: https://openai.com/index/gpt-5-6/ and https://developers.openai.com/api/docs/guides/latest-model
 - OpenAI Codex overview / AGENTS.md guidance: https://openai.com/codex/ and https://openai.com/index/introducing-codex/
-- Anthropic Opus page: https://www.anthropic.com/claude/opus
-- Anthropic Opus 4.8 announcement: https://www.anthropic.com/news/claude-opus-4-8
-- Anthropic system card index: https://www.anthropic.com/system-cards
+- Anthropic Claude Opus 5 platform guide: https://platform.claude.com/docs/en/about-claude/models/whats-new-opus-5
+- Anthropic Claude Opus 5 prompting guide: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5
+- Anthropic Claude release notes (Opus 5 launch, July 24, 2026): https://support.claude.com/en/articles/12138966-release-notes
 - Claude Code docs: https://docs.anthropic.com/en/docs/claude-code/getting-started
 
 Re-check official docs when a materially newer agent/model is used.
