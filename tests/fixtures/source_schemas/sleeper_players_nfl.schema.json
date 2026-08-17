@@ -1,0 +1,362 @@
+{
+  "captured_at_utc": "2026-08-17T16:53:46Z",
+  "check_id": "sleeper_players_nfl",
+  "columns": [
+    {
+      "dtype": "bool",
+      "name": "active"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "age"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "birth_city"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "birth_country"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "birth_date"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "birth_state"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "college"
+    },
+    {
+      "dtype": "list",
+      "name": "competitions"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "depth_chart_order"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "depth_chart_position"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "espn_id"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "fantasy_data_id"
+    },
+    {
+      "dtype": "NoneType|list",
+      "name": "fantasy_positions"
+    },
+    {
+      "dtype": "str",
+      "name": "first_name"
+    },
+    {
+      "dtype": "str",
+      "name": "full_name"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "gsis_id"
+    },
+    {
+      "dtype": "str",
+      "name": "hashtag"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "height"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "high_school"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "injury_body_part"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "injury_notes"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "injury_start_date"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "injury_status"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "kalshi_id"
+    },
+    {
+      "dtype": "str",
+      "name": "last_name"
+    },
+    {
+      "dtype": "NoneType|dict",
+      "name": "metadata"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "news_updated"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "number"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "oddsjam_id"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "opta_id"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "pandascore_id"
+    },
+    {
+      "dtype": "str",
+      "name": "player_id"
+    },
+    {
+      "dtype": "str",
+      "name": "player_shard"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "position"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "practice_description"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "practice_participation"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "rotowire_id"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "rotoworld_id"
+    },
+    {
+      "dtype": "str",
+      "name": "search_first_name"
+    },
+    {
+      "dtype": "str",
+      "name": "search_full_name"
+    },
+    {
+      "dtype": "str",
+      "name": "search_last_name"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "search_rank"
+    },
+    {
+      "dtype": "str",
+      "name": "sport"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "sportradar_id"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "stats_id"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "status"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "swish_id"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "team"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "team_abbr"
+    },
+    {
+      "dtype": "NoneType",
+      "name": "team_changed_at"
+    },
+    {
+      "dtype": "NoneType|str",
+      "name": "weight"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "yahoo_id"
+    },
+    {
+      "dtype": "NoneType|int",
+      "name": "years_exp"
+    }
+  ],
+  "coverage": {
+    "active_skill_gsis_id_fraction": 0.3143,
+    "active_skill_gsis_id_present": 964,
+    "active_skill_gsis_id_total": 3067,
+    "active_skill_position_records": 3067,
+    "espn_id_fraction": 0.5512,
+    "espn_id_present": 6736,
+    "espn_id_total": 12220,
+    "gsis_id_fraction": 0.3186,
+    "gsis_id_present": 3893,
+    "gsis_id_total": 12220,
+    "injury_status_fraction": 0.0507,
+    "injury_status_present": 619,
+    "injury_status_total": 12220,
+    "player_id_fraction": 1.0,
+    "player_id_present": 12220,
+    "player_id_total": 12220,
+    "sportradar_id_fraction": 0.9471,
+    "sportradar_id_present": 11573,
+    "sportradar_id_total": 12220
+  },
+  "record_count": 12220,
+  "sample_rows": [
+    {
+      "active": true,
+      "age": 26,
+      "birth_city": null,
+      "birth_country": null,
+      "birth_date": "1995-02-12",
+      "birth_state": null,
+      "college": "Georgia Southern",
+      "competitions": [],
+      "depth_chart_order": null,
+      "depth_chart_position": null,
+      "espn_id": 3926590,
+      "fantasy_data_id": 21427,
+      "fantasy_positions": [
+        "TE"
+      ],
+      "first_name": "Ellis",
+      "full_name": "Ellis Richardson",
+      "gsis_id": " 00-0035057",
+      "hashtag": "#ellisrichardson-NFL-FA-45",
+      "height": "75",
+      "high_school": "Douglas County",
+      "injury_body_part": null,
+      "injury_notes": null,
+      "injury_start_date": null,
+      "injury_status": null,
+      "kalshi_id": null,
+      "last_name": "Richardson",
+      "metadata": {
+        "channel_id": "1116853254748110848"
+      },
+      "news_updated": null,
+      "number": 45,
+      "oddsjam_id": null,
+      "opta_id": null,
+      "pandascore_id": null,
+      "player_id": "6462",
+      "player_shard": "8",
+      "position": "TE",
+      "practice_description": null,
+      "practice_participation": null,
+      "rotowire_id": 14134,
+      "rotoworld_id": null,
+      "search_first_name": "ellis",
+      "search_full_name": "ellisrichardson",
+      "search_last_name": "richardson",
+      "search_rank": 9999999,
+      "sport": "nfl",
+      "sportradar_id": "efd6f3c3-b752-4bc2-a4f2-b776c15c3ec0",
+      "stats_id": 887183,
+      "status": "Active",
+      "swish_id": null,
+      "team": null,
+      "team_abbr": null,
+      "team_changed_at": null,
+      "weight": "245",
+      "yahoo_id": 32262,
+      "years_exp": 3
+    },
+    {
+      "active": true,
+      "age": 24,
+      "birth_city": null,
+      "birth_country": null,
+      "birth_date": "1997-02-06",
+      "birth_state": null,
+      "college": "Alabama",
+      "competitions": [],
+      "depth_chart_order": null,
+      "depth_chart_position": null,
+      "espn_id": null,
+      "fantasy_data_id": null,
+      "fantasy_positions": [
+        "TE"
+      ],
+      "first_name": "Carl",
+      "full_name": "Carl Tucker",
+      "gsis_id": null,
+      "hashtag": "#carltucker-NFL-FA-0",
+      "height": "74",
+      "high_school": "Hough (NC)",
+      "injury_body_part": null,
+      "injury_notes": null,
+      "injury_start_date": null,
+      "injury_status": null,
+      "kalshi_id": null,
+      "last_name": "Tucker",
+      "metadata": {
+        "channel_id": "1116853436709601280"
+      },
+      "news_updated": 1631568053348,
+      "number": 0,
+      "oddsjam_id": null,
+      "opta_id": null,
+      "pandascore_id": null,
+      "player_id": "7926",
+      "player_shard": "7",
+      "position": "TE",
+      "practice_description": null,
+      "practice_participation": null,
+      "rotowire_id": 15412,
+      "rotoworld_id": null,
+      "search_first_name": "carl",
+      "search_full_name": "carltucker",
+      "search_last_name": "tucker",
+      "search_rank": 426,
+      "sport": "nfl",
+      "sportradar_id": "fde9c52b-0e2f-46e7-9b0e-9ada612ecec3",
+      "stats_id": null,
+      "status": "Active",
+      "swish_id": 866047,
+      "team": null,
+      "team_abbr": null,
+      "team_changed_at": null,
+      "weight": "250",
+      "yahoo_id": null,
+      "years_exp": 1
+    }
+  ],
+  "source_id": "sleeper",
+  "target": "https://api.sleeper.app/v1/players/nfl"
+}

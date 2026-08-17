@@ -1,0 +1,138 @@
+{
+  "captured_at_utc": "2026-08-17T16:53:46Z",
+  "check_id": "mfl_players_details",
+  "columns": [
+    {
+      "dtype": "str",
+      "name": "birthdate"
+    },
+    {
+      "dtype": "str",
+      "name": "cbs_id"
+    },
+    {
+      "dtype": "str",
+      "name": "college"
+    },
+    {
+      "dtype": "str",
+      "name": "draft_pick"
+    },
+    {
+      "dtype": "str",
+      "name": "draft_round"
+    },
+    {
+      "dtype": "str",
+      "name": "draft_team"
+    },
+    {
+      "dtype": "str",
+      "name": "draft_year"
+    },
+    {
+      "dtype": "str",
+      "name": "espn_id"
+    },
+    {
+      "dtype": "str",
+      "name": "fleaflicker_id"
+    },
+    {
+      "dtype": "str",
+      "name": "height"
+    },
+    {
+      "dtype": "str",
+      "name": "id"
+    },
+    {
+      "dtype": "str",
+      "name": "jersey"
+    },
+    {
+      "dtype": "str",
+      "name": "name"
+    },
+    {
+      "dtype": "str",
+      "name": "nfl_id"
+    },
+    {
+      "dtype": "str",
+      "name": "position"
+    },
+    {
+      "dtype": "str",
+      "name": "rotowire_id"
+    },
+    {
+      "dtype": "str",
+      "name": "rotoworld_id"
+    },
+    {
+      "dtype": "str",
+      "name": "sportsdata_id"
+    },
+    {
+      "dtype": "str",
+      "name": "stats_global_id"
+    },
+    {
+      "dtype": "str",
+      "name": "stats_id"
+    },
+    {
+      "dtype": "str",
+      "name": "team"
+    },
+    {
+      "dtype": "str",
+      "name": "twitter_username"
+    },
+    {
+      "dtype": "str",
+      "name": "weight"
+    }
+  ],
+  "coverage": {
+    "espn_id_fraction": 0.8212,
+    "espn_id_present": 2135,
+    "espn_id_total": 2600,
+    "gsis_id_fraction": 0.0,
+    "gsis_id_present": 0,
+    "gsis_id_total": 2600,
+    "id_fraction": 1.0,
+    "id_present": 2600,
+    "id_total": 2600,
+    "nfl_id_fraction": 0.0342,
+    "nfl_id_present": 89,
+    "nfl_id_total": 2600,
+    "sportradar_id_fraction": 0.0,
+    "sportradar_id_present": 0,
+    "sportradar_id_total": 2600
+  },
+  "record_count": 2600,
+  "sample_rows": [
+    {
+      "draft_team": "BUF",
+      "draft_year": "1970",
+      "id": "0151",
+      "name": "Bills, Buffalo",
+      "position": "TMWR",
+      "stats_global_id": "0",
+      "team": "BUF"
+    },
+    {
+      "draft_team": "IND",
+      "draft_year": "1970",
+      "id": "0152",
+      "name": "Colts, Indianapolis",
+      "position": "TMWR",
+      "stats_global_id": "0",
+      "team": "IND"
+    }
+  ],
+  "source_id": "myfantasyleague_adp",
+  "target": "https://api.myfantasyleague.com/2026/export?TYPE=players&DETAILS=1&JSON=1"
+}

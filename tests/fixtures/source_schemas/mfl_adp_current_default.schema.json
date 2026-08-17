@@ -1,0 +1,68 @@
+{
+  "captured_at_utc": "2026-08-17T16:53:46Z",
+  "check_id": "mfl_adp_current_default",
+  "columns": [
+    {
+      "dtype": "str",
+      "name": "averagePick"
+    },
+    {
+      "dtype": "str",
+      "name": "draftSelPct"
+    },
+    {
+      "dtype": "str",
+      "name": "draftsSelectedIn"
+    },
+    {
+      "dtype": "str",
+      "name": "id"
+    },
+    {
+      "dtype": "str",
+      "name": "maxPick"
+    },
+    {
+      "dtype": "str",
+      "name": "minPick"
+    },
+    {
+      "dtype": "str",
+      "name": "rank"
+    }
+  ],
+  "coverage": {
+    "averagePick_max": 218.41,
+    "averagePick_min": 2.57,
+    "response_envelope": {
+      "encoding": "utf-8",
+      "timestamp": "1786977828",
+      "totalDrafts": "410",
+      "totalPicks": "646",
+      "version": "1.0"
+    }
+  },
+  "record_count": 367,
+  "sample_rows": [
+    {
+      "averagePick": "2.57",
+      "draftSelPct": "30",
+      "draftsSelectedIn": "127",
+      "id": "16162",
+      "maxPick": "10",
+      "minPick": "1",
+      "rank": "1"
+    },
+    {
+      "averagePick": "2.64",
+      "draftSelPct": "32",
+      "draftsSelectedIn": "132",
+      "id": "16161",
+      "maxPick": "8",
+      "minPick": "1",
+      "rank": "2"
+    }
+  ],
+  "source_id": "myfantasyleague_adp",
+  "target": "https://api.myfantasyleague.com/2026/export?TYPE=adp&JSON=1"
+}

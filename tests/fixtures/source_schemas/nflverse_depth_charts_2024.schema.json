@@ -1,0 +1,134 @@
+{
+  "captured_at_utc": "2026-08-17T16:53:46Z",
+  "check_id": "nflverse_depth_charts_2024",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "club_code",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0063
+    },
+    {
+      "dtype": "String",
+      "name": "game_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "depth_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "last_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "football_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "formation",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "gsis_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "jersey_number",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "elias_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "depth_position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "full_name",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {
+    "game_type_distinct": 6,
+    "game_type_max": "WC",
+    "game_type_min": "CON",
+    "position_distinct": 22,
+    "position_max": "WR",
+    "position_min": "C",
+    "season_distinct": 1,
+    "season_max": 2024,
+    "season_min": 2024,
+    "week_distinct": 22,
+    "week_max": 22,
+    "week_min": 1
+  },
+  "record_count": 37312,
+  "sample_rows": [
+    {
+      "club_code": "ATL",
+      "depth_position": "RG",
+      "depth_team": "1",
+      "elias_id": "LIN451080",
+      "first_name": "Christopher",
+      "football_name": "Chris",
+      "formation": "Offense",
+      "full_name": "Chris Lindstrom",
+      "game_type": "REG",
+      "gsis_id": "00-0035630",
+      "jersey_number": "63",
+      "last_name": "Lindstrom",
+      "position": "G",
+      "season": 2024,
+      "week": 1
+    },
+    {
+      "club_code": "ATL",
+      "depth_position": "RG",
+      "depth_team": "2",
+      "elias_id": "HIN747075",
+      "first_name": "Kyle",
+      "football_name": "Kyle",
+      "formation": "Offense",
+      "full_name": "Kyle Hinton",
+      "game_type": "REG",
+      "gsis_id": "00-0036354",
+      "jersey_number": "68",
+      "last_name": "Hinton",
+      "position": "G",
+      "season": 2024,
+      "week": 1
+    }
+  ],
+  "source_id": "nflreadpy",
+  "target": "nflreadpy.load_depth_charts({\"seasons\": [2024]})"
+}

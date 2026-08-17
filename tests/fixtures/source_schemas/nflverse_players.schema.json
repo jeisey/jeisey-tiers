@@ -1,0 +1,293 @@
+{
+  "captured_at_utc": "2026-08-17T16:53:46Z",
+  "check_id": "nflverse_players",
+  "columns": [
+    {
+      "dtype": "String",
+      "name": "gsis_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "display_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "common_first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "last_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "short_name",
+      "null_fraction": 0.6797
+    },
+    {
+      "dtype": "String",
+      "name": "football_name",
+      "null_fraction": 0.6605
+    },
+    {
+      "dtype": "String",
+      "name": "suffix",
+      "null_fraction": 0.9935
+    },
+    {
+      "dtype": "String",
+      "name": "esb_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "nfl_id",
+      "null_fraction": 0.5164
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_id",
+      "null_fraction": 0.0994
+    },
+    {
+      "dtype": "String",
+      "name": "pff_id",
+      "null_fraction": 0.5506
+    },
+    {
+      "dtype": "String",
+      "name": "otc_id",
+      "null_fraction": 0.627
+    },
+    {
+      "dtype": "String",
+      "name": "espn_id",
+      "null_fraction": 0.3312
+    },
+    {
+      "dtype": "String",
+      "name": "smart_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "birth_date",
+      "null_fraction": 0.0018
+    },
+    {
+      "dtype": "String",
+      "name": "position_group",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "ngs_position_group",
+      "null_fraction": 0.8043
+    },
+    {
+      "dtype": "String",
+      "name": "ngs_position",
+      "null_fraction": 0.8078
+    },
+    {
+      "dtype": "Int32",
+      "name": "height",
+      "null_fraction": 0.0004
+    },
+    {
+      "dtype": "Int32",
+      "name": "weight",
+      "null_fraction": 0.0004
+    },
+    {
+      "dtype": "String",
+      "name": "headshot",
+      "null_fraction": 0.0081
+    },
+    {
+      "dtype": "String",
+      "name": "college_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "college_conference",
+      "null_fraction": 0.7263
+    },
+    {
+      "dtype": "String",
+      "name": "jersey_number",
+      "null_fraction": 0.0322
+    },
+    {
+      "dtype": "Int32",
+      "name": "rookie_season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "last_season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "latest_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "status",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "ngs_status",
+      "null_fraction": 0.6604
+    },
+    {
+      "dtype": "String",
+      "name": "ngs_status_short_description",
+      "null_fraction": 0.7252
+    },
+    {
+      "dtype": "Int32",
+      "name": "years_of_experience",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pff_position",
+      "null_fraction": 0.7035
+    },
+    {
+      "dtype": "String",
+      "name": "pff_status",
+      "null_fraction": 0.846
+    },
+    {
+      "dtype": "Int32",
+      "name": "draft_year",
+      "null_fraction": 0.5116
+    },
+    {
+      "dtype": "Int32",
+      "name": "draft_round",
+      "null_fraction": 0.5116
+    },
+    {
+      "dtype": "Int32",
+      "name": "draft_pick",
+      "null_fraction": 0.5116
+    },
+    {
+      "dtype": "String",
+      "name": "draft_team",
+      "null_fraction": 0.5116
+    }
+  ],
+  "coverage": {
+    "position_distinct": 25,
+    "position_max": "WR",
+    "position_min": "C"
+  },
+  "record_count": 25040,
+  "sample_rows": [
+    {
+      "birth_date": "1987-01-25",
+      "college_conference": null,
+      "college_name": "UNLV",
+      "common_first_name": "Isaako",
+      "display_name": "Isaako Aaitui",
+      "draft_pick": null,
+      "draft_round": null,
+      "draft_team": null,
+      "draft_year": null,
+      "esb_id": "AAI622937",
+      "espn_id": "14856",
+      "first_name": "Isaako",
+      "football_name": null,
+      "gsis_id": "00-0028830",
+      "headshot": "https://static.www.nfl.com/image/private/f_auto,q_auto/league/hwncbbaztu3pc5unqgnj",
+      "height": 76,
+      "jersey_number": "0",
+      "last_name": "Aaitui",
+      "last_season": 2014,
+      "latest_team": "WAS",
+      "nfl_id": null,
+      "ngs_position": null,
+      "ngs_position_group": null,
+      "ngs_status": null,
+      "ngs_status_short_description": null,
+      "otc_id": "2535",
+      "pff_id": "6998",
+      "pff_position": "DI",
+      "pff_status": null,
+      "pfr_id": "AaitIs00",
+      "position": "NT",
+      "position_group": "DL",
+      "rookie_season": 2011,
+      "short_name": null,
+      "smart_id": "32004141-4962-2937-61ff-017b1804dec6",
+      "status": "DEV",
+      "suffix": null,
+      "weight": 307,
+      "years_of_experience": 2
+    },
+    {
+      "birth_date": "2002-10-05",
+      "college_conference": "Atlantic Coast Conference",
+      "college_name": "Pittsburgh",
+      "common_first_name": "Israel",
+      "display_name": "Israel Abanikanda",
+      "draft_pick": 143,
+      "draft_round": 5,
+      "draft_team": "NYJ",
+      "draft_year": 2023,
+      "esb_id": "ABA159567",
+      "espn_id": "4429202",
+      "first_name": "Israel",
+      "football_name": "Israel",
+      "gsis_id": "00-0038389",
+      "headshot": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mt7lgg9gbjcmb2wttxeg",
+      "height": 70,
+      "jersey_number": "30",
+      "last_name": "Abanikanda",
+      "last_season": 2026,
+      "latest_team": "DAL",
+      "nfl_id": "56008",
+      "ngs_position": "RB",
+      "ngs_position_group": "RB",
+      "ngs_status": "ACT",
+      "ngs_status_short_description": "Active",
+      "otc_id": "10967",
+      "pff_id": "122999",
+      "pff_position": "HB",
+      "pff_status": "A",
+      "pfr_id": "AbanIs00",
+      "position": "RB",
+      "position_group": "RB",
+      "rookie_season": 2023,
+      "short_name": "I.Abanikanda",
+      "smart_id": "32004142-4115-9567-2e24-0eab29f6a4b9",
+      "status": "ACT",
+      "suffix": null,
+      "weight": 225,
+      "years_of_experience": 3
+    }
+  ],
+  "source_id": "nflreadpy",
+  "target": "nflreadpy.load_players({})"
+}

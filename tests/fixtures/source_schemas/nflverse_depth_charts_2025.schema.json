@@ -1,0 +1,104 @@
+{
+  "captured_at_utc": "2026-08-17T16:53:46Z",
+  "check_id": "nflverse_depth_charts_2025",
+  "columns": [
+    {
+      "dtype": "String",
+      "name": "dt",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_name",
+      "null_fraction": 0.0008
+    },
+    {
+      "dtype": "String",
+      "name": "espn_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "gsis_id",
+      "null_fraction": 0.0101
+    },
+    {
+      "dtype": "String",
+      "name": "pos_grp_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pos_grp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pos_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pos_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pos_abb",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pos_slot",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pos_rank",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {
+    "dt_distinct": 221,
+    "dt_max": "2026-03-14T07:32:09Z",
+    "dt_min": "2025-08-03T10:09:07Z"
+  },
+  "record_count": 554215,
+  "sample_rows": [
+    {
+      "dt": "2026-03-14T07:32:09Z",
+      "espn_id": "3693166",
+      "gsis_id": "00-0034381",
+      "player_name": "Josh Sweat",
+      "pos_abb": "LDE",
+      "pos_grp": "Base 4-3 D",
+      "pos_grp_id": "16",
+      "pos_id": "11",
+      "pos_name": "Left Defensive End",
+      "pos_rank": 1,
+      "pos_slot": 1,
+      "team": "ARI"
+    },
+    {
+      "dt": "2026-03-14T07:32:09Z",
+      "espn_id": "4040805",
+      "gsis_id": "00-0036568",
+      "player_name": "Roy Lopez",
+      "pos_abb": "LDT",
+      "pos_grp": "Base 4-3 D",
+      "pos_grp_id": "16",
+      "pos_id": "24",
+      "pos_name": "Left Defensive Tackle",
+      "pos_rank": 1,
+      "pos_slot": 2,
+      "team": "ARI"
+    }
+  ],
+  "source_id": "nflreadpy",
+  "target": "nflreadpy.load_depth_charts({\"seasons\": [2025]})"
+}
