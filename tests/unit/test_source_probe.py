@@ -126,7 +126,7 @@ def test_gsis_coverage_ignores_placeholder_ids():
     }
 
 
-def _adp_year_finding(year: int, *, status: str, records: int) -> sp.Finding:
+def _adp_year_finding(year: int, *, status: str, records: int, drafts: int = 15000) -> sp.Finding:
     return sp.Finding(
         check_id=f"mfl_adp_year_{year}",
         source_id="myfantasyleague_adp",
@@ -134,48 +134,136 @@ def _adp_year_finding(year: int, *, status: str, records: int) -> sp.Finding:
         target="https://example.invalid",
         status=status,
         record_count=records,
+        coverage={"response_envelope": {"totalDrafts": str(drafts)}},
     )
 
 
-def test_arbitrage_feasibility_requires_five_dense_history_years():
-    findings = [
-        sp.Finding(
-            check_id="mfl_adp_current_default",
-            source_id="myfantasyleague_adp",
-            kind="http",
-            target="https://example.invalid",
-            status=sp.OK,
-            record_count=500,
-        ),
-        *[_adp_year_finding(y, status=sp.OK, records=400) for y in range(2019, 2024)],
-    ]
-    decisions = sp.derive_decisions(findings)
+def _window_finding(suffix: str, *, records: int, drafts: int) -> sp.Finding:
+    return sp.Finding(
+        check_id=f"mfl_adp_history_window_{suffix}",
+        source_id="myfantasyleague_adp",
+        kind="http",
+        target="https://example.invalid",
+        status=sp.OK,
+        record_count=records,
+        coverage={"response_envelope": {"totalDrafts": str(drafts)}},
+    )
+
+
+def _current_adp_finding() -> sp.Finding:
+    return sp.Finding(
+        check_id="mfl_adp_current_default",
+        source_id="myfantasyleague_adp",
+        kind="http",
+        target="https://example.invalid",
+        status=sp.OK,
+        record_count=500,
+    )
+
+
+def _dense_history() -> list[sp.Finding]:
+    return [_adp_year_finding(y, status=sp.OK, records=400) for y in range(2019, 2024)]
+
+
+def test_dense_history_alone_does_not_make_arbitrage_ml_feasible():
+    """Volume without point-in-time reconstruction must stay in baseline mode (ADR-003)."""
+    decisions = sp.derive_decisions([_current_adp_finding(), *_dense_history()])
     assert decisions["current_market_source_viable"] is True
-    assert decisions["arbitrage_ml_historical_feasible"] is True
+    assert decisions["mfl_history_dense_enough"] is True
+    assert decisions["market_history_point_in_time_capable"] is False
+    assert decisions["arbitrage_ml_historical_feasible"] is False
+    assert decisions["arbitrage_mode_recommended"] == "baseline"
     assert decisions["mfl_historical_years_with_data"] == ["2019", "2020", "2021", "2022", "2023"]
 
 
-def test_arbitrage_feasibility_false_when_history_is_thin():
+def test_day_window_that_changes_a_historical_aggregate_unlocks_ml_candidacy():
     findings = [
-        sp.Finding(
-            check_id="mfl_adp_current_default",
-            source_id="myfantasyleague_adp",
-            kind="http",
-            target="https://example.invalid",
-            status=sp.OK,
-            record_count=500,
-        ),
-        *[_adp_year_finding(y, status=sp.OK, records=400) for y in (2023, 2024)],
-        *[_adp_year_finding(y, status=sp.EMPTY, records=0) for y in (2019, 2020, 2021)],
+        _current_adp_finding(),
+        *_dense_history(),
+        # 2019 baseline aggregated 15000 drafts; the windowed request returns fewer.
+        _window_finding("days30", records=120, drafts=900),
     ]
     decisions = sp.derive_decisions(findings)
+    assert decisions["market_history_point_in_time_capable"] is True
+    assert decisions["arbitrage_ml_historical_feasible"] is True
+    assert decisions["arbitrage_mode_recommended"] == "ml_candidate"
+
+
+def test_ignored_day_window_is_not_point_in_time_evidence():
+    findings = [
+        _current_adp_finding(),
+        *_dense_history(),
+        _window_finding("days30", records=400, drafts=15000),
+    ]
+    decisions = sp.derive_decisions(findings)
+    assert decisions["market_history_point_in_time_capable"] is False
+    assert any("changed=False" in line for line in decisions["market_history_window_evidence"])
+
+
+def test_draft_type_filter_alone_is_not_point_in_time_evidence():
+    """Excluding mocks changes the aggregate but says nothing about *when* it was priced."""
+    findings = [
+        _current_adp_finding(),
+        *_dense_history(),
+        _window_finding("no_mock_redraft", records=380, drafts=1200),
+    ]
+    decisions = sp.derive_decisions(findings)
+    assert decisions["market_history_point_in_time_capable"] is False
     assert decisions["arbitrage_ml_historical_feasible"] is False
-    assert decisions["mfl_historical_years_with_data"] == ["2023", "2024"]
 
 
 def test_sparse_years_do_not_count_as_coverage():
-    findings = [_adp_year_finding(y, status=sp.OK, records=12) for y in range(2019, 2026)]
-    assert sp.derive_decisions(findings)["arbitrage_ml_historical_feasible"] is False
+    findings = [_adp_year_finding(y, status=sp.OK, records=12) for y in range(2019, 2026)] + [
+        _window_finding("days30", records=5, drafts=10)
+    ]
+    decisions = sp.derive_decisions(findings)
+    assert decisions["mfl_history_dense_enough"] is False
+    assert decisions["arbitrage_ml_historical_feasible"] is False
+
+
+def test_identity_resolution_fraction_is_surfaced_in_decisions():
+    finding = sp.Finding(
+        check_id="identity_market_to_gsis_bridge",
+        source_id="identity",
+        kind="loader",
+        target="t",
+        status=sp.OK,
+        coverage={"resolved_fraction": 0.97},
+    )
+    assert sp.derive_decisions([finding])["market_identity_resolved_fraction"] == 0.97
+
+
+def test_identity_fraction_is_none_when_the_bridge_check_failed():
+    finding = sp.Finding(
+        check_id="identity_market_to_gsis_bridge",
+        source_id="identity",
+        kind="loader",
+        target="t",
+        status=sp.BLOCKED_EGRESS,
+        coverage={},
+    )
+    assert sp.derive_decisions([finding])["market_identity_resolved_fraction"] is None
+
+
+def test_id_map_drops_ambiguous_and_blank_mappings():
+    frame = pl.DataFrame(
+        {
+            "mfl_id": ["1", "2", "2", "3", None, "4"],
+            "gsis_id": ["00-1", "00-2", "00-9", None, "00-5", " 00-4 "],
+        }
+    )
+    assert sp._id_map(frame, "mfl_id", "gsis_id") == {"1": "00-1", "4": "00-4"}
+
+
+def test_id_map_missing_columns_is_empty():
+    assert sp._id_map(pl.DataFrame({"a": ["1"]}), "mfl_id", "gsis_id") == {}
+
+
+def test_envelope_int_parses_string_counts_and_tolerates_junk():
+    finding = _adp_year_finding(2019, status=sp.OK, records=1, drafts=15850)
+    assert sp._envelope_int(finding, "totalDrafts") == 15850
+    assert sp._envelope_int(finding, "missing") is None
+    assert sp._envelope_int(None, "totalDrafts") is None
 
 
 def test_decisions_flag_locally_blocked_sources():

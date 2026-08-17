@@ -96,6 +96,9 @@ class Finding:
     excerpts: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
     redistributable: bool = True
+    # Full row set, kept in memory for follow-up analysis (e.g. the identity bridge) and
+    # deliberately never serialised: the report carries schema and counts, not payloads.
+    rows: list[dict[str, Any]] = field(default_factory=list, repr=False)
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -258,6 +261,20 @@ def gsis_coverage(records: Iterable[dict[str, Any]], id_field: str) -> dict[str,
     }
 
 
+def _envelope_int(finding: Finding | None, key: str) -> int | None:
+    """Read an integer out of a recorded MFL response envelope, if present."""
+    if finding is None:
+        return None
+    envelope = finding.coverage.get("response_envelope")
+    if not isinstance(envelope, dict):
+        return None
+    value = envelope.get(key)
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
 def derive_decisions(findings: Sequence[Finding]) -> dict[str, Any]:
     """Turn raw findings into the explicit Phase-0 decisions TASKS.md demands.
 
@@ -280,7 +297,31 @@ def derive_decisions(findings: Sequence[Finding]) -> dict[str, Any]:
         if finding.status == OK and (finding.record_count or 0) >= 100
     )
     # Rolling arbitrage evaluation needs train seasons *plus* >= 3 chronological holdouts.
-    feasible = len(dense_years) >= 5
+    dense_enough = len(dense_years) >= 5
+
+    # Volume alone is not enough. A learned arbitrage target needs the market *cost* as of a
+    # draft-time anchor; a season-long aggregate recomputed today embeds in-season drafting
+    # that already knows the outcome. Point-in-time capability counts as demonstrated only
+    # if a window filter provably changes a historical aggregate.
+    baseline = by_id.get(f"mfl_adp_year_{MFL_HISTORY_WINDOW_YEAR}")
+    window_findings = [f for f in findings if f.check_id.startswith("mfl_adp_history_window_")]
+    baseline_count = (baseline.record_count or 0) if baseline else 0
+    baseline_drafts = _envelope_int(baseline, "totalDrafts") if baseline else None
+    point_in_time = False
+    window_evidence: list[str] = []
+    for candidate in window_findings:
+        drafts = _envelope_int(candidate, "totalDrafts")
+        changed = candidate.status == OK and (
+            (candidate.record_count or 0) != baseline_count
+            or (drafts is not None and baseline_drafts is not None and drafts != baseline_drafts)
+        )
+        window_evidence.append(
+            f"{candidate.check_id}: status={candidate.status} "
+            f"records={candidate.record_count} totalDrafts={drafts} changed={changed}"
+        )
+        if changed and candidate.check_id.endswith(("days30", "days1", "days14")):
+            point_in_time = True
+    feasible = dense_enough and point_in_time
     injuries_current = [
         f for f in findings if f.check_id.startswith("nflverse_injuries_") and f.status == OK
     ]
@@ -288,15 +329,27 @@ def derive_decisions(findings: Sequence[Finding]) -> dict[str, Any]:
         f.check_id.rsplit("_", 1)[-1] for f in injuries_current if (f.record_count or 0) > 0
     )
 
+    identity = by_id.get("identity_market_to_gsis_bridge")
+    identity_fraction = (
+        identity.coverage.get("resolved_fraction") if identity and identity.status == OK else None
+    )
+
     return {
         "current_market_source_viable": mfl_current == OK,
         "current_market_source_status": mfl_current,
         "mfl_historical_years_with_data": dense_years,
+        "mfl_history_dense_enough": dense_enough,
+        "market_history_point_in_time_capable": point_in_time,
+        "market_history_window_evidence": window_evidence,
         "arbitrage_ml_historical_feasible": feasible,
+        "arbitrage_mode_recommended": "ml_candidate" if feasible else "baseline",
         "arbitrage_ml_feasibility_rule": (
-            ">=5 historical MFL ADP years each with >=100 priced players, so that rolling "
-            "training seasons plus >=3 chronological holdout seasons are possible"
+            ">=5 historical MFL ADP years each with >=100 priced players AND demonstrated "
+            "point-in-time windowing of a historical aggregate; volume alone is insufficient "
+            "because a season-long aggregate embeds in-season drafting that already knows the "
+            "outcome"
         ),
+        "market_identity_resolved_fraction": identity_fraction,
         "nflverse_injury_years_with_data": injury_years,
         "blocked_by_local_egress": sorted(
             {f.source_id for f in findings if f.status == BLOCKED_EGRESS}
@@ -730,6 +783,13 @@ MFL_ADP_VARIANTS: list[tuple[str, dict[str, Any], str]] = [
         {"IS_PPR": 0, "FCOUNT": 10},
         "Are standard-scoring/10-team cohort filters honoured?",
     ),
+    # The cohort filters are also probed one at a time: if a combined cohort returns
+    # almost nothing we need to know which dimension is thin before designing presets.
+    ("ppr_only", {"IS_PPR": 1}, "How much data does the PPR cohort alone carry?"),
+    ("std_only", {"IS_PPR": 0}, "How much data does the standard-scoring cohort alone carry?"),
+    ("fcount10", {"FCOUNT": 10}, "How much data does the 10-team cohort alone carry?"),
+    ("fcount12", {"FCOUNT": 12}, "How much data does the 12-team cohort alone carry?"),
+    ("fcount14", {"FCOUNT": 14}, "How much data does the 14-team cohort alone carry?"),
     (
         "no_mock_redraft",
         {"IS_MOCK": 0, "IS_KEEPER": "N"},
@@ -741,6 +801,11 @@ MFL_ADP_VARIANTS: list[tuple[str, dict[str, Any], str]] = [
         "Is there a date window filter that would make snapshots point-in-time?",
     ),
     (
+        "recent_1day",
+        {"DAYS": 1},
+        "Does a one-day window actually shrink the sample (proof the filter is honoured)?",
+    ),
+    (
         "cutoff5",
         {"CUTOFF": 5},
         "Does a minimum-draft-appearance cutoff exist?",
@@ -748,6 +813,23 @@ MFL_ADP_VARIANTS: list[tuple[str, dict[str, Any], str]] = [
 ]
 
 MFL_HISTORY_YEARS = [2019, 2020, 2021, 2022, 2023, 2024, 2025]
+
+# The arbitrage-ML question is not "is there historical ADP" but "can historical ADP be
+# reduced to what the market believed at a draft-time anchor". These variants test, on one
+# historical season, whether any window/date filter changes the aggregate at all.
+MFL_HISTORY_WINDOW_YEAR = 2019
+MFL_HISTORY_WINDOW_VARIANTS: list[tuple[str, dict[str, Any], str]] = [
+    (
+        "days30",
+        {"DAYS": 30},
+        "Does a day window applied to a past season change the aggregate?",
+    ),
+    (
+        "no_mock_redraft",
+        {"IS_MOCK": 0, "IS_KEEPER": "N"},
+        "Do draft-type filters still work on a past season?",
+    ),
+]
 
 
 def _mfl_records(payload: Any) -> list[dict[str, Any]]:
@@ -779,20 +861,37 @@ def _record_field_union(records: Sequence[dict[str, Any]]) -> list[dict[str, Any
 def probe_mfl(http: HttpProbe, *, current_year: int) -> list[Finding]:
     findings: list[Finding] = []
 
-    # 1. MFL's own machine-readable API description, if it exists.
-    for suffix, params, question in (
-        ("all", {"JSON": 1}, "Does MFL publish a machine-readable request-type list?"),
+    # 1. MFL's own developer documentation, which is also where its usage expectations live.
+    for suffix, params, question, keywords in (
+        (
+            "all",
+            {"JSON": 1},
+            "What does MFL tell third-party developers about acceptable use and rates?",
+            (
+                "Developers Program",
+                "commercial",
+                "per minute",
+                "per hour",
+                "rate",
+                "throttl",
+                "abuse",
+                "block",
+                "cache",
+                "terms",
+            ),
+        ),
         (
             "adp",
             {"TYPE": "adp", "JSON": 1},
             "Does MFL self-document the ADP request parameters?",
+            ("FCOUNT", "IS_PPR", "IS_KEEPER", "IS_MOCK", "CUTOFF", "DAYS", "PERIOD", "INJURED"),
         ),
     ):
         url = f"{MFL_BASE}/{current_year}/api_info"
         finding = Finding(
             check_id=f"mfl_api_info_{suffix}",
             source_id="myfantasyleague_adp",
-            kind="http",
+            kind="rights" if suffix == "all" else "http",
             target=f"{url}?{_qs(params)}",
             status=SKIPPED,
             question=question,
@@ -801,10 +900,10 @@ def probe_mfl(http: HttpProbe, *, current_year: int) -> list[Finding]:
         partial.apply(finding)
         if response is not None and response.ok:
             finding.excerpts = keyword_excerpts(
-                response.text,
-                ["adp", "PERIOD", "FCOUNT", "IS_PPR", "IS_MOCK", "CUTOFF"],
-                window=400,
+                response.text, keywords, window=400, limit=len(keywords)
             )
+            if not finding.excerpts:
+                finding.notes.append("no keyword match in document")
         findings.append(finding)
 
     # 2. Current-season ADP, across candidate filter variants.
@@ -829,6 +928,18 @@ def probe_mfl(http: HttpProbe, *, current_year: int) -> list[Finding]:
                 year=year,
                 params={"TYPE": "adp", "JSON": 1},
                 question=f"Is {year} ADP still retrievable, and how many players are priced?",
+            )
+        )
+
+    # 3b. Can a historical aggregate be windowed back to a draft-time anchor?
+    for suffix, extra, question in MFL_HISTORY_WINDOW_VARIANTS:
+        findings.append(
+            _probe_mfl_adp(
+                http,
+                check_id=f"mfl_adp_history_window_{suffix}",
+                year=MFL_HISTORY_WINDOW_YEAR,
+                params={"TYPE": "adp", "JSON": 1, **extra},
+                question=question,
             )
         )
 
@@ -905,6 +1016,7 @@ def _probe_mfl_adp(
     finding.record_count = len(records)
     finding.columns = _record_field_union(records)
     finding.sample_rows = [jsonable(r) for r in records[:MAX_SAMPLE_ROWS]]
+    finding.rows = records
     finding.status = OK if records else EMPTY
     envelope = {
         key: jsonable(value)
@@ -1040,6 +1152,169 @@ def probe_sleeper(http: HttpProbe) -> list[Finding]:
     findings.append(trending_finding)
 
     return findings
+
+
+# --------------------------------------------------------------------------------------
+# Identity bridge probe: can market rows reach a canonical id without name matching?
+# --------------------------------------------------------------------------------------
+
+TOP_N_FOR_IDENTITY = 100
+
+
+def probe_identity_bridge(http: HttpProbe, *, current_year: int) -> list[Finding]:
+    """Measure whether priced market players can reach `gsis_id` by id alone.
+
+    ADR-005 forbids name-only production joins, so the whole arbitrage join hinges on an
+    id path existing from an MFL ADP row to a canonical player. Two independent bridges
+    are possible, and both are measured because agreement between them is what lets
+    Phase 1 fail closed instead of guessing:
+
+    1. ``mfl_id`` -> ``load_ff_playerids()`` -> ``gsis_id``
+    2. ``MFL players export espn_id`` -> ``load_rosters(current)`` -> ``gsis_id``
+    """
+    findings: list[Finding] = []
+    finding = Finding(
+        check_id="identity_market_to_gsis_bridge",
+        source_id="identity",
+        kind="loader",
+        target="mfl adp -> {ff_playerids.mfl_id, rosters.espn_id} -> gsis_id",
+        status=SKIPPED,
+        question=(
+            "Can priced market players be resolved to a canonical id without name matching, "
+            "and do the two independent id bridges agree?"
+        ),
+    )
+
+    adp = _probe_mfl_adp(
+        http,
+        check_id="identity_source_adp",
+        year=current_year,
+        params={"TYPE": "adp", "JSON": 1},
+        question="market rows used for the identity measurement",
+    )
+    if adp.status != OK:
+        finding.status = adp.status
+        finding.notes.append(f"market rows unavailable: {adp.status}")
+        return [finding]
+
+    players = _mfl_player_index(http, current_year=current_year)
+
+    try:
+        import nflreadpy as nfl
+
+        crosswalk = nfl.load_ff_playerids()
+        rosters = nfl.load_rosters(seasons=[current_year])
+    except BaseException as exc:  # noqa: BLE001
+        status, detail = classify_request_exception(exc)
+        finding.status = LOADER_ERROR if status == NETWORK_ERROR else status
+        finding.notes.append(detail)
+        return [finding]
+
+    mfl_to_gsis = _id_map(crosswalk, "mfl_id", "gsis_id")
+    espn_to_gsis = _id_map(rosters, "espn_id", "gsis_id")
+
+    rows = adp.rows
+    resolved_via_mfl = 0
+    resolved_via_espn = 0
+    resolved_either = 0
+    agreed = 0
+    disagreed = 0
+    unresolved_ids: list[str] = []
+    top_resolved = 0
+    top_total = 0
+
+    for row in rows:
+        mfl_id = str(row.get("id", "")).strip()
+        rank = int(float(row.get("rank", 0) or 0))
+        gsis_a = mfl_to_gsis.get(mfl_id.lstrip("0")) or mfl_to_gsis.get(mfl_id)
+        espn_id = players.get(mfl_id, {}).get("espn_id")
+        gsis_b = espn_to_gsis.get(str(espn_id).strip()) if espn_id else None
+        if gsis_a:
+            resolved_via_mfl += 1
+        if gsis_b:
+            resolved_via_espn += 1
+        if gsis_a or gsis_b:
+            resolved_either += 1
+        elif len(unresolved_ids) < 10:
+            unresolved_ids.append(f"mfl_id={mfl_id} rank={rank}")
+        if gsis_a and gsis_b:
+            if gsis_a == gsis_b:
+                agreed += 1
+            else:
+                disagreed += 1
+        if rank and rank <= TOP_N_FOR_IDENTITY:
+            top_total += 1
+            if gsis_a or gsis_b:
+                top_resolved += 1
+
+    total = len(rows)
+    finding.status = OK if total else EMPTY
+    finding.record_count = total
+    finding.coverage = {
+        "priced_players": total,
+        "resolved_via_mfl_id_bridge": resolved_via_mfl,
+        "resolved_via_espn_id_bridge": resolved_via_espn,
+        "resolved_by_either_bridge": resolved_either,
+        "resolved_fraction": round(resolved_either / total, 4) if total else 0.0,
+        "both_bridges_agree": agreed,
+        "both_bridges_disagree": disagreed,
+        f"top{TOP_N_FOR_IDENTITY}_priced": top_total,
+        f"top{TOP_N_FOR_IDENTITY}_resolved": top_resolved,
+        "crosswalk_rows": int(crosswalk.height),
+        "roster_rows": int(rosters.height),
+        "mfl_player_index_rows": len(players),
+    }
+    if unresolved_ids:
+        finding.notes.append("unresolved sample: " + "; ".join(unresolved_ids))
+    findings.append(finding)
+    return findings
+
+
+def _mfl_player_index(http: HttpProbe, *, current_year: int) -> dict[str, dict[str, Any]]:
+    """MFL player id -> record, used to reach the ESPN id the export publishes."""
+    response, _partial = http.get(
+        f"{MFL_BASE}/{current_year}/export",
+        params={"TYPE": "players", "DETAILS": 1, "JSON": 1},
+    )
+    if response is None or not response.ok:
+        return {}
+    try:
+        payload = response.json()
+    except ValueError:
+        return {}
+    node = payload.get("players", {}) if isinstance(payload, dict) else {}
+    records = node.get("player", []) if isinstance(node, dict) else []
+    return {
+        str(record["id"]).strip(): record
+        for record in records
+        if isinstance(record, dict) and record.get("id")
+    }
+
+
+def _id_map(frame: Any, left: str, right: str) -> dict[str, str]:
+    """Build a left-id -> right-id map, dropping blanks and ambiguous duplicates.
+
+    Ambiguity fails closed: an id that maps to two different canonical ids is dropped
+    rather than resolved arbitrarily (ADR-005).
+    """
+    if left not in frame.columns or right not in frame.columns:
+        return {}
+    mapping: dict[str, str] = {}
+    ambiguous: set[str] = set()
+    for left_value, right_value in zip(frame[left].to_list(), frame[right].to_list(), strict=True):
+        if left_value is None or right_value is None:
+            continue
+        key = str(left_value).strip()
+        value = str(right_value).strip()
+        if not key or not value or key in ambiguous:
+            continue
+        existing = mapping.get(key)
+        if existing and existing != value:
+            del mapping[key]
+            ambiguous.add(key)
+            continue
+        mapping[key] = value
+    return mapping
 
 
 # --------------------------------------------------------------------------------------
@@ -1278,9 +1553,15 @@ def render_summary(report: dict[str, Any]) -> str:
         f"(`{decisions['current_market_source_status']}`)",
         "- MFL historical years returning >=100 priced players: "
         + (", ".join(decisions["mfl_historical_years_with_data"]) or "none"),
+        f"- history dense enough: **{decisions['mfl_history_dense_enough']}**; "
+        f"point-in-time capable: **{decisions['market_history_point_in_time_capable']}**",
         "- `arbitrage_ml_historical_feasible`: "
-        f"**{decisions['arbitrage_ml_historical_feasible']}**",
+        f"**{decisions['arbitrage_ml_historical_feasible']}** "
+        f"-> arbitrage mode **{decisions['arbitrage_mode_recommended']}**",
         f"  - rule: {decisions['arbitrage_ml_feasibility_rule']}",
+        *(f"  - {line}" for line in decisions["market_history_window_evidence"]),
+        "- market rows resolved to a canonical id without name matching: "
+        f"**{decisions['market_identity_resolved_fraction']}**",
         "- nflverse injury years with rows: "
         + (", ".join(decisions["nflverse_injury_years_with_data"]) or "none"),
         "- sources blocked by local egress policy: "
@@ -1355,8 +1636,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument(
         "--only",
-        default="nflverse,mfl,sleeper,rights",
-        help="comma-separated groups to run: nflverse,mfl,sleeper,rights",
+        default="nflverse,mfl,sleeper,identity,rights",
+        help="comma-separated groups to run: nflverse,mfl,sleeper,identity,rights",
     )
     parser.add_argument(
         "--current-year",
@@ -1396,6 +1677,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if "sleeper" in groups:
         print("[probe] sleeper ...", flush=True)
         findings += probe_sleeper(http)
+    if "identity" in groups:
+        print("[probe] identity bridge (market -> gsis) ...", flush=True)
+        findings += probe_identity_bridge(http, current_year=args.current_year)
     if "rights" in groups:
         print("[probe] rights/terms/robots ...", flush=True)
         findings += probe_rights(http)
