@@ -1,9 +1,9 @@
 # Source probe summary
 
 - run environment: `github-actions`
-- started (UTC): `2026-08-17T16:53:05Z`
-- finished (UTC): `2026-08-17T16:53:46Z`
-- git sha: `37f0fdbc77095b272dc60e2ca08c9c9e1218a503`
+- started (UTC): `2026-08-17T17:01:02Z`
+- finished (UTC): `2026-08-17T17:01:55Z`
+- git sha: `5fb325bb60dd0855b2d8547735ca0753792d3392`
 - python: `3.12.13`
 - package versions: `nflreadpy==0.1.5`, `polars==1.43.2`, `requests==2.34.2`
 
@@ -11,8 +11,12 @@
 
 - current market source viable: **True** (`ok`)
 - MFL historical years returning >=100 priced players: 2019, 2020, 2021, 2022, 2023, 2024, 2025
-- `arbitrage_ml_historical_feasible`: **True**
-  - rule: >=5 historical MFL ADP years each with >=100 priced players, so that rolling training seasons plus >=3 chronological holdout seasons are possible
+- history dense enough: **True**; point-in-time capable: **False**
+- `arbitrage_ml_historical_feasible`: **False** -> arbitrage mode **baseline**
+  - rule: >=5 historical MFL ADP years each with >=100 priced players AND demonstrated point-in-time windowing of a historical aggregate; volume alone is insufficient because a season-long aggregate embeds in-season drafting that already knows the outcome
+  - mfl_adp_history_window_days30: status=ok records=445 totalDrafts=15850 changed=False
+  - mfl_adp_history_window_no_mock_redraft: status=ok records=384 totalDrafts=6885 changed=True
+- market rows resolved to a canonical id without name matching: **0.9537**
 - nflverse injury years with rows: 2019, 2024, 2025
 - sources blocked by local egress policy: none
 
@@ -26,12 +30,21 @@
 | `rights_fantasypros_terms` | fantasypros_ecr_via_dynastyprocess | ok |  | no keyword match in document |
 | `rights_ffopportunity_description` | ffopportunity | ok |  |  |
 | `rights_ffopportunity_readme` | ffopportunity | ok |  |  |
+| `identity_market_to_gsis_bridge` | identity | ok | 367 | unresolved sample: mfl_id=0532 rank=215; mfl_id=0515 rank=218; mfl_id=0528 rank=228; mfl_id=0511 rank=235; mfl_id=0510 rank=249; mfl_id=0524 rank=251; mfl_id=05 |
 | `mfl_adp_current_cutoff5` | myfantasyleague_adp | ok | 367 |  |
 | `mfl_adp_current_default` | myfantasyleague_adp | ok | 367 |  |
+| `mfl_adp_current_fcount10` | myfantasyleague_adp | ok | 325 |  |
+| `mfl_adp_current_fcount12` | myfantasyleague_adp | ok | 356 |  |
+| `mfl_adp_current_fcount14` | myfantasyleague_adp | ok | 242 |  |
 | `mfl_adp_current_no_mock_redraft` | myfantasyleague_adp | ok | 383 |  |
 | `mfl_adp_current_ppr_12team` | myfantasyleague_adp | ok | 361 |  |
+| `mfl_adp_current_ppr_only` | myfantasyleague_adp | ok | 370 |  |
 | `mfl_adp_current_recent_14days` | myfantasyleague_adp | ok | 367 |  |
+| `mfl_adp_current_recent_1day` | myfantasyleague_adp | ok | 367 |  |
 | `mfl_adp_current_std_10team` | myfantasyleague_adp | ok | 2 |  |
+| `mfl_adp_current_std_only` | myfantasyleague_adp | ok | 229 |  |
+| `mfl_adp_history_window_days30` | myfantasyleague_adp | ok | 445 |  |
+| `mfl_adp_history_window_no_mock_redraft` | myfantasyleague_adp | ok | 384 |  |
 | `mfl_adp_year_2019` | myfantasyleague_adp | ok | 445 |  |
 | `mfl_adp_year_2020` | myfantasyleague_adp | ok | 442 |  |
 | `mfl_adp_year_2021` | myfantasyleague_adp | ok | 397 |  |

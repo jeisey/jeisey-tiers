@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-08-17T16:53:46Z",
+  "captured_at_utc": "2026-08-17T17:01:55Z",
   "check_id": "mfl_adp_current_default",
   "columns": [
     {
@@ -36,7 +36,7 @@
     "averagePick_min": 2.57,
     "response_envelope": {
       "encoding": "utf-8",
-      "timestamp": "1786977828",
+      "timestamp": "1786983516",
       "totalDrafts": "410",
       "totalPicks": "646",
       "version": "1.0"

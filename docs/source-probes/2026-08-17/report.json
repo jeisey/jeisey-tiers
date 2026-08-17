@@ -1,9 +1,9 @@
 {
   "probe_schema_version": "1.0",
   "run": {
-    "started_at_utc": "2026-08-17T16:53:05Z",
-    "finished_at_utc": "2026-08-17T16:53:46Z",
-    "git_sha": "37f0fdbc77095b272dc60e2ca08c9c9e1218a503",
+    "started_at_utc": "2026-08-17T17:01:02Z",
+    "finished_at_utc": "2026-08-17T17:01:55Z",
+    "git_sha": "5fb325bb60dd0855b2d8547735ca0753792d3392",
     "user_agent": "jeisey-tiers-source-probe/0.1 (+https://github.com/jeisey/jeisey-tiers; non-commercial fantasy research) python-requests",
     "python": "3.12.13",
     "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
@@ -26,8 +26,16 @@
       "2024",
       "2025"
     ],
-    "arbitrage_ml_historical_feasible": true,
-    "arbitrage_ml_feasibility_rule": ">=5 historical MFL ADP years each with >=100 priced players, so that rolling training seasons plus >=3 chronological holdout seasons are possible",
+    "mfl_history_dense_enough": true,
+    "market_history_point_in_time_capable": false,
+    "market_history_window_evidence": [
+      "mfl_adp_history_window_days30: status=ok records=445 totalDrafts=15850 changed=False",
+      "mfl_adp_history_window_no_mock_redraft: status=ok records=384 totalDrafts=6885 changed=True"
+    ],
+    "arbitrage_ml_historical_feasible": false,
+    "arbitrage_mode_recommended": "baseline",
+    "arbitrage_ml_feasibility_rule": ">=5 historical MFL ADP years each with >=100 priced players AND demonstrated point-in-time windowing of a historical aggregate; volume alone is insufficient because a season-long aggregate embeds in-season drafting that already knows the outcome",
+    "market_identity_resolved_fraction": 0.9537,
     "nflverse_injury_years_with_data": [
       "2019",
       "2024",
@@ -42,12 +50,21 @@
         "nflverse_injuries_2026"
       ],
       "ok": [
+        "identity_market_to_gsis_bridge",
         "mfl_adp_current_cutoff5",
         "mfl_adp_current_default",
+        "mfl_adp_current_fcount10",
+        "mfl_adp_current_fcount12",
+        "mfl_adp_current_fcount14",
         "mfl_adp_current_no_mock_redraft",
         "mfl_adp_current_ppr_12team",
+        "mfl_adp_current_ppr_only",
         "mfl_adp_current_recent_14days",
+        "mfl_adp_current_recent_1day",
         "mfl_adp_current_std_10team",
+        "mfl_adp_current_std_only",
+        "mfl_adp_history_window_days30",
+        "mfl_adp_history_window_no_mock_redraft",
         "mfl_adp_year_2019",
         "mfl_adp_year_2020",
         "mfl_adp_year_2021",
@@ -123,7 +140,7 @@
       "status": "ok",
       "question": "Does FantasyCalc restrict automated access?",
       "http_status": 200,
-      "elapsed_ms": 58,
+      "elapsed_ms": 242,
       "content_type": "text/plain",
       "bytes_received": 24,
       "excerpts": [
@@ -138,7 +155,7 @@
       "status": "ok",
       "question": "Do FantasyCalc's current terms permit non-commercial reuse, and by what mechanism?",
       "http_status": 200,
-      "elapsed_ms": 376,
+      "elapsed_ms": 460,
       "content_type": "text/html; charset=utf-8",
       "bytes_received": 113878,
       "notes": [
@@ -153,7 +170,7 @@
       "status": "ok",
       "question": "What does the FantasyPros-derived ranking mirror say about ownership/reuse?",
       "http_status": 200,
-      "elapsed_ms": 94,
+      "elapsed_ms": 129,
       "content_type": "text/plain; charset=utf-8",
       "bytes_received": 2082,
       "excerpts": [
@@ -168,7 +185,7 @@
       "status": "ok",
       "question": "Do FantasyPros terms permit even internal benchmark use of derived ranks?",
       "http_status": 200,
-      "elapsed_ms": 587,
+      "elapsed_ms": 363,
       "content_type": "text/html; charset=UTF-8",
       "bytes_received": 215237,
       "notes": [
@@ -183,7 +200,7 @@
       "status": "ok",
       "question": "What licence does ffopportunity declare?",
       "http_status": 200,
-      "elapsed_ms": 77,
+      "elapsed_ms": 155,
       "content_type": "text/plain; charset=utf-8",
       "bytes_received": 1364,
       "excerpts": [
@@ -199,7 +216,7 @@
       "status": "ok",
       "question": "What attribution does ffopportunity request for its expected-points data?",
       "http_status": 200,
-      "elapsed_ms": 84,
+      "elapsed_ms": 159,
       "content_type": "text/plain; charset=utf-8",
       "bytes_received": 6801,
       "excerpts": [
@@ -211,6 +228,32 @@
       ]
     },
     {
+      "check_id": "identity_market_to_gsis_bridge",
+      "source_id": "identity",
+      "kind": "loader",
+      "target": "mfl adp -> {ff_playerids.mfl_id, rosters.espn_id} -> gsis_id",
+      "status": "ok",
+      "question": "Can priced market players be resolved to a canonical id without name matching, and do the two independent id bridges agree?",
+      "record_count": 367,
+      "coverage": {
+        "priced_players": 367,
+        "resolved_via_mfl_id_bridge": 350,
+        "resolved_via_espn_id_bridge": 331,
+        "resolved_by_either_bridge": 350,
+        "resolved_fraction": 0.9537,
+        "both_bridges_agree": 331,
+        "both_bridges_disagree": 0,
+        "top100_priced": 100,
+        "top100_resolved": 100,
+        "crosswalk_rows": 12472,
+        "roster_rows": 2930,
+        "mfl_player_index_rows": 2600
+      },
+      "notes": [
+        "unresolved sample: mfl_id=0532 rank=215; mfl_id=0515 rank=218; mfl_id=0528 rank=228; mfl_id=0511 rank=235; mfl_id=0510 rank=249; mfl_id=0524 rank=251; mfl_id=0504 rank=252; mfl_id=0514 rank=254; mfl_id=0518 rank=260; mfl_id=0531 rank=266"
+      ]
+    },
+    {
       "check_id": "mfl_adp_current_cutoff5",
       "source_id": "myfantasyleague_adp",
       "kind": "http",
@@ -218,7 +261,7 @@
       "status": "ok",
       "question": "Does a minimum-draft-appearance cutoff exist?",
       "http_status": 200,
-      "elapsed_ms": 78,
+      "elapsed_ms": 127,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 45590,
       "record_count": 367,
@@ -257,30 +300,30 @@
           "version": "1.0",
           "encoding": "utf-8",
           "totalPicks": "646",
-          "timestamp": "1786978022",
-          "totalDrafts": "410"
+          "totalDrafts": "410",
+          "timestamp": "1786972158"
         },
         "averagePick_min": 2.57,
         "averagePick_max": 218.41
       },
       "sample_rows": [
         {
-          "draftSelPct": "30",
-          "draftsSelectedIn": "127",
           "maxPick": "10",
-          "minPick": "1",
           "averagePick": "2.57",
+          "draftSelPct": "30",
           "rank": "1",
-          "id": "16162"
+          "minPick": "1",
+          "id": "16162",
+          "draftsSelectedIn": "127"
         },
         {
+          "maxPick": "8",
+          "draftsSelectedIn": "132",
+          "minPick": "1",
           "id": "16161",
           "rank": "2",
           "averagePick": "2.64",
-          "minPick": "1",
-          "maxPick": "8",
-          "draftSelPct": "32",
-          "draftsSelectedIn": "132"
+          "draftSelPct": "32"
         }
       ]
     },
@@ -292,7 +335,7 @@
       "status": "ok",
       "question": "Does the bare ADP export work without any filters?",
       "http_status": 200,
-      "elapsed_ms": 42,
+      "elapsed_ms": 85,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 45590,
       "record_count": 367,
@@ -330,8 +373,8 @@
         "response_envelope": {
           "version": "1.0",
           "encoding": "utf-8",
+          "timestamp": "1786983516",
           "totalPicks": "646",
-          "timestamp": "1786977828",
           "totalDrafts": "410"
         },
         "averagePick_min": 2.57,
@@ -339,22 +382,244 @@
       },
       "sample_rows": [
         {
+          "maxPick": "10",
           "minPick": "1",
-          "averagePick": "2.57",
-          "rank": "1",
           "id": "16162",
-          "draftSelPct": "30",
           "draftsSelectedIn": "127",
-          "maxPick": "10"
+          "averagePick": "2.57",
+          "draftSelPct": "30",
+          "rank": "1"
         },
         {
-          "minPick": "1",
-          "averagePick": "2.64",
-          "rank": "2",
-          "id": "16161",
           "draftsSelectedIn": "132",
+          "minPick": "1",
+          "id": "16161",
+          "rank": "2",
+          "averagePick": "2.64",
           "draftSelPct": "32",
           "maxPick": "8"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_current_fcount10",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2026/export?TYPE=adp&JSON=1&FCOUNT=10",
+      "status": "ok",
+      "question": "How much data does the 10-team cohort alone carry?",
+      "http_status": 200,
+      "elapsed_ms": 111,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 40188,
+      "record_count": 325,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "version": "1.0",
+          "encoding": "utf-8",
+          "totalPicks": "325",
+          "totalDrafts": "80",
+          "timestamp": "1786972053"
+        },
+        "averagePick_min": 2.41,
+        "averagePick_max": 202.17
+      },
+      "sample_rows": [
+        {
+          "maxPick": "7",
+          "draftSelPct": "40",
+          "averagePick": "2.41",
+          "rank": "1",
+          "id": "16162",
+          "minPick": "1",
+          "draftsSelectedIn": "32"
+        },
+        {
+          "maxPick": "7",
+          "draftsSelectedIn": "32",
+          "minPick": "1",
+          "id": "16161",
+          "rank": "2",
+          "averagePick": "2.59",
+          "draftSelPct": "40"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_current_fcount12",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2026/export?TYPE=adp&JSON=1&FCOUNT=12",
+      "status": "ok",
+      "question": "How much data does the 12-team cohort alone carry?",
+      "http_status": 200,
+      "elapsed_ms": 121,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 44122,
+      "record_count": 356,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "encoding": "utf-8",
+          "version": "1.0",
+          "timestamp": "1786972074",
+          "totalPicks": "494",
+          "totalDrafts": "228"
+        },
+        "averagePick_min": 2.68,
+        "averagePick_max": 233.64
+      },
+      "sample_rows": [
+        {
+          "rank": "1",
+          "draftSelPct": "29",
+          "averagePick": "2.68",
+          "draftsSelectedIn": "68",
+          "id": "16161",
+          "minPick": "1",
+          "maxPick": "8"
+        },
+        {
+          "maxPick": "10",
+          "averagePick": "2.81",
+          "draftSelPct": "28",
+          "rank": "2",
+          "minPick": "1",
+          "id": "16162",
+          "draftsSelectedIn": "64"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_current_fcount14",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2026/export?TYPE=adp&JSON=1&FCOUNT=14",
+      "status": "ok",
+      "question": "How much data does the 14-team cohort alone carry?",
+      "http_status": 200,
+      "elapsed_ms": 103,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 29782,
+      "record_count": 242,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "encoding": "utf-8",
+          "version": "1.0",
+          "timestamp": "1786972146",
+          "totalDrafts": "31",
+          "totalPicks": "242"
+        },
+        "averagePick_min": 2.0,
+        "averagePick_max": 231.0
+      },
+      "sample_rows": [
+        {
+          "maxPick": "3",
+          "rank": "1",
+          "draftSelPct": "19",
+          "averagePick": "2.00",
+          "draftsSelectedIn": "6",
+          "id": "16161",
+          "minPick": "1"
+        },
+        {
+          "rank": "2",
+          "draftSelPct": "19",
+          "averagePick": "3.33",
+          "draftsSelectedIn": "6",
+          "id": "16162",
+          "minPick": "1",
+          "maxPick": "7"
         }
       ]
     },
@@ -366,7 +631,7 @@
       "status": "ok",
       "question": "Can mock drafts and keeper leagues be excluded?",
       "http_status": 200,
-      "elapsed_ms": 82,
+      "elapsed_ms": 123,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 47660,
       "record_count": 383,
@@ -402,33 +667,33 @@
       ],
       "coverage": {
         "response_envelope": {
-          "encoding": "utf-8",
           "version": "1.0",
-          "totalPicks": "421",
+          "encoding": "utf-8",
           "totalDrafts": "101",
-          "timestamp": "1786977955"
+          "totalPicks": "421",
+          "timestamp": "1786972184"
         },
         "averagePick_min": 2.7,
         "averagePick_max": 335.14
       },
       "sample_rows": [
         {
+          "draftSelPct": "100",
           "averagePick": "2.70",
-          "minPick": "1",
-          "id": "16162",
           "rank": "1",
-          "maxPick": "10",
+          "id": "16162",
+          "minPick": "1",
           "draftsSelectedIn": "101",
-          "draftSelPct": "100"
+          "maxPick": "10"
         },
         {
-          "id": "16161",
-          "rank": "2",
-          "averagePick": "2.74",
-          "minPick": "1",
           "maxPick": "8",
+          "draftsSelectedIn": "102",
+          "id": "16161",
+          "minPick": "1",
+          "rank": "2",
           "draftSelPct": "100",
-          "draftsSelectedIn": "102"
+          "averagePick": "2.74"
         }
       ]
     },
@@ -440,7 +705,7 @@
       "status": "ok",
       "question": "Are PPR/league-size cohort filters honoured?",
       "http_status": 200,
-      "elapsed_ms": 69,
+      "elapsed_ms": 106,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 44740,
       "record_count": 361,
@@ -478,9 +743,9 @@
         "response_envelope": {
           "version": "1.0",
           "encoding": "utf-8",
+          "timestamp": "1786972066",
           "totalPicks": "490",
-          "totalDrafts": "219",
-          "timestamp": "1786983597"
+          "totalDrafts": "219"
         },
         "averagePick_min": 2.69,
         "averagePick_max": 244.64
@@ -488,21 +753,95 @@
       "sample_rows": [
         {
           "draftSelPct": "29",
-          "draftsSelectedIn": "65",
-          "maxPick": "8",
           "averagePick": "2.69",
-          "minPick": "1",
           "rank": "1",
-          "id": "16161"
+          "id": "16161",
+          "minPick": "1",
+          "draftsSelectedIn": "65",
+          "maxPick": "8"
         },
         {
-          "draftsSelectedIn": "61",
-          "draftSelPct": "27",
           "maxPick": "10",
+          "draftSelPct": "27",
           "averagePick": "2.90",
-          "minPick": "1",
           "rank": "2",
-          "id": "16162"
+          "id": "16162",
+          "minPick": "1",
+          "draftsSelectedIn": "61"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_current_ppr_only",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2026/export?TYPE=adp&JSON=1&IS_PPR=1",
+      "status": "ok",
+      "question": "How much data does the PPR cohort alone carry?",
+      "http_status": 200,
+      "elapsed_ms": 138,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 45938,
+      "record_count": 370,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "encoding": "utf-8",
+          "version": "1.0",
+          "timestamp": "1786972144",
+          "totalPicks": "644",
+          "totalDrafts": "389"
+        },
+        "averagePick_min": 2.67,
+        "averagePick_max": 237.5
+      },
+      "sample_rows": [
+        {
+          "averagePick": "2.67",
+          "draftSelPct": "31",
+          "rank": "1",
+          "minPick": "1",
+          "id": "16161",
+          "draftsSelectedIn": "121",
+          "maxPick": "8"
+        },
+        {
+          "maxPick": "10",
+          "id": "16162",
+          "minPick": "1",
+          "draftsSelectedIn": "117",
+          "draftSelPct": "30",
+          "averagePick": "2.67",
+          "rank": "2"
         }
       ]
     },
@@ -514,7 +853,7 @@
       "status": "ok",
       "question": "Is there a date window filter that would make snapshots point-in-time?",
       "http_status": 200,
-      "elapsed_ms": 40,
+      "elapsed_ms": 81,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 45590,
       "record_count": 367,
@@ -552,31 +891,105 @@
         "response_envelope": {
           "version": "1.0",
           "encoding": "utf-8",
-          "totalDrafts": "410",
-          "timestamp": "1786977956",
-          "totalPicks": "646"
+          "timestamp": "1786972255",
+          "totalPicks": "646",
+          "totalDrafts": "410"
         },
         "averagePick_min": 2.57,
         "averagePick_max": 218.41
       },
       "sample_rows": [
         {
-          "id": "16162",
+          "maxPick": "10",
           "rank": "1",
           "averagePick": "2.57",
-          "minPick": "1",
-          "maxPick": "10",
+          "draftSelPct": "30",
           "draftsSelectedIn": "127",
-          "draftSelPct": "30"
+          "minPick": "1",
+          "id": "16162"
         },
         {
           "maxPick": "8",
-          "draftSelPct": "32",
           "draftsSelectedIn": "132",
-          "averagePick": "2.64",
           "minPick": "1",
           "id": "16161",
-          "rank": "2"
+          "rank": "2",
+          "averagePick": "2.64",
+          "draftSelPct": "32"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_current_recent_1day",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2026/export?TYPE=adp&JSON=1&DAYS=1",
+      "status": "ok",
+      "question": "Does a one-day window actually shrink the sample (proof the filter is honoured)?",
+      "http_status": 200,
+      "elapsed_ms": 84,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 45590,
+      "record_count": 367,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "encoding": "utf-8",
+          "version": "1.0",
+          "timestamp": "1786974066",
+          "totalPicks": "646",
+          "totalDrafts": "410"
+        },
+        "averagePick_min": 2.57,
+        "averagePick_max": 218.41
+      },
+      "sample_rows": [
+        {
+          "averagePick": "2.57",
+          "draftSelPct": "30",
+          "rank": "1",
+          "minPick": "1",
+          "id": "16162",
+          "draftsSelectedIn": "127",
+          "maxPick": "10"
+        },
+        {
+          "maxPick": "8",
+          "rank": "2",
+          "draftSelPct": "32",
+          "averagePick": "2.64",
+          "draftsSelectedIn": "132",
+          "id": "16161",
+          "minPick": "1"
         }
       ]
     },
@@ -588,7 +1001,7 @@
       "status": "ok",
       "question": "Are standard-scoring/10-team cohort filters honoured?",
       "http_status": 200,
-      "elapsed_ms": 38,
+      "elapsed_ms": 82,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 354,
       "record_count": 2,
@@ -626,43 +1039,117 @@
         "response_envelope": {
           "encoding": "utf-8",
           "version": "1.0",
+          "timestamp": "1786972119",
           "totalPicks": "2",
-          "totalDrafts": "6",
-          "timestamp": "1786977901"
+          "totalDrafts": "6"
         },
         "averagePick_min": 13.67,
         "averagePick_max": 26.2
       },
       "sample_rows": [
         {
-          "id": "17472",
           "rank": "1",
-          "minPick": "1",
           "averagePick": "13.67",
-          "maxPick": "28",
+          "draftSelPct": "100",
           "draftsSelectedIn": "6",
-          "draftSelPct": "100"
+          "minPick": "1",
+          "id": "17472",
+          "maxPick": "28"
         },
         {
-          "minPick": "3",
           "averagePick": "26.20",
+          "draftSelPct": "83",
           "rank": "2",
+          "minPick": "3",
           "id": "17473",
           "draftsSelectedIn": "5",
-          "draftSelPct": "83",
           "maxPick": "74"
         }
       ]
     },
     {
-      "check_id": "mfl_adp_year_2019",
+      "check_id": "mfl_adp_current_std_only",
       "source_id": "myfantasyleague_adp",
       "kind": "http",
-      "target": "https://api.myfantasyleague.com/2019/export?TYPE=adp&JSON=1",
+      "target": "https://api.myfantasyleague.com/2026/export?TYPE=adp&JSON=1&IS_PPR=0",
       "status": "ok",
-      "question": "Is 2019 ADP still retrievable, and how many players are priced?",
+      "question": "How much data does the standard-scoring cohort alone carry?",
       "http_status": 200,
-      "elapsed_ms": 487,
+      "elapsed_ms": 106,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 28212,
+      "record_count": 229,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "version": "1.0",
+          "encoding": "utf-8",
+          "totalPicks": "229",
+          "totalDrafts": "21",
+          "timestamp": "1786972146"
+        },
+        "averagePick_min": 1.4,
+        "averagePick_max": 175.0
+      },
+      "sample_rows": [
+        {
+          "rank": "1",
+          "averagePick": "1.40",
+          "draftSelPct": "47",
+          "draftsSelectedIn": "10",
+          "minPick": "1",
+          "id": "16162",
+          "maxPick": "4"
+        },
+        {
+          "maxPick": "5",
+          "rank": "2",
+          "averagePick": "2.36",
+          "draftSelPct": "52",
+          "draftsSelectedIn": "11",
+          "minPick": "1",
+          "id": "16161"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_history_window_days30",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2019/export?TYPE=adp&JSON=1&DAYS=30",
+      "status": "ok",
+      "question": "Does a day window applied to a past season change the aggregate?",
+      "http_status": 200,
+      "elapsed_ms": 614,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 55793,
       "record_count": 445,
@@ -700,9 +1187,9 @@
         "response_envelope": {
           "version": "1.0",
           "encoding": "utf-8",
-          "totalPicks": "1901",
           "totalDrafts": "15850",
-          "timestamp": "1786985600"
+          "totalPicks": "1901",
+          "timestamp": "1786986092"
         },
         "averagePick_min": 1.82,
         "averagePick_max": 245.28
@@ -710,21 +1197,169 @@
       "sample_rows": [
         {
           "id": "13604",
-          "rank": "1",
           "minPick": "1",
-          "averagePick": "1.82",
-          "maxPick": "369",
+          "draftsSelectedIn": "8953",
           "draftSelPct": "56",
-          "draftsSelectedIn": "8953"
+          "averagePick": "1.82",
+          "rank": "1",
+          "maxPick": "369"
         },
         {
-          "averagePick": "3.07",
+          "maxPick": "205",
           "minPick": "1",
           "id": "13130",
-          "rank": "2",
-          "maxPick": "205",
           "draftsSelectedIn": "9068",
-          "draftSelPct": "57"
+          "averagePick": "3.07",
+          "draftSelPct": "57",
+          "rank": "2"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_history_window_no_mock_redraft",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2019/export?TYPE=adp&JSON=1&IS_MOCK=0&IS_KEEPER=N",
+      "status": "ok",
+      "question": "Do draft-type filters still work on a past season?",
+      "http_status": 200,
+      "elapsed_ms": 525,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 48226,
+      "record_count": 384,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "encoding": "utf-8",
+          "version": "1.0",
+          "totalDrafts": "6885",
+          "totalPicks": "1519",
+          "timestamp": "1786986093"
+        },
+        "averagePick_min": 1.47,
+        "averagePick_max": 293.49
+      },
+      "sample_rows": [
+        {
+          "maxPick": "47",
+          "draftSelPct": "96",
+          "averagePick": "1.47",
+          "rank": "1",
+          "id": "13604",
+          "minPick": "1",
+          "draftsSelectedIn": "6628"
+        },
+        {
+          "maxPick": "42",
+          "draftsSelectedIn": "6431",
+          "id": "13132",
+          "minPick": "1",
+          "rank": "2",
+          "draftSelPct": "93",
+          "averagePick": "2.74"
+        }
+      ]
+    },
+    {
+      "check_id": "mfl_adp_year_2019",
+      "source_id": "myfantasyleague_adp",
+      "kind": "http",
+      "target": "https://api.myfantasyleague.com/2019/export?TYPE=adp&JSON=1",
+      "status": "ok",
+      "question": "Is 2019 ADP still retrievable, and how many players are priced?",
+      "http_status": 200,
+      "elapsed_ms": 570,
+      "content_type": "application/json; charset=utf-8",
+      "bytes_received": 55793,
+      "record_count": 445,
+      "columns": [
+        {
+          "name": "averagePick",
+          "dtype": "str"
+        },
+        {
+          "name": "draftSelPct",
+          "dtype": "str"
+        },
+        {
+          "name": "draftsSelectedIn",
+          "dtype": "str"
+        },
+        {
+          "name": "id",
+          "dtype": "str"
+        },
+        {
+          "name": "maxPick",
+          "dtype": "str"
+        },
+        {
+          "name": "minPick",
+          "dtype": "str"
+        },
+        {
+          "name": "rank",
+          "dtype": "str"
+        }
+      ],
+      "coverage": {
+        "response_envelope": {
+          "encoding": "utf-8",
+          "version": "1.0",
+          "totalDrafts": "15850",
+          "totalPicks": "1901",
+          "timestamp": "1786986085"
+        },
+        "averagePick_min": 1.82,
+        "averagePick_max": 245.28
+      },
+      "sample_rows": [
+        {
+          "maxPick": "369",
+          "draftsSelectedIn": "8953",
+          "id": "13604",
+          "minPick": "1",
+          "rank": "1",
+          "draftSelPct": "56",
+          "averagePick": "1.82"
+        },
+        {
+          "rank": "2",
+          "draftSelPct": "57",
+          "averagePick": "3.07",
+          "draftsSelectedIn": "9068",
+          "id": "13130",
+          "minPick": "1",
+          "maxPick": "205"
         }
       ]
     },
@@ -736,7 +1371,7 @@
       "status": "ok",
       "question": "Is 2020 ADP still retrievable, and how many players are priced?",
       "http_status": 200,
-      "elapsed_ms": 153,
+      "elapsed_ms": 604,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 55546,
       "record_count": 442,
@@ -772,32 +1407,32 @@
       ],
       "coverage": {
         "response_envelope": {
-          "encoding": "utf-8",
           "version": "1.0",
+          "encoding": "utf-8",
+          "totalPicks": "1754",
           "totalDrafts": "12873",
-          "timestamp": "1786978296",
-          "totalPicks": "1754"
+          "timestamp": "1786986086"
         },
         "averagePick_min": 1.31,
         "averagePick_max": 309.4
       },
       "sample_rows": [
         {
-          "rank": "1",
-          "id": "13130",
           "minPick": "1",
+          "id": "13130",
+          "draftsSelectedIn": "8247",
           "averagePick": "1.31",
           "draftSelPct": "64",
-          "draftsSelectedIn": "8247",
+          "rank": "1",
           "maxPick": "35"
         },
         {
           "rank": "2",
-          "id": "13604",
           "averagePick": "2.65",
-          "minPick": "1",
           "draftSelPct": "64",
           "draftsSelectedIn": "8338",
+          "minPick": "1",
+          "id": "13604",
           "maxPick": "65"
         }
       ]
@@ -810,7 +1445,7 @@
       "status": "ok",
       "question": "Is 2021 ADP still retrievable, and how many players are priced?",
       "http_status": 200,
-      "elapsed_ms": 415,
+      "elapsed_ms": 468,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 49850,
       "record_count": 397,
@@ -848,30 +1483,30 @@
         "response_envelope": {
           "version": "1.0",
           "encoding": "utf-8",
-          "totalPicks": "1602",
+          "timestamp": "1786986087",
           "totalDrafts": "12954",
-          "timestamp": "1786985602"
+          "totalPicks": "1602"
         },
         "averagePick_min": 1.42,
         "averagePick_max": 242.4
       },
       "sample_rows": [
         {
-          "draftSelPct": "63",
-          "draftsSelectedIn": "8165",
           "maxPick": "143",
           "rank": "1",
-          "id": "13130",
+          "draftSelPct": "63",
           "averagePick": "1.42",
+          "draftsSelectedIn": "8165",
+          "id": "13130",
           "minPick": "1"
         },
         {
-          "minPick": "1",
-          "averagePick": "2.87",
-          "id": "13128",
-          "rank": "2",
           "maxPick": "91",
           "draftsSelectedIn": "8281",
+          "minPick": "1",
+          "id": "13128",
+          "rank": "2",
+          "averagePick": "2.87",
           "draftSelPct": "63"
         }
       ]
@@ -884,7 +1519,7 @@
       "status": "ok",
       "question": "Is 2022 ADP still retrievable, and how many players are priced?",
       "http_status": 200,
-      "elapsed_ms": 430,
+      "elapsed_ms": 205,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 49012,
       "record_count": 391,
@@ -920,11 +1555,11 @@
       ],
       "coverage": {
         "response_envelope": {
-          "version": "1.0",
           "encoding": "utf-8",
+          "version": "1.0",
+          "timestamp": "1786979920",
           "totalPicks": "1594",
-          "totalDrafts": "11954",
-          "timestamp": "1786985603"
+          "totalDrafts": "11954"
         },
         "averagePick_min": 1.44,
         "averagePick_max": 227.81
@@ -932,21 +1567,21 @@
       "sample_rows": [
         {
           "minPick": "1",
-          "averagePick": "1.44",
           "id": "14802",
-          "rank": "1",
-          "maxPick": "42",
           "draftsSelectedIn": "6997",
-          "draftSelPct": "58"
+          "averagePick": "1.44",
+          "draftSelPct": "58",
+          "rank": "1",
+          "maxPick": "42"
         },
         {
           "maxPick": "51",
-          "draftsSelectedIn": "7325",
+          "averagePick": "3.83",
           "draftSelPct": "61",
-          "id": "13130",
           "rank": "2",
           "minPick": "1",
-          "averagePick": "3.83"
+          "id": "13130",
+          "draftsSelectedIn": "7325"
         }
       ]
     },
@@ -958,7 +1593,7 @@
       "status": "ok",
       "question": "Is 2023 ADP still retrievable, and how many players are priced?",
       "http_status": 200,
-      "elapsed_ms": 474,
+      "elapsed_ms": 263,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 52141,
       "record_count": 416,
@@ -994,33 +1629,33 @@
       ],
       "coverage": {
         "response_envelope": {
-          "encoding": "utf-8",
           "version": "1.0",
-          "totalPicks": "1865",
+          "encoding": "utf-8",
           "totalDrafts": "17631",
-          "timestamp": "1786985604"
+          "totalPicks": "1865",
+          "timestamp": "1786973376"
         },
         "averagePick_min": 3.5,
         "averagePick_max": 214.05
       },
       "sample_rows": [
         {
-          "draftSelPct": "44",
-          "draftsSelectedIn": "7892",
           "maxPick": "235",
           "rank": "1",
-          "id": "14836",
+          "draftSelPct": "44",
           "averagePick": "3.50",
+          "draftsSelectedIn": "7892",
+          "id": "14836",
           "minPick": "1"
         },
         {
+          "draftsSelectedIn": "10021",
           "id": "13130",
-          "rank": "2",
-          "averagePick": "4.30",
           "minPick": "1",
-          "maxPick": "212",
+          "rank": "2",
           "draftSelPct": "56",
-          "draftsSelectedIn": "10021"
+          "averagePick": "4.30",
+          "maxPick": "212"
         }
       ]
     },
@@ -1032,7 +1667,7 @@
       "status": "ok",
       "question": "Is 2024 ADP still retrievable, and how many players are priced?",
       "http_status": 200,
-      "elapsed_ms": 173,
+      "elapsed_ms": 568,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 51744,
       "record_count": 413,
@@ -1070,31 +1705,31 @@
         "response_envelope": {
           "version": "1.0",
           "encoding": "utf-8",
+          "totalPicks": "1847",
           "totalDrafts": "16702",
-          "timestamp": "1786985583",
-          "totalPicks": "1847"
+          "timestamp": "1786986090"
         },
         "averagePick_min": 2.83,
         "averagePick_max": 208.3
       },
       "sample_rows": [
         {
-          "draftsSelectedIn": "7572",
-          "draftSelPct": "45",
           "maxPick": "242",
-          "rank": "1",
           "id": "13130",
           "minPick": "1",
-          "averagePick": "2.83"
+          "draftsSelectedIn": "7572",
+          "draftSelPct": "45",
+          "averagePick": "2.83",
+          "rank": "1"
         },
         {
-          "averagePick": "4.94",
+          "maxPick": "231",
           "minPick": "1",
-          "rank": "2",
           "id": "14832",
-          "draftSelPct": "46",
           "draftsSelectedIn": "7812",
-          "maxPick": "231"
+          "averagePick": "4.94",
+          "draftSelPct": "46",
+          "rank": "2"
         }
       ]
     },
@@ -1106,7 +1741,7 @@
       "status": "ok",
       "question": "Is 2025 ADP still retrievable, and how many players are priced?",
       "http_status": 200,
-      "elapsed_ms": 45,
+      "elapsed_ms": 86,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 45382,
       "record_count": 362,
@@ -1144,9 +1779,9 @@
         "response_envelope": {
           "version": "1.0",
           "encoding": "utf-8",
+          "timestamp": "1786975959",
           "totalPicks": "1337",
-          "totalDrafts": "7185",
-          "timestamp": "1786981256"
+          "totalDrafts": "7185"
         },
         "averagePick_min": 2.74,
         "averagePick_max": 216.73
@@ -1154,21 +1789,21 @@
       "sample_rows": [
         {
           "maxPick": "90",
-          "draftSelPct": "39",
           "draftsSelectedIn": "2824",
           "id": "15281",
-          "rank": "1",
           "minPick": "1",
+          "rank": "1",
+          "draftSelPct": "39",
           "averagePick": "2.74"
         },
         {
           "maxPick": "175",
-          "draftsSelectedIn": "2942",
           "draftSelPct": "40",
-          "id": "16161",
-          "rank": "2",
           "averagePick": "4.15",
-          "minPick": "1"
+          "rank": "2",
+          "id": "16161",
+          "minPick": "1",
+          "draftsSelectedIn": "2942"
         }
       ]
     },
@@ -1180,28 +1815,31 @@
       "status": "ok",
       "question": "Does MFL self-document the ADP request parameters?",
       "http_status": 200,
-      "elapsed_ms": 21,
+      "elapsed_ms": 65,
       "content_type": "text/html; charset=utf-8",
-      "bytes_received": 26999,
+      "bytes_received": 26998,
       "excerpts": [
-        "...d Login Find A League Join a Mock Draft Scores NFL Schedule Player Research Player Ranks NFL Injury Report Player News Draft/Auction ADP Report AAV Report Social MFL Community Forums Follow Us On Twitter Refer A Friend And Save! Help Help Center Help on this Page What's New? Printer Friendly Page Developer's API Guest ( Login ) MFL Developers Program Welcome to the MyFantasyLeague.com Developers Program! We want to thank you for your interest in the MyFantasyLeague.com Developers Program. The goal of this program is to provide...",
         "...ague search functionality (the leagueSearch call), you will also receive the host information. You should save the league's host for period of time, but note that leagues can be moved between hosts. Moving leagues is unusual but does happen, specially if a server goes down or as we get ready for the start of the football season and need to balance load across hosts. Best practice is to get the data and cache it for one session. Note that if you send a request to the wrong host, the system will normally redirect the request to t..."
       ]
     },
     {
       "check_id": "mfl_api_info_all",
       "source_id": "myfantasyleague_adp",
-      "kind": "http",
+      "kind": "rights",
       "target": "https://api.myfantasyleague.com/2026/api_info?JSON=1",
       "status": "ok",
-      "question": "Does MFL publish a machine-readable request-type list?",
+      "question": "What does MFL tell third-party developers about acceptable use and rates?",
       "http_status": 200,
-      "elapsed_ms": 111,
+      "elapsed_ms": 202,
       "content_type": "text/html; charset=utf-8",
-      "bytes_received": 26990,
+      "bytes_received": 26989,
       "excerpts": [
-        "...d Login Find A League Join a Mock Draft Scores NFL Schedule Player Research Player Ranks NFL Injury Report Player News Draft/Auction ADP Report AAV Report Social MFL Community Forums Follow Us On Twitter Refer A Friend And Save! Help Help Center Help on this Page What's New? Printer Friendly Page Developer's API Guest ( Login ) MFL Developers Program Welcome to the MyFantasyLeague.com Developers Program! We want to thank you for your interest in the MyFantasyLeague.com Developers Program. The goal of this program is to provide...",
-        "...ague search functionality (the leagueSearch call), you will also receive the host information. You should save the league's host for period of time, but note that leagues can be moved between hosts. Moving leagues is unusual but does happen, specially if a server goes down or as we get ready for the start of the football season and need to balance load across hosts. Best practice is to get the data and cache it for one session. Note that if you send a request to the wrong host, the system will normally redirect the request to t..."
+        "Fantasy Football: MFL Developers Program LEAGUE MENU MyFantasyLeague.com Home My Account MFL Dashboard Login Find A League Join a Mock Draft Scores NFL Schedule Player Research Player Ranks NFL Injury Report Player News Draft/Auction ADP Report AAV Report Social MFL Community Forums Follow Us On Twitter Refer A Friend And Save! Help Help Center Help on this Page What's New? Printer Friendly Page Developer's API Guest (...",
+        "...ce Access to this data is provided free to anyone to use in almost any way. However, the following uses are forbidden, whether deliberate or accidental: Harvesting league and/or user data Looking for loop holes or other ways to cheat or circumvent league rules Overloading or disrupting the MFL service in any way that negatively impacts the normal operation of the site. Collecting user information without their permission, attempting to make or making changes to someone\\'s fantasy league/team without their permission. Accessing...",
+        "...the User-Agent you chose in the Client Registration on all API requests your client makes. When you go over the limit, we will start throttling some requests from your client. The more you go over the limit, the more requests will be throttled. Throttled requests will return a 429 \"Too Many Requests\" HTTP status code. Here's some suggestions on what to do if you are hitting the limit: Space your requests out. This is the most important thing you can do. Wait one second between making requests and you should be ok. We are not pu...",
+        "...e assumption that all developers will make their best effort to comply with the best practices listed here. Accidental or deliberate abuse of the service will not be tolerated. Your application will perform much better if you cache data whenever possible. For example, our player database is only changed once a day, so your application should request that info no more than once a day and keep it for that long. You should do the same with league data that doesn't change often, like league rules and scoring systems. This service i...",
+        "...s listed here. Accidental or deliberate abuse of the service will not be tolerated. Your application will perform much better if you cache data whenever possible. For example, our player database is only changed once a day, so your application should request that info no more than once a day and keep it for that long. You should do the same with league data that doesn't change often, like league rules and scoring systems. This service is offered as is, without any guarantees expressed or implied. This service may be occassional...",
+        "...can get details on all the available calls on the Request Reference Page , view sample code or test the requests . General Rules and Terms of Service Access to this data is provided free to anyone to use in almost any way. However, the following uses are forbidden, whether deliberate or accidental: Harvesting league and/or user data Looking for loop holes or other ways to cheat or circumvent league rules Overloading or disrupting the MFL service in any way that negatively impacts the normal operation of the site. Collecting use..."
       ]
     },
     {
@@ -1212,7 +1850,7 @@
       "status": "ok",
       "question": "Does the MFL player export expose crosswalk ids (gsis/espn/sportradar)?",
       "http_status": 200,
-      "elapsed_ms": 345,
+      "elapsed_ms": 559,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 902067,
       "record_count": 2600,
@@ -1329,22 +1967,22 @@
       },
       "sample_rows": [
         {
-          "team": "BUF",
-          "id": "0151",
+          "draft_team": "BUF",
           "position": "TMWR",
           "draft_year": "1970",
+          "team": "BUF",
           "name": "Bills, Buffalo",
-          "draft_team": "BUF",
-          "stats_global_id": "0"
+          "stats_global_id": "0",
+          "id": "0151"
         },
         {
           "id": "0152",
-          "position": "TMWR",
-          "team": "IND",
           "stats_global_id": "0",
-          "draft_team": "IND",
           "name": "Colts, Indianapolis",
-          "draft_year": "1970"
+          "draft_year": "1970",
+          "team": "IND",
+          "position": "TMWR",
+          "draft_team": "IND"
         }
       ]
     },
@@ -1356,7 +1994,7 @@
       "status": "ok",
       "question": "What does MFL say about third-party use of its developer API?",
       "http_status": 200,
-      "elapsed_ms": 418,
+      "elapsed_ms": 211,
       "content_type": "text/html; charset=UTF-8",
       "bytes_received": 99590,
       "notes": [
@@ -1371,7 +2009,7 @@
       "status": "ok",
       "question": "Does the MFL API host publish crawl restrictions?",
       "http_status": 200,
-      "elapsed_ms": 63,
+      "elapsed_ms": 364,
       "content_type": "text/plain",
       "bytes_received": 1386,
       "excerpts": [
@@ -1387,7 +2025,7 @@
       "status": "http_error",
       "question": "Are there published MFL terms constraining derived-data publication?",
       "http_status": 404,
-      "elapsed_ms": 130,
+      "elapsed_ms": 312,
       "content_type": "text/html; charset=iso-8859-1",
       "bytes_received": 208
     },
@@ -1398,7 +2036,7 @@
       "target": "nflreadpy.load_combine({\"seasons\": true})",
       "status": "ok",
       "question": "Athletic measure history depth.",
-      "elapsed_ms": 161,
+      "elapsed_ms": 178,
       "record_count": 8968,
       "columns": [
         {
@@ -1560,7 +2198,7 @@
       "target": "nflreadpy.load_depth_charts({\"seasons\": [2019]})",
       "status": "ok",
       "question": "Does historical depth-chart data carry a week/date usable as an anchor?",
-      "elapsed_ms": 145,
+      "elapsed_ms": 221,
       "record_count": 36308,
       "columns": [
         {
@@ -1697,7 +2335,7 @@
       "target": "nflreadpy.load_depth_charts({\"seasons\": [2024]})",
       "status": "ok",
       "question": "Depth-chart schema stability in a recent season.",
-      "elapsed_ms": 147,
+      "elapsed_ms": 207,
       "record_count": 37312,
       "columns": [
         {
@@ -1834,7 +2472,7 @@
       "target": "nflreadpy.load_depth_charts({\"seasons\": [2025]})",
       "status": "ok",
       "question": "Depth-chart availability for the last completed season.",
-      "elapsed_ms": 269,
+      "elapsed_ms": 310,
       "record_count": 554215,
       "columns": [
         {
@@ -1941,7 +2579,7 @@
       "target": "nflreadpy.load_depth_charts({\"seasons\": [2026]})",
       "status": "ok",
       "question": "Is a current-season depth chart available for the live product?",
-      "elapsed_ms": 236,
+      "elapsed_ms": 316,
       "record_count": 442872,
       "columns": [
         {
@@ -2048,7 +2686,7 @@
       "target": "nflreadpy.load_draft_picks({\"seasons\": true})",
       "status": "ok",
       "question": "Draft capital history depth (rookie features).",
-      "elapsed_ms": 154,
+      "elapsed_ms": 217,
       "record_count": 12927,
       "columns": [
         {
@@ -3468,7 +4106,7 @@
       "target": "nflreadpy.load_ff_opportunity({\"seasons\": [2024], \"stat_type\": \"weekly\"})",
       "status": "ok",
       "question": "Expected points coverage, recent season.",
-      "elapsed_ms": 195,
+      "elapsed_ms": 204,
       "record_count": 6005,
       "columns": [
         {
@@ -4610,7 +5248,7 @@
       "target": "nflreadpy.load_ff_opportunity({\"seasons\": [2025], \"stat_type\": \"weekly\"})",
       "status": "ok",
       "question": "Is ffopportunity still being produced for the latest season?",
-      "elapsed_ms": 263,
+      "elapsed_ms": 185,
       "record_count": 6054,
       "columns": [
         {
@@ -5752,7 +6390,7 @@
       "target": "nflreadpy.load_ff_playerids({})",
       "status": "ok",
       "question": "Does the crosswalk cover gsis/sleeper/mfl/espn ids for identity joins?",
-      "elapsed_ms": 416,
+      "elapsed_ms": 246,
       "record_count": 12472,
       "columns": [
         {
@@ -6020,7 +6658,7 @@
       "target": "nflreadpy.load_ff_rankings({\"type\": \"draft\"})",
       "status": "ok",
       "question": "Is a FantasyPros-derived consensus rank reachable for benchmark-only use?",
-      "elapsed_ms": 263,
+      "elapsed_ms": 467,
       "record_count": 5849,
       "columns": [
         {
@@ -6161,7 +6799,7 @@
       "target": "nflreadpy.load_ftn_charting({\"seasons\": [2025]})",
       "status": "ok",
       "question": "FTN-derived data carries CC-BY-SA: is it present, and would we need it?",
-      "elapsed_ms": 177,
+      "elapsed_ms": 222,
       "record_count": 47316,
       "columns": [
         {
@@ -6390,7 +7028,7 @@
       "target": "nflreadpy.load_injuries({\"seasons\": [2019]})",
       "status": "ok",
       "question": "Historical injury/status coverage for point-in-time reconstruction.",
-      "elapsed_ms": 129,
+      "elapsed_ms": 167,
       "record_count": 5392,
       "columns": [
         {
@@ -6534,7 +7172,7 @@
       "target": "nflreadpy.load_injuries({\"seasons\": [2024]})",
       "status": "ok",
       "question": "Injury coverage in the last season the spec believes is covered.",
-      "elapsed_ms": 101,
+      "elapsed_ms": 155,
       "record_count": 6215,
       "columns": [
         {
@@ -6678,7 +7316,7 @@
       "target": "nflreadpy.load_injuries({\"seasons\": [2025]})",
       "status": "ok",
       "question": "Did the nflverse injury feed really stop after 2024?",
-      "elapsed_ms": 156,
+      "elapsed_ms": 159,
       "record_count": 6068,
       "columns": [
         {
@@ -6846,7 +7484,7 @@
       "target": "nflreadpy.load_nextgen_stats({\"seasons\": [2025], \"stat_type\": \"receiving\"})",
       "status": "ok",
       "question": "Optional advanced feature availability.",
-      "elapsed_ms": 53,
+      "elapsed_ms": 182,
       "record_count": 1402,
       "columns": [
         {
@@ -7033,7 +7671,7 @@
       "target": "nflreadpy.load_pfr_advstats({\"seasons\": [2025], \"stat_type\": \"rec\", \"summary_level\": \"season\"})",
       "status": "ok",
       "question": "Optional advanced feature availability.",
-      "elapsed_ms": 162,
+      "elapsed_ms": 177,
       "record_count": 531,
       "columns": [
         {
@@ -7231,7 +7869,7 @@
       "target": "nflreadpy.load_player_stats({\"seasons\": [2012], \"summary_level\": \"reg\"})",
       "status": "ok",
       "question": "How deep is season-level stat history for lagged features?",
-      "elapsed_ms": 220,
+      "elapsed_ms": 285,
       "record_count": 1811,
       "columns": [
         {
@@ -8293,7 +8931,7 @@
       "target": "nflreadpy.load_player_stats({\"seasons\": [2019], \"summary_level\": \"reg\"})",
       "status": "ok",
       "question": "Season-level stats for a mid-history training season.",
-      "elapsed_ms": 162,
+      "elapsed_ms": 252,
       "record_count": 1889,
       "columns": [
         {
@@ -9355,7 +9993,7 @@
       "target": "nflreadpy.load_player_stats({\"seasons\": [2024], \"summary_level\": \"reg\"})",
       "status": "ok",
       "question": "Season-level stats for a recent training season.",
-      "elapsed_ms": 158,
+      "elapsed_ms": 225,
       "record_count": 1997,
       "columns": [
         {
@@ -10417,7 +11055,7 @@
       "target": "nflreadpy.load_player_stats({\"seasons\": [2025], \"summary_level\": \"reg\"})",
       "status": "ok",
       "question": "Are 2025 labels complete enough to serve as the final holdout season?",
-      "elapsed_ms": 176,
+      "elapsed_ms": 229,
       "record_count": 2020,
       "columns": [
         {
@@ -11479,7 +12117,7 @@
       "target": "nflreadpy.load_player_stats({\"seasons\": [2025], \"summary_level\": \"week\"})",
       "status": "ok",
       "question": "Weekly grain for the documented weeks 1-17 fantasy horizon.",
-      "elapsed_ms": 137,
+      "elapsed_ms": 195,
       "record_count": 19422,
       "columns": [
         {
@@ -12558,7 +13196,7 @@
       "target": "nflreadpy.load_players({})",
       "status": "ok",
       "question": "Is there a player master with canonical gsis ids?",
-      "elapsed_ms": 233,
+      "elapsed_ms": 247,
       "record_count": 25040,
       "columns": [
         {
@@ -12854,7 +13492,7 @@
       "target": "nflreadpy.load_rosters({\"seasons\": [2012]})",
       "status": "ok",
       "question": "Roster universe depth for early training seasons.",
-      "elapsed_ms": 181,
+      "elapsed_ms": 198,
       "record_count": 2120,
       "columns": [
         {
@@ -13138,7 +13776,7 @@
       "target": "nflreadpy.load_rosters({\"seasons\": [2019]})",
       "status": "ok",
       "question": "Roster universe, mid history.",
-      "elapsed_ms": 113,
+      "elapsed_ms": 185,
       "record_count": 3114,
       "columns": [
         {
@@ -13422,7 +14060,7 @@
       "target": "nflreadpy.load_rosters({\"seasons\": [2025]})",
       "status": "ok",
       "question": "Roster universe, recent season.",
-      "elapsed_ms": 148,
+      "elapsed_ms": 311,
       "record_count": 3137,
       "columns": [
         {
@@ -13706,7 +14344,7 @@
       "target": "nflreadpy.load_rosters({\"seasons\": [2026]})",
       "status": "ok",
       "question": "Is the current (draft-target) season roster published yet?",
-      "elapsed_ms": 153,
+      "elapsed_ms": 202,
       "record_count": 2930,
       "columns": [
         {
@@ -13990,7 +14628,7 @@
       "target": "nflreadpy.load_rosters_weekly({\"seasons\": [2019]})",
       "status": "ok",
       "question": "Can a point-in-time roster be reconstructed for a historical anchor?",
-      "elapsed_ms": 136,
+      "elapsed_ms": 215,
       "record_count": 51632,
       "columns": [
         {
@@ -14274,7 +14912,7 @@
       "target": "nflreadpy.load_rosters_weekly({\"seasons\": [2025]})",
       "status": "ok",
       "question": "Weekly roster snapshots for the most recent completed season.",
-      "elapsed_ms": 184,
+      "elapsed_ms": 238,
       "record_count": 46849,
       "columns": [
         {
@@ -14558,7 +15196,7 @@
       "target": "nflreadpy.load_schedules({\"seasons\": [2026]})",
       "status": "ok",
       "question": "Current-season schedule for anchor/horizon logic.",
-      "elapsed_ms": 3,
+      "elapsed_ms": 4,
       "record_count": 272,
       "columns": [
         {
@@ -14909,7 +15547,7 @@
       "target": "nflreadpy.load_snap_counts({\"seasons\": [2019]})",
       "status": "ok",
       "question": "Prior-season snap share feature availability.",
-      "elapsed_ms": 152,
+      "elapsed_ms": 157,
       "record_count": 23862,
       "columns": [
         {
@@ -15053,7 +15691,7 @@
       "target": "nflreadpy.load_snap_counts({\"seasons\": [2025]})",
       "status": "ok",
       "question": "Snap counts for the most recent completed season.",
-      "elapsed_ms": 186,
+      "elapsed_ms": 157,
       "record_count": 26612,
       "columns": [
         {
@@ -15197,7 +15835,7 @@
       "target": "nflreadpy.load_teams({})",
       "status": "ok",
       "question": "Team crosswalk for team-context features.",
-      "elapsed_ms": 144,
+      "elapsed_ms": 213,
       "record_count": 36,
       "columns": [
         {
@@ -15328,7 +15966,7 @@
       "status": "ok",
       "question": "What licence covers the nflreadpy client code?",
       "http_status": 200,
-      "elapsed_ms": 211,
+      "elapsed_ms": 180,
       "content_type": "text/plain; charset=utf-8",
       "bytes_received": 1079,
       "excerpts": [
@@ -15344,7 +15982,7 @@
       "status": "ok",
       "question": "What does the client say about the licence of the *data* it downloads?",
       "http_status": 200,
-      "elapsed_ms": 192,
+      "elapsed_ms": 122,
       "content_type": "text/plain; charset=utf-8",
       "bytes_received": 6370,
       "excerpts": [
@@ -15361,7 +15999,7 @@
       "status": "ok",
       "question": "What terms does the nflverse reader project attach to the underlying NFL data?",
       "http_status": 200,
-      "elapsed_ms": 75,
+      "elapsed_ms": 134,
       "content_type": "text/plain; charset=utf-8",
       "bytes_received": 7714,
       "excerpts": [
@@ -15378,7 +16016,7 @@
       "status": "ok",
       "question": "What does the nflverse-data repository say about data licensing/attribution?",
       "http_status": 200,
-      "elapsed_ms": 92,
+      "elapsed_ms": 130,
       "content_type": "text/plain; charset=utf-8",
       "bytes_received": 699,
       "excerpts": [
@@ -15394,7 +16032,7 @@
       "status": "ok",
       "question": "What refresh cadence should the daily workflow assume?",
       "http_status": 200,
-      "elapsed_ms": 244,
+      "elapsed_ms": 191,
       "content_type": "text/html; charset=utf-8",
       "bytes_received": 22664,
       "excerpts": [
@@ -15413,7 +16051,7 @@
       "status": "ok",
       "question": "What rate/attribution/caching guidance does Sleeper publish?",
       "http_status": 200,
-      "elapsed_ms": 136,
+      "elapsed_ms": 247,
       "content_type": "text/html; charset=utf-8",
       "bytes_received": 83830,
       "excerpts": [
@@ -15431,7 +16069,7 @@
       "status": "ok",
       "question": "Does the API host publish crawl restrictions?",
       "http_status": 200,
-      "elapsed_ms": 23,
+      "elapsed_ms": 123,
       "content_type": "text/plain",
       "bytes_received": 202,
       "excerpts": [
@@ -15447,7 +16085,7 @@
       "status": "ok",
       "question": "Does the player map still expose status/injury fields and a gsis crosswalk, and how large is the payload?",
       "http_status": 200,
-      "elapsed_ms": 212,
+      "elapsed_ms": 81,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 14640182,
       "record_count": 12220,
@@ -15815,14 +16453,14 @@
       "status": "ok",
       "question": "What season/week/season_type does Sleeper report (anchor sanity)?",
       "http_status": 200,
-      "elapsed_ms": 135,
+      "elapsed_ms": 124,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 207,
       "coverage": {
         "week": 2,
-        "season_type": "pre",
-        "season": "2026",
         "leg": 0,
+        "season": "2026",
+        "season_type": "pre",
         "league_season": "2026",
         "previous_season": "2025",
         "season_start_date": "2026-08-06",
@@ -15839,7 +16477,7 @@
       "status": "ok",
       "question": "Is the optional trending endpoint available (attribution required if used)?",
       "http_status": 200,
-      "elapsed_ms": 30,
+      "elapsed_ms": 19,
       "content_type": "application/json; charset=utf-8",
       "bytes_received": 884,
       "record_count": 25,
