@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-08-17T17:01:55Z",
+  "captured_at_utc": "2026-08-17T17:05:21Z",
   "check_id": "sleeper_players_nfl",
   "columns": [
     {
@@ -227,7 +227,7 @@
     "gsis_id_present": 3893,
     "gsis_id_total": 12220,
     "injury_status_fraction": 0.0507,
-    "injury_status_present": 619,
+    "injury_status_present": 620,
     "injury_status_total": 12220,
     "player_id_fraction": 1.0,
     "player_id_present": 12220,
