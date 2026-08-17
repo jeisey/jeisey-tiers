@@ -73,9 +73,13 @@ Manifest hash must match expected artifact where practical.
 
 ## 8. Data licensing/attribution
 
+> **Phase-0 verification (2026-08-17):** every statement in this section was re-checked live; the quoted evidence and the resulting policy per source are in `docs/DATA_SOURCES.md` section 13, with decisions in ADR-010 through ADR-015. The subsections below note what changed.
+
 ### nflverse
 
 Research finding as of 2026-08-12: nflreadpy code is MIT; majority of nflverse data is broadly CC-BY 4.0, with FTN-origin data noted as CC-BY-SA 4.0. Each used dataset must be checked and attributed according to its own docs.
+
+**Confirmed.** `LICENSE.md` is MIT ("Copyright (c) 2025 nflreadpy contributors"); the client README states "The majority of all nflverse data available (ie all but the FTN data as of July 2025) is broadly licensed as CC-BY 4.0, and the FTN data is CC-BY-SA 4.0". nflreadr adds that "NFL data accessed by this package belong to their respective owners, and are governed by their terms of use". `load_ftn_charting` is therefore the one nflverse loader that drags in share-alike obligations, and it should stay unused unless a feature justifies them.
 
 ### ffopportunity
 
@@ -85,17 +89,25 @@ Expected-points model/data are CC-BY-SA 4.0. Preserve attribution/share-alike ob
 
 Use official documented API. Trending endpoint documentation requests attribution. Attribute Sleeper if trending data is exposed.
 
+**Materially updated.** Sleeper's docs state the API is "free to use for non-commercial purposes" and that "For commercial use of the Sleeper API, please reach out to us directly to discuss licensing". Sleeper therefore sits inside the section 10 non-commercial boundary alongside FantasyCalc — the original spec treated it as an unrestricted public API. Because ADR-011 promotes Sleeper to the current-status path, **monetisation now requires re-clearing Sleeper, not only FantasyCalc.** Documented rate guidance is to stay under 1000 calls per minute; attribution is requested for trending data.
+
 ### FantasyCalc
 
 Current terms found during research state data is FantasyCalc property, non-commercial website use is permitted under policy, commercial use requires express permission. Re-check exact terms in Phase 0 and before monetization. If unsure, disable production use.
+
+**Resolved: disabled.** The terms page is client-rendered and its text is not in the served markup, and no documented reuse mechanism exists, so "if unsure, disable" applies. See ADR-013.
 
 ### FantasyPros-derived rankings
 
 Treat as benchmark-only by default. nflverse access convenience does not override FantasyPros ownership/terms. Do not redistribute raw ECR unless explicitly permitted.
 
+**Resolved: disabled pending human review.** The dynastyprocess mirror publishes no licence and the FantasyPros terms page is client-rendered, so terms are unclear and the benchmark is switched off rather than used quietly. See ADR-014. The probe enforces this mechanically: rows from benchmark-only sources are suppressed from the report and fixtures.
+
 ### MFL
 
 MFL publicly promotes its developer API for third-party add-ons, but exact 2026 API terms and data reuse decision must be recorded during Phase 0.
+
+**Recorded: production allowed, with obligations.** MFL's published "General Rules and Terms of Service" state access "is provided free to anyone to use in almost any way" and forbid harvesting league/user data, circumventing league rules, overloading the service, and collecting user information without permission — none of which describes reading the public ADP aggregate. Obligations we must honour: send the User-Agent from a registered developer client (**open action, requires an MFL account**), back off on HTTP 429, and request the player database at most once per day. `robots.txt` restricts only `/fflnetdynamic*/` league directories.
 
 ### SportsDataIO
 
@@ -108,6 +120,8 @@ Methodology/Data section should contain concise source acknowledgements and link
 Generated CSV may include a short `source_methodology`/metadata reference or companion metadata rather than repeating long license text in every row.
 
 ## 10. Non-commercial boundary
+
+As of the Phase-0 verification, the non-commercial-only sources in the plan are **Sleeper** (verified, and now on the current-status path) and FantasyCalc (disabled). `config/source-registry.yaml` keeps the authoritative list in `decisions.non_commercial_deployment_required_by`, and a unit test fails if a source is marked non-commercial without being listed there.
 
 Because an optional source may permit only non-commercial reuse, treat any of these as a trigger for a source-rights review before deployment:
 

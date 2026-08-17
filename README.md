@@ -45,6 +45,32 @@ The intended production architecture is static and GitHub-native: Python data/mo
 5. The agent must update `TASKS.md` and `SESSION_STATE.md` after every meaningful phase or handoff.
 6. Source/API uncertainty must be resolved in Phase 0. The agent may not invent endpoints, licenses, historical coverage, or model results.
 
+## Repository status
+
+Phase 0 (source, legal, and feasibility proof) is complete as of 2026-08-17. Phase 1 has not started, so there is no pipeline, model, artifact or site yet.
+
+What has been added on top of the specification bundle:
+
+| Path | Purpose |
+|---|---|
+| `scripts/source_probe.py` | Reproducible source/legal/feasibility probe — the Phase-0 evidence generator |
+| `.github/workflows/source-probe.yml` | Runs the probe where egress is unrestricted and commits its report |
+| `docs/source-probes/<date>/` | Probe evidence: `report.json` plus a human-readable `summary.md` |
+| `tests/fixtures/source_schemas/` | Recorded upstream schemas for network-free adapter tests |
+| `pyproject.toml`, `uv.lock` | Minimal Python 3.12 toolchain for the probe and its tests |
+
+Verified source decisions live in `docs/DATA_SOURCES.md` section 13 and `config/source-registry.yaml`; the reasoning is in ADR-009 through ADR-015 in `docs/DECISIONS.md`. Two headline outcomes: the free source stack covers every required role, and **arbitrage launches in deterministic baseline mode** because historical ADP, while plentiful, is not point-in-time.
+
+```bash
+uv sync --frozen
+uv run ruff check . && uv run ruff format --check .
+uv run pytest                 # network-free
+uv run pytest -m live         # opt-in live source smoke tests
+uv run python scripts/source_probe.py --out docs/source-probes/$(date -u +%F)
+```
+
+Data attribution: player/roster/depth-chart/stat data from **nflverse** (`nflreadpy`), expected fantasy points from **ffopportunity** (CC-BY-SA-4.0), market ADP from **MyFantasyLeague.com**, current player status from the **Sleeper** API (non-commercial use only).
+
 ## Product defaults
 
 - Audience: redraft fantasy-football players preparing draft-day sheets.
