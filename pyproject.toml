@@ -1,0 +1,42 @@
+[project]
+name = "ffdraft"
+version = "0.0.0"
+description = "Fantasy Draft Intelligence: intrinsic value tiers and market arbitrage from public football data"
+readme = "README.md"
+requires-python = ">=3.12"
+# Phase 0 keeps this dependency set intentionally minimal: it only has to support the
+# reproducible source probe (`scripts/source_probe.py`) and its network-free unit tests.
+# Phase 1 extends this file with the `ffdraft` package build target and modeling deps.
+dependencies = [
+    "nflreadpy>=0.1.5",
+    "polars>=1.0",
+    "pyyaml>=6.0",
+    "requests>=2.32",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.6",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -m 'not live'"
+markers = [
+    "live: hits third-party sources over the network; opt-in only (see docs/TEST_STRATEGY.md 2.4)",
+]

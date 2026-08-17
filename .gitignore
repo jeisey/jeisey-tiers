@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local data / caches. Raw vendor data is re-fetched, never committed
+# (see AGENTS.md section 15 and docs/OPERATIONS.md section 4).
+data/cache/
+data/raw/
+*.parquet
+*.csv.gz
+
+# Node (Phase 1+)
+node_modules/
+web/dist/
+web/public/data/
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
