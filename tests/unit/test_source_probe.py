@@ -228,9 +228,11 @@ def test_identity_resolution_fraction_is_surfaced_in_decisions():
         kind="loader",
         target="t",
         status=sp.OK,
-        coverage={"resolved_fraction": 0.97},
+        coverage={"resolved_fraction": 0.95, "core_position_resolved_fraction": 1.0},
     )
-    assert sp.derive_decisions([finding])["market_identity_resolved_fraction"] == 0.97
+    decisions = sp.derive_decisions([finding])
+    assert decisions["market_identity_resolved_fraction"] == 0.95
+    assert decisions["market_identity_core_position_resolved_fraction"] == 1.0
 
 
 def test_identity_fraction_is_none_when_the_bridge_check_failed():

@@ -350,6 +350,11 @@ def derive_decisions(findings: Sequence[Finding]) -> dict[str, Any]:
             "outcome"
         ),
         "market_identity_resolved_fraction": identity_fraction,
+        "market_identity_core_position_resolved_fraction": (
+            identity.coverage.get("core_position_resolved_fraction")
+            if identity and identity.status == OK
+            else None
+        ),
         "nflverse_injury_years_with_data": injury_years,
         "blocked_by_local_egress": sorted(
             {f.source_id for f in findings if f.status == BLOCKED_EGRESS}
@@ -868,16 +873,16 @@ def probe_mfl(http: HttpProbe, *, current_year: int) -> list[Finding]:
             {"JSON": 1},
             "What does MFL tell third-party developers about acceptable use and rates?",
             (
-                "Developers Program",
-                "commercial",
-                "per minute",
-                "per hour",
-                "rate",
+                "General Rules and Terms of Service",
+                "forbidden",
+                "Client Registration",
+                "APIKEY",
+                "requests per",
+                "limit is",
+                "429",
                 "throttl",
-                "abuse",
-                "block",
                 "cache",
-                "terms",
+                "commercial",
             ),
         ),
         (
@@ -1159,6 +1164,7 @@ def probe_sleeper(http: HttpProbe) -> list[Finding]:
 # --------------------------------------------------------------------------------------
 
 TOP_N_FOR_IDENTITY = 100
+CORE_POSITIONS = frozenset({"QB", "RB", "WR", "TE"})
 
 
 def probe_identity_bridge(http: HttpProbe, *, current_year: int) -> list[Finding]:
@@ -1219,24 +1225,34 @@ def probe_identity_bridge(http: HttpProbe, *, current_year: int) -> list[Finding
     resolved_either = 0
     agreed = 0
     disagreed = 0
-    unresolved_ids: list[str] = []
+    unresolved: list[str] = []
     top_resolved = 0
     top_total = 0
+    # PRD section 21 states the identity threshold for modelled positions only, so the
+    # core-position rate is tracked separately from the all-rows rate (MFL prices team
+    # defences and kickers, which this product does not model in V1).
+    core_total = 0
+    core_resolved = 0
+    unresolved_positions: dict[str, int] = {}
 
     for row in rows:
         mfl_id = str(row.get("id", "")).strip()
         rank = int(float(row.get("rank", 0) or 0))
         gsis_a = mfl_to_gsis.get(mfl_id.lstrip("0")) or mfl_to_gsis.get(mfl_id)
         espn_id = players.get(mfl_id, {}).get("espn_id")
+        position = str(players.get(mfl_id, {}).get("position", "") or "unknown")
         gsis_b = espn_to_gsis.get(str(espn_id).strip()) if espn_id else None
+        is_resolved = bool(gsis_a or gsis_b)
         if gsis_a:
             resolved_via_mfl += 1
         if gsis_b:
             resolved_via_espn += 1
-        if gsis_a or gsis_b:
+        if is_resolved:
             resolved_either += 1
-        elif len(unresolved_ids) < 10:
-            unresolved_ids.append(f"mfl_id={mfl_id} rank={rank}")
+        else:
+            unresolved_positions[position] = unresolved_positions.get(position, 0) + 1
+            if len(unresolved) < 10:
+                unresolved.append(f"mfl_id={mfl_id} rank={rank} position={position}")
         if gsis_a and gsis_b:
             if gsis_a == gsis_b:
                 agreed += 1
@@ -1244,8 +1260,12 @@ def probe_identity_bridge(http: HttpProbe, *, current_year: int) -> list[Finding
                 disagreed += 1
         if rank and rank <= TOP_N_FOR_IDENTITY:
             top_total += 1
-            if gsis_a or gsis_b:
+            if is_resolved:
                 top_resolved += 1
+        if position in CORE_POSITIONS:
+            core_total += 1
+            if is_resolved:
+                core_resolved += 1
 
     total = len(rows)
     finding.status = OK if total else EMPTY
@@ -1256,16 +1276,22 @@ def probe_identity_bridge(http: HttpProbe, *, current_year: int) -> list[Finding
         "resolved_via_espn_id_bridge": resolved_via_espn,
         "resolved_by_either_bridge": resolved_either,
         "resolved_fraction": round(resolved_either / total, 4) if total else 0.0,
+        "core_position_priced": core_total,
+        "core_position_resolved": core_resolved,
+        "core_position_resolved_fraction": (
+            round(core_resolved / core_total, 4) if core_total else None
+        ),
         "both_bridges_agree": agreed,
         "both_bridges_disagree": disagreed,
         f"top{TOP_N_FOR_IDENTITY}_priced": top_total,
         f"top{TOP_N_FOR_IDENTITY}_resolved": top_resolved,
+        "unresolved_by_position": dict(sorted(unresolved_positions.items())),
         "crosswalk_rows": int(crosswalk.height),
         "roster_rows": int(rosters.height),
         "mfl_player_index_rows": len(players),
     }
-    if unresolved_ids:
-        finding.notes.append("unresolved sample: " + "; ".join(unresolved_ids))
+    if unresolved:
+        finding.notes.append("unresolved sample: " + "; ".join(unresolved))
     findings.append(finding)
     return findings
 
@@ -1561,7 +1587,8 @@ def render_summary(report: dict[str, Any]) -> str:
         f"  - rule: {decisions['arbitrage_ml_feasibility_rule']}",
         *(f"  - {line}" for line in decisions["market_history_window_evidence"]),
         "- market rows resolved to a canonical id without name matching: "
-        f"**{decisions['market_identity_resolved_fraction']}**",
+        f"**{decisions['market_identity_resolved_fraction']}** all priced, "
+        f"**{decisions['market_identity_core_position_resolved_fraction']}** QB/RB/WR/TE",
         "- nflverse injury years with rows: "
         + (", ".join(decisions["nflverse_injury_years_with_data"]) or "none"),
         "- sources blocked by local egress policy: "
