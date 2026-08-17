@@ -1,0 +1,124 @@
+schema_version: "1.0"
+research_as_of: "2026-08-12"
+policy_states:
+  - production_allowed
+  - allowed_optional
+  - benchmark_only
+  - verify_before_use
+  - disabled
+  - paid_optional
+sources:
+  nflreadpy:
+    policy: production_allowed
+    criticality: critical
+    cost: free
+    docs_url: "https://nflreadpy.nflverse.com/"
+    repo_url: "https://github.com/nflverse/nflreadpy"
+    update_schedule_url: "https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html"
+    expected_license: "MIT code; underlying nflverse data mostly CC-BY-4.0, FTN-derived subsets CC-BY-SA-4.0; verify each used dataset"
+    roles:
+      - player_stats
+      - rosters
+      - depth_charts
+      - player_ids
+      - draft_picks
+      - combine
+      - nextgen_stats_optional
+      - pfr_advstats_optional
+    verify_before_first_production_run:
+      - live_install
+      - required_loader_schemas
+      - historical_coverage
+      - current_freshness
+      - per_dataset_license
+  ffopportunity:
+    policy: production_allowed
+    criticality: important
+    cost: free
+    docs_url: "https://ffopportunity.ffverse.com/"
+    repo_url: "https://github.com/ffverse/ffopportunity"
+    expected_license: "expected-points models/data CC-BY-SA-4.0; package code GPL-3.0"
+    roles:
+      - expected_fantasy_points
+      - expected_opportunity
+    verify_before_first_production_run:
+      - historical_coverage
+      - nflreadpy_loader_behavior
+      - attribution_text
+  myfantasyleague_adp:
+    policy: verify_before_use
+    criticality: critical_for_arbitrage
+    cost: free_public_api_expected
+    developer_info_url: "https://myfantasyleague.wordpress.com/2008/08/06/developer-api/"
+    current_api_base_hint: "https://api.myfantasyleague.com/"
+    expected_license: "verify current API terms/data reuse in Phase 0"
+    roles:
+      - current_adp
+      - historical_adp_candidate
+    phase0_required:
+      - exact_2026_adp_endpoint
+      - output_format
+      - scoring_filters
+      - league_size_filters
+      - date_window_filters
+      - sample_size_and_dispersion_fields
+      - player_id_crosswalk
+      - historical_year_access_2019_2025
+      - request_rate_expectations
+      - public_derived_output_rights
+  sleeper:
+    policy: production_allowed
+    criticality: important
+    cost: free
+    docs_url: "https://docs.sleeper.com/"
+    api_base_url: "https://api.sleeper.app/v1/"
+    expected_license: "official public API; verify current terms; trending documentation requests attribution"
+    roles:
+      - current_player_map
+      - current_status
+      - current_injury_sanity
+      - trending_optional
+    cadence_guidance: "player map no more than once per day per current docs"
+    verify_before_first_production_run:
+      - player_fields
+      - injury_status_fields
+      - crosswalk_coverage
+      - attribution_if_trending
+  fantasycalc:
+    policy: allowed_optional
+    criticality: optional
+    cost: free_noncommercial_under_current_terms
+    rankings_url: "https://fantasycalc.com/redraft-rankings"
+    terms_url: "https://fantasycalc.com/terms-of-usage"
+    expected_license: "copyrighted FantasyCalc data; current terms allow non-commercial website use; commercial use requires permission"
+    roles:
+      - secondary_market_signal
+      - cross_source_market_divergence
+    safeguards:
+      - "Use only an explicitly permitted access/download mechanism."
+      - "Do not reverse-engineer undocumented/private API access merely because an endpoint is reachable."
+      - "Disable before monetization until rights are re-cleared."
+  fantasypros_ecr_via_dynastyprocess:
+    policy: benchmark_only
+    criticality: optional
+    cost: free_access_path_but_separate_rights
+    nflreadpy_docs_url: "https://nflreadpy.nflverse.com/api/load_functions/"
+    expected_license: "FantasyPros ownership/terms apply; verify benchmark use; no raw public redistribution by default"
+    roles:
+      - historical_consensus_benchmark
+    forbidden_roles:
+      - intrinsic_feature
+      - critical_production_dependency
+  sportsdataio:
+    policy: paid_optional
+    criticality: optional
+    cost: commercial
+    nfl_url: "https://sportsdata.io/nfl-api"
+    workflow_url: "https://sportsdata.io/developers/workflow-guide/nfl"
+    roles:
+      - injury_feed_upgrade
+      - maintained_depth_charts
+      - projection_baseline
+      - news
+      - odds_optional
+    value_unlock: "operational reliability, maintained current-state feeds, SLA/support"

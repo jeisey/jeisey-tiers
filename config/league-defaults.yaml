@@ -1,0 +1,86 @@
+schema_version: "1.0"
+season_mode: redraft
+positions:
+  core: [QB, RB, WR, TE]
+  optional_later: [K, DST]
+scoring_presets:
+  STD:
+    reception: 0.0
+    passing_yards_per_point: 25.0
+    passing_td: 4.0
+    interception: -2.0
+    rushing_yards_per_point: 10.0
+    rushing_td: 6.0
+    receiving_yards_per_point: 10.0
+    receiving_td: 6.0
+    fumble_lost: -2.0
+    two_point_conversion: 2.0
+  HALF:
+    reception: 0.5
+    passing_yards_per_point: 25.0
+    passing_td: 4.0
+    interception: -2.0
+    rushing_yards_per_point: 10.0
+    rushing_td: 6.0
+    receiving_yards_per_point: 10.0
+    receiving_td: 6.0
+    fumble_lost: -2.0
+    two_point_conversion: 2.0
+  PPR:
+    reception: 1.0
+    passing_yards_per_point: 25.0
+    passing_td: 4.0
+    interception: -2.0
+    rushing_yards_per_point: 10.0
+    rushing_td: 6.0
+    receiving_yards_per_point: 10.0
+    receiving_td: 6.0
+    fumble_lost: -2.0
+    two_point_conversion: 2.0
+league_presets:
+  redraft-10:
+    teams: 10
+    starters:
+      QB: 1
+      RB: 2
+      WR: 2
+      TE: 1
+      FLEX: 2
+    flex_eligible: [RB, WR, TE]
+    bench: 5
+  redraft-12:
+    teams: 12
+    default: true
+    starters:
+      QB: 1
+      RB: 2
+      WR: 2
+      TE: 1
+      FLEX: 2
+    flex_eligible: [RB, WR, TE]
+    bench: 5
+  redraft-14:
+    teams: 14
+    starters:
+      QB: 1
+      RB: 2
+      WR: 2
+      TE: 1
+      FLEX: 2
+    flex_eligible: [RB, WR, TE]
+    bench: 5
+optional_presets:
+  redraft-8:
+    teams: 8
+    starters:
+      QB: 1
+      RB: 2
+      WR: 2
+      TE: 1
+      FLEX: 2
+    flex_eligible: [RB, WR, TE]
+    bench: 5
+notes:
+  - "Scoring formulas are initial defaults and must be verified against implementation tests."
+  - "V1 does not support arbitrary custom scoring or superflex."
+  - "Bench size is shown for user context; V1 replacement baseline is based on starting/FLEX allocation per PRD, not ADP."

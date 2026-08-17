@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/player_projection.schema.json",
+  "title": "PlayerProjectionRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "model_version", "season", "as_of_utc",
+    "player_id", "display_name", "team", "position", "scoring_preset",
+    "expected_points", "p10_points", "p25_points", "p50_points", "p75_points", "p90_points",
+    "uncertainty_points", "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "model_version": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 2000},
+    "as_of_utc": {"type": "string", "format": "date-time"},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "team": {"type": ["string", "null"]},
+    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "expected_points": {"type": "number"},
+    "p10_points": {"type": "number"},
+    "p25_points": {"type": "number"},
+    "p50_points": {"type": "number"},
+    "p75_points": {"type": "number"},
+    "p90_points": {"type": "number"},
+    "uncertainty_points": {"type": "number", "minimum": 0},
+    "expected_games": {"type": ["number", "null"], "minimum": 0},
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

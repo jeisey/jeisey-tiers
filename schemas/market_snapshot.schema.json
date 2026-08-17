@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/market_snapshot.schema.json",
+  "title": "MarketSnapshotRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "source_id", "snapshot_at_utc", "season", "league_size",
+    "scoring_preset", "player_id", "market_adp", "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "source_id": {"type": "string", "minLength": 1},
+    "snapshot_at_utc": {"type": "string", "format": "date-time"},
+    "source_as_of_utc": {"type": ["string", "null"], "format": "date-time"},
+    "season": {"type": "integer", "minimum": 2000},
+    "league_size": {"type": "integer", "minimum": 4, "maximum": 32},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "player_id": {"type": "string", "minLength": 1},
+    "market_adp": {"type": "number", "exclusiveMinimum": 0},
+    "market_rank": {"type": ["integer", "null"], "minimum": 1},
+    "sample_size": {"type": ["integer", "null"], "minimum": 0},
+    "adp_sd": {"type": ["number", "null"], "minimum": 0},
+    "adp_low": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "adp_high": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "source_format_detail": {"type": ["string", "null"]},
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

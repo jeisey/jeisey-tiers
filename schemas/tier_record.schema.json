@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/tier_record.schema.json",
+  "title": "TierRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "league_preset_id", "scoring_preset", "player_id",
+    "display_name", "team", "position", "fair_rank", "position_rank",
+    "tier_ordinal", "tier_label", "expected_vorp", "p10_vorp", "p25_vorp",
+    "p50_vorp", "p75_vorp", "p90_vorp", "expected_points", "uncertainty", "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "league_preset_id": {"type": "string", "minLength": 1},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "team": {"type": ["string", "null"]},
+    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
+    "fair_rank": {"type": "integer", "minimum": 1},
+    "position_rank": {"type": "integer", "minimum": 1},
+    "tier_ordinal": {"type": "integer", "minimum": 0},
+    "tier_label": {"type": "string", "minLength": 1},
+    "expected_vorp": {"type": "number"},
+    "p10_vorp": {"type": "number"},
+    "p25_vorp": {"type": "number"},
+    "p50_vorp": {"type": "number"},
+    "p75_vorp": {"type": "number"},
+    "p90_vorp": {"type": "number"},
+    "expected_points": {"type": "number"},
+    "uncertainty": {"type": "number", "minimum": 0},
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

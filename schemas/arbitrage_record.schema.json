@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/arbitrage_record.schema.json",
+  "title": "ArbitrageRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "league_preset_id", "scoring_preset", "player_id",
+    "display_name", "team", "position", "fair_rank", "market_adp", "rank_gap",
+    "arbitrage_mode", "arbitrage_score", "confidence", "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "league_preset_id": {"type": "string", "minLength": 1},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "team": {"type": ["string", "null"]},
+    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
+    "fair_rank": {"type": "integer", "minimum": 1},
+    "market_adp": {"type": "number", "exclusiveMinimum": 0},
+    "market_rank": {"type": ["integer", "null"], "minimum": 1},
+    "rank_gap": {"type": "number"},
+    "arbitrage_mode": {"enum": ["baseline", "ml"]},
+    "arbitrage_score": {"type": "number", "minimum": 0, "maximum": 100},
+    "expected_surplus_vorp": {"type": ["number", "null"]},
+    "p_positive_surplus": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "market_trend": {"type": ["number", "null"]},
+    "market_sample_size": {"type": ["integer", "null"], "minimum": 0},
+    "market_adp_sd": {"type": ["number", "null"], "minimum": 0},
+    "confidence": {"enum": ["high", "medium", "low", "unknown"]},
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"arbitrage_mode": {"const": "baseline"}}},
+      "then": {
+        "properties": {
+          "expected_surplus_vorp": {"type": "null"},
+          "p_positive_surplus": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

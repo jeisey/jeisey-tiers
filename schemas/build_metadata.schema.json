@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/build_metadata.schema.json",
+  "title": "BuildMetadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "generated_at_utc", "git_sha", "season",
+    "intrinsic_model_version", "arbitrage_mode", "supported_presets", "sources",
+    "quality_gate", "warnings", "methodology_version"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "generated_at_utc": {"type": "string", "format": "date-time"},
+    "git_sha": {"type": "string", "minLength": 7},
+    "season": {"type": "integer", "minimum": 2000},
+    "intrinsic_model_version": {"type": "string", "minLength": 1},
+    "arbitrage_mode": {"enum": ["baseline", "ml"]},
+    "arbitrage_model_version": {"type": ["string", "null"]},
+    "supported_presets": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "status", "retrieved_at_utc", "record_count"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "status": {"enum": ["pass", "warning", "failed", "disabled"]},
+          "retrieved_at_utc": {"type": "string", "format": "date-time"},
+          "source_as_of_utc": {"type": ["string", "null"], "format": "date-time"},
+          "record_count": {"type": "integer", "minimum": 0},
+          "warnings": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "quality_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "critical_failures", "warnings"],
+      "properties": {
+        "status": {"enum": ["pass", "fail"]},
+        "critical_failures": {"type": "integer", "minimum": 0},
+        "warnings": {"type": "integer", "minimum": 0}
+      }
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "methodology_version": {"type": "string", "minLength": 1}
+  }
+}

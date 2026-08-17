@@ -1,0 +1,117 @@
+TARGET IMPLEMENTATION TREE
+
+.
+├── AGENTS.md
+├── CLAUDE.md
+├── PRD.md
+├── PROMPT_START_HERE.md
+├── TASKS.md
+├── SESSION_STATE.md
+├── README.md
+├── pyproject.toml
+├── uv.lock
+├── package.json
+├── package-lock.json
+├── vite.config.ts
+├── tsconfig.json
+├── config/
+│   ├── league-defaults.yaml
+│   └── source-registry.yaml
+├── schemas/
+│   ├── player_projection.schema.json
+│   ├── market_snapshot.schema.json
+│   ├── tier_record.schema.json
+│   ├── arbitrage_record.schema.json
+│   └── build_metadata.schema.json
+├── src/ffdraft/
+│   ├── __init__.py
+│   ├── cli.py
+│   ├── config.py
+│   ├── identity/
+│   │   ├── crosswalk.py
+│   │   └── resolver.py
+│   ├── sources/
+│   │   ├── base.py
+│   │   ├── nflverse.py
+│   │   ├── sleeper.py
+│   │   ├── mfl.py
+│   │   └── fantasycalc.py        # optional; guarded by policy
+│   ├── contracts/
+│   ├── features/
+│   │   ├── historical.py
+│   │   └── current.py
+│   ├── scoring/
+│   │   └── fantasy.py
+│   ├── modeling/
+│   │   ├── folds.py
+│   │   ├── metrics.py
+│   │   ├── calibration.py
+│   │   ├── intrinsic.py
+│   │   └── registry.py
+│   ├── simulation/
+│   │   ├── quantiles.py
+│   │   └── vorp.py
+│   ├── tiers/
+│   │   └── segment.py
+│   ├── arbitrage/
+│   │   ├── market.py
+│   │   ├── target.py
+│   │   ├── baseline.py
+│   │   └── model.py
+│   ├── artifacts/
+│   │   ├── serialize.py
+│   │   └── validate.py
+│   └── quality/
+│       ├── checks.py
+│       └── report.py
+├── tests/
+│   ├── fixtures/
+│   ├── unit/
+│   ├── integration/
+│   ├── leakage/
+│   ├── data_quality/
+│   └── model/
+├── models/
+│   ├── production/
+│   ├── cards/
+│   └── metrics/
+├── data/
+│   ├── README.md
+│   └── fixtures/
+├── web/
+│   ├── index.html
+│   ├── src/
+│   │   ├── main.tsx
+│   │   ├── app/
+│   │   ├── data/
+│   │   ├── state/
+│   │   ├── components/
+│   │   ├── charts/
+│   │   │   ├── TierBoard.tsx
+│   │   │   └── DraftRail.tsx
+│   │   ├── tables/
+│   │   └── styles/
+│   ├── tests/
+│   └── public/data/             # generated, normally ignored on main
+├── scripts/
+│   ├── source_probe.py
+│   ├── build_historical.py
+│   ├── train_intrinsic.py
+│   ├── train_arbitrage.py
+│   └── build_public.py
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── DATA_SOURCES.md
+│   ├── DATA_CONTRACTS.md
+│   ├── MODELING.md
+│   ├── UX_SPEC.md
+│   ├── IMPLEMENTATION_PLAN.md
+│   ├── TEST_STRATEGY.md
+│   ├── OPERATIONS.md
+│   ├── SECURITY_LICENSE.md
+│   ├── DECISIONS.md
+│   └── AGENT_MODEL_NOTES.md
+└── .github/workflows/
+    ├── ci.yml
+    ├── daily-refresh.yml
+    └── retrain.yml
