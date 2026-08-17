@@ -21,7 +21,7 @@ No production pipeline, model, artifact or site exists. What exists is the Phase
 - `scripts/source_probe.py` — reproducible source/legal/feasibility probe.
 - `.github/workflows/source-probe.yml` — runs it where egress is unrestricted and commits the report.
 - `docs/source-probes/2026-08-17/{report.json,summary.md}` — the evidence.
-- `tests/fixtures/source_schemas/*.schema.json` — 13 recorded upstream schemas for Phase-1 adapter tests.
+- `tests/fixtures/source_schemas/*.schema.json` — 12 recorded upstream schemas for Phase-1 adapter tests.
 - `pyproject.toml` / `uv.lock` — Python 3.12, deliberately minimal dependency set.
 
 ## Confirmed decisions

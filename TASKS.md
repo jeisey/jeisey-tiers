@@ -17,7 +17,7 @@ Completed 2026-08-17. Evidence: `docs/source-probes/2026-08-17/report.json`; ver
 - [x] Re-check FantasyPros-derived ECR terms; decide benchmark-only handling. — **`disabled` pending human terms review** (ADR-014).
 - [x] Determine whether free historical market data is sufficient for an arbitrage ML target across >= 3 chronological holdout seasons. — **No.** Dense but not point-in-time; baseline mode (ADR-010).
 - [x] Document all source findings in `docs/DATA_SOURCES.md` and `config/source-registry.yaml` with retrieval date.
-- [x] Add tiny permitted source fixtures or recorded schema examples for adapter tests. — 13 schema fixtures in `tests/fixtures/source_schemas/`; benchmark-only rows suppressed.
+- [x] Add tiny permitted source fixtures or recorded schema examples for adapter tests. — 12 schema fixtures in `tests/fixtures/source_schemas/`; benchmark-only rows suppressed.
 - [x] Record any architecture-impacting source decision in `docs/DECISIONS.md`. — ADR-009 … ADR-015.
 
 **Exit gate:** met. Every production/benchmark source has a verified policy decision and a tested access/schema path; arbitrage ML feasibility is explicitly **no**; the market→canonical identity path is measured (100% of priced QB/RB/WR/TE) rather than assumed.
