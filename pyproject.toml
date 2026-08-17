@@ -23,6 +23,10 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# ruff >= 0.16 formats Python blocks embedded in Markdown. The specification documents
+# (MASTER_SPEC.md, docs/*.md) are a versioned contract that this project must not rewrite
+# as a side effect of linting, so Markdown is excluded from both lint and format.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = [
