@@ -1,4 +1,4 @@
-schema_version: "1.1"
+schema_version: "1.2"
 research_as_of: "2026-08-12"
 # Phase-0 live verification. Every `verified: true` entry below was proved by
 # scripts/source_probe.py; the evidence is docs/source-probes/2026-08-17/report.json and the
@@ -6,6 +6,12 @@ research_as_of: "2026-08-12"
 phase0_verified_as_of: "2026-08-17"
 phase0_evidence: "docs/source-probes/2026-08-17/report.json"
 phase0_probe_environment: "github-actions ubuntu-latest (see docs/DECISIONS.md ADR-009)"
+# Human decisions recorded 2026-08-18 by the project owner (see docs/DECISIONS.md):
+#   ADR-014 amendment - FantasyPros-derived ECR moves disabled -> benchmark_only.
+#   ADR-016 - repository stays private through Phase 6.
+#   ADR-017 - MFL developer client provisioned; env-variable NAMES recorded below, never values.
+#   ADR-012 amendment - re-measure MFL cohort mix at the start of Phase 5.
+owner_decisions_as_of: "2026-08-18"
 policy_states:
   - production_allowed
   - allowed_optional
@@ -22,7 +28,19 @@ decisions:
     snapshots exist (ADR-006/ADR-010). Historical MFL ADP is dense but not point-in-time.
   current_status_sources: [nflreadpy_rosters, nflreadpy_depth_charts, sleeper]
   market_identity_bridges: [espn_id_via_nflverse_rosters, mfl_id_via_ff_playerids]
-  non_commercial_deployment_required_by: [sleeper]
+  non_commercial_deployment_required_by: [sleeper, fantasypros_ecr_via_dynastyprocess]
+  # Sources permitted for internal comparison only. Nothing here may reach a public
+  # artifact, an intrinsic feature, or any DraftValue input.
+  benchmark_only_sources: [fantasypros_ecr_via_dynastyprocess]
+  repository_visibility: private
+  repository_visibility_decision_ref: "docs/DECISIONS.md ADR-016"
+  repository_visibility_revisit_phase: 7
+  market_cohort_remeasure_phase: 5
+  market_cohort_remeasure_rule: >-
+    Re-measure MFL scoring x league-size cohort counts before implementing the Phase-5
+    market adapter. The 2026-08-17 counts came from only 410 aggregated drafts; peak-season
+    samples may allow tighter preset matching than ADR-012 assumes. Until then use the
+    widest reliable cohort, record the filters actually sent, and flag approximate cohorts.
 sources:
   nflreadpy:
     policy: production_allowed
@@ -132,14 +150,31 @@ sources:
     verified_endpoints:
       current_adp: "https://api.myfantasyleague.com/{season}/export?TYPE=adp&JSON=1"
       player_db: "https://api.myfantasyleague.com/{season}/export?TYPE=players&DETAILS=1&JSON=1"
+    documentation_2026: "https://www41.myfantasyleague.com/2026/api_info"
     authentication: none
+    public_adp_requires_authentication: false
+    # Environment-variable NAMES only. Values are GitHub repository secrets and must never
+    # be printed, logged, committed, cached or serialised (ADR-017,
+    # docs/SECURITY_LICENSE.md section 2). Only the User-Agent is ever transmitted.
+    client_settings:
+      developer_client_registered: true
+      developer_client_registered_at: "2026-08-18"
+      user_agent_env: MFL_API_USER_AGENT
+      client_name_env: MFL_API_CLIENT_NAME
+      # Present for MFL's authenticated league endpoints, which V1 does not call.
+      username_env: MFL_API_USERNAME
+      password_env: MFL_API_PASSWORD
+      credentials_used_by_adp_adapter: false
+      fallback_user_agent_when_unset: >-
+        Descriptive contact User-Agent, plus an `unregistered_user_agent` warning. A missing
+        secret degrades the request identity; it never blocks the unauthenticated export.
     license: >-
       Published developer rules state access "is provided free to anyone to use in almost any
       way", with harvesting league/user data, circumventing league rules, overloading the
       service and collecting user information without permission forbidden. None applies to
       reading the public ADP aggregate.
     obligations:
-      - "Register an MFL developer client and send the registered User-Agent (OPEN ACTION: needs an MFL account)."
+      - "Send the registered developer client's User-Agent from MFL_API_USER_AGENT (client registered 2026-08-18, ADR-017)."
       - "Handle HTTP 429 with backoff; MFL throttles over-limit clients."
       - "Request the player database no more than once per day and cache it."
       - "Do not request league or user data."
@@ -259,25 +294,38 @@ sources:
       - "FantasyCalc publishes a documented reuse mechanism."
       - "A human records a reading of the current terms and any required written permission."
   fantasypros_ecr_via_dynastyprocess:
-    policy: disabled
+    policy: benchmark_only
     verified: true
     verified_at: "2026-08-17"
+    policy_decided_at: "2026-08-18"
     criticality: optional
-    cost: n_a_disabled
+    cost: free_non_commercial_only
+    non_commercial_only: true
     nflreadpy_loader: "load_ff_rankings(type='draft')"
     mirror_url: "https://github.com/dynastyprocess/data"
-    decision_ref: "docs/DECISIONS.md ADR-014"
+    decision_ref: "docs/DECISIONS.md ADR-014 (amended 2026-08-18)"
     decision_reason: >-
-      Reachable (5849 rows) but the redistribution mirror publishes no licence or terms, and
-      the FantasyPros terms page is client-rendered (215237 bytes, no terms text in markup).
-      docs/DATA_SOURCES.md section 8 requires disabling the benchmark when terms are unclear.
+      The project owner manually reviewed the current FantasyPros terms on 2026-08-18 and
+      approved use for this non-commercial project as an internal benchmark. The Phase-0
+      blocker was the absence of a human terms reading, not a measured prohibition; the data
+      itself was already verified reachable (5849 rows).
+    permitted_roles:
+      - internal_benchmark
     forbidden_roles:
       - intrinsic_feature
+      - draftvalue_input
       - critical_production_dependency
       - public_artifact_field
-      - internal_benchmark_until_reviewed
+      - public_redistribution
+    redistribution_permitted: false
+    redistribution_note: >-
+      Approval to compare is not approval to republish. Raw FantasyPros ranking data must not
+      appear in any public artifact unless the documented terms clearly permit that exact
+      redistribution. The source probe continues to suppress benchmark-only rows.
     revisit_if:
-      - "A human reads the current FantasyPros terms and records a benchmark-use decision."
+      - "FantasyPros terms change."
+      - "The deployment stops being non-commercial."
+      - "A published metric would require redistributing the underlying ranking data."
   sportsdataio:
     policy: paid_optional
     verified: false

@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "git_sha": "0000000",
+  "season": 2026,
+  "intrinsic_model_version": "fixture-stub-0",
+  "arbitrage_mode": "baseline",
+  "arbitrage_model_version": null,
+  "supported_presets": [
+    "redraft-10",
+    "redraft-12"
+  ],
+  "sources": [
+    {
+      "source_id": "myfantasyleague_adp",
+      "status": "warning",
+      "retrieved_at_utc": "2026-08-18T12:00:00Z",
+      "source_as_of_utc": null,
+      "record_count": 36,
+      "warnings": [
+        "market_team_unit_row",
+        "mfl_team_unit_row"
+      ]
+    },
+    {
+      "source_id": "nflreadpy",
+      "status": "warning",
+      "retrieved_at_utc": "2026-08-18T12:00:00Z",
+      "source_as_of_utc": "2026-08-18T07:32:09Z",
+      "record_count": 49,
+      "warnings": [
+        "roster_rows_without_gsis_id"
+      ]
+    },
+    {
+      "source_id": "sleeper",
+      "status": "warning",
+      "retrieved_at_utc": "2026-08-18T12:00:00Z",
+      "source_as_of_utc": null,
+      "record_count": 16,
+      "warnings": [
+        "whitespace_trimmed_gsis_id"
+      ]
+    }
+  ],
+  "quality_gate": {
+    "status": "pass",
+    "critical_failures": 0,
+    "warnings": 5
+  },
+  "warnings": [
+    "market.cohort_approximate: cohort is approximate; the UI must not present it as preset-specific ADP (ADR-012)",
+    "identity.crosswalk_id_conflict: the secondary crosswalk disagrees with an nflverse-native id; the whole mirror row is rejected and the disagreement recorded",
+    "identity.ambiguous_records: ambiguous identities must never reach model or public layers",
+    "identity.unresolved_records: records that could not be resolved are excluded from production",
+    "identity.ambiguous_records: ambiguous identities must never reach model or public layers"
+  ],
+  "methodology_version": "phase1-fixture-0"
+}

@@ -148,6 +148,8 @@ If terms are unclear, disable the benchmark and compare against public naive/mar
 
 > **Phase-0 decision (2026-08-17): `disabled` pending human terms review.** The data is reachable (`load_ff_rankings(type="draft")` → 5,849 rows), but the dynastyprocess mirror that serves it publishes no licence or terms statement, and `https://www.fantasypros.com/terms-of-use/` returns 215,237 bytes of client-rendered HTML with no terms text in the served markup. That is "unclear", so this section's own rule applies. Consensus comparison for V1 therefore uses the verified public MFL ADP plus naive baselines. Revisit needs a human to read the FantasyPros terms and record the decision here. See ADR-014.
 
+> **Owner decision (2026-08-18): `benchmark_only`.** The project owner manually reviewed the current FantasyPros terms and approved use for this non-commercial project. The registry policy moves `disabled` → `benchmark_only`, and `load_ff_rankings(type="draft")` may be used as an **internal** comparison benchmark. The four rules at the top of this section are unchanged and remain binding: no ECR in intrinsic features, no ECR needed to render the site, **no raw ECR in any public artifact**, and published benchmark metrics only where that publication is itself permitted. Two additions make the boundary machine-checkable — `draftvalue_input` and `public_redistribution` are recorded as forbidden roles, and `redistribution_permitted: false` is explicit. Approval to compare is not approval to republish, and the probe keeps suppressing benchmark-only rows from reports and fixtures. The source also carries `non_commercial_only: true`, so it now sits inside the `docs/SECURITY_LICENSE.md` section 10 boundary alongside Sleeper. See ADR-014 as amended 2026-08-18.
+
 ## 9. Paid optional sources
 
 ### SportsDataIO
@@ -246,7 +248,7 @@ Every number and quotation below comes from `docs/source-probes/2026-08-17/repor
 | MyFantasyLeague ADP export | `production_allowed` (obligations in 13.5) | `TYPE=adp` works for 2019–2026; published rules permit free reuse "in almost any way" with a forbidden-use list we do not touch. |
 | Sleeper API | `production_allowed`, **non-commercial only** | Documented endpoints work; docs state free for non-commercial use, commercial use requires licensing. |
 | FantasyCalc | `disabled` for V1 | No documented public API or published download, and the terms page is client-rendered so its text cannot be verified programmatically. See ADR-013. |
-| FantasyPros-derived ECR via dynastyprocess | `disabled` pending human terms review | Reachable (5,849 rows) but the redistribution mirror states no licence and the FantasyPros terms page is client-rendered. See ADR-014. |
+| FantasyPros-derived ECR via dynastyprocess | `benchmark_only` (2026-08-18) | Reachable (5,849 rows). Phase 0 disabled it because terms were unread, not because a prohibition was measured; the owner completed the terms review on 2026-08-18 and approved internal benchmark use for this non-commercial project. Redistribution still forbidden. See ADR-014 as amended. |
 | SportsDataIO | `paid_optional` (unchanged) | Not probed; no V1 dependency. |
 
 ### 13.2 nflverse coverage actually observed
@@ -325,7 +327,7 @@ Player database: `TYPE=players&DETAILS=1&JSON=1` → 2,600 records. **No `gsis_i
 
 **Published obligations** (quoted from `api.myfantasyleague.com/2026/api_info`, "General Rules and Terms of Service"): access "is provided free to anyone to use in almost any way", with these uses forbidden — "Harvesting league and/or user data", "Looking for loop holes or other ways to cheat or circumvent league rules", "Overloading or disrupting the MFL service", "Collecting user information without their per[mission]". None applies to reading the public ADP aggregate. Additionally:
 
-- "Starting in 2020 we will be monitoring and restricting usage of the API" and clients should "include the User-Agent you chose in the Client Registration on all API requests". **Registering an MFL developer client and using its User-Agent is an open action item** (see `SESSION_STATE.md`); it needs an MFL account, so an agent cannot complete it.
+- "Starting in 2020 we will be monitoring and restricting usage of the API" and clients should "include the User-Agent you chose in the Client Registration on all API requests". **Closed 2026-08-18:** the project owner registered an MFL developer client and provisioned `MFL_API_CLIENT_NAME`, `MFL_API_USERNAME`, `MFL_API_PASSWORD` and `MFL_API_USER_AGENT` as GitHub repository secrets. The adapter reads the *names* from the environment and transmits only the User-Agent; the public ADP export stays unauthenticated, and a missing secret degrades to the descriptive contact User-Agent with an `unregistered_user_agent` warning rather than failing. Official 2026 documentation: `https://www41.myfantasyleague.com/2026/api_info`. See ADR-017.
 - Over-limit requests are throttled and "return a 429 'Too Many Requests' HTTP status code" — the adapter must handle 429 with backoff, not retry blindly.
 - "our player database is only changed once a day, so your application should request that info no more than once a day" — cache the player export daily.
 - `robots.txt` on the API host disallows only `/fflnetdynamic*/` league directories, not `/{YEAR}/export`. `https://www.myfantasyleague.com/terms.html` does not exist (404); the developer page above is the operative statement.
@@ -355,7 +357,7 @@ Measured on the 367 priced 2026 players, using two independent id bridges:
 | bridges both resolve and **disagree** | **0** |
 | unresolved rows | 17, all MFL `position="Def"` team units, none modelled in V1 |
 
-This satisfies the PRD section 21 identity criterion for the market join and means ADR-005 is achievable as specified. Two independent bridges with zero disagreement also give Phase 1 a cheap cross-check: resolve both ways, accept on agreement, and fail closed when they differ. Note the dependency asymmetry — `mfl_id` exists only in the dynastyprocess crosswalk (which publishes no licence), whereas the `espn_id` path is entirely nflverse-native, so the `espn_id` bridge is the more durable primary and the crosswalk is the higher-coverage secondary.
+This satisfies the PRD section 21 identity criterion for the market join and means ADR-005 is achievable as specified. Two independent bridges with zero disagreement also give Phase 1 a cheap cross-check: resolve both ways, accept on agreement, and fail closed when they differ. Phase 1 implements exactly that (ADR-019). Note the dependency asymmetry — `mfl_id` exists only in the dynastyprocess crosswalk (which publishes no licence), whereas the `espn_id` path is entirely nflverse-native, so the `espn_id` bridge is the more durable primary and the crosswalk is the higher-coverage secondary.
 
 ### 13.8 Arbitrage ML feasibility: **no** — launch in baseline mode
 

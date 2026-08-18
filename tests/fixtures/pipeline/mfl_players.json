@@ -1,0 +1,146 @@
+[
+  {
+    "id": "6000001",
+    "name": "Vandelay, Marcus",
+    "position": "QB",
+    "team": "ATL",
+    "espn_id": "4000001",
+    "draft_year": "2014"
+  },
+  {
+    "id": "6000002",
+    "name": "Okonkwo, Dez",
+    "position": "RB",
+    "team": "BUF",
+    "espn_id": "4000002",
+    "draft_year": "2021"
+  },
+  {
+    "id": "6000003",
+    "name": "Thibodeaux, Ravi",
+    "position": "RB",
+    "team": "CHI",
+    "espn_id": "4000003",
+    "draft_year": "2023"
+  },
+  {
+    "id": "6000004",
+    "name": "Johnson, Chris",
+    "position": "WR",
+    "team": "DAL",
+    "espn_id": "4000004",
+    "draft_year": "2019"
+  },
+  {
+    "id": "6000005",
+    "name": "Jr., Chris",
+    "position": "WR",
+    "team": "DEN",
+    "espn_id": "4000005",
+    "draft_year": "2025"
+  },
+  {
+    "id": "6000006",
+    "name": "Ferreira, Tobias",
+    "position": "WR",
+    "team": "GB",
+    "espn_id": "4000006",
+    "draft_year": "2020"
+  },
+  {
+    "id": "6000007",
+    "name": "Salvatore, Kip",
+    "position": "TE",
+    "team": "HOU",
+    "espn_id": "4000007",
+    "draft_year": "2017"
+  },
+  {
+    "id": "6000008",
+    "name": "Brightwater, Nnamdi",
+    "position": "RB",
+    "team": "IND",
+    "espn_id": "4000008",
+    "draft_year": "2024"
+  },
+  {
+    "id": "6000009",
+    "name": "Vasquez, Emeka",
+    "position": "WR",
+    "team": "JAX",
+    "espn_id": null,
+    "draft_year": "2022"
+  },
+  {
+    "id": "6000010",
+    "name": "Marchetti, Sol",
+    "position": "QB",
+    "team": "KC",
+    "espn_id": "4000010",
+    "draft_year": "2018"
+  },
+  {
+    "id": "6000011",
+    "name": "Kowalczyk, Bram",
+    "position": "TE",
+    "team": "LV",
+    "espn_id": "4000011",
+    "draft_year": "2026"
+  },
+  {
+    "id": "6000012",
+    "name": "Lindqvist, Yusuf",
+    "position": "WR",
+    "team": "LAC",
+    "espn_id": "4000012",
+    "draft_year": "2024"
+  },
+  {
+    "id": "6000014",
+    "name": "Vargas, Teodor",
+    "position": "QB",
+    "team": "MIN",
+    "espn_id": "4000014",
+    "draft_year": "2023"
+  },
+  {
+    "id": "6000015",
+    "name": "Amadi, Hollis",
+    "position": "WR",
+    "team": "NE",
+    "espn_id": "4000015",
+    "draft_year": "2021"
+  },
+  {
+    "id": "6000016",
+    "name": "Nkemdiche, Xavier",
+    "position": "TE",
+    "team": "NO",
+    "espn_id": "4000016",
+    "draft_year": "2020"
+  },
+  {
+    "id": "6000099",
+    "name": "Prospect, Unrostered",
+    "position": "WR",
+    "team": "FA",
+    "espn_id": null,
+    "draft_year": "2026"
+  },
+  {
+    "id": "0151",
+    "name": "Bills, Buffalo",
+    "position": "TMWR",
+    "team": "BUF",
+    "espn_id": null,
+    "draft_year": "1970"
+  },
+  {
+    "id": "0152",
+    "name": "Bears, Chicago",
+    "position": "Def",
+    "team": "CHI",
+    "espn_id": null,
+    "draft_year": "1970"
+  }
+]
