@@ -81,9 +81,27 @@ Steps:
 
 Retraining does not directly deploy the website unless followed by a normal validated inference/build path.
 
+### 2.4 `source-probe.yml` (Phase-0 infrastructure)
+
+Triggers: `workflow_dispatch`, plus pushes to `claude/phase-0-**` that touch the probe, its lockfile or the workflow itself.
+
+Permissions: `contents: read` at workflow level, elevated to `contents: write` only in the probe job, which commits its report to the working branch.
+
+Purpose: run `scripts/source_probe.py` in an environment with unrestricted egress and record what each source actually returns. It exists because source verification cannot be trusted to a development sandbox behind an egress policy (ADR-009). It is **not** part of the production refresh path and must never gate a deploy.
+
+Re-run it before a launch, before promoting a model that depends on a source contract, or whenever an adapter starts failing in a way that smells like upstream drift.
+
+Cadence facts confirmed by the probe and worth designing to:
+
+- 2026 depth-chart snapshots land daily at roughly 07:25–08:25 UTC, so the recommended 07:17 America/New_York refresh (11:17/12:17 UTC) reads a same-day snapshot.
+- MFL asks that the player database be requested no more than once per day and throttles over-limit clients with HTTP 429; the adapter needs backoff, and the player export needs a daily cache.
+- Sleeper's player map is ~14.6 MB; fetch at most daily and stay well under the documented 1000 calls/minute.
+
 ## 3. Public repository cost
 
 The architecture assumes a public repository using standard GitHub-hosted runners and GitHub Pages. GitHub's current documentation states standard hosted runners are free for public repositories and Pages is available for public repositories on GitHub Free. Avoid larger runners or paid services unless a future benchmark proves necessary.
+
+> **Phase-0 observation (2026-08-17):** `jeisey/jeisey-tiers` is currently a **private** repository, so the free-runner and Pages assumptions above do not yet hold. This does not block Phase 0, but it must be resolved before Phase 7: either make the repository public, or accept the plan requirements for Actions minutes and Pages on a private repository. Recorded as an open question in `SESSION_STATE.md`.
 
 ## 4. Caching
 

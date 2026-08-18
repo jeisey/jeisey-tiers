@@ -1,0 +1,141 @@
+{
+  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "check_id": "nflverse_injuries_2025",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "season_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "game_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "gsis_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "full_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "last_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "report_primary_injury",
+      "null_fraction": 0.5405
+    },
+    {
+      "dtype": "String",
+      "name": "report_secondary_injury",
+      "null_fraction": 0.9568
+    },
+    {
+      "dtype": "String",
+      "name": "report_status",
+      "null_fraction": 0.5414
+    },
+    {
+      "dtype": "String",
+      "name": "practice_primary_injury",
+      "null_fraction": 0.0074
+    },
+    {
+      "dtype": "String",
+      "name": "practice_secondary_injury",
+      "null_fraction": 0.9171
+    },
+    {
+      "dtype": "String",
+      "name": "practice_status",
+      "null_fraction": 0.0074
+    }
+  ],
+  "coverage": {
+    "game_type_distinct": 5,
+    "game_type_max": "WC",
+    "game_type_min": "CON",
+    "position_distinct": 16,
+    "position_max": "WR",
+    "position_min": "C",
+    "season_distinct": 1,
+    "season_max": 2025,
+    "season_min": 2025,
+    "week_distinct": 22,
+    "week_max": 22,
+    "week_min": 1
+  },
+  "record_count": 6068,
+  "sample_rows": [
+    {
+      "first_name": "Calais",
+      "full_name": "Calais Campbell",
+      "game_type": "REG",
+      "gsis_id": "00-0026190",
+      "last_name": "Campbell",
+      "position": "DE",
+      "practice_primary_injury": "Not injury related - resting player",
+      "practice_secondary_injury": null,
+      "practice_status": "Did Not Participate In Practice",
+      "report_primary_injury": null,
+      "report_secondary_injury": null,
+      "report_status": null,
+      "season": 2025,
+      "season_type": "REG",
+      "team": "ARI",
+      "week": 1
+    },
+    {
+      "first_name": "William",
+      "full_name": "Will Hernandez",
+      "game_type": "REG",
+      "gsis_id": "00-0034346",
+      "last_name": "Hernandez",
+      "position": "G",
+      "practice_primary_injury": "Knee",
+      "practice_secondary_injury": null,
+      "practice_status": "Limited Participation in Practice",
+      "report_primary_injury": "Knee",
+      "report_secondary_injury": null,
+      "report_status": "Out",
+      "season": 2025,
+      "season_type": "REG",
+      "team": "ARI",
+      "week": 1
+    }
+  ],
+  "source_id": "nflreadpy",
+  "target": "nflreadpy.load_injuries({\"seasons\": [2025]})"
+}

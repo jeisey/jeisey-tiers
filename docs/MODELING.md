@@ -92,7 +92,7 @@ Candidate families, all calculated using information available by the anchor:
 - current team at anchor
 - team change flag
 - prior team offensive volume/efficiency summaries
-- depth-chart rank at anchor
+- depth-chart rank at anchor — **Phase-0 caveat (2026-08-17):** only available as a true anchor observation for 2025 onward, where depth charts are timestamped daily snapshots. For 2024 and earlier the earliest observation is week 1, which postdates a late-August draft and final roster cuts, so it may not be used as an anchor feature without the documented leakage caveat in ADR-015.
 - teammate opportunity vacated using only prior-season/current roster information
 - QB/team context features for RB/WR/TE if constructed without market rank
 

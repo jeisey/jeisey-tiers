@@ -1,0 +1,265 @@
+{
+  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "check_id": "nflverse_ff_playerids",
+  "columns": [
+    {
+      "dtype": "Int64",
+      "name": "mfl_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "sportradar_id",
+      "null_fraction": 0.403
+    },
+    {
+      "dtype": "Int64",
+      "name": "fantasypros_id",
+      "null_fraction": 0.6093
+    },
+    {
+      "dtype": "String",
+      "name": "gsis_id",
+      "null_fraction": 0.3594
+    },
+    {
+      "dtype": "String",
+      "name": "pff_id",
+      "null_fraction": 0.412
+    },
+    {
+      "dtype": "Int64",
+      "name": "sleeper_id",
+      "null_fraction": 0.4897
+    },
+    {
+      "dtype": "Int64",
+      "name": "nfl_id",
+      "null_fraction": 0.398
+    },
+    {
+      "dtype": "Int64",
+      "name": "espn_id",
+      "null_fraction": 0.3472
+    },
+    {
+      "dtype": "String",
+      "name": "yahoo_id",
+      "null_fraction": 0.5599
+    },
+    {
+      "dtype": "String",
+      "name": "fleaflicker_id",
+      "null_fraction": 0.9089
+    },
+    {
+      "dtype": "Int64",
+      "name": "cbs_id",
+      "null_fraction": 0.2569
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_id",
+      "null_fraction": 0.2296
+    },
+    {
+      "dtype": "String",
+      "name": "cfbref_id",
+      "null_fraction": 0.5488
+    },
+    {
+      "dtype": "Int64",
+      "name": "rotowire_id",
+      "null_fraction": 0.1551
+    },
+    {
+      "dtype": "String",
+      "name": "rotoworld_id",
+      "null_fraction": 0.4119
+    },
+    {
+      "dtype": "Int64",
+      "name": "ktc_id",
+      "null_fraction": 0.9629
+    },
+    {
+      "dtype": "Int64",
+      "name": "stats_id",
+      "null_fraction": 0.185
+    },
+    {
+      "dtype": "Int64",
+      "name": "stats_global_id",
+      "null_fraction": 0.0081
+    },
+    {
+      "dtype": "Int64",
+      "name": "fantasy_data_id",
+      "null_fraction": 0.5287
+    },
+    {
+      "dtype": "String",
+      "name": "swish_id",
+      "null_fraction": 0.7253
+    },
+    {
+      "dtype": "String",
+      "name": "name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "merge_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "birthdate",
+      "null_fraction": 0.0985
+    },
+    {
+      "dtype": "Float64",
+      "name": "age",
+      "null_fraction": 0.0985
+    },
+    {
+      "dtype": "Int64",
+      "name": "draft_year",
+      "null_fraction": 0.0081
+    },
+    {
+      "dtype": "Int64",
+      "name": "draft_round",
+      "null_fraction": 0.4156
+    },
+    {
+      "dtype": "Int64",
+      "name": "draft_pick",
+      "null_fraction": 0.4241
+    },
+    {
+      "dtype": "Int64",
+      "name": "draft_ovr",
+      "null_fraction": 0.4673
+    },
+    {
+      "dtype": "String",
+      "name": "twitter_username",
+      "null_fraction": 0.7983
+    },
+    {
+      "dtype": "Int64",
+      "name": "height",
+      "null_fraction": 0.0881
+    },
+    {
+      "dtype": "Int64",
+      "name": "weight",
+      "null_fraction": 0.052
+    },
+    {
+      "dtype": "String",
+      "name": "college",
+      "null_fraction": 0.0514
+    },
+    {
+      "dtype": "Int64",
+      "name": "db_season",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {
+    "position_distinct": 18,
+    "position_max": "XX",
+    "position_min": "? "
+  },
+  "record_count": 12472,
+  "sample_rows": [
+    {
+      "age": 22.9,
+      "birthdate": "2003-10-01",
+      "cbs_id": 28916321,
+      "cfbref_id": "fernando-mendoza-1",
+      "college": "Indiana",
+      "db_season": 2026,
+      "draft_ovr": 1,
+      "draft_pick": 1,
+      "draft_round": 1,
+      "draft_year": 2026,
+      "espn_id": 4837248,
+      "fantasy_data_id": 26740,
+      "fantasypros_id": 28013,
+      "fleaflicker_id": null,
+      "gsis_id": "00-0041562",
+      "height": 77,
+      "ktc_id": 1924,
+      "merge_name": "fernando mendoza",
+      "mfl_id": 17462,
+      "name": "Fernando Mendoza",
+      "nfl_id": 62623,
+      "pff_id": null,
+      "pfr_id": "MendFe00",
+      "position": "QB",
+      "rotowire_id": 19281,
+      "rotoworld_id": null,
+      "sleeper_id": 13269,
+      "sportradar_id": "b1ded115-092a-4199-9a55-cab9f4b5bb18",
+      "stats_global_id": 0,
+      "stats_id": 42623,
+      "swish_id": null,
+      "team": "LVR",
+      "twitter_username": null,
+      "weight": 225,
+      "yahoo_id": null
+    },
+    {
+      "age": 23.6,
+      "birthdate": "2002-12-21",
+      "cbs_id": 28878532,
+      "cfbref_id": "ty-simpson-1",
+      "college": "Alabama",
+      "db_season": 2026,
+      "draft_ovr": 13,
+      "draft_pick": 13,
+      "draft_round": 1,
+      "draft_year": 2026,
+      "espn_id": 4685522,
+      "fantasy_data_id": 26739,
+      "fantasypros_id": 25368,
+      "fleaflicker_id": null,
+      "gsis_id": "00-0041568",
+      "height": 74,
+      "ktc_id": 1925,
+      "merge_name": "ty simpson",
+      "mfl_id": 17463,
+      "name": "Ty Simpson",
+      "nfl_id": 62635,
+      "pff_id": null,
+      "pfr_id": "SimpTy00",
+      "position": "QB",
+      "rotowire_id": 19275,
+      "rotoworld_id": null,
+      "sleeper_id": 13275,
+      "sportradar_id": "2e62e603-363a-425f-8c57-0a1600476c85",
+      "stats_global_id": 0,
+      "stats_id": 42635,
+      "swish_id": null,
+      "team": "LAR",
+      "twitter_username": null,
+      "weight": 203,
+      "yahoo_id": null
+    }
+  ],
+  "source_id": "nflreadpy",
+  "target": "nflreadpy.load_ff_playerids({})"
+}

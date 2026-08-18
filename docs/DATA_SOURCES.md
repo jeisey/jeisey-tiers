@@ -1,6 +1,6 @@
 # Data Sources, Rights, and Feasibility Gates
 
-**Important:** This document contains research decisions as of 2026-08-12, but production use still requires the Phase-0 coding agent to verify live endpoint behavior and re-check current terms. Web pages and APIs change.
+**Important:** Sections 1–12 are the original research decisions as of 2026-08-12. **Phase-0 live verification was completed on 2026-08-17; section 13 is the authoritative verified record** and supersedes any earlier statement it contradicts. Machine-readable evidence lives in `docs/source-probes/2026-08-17/report.json`, regenerable with `uv run python scripts/source_probe.py`. Re-verify before each launch: web pages and APIs change.
 
 ## 1. Source policy states
 
@@ -14,6 +14,8 @@ Every source is assigned one of:
 - `paid_optional` — not required; documents what additional value paid access could unlock.
 
 ## 2. Research-backed source matrix
+
+The "initial policy" column below is the pre-verification research position, kept for provenance. **Section 13.1 holds the verified policy that governs implementation.**
 
 | Source | Initial policy | Cost | Intended role | Important facts / caveats |
 |---|---|---:|---|---|
@@ -57,6 +59,8 @@ At research time nflverse documents:
 
 This supports a daily pre-draft refresh but makes a second current injury/status source necessary.
 
+> **Phase-0 correction (2026-08-17):** the last bullet is wrong. `load_injuries(2025)` returns 6,068 rows; the loader simply refuses seasons after 2025. The real gap is different and larger: injury rows are weekly in-season reports, so **no** season provides an injury report at a preseason draft anchor. Observed depth-chart refreshes for 2026 land at roughly 07:25–08:25 UTC daily, consistent with the cadence above. See section 13.2, 13.3 and ADR-011.
+
 ## 4. ffopportunity usage
 
 Potential feature families:
@@ -92,11 +96,15 @@ Verify:
 
 Save only small schema fixtures on main. Do not commit a full vendor dataset until rights/storage strategy is documented.
 
+> **Phase-0 result (2026-08-17):** all twelve items were probed by `scripts/source_probe.py`; the answers are in section 13.5. Items to note: there is no standard-deviation field (8), there is no working date-window control (6), the export exposes no `gsis_id` (7), and XML/JSON are both available with JSON selected via `JSON=1` (2). Schema fixtures are committed under `tests/fixtures/source_schemas/`.
+
 ### ML feasibility decision
 
 Set `arbitrage_ml_historical_feasible=true` only if the project can construct sufficiently dense, point-in-time market-cost data for multiple historical seasons with stable player identity and scoring context.
 
 A useful minimum target is >= 3 chronological holdout seasons after creating earlier train seasons. If that cannot be met honestly, use deterministic arbitrage baseline mode and begin accumulating daily snapshots for future learned models.
+
+> **Phase-0 decision (2026-08-17): `arbitrage_ml_historical_feasible = false`.** Volume is sufficient but the data is not point-in-time, so baseline mode ships. Evidence and the revisit rule are in section 13.8 and ADR-010.
 
 ## 6. Sleeper Phase-0 probe
 
@@ -123,6 +131,8 @@ Therefore:
 
 It must remain optional; MFL/another verified market source should carry the critical arbitrage path.
 
+> **Phase-0 decision (2026-08-17): `disabled` for V1.** `https://fantasycalc.com/terms-of-usage` returns 113,878 bytes of client-rendered HTML containing none of the terms text in the served markup, so the policy cannot be verified programmatically, and no published CSV/download or documented public API was found. The gate above requires a *permitted, documented* mechanism; none exists, so no FantasyCalc access happens at all. `robots.txt` is permissive, but that is not a licence. See ADR-013.
+
 ## 8. FantasyPros/ECR gate
 
 The original `fftiers` repository states its data is exclusively FantasyPros and its R implementation clusters average rank using `Mclust`. Our system uses ECR only as a potential benchmark.
@@ -135,6 +145,8 @@ Rules:
 - benchmark metrics may be published only if that use is allowed and does not leak the underlying proprietary dataset.
 
 If terms are unclear, disable the benchmark and compare against public naive/market baselines instead.
+
+> **Phase-0 decision (2026-08-17): `disabled` pending human terms review.** The data is reachable (`load_ff_rankings(type="draft")` → 5,849 rows), but the dynastyprocess mirror that serves it publishes no licence or terms statement, and `https://www.fantasypros.com/terms-of-use/` returns 215,237 bytes of client-rendered HTML with no terms text in the served markup. That is "unclear", so this section's own rule applies. Consensus comparison for V1 therefore uses the verified public MFL ADP plus naive baselines. Revisit needs a human to read the FantasyPros terms and record the decision here. See ADR-014.
 
 ## 9. Paid optional sources
 
@@ -218,3 +230,146 @@ The source registry contains exact URLs. The most important research pages used 
 - GitHub Actions/Pages official docs
 
 Do not treat this list as a substitute for live Phase-0 validation.
+
+---
+
+## 13. Phase-0 verification record — retrieved 2026-08-17 (authoritative)
+
+Every number and quotation below comes from `docs/source-probes/2026-08-17/report.json`, produced by `scripts/source_probe.py` on a GitHub-hosted runner (`nflreadpy==0.1.5`, `polars==1.43.2`, `requests==2.34.2`, Python 3.12.13). Re-run the probe to regenerate it. Where a claim in sections 1–12 conflicts with this section, this section wins.
+
+### 13.1 Verified policy decisions
+
+| Source | Verified policy | Basis |
+|---|---|---|
+| nflverse via `nflreadpy` | `production_allowed` | All 30 probed loader calls returned data. Code MIT; data CC-BY-4.0 with FTN subsets CC-BY-SA-4.0. |
+| ffopportunity via `load_ff_opportunity` | `production_allowed` | 2019/2024/2025 all return weekly expected-points rows. Data CC-BY-SA-4.0, package code GPL-3. |
+| MyFantasyLeague ADP export | `production_allowed` (obligations in 13.5) | `TYPE=adp` works for 2019–2026; published rules permit free reuse "in almost any way" with a forbidden-use list we do not touch. |
+| Sleeper API | `production_allowed`, **non-commercial only** | Documented endpoints work; docs state free for non-commercial use, commercial use requires licensing. |
+| FantasyCalc | `disabled` for V1 | No documented public API or published download, and the terms page is client-rendered so its text cannot be verified programmatically. See ADR-013. |
+| FantasyPros-derived ECR via dynastyprocess | `disabled` pending human terms review | Reachable (5,849 rows) but the redistribution mirror states no licence and the FantasyPros terms page is client-rendered. See ADR-014. |
+| SportsDataIO | `paid_optional` (unchanged) | Not probed; no V1 dependency. |
+
+### 13.2 nflverse coverage actually observed
+
+| Loader | Probed seasons → rows |
+|---|---|
+| `load_players` | 25,040 (gsis master, includes draft/PFR/ESPN/PFF ids) |
+| `load_ff_playerids` | 12,472 (`mfl_id` 100%, `gsis_id` 64%, `sleeper_id` 51%, `espn_id` 65%) |
+| `load_player_stats(summary_level="reg")` | 2012→1,811; 2019→1,889; 2024→1,997; 2025→2,020 |
+| `load_player_stats(summary_level="week")` | 2025→19,422 |
+| `load_rosters` | 2012→2,120; 2019→3,114; 2025→3,137; **2026→2,930** |
+| `load_rosters_weekly` | 2019→51,632; 2025→46,849 |
+| `load_depth_charts` | 2019→36,308; 2024→37,312; **2025→554,215; 2026→442,872** (schema break, see 13.3) |
+| `load_snap_counts` | 2019→23,862; 2025→26,612 |
+| `load_ff_opportunity(stat_type="weekly")` | 2019→5,633; 2024→6,005; 2025→6,054 |
+| `load_injuries` | 2019→5,392; 2024→6,215; **2025→6,068**; 2026 → `ValueError: Season must be between 2009 and 2025` |
+| `load_draft_picks` / `load_combine` | 12,927 / 8,968 (all seasons, single file each) |
+| `load_nextgen_stats(receiving)` / `load_pfr_advstats(rec, season)` | 2025→1,402 / 531 |
+| `load_ftn_charting` | 2025→47,316 (**CC-BY-SA**; avoid unless a feature justifies the share-alike obligation) |
+| `load_schedules` | 2026→272 rows, weeks 1–18, `game_type=REG` only |
+
+Season-level `load_player_stats` carries every component the scoring engine needs (`passing_yards`, `passing_tds`, `receptions`, `receiving_yards`, `rushing_tds`, fumbles, 2-point conversions, …), so STD/HALF/PPR can be computed in-house rather than trusting the upstream `fantasy_points` columns.
+
+Downloads come from `github.com/nflverse/nflverse-data/releases/download/`, `github.com/dynastyprocess/data/raw/master/files/`, `github.com/ffverse/ffopportunity/releases/download/` and `github.com/nflverse/espnscrapeR-data/raw/master/data/`. Any egress allowlist must cover all four.
+
+**Two corrections to earlier assumptions.** The nflverse injury feed did *not* die after 2024 — 2025 returns 6,068 rows. But `load_injuries` is capped at 2025 by the installed library and injury rows are weekly in-season reports (weeks 1–22), so **there is no injury report for a preseason draft anchor from nflverse at all**, in any season. That is a different problem from the one the spec anticipated, and it is why ADR-011 exists.
+
+### 13.3 The 2025 depth-chart schema break (Phase-2 critical)
+
+| | ≤ 2024 | 2025 onward |
+|---|---|---|
+| Grain | one row per team/week/position slot | one row per **timestamped snapshot** |
+| Key columns | `season, club_code, week, game_type, depth_team, depth_position, gsis_id, position` | `dt, team, gsis_id, espn_id, pos_grp, pos_abb, pos_rank, pos_slot, player_name` |
+| Earliest observation | week 1 (no week 0, no preseason) | 2025-08-03 (2025), 2026-03-22 (2026) |
+| Snapshot count | 21–22 weeks | 221 (2025), 150 (2026 to date) |
+
+Consequences the adapter and feature builder must honour:
+
+- Two normalisation paths are required; a single schema assumption will silently produce nulls (ADR-015).
+- **2025 onward supports a true point-in-time depth chart**: pick the latest snapshot with `dt <= anchor`. The 2026 series is refreshed daily at roughly 07:25–08:25 UTC; the latest snapshot observed on 2026-08-17 held 3,257 rows across all 32 teams, 924 of them QB/RB/WR/TE with `gsis_id` missing on only 1.4%.
+- **2024 and earlier cannot supply a preseason depth rank.** The earliest available row is week 1, which is published *after* a late-August draft and after final roster cuts, so using it as an "anchor" feature would leak. Phase 2 must either derive anchor depth from prior-season usage plus roster status, or declare the week-1 proxy and its leakage risk explicitly in the feature dictionary.
+
+### 13.4 Current-season anchor inputs (2026)
+
+- `load_rosters(2026)`: 2,930 rows, `status` ACT 2,852 / RES 36 / E14 28 / RET 11 / CUT 3. For the 915 QB/RB/WR/TE rows, `gsis_id` is 100% present, `depth_chart_position` 100% present, `sleeper_id` 82% present, `espn_id` 84% present.
+- `nflreadpy.get_current_season()` returns **2025** while `get_current_season(roster=True)` returns **2026** and `get_current_week()` returns 22. **Do not derive the draft-target season from `get_current_season()`** — in August it still points at the prior season. Sleeper's `/v1/state/nfl` independently reports `season=2026, season_type="pre", week=2, season_start_date=2026-08-06`, and the pipeline should take the target season from configuration cross-checked against these two.
+
+### 13.5 MyFantasyLeague — verified contract
+
+Endpoint: `https://api.myfantasyleague.com/{YEAR}/export?TYPE=adp&JSON=1`. No authentication. `APIKEY` exists but is only for access-restricted league calls, not this export.
+
+Response: `{"adp": {"version", "encoding", "timestamp", "totalDrafts", "totalPicks", "player": [...]}}`. Each player row carries exactly `id, rank, averagePick, minPick, maxPick, draftsSelectedIn, draftSelPct` — all as strings.
+
+- **There is no standard-deviation field.** `market_snapshot.adp_sd` must stay null; dispersion comes from `minPick`/`maxPick` (`adp_low`/`adp_high`) and sample size from `draftsSelectedIn`.
+- `timestamp` is the response generation time, not a data-as-of time. `source_as_of_utc` cannot be recovered for historical years.
+- 2026 unfiltered: 367 priced players, `totalDrafts=410`, `averagePick` 2.57–218.41.
+
+Filter behaviour (2026 unless noted):
+
+| Request | Rows | Reading |
+|---|---:|---|
+| no filters | 367 | baseline |
+| `IS_PPR=1` | 370 | honoured |
+| `IS_PPR=0` | 229 | honoured; standard scoring is much thinner |
+| `FCOUNT=12` | 356 | honoured |
+| `FCOUNT=10` | 325 | honoured |
+| `FCOUNT=14` | 242 | honoured |
+| `IS_PPR=0&FCOUNT=10` | **2** | cohort intersections collapse — see ADR-012 |
+| `IS_MOCK=0&IS_KEEPER=N` | 383 (`totalDrafts=101`) | honoured |
+| `CUTOFF=5` | 367 | accepted, no effect at this threshold |
+| `DAYS=14`, `DAYS=1` | 367, 367 | **ignored** — identical to unfiltered |
+
+Historical years (unfiltered, retrieved 2026-08-17): 2019→445 rows / 15,850 drafts; 2020→442; 2021→397; 2022→391; 2023→416; 2024→413; 2025→362 / 7,185 drafts.
+
+Player database: `TYPE=players&DETAILS=1&JSON=1` → 2,600 records. **No `gsis_id`.** `espn_id` 82.1%, `nfl_id` 3.4%, plus `stats_id`, `stats_global_id`, `sportsdata_id`, `cbs_id`, `rotowire_id`, `rotoworld_id`, `fleaflicker_id`. The export also contains non-player rows (e.g. `id=0151`, `name="Bills, Buffalo"`, `position="TMWR"`) that must be filtered out.
+
+**Published obligations** (quoted from `api.myfantasyleague.com/2026/api_info`, "General Rules and Terms of Service"): access "is provided free to anyone to use in almost any way", with these uses forbidden — "Harvesting league and/or user data", "Looking for loop holes or other ways to cheat or circumvent league rules", "Overloading or disrupting the MFL service", "Collecting user information without their per[mission]". None applies to reading the public ADP aggregate. Additionally:
+
+- "Starting in 2020 we will be monitoring and restricting usage of the API" and clients should "include the User-Agent you chose in the Client Registration on all API requests". **Registering an MFL developer client and using its User-Agent is an open action item** (see `SESSION_STATE.md`); it needs an MFL account, so an agent cannot complete it.
+- Over-limit requests are throttled and "return a 429 'Too Many Requests' HTTP status code" — the adapter must handle 429 with backoff, not retry blindly.
+- "our player database is only changed once a day, so your application should request that info no more than once a day" — cache the player export daily.
+- `robots.txt` on the API host disallows only `/fflnetdynamic*/` league directories, not `/{YEAR}/export`. `https://www.myfantasyleague.com/terms.html` does not exist (404); the developer page above is the operative statement.
+
+### 13.6 Sleeper — verified contract
+
+- `/v1/state/nfl` → season/week/season_type/season_start_date (see 13.4).
+- `/v1/players/nfl` → 12,220 records, **14.6 MB**, `player_id` 100%. Crosswalk: `sportradar_id` 94.7%, `espn_id` 55.1%, `gsis_id` only **31.9%** (31.4% among active QB/RB/WR/TE). Therefore **join nflverse → Sleeper on `sleeper_id` (82% present on current skill rosters), never Sleeper → gsis on Sleeper's own field.**
+- Status/injury fields present and usable: `status`, `injury_status` (populated on 5.1% of rows, i.e. only currently affected players), `injury_body_part`, `injury_notes`, `injury_start_date`, `practice_participation`, `practice_description`, `depth_chart_order`, `depth_chart_position`, `team_changed_at`, `search_rank`.
+- **Data hygiene:** observed `gsis_id` values carry a leading space (e.g. `" 00-0035057"`). The identity layer must trim and validate id formats and fail closed on malformed values.
+- `/v1/players/nfl/trending/add?lookback_hours=24&limit=25` → 25 `{player_id, count}` rows.
+- Published terms (quoted from `docs.sleeper.com`): "The Sleeper API is a read-only HTTP API that is free to use for non-commercial purposes… For commercial use of the Sleeper API, please reach out to us directly to discuss licensing. No API Token is necessary". Rate guidance: "stay under 1000 API calls per minute, otherwise, you risk being IP-blocked". Attribution: "Please give attribution to Sleeper you are using our trending data." `robots.txt` contains no active restrictions.
+- **This puts Sleeper inside the non-commercial boundary of `docs/SECURITY_LICENSE.md` section 10**, alongside FantasyCalc. Monetising the site requires re-clearing Sleeper, not just FantasyCalc.
+
+### 13.7 Market → canonical identity is proven without name matching
+
+Measured on the 367 priced 2026 players, using two independent id bridges:
+
+| Metric | Result |
+|---|---|
+| `mfl_id` → `load_ff_playerids()` → `gsis_id` | 350 / 367 |
+| MFL `espn_id` → `load_rosters(2026).espn_id` → `gsis_id` | 331 / 367 |
+| resolved by either bridge | 350 / 367 = **95.4%** |
+| **QB/RB/WR/TE only** | **287 / 287 = 100%** |
+| top-100 by market rank | 100 / 100 |
+| bridges both resolve and **agree** | 331 |
+| bridges both resolve and **disagree** | **0** |
+| unresolved rows | 17, all MFL `position="Def"` team units, none modelled in V1 |
+
+This satisfies the PRD section 21 identity criterion for the market join and means ADR-005 is achievable as specified. Two independent bridges with zero disagreement also give Phase 1 a cheap cross-check: resolve both ways, accept on agreement, and fail closed when they differ. Note the dependency asymmetry — `mfl_id` exists only in the dynastyprocess crosswalk (which publishes no licence), whereas the `espn_id` path is entirely nflverse-native, so the `espn_id` bridge is the more durable primary and the crosswalk is the higher-coverage secondary.
+
+### 13.8 Arbitrage ML feasibility: **no** — launch in baseline mode
+
+Historical volume is not the binding constraint; point-in-time reconstruction is.
+
+- Seven historical seasons each price 362–445 players, which is enough rows.
+- But the export returns a **season-long aggregate recomputed at request time**, and the day-window filter is ignored: `DAYS=30` against 2019 returned byte-identical coverage to the unfiltered request (445 rows, `totalDrafts=15850`). Draft-type filters do still work on historical years (`IS_MOCK=0&IS_KEEPER=N` → 384 rows / 6,885 drafts), but excluding mocks says nothing about *when* a price was set.
+- So a 2019 "market cost" includes drafts held during and after the 2019 season, by which time the season's outcomes were partly known. Training a learned surplus target on that cost would embed target-season information in the feature the model is supposed to be exploiting.
+
+Therefore `arbitrage_ml_historical_feasible = false` and V1 ships the deterministic fair-rank-vs-ADP baseline, exactly as ADR-003 anticipated. Revisit only from **our own** append-only daily snapshots (ADR-006): at least three draft seasons of retained point-in-time snapshots are needed before an out-of-time promotion gate can be honest.
+
+### 13.9 Attribution strings to ship in the UI methodology panel
+
+- Player, roster, depth-chart, stat, draft and combine data from **nflverse** (`nflreadpy`, MIT; data broadly CC-BY-4.0, FTN-derived subsets CC-BY-SA-4.0).
+- Expected fantasy points from **ffopportunity** (ffverse), expected-points data **CC-BY-SA-4.0** — derived artifacts inherit share-alike obligations.
+- Market ADP from **MyFantasyLeague.com** public developer API.
+- Current player status/injury context from the **Sleeper** API (non-commercial use).

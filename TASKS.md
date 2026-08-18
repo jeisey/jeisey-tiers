@@ -6,19 +6,23 @@ Do not check a phase complete until every exit criterion below passes.
 
 ## Phase 0 — Source/legal/feasibility proof
 
-- [ ] Verify current nflreadpy install/API and required datasets.
-- [ ] Verify nflverse/ffopportunity licenses and attribution obligations.
-- [ ] Probe required historical/current seasons and record schemas/counts/freshness.
-- [ ] Verify 2026 MyFantasyLeague ADP endpoint, filters, unauthenticated access behavior, sample-size/dispersion fields, rate expectations, and historical year access.
-- [ ] Verify Sleeper player/status endpoint behavior and attribution/rate guidance.
-- [ ] Re-check FantasyCalc current terms; decide `allowed_optional`, `benchmark_only`, or `disabled` for this non-commercial deployment.
-- [ ] Re-check FantasyPros-derived ECR terms; decide benchmark-only handling.
-- [ ] Determine whether free historical market data is sufficient for an arbitrage ML target across >= 3 chronological holdout seasons.
-- [ ] Document all source findings in `docs/DATA_SOURCES.md` and `config/source-registry.yaml` with retrieval date.
-- [ ] Add tiny permitted source fixtures or recorded schema examples for adapter tests.
-- [ ] Record any architecture-impacting source decision in `docs/DECISIONS.md`.
+Completed 2026-08-17. Evidence: `docs/source-probes/2026-08-17/report.json`; verified record: `docs/DATA_SOURCES.md` section 13; decisions: ADR-009 through ADR-015.
 
-**Exit gate:** every production/benchmark source has a verified policy decision and a tested access/schema path. Arbitrage ML feasibility is explicitly yes/no. No critical source assumption remains unverified.
+- [x] Verify current nflreadpy install/API and required datasets. — `nflreadpy==0.1.5`; 30 loader calls probed, all returned data.
+- [x] Verify nflverse/ffopportunity licenses and attribution obligations. — MIT client / CC-BY-4.0 data (FTN subsets CC-BY-SA-4.0); ffopportunity data CC-BY-SA-4.0, code GPL-3. Quoted evidence captured.
+- [x] Probe required historical/current seasons and record schemas/counts/freshness. — 2012→2026 coverage recorded per loader; found the 2025 depth-chart schema break and the missing preseason depth history (ADR-015).
+- [x] Verify 2026 MyFantasyLeague ADP endpoint, filters, unauthenticated access behavior, sample-size/dispersion fields, rate expectations, and historical year access. — all twelve registry questions answered; no `adp_sd` field, `DAYS` ignored, 2019–2025 all retrievable.
+- [x] Verify Sleeper player/status endpoint behavior and attribution/rate guidance. — 12,220 records / 14.6 MB; status+injury fields present; non-commercial terms and 1000 calls/minute guidance quoted.
+- [x] Re-check FantasyCalc current terms; decide policy. — **`disabled`** (ADR-013).
+- [x] Re-check FantasyPros-derived ECR terms; decide benchmark-only handling. — **`disabled` pending human terms review** (ADR-014).
+- [x] Determine whether free historical market data is sufficient for an arbitrage ML target across >= 3 chronological holdout seasons. — **No.** Dense but not point-in-time; baseline mode (ADR-010).
+- [x] Document all source findings in `docs/DATA_SOURCES.md` and `config/source-registry.yaml` with retrieval date.
+- [x] Add tiny permitted source fixtures or recorded schema examples for adapter tests. — 12 schema fixtures in `tests/fixtures/source_schemas/`; benchmark-only rows suppressed.
+- [x] Record any architecture-impacting source decision in `docs/DECISIONS.md`. — ADR-009 … ADR-015.
+
+**Exit gate:** met. Every production/benchmark source has a verified policy decision and a tested access/schema path; arbitrage ML feasibility is explicitly **no**; the market→canonical identity path is measured (100% of priced QB/RB/WR/TE) rather than assumed.
+
+Two follow-ups are recorded in `SESSION_STATE.md` and neither blocks Phase 1: registering an MFL developer client (needs an MFL account) and deciding whether the repository becomes public before Phase 7.
 
 ## Phase 1 — Repo scaffold, contracts, identity, adapters
 

@@ -1,5 +1,11 @@
-schema_version: "1.0"
+schema_version: "1.1"
 research_as_of: "2026-08-12"
+# Phase-0 live verification. Every `verified: true` entry below was proved by
+# scripts/source_probe.py; the evidence is docs/source-probes/2026-08-17/report.json and the
+# human-readable record is docs/DATA_SOURCES.md section 13.
+phase0_verified_as_of: "2026-08-17"
+phase0_evidence: "docs/source-probes/2026-08-17/report.json"
+phase0_probe_environment: "github-actions ubuntu-latest (see docs/DECISIONS.md ADR-009)"
 policy_states:
   - production_allowed
   - allowed_optional
@@ -7,15 +13,42 @@ policy_states:
   - verify_before_use
   - disabled
   - paid_optional
+# Global decisions derived from the Phase-0 evidence.
+decisions:
+  arbitrage_ml_historical_feasible: false
+  arbitrage_mode: baseline
+  arbitrage_ml_revisit_rule: >-
+    Revisit only after >= 3 draft seasons of our own append-only point-in-time market
+    snapshots exist (ADR-006/ADR-010). Historical MFL ADP is dense but not point-in-time.
+  current_status_sources: [nflreadpy_rosters, nflreadpy_depth_charts, sleeper]
+  market_identity_bridges: [espn_id_via_nflverse_rosters, mfl_id_via_ff_playerids]
+  non_commercial_deployment_required_by: [sleeper]
 sources:
   nflreadpy:
     policy: production_allowed
+    verified: true
+    verified_at: "2026-08-17"
     criticality: critical
     cost: free
     docs_url: "https://nflreadpy.nflverse.com/"
     repo_url: "https://github.com/nflverse/nflreadpy"
     update_schedule_url: "https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html"
-    expected_license: "MIT code; underlying nflverse data mostly CC-BY-4.0, FTN-derived subsets CC-BY-SA-4.0; verify each used dataset"
+    verified_version: "0.1.5"
+    license: "MIT (client code)"
+    data_license: "nflverse data broadly CC-BY-4.0; FTN-derived subsets CC-BY-SA-4.0"
+    license_evidence:
+      - "https://raw.githubusercontent.com/nflverse/nflreadpy/main/LICENSE.md"
+      - "https://raw.githubusercontent.com/nflverse/nflreadpy/main/README.md"
+      - "https://raw.githubusercontent.com/nflverse/nflreadr/main/README.md"
+    download_hosts:
+      - "github.com/nflverse/nflverse-data/releases/download/"
+      - "github.com/dynastyprocess/data/raw/master/files/"
+      - "github.com/ffverse/ffopportunity/releases/download/"
+      - "github.com/nflverse/espnscrapeR-data/raw/master/data/"
+    client_settings:
+      user_agent_env: NFLREADPY_USER_AGENT
+      cache_env: NFLREADPY_CACHE
+      cache_dir_env: NFLREADPY_CACHE_DIR
     roles:
       - player_stats
       - rosters
@@ -23,94 +56,231 @@ sources:
       - player_ids
       - draft_picks
       - combine
+      - current_status
       - nextgen_stats_optional
       - pfr_advstats_optional
-    verify_before_first_production_run:
-      - live_install
-      - required_loader_schemas
-      - historical_coverage
-      - current_freshness
-      - per_dataset_license
+    verified_loaders:
+      load_players: {rows: 25040}
+      load_ff_playerids: {rows: 12472, gsis_id_coverage: 0.64, mfl_id_coverage: 1.0}
+      load_teams: {rows: 36}
+      load_draft_picks: {rows: 12927, seasons: all}
+      load_combine: {rows: 8968, seasons: all}
+      load_player_stats_reg: {"2012": 1811, "2019": 1889, "2024": 1997, "2025": 2020}
+      load_player_stats_week: {"2025": 19422}
+      load_rosters: {"2012": 2120, "2019": 3114, "2025": 3137, "2026": 2930}
+      load_rosters_weekly: {"2019": 51632, "2025": 46849}
+      load_depth_charts: {"2019": 36308, "2024": 37312, "2025": 554215, "2026": 442872}
+      load_snap_counts: {"2019": 23862, "2025": 26612}
+      load_injuries: {"2019": 5392, "2024": 6215, "2025": 6068}
+      load_nextgen_stats_receiving: {"2025": 1402}
+      load_pfr_advstats_rec_season: {"2025": 531}
+      load_ftn_charting: {"2025": 47316}
+      load_schedules: {"2026": 272}
+    known_issues:
+      - id: depth_chart_schema_break_2025
+        detail: >-
+          Pre-2025 depth charts are weekly rows (season/club_code/week/depth_team/
+          depth_position); 2025+ are timestamped snapshots (dt/team/pos_abb/pos_rank/
+          pos_slot). Two normalisation paths required. See ADR-015.
+      - id: no_preseason_depth_before_2025
+        detail: >-
+          Pre-2025 depth charts start at week 1, so no draft-time anchor depth exists for
+          those seasons. Week-1 data postdates the anchor and leaks. See ADR-015.
+      - id: injuries_in_season_only
+        detail: >-
+          load_injuries returns weekly in-season reports and refuses seasons after 2025, so
+          it cannot supply current preseason status. See ADR-011.
+      - id: current_season_helper_lags
+        detail: >-
+          get_current_season() returned 2025 on 2026-08-17 while
+          get_current_season(roster=True) returned 2026. Never derive the draft-target
+          season from get_current_season().
+      - id: ff_playerids_unlicensed_mirror
+        detail: >-
+          load_ff_playerids is served from the dynastyprocess mirror, which publishes no
+          licence. Prefer nflverse-native ids; treat mfl_id as the secondary bridge.
   ffopportunity:
     policy: production_allowed
+    verified: true
+    verified_at: "2026-08-17"
     criticality: important
     cost: free
     docs_url: "https://ffopportunity.ffverse.com/"
     repo_url: "https://github.com/ffverse/ffopportunity"
-    expected_license: "expected-points models/data CC-BY-SA-4.0; package code GPL-3.0"
+    license: "package code GPL-3.0; expected-points models/data CC-BY-SA-4.0"
+    license_evidence:
+      - "https://raw.githubusercontent.com/ffverse/ffopportunity/main/DESCRIPTION"
+      - "https://raw.githubusercontent.com/ffverse/ffopportunity/main/README.md"
+    attribution_required: true
+    share_alike_obligation: true
     roles:
       - expected_fantasy_points
       - expected_opportunity
-    verify_before_first_production_run:
-      - historical_coverage
-      - nflreadpy_loader_behavior
-      - attribution_text
+    verified_loaders:
+      load_ff_opportunity_weekly: {"2019": 5633, "2024": 6005, "2025": 6054}
+    known_issues:
+      - id: season_column_is_string
+        detail: "season arrives as a string here but as an integer elsewhere; cast in the adapter."
   myfantasyleague_adp:
-    policy: verify_before_use
+    policy: production_allowed
+    verified: true
+    verified_at: "2026-08-17"
     criticality: critical_for_arbitrage
-    cost: free_public_api_expected
-    developer_info_url: "https://myfantasyleague.wordpress.com/2008/08/06/developer-api/"
-    current_api_base_hint: "https://api.myfantasyleague.com/"
-    expected_license: "verify current API terms/data reuse in Phase 0"
+    cost: free
+    developer_info_url: "https://api.myfantasyleague.com/2026/api_info"
+    api_base_url: "https://api.myfantasyleague.com/"
+    verified_endpoints:
+      current_adp: "https://api.myfantasyleague.com/{season}/export?TYPE=adp&JSON=1"
+      player_db: "https://api.myfantasyleague.com/{season}/export?TYPE=players&DETAILS=1&JSON=1"
+    authentication: none
+    license: >-
+      Published developer rules state access "is provided free to anyone to use in almost any
+      way", with harvesting league/user data, circumventing league rules, overloading the
+      service and collecting user information without permission forbidden. None applies to
+      reading the public ADP aggregate.
+    obligations:
+      - "Register an MFL developer client and send the registered User-Agent (OPEN ACTION: needs an MFL account)."
+      - "Handle HTTP 429 with backoff; MFL throttles over-limit clients."
+      - "Request the player database no more than once per day and cache it."
+      - "Do not request league or user data."
+    robots_txt: "disallows /fflnetdynamic*/ league directories only; /{season}/export is not restricted"
     roles:
       - current_adp
-      - historical_adp_candidate
-    phase0_required:
-      - exact_2026_adp_endpoint
-      - output_format
-      - scoring_filters
-      - league_size_filters
-      - date_window_filters
-      - sample_size_and_dispersion_fields
-      - player_id_crosswalk
-      - historical_year_access_2019_2025
-      - request_rate_expectations
-      - public_derived_output_rights
+    forbidden_roles:
+      - historical_arbitrage_training_target
+    response_fields:
+      player: [id, rank, averagePick, minPick, maxPick, draftsSelectedIn, draftSelPct]
+      envelope: [version, encoding, timestamp, totalDrafts, totalPicks]
+    field_notes:
+      adp_sd: "not provided; market_snapshot.adp_sd must be null"
+      dispersion: "derive adp_low/adp_high from minPick/maxPick"
+      sample_size: "draftsSelectedIn"
+      timestamp: "response generation time, NOT a data-as-of time"
+      player_ids: "no gsis_id; espn_id 82.1%, nfl_id 3.4%; team units (e.g. TMWR) must be filtered"
+    verified_filters:
+      honoured: [IS_PPR, FCOUNT, IS_MOCK, IS_KEEPER]
+      accepted_no_effect: [CUTOFF]
+      ignored: [DAYS]
+    verified_cohort_counts_2026:
+      unfiltered: 367
+      is_ppr_1: 370
+      is_ppr_0: 229
+      fcount_10: 325
+      fcount_12: 356
+      fcount_14: 242
+      is_ppr_0_and_fcount_10: 2
+      no_mock_no_keeper: 383
+    verified_history_rows:
+      "2019": 445
+      "2020": 442
+      "2021": 397
+      "2022": 391
+      "2023": 416
+      "2024": 413
+      "2025": 362
+    known_issues:
+      - id: history_not_point_in_time
+        detail: >-
+          Historical responses are season-long aggregates recomputed at request time and
+          DAYS is ignored (DAYS=30 on 2019 returned the unfiltered 445 rows / 15850 drafts),
+          so draft-time market cost cannot be reconstructed. See ADR-010.
+      - id: cohort_intersections_collapse
+        detail: >-
+          Scoring x league-size intersections can return almost nothing (IS_PPR=0&FCOUNT=10
+          returned 2 players). Cohorts must be labelled approximate. See ADR-012.
   sleeper:
     policy: production_allowed
+    verified: true
+    verified_at: "2026-08-17"
     criticality: important
-    cost: free
+    cost: free_non_commercial_only
     docs_url: "https://docs.sleeper.com/"
     api_base_url: "https://api.sleeper.app/v1/"
-    expected_license: "official public API; verify current terms; trending documentation requests attribution"
+    authentication: none
+    license: >-
+      Documented as a read-only API "free to use for non-commercial purposes"; commercial use
+      requires contacting Sleeper for licensing. Trending data requests attribution.
+    non_commercial_only: true
+    rate_guidance: "stay under 1000 API calls per minute or risk an IP block (documented)"
+    robots_txt: "no active restrictions (all directives commented out)"
+    verified_endpoints:
+      state: "https://api.sleeper.app/v1/state/nfl"
+      players: "https://api.sleeper.app/v1/players/nfl"
+      trending_add: "https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=25"
     roles:
       - current_player_map
       - current_status
-      - current_injury_sanity
+      - current_injury_context
+      - anchor_season_cross_check
       - trending_optional
-    cadence_guidance: "player map no more than once per day per current docs"
-    verify_before_first_production_run:
-      - player_fields
-      - injury_status_fields
-      - crosswalk_coverage
-      - attribution_if_trending
+    cadence_guidance: "player map at most once per day; payload is ~14.6 MB"
+    verified_coverage:
+      player_records: 12220
+      payload_bytes: 14640182
+      player_id_coverage: 1.0
+      sportradar_id_coverage: 0.947
+      espn_id_coverage: 0.551
+      gsis_id_coverage: 0.319
+      injury_status_populated: 0.051
+    status_fields:
+      - status
+      - injury_status
+      - injury_body_part
+      - injury_notes
+      - injury_start_date
+      - practice_participation
+      - practice_description
+      - depth_chart_order
+      - depth_chart_position
+      - team_changed_at
+    known_issues:
+      - id: low_gsis_coverage
+        detail: >-
+          Only 31.9% of Sleeper records carry gsis_id, so join nflverse -> Sleeper on
+          sleeper_id (82% present on current skill rosters), never the reverse.
+      - id: whitespace_in_ids
+        detail: >-
+          Observed gsis_id values with a leading space (" 00-0035057"). Trim and validate
+          ids; fail closed on malformed values.
   fantasycalc:
-    policy: allowed_optional
+    policy: disabled
+    verified: true
+    verified_at: "2026-08-17"
     criticality: optional
-    cost: free_noncommercial_under_current_terms
+    cost: n_a_disabled
     rankings_url: "https://fantasycalc.com/redraft-rankings"
     terms_url: "https://fantasycalc.com/terms-of-usage"
-    expected_license: "copyrighted FantasyCalc data; current terms allow non-commercial website use; commercial use requires permission"
-    roles:
-      - secondary_market_signal
-      - cross_source_market_divergence
-    safeguards:
-      - "Use only an explicitly permitted access/download mechanism."
-      - "Do not reverse-engineer undocumented/private API access merely because an endpoint is reachable."
-      - "Disable before monetization until rights are re-cleared."
+    decision_ref: "docs/DECISIONS.md ADR-013"
+    decision_reason: >-
+      No documented public API or published download mechanism, and the terms page is
+      client-rendered (113878 bytes with no terms text in the served markup) so the policy
+      cannot be verified programmatically. Reachability is not sanction.
+    revisit_if:
+      - "FantasyCalc publishes a documented reuse mechanism."
+      - "A human records a reading of the current terms and any required written permission."
   fantasypros_ecr_via_dynastyprocess:
-    policy: benchmark_only
+    policy: disabled
+    verified: true
+    verified_at: "2026-08-17"
     criticality: optional
-    cost: free_access_path_but_separate_rights
-    nflreadpy_docs_url: "https://nflreadpy.nflverse.com/api/load_functions/"
-    expected_license: "FantasyPros ownership/terms apply; verify benchmark use; no raw public redistribution by default"
-    roles:
-      - historical_consensus_benchmark
+    cost: n_a_disabled
+    nflreadpy_loader: "load_ff_rankings(type='draft')"
+    mirror_url: "https://github.com/dynastyprocess/data"
+    decision_ref: "docs/DECISIONS.md ADR-014"
+    decision_reason: >-
+      Reachable (5849 rows) but the redistribution mirror publishes no licence or terms, and
+      the FantasyPros terms page is client-rendered (215237 bytes, no terms text in markup).
+      docs/DATA_SOURCES.md section 8 requires disabling the benchmark when terms are unclear.
     forbidden_roles:
       - intrinsic_feature
       - critical_production_dependency
+      - public_artifact_field
+      - internal_benchmark_until_reviewed
+    revisit_if:
+      - "A human reads the current FantasyPros terms and records a benchmark-use decision."
   sportsdataio:
     policy: paid_optional
+    verified: false
     criticality: optional
     cost: commercial
     nfl_url: "https://sportsdata.io/nfl-api"
@@ -122,3 +292,4 @@ sources:
       - news
       - odds_optional
     value_unlock: "operational reliability, maintained current-state feeds, SLA/support"
+    phase0_note: "Not probed; no V1 dependency. Free stack covered every required role."

@@ -1,0 +1,1139 @@
+{
+  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "check_id": "nflverse_ff_opportunity_2024",
+  "columns": [
+    {
+      "dtype": "String",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "posteam",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "game_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_id",
+      "null_fraction": 0.0698
+    },
+    {
+      "dtype": "String",
+      "name": "full_name",
+      "null_fraction": 0.0698
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0698
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_attempt",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_attempt",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_attempt",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_completions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "receptions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_completions_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "receptions_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_yards_gained",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_yards_gained",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_gained",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_yards_gained_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_yards_gained_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_gained_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_touchdown",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_touchdown",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_touchdown",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_touchdown_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_touchdown_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_touchdown_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_two_point_conv",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_two_point_conv",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_two_point_conv",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_two_point_conv_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_two_point_conv_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_two_point_conv_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_first_down",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_first_down",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_first_down",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_first_down_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_first_down_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_first_down_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_interception",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_interception",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_interception_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_interception_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fumble_lost",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fumble_lost",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_fantasy_points_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fantasy_points_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fantasy_points_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_fantasy_points",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fantasy_points",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fantasy_points",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_yards_gained",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_yards_gained_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_touchdown",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_touchdown_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_first_down",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_first_down_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_fantasy_points",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_fantasy_points_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_completions_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "receptions_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_yards_gained_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_yards_gained_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_gained_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_touchdown_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_touchdown_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_touchdown_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_two_point_conv_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_two_point_conv_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_two_point_conv_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_first_down_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_first_down_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_first_down_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_interception_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_interception_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_fantasy_points_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fantasy_points_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fantasy_points_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_yards_gained_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_touchdown_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_first_down_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_fantasy_points_diff",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_attempt_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_attempt_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_attempt_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_air_yards_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_air_yards_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_completions_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "receptions_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_completions_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "receptions_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_yards_gained_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_yards_gained_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_gained_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_yards_gained_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_yards_gained_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_gained_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_touchdown_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_touchdown_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_touchdown_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_touchdown_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_touchdown_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_touchdown_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_two_point_conv_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_two_point_conv_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_two_point_conv_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_two_point_conv_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_two_point_conv_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_two_point_conv_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_first_down_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_first_down_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_first_down_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_first_down_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_first_down_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_first_down_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_interception_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_interception_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_interception_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_interception_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fumble_lost_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fumble_lost_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_fantasy_points_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fantasy_points_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fantasy_points_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_fantasy_points_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fantasy_points_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fantasy_points_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_completions_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "receptions_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_yards_gained_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_yards_gained_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_gained_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_touchdown_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_touchdown_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_touchdown_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_two_point_conv_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_two_point_conv_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_two_point_conv_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_first_down_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_first_down_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_first_down_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_interception_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_interception_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pass_fantasy_points_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rec_fantasy_points_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_fantasy_points_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_yards_gained_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_yards_gained_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_yards_gained_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_touchdown_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_touchdown_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_touchdown_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_first_down_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_first_down_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_first_down_diff_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_fantasy_points_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_fantasy_points_exp_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_fantasy_points_diff_team",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {
+    "position_distinct": 9,
+    "position_max": "WR",
+    "position_min": "DB",
+    "season_distinct": 1,
+    "season_max": "2024",
+    "season_min": "2024",
+    "week_distinct": 22,
+    "week_max": 22.0,
+    "week_min": 1.0
+  },
+  "record_count": 6005,
+  "sample_rows": [
+    {
+      "full_name": "Kyler Murray",
+      "game_id": "2024_01_ARI_BUF",
+      "pass_air_yards": 191.0,
+      "pass_air_yards_team": 191.0,
+      "pass_attempt": 31.0,
+      "pass_attempt_team": 31.0,
+      "pass_completions": 21.0,
+      "pass_completions_diff": 0.08999999999999986,
+      "pass_completions_diff_team": 0.08999999999999986,
+      "pass_completions_exp": 20.91,
+      "pass_completions_exp_team": 20.91,
+      "pass_completions_team": 21.0,
+      "pass_fantasy_points": 10.48,
+      "pass_fantasy_points_diff": -1.1999999999999993,
+      "pass_fantasy_points_diff_team": -1.1999999999999993,
+      "pass_fantasy_points_exp": 11.68,
+      "pass_fantasy_points_exp_team": 11.68,
+      "pass_fantasy_points_team": 10.48,
+      "pass_first_down": 10.0,
+      "pass_first_down_diff": -1.67,
+      "pass_first_down_diff_team": -1.67,
+      "pass_first_down_exp": 11.67,
+      "pass_first_down_exp_team": 11.67,
+      "pass_first_down_team": 10.0,
+      "pass_interception": 0.0,
+      "pass_interception_diff": -0.51,
+      "pass_interception_diff_team": -0.51,
+      "pass_interception_exp": 0.51,
+      "pass_interception_exp_team": 0.51,
+      "pass_interception_team": 0.0,
+      "pass_touchdown": 1.0,
+      "pass_touchdown_diff": -0.09000000000000008,
+      "pass_touchdown_diff_team": -0.09000000000000008,
+      "pass_touchdown_exp": 1.09,
+      "pass_touchdown_exp_team": 1.09,
+      "pass_touchdown_team": 1.0,
+      "pass_two_point_conv": 0.0,
+      "pass_two_point_conv_diff": 0.0,
+      "pass_two_point_conv_diff_team": 0.0,
+      "pass_two_point_conv_exp": 0.0,
+      "pass_two_point_conv_exp_team": 0.0,
+      "pass_two_point_conv_team": 0.0,
+      "pass_yards_gained": 162.0,
+      "pass_yards_gained_diff": -47.16,
+      "pass_yards_gained_diff_team": -47.16,
+      "pass_yards_gained_exp": 209.16,
+      "pass_yards_gained_exp_team": 209.16,
+      "pass_yards_gained_team": 162.0,
+      "player_id": "00-0035228",
+      "position": "QB",
+      "posteam": "ARI",
+      "rec_air_yards": 0.0,
+      "rec_air_yards_team": 191.0,
+      "rec_attempt": 0.0,
+      "rec_attempt_team": 31.0,
+      "rec_fantasy_points": 0.0,
+      "rec_fantasy_points_diff": 0.0,
+      "rec_fantasy_points_diff_team": -5.130000000000001,
+      "rec_fantasy_points_exp": 0.0,
+      "rec_fantasy_points_exp_team": 48.33,
+      "rec_fantasy_points_team": 43.199999999999996,
+      "rec_first_down": 0.0,
+      "rec_first_down_diff": 0.0,
+      "rec_first_down_diff_team": -1.67,
+      "rec_first_down_exp": 0.0,
+      "rec_first_down_exp_team": 11.67,
+      "rec_first_down_team": 10.0,
+      "rec_fumble_lost": 0.0,
+      "rec_fumble_lost_team": 0.0,
+      "rec_interception": 0.0,
+      "rec_interception_diff": 0.0,
+      "rec_interception_diff_team": -0.51,
+      "rec_interception_exp": 0.0,
+      "rec_interception_exp_team": 0.51,
+      "rec_interception_team": 0.0,
+      "rec_touchdown": 0.0,
+      "rec_touchdown_diff": 0.0,
+      "rec_touchdown_diff_team": -0.08999999999999993,
+      "rec_touchdown_exp": 0.0,
+      "rec_touchdown_exp_team": 1.09,
+      "rec_touchdown_team": 1.0,
+      "rec_two_point_conv": 0.0,
+      "rec_two_point_conv_diff": 0.0,
+      "rec_two_point_conv_diff_team": 0.0,
+      "rec_two_point_conv_exp": 0.0,
+      "rec_two_point_conv_exp_team": 0.0,
+      "rec_two_point_conv_team": 0.0,
+      "rec_yards_gained": 0.0,
+      "rec_yards_gained_diff": 0.0,
+      "rec_yards_gained_diff_team": -47.18,
+      "rec_yards_gained_exp": 0.0,
+      "rec_yards_gained_exp_team": 209.18,
+      "rec_yards_gained_team": 162.0,
+      "receptions": 0.0,
+      "receptions_diff": 0.0,
+      "receptions_diff_team": 0.09999999999999998,
+      "receptions_exp": 0.0,
+      "receptions_exp_team": 20.9,
+      "receptions_team": 21.0,
+      "rush_attempt": 5.0,
+      "rush_attempt_team": 25.0,
+      "rush_fantasy_points": 5.7,
+      "rush_fantasy_points_diff": 2.47,
+      "rush_fantasy_points_diff_team": 2.7500000000000004,
+      "rush_fantasy_points_exp": 3.23,
+      "rush_fantasy_points_exp_team": 17.65,
+      "rush_fantasy_points_team": 20.4,
+      "rush_first_down": 3.0,
+      "rush_first_down_diff": 1.19,
+      "rush_first_down_diff_team": 0.53,
+      "rush_first_down_exp": 1.81,
+      "rush_first_down_exp_team": 6.47,
+      "rush_first_down_team": 7.0,
+      "rush_fumble_lost": 0.0,
+      "rush_fumble_lost_team": 0.0,
+      "rush_touchdown": 0.0,
+      "rush_touchdown_diff": -0.04,
+      "rush_touchdown_diff_team": 0.09000000000000005,
+      "rush_touchdown_exp": 0.04,
+      "rush_touchdown_exp_team": 0.9099999999999999,
+      "rush_touchdown_team": 1.0,
+      "rush_two_point_conv": 0.0,
+      "rush_two_point_conv_diff": 0.0,
+      "rush_two_point_conv_diff_team": 0.75,
+      "rush_two_point_conv_exp": 0.0,
+      "rush_two_point_conv_exp_team": 0.25,
+      "rush_two_point_conv_team": 1.0,
+      "rush_yards_gained": 57.0,
+      "rush_yards_gained_diff": 27.11,
+      "rush_yards_gained_diff_team": 8.180000000000003,
+      "rush_yards_gained_exp": 29.89,
+      "rush_yards_gained_exp_team": 115.82,
+      "rush_yards_gained_team": 124.0,
+      "season": "2024",
+      "total_fantasy_points": 16.18,
+      "total_fantasy_points_diff": 1.2699999999999996,
+      "total_fantasy_points_diff_team": -2.3800000000000003,
+      "total_fantasy_points_exp": 14.91,
+      "total_fantasy_points_exp_team": 65.97999999999999,
+      "total_fantasy_points_team": 63.599999999999994,
+      "total_first_down": 13.0,
+      "total_first_down_diff": -0.4800000000000004,
+      "total_first_down_diff_team": -1.14,
+      "total_first_down_exp": 13.48,
+      "total_first_down_exp_team": 18.14,
+      "total_first_down_team": 17.0,
+      "total_touchdown": 1.0,
+      "total_touchdown_diff": -0.13000000000000012,
+      "total_touchdown_diff_team": 1.249000902703301e-16,
+      "total_touchdown_exp": 1.1300000000000001,
+      "total_touchdown_exp_team": 2.0,
+      "total_touchdown_team": 2.0,
+      "total_yards_gained": 219.0,
+      "total_yards_gained_diff": -20.05000000000001,
+      "total_yards_gained_diff_team": -39.0,
+      "total_yards_gained_exp": 239.05,
+      "total_yards_gained_exp_team": 325.0,
+      "total_yards_gained_team": 286.0,
+      "week": 1.0
+    },
+    {
+      "full_name": "James Conner",
+      "game_id": "2024_01_ARI_BUF",
+      "pass_air_yards": 0.0,
+      "pass_air_yards_team": 191.0,
+      "pass_attempt": 0.0,
+      "pass_attempt_team": 31.0,
+      "pass_completions": 0.0,
+      "pass_completions_diff": 0.0,
+      "pass_completions_diff_team": 0.08999999999999986,
+      "pass_completions_exp": 0.0,
+      "pass_completions_exp_team": 20.91,
+      "pass_completions_team": 21.0,
+      "pass_fantasy_points": 0.0,
+      "pass_fantasy_points_diff": 0.0,
+      "pass_fantasy_points_diff_team": -1.1999999999999993,
+      "pass_fantasy_points_exp": 0.0,
+      "pass_fantasy_points_exp_team": 11.68,
+      "pass_fantasy_points_team": 10.48,
+      "pass_first_down": 0.0,
+      "pass_first_down_diff": 0.0,
+      "pass_first_down_diff_team": -1.67,
+      "pass_first_down_exp": 0.0,
+      "pass_first_down_exp_team": 11.67,
+      "pass_first_down_team": 10.0,
+      "pass_interception": 0.0,
+      "pass_interception_diff": 0.0,
+      "pass_interception_diff_team": -0.51,
+      "pass_interception_exp": 0.0,
+      "pass_interception_exp_team": 0.51,
+      "pass_interception_team": 0.0,
+      "pass_touchdown": 0.0,
+      "pass_touchdown_diff": 0.0,
+      "pass_touchdown_diff_team": -0.09000000000000008,
+      "pass_touchdown_exp": 0.0,
+      "pass_touchdown_exp_team": 1.09,
+      "pass_touchdown_team": 1.0,
+      "pass_two_point_conv": 0.0,
+      "pass_two_point_conv_diff": 0.0,
+      "pass_two_point_conv_diff_team": 0.0,
+      "pass_two_point_conv_exp": 0.0,
+      "pass_two_point_conv_exp_team": 0.0,
+      "pass_two_point_conv_team": 0.0,
+      "pass_yards_gained": 0.0,
+      "pass_yards_gained_diff": 0.0,
+      "pass_yards_gained_diff_team": -47.16,
+      "pass_yards_gained_exp": 0.0,
+      "pass_yards_gained_exp_team": 209.16,
+      "pass_yards_gained_team": 162.0,
+      "player_id": "00-0033553",
+      "position": "RB",
+      "posteam": "ARI",
+      "rec_air_yards": -10.0,
+      "rec_air_yards_team": 191.0,
+      "rec_attempt": 4.0,
+      "rec_attempt_team": 31.0,
+      "rec_fantasy_points": 6.3,
+      "rec_fantasy_points_diff": 0.6200000000000001,
+      "rec_fantasy_points_diff_team": -5.130000000000001,
+      "rec_fantasy_points_exp": 5.68,
+      "rec_fantasy_points_exp_team": 48.33,
+      "rec_fantasy_points_team": 43.199999999999996,
+      "rec_first_down": 1.0,
+      "rec_first_down_diff": -0.15999999999999992,
+      "rec_first_down_diff_team": -1.67,
+      "rec_first_down_exp": 1.16,
+      "rec_first_down_exp_team": 11.67,
+      "rec_first_down_team": 10.0,
+      "rec_fumble_lost": 0.0,
+      "rec_fumble_lost_team": 0.0,
+      "rec_interception": 0.0,
+      "rec_interception_diff": -0.02,
+      "rec_interception_diff_team": -0.51,
+      "rec_interception_exp": 0.02,
+      "rec_interception_exp_team": 0.51,
+      "rec_interception_team": 0.0,
+      "rec_touchdown": 0.0,
+      "rec_touchdown_diff": -0.01,
+      "rec_touchdown_diff_team": -0.08999999999999993,
+      "rec_touchdown_exp": 0.01,
+      "rec_touchdown_exp_team": 1.09,
+      "rec_touchdown_team": 1.0,
+      "rec_two_point_conv": 0.0,
+      "rec_two_point_conv_diff": 0.0,
+      "rec_two_point_conv_diff_team": 0.0,
+      "rec_two_point_conv_exp": 0.0,
+      "rec_two_point_conv_exp_team": 0.0,
+      "rec_two_point_conv_team": 0.0,
+      "rec_yards_gained": 33.0,
+      "rec_yards_gained_diff": 10.05,
+      "rec_yards_gained_diff_team": -47.18,
+      "rec_yards_gained_exp": 22.95,
+      "rec_yards_gained_exp_team": 209.18,
+      "rec_yards_gained_team": 162.0,
+      "receptions": 3.0,
+      "receptions_diff": -0.31999999999999984,
+      "receptions_diff_team": 0.09999999999999998,
+      "receptions_exp": 3.32,
+      "receptions_exp_team": 20.9,
+      "receptions_team": 21.0,
+      "rush_attempt": 16.0,
+      "rush_attempt_team": 25.0,
+      "rush_fantasy_points": 13.0,
+      "rush_fantasy_points_diff": 1.4000000000000004,
+      "rush_fantasy_points_diff_team": 2.7500000000000004,
+      "rush_fantasy_points_exp": 11.6,
+      "rush_fantasy_points_exp_team": 17.65,
+      "rush_fantasy_points_team": 20.4,
+      "rush_first_down": 3.0,
+      "rush_first_down_diff": -0.7999999999999998,
+      "rush_first_down_diff_team": 0.53,
+      "rush_first_down_exp": 3.8,
+      "rush_first_down_exp_team": 6.47,
+      "rush_first_down_team": 7.0,
+      "rush_fumble_lost": 0.0,
+      "rush_fumble_lost_team": 0.0,
+      "rush_touchdown": 1.0,
+      "rush_touchdown_diff": 0.30000000000000004,
+      "rush_touchdown_diff_team": 0.09000000000000005,
+      "rush_touchdown_exp": 0.7,
+      "rush_touchdown_exp_team": 0.9099999999999999,
+      "rush_touchdown_team": 1.0,
+      "rush_two_point_conv": 1.0,
+      "rush_two_point_conv_diff": 0.75,
+      "rush_two_point_conv_diff_team": 0.75,
+      "rush_two_point_conv_exp": 0.25,
+      "rush_two_point_conv_exp_team": 0.25,
+      "rush_two_point_conv_team": 1.0,
+      "rush_yards_gained": 50.0,
+      "rush_yards_gained_diff": -17.909999999999997,
+      "rush_yards_gained_diff_team": 8.180000000000003,
+      "rush_yards_gained_exp": 67.91,
+      "rush_yards_gained_exp_team": 115.82,
+      "rush_yards_gained_team": 124.0,
+      "season": "2024",
+      "total_fantasy_points": 19.3,
+      "total_fantasy_points_diff": 2.0199999999999996,
+      "total_fantasy_points_diff_team": -2.3800000000000003,
+      "total_fantasy_points_exp": 17.28,
+      "total_fantasy_points_exp_team": 65.97999999999999,
+      "total_fantasy_points_team": 63.599999999999994,
+      "total_first_down": 4.0,
+      "total_first_down_diff": -0.96,
+      "total_first_down_diff_team": -1.14,
+      "total_first_down_exp": 4.96,
+      "total_first_down_exp_team": 18.14,
+      "total_first_down_team": 17.0,
+      "total_touchdown": 1.0,
+      "total_touchdown_diff": 0.29000000000000004,
+      "total_touchdown_diff_team": 1.249000902703301e-16,
+      "total_touchdown_exp": 0.71,
+      "total_touchdown_exp_team": 2.0,
+      "total_touchdown_team": 2.0,
+      "total_yards_gained": 83.0,
+      "total_yards_gained_diff": -7.859999999999999,
+      "total_yards_gained_diff_team": -39.0,
+      "total_yards_gained_exp": 90.86,
+      "total_yards_gained_exp_team": 325.0,
+      "total_yards_gained_team": 286.0,
+      "week": 1.0
+    }
+  ],
+  "source_id": "nflreadpy",
+  "target": "nflreadpy.load_ff_opportunity({\"seasons\": [2024], \"stat_type\": \"weekly\"})"
+}
