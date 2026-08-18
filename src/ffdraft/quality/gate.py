@@ -75,8 +75,13 @@ class QualityGate:
         }
 
     def warning_messages(self) -> list[str]:
-        """Warning text for ``build_metadata.warnings``."""
-        return [f"{check.check_id}: {check.message}" for check in self.warnings]
+        """Warning text for ``build_metadata.warnings``.
+
+        The stage is part of the message because the same check fires at several stages -
+        identity ambiguity is reported once for the market join and once for Sleeper - and
+        two identical lines in the UI tell a reader there is one problem when there are two.
+        """
+        return [f"{check.check_id} [{check.stage}]: {check.message}" for check in self.warnings]
 
     def to_dict(self) -> dict[str, Any]:
         return {

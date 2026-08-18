@@ -13,10 +13,14 @@ data/raw/
 *.parquet
 *.csv.gz
 
-# Node (Phase 1+)
+# Node
 node_modules/
 web/dist/
+# Generated public artifacts. Reproducible from `ffdraft build-fixture-artifacts` or the
+# daily refresh, so they stay out of source commits (AGENTS.md section 15). The committed
+# fixture artifacts under tests/fixtures/artifacts/ are a different thing and are tracked.
 web/public/data/
+*.tsbuildinfo
 
 # Editor / OS noise
 .DS_Store

@@ -28,6 +28,8 @@ Jobs:
 
 No live data vendor access in normal PR CI.
 
+> **Phase-1 status: implemented as a two-job subset.** `.github/workflows/ci.yml` runs a `python` job (uv sync --frozen, ruff check, ruff format --check, mypy, pytest, `ffdraft config-check`, the fixture mini-pipeline, `validate-artifacts`, and a staleness check on the committed golden artifacts) and a `web` job (npm ci, lint, typecheck, vitest, build, plus a project-Pages base-path build whose emitted asset URLs are asserted per section 11 of the architecture). Permissions are `contents: read` with no per-job elevation. Playwright smoke tests arrive with the Phase-6 frontend; caching and the richer workflow summary arrive in Phase 7.
+
 ### 2.2 `daily-refresh.yml`
 
 Triggers:

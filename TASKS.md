@@ -26,16 +26,20 @@ Two follow-ups are recorded in `SESSION_STATE.md` and neither blocks Phase 1: re
 
 ## Phase 1 — Repo scaffold, contracts, identity, adapters
 
-- [ ] Initialize Python package, `pyproject.toml`, `uv.lock`, lint/test config.
-- [ ] Initialize Vite/React/TypeScript app and lockfile.
-- [ ] Implement typed source adapter interfaces.
-- [ ] Implement canonical player identity/crosswalk layer.
-- [ ] Implement schema/data-quality framework.
-- [ ] Finalize JSON Schemas in `schemas/` and serializer skeletons.
-- [ ] Add fixture-based adapter/identity/contract tests.
-- [ ] Add minimal CI that runs Python + frontend checks.
+Completed 2026-08-18. Evidence: `.github/workflows/ci.yml`; commands and results recorded in `SESSION_STATE.md`; decisions ADR-016 through ADR-020 plus amendments to ADR-012 and ADR-014.
 
-**Exit gate:** clean clone installs; fixture-only pipeline resolves player identities and emits schema-valid example artifacts with no network access.
+- [x] Initialize Python package, `pyproject.toml`, `uv.lock`, lint/test config. — `src/ffdraft/` (hatchling, editable), `ffdraft` console script, ruff + mypy `--strict` + pytest. Added `jsonschema`, `pydantic`, `rfc3339-validator`; modeling deps deliberately deferred to Phase 3/4.
+- [x] Initialize Vite/React/TypeScript app and lockfile. — root `package.json` + `package-lock.json`, Vite 7 rooted at `web/`, TypeScript strict (plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), ESLint 9 flat config with type-checked rules, Vitest + Testing Library. D3/TanStack Table arrive with the Phase-6 UI.
+- [x] Implement typed source adapter interfaces. — `SourceAdapter` protocol with a pure `normalize` and an I/O `fetch`; nflverse rosters / ff_playerids / depth charts (both ADR-015 eras), Sleeper player map + state, MFL ADP + player directory. Each adapter declares the upstream columns it reads and is tested against the Phase-0 recorded schemas.
+- [x] Implement canonical player identity/crosswalk layer. — namespaced `player_id`, id trimming and format validation, poisoned crosswalk indexes, two-bridge market resolution failing closed on disagreement, nflverse → Sleeper joins with a fatal `gsis_id` cross-check, team units barred from player identity, name matching as diagnostics only, human-reviewed alias file (ADR-019).
+- [x] Implement schema/data-quality framework. — Polars `FrameContract`s, structured `QualityCheck` records, the collecting `QualityGate`, reusable semantic checks, launch thresholds, and the forbidden-feature guard over both names and source lineage.
+- [x] Finalize JSON Schemas in `schemas/` and serializer skeletons. — added `artifact_envelope.schema.json` (ADR-020); deterministic JSON/CSV serializers driven by the schemas themselves; `validate-artifacts` enforces schema **and** semantics.
+- [x] Add fixture-based adapter/identity/contract tests. — 254 network-free Python tests plus 31 frontend tests; synthetic fixtures cover every `docs/DATA_CONTRACTS.md` section 14 case and each fail-closed path.
+- [x] Add minimal CI that runs Python + frontend checks. — `.github/workflows/ci.yml`, two jobs, `contents: read`, no live vendor access.
+
+**Exit gate:** met. From a clean clone with no vendor network, `uv sync --frozen` and `npm ci` install deterministically; fixtures flow source → adapter → identity → contracts → serialization; generated artifacts pass JSON Schema and semantic validation; deliberately conflicting identity fixtures fail closed for their intended reasons and are excluded from public output; both toolchains lint, type-check, test and build.
+
+Phase-1 scope boundaries held: no historical feature engineering, no model training, no VORP simulation, no arbitrage logic, no bespoke charts, no Pages deployment. The fixture pipeline's valuation is an explicitly labelled `fixture-stub-0` serialization exerciser, not a model.
 
 ## Phase 2 — Historical feature dataset
 

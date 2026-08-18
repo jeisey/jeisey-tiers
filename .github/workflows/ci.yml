@@ -1,0 +1,139 @@
+# Phase-1 continuous integration.
+#
+# Both gates run against committed fixtures with **no live vendor access**, which is the
+# property `docs/OPERATIONS.md` section 2.1 asks for: a pull request must be checkable when
+# MyFantasyLeague is down, and a source outage must never look like a code failure. The only
+# network this workflow needs is PyPI and the npm registry.
+#
+# Phase 7 completes this file (caching, richer summaries) and adds `daily-refresh.yml` and
+# `retrain.yml`. The repository is private through Phase 6 (ADR-016), so nothing here
+# assumes public-repository runner economics, and no job requests Pages permissions.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "claude/**"
+    paths-ignore:
+      - "docs/source-probes/**"
+  workflow_dispatch:
+
+# Least privilege by default (docs/SECURITY_LICENSE.md section 3). No job here elevates it.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.8.17"
+
+jobs:
+  python:
+    name: Python lint, types, tests, fixture pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Official actions plus a pinned pip install; no `curl | bash`
+      # (docs/SECURITY_LICENSE.md sections 4 and 5).
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run mypy
+
+      - name: Tests
+        run: uv run pytest
+
+      - name: Configuration check
+        run: uv run ffdraft config-check
+
+      # The Phase-1 exit gate, executed end to end: fixtures flow through normalization,
+      # canonical identity, contracts and serialization, then the artifacts are validated
+      # against the repository JSON Schemas and the semantic rules.
+      - name: Fixture mini-pipeline
+        run: uv run ffdraft build-fixture-artifacts --out web/public/data --git-sha "${GITHUB_SHA}"
+
+      - name: Validate generated artifacts
+        run: uv run python -m ffdraft.cli validate-artifacts web/public/data
+
+      - name: Confirm committed golden artifacts are current
+        run: |
+          set -euo pipefail
+          uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000
+          if ! git diff --quiet -- tests/fixtures/artifacts; then
+            echo "::error::Committed golden artifacts are stale. Regenerate with:"
+            echo "  uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000"
+            git --no-pager diff --stat -- tests/fixtures/artifacts
+            exit 1
+          fi
+
+      - name: Upload generated artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fixture-artifacts-${{ github.run_id }}
+          path: web/public/data
+          if-no-files-found: warn
+          retention-days: 7
+
+  web:
+    name: Frontend lint, types, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      # The frontend tests read the committed golden artifacts, so this also checks that the
+      # TypeScript contracts and the Python serializers still describe the same records.
+      - name: Tests
+        run: npm run test -- --run
+
+      - name: Build
+        run: npm run build
+
+      # docs/ARCHITECTURE.md section 11: the build must work for a project Pages path as
+      # well as a custom domain. Asserting the emitted asset URLs is the cheap way to know.
+      - name: Build for a project Pages base path
+        env:
+          VITE_BASE_PATH: /jeisey-tiers/
+        run: |
+          set -euo pipefail
+          npm run build
+          if ! grep -q 'src="/jeisey-tiers/assets/' web/dist/index.html; then
+            echo "::error::built asset URLs do not respect VITE_BASE_PATH"
+            cat web/dist/index.html
+            exit 1
+          fi

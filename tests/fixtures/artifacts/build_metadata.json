@@ -50,11 +50,11 @@
     "warnings": 5
   },
   "warnings": [
-    "market.cohort_approximate: cohort is approximate; the UI must not present it as preset-specific ADP (ADR-012)",
-    "identity.crosswalk_id_conflict: the secondary crosswalk disagrees with an nflverse-native id; the whole mirror row is rejected and the disagreement recorded",
-    "identity.ambiguous_records: ambiguous identities must never reach model or public layers",
-    "identity.unresolved_records: records that could not be resolved are excluded from production",
-    "identity.ambiguous_records: ambiguous identities must never reach model or public layers"
+    "market.cohort_approximate [myfantasyleague_adp]: cohort is approximate; the UI must not present it as preset-specific ADP (ADR-012)",
+    "identity.crosswalk_id_conflict [identity.registry]: the secondary crosswalk disagrees with an nflverse-native id; the whole mirror row is rejected and the disagreement recorded",
+    "identity.ambiguous_records [identity.market]: ambiguous identities must never reach model or public layers",
+    "identity.unresolved_records [identity.market]: records that could not be resolved are excluded from production",
+    "identity.ambiguous_records [identity.sleeper]: ambiguous identities must never reach model or public layers"
   ],
   "methodology_version": "phase1-fixture-0"
 }

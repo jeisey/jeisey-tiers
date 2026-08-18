@@ -52,6 +52,12 @@ Every external record gets one status:
 
 Production model/artifact eligibility excludes ambiguous/unresolved records unless a documented non-player entity contract applies.
 
+> **Phase-1 implementation (ADR-019).** `ffdraft.identity` emits a `ResolutionOutcome` per external record carrying the status above plus a machine-readable `reason`, the bridges that agreed or disagreed, name candidates as diagnostics, and quality flags. Three details are load-bearing:
+>
+> - a non-resolved outcome **cannot** carry a `player_id` — the type rejects it, so a caller can never use a value the resolver refused to stand behind;
+> - `resolved_reviewed_alias` comes only from `config/identity-aliases.yaml`, a human-reviewed file. An alias never overrides an id bridge: if the bridges resolve to a different player the record fails closed as `ambiguous` (`alias_conflicts_with_bridge`), so a stale entry cannot outvote live data;
+> - team units (MFL `Def`/`TM*`) are classified as the documented non-player entity contract and reported separately from identity failures, rather than depressing the coverage metric.
+
 ## 3. Draft-time anchor
 
 Every historical player-season row has:
@@ -318,6 +324,34 @@ Use semantic-ish integer strings for data contracts, e.g. `1.0`.
 
 Public artifact top level or metadata must state schema version. Frontend rejects an unsupported major version with a clear error instead of attempting best-effort rendering.
 
+### 13.1 The artifact envelope (ADR-020)
+
+Every records-bearing artifact is wrapped in the envelope described by `schemas/artifact_envelope.schema.json`:
+
+```json
+{
+  "schema_version": "1.0",
+  "artifact": "tiers",
+  "record_schema": "tier_record",
+  "build_id": "...",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 32,
+  "arbitrage_mode": "baseline",
+  "records": [ ... ]
+}
+```
+
+The record schemas in `schemas/` are unchanged — they describe one record and the envelope wraps them. Validation is therefore two steps: the envelope against its own schema, then every record against its record schema. Keeping the version outside the records is what lets a frontend reject an unsupported major version before parsing a single record.
+
+`build_metadata.json` is a bare object rather than an envelope: it *is* the metadata, and it carries its own `schema_version`.
+
+### 13.2 Serialization rules
+
+- **Column order is the schema's property order.** The CSV serializer reads it out of the JSON Schema rather than restating it, so JSON and CSV cannot drift and a reordering is a visible schema edit.
+- **Row order is the artifact's declared total ordering**, always ending in `player_id`. Identical inputs therefore produce byte-identical files, which is what `docs/ARCHITECTURE.md` section 13 means by reproducible.
+- **Arrays render as `|`-joined values in CSV**; nulls render as an empty cell; booleans as `true`/`false`.
+- **Nothing is written until it validates.** A failed check leaves the previous artifacts in place (`docs/OPERATIONS.md` section 8).
+
 ## 14. Fixtures
 
 Commit compact, hand-reviewable fixtures representing:
@@ -335,3 +369,5 @@ Commit compact, hand-reviewable fixtures representing:
 - legitimate single-player S tier
 
 Fixtures must be synthetic or permitted excerpts small enough to comply with source terms.
+
+> **Phase-1 fixture set.** `tests/fixtures/pipeline/` carries every case above, entirely synthetic, with a table in its README naming which player or record carries which case. `tests/fixtures/pipeline/collisions/` holds deliberately broken identity inputs used only by the fail-closed tests. `tests/fixtures/artifacts/` holds the committed golden output of the fixture pipeline; the frontend tests read it, so the TypeScript types and the Python serializers are checked against the same bytes. Regenerate it with `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`.

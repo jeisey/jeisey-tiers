@@ -1,0 +1,117 @@
+/*
+ * Utility-first base styles (AGENTS.md section 11): no hero sections, no gradients, no
+ * decorative animation. The draft sheet is a working tool, so type stays readable at a
+ * glance and nothing moves without being asked to.
+ */
+
+:root {
+  --ink: #14181d;
+  --ink-muted: #566072;
+  --surface: #ffffff;
+  --surface-sunken: #f4f6f8;
+  --rule: #d5dbe3;
+  --accent: #1d4ed8;
+  --warn: #92400e;
+  --warn-surface: #fef3c7;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e7ebf0;
+    --ink-muted: #9aa5b5;
+    --surface: #12161b;
+    --surface-sunken: #1b2028;
+    --rule: #2c333d;
+    --accent: #7aa2ff;
+    --warn: #fcd34d;
+    --warn-surface: #3a2f12;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--surface);
+}
+
+main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.subtitle {
+  color: var(--ink-muted);
+  margin: 0 0 1.5rem;
+}
+
+dl.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+dl.facts dt {
+  color: var(--ink-muted);
+}
+
+dl.facts dd {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+.notice {
+  border: 1px solid var(--rule);
+  border-left-width: 4px;
+  background: var(--surface-sunken);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.notice[data-severity="warning"] {
+  border-left-color: var(--warn);
+  background: var(--warn-surface);
+  color: var(--warn);
+}
+
+ul.plain {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
