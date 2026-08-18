@@ -100,6 +100,12 @@ Full detail in `docs/DATA_SOURCES.md` section 13. The load-bearing ones:
 - **`mypy --strict` covers `src/ffdraft` only.** Tests are type-checked by neither mypy nor ruff's type rules; they are covered by execution.
 - **The golden artifacts must be regenerated deliberately** when a contract changes: `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`. CI fails if they are stale.
 
+## Repository notes
+
+- **`BUNDLE_MANIFEST.txt` is a snapshot of the original specification bundle, not a live checksum.** Phase 1 verified that the frozen specification files still match it: `AGENTS.md`, `PRD.md`, `MASTER_SPEC.md`, `PROMPT_START_HERE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TEST_STRATEGY.md`, `docs/UX_SPEC.md`, `docs/BASELINE_FFTIERS_ANALYSIS.md` and `repo-tree.txt` are all byte-identical to the bundle. `CLAUDE.md` and `docs/MODELING.md` diverged before this session (the owner's clarification commit and Phase 0 respectively). The living records — `README.md`, `TASKS.md`, `SESSION_STATE.md`, `docs/DECISIONS.md`, `docs/DATA_SOURCES.md`, `docs/DATA_CONTRACTS.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/SECURITY_LICENSE.md`, `config/*` — are updated as the contract requires, so they are expected to differ. Use the manifest only to confirm the frozen set is untouched.
+- **`ruff` 0.16 formats Python code blocks inside Markdown**, which silently rewrote `MASTER_SPEC.md` and `docs/ARCHITECTURE.md` the first time it ran. Markdown is excluded from ruff in `pyproject.toml`; do not remove that exclusion.
+- **Regenerating the golden artifacts is a deliberate act**, not a fix for a red test: `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`. Read the diff first — it is the contract changing.
+
 ## Known blockers
 
 None. Phase 2 can start immediately.
