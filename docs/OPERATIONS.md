@@ -302,3 +302,30 @@ Useful flags:
 `scripts/capture_source_schemas.py` re-records the upstream schemas the Phase-2 adapters are written against. Run it from an environment with egress to the nflverse release hosts (ADR-009) and review the diff before committing: a changed fixture is a changed upstream contract.
 
 CI does not build the historical dataset — it needs live vendor access, which `ci.yml` deliberately avoids. What CI does run is the full network-free suite, including the fixture-driven historical mini-pipeline and every leakage audit.
+
+---
+
+## Phase-3 commands
+
+The evaluation harness runs entirely offline against the dataset `build-historical` wrote.
+
+```bash
+# Rolling-origin development experiment over both training windows, writing
+# docs/experiments/phase3-intrinsic-baselines/{experiment.json,experiment.md}.
+uv run ffdraft evaluate-intrinsic --git-sha "$(git rev-parse --short HEAD)"
+```
+
+Useful flags:
+
+- `--window` is repeatable and defaults to both policies (`W1_all_history`, `W2_modern_era`).
+- `--model` is repeatable and defaults to `B0 B1 Q1`.
+- `--validation-season` is repeatable and defaults to 2020-2024. Passing a sealed season is refused, not filtered.
+- `--no-diagnostic-folds` skips the W1-only 2017-2019 folds.
+- `--bootstrap-replicates` defaults to 1000; `--seed` defaults to 20260819. Both are recorded in the report.
+- `--write-predictions` additionally writes row-level predictions as Parquet for offline inspection. They are gitignored.
+
+**The final holdout is sealed.** Season 2025 is dropped from the modelling frame at load time, so an ordinary run does not have the rows. Evaluating it requires all three of `--final-eval`, `--confirm-final-eval RELEASE-FINAL-HOLDOUT-2025` and `--final-eval-reason "<why>"`, plus a single `--window`; anything less exits 2 with a refusal. Running it consumes the holdout, and the command says so. Phase 3 never ran it.
+
+Exit status is the usual contract: 0 when the gate passes, 1 when a critical check fails — including "no candidate passed the frozen promotion gate", which is a red build rather than a quiet note.
+
+CI does not run the experiment: it needs the historical dataset, which needs live vendor access. What CI runs is `tests/model/`, which drives the same folds, models, metrics, bootstrap and gate over a synthetic table.

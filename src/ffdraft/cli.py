@@ -27,6 +27,14 @@ Phase 2 adds three:
     Print the feature dictionary as Markdown or JSON. The dictionary is code, so this is
     how the documentation stays in step with it.
 
+Phase 3 adds one:
+
+``evaluate-intrinsic``
+    Run the rolling-origin development experiment over the historical dataset and write the
+    machine-readable and human-readable reports. Season 2025 is sealed; the command cannot
+    reach it without ``--final-eval`` *and* the exact confirmation token, and Phase 3 never
+    runs that path.
+
 Exit status is 0 when the quality gate passes and 1 when a critical check fails, so CI can
 branch on it directly.
 """
@@ -50,6 +58,18 @@ from ffdraft.features.dictionary import (
     to_records,
 )
 from ffdraft.leakage import validate_historical_directory
+from ffdraft.modeling import (
+    ExperimentConfig,
+    FinalEvalAuthorization,
+    HoldoutSealError,
+    WindowPolicy,
+    core_feature_selection,
+    experiment_checks,
+    load_modeling_dataset,
+    run_experiment,
+    write_report,
+)
+from ffdraft.modeling.experiment import run_final_holdout_evaluation
 from ffdraft.paths import repo_root
 from ffdraft.pipeline import (
     DEFAULT_FIRST_SEASON,
@@ -64,6 +84,7 @@ __all__ = ["main"]
 
 DEFAULT_FIXTURE_DIR = Path("tests/fixtures/pipeline")
 DEFAULT_ARTIFACT_DIR = Path("web/public/data")
+DEFAULT_EXPERIMENT_DIR = Path("docs/experiments/phase3-intrinsic-baselines")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -78,6 +99,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         result: int = handler(args)
     except ConfigError as exc:
         print(f"configuration error: {exc}", file=sys.stderr)
+        return 2
+    except HoldoutSealError as exc:
+        # A refusal, not a crash: the seal held, and saying so plainly is the whole point.
+        print(f"final holdout is sealed: {exc}", file=sys.stderr)
         return 2
     return result
 
@@ -160,6 +185,72 @@ def _build_parser() -> argparse.ArgumentParser:
     check_historical.add_argument("directory", type=Path, nargs="?", default=None)
     check_historical.add_argument("--json", action="store_true", help="machine-readable output")
     check_historical.set_defaults(handler=_validate_historical)
+
+    evaluate = subparsers.add_parser(
+        "evaluate-intrinsic",
+        help="run the Phase-3 rolling-origin experiment and write its reports",
+    )
+    evaluate.add_argument("--data", type=Path, default=None, help="historical dataset directory")
+    evaluate.add_argument("--out", type=Path, default=None, help="report output directory")
+    evaluate.add_argument(
+        "--window",
+        action="append",
+        choices=[str(policy) for policy in WindowPolicy],
+        default=None,
+        help="training-window policy; repeatable (default: both)",
+    )
+    evaluate.add_argument(
+        "--model",
+        action="append",
+        default=None,
+        help="model id to run; repeatable (default: B0 B1 Q1)",
+    )
+    evaluate.add_argument("--seed", type=int, default=None, help="experiment seed")
+    evaluate.add_argument(
+        "--bootstrap-replicates",
+        type=int,
+        default=None,
+        help="paired bootstrap replicates",
+    )
+    evaluate.add_argument(
+        "--validation-season",
+        action="append",
+        type=int,
+        default=None,
+        help="development validation season; repeatable (default: 2020-2024)",
+    )
+    evaluate.add_argument(
+        "--no-diagnostic-folds",
+        action="store_true",
+        help="skip the W1-only 2017-2019 diagnostic folds",
+    )
+    evaluate.add_argument(
+        "--write-predictions",
+        action="store_true",
+        help="also write row-level predictions as Parquet for offline inspection",
+    )
+    evaluate.add_argument("--git-sha", default=None, help="code SHA to record in the report")
+    evaluate.add_argument("--generated-at", default=None, help="RFC 3339 report timestamp")
+    evaluate.add_argument("--json", action="store_true", help="emit machine-readable output")
+    evaluate.add_argument(
+        "--final-eval",
+        action="store_true",
+        help=(
+            "evaluate the SEALED final holdout. Requires --confirm-final-eval and "
+            "--final-eval-reason. Phase 3 must not use this."
+        ),
+    )
+    evaluate.add_argument(
+        "--confirm-final-eval",
+        default=None,
+        help="the exact confirmation token required to unseal the final holdout",
+    )
+    evaluate.add_argument(
+        "--final-eval-reason",
+        default=None,
+        help="why the holdout is being consumed; recorded in the report",
+    )
+    evaluate.set_defaults(handler=_evaluate_intrinsic)
 
     dictionary = subparsers.add_parser(
         "feature-dictionary",
@@ -287,6 +378,108 @@ def _validate_historical(args: argparse.Namespace) -> int:
         return 0 if gate.passed else 1
     print(f"validating {directory}")
     return _report_gate(gate)
+
+
+def _evaluate_intrinsic(args: argparse.Namespace) -> int:
+    data_dir = args.data or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    out_dir = args.out or (repo_root() / DEFAULT_EXPERIMENT_DIR)
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+
+    defaults = ExperimentConfig()
+    windows = (
+        tuple(WindowPolicy(value) for value in args.window) if args.window else defaults.windows
+    )
+    config = ExperimentConfig(
+        windows=windows,
+        model_ids=tuple(args.model) if args.model else defaults.model_ids,
+        seed=args.seed if args.seed is not None else defaults.seed,
+        bootstrap_replicates=(
+            args.bootstrap_replicates
+            if args.bootstrap_replicates is not None
+            else defaults.bootstrap_replicates
+        ),
+        validation_seasons=(
+            tuple(sorted(args.validation_season))
+            if args.validation_season
+            else defaults.validation_seasons
+        ),
+        include_w1_diagnostic_folds=not args.no_diagnostic_folds,
+    )
+
+    if args.final_eval:
+        return _final_holdout_eval(args, data_dir=data_dir, out_dir=out_dir, config=config)
+
+    selection = core_feature_selection()
+    dataset = load_modeling_dataset(data_dir, selection=selection)
+    print(
+        f"modelling frame: {dataset.frame.height} row(s), seasons "
+        f"{dataset.seasons[0]}-{dataset.seasons[-1]}; withheld "
+        f"{dataset.withheld_rows} sealed row(s) from {list(dataset.withheld_seasons)}",
+    )
+    print(
+        f"feature set {selection.version} ({selection.fingerprint()}): "
+        f"{len(selection.included)} input(s), {len(selection.excluded)} excluded",
+    )
+    result = run_experiment(dataset, config=config)
+    written = write_report(
+        result,
+        out_dir,
+        git_sha=args.git_sha,
+        generated_at=generated_at,
+        write_predictions=args.write_predictions,
+    )
+    for path in written:
+        print(f"wrote {path}")
+
+    gate = QualityGate().extend(experiment_checks(result))
+    if args.json:
+        print(json.dumps(result.selection, indent=2, sort_keys=True))
+    else:
+        print(f"training window: {result.window_decision.selected}")
+        print(f"promoted model : {result.selection.get('promoted_model') or 'none'}")
+        print(f"runtime        : {result.runtime_seconds}s")
+    return _report_gate(gate)
+
+
+def _final_holdout_eval(
+    args: argparse.Namespace,
+    *,
+    data_dir: Path,
+    out_dir: Path,
+    config: ExperimentConfig,
+) -> int:
+    """The sealed path. Deliberately verbose and deliberately hard to reach."""
+    if not args.confirm_final_eval or not args.final_eval_reason:
+        print(
+            "--final-eval requires both --confirm-final-eval <token> and "
+            "--final-eval-reason <why>; refusing to unseal the final holdout",
+            file=sys.stderr,
+        )
+        return 2
+    authorization = FinalEvalAuthorization(
+        confirmation=args.confirm_final_eval,
+        reason=args.final_eval_reason,
+    )
+    if len(config.windows) != 1:
+        print(
+            "the final holdout is evaluated against exactly one frozen training window; "
+            "pass a single --window",
+            file=sys.stderr,
+        )
+        return 2
+    dataset = load_modeling_dataset(data_dir, authorization=authorization)
+    result = run_final_holdout_evaluation(
+        dataset,
+        authorization=authorization,
+        window=config.windows[0],
+        config=config,
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "final_holdout.json"
+    path.write_text(json.dumps(result.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"wrote {path}")
+    print("FINAL HOLDOUT CONSUMED — it is no longer an untouched holdout")
+    return _report_gate(QualityGate().extend(result.checks))
 
 
 def _feature_dictionary(args: argparse.Namespace) -> int:

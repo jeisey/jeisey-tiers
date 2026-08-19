@@ -342,3 +342,135 @@ Each row records which of the three applied, in `eligibility_basis`, and each se
 **Why it stays out of git.** `AGENTS.md` section 15 keeps generated data out of source commits, and the dataset is reproducible from code plus source releases: the manifest records the code SHA, the config versions, the feature-schema hash, the season windows and a content hash per table, so a rebuild that disagrees is detectable rather than merely suspected. Committing 11,604 rows of derived data would trade review clarity for nothing. What *is* committed is `docs/FEATURE_DICTIONARY.md` (generated from the code, with a test asserting it is current) and the `SESSION_STATE.md` record of the validated build.
 
 **Consequences:** Phase 3 must rebuild the dataset before training, which takes a few minutes of nflverse downloads. `ffdraft validate-historical` re-runs the table-level leakage and semantic audits over a dataset on disk without rebuilding it, and fails if the tables no longer match the hashes in their manifest.
+
+---
+
+## ADR-024 — Phase-3 modelling dependencies: LightGBM and NumPy, nothing else
+
+**Status:** Accepted (2026-08-19)
+
+**Decision:** Phase 3 adds exactly two runtime dependencies, `lightgbm` and `numpy`. The regularized baseline, every metric, and the paired bootstrap are written against NumPy inside `ffdraft.modeling` rather than importing scikit-learn and SciPy. SciPy is declared as a *development* dependency only, so the test suite can cross-check the project's Spearman and Kendall tau-b against an independent implementation.
+
+**Why not scikit-learn.** What Phase 3 needs from it is a closed-form ridge — fifteen lines of linear algebra — and LightGBM's native training API does not need it either. Adding a large framework for that would violate `AGENTS.md` section 13, and its preprocessing objects would make "the preprocessor was fitted only on the training fold" a property of how the code is called rather than of what exists.
+
+**Why not SciPy in production.** Two correlation coefficients and a percentile. Writing them here means the tie-handling conventions are the project's own documented choices — Spearman as Pearson on average ranks, Kendall in its tie-corrected `tau-b` form — pinned by hand-worked examples in `tests/model/test_metrics.py` rather than inherited from a library's defaults. SciPy arrives anyway as a LightGBM dependency, so declaring it for tests costs nothing and buys an independent check.
+
+**Consequences:** the metric implementations are the project's responsibility and are tested twice, by hand-worked example and by cross-check. `ruptures` for tier segmentation still waits for Phase 4.
+
+---
+
+## ADR-025 — Season 2025 is the sealed final holdout for the 2026 launch model
+
+**Status:** Accepted (2026-08-19)
+
+**Decision:** Target season 2025 is the final holdout. It is excluded from every development fold, every fitted statistic and every model-selection decision. `ffdraft.modeling.holdout` seals it structurally: the modelling frame drops sealed seasons at load time, the fold generator refuses to produce a fold that validates one, and reaching it requires constructing a `FinalEvalAuthorization` with the exact token `RELEASE-FINAL-HOLDOUT-2025`, which the CLI accepts only from `--final-eval --confirm-final-eval <token> --final-eval-reason <why>`. Phase 3 does not run that path against real data.
+
+**Why 2025.** It is the most recent fully labelled season; it is the only season carrying true timestamped preseason depth observations (ADR-015, ADR-018), so its information environment is the closest available analogue of 2026 inference; and for the same reason it is a deliberate domain-shift test, because part of its eligible universe is established by a mechanism no earlier season has.
+
+**Predeclared diagnostic slices.** Fixed here, before any candidate comparison, and defined without inspecting 2025 outcomes. The primary result is **full-universe 2025 performance** and nothing may replace it. Reported beside it: an *era-stable subset* (rows whose eligibility is supported by the previous season's roster or the target season's draft class, i.e. discoverable under the pre-snapshot mechanism), rookie versus veteran, depth-context state, position, scoring preset, and an information-rich/low-information split defined purely from feature availability (`has_prior_season_stats` and at least eight games played in the previous season). Every predicate reads feature-side metadata only, and each has an executable form in `slice_masks`, so a slice cannot be defined in prose and quietly implemented differently.
+
+**Why the era-stable subset exists.** Phase 4 has to be able to answer whether a weaker 2025 result means the model failed or the universe widened. Answering that after seeing the number would not be an answer.
+
+**Consequences:** Phase-3 evaluation is restricted to 2020-2024 (with 2017-2019 available as W1-only diagnostics). A feature whose usable signal exists only in 2025 therefore has no development evidence and cannot enter the Phase-3 core set (ADR-026). Once the holdout is consumed it is not a holdout any more, so no model-design decision may be taken against it afterwards.
+
+**Revisit if:** never for the 2026 launch model. A future season becomes the next holdout, and 2025 joins the training window.
+
+---
+
+## ADR-026 — The Phase-3 core feature set excludes snapshot-era and era-index columns
+
+**Status:** Accepted (2026-08-19)
+
+**Decision:** `ffdraft.modeling.features` publishes a versioned, hashed model-input view, `intrinsic_core_v1`, containing 78 of the 85 Phase-2 model inputs. Seven are excluded with a recorded reason, measured on the built 2014-2025 dataset:
+
+| Column | Reason | Measurement |
+|---|---|---|
+| `depth_rank_at_anchor` | snapshot-era only | non-null on 0.0% of rows in every season 2014-2024, 49.8% of 2025 |
+| `team_change_flag` | snapshot-era only | non-null on 0.0% of rows 2014-2024, 36.9% of 2025 |
+| `depth_rank_observed` | era indicator | constant false in every development season |
+| `team_change_known` | era indicator | constant false in every development season |
+| `team_at_anchor_known` | era distribution shift | true on 7.1-11.7% of rows per development season against 50.6% of 2025 |
+| `prev1_team_games` | horizon era index | mean exactly 15.0 through target season 2021 and 16.0 from 2022 — the previous season's fantasy horizon minus the bye, constant within a season apart from the cancelled 2022 game |
+| `draft_year` | time index | a calendar index whose training range never covers the validation season's rookies; `seasons_since_draft` carries the same information relative to the target season |
+
+**Why.** Not every leakage-safe feature is a defensible model input. The first five have no development-era support at all: their only signal lives in the sealed season, so no Phase-3 fold could validate them, and admitting one after seeing 2025 would change the production feature set *after* the final holdout — the exact move that invalidates a holdout. The last two are indices of *when* a row is, not of what the player did.
+
+**What is kept.** The era-stable role signal is the lagged `prior_season_role_rank` with its `prior_season_role_known` indicator, which is present in every development season; no harmonized depth feature is constructed, because collapsing an observed depth rank and a prior-season role rank into one number would give one column two different meanings. `prev1_games_missed` is kept: it is the player-level durability content that `prev1_team_games` was only the denominator for.
+
+**Enforcement.** `audit_era_stability` re-measures every claim it can on each experiment run, over every unsealed season rather than only the validation ones — a missingness indicator that matters mostly in 2014-2016 still carries information the training window uses. An included feature with no development coverage or no development variation is a critical failure; a *snapshot-era-only* or *era-indicator* exclusion whose evidence has gone stale is a warning naming the column. The third reason, **era distribution shift**, is deliberately not re-checked: it is a comparison against the sealed season, which a development run cannot see by design, so it stands as a recorded one-time measurement. The selection's hash and its full included/excluded lists appear in every experiment report; the hash covers the included columns and the exclusion reason codes, not the prose, so rewording an explanation does not masquerade as a different feature set.
+
+**Consequences:** Phase 4 inherits a feature set that means the same thing in development and on the final holdout. Genuinely snapshot-era-only inputs are deferred production candidates and need a future season to validate against, not a rerun.
+
+---
+
+## ADR-027 — Phase-3 promotion criteria and window-selection rule, frozen before the comparison
+
+**Status:** Accepted (2026-08-19)
+
+**Decision:** The rules live in `ffdraft.modeling.gate` as `phase3_promotion_v1` and were committed before the decisive experiment ran. The primary baseline is **B0**. A candidate is promoted only if all four hold:
+
+1. macro MAE improves, with the paired 95% bootstrap interval for the delta entirely below zero;
+2. macro mean pinball loss improves, with its paired interval entirely below zero;
+3. macro Spearman falls by no more than 0.010;
+4. no positional collapse: for every position, MAE no more than 3% worse than the baseline's, Spearman no more than 0.030 worse, and empirical P10-P90 coverage inside [0.60, 0.95].
+
+Aggregates are macro means over season x position x scoring cells, so a large position cannot outvote a small one; row-weighted numbers are emitted as diagnostics. Among candidates that pass on the selected window, the one with the lowest macro mean pinball loss is promoted, ties broken on macro MAE.
+
+**Why these and not others.** The product is a distribution, so improving the point estimate alone is not enough; ranking is what a draft board consumes, so it may not materially regress even when the errors improve; and a pooled win that guts QB or TE is not a win. Requiring every one of the sixty cells to improve would select for luck instead, so the positional rule bounds *deterioration* with a materiality threshold rather than demanding improvement everywhere.
+
+**Window rule.** W1 (2014+) and W2 (2017+) are compared on identical 2020-2024 folds with the same candidate family and feature set, paired at the row level. A window wins only by taking both primary metrics with intervals that exclude zero. Otherwise the evidence is inconclusive and **W2** is selected by predeclared conservative tie-break, because its eligibility universe does not straddle the 2016 nflverse roster-coverage step. No weighted hybrid is constructed to avoid choosing.
+
+**Consequences:** if nothing passes, Phase 3 is not complete and the gate is not weakened afterwards; the response is to investigate data, features or baselines within Phase-3 scope. `tests/model/test_bootstrap_and_gate.py` drives the comparator with synthetic metrics, including a candidate that passes and a hidden positional collapse that fails.
+
+---
+
+## ADR-028 — Training window: W1, the full 2014+ history
+
+**Status:** Accepted (2026-08-19)
+
+**Decision:** The intrinsic model trains on an expanding window starting at **2014** (`W1_all_history`). The alternative, starting at 2017 to avoid the nflverse roster-coverage step (`W2_modern_era`), is retained in code as a policy but is not the production window.
+
+**Evidence.** Both policies were run over the identical development folds 2020-2024, with the same feature set, the same models and the same seed, so the comparison is paired at the row level. On the Q1 candidate, W1 relative to W2:
+
+| Metric | Delta (W1 − W2) | Paired 95% CI |
+|---|---|---|
+| macro MAE | **−0.286** | −0.474 to −0.107 |
+| macro mean pinball | **−0.083** | −0.134 to −0.037 |
+| macro Spearman | +0.0007 | −0.0036 to +0.0054 |
+
+Both primary metrics favour W1 with intervals excluding zero, which is what ADR-027 declared a decisive win. Ranking is indistinguishable between the two.
+
+**The honest caveat.** The advantage is small — 1.3% of MAE — and it is not evenly spread. By fold, W1's MAE advantage is −0.911 (2020), −0.023 (2021), −0.024 (2022), −0.158 (2023), −0.315 (2024). The largest gain is in 2020, which is exactly the fold where W2 has only three training seasons. So a fair reading is "more training data helps, most when there is least of it" rather than "2014-2016 are as informative per row as 2017+". W1 never *lost* a fold on MAE and lost only 2022 on pinball by 0.06, so the direction is consistent even if the mechanism is partly sample size.
+
+**Why accept it anyway.** The rule was frozen before the numbers existed (ADR-027) and W1 met it. Re-reading the same evidence to reach the more conservative answer after seeing it would be exactly the move the freeze exists to prevent. The thin-era concern that motivated W2 — that 2014-2016 carry ~36% fewer eligible rows because of upstream roster coverage — is real but did not produce the systematic calibration or ranking degradation it was expected to: W1's P10-P90 coverage is 0.771 against W2's 0.765 and its Spearman is identical.
+
+**No hybrid.** No era weighting, no observation weights, no menu of window variants. The clean question was asked and answered.
+
+**Consequences:** Phase 4 trains through 2024 from 2014 and, after the final holdout is consumed, through 2025. If a future season's evidence reverses this, that is a new ADR with new folds — not a re-reading of these numbers. The comparison must not be re-run against 2025 to "check".
+
+---
+
+## ADR-029 — Q1, the direct-total LightGBM quantile model, advances to Phase 4
+
+**Status:** Accepted (2026-08-19)
+
+**Decision:** The Phase-4 production candidate family is **Candidate A / Q1**: position-specific, scoring-specific LightGBM quantile regression over P10/P25/P50/P75/P90 of the season fantasy-point total. B0 and B1 remain in the repository as permanent comparators.
+
+**Evidence** (development folds 2020-2024, window W1, macro over season x position x scoring):
+
+| Model | MAE | RMSE | Spearman | Kendall | Mean pinball | P10-P90 coverage | P10-P90 width |
+|---|---|---|---|---|---|---|---|
+| B0 | 25.60 | 44.06 | 0.659 | 0.524 | 9.98 | 0.793 | 83.1 |
+| B1 | 26.98 | 42.21 | 0.711 | 0.550 | 9.74 | 0.798 | 80.4 |
+| **Q1** | **22.07** | **41.03** | **0.726** | **0.570** | **8.13** | 0.771 | 62.7 |
+
+Q1 against B0, paired bootstrap over 1000 replicates: MAE −3.53 (−3.87 to −3.18), mean pinball −1.85 (−1.98 to −1.72), Spearman +0.066 (+0.058 to +0.075). Every position improves on all three; no position triggers the collapse rule. The gate passes on both windows, so the window decision (ADR-028) and the candidate decision are independent.
+
+**What the baselines proved.** B0 is not a strawman: it beats the ridge baseline B1 on MAE at every position, and B1 fails the frozen gate on both windows for that reason. Nonlinear boosting is therefore buying something a linear model on the same features does not — but so is a well-constructed naive rule, and the repository keeps both.
+
+**Two limitations recorded now, for Phase 4 to fix, not to discover.**
+
+1. **Quantile crossing is frequent but small.** 38.7% of Q1 rows have at least one crossing in the raw output, with a mean total crossing magnitude of 0.53 fantasy points against a mean P10-P90 width of 62.7. Phase 3 repairs it with a deterministic sort and reports the raw rate separately. Phase 4 should address it properly — joint or monotonic quantile estimation, or calibrated post-processing — rather than continue to sort.
+2. **Top-K retrieval does not follow rank correlation.** Q1's macro Spearman (0.726) beats B1's (0.711), but B1 retrieves more of the actual top-K by position (0.593 against Q1's 0.544; B0 is 0.535). A median-quantile point prediction is deliberately robust, and robustness compresses the top of the board — which is the part of the board a draft sheet is mostly about. Phase 4 must decide the production ranking statistic (expected versus median simulated VORP) with this in view, and should measure top-K on the simulated VORP rather than assuming the point prediction's ordering carries over.
+
+**Consequences:** Phase 4 inherits Q1, window W1, feature set `intrinsic_core_v1` (`7203befaa5be25a2`), the frozen fold protocol and an untouched 2025 holdout. Candidate B (availability x performance) remains unimplemented and unjudged; comparing it is Phase-4 work, against the same protocol.

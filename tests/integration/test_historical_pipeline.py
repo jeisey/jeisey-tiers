@@ -183,6 +183,33 @@ def test_a_player_who_never_played_scores_zero_rather_than_going_missing(histori
     assert labels.get_column("actual_games_played").to_list() == [0] * labels.height
 
 
+def test_games_missed_is_missing_rather_than_zero_without_a_previous_season(
+    historical_dataset,
+):
+    """A player with no previous season did not miss zero games; he has no games to miss.
+
+    The dictionary has always declared `prev1_games_missed` null when either component is
+    missing. The builder used to clamp it to zero, which reads as perfect durability for
+    exactly the rows carrying no durability evidence - the same mistake as imputing
+    `years_exp = 0`. Phase 3 is the first consumer of the column, so the fix belongs with
+    it, and this is the regression test.
+    """
+    features = historical_dataset.features
+    without_prior = features.filter(pl.col("prev1_games").is_null())
+    assert without_prior.height > 0
+    assert without_prior.get_column("prev1_games_missed").null_count() == without_prior.height
+
+    with_prior = features.filter(
+        pl.col("prev1_games").is_not_null() & pl.col("prev1_team_games").is_not_null(),
+    )
+    assert with_prior.height > 0
+    assert with_prior.get_column("prev1_games_missed").null_count() == 0
+    recomputed = (
+        with_prior.get_column("prev1_team_games") - with_prior.get_column("prev1_games")
+    ).clip(lower_bound=0)
+    assert with_prior.get_column("prev1_games_missed").to_list() == recomputed.to_list()
+
+
 def test_both_depth_eras_are_present_in_one_build(historical_dataset):
     states = (
         historical_dataset.features.group_by("season")

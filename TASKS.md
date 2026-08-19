@@ -63,14 +63,20 @@ Phase-2 scope boundaries held: no model trained or evaluated, no rolling-origin 
 
 ## Phase 3 — Intrinsic baselines + evaluation harness
 
-- [ ] Implement naive baselines (prior-year/age-position or equivalent documented baselines).
-- [ ] Implement chronological rolling-origin fold generator.
-- [ ] Implement point/rank/probabilistic metrics and bootstrap CIs.
-- [ ] Implement simple boosted-tree quantile baseline.
-- [ ] Compare candidates year-by-year and position-by-position.
-- [ ] Freeze final holdout rules before production candidate tuning.
+Completed 2026-08-19. Evidence: `docs/experiments/phase3-intrinsic-baselines/{experiment.json,experiment.md}`; commands and results recorded in `SESSION_STATE.md`; decisions ADR-024 through ADR-029.
 
-**Exit gate:** evaluation harness can train/evaluate from scratch and generates machine-readable + human-readable metrics; at least one candidate improves on the declared naive baseline without leakage.
+- [x] Implement naive baselines (prior-year/age-position or equivalent documented baselines). — **B0**: prior-season points per game in the row's own scoring flavour, optionally shrunk towards the position's typical training-fold rate, times the training-fold mean games played by the same previous-season availability and age cohort; a draft-capital prior for players without usable prior production. It beats a raw prior-season total on every development season tried, so the gate is a real gate. **B1**: closed-form ridge on the core feature set with fold-local imputation, missingness indicators and standardization. Both emit the same five quantiles as the candidate, from residuals collected on an inner chronological split.
+- [x] Implement chronological rolling-origin fold generator. — `ffdraft.modeling.folds`; expanding windows, two policies (W1 from 2014, W2 from 2017), common development validation seasons 2020-2024, W1-only diagnostics 2017-2019, and a persisted fold table. A fold that trains on or after its validation season cannot be constructed.
+- [x] Implement point/rank/probabilistic metrics and bootstrap CIs. — MAE, RMSE, Spearman, Kendall tau-b, top-K retrieval, per-quantile and mean pinball, P10-P90 and P25-P75 coverage with the matching widths, and raw crossing rate *and* magnitude. All written in NumPy (ADR-024), pinned by hand-worked examples and cross-checked against SciPy. Paired block bootstrap, 1000 replicates, resampling within validation-season x position x scoring blocks with both models carried through the same resample.
+- [x] Implement simple boosted-tree quantile baseline. — **Q1**, LightGBM quantile regression per position x scoring x quantile, fixed predeclared parameters, deterministic seeds, no search of any kind.
+- [x] Compare candidates year-by-year and position-by-position. — 468 evaluation cells across window x model x season x position x scoring, aggregated macro-first with row-weighted diagnostics beside them.
+- [x] Freeze final holdout rules before production candidate tuning. — ADR-025: 2025 is sealed structurally, with predeclared primary and diagnostic slices. ADR-027 froze the promotion and window rules in code, committed before the decisive run.
+
+**Exit gate:** met. `ffdraft evaluate-intrinsic` rebuilds folds, trains every model from scratch and writes both reports in ~5 minutes with no network. **Q1 passes the frozen gate on both windows**: against B0 under W1, MAE −3.53 (95% CI −3.87 to −3.18), mean pinball −1.85 (−1.98 to −1.72), Spearman +0.066 (+0.058 to +0.075), with every position improving and none triggering the collapse rule. **W1 is the selected training window** (ADR-028); **Q1 advances to Phase 4** (ADR-029). B1 fails the gate on both windows — it loses to B0 on MAE at every position — which is a result, not a defect.
+
+Two limitations are recorded rather than smoothed over: Q1's raw quantiles cross on 38.7% of rows (mean magnitude 0.53 points against a 62.7-point P10-P90 width), and Q1's top-K retrieval (0.544) is below B1's (0.593) despite better rank correlation. Both are Phase-4 work.
+
+**The 2025 final holdout was not evaluated.** No development command can reach it, and the sealed path was exercised only against synthetic data in the test suite.
 
 ## Phase 4 — Production DraftValue + simulation + tiers
 
