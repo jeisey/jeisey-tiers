@@ -13,6 +13,20 @@ Phase 1 exposes the commands the exit gate needs and nothing more:
     Validate a directory of generated artifacts against `schemas/` **and** the semantic
     rules in `docs/DATA_CONTRACTS.md` sections 8 and 12.
 
+Phase 2 adds three:
+
+``build-historical``
+    Fetch nflverse history, build the modelling dataset and write it with its quality
+    report. This is the only command that touches the network.
+
+``validate-historical``
+    Re-run the leakage and semantic audits over an already-written dataset, so a build can
+    be checked without rebuilding it.
+
+``feature-dictionary``
+    Print the feature dictionary as Markdown or JSON. The dictionary is code, so this is
+    how the documentation stays in step with it.
+
 Exit status is 0 when the quality gate passes and 1 when a critical check fails, so CI can
 branch on it directly.
 """
@@ -29,8 +43,20 @@ from ffdraft import __version__
 from ffdraft.artifacts import validate_artifact_directory
 from ffdraft.config import ConfigError, load_app_config
 from ffdraft.contracts import CheckStatus, QualityCheck
+from ffdraft.features.dictionary import (
+    FEATURE_SCHEMA_VERSION,
+    dictionary_markdown,
+    feature_schema_hash,
+    to_records,
+)
+from ffdraft.leakage import validate_historical_directory
 from ffdraft.paths import repo_root
-from ffdraft.pipeline import build_fixture_artifacts
+from ffdraft.pipeline import (
+    DEFAULT_FIRST_SEASON,
+    DEFAULT_HISTORICAL_DIR,
+    build_fixture_artifacts,
+    run_historical_build,
+)
 from ffdraft.quality import QualityGate
 from ffdraft.timeutil import parse_utc
 
@@ -86,6 +112,65 @@ def _build_parser() -> argparse.ArgumentParser:
     validate.add_argument("directory", type=Path, nargs="?", default=None)
     validate.add_argument("--json", action="store_true", help="emit machine-readable output")
     validate.set_defaults(handler=_validate_artifacts)
+
+    historical = subparsers.add_parser(
+        "build-historical",
+        help="build the historical modelling dataset (performs network I/O)",
+    )
+    historical.add_argument("--out", type=Path, default=None, help="output directory")
+    historical.add_argument(
+        "--first-season",
+        type=int,
+        default=DEFAULT_FIRST_SEASON,
+        help=f"first target season (default {DEFAULT_FIRST_SEASON})",
+    )
+    historical.add_argument(
+        "--last-season",
+        type=int,
+        required=True,
+        help="last target season; must be a completed season with full labels",
+    )
+    historical.add_argument("--git-sha", default=None, help="code SHA to record in the manifest")
+    historical.add_argument("--generated-at", default=None, help="RFC 3339 build timestamp")
+    historical.add_argument(
+        "--league-preset",
+        action="append",
+        default=None,
+        help="league preset id to build VORP labels for; repeatable (default: launch presets)",
+    )
+    historical.add_argument(
+        "--no-write",
+        action="store_true",
+        help="build and validate without writing any file",
+    )
+    historical.add_argument(
+        "--skip-independence-check",
+        action="store_true",
+        help=(
+            "skip the rebuild-with-target-season-deleted leakage proof; for iteration only, "
+            "never for a dataset anything downstream will use"
+        ),
+    )
+    historical.set_defaults(handler=_build_historical)
+
+    check_historical = subparsers.add_parser(
+        "validate-historical",
+        help="re-run leakage and semantic audits over a written historical dataset",
+    )
+    check_historical.add_argument("directory", type=Path, nargs="?", default=None)
+    check_historical.add_argument("--json", action="store_true", help="machine-readable output")
+    check_historical.set_defaults(handler=_validate_historical)
+
+    dictionary = subparsers.add_parser(
+        "feature-dictionary",
+        help="print the historical feature dictionary",
+    )
+    dictionary.add_argument(
+        "--format",
+        choices=("markdown", "json"),
+        default="markdown",
+    )
+    dictionary.set_defaults(handler=_feature_dictionary)
 
     return parser
 
@@ -162,6 +247,56 @@ def _validate_artifacts(args: argparse.Namespace) -> int:
         return 0 if gate.passed else 1
     print(f"validating {directory}")
     return _report_gate(gate)
+
+
+def _build_historical(args: argparse.Namespace) -> int:
+    out_dir = args.out or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    seasons = tuple(range(args.first_season, args.last_season + 1))
+    if not seasons:
+        print(
+            f"empty season range {args.first_season}-{args.last_season}",
+            file=sys.stderr,
+        )
+        return 2
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+    dataset, written = run_historical_build(
+        out_dir=out_dir,
+        seasons=seasons,
+        generated_at=generated_at,
+        git_sha=args.git_sha,
+        league_preset_ids=args.league_preset,
+        write=not args.no_write,
+        verify_target_season_independence=not args.skip_independence_check,
+    )
+    print(
+        f"seasons {seasons[0]}-{seasons[-1]}: "
+        f"{dataset.features.height} feature row(s), "
+        f"{dataset.fantasy_labels.height} fantasy label(s), "
+        f"{dataset.vorp_labels.height} VORP label(s)",
+    )
+    for path in written:
+        print(f"wrote {path}")
+    return _report_gate(dataset.gate)
+
+
+def _validate_historical(args: argparse.Namespace) -> int:
+    directory = args.directory or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    gate = validate_historical_directory(directory)
+    if args.json:
+        print(json.dumps(gate.to_dict(), indent=2))
+        return 0 if gate.passed else 1
+    print(f"validating {directory}")
+    return _report_gate(gate)
+
+
+def _feature_dictionary(args: argparse.Namespace) -> int:
+    if args.format == "json":
+        print(json.dumps(to_records(), indent=2, sort_keys=True))
+    else:
+        print(f"# Feature dictionary ({FEATURE_SCHEMA_VERSION}, {feature_schema_hash()})")
+        print()
+        print(dictionary_markdown())
+    return 0
 
 
 def _report_gate(gate: QualityGate) -> int:

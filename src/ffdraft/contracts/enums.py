@@ -10,6 +10,8 @@ from enum import StrEnum
 
 __all__ = [
     "CORE_POSITIONS",
+    "NFLVERSE_TEAM_CODES",
+    "PFR_TEAM_ALIASES",
     "ArbitrageMode",
     "CheckStatus",
     "Confidence",
@@ -19,6 +21,7 @@ __all__ = [
     "ResolutionStatus",
     "Severity",
     "SourceStatus",
+    "normalize_team_code",
 ]
 
 
@@ -66,6 +69,86 @@ _POSITION_ALIASES: dict[str, Position] = {
 CORE_POSITIONS: frozenset[Position] = frozenset(
     {Position.QB, Position.RB, Position.WR, Position.TE},
 )
+
+
+#: The 32 current franchise abbreviations nflverse uses across rosters, statistics and depth
+#: charts. nflverse standardises relocated franchises onto their present code, so a 2015
+#: St. Louis roster row reads ``LA``; keeping to that convention is what lets
+#: ``team_at_anchor`` and ``prev1_team`` be compared at all.
+NFLVERSE_TEAM_CODES: frozenset[str] = frozenset(
+    {
+        "ARI",
+        "ATL",
+        "BAL",
+        "BUF",
+        "CAR",
+        "CHI",
+        "CIN",
+        "CLE",
+        "DAL",
+        "DEN",
+        "DET",
+        "GB",
+        "HOU",
+        "IND",
+        "JAX",
+        "KC",
+        "LA",
+        "LAC",
+        "LV",
+        "MIA",
+        "MIN",
+        "NE",
+        "NO",
+        "NYG",
+        "NYJ",
+        "PHI",
+        "PIT",
+        "SEA",
+        "SF",
+        "TB",
+        "TEN",
+        "WAS",
+    },
+)
+
+#: Pro Football Reference abbreviations, which arrive through the draft-pick and combine
+#: tables, mapped onto the nflverse codes everything else uses. Relocated franchises map to
+#: their current code for the same reason nflverse does it: a franchise that moved is the
+#: same franchise, and two vocabularies in one column is a semantic drift waiting to happen.
+PFR_TEAM_ALIASES: dict[str, str] = {
+    "GNB": "GB",
+    "KAN": "KC",
+    "LAR": "LA",
+    "LVR": "LV",
+    "NOR": "NO",
+    "NWE": "NE",
+    "OAK": "LV",
+    "SDG": "LAC",
+    "SFO": "SF",
+    "STL": "LA",
+    "TAM": "TB",
+    "RAI": "LV",
+    "RAM": "LA",
+    "SD": "LAC",
+    "JAC": "JAX",
+    "WSH": "WAS",
+}
+
+
+def normalize_team_code(raw: str | None) -> str | None:
+    """Map a team abbreviation onto the nflverse vocabulary, or return it unchanged.
+
+    An unrecognised code is passed through rather than dropped: the domain check in the
+    quality report is what should notice a genuinely new abbreviation, and silently blanking
+    it would hide exactly the source change worth seeing.
+    """
+    if raw is None:
+        return None
+    code = str(raw).strip().upper()
+    if not code:
+        return None
+    return PFR_TEAM_ALIASES.get(code, code)
 
 
 class EntityKind(StrEnum):

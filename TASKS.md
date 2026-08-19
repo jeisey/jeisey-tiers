@@ -43,17 +43,23 @@ Phase-1 scope boundaries held: no historical feature engineering, no model train
 
 ## Phase 2 — Historical feature dataset
 
-- [ ] Define draft-time anchor date logic by season.
-- [ ] Build player-season eligibility rules.
-- [ ] Build historical raw/canonical feature assembly for QB/RB/WR/TE.
-- [ ] Engineer lagged performance/opportunity/age/team/depth/draft/athletic features.
-- [ ] Build actual fantasy scoring labels for STD/HALF/PPR.
-- [ ] Build realized VORP labels independently of market data.
-- [ ] Add feature-availability timestamps/rules.
-- [ ] Add automated temporal leakage tests.
-- [ ] Emit data-quality report by season/position.
+Completed 2026-08-19. Evidence: `data/historical/quality_report.md` from the validated build; commands and results recorded in `SESSION_STATE.md`; decisions ADR-021 through ADR-023.
 
-**Exit gate:** reproducible historical modeling table with documented feature dictionary, target dictionary, leakage tests passing, and acceptable missingness/identity quality.
+- [x] Define draft-time anchor date logic by season. — `ffdraft.anchors`, rule `draft_anchor_v1_tuesday_eod_pre_week1` (ADR-021): 23:59:59 America/New_York on the Tuesday before the earliest Week-1 kickoff, persisted as UTC. Explicit time zone, DST-correct, weekday derived rather than assumed, strictly-before-kickoff enforced by the type. Tested across eight real openers including the two Wednesday ones.
+- [x] Build player-season eligibility rules. — ADR-022's preseason universe: previous-season roster, target-season draft class, and pre-anchor depth snapshots (2025+ only). `load_rosters(Y)` and week-1 weekly rosters are refused because neither carries evidence it was settled by the anchor. Every row records `eligibility_basis` and `universe_era`; every exclusion is counted with a reason.
+- [x] Build historical raw/canonical feature assembly for QB/RB/WR/TE. — 11,604 rows across 2014-2025, zero duplicate `(season, player_id)` keys, 102 columns built from the feature dictionary.
+- [x] Engineer lagged performance/opportunity/age/team/depth/draft/athletic features. — 85 model inputs across nine families; ADR-018's three depth states realised, with the prior-season role rank as the pre-2025 proxy and no fabricated depth rank anywhere.
+- [x] Build actual fantasy scoring labels for STD/HALF/PPR. — `ffdraft.scoring` computes all three from weekly stat components over the documented horizon (1-17 from 2021, 1-16 before). 34,812 label rows. nflverse's own totals are a reconciliation check, never the label.
+- [x] Build realized VORP labels independently of market data. — 104,436 rows across three launch presets, using the same `ffdraft.simulation.allocation` Phase 4 will drive with Monte Carlo draws. No market input anywhere.
+- [x] Add feature-availability timestamps/rules. — every column declares an availability class; rows carry `anchor_at_utc`, `feature_cutoff_rule_version`, `max_lagged_source_season` and `depth_observed_at_utc`, which is what the audits check.
+- [x] Add automated temporal leakage tests. — all ten required rules, each with a paired test proving the guard fails when the rule is broken. Rules 1 and 6 are proved by construction: every season rebuilt with its own statistics deleted produces a byte-identical table.
+- [x] Emit data-quality report by season/position. — deterministic JSON and Markdown covering eligibility, rookie/veteran counts, depth-state distribution, per-family missingness, label coverage, exclusions, thresholds and every check.
+
+**Exit gate:** met. The dataset rebuilds reproducibly from `ffdraft build-historical`, its 187 checks pass with zero critical failures, the feature dictionary is published and test-pinned against the code, and both eras of the ADR-018 boundary are visible rather than averaged away.
+
+Two warnings are deliberate and expected: one upstream GSIS id names two different players in 2019 (failed closed, excluded), and 2014-2016 carry ~36% fewer eligible rows than the median season because nflverse roster coverage steps up at 2016. Phase 3 must choose its training window with that boundary in view.
+
+Phase-2 scope boundaries held: no model trained or evaluated, no rolling-origin harness, no holdout chosen, no simulation, no tiering, no arbitrage, no UI.
 
 ## Phase 3 — Intrinsic baselines + evaluation harness
 

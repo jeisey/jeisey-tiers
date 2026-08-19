@@ -48,6 +48,8 @@ Include drafted/UDFA players present in the current roster/player universe. Miss
 
 The model may predict them but should emit a quality/confidence flag. Do not silently exclude all unknown players if they are draft-relevant.
 
+> **Phase-2 implementation.** The eligibility rules above are realised as ADR-022's preseason universe: a row exists only when the previous season's roster, the target season's draft class, or a pre-anchor depth snapshot says the player was in the league. Prior-year touches are deliberately not required, so breakouts survive. `load_rosters(Y)` and week-1 weekly rosters are refused — see `docs/DATA_CONTRACTS.md` section 3.1 for why. Low-information rows are not silently dropped: they carry `rookie_flag`, `has_prior_season_stats`, `depth_context_state` and per-family missingness indicators, and the quality report slices coverage by season and position so their share is visible.
+
 ## 5. Feature allowlist
 
 Candidate families, all calculated using information available by the anchor:
@@ -100,6 +102,29 @@ Candidate families, all calculated using information available by the anchor:
 
 Tree models can often handle missing values, but missingness can itself be informative. Add explicit indicators only where evaluation supports them.
 
+### 5.1 Phase-2 first cut
+
+The built feature set is published in `docs/FEATURE_DICTIONARY.md`, generated from `ffdraft.features.dictionary` with a test asserting the two agree. 102 columns, of which 85 are model inputs, in these families:
+
+| Family | What it carries |
+|---|---|
+| `production` | Previous-season fantasy points and per-game production. STD and PPR totals are carried explicitly; half-PPR is exactly their mean. |
+| `opportunity` | Carries, targets, receptions, pass attempts per game; target and rush share against the player's own teams in the weeks he played; ffopportunity expected points per game. |
+| `efficiency` | Yards per carry/target, catch rate, touchdown rates, passing efficiency, actual-minus-expected points. Every one is null below a declared minimum denominator, with a paired `*_denominator_met` indicator. |
+| `durability` | Games played, the player's team's games inside the horizon, and the difference. |
+| `career` | Experience, rookie flag, age at anchor, position-standardised age, a fixed five-season prior window and recency-weighted 3-season summaries. |
+| `draft` | Draft year, round, overall pick, drafted flag, seasons since draft. |
+| `athletic` | Height, weight, the six combine drills, and a transparent speed score — never imputed for a player who did not test. |
+| `depth` | ADR-018's three states, the observed pre-anchor depth rank (2025+ only) and the lagged prior-season role rank. |
+| `team_context` | Previous-season team offensive volume, the team observed at the anchor where one exists, and a team-change flag that is null wherever it cannot be known. |
+
+Two families named in section 5 are **deliberately deferred**, with reasons rather than silence:
+
+- **Vacated-opportunity / teammate features.** Deriving them needs to know who is on the team at the anchor. Before 2025 that is unobservable, so the feature would exist for one labelled season out of twelve and would be perfectly confounded with the era boundary. Revisit once Phase 3 has baselines and more snapshot-era seasons exist.
+- **NGS and PFR advanced metrics, and FTN charting.** Not needed for a first cut, and FTN carries a share-alike obligation the project has no reason to take on yet. Revisit only with evidence that the compact set is leaving signal on the table.
+
+Preseason injury state is absent because no nflverse source publishes one at a draft anchor in any season (ADR-011), not because it was overlooked.
+
 ## 6. Forbidden intrinsic features
 
 Automated test must reject feature names/lineage matching:
@@ -114,6 +139,8 @@ Automated test must reject feature names/lineage matching:
 - arbitrage score
 
 Do not evade this rule by renaming a market proxy.
+
+> **Phase-2 implementation.** `ffdraft.quality.forbidden` audits both the declared model-input names *and* the columns actually present in the built table, plus each feature's declared source lineage against the registry — so a market-derived column with an innocent name fails too, and a `benchmark_only` source (FantasyPros ECR, ADR-014) can never become an input. The audit runs inside every build and again in `ffdraft validate-historical`, and the leakage suite proves it fires on `market_adp`, `prev1_ecr`, `consensus_rank`, `fantasypros_tier` and `arbitrage_score`.
 
 ## 7. Evaluation split
 
@@ -251,6 +278,8 @@ For every simulation and league preset:
 A player not projected above replacement can have negative VORP.
 
 This produces position-aware scarcity without market ADP.
+
+> **Phase-2 implementation.** The algorithm lives in `ffdraft.simulation.allocation`, independent of where the points came from: Phase 2 feeds it a player's **actual** season total to build realized-VORP labels, and Phase 4 will feed it one Monte Carlo draw per player. There is one implementation, so the realized label and the simulated value cannot disagree about what a league starts. Ties break on `player_id` ascending, making an allocation a pure function of its inputs, and a position whose pool is entirely consumed by starting slots gets a null replacement rather than an invented zero.
 
 ### Superflex future extension
 

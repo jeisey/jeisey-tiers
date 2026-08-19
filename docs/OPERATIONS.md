@@ -266,3 +266,39 @@ Use:
 - optional automatically opened GitHub issue after repeated scheduled failures only if implemented carefully to avoid issue spam
 
 Do not add paid observability for V1.
+
+
+---
+
+## Phase-2 commands
+
+The historical modelling dataset is built and checked with three commands. Only the first touches the network.
+
+```bash
+# Build the dataset for target seasons 2014 through the last completed season, and write
+# data/historical/ (tables, quality report, manifest, feature dictionary). Takes a few
+# minutes of nflverse downloads plus the leakage proof, which rebuilds each season with its
+# own statistics deleted.
+uv run ffdraft build-historical --last-season 2025 --git-sha "$(git rev-parse --short HEAD)"
+
+# Re-run the table-level leakage and semantic audits over a dataset already on disk, and
+# check it still matches the content hashes in its manifest. No network.
+uv run ffdraft validate-historical data/historical
+
+# Print the feature dictionary. docs/FEATURE_DICTIONARY.md is this output; a test asserts
+# the committed copy matches the code.
+uv run ffdraft feature-dictionary
+```
+
+Useful flags:
+
+- `--first-season` defaults to 2014, the first season whose *previous* season has snap counts.
+- `--league-preset` is repeatable and defaults to the launch presets; each extra preset multiplies the VORP label count.
+- `--no-write` builds and validates without writing anything, for checking a change.
+- `--skip-independence-check` skips the rebuild-with-target-season-deleted leakage proof. It roughly triples build time, so the flag exists for iteration — never for a dataset anything downstream will use.
+
+**Nothing is written when the gate fails.** As with the public artifacts (section 8), a failed critical check leaves whatever was there before intact, so a bad run cannot replace a good dataset with a broken one.
+
+`scripts/capture_source_schemas.py` re-records the upstream schemas the Phase-2 adapters are written against. Run it from an environment with egress to the nflverse release hosts (ADR-009) and review the diff before committing: a changed fixture is a changed upstream contract.
+
+CI does not build the historical dataset — it needs live vendor access, which `ci.yml` deliberately avoids. What CI does run is the full network-free suite, including the fixture-driven historical mini-pipeline and every leakage audit.

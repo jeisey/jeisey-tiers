@@ -1,0 +1,39 @@
+[
+ {
+  "car_av": 22,
+  "college": "Fixture State",
+  "games": 41,
+  "gsis_id": "00-0090005",
+  "pfr_player_id": "DrafRo00",
+  "pfr_player_name": "Rookie Draftee",
+  "pick": 6,
+  "position": "RB",
+  "probowls": 1,
+  "round": 1,
+  "season": 2025,
+  "team": "MIA"
+ },
+ {
+  "college": "Fixture Tech",
+  "games": 12,
+  "gsis_id": "00-0090011",
+  "pfr_player_id": "DrafPr00",
+  "pfr_player_name": "Prior Draftee",
+  "pick": 118,
+  "position": "WR",
+  "round": 4,
+  "season": 2024,
+  "team": "BUF"
+ },
+ {
+  "college": "Fixture State",
+  "gsis_id": "00-0090001",
+  "pfr_player_id": "SteaVe00",
+  "pfr_player_name": "Vera Steadman",
+  "pick": 44,
+  "position": "WR",
+  "round": 2,
+  "season": 2018,
+  "team": "BUF"
+ }
+]

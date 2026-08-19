@@ -70,11 +70,35 @@ Recommended anchor: a consistent date relative to Week 1, such as the Tuesday im
 
 Current production inference uses the build timestamp/as-of date and current allowed data.
 
+> **Phase-2 implementation (ADR-021).** The rule is fixed at `draft_anchor_v1_tuesday_eod_pre_week1`: **23:59:59 America/New_York on the Tuesday immediately preceding the earliest Week-1 regular-season kickoff**, persisted as UTC. `ffdraft.anchors` derives it from `load_schedules` — the Week-1 date is published in May, so reading it is preseason context, not an outcome — and refuses to construct an anchor that does not strictly precede the first kickoff. Measured over 2014-2025 the lead time is 1.85 days in every season. The version string travels on every feature row, and changing the rule requires a new version plus a new ADR; in particular it may not be tuned after seeing model performance.
+
+### 3.1 Preseason eligibility (ADR-022)
+
+The row list is itself a leakage surface. A `(season, player_id)` row exists only when pre-anchor evidence says the player was in the league, and the row records which evidence applied in `eligibility_basis`:
+
+| Basis | Evidence | Available |
+|---|---|---|
+| `prior_season_roster` | on an NFL roster in season Y-1 | every season |
+| `draft_class` | selected in the season-Y NFL draft | every season |
+| `depth_snapshot_pre_anchor` | on a timestamped depth chart with `observed_at <= anchor` | 2025 onward only (ADR-015) |
+
+`load_rosters(Y)` and `load_rosters_weekly(Y)` week 1 are **not** used. A week-1 roster carries no observation timestamp, so nothing establishes it was settled by the anchor, and letting eventual participation choose the training rows is survivorship bias. Each season also records `universe_era` (`lagged_only` or `snapshot_2025_plus`) so the boundary is filterable rather than hidden.
+
 ## 4. Historical feature entity
 
 Logical key:
 
 `(season, player_id, scoring_preset)` if scoring-dependent features are materialized; otherwise `(season, player_id)` with labels generated downstream.
+
+> **Phase-2 implementation (ADR-023).** Three normalized grains rather than one wide table:
+>
+> | Table | Grain | Contract |
+> |---|---|---|
+> | `features.parquet` | `(season, player_id)` — scoring-independent | `historical_features` 1.0 |
+> | `labels_fantasy.parquet` | `(season, player_id, scoring_preset)` | `historical_fantasy_labels` 1.0 |
+> | `labels_vorp.parquet` | `(season, player_id, scoring_preset, league_preset_id)` | `historical_vorp_labels` 1.0 |
+>
+> Football features do not depend on scoring, and realized replacement value depends on roster construction as well as scoring, so one wide table would repeat every feature nine times to carry two columns that vary. The feature table's columns are generated from `ffdraft.features.dictionary`, published as `docs/FEATURE_DICTIONARY.md`, and a test asserts the two agree. The prior-production columns (`prev1_fantasy_points_std` / `_ppr`) are the deliberate exception to scoring independence: half-PPR is exactly their mean, so two columns serve all three presets.
 
 Core descriptive fields:
 
@@ -135,6 +159,11 @@ Use a documented fantasy-relevant horizon consistently. Recommended:
 - older 17-week seasons: Weeks 1–16, excluding final NFL week;
 
 This approximates common fantasy championship timing and prevents historical target drift. If a different horizon materially improves validity, document it as an ADR before changing.
+
+> **Phase-2 implementation.** `ffdraft.scoring` owns the arithmetic and the horizon, and labels are aggregated from **weekly** rows because season-level upstream totals already include the excluded final week. Two consequences are worth stating:
+>
+> - **nflverse `fantasy_points` is a sanity comparison, never the label.** It covers the full regular season *and* awards six points for return touchdowns, which `config/league-defaults.yaml` does not define. `reconcile_with_upstream` proves the gap is exactly return touchdowns rather than reporting a vague mismatch — across 2014, 2020 and 2024 the residual after accounting for them is zero on every row.
+> - **Lagged production features use the same horizon as the label**, so a prior-production baseline compares like with like.
 
 ## 6. Current projection contract
 
@@ -318,6 +347,26 @@ Examples:
 - games played within season maximum
 - age plausible bounds
 
+### 12.1 Phase-2 historical thresholds
+
+The Phase-2 gate's thresholds live in `ffdraft.quality.thresholds` as `HistoricalThresholds`, and every one is printed in the quality report with the reason it sits where it does. Each was set from a measurement on the real 2014-2025 dataset **plus deliberate headroom**, never from what the current build happens to score:
+
+| Threshold | Bound | Observed | Basis |
+|---|---:|---:|---|
+| canonical key coverage | >= 1.0 | 1.0 | The universe is assembled only from GSIS-keyed sources, so anything less is a construction bug. |
+| duplicate `(season, player_id)` | 0 | 0 | Named by the Phase-2 exit gate. |
+| `age_at_anchor` coverage | >= 0.93 | 0.967 (worst season 0.925) | The gap is 380 deep fringe roster entries for whom no nflverse source publishes a birth date. |
+| snap-count bridge coverage | >= 0.90 | 0.977 | Snap counts are keyed by `pfr_id` and must cross an id space; this is the identity join that can genuinely fail. |
+| ffopportunity coverage | >= 0.80 (warning) | 0.954 | ffopportunity models only plays it can attribute, so some gaps are legitimate. |
+| label coverage | >= 1.0 | 1.0 | A missing label is a join failure; a player who did not play scores zero. |
+| season row-count tolerance | <= 0.35 of median (warning) | fires on 2014-2016 | Wide enough for a genuine era change, narrow enough to catch a truncated source. |
+
+A **fixture profile** (`HistoricalThresholds.fixture()`) loosens the statistical thresholds for the deliberately adversarial synthetic fixtures, which are far too small for a production coverage rate to mean anything — the same reasoning Phase 1 recorded for `FIXTURE_IDENTITY_COVERAGE_MINIMUM`. The structural thresholds (canonical key, duplicates, label coverage) do not relax at all, and a test asserts the fixture profile is strictly looser than production on exactly the statistical ones.
+
+### 12.2 Semantic and domain checks
+
+Structural checks catch a column that disappears. `ffdraft.quality.semantic` adds the layer that catches a column that keeps its name, its dtype and its plausibility while its *meaning* changes: categorical-domain validation for positions, teams, depth states and scoring presets; `[0, 1]` bounds on every share and rate; non-negativity on counting statistics; plausible ranges on draft round, combine forty and depth rank; derived-ratio minimum denominators; season/week consistency; impossible age/experience/draft combinations; per-column missingness budgets; per-season row-count anomalies; and informational per-season/per-position distribution summaries. A fixture in which every column exists, every dtype is right and every *value* violates its contract proves the class is detectable.
+
 ## 13. Contract versioning
 
 Use semantic-ish integer strings for data contracts, e.g. `1.0`.
@@ -345,6 +394,15 @@ The record schemas in `schemas/` are unchanged — they describe one record and 
 
 `build_metadata.json` is a bare object rather than an envelope: it *is* the metadata, and it carries its own `schema_version`.
 
+### 13.1.1 Source contract changes in Phase 2
+
+Two Phase-1 source contracts changed when historical data exposed grains the 2026-only fixtures could not:
+
+- **`nflverse_roster` 1.0 -> 1.1.** The primary key gains `team`. A player traded mid-season appears once per club, which is not a duplicate: 99 such rows in 2014 and 125 in 2015. Consumers that want one row per player must now say which one they want.
+- **`ffopportunity_expected_points` 1.0 -> 1.1.** The primary key gains `position`. A two-way player can receive one expected-points row per position in the same week, and summing the split attributions would double-count a single set of opportunities; `expected_points_by_season` reduces to one row per player-week by taking the largest attribution, with the position name breaking ties.
+
+Separately, `load_draft_picks` and `load_combine` publish Pro Football Reference team abbreviations (`GNB`, `LVR`, `SDG`) while everything else speaks nflverse's (`GB`, `LV`, `LAC`). `ffdraft.contracts.enums.normalize_team_code` maps them, and a domain check over `team_at_anchor` and `prev1_team` catches anything outside the league vocabulary — two abbreviations in one column being exactly the semantic drift section 12.2 exists to notice.
+
 ### 13.2 Serialization rules
 
 - **Column order is the schema's property order.** The CSV serializer reads it out of the JSON Schema rather than restating it, so JSON and CSV cannot drift and a reordering is a visible schema edit.
@@ -369,5 +427,7 @@ Commit compact, hand-reviewable fixtures representing:
 - legitimate single-player S tier
 
 Fixtures must be synthetic or permitted excerpts small enough to comply with source terms.
+
+> **Phase-2 fixture set.** `tests/fixtures/historical/` carries synthetic nflverse-shaped source rows for two target seasons — 2024 in the lagged-only era and 2025 in the snapshot era — read through the real adapters so the integration test exercises the production code path without a network. Its README names which invented player carries which case, including the identity collision, the undrafted rookie visible only on a pre-anchor depth chart, the player with no birth date anywhere, and the eligible player who records nothing all season.
 
 > **Phase-1 fixture set.** `tests/fixtures/pipeline/` carries every case above, entirely synthetic, with a table in its README naming which player or record carries which case. `tests/fixtures/pipeline/collisions/` holds deliberately broken identity inputs used only by the fail-closed tests. `tests/fixtures/artifacts/` holds the committed golden output of the fixture pipeline; the frontend tests read it, so the TypeScript types and the Python serializers are checked against the same bytes. Regenerate it with `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`.

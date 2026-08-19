@@ -1,0 +1,241 @@
+{
+  "captured_at_utc": "2026-08-19T00:29:52Z",
+  "check_id": "nflverse_schedules",
+  "columns": [
+    {
+      "dtype": "String",
+      "name": "game_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "game_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "gameday",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "weekday",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "gametime",
+      "null_fraction": 0.0343
+    },
+    {
+      "dtype": "String",
+      "name": "away_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "away_score",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "home_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "home_score",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "location",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "result",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "Int32",
+      "name": "total",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "Int32",
+      "name": "overtime",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "old_game_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "gsis",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "nfl_detail_id",
+      "null_fraction": 0.964
+    },
+    {
+      "dtype": "String",
+      "name": "pfr",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pff",
+      "null_fraction": 0.3953
+    },
+    {
+      "dtype": "String",
+      "name": "espn",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "ftn",
+      "null_fraction": 0.7809
+    },
+    {
+      "dtype": "Int32",
+      "name": "away_rest",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "home_rest",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "away_moneyline",
+      "null_fraction": 0.2837
+    },
+    {
+      "dtype": "Int32",
+      "name": "home_moneyline",
+      "null_fraction": 0.2837
+    },
+    {
+      "dtype": "Float64",
+      "name": "spread_line",
+      "null_fraction": 0.0212
+    },
+    {
+      "dtype": "Int32",
+      "name": "away_spread_odds",
+      "null_fraction": 0.2837
+    },
+    {
+      "dtype": "Int32",
+      "name": "home_spread_odds",
+      "null_fraction": 0.2837
+    },
+    {
+      "dtype": "Float64",
+      "name": "total_line",
+      "null_fraction": 0.0212
+    },
+    {
+      "dtype": "Int32",
+      "name": "under_odds",
+      "null_fraction": 0.284
+    },
+    {
+      "dtype": "Int32",
+      "name": "over_odds",
+      "null_fraction": 0.284
+    },
+    {
+      "dtype": "Int32",
+      "name": "div_game",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "roof",
+      "null_fraction": 0.0057
+    },
+    {
+      "dtype": "String",
+      "name": "surface",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "temp",
+      "null_fraction": 0.3103
+    },
+    {
+      "dtype": "Int32",
+      "name": "wind",
+      "null_fraction": 0.3103
+    },
+    {
+      "dtype": "String",
+      "name": "away_qb_id",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "home_qb_id",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "away_qb_name",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "home_qb_name",
+      "null_fraction": 0.036
+    },
+    {
+      "dtype": "String",
+      "name": "away_coach",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "home_coach",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "referee",
+      "null_fraction": 0.0362
+    },
+    {
+      "dtype": "String",
+      "name": "stadium_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "stadium",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {},
+  "record_count": 7548,
+  "sample_rows": [],
+  "source_id": "nflreadpy",
+  "target": "load_schedules"
+}

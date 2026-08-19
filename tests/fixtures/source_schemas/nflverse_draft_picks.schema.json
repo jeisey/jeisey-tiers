@@ -1,0 +1,191 @@
+{
+  "captured_at_utc": "2026-08-19T00:29:53Z",
+  "check_id": "nflverse_draft_picks",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "round",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pick",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "gsis_id",
+      "null_fraction": 0.1449
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_player_id",
+      "null_fraction": 0.1357
+    },
+    {
+      "dtype": "String",
+      "name": "cfb_player_id",
+      "null_fraction": 0.2988
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_player_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Boolean",
+      "name": "hof",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "category",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "side",
+      "null_fraction": 0.0004
+    },
+    {
+      "dtype": "String",
+      "name": "college",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "age",
+      "null_fraction": 0.1396
+    },
+    {
+      "dtype": "Int32",
+      "name": "to",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "allpro",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "probowls",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "seasons_started",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "w_av",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Boolean",
+      "name": "car_av",
+      "null_fraction": 1.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "dr_av",
+      "null_fraction": 0.2646
+    },
+    {
+      "dtype": "Int32",
+      "name": "games",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "pass_completions",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "pass_attempts",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "pass_yards",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "pass_tds",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "pass_ints",
+      "null_fraction": 0.1811
+    },
+    {
+      "dtype": "Int32",
+      "name": "rush_atts",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "rush_yards",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "rush_tds",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "receptions",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "rec_yards",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "rec_tds",
+      "null_fraction": 0.181
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_solo_tackles",
+      "null_fraction": 0.6155
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_ints",
+      "null_fraction": 0.806
+    },
+    {
+      "dtype": "Float64",
+      "name": "def_sacks",
+      "null_fraction": 0.747
+    }
+  ],
+  "coverage": {},
+  "record_count": 12927,
+  "sample_rows": [],
+  "source_id": "nflreadpy",
+  "target": "load_draft_picks"
+}

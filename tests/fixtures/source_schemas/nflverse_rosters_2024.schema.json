@@ -1,0 +1,191 @@
+{
+  "captured_at_utc": "2026-08-19T00:29:54Z",
+  "check_id": "nflverse_rosters_2024",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "depth_chart_position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "jersey_number",
+      "null_fraction": 0.0053
+    },
+    {
+      "dtype": "String",
+      "name": "status",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "full_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "last_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Date",
+      "name": "birth_date",
+      "null_fraction": 0.0103
+    },
+    {
+      "dtype": "Float64",
+      "name": "height",
+      "null_fraction": 0.0006
+    },
+    {
+      "dtype": "Int32",
+      "name": "weight",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "college",
+      "null_fraction": 0.0006
+    },
+    {
+      "dtype": "String",
+      "name": "gsis_id",
+      "null_fraction": 0.0003
+    },
+    {
+      "dtype": "String",
+      "name": "espn_id",
+      "null_fraction": 0.3535
+    },
+    {
+      "dtype": "String",
+      "name": "sportradar_id",
+      "null_fraction": 0.352
+    },
+    {
+      "dtype": "String",
+      "name": "yahoo_id",
+      "null_fraction": 0.426
+    },
+    {
+      "dtype": "String",
+      "name": "rotowire_id",
+      "null_fraction": 0.352
+    },
+    {
+      "dtype": "String",
+      "name": "pff_id",
+      "null_fraction": 0.6322
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_id",
+      "null_fraction": 0.4493
+    },
+    {
+      "dtype": "String",
+      "name": "fantasy_data_id",
+      "null_fraction": 0.6875
+    },
+    {
+      "dtype": "String",
+      "name": "sleeper_id",
+      "null_fraction": 0.352
+    },
+    {
+      "dtype": "Int32",
+      "name": "years_exp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "headshot_url",
+      "null_fraction": 0.0463
+    },
+    {
+      "dtype": "String",
+      "name": "ngs_position",
+      "null_fraction": 0.6213
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "game_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "status_description_abbr",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "football_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "esb_id",
+      "null_fraction": 0.0062
+    },
+    {
+      "dtype": "String",
+      "name": "gsis_it_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "smart_id",
+      "null_fraction": 0.0081
+    },
+    {
+      "dtype": "Int32",
+      "name": "entry_year",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rookie_year",
+      "null_fraction": 0.0009
+    },
+    {
+      "dtype": "String",
+      "name": "draft_club",
+      "null_fraction": 0.4282
+    },
+    {
+      "dtype": "Int32",
+      "name": "draft_number",
+      "null_fraction": 0.4282
+    }
+  ],
+  "coverage": {},
+  "record_count": 3216,
+  "sample_rows": [],
+  "source_id": "nflreadpy",
+  "target": "load_rosters"
+}

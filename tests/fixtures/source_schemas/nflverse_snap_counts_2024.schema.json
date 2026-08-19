@@ -1,0 +1,91 @@
+{
+  "captured_at_utc": "2026-08-19T00:29:52Z",
+  "check_id": "nflverse_snap_counts_2024",
+  "columns": [
+    {
+      "dtype": "String",
+      "name": "game_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_game_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "game_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_player_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "opponent",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "offense_snaps",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "offense_pct",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "defense_snaps",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "defense_pct",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "st_snaps",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "st_pct",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {},
+  "record_count": 26615,
+  "sample_rows": [],
+  "source_id": "nflreadpy",
+  "target": "load_snap_counts"
+}
