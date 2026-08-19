@@ -389,10 +389,13 @@ def run_experiment(
         )
         raise ValueError("refusing to run a development experiment over unsealed data")
 
+    # Every unsealed season, not only the validation ones: a missingness indicator that
+    # matters mostly in 2014-2016 still carries information the training window uses, and
+    # judging it on 2020-2024 alone would call it constant.
     era_checks, coverage = audit_era_stability(
         dataset.audit_frame,
         selection=dataset.selection,
-        development_seasons=settings.validation_seasons,
+        development_seasons=dataset.seasons,
     )
     checks.extend(era_checks)
 

@@ -136,6 +136,10 @@ prior_games_missed
 
 Do not use cryptic numbered features in model cards.
 
+> **Phase-2 implementation.** The built column set is `docs/FEATURE_DICTIONARY.md`, generated from `ffdraft.features.dictionary` with a test asserting the two agree. The names above are the sketch; the dictionary is the contract.
+>
+> **Phase-3 model-input view.** A second, narrower contract sits on top of it: `intrinsic_core_v1` in `ffdraft.modeling.features`, the versioned and hashed set of columns a Phase-3 model may consume. It is a strict subset of the Phase-2 model inputs — 78 of 85 — and both its hash and its full included/excluded lists appear in every experiment report and will appear in every promoted model artifact. Two columns named in the sketch above, `team_change_flag` and `depth_rank_at_anchor`, are deliberately **not** in it: they exist only in the 2025 snapshot era, which is the sealed final holdout, so no development fold can validate them (ADR-025, ADR-026). They remain in the dataset as context.
+
 ## 5. Label entity
 
 For each scoring preset:

@@ -165,6 +165,27 @@ Reserve final holdout season(s) from iterative tuning. A reasonable workflow:
 
 Record fold definitions before tuning.
 
+> **Phase-3 implementation.** `ffdraft.modeling.folds` makes a fold data rather than a loop
+> variable: the fold table is persisted in every experiment report with its window policy,
+> training span, validation season, record counts, feature-set hash and seed. Development
+> validation seasons are **2020-2024**, common to both training-window policies so the
+> comparison is paired at the row level; 2017-2019 are emitted as W1-only diagnostics and
+> may not decide the window, because W2 cannot reproduce them with three training seasons.
+>
+> **Season 2025 is the sealed final holdout** (ADR-025). It is removed from the modelling
+> frame at load time, so a development run does not have the rows at all; the fold generator
+> additionally refuses to construct a fold that validates a sealed season. Opening it
+> requires an explicit `FinalEvalAuthorization` carrying an exact token, which the CLI only
+> accepts from `--final-eval --confirm-final-eval <token> --final-eval-reason <why>`.
+> `tests/model/test_folds_and_holdout.py` proves the seal by construction: poisoning every
+> 2025 label leaves a development run byte-identical.
+>
+> Fold isolation is structural. A model implements one method, `fit_predict(train, validate,
+> context)`, so there is no fitted object that could outlive a fold and nowhere to keep a
+> statistic computed over the whole dataset. Preprocessing, baseline priors, penalty
+> selection and residual quantiles are all fitted inside the training window, the last three
+> on an inner *chronological* split of it.
+
 ## 8. Baselines
 
 At least:
@@ -182,6 +203,36 @@ ElasticNet/linear or simple gradient boosting on compact feature set.
 `market_adp - fair_rank`, with no learned parameters beyond optional percentile normalization.
 
 Baseline code remains in repo after better models are promoted.
+
+> **Phase-3 implementation.** `ffdraft.modeling.baselines`.
+>
+> **B0 — naive prior production.** For a veteran with usable prior production: prior-season
+> points per game in the row's own scoring flavour (STD and PPR are carried explicitly;
+> half-PPR is their mean), optionally shrunk towards the position's typical training-fold
+> rate, times the training-fold mean games played by players in the same previous-season
+> availability cohort and age cohort. For a player without usable prior production —
+> rookies, and veterans whose previous season produced no qualifying stat line — the
+> training-fold mean season total for his draft-capital bucket. Every statistic is estimated
+> on training rows only; the shrinkage weight is chosen from a four-value predeclared grid
+> on an inner chronological split of the training window.
+>
+> B0 is deliberately a **strong** naive baseline. The obvious alternative, last season's
+> point total, is beaten by it on every development season tried, because games played last
+> season is itself an availability signal and conditioning the multiplier on it uses that
+> signal honestly. A baseline chosen to be easy to beat would make the promotion gate
+> meaningless.
+>
+> **B1 — simple regularized model.** Closed-form ridge on the Phase-3 core feature set, with
+> training-fold median imputation, an explicit missingness indicator per imputed column, and
+> training-fold standardization. The penalty comes from a five-value predeclared grid chosen
+> on the same inner chronological split. Its job is to say whether nonlinear boosting is
+> buying anything over an ordinary regularized model.
+>
+> **Baseline uncertainty.** Neither baseline is given a fabricated fixed-width interval.
+> Both emit the same five quantiles as the candidate, built from residuals collected on the
+> inner chronological split — fit on the earlier training seasons, residuals from the latest
+> one or two — stratified by predicted level where a stratum has at least 100 rows and
+> pooled otherwise. No validation-season row influences its own predictive interval.
 
 ## 9. Intrinsic candidate model family
 
@@ -213,6 +264,17 @@ Disadvantages:
 - quantile crossing possible
 - injuries may dominate noise
 
+> **Phase-3 implementation.** `ffdraft.modeling.candidates` implements Candidate A as **Q1**:
+> LightGBM quantile regression, one booster per position x scoring preset x quantile, over
+> P10/P25/P50/P75/P90, predicting the season point total directly. The configuration is
+> fixed and predeclared for the whole phase — 250 rounds, learning rate 0.05, 15 leaves, a
+> 30-row leaf minimum, feature and row subsampling, L2 of 1.0 — with no search of any kind:
+> no grid, no Optuna, no early stopping against a validation season, no feature-selection
+> loop. Determinism is enforced rather than hoped for: one thread, LightGBM's
+> `deterministic` and `force_row_wise` modes, and every seed derived from the experiment seed
+> plus the group identity. Missing values reach LightGBM as NaN and are handled natively,
+> which is why the nullable Phase-2 columns were never imputed upstream.
+
 ### 9.2 Candidate B — availability × performance
 
 Two components:
@@ -243,6 +305,16 @@ Minimum fixes:
 - calibration parameters must be learned on allowed validation/calibration folds, not final holdout.
 
 Public model card reports target vs empirical interval coverage.
+
+> **Phase-3 implementation.** Crossing is *measured*, not assumed away. Every experiment
+> reports the raw row-level crossing rate and the mean crossing magnitude in fantasy points
+> before any repair, alongside empirical P10-P90 and P25-P75 coverage and the corresponding
+> mean interval widths. Coverage is never reported without width: an interval wide enough to
+> swallow every observation is uninformative, not calibrated. The only post-processing Phase
+> 3 applies is a deterministic sort of each row's quantiles, which is the minimum needed for
+> pinball loss and coverage to be well defined; the rate it repairs is reported separately.
+> Conformal or residual calibration belongs to Phase 4 and must be fitted on allowed
+> development folds, never on the sealed holdout.
 
 ## 11. Monte Carlo
 

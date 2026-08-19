@@ -72,8 +72,14 @@ MINIMUM_DEVELOPMENT_VARIATION = 0.01
 class ExclusionReason(StrEnum):
     """Why a leakage-safe Phase-2 model input is not a Phase-3 core feature."""
 
+    #: Non-null only in the sealed season; no development fold can validate it.
     SNAPSHOT_ERA_ONLY = "snapshot_era_only"
+    #: Constant in every development season, so it can only act as an era flag later.
     ERA_INDICATOR = "era_indicator"
+    #: Varies in development, but its distribution moves sharply at the era boundary. This
+    #: claim cannot be re-measured from a development run - the sealed season is absent by
+    #: design - so it stands as a recorded one-time measurement rather than a live check.
+    ERA_DISTRIBUTION_SHIFT = "era_distribution_shift"
     HORIZON_ERA_INDEX = "horizon_era_index"
     TIME_INDEX = "time_index"
 
@@ -137,7 +143,7 @@ _EXCLUSIONS: tuple[ExcludedFeature, ...] = (
     ),
     ExcludedFeature(
         name="team_at_anchor_known",
-        reason=ExclusionReason.ERA_INDICATOR,
+        reason=ExclusionReason.ERA_DISTRIBUTION_SHIFT,
         evidence=(
             "true on 7.1-11.7% of rows per development season against 50.6% of 2025; the "
             "shift is the data era, not a change in football"
@@ -199,7 +205,11 @@ class FeatureSelection:
                 "included": [
                     {"name": name, "dtype": str(specs[name].dtype)} for name in self.included
                 ],
-                "excluded": [item.to_dict() for item in self.excluded],
+                # Names and reason codes, not the prose evidence: rewording an explanation
+                # must not look like a different feature set.
+                "excluded": [
+                    {"name": item.name, "reason": str(item.reason)} for item in self.excluded
+                ],
             },
             sort_keys=True,
         )
@@ -366,6 +376,9 @@ def audit_era_stability(
             stats["max_development_coverage"] < MINIMUM_DEVELOPMENT_COVERAGE
             or stats["max_development_variation"] < MINIMUM_DEVELOPMENT_VARIATION
         )
+        # Only the two reasons that *are* claims about development-era data can be
+        # re-measured here. An era distribution shift is a comparison against the sealed
+        # season, which a development run deliberately cannot see.
         if item.reason in {ExclusionReason.SNAPSHOT_ERA_ONLY, ExclusionReason.ERA_INDICATOR}:
             checks.append(
                 QualityCheck.ok(

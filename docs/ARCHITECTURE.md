@@ -172,6 +172,12 @@ The implementation agent may make modest naming changes, but subsystem boundarie
 > - `src/ffdraft/pipeline/historical.py` — the historical build, alongside the Phase-1 fixture pipeline.
 > - `scripts/capture_source_schemas.py` — records upstream schemas for the Phase-2 loaders in the Phase-0 format.
 > - `docs/FEATURE_DICTIONARY.md` — generated from the dictionary module, with a test asserting it is current.
+>
+> **Phase-3 deltas**, also additive:
+>
+> - `src/ffdraft/modeling/` — the evaluation harness: the sealed holdout, the fold generator and window policies, the versioned core feature set, fold-local preprocessing and residual quantiles, the B0/B1 baselines, the Q1 LightGBM quantile candidate, metrics, the paired bootstrap, the frozen promotion gate, and experiment orchestration and reporting. It knows how to *evaluate* a model on the Phase-2 dataset; it fetches nothing, writes no public artifact and does not know what a tier is.
+> - `tests/model/` — the Phase-3 suite, driven by a synthetic modelling table so it runs without the gitignored historical dataset.
+> - `docs/experiments/phase3-intrinsic-baselines/` — the machine-readable and human-readable experiment reports, committed as evidence in the same way `docs/source-probes/` holds the Phase-0 probe.
 
 ## 5. Python package boundaries
 

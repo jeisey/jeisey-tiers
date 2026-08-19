@@ -87,6 +87,10 @@ uv run ffdraft build-historical --last-season 2025 --git-sha "$(git rev-parse --
 uv run ffdraft validate-historical data/historical
 uv run ffdraft feature-dictionary
 
+# The Phase-3 evaluation harness. Offline; reads what build-historical wrote. Season 2025
+# is the sealed final holdout and an ordinary run cannot reach it.
+uv run ffdraft evaluate-intrinsic --git-sha "$(git rev-parse --short HEAD)"
+
 # Frontend
 npm ci
 npm run lint && npm run typecheck
