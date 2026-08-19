@@ -21,7 +21,7 @@ uv sync --frozen
 uv run ruff check .                 # clean
 uv run ruff format --check .        # clean, 105 files
 uv run mypy                         # clean, 71 source files, strict
-uv run pytest                       # 638 passed, 4 live deselected
+uv run pytest                       # 639 passed, 4 live deselected
 uv run ffdraft config-check
 uv run ffdraft build-fixture-artifacts --out web/public/data
 uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
@@ -43,7 +43,7 @@ npm ci
 npm run lint                        # clean
 npm run typecheck                   # clean
 npm run test -- --run               # 31 passed
-npm run build                       # clean
+npm run build                       # clean; also verified with VITE_BASE_PATH=/jeisey-tiers/
 ```
 
 The Phase-1 golden artifacts were **not** regenerated: Phases 2 and 3 changed no public serialization contract, and a rebuild produces byte-identical files.
@@ -58,7 +58,7 @@ No production pipeline, model, artifact or site exists. What exists is the Phase
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
 - `.github/workflows/ci.yml` — Python and frontend gates, fixture-only, no vendor network.
 - `web/` — Vite/React/TypeScript skeleton with a typed artifact loader.
-- `tests/` — 638 network-free Python tests, including the Phase-3 suite in `tests/model/`; `web/tests/` adds 31.
+- `tests/` — 639 network-free Python tests, including the Phase-3 suite in `tests/model/`; `web/tests/` adds 31.
 
 **The fixture pipeline's valuation is still not a model** (`intrinsic_model_version="fixture-stub-0"`). Phase 3 evaluated candidates but promoted none to production: no model artifact is trained, saved or served. Phase 4 replaces the stub.
 

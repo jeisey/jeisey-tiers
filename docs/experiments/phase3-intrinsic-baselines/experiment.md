@@ -1,6 +1,6 @@
 # Phase 3 — intrinsic baselines and evaluation harness
 
-Experiment `phase3_intrinsic_v1`, seed `20260819`, code `c2b48cc`, generated 2026-08-19T13:34:46Z.
+Experiment `phase3_intrinsic_v1`, seed `20260819`, code `21a760f`, generated 2026-08-19T13:47:25Z.
 
 ## Conclusion
 
@@ -17,6 +17,28 @@ Experiment `phase3_intrinsic_v1`, seed `20260819`, code `c2b48cc`, generated 202
 > W1 improves both primary metrics on the common folds with paired 95% intervals excluding zero (MAE -0.2864 [-0.4735, -0.1067], pinball -0.0826 [-0.1340, -0.0373])
 
 **Final holdout:** season 2025 — **UNTOUCHED / NOT EVALUATED**.
+
+## Reading the result
+
+**The hardest baseline to beat is B0**, on macro MAE (25.60, against B1 26.98). Ranking tells a different story: B0 0.659, B1 0.710 on macro Spearman. A naive rule built on prior production and availability is hard to beat on error; a linear model on the full feature set orders players better than it does.
+
+**Does nonlinear quantile boosting add value? Yes.** Q1 improves on B0 by 3.53 points of macro MAE (25.60 to 22.07) and 1.85 of mean pinball loss, while ranking improves rather than regresses (0.659 to 0.726 Spearman). Every paired interval excludes zero.
+
+**By position it gains everywhere, unevenly.** MAE improvement runs from 12.1% at TE to 15.6% at RB; the rank improvement is largest at RB (+0.102 Spearman) and smallest at QB (+0.028). No position loses on either metric, so the aggregate win is not hiding one.
+
+**Calibration is decent, crossing is not.** Q1's P10-P90 interval covers 0.771 of observations against a nominal 0.80, at a mean width of 62.7 points - narrower than B0's 83.1 while covering comparably, which is the combination worth having. The P25-P75 interval covers 0.513 against a nominal 0.50. But the five quantiles are fitted independently, and 38.7% of rows have at least one crossing in the raw output, with a mean total magnitude of 0.53 points. The crossings are frequent but small relative to the interval width; Phase 3 repairs them by sorting and reports the raw rate rather than hiding it. Fixing the cause is Phase-4 work.
+
+**One result cuts against the promotion: top-K retrieval.** B1 retrieves 0.593 of the actual top-K by position against Q1's 0.544, despite the worse rank correlation. A median-quantile point prediction is deliberately robust, and robustness compresses the top of the board - which is the part of the board a draft sheet is mostly about. It does not breach the frozen gate, whose baseline is B0, and it is recorded as a Phase-4 risk: the production ranking runs on simulated VORP, so top-K must be re-measured there rather than assumed to carry over.
+
+**Does the 2014-2016 history help?** W1 improves both primary metrics on the common folds with paired 95% intervals excluding zero (MAE -0.2864 [-0.4735, -0.1067], pinball -0.0826 [-0.1340, -0.0373]). Read the per-fold numbers before generalising: the advantage is largest in the earliest validation season, which is exactly where the shorter window has least data, so the fair summary is that more training data helps most when there is least of it.
+
+**What remains unresolved.**
+
+- Candidate B (availability x performance) is unimplemented and unjudged. Phase 4 compares it against this same protocol or records why it is not worth building.
+- Quantile crossing needs a real fix rather than a sort, and interval calibration should be fitted on development folds.
+- The production ranking statistic - expected versus median simulated VORP - is still open, and the top-K finding is evidence that the choice matters.
+- No FantasyPros/ECR benchmark comparison was run. It is benchmark-only under ADR-014 and would have muddied a clean gate; it belongs in a later audit, after model-design choices are frozen.
+- The final holdout has not been touched, so nothing here is evidence about 2025.
 
 ## What the numbers say
 

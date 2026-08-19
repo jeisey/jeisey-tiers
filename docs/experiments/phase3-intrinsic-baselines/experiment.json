@@ -300,7 +300,7 @@
       "weighted_mae": 20.693630017180798,
       "weighted_mean_pinball": 7.827348090445709,
       "weighted_mean_width_p10_p90": 78.3414858508198,
-      "weighted_mean_width_p25_p75": 33.96511735742,
+      "weighted_mean_width_p25_p75": 33.965117357420006,
       "weighted_rmse": 35.55430028027269,
       "weighted_spearman": 0.6896263989181304,
       "weighted_top_k_recall": 0.5426114453185253,
@@ -984,7 +984,7 @@
       "weighted_mae": 26.785426179429855,
       "weighted_mean_pinball": 10.212205183126787,
       "weighted_mean_width_p10_p90": 90.85980148925103,
-      "weighted_mean_width_p25_p75": 36.403794172491644,
+      "weighted_mean_width_p25_p75": 36.40379417249165,
       "weighted_rmse": 45.803317044974655,
       "weighted_spearman": 0.6689521610046201,
       "weighted_top_k_recall": 0.5360656257933486,
@@ -1573,7 +1573,7 @@
       "weighted_crossing_rate_raw": 0.0,
       "weighted_kendall_tau_b": 0.5280996898102333,
       "weighted_mae": 23.331229706342306,
-      "weighted_mean_pinball": 8.930312577233355,
+      "weighted_mean_pinball": 8.930312577233353,
       "weighted_mean_width_p10_p90": 83.59324188148621,
       "weighted_mean_width_p25_p75": 32.685889072816884,
       "weighted_rmse": 38.660900815926375,
@@ -1637,7 +1637,7 @@
       "weighted_mae": 23.36069689448074,
       "weighted_mean_pinball": 8.967987972634946,
       "weighted_mean_width_p10_p90": 75.88891214581778,
-      "weighted_mean_width_p25_p75": 29.7529416364923,
+      "weighted_mean_width_p25_p75": 29.752941636492306,
       "weighted_rmse": 40.85583748297211,
       "weighted_spearman": 0.6816652085286972,
       "weighted_top_k_recall": 0.5284391534391534,
@@ -2848,7 +2848,7 @@
       2025
     ]
   },
-  "experiment_id": "phase3_intrinsic_v1:20260819:20260819T133446Z",
+  "experiment_id": "phase3_intrinsic_v1:20260819:20260819T134725Z",
   "experiment_version": "phase3_intrinsic_v1",
   "feature_development_coverage": {
     "age_at_anchor": {
@@ -33072,8 +33072,8 @@
       "window_policy": "W2_modern_era"
     }
   ],
-  "generated_at_utc": "2026-08-19T13:34:46Z",
-  "git_sha": "c2b48cc",
+  "generated_at_utc": "2026-08-19T13:47:25Z",
+  "git_sha": "21a760f",
   "metrics_by_cell": [
     {
       "coverage_p10_p90": 0.8169014084507042,
@@ -36655,7 +36655,7 @@
       "kendall_tau_b": 0.5470972062497401,
       "mae": 26.058638663694673,
       "mean_actual": 41.830149999999996,
-      "mean_pinball": 9.8502579062641,
+      "mean_pinball": 9.850257906264096,
       "mean_prediction": 39.708459317133766,
       "mean_width_p10_p90": 102.43275103198232,
       "mean_width_p25_p75": 43.98788896082543,
@@ -36663,8 +36663,8 @@
       "n": 400,
       "pinball_by_quantile": {
         "p10": 5.590355277522528,
-        "p25": 9.810215705907014,
-        "p50": 12.819330576249962,
+        "p25": 9.810215705907012,
+        "p50": 12.81933057624996,
         "p75": 12.141757942062855,
         "p90": 8.889630029578132
       },
@@ -37819,7 +37819,7 @@
       "pinball_by_quantile": {
         "p10": 3.0667191984199342,
         "p25": 6.217784460131827,
-        "p50": 8.88481709848143,
+        "p50": 8.884817098481431,
         "p75": 8.205937561435027,
         "p90": 5.580588345646853
       },
@@ -37922,8 +37922,8 @@
       "model_id": "B0",
       "n": 447,
       "pinball_by_quantile": {
-        "p10": 3.7563652965531955,
-        "p25": 7.583357978752198,
+        "p10": 3.756365296553196,
+        "p25": 7.583357978752199,
         "p50": 10.72905428443128,
         "p75": 9.849497123331808,
         "p90": 6.752778914436131
@@ -38018,7 +38018,7 @@
       "fold_id": "W1_all_history:2014-2022->2023",
       "fold_kind": "development",
       "kendall_tau_b": 0.6049171587278036,
-      "mae": 14.55195273109438,
+      "mae": 14.551952731094378,
       "mean_actual": 24.09946308724832,
       "mean_pinball": 5.109005708648974,
       "mean_prediction": 21.642324501004296,
@@ -39079,12 +39079,12 @@
       "pinball_by_quantile": {
         "p10": 4.17564500526405,
         "p25": 7.234237610510794,
-        "p50": 9.497250272064301,
+        "p50": 9.497250272064303,
         "p75": 9.19496892885332,
         "p90": 7.055506817655021
       },
       "position": "WR",
-      "rmse": 33.56997016920837,
+      "rmse": 33.56997016920836,
       "scoring_preset": "HALF",
       "spearman": 0.7043578928174621,
       "top_k": 24,
@@ -39178,7 +39178,7 @@
       "mean_pinball": 8.9511987687788,
       "mean_prediction": 35.47925470808429,
       "mean_width_p10_p90": 93.41176031656082,
-      "mean_width_p25_p75": 39.71982239850784,
+      "mean_width_p25_p75": 39.71982239850785,
       "model_id": "B0",
       "n": 450,
       "pinball_by_quantile": {
@@ -39280,7 +39280,7 @@
       "kendall_tau_b": 0.578709560313309,
       "mae": 15.381638191868397,
       "mean_actual": 24.220622222222218,
-      "mean_pinball": 5.971446433285389,
+      "mean_pinball": 5.97144643328539,
       "mean_prediction": 22.6685982087239,
       "mean_width_p10_p90": 62.33707890867655,
       "mean_width_p25_p75": 24.741440526140885,
@@ -39291,7 +39291,7 @@
         "p25": 5.784663581036247,
         "p50": 7.538337534703157,
         "p75": 7.438896268724914,
-        "p90": 5.721456191344929
+        "p90": 5.72145619134493
       },
       "position": "WR",
       "rmse": 27.197922998516233,
@@ -45484,7 +45484,7 @@
       "pinball_by_quantile": {
         "p10": 3.7028783801515086,
         "p25": 7.2918187593937,
-        "p50": 11.047828499719047,
+        "p50": 11.04782849971905,
         "p75": 10.52232733143137,
         "p90": 6.979132312910897
       },
@@ -49535,7 +49535,7 @@
         "candidate": 26.978590257291103,
         "ci_excludes_zero": true,
         "ci_high": 1.7292876917500837,
-        "ci_low": 0.9932828483532968,
+        "ci_low": 0.9932828483532967,
         "delta": 1.3769415946614885,
         "favours_candidate": false,
         "lower_is_better": true,
@@ -49623,7 +49623,7 @@
         "candidate": 22.06989505333827,
         "ci_excludes_zero": true,
         "ci_high": -3.1800960145272184,
-        "ci_low": -3.8669417592146735,
+        "ci_low": -3.866941759214674,
         "delta": -3.531753609291343,
         "favours_candidate": true,
         "lower_is_better": true,
@@ -49800,7 +49800,7 @@
           "candidate": 26.978590257291103,
           "ci_excludes_zero": true,
           "ci_high": 1.7292876917500837,
-          "ci_low": 0.9932828483532968,
+          "ci_low": 0.9932828483532967,
           "delta": 1.3769415946614885,
           "favours_candidate": false,
           "lower_is_better": true,
@@ -49925,7 +49925,7 @@
           "candidate": 22.06989505333827,
           "ci_excludes_zero": true,
           "ci_high": -3.1800960145272184,
-          "ci_low": -3.8669417592146735,
+          "ci_low": -3.866941759214674,
           "delta": -3.531753609291343,
           "favours_candidate": true,
           "lower_is_better": true,
@@ -50264,7 +50264,7 @@
       "window_policy": "W2_modern_era"
     }
   ],
-  "runtime_seconds": 296.64,
+  "runtime_seconds": 287.37,
   "selection": {
     "candidates_passing": [
       "Q1"

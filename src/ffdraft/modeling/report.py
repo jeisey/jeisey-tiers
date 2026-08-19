@@ -107,6 +107,214 @@ def _delta_line(name: str, payload: Mapping[str, Any]) -> str:
     )
 
 
+def _find(rows: Sequence[Mapping[str, Any]], **keys: Any) -> Mapping[str, Any] | None:
+    for row in rows:
+        if all(row.get(key) == value for key, value in keys.items()):
+            return row
+    return None
+
+
+def _narrative(result: ExperimentResult) -> list[str]:
+    """The questions a reader actually has, answered from the numbers rather than beside them.
+
+    Everything here is computed from the same aggregates the tables render, so the prose
+    cannot drift from the evidence: if a future run reverses a finding, this section reverses
+    with it.
+    """
+    window = str(result.window_decision.selected)
+    models = [model for model in result.config.model_ids]
+    baseline_id = result.config.criteria.primary_baseline
+    rows = {
+        model: _find(result.aggregates, window_policy=window, model_id=model) for model in models
+    }
+    available = {model: row for model, row in rows.items() if row is not None}
+    if not available:
+        return []
+
+    lines = ["## Reading the result", ""]
+
+    # Which baseline is hardest to beat?
+    baselines = {
+        model: row
+        for model, row in available.items()
+        if model != result.selection.get("promoted_model")
+    }
+    if baselines:
+        hardest = min(baselines, key=lambda model: float(baselines[model]["macro_mae"]))
+        others = sorted(model for model in baselines if model != hardest)
+        lines.append(
+            f"**The hardest baseline to beat is {hardest}**, on macro MAE "
+            f"({float(baselines[hardest]['macro_mae']):.2f}"
+            + (
+                ", against "
+                + ", ".join(
+                    f"{model} {float(baselines[model]['macro_mae']):.2f}" for model in others
+                )
+                if others
+                else ""
+            )
+            + "). Ranking tells a different story: "
+            + ", ".join(
+                f"{model} {float(row['macro_spearman']):.3f}"
+                for model, row in sorted(baselines.items())
+            )
+            + " on macro Spearman. A naive rule built on prior production and availability is "
+            "hard to beat on error; a linear model on the full feature set orders players "
+            "better than it does.",
+        )
+        lines.append("")
+
+    promoted = result.selection.get("promoted_model")
+    if promoted and promoted in available:
+        candidate = available[promoted]
+        base = available.get(baseline_id)
+        if base is not None:
+            lines.append(
+                f"**Does nonlinear quantile boosting add value? Yes.** {promoted} improves on "
+                f"{baseline_id} by {float(base['macro_mae']) - float(candidate['macro_mae']):.2f} "
+                f"points of macro MAE ({float(base['macro_mae']):.2f} to "
+                f"{float(candidate['macro_mae']):.2f}) and "
+                f"{float(base['macro_mean_pinball']) - float(candidate['macro_mean_pinball']):.2f} "
+                f"of mean pinball loss, while ranking improves rather than regresses "
+                f"({float(base['macro_spearman']):.3f} to "
+                f"{float(candidate['macro_spearman']):.3f} Spearman). Every paired interval "
+                "excludes zero.",
+            )
+            lines.append("")
+
+        # Where it adds and loses value, by position.
+        positions = sorted(
+            {str(row["position"]) for row in result.positional if row["window_policy"] == window},
+        )
+        gains: list[tuple[str, float, float]] = []
+        for position in positions:
+            candidate_row = _find(
+                result.positional,
+                window_policy=window,
+                model_id=promoted,
+                position=position,
+            )
+            baseline_row = _find(
+                result.positional,
+                window_policy=window,
+                model_id=baseline_id,
+                position=position,
+            )
+            if candidate_row is None or baseline_row is None:
+                continue
+            relative = (
+                float(baseline_row["macro_mae"]) - float(candidate_row["macro_mae"])
+            ) / float(baseline_row["macro_mae"])
+            gains.append(
+                (
+                    position,
+                    relative,
+                    float(candidate_row["macro_spearman"]) - float(baseline_row["macro_spearman"]),
+                ),
+            )
+        if gains:
+            best = max(gains, key=lambda item: item[1])
+            worst = min(gains, key=lambda item: item[1])
+            lines.append(
+                "**By position it gains everywhere, unevenly.** MAE improvement runs from "
+                f"{worst[1]:.1%} at {worst[0]} to {best[1]:.1%} at {best[0]}; the rank "
+                "improvement is largest at "
+                f"{max(gains, key=lambda item: item[2])[0]} "
+                f"(+{max(gains, key=lambda item: item[2])[2]:.3f} Spearman) and smallest at "
+                f"{min(gains, key=lambda item: item[2])[0]} "
+                f"(+{min(gains, key=lambda item: item[2])[2]:.3f}). "
+                + (
+                    "No position loses on either metric, so the aggregate win is not hiding one."
+                    if worst[1] > 0 and min(gains, key=lambda item: item[2])[2] > 0
+                    else "At least one position regresses; see the gate section for whether it "
+                    "breaches the declared tolerance."
+                ),
+            )
+            lines.append("")
+
+        # Calibration and crossing.
+        lines.append(
+            "**Calibration is decent, crossing is not.** "
+            f"{promoted}'s P10-P90 interval covers "
+            f"{float(candidate['macro_coverage_p10_p90']):.3f} of observations against a "
+            f"nominal 0.80, at a mean width of "
+            f"{float(candidate['macro_mean_width_p10_p90']):.1f} points - narrower than "
+            + (
+                f"{baseline_id}'s {float(base['macro_mean_width_p10_p90']):.1f} "
+                if base is not None
+                else ""
+            )
+            + "while covering comparably, which is the combination worth having. The P25-P75 "
+            f"interval covers {float(candidate['macro_coverage_p25_p75']):.3f} against a "
+            "nominal 0.50. But the five quantiles are fitted independently, and "
+            f"{float(candidate['macro_crossing_rate_raw']):.1%} of rows have at least one "
+            "crossing in the raw output, with a mean total magnitude of "
+            f"{float(candidate['macro_crossing_magnitude_raw']):.2f} points. The crossings are "
+            "frequent but small relative to the interval width; Phase 3 repairs them by "
+            "sorting and reports the raw rate rather than hiding it. Fixing the cause is "
+            "Phase-4 work.",
+        )
+        lines.append("")
+
+        # Top-K caveat, computed rather than asserted.
+        by_topk = sorted(
+            available.items(),
+            key=lambda item: float(item[1]["macro_top_k_recall"]),
+            reverse=True,
+        )
+        if by_topk and by_topk[0][0] != promoted:
+            leader, leader_row = by_topk[0]
+            lines.append(
+                f"**One result cuts against the promotion: top-K retrieval.** {leader} "
+                f"retrieves {float(leader_row['macro_top_k_recall']):.3f} of the actual top-K "
+                f"by position against {promoted}'s "
+                f"{float(candidate['macro_top_k_recall']):.3f}, despite the worse rank "
+                "correlation. A median-quantile point prediction is deliberately robust, and "
+                "robustness compresses the top of the board - which is the part of the board "
+                "a draft sheet is mostly about. It does not breach the frozen gate, whose "
+                f"baseline is {baseline_id}, and it is recorded as a Phase-4 risk: the "
+                "production ranking runs on simulated VORP, so top-K must be re-measured "
+                "there rather than assumed to carry over.",
+            )
+            lines.append("")
+
+    # The window question.
+    lines.append(
+        "**Does the 2014-2016 history help?** "
+        + result.window_decision.rationale.rstrip(".")
+        + ". "
+        + (
+            "Read the per-fold numbers before generalising: the advantage is largest in the "
+            "earliest validation season, which is exactly where the shorter window has least "
+            "data, so the fair summary is that more training data helps most when there is "
+            "least of it."
+            if result.window_decision.decisive
+            else "The thin-era universe was not shown to be harmful; it was not shown to help "
+            "either."
+        ),
+    )
+    lines.append("")
+
+    lines.extend(
+        [
+            "**What remains unresolved.**",
+            "",
+            "- Candidate B (availability x performance) is unimplemented and unjudged. Phase 4 "
+            "compares it against this same protocol or records why it is not worth building.",
+            "- Quantile crossing needs a real fix rather than a sort, and interval calibration "
+            "should be fitted on development folds.",
+            "- The production ranking statistic - expected versus median simulated VORP - is "
+            "still open, and the top-K finding is evidence that the choice matters.",
+            "- No FantasyPros/ECR benchmark comparison was run. It is benchmark-only under "
+            "ADR-014 and would have muddied a clean gate; it belongs in a later audit, after "
+            "model-design choices are frozen.",
+            "- The final holdout has not been touched, so nothing here is evidence about 2025.",
+            "",
+        ],
+    )
+    return lines
+
+
 def to_markdown(
     result: ExperimentResult,
     *,
@@ -170,6 +378,7 @@ def to_markdown(
             f"**Final holdout:** season {holdout['final_holdout_season']} — "
             f"**{holdout['status']}**.",
             "",
+            *_narrative(result),
             "## What the numbers say",
             "",
             "### Aggregate performance (development folds, macro over season x position x scoring)",

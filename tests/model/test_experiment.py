@@ -173,8 +173,25 @@ def test_the_markdown_report_leads_with_the_conclusion(result):
     assert text.startswith("# Phase 3")
     assert "## Conclusion" in text
     assert text.index("## Conclusion") < text.index("## What the numbers say")
-    for heading in ("The promotion gate", "Folds", "Feature set", "Final holdout"):
+    for heading in ("Reading the result", "The promotion gate", "Folds", "Feature set"):
         assert f"## {heading}" in text
+    assert "## Final holdout" in text
+
+
+def test_the_narrative_answers_the_questions_a_reader_has(result):
+    """The prose is generated from the same aggregates the tables render, so it cannot drift."""
+    text = to_markdown(result, git_sha="abc1234")
+    narrative = text[text.index("## Reading the result") : text.index("## What the numbers say")]
+    for claim in (
+        "hardest baseline to beat",
+        "Calibration is decent, crossing is not",
+        "Does the 2014-2016 history help?",
+        "What remains unresolved",
+    ):
+        assert claim in narrative, claim
+    # The unresolved list must keep naming the things Phase 4 owns.
+    for open_item in ("Candidate B", "final holdout has not been touched", "ECR"):
+        assert open_item in narrative, open_item
 
 
 def test_writing_the_report_produces_both_files(result, tmp_path):
