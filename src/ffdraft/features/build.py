@@ -687,9 +687,17 @@ def _derive(frame: pl.DataFrame, *, anchor: SeasonAnchor) -> pl.DataFrame:
         _ratio("prev1_points_over_expected", "prev1_xfp_games", minimum=1).alias(
             "prev1_fp_over_expected_pg",
         ),
-        pl.max_horizontal(
-            pl.lit(0),
-            pl.col("prev1_team_games").cast(pl.Int32) - pl.col("prev1_games").cast(pl.Int32),
+        # Null when either component is missing, which is what the dictionary declares.
+        # `max_horizontal` alone would return 0 for a player with no previous season, and a
+        # fabricated "missed no games" reads as perfect durability for exactly the rows that
+        # have no durability evidence at all - the same mistake as imputing years_exp = 0.
+        pl.when(pl.col("prev1_team_games").is_null() | pl.col("prev1_games").is_null())
+        .then(None)
+        .otherwise(
+            pl.max_horizontal(
+                pl.lit(0),
+                pl.col("prev1_team_games").cast(pl.Int32) - pl.col("prev1_games").cast(pl.Int32),
+            ),
         )
         .cast(pl.Int32)
         .alias("prev1_games_missed"),

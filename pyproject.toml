@@ -8,10 +8,17 @@ requires-python = ">=3.12"
 # what the scaffold, contracts, identity layer, adapters and artifact serializers need:
 # pydantic for validated configuration, jsonschema (+ an RFC 3339 validator so `format:
 # date-time` is actually asserted rather than ignored) for the public artifact contracts.
-# Modeling dependencies (scikit-learn, LightGBM, ruptures) arrive with Phase 3/4, not here.
+#
+# Phase 3 adds exactly two modelling dependencies: LightGBM for the boosted-tree quantile
+# candidate, and NumPy, which LightGBM requires anyway and which the metrics work in. The
+# regularized baseline, the rank/probabilistic metrics and the paired bootstrap are written
+# against NumPy rather than pulling in scikit-learn and SciPy for a closed-form ridge, two
+# correlation coefficients and a percentile (ADR-024). `ruptures` still waits for Phase 4.
 dependencies = [
     "jsonschema>=4.23",
+    "lightgbm>=4.5",
     "nflreadpy>=0.1.5",
+    "numpy>=2.0",
     "polars>=1.0",
     "pydantic>=2.9",
     "pyyaml>=6.0",
@@ -27,6 +34,11 @@ dev = [
     "mypy>=1.11",
     "pytest>=8.3",
     "ruff>=0.6",
+    # SciPy is already a hard LightGBM dependency. It is declared here as well so the
+    # metric cross-check tests may import it honestly: the project's own Spearman, Kendall
+    # tau-b and pinball implementations are checked against an independent implementation
+    # as well as against hand-worked examples, without SciPy becoming production code.
+    "scipy>=1.14",
     "types-jsonschema>=4.23",
     "types-pyyaml>=6.0",
     "types-requests>=2.32",
