@@ -26,7 +26,7 @@ Four things are measured, all of them named in the frozen ``phase4_tier_stabilit
 from __future__ import annotations
 
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -87,6 +87,22 @@ def adjusted_rand_index(left: Sequence[int], right: Sequence[int]) -> float:
     return float((index - expected) / (maximum - expected))
 
 
+def _quantiles(matrix: Floats, levels: Sequence[float]) -> tuple[Floats, Floats]:
+    """Quantiles and mean, taking the fast path when nothing is missing.
+
+    ``nanquantile`` copies and masks before it partitions, which roughly doubles the cost of
+    the bootstrap's hot loop. A full pool has no missing VORP at all - a null only appears
+    when a position's whole pool was consumed by starting slots - so the check is cheap and
+    almost always lets the plain path run.
+    """
+    level_list = list(levels)
+    if np.isnan(matrix).any():
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            return np.nanquantile(matrix, level_list, axis=1).T, np.nanmean(matrix, axis=1)
+    return np.quantile(matrix, level_list, axis=1).T, np.mean(matrix, axis=1)
+
+
 def summarise_from_draws(
     players: pl.DataFrame,
     vorp_draws: Floats,
@@ -94,29 +110,32 @@ def summarise_from_draws(
     *,
     columns: NDArray[np.int64] | Sequence[int] | None = None,
     levels: Sequence[float] = QUANTILE_LEVELS,
+    point_levels: Sequence[float] | None = None,
 ) -> pl.DataFrame:
     """Rebuild the per-player VORP summary from a subset of simulation draws.
 
     ``columns`` selects draw indices, with replacement, which is what makes a bootstrap
     replicate. Passing ``None`` recomputes the summary over every draw, which must reproduce
     the original simulation exactly - a property the test suite asserts.
+
+    ``point_levels`` narrows which *point* quantiles are recomputed. The ranking tie-break
+    reads only P50 points and the segmentation reads only VORP, so a bootstrap replicate can
+    skip four of the five and halve its quantile work; the default recomputes all of them.
     """
     index = np.arange(vorp_draws.shape[1]) if columns is None else np.asarray(columns, dtype=int)
     vorp = vorp_draws[:, index]
     points = point_draws[:, index]
     level_list = list(levels)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
-        vorp_quantiles = np.nanquantile(vorp, level_list, axis=1).T
-        expected_vorp = np.nanmean(vorp, axis=1)
-    point_quantiles = np.quantile(points, level_list, axis=1).T
+    point_list = list(point_levels if point_levels is not None else levels)
+    vorp_quantiles, expected_vorp = _quantiles(vorp, level_list)
+    point_quantiles, expected_points = _quantiles(points, point_list)
     frame = players.select(
         "player_id", "position", "league_preset_id", "scoring_preset"
     ).with_columns(
-        pl.Series("expected_points", np.mean(points, axis=1), dtype=pl.Float64),
+        pl.Series("expected_points", expected_points, dtype=pl.Float64),
         *[
             pl.Series(name, point_quantiles[:, position], dtype=pl.Float64)
-            for position, name in enumerate(quantile_column_names("points", level_list))
+            for position, name in enumerate(quantile_column_names("points", point_list))
         ],
         pl.Series("expected_vorp", expected_vorp, dtype=pl.Float64),
         *[
@@ -178,34 +197,49 @@ def bootstrap_stability(
     vorp_draws: Floats,
     point_draws: Floats,
     *,
-    promoted: Mapping[float, Segmentation],
+    promoted: Mapping[str, Mapping[float, Segmentation]],
     promoted_player_ids: Sequence[str],
     statistic: str,
     board_depth: int,
+    segmenters: Mapping[str, Callable[[pl.DataFrame, float], Segmentation]] | None = None,
     replicates: int = DEFAULT_BOOTSTRAP_REPLICATES,
     seed: int,
     levels: Sequence[float] = QUANTILE_LEVELS,
-) -> dict[float, StabilityReport]:
+) -> dict[str, dict[float, StabilityReport]]:
     """Resample the simulated seasons and rerun the whole ranking-and-segmentation pipeline.
 
-    Every penalty in ``promoted`` is evaluated against the same replicates, because the
-    expensive step is recomputing each player's VORP summary from the resampled draws and
-    that work is shared. Each replicate re-ranks the board as well as re-segmenting it: a
-    boundary that only survives when the fair ranks are held fixed has not been shown to be
-    stable, since the ranking comes from the same draws.
+    Every algorithm and every penalty in ``promoted`` is evaluated against the **same**
+    replicates. That is not only fair, it is most of the runtime saved: recomputing each
+    player's VORP summary from ten thousand resampled draws costs seconds, and segmenting the
+    resulting board costs milliseconds, so the expensive step is shared and the cheap one is
+    repeated.
+
+    Each replicate re-ranks the board as well as re-segmenting it: a boundary that only
+    survives when the fair ranks are held fixed has not been shown to be stable, since the
+    ranking comes from the same draws.
     """
+    resolved: dict[str, Callable[[pl.DataFrame, float], Segmentation]] = dict(segmenters or {})
+    for algorithm in promoted:
+        resolved.setdefault(
+            algorithm,
+            lambda board, penalty: segment_board(board, penalty=penalty),
+        )
     generator = np.random.default_rng(seed)
     draws = vorp_draws.shape[1]
     promoted_index = {player_id: index for index, player_id in enumerate(promoted_player_ids)}
     promoted_ordinals = {
-        penalty: dict(zip(promoted_player_ids, segmentation.ordinals, strict=True))
-        for penalty, segmentation in promoted.items()
+        algorithm: {
+            penalty: dict(zip(promoted_player_ids, segmentation.ordinals, strict=True))
+            for penalty, segmentation in by_penalty.items()
+        }
+        for algorithm, by_penalty in promoted.items()
     }
 
-    rand_scores: dict[float, list[float]] = {penalty: [] for penalty in promoted}
-    tier_counts: dict[float, list[int]] = {penalty: [] for penalty in promoted}
-    singleton_rates: dict[float, list[float]] = {penalty: [] for penalty in promoted}
-    boundary_hits: dict[float, dict[int, int]] = {penalty: {} for penalty in promoted}
+    keys = [(algorithm, penalty) for algorithm, by in promoted.items() for penalty in by]
+    rand_scores: dict[tuple[str, float], list[float]] = {key: [] for key in keys}
+    tier_counts: dict[tuple[str, float], list[int]] = {key: [] for key in keys}
+    singleton_rates: dict[tuple[str, float], list[float]] = {key: [] for key in keys}
+    boundary_hits: dict[tuple[str, float], dict[int, int]] = {key: {} for key in keys}
 
     for _ in range(replicates):
         columns: NDArray[np.int64] = np.asarray(
@@ -218,64 +252,66 @@ def bootstrap_stability(
             point_draws,
             columns=columns,
             levels=levels,
+            point_levels=(0.50,),
         )
         ranked = fair_ranking(summary, statistic=statistic).head(board_depth)
         replicate_ids = ranked.get_column("player_id").to_list()
-        for penalty in promoted:
-            segmentation = segment_board(ranked, penalty=penalty)
-            tier_counts[penalty].append(segmentation.tier_count)
-            singleton_rates[penalty].append(segmentation.singleton_rate)
+        for algorithm, penalty in keys:
+            segmentation = resolved[algorithm](ranked, penalty)
+            key = (algorithm, penalty)
+            tier_counts[key].append(segmentation.tier_count)
+            singleton_rates[key].append(segmentation.singleton_rate)
             replicate_ordinals = dict(zip(replicate_ids, segmentation.ordinals, strict=True))
             shared = [pid for pid in promoted_player_ids if pid in replicate_ordinals]
             if len(shared) > 1:
-                rand_scores[penalty].append(
+                rand_scores[key].append(
                     adjusted_rand_index(
-                        [promoted_ordinals[penalty][pid] for pid in shared],
+                        [promoted_ordinals[algorithm][penalty][pid] for pid in shared],
                         [replicate_ordinals[pid] for pid in shared],
                     ),
                 )
             for index in segmentation.boundaries:
                 position = promoted_index.get(replicate_ids[index])
                 if position is not None:
-                    boundary_hits[penalty][position] = boundary_hits[penalty].get(position, 0) + 1
+                    boundary_hits[key][position] = boundary_hits[key].get(position, 0) + 1
 
-    reports: dict[float, StabilityReport] = {}
-    for penalty, segmentation in promoted.items():
-        frequency = {
-            position: hits / float(replicates)
-            for position, hits in sorted(boundary_hits[penalty].items())
-        }
-        promoted_boundaries = list(segmentation.boundaries)
-        agreement = (
-            float(np.mean([frequency.get(index, 0.0) >= 0.5 for index in promoted_boundaries]))
-            if promoted_boundaries
-            else float("nan")
-        )
-        counts = np.asarray(tier_counts[penalty], dtype=np.float64)
-        cv = (
-            float(np.std(counts) / np.mean(counts))
-            if counts.size and np.mean(counts)
-            else float("nan")
-        )
-        by_region: dict[str, list[float]] = {}
-        for position, value in frequency.items():
-            by_region.setdefault(_region(position + 1, board_depth), []).append(value)
-        reports[penalty] = StabilityReport(
-            replicates=replicates,
-            adjusted_rand=(
-                float(np.mean(rand_scores[penalty])) if rand_scores[penalty] else float("nan")
-            ),
-            boundary_agreement=agreement,
-            singleton_rate=(
-                float(np.mean(singleton_rates[penalty]))
-                if singleton_rates[penalty]
+    reports: dict[str, dict[float, StabilityReport]] = {algorithm: {} for algorithm in promoted}
+    for algorithm, by_penalty in promoted.items():
+        for penalty, segmentation in by_penalty.items():
+            key = (algorithm, penalty)
+            frequency = {
+                position: hits / float(replicates)
+                for position, hits in sorted(boundary_hits[key].items())
+            }
+            promoted_boundaries = list(segmentation.boundaries)
+            agreement = (
+                float(np.mean([frequency.get(index, 0.0) >= 0.5 for index in promoted_boundaries]))
+                if promoted_boundaries
                 else float("nan")
-            ),
-            tier_count_cv=cv,
-            tier_counts=tuple(tier_counts[penalty]),
-            boundary_frequency=frequency,
-            boundary_frequency_by_region={
-                region: float(np.mean(values)) for region, values in sorted(by_region.items())
-            },
-        )
+            )
+            counts = np.asarray(tier_counts[key], dtype=np.float64)
+            cv = (
+                float(np.std(counts) / np.mean(counts))
+                if counts.size and np.mean(counts)
+                else float("nan")
+            )
+            by_region: dict[str, list[float]] = {}
+            for position, value in frequency.items():
+                by_region.setdefault(_region(position + 1, board_depth), []).append(value)
+            reports[algorithm][penalty] = StabilityReport(
+                replicates=replicates,
+                adjusted_rand=(
+                    float(np.mean(rand_scores[key])) if rand_scores[key] else float("nan")
+                ),
+                boundary_agreement=agreement,
+                singleton_rate=(
+                    float(np.mean(singleton_rates[key])) if singleton_rates[key] else float("nan")
+                ),
+                tier_count_cv=cv,
+                tier_counts=tuple(tier_counts[key]),
+                boundary_frequency=frequency,
+                boundary_frequency_by_region={
+                    region: float(np.mean(values)) for region, values in sorted(by_region.items())
+                },
+            )
     return reports

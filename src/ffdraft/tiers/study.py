@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -37,6 +37,7 @@ import polars as pl
 
 from ffdraft.config import LeagueConfig
 from ffdraft.contracts import CheckStatus, QualityCheck
+from ffdraft.contracts.enums import Severity
 from ffdraft.modeling.folds import DEFAULT_SEED, DEVELOPMENT_VALIDATION_SEASONS
 from ffdraft.modeling.metrics import QUANTILE_LEVELS
 from ffdraft.modeling.rules import (
@@ -56,10 +57,12 @@ from ffdraft.simulation.study import (
     training_bounds,
 )
 from ffdraft.simulation.vorp import SimulationConfig, fair_ranking, sample_points, simulate_vorp
+from ffdraft.tiers.dynamic import DP_SEGMENTATION_VERSION, segment_board_dp
 from ffdraft.tiers.labels import tier_label
-from ffdraft.tiers.segmentation import Segmentation, segment_board
+from ffdraft.tiers.segmentation import SEGMENTATION_VERSION, Segmentation, segment_board
 from ffdraft.tiers.stability import (
     DEFAULT_BOOTSTRAP_REPLICATES,
+    StabilityReport,
     adjusted_rand_index,
     bootstrap_stability,
 )
@@ -75,7 +78,37 @@ __all__ = [
 
 TIER_STUDY_VERSION = "phase4_tiers_v1"
 
+
+def _mean(values: Sequence[float]) -> float:
+    """Mean over the measurable values.
+
+    A penalty large enough to leave the board in one tier has no boundaries, so its boundary
+    statistics are genuinely undefined rather than zero. NumPy warns about the all-NaN
+    reduction; the undefined answer is the intended one, so it is produced quietly.
+    """
+    finite = [float(value) for value in values if value == value]
+    return float(np.mean(finite)) if finite else float("nan")
+
+
 _DEFAULT_LEAGUE = "redraft-12"
+
+#: The primary candidate and the documented alternative, in the order ADR-030 requires them
+#: to be tried: the alternative is only reached because the primary failed a frozen rule.
+PRIMARY_ALGORITHM = "pelt_rbf"
+ALTERNATIVE_ALGORITHM = "dp_quantile"
+ALGORITHM_VERSIONS: Mapping[str, str] = {
+    PRIMARY_ALGORITHM: SEGMENTATION_VERSION,
+    ALTERNATIVE_ALGORITHM: DP_SEGMENTATION_VERSION,
+}
+
+
+def segment_with(algorithm: str, board: pl.DataFrame, *, penalty: float) -> Segmentation:
+    """Segment one board with the named algorithm."""
+    if algorithm == PRIMARY_ALGORITHM:
+        return segment_board(board, penalty=penalty)
+    if algorithm == ALTERNATIVE_ALGORITHM:
+        return segment_board_dp(board, penalty=penalty)
+    raise ValueError(f"unknown segmentation algorithm {algorithm!r}")
 
 
 @dataclass(frozen=True)
@@ -138,6 +171,7 @@ class TierStudyResult:
     """Everything the tier study produced."""
 
     config: TierStudyConfig
+    algorithm: str
     boards: list[dict[str, Any]]
     penalty_candidates: list[dict[str, Any]]
     penalty_decision: Decision
@@ -148,6 +182,7 @@ class TierStudyResult:
     monotonicity: list[dict[str, Any]]
     cross_preset: list[dict[str, Any]]
     example_board: list[dict[str, Any]]
+    attempts: list[dict[str, Any]] = field(default_factory=list)
     checks: list[QualityCheck] = field(default_factory=list)
     runtime_seconds: float = 0.0
 
@@ -222,11 +257,11 @@ def _candidate_evidence(
                 mean_tier_count=float(np.mean([row["tier_count"] for row in rows])),
                 singleton_rate=float(np.mean([row["singleton_rate"] for row in rows])),
                 largest_tier_share=float(np.mean([row["largest_tier_share"] for row in rows])),
-                mean_boundary_effect_size=float(
-                    np.nanmean([row["mean_boundary_effect_size"] for row in rows]),
+                mean_boundary_effect_size=_mean(
+                    [row["mean_boundary_effect_size"] for row in rows],
                 ),
-                median_within_tier_effect_size=float(
-                    np.nanmean([row["median_within_tier_effect_size"] for row in rows]),
+                median_within_tier_effect_size=_mean(
+                    [row["median_within_tier_effect_size"] for row in rows],
                 ),
                 bootstrap_adjusted_rand=(
                     float(report.adjusted_rand) if report is not None else float("nan")
@@ -276,7 +311,14 @@ def run_tier_study(
     *,
     config: TierStudyConfig,
 ) -> TierStudyResult:
-    """Select the tier penalty, then measure the promoted segmentation's stability."""
+    """Select the tier penalty, then measure the promoted segmentation's stability.
+
+    The PELT candidate is tried first, because `docs/MODELING.md` section 14.2 names it as
+    the initial candidate. The documented dynamic-programming alternative is reached **only**
+    when a frozen rule refuses PELT - either no penalty in the grid is admissible, or the
+    promoted one fails the stability gate. That is ADR-030's declared response, and both
+    attempts are recorded so the escalation is visible rather than inferred.
+    """
     started = time.monotonic()
     sealed = [
         season for season in predictions.get_column("season").unique().to_list() if season >= 2025
@@ -287,31 +329,78 @@ def run_tier_study(
             "study runs on development folds only",
         )
 
-    shape: list[dict[str, Any]] = []
-    boards: dict[str, tuple[pl.DataFrame, dict[float, Segmentation]]] = {}
-    for scenario in config.scenarios():
-        _, ranked, _ = _simulate_board(predictions, modelling_frame, league, scenario, config)
-        segmentations = {
-            penalty: segment_board(ranked, penalty=penalty) for penalty in config.penalties
+    ranked_boards = _simulate_boards(predictions, modelling_frame, league, config)
+    algorithms = (PRIMARY_ALGORITHM, ALTERNATIVE_ALGORITHM)
+    segmentations = {
+        algorithm: {
+            key: {
+                penalty: segment_with(algorithm, ranked, penalty=penalty)
+                for penalty in config.penalties
+            }
+            for key, (_, ranked) in ranked_boards.items()
         }
-        boards[scenario.key] = (ranked, segmentations)
-        for penalty, segmentation in segmentations.items():
-            shape.append(
-                {
-                    **scenario.to_dict(),
-                    "penalty": penalty,
-                    "tier_count": segmentation.tier_count,
-                    "singleton_rate": segmentation.singleton_rate,
-                    "largest_tier_share": segmentation.largest_tier_share,
-                    "mean_boundary_effect_size": segmentation.mean_boundary_effect_size,
-                    "median_within_tier_effect_size": segmentation.median_within_tier_effect_size,
-                    "sizes": list(segmentation.sizes),
-                },
-            )
+        for algorithm in algorithms
+    }
+    pooled = _bootstrap(predictions, modelling_frame, league, config, algorithms)
 
-    # The bootstrap is the expensive half, so it runs on a declared subset and evaluates
-    # every penalty against the same replicates.
-    aggregated: dict[float, list[Any]] = {penalty: [] for penalty in config.penalties}
+    attempts: list[dict[str, Any]] = []
+    promoted: dict[str, Any] | None = None
+    for algorithm in algorithms:
+        attempt = _evaluate_algorithm(
+            algorithm,
+            ranked_boards=ranked_boards,
+            segmentations=segmentations[algorithm],
+            pooled=pooled[algorithm],
+            realized_vorp=realized_vorp,
+            predictions=predictions,
+            modelling_frame=modelling_frame,
+            league=league,
+            config=config,
+        )
+        attempts.append(attempt["summary"])
+        if attempt["passed"]:
+            promoted = attempt["payload"]
+            break
+
+    # Neither algorithm passing is a real outcome, not an error: the last attempt's
+    # measurements are reported so the failure is legible instead of empty.
+    outcome: Mapping[str, Any] = promoted if promoted is not None else attempts[-1]["payload"]
+
+    return TierStudyResult(
+        config=config,
+        algorithm=str(outcome["algorithm"]),
+        boards=list(outcome["shape"]),
+        penalty_candidates=list(outcome["candidates"]),
+        penalty_decision=outcome["penalty_decision"],
+        stability_by_penalty=dict(outcome["stability_by_penalty"]),
+        stability_decision=outcome["stability_decision"],
+        stability_evidence=dict(outcome["stability_evidence"]),
+        boundary_diagnostics=list(outcome["boundary_diagnostics"]),
+        monotonicity=list(outcome["monotonicity"]),
+        cross_preset=list(outcome["cross_preset"]),
+        example_board=list(outcome["example_board"]),
+        attempts=attempts,
+        checks=_tier_checks(
+            outcome["penalty_decision"],
+            outcome["stability_decision"],
+            algorithm=str(outcome["algorithm"]),
+            attempts=attempts,
+        ),
+        runtime_seconds=round(time.monotonic() - started, 2),
+    )
+
+
+def _bootstrap(
+    predictions: pl.DataFrame,
+    modelling_frame: pl.DataFrame,
+    league: LeagueConfig,
+    config: TierStudyConfig,
+    algorithms: Sequence[str],
+) -> dict[str, dict[float, StabilityReport]]:
+    """Run the declared bootstrap subset once, scoring every algorithm on the same replicates."""
+    collected: dict[str, dict[float, list[StabilityReport]]] = {
+        algorithm: {penalty: [] for penalty in config.penalties} for algorithm in algorithms
+    }
     for scenario in [
         DevelopmentScenario(season, scoring, _DEFAULT_LEAGUE)
         for season in config.bootstrap_seasons
@@ -326,7 +415,13 @@ def run_tier_study(
             keep_draws=True,
         )
         assert result.vorp_draws is not None and result.point_draws is not None
-        promoted = {penalty: segment_board(ranked, penalty=penalty) for penalty in config.penalties}
+        promoted = {
+            algorithm: {
+                penalty: segment_with(algorithm, ranked, penalty=penalty)
+                for penalty in config.penalties
+            }
+            for algorithm in algorithms
+        }
         reports = bootstrap_stability(
             players,
             result.vorp_draws,
@@ -335,25 +430,80 @@ def run_tier_study(
             promoted_player_ids=ranked.get_column("player_id").to_list(),
             statistic=config.statistic,
             board_depth=config.board_depth,
+            segmenters={algorithm: _segmenter(algorithm) for algorithm in algorithms},
             replicates=config.bootstrap_replicates,
             seed=config.seed + scenario.season,
         )
-        for penalty, report in reports.items():
-            aggregated[penalty].append(report)
+        for algorithm, by_penalty in reports.items():
+            for penalty, report in by_penalty.items():
+                collected[algorithm][penalty].append(report)
+    return {
+        algorithm: {penalty: _pool(reports) for penalty, reports in by_penalty.items() if reports}
+        for algorithm, by_penalty in collected.items()
+    }
 
-    pooled = {penalty: _pool(reports) for penalty, reports in aggregated.items() if reports}
-    penalty_decision = select_tier_penalty(
-        _candidate_evidence(shape, pooled, config.penalties),
-    )
+
+def _segmenter(algorithm: str) -> Callable[[pl.DataFrame, float], Segmentation]:
+    def segment(board: pl.DataFrame, penalty: float) -> Segmentation:
+        return segment_with(algorithm, board, penalty=penalty)
+
+    return segment
+
+
+def _simulate_boards(
+    predictions: pl.DataFrame,
+    modelling_frame: pl.DataFrame,
+    league: LeagueConfig,
+    config: TierStudyConfig,
+) -> dict[str, tuple[DevelopmentScenario, pl.DataFrame]]:
+    """Simulate every shape-diagnostic scenario once; both algorithms reuse the boards."""
+    boards: dict[str, tuple[DevelopmentScenario, pl.DataFrame]] = {}
+    for scenario in config.scenarios():
+        _, ranked, _ = _simulate_board(predictions, modelling_frame, league, scenario, config)
+        boards[scenario.key] = (scenario, ranked)
+    return boards
+
+
+def _evaluate_algorithm(
+    algorithm: str,
+    *,
+    ranked_boards: Mapping[str, tuple[DevelopmentScenario, pl.DataFrame]],
+    segmentations: Mapping[str, Mapping[float, Segmentation]],
+    pooled: Mapping[float, StabilityReport],
+    realized_vorp: pl.DataFrame,
+    predictions: pl.DataFrame,
+    modelling_frame: pl.DataFrame,
+    league: LeagueConfig,
+    config: TierStudyConfig,
+) -> dict[str, Any]:
+    """Run the whole penalty-selection and stability pipeline for one algorithm."""
+    shape: list[dict[str, Any]] = []
+    for key, (scenario, _ranked) in ranked_boards.items():
+        for penalty, segmentation in segmentations[key].items():
+            shape.append(
+                {
+                    **scenario.to_dict(),
+                    "algorithm": algorithm,
+                    "penalty": penalty,
+                    "tier_count": segmentation.tier_count,
+                    "singleton_rate": segmentation.singleton_rate,
+                    "largest_tier_share": segmentation.largest_tier_share,
+                    "mean_boundary_effect_size": segmentation.mean_boundary_effect_size,
+                    "median_within_tier_effect_size": segmentation.median_within_tier_effect_size,
+                    "sizes": list(segmentation.sizes),
+                },
+            )
+
+    candidates = _candidate_evidence(shape, pooled, config.penalties)
+    penalty_decision = select_tier_penalty(candidates)
     penalty = float(penalty_decision.selected) if penalty_decision.decisive else float("nan")
 
     monotonicity: list[dict[str, Any]] = []
     boundary_diagnostics: list[dict[str, Any]] = []
     example_board: list[dict[str, Any]] = []
     if penalty_decision.decisive:
-        for scenario in config.scenarios():
-            ranked, segmentations = boards[scenario.key]
-            segmentation = segmentations[penalty]
+        for key, (scenario, ranked) in ranked_boards.items():
+            segmentation = segmentations[key][penalty]
             realized = realized_vorp.filter(
                 (pl.col("season") == scenario.season)
                 & (pl.col("scoring_preset") == scenario.scoring_preset)
@@ -363,62 +513,66 @@ def run_tier_study(
             boundary_diagnostics.extend(
                 {**scenario.to_dict(), **item.to_dict()} for item in segmentation.diagnostics
             )
-        example = config.scenarios()[-1]
-        ranked, segmentations = boards[example.key]
-        example_board = _board_preview(ranked, segmentations[penalty], example)
+        example_key = list(ranked_boards)[-1]
+        scenario, ranked = ranked_boards[example_key]
+        example_board = _board_preview(ranked, segmentations[example_key][penalty], scenario)
 
-    cross_preset = _cross_preset(predictions, modelling_frame, league, config, penalty)
-
-    stability_report = pooled.get(penalty)
-    monotone_share = (
-        float(np.nanmean([row["monotonic_pair_share"] for row in monotonicity]))
-        if monotonicity
-        else float("nan")
+    cross_preset = _cross_preset(
+        predictions,
+        modelling_frame,
+        league,
+        config,
+        penalty,
+        algorithm=algorithm,
     )
-    cross_preset_ari = (
-        float(np.nanmean([row["adjusted_rand"] for row in cross_preset]))
-        if cross_preset
-        else float("nan")
-    )
+    report: StabilityReport | None = pooled.get(penalty)
+    monotone_share = _mean([row["monotonic_pair_share"] for row in monotonicity])
+    cross_preset_ari = _mean([row["adjusted_rand"] for row in cross_preset])
     evidence = TierStabilityEvidence(
-        bootstrap_adjusted_rand=(
-            float(stability_report.adjusted_rand) if stability_report else float("nan")
-        ),
-        boundary_agreement=(
-            float(stability_report.boundary_agreement) if stability_report else float("nan")
-        ),
-        singleton_rate=(
-            float(stability_report.singleton_rate) if stability_report else float("nan")
-        ),
-        tier_count_cv=(float(stability_report.tier_count_cv) if stability_report else float("nan")),
+        bootstrap_adjusted_rand=float(report.adjusted_rand) if report else float("nan"),
+        boundary_agreement=float(report.boundary_agreement) if report else float("nan"),
+        singleton_rate=float(report.singleton_rate) if report else float("nan"),
+        tier_count_cv=float(report.tier_count_cv) if report else float("nan"),
         monotonic_pair_share=monotone_share,
         cross_preset_adjusted_rand=cross_preset_ari,
     )
     stability_decision = evaluate_tier_stability(evidence)
+    payload = {
+        "algorithm": algorithm,
+        "shape": shape,
+        "candidates": [item.to_dict() for item in candidates],
+        "penalty_decision": penalty_decision,
+        "stability_by_penalty": {
+            str(key): value.to_dict() for key, value in sorted(pooled.items())
+        },
+        "stability_decision": stability_decision,
+        "stability_evidence": evidence.to_dict(),
+        "boundary_diagnostics": boundary_diagnostics,
+        "monotonicity": monotonicity,
+        "cross_preset": cross_preset,
+        "example_board": example_board,
+    }
+    return {
+        "algorithm": algorithm,
+        "passed": bool(penalty_decision.decisive and stability_decision.decisive),
+        "payload": payload,
+        "summary": {
+            "algorithm": algorithm,
+            "version": ALGORITHM_VERSIONS[algorithm],
+            "penalty_selected": penalty_decision.selected,
+            "penalty_decisive": penalty_decision.decisive,
+            "penalty_failures": list(penalty_decision.failures),
+            "stability": stability_decision.selected,
+            "stability_failures": list(stability_decision.failures),
+            "candidates": [item.to_dict() for item in candidates],
+            "stability_evidence": evidence.to_dict(),
+            "payload": payload,
+        },
+    }
 
-    return TierStudyResult(
-        config=config,
-        boards=shape,
-        penalty_candidates=[
-            item.to_dict() for item in _candidate_evidence(shape, pooled, config.penalties)
-        ],
-        penalty_decision=penalty_decision,
-        stability_by_penalty={str(key): report.to_dict() for key, report in sorted(pooled.items())},
-        stability_decision=stability_decision,
-        stability_evidence=evidence.to_dict(),
-        boundary_diagnostics=boundary_diagnostics,
-        monotonicity=monotonicity,
-        cross_preset=cross_preset,
-        example_board=example_board,
-        checks=_tier_checks(penalty_decision, stability_decision),
-        runtime_seconds=round(time.monotonic() - started, 2),
-    )
 
-
-def _pool(reports: Sequence[Any]) -> Any:
+def _pool(reports: Sequence[StabilityReport]) -> StabilityReport:
     """Average several scenarios' stability reports into one."""
-    from ffdraft.tiers.stability import StabilityReport
-
     counts = tuple(count for report in reports for count in report.tier_counts)
     frequency: dict[int, list[float]] = {}
     for report in reports:
@@ -430,10 +584,10 @@ def _pool(reports: Sequence[Any]) -> Any:
             by_region.setdefault(region, []).append(value)
     return StabilityReport(
         replicates=int(sum(report.replicates for report in reports)),
-        adjusted_rand=float(np.nanmean([report.adjusted_rand for report in reports])),
-        boundary_agreement=float(np.nanmean([report.boundary_agreement for report in reports])),
-        singleton_rate=float(np.nanmean([report.singleton_rate for report in reports])),
-        tier_count_cv=float(np.nanmean([report.tier_count_cv for report in reports])),
+        adjusted_rand=_mean([report.adjusted_rand for report in reports]),
+        boundary_agreement=_mean([report.boundary_agreement for report in reports]),
+        singleton_rate=_mean([report.singleton_rate for report in reports]),
+        tier_count_cv=_mean([report.tier_count_cv for report in reports]),
         tier_counts=counts,
         boundary_frequency={
             position: float(np.mean(values)) for position, values in sorted(frequency.items())
@@ -450,6 +604,8 @@ def _cross_preset(
     league: LeagueConfig,
     config: TierStudyConfig,
     penalty: float,
+    *,
+    algorithm: str,
 ) -> list[dict[str, Any]]:
     """Membership similarity between boards that differ only in preset."""
     if penalty != penalty:
@@ -459,7 +615,7 @@ def _cross_preset(
         if scenario.league_preset_id not in league.presets:
             continue
         _, ranked, _ = _simulate_board(predictions, modelling_frame, league, scenario, config)
-        segmentation = segment_board(ranked, penalty=penalty)
+        segmentation = segment_with(algorithm, ranked, penalty=penalty)
         memberships[scenario.key] = dict(
             zip(ranked.get_column("player_id").to_list(), segmentation.ordinals, strict=True),
         )
@@ -509,8 +665,31 @@ def _board_preview(
     ]
 
 
-def _tier_checks(penalty: Decision, stability: Decision) -> list[QualityCheck]:
+def _tier_checks(
+    penalty: Decision,
+    stability: Decision,
+    *,
+    algorithm: str,
+    attempts: Sequence[Mapping[str, Any]],
+) -> list[QualityCheck]:
     checks: list[QualityCheck] = []
+    if algorithm != PRIMARY_ALGORITHM:
+        first = next(item for item in attempts if item["algorithm"] == PRIMARY_ALGORITHM)
+        checks.append(
+            QualityCheck.fail(
+                "phase4.tier_algorithm_escalated",
+                stage="phase4_tiers",
+                message=(
+                    f"the {PRIMARY_ALGORITHM} candidate failed a frozen rule, so the "
+                    "documented dynamic-programming alternative was evaluated - ADR-030's "
+                    "declared response, not a wider penalty search"
+                ),
+                observed="; ".join(
+                    [*first["penalty_failures"], *first["stability_failures"]],
+                ),
+                severity=Severity.WARNING,
+            ),
+        )
     if penalty.decisive:
         checks.append(
             QualityCheck.ok(
@@ -593,6 +772,12 @@ def to_json(
         "configuration": result.config.to_dict(),
         "selection_criteria": TIER_SELECTION.to_dict(),
         "stability_gate": TIER_STABILITY_GATE.to_dict(),
+        "promoted_algorithm": result.algorithm,
+        "promoted_algorithm_version": ALGORITHM_VERSIONS.get(result.algorithm, "unknown"),
+        "algorithm_attempts": [
+            {key: value for key, value in attempt.items() if key != "payload"}
+            for attempt in result.attempts
+        ],
         "segmentation_shape": result.boards,
         "penalty_candidates": result.penalty_candidates,
         "penalty_decision": result.penalty_decision.to_dict(),
@@ -627,11 +812,45 @@ def to_markdown(
         "",
         "## Conclusion",
         "",
-        f"**Penalty `{result.penalty_decision.selected}`** for "
-        f"`ruptures.Pelt(model='rbf')` on standardized P25/P50/P75/spread VORP in fair-rank "
-        "order.",
+        f"**Algorithm `{result.algorithm}`** "
+        f"(`{ALGORITHM_VERSIONS.get(result.algorithm, 'unknown')}`) at "
+        f"**penalty `{result.penalty_decision.selected}`**.",
         "",
     ]
+    if len(result.attempts) > 1:
+        first = result.attempts[0]
+        lines.extend(
+            [
+                "The PELT candidate was tried first and refused by a frozen rule, so the "
+                "documented dynamic-programming alternative was evaluated - ADR-030's "
+                "declared response, not a wider penalty search.",
+                "",
+                _table(
+                    [
+                        {
+                            "algorithm": attempt["algorithm"],
+                            "penalty": attempt["penalty_selected"],
+                            "admissible": attempt["penalty_decisive"],
+                            "stability": attempt["stability"],
+                            "why": "; ".join(
+                                [*attempt["penalty_failures"], *attempt["stability_failures"]],
+                            )[:180]
+                            or "-",
+                        }
+                        for attempt in result.attempts
+                    ],
+                    (
+                        ("Algorithm", "algorithm"),
+                        ("Penalty", "penalty"),
+                        ("Admissible", "admissible"),
+                        ("Stability", "stability"),
+                        ("Why not", "why"),
+                    ),
+                ),
+                "",
+            ],
+        )
+        del first
     for label, decision in (
         ("Penalty selection", result.penalty_decision),
         ("Stability gate", result.stability_decision),

@@ -223,3 +223,118 @@ def test_the_tier_command_needs_a_draw_count_and_a_statistic(dataset_dir, tmp_pa
     )
     assert status == 2
     assert "evaluate-simulation" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------------------
+# The tier study, end to end
+# ---------------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def synthetic_oof(synthetic_modeling_dataset) -> pl.DataFrame:
+    """Out-of-fold-shaped predictions: five monotone quantiles around a known signal."""
+    import numpy as np
+
+    frame = synthetic_modeling_dataset.frame.filter(pl.col("season") == 2024)
+    generator = np.random.default_rng(23)
+    centre = frame.get_column("target_points").cast(pl.Float64).to_numpy()
+    centre = centre + generator.normal(0.0, 15.0, size=centre.size)
+    spread = generator.uniform(20.0, 80.0, size=centre.size)
+    offsets = np.array([-1.28, -0.67, 0.0, 0.67, 1.28])
+    quantiles = centre[:, None] + spread[:, None] * offsets[None, :]
+    return frame.select("season", "player_id", "position", "scoring_preset").with_columns(
+        pl.lit("CB").alias("model_id"),
+        pl.Series("target_points", frame.get_column("target_points").cast(pl.Float64).to_numpy()),
+        *[
+            pl.Series(name, quantiles[:, index], dtype=pl.Float64)
+            for index, name in enumerate(("q10", "q25", "q50", "q75", "q90"))
+        ],
+    )
+
+
+@pytest.fixture(scope="module")
+def synthetic_realized_vorp(synthetic_label_frame):
+    from ffdraft.config import load_league_config
+    from ffdraft.labels import build_vorp_labels
+
+    league = load_league_config()
+    return build_vorp_labels(
+        synthetic_label_frame.filter(pl.col("season") == 2024),
+        league,
+        preset_ids=["redraft-10", "redraft-12", "redraft-14"],
+    )
+
+
+def test_the_tier_study_runs_and_records_both_algorithms(
+    synthetic_oof,
+    synthetic_modeling_dataset,
+    synthetic_realized_vorp,
+) -> None:
+    """Both candidates are measured on the same boards and the same bootstrap replicates."""
+    from ffdraft.config import load_league_config
+
+    config = TierStudyConfig(
+        draws=120,
+        statistic="median_vorp",
+        bootstrap_replicates=4,
+        seasons=(2024,),
+        scoring_presets=("PPR",),
+        bootstrap_seasons=(2024,),
+        preset_comparison_season=2024,
+        board_depth=80,
+    )
+    result = run_tier_study(
+        synthetic_oof,
+        synthetic_modeling_dataset.frame,
+        synthetic_realized_vorp,
+        load_league_config(),
+        config=config,
+    )
+    algorithms = [attempt["algorithm"] for attempt in result.attempts]
+    assert algorithms[0] == "pelt_rbf"
+    assert result.algorithm in {"pelt_rbf", "dp_quantile"}
+    assert result.penalty_decision.rule == "phase4_tier_v1"
+    assert result.stability_decision.rule == "phase4_tier_stability_v1"
+    assert {check.check_id for check in result.checks} >= {
+        "phase4.tier_penalty",
+        "phase4.tier_stability",
+    }
+    for attempt in result.attempts:
+        assert len(attempt["candidates"]) == len(config.penalties)
+
+
+def test_the_alternative_is_only_reached_when_the_primary_fails(
+    synthetic_oof,
+    synthetic_modeling_dataset,
+    synthetic_realized_vorp,
+) -> None:
+    """One attempt means PELT passed; two means a frozen rule refused it, and says which."""
+    from ffdraft.config import load_league_config
+
+    config = TierStudyConfig(
+        draws=120,
+        statistic="median_vorp",
+        bootstrap_replicates=4,
+        seasons=(2024,),
+        scoring_presets=("PPR",),
+        bootstrap_seasons=(2024,),
+        preset_comparison_season=2024,
+        board_depth=80,
+    )
+    result = run_tier_study(
+        synthetic_oof,
+        synthetic_modeling_dataset.frame,
+        synthetic_realized_vorp,
+        load_league_config(),
+        config=config,
+    )
+    if result.algorithm == "pelt_rbf":
+        assert len(result.attempts) == 1
+    else:
+        assert len(result.attempts) == 2
+        first = result.attempts[0]
+        assert first["penalty_failures"] or first["stability_failures"]
+        escalation = next(
+            check for check in result.checks if check.check_id == "phase4.tier_algorithm_escalated"
+        )
+        assert "dynamic-programming" in escalation.message

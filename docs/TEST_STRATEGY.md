@@ -112,6 +112,14 @@ For each historical arbitrage row:
 
 Experiment configuration must prevent final holdout from being used in tuning commands unless an explicit `--final-eval` mode is set.
 
+> **Phase-4 implementation.** Phase 4 adds three development commands, and each is a
+> potential second door to the sealed season. `tests/model/test_phase4_studies.py` proves the
+> door is locked from every side: the distribution study refuses an unsealed frame, both
+> stage-C studies refuse predictions containing a sealed season, and **poisoning every 2025
+> label leaves a development study byte-identical**. `tests/model/test_final_holdout_gate.py`
+> additionally pins the predeclared ADR-025 slices against edits and asserts that the
+> acceptance rule's signature has no parameter a diagnostic slice could enter through.
+
 ### 2.6 Model tests
 
 Not unit tests for "accuracy > magic number". Use controlled assertions:
@@ -141,6 +149,19 @@ Add tests for:
 - missing eligible positions;
 - deterministic output across seeds/configs;
 - simulation convergence tolerance for 1k vs 5k vs 10k draws in development benchmark.
+
+> **Phase-4 implementation.** `tests/unit/test_sampler.py`, `tests/unit/test_simulated_vorp.py`
+> and `tests/unit/test_tiers.py` cover the sampler's monotonicity, tails and per-player
+> determinism; the draw loop's replacement variation, league-size sensitivity and tie-break
+> order; and the segmentation's two-cluster, smooth, singleton and contiguity cases. The
+> convergence *comparator* is tested against synthetic evidence in
+> `tests/model/test_phase4_rules.py` rather than by running a real benchmark, so a threshold
+> change breaks a test in milliseconds.
+>
+> The load-bearing assertions are the structural ones: adding a player to the pool does not
+> change anybody else's draws; the same draws are reused across league presets so a preset
+> difference is a scarcity difference; replacement moves between draws, so VORP is not a
+> shifted copy of points; and a repeated build is byte-identical.
 
 ### 2.8 Tier tests
 

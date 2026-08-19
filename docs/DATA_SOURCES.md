@@ -411,3 +411,42 @@ Verified while building the historical modelling dataset over target seasons 201
 - **NGS and PFR advanced statistics** — available, but their historical availability, coverage and incremental value are unproven. Revisit only with Phase-3 evidence.
 - **`load_injuries`** — unchanged from ADR-011: injury rows are weekly in-season reports, so no season provides one at a preseason anchor.
 - **Any market or expert source** — ADR-002. The forbidden-feature audit runs over the built feature matrix, not just over a list.
+
+---
+
+## 15. Phase-4 source observations — 2026-08-19
+
+Phase 4 adds one source *use*, not one source: the target season's own nflverse roster, read
+at build time as current-status metadata.
+
+### 15.1 The current roster is a status source, not an eligibility source
+
+ADR-022 refuses `load_rosters(Y)` as evidence for the *historical* eligible universe, because
+a season roster carries no observation timestamp and nothing establishes that a given row
+predated the draft anchor. Current inference asks a different question. A build running now
+is fetching the roster now, so "this is true at the build timestamp" is precisely what it
+knows, and ADR-011 already names nflverse rosters as a current-status source. The current
+build therefore reads it, and uses it for exactly two things: a player the roster records as
+retired is removed from the published board, and every other status becomes a quality flag.
+It reaches no model input.
+
+### 15.2 Verified for target season 2026 — retrieved 2026-08-19
+
+| Loader | Observation |
+|---|---|
+| `load_schedules()` | 16 Week-1 regular-season games; earliest kickoff **2026-09-09**, a Wednesday. ADR-021 derives the anchor weekday rather than subtracting two days, which is why this season is safe. |
+| `load_rosters(2026)` | 2,930 rows. `status`: ACT 2,852, RES 36, E14 28, **RET 11**, CUT 3. |
+| `load_depth_charts(2026)` | 449,396 timestamped rows carrying `dt`, so the ADR-022 snapshot eligibility basis is available for 2026 as it was for 2025. |
+| `load_draft_picks()` | 257 rows for the 2026 draft class. |
+
+The build's information cutoff is `min(build timestamp, season anchor)`. On 2026-08-19 that
+is the build timestamp, roughly twenty days before the 2026 anchor, and the row records the
+rule version `current_build_as_of_v1` so its provenance says which bound applied.
+
+### 15.3 Still not used
+
+Unchanged from section 14.3, plus one addition: **Sleeper's player map is not read by the
+current build.** ADR-011 lists it as a current-status source and it remains available, but the
+nflverse roster already answers the only question the board asks of current status — is this
+person a retired player — without a second identity bridge or a 14.6 MB daily fetch. Phase 5
+revisits it when the market join needs Sleeper's identifiers anyway.

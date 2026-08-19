@@ -12,7 +12,11 @@ configuration, the same calibration, the same copula - and adds what only produc
 **A serialization format that is not a pickle.** Every booster is stored as LightGBM's own
 text representation and every other parameter as JSON. Loading a model therefore reads
 numbers and a documented text format, never executes a serialized object graph
-(`AGENTS.md` section 5). The artifact is reviewable in a diff.
+(`AGENTS.md` section 5). The text is gzipped, because a hundred and twenty boosters of it is
+forty-five megabytes raw and fifteen compressed, and a production artifact lives in version
+control; ``gunzip`` still returns something a human can read. Every booster's SHA-256 is
+recorded in the metadata, so a regenerated model is checkable against the committed one
+rather than merely assumed to match.
 
 **A feature-schema contract that fails closed.** The artifact records the Phase-2 feature
 schema hash *and* the Phase-3 core feature-set hash, and inference refuses to run against a
@@ -26,6 +30,8 @@ the historical dataset's content hashes.
 
 from __future__ import annotations
 
+import gzip
+import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -83,6 +89,7 @@ ARTIFACT_SCHEMA = "intrinsic_model_artifact_v1"
 
 METADATA_FILE = "metadata.json"
 BOOSTER_DIR = "boosters"
+BOOSTER_SUFFIX = ".txt.gz"
 
 #: The two architectures Phase 4 compared. The promoted one is recorded in the artifact.
 ARCHITECTURE_DIRECT = "direct_total_quantiles"
@@ -91,6 +98,20 @@ ARCHITECTURE_HURDLE = "availability_x_performance"
 
 class FeatureSchemaMismatch(RuntimeError):
     """Raised when a model is asked to predict from a frame it was not built for."""
+
+
+def _read_booster(path: Path, *, expected_sha256: str | None = None) -> str:
+    """Read one gzipped booster, checking it is the one the metadata describes."""
+    with gzip.open(path, "rb") as handle:
+        payload = handle.read()
+    if expected_sha256 is not None:
+        actual = hashlib.sha256(payload).hexdigest()
+        if actual != expected_sha256:
+            raise FeatureSchemaMismatch(
+                f"{path.name} does not match the digest recorded in the model metadata "
+                f"({actual} != {expected_sha256}); the artifact has been altered",
+            )
+    return payload.decode("utf-8")
 
 
 @dataclass(frozen=True)
@@ -169,7 +190,7 @@ class GroupArtifact:
             "features_used": list(self.features),
             "components": sorted(self.boosters),
             "calibration_shift": (
-                self.calibration_shift.describe() if self.calibration_shift else None
+                self.calibration_shift.to_artifact() if self.calibration_shift else None
             ),
             "dependence_correlation": self.dependence_correlation,
             "dependence_rows": self.dependence_rows,
@@ -456,25 +477,34 @@ class ProductionModel:
         }
 
     def save(self, directory: Path) -> list[Path]:
-        """Write the artifact: one text booster per model, one JSON metadata file."""
+        """Write the artifact: one gzipped text booster per model, one JSON metadata file."""
         directory.mkdir(parents=True, exist_ok=True)
         booster_dir = directory / BOOSTER_DIR
         booster_dir.mkdir(exist_ok=True)
         written: list[Path] = []
+        digests: dict[str, str] = {}
         for artifact in sorted(self.groups.values(), key=lambda item: item.key):
             for component, boosters in sorted(artifact.boosters.items()):
                 for index, booster in enumerate(boosters):
-                    level = int(self.spec.levels[index] * 100)
-                    path = booster_dir / f"{artifact.key}-{component}-q{level:02d}.txt"
-                    path.write_text(booster.model_to_string(), encoding="utf-8")
+                    name = self._booster_name(artifact.key, component, index)
+                    payload = booster.model_to_string().encode("utf-8")
+                    digests[name] = hashlib.sha256(payload).hexdigest()
+                    # mtime=0 so two builds of the same model produce identical bytes.
+                    path = booster_dir / name
+                    with gzip.GzipFile(path, "wb", compresslevel=9, mtime=0) as handle:
+                        handle.write(payload)
                     written.append(path)
         metadata_path = directory / METADATA_FILE
+        metadata = {**self.metadata(), "booster_sha256": digests}
         metadata_path.write_text(
-            json.dumps(self.metadata(), indent=2, sort_keys=True) + "\n",
+            json.dumps(metadata, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
         written.append(metadata_path)
         return written
+
+    def _booster_name(self, key: str, component: str, index: int) -> str:
+        return f"{key}-{component}-q{int(self.spec.levels[index] * 100):02d}{BOOSTER_SUFFIX}"
 
     @classmethod
     def load(cls, directory: Path) -> ProductionModel:
@@ -488,6 +518,7 @@ class ProductionModel:
                 f"{ARTIFACT_SCHEMA!r}",
             )
         spec = ProductionSpec.from_dict(payload["spec"])
+        digests: Mapping[str, str] = payload.get("booster_sha256", {})
         booster_dir = directory / BOOSTER_DIR
         groups: dict[str, GroupArtifact] = {}
         for group in payload["groups"]:
@@ -496,9 +527,13 @@ class ProductionModel:
             for component in group["components"]:
                 boosters[component] = [
                     lgb.Booster(
-                        model_str=(
-                            booster_dir / f"{key}-{component}-q{int(level * 100):02d}.txt"
-                        ).read_text(encoding="utf-8"),
+                        model_str=_read_booster(
+                            booster_dir
+                            / f"{key}-{component}-q{int(level * 100):02d}{BOOSTER_SUFFIX}",
+                            expected_sha256=digests.get(
+                                f"{key}-{component}-q{int(level * 100):02d}{BOOSTER_SUFFIX}",
+                            ),
+                        ),
                     )
                     for level in spec.levels
                 ]

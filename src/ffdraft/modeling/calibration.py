@@ -264,9 +264,23 @@ class QuantileShift:
         return matrix + self.shifts[None, :]
 
     def describe(self) -> dict[str, Any]:
+        """A rounded, readable summary for reports."""
         return {
             "levels": list(self.levels),
             "shifts": [round(float(value), 4) for value in self.shifts],
+            "calibration_rows": self.calibration_rows,
+            "fitted": self.fitted,
+        }
+
+    def to_artifact(self) -> dict[str, Any]:
+        """The exact values, for a model artifact that must reload bit-identically.
+
+        Deliberately separate from :meth:`describe`: a report rounds for a reader, and an
+        artifact does not round at all, because a rounded shift is a different model.
+        """
+        return {
+            "levels": [float(level) for level in self.levels],
+            "shifts": [float(value) for value in self.shifts],
             "calibration_rows": self.calibration_rows,
             "fitted": self.fitted,
         }

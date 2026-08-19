@@ -196,6 +196,12 @@ quality_flags[]
 
 Quantiles must be monotonic. Violations are critical.
 
+> **Phase-4 implementation.** `projections.json`/`.csv` carry exactly this record, one row per
+> player and scoring preset, with `expected_points` computed from the Monte Carlo draws rather
+> than from the quantiles and `uncertainty_points` = `p75_points - p25_points`. Monotonicity is
+> guaranteed upstream: the promoted architecture's quantiles are empirical quantiles of one
+> sample, and the isotonic projection is applied regardless as a safety net.
+
 ## 7. Simulated league value contract
 
 For each supported league preset:
@@ -223,6 +229,13 @@ Suggested tie order:
 3. lower uncertainty only if still tied
 4. stable `player_id` lexical order
 
+> **Phase-4 implementation.** `ffdraft.simulation.vorp.fair_ranking` implements exactly that
+> order, and which statistic occupies step 1 is the frozen decision in ADR-034 rather than a
+> per-call choice. `uncertainty` is the interquartile range of simulated VORP. A player whose
+> position had no replacement baseline in any draw sorts last and is withheld from the
+> published board with a counted quality check, because a null VORP is a statement about the
+> league's depth rather than about the player.
+
 ## 8. Tier artifact
 
 See `schemas/tier_record.schema.json`.
@@ -237,6 +250,14 @@ Required semantic rules beyond JSON Schema:
 - all members of a tier occupy a contiguous fair-rank interval
 - quantiles monotonic
 - VORP values finite
+
+> **Phase-4 implementation.** The production build publishes the top 300 fair ranks per
+> `(league preset, scoring preset)`, which covers every pick of the deepest launch preset
+> (14 teams x 13 roster slots = 182) with headroom while keeping segmentation on the part of
+> the board a drafter reads. Tier ordinals are contiguous by construction - the segmentation
+> assigns them along the fair-rank-ordered board - so the validator's contiguity rule is a
+> check on the serializer rather than on the algorithm. `tier_label` comes from
+> `ffdraft.tiers.labels` and is presentation only.
 
 ## 9. Market snapshot contract
 

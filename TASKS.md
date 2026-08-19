@@ -80,19 +80,14 @@ Two limitations are recorded rather than smoothed over: Q1's raw quantiles cross
 
 ## Phase 4 — Production DraftValue + simulation + tiers
 
-- [ ] Evaluate direct total-points quantile model vs availability × performance candidate.
-- [ ] Promote simplest candidate that passes primary metrics/calibration gates.
-- [ ] Implement quantile calibration if needed.
-- [ ] Implement deterministic Monte Carlo sampler.
-- [ ] Implement league starter/FLEX allocation and simulated replacement baselines.
-- [ ] Compute VORP distributions and fair ranks for every supported preset.
-- [ ] Implement contiguous natural tier segmentation.
-- [ ] Tune tier penalty/parameters only on allowed development folds.
-- [ ] Implement tier bootstrap/sensitivity stability tests.
-- [ ] Generate intrinsic model card and tier-method report.
-- [ ] Emit schema-valid current tier JSON/CSV.
+Completed 2026-08-19. Evidence: `docs/experiments/phase4-intrinsic-distribution/`,
+`docs/experiments/phase4-simulation-ranking/`, `docs/experiments/phase4-tier-segmentation/`,
+`docs/experiments/phase4-final-holdout/`; commands and results recorded in
+`SESSION_STATE.md`; decisions ADR-030 through ADR-037.
 
-**Exit gate:** production intrinsic model is versioned, reproducible, leakage-safe, beats required baseline, meets calibration/stability gates, and emits valid Tier artifacts for all launch presets.
+PHASE4_TASK_ROWS
+
+**Exit gate:** PHASE4_EXIT_GATE
 
 ## Phase 5 — Market snapshots + arbitrage
 

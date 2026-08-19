@@ -48,6 +48,18 @@ own experiment report and each restricted to development folds:
 ``evaluate-tiers``
     Stage C — tier penalty selection from the frozen grid and the bootstrap stability gate.
 
+``train-production``
+    Train the frozen architecture on every allowed season and write a versioned model
+    artifact. Runs only after the final holdout has been consumed successfully.
+
+``build-current``
+    Build the current season's tier board from that artifact and write the public
+    artifacts. Its information cutoff is the build timestamp, not a future draft anchor.
+
+``model-card``
+    Generate the intrinsic model card and the tier-method report from the committed
+    experiment reports and the model artifact.
+
 Exit status is 0 when the quality gate passes and 1 when a critical check fails, so CI can
 branch on it directly.
 """
@@ -58,8 +70,11 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
+
+import polars as pl
 
 from ffdraft import __version__
 from ffdraft.artifacts import validate_artifact_directory
@@ -83,12 +98,14 @@ from ffdraft.modeling import (
     run_experiment,
     write_report,
 )
+from ffdraft.modeling.cards import CardInputs, write_model_card, write_tier_method_report
 from ffdraft.modeling.distribution import (
     DistributionConfig,
     run_distribution_study,
     write_distribution_report,
 )
 from ffdraft.modeling.experiment import run_final_holdout_evaluation
+from ffdraft.modeling.production import train_production_model
 from ffdraft.paths import repo_root
 from ffdraft.pipeline import (
     DEFAULT_FIRST_SEASON,
@@ -96,6 +113,7 @@ from ffdraft.pipeline import (
     build_fixture_artifacts,
     run_historical_build,
 )
+from ffdraft.pipeline.current import CurrentBuildConfig, run_current_build
 from ffdraft.quality import QualityGate
 from ffdraft.simulation.study import (
     SimulationStudyConfig,
@@ -115,6 +133,9 @@ DEFAULT_DISTRIBUTION_DIR = Path("docs/experiments/phase4-intrinsic-distribution"
 DEFAULT_PHASE4_DATA_DIR = Path("data/phase4")
 DEFAULT_SIMULATION_DIR = Path("docs/experiments/phase4-simulation-ranking")
 DEFAULT_TIER_DIR = Path("docs/experiments/phase4-tier-segmentation")
+DEFAULT_HOLDOUT_DIR = Path("docs/experiments/phase4-final-holdout")
+DEFAULT_MODEL_DIR = Path("models/production")
+DEFAULT_CARD_DIR = Path("models/cards")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -372,6 +393,59 @@ def _build_parser() -> argparse.ArgumentParser:
     tiers.add_argument("--generated-at", default=None, help="RFC 3339 report timestamp")
     tiers.set_defaults(handler=_evaluate_tiers)
 
+    train = subparsers.add_parser(
+        "train-production",
+        help="train the frozen architecture and write a versioned model artifact",
+    )
+    train.add_argument("--data", type=Path, default=None, help="historical dataset directory")
+    train.add_argument("--out", type=Path, default=None, help="model artifact root directory")
+    train.add_argument(
+        "--last-season",
+        type=int,
+        default=None,
+        help="last training season (default: the frozen production window)",
+    )
+    train.add_argument("--git-sha", default=None, help="code SHA to record in the artifact")
+    train.add_argument("--generated-at", default=None, help="RFC 3339 build timestamp")
+    train.add_argument(
+        "--allow-unsealed",
+        action="store_true",
+        help=(
+            "train through the sealed season. Requires the final holdout to have been "
+            "consumed, and the same confirmation token."
+        ),
+    )
+    train.add_argument("--confirm-final-eval", default=None, help="the confirmation token")
+    train.add_argument("--final-eval-reason", default=None, help="why the seal is open")
+    train.set_defaults(handler=_train_production)
+
+    current = subparsers.add_parser(
+        "build-current",
+        help="build the current season's tier board and write the public artifacts",
+    )
+    current.add_argument("--season", type=int, default=None, help="target season")
+    current.add_argument("--model", type=Path, default=None, help="production model directory")
+    current.add_argument("--out", type=Path, default=None, help="artifact output directory")
+    current.add_argument("--as-of", default=None, help="RFC 3339 build timestamp")
+    current.add_argument("--build-id", default=None, help="override the deterministic build id")
+    current.add_argument("--git-sha", default=None, help="code SHA to record")
+    current.add_argument("--draws", type=int, default=None, help="override the draw count")
+    current.add_argument("--statistic", default=None, help="override the ranking statistic")
+    current.add_argument("--penalty", type=float, default=None, help="override the tier penalty")
+    current.add_argument("--no-write", action="store_true", help="build without writing files")
+    current.set_defaults(handler=_build_current)
+
+    card = subparsers.add_parser(
+        "model-card",
+        help="generate the intrinsic model card and the tier-method report",
+    )
+    card.add_argument("--model", type=Path, default=None, help="production model directory")
+    card.add_argument("--out", type=Path, default=None, help="card output directory")
+    card.add_argument("--data", type=Path, default=None, help="historical dataset directory")
+    card.add_argument("--predictions", type=Path, default=None, help="out-of-fold prediction dir")
+    card.add_argument("--git-sha", default=None, help="code SHA to record")
+    card.set_defaults(handler=_model_card)
+
     dictionary = subparsers.add_parser(
         "feature-dictionary",
         help="print the historical feature dictionary",
@@ -568,7 +642,19 @@ def _final_holdout_eval(
     out_dir: Path,
     config: ExperimentConfig,
 ) -> int:
-    """The sealed path. Deliberately verbose and deliberately hard to reach."""
+    """The sealed path. Deliberately verbose and deliberately hard to reach.
+
+    The model set defaults to the permanent baseline plus the *frozen production*
+    architecture, not to Phase 3's candidates: the holdout exists to judge what will ship.
+    Passing ``--model`` overrides it, which is what the synthetic-data tests do.
+    """
+    from ffdraft.modeling.frozen import PRODUCTION_MODEL_ID
+
+    if not args.model:
+        config = replace(
+            config,
+            model_ids=(config.criteria.primary_baseline, PRODUCTION_MODEL_ID),
+        )
     if not args.confirm_final_eval or not args.final_eval_reason:
         print(
             "--final-eval requires both --confirm-final-eval <token> and "
@@ -755,6 +841,132 @@ def _evaluate_tiers(args: argparse.Namespace) -> int:
     print(f"stability      : {result.stability_decision.selected}")
     print(f"runtime        : {result.runtime_seconds}s")
     return _report_gate(QualityGate().extend(result.checks))
+
+
+def _production_model_dir(root: Path) -> Path:
+    from ffdraft.modeling.frozen import PRODUCTION_SPEC
+
+    return root / PRODUCTION_SPEC.model_version
+
+
+def _train_production(args: argparse.Namespace) -> int:
+    """Train the frozen architecture. The seal still has to be opened deliberately."""
+    from ffdraft.modeling.frozen import (
+        PRODUCTION_LAST_TRAINING_SEASON,
+        PRODUCTION_SPEC,
+    )
+
+    data_dir = args.data or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    root = args.out or (repo_root() / DEFAULT_MODEL_DIR)
+    last_season = args.last_season or PRODUCTION_LAST_TRAINING_SEASON
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+
+    authorization = None
+    if args.allow_unsealed:
+        if not args.confirm_final_eval or not args.final_eval_reason:
+            print(
+                "--allow-unsealed requires both --confirm-final-eval <token> and "
+                "--final-eval-reason <why>",
+                file=sys.stderr,
+            )
+            return 2
+        authorization = FinalEvalAuthorization(
+            confirmation=args.confirm_final_eval,
+            reason=args.final_eval_reason,
+        )
+
+    dataset = load_modeling_dataset(
+        data_dir,
+        selection=core_feature_selection(),
+        authorization=authorization,
+    )
+    frame = dataset.frame.filter(pl.col("season") <= last_season)
+    seasons = sorted(set(frame.get_column("season").to_list()))
+    print(
+        f"training {PRODUCTION_SPEC.model_version} on {frame.height} row(s), seasons "
+        f"{seasons[0]}-{seasons[-1]}",
+    )
+    model = train_production_model(
+        frame,
+        spec=PRODUCTION_SPEC,
+        dataset_manifest=dataset.dataset_manifest,
+        git_sha=args.git_sha or "unknown",
+        generated_at=generated_at,
+    )
+    out_dir = _production_model_dir(root)
+    written = model.save(out_dir)
+    print(f"wrote {len(written)} file(s) to {out_dir}")
+    print(f"groups: {len(model.groups)}; features: {len(model.features)}")
+    return 0
+
+
+def _build_current(args: argparse.Namespace) -> int:
+    """Build the current season's board. The cutoff is the build time, not a future anchor."""
+    from ffdraft.modeling.frozen import (
+        PRODUCTION_BUILD_CONFIG,
+        PRODUCTION_SEASON,
+    )
+
+    season = args.season or PRODUCTION_SEASON
+    root = repo_root() / DEFAULT_MODEL_DIR
+    model_dir = args.model or _production_model_dir(root)
+    out_dir = args.out or (repo_root() / DEFAULT_ARTIFACT_DIR)
+    as_of = parse_utc(args.as_of) if args.as_of else None
+
+    config = CurrentBuildConfig(
+        draws=args.draws if args.draws is not None else PRODUCTION_BUILD_CONFIG.draws,
+        ranking_statistic=args.statistic or PRODUCTION_BUILD_CONFIG.ranking_statistic,
+        tier_penalty=(
+            args.penalty if args.penalty is not None else PRODUCTION_BUILD_CONFIG.tier_penalty
+        ),
+        board_depth=PRODUCTION_BUILD_CONFIG.board_depth,
+        seed=PRODUCTION_BUILD_CONFIG.seed,
+        league_preset_ids=PRODUCTION_BUILD_CONFIG.league_preset_ids,
+        scoring_presets=PRODUCTION_BUILD_CONFIG.scoring_presets,
+    )
+    result = run_current_build(
+        season=season,
+        model_dir=model_dir,
+        out_dir=out_dir,
+        config=config,
+        as_of=as_of,
+        build_id=args.build_id,
+        git_sha=args.git_sha,
+        write=not args.no_write,
+    )
+    print(f"build id       : {result.build_id}")
+    print(f"model version  : {result.model_version}")
+    print(f"cutoff         : {result.cutoff.rule_version} @ {result.cutoff.anchor_at_utc}")
+    for artifact, rows in sorted(result.records.items()):
+        print(f"  {artifact}: {len(rows)} record(s)")
+    for path in result.written:
+        print(f"wrote {path}")
+    return _report_gate(result.gate)
+
+
+def _model_card(args: argparse.Namespace) -> int:
+    """Generate the model card and tier-method report from the committed reports."""
+    root = repo_root()
+    model_dir = args.model or _production_model_dir(root / DEFAULT_MODEL_DIR)
+    out_dir = args.out or (root / DEFAULT_CARD_DIR)
+    data_dir = args.data or (root / DEFAULT_HISTORICAL_DIR)
+    predictions_dir = args.predictions or (root / DEFAULT_PHASE4_DATA_DIR)
+
+    inputs = CardInputs.load(
+        model_dir,
+        distribution=root / DEFAULT_DISTRIBUTION_DIR / "experiment.json",
+        simulation=root / DEFAULT_SIMULATION_DIR / "experiment.json",
+        tiers=root / DEFAULT_TIER_DIR / "experiment.json",
+        final_holdout=root / DEFAULT_HOLDOUT_DIR / "final_holdout.json",
+        oof_predictions=predictions_dir / "oof_predictions.parquet",
+        fantasy_labels=data_dir / "labels_fantasy.parquet",
+        current_build=out_dir / "current_build.json",
+        git_sha=args.git_sha or "unknown",
+    )
+    written = [*write_model_card(inputs, out_dir), *write_tier_method_report(inputs, out_dir)]
+    for path in written:
+        print(f"wrote {path}")
+    return 0
 
 
 def _feature_dictionary(args: argparse.Namespace) -> int:

@@ -170,10 +170,25 @@ def build_feature_table(
     *,
     config: AppConfig,
     seasons: Sequence[int],
+    anchors: Mapping[int, SeasonAnchor] | None = None,
 ) -> FeatureBuildResult:
-    """Build the ``(season, player_id)`` historical feature table."""
+    """Build the ``(season, player_id)`` feature table.
+
+    ``anchors`` overrides the ADR-021 rule for callers that have a different, *earlier*
+    information cutoff. The only such caller is the current-season production build: it runs
+    before the target season's anchor has occurred, so its cutoff is the build timestamp and
+    it says so with its own rule version (`ffdraft.pipeline.current`). Historical builds pass
+    nothing and get the versioned rule.
+    """
     checks: list[QualityCheck] = []
-    anchors = build_season_anchors(sources.schedule, seasons)
+    anchors = (
+        dict(anchors)
+        if anchors is not None
+        else build_season_anchors(
+            sources.schedule,
+            seasons,
+        )
+    )
 
     bridge = pfr_to_gsis_bridge(sources.player_master, sources.rosters)
     usage = player_season_usage(sources.weekly_stats, config.league.scoring)

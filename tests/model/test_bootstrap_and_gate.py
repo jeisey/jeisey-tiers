@@ -393,3 +393,80 @@ def test_missing_window_deltas_fall_back_conservatively():
     decision = select_training_window({})
     assert decision.selected is WindowPolicy.W2
     assert not decision.decisive
+
+
+# ---------------------------------------------------------------------------------------
+# Phase 4: top-K retrieval inside the paired bootstrap
+# ---------------------------------------------------------------------------------------
+
+
+def test_bootstrap_top_k_matches_the_metric_it_resamples() -> None:
+    """The bootstrap's vectorized retrieval must agree with the metric on the same rows."""
+    import numpy as np
+
+    from ffdraft.modeling.bootstrap import _row_top_k_recall
+    from ffdraft.modeling.metrics import top_k_recall
+
+    generator = np.random.default_rng(3)
+    for _ in range(20):
+        n = int(generator.integers(5, 40))
+        actual = generator.normal(0.0, 20.0, size=n)
+        predicted = actual + generator.normal(0.0, 10.0, size=n)
+        k = int(generator.integers(1, n + 3))
+        vectorized = _row_top_k_recall(actual[None, :], predicted[None, :], k)[0]
+        assert vectorized == pytest.approx(top_k_recall(actual, predicted, k))
+
+
+def test_bootstrap_top_k_is_one_when_depth_exceeds_the_pool() -> None:
+    import numpy as np
+
+    from ffdraft.modeling.bootstrap import _row_top_k_recall
+
+    actual = np.array([[3.0, 1.0, 2.0]])
+    predicted = np.array([[1.0, 2.0, 3.0]])
+    assert _row_top_k_recall(actual, predicted, 10)[0] == pytest.approx(1.0)
+
+
+def test_top_k_recall_is_reported_only_when_the_cell_declares_a_depth() -> None:
+    """A cell with no declared retrieval depth returns NaN rather than a misleading zero."""
+    import numpy as np
+
+    from ffdraft.modeling.bootstrap import _row_top_k_recall
+
+    assert np.isnan(_row_top_k_recall(np.zeros((1, 4)), np.zeros((1, 4)), 0)[0])
+
+
+def test_paired_bootstrap_can_measure_top_k() -> None:
+    import numpy as np
+
+    from ffdraft.modeling.bootstrap import PairedCell, paired_bootstrap
+
+    generator = np.random.default_rng(11)
+    cells = []
+    for index in range(4):
+        n = 60
+        actual = generator.normal(100.0, 40.0, size=n)
+        weak = actual + generator.normal(0.0, 60.0, size=n)
+        strong = actual + generator.normal(0.0, 10.0, size=n)
+        quantiles = np.column_stack([actual - 40, actual - 20, actual, actual + 20, actual + 40])
+        cells.append(
+            PairedCell(
+                key=f"cell{index}",
+                actual=actual,
+                baseline_point=weak,
+                candidate_point=strong,
+                baseline_quantiles=quantiles,
+                candidate_quantiles=quantiles,
+                top_k=12,
+            ),
+        )
+    result = paired_bootstrap(
+        cells,
+        metrics=("top_k_recall",),
+        seed=5,
+        replicates=100,
+    )
+    delta = result["top_k_recall"]
+    assert delta.lower_is_better is False
+    assert delta.delta > 0.0
+    assert delta.favours_candidate

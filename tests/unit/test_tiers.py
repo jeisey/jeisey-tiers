@@ -178,7 +178,7 @@ def test_bootstrap_is_deterministic_for_a_fixed_seed() -> None:
     from ffdraft.simulation.vorp import fair_ranking
 
     ranked = fair_ranking(summary, statistic="median_vorp").head(60)
-    promoted = {3.0: segment_board(ranked, penalty=3.0)}
+    promoted = {"pelt_rbf": {3.0: segment_board(ranked, penalty=3.0)}}
     kwargs = {
         "promoted": promoted,
         "promoted_player_ids": ranked.get_column("player_id").to_list(),
@@ -189,17 +189,25 @@ def test_bootstrap_is_deterministic_for_a_fixed_seed() -> None:
     }
     first = bootstrap_stability(summary, vorp, points, **kwargs)  # type: ignore[arg-type]
     second = bootstrap_stability(summary, vorp, points, **kwargs)  # type: ignore[arg-type]
-    assert first[3.0].to_dict() == second[3.0].to_dict()
-    assert 0.0 <= first[3.0].adjusted_rand <= 1.0
+    assert first["pelt_rbf"][3.0].to_dict() == second["pelt_rbf"][3.0].to_dict()
+    assert 0.0 <= first["pelt_rbf"][3.0].adjusted_rand <= 1.0
 
 
-def test_bootstrap_evaluates_every_requested_penalty() -> None:
+def test_bootstrap_scores_every_algorithm_and_penalty_on_the_same_replicates() -> None:
+    """Sharing the replicates is what makes the comparison fair and the runtime bearable."""
+    from ffdraft.simulation.vorp import fair_ranking
+    from ffdraft.tiers.dynamic import segment_board_dp
+    from ffdraft.tiers.study import segment_with
+
     frame, vorp, points = _draw_fixture()
     summary = summarise_from_draws(frame, vorp, points)
-    from ffdraft.simulation.vorp import fair_ranking
-
     ranked = fair_ranking(summary, statistic="median_vorp").head(60)
-    promoted = {penalty: segment_board(ranked, penalty=penalty) for penalty in (2.0, 8.0)}
+    promoted = {
+        "pelt_rbf": {penalty: segment_board(ranked, penalty=penalty) for penalty in (2.0, 8.0)},
+        "dp_quantile": {
+            penalty: segment_board_dp(ranked, penalty=penalty) for penalty in (2.0, 8.0)
+        },
+    }
     reports = bootstrap_stability(
         summary,
         vorp,
@@ -208,8 +216,110 @@ def test_bootstrap_evaluates_every_requested_penalty() -> None:
         promoted_player_ids=ranked.get_column("player_id").to_list(),
         statistic="median_vorp",
         board_depth=60,
+        segmenters={
+            name: (lambda board, penalty, name=name: segment_with(name, board, penalty=penalty))
+            for name in promoted
+        },
         replicates=10,
         seed=21,
     )
-    assert set(reports) == {2.0, 8.0}
-    assert all(report.replicates == 10 for report in reports.values())
+    assert set(reports) == {"pelt_rbf", "dp_quantile"}
+    assert all(set(by_penalty) == {2.0, 8.0} for by_penalty in reports.values())
+    assert all(
+        report.replicates == 10 for by_penalty in reports.values() for report in by_penalty.values()
+    )
+
+
+# ---------------------------------------------------------------------------------------
+# The documented dynamic-programming alternative
+# ---------------------------------------------------------------------------------------
+
+
+def test_dp_segmentation_finds_the_known_gap() -> None:
+    from ffdraft.tiers.dynamic import segment_board_dp
+
+    values = [100.0 - index for index in range(20)] + [20.0 - index for index in range(20)]
+    segmentation = segment_board_dp(_board(values), penalty=3.0)
+    assert 20 in segmentation.boundaries
+
+
+def test_dp_segmentation_is_contiguous_and_ordinal() -> None:
+    from ffdraft.tiers.dynamic import segment_board_dp
+
+    generator = np.random.default_rng(15)
+    values = np.sort(generator.uniform(0.0, 200.0, size=120))[::-1].tolist()
+    segmentation = segment_board_dp(_board(values), penalty=4.0)
+    ordinals = list(segmentation.ordinals)
+    assert ordinals == sorted(ordinals)
+    assert len(ordinals) == 120
+    assert ordinals[0] == 0
+
+
+def test_dp_segmentation_responds_monotonically_to_the_penalty() -> None:
+    from ffdraft.tiers.dynamic import segment_board_dp
+
+    generator = np.random.default_rng(16)
+    values = np.sort(generator.uniform(0.0, 250.0, size=200))[::-1].tolist()
+    counts = [
+        segment_board_dp(_board(values), penalty=penalty).tier_count for penalty in (1.0, 5.0, 12.0)
+    ]
+    assert counts[0] >= counts[1] >= counts[2]
+
+
+def test_dp_boundaries_separate_more_than_within_tier_pairs() -> None:
+    """The property that makes this the documented alternative: it optimizes exactly this."""
+    from ffdraft.tiers.dynamic import segment_board_dp
+
+    generator = np.random.default_rng(17)
+    values = np.sort(generator.uniform(0.0, 200.0, size=160))[::-1].tolist()
+    segmentation = segment_board_dp(_board(values), penalty=3.0)
+    assert segmentation.mean_boundary_effect_size > segmentation.median_within_tier_effect_size
+
+
+def test_dp_segmentation_is_exact_and_deterministic() -> None:
+    from ffdraft.tiers.dynamic import segment_board_dp
+
+    generator = np.random.default_rng(18)
+    values = np.sort(generator.uniform(0.0, 200.0, size=80))[::-1].tolist()
+    first = segment_board_dp(_board(values), penalty=2.0)
+    second = segment_board_dp(_board(values), penalty=2.0)
+    assert first.ordinals == second.ordinals
+
+
+def test_dp_segmentation_beats_a_brute_force_alternative_partition() -> None:
+    """Exactness is the claim; a hand-built partition must not have a lower total cost."""
+    import itertools
+
+    from ffdraft.tiers.dynamic import QUANTILE_FEATURE_COLUMNS, segment_board_dp
+    from ffdraft.tiers.segmentation import standardize
+
+    values = [100.0, 99.0, 98.0, 50.0, 49.0, 48.0, 10.0, 9.0]
+    board = _board(values)
+    penalty = 0.5
+    matrix = standardize(board.select(list(QUANTILE_FEATURE_COLUMNS)).to_numpy())
+
+    def total_cost(cuts: tuple[int, ...]) -> float:
+        bounds = [0, *cuts, len(values)]
+        cost = 0.0
+        for start, end in zip(bounds, bounds[1:], strict=False):
+            block = matrix[start:end]
+            cost += float(np.sum((block - block.mean(axis=0)) ** 2)) / matrix.shape[1]
+        return cost + penalty * (len(bounds) - 1)
+
+    best = min(
+        (
+            total_cost(cuts)
+            for size in range(len(values))
+            for cuts in itertools.combinations(range(1, len(values)), size)
+        ),
+    )
+    chosen = segment_board_dp(board, penalty=penalty)
+    assert total_cost(chosen.boundaries) == pytest.approx(best, abs=1e-9)
+
+
+def test_dp_segmentation_of_an_empty_board_is_empty() -> None:
+    from ffdraft.tiers.dynamic import segment_board_dp
+
+    segmentation = segment_board_dp(_board([]), penalty=3.0)
+    assert segmentation.ordinals == ()
+    assert segmentation.version == "dp_quantile_wasserstein_v1"

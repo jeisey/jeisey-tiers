@@ -329,3 +329,81 @@ Useful flags:
 Exit status is the usual contract: 0 when the gate passes, 1 when a critical check fails — including "no candidate passed the frozen promotion gate", which is a red build rather than a quiet note.
 
 CI does not run the experiment: it needs the historical dataset, which needs live vendor access. What CI runs is `tests/model/`, which drives the same folds, models, metrics, bootstrap and gate over a synthetic table.
+
+---
+
+## Phase-4 commands
+
+Phase 4 runs in four stages, in this order. Each writes a committed experiment report, and
+each stage's decision is made by a rule frozen in `ffdraft.modeling.rules` before its
+evidence existed (ADR-030). Every development command runs offline against the dataset
+`build-historical` wrote; none of them can reach the sealed season.
+
+```bash
+# Stage B — the predictive distribution: calibration, horizon sensitivity, Candidate A vs B.
+# Writes docs/experiments/phase4-intrinsic-distribution/ and the promoted architecture's
+# out-of-fold predictions to data/phase4/ for stage C. ~25 minutes.
+uv run ffdraft evaluate-distribution --git-sha "$(git rev-parse --short HEAD)"
+
+# Stage C — the Monte Carlo draw count and the fair-ranking statistic.
+uv run ffdraft evaluate-simulation --git-sha "$(git rev-parse --short HEAD)"
+
+# Stage C — the tier penalty and the bootstrap stability gate. Reads the draw count and
+# ranking statistic from the simulation report unless --draws/--statistic override them.
+uv run ffdraft evaluate-tiers --git-sha "$(git rev-parse --short HEAD)"
+```
+
+Then the freeze checkpoint (`ffdraft.modeling.frozen`) is committed, and **only then**:
+
+```bash
+# Stage E — the sealed final holdout, run exactly once against the frozen architecture.
+uv run ffdraft evaluate-intrinsic \
+  --final-eval \
+  --confirm-final-eval RELEASE-FINAL-HOLDOUT-2025 \
+  --final-eval-reason "<why>" \
+  --window W1_all_history \
+  --model B0 --model CB \
+  --out docs/experiments/phase4-final-holdout
+```
+
+After the holdout passes:
+
+```bash
+# Train the frozen architecture on 2014-2025 and write models/production/<version>/.
+# The seal still has to be opened deliberately, with the same token.
+uv run ffdraft train-production \
+  --allow-unsealed \
+  --confirm-final-eval RELEASE-FINAL-HOLDOUT-2025 \
+  --final-eval-reason "<why>" \
+  --git-sha "$(git rev-parse --short HEAD)"
+
+# Build the current season's board and write the public artifacts.
+uv run ffdraft build-current --git-sha "$(git rev-parse --short HEAD)"
+uv run ffdraft validate-artifacts web/public/data
+
+# Regenerate the model card and the tier-method report from the committed reports.
+uv run ffdraft model-card --git-sha "$(git rev-parse --short HEAD)"
+```
+
+Three operational notes.
+
+**`build-current`'s information cutoff is the build timestamp**, not the target season's
+draft anchor, and the two are recorded separately in the quality report. A build running in
+August 2026 stands before the 2026 anchor, so pretending that anchor had occurred would be
+claiming knowledge of roster moves that have not happened. The cutoff is
+`min(as_of, anchor)`, which also means a current row can never see more than a training row
+would have. The rule version travels on the row: `current_build_as_of_v1` when the build
+timestamp binds, the ADR-021 rule when the anchor does.
+
+**Current roster status is metadata, never a model input.** A player the current roster
+records as retired is excluded from the board; every other status - reserve, cut, exempt, or
+absent from the roster entirely - annotates the row and leaves it in place, because absence
+from a roster in August is not evidence of absence from the league in September.
+
+**Model/feature compatibility fails closed.** `build-current` refuses to run when the model
+artifact's feature-set hash or feature-schema hash disagrees with the build's, rather than
+serving a model on a contract it was never validated against.
+
+CI runs none of these: they need the historical dataset and live vendor access. What CI runs
+is `tests/model/`, `tests/unit/` and `tests/integration/`, which drive the same rules,
+sampler, allocation, segmentation, artifact writers and seal over synthetic and fixture data.
