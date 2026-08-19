@@ -11,7 +11,7 @@ argument about what it means.
 | `phase4-intrinsic-distribution/` | `ffdraft evaluate-distribution` | quantile monotonicity and calibration (ADR-031), the horizon sensitivity (ADR-032), and Candidate A vs B (ADR-033) |
 | `phase4-simulation-ranking/` | `ffdraft evaluate-simulation` | the Monte Carlo draw count and the fair-ranking statistic (ADR-034) |
 | `phase4-tier-segmentation/` | `ffdraft evaluate-tiers` | the tier algorithm, its penalty and its stability (ADR-035) |
-| `phase4-final-holdout/` | `ffdraft evaluate-intrinsic --final-eval …` | whether the frozen production model is released (ADR-037) |
+| `phase4-final-holdout/` | `ffdraft evaluate-intrinsic --final-eval …` | the single evaluation of the sealed 2025 season, and whether the frozen production model is released (ADR-036) |
 
 Three conventions hold across all of them.
 

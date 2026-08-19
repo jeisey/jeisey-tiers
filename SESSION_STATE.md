@@ -4,24 +4,28 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 3 — **complete** (2026-08-19). Phase 4 (production DraftValue, simulation and tiers) is next and has not been started.
+Phase 4 — **implemented, exit gate partially met** (2026-08-19). Every task is built and measured; two frozen gates were measured as failing and are published rather than repaired. Phase 5 (market snapshots and arbitrage) has not been started.
 
 ## Current target gate
 
-Phase 4 exit gate: a versioned, reproducible, leakage-safe production intrinsic model that beats the required baseline, meets calibration and stability gates, and emits valid Tier artifacts for every launch preset.
+Phase 5 exit gate: point-in-time market snapshots retained append-only, a fair-rank-vs-ADP arbitrage baseline that stays a permanent challenger, and — only if the historical market coverage and out-of-time promotion gate pass — a learned arbitrage model whose target is realized value relative to market cost.
+
+Two Phase-4 criteria remain open and are **not** Phase-5 work to quietly absorb: the Monte Carlo convergence rule needs a revision that measures its tier clause on the promoted configuration (ADR-034), and tier boundary stability needs either a re-specified admissibility rule or a boundary-confidence presentation (ADR-035). Both are new decisions with their own gates.
 
 ## Last validated commit
 
-The Phase-3 branch `claude/fdi-phase-3-baselines-82pptx`, branched from the merged Phase-2 state on `main` (`0cbb343`).
+The Phase-4 branch `claude/ffdraft-phase-4-w96nvs`, branched from the merged Phase-3 state on `main` (`4e2fb4b`).
+
+**The freeze checkpoint is `2f0e725`.** Every Phase-4 model, calibration, ranking, simulation and tier decision is fixed in that commit, and the sealed 2025 holdout was evaluated only afterwards. A future session auditing whether a decision could have seen the holdout should check whether it predates that SHA.
 
 Validation run locally; every network-free command below also runs in CI (`.github/workflows/ci.yml`):
 
 ```
 uv sync --frozen
 uv run ruff check .                 # clean
-uv run ruff format --check .        # clean, 105 files
-uv run mypy                         # clean, 71 source files, strict
-uv run pytest                       # 640 passed, 4 live deselected
+uv run ruff format --check .        # clean, 134 files
+uv run mypy                         # clean, 89 source files, strict
+uv run pytest                       # 830 passed, 4 live deselected, 544s
 uv run ffdraft config-check
 uv run ffdraft build-fixture-artifacts --out web/public/data
 uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
@@ -33,11 +37,39 @@ uv run ffdraft build-historical --last-season 2025 --git-sha c2b48cc
 uv run ffdraft validate-historical data/historical   # gate: pass (0 critical, 0 warning)
 
 # Phase-3, offline
-uv run ffdraft evaluate-intrinsic --git-sha f2de169
+uv run ffdraft evaluate-intrinsic --git-sha 5550ba8
 #   -> 31,503 modelling rows, 2014-2024; 3,309 sealed 2025 rows withheld at load
 #   -> feature set intrinsic_core_v1 (7203befaa5be25a2), 78 inputs, 7 excluded
-#   -> 291.1s; window W1_all_history; promoted Q1
+#   -> 612.5s; window W1_all_history; promoted Q1
 #   -> quality gate: pass (0 critical, 0 warning)
+#   -> re-run at Phase 4 and diffed against the committed report: IDENTICAL on every
+#      number, every decision and every check. Only the timestamped experiment_id differs.
+
+# Phase-4 development studies, offline (data/phase4/ intermediates are gitignored)
+uv run ffdraft evaluate-distribution --git-sha 4cd90af    # ~40 min; promoted CB
+uv run ffdraft evaluate-simulation   --git-sha 3ba6cb0    # 3325s; 10000 draws, median_vorp
+#   -> quality gate: FAIL (1 critical) — no draw count met every convergence tolerance
+uv run ffdraft evaluate-tiers        --git-sha 3ba6cb0    # 6903s; dp_quantile @ penalty 1.0
+#   -> quality gate: FAIL (1 critical, 1 warning) — stability gate, and PELT escalation
+
+# Phase-4 sealed holdout — RUN ONCE, at the freeze checkpoint, and now spent
+uv run ffdraft evaluate-intrinsic --final-eval \
+  --confirm-final-eval RELEASE-FINAL-HOLDOUT-2025 --final-eval-reason "<why>" \
+  --window W1_all_history --out docs/experiments/phase4-final-holdout --git-sha 2f0e725
+#   -> PASS. CB vs B0 on 3,309 rows: MAE -3.738 [-4.364, -3.102],
+#      pinball -2.134 [-2.377, -1.874], Spearman +0.1015, zero quantile crossings
+#   -> quality gate: pass (0 critical, 1 warning: "final holdout consumed")
+
+# Phase-4 production, network-bound (nflverse + Sleeper for current status)
+uv run ffdraft train-production --allow-unsealed \
+  --confirm-final-eval RELEASE-FINAL-HOLDOUT-2025 --final-eval-reason "<why>" --git-sha 2f0e725
+#   -> intrinsic-cb-hurdle-v1 on 34,812 rows, seasons 2014-2025; 12 groups, 78 features
+#   -> 121 files, ~15 MB gzipped, one SHA-256 per booster
+uv run ffdraft build-current --git-sha 2f0e725
+#   -> 2026 board; 3,510 projections, 2,700 tier records; cutoff = build time (pre-anchor)
+#   -> quality gate: pass (0 critical, 1 warning: tiers published under a failed gate)
+uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
+uv run ffdraft model-card --git-sha 2f0e725
 
 npm ci
 npm run lint                        # clean
@@ -50,7 +82,15 @@ The Phase-1 golden artifacts were **not** regenerated: Phases 2 and 3 changed no
 
 ## Production status
 
-No production pipeline, model, artifact or site exists. What exists is the Phase-0 evidence base, the Phase-1 skeleton, and the Phase-2 historical dataset:
+**A production model exists.** `intrinsic-cb-hurdle-v1`, trained on 2014-2025, promoted through a sealed single-use holdout, serving a 2026 board for every launch preset. There is still no arbitrage board and no deployed site.
+
+- `models/production/intrinsic-cb-hurdle-v1/` — **committed**, not gitignored (`PRD.md` section 15). 120 gzipped LightGBM boosters plus `metadata.json` carrying the spec, seed, training seasons, library versions, dataset manifest, `feature_set_hash` `7203befaa5be25a2`, `feature_schema_hash` `c495ba3177dcb989` and a SHA-256 per booster. No pickles anywhere: loading reads JSON and LightGBM's documented text format, and a tampered booster fails closed.
+- `models/cards/` — the model card and the tier-method report, generated from the committed experiment reports and the artifact, never hand-written.
+- `web/public/data/` — the 2026 build. Gitignored and reproducible.
+
+The fixture stub `fixture-stub-0` is gone from the production path.
+
+What was there before and still is:
 
 - `src/ffdraft/` — config, contracts, sources, identity, quality, artifacts, pipeline, CLI (Phase 1) plus `anchors.py`, `scoring/`, `features/`, `labels/`, `simulation/`, `leakage.py` (Phase 2) plus `modeling/` (Phase 3).
 - `data/historical/` — the modelling dataset. Gitignored and reproducible; see "Phase-2 dataset" below.
@@ -58,9 +98,8 @@ No production pipeline, model, artifact or site exists. What exists is the Phase
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
 - `.github/workflows/ci.yml` — Python and frontend gates, fixture-only, no vendor network.
 - `web/` — Vite/React/TypeScript skeleton with a typed artifact loader.
-- `tests/` — 640 network-free Python tests, including the Phase-3 suite in `tests/model/`; `web/tests/` adds 31.
-
-**The fixture pipeline's valuation is still not a model** (`intrinsic_model_version="fixture-stub-0"`). Phase 3 evaluated candidates but promoted none to production: no model artifact is trained, saved or served. Phase 4 replaces the stub.
+- `tests/` — 830 network-free Python tests (4 live-network deselected), including the Phase-3/4 suites in `tests/model/`; `web/tests/` adds 31.
+- `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
 
 ## Phase-2 dataset — the validated build
 
@@ -105,6 +144,32 @@ Training window (ADR-028): W1 beats W2 on the common folds with Q1 by MAE **-0.2
 
 Selected for Phase 4 (ADR-029): **Q1**, window **W1**, feature set `intrinsic_core_v1` (`7203befaa5be25a2`), 78 inputs.
 
+## Phase-4 results — the frozen production system
+
+Development folds 2020-2024, seed 20260819, 1000 bootstrap replicates. Every decision below was made by a rule written into `ffdraft.modeling.rules` **before** the run that decided it, and the whole set was committed at `2f0e725` before 2025 was opened.
+
+| Decision | Rule | Outcome |
+|---|---|---|
+| calibration | `phase4_calibration_v1` | monotone (PAV) projection only; the fitted conformal layer was measured and refused |
+| target scale | `phase4_horizon_v1` | season total; horizon normalization refused on both declared routes |
+| architecture | `phase4_candidate_v1` | **CB**, availability x performance hurdle |
+| draw count | `phase4_convergence_v1` | 10,000 — **by the fallback clause; no count passed** |
+| fair rank | `phase4_ranking_v1` | median simulated VORP; expected VORP refused |
+| tier penalty | `phase4_tier_v1` | 1.0, the only admissible penalty in the grid |
+| tier stability | `phase4_tier_stability_v1` | **FAIL** on boundary agreement, after escalating from PELT to dp_quantile |
+| final holdout | `phase4_final_holdout_v1` | **PASS** |
+
+**Development macro aggregates (CB vs the A0 direct-quantile candidate):** MAE 21.91 vs 22.11, pinball 8.080 vs 8.142, Spearman 0.750, top-K 0.577, P10-P90 coverage 0.827, raw crossing rate **0.000** (against Q1's 0.387). Paired deltas: pinball -0.0614 [-0.1002, -0.0236], MAE -0.205 [-0.332, -0.073], Spearman +0.0298, top-K +0.0326.
+
+**Final holdout, 2025, run once (ADR-036):** CB MAE 20.19 vs B0 23.93; pinball 7.197 vs 9.331; Spearman 0.780 vs 0.679; P10-P90 coverage 0.845 against nominal 0.80; width 56.9 vs 80.7. Paired: MAE **-3.738** [-4.364, -3.102], pinball **-2.134** [-2.377, -1.874], Spearman **+0.1015**. CB improves MAE and pinball on **all eleven** predeclared slices; rookies go 34.29 -> 29.83 MAE with coverage 0.675 -> 0.747.
+
+**The two failures, in the units that matter.**
+
+- *Convergence.* Ranking tolerances pass comfortably (fair-rank Spearman 0.99993 between seeds, top-50 overlap 0.96+); value tolerances miss by 10-20% (mean |Δ expected VORP| 0.29-0.31 against 0.25); the tier clause misses badly (ARI 0.50-0.75 against 0.90). More draws would close the value gap; they would not close the tier gap, because a boundary is a discrete cut on a nearly continuous curve.
+- *Tier stability.* Boundary agreement 0.239 against 0.500. Everything else passes: ARI 0.865, singleton rate 0.040, tier-count CV 0.045, monotonic pairs 0.845, cross-preset ARI 0.529. Across 1,200 replicates the segmentation used 283 of 299 cut sites and only 4 survived in a majority (ranks 267, 99, 16, 68). The median promoted boundary sits on a 0.55-point P50 cliff against an 80-130 point interval, and P(player below outscores player above) is 0.497.
+
+**The 2026 board looks right.** PPR/redraft-12 top eight: Bijan Robinson, Amon-Ra St. Brown, Ja'Marr Chase, Jahmyr Gibbs, De'Von Achane, Puka Nacua, Jaxon Smith-Njigba, CeeDee Lamb. Top 12 is 6 RB and 6 WR; the first QB is 15th (Josh Allen) and the first TE 19th (Trey McBride), which is the correct shape for a 1-QB league where those positions' VORP is compressed. Tier sizes 8/14/25/33/29/42/45/69/35. 34 rookies make the 300-deep board, the best at rank 72. Zero quantile-monotonicity violations, zero non-finite values.
+
 ## Confirmed decisions
 
 - Static GitHub Pages runtime.
@@ -131,6 +196,14 @@ Selected for Phase 4 (ADR-029): **Q1**, window **W1**, feature set `intrinsic_co
 - **The promotion and window-selection rules were frozen in code before the decisive comparison** (ADR-027).
 - **The training window is W1, the full 2014+ expanding history** (ADR-028).
 - **Q1, the direct-total LightGBM quantile model, advances to Phase 4** (ADR-029).
+- **The Phase-4 decision rules were frozen in code before their results existed** (ADR-030).
+- **Quantile monotonicity is an isotonic projection, not a sort**; the fitted calibration layer was measured and not adopted (ADR-031).
+- **Horizon normalization was measured and rejected** on both declared routes; no calendar-year feature was added (ADR-032).
+- **Candidate B, the availability x performance hurdle, is the production intrinsic model** (ADR-033).
+- **Median simulated VORP is the fair rank**; the draw count is the convergence rule's predeclared fallback, and that rule's tier clause is stricter than the tier gate it protects (ADR-034).
+- **Tiers come from the dynamic-programming alternative at penalty 1.0, and the stability gate fails** on boundary agreement; they ship with the failure attached (ADR-035).
+- **The sealed 2025 holdout was evaluated once, at `2f0e725`, and passed** (ADR-036). It is spent.
+- **`intrinsic-cb-hurdle-v1` is the production artifact**, trained through 2025, committed, digest-verified; a 2026 build uses `min(as_of, anchor)` and never loads target-season statistics (ADR-037).
 - Source verification runs on a GitHub runner, not in an egress-restricted sandbox (ADR-009).
 
 ## Verified source facts a later phase should not re-derive
@@ -184,17 +257,39 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **Top-K retrieval does not follow rank correlation.** Q1 has the better Spearman but B1 retrieves more of the actual top-K (0.593 against 0.544). A median-quantile point prediction is robust, and robustness compresses the top of the board. Measure top-K on simulated VORP in Phase 4 rather than assuming the point ordering carries over.
 - **`prev1_games_missed` was clamped to zero when either component was missing.** Phase 3 fixed it to null, matching what the dictionary always declared, and added the regression test. 4,946 of 11,604 rows are affected; a dataset built before this fix disagrees.
 
+## Phase-4 facts a later phase should not re-derive
+
+- **`ffdraft.modeling.rules` is the freeze, and `ffdraft.modeling.frozen` is its output.** Every Phase-4 threshold lives in the first as a frozen dataclass with a pure evaluator; every decision those rules made lives in the second as a constant. If you want to know what the production system is, read `frozen.py` — it is one screen and every value cites the ADR that produced it. Do not add a decision to `frozen.py` that no rule made.
+- **A rule that fails is a result.** Two did. The convergence rule fell through to its own fallback clause and the tier stability gate failed outright, and both are published rather than repaired. If a future session is tempted to move `min_boundary_agreement` or `max_largest_tier_share`, that is a new rule version with its own evidence and its own ADR — not an edit.
+- **Crossing is fixed by projection, not by sorting.** PAV projects the raw quantile vector onto the monotone cone, which is an L2 projection onto a closed convex set that contains the true quantile vector, so it provably cannot move the estimate further from the truth. Sorting has no such guarantee. Raw crossing went 0.387 -> 0.000 and CB's own components do not cross at all.
+- **The hurdle's two components are coupled, not independent.** A Gaussian copula carries one fold-fitted rank correlation between availability and per-game performance, estimated from probability-integral transforms on an inner chronological split. Assuming independence would have understated the spread of the season total.
+- **VORP is simulated, never differenced against a fixed replacement.** Every draw allocates starters and derives *that draw's* replacement level. Subtracting one deterministic baseline from every quantile would have made VORP a shifted copy of points and destroyed the league-scarcity information the whole simulation exists to produce.
+- **Point draws deliberately do not depend on the league preset.** The same simulated seasons are re-allocated under every roster shape, so a preset-to-preset difference is a scarcity difference rather than Monte Carlo noise. Per-player BLAKE2b streams make a board independent of player order and pool membership too.
+- **`ffdraft.simulation.allocation` is still the only allocator.** Phase 4 fed it sampled points instead of realized ones; it did not write a second one, and neither should Phase 5+.
+- **Tier membership is reproducible; tier boundaries are not.** ARI 0.865 beside boundary agreement 0.239 is not a contradiction, it is the finding. Simulated VORP declines almost smoothly, so "where a tier ends" is mostly not an identified quantity — only about four cut sites on a 300-deep board are. Any UI that draws a hard line overstates the measurement.
+- **The board's deep tail genuinely is one group.** At penalty 3.0 the segmentation wants tiers of 82 and 110 players. The frozen 25%-of-board cap forbids that, which is what forces the unstable cuts. A future tier rule should let the undifferentiated tail be one wide tier rather than slicing it.
+- **The holdout is spent and the seal is one-way in code.** `--final-eval` needs a fixed token *and* a written reason; `train-production --allow-unsealed` needs the same token and refuses unless the holdout has already been consumed. There is no softer path, and none should be added.
+- **A current build never loads target-season statistics.** `include_target_statistics=False` is correct in general — a preseason board may not consume the season it predicts — and not a workaround for 2026 being unplayed. The 404 from nflverse for an unplayed season is a symptom of the same fact.
+- **A pre-anchor build uses its own timestamp, not the anchor.** `min(as_of, anchor)`. Stamping a future anchor onto a build that ran before it would claim knowledge the build does not have.
+- **Current roster status is metadata, never a feature.** It can drop a retired player from the board and it annotates rows with flags, but it has no development-era support and cannot enter a prediction.
+- **The Phase-3 harness reproduces exactly.** `evaluate-intrinsic` was re-run at Phase 4 and diffed against the committed report: identical on every number, decision and check, with only the timestamped `experiment_id` differing. Determinism here is real, not aspirational.
+- **Model cards are generated, like the feature dictionary.** `ffdraft model-card` reads the committed experiment reports and the artifact. A number in a card that no command produces is a number that can drift.
+
 ## Open questions requiring evidence
 
-- **Whether Candidate B (availability x performance) beats Q1.** Unimplemented and unjudged. Phase 4 compares it against the same frozen protocol, or documents why it is not worth building.
-- **The production ranking statistic** — expected versus median simulated VORP. `docs/MODELING.md` section 13 prefers median for robustness; Phase 3's top-K finding is evidence that robustness costs something at the top of the board. Decide with a measurement, not a preference.
-- **How to fix quantile crossing properly.** Sorting is a Phase-3 expedient. Monotonic or joint quantile estimation, or calibrated post-processing fitted on development folds, is Phase-4 work.
+- **How to make tier boundaries meet a stability bar, or how to stop pretending they are lines.** The measurement says a 300-deep board supports about four reproducible cut sites. Two candidate remedies, both new decisions needing their own rule version and evidence: let the undifferentiated tail be one wide tier by re-specifying `max_largest_tier_share`, or keep the segmentation and present membership with a boundary-confidence band instead of a hard edge. **Do not simply lower the threshold** (ADR-035).
+- **How to re-specify the Monte Carlo convergence rule.** Its tier clause is stricter than the tier stability gate it was meant to protect and is decided partly by penalties the tier rule may never select. A revision should measure the tier clause on the promoted configuration only, and set its bar consistently with the gate (ADR-034).
+- **Whether correlated player draws are worth building.** V1 samples every player independently, so it cannot express that a quarterback's collapse takes his receivers with him. That is the largest structural simplification in the simulation and it was never measured.
 - **Repository visibility** — deferred to Phase 7 by ADR-016.
 - **Market cohort mix closer to peak draft season** — re-measure at the start of Phase 5 (ADR-012 amendment).
 - **Whether `load_ftn_charting` earns its CC-BY-SA obligation** — still open, and still not needed.
 
 ## Known risks (non-blocking)
 
+- **Tiers are published having failed their stability gate.** `build_metadata.json` carries a `current.tier_stability` warning and the cards say so, but nothing stops a consumer from rendering a hard line anyway. The Phase-6 frontend is where this becomes a user-visible risk rather than a documented one.
+- **Residual Monte Carlo error is real and unmeasured beyond the ladder.** At 10,000 draws two seeds differ by about 0.3 fantasy points on a player's expected VORP and under 1.5 rank positions in the top 150. Tier boundaries move more than that, which is part of why boundary agreement is low. A build is deterministic for a fixed seed; it is not seed-invariant.
+- **CB's pooled P25-P75 coverage is 0.614 against a nominal 0.50**, driven by zero-game rows: among players with at least one game it is 0.456, among zero-game rows 0.836, and 18.4% of rows have `q25 == q75 == 0`. The hurdle is right that many players score nothing; the inner interval is consequently wide where it should be degenerate. Recorded as an ADR-033 limitation rather than patched.
+- **The model card and tier report are only as current as the last `ffdraft model-card` run.** They are generated from committed experiment reports, so a retrain without regenerating them leaves published numbers describing a model that no longer exists.
 - **The 2014-2016 era boundary is real and is reported as a warning, not hidden.** It comes from upstream roster coverage, not from this code. Any metric averaged across all twelve seasons mixes two different universes. ADR-028 chose to train across it anyway, on measured evidence, and records that W1's advantage is largest where W2 has least data.
 - **The fantasy horizon changed at 2021** (weeks 1-16 to weeks 1-17), so season totals are on a ~6% different scale either side of it. It affects every candidate identically within a fold and is not corrected for; validation season 2021 is the one fold trained entirely on 16-week seasons. `prev1_team_games`, which is that horizon expressed as a lagged count, is excluded from the feature set for the same reason (ADR-026).
 - **B0 and B1 predictive intervals under-cover slightly** because their residual quantiles are estimated on one or two inner-split seasons, which understates season-to-season variance. Q1's P10-P90 coverage is 0.771 against a nominal 0.80. Calibration is Phase-4 work and must be fitted on development folds only.
@@ -216,18 +311,16 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 ## Known blockers
 
-None. Phase 4 can start immediately.
+None blocking Phase 5. Two Phase-4 exit criteria are **open, not blocking**: the Monte Carlo convergence rule fell through to its fallback (ADR-034) and the tier stability gate failed on boundary agreement (ADR-035). Both are published limitations of a model that otherwise passed every gate including the sealed holdout, and neither prevents market snapshots or an arbitrage baseline from being built. Neither should be closed by editing a threshold.
 
 ## Next action
 
-Begin Phase 4 (`docs/IMPLEMENTATION_PLAN.md`). Everything it needs is frozen: the dataset, the fold protocol, window **W1**, feature set **`intrinsic_core_v1`** (`7203befaa5be25a2`), candidate family **Q1**, and an untouched 2025 holdout.
+Begin Phase 5 (`docs/IMPLEMENTATION_PLAN.md`). The concrete first step, and the one Phase 4 deliberately did **not** take:
 
-The first concrete step is **quantile calibration and the crossing fix**, before any simulation code:
+**Take the first point-in-time MFL ADP snapshot and stand up the append-only retention strategy** — `https://api.myfantasyleague.com/{season}/export?TYPE=adp&JSON=1`, no auth, recording source id, retrieval timestamp and the response `timestamp` separately (it is generation time, not data-as-of), plus sample size where available. `PRD.md` section 15 recommends a dedicated `data` branch or another append-only store, and that decision needs an ADR before the first snapshot is written, because a retention scheme chosen after a month of snapshots exist is a migration rather than a decision.
 
-1. address Q1's 38.7% raw crossing rate at its source - monotonic or joint quantile estimation, or a calibrated post-processing step fitted on development folds - and re-measure coverage and width together, not separately;
-2. only then compare Candidate B (availability x performance) against Q1 on the same folds, or record why it is not worth building;
-3. then the deterministic Monte Carlo sampler, the shared `ffdraft.simulation.allocation` replacement algorithm, VORP distributions and tiers.
+Then, in order: re-measure the market cohort mix now that it is closer to peak draft season (the ADR-012 amendment requires this at the start of Phase 5); build the deterministic fair-rank-vs-ADP arbitrage baseline and keep it as a permanent challenger; and only then consider a learned arbitrage model, whose target must be realized value *relative to market cost* and which may not be called ML until the historical market coverage and out-of-time promotion gate pass.
 
-Two things Phase 4 must not do casually. **The final holdout is a single-use instrument**: run it once, after the candidate, the calibration and the ranking statistic are all frozen, with `--final-eval --confirm-final-eval RELEASE-FINAL-HOLDOUT-2025 --final-eval-reason "<why>" --window W1_all_history`, and report the full-universe result as primary with the predeclared slices beside it. **The window decision is not to be re-run against 2025** to check.
+**What Phase 5 must not do.** Market or expert data may never reach the intrinsic model — not as a feature, not as a training target, not as a calibration input. Arbitrage may consume intrinsic outputs; the reverse is a design bug (`AGENTS.md` section 1). Historical arbitrage training may only use out-of-fold intrinsic predictions for the same season, and `data/phase4/oof_predictions.parquet` is regenerable with `ffdraft evaluate-distribution` for exactly that purpose.
 
-Rebuild the dataset first - `uv run ffdraft build-historical --last-season 2025` - because `data/historical/` is not in the repository.
+Rebuild the dataset first — `uv run ffdraft build-historical --last-season 2025` — because `data/historical/` is not in the repository. The production model artifact **is** committed, so inference needs no retrain.

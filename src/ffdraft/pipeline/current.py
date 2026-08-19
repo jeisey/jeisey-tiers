@@ -354,6 +354,24 @@ def run_current_build(
         ),
     )
 
+    if config.tier_stability_gate != "pass":
+        gate.add(
+            QualityCheck.fail(
+                "current.tier_stability",
+                stage="current_build",
+                message=(
+                    "tiers are published having not passed the frozen tier stability gate; "
+                    "read a tier as a group of comparable players, not as a hard line - "
+                    "membership is reproducible but boundary positions are not (ADR-035)"
+                ),
+                observed=(
+                    f"{config.tier_algorithm} @ penalty {config.tier_penalty}: "
+                    f"stability gate {config.tier_stability_gate}"
+                ),
+                severity=Severity.WARNING,
+            ),
+        )
+
     resolved_build_id = build_id or _build_id(model.spec.model_version, stamped, season)
     frame = _model_frame(eligible, config.scoring_presets)
     projections = model.predict(frame, season=season)

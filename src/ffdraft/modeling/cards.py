@@ -246,10 +246,13 @@ def write_model_card(inputs: CardInputs, out_dir: Path) -> list[Path]:
     """Write the intrinsic model card as JSON and Markdown."""
     out_dir.mkdir(parents=True, exist_ok=True)
     payload = _card_payload(inputs)
+    # The version already carries the "intrinsic-" prefix; prefixing it again would name
+    # the file intrinsic-intrinsic-... and stop it matching the version a build records.
     version = inputs.model.spec.model_version
-    json_path = out_dir / f"intrinsic-{version}.json"
+    stem = version if version.startswith("intrinsic-") else f"intrinsic-{version}"
+    json_path = out_dir / f"{stem}.json"
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    markdown_path = out_dir / f"intrinsic-{version}.md"
+    markdown_path = out_dir / f"{stem}.md"
     markdown_path.write_text(_card_markdown(inputs, payload), encoding="utf-8")
     return [json_path, markdown_path]
 
@@ -558,10 +561,13 @@ def _frozen_gate_limitations(inputs: CardInputs) -> list[str]:
         )
     tiers = inputs.tiers or {}
     stability = tiers.get("stability_decision") or {}
-    evidence = stability.get("evidence") or {}
-    if stability and not stability.get("decisive", True):
-        agreement = evidence.get("boundary_agreement")
-        rand = evidence.get("bootstrap_adjusted_rand")
+    measured = (stability.get("evidence") or {}).get("measured") or tiers.get(
+        "stability_evidence",
+        {},
+    )
+    agreement = measured.get("boundary_agreement")
+    rand = measured.get("bootstrap_adjusted_rand")
+    if stability and not stability.get("decisive", True) and agreement is not None:
         lines.append(
             "- **Tier boundaries are not sharply located, and the stability gate says so.** "
             f"Membership is reproducible under resampling (bootstrap ARI {rand:.3f}), but "

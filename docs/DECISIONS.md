@@ -655,3 +655,68 @@ So simulated VORP declines almost smoothly down a 300-deep board, and "where a t
 **What was not done.** No threshold was changed after seeing it fail. No penalty outside the frozen grid was tried, and the admissible-but-better-looking penalty 3.0 was not substituted for the one the rule selected. No boundary was moved by hand. The escalation to the alternative is the response ADR-030 declared in advance for exactly this case, and it was taken only after PELT's measured failure.
 
 **Consequences:** the Phase-4 exit criterion for tier stability is **not satisfied**, and is reported as not satisfied. Tier artifacts ship with `tier_stability_gate: "fail"` in their build metadata and a limitation in the model card, so no consumer can read a boundary as sharper than it is. `docs/MODELING.md` section 14 gains the measurement. The remedy is a Phase-6+ decision, not an edit here: either publish fewer, wider tiers by relaxing `max_largest_tier_share` for the undifferentiated tail (a new rule version with its own evidence), or present tier membership with an explicit boundary-confidence band instead of a hard line. Both are new decisions and both need their own gate.
+
+## ADR-036 — The sealed 2025 holdout was evaluated once, and the production model passed
+
+**Date:** 2026-08-19 (Phase 4, stage E)
+
+**Status:** accepted
+
+**Context:** ADR-025 sealed season 2025 structurally: `load_modeling_dataset` drops it before anything sees the frame, the fold generator refuses to build a fold that validates it, and the only path through requires an explicit `FinalEvalAuthorization` carrying a fixed token and a written reason. ADR-030 froze `phase4_final_holdout_v1` — the acceptance rule — before any Phase-4 model existed. The predeclared primary slice is the full universe against baseline **B0**; the ADR-025 diagnostic slices are reported beside it and are explicitly *not* part of the gate.
+
+Freeze checkpoint `2f0e725` fixed the architecture, calibration, target scale, training window, ranking statistic, draw count, tier algorithm and tier penalty. That commit exists so that the holdout demonstrably could not have informed any of them.
+
+**Decision:** the holdout was consumed **once**, at `2f0e725`, with `--window W1_all_history` and the required token. It **passed**. No parameter, threshold, feature or rule was changed afterwards, and the holdout is now spent: it can never again serve as an untouched test of this project.
+
+**Result — full universe, 3,309 rows, 12 cells, macro over position × scoring:**
+
+| Model | MAE | RMSE | Spearman | Kendall | Pinball | P10-P90 cov | P10-P90 width | Top-K |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| B0 | 23.93 | 42.06 | 0.679 | 0.546 | 9.331 | 0.808 | 80.7 | 0.472 |
+| **CB** | **20.19** | **38.75** | **0.780** | **0.648** | **7.197** | 0.845 | 56.9 | 0.521 |
+
+Paired deltas, 1,000 block-bootstrap replicates: **MAE −3.738 (95% CI −4.364 to −3.102)**, **mean pinball −2.134 (−2.377 to −1.874)**, **Spearman +0.1015 (+0.082 to +0.122)**. Top-K recall +0.049 (−0.017 to +0.083) is not significant and is not required by the rule. Every clause passed: both intervals exclude zero, Spearman improved rather than regressed, no position exceeded a tolerance, positional P10-P90 coverage ran 0.803-0.879 inside the 0.60-0.95 band, and **no production quantile crossed** — 0.0000 against a bar of exactly zero.
+
+**Diagnostics (not part of the gate).** CB improves MAE and pinball on **every** predeclared slice:
+
+| Slice | n | B0 MAE | CB MAE | B0 Spearman | CB Spearman |
+|---|---:|---:|---:|---:|---:|
+| QB | 432 | 37.22 | 29.92 | 0.675 | 0.753 |
+| RB | 789 | 26.03 | 23.74 | 0.643 | 0.744 |
+| TE | 708 | 14.62 | 12.35 | 0.685 | 0.819 |
+| WR | 1380 | 17.86 | 14.77 | 0.676 | 0.803 |
+| rookie | 318 | 34.29 | 29.83 | 0.459 | 0.630 |
+| veteran | 2991 | 22.87 | 19.14 | 0.687 | 0.786 |
+| information-rich | 1113 | 44.89 | 42.36 | 0.688 | 0.718 |
+| low-information | 2196 | 14.76 | 10.20 | 0.340 | 0.582 |
+| depth observed at anchor | 1647 | 38.27 | 35.67 | 0.700 | 0.741 |
+| prior-season role proxy | 591 | 10.61 | 8.74 | 0.358 | 0.326 |
+| depth unavailable | 1071 | 6.61 | 0.74 | 0.048 | 0.020 |
+
+Rookie coverage rises from 0.675 to 0.747, which matters more than the MAE: the baseline's rookie intervals were the least honest thing it produced. The two slices where Spearman falls (`prior_season_role_proxy`, `depth_unavailable`) are the two where MAE is smallest and nearly every player scores near zero, so their rank correlation is close to noise in both models; reporting them unflattered is the point of a predeclared slice.
+
+**A caveat that should not be smoothed over.** CB's holdout MAE (20.19) is *better* than its development MAE (21.91), and its coverage is closer to nominal (0.845 against 0.827). A holdout beating development is a signal to check for leakage, so it was checked: the 2025 fold trains on 2014-2024, the longest training window any fold gets, while the development folds train on 6-10 seasons; and 2025 carries the only draft-time depth observations in the dataset (ADR-018), so its feature rows are the richest in the project. Both explanations are structural and were known before the holdout ran. The seal itself is proved by construction — `tests/model/test_folds_and_holdout.py` poisons every 2025 label and shows a development run stays byte-identical.
+
+**Consequences:** CB is licensed for production, and `--allow-unsealed` may now extend the training window through 2025. Nothing else follows: a passing holdout does not license re-running a development comparison against 2025, and it does not repair the two gates that failed (ADR-034's convergence fallback, ADR-035's tier boundary stability). Those remain published limitations of a model that is otherwise validated.
+
+## ADR-037 — The production model artifact and the 2026 current build
+
+**Date:** 2026-08-19 (Phase 4, post-holdout)
+
+**Status:** accepted
+
+**Context:** ADR-036 licensed CB for production. What remained was to say precisely what "the production model" *is* as a file, and how a build that runs before the 2026 season anchor is allowed to talk about 2026.
+
+**Decision — the model artifact.** `intrinsic-cb-hurdle-v1`, trained on **2014-2025** under window W1, saved as `intrinsic_model_artifact_v1`. Every group (position × scoring preset × quantile, plus the hurdle's two components) is a gzipped LightGBM booster with `mtime=0` so the bytes are reproducible, and each carries its own SHA-256. `ProductionModel.load` verifies every digest before use and refuses a mismatch. The artifact records **two** hashes, because they answer different questions: `feature_set_hash` `7203befaa5be25a2` (`intrinsic_core_v1`) pins which 78 columns the model consumes, and `feature_schema_hash` `c495ba3177dcb989` (`historical_features_v1`) pins the dataset's whole column contract. `assert_compatible` refuses to predict when either disagrees, so a dataset rebuild that quietly changes a column cannot silently change a board. The dataset manifest's content hashes are stored alongside them.
+
+Training through 2025 is gated: `train-production --allow-unsealed` requires the same confirmation token as the holdout and refuses unless the holdout has already been consumed. The seal is one-way and the gate says so in code, not only in prose.
+
+**Decision — what a 2026 build may know.** `current_build_as_of_v1` sets the information cutoff to `min(as_of, season anchor)`. A build that runs *before* the 2026 anchor uses its own timestamp, not the anchor: the anchor is in the future and pretending otherwise would let a build claim knowledge it does not have. A build that runs after the anchor uses the anchor, so a board is not silently refreshed with in-season information. The cutoff, its rule version and both timestamps are written into the build metadata.
+
+Target-season statistics are not loaded at all for a current build (`include_target_statistics=False`). This is correct in general rather than a workaround for 2026 specifically: a preseason board may not consume the season it is predicting, and the historical loader's own behaviour — nflverse returns 404 for a season that has not been played — is a symptom of the same fact, not the reason for the rule.
+
+**Decision — current status is metadata, never signal.** Today's roster status and team annotate a published row and can remove a retired player from the board, but they never enter a prediction. They have no development-era support and could not have been validated, so treating them as features would put an unvalidated input into a validated model.
+
+**Decision — the tier artifacts ship with their failure attached.** `CurrentBuildConfig` records `tier_algorithm`, `tier_algorithm_version`, `tier_penalty` and `tier_stability_gate`, and the production value of the last is **`"fail"`** (ADR-035). A consumer of a Tier artifact can therefore see, from the artifact alone, that the boundaries are not sharply located. Publishing tiers without that field would have been the dishonest option; not publishing them at all would have left the artifact contract untested and the phase's deliverable unbuilt.
+
+**Consequences:** the fixture stub `fixture-stub-0` is replaced by a real, versioned, digest-verified model for every launch preset. `models/` holds the artifact and **is committed**, not gitignored: `PRD.md` section 15 requires every production model artifact needed for deterministic inference to be versioned, and a digest-verified 15 MB of gzipped LightGBM text is the price of a board that can be reproduced months later. `train-production` is the one command that makes it, and a promoted model replaces the previous directory rather than accumulating beside it. The Phase-6 frontend must surface the tier stability caveat rather than drawing a hard line and leaving the reader to assume it was measured as sharp.
