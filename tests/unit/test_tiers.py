@@ -14,6 +14,13 @@ import numpy as np
 import polars as pl
 import pytest
 
+from ffdraft.tiers.algorithms import (
+    ALGORITHM_VERSIONS,
+    ALTERNATIVE_ALGORITHM,
+    PRIMARY_ALGORITHM,
+    segment_with,
+)
+from ffdraft.tiers.dynamic import segment_board_dp
 from ffdraft.tiers.labels import LETTER_LABELS, tier_label
 from ffdraft.tiers.segmentation import (
     adjacent_effect_sizes,
@@ -323,3 +330,32 @@ def test_dp_segmentation_of_an_empty_board_is_empty() -> None:
     segmentation = segment_board_dp(_board([]), penalty=3.0)
     assert segmentation.ordinals == ()
     assert segmentation.version == "dp_quantile_wasserstein_v1"
+
+
+# ---------------------------------------------------------------------------------------
+# Naming the algorithm
+# ---------------------------------------------------------------------------------------
+
+
+def test_each_named_algorithm_dispatches_to_its_own_implementation() -> None:
+    """A build that names an algorithm gets that algorithm, not whichever is primary."""
+    board = _board([120.0, 118.0, 116.0, 40.0, 38.0, 36.0])
+    assert segment_with(PRIMARY_ALGORITHM, board, penalty=3.0).ordinals == (
+        segment_board(board, penalty=3.0).ordinals
+    )
+    assert segment_with(ALTERNATIVE_ALGORITHM, board, penalty=3.0).ordinals == (
+        segment_board_dp(board, penalty=3.0).ordinals
+    )
+
+
+def test_every_named_algorithm_carries_its_own_version() -> None:
+    """The two versions differ, so an artifact recording one cannot be mistaken for the other."""
+    versions = {ALGORITHM_VERSIONS[PRIMARY_ALGORITHM], ALGORITHM_VERSIONS[ALTERNATIVE_ALGORITHM]}
+    assert len(versions) == 2
+    assert set(ALGORITHM_VERSIONS) == {PRIMARY_ALGORITHM, ALTERNATIVE_ALGORITHM}
+
+
+def test_an_unknown_algorithm_refuses_rather_than_falling_back() -> None:
+    """Silently drawing PELT tiers for a build that asked for something else is the bug."""
+    with pytest.raises(ValueError, match="unknown segmentation algorithm"):
+        segment_with("kmeans", _board([100.0, 90.0, 20.0]), penalty=3.0)

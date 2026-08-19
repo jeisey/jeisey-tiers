@@ -620,3 +620,38 @@ Expected VORP gained 0.0014 of top-K — a seventh of the margin the rule requir
 **A flaw in the frozen rule, recorded rather than corrected.** `phase4_convergence_v1` requires tier ARI >= 0.90 between seeds, taken as the worst case over both candidate ranking statistics and all six penalties in the grid. `phase4_tier_stability_v1` — the rule that actually governs whether tiers may be published — asks for >= 0.60 under bootstrap on the *same* quantity. The convergence clause is therefore strictly harder than the promotion clause it was meant to protect, and it is decided partly by penalties the tier rule may never select. That is a design error in ADR-030, discovered by running it. It is not fixed here: changing a threshold after seeing it fail is the move the freeze exists to prevent. It is recorded, the measurement is published, and the tier-stability gate remains the decisive test of whether tiers ship.
 
 **Consequences:** Phase-4 exit criterion 7 ("draw count passed an explicit convergence test") is **not satisfied**. The convergence test ran, was explicit and was decided by a predeclared rule, but the draw count comes from that rule's fallback rather than from meeting its tolerances. Residual Monte Carlo error at 10,000 draws — about 0.3 fantasy points on a player's expected VORP, under one and a half rank positions in the top 150 — is published as a limitation in the model card and the tier-method report. A future revision of the convergence rule should measure the tier clause on the promoted configuration and set its bar consistently with the stability gate; that is a new decision with a new version, not an edit to this one.
+
+## ADR-035 — Tiers are published from the dynamic-programming alternative and the stability gate fails
+
+**Date:** 2026-08-19 (Phase 4, stage C)
+
+**Status:** accepted
+
+**Context:** `phase4_tier_v1` and `phase4_tier_stability_v1` were frozen in ADR-030 before any tier existed. The first selects a penalty from a fixed six-value grid — admissibility first (6-24 tiers, singleton rate <= 0.20, no tier holding more than 25% of the 300-player board, boundaries separating more than a typical within-tier adjacent pair), then the highest bootstrap adjusted Rand index among the admissible. The second decides whether the promoted segmentation may be put in front of a drafter. `docs/MODELING.md` section 14 names PELT as the primary candidate and exact quantile-dispersion dynamic programming as the alternative, to be reached only when the primary proves unstable under measured tests.
+
+The study ran on development folds only, at the draw count and ranking statistic ADR-034 had already fixed (10,000 draws, `median_vorp`), with 200 bootstrap replicates per scenario over six scenarios — 1,200 replicates in total, each re-ranking as well as re-segmenting, because the fair ranks come from the same draws.
+
+**Decision:** the promoted segmentation is **`dp_quantile`** (`dp_quantile_wasserstein_v1`) at **penalty 1.0**, and **the frozen stability gate fails on boundary agreement**. Tiers are published anyway, with the failure recorded in the model card, the tier-method report and the build metadata, because tier *membership* passes every other clause and is useful; tier *boundaries* are not sharply located and the artifacts must not imply that they are.
+
+**Evidence:** PELT was tried first and refused, so the escalation is a measured failure rather than a preference:
+
+| Criterion | Threshold | `pelt_rbf` @ 1.0 | `dp_quantile` @ 1.0 |
+|---|---|---|---|
+| bootstrap adjusted Rand | >= 0.60 | 0.7726 | **0.8649** |
+| boundary agreement | >= 0.50 | 0.3336 **fail** | 0.2394 **fail** |
+| singleton rate | <= 0.20 | 0.1381 | **0.0396** |
+| tier-count CV | <= 0.25 | 0.1061 | **0.0454** |
+| monotonic tier pairs | >= 0.80 | 0.6560 **fail** | **0.8448** |
+| cross-preset ARI | >= 0.50 | 0.4316 **fail** | **0.5288** |
+
+The alternative fixes two of PELT's three failures and improves five of the six quantities. It does not fix the third, and no further algorithm is declared.
+
+**Why boundary agreement fails, measured rather than guessed.** Across 1,200 replicates the segmentation used **283 of the 299 possible cut sites at least once, and only 4 were reproduced by a majority**. The four are real: ranks 267 (0.995), 99 (0.680), 16 (0.587) and 68 (0.585). Everything else is spread thinly. The boundary diagnostics say the same thing in units a drafter would recognise — the median promoted boundary sits on a **0.55-point** P50 cliff against a P10-P90 width of 80-130 points, and the median probability that the player just below a boundary outscores the player just above it is **0.4972**. A coin flip.
+
+So simulated VORP declines almost smoothly down a 300-deep board, and "where a tier ends" is mostly not an identified quantity. The frozen admissibility rule then demands more cuts than the data supports: `max_largest_tier_share = 0.25` forbids any tier larger than 75 players, but the deep tail of a 300-player board genuinely *is* one large near-replacement group — at penalty 3.0 the segmentation wants tiers of 82 and 110 — so the rule forces the tail to be sliced, and slices inside a flat region are exactly what a bootstrap cannot reproduce. The grid shows the trap directly: penalty 3.0 reaches boundary agreement 0.5167 and penalty 8.0 reaches 0.5000, and **both are inadmissible on largest tier share** (0.3409 and 0.3978). The two frozen rules cannot both be satisfied on this distribution.
+
+**Bootstrap ARI 0.865 beside boundary agreement 0.239 is not a contradiction**, it is the finding: which group a player belongs to is reproducible, where the group ends is not. Realized-VORP monotonicity agrees — mean realized VORP falls across 0.845 of adjacent tier pairs, so the groups carry real signal even though their edges are soft.
+
+**What was not done.** No threshold was changed after seeing it fail. No penalty outside the frozen grid was tried, and the admissible-but-better-looking penalty 3.0 was not substituted for the one the rule selected. No boundary was moved by hand. The escalation to the alternative is the response ADR-030 declared in advance for exactly this case, and it was taken only after PELT's measured failure.
+
+**Consequences:** the Phase-4 exit criterion for tier stability is **not satisfied**, and is reported as not satisfied. Tier artifacts ship with `tier_stability_gate: "fail"` in their build metadata and a limitation in the model card, so no consumer can read a boundary as sharper than it is. `docs/MODELING.md` section 14 gains the measurement. The remedy is a Phase-6+ decision, not an edit here: either publish fewer, wider tiers by relaxing `max_largest_tier_share` for the undifferentiated tail (a new rule version with its own evidence), or present tier membership with an explicit boundary-confidence band instead of a hard line. Both are new decisions and both need their own gate.

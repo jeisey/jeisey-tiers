@@ -454,6 +454,25 @@ Dynamic programming segmentation minimizing within-tier distribution distance (e
 
 Implement only if the simpler PELT candidate proves unstable/unintuitive under measured tests.
 
+> **Phase-4 implementation.** `ffdraft.tiers.dynamic` implements it, and the study reaches it
+> **only** when a frozen rule refuses PELT - either no penalty in the grid is admissible or
+> the promoted one fails the stability gate. Both attempts are recorded in the report, so an
+> escalation is visible rather than inferred.
+>
+> The two algorithms optimize different things, which is the point. PELT with an RBF cost
+> finds where the *kernel mean* of the feature vector changes. This one minimizes within-tier
+> squared quantile distance, and because the L2 distance between two quantile functions on a
+> common level grid is the 2-Wasserstein distance between the distributions, that is
+> minimizing within-tier Wasserstein dispersion directly - the phrase this section uses.
+>
+> Three implementation choices: the solution is **exact** (contiguous segmentation with an
+> additive per-segment cost is a shortest path, solved by dynamic programming in O(n^2) with
+> prefix sums, which removes "a local optimum" from the list of things a boundary could be);
+> it uses **three quantiles rather than four features**, because the interquartile spread the
+> PELT candidate also passes *is* P75 - P25 and would be counted twice under an L2 cost; and
+> its cost is **normalized per feature**, so a penalty means roughly the same thing under
+> both algorithms and the frozen grid stays interpretable across them.
+
 ### 14.4 Boundary diagnostics
 
 For each adjacent boundary compute diagnostics such as:
@@ -475,6 +494,34 @@ Bootstrap/re-simulate model outputs and rerun segmentation. Track:
 - average tier count.
 
 Tier algorithm promotion requires a declared stability threshold chosen during development and documented in the tier method card. Avoid inventing an arbitrary threshold in code without evaluation.
+
+> **Phase-4 measurement (ADR-035).** The thresholds were declared in `phase4_tier_stability_v1`
+> before any tier existed, and the promoted segmentation **fails** one of the six. The
+> failure is specific and worth reading carefully, because it is not "the algorithm is
+> wrong":
+>
+> | Quantity | Bar | Measured |
+> |---|---|---|
+> | bootstrap adjusted Rand | >= 0.60 | 0.865 |
+> | boundary agreement | >= 0.50 | **0.239** |
+> | singleton rate | <= 0.20 | 0.040 |
+> | tier-count CV | <= 0.25 | 0.045 |
+> | monotonic tier pairs | >= 0.80 | 0.845 |
+> | cross-preset ARI | >= 0.50 | 0.529 |
+>
+> **Membership is reproducible; boundaries are not located.** Over 1,200 replicates the
+> segmentation used 283 of 299 possible cut sites at least once and only 4 survived in a
+> majority. The median promoted boundary sits on a 0.55-point P50 cliff against a 80-130
+> point P10-P90 width, and the median probability that the player below a boundary outscores
+> the player above it is 0.497 - a coin flip.
+>
+> The cause is a conflict between two frozen rules rather than a property of either
+> algorithm. `max_largest_tier_share = 0.25` forbids any tier holding more than a quarter of
+> a 300-deep board, but the deep tail of that board genuinely is one large near-replacement
+> group; the rule therefore forces cuts inside a flat region, which is exactly what a
+> bootstrap cannot reproduce. The same grid offers penalties whose boundary agreement passes
+> (3.0 at 0.517, 8.0 at 0.500) and both are inadmissible on largest tier share. Neither
+> threshold was moved after the fact; the remedy is a new rule version with its own evidence.
 
 > **Phase-4 implementation (ADR-035).** `ffdraft.tiers` implements the PELT candidate on the
 > rank-ordered matrix of standardized P25, P50, P75 and interquartile spread of simulated

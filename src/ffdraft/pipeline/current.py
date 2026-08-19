@@ -66,8 +66,8 @@ from ffdraft.simulation.vorp import (
     sample_points,
     simulate_vorp,
 )
+from ffdraft.tiers.algorithms import ALGORITHM_VERSIONS, segment_with
 from ffdraft.tiers.labels import tier_label
-from ffdraft.tiers.segmentation import segment_board
 from ffdraft.timeutil import isoformat_utc, utc_now
 
 __all__ = [
@@ -136,9 +136,17 @@ class CurrentBuildConfig:
 
     draws: int
     ranking_statistic: str
+    #: Which of the two documented segmentation algorithms drew these tiers. A board is a
+    #: function of the algorithm as much as of the penalty, so a build records both.
+    tier_algorithm: str
     tier_penalty: float
     board_depth: int
     seed: int
+    #: The frozen tier stability gate's verdict on this configuration, carried into every
+    #: build's metadata. It is a finding about the parameters rather than a parameter, but
+    #: it travels with them so that no published board can be read as sharper than the
+    #: measurement behind it. `ffdraft.modeling.frozen` supplies the production value.
+    tier_stability_gate: str = "unmeasured"
     league_preset_ids: tuple[str, ...] = ("redraft-10", "redraft-12", "redraft-14")
     scoring_presets: tuple[str, ...] = _LAUNCH_SCORING
     levels: tuple[float, ...] = QUANTILE_LEVELS
@@ -147,7 +155,10 @@ class CurrentBuildConfig:
         return {
             "draws": self.draws,
             "ranking_statistic": self.ranking_statistic,
+            "tier_algorithm": self.tier_algorithm,
+            "tier_algorithm_version": ALGORITHM_VERSIONS[self.tier_algorithm],
             "tier_penalty": self.tier_penalty,
+            "tier_stability_gate": self.tier_stability_gate,
             "board_depth": self.board_depth,
             "seed": self.seed,
             "league_preset_ids": list(self.league_preset_ids),
@@ -560,7 +571,11 @@ def build_board_records(
                 statistic=config.ranking_statistic,
             )
             published = board.head(config.board_depth)
-            segmentation = segment_board(published, penalty=config.tier_penalty)
+            segmentation = segment_with(
+                config.tier_algorithm,
+                published,
+                penalty=config.tier_penalty,
+            )
             tier_records.extend(
                 _tier_records(
                     published,

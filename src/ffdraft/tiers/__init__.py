@@ -7,6 +7,13 @@ that way: whatever the arbitrage phase does with a tier, a tier never learns abo
 
 from __future__ import annotations
 
+from ffdraft.tiers.algorithms import (
+    ALGORITHM_VERSIONS,
+    ALTERNATIVE_ALGORITHM,
+    PRIMARY_ALGORITHM,
+    segment_with,
+)
+from ffdraft.tiers.dynamic import DP_SEGMENTATION_VERSION, segment_board_dp
 from ffdraft.tiers.labels import LETTER_LABELS, tier_label
 from ffdraft.tiers.segmentation import (
     SEGMENTATION_VERSION,
@@ -26,7 +33,11 @@ from ffdraft.tiers.stability import (
 )
 
 __all__ = [
+    "ALGORITHM_VERSIONS",
+    "ALTERNATIVE_ALGORITHM",
     "DEFAULT_BOOTSTRAP_REPLICATES",
+    "DP_SEGMENTATION_VERSION",
+    "PRIMARY_ALGORITHM",
     "LETTER_LABELS",
     "SEGMENTATION_VERSION",
     "TIER_FEATURE_COLUMNS",
@@ -37,6 +48,8 @@ __all__ = [
     "adjusted_rand_index",
     "bootstrap_stability",
     "segment_board",
+    "segment_board_dp",
+    "segment_with",
     "standardize",
     "summarise_from_draws",
     "tier_label",

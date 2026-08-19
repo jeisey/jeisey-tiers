@@ -916,6 +916,8 @@ def _build_current(args: argparse.Namespace) -> int:
     config = CurrentBuildConfig(
         draws=args.draws if args.draws is not None else PRODUCTION_BUILD_CONFIG.draws,
         ranking_statistic=args.statistic or PRODUCTION_BUILD_CONFIG.ranking_statistic,
+        tier_algorithm=PRODUCTION_BUILD_CONFIG.tier_algorithm,
+        tier_stability_gate=PRODUCTION_BUILD_CONFIG.tier_stability_gate,
         tier_penalty=(
             args.penalty if args.penalty is not None else PRODUCTION_BUILD_CONFIG.tier_penalty
         ),

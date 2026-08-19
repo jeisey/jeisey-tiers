@@ -41,6 +41,7 @@ from ffdraft.pipeline.current import (
     run_current_build,
 )
 from ffdraft.quality import QualityGate
+from ffdraft.tiers.algorithms import PRIMARY_ALGORITHM
 
 FIXTURE_SEASON = 2025
 BEFORE_THE_ANCHOR = datetime(2025, 8, 1, 12, 0, 0, tzinfo=UTC)
@@ -78,6 +79,7 @@ def _config(**overrides: object) -> CurrentBuildConfig:
     payload: dict[str, object] = {
         "draws": 120,
         "ranking_statistic": "median_vorp",
+        "tier_algorithm": PRIMARY_ALGORITHM,
         "tier_penalty": 3.0,
         "board_depth": 300,
         "seed": DEFAULT_SEED,

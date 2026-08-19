@@ -57,9 +57,14 @@ from ffdraft.simulation.study import (
     training_bounds,
 )
 from ffdraft.simulation.vorp import SimulationConfig, fair_ranking, sample_points, simulate_vorp
-from ffdraft.tiers.dynamic import DP_SEGMENTATION_VERSION, segment_board_dp
+from ffdraft.tiers.algorithms import (
+    ALGORITHM_VERSIONS,
+    ALTERNATIVE_ALGORITHM,
+    PRIMARY_ALGORITHM,
+    segment_with,
+)
 from ffdraft.tiers.labels import tier_label
-from ffdraft.tiers.segmentation import SEGMENTATION_VERSION, Segmentation, segment_board
+from ffdraft.tiers.segmentation import Segmentation
 from ffdraft.tiers.stability import (
     DEFAULT_BOOTSTRAP_REPLICATES,
     StabilityReport,
@@ -91,24 +96,6 @@ def _mean(values: Sequence[float]) -> float:
 
 
 _DEFAULT_LEAGUE = "redraft-12"
-
-#: The primary candidate and the documented alternative, in the order ADR-030 requires them
-#: to be tried: the alternative is only reached because the primary failed a frozen rule.
-PRIMARY_ALGORITHM = "pelt_rbf"
-ALTERNATIVE_ALGORITHM = "dp_quantile"
-ALGORITHM_VERSIONS: Mapping[str, str] = {
-    PRIMARY_ALGORITHM: SEGMENTATION_VERSION,
-    ALTERNATIVE_ALGORITHM: DP_SEGMENTATION_VERSION,
-}
-
-
-def segment_with(algorithm: str, board: pl.DataFrame, *, penalty: float) -> Segmentation:
-    """Segment one board with the named algorithm."""
-    if algorithm == PRIMARY_ALGORITHM:
-        return segment_board(board, penalty=penalty)
-    if algorithm == ALTERNATIVE_ALGORITHM:
-        return segment_board_dp(board, penalty=penalty)
-    raise ValueError(f"unknown segmentation algorithm {algorithm!r}")
 
 
 @dataclass(frozen=True)

@@ -495,6 +495,7 @@ def _card_markdown(inputs: CardInputs, payload: Mapping[str, Any]) -> str:
             "wide is the honest statement of that, not a modelling failure.",
             "- **Independent player draws.** V1 samples every player independently, so it "
             "cannot express that a quarterback's collapse takes his receivers with him.",
+            *_frozen_gate_limitations(inputs),
             "- **The 2014-2016 era is thinner.** nflverse roster coverage steps up at 2016, "
             "so those target seasons carry about 36% fewer eligible rows. ADR-028 chose to "
             "train across the boundary on measured evidence; any metric averaged over all "
@@ -535,6 +536,42 @@ def _card_markdown(inputs: CardInputs, payload: Mapping[str, Any]) -> str:
         ],
     )
     return "\n".join(lines) + "\n"
+
+
+def _frozen_gate_limitations(inputs: CardInputs) -> list[str]:
+    """The frozen gates that failed, stated as limitations rather than left in a report.
+
+    Both were decided by rules written before their evidence existed, and neither was
+    repaired by moving a threshold. A reader of the card should meet them here, in the units
+    that matter to them, rather than have to open the experiment JSON to find out.
+    """
+    lines: list[str] = []
+    simulation = inputs.simulation or {}
+    convergence = simulation.get("convergence_decision") or {}
+    if convergence and not convergence.get("decisive", True):
+        lines.append(
+            "- **The draw count is a predeclared fallback, not a converged one.** No count "
+            f"in the frozen ladder met every tolerance, so {simulation.get('selected_draws')} "
+            "draws stands by the rule's own fallback clause (ADR-034). Residual Monte Carlo "
+            "error is roughly 0.3 fantasy points on a player's expected VORP and under one "
+            "and a half rank positions in the top 150; tier boundaries move more than that.",
+        )
+    tiers = inputs.tiers or {}
+    stability = tiers.get("stability_decision") or {}
+    evidence = stability.get("evidence") or {}
+    if stability and not stability.get("decisive", True):
+        agreement = evidence.get("boundary_agreement")
+        rand = evidence.get("bootstrap_adjusted_rand")
+        lines.append(
+            "- **Tier boundaries are not sharply located, and the stability gate says so.** "
+            f"Membership is reproducible under resampling (bootstrap ARI {rand:.3f}), but "
+            f"only {agreement:.1%} of promoted boundaries survive in a majority of "
+            "replicates against a 50% bar, so the gate fails (ADR-035). Read a tier as a "
+            "group of comparable players, never as a hard line: the median boundary sits on "
+            "a sub-point median gap, and the player just below one outscores the player just "
+            "above it almost half the time.",
+        )
+    return lines
 
 
 def _holdout_section(
@@ -700,12 +737,16 @@ def _tier_markdown(
             "",
             "## Segmentation",
             "",
-            f"- algorithm: `{config.get('penalties') and 'ruptures.Pelt(model=rbf)'}`",
+            f"- promoted algorithm: `{tiers.get('promoted_algorithm', 'unknown')}` "
+            f"(`{tiers.get('promoted_algorithm_version', 'unknown')}`)",
             f"- board depth: {config.get('board_depth')}",
             f"- penalty grid: {config.get('penalties')}",
-            "- features: standardized P25, P50, P75 and interquartile spread of simulated "
-            "VORP, in fair-rank order",
-            "- minimum segment size 1, so a genuinely isolated top player may stand alone",
+            "- the primary candidate is `ruptures.Pelt(model='rbf')` over standardized P25, "
+            "P50, P75 and interquartile spread of simulated VORP in fair-rank order, with "
+            "minimum segment size 1 so a genuinely isolated top player may stand alone",
+            "- the documented alternative is exact dynamic programming minimizing "
+            "within-tier quantile (Wasserstein) dispersion plus a per-tier penalty; it is "
+            "reached only when a frozen rule refuses the primary",
             "",
         ],
     )
@@ -725,6 +766,37 @@ def _tier_markdown(
                         ("Boundary effect", "mean_boundary_effect_size"),
                         ("Within-tier effect", "median_within_tier_effect_size"),
                         ("Bootstrap ARI", "bootstrap_adjusted_rand"),
+                    ),
+                ),
+            ],
+        )
+    attempts = tiers.get("algorithm_attempts", [])
+    if len(attempts) > 1:
+        lines.extend(
+            [
+                "",
+                "### Why the alternative was reached",
+                "",
+                _table(
+                    [
+                        {
+                            "algorithm": attempt["algorithm"],
+                            "penalty": attempt["penalty_selected"],
+                            "admissible": attempt["penalty_decisive"],
+                            "stability": attempt["stability"],
+                            "why": "; ".join(
+                                [*attempt["penalty_failures"], *attempt["stability_failures"]],
+                            )[:200]
+                            or "-",
+                        }
+                        for attempt in attempts
+                    ],
+                    (
+                        ("Algorithm", "algorithm"),
+                        ("Penalty", "penalty"),
+                        ("Admissible", "admissible"),
+                        ("Stability", "stability"),
+                        ("Why not", "why"),
                     ),
                 ),
             ],
