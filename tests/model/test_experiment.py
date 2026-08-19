@@ -120,6 +120,19 @@ _OTHER_METRICS = (
 )
 
 
+def test_the_fold_table_carries_everything_needed_to_reconstruct_a_fold(result):
+    for fold in result.folds:
+        assert fold["train_end_season"] < fold["validation_season"]
+        assert fold["train_rows"] > 0
+        assert fold["validation_rows"] > 0
+        assert set(fold["train_rows_by_position"]) == {"QB", "RB", "WR", "TE"}
+        assert set(fold["validation_rows_by_position"]) == {"QB", "RB", "WR", "TE"}
+        assert fold["feature_set_hash"]
+        assert fold["feature_schema_hash"]
+        assert fold["seed"] == CONFIG.seed
+        assert "scoring_engine_version" in fold
+
+
 def test_the_experiment_records_the_window_decision_and_a_selection(result):
     assert result.window_decision.selected in set(WindowPolicy)
     assert result.selection["window_policy"] == str(result.window_decision.selected)

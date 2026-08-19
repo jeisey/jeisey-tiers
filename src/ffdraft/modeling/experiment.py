@@ -365,6 +365,52 @@ def _positional_evidence(
     return evidence
 
 
+def _fold_records(
+    dataset: ModelingDataset,
+    folds: Sequence[Fold],
+    settings: ExperimentConfig,
+) -> list[dict[str, Any]]:
+    """The persisted fold table.
+
+    Everything needed to reconstruct a fold lives in one place rather than being reassembled
+    from three sections of the report: the window policy and season span, the record counts
+    by position on both sides of the split, the feature schema and selection hashes, the
+    label/scoring engine version and the seed.
+    """
+    manifest = dataset.dataset_manifest
+    records: list[dict[str, Any]] = []
+    for row in fold_table(folds):
+        fold = next(item for item in folds if item.fold_id == row["fold_id"])
+        train, validate = dataset.fold_frames(fold)
+
+        def counts(frame: pl.DataFrame) -> dict[str, int]:
+            grouped = frame.group_by("position").agg(pl.len().alias("rows")).sort("position")
+            return {
+                str(item["position"]): int(item["rows"])
+                for item in grouped.iter_rows(
+                    named=True,
+                )
+            }
+
+        records.append(
+            {
+                **row,
+                "train_rows": train.height,
+                "validation_rows": validate.height,
+                "train_rows_by_position": counts(train),
+                "validation_rows_by_position": counts(validate),
+                "feature_set_version": dataset.selection.version,
+                "feature_set_hash": dataset.selection.fingerprint(),
+                "feature_schema_version": dataset.selection.source_schema_version,
+                "feature_schema_hash": dataset.selection.source_schema_hash,
+                "scoring_engine_version": manifest.get("scoring_engine_version", "unknown"),
+                "dataset_version": manifest.get("dataset_version", "unknown"),
+                "seed": settings.seed,
+            },
+        )
+    return records
+
+
 def run_experiment(
     dataset: ModelingDataset,
     *,
@@ -476,7 +522,7 @@ def run_experiment(
         dataset=dataset.describe(),
         feature_selection=dataset.selection.to_dict(),
         feature_coverage=coverage,
-        folds=fold_table(folds),
+        folds=_fold_records(dataset, folds, settings),
         model_definitions={model_id: model.describe() for model_id, model in models.items()},
         cells=cells,
         aggregates=aggregates,

@@ -1,6 +1,6 @@
 # Phase 3 — intrinsic baselines and evaluation harness
 
-Experiment `phase3_intrinsic_v1`, seed `20260819`, code `21a760f`, generated 2026-08-19T13:47:25Z.
+Experiment `phase3_intrinsic_v1`, seed `20260819`, code `f2de169`, generated 2026-08-19T13:55:50Z.
 
 ## Conclusion
 

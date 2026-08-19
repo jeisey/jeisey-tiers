@@ -21,7 +21,7 @@ uv sync --frozen
 uv run ruff check .                 # clean
 uv run ruff format --check .        # clean, 105 files
 uv run mypy                         # clean, 71 source files, strict
-uv run pytest                       # 639 passed, 4 live deselected
+uv run pytest                       # 640 passed, 4 live deselected
 uv run ffdraft config-check
 uv run ffdraft build-fixture-artifacts --out web/public/data
 uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
@@ -33,10 +33,10 @@ uv run ffdraft build-historical --last-season 2025 --git-sha c2b48cc
 uv run ffdraft validate-historical data/historical   # gate: pass (0 critical, 0 warning)
 
 # Phase-3, offline
-uv run ffdraft evaluate-intrinsic --git-sha c2b48cc --write-predictions
+uv run ffdraft evaluate-intrinsic --git-sha f2de169
 #   -> 31,503 modelling rows, 2014-2024; 3,309 sealed 2025 rows withheld at load
 #   -> feature set intrinsic_core_v1 (7203befaa5be25a2), 78 inputs, 7 excluded
-#   -> 296.6s; window W1_all_history; promoted Q1
+#   -> 291.1s; window W1_all_history; promoted Q1
 #   -> quality gate: pass (0 critical, 0 warning)
 
 npm ci
@@ -58,7 +58,7 @@ No production pipeline, model, artifact or site exists. What exists is the Phase
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
 - `.github/workflows/ci.yml` — Python and frontend gates, fixture-only, no vendor network.
 - `web/` — Vite/React/TypeScript skeleton with a typed artifact loader.
-- `tests/` — 639 network-free Python tests, including the Phase-3 suite in `tests/model/`; `web/tests/` adds 31.
+- `tests/` — 640 network-free Python tests, including the Phase-3 suite in `tests/model/`; `web/tests/` adds 31.
 
 **The fixture pipeline's valuation is still not a model** (`intrinsic_model_version="fixture-stub-0"`). Phase 3 evaluated candidates but promoted none to production: no model artifact is trained, saved or served. Phase 4 replaces the stub.
 

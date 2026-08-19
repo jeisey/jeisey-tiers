@@ -285,7 +285,7 @@
       "macro_mae": 20.733684964479387,
       "macro_mean_pinball": 7.845496178585103,
       "macro_mean_width_p10_p90": 78.54483824040904,
-      "macro_mean_width_p25_p75": 34.0512683014436,
+      "macro_mean_width_p25_p75": 34.05126830144359,
       "macro_rmse": 35.5683033522019,
       "macro_spearman": 0.6890604893029532,
       "macro_top_k_recall": 0.5444444444444444,
@@ -300,7 +300,7 @@
       "weighted_mae": 20.693630017180798,
       "weighted_mean_pinball": 7.827348090445709,
       "weighted_mean_width_p10_p90": 78.3414858508198,
-      "weighted_mean_width_p25_p75": 33.965117357420006,
+      "weighted_mean_width_p25_p75": 33.96511735742,
       "weighted_rmse": 35.55430028027269,
       "weighted_spearman": 0.6896263989181304,
       "weighted_top_k_recall": 0.5426114453185253,
@@ -984,7 +984,7 @@
       "weighted_mae": 26.785426179429855,
       "weighted_mean_pinball": 10.212205183126787,
       "weighted_mean_width_p10_p90": 90.85980148925103,
-      "weighted_mean_width_p25_p75": 36.40379417249165,
+      "weighted_mean_width_p25_p75": 36.403794172491644,
       "weighted_rmse": 45.803317044974655,
       "weighted_spearman": 0.6689521610046201,
       "weighted_top_k_recall": 0.5360656257933486,
@@ -1637,7 +1637,7 @@
       "weighted_mae": 23.36069689448074,
       "weighted_mean_pinball": 8.967987972634946,
       "weighted_mean_width_p10_p90": 75.88891214581778,
-      "weighted_mean_width_p25_p75": 29.752941636492306,
+      "weighted_mean_width_p25_p75": 29.7529416364923,
       "weighted_rmse": 40.85583748297211,
       "weighted_spearman": 0.6816652085286972,
       "weighted_top_k_recall": 0.5284391534391534,
@@ -2848,7 +2848,7 @@
       2025
     ]
   },
-  "experiment_id": "phase3_intrinsic_v1:20260819:20260819T134725Z",
+  "experiment_id": "phase3_intrinsic_v1:20260819:20260819T135550Z",
   "experiment_version": "phase3_intrinsic_v1",
   "feature_development_coverage": {
     "age_at_anchor": {
@@ -32852,10 +32852,24 @@
   ],
   "folds": [
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2019->2020",
       "kind": "development",
       "n_train_seasons": 6,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2019,
+      "train_rows": 15747,
+      "train_rows_by_position": {
+        "QB": 2178,
+        "RB": 4026,
+        "TE": 3300,
+        "WR": 6243
+      },
       "train_seasons": [
         2014,
         2015,
@@ -32865,14 +32879,35 @@
         2019
       ],
       "train_start_season": 2014,
+      "validation_rows": 3195,
+      "validation_rows_by_position": {
+        "QB": 426,
+        "RB": 798,
+        "TE": 675,
+        "WR": 1296
+      },
       "validation_season": 2020,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2020->2021",
       "kind": "development",
       "n_train_seasons": 7,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2020,
+      "train_rows": 18942,
+      "train_rows_by_position": {
+        "QB": 2604,
+        "RB": 4824,
+        "TE": 3975,
+        "WR": 7539
+      },
       "train_seasons": [
         2014,
         2015,
@@ -32883,14 +32918,35 @@
         2020
       ],
       "train_start_season": 2014,
+      "validation_rows": 3168,
+      "validation_rows_by_position": {
+        "QB": 420,
+        "RB": 777,
+        "TE": 675,
+        "WR": 1296
+      },
       "validation_season": 2021,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2021->2022",
       "kind": "development",
       "n_train_seasons": 8,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2021,
+      "train_rows": 22110,
+      "train_rows_by_position": {
+        "QB": 3024,
+        "RB": 5601,
+        "TE": 4650,
+        "WR": 8835
+      },
       "train_seasons": [
         2014,
         2015,
@@ -32902,14 +32958,35 @@
         2021
       ],
       "train_start_season": 2014,
+      "validation_rows": 3024,
+      "validation_rows_by_position": {
+        "QB": 399,
+        "RB": 753,
+        "TE": 672,
+        "WR": 1200
+      },
       "validation_season": 2022,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2022->2023",
       "kind": "development",
       "n_train_seasons": 9,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2022,
+      "train_rows": 25134,
+      "train_rows_by_position": {
+        "QB": 3423,
+        "RB": 6354,
+        "TE": 5322,
+        "WR": 10035
+      },
       "train_seasons": [
         2014,
         2015,
@@ -32922,14 +32999,35 @@
         2022
       ],
       "train_start_season": 2014,
+      "validation_rows": 3219,
+      "validation_rows_by_position": {
+        "QB": 411,
+        "RB": 777,
+        "TE": 690,
+        "WR": 1341
+      },
       "validation_season": 2023,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2023->2024",
       "kind": "development",
       "n_train_seasons": 10,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2023,
+      "train_rows": 28353,
+      "train_rows_by_position": {
+        "QB": 3834,
+        "RB": 7131,
+        "TE": 6012,
+        "WR": 11376
+      },
       "train_seasons": [
         2014,
         2015,
@@ -32943,28 +33041,70 @@
         2023
       ],
       "train_start_season": 2014,
+      "validation_rows": 3150,
+      "validation_rows_by_position": {
+        "QB": 402,
+        "RB": 744,
+        "TE": 654,
+        "WR": 1350
+      },
       "validation_season": 2024,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2016->2017",
       "kind": "w1_diagnostic",
       "n_train_seasons": 3,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2016,
+      "train_rows": 6069,
+      "train_rows_by_position": {
+        "QB": 963,
+        "RB": 1500,
+        "TE": 1311,
+        "WR": 2295
+      },
       "train_seasons": [
         2014,
         2015,
         2016
       ],
       "train_start_season": 2014,
+      "validation_rows": 3168,
+      "validation_rows_by_position": {
+        "QB": 405,
+        "RB": 849,
+        "TE": 651,
+        "WR": 1263
+      },
       "validation_season": 2017,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2017->2018",
       "kind": "w1_diagnostic",
       "n_train_seasons": 4,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2017,
+      "train_rows": 9237,
+      "train_rows_by_position": {
+        "QB": 1368,
+        "RB": 2349,
+        "TE": 1962,
+        "WR": 3558
+      },
       "train_seasons": [
         2014,
         2015,
@@ -32972,14 +33112,35 @@
         2017
       ],
       "train_start_season": 2014,
+      "validation_rows": 3234,
+      "validation_rows_by_position": {
+        "QB": 405,
+        "RB": 819,
+        "TE": 660,
+        "WR": 1350
+      },
       "validation_season": 2018,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W1_all_history:2014-2018->2019",
       "kind": "w1_diagnostic",
       "n_train_seasons": 5,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2018,
+      "train_rows": 12471,
+      "train_rows_by_position": {
+        "QB": 1773,
+        "RB": 3168,
+        "TE": 2622,
+        "WR": 4908
+      },
       "train_seasons": [
         2014,
         2015,
@@ -32988,28 +33149,70 @@
         2018
       ],
       "train_start_season": 2014,
+      "validation_rows": 3276,
+      "validation_rows_by_position": {
+        "QB": 405,
+        "RB": 858,
+        "TE": 678,
+        "WR": 1335
+      },
       "validation_season": 2019,
       "window_policy": "W1_all_history"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W2_modern_era:2017-2019->2020",
       "kind": "development",
       "n_train_seasons": 3,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2019,
+      "train_rows": 9678,
+      "train_rows_by_position": {
+        "QB": 1215,
+        "RB": 2526,
+        "TE": 1989,
+        "WR": 3948
+      },
       "train_seasons": [
         2017,
         2018,
         2019
       ],
       "train_start_season": 2017,
+      "validation_rows": 3195,
+      "validation_rows_by_position": {
+        "QB": 426,
+        "RB": 798,
+        "TE": 675,
+        "WR": 1296
+      },
       "validation_season": 2020,
       "window_policy": "W2_modern_era"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W2_modern_era:2017-2020->2021",
       "kind": "development",
       "n_train_seasons": 4,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2020,
+      "train_rows": 12873,
+      "train_rows_by_position": {
+        "QB": 1641,
+        "RB": 3324,
+        "TE": 2664,
+        "WR": 5244
+      },
       "train_seasons": [
         2017,
         2018,
@@ -33017,14 +33220,35 @@
         2020
       ],
       "train_start_season": 2017,
+      "validation_rows": 3168,
+      "validation_rows_by_position": {
+        "QB": 420,
+        "RB": 777,
+        "TE": 675,
+        "WR": 1296
+      },
       "validation_season": 2021,
       "window_policy": "W2_modern_era"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W2_modern_era:2017-2021->2022",
       "kind": "development",
       "n_train_seasons": 5,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2021,
+      "train_rows": 16041,
+      "train_rows_by_position": {
+        "QB": 2061,
+        "RB": 4101,
+        "TE": 3339,
+        "WR": 6540
+      },
       "train_seasons": [
         2017,
         2018,
@@ -33033,14 +33257,35 @@
         2021
       ],
       "train_start_season": 2017,
+      "validation_rows": 3024,
+      "validation_rows_by_position": {
+        "QB": 399,
+        "RB": 753,
+        "TE": 672,
+        "WR": 1200
+      },
       "validation_season": 2022,
       "window_policy": "W2_modern_era"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W2_modern_era:2017-2022->2023",
       "kind": "development",
       "n_train_seasons": 6,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2022,
+      "train_rows": 19065,
+      "train_rows_by_position": {
+        "QB": 2460,
+        "RB": 4854,
+        "TE": 4011,
+        "WR": 7740
+      },
       "train_seasons": [
         2017,
         2018,
@@ -33050,14 +33295,35 @@
         2022
       ],
       "train_start_season": 2017,
+      "validation_rows": 3219,
+      "validation_rows_by_position": {
+        "QB": 411,
+        "RB": 777,
+        "TE": 690,
+        "WR": 1341
+      },
       "validation_season": 2023,
       "window_policy": "W2_modern_era"
     },
     {
+      "dataset_version": "historical_v1",
+      "feature_schema_hash": "c495ba3177dcb989",
+      "feature_schema_version": "historical_features_v1",
+      "feature_set_hash": "7203befaa5be25a2",
+      "feature_set_version": "intrinsic_core_v1",
       "fold_id": "W2_modern_era:2017-2023->2024",
       "kind": "development",
       "n_train_seasons": 7,
+      "scoring_engine_version": "scoring_v1",
+      "seed": 20260819,
       "train_end_season": 2023,
+      "train_rows": 22284,
+      "train_rows_by_position": {
+        "QB": 2871,
+        "RB": 5631,
+        "TE": 4701,
+        "WR": 9081
+      },
       "train_seasons": [
         2017,
         2018,
@@ -33068,12 +33334,19 @@
         2023
       ],
       "train_start_season": 2017,
+      "validation_rows": 3150,
+      "validation_rows_by_position": {
+        "QB": 402,
+        "RB": 744,
+        "TE": 654,
+        "WR": 1350
+      },
       "validation_season": 2024,
       "window_policy": "W2_modern_era"
     }
   ],
-  "generated_at_utc": "2026-08-19T13:47:25Z",
-  "git_sha": "21a760f",
+  "generated_at_utc": "2026-08-19T13:55:50Z",
+  "git_sha": "f2de169",
   "metrics_by_cell": [
     {
       "coverage_p10_p90": 0.8169014084507042,
@@ -37813,7 +38086,7 @@
       "mean_pinball": 6.391169332823014,
       "mean_prediction": 27.868330155058082,
       "mean_width_p10_p90": 61.22716309359172,
-      "mean_width_p25_p75": 29.056082845370923,
+      "mean_width_p25_p75": 29.05608284537092,
       "model_id": "B0",
       "n": 447,
       "pinball_by_quantile": {
@@ -37922,9 +38195,9 @@
       "model_id": "B0",
       "n": 447,
       "pinball_by_quantile": {
-        "p10": 3.756365296553196,
-        "p25": 7.583357978752199,
-        "p50": 10.72905428443128,
+        "p10": 3.7563652965531955,
+        "p25": 7.583357978752198,
+        "p50": 10.729054284431282,
         "p75": 9.849497123331808,
         "p90": 6.752778914436131
       },
@@ -39178,7 +39451,7 @@
       "mean_pinball": 8.9511987687788,
       "mean_prediction": 35.47925470808429,
       "mean_width_p10_p90": 93.41176031656082,
-      "mean_width_p25_p75": 39.71982239850785,
+      "mean_width_p25_p75": 39.71982239850784,
       "model_id": "B0",
       "n": 450,
       "pinball_by_quantile": {
@@ -39280,7 +39553,7 @@
       "kendall_tau_b": 0.578709560313309,
       "mae": 15.381638191868397,
       "mean_actual": 24.220622222222218,
-      "mean_pinball": 5.97144643328539,
+      "mean_pinball": 5.971446433285389,
       "mean_prediction": 22.6685982087239,
       "mean_width_p10_p90": 62.33707890867655,
       "mean_width_p25_p75": 24.741440526140885,
@@ -39291,7 +39564,7 @@
         "p25": 5.784663581036247,
         "p50": 7.538337534703157,
         "p75": 7.438896268724914,
-        "p90": 5.72145619134493
+        "p90": 5.721456191344929
       },
       "position": "WR",
       "rmse": 27.197922998516233,
@@ -42953,11 +43226,11 @@
       "fold_id": "W2_modern_era:2017-2021->2022",
       "fold_kind": "development",
       "kendall_tau_b": 0.5461497492414064,
-      "mae": 26.10810614916066,
+      "mae": 26.108106149160655,
       "mean_actual": 41.830149999999996,
       "mean_pinball": 9.307791962664927,
       "mean_prediction": 38.782737494170114,
-      "mean_width_p10_p90": 84.6422105101051,
+      "mean_width_p10_p90": 84.64221051010513,
       "mean_width_p25_p75": 39.2864200874656,
       "model_id": "B0",
       "n": 400,
@@ -44320,18 +44593,18 @@
       "kendall_tau_b": 0.6077420977222574,
       "mae": 14.57380842477782,
       "mean_actual": 24.09946308724832,
-      "mean_pinball": 5.0945108761652484,
-      "mean_prediction": 21.09016144362956,
+      "mean_pinball": 5.094510876165249,
+      "mean_prediction": 21.090161443629555,
       "mean_width_p10_p90": 49.18141949987112,
       "mean_width_p25_p75": 21.656757688667934,
       "model_id": "B0",
       "n": 447,
       "pinball_by_quantile": {
-        "p10": 2.406698507398776,
+        "p10": 2.4066985073987754,
         "p25": 4.838257866780167,
-        "p50": 7.026716309044756,
+        "p50": 7.026716309044755,
         "p75": 6.66437859555292,
-        "p90": 4.536503102049625
+        "p90": 4.536503102049627
       },
       "position": "WR",
       "rmse": 26.906541683305733,
@@ -45377,7 +45650,7 @@
       "model_id": "B0",
       "n": 450,
       "pinball_by_quantile": {
-        "p10": 4.296721380797452,
+        "p10": 4.296721380797453,
         "p25": 7.007157852352196,
         "p50": 9.431824386004907,
         "p75": 9.234456893606096,
@@ -45484,7 +45757,7 @@
       "pinball_by_quantile": {
         "p10": 3.7028783801515086,
         "p25": 7.2918187593937,
-        "p50": 11.04782849971905,
+        "p50": 11.047828499719047,
         "p75": 10.52232733143137,
         "p90": 6.979132312910897
       },
@@ -49535,7 +49808,7 @@
         "candidate": 26.978590257291103,
         "ci_excludes_zero": true,
         "ci_high": 1.7292876917500837,
-        "ci_low": 0.9932828483532967,
+        "ci_low": 0.9932828483532968,
         "delta": 1.3769415946614885,
         "favours_candidate": false,
         "lower_is_better": true,
@@ -49623,7 +49896,7 @@
         "candidate": 22.06989505333827,
         "ci_excludes_zero": true,
         "ci_high": -3.1800960145272184,
-        "ci_low": -3.866941759214674,
+        "ci_low": -3.8669417592146735,
         "delta": -3.531753609291343,
         "favours_candidate": true,
         "lower_is_better": true,
@@ -49800,7 +50073,7 @@
           "candidate": 26.978590257291103,
           "ci_excludes_zero": true,
           "ci_high": 1.7292876917500837,
-          "ci_low": 0.9932828483532967,
+          "ci_low": 0.9932828483532968,
           "delta": 1.3769415946614885,
           "favours_candidate": false,
           "lower_is_better": true,
@@ -49925,7 +50198,7 @@
           "candidate": 22.06989505333827,
           "ci_excludes_zero": true,
           "ci_high": -3.1800960145272184,
-          "ci_low": -3.866941759214674,
+          "ci_low": -3.8669417592146735,
           "delta": -3.531753609291343,
           "favours_candidate": true,
           "lower_is_better": true,
@@ -50264,7 +50537,7 @@
       "window_policy": "W2_modern_era"
     }
   ],
-  "runtime_seconds": 287.37,
+  "runtime_seconds": 291.12,
   "selection": {
     "candidates_passing": [
       "Q1"
