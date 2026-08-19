@@ -28,6 +28,8 @@ Jobs:
 
 No live data vendor access in normal PR CI.
 
+> **Phase-1 status: implemented as a two-job subset.** `.github/workflows/ci.yml` runs a `python` job (uv sync --frozen, ruff check, ruff format --check, mypy, pytest, `ffdraft config-check`, the fixture mini-pipeline, `validate-artifacts`, and a staleness check on the committed golden artifacts) and a `web` job (npm ci, lint, typecheck, vitest, build, plus a project-Pages base-path build whose emitted asset URLs are asserted per section 11 of the architecture). Permissions are `contents: read` with no per-job elevation. Playwright smoke tests arrive with the Phase-6 frontend; caching and the richer workflow summary arrive in Phase 7.
+
 ### 2.2 `daily-refresh.yml`
 
 Triggers:
@@ -101,7 +103,9 @@ Cadence facts confirmed by the probe and worth designing to:
 
 The architecture assumes a public repository using standard GitHub-hosted runners and GitHub Pages. GitHub's current documentation states standard hosted runners are free for public repositories and Pages is available for public repositories on GitHub Free. Avoid larger runners or paid services unless a future benchmark proves necessary.
 
-> **Phase-0 observation (2026-08-17):** `jeisey/jeisey-tiers` is currently a **private** repository, so the free-runner and Pages assumptions above do not yet hold. This does not block Phase 0, but it must be resolved before Phase 7: either make the repository public, or accept the plan requirements for Actions minutes and Pages on a private repository. Recorded as an open question in `SESSION_STATE.md`.
+> **Phase-0 observation (2026-08-17):** `jeisey/jeisey-tiers` is currently a **private** repository, so the free-runner and Pages assumptions above do not yet hold.
+>
+> **Owner decision (2026-08-18, ADR-016):** the repository **stays private through Phase 6**. No phase between 1 and 6 may change visibility or depend on the repository being public, and Phase-1 CI is written accordingly — no `pull_request_target`, no Pages permissions, no assumption of unlimited Actions minutes. The choice between going public and accepting private-repository Actions/Pages terms is a **required Phase-7 decision** and must be recorded as an amendment to ADR-016 before that phase exits.
 
 ## 4. Caching
 

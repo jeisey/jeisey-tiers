@@ -1,0 +1,17 @@
+schema_version,build_id,model_version,season,as_of_utc,player_id,display_name,team,position,scoring_preset,expected_points,p10_points,p25_points,p50_points,p75_points,p90_points,uncertainty_points,expected_games,quality_flags
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000001,Marcus Vandelay,ATL,QB,PPR,355.0,255.6,312.4,355.0,397.6,454.4,99.4,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000002,Dez Okonkwo,BUF,RB,PPR,340.0,244.8,299.2,340.0,380.8,435.2,95.2,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000003,Ravi Thibodeaux,CHI,RB,PPR,262.0,188.6,230.6,262.0,293.4,335.4,73.4,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000004,Chris Johnson,DAL,WR,PPR,285.0,205.2,250.8,285.0,319.2,364.8,79.8,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000005,Chris Johnson Jr.,DEN,WR,PPR,240.0,148.8,199.2,240.0,283.2,345.6,98.4,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000006,Tobias Ferreira,GB,WR,PPR,278.0,200.2,244.6,278.0,311.4,355.8,77.8,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000007,Kip Salvatore,HOU,TE,PPR,232.0,167.0,204.2,232.0,259.8,297.0,65.0,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000008,Nnamdi Brightwater,IND,RB,PPR,205.0,147.6,180.4,205.0,229.6,262.4,57.4,17.0,no_sleeper_status
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000009,Emeka Vasquez,JAX,WR,PPR,225.0,162.0,198.0,225.0,252.0,288.0,63.0,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000010,Sol Marchetti,KC,QB,PPR,318.0,229.0,279.8,318.0,356.2,407.0,89.0,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000011,Bram Kowalczyk,LV,TE,PPR,150.0,82.5,117.0,150.0,186.0,232.5,75.0,17.0,rookie
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000012,Yusuf Lindqvist,LAC,WR,PPR,198.0,114.8,158.4,198.0,241.6,297.0,91.1,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000013,Ade Fontenot,MIA,RB,PPR,188.0,135.4,165.4,188.0,210.6,240.6,52.6,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000014,Teodor Vargas,MIN,QB,PPR,289.0,208.1,254.3,289.0,323.7,369.9,80.9,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000015,Hollis Amadi,NE,WR,PPR,210.0,151.2,184.8,210.0,235.2,268.8,58.8,17.0,
+1.0,fixture-20260818T120000Z,fixture-stub-0,2026,2026-08-18T12:00:00Z,gsis:00-0000016,Xavier Nkemdiche,NO,TE,PPR,128.0,92.2,112.6,128.0,143.4,163.8,35.8,17.0,roster_status_res

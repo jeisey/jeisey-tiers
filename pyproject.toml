@@ -1,24 +1,43 @@
 [project]
 name = "ffdraft"
-version = "0.0.0"
+version = "0.1.0"
 description = "Fantasy Draft Intelligence: intrinsic value tiers and market arbitrage from public football data"
 readme = "README.md"
 requires-python = ">=3.12"
-# Phase 0 keeps this dependency set intentionally minimal: it only has to support the
-# reproducible source probe (`scripts/source_probe.py`) and its network-free unit tests.
-# Phase 1 extends this file with the `ffdraft` package build target and modeling deps.
+# The dependency set stays deliberately small (AGENTS.md section 13). Phase 1 adds only
+# what the scaffold, contracts, identity layer, adapters and artifact serializers need:
+# pydantic for validated configuration, jsonschema (+ an RFC 3339 validator so `format:
+# date-time` is actually asserted rather than ignored) for the public artifact contracts.
+# Modeling dependencies (scikit-learn, LightGBM, ruptures) arrive with Phase 3/4, not here.
 dependencies = [
+    "jsonschema>=4.23",
     "nflreadpy>=0.1.5",
     "polars>=1.0",
+    "pydantic>=2.9",
     "pyyaml>=6.0",
     "requests>=2.32",
+    "rfc3339-validator>=0.1.4",
 ]
+
+[project.scripts]
+ffdraft = "ffdraft.cli:main"
 
 [dependency-groups]
 dev = [
+    "mypy>=1.11",
     "pytest>=8.3",
     "ruff>=0.6",
+    "types-jsonschema>=4.23",
+    "types-pyyaml>=6.0",
+    "types-requests>=2.32",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ffdraft"]
 
 [tool.ruff]
 line-length = 100
@@ -44,3 +63,12 @@ addopts = "-q -m 'not live'"
 markers = [
     "live: hits third-party sources over the network; opt-in only (see docs/TEST_STRATEGY.md 2.4)",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/ffdraft"]
+strict = true
+# nflreadpy and rfc3339_validator ship no type information; everything we write is typed.
+[[tool.mypy.overrides]]
+module = ["nflreadpy.*", "rfc3339_validator.*"]
+ignore_missing_imports = true

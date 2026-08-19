@@ -1,0 +1,20 @@
+# Human-reviewed identity aliases.
+#
+# The resolver refuses to guess (ADR-005 / ADR-019), so a genuine record that no id bridge
+# can reach - a player MFL prices before nflverse lists him, an id an upstream never
+# published - stays unresolved until a person inspects the case and records it here. An
+# entry produces a `resolved_reviewed_alias` outcome (docs/DATA_CONTRACTS.md section 2.3).
+#
+# An alias never overrides a live id bridge. If the bridges resolve to a different player
+# the record fails closed as ambiguous instead, so a stale entry cannot quietly outvote
+# current data.
+#
+# Format:
+#   - source_id: myfantasyleague_adp     # the external source the id belongs to
+#     external_id: "16162"               # the id as that source publishes it
+#     player_id: "gsis:00-0039163"       # the canonical, namespaced target
+#     reviewed_by: name-or-handle
+#     reviewed_at: "2026-08-18"
+#     note: why no id bridge could resolve this
+schema_version: "1.0"
+aliases: []

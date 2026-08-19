@@ -1,0 +1,68 @@
+[
+  {
+    "season": 2024,
+    "club_code": "ATL",
+    "week": 1,
+    "game_type": "REG",
+    "depth_team": "1",
+    "gsis_id": "00-0000001",
+    "position": "QB",
+    "depth_position": "QB",
+    "full_name": "Marcus Vandelay"
+  },
+  {
+    "season": 2024,
+    "club_code": "BUF",
+    "week": 1,
+    "game_type": "REG",
+    "depth_team": "1",
+    "gsis_id": "00-0000002",
+    "position": "RB",
+    "depth_position": "RB",
+    "full_name": "Dez Okonkwo"
+  },
+  {
+    "season": 2024,
+    "club_code": "CHI",
+    "week": 1,
+    "game_type": "REG",
+    "depth_team": "1",
+    "gsis_id": "00-0000003",
+    "position": "RB",
+    "depth_position": "RB",
+    "full_name": "Ravi Thibodeaux"
+  },
+  {
+    "season": 2024,
+    "club_code": "DAL",
+    "week": 1,
+    "game_type": "REG",
+    "depth_team": "1",
+    "gsis_id": "00-0000004",
+    "position": "WR",
+    "depth_position": "WR",
+    "full_name": "Chris Johnson"
+  },
+  {
+    "season": 2024,
+    "club_code": "DEN",
+    "week": 1,
+    "game_type": "REG",
+    "depth_team": "1",
+    "gsis_id": "00-0000005",
+    "position": "WR",
+    "depth_position": "WR",
+    "full_name": "Chris Johnson Jr."
+  },
+  {
+    "season": 2024,
+    "club_code": "GB",
+    "week": 1,
+    "game_type": "REG",
+    "depth_team": "1",
+    "gsis_id": "00-0000006",
+    "position": "WR",
+    "depth_position": "WR",
+    "full_name": "Tobias Ferreira"
+  }
+]

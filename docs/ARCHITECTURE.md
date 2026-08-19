@@ -151,6 +151,15 @@ Benchmark-only source data must never be serialized into public artifacts unless
 
 The implementation agent may make modest naming changes, but subsystem boundaries must remain recognizable.
 
+> **Phase-1 deltas from the sketch above**, all additive:
+>
+> - `src/ffdraft/pipeline/` holds pipeline wiring, currently the network-free fixture mini-pipeline. Its deterministic stub valuation lives there rather than in `modeling/`, `simulation/` or `tiers/` precisely so it cannot be mistaken for the real thing.
+> - `src/ffdraft/paths.py`, `secret.py` and `timeutil.py` are small cross-cutting utilities.
+> - TypeScript configuration is split into `tsconfig.json` (project references), `tsconfig.app.json` (the browser sources) and `tsconfig.node.json` (the build tooling), which is the standard Vite layout.
+> - `tests/` grew `contract/`, `data_quality/` and `leakage/` alongside `unit/` and `integration/`, matching `docs/TEST_STRATEGY.md` section 2.
+> - `config/identity-aliases.yaml` holds human-reviewed identity aliases (ADR-019).
+> - `schemas/artifact_envelope.schema.json` describes the shared artifact wrapper (ADR-020).
+
 ## 5. Python package boundaries
 
 ### `sources/`
@@ -290,6 +299,10 @@ Each record contains scoring/league preset.
 - etc.
 
 Choose after measuring browser payload. Keep CSV export paths stable.
+
+> **Chosen for V1: Shape A** (ADR-020). There is no payload to measure yet, and one file per product keeps the loader, the export path and the validator simple; a preset switch is a client-side filter rather than a fetch. Each JSON file is wrapped in the envelope described in `docs/DATA_CONTRACTS.md` section 13.1. Moving to Shape B later changes only the envelope, not the record contracts, so CSV export paths survive the migration.
+>
+> Phase 1 also emits `projections.json`/`.csv` and `market_snapshot.json` alongside the PRD's minimum set, so every schema in `schemas/` has a serializer and a validator rather than only a definition.
 
 ## 9. Configuration strategy
 

@@ -47,27 +47,42 @@ The intended production architecture is static and GitHub-native: Python data/mo
 
 ## Repository status
 
-Phase 0 (source, legal, and feasibility proof) is complete as of 2026-08-17. Phase 1 has not started, so there is no pipeline, model, artifact or site yet.
-
-What has been added on top of the specification bundle:
+Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. **Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18.** There is still no model, no production pipeline and no deployed site — Phase 1 builds the skeleton that makes bad joins and schema drift hard, and proves it end to end without touching a vendor API.
 
 | Path | Purpose |
 |---|---|
-| `scripts/source_probe.py` | Reproducible source/legal/feasibility probe — the Phase-0 evidence generator |
-| `.github/workflows/source-probe.yml` | Runs the probe where egress is unrestricted and commits its report |
-| `docs/source-probes/<date>/` | Probe evidence: `report.json` plus a human-readable `summary.md` |
-| `tests/fixtures/source_schemas/` | Recorded upstream schemas for network-free adapter tests |
-| `pyproject.toml`, `uv.lock` | Minimal Python 3.12 toolchain for the probe and its tests |
+| `src/ffdraft/` | Config, typed contracts, source adapters, canonical identity, quality gate, artifact serializers, CLI |
+| `web/` + root `package.json` | Vite/React/TypeScript skeleton with a typed, version-checked artifact loader |
+| `schemas/` | Public artifact contracts, plus the shared `artifact_envelope` wrapper |
+| `config/` | League presets, source policy registry, human-reviewed identity aliases |
+| `tests/` | 254 network-free Python tests across unit / contract / integration / data-quality / leakage |
+| `tests/fixtures/pipeline/` | Synthetic source fixtures covering every documented edge case |
+| `tests/fixtures/artifacts/` | Committed golden artifacts, also read by the frontend tests |
+| `.github/workflows/ci.yml` | Python and frontend gates; fixtures only, no vendor network |
+| `scripts/source_probe.py` | The Phase-0 evidence generator |
 
-Verified source decisions live in `docs/DATA_SOURCES.md` section 13 and `config/source-registry.yaml`; the reasoning is in ADR-009 through ADR-015 in `docs/DECISIONS.md`. Two headline outcomes: the free source stack covers every required role, and **arbitrage launches in deterministic baseline mode** because historical ADP, while plentiful, is not point-in-time.
+Verified source decisions live in `docs/DATA_SOURCES.md` section 13 and `config/source-registry.yaml`; the reasoning is in ADR-009 through ADR-020 in `docs/DECISIONS.md`. Three headline outcomes: the free source stack covers every required role, **arbitrage launches in deterministic baseline mode** because historical ADP is plentiful but not point-in-time, and **market identity resolves by id alone** through two independent bridges that fail closed when they disagree.
 
 ```bash
+# Python
 uv sync --frozen
 uv run ruff check . && uv run ruff format --check .
-uv run pytest                 # network-free
-uv run pytest -m live         # opt-in live source smoke tests
-uv run python scripts/source_probe.py --out docs/source-probes/$(date -u +%F)
+uv run mypy
+uv run pytest                                            # network-free
+uv run pytest -m live                                    # opt-in live source smoke tests
+
+# The Phase-1 fixture pipeline: fixtures -> adapters -> identity -> contracts -> artifacts
+uv run ffdraft build-fixture-artifacts --out web/public/data
+uv run python -m ffdraft.cli validate-artifacts web/public/data
+
+# Frontend
+npm ci
+npm run lint && npm run typecheck
+npm run test -- --run
+npm run build
 ```
+
+Artifacts written to `web/public/data/` are generated and gitignored. `ffdraft config-check` prints the loaded configuration and which MFL client secrets are present — never their values.
 
 Data attribution: player/roster/depth-chart/stat data from **nflverse** (`nflreadpy`), expected fantasy points from **ffopportunity** (CC-BY-SA-4.0), market ADP from **MyFantasyLeague.com**, current player status from the **Sleeper** API (non-commercial use only).
 

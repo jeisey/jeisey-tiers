@@ -1,0 +1,173 @@
+{
+  "adp": {
+    "version": "1.0",
+    "encoding": "utf-8",
+    "timestamp": "1786974291",
+    "totalDrafts": "410",
+    "totalPicks": "646",
+    "player": [
+      {
+        "id": "6000002",
+        "rank": "1",
+        "averagePick": "2.40",
+        "minPick": "1",
+        "maxPick": "6",
+        "draftsSelectedIn": "140",
+        "draftSelPct": "93"
+      },
+      {
+        "id": "6000004",
+        "rank": "2",
+        "averagePick": "8.70",
+        "minPick": "3",
+        "maxPick": "18",
+        "draftsSelectedIn": "138",
+        "draftSelPct": "92"
+      },
+      {
+        "id": "6000006",
+        "rank": "3",
+        "averagePick": "12.10",
+        "minPick": "6",
+        "maxPick": "25",
+        "draftsSelectedIn": "131",
+        "draftSelPct": "87"
+      },
+      {
+        "id": "6000015",
+        "rank": "4",
+        "averagePick": "15.50",
+        "minPick": "8",
+        "maxPick": "30",
+        "draftsSelectedIn": "127",
+        "draftSelPct": "85"
+      },
+      {
+        "id": "6000003",
+        "rank": "5",
+        "averagePick": "21.90",
+        "minPick": "12",
+        "maxPick": "38",
+        "draftsSelectedIn": "120",
+        "draftSelPct": "80"
+      },
+      {
+        "id": "6000007",
+        "rank": "6",
+        "averagePick": "26.40",
+        "minPick": "15",
+        "maxPick": "44",
+        "draftsSelectedIn": "118",
+        "draftSelPct": "79"
+      },
+      {
+        "id": "6000001",
+        "rank": "7",
+        "averagePick": "33.80",
+        "minPick": "20",
+        "maxPick": "55",
+        "draftsSelectedIn": "115",
+        "draftSelPct": "77"
+      },
+      {
+        "id": "6000009",
+        "rank": "8",
+        "averagePick": "41.20",
+        "minPick": "26",
+        "maxPick": "67",
+        "draftsSelectedIn": "96",
+        "draftSelPct": "64"
+      },
+      {
+        "id": "6000005",
+        "rank": "9",
+        "averagePick": "49.60",
+        "minPick": "31",
+        "maxPick": "80",
+        "draftsSelectedIn": "88",
+        "draftSelPct": "59"
+      },
+      {
+        "id": "6000010",
+        "rank": "10",
+        "averagePick": "58.30",
+        "minPick": "38",
+        "maxPick": "92",
+        "draftsSelectedIn": "71",
+        "draftSelPct": "47"
+      },
+      {
+        "id": "6000008",
+        "rank": "11",
+        "averagePick": "72.50",
+        "minPick": "47",
+        "maxPick": "110",
+        "draftsSelectedIn": "52",
+        "draftSelPct": "35"
+      },
+      {
+        "id": "6000016",
+        "rank": "12",
+        "averagePick": "95.00",
+        "minPick": "60",
+        "maxPick": "140",
+        "draftsSelectedIn": "33",
+        "draftSelPct": "22"
+      },
+      {
+        "id": "6000014",
+        "rank": "13",
+        "averagePick": "104.20",
+        "minPick": "70",
+        "maxPick": "150",
+        "draftsSelectedIn": "27",
+        "draftSelPct": "18"
+      },
+      {
+        "id": "6000011",
+        "rank": "14",
+        "averagePick": "132.70",
+        "minPick": "90",
+        "maxPick": "180",
+        "draftsSelectedIn": "18",
+        "draftSelPct": "12"
+      },
+      {
+        "id": "6000099",
+        "rank": "15",
+        "averagePick": "189.30",
+        "minPick": "150",
+        "maxPick": "220",
+        "draftsSelectedIn": "9",
+        "draftSelPct": "6"
+      },
+      {
+        "id": "0151",
+        "rank": "16",
+        "averagePick": "205.00",
+        "minPick": "180",
+        "maxPick": "240",
+        "draftsSelectedIn": "11",
+        "draftSelPct": "7"
+      },
+      {
+        "id": "0152",
+        "rank": "17",
+        "averagePick": "212.00",
+        "minPick": "185",
+        "maxPick": "245",
+        "draftsSelectedIn": "10",
+        "draftSelPct": "7"
+      },
+      {
+        "id": "6000012",
+        "rank": "18",
+        "averagePick": "218.40",
+        "minPick": "170",
+        "maxPick": "250",
+        "draftsSelectedIn": "6",
+        "draftSelPct": "4"
+      }
+    ]
+  }
+}

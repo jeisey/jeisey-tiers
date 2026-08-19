@@ -17,6 +17,8 @@ This is a public static data site, so security risk is modest but not zero. Main
 
 V1 should not require vendor secrets if free source plan succeeds.
 
+**Recorded 2026-08-18 (ADR-017).** The one secret set that exists is the MyFantasyLeague developer-client configuration — `MFL_API_CLIENT_NAME`, `MFL_API_USERNAME`, `MFL_API_PASSWORD`, `MFL_API_USER_AGENT` — held as GitHub repository secrets. It is a *client-identity* secret, not an access credential: the public ADP export needs no authentication, so the adapter transmits only the User-Agent and never attaches a username, password, `APIKEY` or `Authorization` header. Configuration objects record which environment variable a value came from and whether it is present, never the value; their `repr` is redacted; and no secret may enter a log line, a cache key, a URL query, a committed fixture or a serialized artifact. Absence degrades the request identity, it does not block the source. Network-free tests must not read these variables at all.
+
 If a future paid/API-key source is added:
 
 - GitHub Actions secret only;
@@ -101,13 +103,13 @@ Current terms found during research state data is FantasyCalc property, non-comm
 
 Treat as benchmark-only by default. nflverse access convenience does not override FantasyPros ownership/terms. Do not redistribute raw ECR unless explicitly permitted.
 
-**Resolved: disabled pending human review.** The dynastyprocess mirror publishes no licence and the FantasyPros terms page is client-rendered, so terms are unclear and the benchmark is switched off rather than used quietly. See ADR-014. The probe enforces this mechanically: rows from benchmark-only sources are suppressed from the report and fixtures.
+**Resolved: `benchmark_only` (owner terms review, 2026-08-18).** Phase 0 switched the benchmark off because terms were unread; the owner has now read them and approved internal benchmark use for this non-commercial project (ADR-014 as amended). The default in the paragraph above therefore stands rather than being overridden: benchmark-only, no redistribution of raw ECR, and no place in intrinsic features or DraftValue inputs. The probe still enforces this mechanically — rows from benchmark-only sources are suppressed from the report and fixtures — because permission to compare is not permission to republish. The source is `non_commercial_only`, so it is inside the section 10 boundary.
 
 ### MFL
 
 MFL publicly promotes its developer API for third-party add-ons, but exact 2026 API terms and data reuse decision must be recorded during Phase 0.
 
-**Recorded: production allowed, with obligations.** MFL's published "General Rules and Terms of Service" state access "is provided free to anyone to use in almost any way" and forbid harvesting league/user data, circumventing league rules, overloading the service, and collecting user information without permission — none of which describes reading the public ADP aggregate. Obligations we must honour: send the User-Agent from a registered developer client (**open action, requires an MFL account**), back off on HTTP 429, and request the player database at most once per day. `robots.txt` restricts only `/fflnetdynamic*/` league directories.
+**Recorded: production allowed, with obligations.** MFL's published "General Rules and Terms of Service" state access "is provided free to anyone to use in almost any way" and forbid harvesting league/user data, circumventing league rules, overloading the service, and collecting user information without permission — none of which describes reading the public ADP aggregate. Obligations we must honour: send the User-Agent from a registered developer client (**registered 2026-08-18**; supplied as the `MFL_API_USER_AGENT` repository secret, ADR-017), back off on HTTP 429, and request the player database at most once per day. `robots.txt` restricts only `/fflnetdynamic*/` league directories.
 
 ### SportsDataIO
 
@@ -121,7 +123,7 @@ Generated CSV may include a short `source_methodology`/metadata reference or com
 
 ## 10. Non-commercial boundary
 
-As of the Phase-0 verification, the non-commercial-only sources in the plan are **Sleeper** (verified, and now on the current-status path) and FantasyCalc (disabled). `config/source-registry.yaml` keeps the authoritative list in `decisions.non_commercial_deployment_required_by`, and a unit test fails if a source is marked non-commercial without being listed there.
+As of the 2026-08-18 owner decisions, the non-commercial-only sources in the plan are **Sleeper** (verified, and on the current-status path), **FantasyPros-derived ECR** (benchmark-only, ADR-014 as amended) and FantasyCalc (disabled). `config/source-registry.yaml` keeps the authoritative list in `decisions.non_commercial_deployment_required_by`, and a unit test fails if a source is marked non-commercial without being listed there.
 
 Because an optional source may permit only non-commercial reuse, treat any of these as a trigger for a source-rights review before deployment:
 

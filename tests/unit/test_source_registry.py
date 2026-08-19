@@ -99,3 +99,72 @@ def test_benchmark_only_data_cannot_reach_public_artifacts(registry):
     ecr = registry["sources"]["fantasypros_ecr_via_dynastyprocess"]
     assert "intrinsic_feature" in ecr["forbidden_roles"]
     assert "public_artifact_field" in ecr["forbidden_roles"]
+
+
+# --------------------------------------------------------------------------------------
+# Owner decisions recorded 2026-08-18. These are contract tests over durable state: each
+# one fails if a later change quietly reverses a decision a human made.
+# --------------------------------------------------------------------------------------
+
+
+def test_fantasypros_benchmark_is_approved_but_not_redistributable(registry):
+    """ADR-014 as amended: approval to compare is not approval to republish."""
+    ecr = registry["sources"]["fantasypros_ecr_via_dynastyprocess"]
+    assert ecr["policy"] == "benchmark_only"
+    assert ecr["redistribution_permitted"] is False
+    assert "internal_benchmark" in ecr["permitted_roles"]
+    for forbidden in (
+        "intrinsic_feature",
+        "draftvalue_input",
+        "critical_production_dependency",
+        "public_artifact_field",
+        "public_redistribution",
+    ):
+        assert forbidden in ecr["forbidden_roles"], f"{forbidden} must stay forbidden"
+    assert "internal_benchmark_until_reviewed" not in ecr["forbidden_roles"]
+
+
+def test_benchmark_only_sources_are_listed_globally(registry):
+    listed = set(registry["decisions"]["benchmark_only_sources"])
+    derived = {
+        source_id
+        for source_id, source in registry["sources"].items()
+        if source["policy"] == "benchmark_only"
+    }
+    assert listed == derived
+
+
+def test_mfl_client_records_env_names_and_never_a_value(registry):
+    """ADR-017. A value in this file would be a committed secret."""
+    market = registry["sources"]["myfantasyleague_adp"]
+    settings = market["client_settings"]
+    assert settings["developer_client_registered"] is True
+    assert settings["credentials_used_by_adp_adapter"] is False
+    assert market["public_adp_requires_authentication"] is False
+    for key in ("user_agent_env", "client_name_env", "username_env", "password_env"):
+        value = settings[key]
+        assert value.startswith("MFL_API_"), f"{key} must name an environment variable"
+        assert value.isupper()
+
+
+def test_the_registry_file_contains_no_secret_looking_values():
+    raw = REGISTRY_PATH.read_text(encoding="utf-8")
+    for forbidden in ("password:", "api_key:", "apikey:", "token:"):
+        assert forbidden not in raw.lower(), f"{forbidden} suggests a committed credential"
+
+
+def test_repository_visibility_decision_is_recorded_for_phase_7(registry):
+    """ADR-016: private through Phase 6; the choice is a required Phase-7 decision."""
+    decisions = registry["decisions"]
+    assert decisions["repository_visibility"] == "private"
+    assert decisions["repository_visibility_revisit_phase"] == 7
+    assert "ADR-016" in decisions["repository_visibility_decision_ref"]
+
+
+def test_market_cohort_remeasurement_is_scheduled_for_phase_5(registry):
+    """ADR-012 amendment: do not attempt thin cohorts in Phase 1; re-measure in Phase 5."""
+    decisions = registry["decisions"]
+    assert decisions["market_cohort_remeasure_phase"] == 5
+    rule = decisions["market_cohort_remeasure_rule"].lower()
+    assert "widest reliable cohort" in rule
+    assert "approximate" in rule

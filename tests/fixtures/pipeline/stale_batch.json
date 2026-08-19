@@ -1,0 +1,7 @@
+{
+  "source_id": "myfantasyleague_adp",
+  "resource": "export?TYPE=adp",
+  "retrieved_at_utc": "2026-06-01T04:15:00Z",
+  "record_count": 18,
+  "note": "Deliberately old. Drives the stale-critical-source check."
+}

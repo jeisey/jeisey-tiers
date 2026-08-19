@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "note": "Fixture-supplied projection inputs for the Phase-1 serialization exerciser. These are invented numbers, not model output; Phase 4 replaces the stub that reads them with a trained, validated intrinsic model.",
+  "scoring_presets": [
+    "PPR"
+  ],
+  "players": {
+    "00-0000001": {
+      "PPR": {
+        "expected_points": 355.0,
+        "p10_points": 255.6,
+        "p25_points": 312.4,
+        "p50_points": 355.0,
+        "p75_points": 397.6,
+        "p90_points": 454.4,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000002": {
+      "PPR": {
+        "expected_points": 340.0,
+        "p10_points": 244.8,
+        "p25_points": 299.2,
+        "p50_points": 340.0,
+        "p75_points": 380.8,
+        "p90_points": 435.2,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000003": {
+      "PPR": {
+        "expected_points": 262.0,
+        "p10_points": 188.6,
+        "p25_points": 230.6,
+        "p50_points": 262.0,
+        "p75_points": 293.4,
+        "p90_points": 335.4,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000004": {
+      "PPR": {
+        "expected_points": 285.0,
+        "p10_points": 205.2,
+        "p25_points": 250.8,
+        "p50_points": 285.0,
+        "p75_points": 319.2,
+        "p90_points": 364.8,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000005": {
+      "PPR": {
+        "expected_points": 240.0,
+        "p10_points": 148.8,
+        "p25_points": 199.2,
+        "p50_points": 240.0,
+        "p75_points": 283.2,
+        "p90_points": 345.6,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000006": {
+      "PPR": {
+        "expected_points": 278.0,
+        "p10_points": 200.2,
+        "p25_points": 244.6,
+        "p50_points": 278.0,
+        "p75_points": 311.4,
+        "p90_points": 355.8,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000007": {
+      "PPR": {
+        "expected_points": 232.0,
+        "p10_points": 167.0,
+        "p25_points": 204.2,
+        "p50_points": 232.0,
+        "p75_points": 259.8,
+        "p90_points": 297.0,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000008": {
+      "PPR": {
+        "expected_points": 205.0,
+        "p10_points": 147.6,
+        "p25_points": 180.4,
+        "p50_points": 205.0,
+        "p75_points": 229.6,
+        "p90_points": 262.4,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000009": {
+      "PPR": {
+        "expected_points": 225.0,
+        "p10_points": 162.0,
+        "p25_points": 198.0,
+        "p50_points": 225.0,
+        "p75_points": 252.0,
+        "p90_points": 288.0,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000010": {
+      "PPR": {
+        "expected_points": 318.0,
+        "p10_points": 229.0,
+        "p25_points": 279.8,
+        "p50_points": 318.0,
+        "p75_points": 356.2,
+        "p90_points": 407.0,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000011": {
+      "PPR": {
+        "expected_points": 150.0,
+        "p10_points": 82.5,
+        "p25_points": 117.0,
+        "p50_points": 150.0,
+        "p75_points": 186.0,
+        "p90_points": 232.5,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000012": {
+      "PPR": {
+        "expected_points": 198.0,
+        "p10_points": 114.8,
+        "p25_points": 158.4,
+        "p50_points": 198.0,
+        "p75_points": 241.6,
+        "p90_points": 297.0,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000013": {
+      "PPR": {
+        "expected_points": 188.0,
+        "p10_points": 135.4,
+        "p25_points": 165.4,
+        "p50_points": 188.0,
+        "p75_points": 210.6,
+        "p90_points": 240.6,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000014": {
+      "PPR": {
+        "expected_points": 289.0,
+        "p10_points": 208.1,
+        "p25_points": 254.3,
+        "p50_points": 289.0,
+        "p75_points": 323.7,
+        "p90_points": 369.9,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000015": {
+      "PPR": {
+        "expected_points": 210.0,
+        "p10_points": 151.2,
+        "p25_points": 184.8,
+        "p50_points": 210.0,
+        "p75_points": 235.2,
+        "p90_points": 268.8,
+        "expected_games": 17.0
+      }
+    },
+    "00-0000016": {
+      "PPR": {
+        "expected_points": 128.0,
+        "p10_points": 92.2,
+        "p25_points": 112.6,
+        "p50_points": 128.0,
+        "p75_points": 143.4,
+        "p90_points": 163.8,
+        "expected_games": 17.0
+      }
+    }
+  }
+}
