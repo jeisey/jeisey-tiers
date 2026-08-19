@@ -10,12 +10,16 @@
 # assumes public-repository runner economics, and no job requests Pages permissions.
 name: ci
 
+# Pull requests plus the default branch, exactly as docs/OPERATIONS.md section 2.1 specifies.
+# Feature branches are covered by their pull request; adding a `claude/**` push trigger as
+# well would run every commit twice, because a PR event and a branch push land in different
+# concurrency groups. On a private repository (ADR-016) that is metered runner time for no
+# extra signal.
 on:
   pull_request:
   push:
     branches:
       - main
-      - "claude/**"
     paths-ignore:
       - "docs/source-probes/**"
   workflow_dispatch:
