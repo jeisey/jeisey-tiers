@@ -83,5 +83,5 @@ files = ["src/ffdraft"]
 strict = true
 # nflreadpy and rfc3339_validator ship no type information; everything we write is typed.
 [[tool.mypy.overrides]]
-module = ["nflreadpy.*", "rfc3339_validator.*"]
+module = ["nflreadpy.*", "rfc3339_validator.*", "ruptures.*"]
 ignore_missing_imports = true

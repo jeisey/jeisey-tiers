@@ -32,8 +32,21 @@ Phase 3 adds one:
 ``evaluate-intrinsic``
     Run the rolling-origin development experiment over the historical dataset and write the
     machine-readable and human-readable reports. Season 2025 is sealed; the command cannot
-    reach it without ``--final-eval`` *and* the exact confirmation token, and Phase 3 never
-    runs that path.
+    reach it without ``--final-eval`` *and* the exact confirmation token.
+
+Phase 4 adds the development studies that choose the production system, each writing its
+own experiment report and each restricted to development folds:
+
+``evaluate-distribution``
+    Stage B — the calibration, horizon-sensitivity and Candidate-A-versus-B decisions,
+    taken by the rules ADR-030 froze before their evidence existed.
+
+``evaluate-simulation``
+    Stage C — the Monte Carlo convergence benchmark and the expected-versus-median VORP
+    ranking comparison, over the out-of-fold predictions stage B wrote.
+
+``evaluate-tiers``
+    Stage C — tier penalty selection from the frozen grid and the bootstrap stability gate.
 
 Exit status is 0 when the quality gate passes and 1 when a critical check fails, so CI can
 branch on it directly.
@@ -46,6 +59,7 @@ import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from ffdraft import __version__
 from ffdraft.artifacts import validate_artifact_directory
@@ -69,6 +83,11 @@ from ffdraft.modeling import (
     run_experiment,
     write_report,
 )
+from ffdraft.modeling.distribution import (
+    DistributionConfig,
+    run_distribution_study,
+    write_distribution_report,
+)
 from ffdraft.modeling.experiment import run_final_holdout_evaluation
 from ffdraft.paths import repo_root
 from ffdraft.pipeline import (
@@ -78,6 +97,13 @@ from ffdraft.pipeline import (
     run_historical_build,
 )
 from ffdraft.quality import QualityGate
+from ffdraft.simulation.study import (
+    SimulationStudyConfig,
+    load_oof_predictions,
+    run_simulation_study,
+    write_simulation_report,
+)
+from ffdraft.tiers.study import TierStudyConfig, run_tier_study, write_tier_report
 from ffdraft.timeutil import parse_utc
 
 __all__ = ["main"]
@@ -85,6 +111,10 @@ __all__ = ["main"]
 DEFAULT_FIXTURE_DIR = Path("tests/fixtures/pipeline")
 DEFAULT_ARTIFACT_DIR = Path("web/public/data")
 DEFAULT_EXPERIMENT_DIR = Path("docs/experiments/phase3-intrinsic-baselines")
+DEFAULT_DISTRIBUTION_DIR = Path("docs/experiments/phase4-intrinsic-distribution")
+DEFAULT_PHASE4_DATA_DIR = Path("data/phase4")
+DEFAULT_SIMULATION_DIR = Path("docs/experiments/phase4-simulation-ranking")
+DEFAULT_TIER_DIR = Path("docs/experiments/phase4-tier-segmentation")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -251,6 +281,96 @@ def _build_parser() -> argparse.ArgumentParser:
         help="why the holdout is being consumed; recorded in the report",
     )
     evaluate.set_defaults(handler=_evaluate_intrinsic)
+
+    distribution = subparsers.add_parser(
+        "evaluate-distribution",
+        help="run the Phase-4 stage-B distribution study and write its reports",
+    )
+    distribution.add_argument("--data", type=Path, default=None, help="historical dataset dir")
+    distribution.add_argument("--out", type=Path, default=None, help="report output directory")
+    distribution.add_argument(
+        "--predictions-out",
+        type=Path,
+        default=None,
+        help="directory for the promoted architecture's out-of-fold predictions",
+    )
+    distribution.add_argument("--seed", type=int, default=None, help="study seed")
+    distribution.add_argument(
+        "--bootstrap-replicates",
+        type=int,
+        default=None,
+        help="paired bootstrap replicates",
+    )
+    distribution.add_argument(
+        "--composition-draws",
+        type=int,
+        default=None,
+        help="Monte Carlo draws used to compose Candidate B's two components",
+    )
+    distribution.add_argument(
+        "--validation-season",
+        action="append",
+        type=int,
+        default=None,
+        help="development validation season; repeatable (default: 2020-2024)",
+    )
+    distribution.add_argument(
+        "--no-references",
+        action="store_true",
+        help="skip the B0 and Q1 reference rows",
+    )
+    distribution.add_argument("--git-sha", default=None, help="code SHA to record")
+    distribution.add_argument("--generated-at", default=None, help="RFC 3339 report timestamp")
+    distribution.add_argument("--json", action="store_true", help="machine-readable output")
+    distribution.set_defaults(handler=_evaluate_distribution)
+
+    simulation = subparsers.add_parser(
+        "evaluate-simulation",
+        help="run the Phase-4 Monte Carlo convergence and ranking-statistic study",
+    )
+    simulation.add_argument("--data", type=Path, default=None, help="historical dataset dir")
+    simulation.add_argument(
+        "--predictions",
+        type=Path,
+        default=None,
+        help="directory holding the stage-B out-of-fold predictions",
+    )
+    simulation.add_argument("--out", type=Path, default=None, help="report output directory")
+    simulation.add_argument("--seed", type=int, default=None, help="study seed")
+    simulation.add_argument("--git-sha", default=None, help="code SHA to record")
+    simulation.add_argument("--generated-at", default=None, help="RFC 3339 report timestamp")
+    simulation.set_defaults(handler=_evaluate_simulation)
+
+    tiers = subparsers.add_parser(
+        "evaluate-tiers",
+        help="run the Phase-4 tier penalty selection and stability study",
+    )
+    tiers.add_argument("--data", type=Path, default=None, help="historical dataset dir")
+    tiers.add_argument(
+        "--predictions",
+        type=Path,
+        default=None,
+        help="directory holding the stage-B out-of-fold predictions",
+    )
+    tiers.add_argument("--out", type=Path, default=None, help="report output directory")
+    tiers.add_argument(
+        "--simulation-report",
+        type=Path,
+        default=None,
+        help="stage-C simulation report the draw count and ranking statistic come from",
+    )
+    tiers.add_argument("--draws", type=int, default=None, help="override the draw count")
+    tiers.add_argument("--statistic", default=None, help="override the ranking statistic")
+    tiers.add_argument(
+        "--bootstrap-replicates",
+        type=int,
+        default=None,
+        help="tier bootstrap replicates per scenario",
+    )
+    tiers.add_argument("--seed", type=int, default=None, help="study seed")
+    tiers.add_argument("--git-sha", default=None, help="code SHA to record")
+    tiers.add_argument("--generated-at", default=None, help="RFC 3339 report timestamp")
+    tiers.set_defaults(handler=_evaluate_tiers)
 
     dictionary = subparsers.add_parser(
         "feature-dictionary",
@@ -479,6 +599,161 @@ def _final_holdout_eval(
     path.write_text(json.dumps(result.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"wrote {path}")
     print("FINAL HOLDOUT CONSUMED — it is no longer an untouched holdout")
+    return _report_gate(QualityGate().extend(result.checks))
+
+
+def _evaluate_distribution(args: argparse.Namespace) -> int:
+    """Phase-4 stage B. Development folds only; the sealed season is dropped at load time."""
+    data_dir = args.data or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    out_dir = args.out or (repo_root() / DEFAULT_DISTRIBUTION_DIR)
+    predictions_dir = args.predictions_out or (repo_root() / DEFAULT_PHASE4_DATA_DIR)
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+
+    defaults = DistributionConfig()
+    config = DistributionConfig(
+        window=defaults.window,
+        validation_seasons=(
+            tuple(sorted(args.validation_season))
+            if args.validation_season
+            else defaults.validation_seasons
+        ),
+        seed=args.seed if args.seed is not None else defaults.seed,
+        bootstrap_replicates=(
+            args.bootstrap_replicates
+            if args.bootstrap_replicates is not None
+            else defaults.bootstrap_replicates
+        ),
+        composition_draws=(
+            args.composition_draws
+            if args.composition_draws is not None
+            else defaults.composition_draws
+        ),
+        include_references=not args.no_references,
+    )
+
+    selection = core_feature_selection()
+    dataset = load_modeling_dataset(data_dir, selection=selection)
+    print(
+        f"modelling frame: {dataset.frame.height} row(s), seasons "
+        f"{dataset.seasons[0]}-{dataset.seasons[-1]}; withheld "
+        f"{dataset.withheld_rows} sealed row(s) from {list(dataset.withheld_seasons)}",
+    )
+    result = run_distribution_study(dataset, config=config)
+    written = write_distribution_report(
+        result,
+        out_dir,
+        git_sha=args.git_sha,
+        generated_at=generated_at,
+        predictions_dir=predictions_dir,
+    )
+    for path in written:
+        print(f"wrote {path}")
+
+    if args.json:
+        print(json.dumps(result.selected, indent=2, sort_keys=True, default=str))
+    else:
+        print(f"calibration    : {result.calibration_decision.selected}")
+        print(f"horizon        : {result.horizon_decision.selected}")
+        print(f"candidate      : {result.candidate_decision.selected}")
+        print(f"promoted       : {result.selected['model_id']}")
+        print(f"runtime        : {result.runtime_seconds}s")
+    return _report_gate(QualityGate().extend(result.checks))
+
+
+def _phase4_inputs(args: argparse.Namespace) -> tuple[Any, Any, Any, Any]:
+    """The three tables and the league config every stage-C study reads."""
+    import polars as pl
+
+    from ffdraft.modeling.distribution import OOF_PREDICTIONS_FILE
+
+    data_dir = args.data or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    predictions_dir = args.predictions or (repo_root() / DEFAULT_PHASE4_DATA_DIR)
+    predictions = load_oof_predictions(predictions_dir / OOF_PREDICTIONS_FILE)
+    dataset = load_modeling_dataset(data_dir, selection=core_feature_selection())
+    realized = pl.read_parquet(data_dir / "labels_vorp.parquet")
+    return predictions, dataset.frame, realized, load_app_config().league
+
+
+def _evaluate_simulation(args: argparse.Namespace) -> int:
+    """Phase-4 stage C: draw count and ranking statistic. Development folds only."""
+    out_dir = args.out or (repo_root() / DEFAULT_SIMULATION_DIR)
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+    predictions, modelling_frame, realized, league = _phase4_inputs(args)
+
+    defaults = SimulationStudyConfig()
+    config = SimulationStudyConfig(
+        seed=args.seed if args.seed is not None else defaults.seed,
+        second_seed=(args.seed + 1) if args.seed is not None else defaults.second_seed,
+    )
+    print(
+        f"out-of-fold predictions: {predictions.height} row(s), seasons "
+        f"{sorted(set(predictions['season'].to_list()))}",
+    )
+    result = run_simulation_study(
+        predictions,
+        modelling_frame,
+        realized,
+        league,
+        config=config,
+    )
+    for path in write_simulation_report(
+        result,
+        out_dir,
+        git_sha=args.git_sha,
+        generated_at=generated_at,
+    ):
+        print(f"wrote {path}")
+    print(f"draw count     : {result.draws}")
+    print(f"rank statistic : {result.statistic}")
+    print(f"runtime        : {result.runtime_seconds}s")
+    return _report_gate(QualityGate().extend(result.checks))
+
+
+def _evaluate_tiers(args: argparse.Namespace) -> int:
+    """Phase-4 stage C: tier penalty and stability. Development folds only."""
+    out_dir = args.out or (repo_root() / DEFAULT_TIER_DIR)
+    report_path = args.simulation_report or (
+        repo_root() / DEFAULT_SIMULATION_DIR / "experiment.json"
+    )
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+
+    draws, statistic = args.draws, args.statistic
+    if (draws is None or statistic is None) and report_path.is_file():
+        payload = json.loads(report_path.read_text(encoding="utf-8"))
+        draws = draws if draws is not None else int(payload["selected_draws"])
+        statistic = statistic or str(payload["selected_ranking_statistic"])
+    if draws is None or statistic is None:
+        print(
+            "the tier study needs a draw count and a ranking statistic; run "
+            "`ffdraft evaluate-simulation` first or pass --draws and --statistic",
+            file=sys.stderr,
+        )
+        return 2
+
+    predictions, modelling_frame, realized, league = _phase4_inputs(args)
+    defaults = TierStudyConfig(draws=draws, statistic=statistic)
+    config = TierStudyConfig(
+        draws=draws,
+        statistic=statistic,
+        seed=args.seed if args.seed is not None else defaults.seed,
+        bootstrap_replicates=(
+            args.bootstrap_replicates
+            if args.bootstrap_replicates is not None
+            else defaults.bootstrap_replicates
+        ),
+    )
+    print(f"tier study: {draws} draws, ranked by {statistic}")
+    result = run_tier_study(predictions, modelling_frame, realized, league, config=config)
+    for path in write_tier_report(
+        result,
+        out_dir,
+        git_sha=args.git_sha,
+        generated_at=generated_at,
+    ):
+        print(f"wrote {path}")
+    print(f"penalty        : {result.penalty_decision.selected}")
+    print(f"stability      : {result.stability_decision.selected}")
+    print(f"runtime        : {result.runtime_seconds}s")
     return _report_gate(QualityGate().extend(result.checks))
 
 

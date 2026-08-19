@@ -69,7 +69,7 @@ from ffdraft.modeling.holdout import (
     final_holdout_policy,
     slice_masks,
 )
-from ffdraft.modeling.metrics import QUANTILE_LEVELS, slice_metrics
+from ffdraft.modeling.metrics import QUANTILE_LEVELS, TOP_K_BY_POSITION, slice_metrics
 
 __all__ = [
     "EXPERIMENT_VERSION",
@@ -78,6 +78,8 @@ __all__ = [
     "FinalHoldoutResult",
     "aggregate_cells",
     "build_models",
+    "cell_records",
+    "paired_cells",
     "run_experiment",
     "run_final_holdout_evaluation",
 ]
@@ -169,7 +171,7 @@ class ExperimentResult:
         return any(result.passed for result in self.gate_results)
 
 
-def _cell_records(
+def cell_records(
     dataset: ModelingDataset,
     models: Mapping[str, IntrinsicModel],
     folds: Sequence[Fold],
@@ -287,7 +289,7 @@ def aggregate_cells(
     return records
 
 
-def _paired_cells(
+def paired_cells(
     predictions: pl.DataFrame,
     *,
     baseline: tuple[str, str],
@@ -321,6 +323,7 @@ def _paired_cells(
         cells.append(
             PairedCell(
                 key=f"{season}|{position}|{preset}",
+                top_k=TOP_K_BY_POSITION.get(str(position), 0),
                 actual=block.get_column(TARGET_COLUMN).to_numpy().astype(np.float64),
                 baseline_point=block.get_column("pred_point").to_numpy().astype(np.float64),
                 candidate_point=block.get_column("pred_point_cand").to_numpy().astype(np.float64),
@@ -452,7 +455,7 @@ def run_experiment(
     if settings.include_w1_diagnostic_folds and WindowPolicy.W1 in settings.windows:
         folds.extend(diagnostic_folds(WindowPolicy.W1))
 
-    cells, prediction_blocks, diagnostics = _cell_records(dataset, models, folds, settings)
+    cells, prediction_blocks, diagnostics = cell_records(dataset, models, folds, settings)
     predictions = pl.concat(prediction_blocks) if prediction_blocks else pl.DataFrame()
 
     development_fold_ids = [fold.fold_id for fold in folds if fold.kind is FoldKind.DEVELOPMENT]
@@ -473,7 +476,7 @@ def run_experiment(
         for model_id in settings.model_ids:
             if model_id == baseline_id:
                 continue
-            paired = _paired_cells(
+            paired = paired_cells(
                 predictions,
                 baseline=(baseline_id, str(window)),
                 candidate=(model_id, str(window)),
@@ -562,7 +565,7 @@ def _decide_window(
     ]
     # Both sides predict the same validation rows, so the pairing is exact; W2 is passed as
     # the "baseline" so a negative delta reads as "W1 is better".
-    paired = _paired_cells(
+    paired = paired_cells(
         predictions,
         baseline=(comparison_model, str(WindowPolicy.W2)),
         candidate=(comparison_model, str(WindowPolicy.W1)),
@@ -732,7 +735,7 @@ def run_final_holdout_evaluation(
         )
     fold = final_holdout_fold(window, authorization=authorization)
     models = build_models(settings.model_ids)
-    cells, prediction_blocks, _ = _cell_records(dataset, models, [fold], settings)
+    cells, prediction_blocks, _ = cell_records(dataset, models, [fold], settings)
     predictions = pl.concat(prediction_blocks) if prediction_blocks else pl.DataFrame()
 
     holdout_frame = dataset.frame.filter(pl.col("season") == fold.validation_season)
