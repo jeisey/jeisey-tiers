@@ -375,3 +375,39 @@ Therefore `arbitrage_ml_historical_feasible = false` and V1 ships the determinis
 - Expected fantasy points from **ffopportunity** (ffverse), expected-points data **CC-BY-SA-4.0** — derived artifacts inherit share-alike obligations.
 - Market ADP from **MyFantasyLeague.com** public developer API.
 - Current player status/injury context from the **Sleeper** API (non-commercial use).
+
+---
+
+## 14. Phase-2 source observations — 2026-08-19
+
+Verified while building the historical modelling dataset over target seasons 2014-2025. These are measurements on the same nflverse release the Phase-0 record describes, made through the loaders Phase 2 added; they extend section 13 rather than superseding it. Recorded schemas for the new loaders live in `tests/fixtures/source_schemas/`, captured by `scripts/capture_source_schemas.py` in the Phase-0 format.
+
+### 14.1 New loaders in production use
+
+| Loader | Grain | Notes |
+|---|---|---|
+| `load_player_stats(summary_level="week")` | player-week | Carries every scorable component. **The weekly grain is mandatory, not preferred:** the season-level loader has already summed the excluded final NFL week into its totals, so it cannot produce this project's label. |
+| `load_snap_counts(season)` | player-game | Keyed by `pfr_player_id`, not GSIS. **2012 returns an empty file**; 2013 is the first season with rows, which is why 2014 is the first target season — it is the first whose *previous* season has snap data. |
+| `load_schedules()` | game | Supplies the Week-1 kickoff the anchor is derived from. `gametime` is Eastern regardless of venue. |
+| `load_draft_picks()` | player | Draft-time facts **plus career outcomes** (games, approximate value, Pro Bowls, career statistics). Those are post-draft knowledge and are excluded at the contract boundary. |
+| `load_combine()` | player | Keyed by `pfr_id`. Heights arrive as `"6-2"`. |
+| `load_players()` | player | Biographical facts only. Its `status`, `latest_team`, `last_season` and `years_of_experience` describe the player *today* and are excluded from the contract. |
+| `load_ff_opportunity(stat_type="weekly")` | player-week | `season` arrives as a string and `week` as a float. Covers weeks 1-22, so the horizon filter is required. |
+
+### 14.2 Coverage and grain findings that changed the implementation
+
+- **nflverse roster coverage steps up at 2016.** Seasonal roster rows: 2013 → 2,137; 2014 → 2,153; 2015 → 2,190; **2016 → 3,061**; 2017 → 3,082; stable near 3,100 thereafter. Because the previous season's roster is the eligibility spine, target seasons 2014-2016 carry ~670 eligible QB/RB/WR/TE rows against ~1,050 from 2017 onward. This is a real era boundary in the source, it is reported as a row-count warning rather than smoothed away, and Phase 3 must choose its training window with it in view.
+- **The 2016 roster leaves `years_exp` null on 510 rows.** Treating an absent experience count as zero would have declared 247 established players rookies in 2017. Experience is therefore allowed to be null, and rookie status is derived from evidence of prior existence instead.
+- **A seasonal roster's grain is `(season, gsis_id, team)`.** A player traded mid-season appears once per club — 99 rows in 2014, 125 in 2015. The roster contract's key was corrected to match (1.0 → 1.1).
+- **One upstream identity collision exists in the window.** `00-0035718` appears on the 2019 roster twice, once as Isaiah Searight and once as Quinnen Williams. ADR-019's poisoned-key rule applies: the id is barred from the universe entirely and the exclusion is counted. Detected by comparing normalised names per id, so a punctuation or suffix difference does not read as a collision.
+- **`load_players` keys about a quarter of its rows by an ESB identifier**, not a GSIS one (6,081 of 25,046 look like `ABB498348`). Id hygiene correctly refuses them. The remaining master also misses roughly seventy skill-position players a season, so birth dates fall back to season rosters — safe because a birth date is time-invariant.
+- **ffopportunity can emit one row per position for the same player-week.** `00-0028079` appears in 2013 as both TE and OLB. Summing the split attributions would double-count one set of opportunities, so the contract's key gained `position` (1.0 → 1.1) and the aggregate takes the largest attribution.
+- **Draft picks and combine rows speak Pro Football Reference abbreviations** (`GNB`, `KAN`, `LVR`, `NOR`, `NWE`, `SDG`, `SFO`, `STL`, `TAM`, `OAK`) while rosters, statistics and depth charts speak nflverse's. They are mapped onto the nflverse vocabulary, and a domain check catches anything outside it.
+- **nflverse's `fantasy_points` awards six points for a return touchdown**; `config/league-defaults.yaml` declares no return-touchdown rule. Across 2014, 2020 and 2024 that is the *entire* difference between our standard scoring and theirs — 31, 18 and 19 rows respectively, all exactly six points, with zero residual once return touchdowns are accounted for. The reconciliation check proves that rather than reporting a vague mismatch, so a genuine component change would still surface.
+
+### 14.3 Sources deliberately not used in Phase 2
+
+- **`load_ftn_charting`** — not approved as a Phase-2 feature source. Its CC-BY-SA obligation is not worth taking on for a first cut, and the compact set above is sufficient.
+- **NGS and PFR advanced statistics** — available, but their historical availability, coverage and incremental value are unproven. Revisit only with Phase-3 evidence.
+- **`load_injuries`** — unchanged from ADR-011: injury rows are weekly in-season reports, so no season provides one at a preseason anchor.
+- **Any market or expert source** — ADR-002. The forbidden-feature audit runs over the built feature matrix, not just over a list.

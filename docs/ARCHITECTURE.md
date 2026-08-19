@@ -159,6 +159,19 @@ The implementation agent may make modest naming changes, but subsystem boundarie
 > - `tests/` grew `contract/`, `data_quality/` and `leakage/` alongside `unit/` and `integration/`, matching `docs/TEST_STRATEGY.md` section 2.
 > - `config/identity-aliases.yaml` holds human-reviewed identity aliases (ADR-019).
 > - `schemas/artifact_envelope.schema.json` describes the shared artifact wrapper (ADR-020).
+>
+> **Phase-2 deltas**, also additive:
+>
+> - `src/ffdraft/anchors.py` — the draft-time anchor rule (ADR-021). It sits at the package root rather than inside `features/` because the leakage tests, the labels and the quality report all key off it.
+> - `src/ffdraft/scoring/` — the one authoritative fantasy scoring engine and the season horizon.
+> - `src/ffdraft/features/` — dictionary, eligibility, lagged aggregates, assembly, source loading and the data-quality report.
+> - `src/ffdraft/labels/` — actual fantasy points and realized VORP.
+> - `src/ffdraft/simulation/allocation.py` — starter/FLEX allocation and replacement baselines, written now so Phase 4 wraps a sampler around it rather than reimplementing it.
+> - `src/ffdraft/leakage.py` — the ten automated leakage audits, production code because the build runs them before writing and `validate-historical` runs them again over a dataset on disk.
+> - `src/ffdraft/quality/semantic.py` — the semantic/domain drift layer.
+> - `src/ffdraft/pipeline/historical.py` — the historical build, alongside the Phase-1 fixture pipeline.
+> - `scripts/capture_source_schemas.py` — records upstream schemas for the Phase-2 loaders in the Phase-0 format.
+> - `docs/FEATURE_DICTIONARY.md` — generated from the dictionary module, with a test asserting it is current.
 
 ## 5. Python package boundaries
 
@@ -195,6 +208,8 @@ Typed internal entities and schema constants. Centralize names/types to avoid ac
 
 Pure-ish transforms from canonical historical snapshots to model matrices. No source HTTP calls here.
 
+> **Phase-2 exception, deliberate.** `features/sources.py` *is* the historical pipeline's only I/O, and it does nothing else: it fetches, hands each payload to its adapter's pure `normalize`, and returns frames. Keeping it here rather than in `sources/` puts the season-window logic next to the feature dictionary that determines it, and `features/build.py` still receives frames with no idea where they came from — which is what lets the whole builder run from fixtures with no network.
+
 ### `modeling/`
 
 Training, fold generation, metrics, calibration, artifact versioning. Separate intrinsic and arbitrage subpackages.
@@ -220,6 +235,10 @@ Convert internal outputs to strict public schemas, JSON, CSV, and metadata.
 Reusable checks, severity levels, source freshness, record completeness, drift, deploy gate.
 
 ## 6. Storage strategy
+
+### 6.0 Historical modelling dataset (ADR-023)
+
+`ffdraft build-historical` writes `data/historical/` — three Parquet tables, a JSON and Markdown quality report, a build manifest and a rendered feature dictionary — and that directory is gitignored. The dataset is reproducible from code plus source releases; the manifest records the code SHA, config versions, feature-schema hash, season windows and a content hash per table, so a rebuild that disagrees is detectable. `ffdraft validate-historical` re-runs the leakage and semantic audits over a written dataset and fails if the tables no longer match their manifest.
 
 ### 6.1 Main branch
 

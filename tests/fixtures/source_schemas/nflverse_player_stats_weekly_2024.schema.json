@@ -1,0 +1,761 @@
+{
+  "captured_at_utc": "2026-08-19T00:29:51Z",
+  "check_id": "nflverse_player_stats_weekly_2024",
+  "columns": [
+    {
+      "dtype": "String",
+      "name": "player_id",
+      "null_fraction": 0.0012
+    },
+    {
+      "dtype": "String",
+      "name": "player_name",
+      "null_fraction": 0.0012
+    },
+    {
+      "dtype": "String",
+      "name": "player_display_name",
+      "null_fraction": 0.0012
+    },
+    {
+      "dtype": "String",
+      "name": "position",
+      "null_fraction": 0.0012
+    },
+    {
+      "dtype": "String",
+      "name": "position_group",
+      "null_fraction": 0.0012
+    },
+    {
+      "dtype": "String",
+      "name": "headshot_url",
+      "null_fraction": 0.0015
+    },
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "season_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "game_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "opponent_team",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "completions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "attempts",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_tds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_interceptions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "sacks_suffered",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "sack_yards_lost",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "sack_fumbles",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "sack_fumbles_lost",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_yards_after_catch",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_first_downs",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "passing_epa",
+      "null_fraction": 0.9628
+    },
+    {
+      "dtype": "Float64",
+      "name": "passing_cpoe",
+      "null_fraction": 0.9634
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_2pt_conversions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pacr",
+      "null_fraction": 0.9634
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_10",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_16",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_20",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "passing_40",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "carries",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_tds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_fumbles",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_fumbles_lost",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_first_downs",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rushing_epa",
+      "null_fraction": 0.8758
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_2pt_conversions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_10",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_12",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_20",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rushing_40",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receptions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "targets",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_tds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_fumbles",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_fumbles_lost",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_yards_after_catch",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_first_downs",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "receiving_epa",
+      "null_fraction": 0.7648
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_2pt_conversions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_10",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_16",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_20",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receiving_40",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "racr",
+      "null_fraction": 0.7664
+    },
+    {
+      "dtype": "Float64",
+      "name": "target_share",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "air_yards_share",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "wopr",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "special_teams_tds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_tackles_solo",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_tackles_with_assist",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_tackle_assists",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_tackles_for_loss",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_tackles_for_loss_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_fumbles_forced",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "def_sacks",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "def_sack_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_qb_hits",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_interceptions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_interception_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_pass_defended",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_tds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_fumbles",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_safeties",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_punt_blocks",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_pat_blocks",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_fg_blocks",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_2pt_atts",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "def_2pt_made",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "misc_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumble_recovery_own",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumble_recovery_yards_own",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumble_recovery_opp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumble_recovery_yards_opp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumble_recovery_tds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "penalties",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "penalty_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumbles_forced_by_opp",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumbles_not_forced",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumbles_out_of_bounds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumbles_total",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fumbles_lost_total",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "punt_returns",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "punt_return_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "kickoff_returns",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "kickoff_return_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_att",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_blocked",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_long",
+      "null_fraction": 0.9751
+    },
+    {
+      "dtype": "Float64",
+      "name": "fg_pct",
+      "null_fraction": 0.9731
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made_0_19",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made_20_29",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made_30_39",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made_40_49",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made_50_59",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made_60_",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed_0_19",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed_20_29",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed_30_39",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed_40_49",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed_50_59",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed_60_",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "fg_made_list",
+      "null_fraction": 0.9751
+    },
+    {
+      "dtype": "String",
+      "name": "fg_missed_list",
+      "null_fraction": 0.9925
+    },
+    {
+      "dtype": "String",
+      "name": "fg_blocked_list",
+      "null_fraction": 0.999
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_made_distance",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_missed_distance",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "fg_blocked_distance",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pat_made",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pat_att",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pat_missed",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pat_blocked",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "pat_pct",
+      "null_fraction": 0.9728
+    },
+    {
+      "dtype": "Int32",
+      "name": "gwfg_made",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "gwfg_att",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "gwfg_missed",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "gwfg_blocked",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "gwfg_distance",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_att",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_blocked",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_long",
+      "null_fraction": 0.9706
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_inside_20",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_out_of_bounds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_downed",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_touchback",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_fair_caught",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_returned",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_return_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_return_tds",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pt_net_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "fantasy_points",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "fantasy_points_ppr",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {},
+  "record_count": 18983,
+  "sample_rows": [],
+  "source_id": "nflreadpy",
+  "target": "load_player_stats(summary_level='week')"
+}

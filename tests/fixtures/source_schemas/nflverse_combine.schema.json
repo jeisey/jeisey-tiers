@@ -1,0 +1,101 @@
+{
+  "captured_at_utc": "2026-08-19T00:29:53Z",
+  "check_id": "nflverse_combine",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "draft_year",
+      "null_fraction": 0.3807
+    },
+    {
+      "dtype": "String",
+      "name": "draft_team",
+      "null_fraction": 0.3807
+    },
+    {
+      "dtype": "Float64",
+      "name": "draft_round",
+      "null_fraction": 0.3807
+    },
+    {
+      "dtype": "Float64",
+      "name": "draft_ovr",
+      "null_fraction": 0.3807
+    },
+    {
+      "dtype": "String",
+      "name": "pfr_id",
+      "null_fraction": 0.1707
+    },
+    {
+      "dtype": "String",
+      "name": "cfb_id",
+      "null_fraction": 0.1697
+    },
+    {
+      "dtype": "String",
+      "name": "player_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "pos",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "school",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "ht",
+      "null_fraction": 0.0032
+    },
+    {
+      "dtype": "Float64",
+      "name": "wt",
+      "null_fraction": 0.0027
+    },
+    {
+      "dtype": "Float64",
+      "name": "forty",
+      "null_fraction": 0.1036
+    },
+    {
+      "dtype": "Float64",
+      "name": "bench",
+      "null_fraction": 0.4
+    },
+    {
+      "dtype": "Float64",
+      "name": "vertical",
+      "null_fraction": 0.2429
+    },
+    {
+      "dtype": "Float64",
+      "name": "broad_jump",
+      "null_fraction": 0.2551
+    },
+    {
+      "dtype": "Float64",
+      "name": "cone",
+      "null_fraction": 0.4342
+    },
+    {
+      "dtype": "Float64",
+      "name": "shuttle",
+      "null_fraction": 0.4171
+    }
+  ],
+  "coverage": {},
+  "record_count": 8968,
+  "sample_rows": [],
+  "source_id": "nflreadpy",
+  "target": "load_combine"
+}

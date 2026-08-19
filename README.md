@@ -47,7 +47,9 @@ The intended production architecture is static and GitHub-native: Python data/mo
 
 ## Repository status
 
-Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. **Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18.** There is still no model, no production pipeline and no deployed site — Phase 1 builds the skeleton that makes bad joins and schema drift hard, and proves it end to end without touching a vendor API.
+Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. **Phase 2 (historical feature dataset) completed 2026-08-19.**
+
+There is still no model, no production pipeline and no deployed site. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 builds the time-correct data asset every later model result depends on — 11,604 leakage-audited player-seasons across 2014-2025, with independently computed STD/HALF/PPR labels and market-independent realized VORP.
 
 | Path | Purpose |
 |---|---|
@@ -55,13 +57,17 @@ Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. **Phase 1 (
 | `web/` + root `package.json` | Vite/React/TypeScript skeleton with a typed, version-checked artifact loader |
 | `schemas/` | Public artifact contracts, plus the shared `artifact_envelope` wrapper |
 | `config/` | League presets, source policy registry, human-reviewed identity aliases |
-| `tests/` | 254 network-free Python tests across unit / contract / integration / data-quality / leakage |
+| `src/ffdraft/anchors.py` + `features/` + `scoring/` + `labels/` + `simulation/` + `leakage.py` | The Phase-2 historical dataset: anchor rule, feature dictionary, eligibility, lagged aggregates, scoring engine, VORP labels, leakage audits |
+| `docs/FEATURE_DICTIONARY.md` | Every model feature with its formula, sources and availability rule — generated from code, kept current by a test |
+| `tests/` | 510 network-free Python tests across unit / contract / integration / data-quality / leakage |
 | `tests/fixtures/pipeline/` | Synthetic source fixtures covering every documented edge case |
+| `tests/fixtures/historical/` | Synthetic nflverse-shaped history spanning both depth eras |
 | `tests/fixtures/artifacts/` | Committed golden artifacts, also read by the frontend tests |
 | `.github/workflows/ci.yml` | Python and frontend gates; fixtures only, no vendor network |
 | `scripts/source_probe.py` | The Phase-0 evidence generator |
+| `scripts/capture_source_schemas.py` | Records upstream schemas for the Phase-2 loaders |
 
-Verified source decisions live in `docs/DATA_SOURCES.md` section 13 and `config/source-registry.yaml`; the reasoning is in ADR-009 through ADR-020 in `docs/DECISIONS.md`. Three headline outcomes: the free source stack covers every required role, **arbitrage launches in deterministic baseline mode** because historical ADP is plentiful but not point-in-time, and **market identity resolves by id alone** through two independent bridges that fail closed when they disagree.
+Verified source decisions live in `docs/DATA_SOURCES.md` sections 13 and 14, and in `config/source-registry.yaml`; the reasoning is in ADR-009 through ADR-023 in `docs/DECISIONS.md`. Headline outcomes: the free source stack covers every required role; **arbitrage launches in deterministic baseline mode** because historical ADP is plentiful but not point-in-time; **market identity resolves by id alone** through two independent bridges that fail closed when they disagree; and the historical dataset's **draft anchor is 23:59:59 America/New_York on the Tuesday before Week 1**, with a preseason universe built only from evidence that predates it.
 
 ```bash
 # Python
@@ -75,6 +81,12 @@ uv run pytest -m live                                    # opt-in live source sm
 uv run ffdraft build-fixture-artifacts --out web/public/data
 uv run python -m ffdraft.cli validate-artifacts web/public/data
 
+# The Phase-2 historical dataset. `build-historical` is the only command that needs the
+# network; the other two read what it wrote.
+uv run ffdraft build-historical --last-season 2025 --git-sha "$(git rev-parse --short HEAD)"
+uv run ffdraft validate-historical data/historical
+uv run ffdraft feature-dictionary
+
 # Frontend
 npm ci
 npm run lint && npm run typecheck
@@ -82,7 +94,7 @@ npm run test -- --run
 npm run build
 ```
 
-Artifacts written to `web/public/data/` are generated and gitignored. `ffdraft config-check` prints the loaded configuration and which MFL client secrets are present — never their values.
+Artifacts written to `web/public/data/` and the historical dataset in `data/historical/` are generated and gitignored; both are reproducible from code plus source releases, and the historical build writes a manifest of content hashes so a rebuild that disagrees is detectable. `ffdraft config-check` prints the loaded configuration and which MFL client secrets are present — never their values.
 
 Data attribution: player/roster/depth-chart/stat data from **nflverse** (`nflreadpy`), expected fantasy points from **ffopportunity** (CC-BY-SA-4.0), market ADP from **MyFantasyLeague.com**, current player status from the **Sleeper** API (non-commercial use only).
 

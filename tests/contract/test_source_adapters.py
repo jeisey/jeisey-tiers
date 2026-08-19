@@ -35,6 +35,15 @@ from ffdraft.sources.market import (
     classify_mfl_entity,
     widest_cohort,
 )
+from ffdraft.sources.nflverse_history import (
+    NflverseCombineAdapter,
+    NflverseDraftPickAdapter,
+    NflverseExpectedPointsAdapter,
+    NflversePlayerMasterAdapter,
+    NflverseScheduleAdapter,
+    NflverseSnapCountAdapter,
+    NflverseWeeklyStatsAdapter,
+)
 
 ADAPTERS = [
     NflverseRosterAdapter(),
@@ -44,6 +53,16 @@ ADAPTERS = [
     SleeperPlayerAdapter(),
     MflAdpAdapter(),
     MflPlayerDirectoryAdapter(),
+    # Phase-2 historical adapters. Their recorded schemas were captured by
+    # `scripts/capture_source_schemas.py` in the same format Phase 0 used, so the
+    # "adapters are tied to measured evidence" rule extends to them unchanged.
+    NflverseWeeklyStatsAdapter(),
+    NflverseSnapCountAdapter(),
+    NflverseScheduleAdapter(),
+    NflverseDraftPickAdapter(),
+    NflverseCombineAdapter(),
+    NflversePlayerMasterAdapter(),
+    NflverseExpectedPointsAdapter(),
 ]
 
 
@@ -338,3 +357,110 @@ def test_market_module_is_the_only_place_market_normalization_lives():
     assert not {name for name in exported if "Mfl" in name or "Market" in name}, (
         "market adapters must be imported from ffdraft.sources.market explicitly"
     )
+
+
+# --------------------------------------------------------------------------------------
+# Phase-2 historical adapters
+# --------------------------------------------------------------------------------------
+
+
+def test_draft_capital_normalization_drops_every_post_draft_outcome(historical_sources):
+    """`load_draft_picks` publishes games played, approximate value and Pro Bowls.
+
+    All of those are knowledge from after the draft, so the contract excludes them and a
+    semantic check asserts none survived. The fixture deliberately supplies them.
+    """
+    adapter = NflverseDraftPickAdapter()
+    frame = historical_sources.sources.draft_picks
+    assert adapter.POST_DRAFT_OUTCOME_COLUMNS.isdisjoint(set(frame.columns))
+    report = adapter.validate_raw(
+        adapter.normalize([{"season": 2025, "round": 1, "pick": 1, "gsis_id": "00-0090005"}]),
+    )
+    assert not [check for check in report.checks if check.blocking]
+
+
+def test_the_player_master_carries_no_current_state_column(historical_sources):
+    """`status`, `latest_team`, `last_season` and `years_of_experience` describe today.
+
+    Using any of them on a 2016 row would import 2026 knowledge, so they are absent from the
+    contract entirely - and the fixture supplies them to prove the exclusion is real.
+    """
+    adapter = NflversePlayerMasterAdapter()
+    frame = historical_sources.sources.player_master
+    assert adapter.CURRENT_STATE_COLUMNS.isdisjoint(set(frame.columns))
+
+
+def test_a_weekly_row_beyond_its_seasons_week_count_is_a_semantic_failure():
+    adapter = NflverseWeeklyStatsAdapter()
+    batch = adapter.normalize(
+        [
+            {
+                "season": 2019,
+                "week": 18,
+                "season_type": "REG",
+                "player_id": "00-0000001",
+            },
+        ],
+    )
+    checks = adapter.semantic_checks(batch)
+    assert any(check.check_id == "weekly_stats.week_out_of_range" for check in checks)
+
+
+def test_the_weekly_adapter_sums_offensive_fumbles_and_two_point_conversions():
+    batch = NflverseWeeklyStatsAdapter().normalize(
+        [
+            {
+                "season": 2024,
+                "week": 3,
+                "season_type": "REG",
+                "player_id": "00-0000001",
+                "rushing_fumbles_lost": 1,
+                "receiving_fumbles_lost": 1,
+                "sack_fumbles_lost": 1,
+                "passing_2pt_conversions": 1,
+                "rushing_2pt_conversions": 1,
+                "receiving_2pt_conversions": 0,
+            },
+        ],
+    )
+    row = batch.frame.to_dicts()[0]
+    assert row["fumbles_lost"] == 3.0
+    assert row["two_point_conversions"] == 2.0
+
+
+def test_combine_heights_are_parsed_from_feet_and_inches():
+    batch = NflverseCombineAdapter().normalize(
+        [{"season": 2020, "pfr_id": "Test0000", "ht": "6-2", "wt": 210}],
+    )
+    assert batch.frame.to_dicts()[0]["height_in"] == 74.0
+
+
+def test_a_roster_gsis_id_naming_two_players_is_reported():
+    from ffdraft.sources.nflverse import collided_gsis_ids
+
+    adapter = NflverseRosterAdapter()
+    batch = adapter.normalize(
+        [
+            {"season": 2019, "gsis_id": "00-0035718", "full_name": "Isaiah Searight"},
+            {"season": 2019, "gsis_id": "00-0035718", "full_name": "Quinnen Williams"},
+        ],
+        season=2019,
+    )
+    assert collided_gsis_ids(batch.frame) == frozenset({"00-0035718"})
+    checks = adapter.semantic_checks(batch)
+    assert any(check.check_id == "nflverse_roster.gsis_id_names_two_players" for check in checks)
+
+
+def test_one_player_on_two_teams_is_not_a_collision():
+    """A mid-season trade produces two roster rows for one player, which is normal."""
+    from ffdraft.sources.nflverse import collided_gsis_ids
+
+    batch = NflverseRosterAdapter().normalize(
+        [
+            {"season": 2014, "gsis_id": "00-0027325", "full_name": "L. Blount", "team": "PIT"},
+            {"season": 2014, "gsis_id": "00-0027325", "full_name": "L. Blount", "team": "NE"},
+        ],
+        season=2014,
+    )
+    assert collided_gsis_ids(batch.frame) == frozenset()
+    assert batch.frame.height == 2

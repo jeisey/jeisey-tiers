@@ -34,12 +34,14 @@ from ffdraft.contracts import (
 )
 from ffdraft.contracts.enums import Severity
 from ffdraft.identity.ids import IdNamespace, NormalizedId, normalize_id
+from ffdraft.identity.names import name_key
 from ffdraft.sources.base import BaseSourceAdapter, RawRecords, SourceConfig, as_rows
 from ffdraft.timeutil import parse_utc, utc_now
 
 __all__ = [
     "NFLVERSE_SOURCE_ID",
     "FlagCounter",
+    "collided_gsis_ids",
     "NflverseDepthChartAdapter",
     "NflversePlayerIdsAdapter",
     "NflverseRosterAdapter",
@@ -210,12 +212,13 @@ class NflverseRosterAdapter(BaseSourceAdapter):
         return batch
 
     def semantic_checks(self, batch: SourceBatch) -> Sequence[QualityCheck]:
-        """Rosters must be one season and must carry usable skill-position rows."""
+        """Rosters must be one season, and a GSIS id must name exactly one player."""
         if batch.frame.is_empty():
             return ()
+        checks: list[QualityCheck] = []
         seasons = batch.frame.get_column("season").unique().to_list()
         if len(seasons) > 1:
-            return (
+            checks.append(
                 QualityCheck.fail(
                     "nflverse_roster.mixed_seasons",
                     stage=self.source_id,
@@ -224,7 +227,25 @@ class NflverseRosterAdapter(BaseSourceAdapter):
                     expected="1 season",
                 ),
             )
-        return ()
+        collisions = collided_gsis_ids(batch.frame)
+        if collisions:
+            checks.append(
+                QualityCheck.fail(
+                    "nflverse_roster.gsis_id_names_two_players",
+                    stage=self.source_id,
+                    message=(
+                        "a GSIS id appears under two different player names; downstream "
+                        "consumers must fail closed on it rather than pick a winner (ADR-019)"
+                    ),
+                    observed=", ".join(sorted(collisions)[:10]),
+                    expected="one name per GSIS id",
+                    # The source is wrong, not our reading of it, and the fail-closed
+                    # behaviour lives with the consumer. Blocking every historical build on
+                    # one bad upstream row would be a worse failure than excluding it.
+                    severity=Severity.WARNING,
+                ),
+            )
+        return tuple(checks)
 
 
 class NflversePlayerIdsAdapter(BaseSourceAdapter):
@@ -457,6 +478,25 @@ class NflverseDepthChartAdapter(BaseSourceAdapter):
                 ),
             )
         return checks
+
+
+def collided_gsis_ids(roster: pl.DataFrame) -> frozenset[str]:
+    """GSIS ids that name more than one distinct player in a roster frame.
+
+    nflverse's 2019 roster carries ``00-0035718`` twice, once as Isaiah Searight and once as
+    Quinnen Williams. A multi-team row for one player is normal and expected; two *names*
+    behind one id is upstream corruption, and ADR-019's poisoned-key rule says every lookup
+    through it must fail closed. Names are compared through the resolver's normalizer so a
+    punctuation or suffix difference does not read as a collision.
+    """
+    if roster.is_empty():
+        return frozenset()
+    names: dict[str, set[str]] = {}
+    for gsis, display in roster.select("gsis_id", "display_name").drop_nulls().iter_rows():
+        key = name_key(str(display))
+        if key:
+            names.setdefault(str(gsis), set()).add(key)
+    return frozenset(gsis for gsis, values in names.items() if len(values) > 1)
 
 
 def normalized_depth_is_anchor_safe(frame: pl.DataFrame, anchor: datetime) -> bool:

@@ -20,6 +20,7 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 FIXTURE_DIR = REPO_ROOT / "tests" / "fixtures"
 PIPELINE_FIXTURES = FIXTURE_DIR / "pipeline"
 SOURCE_SCHEMA_FIXTURES = FIXTURE_DIR / "source_schemas"
+HISTORICAL_FIXTURES = FIXTURE_DIR / "historical"
 
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
@@ -85,3 +86,45 @@ def read_source_schema():
         return json.loads(path.read_text(encoding="utf-8"))
 
     return load
+
+
+@pytest.fixture(scope="session")
+def historical_fixture_dir() -> Path:
+    return HISTORICAL_FIXTURES
+
+
+@pytest.fixture(scope="session")
+def historical_sources():
+    """The synthetic historical sources, normalized through the real adapters."""
+    from ffdraft.features.sources import load_fixture_sources
+
+    return load_fixture_sources(HISTORICAL_FIXTURES)
+
+
+@pytest.fixture(scope="session")
+def historical_dataset(historical_sources, app_config):
+    """One fixture-driven historical build, shared by every test that reads it.
+
+    Built under :meth:`HistoricalThresholds.fixture` because the fixture deliberately
+    contains a player with no birth date anywhere and is far too small for a production
+    coverage threshold to mean anything - the same reasoning Phase 1 recorded for the
+    16-player artifact fixture.
+    """
+    from ffdraft.features.sources import FIXTURE_TARGET_SEASONS
+    from ffdraft.pipeline import build_historical_dataset
+    from ffdraft.quality.thresholds import HistoricalThresholds
+    from ffdraft.timeutil import parse_utc
+
+    return build_historical_dataset(
+        historical_sources.sources,
+        config=app_config,
+        seasons=FIXTURE_TARGET_SEASONS,
+        generated_at=parse_utc("2026-01-01T00:00:00Z"),
+        git_sha="0000000",
+        thresholds=HistoricalThresholds.fixture(),
+    )
+
+
+@pytest.fixture(scope="session")
+def historical_features(historical_dataset):
+    return historical_dataset.features

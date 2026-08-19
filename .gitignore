@@ -12,6 +12,10 @@ data/cache/
 data/raw/
 *.parquet
 *.csv.gz
+# The historical modelling dataset. Reproducible from code plus source releases with
+# `ffdraft build-historical`, so it stays out of source commits; the committed record of
+# what it contains is docs/FEATURE_DICTIONARY.md plus the SESSION_STATE.md build summary.
+data/historical/
 
 # Node
 node_modules/

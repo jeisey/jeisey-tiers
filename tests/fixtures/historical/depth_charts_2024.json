@@ -1,0 +1,46 @@
+[
+ {
+  "club_code": "BUF",
+  "depth_position": "WR",
+  "depth_team": 1,
+  "full_name": "Vera Steadman",
+  "game_type": "REG",
+  "gsis_id": "00-0090001",
+  "position": "WR",
+  "season": 2024,
+  "week": 1
+ },
+ {
+  "club_code": "BUF",
+  "depth_position": "RB",
+  "depth_team": 1,
+  "full_name": "Marcus Lagg",
+  "game_type": "REG",
+  "gsis_id": "00-0090002",
+  "position": "RB",
+  "season": 2024,
+  "week": 1
+ },
+ {
+  "club_code": "BUF",
+  "depth_position": "QB",
+  "depth_team": 1,
+  "full_name": "Quill Passer",
+  "game_type": "REG",
+  "gsis_id": "00-0090003",
+  "position": "QB",
+  "season": 2024,
+  "week": 1
+ },
+ {
+  "club_code": "BUF",
+  "depth_position": "WR",
+  "depth_team": 2,
+  "full_name": "Prior Draftee",
+  "game_type": "REG",
+  "gsis_id": "00-0090011",
+  "position": "WR",
+  "season": 2024,
+  "week": 1
+ }
+]
