@@ -25,9 +25,9 @@ The Phase-5 branch `claude/ffdraft-phase-5-hpjbmm`, branched from the merged Pha
 ```
 uv sync --frozen
 uv run ruff check .                 # clean
-uv run ruff format --check .        # clean, 164 files
-uv run mypy                         # clean, 109 source files, strict
-uv run pytest                       # 913 passed, 4 live deselected
+uv run ruff format --check .        # clean, 163 files
+uv run mypy                         # clean, 110 source files, strict
+uv run pytest                       # 987 passed, 4 live deselected
 uv run ffdraft config-check
 
 # Phase-2, network-bound (nflverse only) — data/historical/ is gitignored
@@ -73,7 +73,7 @@ What was there before and still is:
 - `.github/workflows/ci.yml` — Python and frontend gates, fixture-only, no vendor network.
 - `.github/workflows/market-capture.yml` — the Phase-5 live capture, triggered by bumping `.github/market-capture.request`. Deliberately the minimum needed to prove the source path; scheduling is Phase-7 work.
 - `web/` — Vite/React/TypeScript skeleton with a typed artifact loader.
-- `tests/` — 913 network-free Python tests (4 live-network deselected); `web/tests/` adds 39.
+- `tests/` — 987 network-free Python tests (4 live-network deselected); `web/tests/` adds 39.
 - `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
 
 ## Phase-2 dataset — the validated build
