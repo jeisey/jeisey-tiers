@@ -1,0 +1,17 @@
+schema_version,build_id,season,player_id,display_name,current_team,position,roster_status,roster_depth_chart_position,sleeper_status,injury_status,injury_body_part,injury_notes,injury_start_date,practice_participation,practice_description,depth_chart_position,depth_chart_order,observed_at_utc,source_ids,quality_flags
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000001,Marcus Vandelay,ATL,QB,ACT,QB,Active,,,,,,,QB,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000002,Dez Okonkwo,BUF,RB,ACT,RB,Active,,,,,,,RB,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000003,Ravi Thibodeaux,CHI,RB,ACT,RB,Active,,,,,,,RB,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000004,Chris Johnson,DAL,WR,ACT,WR,Active,Questionable,Hamstring,,,Limited Participation,,WR,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000005,Chris Johnson Jr.,DEN,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000006,Tobias Ferreira,GB,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000007,Kip Salvatore,HOU,TE,ACT,TE,Active,,,,,,,TE,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000008,Nnamdi Brightwater,IND,RB,ACT,RB,,,,,,,,,,2026-08-18T12:00:00Z,nflreadpy|sleeper,sleeper_record_missing
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000009,Emeka Vasquez,JAX,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000010,Sol Marchetti,KC,QB,ACT,QB,Active,,,,,,,QB,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000011,Bram Kowalczyk,LV,TE,ACT,TE,Active,,,,,,,TE,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000012,Yusuf Lindqvist,LAC,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000013,Ade Fontenot,MIA,RB,ACT,RB,Active,,,,,,,RB,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000014,Teodor Vargas,MIN,QB,ACT,QB,,,,,,,,,,2026-08-18T12:00:00Z,nflreadpy|sleeper,sleeper_record_missing
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000015,Hollis Amadi,NE,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000016,Xavier Nkemdiche,NO,TE,RES,TE,Injured Reserve,,,,,,,TE,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,

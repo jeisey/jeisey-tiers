@@ -52,6 +52,7 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         "arbitrage",
         "projections",
         "market_snapshot",
+        "player_status",
     }
     assert all(records for records in pipeline_result.records.values())
 
@@ -253,8 +254,32 @@ def test_build_metadata_describes_the_stub_honestly(built_artifacts):
 
 def test_recorded_warnings_name_the_real_findings(built_artifacts):
     warnings = " ".join(_load(built_artifacts, "build_metadata.json")["warnings"])
-    assert "cohort is approximate" in warnings
     assert "ambiguous identities" in warnings
+    # Sleeper's reported gsis_id contradicts the canonical id on one fixture player, and
+    # the cross-check is supposed to fail that record closed rather than average over it.
+    assert "gsis_id disagreed" in warnings
+
+
+def test_cohort_approximation_is_recorded_where_it_belongs(built_artifacts):
+    """ADR-012/ADR-039: approximation is a property of an assignment, not of a quote.
+
+    Phase 1 recorded it as a build warning because a quote row carried the flag. It is now
+    a per-preset verdict, so it travels on the assignment in build metadata and on the rows
+    the assignment produced - which is where a reader of the arbitrage table will look.
+    """
+    metadata = _load(built_artifacts, "build_metadata.json")
+    assignments = metadata["market"]["assignments"]
+    assert assignments, "the build recorded no cohort assignment"
+    assert all(assignment["exact"] is False for assignment in assignments)
+    assert all(
+        "approximate cohort" in assignment["source_format_detail"] for assignment in assignments
+    )
+
+    arbitrage = _load(built_artifacts, "arbitrage.json")["records"]
+    assert arbitrage
+    for record in arbitrage:
+        assert "cohort_approximate" in record["quality_flags"]
+        assert "approximate cohort" in record["market_cohort_detail"]
 
 
 # --------------------------------------------------------------------------------------

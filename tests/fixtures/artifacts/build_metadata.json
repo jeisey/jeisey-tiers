@@ -7,6 +7,38 @@
   "intrinsic_model_version": "fixture-stub-0",
   "arbitrage_mode": "baseline",
   "arbitrage_model_version": null,
+  "arbitrage_method_version": "a0_rank_gap_v1",
+  "market": {
+    "source_id": "myfantasyleague_adp",
+    "snapshot_key": "2026-08-18T12-00-00Z",
+    "snapshot_at_utc": "2026-08-18T12:00:00Z",
+    "source_as_of_utc": null,
+    "cohort_rule_version": "phase5_cohort_v1",
+    "confidence_rubric_version": "phase5_confidence_v1",
+    "trend_rule_version": "phase5_trend_v1",
+    "trend_available": false,
+    "assignments": [
+      {
+        "scoring_preset": "PPR",
+        "league_size": 12,
+        "cohort_id": "unfiltered",
+        "exact": false,
+        "sufficient": true,
+        "source_format_detail": "no filters (approximate cohort)"
+      }
+    ]
+  },
+  "player_status": {
+    "players": 16,
+    "sleeper_available": true,
+    "sleeper_matched": 14,
+    "sleeper_identity_conflicts": 1,
+    "observed_at_utc": "2026-08-18T12:00:00Z",
+    "source_ids": [
+      "nflreadpy",
+      "sleeper"
+    ]
+  },
   "supported_presets": [
     "redraft-10",
     "redraft-12"
@@ -50,11 +82,11 @@
     "warnings": 5
   },
   "warnings": [
-    "market.cohort_approximate [myfantasyleague_adp]: cohort is approximate; the UI must not present it as preset-specific ADP (ADR-012)",
     "identity.crosswalk_id_conflict [identity.registry]: the secondary crosswalk disagrees with an nflverse-native id; the whole mirror row is rejected and the disagreement recorded",
     "identity.ambiguous_records [identity.market]: ambiguous identities must never reach model or public layers",
     "identity.unresolved_records [identity.market]: records that could not be resolved are excluded from production",
-    "identity.ambiguous_records [identity.sleeper]: ambiguous identities must never reach model or public layers"
+    "identity.ambiguous_records [identity.sleeper]: ambiguous identities must never reach model or public layers",
+    "status.sleeper_gsis_conflict [status.build]: Sleeper's reported gsis_id disagreed with the canonical id; those records fail closed and carry no Sleeper annotation"
   ],
   "methodology_version": "phase1-fixture-0"
 }

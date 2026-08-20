@@ -7,15 +7,33 @@
  * the frontend build rather than surface as `undefined` in a table cell.
  */
 
-/** Bumped together across `schemas/`, the serializers, the fixtures and this file. */
+/**
+ * The *envelope* (bundle) version, bumped together across `schemas/`, the serializers, the
+ * fixtures and this file. Individual record contracts version independently — see
+ * `RECORD_SCHEMA_VERSIONS`, which mirrors `ffdraft.artifacts.RECORD_SCHEMA_VERSIONS`.
+ */
 export const ARTIFACT_SCHEMA_VERSION = "1.0";
+
+/** Per-record contract versions. Phase 5 moved `arbitrage_record` to 1.1 (ADR-040). */
+export const RECORD_SCHEMA_VERSIONS = {
+  tiers: "1.0",
+  arbitrage: "1.1",
+  projections: "1.0",
+  market_snapshot: "1.0",
+  player_status: "1.0",
+} as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
 export type Position = "QB" | "RB" | "WR" | "TE" | "K" | "DST";
 export type ArbitrageMode = "baseline" | "ml";
 export type Confidence = "high" | "medium" | "low" | "unknown";
 export type SourceStatus = "pass" | "warning" | "failed" | "disabled";
-export type ArtifactName = "tiers" | "arbitrage" | "projections" | "market_snapshot";
+export type ArtifactName =
+  | "tiers"
+  | "arbitrage"
+  | "projections"
+  | "market_snapshot"
+  | "player_status";
 
 export interface ArtifactEnvelope<TRecord> {
   readonly schema_version: string;
@@ -66,16 +84,61 @@ export interface ArbitrageRecord {
   readonly market_rank: number | null;
   /** `market_adp - fair_rank`. Positive means the market is late on the player. */
   readonly rank_gap: number;
+  /** `ln(market_adp / fair_rank)`: the same comparison, normalized for draft region. */
+  readonly regional_value_gap: number;
   readonly arbitrage_mode: ArbitrageMode;
+  /** Midpoint percentile of `regional_value_gap` within this preset block. An ordering. */
   readonly arbitrage_score: number;
   /** Null in baseline mode. ADR-010 forbids claiming a model that was not trained. */
   readonly expected_surplus_vorp: number | null;
   readonly p_positive_surplus: number | null;
+  /** Picks per day, positive = moving earlier. Null until the store has enough history. */
   readonly market_trend: number | null;
   readonly market_sample_size: number | null;
   /** Always null for MyFantasyLeague: the export publishes no standard deviation. */
   readonly market_adp_sd: number | null;
+  /** Extreme order statistics: they widen with sample size, so do not compare across rows. */
+  readonly market_adp_low: number | null;
+  readonly market_adp_high: number | null;
+  readonly market_source_id: string;
+  readonly market_cohort_id: string;
+  /** The filters actually sent, plus whether the cohort is exact for this preset. */
+  readonly market_cohort_detail: string;
+  readonly market_snapshot_at_utc: string;
+  /** Market-data quality, never a probability that the player is a bargain (ADR-041). */
   readonly confidence: Confidence;
+  readonly quality_flags: readonly string[];
+}
+
+/**
+ * Current roster and injury status, keyed once per player (ADR-043).
+ *
+ * Joined to Tier and Arbitrage rows in the browser by `player_id`. **Annotation only**: no
+ * field here participated in producing a projection, a fair rank, a tier or an arbitrage
+ * score, and the UI must not present it as if it had.
+ */
+export interface PlayerStatusRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly current_team: string | null;
+  readonly position: Position;
+  /** nflverse roster status, as published (ACT/RES/CUT/...). */
+  readonly roster_status: string | null;
+  readonly roster_depth_chart_position: string | null;
+  readonly sleeper_status: string | null;
+  readonly injury_status: string | null;
+  readonly injury_body_part: string | null;
+  readonly injury_notes: string | null;
+  readonly injury_start_date: string | null;
+  readonly practice_participation: string | null;
+  readonly practice_description: string | null;
+  readonly depth_chart_position: string | null;
+  readonly depth_chart_order: number | null;
+  readonly observed_at_utc: string;
+  readonly source_ids: readonly string[];
   readonly quality_flags: readonly string[];
 }
 
@@ -131,6 +194,37 @@ export interface BuildSourceStatus {
   readonly warnings?: readonly string[];
 }
 
+/** Market provenance for the arbitrage board (ADR-038/039/041/042). */
+export interface BuildMarketMetadata {
+  readonly source_id?: string;
+  readonly snapshot_key?: string;
+  readonly snapshot_at_utc?: string;
+  /** Always null for MyFantasyLeague: its response timestamp is generation time. */
+  readonly source_as_of_utc?: string | null;
+  readonly cohort_rule_version?: string;
+  readonly confidence_rubric_version?: string;
+  readonly trend_rule_version?: string;
+  readonly trend_available?: boolean;
+  readonly assignments?: readonly {
+    readonly scoring_preset: ScoringPreset;
+    readonly league_size: number;
+    readonly cohort_id: string;
+    readonly exact: boolean;
+    readonly sufficient: boolean;
+    readonly source_format_detail: string;
+  }[];
+}
+
+/** Player-status artifact provenance (ADR-043). Annotation only. */
+export interface BuildPlayerStatusMetadata {
+  readonly players?: number;
+  readonly sleeper_available?: boolean;
+  readonly sleeper_matched?: number;
+  readonly sleeper_identity_conflicts?: number;
+  readonly observed_at_utc?: string | null;
+  readonly source_ids?: readonly string[];
+}
+
 export interface BuildMetadata {
   readonly schema_version: string;
   readonly build_id: string;
@@ -140,6 +234,9 @@ export interface BuildMetadata {
   readonly intrinsic_model_version: string;
   readonly arbitrage_mode: ArbitrageMode;
   readonly arbitrage_model_version: string | null;
+  readonly arbitrage_method_version?: string | null;
+  readonly market?: BuildMarketMetadata | null;
+  readonly player_status?: BuildPlayerStatusMetadata | null;
   readonly supported_presets: readonly string[];
   readonly sources: readonly BuildSourceStatus[];
   readonly quality_gate: {
@@ -195,6 +292,7 @@ export const ARBITRAGE_FIELDS = [
   "market_adp",
   "market_rank",
   "rank_gap",
+  "regional_value_gap",
   "arbitrage_mode",
   "arbitrage_score",
   "expected_surplus_vorp",
@@ -202,9 +300,39 @@ export const ARBITRAGE_FIELDS = [
   "market_trend",
   "market_sample_size",
   "market_adp_sd",
+  "market_adp_low",
+  "market_adp_high",
+  "market_source_id",
+  "market_cohort_id",
+  "market_cohort_detail",
+  "market_snapshot_at_utc",
   "confidence",
   "quality_flags",
 ] as const satisfies readonly (keyof ArbitrageRecord)[];
+
+export const PLAYER_STATUS_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "player_id",
+  "display_name",
+  "current_team",
+  "position",
+  "roster_status",
+  "roster_depth_chart_position",
+  "sleeper_status",
+  "injury_status",
+  "injury_body_part",
+  "injury_notes",
+  "injury_start_date",
+  "practice_participation",
+  "practice_description",
+  "depth_chart_position",
+  "depth_chart_order",
+  "observed_at_utc",
+  "source_ids",
+  "quality_flags",
+] as const satisfies readonly (keyof PlayerStatusRecord)[];
 
 export const PROJECTION_FIELDS = [
   "schema_version",
@@ -271,12 +399,17 @@ export const MARKET_SNAPSHOT_FIELDS_COMPLETE: NoMissingKeys<
   MarketSnapshotRecord,
   typeof MARKET_SNAPSHOT_FIELDS
 > = true;
+export const PLAYER_STATUS_FIELDS_COMPLETE: NoMissingKeys<
+  PlayerStatusRecord,
+  typeof PLAYER_STATUS_FIELDS
+> = true;
 
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
   projections: PROJECTION_FIELDS,
   market_snapshot: MARKET_SNAPSHOT_FIELDS,
+  player_status: PLAYER_STATUS_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -284,6 +417,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   arbitrage: "arbitrage.json",
   projections: "projections.json",
   market_snapshot: "market_snapshot.json",
+  player_status: "player_status.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

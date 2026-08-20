@@ -23,8 +23,8 @@
       "adp_high": 6.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -45,8 +45,8 @@
       "adp_high": 18.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -67,8 +67,8 @@
       "adp_high": 25.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -89,8 +89,8 @@
       "adp_high": 38.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -111,8 +111,8 @@
       "adp_high": 44.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -133,8 +133,8 @@
       "adp_high": 55.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -155,8 +155,8 @@
       "adp_high": 67.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -177,8 +177,8 @@
       "adp_high": 80.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -199,8 +199,8 @@
       "adp_high": 92.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -221,8 +221,8 @@
       "adp_high": 110.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -243,8 +243,8 @@
       "adp_high": 140.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -265,8 +265,8 @@
       "adp_high": 150.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -287,8 +287,8 @@
       "adp_high": 180.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     },
@@ -309,8 +309,8 @@
       "adp_high": 250.0,
       "source_format_detail": "no filters (approximate cohort)",
       "quality_flags": [
-        "cohort_approximate",
         "adp_sd_unavailable",
+        "cohort_approximate",
         "source_as_of_unavailable"
       ]
     }

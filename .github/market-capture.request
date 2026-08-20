@@ -9,10 +9,15 @@
 # has open egress and is the environment the Phase-7 production workflow will run in, so
 # evidence gathered there describes the environment that actually matters.
 
-revision: 1
+revision: 2
 season: 2026
 cohorts: study
 reason: >-
   First Phase-5 capture. Retains every candidate cohort so the ADR-012 amendment's cohort
   re-measurement can run offline against retained evidence, and takes the first Sleeper
   current-status capture for the player-status artifact.
+
+  Revision 2 re-runs it after revision 1 proved the source path works and then exited 1:
+  IS_PPR=0&FCOUNT=14 returned zero rows, which the adapter reported as a critical source
+  failure. For a candidate cohort in a measurement that is the finding, not an outage, so
+  per-cohort emptiness is now a warning and only an empty capture is critical.

@@ -37,6 +37,7 @@ from typing import Any
 import polars as pl
 
 from ffdraft.arbitrage.build import build_arbitrage_records
+from ffdraft.arbitrage.frozen import ARBITRAGE_CONFIDENCE_VERSION, ARBITRAGE_METHOD_VERSION
 from ffdraft.artifacts import (
     ARTIFACT_SCHEMA_VERSION,
     validate_artifact_directory,
@@ -65,7 +66,7 @@ from ffdraft.identity import (
 )
 from ffdraft.identity.aliases import AliasMap
 from ffdraft.identity.resolver import FLAG_SECONDARY_ONLY
-from ffdraft.market.cohorts import CohortAssignment, widest_cohort
+from ffdraft.market.cohorts import COHORT_RULE_VERSION, CohortAssignment, widest_cohort
 from ffdraft.market.current import (
     LOW_MARKET_SAMPLE,
     LOW_SAMPLE_THRESHOLD,
@@ -75,7 +76,7 @@ from ffdraft.market.current import (
     MarketPrice,
 )
 from ffdraft.market.snapshot import snapshot_key
-from ffdraft.market.trend import INSUFFICIENT_TREND_HISTORY
+from ffdraft.market.trend import INSUFFICIENT_TREND_HISTORY, TREND_RULE
 from ffdraft.quality import QualityGate, check_source_freshness
 from ffdraft.quality.forbidden import (
     audit_intrinsic_feature_names,
@@ -89,6 +90,8 @@ from ffdraft.sources import (
     SleeperPlayerAdapter,
 )
 from ffdraft.sources.market import MflAdpAdapter, MflPlayerDirectory, MflPlayerDirectoryAdapter
+from ffdraft.status.build import PlayerStatusResult, build_player_status_records
+from ffdraft.status.capture import StatusCapture
 from ffdraft.timeutil import isoformat_utc, parse_utc
 
 __all__ = [
@@ -345,11 +348,22 @@ def run_fixture_pipeline(
         snapshot_at=now,
     )
 
+    status = _player_status_records(
+        registry=registry,
+        roster=roster_batch.frame,
+        sleeper_batch=sleeper_batch,
+        build_id=build_id,
+        generated_at=now,
+        published=[str(row["player_id"]) for row in tiers],
+        gate=gate,
+    )
+
     records = {
         "projections": projections,
         "tiers": tiers,
         "arbitrage": arbitrage,
         "market_snapshot": market_records,
+        "player_status": status.records,
     }
     gate.extend(_published_identity_checks(records, market_outcomes))
 
@@ -361,6 +375,27 @@ def run_fixture_pipeline(
         generated_at=now,
         git_sha=git_sha or _git_sha(),
         presets=_LAUNCH_PRESETS,
+        status=status,
+        market={
+            "source_id": market_batch.source_id,
+            "snapshot_key": snapshot_key(now),
+            "snapshot_at_utc": isoformat_utc(now),
+            "source_as_of_utc": None,
+            "cohort_rule_version": COHORT_RULE_VERSION,
+            "confidence_rubric_version": ARBITRAGE_CONFIDENCE_VERSION,
+            "trend_rule_version": TREND_RULE.version,
+            "trend_available": False,
+            "assignments": [
+                {
+                    "scoring_preset": assignment.scoring_preset,
+                    "league_size": assignment.league_size,
+                    "cohort_id": assignment.cohort.cohort_id,
+                    "exact": assignment.exact,
+                    "sufficient": assignment.sufficient,
+                    "source_format_detail": assignment.source_format_detail,
+                },
+            ],
+        },
     )
 
     return FixturePipelineResult(
@@ -689,6 +724,49 @@ def _fixture_price(
     )
 
 
+def _player_status_records(
+    *,
+    registry: CanonicalRegistry,
+    roster: pl.DataFrame,
+    sleeper_batch: SourceBatch,
+    build_id: str,
+    generated_at: datetime,
+    published: Sequence[str],
+    gate: QualityGate,
+) -> PlayerStatusResult:
+    """The fixture's status artifact, built by the production Phase-5 code.
+
+    The fixture's Sleeper payload deliberately includes an id whose reported ``gsis_id``
+    contradicts the canonical one, so this exercises the fail-closed cross-check as well as
+    the happy path (ADR-019).
+    """
+    capture = StatusCapture(
+        source_id=sleeper_batch.source_id,
+        season=FIXTURE_SEASON,
+        snapshot_key=snapshot_key(generated_at),
+        observed_at_utc=generated_at,
+        adapter_version=SleeperPlayerAdapter.adapter_version,
+        source_policy_version=SleeperPlayerAdapter.license_policy_version,
+        rows=[
+            {
+                **row,
+                "observed_at_utc": isoformat_utc(row["observed_at_utc"]),
+            }
+            for row in sleeper_batch.frame.iter_rows(named=True)
+        ],
+    )
+    return build_player_status_records(
+        registry=registry,
+        roster=roster,
+        capture=capture,
+        build_id=build_id,
+        season=FIXTURE_SEASON,
+        generated_at=generated_at,
+        player_ids=sorted(dict.fromkeys(published)),
+        gate=gate,
+    )
+
+
 def _market_snapshot_records(
     market_batch: SourceBatch,
     *,
@@ -793,6 +871,8 @@ def _build_metadata(
     generated_at: datetime,
     git_sha: str,
     presets: Sequence[str],
+    status: PlayerStatusResult | None = None,
+    market: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     seen: dict[str, dict[str, Any]] = {}
     for batch in batches.values():
@@ -824,6 +904,9 @@ def _build_metadata(
         "intrinsic_model_version": FIXTURE_MODEL_VERSION,
         "arbitrage_mode": app.arbitrage_mode,
         "arbitrage_model_version": None,
+        "arbitrage_method_version": ARBITRAGE_METHOD_VERSION,
+        "market": dict(market) if market is not None else None,
+        "player_status": status.summary() if status is not None else None,
         "supported_presets": list(presets),
         "sources": [seen[key] for key in sorted(seen)],
         "quality_gate": gate.summary(),
