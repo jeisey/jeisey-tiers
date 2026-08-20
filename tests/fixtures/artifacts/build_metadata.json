@@ -13,7 +13,7 @@
     "snapshot_key": "2026-08-18T12-00-00Z",
     "snapshot_at_utc": "2026-08-18T12:00:00Z",
     "source_as_of_utc": null,
-    "cohort_rule_version": "phase5_cohort_v1",
+    "cohort_rule_version": "phase5_cohort_v2",
     "confidence_rubric_version": "phase5_confidence_v1",
     "trend_rule_version": "phase5_trend_v1",
     "trend_available": false,

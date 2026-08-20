@@ -2,7 +2,7 @@ schema_version,build_id,season,player_id,display_name,current_team,position,rost
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000001,Marcus Vandelay,ATL,QB,ACT,QB,Active,,,,,,,QB,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000002,Dez Okonkwo,BUF,RB,ACT,RB,Active,,,,,,,RB,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000003,Ravi Thibodeaux,CHI,RB,ACT,RB,Active,,,,,,,RB,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
-1.0,fixture-20260818T120000Z,2026,gsis:00-0000004,Chris Johnson,DAL,WR,ACT,WR,Active,Questionable,Hamstring,,,Limited Participation,,WR,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000004,Chris Johnson,DAL,WR,ACT,WR,Active,Questionable,Hamstring,Tweaked it in Thursday's walkthrough; day to day.,2026-08-14,Limited Participation,"Limited in team drills, full in individual.",WR,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000005,Chris Johnson Jr.,DEN,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000006,Tobias Ferreira,GB,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000007,Kip Salvatore,HOU,TE,ACT,TE,Active,,,,,,,TE,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
@@ -14,4 +14,4 @@ schema_version,build_id,season,player_id,display_name,current_team,position,rost
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000013,Ade Fontenot,MIA,RB,ACT,RB,Active,,,,,,,RB,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000014,Teodor Vargas,MIN,QB,ACT,QB,,,,,,,,,,2026-08-18T12:00:00Z,nflreadpy|sleeper,sleeper_record_missing
 1.0,fixture-20260818T120000Z,2026,gsis:00-0000015,Hollis Amadi,NE,WR,ACT,WR,Active,,,,,,,WR,2,2026-08-18T12:00:00Z,nflreadpy|sleeper,
-1.0,fixture-20260818T120000Z,2026,gsis:00-0000016,Xavier Nkemdiche,NO,TE,RES,TE,Injured Reserve,,,,,,,TE,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,
+1.0,fixture-20260818T120000Z,2026,gsis:00-0000016,Xavier Nkemdiche,NO,TE,RES,TE,Injured Reserve,IR,Knee,,,,,TE,1,2026-08-18T12:00:00Z,nflreadpy|sleeper,

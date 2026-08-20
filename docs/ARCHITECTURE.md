@@ -240,6 +240,8 @@ Pure-ish transforms from canonical historical snapshots to model matrices. No so
 
 ### `modeling/`
 
+Includes `build_config.py`, which holds the current build's frozen parameter shape. It lives here rather than in `pipeline/` because `modeling/frozen.py` names it, and importing it from the pipeline dragged the whole current-build dependency tree — the Sleeper status package included — onto the intrinsic side of the import graph.
+
 Training, fold generation, metrics, calibration, artifact versioning. Separate intrinsic and arbitrage subpackages.
 
 ### `simulation/`
