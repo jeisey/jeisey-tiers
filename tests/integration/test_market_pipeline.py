@@ -140,7 +140,7 @@ def _write_snapshot(
     store: MarketSnapshotStore,
     moment: str,
     *,
-    cohort_id: str = "unfiltered",
+    cohort_id: str = "no-keeper",
     shift: float = 0.0,
 ) -> str:
     stamped = parse_utc(moment)
@@ -201,7 +201,7 @@ def _sufficient(cohort_id: str) -> CohortMeasurement:
     )
 
 
-def _selection(path: Path, *, cohort_id: str = "unfiltered") -> Path:
+def _selection(path: Path, *, cohort_id: str = "no-keeper") -> Path:
     measurements = {
         cohort.cohort_id: _sufficient(cohort.cohort_id)
         for cohort in CANDIDATE_COHORTS
@@ -345,7 +345,7 @@ def test_every_row_carries_its_market_provenance(store, artifacts, tmp_path):
     result = _run(store, artifacts, tmp_path)
     for record in result.records:
         assert record["market_source_id"] == SOURCE
-        assert record["market_cohort_id"] == "unfiltered"
+        assert record["market_cohort_id"] == "no-keeper"
         assert "approximate cohort" in record["market_cohort_detail"]
         assert record["market_snapshot_at_utc"] == "2026-08-20T11:00:00Z"
         assert record["market_adp_low"] is not None

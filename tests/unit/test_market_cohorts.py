@@ -5,9 +5,10 @@ evidence-driven threshold can mean anything. These tests pin the two properties 
 the policy honest rather than merely defensible:
 
 * **specificity never beats sufficiency.** A cohort whose filter text exactly matches a
-  preset but which prices forty players loses to the unfiltered aggregate.
+  preset but which prices forty players loses to the wider one.
 * **approximation is allowed to be wide, never wrong.** A non-PPR cohort never serves a PPR
-  league, and HALF is never exact on a source that only knows a boolean.
+  league, a keeper-contaminated cohort never prices a redraft board (ADR-045), and HALF is
+  never exact on a source that only knows a boolean.
 """
 
 from __future__ import annotations
@@ -106,7 +107,7 @@ def test_every_failing_clause_is_reported_not_just_the_first():
 
 def test_the_rule_is_pure_and_carries_its_version():
     rule = COHORT_SUFFICIENCY_RULE.to_dict()
-    assert rule["rule_version"] == "phase5_cohort_v1"
+    assert rule["rule_version"] == "phase5_cohort_v2"
     subject = measurement("ppr")
     assert COHORT_SUFFICIENCY_RULE.evaluate(subject) == COHORT_SUFFICIENCY_RULE.evaluate(subject)
 
@@ -117,12 +118,17 @@ def test_the_rule_is_pure_and_carries_its_version():
 
 
 def test_an_adequate_exact_cohort_wins():
+    """Selection with the redraft requirement relaxed, so specificity is what is tested."""
     measurements = {
         "unfiltered": measurement("unfiltered"),
         "ppr": measurement("ppr"),
         "ppr-fcount12": measurement("ppr-fcount12"),
     }
-    assignments, _ = select_cohorts(measurements, presets=[("PPR", 12)])
+    assignments, _ = select_cohorts(
+        measurements,
+        presets=[("PPR", 12)],
+        require_redraft=False,
+    )
     chosen = assignments[("PPR", 12)]
     assert chosen.cohort.cohort_id == "ppr-fcount12"
     assert chosen.exact is True
@@ -136,7 +142,11 @@ def test_a_thin_exact_cohort_loses_to_a_wider_reliable_one():
         "ppr": measurement("ppr"),
         "ppr-fcount12": measurement("ppr-fcount12", priced_players=40, total_drafts=11),
     }
-    assignments, verdicts = select_cohorts(measurements, presets=[("PPR", 12)])
+    assignments, verdicts = select_cohorts(
+        measurements,
+        presets=[("PPR", 12)],
+        require_redraft=False,
+    )
     assert verdicts["ppr-fcount12"].sufficient is False
     chosen = assignments[("PPR", 12)]
     assert chosen.cohort.cohort_id == "ppr"
@@ -149,12 +159,76 @@ def test_the_widest_cohort_is_the_last_resort_and_is_flagged():
         cohort_id: measurement(cohort_id, priced_players=5, total_drafts=2)
         for cohort_id in ("unfiltered", "ppr", "ppr-fcount12")
     }
-    assignments, _ = select_cohorts(measurements, presets=[("PPR", 12)])
+    assignments, _ = select_cohorts(
+        measurements,
+        presets=[("PPR", 12)],
+        require_redraft=False,
+    )
     chosen = assignments[("PPR", 12)]
     assert chosen.cohort.cohort_id == widest_cohort().cohort_id
     assert chosen.sufficient is False
     assert set(chosen.quality_flags) == {COHORT_APPROXIMATE, COHORT_INSUFFICIENT}
     assert "no candidate met the sufficiency rule" in chosen.reason
+
+
+def test_the_fallback_prefers_the_widest_qualifying_candidate_deterministically():
+    """When nothing passes, "widest" means least specific, then most of the board priced."""
+    measurements = {
+        "no-keeper": measurement("no-keeper", priced_players=291, total_drafts=125),
+        "no-mock-no-keeper": measurement(
+            "no-mock-no-keeper",
+            priced_players=250,
+            total_drafts=125,
+        ),
+        "ppr-no-keeper": measurement("ppr-no-keeper", priced_players=300, total_drafts=115),
+    }
+    assignments, verdicts = select_cohorts(measurements, presets=[("PPR", 12)])
+    assert not any(verdict.sufficient for verdict in verdicts.values())
+    chosen = assignments[("PPR", 12)]
+    assert chosen.cohort.cohort_id == "no-keeper"
+    assert chosen.cohort.specificity == 0
+    assert COHORT_INSUFFICIENT in chosen.quality_flags
+
+
+# --------------------------------------------------------------------------------------
+# The redraft requirement (ADR-045)
+# --------------------------------------------------------------------------------------
+
+
+def test_a_keeper_contaminated_cohort_can_never_price_a_redraft_board():
+    """A dynasty rookie draft's "average pick" is a pick in a rookie-only draft."""
+    measurements = {cohort.cohort_id: measurement(cohort.cohort_id) for cohort in CANDIDATE_COHORTS}
+    assignments, _ = select_cohorts(measurements, presets=LAUNCH_PRESETS)
+    for assignment in assignments.values():
+        assert assignment.cohort.excludes_keepers, assignment.cohort.cohort_id
+        assert assignment.cohort.filters["IS_KEEPER"] == "N"
+
+
+def test_the_requirement_is_qualifying_not_a_sufficiency_bound():
+    """A keeper-free cohort still has to earn its way past every volume clause."""
+    measurements = {
+        "no-keeper": measurement("no-keeper", priced_players=10, total_drafts=3),
+        "unfiltered": measurement("unfiltered"),
+    }
+    _assignments, verdicts = select_cohorts(measurements, presets=[("PPR", 12)])
+    assert verdicts["no-keeper"].sufficient is False
+    assert verdicts["unfiltered"].sufficient is True
+
+
+def test_selection_raises_rather_than_pricing_a_board_with_nothing_valid():
+    """Silently falling back to a contradicting cohort is the failure mode to avoid."""
+    measurements = {"unfiltered": measurement("unfiltered")}
+    with pytest.raises(ValueError, match="no cohort qualifies"):
+        select_cohorts(measurements, presets=[("PPR", 12)])
+
+
+def test_excludes_keepers_reads_the_filter_that_was_actually_sent():
+    assert cohort_by_id("no-keeper").excludes_keepers is True
+    assert cohort_by_id("no-mock-no-keeper").excludes_keepers is True
+    assert cohort_by_id("ppr-no-keeper").excludes_keepers is True
+    assert cohort_by_id("no-mock").excludes_keepers is False
+    assert cohort_by_id("unfiltered").excludes_keepers is False
+    assert cohort_by_id("ppr").excludes_keepers is False
 
 
 def test_a_contradicting_cohort_never_serves_a_preset():
@@ -165,7 +239,11 @@ def test_a_contradicting_cohort_never_serves_a_preset():
         "std-fcount12": measurement("std-fcount12"),
         "fcount14": measurement("fcount14"),
     }
-    assignments, _ = select_cohorts(measurements, presets=[("PPR", 12)])
+    assignments, _ = select_cohorts(
+        measurements,
+        presets=[("PPR", 12)],
+        require_redraft=False,
+    )
     chosen = assignments[("PPR", 12)].cohort
     assert chosen.scoring_semantics is None
     assert chosen.league_size_semantics is None

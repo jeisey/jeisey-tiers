@@ -846,6 +846,8 @@ Every fired clause is recorded, so a row can be explained rather than merely lab
 
 **Decision — dispersion is described, not scored.** `adp_low`/`adp_high` come from MFL's `minPick`/`maxPick`, which are extreme order statistics: they widen as more drafts are sampled. Two players with different sample sizes therefore cannot be compared on that range, and using it as a confidence input would systematically punish the best-sampled players. It is published, and a `wide_market_range` flag fires when the range spans five rounds or more, but it does not move the confidence tier.
 
+**Observed (2026-08-20).** At the launch sample size — roughly 125 drafts per cohort — `wide_market_range` fires on 1,914 of 2,124 rows. The flag is *true*: a min-to-max span really does exceed five rounds for most players. It is also useless as a discriminator, and the honest response is to say so rather than to move the bound until the flag looks selective. Phase 6 should render `market_adp_low`/`market_adp_high` directly, which every row carries, and treat the flag as a footnote.
+
 **Decision — the flag vocabulary.** `cohort_approximate`, `cohort_insufficient`, `low_market_sample`, `wide_market_range`, `insufficient_trend_history`, `market_snapshot_stale`, `secondary_identity_bridge_only`. Flags are additive and orthogonal to the tier; a `medium` row can carry three of them.
 
 **Consequences:** `confidence` never appears in the score arithmetic (ADR-040), so a reader can sort by signal and filter by data quality independently. Because HALF is permanently approximate (ADR-039), HALF rows cannot reach `high`; that is the source's limitation stated plainly rather than smoothed over.
@@ -909,3 +911,42 @@ so that **positive means the player is moving earlier — getting more expensive
 **Decision — current annotations are not a substitute.** The Sleeper status artifact (ADR-043) describes *today*. It is not a model feature, it is not a proxy for one, and a reader who sees an injury badge next to a fair rank is seeing two independent things — a frozen preseason projection, and a current-state note the projection has never seen.
 
 **Revisit at:** the 2027 model refresh, which gets its own feature-set version and its own untouched evaluation season.
+
+## ADR-045 — A redraft board may only be priced by redraft drafts (`phase5_cohort_v2`)
+
+**Date:** 2026-08-20 (Phase 5, after the `phase5_cohort_v1` measurement)
+
+**Status:** accepted. Supersedes ADR-039's rule version; ADR-039's bounds are unchanged and its report is preserved.
+
+**Context.** `phase5_cohort_v1` ran and selected `ppr` for the PPR presets and the unfiltered aggregate for the rest — both comfortably sufficient on every clause. Then the resulting board was read, and 2026 rookies came out as enormous market bargains-in-reverse: the model ranked them deep and the market appeared to be taking them in the third round.
+
+Comparing cohorts inside the retained snapshot — which is what a retained store is for — showed why:
+
+| player | `ppr` | `unfiltered` | `IS_KEEPER=N` |
+|---|---:|---:|---:|
+| Ty Simpson | 35.1 | 35.6 | 162.3 |
+| Emmett Johnson | 50.1 | 50.4 | 193.1 |
+| Chris Bell | 40.3 | 39.9 | 187.9 |
+| Eli Stowers | 28.3 | 28.2 | 131.6 |
+| Jeremiyah Love | 11.4 | 11.7 | 31.2 |
+| Bijan Robinson | 2.5 | 2.5 | 2.6 |
+| Amon-Ra St. Brown | 9.8 | 9.8 | 10.5 |
+| De'Von Achane | 17.5 | 17.3 | 18.5 |
+
+Rookies move by a factor of three to five; established veterans do not move at all. That is the signature of **dynasty rookie drafts** inside the aggregate: only rookies are selectable in one, so a rookie's "average pick" there is a pick number in a rookie-only draft, not a redraft ADP. Publishing it as one would say something false about roughly forty players — precisely the truthfulness failure ADR-012 exists to prevent.
+
+A second capture separated the two available format filters and settled which was responsible. `IS_MOCK=0` returns **426 drafts, identical to unfiltered**: there are no mock drafts in this aggregate and that filter does nothing. `IS_KEEPER=N` returns 125. So keeper and dynasty leagues are 301 of 426 drafts, and they are the entire contamination.
+
+**Decision.** `phase5_cohort_v2` adds exactly one clause, and it is a *qualifying* condition rather than a threshold: **a cohort may serve this project's board only if its filters exclude keeper and dynasty drafts.** `config/league-defaults.yaml` declares `season_mode: redraft`; a price for a redraft board has to come from redraft drafts, the same way a PPR preset may not be served by an `IS_PPR=0` cohort. It sits beside the existing "must not contradict the preset" check, not among the sufficiency bounds.
+
+**No bound moved.** `min_priced_players`, `min_total_drafts`, both board-coverage clauses, the per-player median and the identity threshold are all exactly as ADR-039 froze them.
+
+**Consequence, published rather than repaired.** Every keeper-free cohort fails `min_total_drafts` (125 and 115 against 300), because filtering to real redraft leagues necessarily shrinks the cohort-level count. No qualifying candidate is sufficient, so the rule falls through to its own documented last resort: use the widest qualifying candidate and flag it. The 2026 board therefore ships from `no-keeper` (and `ppr-no-keeper` for PPR), with `cohort_insufficient` on every row and consequently `low` confidence on every row, each carrying the reason that fired.
+
+That is a worse-looking confidence distribution than v1 would have produced and it is the honest one. The alternative was a board whose rookie prices were wrong, and ADR-035 already set this project's precedent: when a frozen rule produces an awkward result, publish the result with its failure attached rather than repair it mid-flight.
+
+**Open question, deliberately not answered here.** The evidence suggests `min_total_drafts` may be the wrong instrument for a *filtered* cohort. Filtering shrinks the cohort-level count structurally while leaving per-player evidence intact: `no-keeper` carries 125 drafts but a **median of 105 drafts per top-150 player**, against `ppr`'s 129 and a bar of 25 — and it has the best top-150 board coverage of any cohort measured (0.967). ADR-039 introduced the median clause precisely because cohort-level counts are inflatable, and it is the only clause any format-pure or preset-specific cohort fails. Re-specifying or removing it is a **new decision needing its own rule version and its own evidence**, and it must not be done in the same breath as reading the result it would change.
+
+**A second open question, also left alone.** When nothing is sufficient, the fallback takes the *widest* qualifying candidate, because ADR-039 reasoned that a failed rule should fall back on more data. Here that hands the PPR presets `no-mock-no-keeper` (125 drafts, all scoring) rather than `ppr-no-keeper` (115 drafts, PPR only) — trading scoring specificity for an eight-per-cent larger sample. Whether a fallback should prefer specificity when the candidates are this close is a genuine question, and answering it *after* seeing which cohort it picks is exactly the trap this ADR is written to avoid. The dilution is roughly ten non-PPR drafts out of 125 and is covered by the report's composition caveat.
+
+**Revisit when:** the volume clause is re-specified with evidence, MFL exposes a redraft-only or half-PPR filter, or the non-keeper cohort's own draft count clears the existing bar as the season matures — at which point the same rule selects it without any change at all.

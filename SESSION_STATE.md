@@ -4,101 +4,76 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 4 — **implemented, exit gate partially met** (2026-08-19). Every task is built and measured; two frozen gates were measured as failing and are published rather than repaired. Phase 5 (market snapshots and arbitrage) has not been started.
+Phase 5 — **complete** (2026-08-20). Point-in-time market history is being retained on a dedicated branch, the cohort mix has been re-measured and the selection frozen, the deterministic A0 arbitrage baseline is built for every launch preset, and current player status ships as a separate annotation-only artifact. Phase 6 (frontend) has not been started.
+
+Two Phase-5 findings are **published rather than repaired**, in the ADR-034/ADR-035 tradition: no keeper-free cohort clears the frozen cohort-level draft-count bar, so every arbitrage row carries `cohort_insufficient` and `low` confidence; and `wide_market_range` fires on 90% of rows, which makes it true and useless.
+
+Two Phase-4 criteria remain open and were **not** touched: the Monte Carlo convergence rule (ADR-034) and tier boundary stability (ADR-035). Phase 5 did not lower a tier threshold, change the tier penalty, change the draw count, reopen expected-vs-median VORP, retrain the intrinsic model or alter `intrinsic_core_v1`. A0 consumes fair rank and never a tier boundary, so the failed quantity does not propagate into the arbitrage score.
 
 ## Current target gate
 
-Phase 5 exit gate: point-in-time market snapshots retained append-only, a fair-rank-vs-ADP arbitrage baseline that stays a permanent challenger, and — only if the historical market coverage and out-of-time promotion gate pass — a learned arbitrage model whose target is realized value relative to market cost.
+Phase 6 exit gate: all primary draft-sheet flows work against the real generated artifacts — Tier Board and Draft Rail visualizations, Tier and Arbitrage tables with search/filter/sort/export, URL query state, methodology/freshness panel, degraded-source states, responsive layouts, accessibility and reduced-motion — with exports correct and chart values agreeing with the tables.
 
-Two Phase-4 criteria remain open and are **not** Phase-5 work to quietly absorb: the Monte Carlo convergence rule needs a revision that measures its tier clause on the promoted configuration (ADR-034), and tier boundary stability needs either a re-specified admissibility rule or a boundary-confidence presentation (ADR-035). Both are new decisions with their own gates.
+Phase 6 inherits three browser-ready data products and two obligations. The products: intrinsic Tier data, deterministic Arbitrage data, and current Player Status. The obligations: **a tier is a group, not a line** (ADR-035 — the measurement supports about four reproducible cut sites on a 300-deep board, so any UI that draws a hard edge overstates it), and **an injury badge is not a model input** (ADR-043 — the projection has never seen it, and the UI must not imply otherwise).
 
 ## Last validated commit
 
-The Phase-4 branch `claude/ffdraft-phase-4-w96nvs`, branched from the merged Phase-3 state on `main` (`4e2fb4b`).
+The Phase-5 branch `claude/ffdraft-phase-5-hpjbmm`, branched from the merged Phase-4 state on `main` (`1a7fe8b`).
 
-**The freeze checkpoint is `2f0e725`.** Every Phase-4 model, calibration, ranking, simulation and tier decision is fixed in that commit, and the sealed 2025 holdout was evaluated only afterwards. A future session auditing whether a decision could have seen the holdout should check whether it predates that SHA.
-
-Validation run locally; every network-free command below also runs in CI (`.github/workflows/ci.yml`):
+**The Phase-5 freeze checkpoint is `455f08b`.** ADR-038 through ADR-044 — the retention architecture, the cohort sufficiency rule, the A0 formula, the confidence rubric and the trend definition — were written and committed *before* any of them had been run against live data. A later session auditing whether a Phase-5 decision could have seen its own evidence should check whether it predates that SHA. The two exceptions are recorded as such: the ADR-039 population clarification (`239db00`, still before the decisive measurement) and ADR-045 (after the v1 measurement, which is the whole subject of that ADR).
 
 ```
 uv sync --frozen
 uv run ruff check .                 # clean
-uv run ruff format --check .        # clean, 134 files
-uv run mypy                         # clean, 89 source files, strict
-uv run pytest                       # 830 passed, 4 live deselected, 544s
+uv run ruff format --check .        # clean, 164 files
+uv run mypy                         # clean, 109 source files, strict
+uv run pytest                       # 913 passed, 4 live deselected
 uv run ffdraft config-check
-uv run ffdraft build-fixture-artifacts --out web/public/data
+
+# Phase-2, network-bound (nflverse only) — data/historical/ is gitignored
+uv run ffdraft build-historical --last-season 2025
+uv run ffdraft validate-historical data/historical
+
+# Phase-5 capture, network-bound, GitHub runner only (ADR-009)
+#   .github/workflows/market-capture.yml, triggered by bumping
+#   .github/market-capture.request
+uv run ffdraft snapshot-market --season 2026 --cohorts study --store ../market-data
+uv run ffdraft capture-status  --season 2026 --store ../market-data
+
+# Phase-5 analysis and build, entirely offline from retained bytes
+uv run ffdraft validate-market-history ../market-data --season 2026   # 2 snapshots, 35 files
+uv run ffdraft measure-market-cohorts --store ../market-data
+uv run ffdraft build-current --store ../market-data     # 2,700 tiers, 315 status rows
+uv run ffdraft build-arbitrage --store ../market-data   # 2,124 arbitrage rows
+uv run ffdraft arbitrage-card
 uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
-
-# Phase-2, network-bound (nflverse only)
-uv run ffdraft build-historical --last-season 2025 --git-sha c2b48cc
-#   -> 11,604 feature rows, 34,812 fantasy labels, 104,436 VORP labels
-#   -> quality gate: pass (0 critical, 2 warning), 187 checks
-uv run ffdraft validate-historical data/historical   # gate: pass (0 critical, 0 warning)
-
-# Phase-3, offline
-uv run ffdraft evaluate-intrinsic --git-sha 5550ba8
-#   -> 31,503 modelling rows, 2014-2024; 3,309 sealed 2025 rows withheld at load
-#   -> feature set intrinsic_core_v1 (7203befaa5be25a2), 78 inputs, 7 excluded
-#   -> 612.5s; window W1_all_history; promoted Q1
-#   -> quality gate: pass (0 critical, 0 warning)
-#   -> re-run at Phase 4 and diffed against the committed report: IDENTICAL on every
-#      number, every decision and every check. Only the timestamped experiment_id differs.
-
-# Phase-4 development studies, offline (data/phase4/ intermediates are gitignored)
-uv run ffdraft evaluate-distribution --git-sha 4cd90af    # ~40 min; promoted CB
-uv run ffdraft evaluate-simulation   --git-sha 3ba6cb0    # 3325s; 10000 draws, median_vorp
-#   -> quality gate: FAIL (1 critical) — no draw count met every convergence tolerance
-uv run ffdraft evaluate-tiers        --git-sha 3ba6cb0    # 6903s; dp_quantile @ penalty 1.0
-#   -> quality gate: FAIL (1 critical, 1 warning) — stability gate, and PELT escalation
-
-# Phase-4 sealed holdout — RUN ONCE, at the freeze checkpoint, and now spent
-uv run ffdraft evaluate-intrinsic --final-eval \
-  --confirm-final-eval RELEASE-FINAL-HOLDOUT-2025 --final-eval-reason "<why>" \
-  --window W1_all_history --out docs/experiments/phase4-final-holdout --git-sha 2f0e725
-#   -> PASS. CB vs B0 on 3,309 rows: MAE -3.738 [-4.364, -3.102],
-#      pinball -2.134 [-2.377, -1.874], Spearman +0.1015, zero quantile crossings
-#   -> quality gate: pass (0 critical, 1 warning: "final holdout consumed")
-
-# Phase-4 production, network-bound (nflverse + Sleeper for current status)
-uv run ffdraft train-production --allow-unsealed \
-  --confirm-final-eval RELEASE-FINAL-HOLDOUT-2025 --final-eval-reason "<why>" --git-sha 2f0e725
-#   -> intrinsic-cb-hurdle-v1 on 34,812 rows, seasons 2014-2025; 12 groups, 78 features
-#   -> 121 files, ~15 MB gzipped, one SHA-256 per booster
-uv run ffdraft build-current --git-sha 2f0e725
-#   -> 2026 board; 3,510 projections, 2,700 tier records; cutoff = build time (pre-anchor)
-#   -> quality gate: pass (0 critical, 1 warning: tiers published under a failed gate)
-uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
-uv run ffdraft model-card --git-sha 2f0e725
 
 npm ci
-npm run lint                        # clean
-npm run typecheck                   # clean
-npm run test -- --run               # 31 passed
-npm run build                       # clean; also verified with VITE_BASE_PATH=/jeisey-tiers/
+npm run lint / typecheck / test -- --run / build     # all clean, 39 frontend tests
 ```
-
-The Phase-1 golden artifacts were **not** regenerated: Phases 2 and 3 changed no public serialization contract, and a rebuild produces byte-identical files.
 
 ## Production status
 
-**A production model exists.** `intrinsic-cb-hurdle-v1`, trained on 2014-2025, promoted through a sealed single-use holdout, serving a 2026 board for every launch preset. There is still no arbitrage board and no deployed site.
+**A production model and a production arbitrage board exist.** `intrinsic-cb-hurdle-v1`, trained on 2014-2025, promoted through a sealed single-use holdout, serving a 2026 board for every launch preset; and the deterministic A0 arbitrage baseline built on top of it from retained market history. There is still no deployed site.
 
 - `models/production/intrinsic-cb-hurdle-v1/` — **committed**, not gitignored (`PRD.md` section 15). 120 gzipped LightGBM boosters plus `metadata.json` carrying the spec, seed, training seasons, library versions, dataset manifest, `feature_set_hash` `7203befaa5be25a2`, `feature_schema_hash` `c495ba3177dcb989` and a SHA-256 per booster. No pickles anywhere: loading reads JSON and LightGBM's documented text format, and a tampered booster fails closed.
 - `models/cards/` — the model card and the tier-method report, generated from the committed experiment reports and the artifact, never hand-written.
-- `web/public/data/` — the 2026 build. Gitignored and reproducible.
+- `models/cards/arbitrage-method-a0.{json,md}` — the arbitrage method card, generated from the artifacts, the cohort report and the frozen constants.
+- `web/public/data/` — the 2026 build: `tiers`, `projections`, `arbitrage`, `player_status`, `build_metadata`. Gitignored and reproducible.
+- **`market-data` branch** — the append-only point-in-time capture store (ADR-038). Not in this working tree; clone it separately.
 
-The fixture stub `fixture-stub-0` is gone from the production path.
+The fixture stub `fixture-stub-0` is gone from the production path, and so is the Phase-1 stub arbitrage score: the fixture pipeline now drives the real A0 code.
 
 What was there before and still is:
 
-- `src/ffdraft/` — config, contracts, sources, identity, quality, artifacts, pipeline, CLI (Phase 1) plus `anchors.py`, `scoring/`, `features/`, `labels/`, `simulation/`, `leakage.py` (Phase 2) plus `modeling/` (Phase 3).
+- `src/ffdraft/` — config, contracts, sources, identity, quality, artifacts, pipeline, CLI (Phase 1) plus `anchors.py`, `scoring/`, `features/`, `labels/`, `simulation/`, `leakage.py` (Phase 2) plus `modeling/` (Phase 3) plus `market/`, `arbitrage/`, `status/`, `retention/` and `pipeline/market.py` (Phase 5).
 - `data/historical/` — the modelling dataset. Gitignored and reproducible; see "Phase-2 dataset" below.
 - `docs/FEATURE_DICTIONARY.md` — every model feature with formula, sources and availability rule, generated from code and pinned by a test.
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
 - `.github/workflows/ci.yml` — Python and frontend gates, fixture-only, no vendor network.
+- `.github/workflows/market-capture.yml` — the Phase-5 live capture, triggered by bumping `.github/market-capture.request`. Deliberately the minimum needed to prove the source path; scheduling is Phase-7 work.
 - `web/` — Vite/React/TypeScript skeleton with a typed artifact loader.
-- `tests/` — 830 network-free Python tests (4 live-network deselected), including the Phase-3/4 suites in `tests/model/`; `web/tests/` adds 31.
+- `tests/` — 913 network-free Python tests (4 live-network deselected); `web/tests/` adds 39.
 - `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
 
 ## Phase-2 dataset — the validated build
@@ -170,6 +145,47 @@ Development folds 2020-2024, seed 20260819, 1000 bootstrap replicates. Every dec
 
 **The 2026 board looks right.** PPR/redraft-12 top eight: Bijan Robinson, Amon-Ra St. Brown, Ja'Marr Chase, Jahmyr Gibbs, De'Von Achane, Puka Nacua, Jaxon Smith-Njigba, CeeDee Lamb. Top 12 is 6 RB and 6 WR; the first QB is 15th (Josh Allen) and the first TE 19th (Trey McBride), which is the correct shape for a 1-QB league where those positions' VORP is compressed. Tier sizes 8/14/25/33/29/42/45/69/35. 34 rookies make the 300-deep board, the best at rank 72. Zero quantile-monotonicity violations, zero non-finite values.
 
+## Phase-5 results — market history, cohorts and the arbitrage baseline
+
+Every rule was frozen at `455f08b` before it had been run against live data.
+
+**The store.** Two real 2026 snapshots on the `market-data` branch:
+
+| snapshot | commit | contents |
+|---|---|---|
+| `2026-08-20T14-11-48Z` | `36303e6` | 13 cohorts, 3,293 normalized rows, 2,606-row player directory |
+| `2026-08-20T14-38-44Z` | `57ee0c1` | 16 cohorts, 4,110 normalized rows |
+| `status/sleeper/2026/2026-08-20T14-12-17Z` | `36303e6` | 12,240 normalized status rows |
+
+`validate-market-history` re-hashes all 35 files clean. Roughly 590 KB per study capture; a production capture (three cohorts) is far smaller.
+
+**The cohort measurement** (`docs/market-cohorts/2026-08-20/`, reproducible offline from the retained snapshot). Aggregate volume has barely moved since Phase 0: 426 drafts against 410. Exact scoring × league-size intersections are still thin or empty, so ADR-012 stands. Two things the measurement found that Phase 0 could not:
+
+- **`IS_MOCK=0` is inert** — 426 drafts, byte-identical to unfiltered. No mocks in the aggregate.
+- **`IS_KEEPER=N` returns 125 drafts, and the other 301 are dynasty rookie drafts.** 2026 rookies price three to five times earlier in the aggregate than in the keeper-free cohort while established veterans do not move at all. Ty Simpson 35.6 → 162.3; Emmett Johnson 50.4 → 193.1; Bijan Robinson 2.5 → 2.6. In a dynasty rookie draft only rookies are selectable, so a rookie's `averagePick` there is a pick number in a rookie-only draft.
+
+That produced ADR-045 and `phase5_cohort_v2`: a redraft board may only be priced by a keeper-free cohort. **No bound moved.** Every keeper-free cohort then fails `min_total_drafts` (125 and 115 against 300), so the rule falls through to its documented last resort and flags the result.
+
+**Identity coverage depends on the population counted**: ~87% over the whole priced payload, **98.2–98.5%** over the QB/RB/WR/TE rows the board is made of. MFL also prices kickers, team defences and IDP. The rule counts the core positions its clauses are written about (ADR-039 clarification).
+
+**Per-player sample is the statistic that matters.** Medians over the priced top-150: unfiltered 141, `IS_PPR=1` 129, `IS_KEEPER=N` **105**, `FCOUNT=12` 62, `FCOUNT=14` 7. That `no-keeper` scores 105 on the direct measure while failing a cohort-level bar of 300 is the open question ADR-045 records and deliberately does not answer.
+
+**The 2026 arbitrage board.** 2,124 rows across nine preset blocks, `a0_rank_gap_v1`, built from snapshot `2026-08-20T14-38-44Z`. Confidence: 2,124 `low`, all for the same recorded reason. Trend: null on every row — the store holds two snapshots against a requirement of three observation days spanning three days. 42 top-150 board players carry no price and are excluded rather than filled in.
+
+PPR/redraft-12, the biggest signals, and why they are believable:
+
+| | player | fair rank | ADP | gap | score |
+|---|---|---:|---:|---:|---:|
+| bargain | Amon-Ra St. Brown | 2 | 10.5 | +8.5 | 99.8 |
+| bargain | De'Von Achane | 4 | 18.5 | +14.5 | 99.0 |
+| premium | Joe Burrow | 234 | 28.1 | −205.9 | 0.2 |
+| premium | Jayden Daniels | 267 | 34.5 | −232.5 | 0.6 |
+| premium | Christian McCaffrey | 43 | 12.9 | −30.1 | 1.9 |
+
+The quarterbacks are the known 1-QB-league VORP compression from Phase 4, not a defect: the model ranks them where their league-relative value sits and the market takes them where positional scarcity feels. McCaffrey is `Questionable/Undisclosed` in the status artifact — which is exactly the join Phase 6 exists to render.
+
+**Player status.** 315 rows for the published board, 309 matched through `sleeper_id`, one failed the `gsis_id` cross-check closed. 61 players carry an `injury_status`, 13 carry `injury_notes`. `injury_start_date`, `practice_participation` and `practice_description` are published by Sleeper as keys with null values across the whole preseason payload; they are normalized anyway because Sleeper declares them and they populate in season.
+
 ## Confirmed decisions
 
 - Static GitHub Pages runtime.
@@ -204,6 +220,14 @@ Development folds 2020-2024, seed 20260819, 1000 bootstrap replicates. Every dec
 - **Tiers come from the dynamic-programming alternative at penalty 1.0, and the stability gate fails** on boundary agreement; they ship with the failure attached (ADR-035).
 - **The sealed 2025 holdout was evaluated once, at `2f0e725`, and passed** (ADR-036). It is spent.
 - **`intrinsic-cb-hurdle-v1` is the production artifact**, trained through 2025, committed, digest-verified; a 2026 build uses `min(as_of, anchor)` and never loads target-season statistics (ADR-037).
+- **Point-in-time captures live on the dedicated long-lived `market-data` branch**, immutable and timestamp-keyed, fail-closed on a differing rewrite (ADR-038).
+- **The cohort sufficiency rule and its selection policy were frozen before their measurement** (ADR-039), and the measured population is core positions only.
+- **A0 is the arbitrage baseline**: `rank_gap = market_adp - fair_rank`, `regional_value_gap = ln(market_adp / fair_rank)`, score = within-preset midpoint percentile, no reliability multiplier (ADR-040).
+- **`confidence` is market-data quality, not a probability**, and dispersion is described rather than scored (ADR-041).
+- **Trend is a trailing 7-day negated OLS slope over our own snapshots**, null until three observation days spanning three days exist (ADR-042).
+- **Current player status is a separate artifact, keyed once per player, and is annotation only** (ADR-043).
+- **Richer historical injury features are a 2027 refresh candidate**; the 2025 holdout is spent, so there is nothing to promote them against (ADR-044).
+- **A redraft board may only be priced by a keeper-free cohort** (`phase5_cohort_v2`, ADR-045). No bound moved; the resulting insufficiency is published.
 - Source verification runs on a GitHub runner, not in an egress-restricted sandbox (ADR-009).
 
 ## Verified source facts a later phase should not re-derive
@@ -275,17 +299,37 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **The Phase-3 harness reproduces exactly.** `evaluate-intrinsic` was re-run at Phase 4 and diffed against the committed report: identical on every number, decision and check, with only the timestamped `experiment_id` differing. Determinism here is real, not aspirational.
 - **Model cards are generated, like the feature dictionary.** `ffdraft model-card` reads the committed experiment reports and the artifact. A number in a card that no command produces is a number that can drift.
 
+## Phase-5 facts a later phase should not re-derive
+
+- **The firewall is a test, not a habit.** `tests/contract/test_architecture_boundary.py` walks the import graph — function-local imports included — from every intrinsic module and fails on any path to market data. It found a real edge on its first run. If a new module needs the append-only store, import `ffdraft.retention`, not `ffdraft.market`.
+- **A quote belongs to a cohort, not a preset.** `market_quote` 2.0 records `cohort_id`; exactness is a per-preset verdict the selection rule reaches later. Do not reintroduce a preset column on a quote row.
+- **The analysis is offline by construction.** Only `snapshot-market` and `capture-status` touch a vendor. Cohort measurement, arbitrage and the cards all read retained bytes, which is why a session behind an egress policy can still build and validate the whole product, and why every report can be regenerated and diffed.
+- **`build_metadata.json` is merged, never rewritten.** An arbitrage build that overwrote it would erase the Phase-4 tier-stability warning. A test asserts the warning survives.
+- **`source_as_of_utc` is null for MFL everywhere, forever.** Its response `timestamp` is generation time. It is retained as `response_timestamp` vendor metadata and a semantic check fails the build if the field is ever populated.
+- **Two snapshots on the same day are two observations but one observation day.** That is what stops a "7-day trend" from silently becoming a 6-hour one.
+- **The status build goes through the frame contract, not schema inference.** A 12,000-row Sleeper capture is mostly nulls; Polars infers from the first rows, so the first injury note several thousand rows in used to kill the build.
+- **An empty *cohort* is a finding; an empty *capture* is an outage.** The adapter's `source.too_few_records` is downgraded per cohort and re-raised at capture level, because a study that refused to record a collapsed cohort could not prove the collapse.
+- **`no-keeper` and `no-mock-no-keeper` are the same cohort on this data**, because `IS_MOCK=0` does nothing. The fallback tie-break picks the latter; it is an arbitrary but deterministic choice between identical populations.
+
 ## Open questions requiring evidence
 
 - **How to make tier boundaries meet a stability bar, or how to stop pretending they are lines.** The measurement says a 300-deep board supports about four reproducible cut sites. Two candidate remedies, both new decisions needing their own rule version and evidence: let the undifferentiated tail be one wide tier by re-specifying `max_largest_tier_share`, or keep the segmentation and present membership with a boundary-confidence band instead of a hard edge. **Do not simply lower the threshold** (ADR-035).
 - **How to re-specify the Monte Carlo convergence rule.** Its tier clause is stricter than the tier stability gate it was meant to protect and is decided partly by penalties the tier rule may never select. A revision should measure the tier clause on the promoted configuration only, and set its bar consistently with the gate (ADR-034).
 - **Whether correlated player draws are worth building.** V1 samples every player independently, so it cannot express that a quarterback's collapse takes his receivers with him. That is the largest structural simplification in the simulation and it was never measured.
+- **Whether `min_total_drafts` is the right instrument for a filtered cohort.** It is the only clause any format-pure or preset-specific cohort fails, and filtering shrinks the cohort-level count structurally while leaving per-player evidence intact — `no-keeper` carries 125 drafts but a median of 105 drafts per top-150 player, against a bar of 25, with the best top-150 coverage of any cohort measured. Re-specifying it needs its own rule version and its own evidence, and must not be done in the same breath as reading the result it would change (ADR-045).
+- **Whether the fallback should prefer specificity when candidates are close.** With nothing sufficient, "widest" hands the PPR presets a 125-draft all-scoring cohort over a 115-draft PPR-only one. Answering this after seeing which cohort it picks is the trap ADR-045 avoids.
+- **Whether a learned arbitrage model is ever worth it.** Not before three draft seasons of our own snapshots (ADR-010), which is 2029 at the earliest. Until then, snapshot retention is still the highest-value arbitrage work in the repository.
 - **Repository visibility** — deferred to Phase 7 by ADR-016.
 - **Market cohort mix closer to peak draft season** — re-measure at the start of Phase 5 (ADR-012 amendment).
 - **Whether `load_ftn_charting` earns its CC-BY-SA obligation** — still open, and still not needed.
 
 ## Known risks (non-blocking)
 
+- **Every arbitrage row reads `low` confidence**, because no keeper-free cohort clears the frozen cohort-level draft-count bar. The label is correct under the rule and pessimistic against the per-player evidence, and it makes `confidence` non-discriminating for Phase 6. The rubric returns the clause that fired, so the UI can explain it rather than just show it.
+- **`wide_market_range` fires on 1,914 of 2,124 rows.** True and useless at this sample size: with ~125 drafts the min-to-max span really does exceed five rounds for most players. Phase 6 should render `market_adp_low`/`market_adp_high` directly and treat the flag as a footnote.
+- **The 2026 board is priced by 125 real redraft drafts** taken on one afternoon in late August. It will get better on its own as the season matures and the store fills; nothing about the code needs to change for that.
+- **STD and HALF are served by an all-scoring cohort.** The dilution is about ten non-PPR drafts out of 125 and is stated in the cohort report's composition caveat, but a standard-scoring reader is looking at a board whose price is set mostly by PPR drafters.
+- **Sleeper publishes `practice_participation`, `practice_description` and `injury_start_date` as keys with null values in the preseason.** They are normalized and will populate in season; a Phase-6 UI must not assume they are present.
 - **Tiers are published having failed their stability gate.** `build_metadata.json` carries a `current.tier_stability` warning and the cards say so, but nothing stops a consumer from rendering a hard line anyway. The Phase-6 frontend is where this becomes a user-visible risk rather than a documented one.
 - **Residual Monte Carlo error is real and unmeasured beyond the ladder.** At 10,000 draws two seeds differ by about 0.3 fantasy points on a player's expected VORP and under 1.5 rank positions in the top 150. Tier boundaries move more than that, which is part of why boundary agreement is low. A build is deterministic for a fixed seed; it is not seed-invariant.
 - **CB's pooled P25-P75 coverage is 0.614 against a nominal 0.50**, driven by zero-game rows: among players with at least one game it is 0.456, among zero-game rows 0.836, and 18.4% of rows have `q25 == q75 == 0`. The hurdle is right that many players score nothing; the inner interval is consequently wide where it should be degenerate. Recorded as an ADR-033 limitation rather than patched.
@@ -307,20 +351,25 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **Regenerating the golden artifacts is a deliberate act**, not a fix for a red test: `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`. Read the diff first.
 - **`docs/FEATURE_DICTIONARY.md` is generated.** Regenerate from `uv run ffdraft feature-dictionary` after changing `ffdraft.features.dictionary`; a test fails if it is stale.
 - **`data/historical/` is gitignored.** Rebuild it rather than looking for it in a clone.
+- **The `market-data` branch is not in this working tree.** Clone it beside the repository (`git clone --branch market-data ...`) and pass `--store` to the Phase-5 commands. It shares no history with `main`, is never merged, and must be excluded from any future release archive or Pages publish.
+- **`docs/market-cohorts/` is committed evidence**, like `docs/source-probes/` and `docs/experiments/`. Regenerate with `ffdraft measure-market-cohorts` and read the diff.
+- **`models/cards/arbitrage-method-a0.*` is generated.** Regenerate with `ffdraft arbitrage-card` after any rebuild; a number in a card that no command produces is a number that can drift.
 - **The Phase-3 experiment reports are committed; the row-level predictions are not.** `docs/experiments/phase3-intrinsic-baselines/{experiment.json,experiment.md}` are the evidence behind ADR-028 and ADR-029, in the same spirit as `docs/source-probes/`. `predictions.parquet` is written only with `--write-predictions` and is gitignored.
 
 ## Known blockers
 
-None blocking Phase 5. Two Phase-4 exit criteria are **open, not blocking**: the Monte Carlo convergence rule fell through to its fallback (ADR-034) and the tier stability gate failed on boundary agreement (ADR-035). Both are published limitations of a model that otherwise passed every gate including the sealed holdout, and neither prevents market snapshots or an arbitrage baseline from being built. Neither should be closed by editing a threshold.
+None blocking Phase 6. Three Phase-5 findings are **open, not blocking**: the cohort volume clause (ADR-045), the non-discriminating `wide_market_range` flag (ADR-041), and the two Phase-4 gates that were already open (ADR-034, ADR-035). All four are published limitations of a system that otherwise passes every gate, and none should be closed by editing a threshold.
 
 ## Next action
 
-Begin Phase 5 (`docs/IMPLEMENTATION_PLAN.md`). The concrete first step, and the one Phase 4 deliberately did **not** take:
+Begin Phase 6 (`docs/IMPLEMENTATION_PLAN.md`). The concrete first step, following ADR-008's build order — tables before bespoke charts, because a table is the truth surface a chart is checked against:
 
-**Take the first point-in-time MFL ADP snapshot and stand up the append-only retention strategy** — `https://api.myfantasyleague.com/{season}/export?TYPE=adp&JSON=1`, no auth, recording source id, retrieval timestamp and the response `timestamp` separately (it is generation time, not data-as-of), plus sample size where available. `PRD.md` section 15 recommends a dedicated `data` branch or another append-only store, and that decision needs an ADR before the first snapshot is written, because a retention scheme chosen after a month of snapshots exist is a migration rather than a decision.
+**Build the typed Tier table against the real `web/public/data/` artifacts, with URL query state for the scoring and league preset.** The loader, the contracts and the version checks already exist in `web/src/data/`; what does not exist is anything that renders a row. Start there, get the preset switch and the export correct, and only then draw the Tier Board.
 
-Then, in order: re-measure the market cohort mix now that it is closer to peak draft season (the ADR-012 amendment requires this at the start of Phase 5); build the deterministic fair-rank-vs-ADP arbitrage baseline and keep it as a permanent challenger; and only then consider a learned arbitrage model, whose target must be realized value *relative to market cost* and which may not be called ML until the historical market coverage and out-of-time promotion gate pass.
+Three things Phase 6 must get right, none of which are the frontend's own idea:
 
-**What Phase 5 must not do.** Market or expert data may never reach the intrinsic model — not as a feature, not as a training target, not as a calibration input. Arbitrage may consume intrinsic outputs; the reverse is a design bug (`AGENTS.md` section 1). Historical arbitrage training may only use out-of-fold intrinsic predictions for the same season, and `data/phase4/oof_predictions.parquet` is regenerable with `ffdraft evaluate-distribution` for exactly that purpose.
+1. **A tier is a group, not a line** (ADR-035). Boundary agreement measured 0.239 against a 0.500 bar while membership ARI measured 0.865, and the board's deep tail genuinely is one undifferentiated group. Any hard edge drawn between tiers overstates a quantity that was measured as unidentified. `build_metadata.json` carries the warning; the UI has to act on it.
+2. **An injury badge is not a model input** (ADR-043). `player_status.json` joins by `player_id` and describes *today*; the projection beside it has never seen it. The UI must not imply the model priced the injury in.
+3. **`confidence` is data quality, not probability** (ADR-041), and at launch every arbitrage row reads `low` for one recorded reason. Show the reason, not just the label — otherwise the field reads as "the model is unsure", which is the opposite of what it says.
 
-Rebuild the dataset first — `uv run ffdraft build-historical --last-season 2025` — because `data/historical/` is not in the repository. The production model artifact **is** committed, so inference needs no retrain.
+Data is ready and reproducible: `uv run ffdraft build-current --store ../market-data` then `build-arbitrage --store ../market-data`, both from a clone of the `market-data` branch. Rebuild `data/historical/` only if a model question comes up; Phase 6 needs none of it.

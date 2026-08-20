@@ -554,6 +554,37 @@ If the board requires more segments than comfortable letter labels, maintain sem
 > presentation: nothing downstream computes with a letter, and a letter carries no claim
 > beyond "the segmentation put a break above this group".
 
+## 15.1 Phase-5 status: A0 only, and what it is
+
+Sections 16 and 17 describe the **learned** arbitrage design. None of it is built, and ADR-010 says why on measured source evidence: MyFantasyLeague's historical export is a season-long aggregate recomputed at request time, so a historical "market cost" embeds drafts held after the season's outcomes were partly known. There is no honest realized-surplus label to fit against, and there will not be one until at least three draft seasons of this project's own point-in-time snapshots exist.
+
+What ships is **A0**, frozen in `ffdraft.arbitrage` (ADR-040):
+
+```text
+rank_gap           = market_adp - fair_rank            # positive = bargain
+regional_value_gap = ln(market_adp / fair_rank)        # same sign, region-normalized
+arbitrage_score    = midpoint percentile of regional_value_gap, within one preset block
+```
+
+Fair rank is the promoted median simulated VORP (ADR-034). **Tier ordinals and tier edges are not inputs**: the tier stability gate failed (ADR-035) and fair rank did not, so the failed quantity does not propagate into the arbitrage score, and tier instability is deliberately *not* turned into an arbitrage confidence penalty.
+
+`expected_surplus_vorp` and `p_positive_surplus` are null on every row and are not approximated. `confidence` is a data-quality rubric, not a probability (ADR-041). `market_trend` is a trailing seven-day slope over retained snapshots and is null until three observation days spanning three days exist (ADR-042).
+
+## 15.2 Historical injury features: a 2027 refresh candidate, not a Phase-5 addition
+
+Integrating Sleeper's current injury data (ADR-043) makes an adjacent idea tempting: nflverse publishes historical weekly injury reports, so the intrinsic model could learn from prior-season injury history. It probably should, eventually. It must not now.
+
+Adding the family would require a new feature-set version, a full historical feature rebuild, a new rolling evaluation, a new candidate comparison — and a **new final holdout**. The 2025 holdout was evaluated once and is spent (ADR-036). There is no untouched season left to promote a new feature set against in 2026, and promoting one without a holdout would abandon the discipline that makes every other number in this project mean something.
+
+A future refresh may investigate, only where each can be reconstructed leakage-safely against the draft anchor and the licensing and semantics still hold:
+
+- prior-season injury-report weeks;
+- repeated limited/DNP practice patterns;
+- prior-season games missed by injury category;
+- recurring body-part or injury-category signals.
+
+`intrinsic_core_v1` is unchanged, no `intrinsic_core_v2` exists, and `intrinsic-cb-hurdle-v1` was not retrained. **The current Sleeper annotations are not a substitute for model features**: they describe today, the model has never seen them, and a reader looking at an injury badge beside a fair rank is looking at two independent things (ADR-044).
+
 ## 16. Arbitrage target construction
 
 ### 16.1 Market cost curve

@@ -2,144 +2,192 @@
   "assignments": [
     {
       "approximate": true,
-      "cohort_id": "unfiltered",
+      "cohort_id": "no-mock-no-keeper",
       "exact": false,
-      "failed_clauses": [],
-      "filters": {},
-      "league_size": 10,
-      "quality_flags": [
-        "cohort_approximate"
+      "failed_clauses": [
+        "total_drafts 125 < 300"
       ],
-      "reason": "widest sufficient candidate",
-      "scoring_preset": "HALF",
-      "source_format_detail": "no filters (approximate cohort)",
-      "sufficient": true
-    },
-    {
-      "approximate": true,
-      "cohort_id": "unfiltered",
-      "exact": false,
-      "failed_clauses": [],
-      "filters": {},
-      "league_size": 12,
-      "quality_flags": [
-        "cohort_approximate"
-      ],
-      "reason": "widest sufficient candidate",
-      "scoring_preset": "HALF",
-      "source_format_detail": "no filters (approximate cohort)",
-      "sufficient": true
-    },
-    {
-      "approximate": true,
-      "cohort_id": "unfiltered",
-      "exact": false,
-      "failed_clauses": [],
-      "filters": {},
-      "league_size": 14,
-      "quality_flags": [
-        "cohort_approximate"
-      ],
-      "reason": "widest sufficient candidate",
-      "scoring_preset": "HALF",
-      "source_format_detail": "no filters (approximate cohort)",
-      "sufficient": true
-    },
-    {
-      "approximate": true,
-      "cohort_id": "ppr",
-      "exact": false,
-      "failed_clauses": [],
       "filters": {
-        "IS_PPR": "1"
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
       },
       "league_size": 10,
       "quality_flags": [
-        "cohort_approximate"
+        "cohort_approximate",
+        "cohort_insufficient"
       ],
-      "reason": "most specific sufficient candidate",
-      "scoring_preset": "PPR",
-      "source_format_detail": "IS_PPR=1 (approximate cohort)",
-      "sufficient": true
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "HALF",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
     },
     {
       "approximate": true,
-      "cohort_id": "ppr",
+      "cohort_id": "no-mock-no-keeper",
       "exact": false,
-      "failed_clauses": [],
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
       "filters": {
-        "IS_PPR": "1"
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
       },
       "league_size": 12,
       "quality_flags": [
-        "cohort_approximate"
+        "cohort_approximate",
+        "cohort_insufficient"
       ],
-      "reason": "most specific sufficient candidate",
-      "scoring_preset": "PPR",
-      "source_format_detail": "IS_PPR=1 (approximate cohort)",
-      "sufficient": true
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "HALF",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
     },
     {
       "approximate": true,
-      "cohort_id": "ppr",
+      "cohort_id": "no-mock-no-keeper",
       "exact": false,
-      "failed_clauses": [],
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
       "filters": {
-        "IS_PPR": "1"
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
       },
       "league_size": 14,
       "quality_flags": [
-        "cohort_approximate"
+        "cohort_approximate",
+        "cohort_insufficient"
       ],
-      "reason": "most specific sufficient candidate",
-      "scoring_preset": "PPR",
-      "source_format_detail": "IS_PPR=1 (approximate cohort)",
-      "sufficient": true
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "HALF",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
     },
     {
       "approximate": true,
-      "cohort_id": "unfiltered",
+      "cohort_id": "no-mock-no-keeper",
       "exact": false,
-      "failed_clauses": [],
-      "filters": {},
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
+      },
       "league_size": 10,
       "quality_flags": [
-        "cohort_approximate"
+        "cohort_approximate",
+        "cohort_insufficient"
       ],
-      "reason": "widest sufficient candidate",
-      "scoring_preset": "STD",
-      "source_format_detail": "no filters (approximate cohort)",
-      "sufficient": true
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "PPR",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
     },
     {
       "approximate": true,
-      "cohort_id": "unfiltered",
+      "cohort_id": "no-mock-no-keeper",
       "exact": false,
-      "failed_clauses": [],
-      "filters": {},
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
+      },
       "league_size": 12,
       "quality_flags": [
-        "cohort_approximate"
+        "cohort_approximate",
+        "cohort_insufficient"
       ],
-      "reason": "widest sufficient candidate",
-      "scoring_preset": "STD",
-      "source_format_detail": "no filters (approximate cohort)",
-      "sufficient": true
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "PPR",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
     },
     {
       "approximate": true,
-      "cohort_id": "unfiltered",
+      "cohort_id": "no-mock-no-keeper",
       "exact": false,
-      "failed_clauses": [],
-      "filters": {},
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
+      },
       "league_size": 14,
       "quality_flags": [
-        "cohort_approximate"
+        "cohort_approximate",
+        "cohort_insufficient"
       ],
-      "reason": "widest sufficient candidate",
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "PPR",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
+    },
+    {
+      "approximate": true,
+      "cohort_id": "no-mock-no-keeper",
+      "exact": false,
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
+      },
+      "league_size": 10,
+      "quality_flags": [
+        "cohort_approximate",
+        "cohort_insufficient"
+      ],
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
       "scoring_preset": "STD",
-      "source_format_detail": "no filters (approximate cohort)",
-      "sufficient": true
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
+    },
+    {
+      "approximate": true,
+      "cohort_id": "no-mock-no-keeper",
+      "exact": false,
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
+      },
+      "league_size": 12,
+      "quality_flags": [
+        "cohort_approximate",
+        "cohort_insufficient"
+      ],
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "STD",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
+    },
+    {
+      "approximate": true,
+      "cohort_id": "no-mock-no-keeper",
+      "exact": false,
+      "failed_clauses": [
+        "total_drafts 125 < 300"
+      ],
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
+      },
+      "league_size": 14,
+      "quality_flags": [
+        "cohort_approximate",
+        "cohort_insufficient"
+      ],
+      "reason": "no candidate met the sufficiency rule; widest candidate used and flagged",
+      "scoring_preset": "STD",
+      "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+      "sufficient": false
     }
   ],
   "board": {
@@ -260,6 +308,76 @@
           "median_top150_sample_size 7.0 < 25.0"
         ],
         "sufficient": false
+      }
+    },
+    {
+      "adp_max": 352.57,
+      "adp_min": 2.46,
+      "ambiguous_players": 0,
+      "cohort_id": "no-keeper",
+      "filters": {
+        "IS_KEEPER": "N"
+      },
+      "identity_coverage": 0.9725,
+      "max_pick_available": 291,
+      "median_top150_sample_size": 105.0,
+      "min_pick_available": 291,
+      "non_core_rows": 21,
+      "non_player_entities": 23,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 291,
+      "resolvable_players": 291,
+      "resolved_players": 283,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.9667,
+      "total_drafts": 125,
+      "total_picks": 407,
+      "total_rows": 353,
+      "unclassified_rows": 18,
+      "verdict": {
+        "cohort_id": "no-keeper",
+        "failed_clauses": [
+          "total_drafts 125 < 300"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 202.31,
+      "adp_min": 2.28,
+      "ambiguous_players": 0,
+      "cohort_id": "no-mock",
+      "filters": {
+        "IS_MOCK": "0"
+      },
+      "identity_coverage": 0.9823,
+      "max_pick_available": 283,
+      "median_top150_sample_size": 141.0,
+      "min_pick_available": 283,
+      "non_core_rows": 19,
+      "non_player_entities": 18,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 283,
+      "resolvable_players": 283,
+      "resolved_players": 278,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.96,
+      "total_drafts": 426,
+      "total_picks": 612,
+      "total_rows": 360,
+      "unclassified_rows": 40,
+      "verdict": {
+        "cohort_id": "no-mock",
+        "failed_clauses": [],
+        "sufficient": true
       }
     },
     {
@@ -444,6 +562,43 @@
           "top100_board_coverage 0.880 < 0.95",
           "top150_board_coverage 0.780 < 0.9",
           "median_top150_sample_size 6.0 < 25.0"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 370.17,
+      "adp_min": 2.52,
+      "ambiguous_players": 0,
+      "cohort_id": "ppr-no-keeper",
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_PPR": "1"
+      },
+      "identity_coverage": 0.9733,
+      "max_pick_available": 300,
+      "median_top150_sample_size": 97.0,
+      "min_pick_available": 300,
+      "non_core_rows": 21,
+      "non_player_entities": 25,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 300,
+      "resolvable_players": 300,
+      "resolved_players": 292,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.9667,
+      "total_drafts": 115,
+      "total_picks": 392,
+      "total_rows": 358,
+      "unclassified_rows": 12,
+      "verdict": {
+        "cohort_id": "ppr-no-keeper",
+        "failed_clauses": [
+          "total_drafts 115 < 300"
         ],
         "sufficient": false
       }
@@ -645,8 +800,8 @@
       }
     }
   ],
-  "generated_at_utc": "2026-08-20T14:34:51Z",
-  "git_sha": "61e1e74",
+  "generated_at_utc": "2026-08-20T14:43:06Z",
+  "git_sha": "239db00",
   "report_version": "1.0",
   "rule": {
     "min_identity_coverage": 0.95,
@@ -655,11 +810,11 @@
     "min_top100_board_coverage": 0.95,
     "min_top150_board_coverage": 0.9,
     "min_total_drafts": 300,
-    "rule_version": "phase5_cohort_v1"
+    "rule_version": "phase5_cohort_v2"
   },
-  "rule_version": "phase5_cohort_v1",
+  "rule_version": "phase5_cohort_v2",
   "season": 2026,
-  "snapshot_at_utc": "2026-08-20T14:11:48Z",
-  "snapshot_key": "2026-08-20T14-11-48Z",
+  "snapshot_at_utc": "2026-08-20T14:38:44Z",
+  "snapshot_key": "2026-08-20T14-38-44Z",
   "source_id": "myfantasyleague_adp"
 }

@@ -112,6 +112,20 @@ def build_card(
                 "MFL exposes IS_PPR as a boolean and publishes no half-PPR filter, so a "
                 "HALF assignment is never exact (ADR-039)"
             ),
+            "redraft_note": (
+                "A cohort may price this board only if its filters exclude keeper and "
+                "dynasty drafts. The 2026 measurement found rookies priced three to five "
+                "times earlier in the aggregate than in IS_KEEPER=N while veterans did not "
+                "move: dynasty rookie drafts, where a rookie's average pick is a pick "
+                "number in a rookie-only draft (ADR-045)"
+            ),
+            "insufficient_note": (
+                "Filtering to redraft leagues shrinks the cohort-level draft count, so no "
+                "qualifying cohort clears min_total_drafts. The rule falls through to its "
+                "documented last resort - widest qualifying candidate, flagged - which puts "
+                "cohort_insufficient and therefore low confidence on every row. Published "
+                "rather than repaired (ADR-045)"
+            ),
         },
         "confidence": CONFIDENCE_RUBRIC.to_dict(),
         "trend": {
@@ -142,8 +156,17 @@ def build_card(
             "Cohorts are approximate wherever the source cannot express a preset; HALF always is.",
             "adp_low/adp_high are extreme order statistics that widen with sample size, so "
             "they describe dispersion but do not move confidence (ADR-041).",
+            "wide_market_range fires on most rows at this sample size, which makes it a "
+            "poor discriminator: with roughly 125 drafts the min-to-max span genuinely does "
+            "exceed five rounds for most players. The flag is true and unhelpful; a reader "
+            "should use market_adp_low/market_adp_high directly, which every row carries.",
             "market_trend is null until at least three observation days spanning three days "
             "exist in the retained store (ADR-042).",
+            "Every row carries cohort_insufficient and therefore low confidence: no "
+            "keeper-free cohort clears the frozen cohort-level draft-count bar. That bar "
+            "may be the wrong instrument for a filtered cohort - the same cohort carries a "
+            "median of 105 drafts per top-150 player - but re-specifying it is a separate "
+            "decision with its own evidence (ADR-045).",
             "The intrinsic fair rank this compares against carries its own published "
             "limitations: the Monte Carlo convergence rule fell through to its fallback "
             "(ADR-034) and the tier stability gate failed (ADR-035). A0 uses fair rank, not "
@@ -242,8 +265,9 @@ def card_markdown(card: dict[str, Any]) -> str:
         "",
         "## Cohort selection",
         "",
-        f"Rule `{cohort['rule_version']}`, frozen before the measurement that applied it. "
-        f"Measured against retained snapshot `{cohort['measured_from_snapshot']}`.",
+        f"Rule `{cohort['rule_version']}` (ADR-039, ADR-045), measured against retained "
+        f"snapshot `{cohort['measured_from_snapshot']}`. Every bound was frozen before any "
+        "measurement existed; v2 adds one qualifying condition and moves no bound.",
         "",
         "| scoring | teams | cohort | exact | sufficient |",
         "|---|---:|---|---|---|",
@@ -257,6 +281,10 @@ def card_markdown(card: dict[str, Any]) -> str:
     lines += [
         "",
         cohort["half_ppr_note"] + ".",
+        "",
+        cohort["redraft_note"] + ".",
+        "",
+        "**Why every row reads `cohort_insufficient`.** " + cohort["insufficient_note"] + ".",
         "",
         "## Confidence",
         "",

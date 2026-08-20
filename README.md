@@ -47,9 +47,11 @@ The intended production architecture is static and GitHub-native: Python data/mo
 
 ## Repository status
 
-Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). Both are published as limitations rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
+Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). **Phase 5 (market snapshots and arbitrage) completed 2026-08-20.** Every shortfall is published as a limitation rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
 
-There is a model now. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 built the time-correct data asset — 11,604 leakage-audited player-seasons across 2014-2025 with independently computed STD/HALF/PPR labels and market-independent realized VORP; Phase 3 built the rolling-origin evaluation harness and the baselines worth beating; Phase 4 turned that into a production intrinsic model, a deterministic Monte Carlo simulation of league-relative value, and natural contiguous tiers. The model passed its single sealed-holdout evaluation on 2025; the tiers are honest about being groups rather than hard lines. There is still no arbitrage board and no deployed site.
+There is a model and an arbitrage board now. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 built the time-correct data asset — 11,604 leakage-audited player-seasons across 2014-2025 with independently computed STD/HALF/PPR labels and market-independent realized VORP; Phase 3 built the rolling-origin evaluation harness and the baselines worth beating; Phase 4 turned that into a production intrinsic model, a deterministic Monte Carlo simulation of league-relative value, and natural contiguous tiers. The model passed its single sealed-holdout evaluation on 2025; the tiers are honest about being groups rather than hard lines.
+
+Phase 5 added the market half without letting it near the model. Point-in-time ADP snapshots are retained append-only on a dedicated `market-data` branch, because MyFantasyLeague's historical export is a season aggregate recomputed at request time and a price we do not capture today can never be reconstructed. The arbitrage board is a transparent fair-rank-versus-ADP baseline and says so; no learned model is claimed and no surplus or probability is invented. Current injury and roster status ships as a separate artifact that annotates a row and can never move one. The cohort study found dynasty rookie drafts inside the ADP aggregate — rookies priced three to five times earlier than in real redraft leagues, while veterans did not move — so a redraft board is now priced only by keeper-free cohorts. There is still no deployed site.
 
 | Path | Purpose |
 |---|---|
@@ -62,6 +64,10 @@ There is a model now. Phase 1 built the skeleton that makes bad joins and schema
 | `src/ffdraft/modeling/` | The evaluation harness, the frozen Phase-4 decision rules, calibration, the candidates, production model training/serving, and the generated cards |
 | `src/ffdraft/simulation/` | The one starter/FLEX allocation, the deterministic quantile sampler, and the simulated-VORP draw loop |
 | `src/ffdraft/tiers/` | Contiguous natural tier segmentation, its documented alternative, and the stability bootstrap |
+| `src/ffdraft/market/` | MFL cohorts and the frozen sufficiency rule, point-in-time capture, snapshot manifests, cohort measurement, market trend, the current price layer |
+| `src/ffdraft/retention/` | The append-only content-addressed capture store, shared by market and status so neither imports the other |
+| `src/ffdraft/arbitrage/` | The frozen A0 baseline, the data-quality confidence rubric, the board build, the generated method card |
+| `src/ffdraft/status/` | The Sleeper capture and the annotation-only `player_status` artifact |
 | `models/` | Versioned production model artifacts (text boosters plus JSON metadata, no pickle) and the generated model card and tier-method report |
 | `docs/experiments/` | The committed evidence behind every promotion decision |
 | `tests/` | Network-free Python tests across unit / contract / integration / data-quality / leakage / model |
@@ -69,6 +75,8 @@ There is a model now. Phase 1 built the skeleton that makes bad joins and schema
 | `tests/fixtures/historical/` | Synthetic nflverse-shaped history spanning both depth eras |
 | `tests/fixtures/artifacts/` | Committed golden artifacts, also read by the frontend tests |
 | `.github/workflows/ci.yml` | Python and frontend gates; fixtures only, no vendor network |
+| `.github/workflows/market-capture.yml` | The live point-in-time capture, triggered by bumping `.github/market-capture.request` |
+| `docs/market-cohorts/` | The committed cohort measurement, reproducible offline from a retained snapshot |
 | `scripts/source_probe.py` | The Phase-0 evidence generator |
 | `scripts/capture_source_schemas.py` | Records upstream schemas for the Phase-2 loaders |
 
@@ -104,6 +112,16 @@ uv run ffdraft evaluate-distribution --git-sha "$(git rev-parse --short HEAD)"
 uv run ffdraft evaluate-simulation   --git-sha "$(git rev-parse --short HEAD)"
 uv run ffdraft evaluate-tiers        --git-sha "$(git rev-parse --short HEAD)"
 
+# The Phase-5 market path. Exactly two commands touch a vendor, and they run on a GitHub
+# runner (ADR-009) via .github/workflows/market-capture.yml. Everything else reads the
+# retained bytes, which is what makes the analysis reproducible and diffable.
+git clone --branch market-data <this repo> ../market-data
+uv run ffdraft validate-market-history ../market-data --season 2026
+uv run ffdraft measure-market-cohorts --store ../market-data
+uv run ffdraft build-current   --store ../market-data     # tiers, projections, player_status
+uv run ffdraft build-arbitrage --store ../market-data     # the A0 board
+uv run ffdraft arbitrage-card
+
 # Frontend
 npm ci
 npm run lint && npm run typecheck
@@ -111,7 +129,7 @@ npm run test -- --run
 npm run build
 ```
 
-Artifacts written to `web/public/data/` and the historical dataset in `data/historical/` are generated and gitignored; both are reproducible from code plus source releases, and the historical build writes a manifest of content hashes so a rebuild that disagrees is detectable. `ffdraft config-check` prints the loaded configuration and which MFL client secrets are present — never their values.
+Artifacts written to `web/public/data/` and the historical dataset in `data/historical/` are generated and gitignored; both are reproducible from code plus source releases, and the historical build writes a manifest of content hashes so a rebuild that disagrees is detectable. The `market-data` branch is *not* in this working tree — it shares no history with `main`, is never merged, and holds the retained captures the market path reads. `ffdraft config-check` prints the loaded configuration and which MFL client secrets are present — never their values.
 
 Data attribution: player/roster/depth-chart/stat data from **nflverse** (`nflreadpy`), expected fantasy points from **ffopportunity** (CC-BY-SA-4.0), market ADP from **MyFantasyLeague.com**, current player status from the **Sleeper** API (non-commercial use only).
 

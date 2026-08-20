@@ -332,6 +332,31 @@ Player database: `TYPE=players&DETAILS=1&JSON=1` → 2,600 records. **No `gsis_i
 - "our player database is only changed once a day, so your application should request that info no more than once a day" — cache the player export daily.
 - `robots.txt` on the API host disallows only `/fflnetdynamic*/` league directories, not `/{YEAR}/export`. `https://www.myfantasyleague.com/terms.html` does not exist (404); the developer page above is the operative statement.
 
+#### Phase-5 additions (measured 2026-08-20, from retained snapshots)
+
+The cohort mix was re-measured at the start of Phase 5, as the ADR-012 amendment required. It is reproducible offline: `ffdraft measure-market-cohorts` reads a retained snapshot rather than the network, so the report can be regenerated and diffed against the evidence commit. Full tables in `docs/market-cohorts/`.
+
+**Aggregate volume has barely moved** since 2026-08-17: 426 drafts unfiltered against 410, and 360 priced rows against 367. Exact scoring × league-size intersections remain thin or empty (`IS_PPR=0&FCOUNT=14` returns **zero** rows), so ADR-012's finding stands.
+
+**`IS_MOCK=0` is inert on this data.** It returns 426 drafts — byte-for-byte the unfiltered result. There are no mock drafts in the 2026 aggregate.
+
+**`IS_KEEPER=N` returns 125 drafts, and the other 301 are the problem.** 2026 rookies are priced three to five times earlier in the aggregate than in the keeper-free cohort, while established veterans do not move at all:
+
+| player | unfiltered | `IS_KEEPER=N` |
+|---|---:|---:|
+| Ty Simpson | 35.6 | 162.3 |
+| Emmett Johnson | 50.4 | 193.1 |
+| Chris Bell | 39.9 | 187.9 |
+| Eli Stowers | 28.2 | 131.6 |
+| Bijan Robinson | 2.5 | 2.6 |
+| Amon-Ra St. Brown | 9.8 | 10.5 |
+
+That is the signature of **dynasty rookie drafts** inside the aggregate: only rookies are selectable in one, so a rookie's `averagePick` there is a pick number in a rookie-only draft rather than a redraft ADP. A redraft board may therefore only be priced by an `IS_KEEPER=N` cohort (ADR-045).
+
+**Identity coverage depends on which population you count.** Over the whole priced payload it is ~87%; over the QB/RB/WR/TE rows the board is made of, it is **98.2–98.5%**. MFL also prices kickers, team defences and IDP, none of which this project models. The launch identity threshold is defined over model-eligible players (`docs/DATA_CONTRACTS.md` 12), so that is the population the cohort rule counts.
+
+**Per-player sample size is the statistic that matters.** Cohort-level `totalDrafts` can be inflated by drafts that touched a handful of players; `draftsSelectedIn` answers the direct question. Medians over the priced top-150: unfiltered 141, `IS_PPR=1` 129, `IS_KEEPER=N` **105**, `FCOUNT=12` 62, `FCOUNT=14` 7.
+
 ### 13.6 Sleeper — verified contract
 
 - `/v1/state/nfl` → season/week/season_type/season_start_date (see 13.4).
@@ -341,6 +366,10 @@ Player database: `TYPE=players&DETAILS=1&JSON=1` → 2,600 records. **No `gsis_i
 - `/v1/players/nfl/trending/add?lookback_hours=24&limit=25` → 25 `{player_id, count}` rows.
 - Published terms (quoted from `docs.sleeper.com`): "The Sleeper API is a read-only HTTP API that is free to use for non-commercial purposes… For commercial use of the Sleeper API, please reach out to us directly to discuss licensing. No API Token is necessary". Rate guidance: "stay under 1000 API calls per minute, otherwise, you risk being IP-blocked". Attribution: "Please give attribution to Sleeper you are using our trending data." `robots.txt` contains no active restrictions.
 - **This puts Sleeper inside the non-commercial boundary of `docs/SECURITY_LICENSE.md` section 10**, alongside FantasyCalc. Monetising the site requires re-clearing Sleeper, not just FantasyCalc.
+
+**Phase-5 observations (2026-08-20, live capture).** Of 315 players on the published 2026 board, **309 matched** through `sleeper_id` and one failed the `gsis_id` cross-check closed (Sleeper reported an id belonging to a different canonical player; that record carries no Sleeper annotation, and the player whose id was falsely claimed keeps his own). 61 board players carry an `injury_status` and 13 carry `injury_notes`.
+
+`injury_start_date`, `practice_participation` and `practice_description` are published as **keys with null values** across the whole preseason payload — the Phase-0 recorded schema shows the same (`dtype: NoneType`). The adapter normalizes all three because Sleeper declares them and they populate in season; a healthy player legitimately has none, so all three are nullable and are never fabricated (ADR-043).
 
 ### 13.7 Market → canonical identity is proven without name matching
 

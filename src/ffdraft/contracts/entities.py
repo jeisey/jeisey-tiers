@@ -164,6 +164,17 @@ class MarketCohort:
         return rendered or "no filters"
 
     @property
+    def excludes_keepers(self) -> bool:
+        """Whether this cohort's filters exclude keeper and dynasty drafts (ADR-045).
+
+        A dynasty *rookie* draft prices only rookies, so a rookie's "average pick" there is
+        a pick number in a rookie-only draft rather than a redraft ADP. A board this
+        project publishes is a redraft board (``season_mode: redraft``), so a cohort that
+        cannot say it excludes those drafts cannot price it.
+        """
+        return str(self.filters.get("IS_KEEPER", "")).upper() == "N"
+
+    @property
     def specificity(self) -> int:
         """How many axes this cohort constrains. Higher is more specific (ADR-039)."""
         return int(self.scoring_semantics is not None) + int(

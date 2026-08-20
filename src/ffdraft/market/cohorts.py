@@ -37,7 +37,14 @@ __all__ = [
 ]
 
 #: The frozen rule's version. A change to any bound below is a new version with its own ADR.
-COHORT_RULE_VERSION = "phase5_cohort_v1"
+#:
+#: v2 (ADR-045) adds one *qualifying* condition and moves no bound: a cohort may serve this
+#: project's board only if its filters exclude keeper and dynasty drafts. The v1 measurement
+#: showed 2026 rookies priced three to five times earlier in the aggregate than in
+#: ``IS_KEEPER=N`` while established veterans did not move at all - dynasty rookie drafts
+#: inside the aggregate, where a rookie's "average pick" is a pick number in a rookie-only
+#: draft. ``IS_MOCK=0`` returned exactly the unfiltered result, so mocks are not a factor.
+COHORT_RULE_VERSION = "phase5_cohort_v2"
 
 #: Flag emitted when a preset is served by a cohort that failed the sufficiency rule.
 COHORT_INSUFFICIENT = "cohort_insufficient"
@@ -384,19 +391,30 @@ def _candidates_for(
     scoring_preset: str,
     league_size: int,
     available: Sequence[MarketCohort],
+    *,
+    require_redraft: bool = True,
 ) -> list[MarketCohort]:
     """Cohorts that may serve this preset, most specific first.
 
-    A cohort qualifies when it does not *contradict* the preset: an unconstrained axis is
-    always compatible, a constrained one must match. `IS_PPR=0` therefore never serves a
-    PPR league, and a 14-team cohort never serves a 10-team one - approximation is allowed
-    to be wide, never wrong.
+    Two qualifying conditions, both about being *wrong* rather than about being thin:
+
+    * a cohort must not **contradict** the preset. An unconstrained axis is always
+      compatible; a constrained one must match. `IS_PPR=0` therefore never serves a PPR
+      league and a 14-team cohort never serves a 10-team one — approximation is allowed to
+      be wide, never wrong.
+    * a cohort must **exclude keeper and dynasty drafts** (ADR-045). A dynasty rookie draft
+      prices only rookies, so its "average pick" for a rookie is a pick number in a
+      rookie-only draft. This project publishes a redraft board.
+
+    Neither is a sufficiency bound. A candidate that survives both is still judged on
+    volume and coverage by the frozen rule, and may still lose.
     """
     qualifying = [
         cohort
         for cohort in available
         if (cohort.scoring_semantics is None or cohort.scoring_semantics == scoring_preset)
         and (cohort.league_size_semantics is None or cohort.league_size_semantics == league_size)
+        and (cohort.excludes_keepers or not require_redraft)
     ]
     return sorted(qualifying, key=lambda cohort: (-cohort.specificity, cohort.cohort_id))
 
@@ -406,6 +424,7 @@ def select_cohorts(
     *,
     presets: Sequence[tuple[str, int]],
     rule: CohortSufficiencyRule = COHORT_SUFFICIENCY_RULE,
+    require_redraft: bool = True,
 ) -> tuple[dict[tuple[str, int], CohortAssignment], dict[str, CohortSufficiency]]:
     """Apply the frozen rule and choose one cohort per preset.
 
@@ -421,7 +440,17 @@ def select_cohorts(
 
     assignments: dict[tuple[str, int], CohortAssignment] = {}
     for scoring_preset, league_size in presets:
-        candidates = _candidates_for(scoring_preset, league_size, available)
+        candidates = _candidates_for(
+            scoring_preset,
+            league_size,
+            available,
+            require_redraft=require_redraft,
+        )
+        if not candidates:
+            raise ValueError(
+                f"no cohort qualifies for {scoring_preset}/{league_size}-team; a board "
+                "cannot be priced by a cohort that contradicts it (ADR-039/ADR-045)",
+            )
         chosen: MarketCohort | None = None
         reason = ""
         for cohort in candidates:
@@ -435,8 +464,17 @@ def select_cohorts(
                 break
         if chosen is None:
             # Nothing passed. A thin market is still the market; publish it flagged rather
-            # than withhold an arbitrage board entirely (ADR-039).
-            chosen = widest_cohort() if widest_cohort() in candidates else candidates[-1]
+            # than withhold an arbitrage board entirely (ADR-039). "Widest" means the least
+            # specific qualifying candidate, tie-broken by how much of the board it prices,
+            # so the fallback is deterministic and is not an alphabetical accident.
+            chosen = max(
+                candidates,
+                key=lambda cohort: (
+                    -cohort.specificity,
+                    measurements[cohort.cohort_id].priced_players,
+                    cohort.cohort_id,
+                ),
+            )
             reason = "no candidate met the sufficiency rule; widest candidate used and flagged"
         verdict = verdicts[chosen.cohort_id]
         assignments[(scoring_preset, league_size)] = CohortAssignment(

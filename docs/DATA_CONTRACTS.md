@@ -285,6 +285,14 @@ ADP semantics must be standardized: lower pick = more expensive/earlier.
 
 Never combine sources into one synthetic ADP without preserving components and method version.
 
+### 9.1 Retained snapshots (Phase 5)
+
+The *public* market snapshot record above and the *retained* history are different things. Retention is append-only on the `market-data` branch under the layout in `docs/ARCHITECTURE.md` 6.2, and its record shape is the normalized market quote (`market_quote` contract **2.0**) plus its identity outcome, not this artifact schema.
+
+Contract 2.0 replaces `scoring_preset`, `league_size` and `cohort_approximate` with `cohort_id`. A quote belongs to a *cohort request*; whether that cohort is an exact match for a published preset is a per-preset verdict the frozen selection rule reaches later (ADR-039). Making a row claim a preset it did not describe was the failure ADR-012 was written to prevent.
+
+Unresolved and team-unit rows are retained too, with a null `player_id` and their refusal reason. A snapshot is evidence; dropping the rows that did not join would hide the coverage question a later session needs to answer.
+
 ## 10. Arbitrage artifact
 
 See `schemas/arbitrage_record.schema.json`.
@@ -316,6 +324,28 @@ quality_flags[]
 `market_adp - fair_rank`
 
 Positive = model thinks the player is worth taking earlier than the market typically takes him (potential bargain).
+
+### 10.1 Record contract 1.1 (Phase 5)
+
+`arbitrage_record` moves to **1.1**. Record schemas now version independently of the envelope: the envelope's `schema_version` is the bundle version (still 1.0) and `ffdraft.artifacts.RECORD_SCHEMA_VERSIONS` maps each record schema to its own, mirrored in `web/src/data/contracts.ts` and pinned by tests on both sides.
+
+Added fields, all required, all so a row can be judged without a second fetch:
+
+```text
+regional_value_gap        ln(market_adp / fair_rank); the A0 draft-region gap (ADR-040)
+market_adp_low            minPick; an extreme order statistic, not a standard deviation
+market_adp_high           maxPick
+market_source_id          which source priced this row
+market_cohort_id          which cohort request the price came from
+market_cohort_detail      the filters actually sent, plus exact|approximate
+market_snapshot_at_utc    when the retained snapshot was taken
+```
+
+`market_adp_sd` stays null and the schema now enforces it conditionally: a row whose `market_source_id` is `myfantasyleague_adp` must carry a null, because that source publishes no standard deviation.
+
+`player_status` (1.0) is a new artifact, keyed once per canonical `player_id` and joined in the browser. It is **annotation only**: no field in it participated in producing a projection, a fair rank, a tier or an arbitrage score, and a test proves it by mutating every field and asserting the other artifacts are byte-identical (ADR-043).
+
+`build_metadata` gains three optional blocks — `arbitrage_method_version`, `market` and `player_status` — so a build that produced only the intrinsic board still validates. An arbitrage build **merges** into that file rather than rewriting it, because a rewrite would erase the Phase-4 tier-stability warning (ADR-035).
 
 ## 11. Build metadata
 
