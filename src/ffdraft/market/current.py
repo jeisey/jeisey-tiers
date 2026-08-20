@@ -18,7 +18,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
-from ffdraft.contracts import EntityKind, QualityCheck
+from ffdraft.contracts import CORE_POSITIONS, EntityKind, Position, QualityCheck
 from ffdraft.contracts.enums import Severity
 from ffdraft.identity.resolver import FLAG_SECONDARY_ONLY, REASON_RESOLVED_SECONDARY
 from ffdraft.market.cohorts import CohortAssignment
@@ -30,7 +30,7 @@ from ffdraft.market.trend import (
     compute_trends,
     observations_from_snapshots,
 )
-from ffdraft.quality.thresholds import MARKET_SOURCE_MAX_AGE
+from ffdraft.quality.thresholds import IDENTITY_COVERAGE_MINIMUM, MARKET_SOURCE_MAX_AGE
 from ffdraft.timeutil import isoformat_utc
 
 __all__ = [
@@ -261,6 +261,9 @@ def build_current_market(
                 ),
             )
 
+    market.checks.extend(
+        _identity_checks(snapshot, cohorts=cohorts_used),
+    )
     market.checks.append(
         QualityCheck.fail(
             "market.snapshot_freshness",
@@ -279,6 +282,62 @@ def build_current_market(
         ),
     )
     return market
+
+
+def _identity_checks(
+    snapshot: MarketSnapshot,
+    *,
+    cohorts: Sequence[str],
+) -> list[QualityCheck]:
+    """Gate the *assigned* cohorts on the production identity standard.
+
+    Measured over core positions, which is the population `docs/DATA_CONTRACTS.md` 12
+    defines its threshold over: MyFantasyLeague also prices kickers, team defences and IDP,
+    and counting those would depress a coverage figure the threshold was never about.
+
+    A retained snapshot keeps unresolved and ambiguous rows so the question stays
+    answerable. They cannot reach a published row — a price needs a ``player_id`` — but
+    "cannot by construction" is worth asserting rather than assuming.
+    """
+    checks: list[QualityCheck] = []
+    for cohort_id in cohorts:
+        rows = [
+            row
+            for row in snapshot.rows_for(cohort_id)
+            if str(row.get("entity_kind")) == str(EntityKind.PLAYER)
+            and _is_core(row.get("raw_position") or row.get("position"))
+        ]
+        if not rows:
+            continue
+        resolved = sum(1 for row in rows if row.get("player_id"))
+        coverage = resolved / len(rows)
+        checks.append(
+            QualityCheck.fail(
+                "market.identity_coverage",
+                stage="market.current",
+                message=(
+                    f"cohort {cohort_id!r} resolves too few of its priced QB/RB/WR/TE rows "
+                    "to canonical players to publish an arbitrage board"
+                ),
+                observed=f"{coverage:.1%} of {len(rows)}",
+                expected=f">= {IDENTITY_COVERAGE_MINIMUM:.0%}",
+            )
+            if coverage < IDENTITY_COVERAGE_MINIMUM
+            else QualityCheck.ok(
+                "market.identity_coverage",
+                stage="market.current",
+                message=f"cohort {cohort_id!r} meets the launch identity threshold",
+                observed=f"{coverage:.1%} of {len(rows)} priced core-position row(s)",
+            ),
+        )
+    return checks
+
+
+def _is_core(raw_position: object) -> bool:
+    if raw_position is None:
+        return False
+    position = Position.parse(str(raw_position))
+    return position is not None and position in CORE_POSITIONS
 
 
 def load_trend_window(

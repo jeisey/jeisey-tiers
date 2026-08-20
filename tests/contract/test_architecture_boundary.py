@@ -42,6 +42,10 @@ MARKET_MODULES = (
     "ffdraft.arbitrage",
 )
 
+#: Current player status. Annotation only (ADR-043): it may not reach anything that
+#: produces a number, which is every intrinsic package plus the arbitrage score.
+STATUS_MODULES = ("ffdraft.status", "ffdraft.sources.sleeper")
+
 
 def _module_name(path: Path) -> str:
     relative = path.relative_to(SRC).with_suffix("")
@@ -158,3 +162,38 @@ def test_the_intrinsic_current_build_stays_market_free(graph):
     assert not any(_is_market(module) for module in reachable), sorted(
         module for module in reachable if _is_market(module)
     )
+
+
+# --------------------------------------------------------------------------------------
+# Status is annotation only (ADR-043)
+# --------------------------------------------------------------------------------------
+
+
+def _is_status(module: str) -> bool:
+    return any(module == name or module.startswith(f"{name}.") for name in STATUS_MODULES)
+
+
+@pytest.mark.parametrize("package", INTRINSIC_PACKAGES)
+def test_no_intrinsic_module_can_reach_current_status(package, graph):
+    """A current-state field has no development-era support and cannot enter a prediction."""
+    offenders = [
+        f"{module} -> {reached}"
+        for module in _modules_under(package, graph)
+        for reached in sorted(_reachable(module, graph))
+        if _is_status(reached)
+    ]
+    assert not offenders, (
+        f"current status is annotation only and may not reach a model: {offenders}"
+    )
+
+
+def test_the_arbitrage_score_cannot_reach_current_status(graph):
+    """An injury badge must not be able to move an arbitrage score, structurally.
+
+    `tests/integration/test_status_annotation_only.py` proves it behaviourally by mutating
+    every status field and comparing bytes. This proves the same thing by construction:
+    there is no code path from the arbitrage build to a status field to begin with.
+    """
+    for module in ("ffdraft.arbitrage.build", "ffdraft.pipeline.market", "ffdraft.market.current"):
+        offenders = [name for name in _reachable(module, graph) if _is_status(name)]
+        assert not offenders, f"{module} -> {offenders}"

@@ -19,12 +19,12 @@ Reading order for anyone auditing a build:
 
 from __future__ import annotations
 
+from ffdraft.modeling.build_config import CurrentBuildConfig
 from ffdraft.modeling.calibration import MonotoneOnly
 from ffdraft.modeling.candidates import HURDLE_COMPOSITION_DRAWS
 from ffdraft.modeling.folds import DEFAULT_SEED, WindowPolicy
 from ffdraft.modeling.production import ARCHITECTURE_HURDLE, ProductionSpec
 from ffdraft.modeling.rules import TIER_BOARD_DEPTH
-from ffdraft.pipeline.current import CurrentBuildConfig
 from ffdraft.tiers.algorithms import ALTERNATIVE_ALGORITHM
 
 __all__ = [

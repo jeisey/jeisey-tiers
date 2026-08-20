@@ -57,8 +57,8 @@ from ffdraft.contracts.enums import Severity
 from ffdraft.features.build import build_feature_table
 from ffdraft.features.dictionary import feature_schema_hash
 from ffdraft.features.sources import load_historical_sources
+from ffdraft.modeling.build_config import CurrentBuildConfig
 from ffdraft.modeling.features import core_feature_selection
-from ffdraft.modeling.metrics import QUANTILE_LEVELS
 from ffdraft.modeling.production import ProductionModel
 from ffdraft.quality import QualityGate, audit_intrinsic_feature_names
 from ffdraft.simulation.vorp import (
@@ -70,7 +70,7 @@ from ffdraft.simulation.vorp import (
 )
 from ffdraft.status.build import build_player_status_records
 from ffdraft.status.capture import StatusCapture, read_status_capture
-from ffdraft.tiers.algorithms import ALGORITHM_VERSIONS, segment_with
+from ffdraft.tiers.algorithms import segment_with
 from ffdraft.tiers.labels import tier_label
 from ffdraft.timeutil import isoformat_utc, utc_now
 
@@ -111,7 +111,6 @@ FLAGGED_STATUSES: Mapping[str, str] = {
 DEFAULT_CURRENT_ARTIFACT_DIR = Path("web/public/data")
 
 _EASTERN = ZoneInfo(ANCHOR_TIMEZONE)
-_LAUNCH_SCORING: tuple[str, ...] = ("STD", "HALF", "PPR")
 
 
 def current_cutoff(anchor: SeasonAnchor, as_of: datetime) -> SeasonAnchor:
@@ -132,43 +131,6 @@ def current_cutoff(anchor: SeasonAnchor, as_of: datetime) -> SeasonAnchor:
         anchor_local=stamped.astimezone(_EASTERN),
         rule_version=CURRENT_CUTOFF_RULE_VERSION,
     )
-
-
-@dataclass(frozen=True)
-class CurrentBuildConfig:
-    """The frozen production parameters a current build runs under."""
-
-    draws: int
-    ranking_statistic: str
-    #: Which of the two documented segmentation algorithms drew these tiers. A board is a
-    #: function of the algorithm as much as of the penalty, so a build records both.
-    tier_algorithm: str
-    tier_penalty: float
-    board_depth: int
-    seed: int
-    #: The frozen tier stability gate's verdict on this configuration, carried into every
-    #: build's metadata. It is a finding about the parameters rather than a parameter, but
-    #: it travels with them so that no published board can be read as sharper than the
-    #: measurement behind it. `ffdraft.modeling.frozen` supplies the production value.
-    tier_stability_gate: str = "unmeasured"
-    league_preset_ids: tuple[str, ...] = ("redraft-10", "redraft-12", "redraft-14")
-    scoring_presets: tuple[str, ...] = _LAUNCH_SCORING
-    levels: tuple[float, ...] = QUANTILE_LEVELS
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "draws": self.draws,
-            "ranking_statistic": self.ranking_statistic,
-            "tier_algorithm": self.tier_algorithm,
-            "tier_algorithm_version": ALGORITHM_VERSIONS[self.tier_algorithm],
-            "tier_penalty": self.tier_penalty,
-            "tier_stability_gate": self.tier_stability_gate,
-            "board_depth": self.board_depth,
-            "seed": self.seed,
-            "league_preset_ids": list(self.league_preset_ids),
-            "scoring_presets": list(self.scoring_presets),
-            "levels": list(self.levels),
-        }
 
 
 @dataclass

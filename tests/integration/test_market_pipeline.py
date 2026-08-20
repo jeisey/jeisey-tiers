@@ -439,6 +439,59 @@ def test_a_player_with_no_price_keeps_his_tier_row(store, artifacts, tmp_path):
 # --------------------------------------------------------------------------------------
 
 
+def test_the_market_identity_gate_refuses_an_unresolvable_cohort(store, artifacts, tmp_path):
+    """A cohort this project cannot join is a cohort it cannot publish (DATA_CONTRACTS 12)."""
+    stamped = parse_utc("2026-08-20T11:00:00Z")
+    raw = gzip_bytes(canonical_json({"adp": {"player": []}}))
+    rows = _market_rows("no-keeper")
+    # Half the priced core-position rows lose their canonical id, as an unresolved market
+    # row would. They stay in the snapshot as evidence; they just cannot become prices.
+    for row in rows[: len(rows) // 2]:
+        row["player_id"] = None
+        row["resolution_reason"] = "no_bridge_resolved"
+    manifest = SnapshotManifest(
+        manifest_version="1.0",
+        source_id=SOURCE,
+        season=SEASON,
+        snapshot_key=snapshot_key(stamped),
+        retrieved_at_utc=isoformat_utc(stamped),
+        adapter_version="2.0",
+        source_policy_version="mfl-developer-rules/2026-08-17",
+        cohorts=(
+            CohortCapture(
+                cohort_id="no-keeper",
+                filters=dict(cohort_by_id("no-keeper").filters),
+                label="non-keeper drafts",
+                raw_path="cohorts/no-keeper/adp.raw.json.gz",
+                raw_content_hash=content_hash(raw),
+                row_count=len(rows),
+                total_drafts=500,
+            ),
+        ),
+    )
+    store.write(
+        manifest=manifest,
+        normalized_rows=rows,
+        raw_payloads={"cohorts/no-keeper/adp.raw.json.gz": raw},
+    )
+
+    result = _run(store, artifacts, tmp_path)
+    assert not result.gate.passed
+    assert any(
+        check.check_id == "market.identity_coverage" for check in result.gate.critical_failures
+    )
+    assert not (artifacts / "arbitrage.json").exists()
+
+
+def test_unresolved_market_rows_cannot_reach_a_published_row(store, artifacts, tmp_path):
+    """Retained as evidence, excluded from output. Asserted rather than assumed."""
+    _write_snapshot(store, "2026-08-20T11:00:00Z")
+    snapshot = store.read(SOURCE, SEASON, "2026-08-20T11-00-00Z")
+    result = _run(store, artifacts, tmp_path)
+    assert all(row.get("player_id") for row in snapshot.rows)
+    assert all(record["player_id"] for record in result.records)
+
+
 def test_the_arbitrage_build_merges_metadata_and_keeps_phase_4_warnings(
     store,
     artifacts,
