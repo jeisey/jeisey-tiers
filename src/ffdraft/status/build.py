@@ -31,7 +31,7 @@ from typing import Any
 import polars as pl
 
 from ffdraft.artifacts import record_schema_version
-from ffdraft.contracts import CORE_POSITIONS, Position, QualityCheck
+from ffdraft.contracts import CORE_POSITIONS, PLAYER_STATUS_CONTRACT, Position, QualityCheck
 from ffdraft.contracts.enums import Severity
 from ffdraft.identity.registry import CanonicalRegistry
 from ffdraft.identity.resolver import (
@@ -137,7 +137,13 @@ def build_player_status_records(
 
     if capture is not None and capture.rows:
         observed_at = isoformat_utc(capture.observed_at_utc)
-        frame = pl.DataFrame(capture.rows)
+        # Built through the contract, not by inference. A retained capture is 12,000 rows of
+        # mostly-null free text, and Polars infers a schema from the first few of them — so
+        # the first player to carry an injury note several thousand rows in would fail the
+        # whole build. The contract already declares every dtype; use it.
+        frame = PLAYER_STATUS_CONTRACT.build(
+            {**row, "observed_at_utc": capture.observed_at_utc} for row in capture.rows
+        )
         outcomes = resolve_sleeper_status(
             frame,
             registry=registry,

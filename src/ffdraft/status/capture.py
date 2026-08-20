@@ -21,21 +21,21 @@ from datetime import datetime
 from typing import Any
 
 from ffdraft.contracts import SourceBatch
-from ffdraft.market.snapshot import (
+from ffdraft.quality import QualityGate
+from ffdraft.retention import (
     MANIFEST_FILENAME,
-    STATUS_PREFIX,
     SnapshotConflictError,
     SnapshotStore,
     content_hash,
     snapshot_key,
 )
-from ffdraft.quality import QualityGate
 from ffdraft.sources.base import SourceConfig
 from ffdraft.sources.sleeper import SLEEPER_SOURCE_ID, SleeperPlayerAdapter
 from ffdraft.timeutil import isoformat_utc, parse_utc, utc_now
 
 __all__ = [
     "STATUS_NORMALIZED_FILENAME",
+    "STATUS_PREFIX",
     "StatusCapture",
     "capture_status",
     "read_status_capture",
@@ -44,6 +44,9 @@ __all__ = [
 
 STATUS_NORMALIZED_FILENAME = "status.normalized.json.gz"
 STATUS_MANIFEST_VERSION = "1.0"
+
+#: Where status captures live inside the retention store, beside ``market/`` (ADR-038).
+STATUS_PREFIX = "status"
 
 
 @dataclass

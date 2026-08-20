@@ -116,7 +116,7 @@ from ffdraft.features.dictionary import (
 )
 from ffdraft.leakage import validate_historical_directory
 from ffdraft.market.capture import capture_market, cohort_set
-from ffdraft.market.snapshot import MARKET_PREFIX, SnapshotStore, verify_store
+from ffdraft.market.snapshot import MarketSnapshotStore, verify_store
 from ffdraft.modeling import (
     ExperimentConfig,
     FinalEvalAuthorization,
@@ -1113,7 +1113,7 @@ def _model_card(args: argparse.Namespace) -> int:
     return 0
 
 
-def _market_store(path: Path | None) -> SnapshotStore:
+def _market_store(path: Path | None) -> MarketSnapshotStore:
     """Resolve a store directory.
 
     The default sits *beside* the repository, not inside it: the store is a separate
@@ -1121,7 +1121,7 @@ def _market_store(path: Path | None) -> SnapshotStore:
     to commit a day of captures onto a code branch.
     """
     root = path or (repo_root().parent / DEFAULT_MARKET_STORE)
-    return SnapshotStore(root=root, prefix=MARKET_PREFIX)
+    return MarketSnapshotStore(root=root)
 
 
 def _snapshot_market(args: argparse.Namespace) -> int:

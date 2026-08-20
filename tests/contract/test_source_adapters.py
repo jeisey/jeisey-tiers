@@ -209,6 +209,77 @@ def test_sleeper_observation_time_is_retrieval_time_not_a_freshness_claim(fixtur
     assert set(batch.frame.get_column("observed_at_utc").to_list()) == {when}
 
 
+def test_the_optional_injury_and_practice_fields_survive_normalization(fixture_inputs):
+    """Contract 1.1 (ADR-043): read what Sleeper publishes, and only what it publishes."""
+    batch = SleeperPlayerAdapter().normalize(fixture_inputs.sleeper_players)
+    row = batch.frame.filter(batch.frame.get_column("external_player_id") == "5000004").to_dicts()[
+        0
+    ]
+    assert row["injury_status"] == "Questionable"
+    assert row["injury_body_part"] == "Hamstring"
+    assert row["injury_notes"].startswith("Tweaked it")
+    assert row["injury_start_date"] == "2026-08-14"
+    assert row["practice_participation"] == "Limited Participation"
+    assert row["practice_description"].startswith("Limited in team drills")
+
+
+def test_a_healthy_player_carries_nulls_rather_than_a_fabricated_value(fixture_inputs):
+    """Sleeper omits injury fields when there is no injury. Nullable is the honest shape."""
+    batch = SleeperPlayerAdapter().normalize(fixture_inputs.sleeper_players)
+    row = batch.frame.filter(batch.frame.get_column("external_player_id") == "5000002").to_dicts()[
+        0
+    ]
+    for field in (
+        "injury_status",
+        "injury_body_part",
+        "injury_notes",
+        "injury_start_date",
+        "practice_participation",
+        "practice_description",
+    ):
+        assert row[field] is None, field
+
+
+def test_a_designation_without_notes_is_normalized_as_such(fixture_inputs):
+    """A reserve player with a body part and no note must not acquire one."""
+    batch = SleeperPlayerAdapter().normalize(fixture_inputs.sleeper_players)
+    row = batch.frame.filter(batch.frame.get_column("external_player_id") == "5000016").to_dicts()[
+        0
+    ]
+    assert row["status"] == "Injured Reserve"
+    assert row["injury_status"] == "IR"
+    assert row["injury_body_part"] == "Knee"
+    assert row["injury_notes"] is None
+
+
+def test_the_sleeper_contract_version_moved_with_its_fields():
+    """AGENTS.md 18: a contract and the adapter that produces it change together."""
+    from ffdraft.contracts import PLAYER_STATUS_CONTRACT
+
+    assert PLAYER_STATUS_CONTRACT.version == "1.1"
+    assert SleeperPlayerAdapter.adapter_version == "1.1"
+    names = {column.name for column in PLAYER_STATUS_CONTRACT.columns}
+    assert {"injury_notes", "injury_start_date", "practice_description"} <= names
+
+
+def test_every_normalized_field_exists_in_the_recorded_upstream_schema():
+    """No field is read that Phase 0 did not observe the source publishing."""
+    import json
+    from pathlib import Path
+
+    recorded = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "fixtures"
+            / "source_schemas"
+            / "sleeper_players_nfl.schema.json"
+        ).read_text(encoding="utf-8"),
+    )
+    published = {column["name"] for column in recorded["columns"]}
+    for field in ("injury_notes", "injury_start_date", "practice_description"):
+        assert field in published, field
+
+
 def test_sleeper_state_parses_the_season_cross_check():
     state = parse_sleeper_state(
         {"season": "2026", "week": 2, "season_type": "pre", "season_start_date": "2026-08-06"},

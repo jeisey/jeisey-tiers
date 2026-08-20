@@ -31,10 +31,11 @@ from ffdraft.market.measure import (
     measure_cohorts,
 )
 from ffdraft.market.snapshot import (
+    MARKET_PREFIX,
     MarketSnapshot,
+    MarketSnapshotStore,
     SnapshotConflictError,
     SnapshotManifest,
-    SnapshotStore,
     snapshot_key,
     verify_store,
 )
@@ -54,10 +55,11 @@ __all__ = [
     "CurrentMarket",
     "MarketIdentity",
     "MarketPrice",
+    "MARKET_PREFIX",
     "MarketSnapshot",
+    "MarketSnapshotStore",
     "SnapshotConflictError",
     "SnapshotManifest",
-    "SnapshotStore",
     "TrendResult",
     "board_from_tier_records",
     "build_current_market",

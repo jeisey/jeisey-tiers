@@ -33,7 +33,7 @@ from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import SourceStatus
 from ffdraft.market.cohorts import assignments_from_report
 from ffdraft.market.current import build_current_market, load_trend_window
-from ffdraft.market.snapshot import SnapshotStore
+from ffdraft.market.snapshot import MarketSnapshotStore
 from ffdraft.market.trend import TREND_RULE
 from ffdraft.quality import QualityGate
 from ffdraft.sources.market import MFL_SOURCE_ID
@@ -47,7 +47,7 @@ class ArbitrageBuildRequest:
     """Everything one arbitrage build needs. All of it is on disk."""
 
     season: int
-    store: SnapshotStore
+    store: MarketSnapshotStore
     artifacts_dir: Path
     selection_path: Path
     snapshot_key: str | None = None

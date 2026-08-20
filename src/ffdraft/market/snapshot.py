@@ -1,6 +1,8 @@
-"""The append-only point-in-time market snapshot store (ADR-006, ADR-038).
+"""The market snapshot manifest and the market view of the retention store (ADR-006/038).
 
-**Boundary module.** Market data only.
+**Boundary module.** Market data only. The append-only mechanics themselves are
+source-neutral and live in :mod:`ffdraft.retention`, so a status capture can reuse them
+without importing market code.
 
 A snapshot is an immutable directory named for the instant it was retrieved::
 
@@ -10,20 +12,12 @@ A snapshot is an immutable directory named for the instant it was retrieved::
         cohorts/<cohort_id>/adp.raw.json.gz
         market.normalized.json.gz
 
-Three rules make the store trustworthy rather than merely present:
-
-*append-only* — a new timestamp appends; an existing path with **identical** content is an
-idempotent no-op, so a retried workflow run is safe; an existing path with **different**
-content fails closed and writes nothing. A later snapshot can never mutate an earlier one.
-
-*content-addressed* — the manifest records a SHA-256 for every file it describes, and
-:func:`verify_store` re-hashes them. Truncation, corruption and hand-editing are detected
-rather than assumed away.
-
-*self-describing* — a manifest carries enough provenance to reconstruct the capture's
-meaning without the code that wrote it: the filters actually sent, the adapter version, the
-source policy version, the retrieval time, MFL's response ``timestamp`` **as vendor
-metadata only**, row counts and identity-resolution counts.
+What this module adds to the generic store is **self-description**: a manifest carrying
+enough provenance to reconstruct a capture's meaning without the code that wrote it - the
+filters actually sent, the adapter version, the source policy version, the retrieval time,
+MFL's response ``timestamp`` **as vendor metadata only**, row counts, content hashes and
+identity-resolution counts - plus :func:`verify_store`, which re-hashes every retained file
+against the manifest that claims to describe it.
 
 MFL's response ``timestamp`` is response-generation time (`docs/DATA_SOURCES.md` 13.5). It
 is retained under ``response_timestamp`` and is never promoted to ``source_as_of_utc``.
@@ -32,27 +26,33 @@ is retained under ``response_timestamp`` and is never promoted to ``source_as_of
 from __future__ import annotations
 
 import gzip
-import hashlib
 import json
-import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
-from ffdraft.timeutil import ensure_utc, isoformat_utc, parse_utc
+from ffdraft.retention.store import (
+    MANIFEST_FILENAME,
+    SnapshotConflictError,
+    SnapshotStore,
+    WriteResult,
+    canonical_json,
+    content_hash,
+    gzip_bytes,
+    parse_snapshot_key,
+    snapshot_key,
+)
+from ffdraft.timeutil import parse_utc
 
 __all__ = [
-    "MANIFEST_FILENAME",
     "MARKET_PREFIX",
     "NORMALIZED_FILENAME",
     "SNAPSHOT_MANIFEST_VERSION",
-    "STATUS_PREFIX",
     "MarketSnapshot",
+    "MarketSnapshotStore",
     "SnapshotConflictError",
     "SnapshotManifest",
-    "SnapshotStore",
     "content_hash",
     "parse_snapshot_key",
     "snapshot_key",
@@ -63,57 +63,12 @@ __all__ = [
 #: this describes retained evidence, not a public artifact.
 SNAPSHOT_MANIFEST_VERSION = "1.0"
 
-MANIFEST_FILENAME = "manifest.json"
 NORMALIZED_FILENAME = "market.normalized.json.gz"
 PLAYERS_RAW_FILENAME = "players.raw.json.gz"
 ADP_RAW_FILENAME = "adp.raw.json.gz"
 
+#: Where market captures live inside the store.
 MARKET_PREFIX = "market"
-STATUS_PREFIX = "status"
-
-_KEY_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z$")
-
-
-class SnapshotConflictError(RuntimeError):
-    """Raised when a write would change bytes that a retained snapshot already holds."""
-
-
-def snapshot_key(moment: datetime) -> str:
-    """The directory name for a retrieval instant: ``YYYY-MM-DDTHH-MM-SSZ``.
-
-    Colons are illegal on some filesystems and awkward in URLs, so the RFC 3339 form is
-    rendered with hyphens. The mapping is total and reversible.
-    """
-    return isoformat_utc(ensure_utc(moment)).replace(":", "-")
-
-
-def parse_snapshot_key(key: str) -> datetime:
-    """Invert :func:`snapshot_key`."""
-    if not _KEY_PATTERN.match(key):
-        raise ValueError(f"{key!r} is not a snapshot key (YYYY-MM-DDTHH-MM-SSZ)")
-    date_part, time_part = key.split("T", 1)
-    return parse_utc(f"{date_part}T{time_part[:-1].replace('-', ':')}Z")
-
-
-def content_hash(payload: bytes) -> str:
-    """SHA-256 of raw bytes, hex encoded. The store's only integrity primitive."""
-    return hashlib.sha256(payload).hexdigest()
-
-
-def _canonical_json(payload: Any) -> bytes:
-    """Deterministic JSON bytes: sorted keys, fixed separators, no trailing whitespace.
-
-    Determinism is what lets an idempotent re-capture of unchanged data hash identically
-    instead of conflicting on key order.
-    """
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
-        "utf-8",
-    )
-
-
-def _gzip_bytes(payload: bytes) -> bytes:
-    """Gzip with ``mtime=0`` so identical content produces identical bytes."""
-    return gzip.compress(payload, compresslevel=9, mtime=0)
 
 
 # --------------------------------------------------------------------------------------
@@ -277,47 +232,11 @@ class MarketSnapshot:
 # --------------------------------------------------------------------------------------
 
 
-@dataclass(frozen=True, slots=True)
-class WriteResult:
-    """What a write did, and to which paths."""
-
-    directory: Path
-    written: tuple[Path, ...]
-    #: True when every file already existed with identical content (ADR-038 idempotency).
-    idempotent: bool
-
-
 @dataclass(frozen=True)
-class SnapshotStore:
-    """A checkout of the ``market-data`` branch, or any directory shaped like one."""
+class MarketSnapshotStore(SnapshotStore):
+    """The market view of the retention store: manifests in, manifests and rows out."""
 
-    root: Path
     prefix: str = MARKET_PREFIX
-
-    def season_dir(self, source_id: str, season: int) -> Path:
-        return self.root / self.prefix / source_id / str(season)
-
-    def snapshot_dir(self, source_id: str, season: int, key: str) -> Path:
-        return self.season_dir(source_id, season) / key
-
-    def keys(self, source_id: str, season: int) -> list[str]:
-        """Retained snapshot keys for a source and season, oldest first.
-
-        Sorted lexically, which for this key format is chronological order - that is the
-        point of a zero-padded RFC 3339 name.
-        """
-        directory = self.season_dir(source_id, season)
-        if not directory.is_dir():
-            return []
-        return sorted(
-            entry.name
-            for entry in directory.iterdir()
-            if entry.is_dir() and _KEY_PATTERN.match(entry.name)
-        )
-
-    def latest_key(self, source_id: str, season: int) -> str | None:
-        keys = self.keys(source_id, season)
-        return keys[-1] if keys else None
 
     def read_manifest(self, source_id: str, season: int, key: str) -> SnapshotManifest:
         path = self.snapshot_dir(source_id, season, key) / MANIFEST_FILENAME
@@ -352,8 +271,6 @@ class SnapshotStore:
         wanted = list(keys) if keys is not None else self.keys(source_id, season)
         return [self.read(source_id, season, key) for key in wanted]
 
-    # -- writing -----------------------------------------------------------------------
-
     def write(
         self,
         *,
@@ -363,12 +280,11 @@ class SnapshotStore:
     ) -> WriteResult:
         """Append one snapshot.
 
-        ``raw_payloads`` maps a snapshot-relative path to already-gzipped bytes. Nothing is
-        written until every file has been checked against what is already retained, so a
-        conflict leaves the store exactly as it was.
+        ``raw_payloads`` maps a snapshot-relative path to already-gzipped bytes. The
+        manifest is stamped with the normalized payload's hash and row count here rather
+        than by the caller, so a manifest can never describe bytes that were not written.
         """
-        directory = self.snapshot_dir(manifest.source_id, manifest.season, manifest.snapshot_key)
-        normalized = _gzip_bytes(_canonical_json(list(normalized_rows)))
+        normalized = gzip_bytes(canonical_json(list(normalized_rows)))
         stamped = SnapshotManifest(
             **{
                 **{
@@ -387,36 +303,12 @@ class SnapshotStore:
         files[MANIFEST_FILENAME] = (
             json.dumps(stamped.to_dict(), indent=2, sort_keys=True, ensure_ascii=False) + "\n"
         ).encode("utf-8")
-
-        conflicts = []
-        unchanged = 0
-        for relative, payload in sorted(files.items()):
-            existing = directory / relative
-            if not existing.is_file():
-                continue
-            if existing.read_bytes() == payload:
-                unchanged += 1
-                continue
-            conflicts.append(relative)
-        if conflicts:
-            raise SnapshotConflictError(
-                f"{directory} already holds different content for {sorted(conflicts)}; a "
-                "retained snapshot is immutable (ADR-038). Take a new snapshot instead.",
-            )
-        if unchanged == len(files):
-            return WriteResult(
-                directory=directory,
-                written=tuple(sorted(directory / name for name in files)),
-                idempotent=True,
-            )
-
-        written: list[Path] = []
-        for relative, payload in sorted(files.items()):
-            target = directory / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(payload)
-            written.append(target)
-        return WriteResult(directory=directory, written=tuple(written), idempotent=False)
+        return self.write_files(
+            source_id=manifest.source_id,
+            season=manifest.season,
+            key=manifest.snapshot_key,
+            files=files,
+        )
 
 
 def _as_fields(manifest: SnapshotManifest) -> dict[str, Any]:
@@ -460,7 +352,7 @@ class StoreVerification:
 
 
 def verify_store(
-    store: SnapshotStore,
+    store: MarketSnapshotStore,
     *,
     source_id: str,
     season: int,

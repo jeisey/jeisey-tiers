@@ -46,13 +46,11 @@ from ffdraft.market.snapshot import (
     PLAYERS_RAW_FILENAME,
     SNAPSHOT_MANIFEST_VERSION,
     CohortCapture,
+    MarketSnapshotStore,
     SnapshotManifest,
-    SnapshotStore,
-    WriteResult,
-    content_hash,
-    snapshot_key,
 )
 from ffdraft.quality import QualityGate
+from ffdraft.retention import WriteResult, content_hash, snapshot_key
 from ffdraft.sources.base import SourceConfig
 from ffdraft.sources.market import (
     MFL_SOURCE_ID,
@@ -135,7 +133,6 @@ def build_snapshot(
     raw_by_cohort: Mapping[str, Any],
     raw_players: Any,
     identity: MarketIdentity,
-    app: AppConfig | None = None,
     git_sha: str | None = None,
     gate: QualityGate | None = None,
 ) -> CaptureResult:
@@ -144,7 +141,6 @@ def build_snapshot(
     Pure with respect to the network: every fixture test drives this, and the live capture
     path is a thin wrapper that supplies ``raw_by_cohort`` and ``raw_players``.
     """
-    settings = app or load_app_config()
     checks = gate or QualityGate()
     key = snapshot_key(retrieved_at)
 
@@ -222,10 +218,10 @@ def build_snapshot(
         snapshot_key=key,
         retrieved_at_utc=isoformat_utc(retrieved_at),
         adapter_version=adp_adapter.adapter_version,
-        source_policy_version=settings.registry.source(MFL_SOURCE_ID).extra.get(
-            "verified_at",
-            "unknown",
-        ),
+        # The licence/policy version the adapter was written against, not a config lookup:
+        # what matters when reading a retained capture years later is which published rules
+        # the request was made under (ADR-017, `docs/DATA_SOURCES.md` 13.5).
+        source_policy_version=adp_adapter.license_policy_version,
         player_directory_path=PLAYERS_RAW_FILENAME,
         player_directory_content_hash=content_hash(raw_payloads[PLAYERS_RAW_FILENAME]),
         player_directory_row_count=directory_batch.frame.height,
@@ -369,7 +365,7 @@ def _snapshot_rows(
 def capture_market(
     *,
     season: int,
-    store: SnapshotStore,
+    store: MarketSnapshotStore,
     cohorts: Sequence[MarketCohort] | None = None,
     as_of: datetime | None = None,
     app: AppConfig | None = None,
@@ -413,7 +409,6 @@ def capture_market(
         raw_by_cohort=raw_by_cohort,
         raw_players=raw_players,
         identity=resolved_identity,
-        app=settings,
         git_sha=git_sha,
         gate=gate,
     )

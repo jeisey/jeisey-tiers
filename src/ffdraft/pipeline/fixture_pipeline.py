@@ -75,7 +75,6 @@ from ffdraft.market.current import (
     CurrentMarket,
     MarketPrice,
 )
-from ffdraft.market.snapshot import snapshot_key
 from ffdraft.market.trend import INSUFFICIENT_TREND_HISTORY, TREND_RULE
 from ffdraft.quality import QualityGate, check_source_freshness
 from ffdraft.quality.forbidden import (
@@ -83,6 +82,7 @@ from ffdraft.quality.forbidden import (
     audit_intrinsic_source_lineage,
 )
 from ffdraft.quality.thresholds import MARKET_SOURCE_MAX_AGE
+from ffdraft.retention import snapshot_key
 from ffdraft.sources import (
     NflverseDepthChartAdapter,
     NflversePlayerIdsAdapter,

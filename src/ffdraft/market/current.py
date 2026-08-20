@@ -22,7 +22,7 @@ from ffdraft.contracts import EntityKind, QualityCheck
 from ffdraft.contracts.enums import Severity
 from ffdraft.identity.resolver import FLAG_SECONDARY_ONLY, REASON_RESOLVED_SECONDARY
 from ffdraft.market.cohorts import CohortAssignment
-from ffdraft.market.snapshot import MarketSnapshot, SnapshotStore
+from ffdraft.market.snapshot import MarketSnapshot, MarketSnapshotStore
 from ffdraft.market.trend import (
     INSUFFICIENT_TREND_HISTORY,
     TREND_RULE,
@@ -282,7 +282,7 @@ def build_current_market(
 
 
 def load_trend_window(
-    store: SnapshotStore,
+    store: MarketSnapshotStore,
     *,
     source_id: str,
     season: int,
@@ -294,7 +294,7 @@ def load_trend_window(
     Reading only the window keeps a build's cost flat as the store grows: a season of daily
     captures is 365 directories, and a trend needs at most eight of them.
     """
-    from ffdraft.market.snapshot import parse_snapshot_key
+    from ffdraft.retention import parse_snapshot_key
 
     horizon = now - timedelta(days=rule_window_days)
     keys = [
