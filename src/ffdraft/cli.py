@@ -1178,21 +1178,30 @@ def _capture_status(args: argparse.Namespace) -> int:
 
 
 def _validate_market_history(args: argparse.Namespace) -> int:
-    """Re-hash the retained store and check its append-only invariants."""
+    """Re-hash every retained capture and check the store's append-only invariants.
+
+    Both prefixes are checked, not just the one a ``--source`` happens to name. A
+    validator that reports "pass" for a prefix it never opened is worse than no validator.
+    """
     from ffdraft.modeling.frozen import PRODUCTION_SEASON
     from ffdraft.sources.market import MFL_SOURCE_ID
+    from ffdraft.status.capture import verify_status_store
 
     store = _market_store(args.store)
     season = args.season or PRODUCTION_SEASON
-    source_id = args.source or MFL_SOURCE_ID
-    verification = verify_store(store, source_id=source_id, season=season)
+    market = verify_store(store, source_id=args.source or MFL_SOURCE_ID, season=season)
+    captures, status_files, status_problems = verify_status_store(store, season=season)
+
     print(f"store          : {store.root}")
-    print(f"snapshots      : {verification.snapshots}")
-    print(f"files checked  : {verification.files_checked}")
-    for problem in verification.problems:
+    print(f"market         : {market.snapshots} snapshot(s), {market.files_checked} file(s)")
+    print(f"status         : {captures} capture(s), {status_files} file(s)")
+    for problem in (*market.problems, *status_problems):
         print(f"  [critical] {problem}")
-    print(f"market history : {'pass' if verification.ok else 'fail'}")
-    return 0 if verification.ok else 1
+    ok = market.ok and not status_problems
+    if not (market.snapshots or captures):
+        print("  [warning] the store holds nothing for this source and season")
+    print(f"retained history: {'pass' if ok else 'fail'}")
+    return 0 if ok else 1
 
 
 def _reference_board(artifacts: Path, league_preset_id: str) -> Any:

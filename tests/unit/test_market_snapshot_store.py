@@ -263,3 +263,98 @@ def test_a_directory_that_is_not_a_snapshot_key_is_ignored(store):
     _write(store, "2026-08-20T12:00:00Z")
     (store.season_dir(SOURCE, SEASON) / "scratch").mkdir()
     assert store.keys(SOURCE, SEASON) == ["2026-08-20T12-00-00Z"]
+
+
+# --------------------------------------------------------------------------------------
+# Status captures share the mechanism and get their own verification
+# --------------------------------------------------------------------------------------
+
+
+def _status_capture(moment: str):
+    from ffdraft.status.capture import StatusCapture
+
+    stamped = parse_utc(moment)
+    return StatusCapture(
+        source_id="sleeper",
+        season=SEASON,
+        snapshot_key=snapshot_key(stamped),
+        observed_at_utc=stamped,
+        adapter_version="1.1",
+        source_policy_version="sleeper-non-commercial/2026-08-17",
+        rows=[
+            {
+                "source_id": "sleeper",
+                "external_player_id": "5000004",
+                "observed_at_utc": isoformat_utc(stamped),
+                "injury_status": "Questionable",
+            },
+        ],
+    )
+
+
+def test_a_status_capture_appends_and_verifies(tmp_path):
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.status.capture import (
+        read_status_capture,
+        verify_status_store,
+        write_status_capture,
+    )
+
+    store = SnapshotStore(root=tmp_path, prefix="market")
+    write_status_capture(_status_capture("2026-08-20T12:00:00Z"), store=store)
+    write_status_capture(_status_capture("2026-08-21T12:00:00Z"), store=store)
+
+    captures, files, problems = verify_status_store(store, season=SEASON)
+    assert (captures, files, problems) == (2, 4, ())
+
+    latest = read_status_capture(store, season=SEASON)
+    assert latest is not None
+    assert latest.snapshot_key == "2026-08-21T12-00-00Z"
+    assert latest.rows[0]["injury_status"] == "Questionable"
+
+
+def test_a_differing_status_rewrite_fails_closed(tmp_path):
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.status.capture import write_status_capture
+
+    store = SnapshotStore(root=tmp_path, prefix="market")
+    write_status_capture(_status_capture("2026-08-20T12:00:00Z"), store=store)
+
+    conflicting = _status_capture("2026-08-20T12:00:00Z")
+    conflicting.rows[0]["injury_status"] = "Out"
+    with pytest.raises(SnapshotConflictError, match="immutable"):
+        write_status_capture(conflicting, store=store)
+
+
+def test_tampering_with_a_status_capture_is_detected(tmp_path):
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.status.capture import (
+        STATUS_NORMALIZED_FILENAME,
+        read_status_capture,
+        verify_status_store,
+        write_status_capture,
+    )
+
+    store = SnapshotStore(root=tmp_path, prefix="market")
+    write_status_capture(_status_capture("2026-08-20T12:00:00Z"), store=store)
+    target = (
+        tmp_path
+        / "status"
+        / "sleeper"
+        / str(SEASON)
+        / "2026-08-20T12-00-00Z"
+        / STATUS_NORMALIZED_FILENAME
+    )
+    target.write_bytes(gzip_bytes(canonical_json([{"injury_status": "Out"}])))
+
+    _captures, _files, problems = verify_status_store(store, season=SEASON)
+    assert any("hashes to" in problem for problem in problems)
+    with pytest.raises(SnapshotConflictError, match="hashes to"):
+        read_status_capture(store, season=SEASON)
+
+
+def test_an_absent_status_capture_is_none_rather_than_an_error(tmp_path):
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.status.capture import read_status_capture
+
+    assert read_status_capture(SnapshotStore(root=tmp_path, prefix="market"), season=SEASON) is None

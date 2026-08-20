@@ -27,6 +27,7 @@ from ffdraft.retention import (
     SnapshotConflictError,
     SnapshotStore,
     content_hash,
+    parse_snapshot_key,
     snapshot_key,
 )
 from ffdraft.sources.base import SourceConfig
@@ -36,6 +37,7 @@ from ffdraft.timeutil import isoformat_utc, parse_utc, utc_now
 __all__ = [
     "STATUS_NORMALIZED_FILENAME",
     "STATUS_PREFIX",
+    "verify_status_store",
     "StatusCapture",
     "capture_status",
     "read_status_capture",
@@ -210,3 +212,65 @@ def read_status_capture(
         git_sha=manifest.get("git_sha"),
         warning_codes=tuple(manifest.get("warning_codes", ())),
     )
+
+
+def verify_status_store(
+    store: SnapshotStore,
+    *,
+    season: int,
+    source_id: str = SLEEPER_SOURCE_ID,
+) -> tuple[int, int, tuple[str, ...]]:
+    """Re-hash every retained status capture against its manifest.
+
+    Returns ``(snapshots, files_checked, problems)``. The market store has its own
+    verifier because its manifest carries per-cohort raw payloads; this one is the same
+    discipline over a simpler shape, and it exists so that
+    ``ffdraft validate-market-history`` cannot report "pass" for a prefix it never opened.
+    """
+    status_store = SnapshotStore(root=store.root, prefix=STATUS_PREFIX)
+    keys = status_store.keys(source_id, season)
+    problems: list[str] = []
+    checked = 0
+    previous: datetime | None = None
+
+    for key in keys:
+        directory = status_store.snapshot_dir(source_id, season, key)
+        try:
+            moment = parse_snapshot_key(key)
+        except ValueError as exc:
+            problems.append(str(exc))
+            continue
+        if previous is not None and moment <= previous:
+            problems.append(f"{key}: capture keys must strictly increase")
+        previous = moment
+
+        manifest_path = directory / MANIFEST_FILENAME
+        if not manifest_path.is_file():
+            problems.append(f"{key}: no {MANIFEST_FILENAME}")
+            continue
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except ValueError as exc:
+            problems.append(f"{key}: unreadable manifest: {exc}")
+            continue
+        checked += 1
+
+        if str(manifest.get("snapshot_key")) != key:
+            problems.append(f"{key}: manifest claims snapshot_key {manifest.get('snapshot_key')!r}")
+        if parse_utc(str(manifest.get("observed_at_utc"))) != moment:
+            problems.append(f"{key}: observed_at_utc disagrees with the path")
+
+        payload_path = directory / str(manifest.get("normalized_path", ""))
+        if not payload_path.is_file():
+            problems.append(
+                f"{key}: manifest names a missing file {manifest.get('normalized_path')}"
+            )
+            continue
+        checked += 1
+        digest = content_hash(payload_path.read_bytes())
+        declared = str(manifest.get("normalized_content_hash", ""))
+        if declared and digest != declared:
+            problems.append(
+                f"{key}: {payload_path.name} hashes to {digest}, manifest says {declared}"
+            )
+    return len(keys), checked, tuple(problems)

@@ -165,7 +165,7 @@ uv run ffdraft snapshot-market --season 2026 --cohorts study --store ../market-d
 uv run ffdraft capture-status  --season 2026 --store ../market-data
 
 # offline, reproducible from retained bytes
-uv run ffdraft validate-market-history ../market-data --season 2026
+uv run ffdraft validate-market-history ../market-data --season 2026   # market and status
 uv run ffdraft measure-market-cohorts --store ../market-data     # writes docs/market-cohorts/
 uv run ffdraft build-current --store ../market-data              # tiers + player_status
 uv run ffdraft build-arbitrage --store ../market-data            # A0 board, merges metadata
