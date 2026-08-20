@@ -94,13 +94,25 @@ class LoadedSources:
         return [item.to_dict() for item in self.metadata]
 
 
-def season_windows(target_seasons: Sequence[int]) -> SeasonWindows:
-    """Derive every source's season window from the requested target seasons."""
+def season_windows(
+    target_seasons: Sequence[int],
+    *,
+    include_target_statistics: bool = True,
+) -> SeasonWindows:
+    """Derive every source's season window from the requested target seasons.
+
+    A historical build needs the target season's own statistics, because that is where the
+    labels come from. Current inference has no labels: the target season's statistics are
+    either unpublished (it has not been played) or an outcome of the season being predicted,
+    and both answers are "do not load them". ``include_target_statistics=False`` says so
+    explicitly rather than leaving it to whether nflverse happens to have the file yet.
+    """
     targets = tuple(sorted(set(int(season) for season in target_seasons)))
     if not targets:
         raise ValueError("at least one target season is required")
     deepest = max(CAREER_LOOKBACK_SEASONS)
-    statistics = tuple(range(targets[0] - deepest, targets[-1] + 1))
+    last_statistics_season = targets[-1] if include_target_statistics else targets[-1] - 1
+    statistics = tuple(range(targets[0] - deepest, last_statistics_season + 1))
     rosters = tuple(season - 1 for season in targets)
     return SeasonWindows(
         target=targets,
@@ -155,6 +167,7 @@ def load_historical_sources(
     target_seasons: Sequence[int],
     as_of: datetime | None = None,
     timeout_seconds: float = 60.0,
+    include_target_statistics: bool = True,
 ) -> LoadedSources:
     """Fetch and normalize every source the historical build needs.
 
@@ -164,7 +177,10 @@ def load_historical_sources(
     import nflreadpy
 
     retrieved_at = as_of or utc_now()
-    windows = season_windows(target_seasons)
+    windows = season_windows(
+        target_seasons,
+        include_target_statistics=include_target_statistics,
+    )
     checks: list[QualityCheck] = []
     metadata: list[SourceMetadata] = []
     del timeout_seconds  # nflreadpy manages its own HTTP timeouts

@@ -175,6 +175,24 @@ The implementation agent may make modest naming changes, but subsystem boundarie
 >
 > **Phase-3 deltas**, also additive:
 >
+> **Phase-4 additions.**
+>
+> - `src/ffdraft/modeling/rules.py` — every frozen Phase-4 decision rule in one module,
+>   committed before its evidence existed (ADR-030).
+> - `src/ffdraft/modeling/calibration.py` — the isotonic monotonicity projection, the
+>   split-conformal quantile shift, and the horizon target scale.
+> - `src/ffdraft/modeling/gaussian.py` — the normal CDF and its inverse, written against
+>   NumPy for the copula (ADR-024 keeps SciPy out of production).
+> - `src/ffdraft/modeling/distribution.py` — the stage-B study that chose the production
+>   predictive distribution.
+> - `src/ffdraft/modeling/production.py` — training, serializing and serving a versioned
+>   model artifact. Text boosters plus JSON metadata; no pickle anywhere.
+> - `src/ffdraft/modeling/frozen.py` — the freeze checkpoint: the production system as
+>   constants, committed before the final holdout was opened.
+> - `src/ffdraft/modeling/cards.py` — the generated model card and tier-method report.
+> - `src/ffdraft/pipeline/current.py` — the current-season build, whose information cutoff is
+>   the build timestamp rather than a future draft anchor.
+>
 > - `src/ffdraft/modeling/` — the evaluation harness: the sealed holdout, the fold generator and window policies, the versioned core feature set, fold-local preprocessing and residual quantiles, the B0/B1 baselines, the Q1 LightGBM quantile candidate, metrics, the paired bootstrap, the frozen promotion gate, and experiment orchestration and reporting. It knows how to *evaluate* a model on the Phase-2 dataset; it fetches nothing, writes no public artifact and does not know what a tier is.
 > - `tests/model/` — the Phase-3 suite, driven by a synthetic modelling table so it runs without the gitignored historical dataset.
 > - `docs/experiments/phase3-intrinsic-baselines/` — the machine-readable and human-readable experiment reports, committed as evidence in the same way `docs/source-probes/` holds the Phase-0 probe.
@@ -224,9 +242,21 @@ Training, fold generation, metrics, calibration, artifact versioning. Separate i
 
 Sample outcomes from production model distributions, calculate roster allocation/replacement baselines, produce simulated VORP.
 
+> **Phase-4 contents.** `allocation.py` is unchanged from Phase 2 and is still the only
+> implementation of who a league starts. `sampler.py` builds the monotone quantile function
+> and the deterministic per-player draw streams; `vorp.py` is the draw loop that hands each
+> sampled season to the allocation and summarises the result; `study.py` is the development
+> study that chose the draw count and the fair-ranking statistic.
+
 ### `tiers/`
 
 Contiguous segmentation only. It consumes ranked intrinsic distribution summaries/samples, never market data.
+
+> **Phase-4 contents.** `segmentation.py` (PELT over standardized VORP summaries, plus
+> boundary diagnostics), `stability.py` (the draw-resampling bootstrap and the adjusted Rand
+> index), `labels.py` (ordinal to letter) and `study.py` (penalty selection and the stability
+> gate). Nothing in the package imports a market source, and nothing in it knows what a
+> market is.
 
 ### `arbitrage/`
 

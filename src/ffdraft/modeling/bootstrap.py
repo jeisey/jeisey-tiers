@@ -67,7 +67,12 @@ def row_pinball_loss(
 
 @dataclass(frozen=True)
 class PairedCell:
-    """One evaluation cell with both models' predictions for the same rows."""
+    """One evaluation cell with both models' predictions for the same rows.
+
+    ``top_k`` is the retrieval depth for this cell's position, used only when the caller asks
+    for the ``top_k_recall`` metric. It defaults to zero, which means "not measured here",
+    so a caller that only wants the three primary metrics is unaffected.
+    """
 
     key: str
     actual: Floats
@@ -75,6 +80,7 @@ class PairedCell:
     candidate_point: Floats
     baseline_quantiles: Floats
     candidate_quantiles: Floats
+    top_k: int = 0
 
     @property
     def size(self) -> int:
@@ -168,6 +174,26 @@ def _row_spearman(actual: Floats, predicted: Floats) -> Floats:
         return np.where(denominator > 0.0, numerator / denominator, np.nan)
 
 
+def _row_top_k_recall(actual: Floats, predicted: Floats, k: int) -> Floats:
+    """Top-K retrieval for each row of a paired (replicates, n) pair of matrices.
+
+    Ties break on input position, exactly as :func:`ffdraft.modeling.metrics.top_k_recall`
+    does, because the caller sorts the frame before building the cell. With ``k >= n`` the
+    metric is 1.0 by construction; that is reported rather than suppressed.
+    """
+    replicates, n = actual.shape
+    depth = min(max(k, 0), n)
+    if depth == 0:
+        return np.full(replicates, np.nan)
+    actual_top = np.argsort(-actual, axis=1, kind="stable")[:, :depth]
+    predicted_top = np.argsort(-predicted, axis=1, kind="stable")[:, :depth]
+    actual_mask = np.zeros((replicates, n), dtype=bool)
+    predicted_mask = np.zeros((replicates, n), dtype=bool)
+    np.put_along_axis(actual_mask, actual_top, True, axis=1)
+    np.put_along_axis(predicted_mask, predicted_top, True, axis=1)
+    return np.sum(actual_mask & predicted_mask, axis=1) / float(depth)
+
+
 def _cell_statistics(
     cell: PairedCell,
     indices: NDArray[np.int64],
@@ -193,6 +219,10 @@ def _cell_statistics(
             _row_spearman(resampled_actual, cell.baseline_point[indices]),
             _row_spearman(resampled_actual, cell.candidate_point[indices]),
         ),
+        "top_k_recall": (
+            _row_top_k_recall(resampled_actual, cell.baseline_point[indices], cell.top_k),
+            _row_top_k_recall(resampled_actual, cell.candidate_point[indices], cell.top_k),
+        ),
     }
 
 
@@ -201,6 +231,7 @@ LOWER_IS_BETTER: Mapping[str, bool] = {
     "mae": True,
     "mean_pinball": True,
     "spearman": False,
+    "top_k_recall": False,
 }
 
 
@@ -263,7 +294,7 @@ def _observed_delta(
     levels: Sequence[float],
 ) -> tuple[float, float]:
     """The macro metric on the observed data, which the interval is centred on."""
-    from ffdraft.modeling.metrics import mae, mean_pinball, spearman
+    from ffdraft.modeling.metrics import mae, mean_pinball, spearman, top_k_recall
 
     baseline_values: list[float] = []
     candidate_values: list[float] = []
@@ -277,6 +308,9 @@ def _observed_delta(
         elif metric == "spearman":
             baseline_values.append(spearman(cell.actual, cell.baseline_point))
             candidate_values.append(spearman(cell.actual, cell.candidate_point))
+        elif metric == "top_k_recall":
+            baseline_values.append(top_k_recall(cell.actual, cell.baseline_point, cell.top_k))
+            candidate_values.append(top_k_recall(cell.actual, cell.candidate_point, cell.top_k))
         else:  # pragma: no cover - guarded by LOWER_IS_BETTER
             raise ValueError(f"unsupported bootstrap metric {metric!r}")
     return (

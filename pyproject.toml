@@ -24,6 +24,7 @@ dependencies = [
     "pyyaml>=6.0",
     "requests>=2.32",
     "rfc3339-validator>=0.1.4",
+    "ruptures>=1.1.9",
 ]
 
 [project.scripts]
@@ -82,5 +83,5 @@ files = ["src/ffdraft"]
 strict = true
 # nflreadpy and rfc3339_validator ship no type information; everything we write is typed.
 [[tool.mypy.overrides]]
-module = ["nflreadpy.*", "rfc3339_validator.*"]
+module = ["nflreadpy.*", "rfc3339_validator.*", "ruptures.*"]
 ignore_missing_imports = true

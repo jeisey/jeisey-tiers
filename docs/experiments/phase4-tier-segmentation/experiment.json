@@ -1,0 +1,6058 @@
+{
+  "algorithm_attempts": [
+    {
+      "algorithm": "pelt_rbf",
+      "candidates": [
+        {
+          "bootstrap_adjusted_rand": 0.7726060716064397,
+          "boundary_agreement": 0.3335978835978836,
+          "largest_tier_share": 0.19466666666666663,
+          "mean_boundary_effect_size": 0.009218611793359583,
+          "mean_tier_count": 16.333333333333332,
+          "median_within_tier_effect_size": 0.0047334574063601165,
+          "penalty": 1.0,
+          "singleton_rate": 0.13382248985964157
+        },
+        {
+          "bootstrap_adjusted_rand": 0.8579475038630165,
+          "boundary_agreement": 0.2738095238095238,
+          "largest_tier_share": 0.26888888888888884,
+          "mean_boundary_effect_size": 0.014401032679335894,
+          "mean_tier_count": 7.6,
+          "median_within_tier_effect_size": 0.004698163665988305,
+          "penalty": 2.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.8624021084413619,
+          "boundary_agreement": 0.2333333333333333,
+          "largest_tier_share": 0.30333333333333334,
+          "mean_boundary_effect_size": 0.014507452845229592,
+          "mean_tier_count": 6.266666666666667,
+          "median_within_tier_effect_size": 0.004726369816136828,
+          "penalty": 3.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9339451778502518,
+          "boundary_agreement": 0.3888888888888889,
+          "largest_tier_share": 0.3464444444444445,
+          "mean_boundary_effect_size": 0.014591767406274277,
+          "mean_tier_count": 5.066666666666666,
+          "median_within_tier_effect_size": 0.004711038076269957,
+          "penalty": 5.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9433453208126137,
+          "boundary_agreement": 0.38888888888888884,
+          "largest_tier_share": 0.38133333333333336,
+          "mean_boundary_effect_size": 0.017204819835520604,
+          "mean_tier_count": 4.0,
+          "median_within_tier_effect_size": 0.004710814306886155,
+          "penalty": 8.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9207306490359701,
+          "boundary_agreement": 0.3611111111111111,
+          "largest_tier_share": 0.4024444444444445,
+          "mean_boundary_effect_size": 0.013850387663206194,
+          "mean_tier_count": 3.6,
+          "median_within_tier_effect_size": 0.004738525388522954,
+          "penalty": 12.0,
+          "singleton_rate": 0.0
+        }
+      ],
+      "penalty_decisive": true,
+      "penalty_failures": [],
+      "penalty_selected": "1.0",
+      "stability": "fail",
+      "stability_evidence": {
+        "bootstrap_adjusted_rand": 0.7726060716064397,
+        "boundary_agreement": 0.3335978835978836,
+        "cross_preset_adjusted_rand": 0.431581902411677,
+        "monotonic_pair_share": 0.6560298361768949,
+        "singleton_rate": 0.13812085429533102,
+        "tier_count_cv": 0.10605592835203059
+      },
+      "stability_failures": [
+        "boundary agreement 0.3336 below 0.5000",
+        "monotonic tier pairs 0.6560 below 0.8000",
+        "cross-preset ARI 0.4316 below 0.5000"
+      ],
+      "version": "pelt_rbf_vorp_summary_v1"
+    },
+    {
+      "algorithm": "dp_quantile",
+      "candidates": [
+        {
+          "bootstrap_adjusted_rand": 0.864869594098204,
+          "boundary_agreement": 0.2394179894179894,
+          "largest_tier_share": 0.24088888888888887,
+          "mean_boundary_effect_size": 0.014415279025637077,
+          "mean_tier_count": 8.8,
+          "median_within_tier_effect_size": 0.004738146616507508,
+          "penalty": 1.0,
+          "singleton_rate": 0.03286195286195286
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9142746314819087,
+          "boundary_agreement": 0.38888888888888884,
+          "largest_tier_share": 0.29022222222222216,
+          "mean_boundary_effect_size": 0.015305043156309433,
+          "mean_tier_count": 6.733333333333333,
+          "median_within_tier_effect_size": 0.004683314907098753,
+          "penalty": 2.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9304583444584164,
+          "boundary_agreement": 0.5166666666666666,
+          "largest_tier_share": 0.3408888888888889,
+          "mean_boundary_effect_size": 0.014815722404271555,
+          "mean_tier_count": 5.666666666666667,
+          "median_within_tier_effect_size": 0.004718774724777561,
+          "penalty": 3.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9513971078710238,
+          "boundary_agreement": 0.4583333333333333,
+          "largest_tier_share": 0.3735555555555556,
+          "mean_boundary_effect_size": 0.013648900404670702,
+          "mean_tier_count": 4.933333333333334,
+          "median_within_tier_effect_size": 0.004726983761836306,
+          "penalty": 5.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9593349811860441,
+          "boundary_agreement": 0.49999999999999994,
+          "largest_tier_share": 0.3977777777777778,
+          "mean_boundary_effect_size": 0.01875652562201531,
+          "mean_tier_count": 4.066666666666666,
+          "median_within_tier_effect_size": 0.004730390742231195,
+          "penalty": 8.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9440009090398996,
+          "boundary_agreement": 0.3611111111111111,
+          "largest_tier_share": 0.45022222222222225,
+          "mean_boundary_effect_size": 0.020950173839666898,
+          "mean_tier_count": 3.6,
+          "median_within_tier_effect_size": 0.004719074703562339,
+          "penalty": 12.0,
+          "singleton_rate": 0.0
+        }
+      ],
+      "penalty_decisive": true,
+      "penalty_failures": [],
+      "penalty_selected": "1.0",
+      "stability": "fail",
+      "stability_evidence": {
+        "bootstrap_adjusted_rand": 0.864869594098204,
+        "boundary_agreement": 0.2394179894179894,
+        "cross_preset_adjusted_rand": 0.5287854887647532,
+        "monotonic_pair_share": 0.8447619047619048,
+        "singleton_rate": 0.03958831908831909,
+        "tier_count_cv": 0.045362248464726224
+      },
+      "stability_failures": [
+        "boundary agreement 0.2394 below 0.5000"
+      ],
+      "version": "dp_quantile_wasserstein_v1"
+    }
+  ],
+  "boundary_diagnostics": [
+    {
+      "effect_size": 0.027333144579150377,
+      "fair_rank_above": 14,
+      "fair_rank_below": 15,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.511724671639051,
+      "probability_lower_exceeds_upper": 0.48909696037877454,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0012133898141201487,
+      "fair_rank_above": 37,
+      "fair_rank_below": 38,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.08756162310919535,
+      "probability_lower_exceeds_upper": 0.49951592407771916,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.014998890689852568,
+      "fair_rank_above": 71,
+      "fair_rank_below": 72,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.4144132908500566,
+      "probability_lower_exceeds_upper": 0.494016500318666,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.005217200287372765,
+      "fair_rank_above": 90,
+      "fair_rank_below": 91,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.3105791156696256,
+      "probability_lower_exceeds_upper": 0.49791863468583664,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.013247824490635652,
+      "fair_rank_above": 108,
+      "fair_rank_below": 109,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.3712787015914714,
+      "probability_lower_exceeds_upper": 0.4947150080138704,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.01116173075891235,
+      "fair_rank_above": 153,
+      "fair_rank_below": 154,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.6608686349966852,
+      "probability_lower_exceeds_upper": 0.4955471807789826,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0018998669337041713,
+      "fair_rank_above": 190,
+      "fair_rank_below": 191,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.11495252615442553,
+      "probability_lower_exceeds_upper": 0.49924205798464477,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.000938861177589277,
+      "fair_rank_above": 240,
+      "fair_rank_below": 241,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.0439876764062177,
+      "probability_lower_exceeds_upper": 0.49962544577486095,
+      "scoring_preset": "STD",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.011945606604343701,
+      "fair_rank_above": 11,
+      "fair_rank_below": 12,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.201550160258975,
+      "probability_lower_exceeds_upper": 0.495234478947293,
+      "scoring_preset": "HALF",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0298051777729916,
+      "fair_rank_above": 33,
+      "fair_rank_below": 34,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.253538424398613,
+      "probability_lower_exceeds_upper": 0.48811116167470997,
+      "scoring_preset": "HALF",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.012424184476902377,
+      "fair_rank_above": 66,
+      "fair_rank_below": 67,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.9662174695216947,
+      "probability_lower_exceeds_upper": 0.49504356727763327,
+      "scoring_preset": "HALF",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.003403739735336226,
+      "fair_rank_above": 96,
+      "fair_rank_below": 97,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.2636714134768212,
+      "probability_lower_exceeds_upper": 0.4986420981142124,
+      "scoring_preset": "HALF",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.004266687833325684,
+      "fair_rank_above": 123,
+      "fair_rank_below": 124,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.36448784106814003,
+      "probability_lower_exceeds_upper": 0.4982978321718868,
+      "scoring_preset": "HALF",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.00928091117871875,
+      "fair_rank_above": 160,
+      "fair_rank_below": 161,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.8877054845664745,
+      "probability_lower_exceeds_upper": 0.49629748363966714,
+      "scoring_preset": "HALF",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.012732642015511846,
+      "fair_rank_above": 211,
+      "fair_rank_below": 212,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.48116715419960343,
+      "probability_lower_exceeds_upper": 0.494920519686947,
+      "scoring_preset": "HALF",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.08858279921412372,
+      "fair_rank_above": 5,
+      "fair_rank_below": 6,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 6.914914185829588,
+      "probability_lower_exceeds_upper": 0.4647066758987074,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0552898194672488,
+      "fair_rank_above": 26,
+      "fair_rank_below": 27,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 5.006714680399625,
+      "probability_lower_exceeds_upper": 0.477953717549159,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.00764361446832913,
+      "fair_rank_above": 50,
+      "fair_rank_below": 51,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.6389351484017993,
+      "probability_lower_exceeds_upper": 0.4969506504478245,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.004659349504149534,
+      "fair_rank_above": 71,
+      "fair_rank_below": 72,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.5698856398594216,
+      "probability_lower_exceeds_upper": 0.4981411834931519,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0020509438106533317,
+      "fair_rank_above": 98,
+      "fair_rank_below": 99,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.21456387615885575,
+      "probability_lower_exceeds_upper": 0.4991817867818287,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.03772806063028743,
+      "fair_rank_above": 137,
+      "fair_rank_below": 138,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.129281958432017,
+      "probability_lower_exceeds_upper": 0.4849521910980089,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0015639457554558539,
+      "fair_rank_above": 190,
+      "fair_rank_below": 191,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.12671192315267632,
+      "probability_lower_exceeds_upper": 0.4993760717639223,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0021536981794004354,
+      "fair_rank_above": 240,
+      "fair_rank_below": 241,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.20201520404991413,
+      "probability_lower_exceeds_upper": 0.4991407935616146,
+      "scoring_preset": "PPR",
+      "season": 2020
+    },
+    {
+      "effect_size": 0.0002905734861107859,
+      "fair_rank_above": 15,
+      "fair_rank_below": 16,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.027079721788346944,
+      "probability_lower_exceeds_upper": 0.4998840767161989,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0026320184446454904,
+      "fair_rank_above": 35,
+      "fair_rank_below": 36,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.19916130821746236,
+      "probability_lower_exceeds_upper": 0.498949970782968,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.022959626458327675,
+      "fair_rank_above": 66,
+      "fair_rank_below": 67,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.4159686225286237,
+      "probability_lower_exceeds_upper": 0.49084119426626877,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.007357775523419711,
+      "fair_rank_above": 87,
+      "fair_rank_below": 88,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.901953675522968,
+      "probability_lower_exceeds_upper": 0.4970646810858151,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.000677561864460493,
+      "fair_rank_above": 88,
+      "fair_rank_below": 89,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.08616146570707883,
+      "probability_lower_exceeds_upper": 0.49972968973626697,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.001764973769280944,
+      "fair_rank_above": 115,
+      "fair_rank_below": 116,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.10565379469602121,
+      "probability_lower_exceeds_upper": 0.49929587280938076,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0002693130197041107,
+      "fair_rank_above": 157,
+      "fair_rank_below": 158,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.031102168532164853,
+      "probability_lower_exceeds_upper": 0.4998925584685183,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.00046578512615419725,
+      "fair_rank_above": 158,
+      "fair_rank_below": 159,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.05599446630951377,
+      "probability_lower_exceeds_upper": 0.49981417694850666,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0016592115191401205,
+      "fair_rank_above": 189,
+      "fair_rank_below": 190,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.09869271740404884,
+      "probability_lower_exceeds_upper": 0.49933806603906766,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0022390597217240254,
+      "fair_rank_above": 233,
+      "fair_rank_below": 234,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.10309922968373542,
+      "probability_lower_exceeds_upper": 0.4991067391093274,
+      "scoring_preset": "STD",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.02228298329893797,
+      "fair_rank_above": 16,
+      "fair_rank_below": 17,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.0164876478137472,
+      "probability_lower_exceeds_upper": 0.491111067699344,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.01884977795243389,
+      "fair_rank_above": 39,
+      "fair_rank_below": 40,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.2239342438295537,
+      "probability_lower_exceeds_upper": 0.4924804332103314,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.008150098400625966,
+      "fair_rank_above": 59,
+      "fair_rank_below": 60,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.7397915206437276,
+      "probability_lower_exceeds_upper": 0.49674859783285313,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0015784689195425037,
+      "fair_rank_above": 90,
+      "fair_rank_below": 91,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.12452782221611614,
+      "probability_lower_exceeds_upper": 0.49937027783128735,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0005524706125887944,
+      "fair_rank_above": 117,
+      "fair_rank_below": 118,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.03736230412743424,
+      "probability_lower_exceeds_upper": 0.4997795942295757,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0038426388130188656,
+      "fair_rank_above": 152,
+      "fair_rank_below": 153,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.33460673956665943,
+      "probability_lower_exceeds_upper": 0.498467002842096,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.007214355851926891,
+      "fair_rank_above": 197,
+      "fair_rank_below": 198,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.5536683568528389,
+      "probability_lower_exceeds_upper": 0.4971218960433988,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0009622798227422068,
+      "fair_rank_above": 237,
+      "fair_rank_below": 238,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.09906159386380864,
+      "probability_lower_exceeds_upper": 0.49961610303315007,
+      "scoring_preset": "HALF",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.02443196801375215,
+      "fair_rank_above": 28,
+      "fair_rank_below": 29,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.581716900554767,
+      "probability_lower_exceeds_upper": 0.4902539779439395,
+      "scoring_preset": "PPR",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.07438426541696708,
+      "fair_rank_above": 58,
+      "fair_rank_below": 59,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 6.606415189992745,
+      "probability_lower_exceeds_upper": 0.47035224580296814,
+      "scoring_preset": "PPR",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.005997146348890979,
+      "fair_rank_above": 94,
+      "fair_rank_below": 95,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.8567876716904763,
+      "probability_lower_exceeds_upper": 0.4976074843916684,
+      "scoring_preset": "PPR",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.009605132707500663,
+      "fair_rank_above": 130,
+      "fair_rank_below": 131,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.9678754934195339,
+      "probability_lower_exceeds_upper": 0.4961681430775923,
+      "scoring_preset": "PPR",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0002184538271057722,
+      "fair_rank_above": 174,
+      "fair_rank_below": 175,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.027360656973762332,
+      "probability_lower_exceeds_upper": 0.49991284847875894,
+      "scoring_preset": "PPR",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.0013322141753770054,
+      "fair_rank_above": 220,
+      "fair_rank_below": 221,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.04784130305486656,
+      "probability_lower_exceeds_upper": 0.4994685197612721,
+      "scoring_preset": "PPR",
+      "season": 2021
+    },
+    {
+      "effect_size": 0.03573862030660697,
+      "fair_rank_above": 5,
+      "fair_rank_below": 6,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 4.447253256447922,
+      "probability_lower_exceeds_upper": 0.48574532915071156,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.0005046668429480183,
+      "fair_rank_above": 24,
+      "fair_rank_below": 25,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.05238974065126456,
+      "probability_lower_exceeds_upper": 0.4997986652918294,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.021036523239926646,
+      "fair_rank_above": 42,
+      "fair_rank_below": 43,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.7852292137385035,
+      "probability_lower_exceeds_upper": 0.4916082184249117,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.00044876691136004664,
+      "fair_rank_above": 73,
+      "fair_rank_below": 74,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.038695956982095936,
+      "probability_lower_exceeds_upper": 0.49982096627602324,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.027243559289211548,
+      "fair_rank_above": 102,
+      "fair_rank_below": 103,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.6298007831526462,
+      "probability_lower_exceeds_upper": 0.48913268653980735,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.005285138756312343,
+      "fair_rank_above": 142,
+      "fair_rank_below": 143,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.3541594268330215,
+      "probability_lower_exceeds_upper": 0.4978915313795044,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.00145784892502489,
+      "fair_rank_above": 195,
+      "fair_rank_below": 196,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.08793264018252955,
+      "probability_lower_exceeds_upper": 0.4994183984874155,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.0009746364611412038,
+      "fair_rank_above": 266,
+      "fair_rank_below": 267,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.12151677534367877,
+      "probability_lower_exceeds_upper": 0.49961117341924915,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.000970421054802708,
+      "fair_rank_above": 267,
+      "fair_rank_below": 268,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.11418406414676951,
+      "probability_lower_exceeds_upper": 0.4996128551327474,
+      "scoring_preset": "STD",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.011975653736130252,
+      "fair_rank_above": 15,
+      "fair_rank_below": 16,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.9883405535262852,
+      "probability_lower_exceeds_upper": 0.49522249267676854,
+      "scoring_preset": "HALF",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.0036366686903291407,
+      "fair_rank_above": 36,
+      "fair_rank_below": 37,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.2623310389405731,
+      "probability_lower_exceeds_upper": 0.4985491729369572,
+      "scoring_preset": "HALF",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.016357232853414918,
+      "fair_rank_above": 70,
+      "fair_rank_below": 71,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.6497809315378333,
+      "probability_lower_exceeds_upper": 0.4934746645267934,
+      "scoring_preset": "HALF",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.05847901335962736,
+      "fair_rank_above": 98,
+      "fair_rank_below": 99,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.56093799660524,
+      "probability_lower_exceeds_upper": 0.4766834700617142,
+      "scoring_preset": "HALF",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.0011170514674145446,
+      "fair_rank_above": 136,
+      "fair_rank_below": 137,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.09202715509300674,
+      "probability_lower_exceeds_upper": 0.4995543577296779,
+      "scoring_preset": "HALF",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.00035003888574192316,
+      "fair_rank_above": 183,
+      "fair_rank_below": 184,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.0229686973400689,
+      "probability_lower_exceeds_upper": 0.4998603533052248,
+      "scoring_preset": "HALF",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.002009331246790274,
+      "fair_rank_above": 248,
+      "fair_rank_below": 249,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.1202357414052102,
+      "probability_lower_exceeds_upper": 0.49919838785960025,
+      "scoring_preset": "HALF",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.04795463813353669,
+      "fair_rank_above": 17,
+      "fair_rank_below": 18,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 4.414747141389,
+      "probability_lower_exceeds_upper": 0.4808761308507386,
+      "scoring_preset": "PPR",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.000763602831124672,
+      "fair_rank_above": 48,
+      "fair_rank_below": 49,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.09115191156401181,
+      "probability_lower_exceeds_upper": 0.4996953641506395,
+      "scoring_preset": "PPR",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.03583734642775206,
+      "fair_rank_above": 71,
+      "fair_rank_below": 72,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 4.545188590162809,
+      "probability_lower_exceeds_upper": 0.485705968257888,
+      "scoring_preset": "PPR",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.0035639916202992966,
+      "fair_rank_above": 100,
+      "fair_rank_below": 101,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.34775775531599606,
+      "probability_lower_exceeds_upper": 0.4985781668747246,
+      "scoring_preset": "PPR",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.015594556723971864,
+      "fair_rank_above": 144,
+      "fair_rank_below": 145,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.301918381210399,
+      "probability_lower_exceeds_upper": 0.4937788907331481,
+      "scoring_preset": "PPR",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.008845918032715264,
+      "fair_rank_above": 194,
+      "fair_rank_below": 195,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.7246289260120164,
+      "probability_lower_exceeds_upper": 0.4964710145537507,
+      "scoring_preset": "PPR",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.001683434662798856,
+      "fair_rank_above": 253,
+      "fair_rank_below": 254,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.11026161554066505,
+      "probability_lower_exceeds_upper": 0.4993284023571797,
+      "scoring_preset": "PPR",
+      "season": 2022
+    },
+    {
+      "effect_size": 0.04711151597318656,
+      "fair_rank_above": 13,
+      "fair_rank_below": 14,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.8927559718250677,
+      "probability_lower_exceeds_upper": 0.48121210852647356,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.020255581139150308,
+      "fair_rank_above": 33,
+      "fair_rank_below": 34,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.190236583575178,
+      "probability_lower_exceeds_upper": 0.4919197039909154,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.045446931029644526,
+      "fair_rank_above": 61,
+      "fair_rank_below": 62,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 4.283671732735328,
+      "probability_lower_exceeds_upper": 0.481875471805345,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0,
+      "fair_rank_above": 85,
+      "fair_rank_below": 86,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.0,
+      "probability_lower_exceeds_upper": 0.5,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0,
+      "fair_rank_above": 87,
+      "fair_rank_below": 88,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.0,
+      "probability_lower_exceeds_upper": 0.5,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0015035145273721551,
+      "fair_rank_above": 112,
+      "fair_rank_below": 113,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.09800893571604163,
+      "probability_lower_exceeds_upper": 0.4994001804557135,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.00037825033071615347,
+      "fair_rank_above": 155,
+      "fair_rank_below": 156,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.04870029470426118,
+      "probability_lower_exceeds_upper": 0.4998490984966615,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0031783156758658183,
+      "fair_rank_above": 156,
+      "fair_rank_below": 157,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.4153593331766672,
+      "probability_lower_exceeds_upper": 0.4987320293454722,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0018063694128204332,
+      "fair_rank_above": 226,
+      "fair_rank_below": 227,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.084172176484266,
+      "probability_lower_exceeds_upper": 0.49927935826235775,
+      "scoring_preset": "STD",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.01856949549776301,
+      "fair_rank_above": 9,
+      "fair_rank_below": 10,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.320034111169605,
+      "probability_lower_exceeds_upper": 0.4925922305985614,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.036587703557737966,
+      "fair_rank_above": 27,
+      "fair_rank_below": 28,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.9065662564424883,
+      "probability_lower_exceeds_upper": 0.48540681467015895,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.031294774453232053,
+      "fair_rank_above": 49,
+      "fair_rank_below": 50,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.98880950970225,
+      "probability_lower_exceeds_upper": 0.4875171743259368,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0420392284641413,
+      "fair_rank_above": 69,
+      "fair_rank_below": 70,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.3535153052639686,
+      "probability_lower_exceeds_upper": 0.4832336496836942,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.018915791279968498,
+      "fair_rank_above": 100,
+      "fair_rank_below": 101,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.6669348181727486,
+      "probability_lower_exceeds_upper": 0.4924541022954326,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0037714025153786673,
+      "fair_rank_above": 119,
+      "fair_rank_below": 120,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.26303793357982386,
+      "probability_lower_exceeds_upper": 0.49849542197261637,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.01060605150640822,
+      "fair_rank_above": 166,
+      "fair_rank_below": 167,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.7000781397158065,
+      "probability_lower_exceeds_upper": 0.4957688526725364,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0012934366283243524,
+      "fair_rank_above": 227,
+      "fair_rank_below": 228,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.07038714354349196,
+      "probability_lower_exceeds_upper": 0.4994839898465917,
+      "scoring_preset": "HALF",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.006921588755622216,
+      "fair_rank_above": 10,
+      "fair_rank_below": 11,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.873064154565327,
+      "probability_lower_exceeds_upper": 0.4972386909258012,
+      "scoring_preset": "PPR",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.048533066031433696,
+      "fair_rank_above": 34,
+      "fair_rank_below": 35,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.5809198080367963,
+      "probability_lower_exceeds_upper": 0.4806456396509697,
+      "scoring_preset": "PPR",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.030219167636637033,
+      "fair_rank_above": 57,
+      "fair_rank_below": 58,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.7607998358336445,
+      "probability_lower_exceeds_upper": 0.48794607753911523,
+      "scoring_preset": "PPR",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.00047306451083533604,
+      "fair_rank_above": 89,
+      "fair_rank_below": 90,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.04303539328798678,
+      "probability_lower_exceeds_upper": 0.49981127287619603,
+      "scoring_preset": "PPR",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.007871099421551652,
+      "fair_rank_above": 115,
+      "fair_rank_below": 116,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.1647862618944913,
+      "probability_lower_exceeds_upper": 0.49685989933377056,
+      "scoring_preset": "PPR",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.0037930172436218008,
+      "fair_rank_above": 162,
+      "fair_rank_below": 163,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.32199328605892674,
+      "probability_lower_exceeds_upper": 0.4984867989550877,
+      "scoring_preset": "PPR",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.005283738794628919,
+      "fair_rank_above": 219,
+      "fair_rank_below": 220,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.3754211883993719,
+      "probability_lower_exceeds_upper": 0.49789208987874867,
+      "scoring_preset": "PPR",
+      "season": 2023
+    },
+    {
+      "effect_size": 0.01895027973903473,
+      "fair_rank_above": 15,
+      "fair_rank_below": 16,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.8320358228514948,
+      "probability_lower_exceeds_upper": 0.49244034580342533,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.009026057162610244,
+      "fair_rank_above": 44,
+      "fair_rank_below": 45,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.5371266332333278,
+      "probability_lower_exceeds_upper": 0.4963991519399579,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.0034000680031217737,
+      "fair_rank_above": 67,
+      "fair_rank_below": 68,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.1920836416776197,
+      "probability_lower_exceeds_upper": 0.49864356292357054,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.0027010230748997156,
+      "fair_rank_above": 94,
+      "fair_rank_below": 95,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.17934595290184063,
+      "probability_lower_exceeds_upper": 0.498922441851558,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.007793587590447604,
+      "fair_rank_above": 126,
+      "fair_rank_below": 127,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.7877685329743684,
+      "probability_lower_exceeds_upper": 0.4968908212947892,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.01032122659697834,
+      "fair_rank_above": 166,
+      "fair_rank_below": 167,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.5834039524141446,
+      "probability_lower_exceeds_upper": 0.49588247570952626,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.00268387511723542,
+      "fair_rank_above": 208,
+      "fair_rank_below": 209,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.3362612441333823,
+      "probability_lower_exceeds_upper": 0.49892928291300787,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.0035865854937700693,
+      "fair_rank_above": 209,
+      "fair_rank_below": 210,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.49933852036519966,
+      "probability_lower_exceeds_upper": 0.49856915322815937,
+      "scoring_preset": "STD",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.021905670427814963,
+      "fair_rank_above": 16,
+      "fair_rank_below": 17,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.0177135264360544,
+      "probability_lower_exceeds_upper": 0.49126155754840994,
+      "scoring_preset": "HALF",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.038898423840530244,
+      "fair_rank_above": 41,
+      "fair_rank_below": 42,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.0758815064827445,
+      "probability_lower_exceeds_upper": 0.4844856254385864,
+      "scoring_preset": "HALF",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.05657933982079753,
+      "fair_rank_above": 61,
+      "fair_rank_below": 62,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 3.812175185057505,
+      "probability_lower_exceeds_upper": 0.47744007727065746,
+      "scoring_preset": "HALF",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.034997324260368404,
+      "fair_rank_above": 82,
+      "fair_rank_below": 83,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.478471572833911,
+      "probability_lower_exceeds_upper": 0.4860408792076432,
+      "scoring_preset": "HALF",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.002689878967726736,
+      "fair_rank_above": 116,
+      "fair_rank_below": 117,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.23678867039924256,
+      "probability_lower_exceeds_upper": 0.49892688771752197,
+      "scoring_preset": "HALF",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.002731043665684927,
+      "fair_rank_above": 170,
+      "fair_rank_below": 171,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.14691073464854298,
+      "probability_lower_exceeds_upper": 0.49891046534120354,
+      "scoring_preset": "HALF",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.018084195255528915,
+      "fair_rank_above": 207,
+      "fair_rank_below": 208,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.9256026146960181,
+      "probability_lower_exceeds_upper": 0.4927858056346139,
+      "scoring_preset": "HALF",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.03684685007750451,
+      "fair_rank_above": 8,
+      "fair_rank_below": 9,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 4.1380745866734685,
+      "probability_lower_exceeds_upper": 0.4853034996230098,
+      "scoring_preset": "PPR",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.00042263768379039785,
+      "fair_rank_above": 34,
+      "fair_rank_below": 35,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.0480166458246174,
+      "probability_lower_exceeds_upper": 0.49983139039442454,
+      "scoring_preset": "PPR",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.03531429018812087,
+      "fair_rank_above": 57,
+      "fair_rank_below": 58,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.535105765971153,
+      "probability_lower_exceeds_upper": 0.48591450594163305,
+      "scoring_preset": "PPR",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.02387170763179094,
+      "fair_rank_above": 79,
+      "fair_rank_below": 80,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.930400797317418,
+      "probability_lower_exceeds_upper": 0.49047742505064856,
+      "scoring_preset": "PPR",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.012580098696678125,
+      "fair_rank_above": 114,
+      "fair_rank_below": 115,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 1.2632570071251905,
+      "probability_lower_exceeds_upper": 0.49498137107463147,
+      "scoring_preset": "PPR",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.0013843903976977446,
+      "fair_rank_above": 144,
+      "fair_rank_below": 145,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.12765265149970872,
+      "probability_lower_exceeds_upper": 0.49944770435086483,
+      "scoring_preset": "PPR",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.027183125621957405,
+      "fair_rank_above": 188,
+      "fair_rank_below": 189,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 2.0864568939839003,
+      "probability_lower_exceeds_upper": 0.4891567872304474,
+      "scoring_preset": "PPR",
+      "season": 2024
+    },
+    {
+      "effect_size": 0.0024785223672643985,
+      "fair_rank_above": 242,
+      "fair_rank_below": 243,
+      "league_preset_id": "redraft-12",
+      "p50_cliff": 0.26223251298706884,
+      "probability_lower_exceeds_upper": 0.49901120702554874,
+      "scoring_preset": "PPR",
+      "season": 2024
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "phase4.tier_algorithm_escalated",
+      "expected": "",
+      "message": "the pelt_rbf candidate failed a frozen rule, so the documented dynamic-programming alternative was evaluated - ADR-030's declared response, not a wider penalty search",
+      "observed": "boundary agreement 0.3336 below 0.5000; monotonic tier pairs 0.6560 below 0.8000; cross-preset ARI 0.4316 below 0.5000",
+      "severity": "warning",
+      "stage": "phase4_tiers",
+      "status": "fail"
+    },
+    {
+      "check_id": "phase4.tier_penalty",
+      "expected": "",
+      "message": "phase4_tier_v1 selected penalty 1.0",
+      "observed": "penalty 1.0 is admissible with bootstrap ARI 0.865, mean tier count 8.80, singleton rate 0.033 and boundary effect size 0.014",
+      "severity": "info",
+      "stage": "phase4_tiers",
+      "status": "pass"
+    },
+    {
+      "check_id": "phase4.tier_stability",
+      "expected": "",
+      "message": "the promoted segmentation failed the frozen stability gate; the documented response is the dynamic-programming alternative in docs/MODELING.md section 14.3, not a wider penalty search",
+      "observed": "boundary agreement 0.2394 below 0.5000",
+      "severity": "critical",
+      "stage": "phase4_tiers",
+      "status": "fail"
+    }
+  ],
+  "configuration": {
+    "board_depth": 300,
+    "bootstrap_replicates": 200,
+    "bootstrap_seasons": [
+      2022,
+      2024
+    ],
+    "default_league_preset": "redraft-12",
+    "draws": 10000,
+    "league_presets": [
+      "redraft-10",
+      "redraft-12",
+      "redraft-14"
+    ],
+    "penalties": [
+      1.0,
+      2.0,
+      3.0,
+      5.0,
+      8.0,
+      12.0
+    ],
+    "preset_comparison_season": 2024,
+    "scoring_presets": [
+      "STD",
+      "HALF",
+      "PPR"
+    ],
+    "seasons": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "seed": 20260819,
+    "statistic": "median_vorp",
+    "study_version": "phase4_tiers_v1"
+  },
+  "cross_preset_similarity": [
+    {
+      "adjusted_rand": 0.7420370928051686,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/HALF/redraft-12",
+      "shared_players": 290
+    },
+    {
+      "adjusted_rand": 0.690533395485794,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/HALF/redraft-14",
+      "shared_players": 285
+    },
+    {
+      "adjusted_rand": 0.600040123979308,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/PPR/redraft-10",
+      "shared_players": 285
+    },
+    {
+      "adjusted_rand": 0.4781863481445507,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/PPR/redraft-12",
+      "shared_players": 282
+    },
+    {
+      "adjusted_rand": 0.4408135478806888,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/PPR/redraft-14",
+      "shared_players": 276
+    },
+    {
+      "adjusted_rand": 0.49886564484050133,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/STD/redraft-10",
+      "shared_players": 280
+    },
+    {
+      "adjusted_rand": 0.6403256324559575,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/STD/redraft-12",
+      "shared_players": 291
+    },
+    {
+      "adjusted_rand": 0.5165770489971413,
+      "left": "2024/HALF/redraft-10",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 288
+    },
+    {
+      "adjusted_rand": 0.8400402479801193,
+      "left": "2024/HALF/redraft-12",
+      "right": "2024/HALF/redraft-14",
+      "shared_players": 295
+    },
+    {
+      "adjusted_rand": 0.6512160796401071,
+      "left": "2024/HALF/redraft-12",
+      "right": "2024/PPR/redraft-10",
+      "shared_players": 293
+    },
+    {
+      "adjusted_rand": 0.5325482995397421,
+      "left": "2024/HALF/redraft-12",
+      "right": "2024/PPR/redraft-12",
+      "shared_players": 290
+    },
+    {
+      "adjusted_rand": 0.5454129066929082,
+      "left": "2024/HALF/redraft-12",
+      "right": "2024/PPR/redraft-14",
+      "shared_players": 285
+    },
+    {
+      "adjusted_rand": 0.4133659018993326,
+      "left": "2024/HALF/redraft-12",
+      "right": "2024/STD/redraft-10",
+      "shared_players": 271
+    },
+    {
+      "adjusted_rand": 0.593636506801296,
+      "left": "2024/HALF/redraft-12",
+      "right": "2024/STD/redraft-12",
+      "shared_players": 285
+    },
+    {
+      "adjusted_rand": 0.46188196815775884,
+      "left": "2024/HALF/redraft-12",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 290
+    },
+    {
+      "adjusted_rand": 0.6225212457901792,
+      "left": "2024/HALF/redraft-14",
+      "right": "2024/PPR/redraft-10",
+      "shared_players": 294
+    },
+    {
+      "adjusted_rand": 0.5152112531922581,
+      "left": "2024/HALF/redraft-14",
+      "right": "2024/PPR/redraft-12",
+      "shared_players": 294
+    },
+    {
+      "adjusted_rand": 0.5479758415908673,
+      "left": "2024/HALF/redraft-14",
+      "right": "2024/PPR/redraft-14",
+      "shared_players": 289
+    },
+    {
+      "adjusted_rand": 0.39055079122275294,
+      "left": "2024/HALF/redraft-14",
+      "right": "2024/STD/redraft-10",
+      "shared_players": 267
+    },
+    {
+      "adjusted_rand": 0.5405328252928412,
+      "left": "2024/HALF/redraft-14",
+      "right": "2024/STD/redraft-12",
+      "shared_players": 282
+    },
+    {
+      "adjusted_rand": 0.4709525808519174,
+      "left": "2024/HALF/redraft-14",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 289
+    },
+    {
+      "adjusted_rand": 0.5123534528996773,
+      "left": "2024/PPR/redraft-10",
+      "right": "2024/PPR/redraft-12",
+      "shared_players": 295
+    },
+    {
+      "adjusted_rand": 0.5351444682331679,
+      "left": "2024/PPR/redraft-10",
+      "right": "2024/PPR/redraft-14",
+      "shared_players": 289
+    },
+    {
+      "adjusted_rand": 0.36787547982587177,
+      "left": "2024/PPR/redraft-10",
+      "right": "2024/STD/redraft-10",
+      "shared_players": 269
+    },
+    {
+      "adjusted_rand": 0.5689937025461232,
+      "left": "2024/PPR/redraft-10",
+      "right": "2024/STD/redraft-12",
+      "shared_players": 284
+    },
+    {
+      "adjusted_rand": 0.43467618920059936,
+      "left": "2024/PPR/redraft-10",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 289
+    },
+    {
+      "adjusted_rand": 0.8893223344137964,
+      "left": "2024/PPR/redraft-12",
+      "right": "2024/PPR/redraft-14",
+      "shared_players": 294
+    },
+    {
+      "adjusted_rand": 0.31643759056403203,
+      "left": "2024/PPR/redraft-12",
+      "right": "2024/STD/redraft-10",
+      "shared_players": 264
+    },
+    {
+      "adjusted_rand": 0.41230528087474005,
+      "left": "2024/PPR/redraft-12",
+      "right": "2024/STD/redraft-12",
+      "shared_players": 279
+    },
+    {
+      "adjusted_rand": 0.40041367079966667,
+      "left": "2024/PPR/redraft-12",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 284
+    },
+    {
+      "adjusted_rand": 0.30091426482388556,
+      "left": "2024/PPR/redraft-14",
+      "right": "2024/STD/redraft-10",
+      "shared_players": 258
+    },
+    {
+      "adjusted_rand": 0.3934528728503282,
+      "left": "2024/PPR/redraft-14",
+      "right": "2024/STD/redraft-12",
+      "shared_players": 274
+    },
+    {
+      "adjusted_rand": 0.3627625382379307,
+      "left": "2024/PPR/redraft-14",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 280
+    },
+    {
+      "adjusted_rand": 0.6979468157283645,
+      "left": "2024/STD/redraft-10",
+      "right": "2024/STD/redraft-12",
+      "shared_players": 282
+    },
+    {
+      "adjusted_rand": 0.4949282046870121,
+      "left": "2024/STD/redraft-10",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 273
+    },
+    {
+      "adjusted_rand": 0.6155254466047239,
+      "left": "2024/STD/redraft-12",
+      "right": "2024/STD/redraft-14",
+      "shared_players": 291
+    }
+  ],
+  "example_board": [
+    {
+      "expected_vorp": 132.54589043418903,
+      "fair_rank": 1,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 134.63993016869594,
+      "position": "WR",
+      "position_rank": 1,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 118.36479218090277
+    },
+    {
+      "expected_vorp": 130.51638401811744,
+      "fair_rank": 2,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 129.22525032404144,
+      "position": "WR",
+      "position_rank": 2,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 129.05063827727767
+    },
+    {
+      "expected_vorp": 106.03967475996762,
+      "fair_rank": 3,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 119.64399489614146,
+      "position": "WR",
+      "position_rank": 3,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 94.07239551914721
+    },
+    {
+      "expected_vorp": 107.3240247428629,
+      "fair_rank": 4,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 113.1470508833055,
+      "position": "WR",
+      "position_rank": 4,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 111.49252213245842
+    },
+    {
+      "expected_vorp": 101.54122116896946,
+      "fair_rank": 5,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 103.74882566417432,
+      "position": "WR",
+      "position_rank": 5,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 93.75583099939148
+    },
+    {
+      "expected_vorp": 100.537201295314,
+      "fair_rank": 6,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 102.41013181454967,
+      "position": "RB",
+      "position_rank": 1,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 100.06719780926844
+    },
+    {
+      "expected_vorp": 85.67569535224004,
+      "fair_rank": 7,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 99.85064237255975,
+      "position": "WR",
+      "position_rank": 6,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 99.86644170299644
+    },
+    {
+      "expected_vorp": 102.03374933856445,
+      "fair_rank": 8,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 99.22106437866032,
+      "position": "WR",
+      "position_rank": 7,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "S",
+      "tier_ordinal": 0,
+      "uncertainty": 126.24865519688515
+    },
+    {
+      "expected_vorp": 81.07190390048879,
+      "fair_rank": 9,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 95.08298979198685,
+      "position": "WR",
+      "position_rank": 8,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 83.7450766111287
+    },
+    {
+      "expected_vorp": 77.92172787865597,
+      "fair_rank": 10,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 93.20911200606822,
+      "position": "WR",
+      "position_rank": 9,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 114.18873038894216
+    },
+    {
+      "expected_vorp": 66.80735818080532,
+      "fair_rank": 11,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 90.7555688446496,
+      "position": "WR",
+      "position_rank": 10,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 84.43322592909504
+    },
+    {
+      "expected_vorp": 78.80323967896993,
+      "fair_rank": 12,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 89.50601911986867,
+      "position": "WR",
+      "position_rank": 11,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 89.0486326987054
+    },
+    {
+      "expected_vorp": 84.02979792594232,
+      "fair_rank": 13,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 89.44406286330921,
+      "position": "WR",
+      "position_rank": 12,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 81.35478393827844
+    },
+    {
+      "expected_vorp": 84.66986807483683,
+      "fair_rank": 14,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 84.78983510601134,
+      "position": "RB",
+      "position_rank": 2,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 94.34515282864895
+    },
+    {
+      "expected_vorp": 78.28276937593434,
+      "fair_rank": 15,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 84.58835346928959,
+      "position": "WR",
+      "position_rank": 13,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 89.75624202044503
+    },
+    {
+      "expected_vorp": 75.59880672314543,
+      "fair_rank": 16,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 84.29894564315543,
+      "position": "WR",
+      "position_rank": 14,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 78.58767598487098
+    },
+    {
+      "expected_vorp": 70.26695428310886,
+      "fair_rank": 17,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 83.02514293394225,
+      "position": "WR",
+      "position_rank": 15,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 98.87051951103982
+    },
+    {
+      "expected_vorp": 78.86411039616854,
+      "fair_rank": 18,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 82.83256475057016,
+      "position": "WR",
+      "position_rank": 16,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 84.33359438980735
+    },
+    {
+      "expected_vorp": 47.87098021037201,
+      "fair_rank": 19,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 81.31501630186999,
+      "position": "QB",
+      "position_rank": 1,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 125.27130511934597
+    },
+    {
+      "expected_vorp": 64.72529730742725,
+      "fair_rank": 20,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 80.17544994453522,
+      "position": "QB",
+      "position_rank": 2,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 82.42235293796412
+    },
+    {
+      "expected_vorp": 62.787118696791424,
+      "fair_rank": 21,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 79.65393899610262,
+      "position": "TE",
+      "position_rank": 1,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 119.56661033557741
+    },
+    {
+      "expected_vorp": 64.95128443321109,
+      "fair_rank": 22,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 79.5996164961161,
+      "position": "RB",
+      "position_rank": 3,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 84.72830326710451
+    },
+    {
+      "expected_vorp": 63.070021563407174,
+      "fair_rank": 23,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 77.32152383968366,
+      "position": "WR",
+      "position_rank": 17,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 88.13656728996132
+    },
+    {
+      "expected_vorp": 60.933285028754476,
+      "fair_rank": 24,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 77.00047307133967,
+      "position": "WR",
+      "position_rank": 18,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 126.54157947752036
+    },
+    {
+      "expected_vorp": 58.05796427866798,
+      "fair_rank": 25,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 75.95414245386547,
+      "position": "QB",
+      "position_rank": 3,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 91.35482535852582
+    },
+    {
+      "expected_vorp": 55.418805790756785,
+      "fair_rank": 26,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 75.1247896724587,
+      "position": "WR",
+      "position_rank": 19,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 100.81616954842792
+    },
+    {
+      "expected_vorp": 71.0847985866836,
+      "fair_rank": 27,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 73.38526373972772,
+      "position": "RB",
+      "position_rank": 4,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 89.26678362686924
+    },
+    {
+      "expected_vorp": 68.8020673769458,
+      "fair_rank": 28,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 72.3460955725642,
+      "position": "RB",
+      "position_rank": 5,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 74.64074410641669
+    },
+    {
+      "expected_vorp": 71.69442442053274,
+      "fair_rank": 29,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 68.70391697341908,
+      "position": "RB",
+      "position_rank": 6,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 161.5296910155496
+    },
+    {
+      "expected_vorp": 57.28456485778532,
+      "fair_rank": 30,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 68.65337110774175,
+      "position": "WR",
+      "position_rank": 20,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 95.90371325917373
+    },
+    {
+      "expected_vorp": 56.28311534169442,
+      "fair_rank": 31,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 67.65438217936514,
+      "position": "WR",
+      "position_rank": 21,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 61.62910763005954
+    },
+    {
+      "expected_vorp": 54.607284365448166,
+      "fair_rank": 32,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 64.95676992058051,
+      "position": "WR",
+      "position_rank": 22,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 53.777000884858765
+    },
+    {
+      "expected_vorp": 61.9091177306714,
+      "fair_rank": 33,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 64.60942802461346,
+      "position": "TE",
+      "position_rank": 2,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 69.76380458532887
+    },
+    {
+      "expected_vorp": 65.21472029763639,
+      "fair_rank": 34,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 64.16438114526045,
+      "position": "RB",
+      "position_rank": 7,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "A",
+      "tier_ordinal": 1,
+      "uncertainty": 121.90057549186919
+    },
+    {
+      "expected_vorp": 53.22051393581654,
+      "fair_rank": 35,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 64.11636449943583,
+      "position": "TE",
+      "position_rank": 3,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "B",
+      "tier_ordinal": 2,
+      "uncertainty": 92.89566895671923
+    },
+    {
+      "expected_vorp": 54.219335535615635,
+      "fair_rank": 36,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 62.79588452751388,
+      "position": "RB",
+      "position_rank": 8,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "B",
+      "tier_ordinal": 2,
+      "uncertainty": 84.39660510665857
+    },
+    {
+      "expected_vorp": 52.78830433835189,
+      "fair_rank": 37,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 60.96108761089355,
+      "position": "TE",
+      "position_rank": 4,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "B",
+      "tier_ordinal": 2,
+      "uncertainty": 98.68388056916814
+    },
+    {
+      "expected_vorp": 47.72925856391236,
+      "fair_rank": 38,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 60.90819060773168,
+      "position": "WR",
+      "position_rank": 23,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "B",
+      "tier_ordinal": 2,
+      "uncertainty": 62.177761458519726
+    },
+    {
+      "expected_vorp": 48.98650754621417,
+      "fair_rank": 39,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 60.633603005700934,
+      "position": "WR",
+      "position_rank": 24,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "B",
+      "tier_ordinal": 2,
+      "uncertainty": 59.22168664125084
+    },
+    {
+      "expected_vorp": 51.53804854109655,
+      "fair_rank": 40,
+      "league_preset_id": "redraft-12",
+      "p50_vorp": 59.80803159217922,
+      "position": "WR",
+      "position_rank": 25,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tier_label": "B",
+      "tier_ordinal": 2,
+      "uncertainty": 70.91362178689675
+    }
+  ],
+  "generated_at_utc": "2026-08-19T21:41:20Z",
+  "git_sha": "3ba6cb0",
+  "penalty_candidates": [
+    {
+      "bootstrap_adjusted_rand": 0.864869594098204,
+      "boundary_agreement": 0.2394179894179894,
+      "largest_tier_share": 0.24088888888888887,
+      "mean_boundary_effect_size": 0.014415279025637077,
+      "mean_tier_count": 8.8,
+      "median_within_tier_effect_size": 0.004738146616507508,
+      "penalty": 1.0,
+      "singleton_rate": 0.03286195286195286
+    },
+    {
+      "bootstrap_adjusted_rand": 0.9142746314819087,
+      "boundary_agreement": 0.38888888888888884,
+      "largest_tier_share": 0.29022222222222216,
+      "mean_boundary_effect_size": 0.015305043156309433,
+      "mean_tier_count": 6.733333333333333,
+      "median_within_tier_effect_size": 0.004683314907098753,
+      "penalty": 2.0,
+      "singleton_rate": 0.0
+    },
+    {
+      "bootstrap_adjusted_rand": 0.9304583444584164,
+      "boundary_agreement": 0.5166666666666666,
+      "largest_tier_share": 0.3408888888888889,
+      "mean_boundary_effect_size": 0.014815722404271555,
+      "mean_tier_count": 5.666666666666667,
+      "median_within_tier_effect_size": 0.004718774724777561,
+      "penalty": 3.0,
+      "singleton_rate": 0.0
+    },
+    {
+      "bootstrap_adjusted_rand": 0.9513971078710238,
+      "boundary_agreement": 0.4583333333333333,
+      "largest_tier_share": 0.3735555555555556,
+      "mean_boundary_effect_size": 0.013648900404670702,
+      "mean_tier_count": 4.933333333333334,
+      "median_within_tier_effect_size": 0.004726983761836306,
+      "penalty": 5.0,
+      "singleton_rate": 0.0
+    },
+    {
+      "bootstrap_adjusted_rand": 0.9593349811860441,
+      "boundary_agreement": 0.49999999999999994,
+      "largest_tier_share": 0.3977777777777778,
+      "mean_boundary_effect_size": 0.01875652562201531,
+      "mean_tier_count": 4.066666666666666,
+      "median_within_tier_effect_size": 0.004730390742231195,
+      "penalty": 8.0,
+      "singleton_rate": 0.0
+    },
+    {
+      "bootstrap_adjusted_rand": 0.9440009090398996,
+      "boundary_agreement": 0.3611111111111111,
+      "largest_tier_share": 0.45022222222222225,
+      "mean_boundary_effect_size": 0.020950173839666898,
+      "mean_tier_count": 3.6,
+      "median_within_tier_effect_size": 0.004719074703562339,
+      "penalty": 12.0,
+      "singleton_rate": 0.0
+    }
+  ],
+  "penalty_decision": {
+    "decisive": true,
+    "evidence": {
+      "admissible": [
+        1.0
+      ],
+      "candidates": [
+        {
+          "bootstrap_adjusted_rand": 0.864869594098204,
+          "boundary_agreement": 0.2394179894179894,
+          "largest_tier_share": 0.24088888888888887,
+          "mean_boundary_effect_size": 0.014415279025637077,
+          "mean_tier_count": 8.8,
+          "median_within_tier_effect_size": 0.004738146616507508,
+          "penalty": 1.0,
+          "singleton_rate": 0.03286195286195286
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9142746314819087,
+          "boundary_agreement": 0.38888888888888884,
+          "largest_tier_share": 0.29022222222222216,
+          "mean_boundary_effect_size": 0.015305043156309433,
+          "mean_tier_count": 6.733333333333333,
+          "median_within_tier_effect_size": 0.004683314907098753,
+          "penalty": 2.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9304583444584164,
+          "boundary_agreement": 0.5166666666666666,
+          "largest_tier_share": 0.3408888888888889,
+          "mean_boundary_effect_size": 0.014815722404271555,
+          "mean_tier_count": 5.666666666666667,
+          "median_within_tier_effect_size": 0.004718774724777561,
+          "penalty": 3.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9513971078710238,
+          "boundary_agreement": 0.4583333333333333,
+          "largest_tier_share": 0.3735555555555556,
+          "mean_boundary_effect_size": 0.013648900404670702,
+          "mean_tier_count": 4.933333333333334,
+          "median_within_tier_effect_size": 0.004726983761836306,
+          "penalty": 5.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9593349811860441,
+          "boundary_agreement": 0.49999999999999994,
+          "largest_tier_share": 0.3977777777777778,
+          "mean_boundary_effect_size": 0.01875652562201531,
+          "mean_tier_count": 4.066666666666666,
+          "median_within_tier_effect_size": 0.004730390742231195,
+          "penalty": 8.0,
+          "singleton_rate": 0.0
+        },
+        {
+          "bootstrap_adjusted_rand": 0.9440009090398996,
+          "boundary_agreement": 0.3611111111111111,
+          "largest_tier_share": 0.45022222222222225,
+          "mean_boundary_effect_size": 0.020950173839666898,
+          "mean_tier_count": 3.6,
+          "median_within_tier_effect_size": 0.004719074703562339,
+          "penalty": 12.0,
+          "singleton_rate": 0.0
+        }
+      ],
+      "criteria": {
+        "algorithm": "ruptures.Pelt(model='rbf')",
+        "board_depth": 300,
+        "criteria_version": "phase4_tier_v1",
+        "max_largest_tier_share": 0.25,
+        "max_mean_tier_count": 24.0,
+        "max_singleton_rate": 0.2,
+        "min_boundary_effect_ratio": 1.0,
+        "min_mean_tier_count": 6.0,
+        "penalties": [
+          1.0,
+          2.0,
+          3.0,
+          5.0,
+          8.0,
+          12.0
+        ],
+        "rules": [
+          "admissible: mean tier count inside the declared band",
+          "admissible: singleton rate at or below max_singleton_rate",
+          "admissible: no tier holds more than max_largest_tier_share of the board",
+          "admissible: mean boundary effect size exceeds the median within-tier adjacent-pair effect size by at least min_boundary_effect_ratio",
+          "among admissible penalties, the highest bootstrap adjusted Rand index wins",
+          "ties inside stability_tie_band resolve on boundary separation, then on the larger penalty"
+        ],
+        "stability_tie_band": 0.01
+      },
+      "inadmissible": {
+        "12.0": [
+          "mean tier count 3.60 below 6.0",
+          "largest tier holds 0.450 of the board, above 0.25"
+        ],
+        "2.0": [
+          "largest tier holds 0.290 of the board, above 0.25"
+        ],
+        "3.0": [
+          "mean tier count 5.67 below 6.0",
+          "largest tier holds 0.341 of the board, above 0.25"
+        ],
+        "5.0": [
+          "mean tier count 4.93 below 6.0",
+          "largest tier holds 0.374 of the board, above 0.25"
+        ],
+        "8.0": [
+          "mean tier count 4.07 below 6.0",
+          "largest tier holds 0.398 of the board, above 0.25"
+        ]
+      },
+      "selected": {
+        "bootstrap_adjusted_rand": 0.864869594098204,
+        "boundary_agreement": 0.2394179894179894,
+        "largest_tier_share": 0.24088888888888887,
+        "mean_boundary_effect_size": 0.014415279025637077,
+        "mean_tier_count": 8.8,
+        "median_within_tier_effect_size": 0.004738146616507508,
+        "penalty": 1.0,
+        "singleton_rate": 0.03286195286195286
+      },
+      "tied_within_band": [
+        1.0
+      ]
+    },
+    "failures": [],
+    "reasons": [
+      "penalty 1.0 is admissible with bootstrap ARI 0.865, mean tier count 8.80, singleton rate 0.033 and boundary effect size 0.014"
+    ],
+    "rule": "phase4_tier_v1",
+    "rules_version": "phase4_rules_v1",
+    "selected": "1.0"
+  },
+  "promoted_algorithm": "dp_quantile",
+  "promoted_algorithm_version": "dp_quantile_wasserstein_v1",
+  "runtime_seconds": 6902.73,
+  "segmentation_shape": [
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.2,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.009501363591417164,
+      "median_within_tier_effect_size": 0.004901821361463208,
+      "penalty": 1.0,
+      "scoring_preset": "STD",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        14,
+        23,
+        34,
+        19,
+        18,
+        45,
+        37,
+        50,
+        60
+      ],
+      "tier_count": 9
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.23666666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01367104360609264,
+      "median_within_tier_effect_size": 0.004768465382230607,
+      "penalty": 2.0,
+      "scoring_preset": "STD",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        14,
+        23,
+        34,
+        37,
+        57,
+        71,
+        64
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36666666666666664,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.011738623301492581,
+      "median_within_tier_effect_size": 0.0049137856208010255,
+      "penalty": 3.0,
+      "scoring_preset": "STD",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        14,
+        23,
+        34,
+        37,
+        82,
+        110
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36666666666666664,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.008110868697402157,
+      "median_within_tier_effect_size": 0.004925749880138842,
+      "penalty": 5.0,
+      "scoring_preset": "STD",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        27,
+        44,
+        37,
+        82,
+        110
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3933333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.001718615111392429,
+      "median_within_tier_effect_size": 0.00501719058689273,
+      "penalty": 8.0,
+      "scoring_preset": "STD",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        37,
+        57,
+        88,
+        118
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3933333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.001718615111392429,
+      "median_within_tier_effect_size": 0.00501719058689273,
+      "penalty": 12.0,
+      "scoring_preset": "STD",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        37,
+        57,
+        88,
+        118
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.2966666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.011979849945304311,
+      "median_within_tier_effect_size": 0.004493534264148876,
+      "penalty": 1.0,
+      "scoring_preset": "HALF",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        11,
+        22,
+        33,
+        30,
+        27,
+        37,
+        51,
+        89
+      ],
+      "tier_count": 8
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.012640569950006793,
+      "median_within_tier_effect_size": 0.004506654507140831,
+      "penalty": 2.0,
+      "scoring_preset": "HALF",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        11,
+        22,
+        33,
+        30,
+        53,
+        61,
+        90
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014865634178267695,
+      "median_within_tier_effect_size": 0.0045194357443751314,
+      "penalty": 3.0,
+      "scoring_preset": "HALF",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        31,
+        35,
+        30,
+        53,
+        61,
+        90
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3566666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014910158263958424,
+      "median_within_tier_effect_size": 0.004506654507140831,
+      "penalty": 5.0,
+      "scoring_preset": "HALF",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        31,
+        37,
+        53,
+        72,
+        107
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4033333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01057148853143629,
+      "median_within_tier_effect_size": 0.004560563379013246,
+      "penalty": 8.0,
+      "scoring_preset": "HALF",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        34,
+        60,
+        85,
+        121
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4033333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01057148853143629,
+      "median_within_tier_effect_size": 0.004560563379013246,
+      "penalty": 12.0,
+      "scoring_preset": "HALF",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        34,
+        60,
+        85,
+        121
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.2,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.024959028878706026,
+      "median_within_tier_effect_size": 0.004734862206632381,
+      "penalty": 1.0,
+      "scoring_preset": "PPR",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        5,
+        21,
+        24,
+        21,
+        27,
+        39,
+        53,
+        50,
+        60
+      ],
+      "tier_count": 9
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.31666666666666665,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.023175597385349613,
+      "median_within_tier_effect_size": 0.004687072247566884,
+      "penalty": 2.0,
+      "scoring_preset": "PPR",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        26,
+        24,
+        39,
+        48,
+        68,
+        95
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.31666666666666665,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.023175597385349613,
+      "median_within_tier_effect_size": 0.004687072247566884,
+      "penalty": 3.0,
+      "scoring_preset": "PPR",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        26,
+        24,
+        39,
+        48,
+        68,
+        95
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.017130546599401292,
+      "median_within_tier_effect_size": 0.00472338161049764,
+      "penalty": 5.0,
+      "scoring_preset": "PPR",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        31,
+        40,
+        49,
+        80,
+        100
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.41,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01647718378157612,
+      "median_within_tier_effect_size": 0.004729121908565011,
+      "penalty": 8.0,
+      "scoring_preset": "PPR",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        36,
+        53,
+        88,
+        123
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.41,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01647718378157612,
+      "median_within_tier_effect_size": 0.004729121908565011,
+      "penalty": 12.0,
+      "scoring_preset": "PPR",
+      "season": 2020,
+      "singleton_rate": 0.0,
+      "sizes": [
+        36,
+        53,
+        88,
+        123
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.22333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.0040315898932967555,
+      "median_within_tier_effect_size": 0.004558235592821427,
+      "penalty": 1.0,
+      "scoring_preset": "STD",
+      "season": 2021,
+      "singleton_rate": 0.18181818181818182,
+      "sizes": [
+        15,
+        20,
+        31,
+        21,
+        1,
+        27,
+        42,
+        1,
+        31,
+        44,
+        67
+      ],
+      "tier_count": 11
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.23333333333333334,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.010342455438768388,
+      "median_within_tier_effect_size": 0.004484653660517512,
+      "penalty": 2.0,
+      "scoring_preset": "STD",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        15,
+        29,
+        29,
+        42,
+        49,
+        66,
+        70
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.38,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.015350236577595105,
+      "median_within_tier_effect_size": 0.004484653660517512,
+      "penalty": 3.0,
+      "scoring_preset": "STD",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        20,
+        46,
+        49,
+        71,
+        114
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.38,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.015350236577595105,
+      "median_within_tier_effect_size": 0.004484653660517512,
+      "penalty": 5.0,
+      "scoring_preset": "STD",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        20,
+        46,
+        49,
+        71,
+        114
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.38,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.015350236577595105,
+      "median_within_tier_effect_size": 0.004484653660517512,
+      "penalty": 8.0,
+      "scoring_preset": "STD",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        20,
+        46,
+        49,
+        71,
+        114
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.52,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.013171688586597148,
+      "median_within_tier_effect_size": 0.004484653660517512,
+      "penalty": 12.0,
+      "scoring_preset": "STD",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        66,
+        78,
+        156
+      ],
+      "tier_count": 3
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.21,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.007929134208977135,
+      "median_within_tier_effect_size": 0.004079214061659855,
+      "penalty": 1.0,
+      "scoring_preset": "HALF",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        16,
+        23,
+        20,
+        31,
+        27,
+        35,
+        45,
+        40,
+        63
+      ],
+      "tier_count": 9
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.22333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.00977597242292777,
+      "median_within_tier_effect_size": 0.0039032156726343885,
+      "penalty": 2.0,
+      "scoring_preset": "HALF",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        38,
+        21,
+        31,
+        28,
+        49,
+        66,
+        67
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.25333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.0058150103055183795,
+      "median_within_tier_effect_size": 0.003991214867147121,
+      "penalty": 3.0,
+      "scoring_preset": "HALF",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        38,
+        21,
+        48,
+        45,
+        72,
+        76
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01017749256167036,
+      "median_within_tier_effect_size": 0.003991214867147121,
+      "penalty": 5.0,
+      "scoring_preset": "HALF",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        59,
+        57,
+        76,
+        108
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01017749256167036,
+      "median_within_tier_effect_size": 0.003991214867147121,
+      "penalty": 8.0,
+      "scoring_preset": "HALF",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        59,
+        57,
+        76,
+        108
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.5266666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.007469755898561743,
+      "median_within_tier_effect_size": 0.0039032156726343885,
+      "penalty": 12.0,
+      "scoring_preset": "HALF",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        59,
+        83,
+        158
+      ],
+      "tier_count": 3
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.26666666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.019328196748265605,
+      "median_within_tier_effect_size": 0.005134178290660179,
+      "penalty": 1.0,
+      "scoring_preset": "PPR",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        28,
+        30,
+        36,
+        36,
+        44,
+        46,
+        80
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.26666666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.019328196748265605,
+      "median_within_tier_effect_size": 0.005134178290660179,
+      "penalty": 2.0,
+      "scoring_preset": "PPR",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        28,
+        30,
+        36,
+        36,
+        44,
+        46,
+        80
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3566666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.023820201310208018,
+      "median_within_tier_effect_size": 0.005124732844473373,
+      "penalty": 3.0,
+      "scoring_preset": "PPR",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        28,
+        30,
+        36,
+        36,
+        63,
+        107
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014627608091958354,
+      "median_within_tier_effect_size": 0.0051152873982865665,
+      "penalty": 5.0,
+      "scoring_preset": "PPR",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        28,
+        33,
+        58,
+        69,
+        112
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.029412781600894777,
+      "median_within_tier_effect_size": 0.00517579425170909,
+      "penalty": 8.0,
+      "scoring_preset": "PPR",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        58,
+        58,
+        72,
+        112
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.5266666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.04275335854077885,
+      "median_within_tier_effect_size": 0.005134178290660179,
+      "penalty": 12.0,
+      "scoring_preset": "PPR",
+      "season": 2021,
+      "singleton_rate": 0.0,
+      "sizes": [
+        58,
+        84,
+        158
+      ],
+      "tier_count": 3
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.23666666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.010406686865259373,
+      "median_within_tier_effect_size": 0.00429413539455705,
+      "penalty": 1.0,
+      "scoring_preset": "STD",
+      "season": 2022,
+      "singleton_rate": 0.1,
+      "sizes": [
+        5,
+        19,
+        18,
+        31,
+        29,
+        40,
+        53,
+        71,
+        1,
+        33
+      ],
+      "tier_count": 10
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.011828343370479248,
+      "median_within_tier_effect_size": 0.004268570566326797,
+      "penalty": 2.0,
+      "scoring_preset": "STD",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        17,
+        25,
+        31,
+        29,
+        40,
+        68,
+        90
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4166666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.008332952968108596,
+      "median_within_tier_effect_size": 0.004268617506658154,
+      "penalty": 3.0,
+      "scoring_preset": "STD",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        36,
+        37,
+        34,
+        68,
+        125
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4166666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.008332952968108596,
+      "median_within_tier_effect_size": 0.004268617506658154,
+      "penalty": 5.0,
+      "scoring_preset": "STD",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        36,
+        37,
+        34,
+        68,
+        125
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4533333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01658485960740868,
+      "median_within_tier_effect_size": 0.004253818395939105,
+      "penalty": 8.0,
+      "scoring_preset": "STD",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        42,
+        53,
+        69,
+        136
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4533333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01658485960740868,
+      "median_within_tier_effect_size": 0.004253818395939105,
+      "penalty": 12.0,
+      "scoring_preset": "STD",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        42,
+        53,
+        69,
+        136
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.21666666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01341785574849263,
+      "median_within_tier_effect_size": 0.004462228396301782,
+      "penalty": 1.0,
+      "scoring_preset": "HALF",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        15,
+        21,
+        34,
+        28,
+        38,
+        47,
+        65,
+        52
+      ],
+      "tier_count": 8
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3433333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.027804342267171635,
+      "median_within_tier_effect_size": 0.004407244996416343,
+      "penalty": 2.0,
+      "scoring_preset": "HALF",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        29,
+        40,
+        29,
+        39,
+        60,
+        103
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3433333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.027804342267171635,
+      "median_within_tier_effect_size": 0.004407244996416343,
+      "penalty": 3.0,
+      "scoring_preset": "HALF",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        29,
+        40,
+        29,
+        39,
+        60,
+        103
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.44333333333333336,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.03051179400861806,
+      "median_within_tier_effect_size": 0.004415951509820631,
+      "penalty": 5.0,
+      "scoring_preset": "HALF",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        29,
+        40,
+        29,
+        69,
+        133
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.44333333333333336,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.02627174088865933,
+      "median_within_tier_effect_size": 0.004426822176909956,
+      "penalty": 8.0,
+      "scoring_preset": "HALF",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        58,
+        40,
+        69,
+        133
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.44333333333333336,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.02627174088865933,
+      "median_within_tier_effect_size": 0.004426822176909956,
+      "penalty": 12.0,
+      "scoring_preset": "HALF",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        58,
+        40,
+        69,
+        133
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.19666666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01632049834745696,
+      "median_within_tier_effect_size": 0.004794016516833187,
+      "penalty": 1.0,
+      "scoring_preset": "PPR",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        17,
+        31,
+        23,
+        29,
+        44,
+        50,
+        59,
+        47
+      ],
+      "tier_count": 8
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3233333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.010088922217913535,
+      "median_within_tier_effect_size": 0.004831633345751504,
+      "penalty": 2.0,
+      "scoring_preset": "PPR",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        24,
+        46,
+        30,
+        50,
+        53,
+        97
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3233333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.010088922217913535,
+      "median_within_tier_effect_size": 0.004831633345751504,
+      "penalty": 3.0,
+      "scoring_preset": "PPR",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        24,
+        46,
+        30,
+        50,
+        53,
+        97
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4033333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01945879929242295,
+      "median_within_tier_effect_size": 0.004772219747294183,
+      "penalty": 5.0,
+      "scoring_preset": "PPR",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        24,
+        47,
+        35,
+        73,
+        121
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.41333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.009062567122948543,
+      "median_within_tier_effect_size": 0.004831633345751504,
+      "penalty": 8.0,
+      "scoring_preset": "PPR",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        60,
+        40,
+        76,
+        124
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.4866666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.018998529950331047,
+      "median_within_tier_effect_size": 0.004815187965577958,
+      "penalty": 12.0,
+      "scoring_preset": "PPR",
+      "season": 2022,
+      "singleton_rate": 0.0,
+      "sizes": [
+        71,
+        83,
+        146
+      ],
+      "tier_count": 3
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.24666666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01329783089875066,
+      "median_within_tier_effect_size": 0.004930345284123283,
+      "penalty": 1.0,
+      "scoring_preset": "STD",
+      "season": 2023,
+      "singleton_rate": 0.1,
+      "sizes": [
+        13,
+        20,
+        28,
+        24,
+        2,
+        25,
+        43,
+        1,
+        70,
+        74
+      ],
+      "tier_count": 10
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.31333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014021364574966852,
+      "median_within_tier_effect_size": 0.004754622993759525,
+      "penalty": 2.0,
+      "scoring_preset": "STD",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        26,
+        35,
+        36,
+        42,
+        67,
+        94
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.31333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014021364574966852,
+      "median_within_tier_effect_size": 0.004754622993759525,
+      "penalty": 3.0,
+      "scoring_preset": "STD",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        26,
+        35,
+        36,
+        42,
+        67,
+        94
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014577392858087934,
+      "median_within_tier_effect_size": 0.004757188343890277,
+      "penalty": 5.0,
+      "scoring_preset": "STD",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        33,
+        33,
+        46,
+        80,
+        108
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.48333333333333334,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.020241826457112914,
+      "median_within_tier_effect_size": 0.004819853630828865,
+      "penalty": 8.0,
+      "scoring_preset": "STD",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        44,
+        40,
+        71,
+        145
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.57,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.03460079519649241,
+      "median_within_tier_effect_size": 0.004752057643628773,
+      "penalty": 12.0,
+      "scoring_preset": "STD",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        61,
+        68,
+        171
+      ],
+      "tier_count": 3
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.24333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.02038473548786926,
+      "median_within_tier_effect_size": 0.0047604660657897405,
+      "penalty": 1.0,
+      "scoring_preset": "HALF",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        9,
+        18,
+        22,
+        20,
+        31,
+        19,
+        47,
+        61,
+        73
+      ],
+      "tier_count": 9
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.24333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014642984651424764,
+      "median_within_tier_effect_size": 0.0047604660657897405,
+      "penalty": 2.0,
+      "scoring_preset": "HALF",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        14,
+        35,
+        25,
+        38,
+        54,
+        61,
+        73
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.2866666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.009679724184248341,
+      "median_within_tier_effect_size": 0.004761469652895009,
+      "penalty": 3.0,
+      "scoring_preset": "HALF",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        22,
+        38,
+        40,
+        53,
+        61,
+        86
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.35333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.009085303571237243,
+      "median_within_tier_effect_size": 0.004762473240000277,
+      "penalty": 5.0,
+      "scoring_preset": "HALF",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        22,
+        38,
+        52,
+        82,
+        106
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.38666666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01849893604242336,
+      "median_within_tier_effect_size": 0.004761469652895009,
+      "penalty": 8.0,
+      "scoring_preset": "HALF",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        52,
+        48,
+        84,
+        116
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.38666666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01849893604242336,
+      "median_within_tier_effect_size": 0.004761469652895009,
+      "penalty": 12.0,
+      "scoring_preset": "HALF",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        52,
+        48,
+        84,
+        116
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.27,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014727820342047237,
+      "median_within_tier_effect_size": 0.004340203675940152,
+      "penalty": 1.0,
+      "scoring_preset": "PPR",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        10,
+        24,
+        23,
+        32,
+        26,
+        47,
+        57,
+        81
+      ],
+      "tier_count": 8
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.27,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.014727820342047237,
+      "median_within_tier_effect_size": 0.004340203675940152,
+      "penalty": 2.0,
+      "scoring_preset": "PPR",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        10,
+        24,
+        23,
+        32,
+        26,
+        47,
+        57,
+        81
+      ],
+      "tier_count": 8
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.018333056693595872,
+      "median_within_tier_effect_size": 0.004431684977307533,
+      "penalty": 3.0,
+      "scoring_preset": "PPR",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        14,
+        43,
+        55,
+        80,
+        108
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.018333056693595872,
+      "median_within_tier_effect_size": 0.004431684977307533,
+      "penalty": 5.0,
+      "scoring_preset": "PPR",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        14,
+        43,
+        55,
+        80,
+        108
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.039954446207719284,
+      "median_within_tier_effect_size": 0.004390424913748239,
+      "penalty": 8.0,
+      "scoring_preset": "PPR",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        55,
+        55,
+        82,
+        108
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.039954446207719284,
+      "median_within_tier_effect_size": 0.004390424913748239,
+      "penalty": 12.0,
+      "scoring_preset": "PPR",
+      "season": 2023,
+      "singleton_rate": 0.0,
+      "sizes": [
+        55,
+        55,
+        82,
+        108
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.30333333333333334,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.007307837847262236,
+      "median_within_tier_effect_size": 0.005888461119137742,
+      "penalty": 1.0,
+      "scoring_preset": "STD",
+      "season": 2024,
+      "singleton_rate": 0.1111111111111111,
+      "sizes": [
+        15,
+        29,
+        23,
+        27,
+        32,
+        40,
+        42,
+        1,
+        91
+      ],
+      "tier_count": 9
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.36,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.0065070119556146985,
+      "median_within_tier_effect_size": 0.0058691675374605914,
+      "penalty": 2.0,
+      "scoring_preset": "STD",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        27,
+        40,
+        34,
+        35,
+        56,
+        108
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37666666666666665,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.005270529043413013,
+      "median_within_tier_effect_size": 0.0060260590553480155,
+      "penalty": 3.0,
+      "scoring_preset": "STD",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        27,
+        40,
+        47,
+        73,
+        113
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37666666666666665,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.005270529043413013,
+      "median_within_tier_effect_size": 0.0060260590553480155,
+      "penalty": 5.0,
+      "scoring_preset": "STD",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        27,
+        40,
+        47,
+        73,
+        113
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.38,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.007773771606077363,
+      "median_within_tier_effect_size": 0.005844345176235291,
+      "penalty": 8.0,
+      "scoring_preset": "STD",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        55,
+        50,
+        81,
+        114
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.5466666666666666,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.00792927101831165,
+      "median_within_tier_effect_size": 0.005888461119137742,
+      "penalty": 12.0,
+      "scoring_preset": "STD",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        67,
+        69,
+        164
+      ],
+      "tier_count": 3
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.31,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.02512655374835025,
+      "median_within_tier_effect_size": 0.00454692141230087,
+      "penalty": 1.0,
+      "scoring_preset": "HALF",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        16,
+        25,
+        20,
+        21,
+        34,
+        54,
+        37,
+        93
+      ],
+      "tier_count": 8
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.31,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.020567781847073165,
+      "median_within_tier_effect_size": 0.004523798306347607,
+      "penalty": 2.0,
+      "scoring_preset": "HALF",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        16,
+        27,
+        33,
+        38,
+        45,
+        48,
+        93
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3466666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.008310034001719117,
+      "median_within_tier_effect_size": 0.004570044518254134,
+      "penalty": 3.0,
+      "scoring_preset": "HALF",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        40,
+        36,
+        45,
+        75,
+        104
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.3466666666666667,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.008310034001719117,
+      "median_within_tier_effect_size": 0.004570044518254134,
+      "penalty": 5.0,
+      "scoring_preset": "HALF",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        40,
+        36,
+        45,
+        75,
+        104
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.35333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.025084006253125037,
+      "median_within_tier_effect_size": 0.004587279205724496,
+      "penalty": 8.0,
+      "scoring_preset": "HALF",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        60,
+        54,
+        80,
+        106
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.35333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.025084006253125037,
+      "median_within_tier_effect_size": 0.004587279205724496,
+      "penalty": 12.0,
+      "scoring_preset": "HALF",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        60,
+        54,
+        80,
+        106
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.19333333333333333,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.01751020283310055,
+      "median_within_tier_effect_size": 0.005153575605242871,
+      "penalty": 1.0,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        8,
+        26,
+        23,
+        22,
+        35,
+        30,
+        44,
+        54,
+        58
+      ],
+      "tier_count": 9
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.31333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.020453240566539542,
+      "median_within_tier_effect_size": 0.005009776357938627,
+      "penalty": 2.0,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        8,
+        37,
+        31,
+        38,
+        47,
+        45,
+        94
+      ],
+      "tier_count": 7
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.025629607054504944,
+      "median_within_tier_effect_size": 0.005009348840392145,
+      "penalty": 3.0,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        8,
+        37,
+        31,
+        43,
+        69,
+        112
+      ],
+      "tier_count": 6
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.010546732840872038,
+      "median_within_tier_effect_size": 0.005153575605242871,
+      "penalty": 5.0,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        34,
+        39,
+        45,
+        70,
+        112
+      ],
+      "tier_count": 5
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.03416793198019006,
+      "median_within_tier_effect_size": 0.005081675981590749,
+      "penalty": 8.0,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        54,
+        58,
+        76,
+        112
+      ],
+      "tier_count": 4
+    },
+    {
+      "algorithm": "dp_quantile",
+      "largest_tier_share": 0.37333333333333335,
+      "league_preset_id": "redraft-12",
+      "mean_boundary_effect_size": 0.03416793198019006,
+      "median_within_tier_effect_size": 0.005081675981590749,
+      "penalty": 12.0,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "singleton_rate": 0.0,
+      "sizes": [
+        54,
+        58,
+        76,
+        112
+      ],
+      "tier_count": 4
+    }
+  ],
+  "selection_criteria": {
+    "algorithm": "ruptures.Pelt(model='rbf')",
+    "board_depth": 300,
+    "criteria_version": "phase4_tier_v1",
+    "max_largest_tier_share": 0.25,
+    "max_mean_tier_count": 24.0,
+    "max_singleton_rate": 0.2,
+    "min_boundary_effect_ratio": 1.0,
+    "min_mean_tier_count": 6.0,
+    "penalties": [
+      1.0,
+      2.0,
+      3.0,
+      5.0,
+      8.0,
+      12.0
+    ],
+    "rules": [
+      "admissible: mean tier count inside the declared band",
+      "admissible: singleton rate at or below max_singleton_rate",
+      "admissible: no tier holds more than max_largest_tier_share of the board",
+      "admissible: mean boundary effect size exceeds the median within-tier adjacent-pair effect size by at least min_boundary_effect_ratio",
+      "among admissible penalties, the highest bootstrap adjusted Rand index wins",
+      "ties inside stability_tie_band resolve on boundary separation, then on the larger penalty"
+    ],
+    "stability_tie_band": 0.01
+  },
+  "stability_by_penalty": {
+    "1.0": {
+      "bootstrap_adjusted_rand": 0.864869594098204,
+      "boundary_agreement": 0.2394179894179894,
+      "boundary_frequency": {
+        "10": 0.0325,
+        "100": 0.17166666666666666,
+        "101": 0.07500000000000001,
+        "102": 0.22666666666666668,
+        "103": 0.3,
+        "104": 0.035,
+        "105": 0.0575,
+        "106": 0.005,
+        "107": 0.015000000000000001,
+        "108": 0.02,
+        "11": 0.11,
+        "110": 0.025,
+        "112": 0.415,
+        "113": 0.01,
+        "114": 0.1775,
+        "115": 0.045000000000000005,
+        "116": 0.11374999999999999,
+        "117": 0.065,
+        "118": 0.095,
+        "119": 0.02,
+        "12": 0.07,
+        "120": 0.025,
+        "121": 0.023333333333333334,
+        "122": 0.0375,
+        "123": 0.16749999999999998,
+        "124": 0.255,
+        "125": 0.0125,
+        "126": 0.061250000000000006,
+        "127": 0.125,
+        "128": 0.01833333333333333,
+        "129": 0.0175,
+        "13": 0.1825,
+        "130": 0.11,
+        "131": 0.005,
+        "132": 0.00875,
+        "133": 0.07750000000000001,
+        "135": 0.0275,
+        "136": 0.039,
+        "137": 0.07250000000000001,
+        "138": 0.0325,
+        "139": 0.17,
+        "14": 0.0275,
+        "140": 0.052500000000000005,
+        "141": 0.0175,
+        "142": 0.15,
+        "143": 0.085,
+        "144": 0.295,
+        "145": 0.10500000000000002,
+        "146": 0.10666666666666667,
+        "147": 0.06,
+        "148": 0.01,
+        "149": 0.04,
+        "15": 0.5874999999999999,
+        "150": 0.065,
+        "151": 0.005,
+        "152": 0.02,
+        "153": 0.005,
+        "154": 0.024999999999999998,
+        "155": 0.016666666666666666,
+        "156": 0.034999999999999996,
+        "157": 0.025,
+        "158": 0.0175,
+        "159": 0.10500000000000001,
+        "16": 0.38666666666666666,
+        "160": 0.1275,
+        "161": 0.005,
+        "162": 0.03,
+        "163": 0.09,
+        "164": 0.0475,
+        "166": 0.14250000000000002,
+        "167": 0.025,
+        "168": 0.037500000000000006,
+        "169": 0.005,
+        "17": 0.217,
+        "170": 0.023333333333333334,
+        "171": 0.08750000000000001,
+        "172": 0.021666666666666667,
+        "173": 0.05000000000000001,
+        "174": 0.04666666666666667,
+        "175": 0.0475,
+        "176": 0.125,
+        "177": 0.005,
+        "178": 0.105,
+        "179": 0.016666666666666666,
+        "18": 0.145,
+        "180": 0.04,
+        "181": 0.02,
+        "182": 0.03,
+        "183": 0.1325,
+        "184": 0.005,
+        "185": 0.1,
+        "186": 0.015,
+        "187": 0.016666666666666666,
+        "188": 0.34,
+        "189": 0.04,
+        "19": 0.041666666666666664,
+        "190": 0.05374999999999999,
+        "191": 0.03,
+        "192": 0.061666666666666675,
+        "193": 0.015,
+        "194": 0.07166666666666667,
+        "195": 0.08,
+        "196": 0.041666666666666664,
+        "197": 0.03875,
+        "198": 0.05833333333333333,
+        "199": 0.0125,
+        "20": 0.0125,
+        "200": 0.07250000000000001,
+        "201": 0.0125,
+        "202": 0.0225,
+        "203": 0.052500000000000005,
+        "204": 0.03,
+        "205": 0.021666666666666667,
+        "206": 0.03,
+        "207": 0.13333333333333333,
+        "208": 0.4266666666666666,
+        "209": 0.03833333333333334,
+        "21": 0.015,
+        "210": 0.05333333333333334,
+        "211": 0.06,
+        "212": 0.026666666666666672,
+        "213": 0.0275,
+        "214": 0.05,
+        "215": 0.015,
+        "216": 0.04,
+        "217": 0.0075,
+        "218": 0.057499999999999996,
+        "219": 0.0325,
+        "22": 0.05,
+        "220": 0.005,
+        "221": 0.02,
+        "222": 0.015000000000000001,
+        "223": 0.03,
+        "224": 0.015000000000000001,
+        "225": 0.005,
+        "226": 0.006666666666666667,
+        "227": 0.0075,
+        "228": 0.01,
+        "229": 0.005,
+        "23": 0.015,
+        "230": 0.005,
+        "231": 0.005,
+        "232": 0.005,
+        "233": 0.024999999999999998,
+        "234": 0.065,
+        "235": 0.03,
+        "237": 0.02375,
+        "238": 0.06333333333333334,
+        "239": 0.02333333333333333,
+        "24": 0.23500000000000001,
+        "240": 0.08666666666666667,
+        "241": 0.013333333333333334,
+        "242": 0.1275,
+        "243": 0.05125,
+        "244": 0.065,
+        "245": 0.0375,
+        "246": 0.07250000000000001,
+        "247": 0.0225,
+        "248": 0.03625,
+        "249": 0.04125,
+        "25": 0.005,
+        "250": 0.016666666666666666,
+        "251": 0.028333333333333335,
+        "252": 0.016666666666666666,
+        "253": 0.07166666666666667,
+        "254": 0.04,
+        "255": 0.0375,
+        "256": 0.0125,
+        "257": 0.03166666666666667,
+        "258": 0.05500000000000001,
+        "259": 0.0525,
+        "260": 0.017499999999999998,
+        "261": 0.022500000000000003,
+        "262": 0.02,
+        "263": 0.045,
+        "264": 0.03,
+        "265": 0.035,
+        "266": 0.995,
+        "267": 0.035,
+        "268": 0.02,
+        "269": 0.035,
+        "27": 0.005,
+        "270": 0.015,
+        "271": 0.025,
+        "272": 0.04,
+        "273": 0.025,
+        "274": 0.01,
+        "275": 0.005,
+        "276": 0.04,
+        "277": 0.04,
+        "278": 0.03,
+        "279": 0.03,
+        "28": 0.005,
+        "280": 0.02,
+        "281": 0.035,
+        "282": 0.02,
+        "283": 0.01,
+        "284": 0.02,
+        "285": 0.015,
+        "286": 0.005,
+        "287": 0.02,
+        "288": 0.01,
+        "289": 0.0125,
+        "29": 0.01,
+        "291": 0.005,
+        "293": 0.025,
+        "294": 0.005,
+        "296": 0.005,
+        "297": 0.005,
+        "298": 0.04,
+        "299": 0.005,
+        "30": 0.05833333333333333,
+        "31": 0.07,
+        "32": 0.01,
+        "34": 0.1675,
+        "35": 0.1325,
+        "36": 0.09125,
+        "37": 0.07250000000000001,
+        "38": 0.025000000000000005,
+        "39": 0.095,
+        "4": 0.015,
+        "40": 0.05833333333333334,
+        "41": 0.165,
+        "42": 0.20166666666666666,
+        "43": 0.1725,
+        "44": 0.13699999999999998,
+        "45": 0.09000000000000001,
+        "46": 0.0275,
+        "47": 0.06,
+        "48": 0.051250000000000004,
+        "49": 0.2625,
+        "5": 0.1075,
+        "50": 0.01,
+        "51": 0.03125,
+        "52": 0.17,
+        "53": 0.025,
+        "54": 0.03833333333333333,
+        "55": 0.05,
+        "56": 0.028333333333333335,
+        "57": 0.195,
+        "58": 0.11,
+        "59": 0.005,
+        "6": 0.305,
+        "60": 0.2875,
+        "61": 0.18,
+        "62": 0.115,
+        "63": 0.005,
+        "64": 0.057499999999999996,
+        "65": 0.03,
+        "66": 0.01,
+        "67": 0.585,
+        "68": 0.03,
+        "69": 0.18000000000000002,
+        "7": 0.065,
+        "70": 0.345,
+        "71": 0.31666666666666665,
+        "72": 0.005,
+        "73": 0.15500000000000003,
+        "74": 0.20750000000000002,
+        "75": 0.017499999999999998,
+        "76": 0.35,
+        "77": 0.12333333333333334,
+        "78": 0.08,
+        "79": 0.19166666666666665,
+        "8": 0.37,
+        "80": 0.025,
+        "81": 0.017499999999999998,
+        "82": 0.14250000000000002,
+        "83": 0.1225,
+        "84": 0.035,
+        "87": 0.01,
+        "88": 0.005,
+        "89": 0.015,
+        "9": 0.04,
+        "90": 0.0125,
+        "92": 0.085,
+        "93": 0.035,
+        "94": 0.43,
+        "95": 0.045,
+        "96": 0.045,
+        "97": 0.45,
+        "98": 0.68,
+        "99": 0.18166666666666664
+      },
+      "boundary_frequency_by_region": {
+        "1-24": 0.19170454545454543,
+        "121-200": 0.06451717157052524,
+        "201-300": 0.050081668678482405,
+        "25-60": 0.1083446600508004,
+        "61-120": 0.14858446836388015
+      },
+      "replicates": 1200,
+      "singleton_rate": 0.03958831908831909,
+      "tier_count_cv": 0.045362248464726224,
+      "tier_count_distribution": {
+        "10": 113,
+        "11": 44,
+        "12": 10,
+        "13": 2,
+        "8": 594,
+        "9": 437
+      }
+    },
+    "12.0": {
+      "bootstrap_adjusted_rand": 0.9440009090398996,
+      "boundary_agreement": 0.3611111111111111,
+      "boundary_frequency": {
+        "100": 0.14250000000000002,
+        "101": 0.0075,
+        "102": 0.11,
+        "103": 0.08,
+        "105": 0.1325,
+        "106": 0.0175,
+        "107": 0.024999999999999998,
+        "108": 0.0225,
+        "110": 0.02,
+        "112": 0.5,
+        "113": 0.02,
+        "114": 0.41,
+        "115": 0.1375,
+        "116": 0.08499999999999999,
+        "117": 0.005,
+        "120": 0.005,
+        "126": 0.005,
+        "136": 0.4,
+        "137": 0.14,
+        "139": 0.025,
+        "141": 0.03,
+        "142": 0.015,
+        "143": 0.005,
+        "146": 0.005,
+        "148": 0.005,
+        "150": 0.0575,
+        "152": 0.19,
+        "153": 0.01,
+        "154": 0.14,
+        "155": 0.32,
+        "156": 0.042499999999999996,
+        "157": 0.16,
+        "158": 0.035,
+        "159": 0.02,
+        "160": 0.07,
+        "161": 0.015,
+        "162": 0.01,
+        "164": 0.245,
+        "165": 0.235,
+        "167": 0.18,
+        "168": 0.3,
+        "169": 0.05,
+        "170": 0.035,
+        "171": 0.02,
+        "172": 0.02,
+        "173": 0.06,
+        "174": 0.015,
+        "175": 0.030000000000000002,
+        "176": 0.07,
+        "177": 0.04,
+        "178": 0.06,
+        "179": 0.015000000000000001,
+        "180": 0.005,
+        "181": 0.0075,
+        "183": 0.04,
+        "184": 0.0225,
+        "185": 0.005,
+        "186": 0.11750000000000001,
+        "187": 0.04833333333333334,
+        "188": 0.2525,
+        "189": 0.035,
+        "190": 0.1525,
+        "191": 0.015,
+        "193": 0.01,
+        "194": 0.165,
+        "195": 0.04,
+        "196": 0.08,
+        "197": 0.03,
+        "198": 0.035,
+        "199": 0.005,
+        "200": 0.005,
+        "36": 0.035,
+        "41": 0.17,
+        "42": 0.355,
+        "43": 0.155,
+        "44": 0.125,
+        "45": 0.015,
+        "46": 0.0075,
+        "47": 0.030000000000000002,
+        "49": 0.042499999999999996,
+        "50": 0.028333333333333332,
+        "51": 0.0075,
+        "53": 0.0875,
+        "54": 0.395,
+        "55": 0.1875,
+        "56": 0.08333333333333333,
+        "57": 0.025,
+        "58": 0.165,
+        "59": 0.0325,
+        "60": 0.5225,
+        "61": 0.017499999999999998,
+        "64": 0.495,
+        "67": 0.26,
+        "68": 0.02,
+        "70": 0.015,
+        "71": 0.995,
+        "73": 0.005,
+        "75": 0.005,
+        "92": 0.005,
+        "95": 0.36,
+        "96": 0.11,
+        "97": 0.09,
+        "98": 0.665,
+        "99": 0.1275
+      },
+      "boundary_frequency_by_region": {
+        "121-200": 0.09608693049869521,
+        "201-300": 0.005,
+        "25-60": 0.10489583333333334,
+        "61-120": 0.21444444444444444
+      },
+      "replicates": 1200,
+      "singleton_rate": 0.0,
+      "tier_count_cv": 0.031599300009122575,
+      "tier_count_distribution": {
+        "3": 361,
+        "4": 839
+      }
+    },
+    "2.0": {
+      "bootstrap_adjusted_rand": 0.9142746314819087,
+      "boundary_agreement": 0.38888888888888884,
+      "boundary_frequency": {
+        "10": 0.065,
+        "100": 0.33499999999999996,
+        "101": 0.16666666666666666,
+        "102": 0.22333333333333336,
+        "103": 0.15,
+        "104": 0.01,
+        "105": 0.05,
+        "106": 0.005,
+        "107": 0.035,
+        "108": 0.005,
+        "11": 0.060000000000000005,
+        "112": 0.085,
+        "114": 0.5525,
+        "115": 0.14,
+        "116": 0.22499999999999998,
+        "117": 0.01,
+        "118": 0.025,
+        "119": 0.01,
+        "12": 0.05,
+        "126": 0.04,
+        "13": 0.05,
+        "130": 0.0175,
+        "132": 0.005,
+        "133": 0.05,
+        "135": 0.18,
+        "136": 0.1675,
+        "137": 0.175,
+        "138": 0.08249999999999999,
+        "139": 0.15166666666666667,
+        "140": 0.08,
+        "141": 0.02,
+        "142": 0.08333333333333333,
+        "143": 0.025000000000000005,
+        "144": 0.345,
+        "145": 0.0575,
+        "146": 0.14750000000000002,
+        "147": 0.05833333333333333,
+        "148": 0.13,
+        "15": 0.065,
+        "150": 0.08166666666666667,
+        "151": 0.006666666666666667,
+        "152": 0.08833333333333333,
+        "153": 0.023333333333333334,
+        "154": 0.043333333333333335,
+        "155": 0.036250000000000004,
+        "156": 0.02375,
+        "157": 0.01,
+        "158": 0.01,
+        "159": 0.036250000000000004,
+        "16": 0.24500000000000002,
+        "160": 0.095,
+        "161": 0.53,
+        "162": 0.01,
+        "163": 0.09833333333333333,
+        "164": 0.0375,
+        "165": 0.015,
+        "166": 0.125,
+        "167": 0.03,
+        "169": 0.005,
+        "17": 0.26666666666666666,
+        "170": 0.04,
+        "171": 0.105,
+        "172": 0.03,
+        "173": 0.055,
+        "174": 0.02,
+        "175": 0.03,
+        "18": 0.015000000000000001,
+        "19": 0.06666666666666667,
+        "192": 0.38,
+        "193": 0.235,
+        "194": 0.025,
+        "195": 0.16333333333333333,
+        "196": 0.11,
+        "197": 0.12625,
+        "198": 0.05833333333333333,
+        "199": 0.035,
+        "20": 0.01,
+        "200": 0.051250000000000004,
+        "201": 0.035,
+        "202": 0.02,
+        "203": 0.075,
+        "204": 0.06166666666666667,
+        "205": 0.04,
+        "206": 0.33499999999999996,
+        "207": 0.098,
+        "208": 0.07600000000000001,
+        "209": 0.03666666666666667,
+        "21": 0.005,
+        "210": 0.025,
+        "211": 0.0475,
+        "212": 0.015,
+        "213": 0.005,
+        "214": 0.01125,
+        "215": 0.00875,
+        "216": 0.005,
+        "217": 0.005,
+        "218": 0.065,
+        "219": 0.015,
+        "22": 0.115,
+        "220": 0.005,
+        "221": 0.021666666666666667,
+        "222": 0.08750000000000001,
+        "223": 0.08249999999999999,
+        "224": 0.023333333333333334,
+        "225": 0.0325,
+        "226": 0.005,
+        "228": 0.035,
+        "229": 0.025,
+        "23": 0.01,
+        "231": 0.025,
+        "232": 0.02,
+        "233": 0.005,
+        "236": 0.005,
+        "24": 0.555,
+        "25": 0.18166666666666664,
+        "26": 0.02,
+        "27": 0.14,
+        "28": 0.04,
+        "29": 0.305,
+        "298": 0.005,
+        "30": 0.14,
+        "36": 0.05,
+        "41": 0.18,
+        "42": 0.285,
+        "43": 0.18875,
+        "44": 0.0875,
+        "45": 0.365,
+        "46": 0.10500000000000001,
+        "47": 0.025000000000000005,
+        "48": 0.02,
+        "49": 0.028333333333333335,
+        "50": 0.045,
+        "52": 0.135,
+        "54": 0.025,
+        "55": 0.005,
+        "6": 0.29,
+        "63": 0.005,
+        "64": 0.545,
+        "66": 0.005,
+        "67": 0.375,
+        "68": 0.02,
+        "69": 0.35250000000000004,
+        "70": 0.38833333333333325,
+        "71": 0.08,
+        "72": 0.02,
+        "73": 0.29500000000000004,
+        "74": 0.3125,
+        "76": 0.6075,
+        "77": 0.10833333333333334,
+        "78": 0.07,
+        "79": 0.105,
+        "8": 0.31,
+        "9": 0.275,
+        "90": 0.005,
+        "93": 0.04,
+        "94": 0.005,
+        "95": 0.005,
+        "97": 0.3,
+        "98": 0.68,
+        "99": 0.24
+      },
+      "boundary_frequency_by_region": {
+        "1-24": 0.10216666666666667,
+        "121-200": 0.08279978354978355,
+        "201-300": 0.07051888634241575,
+        "25-60": 0.16177879990379992,
+        "61-120": 0.20530303030303032
+      },
+      "replicates": 1200,
+      "singleton_rate": 0.0,
+      "tier_count_cv": 0.012337327357724503,
+      "tier_count_distribution": {
+        "6": 561,
+        "7": 638,
+        "8": 1
+      }
+    },
+    "3.0": {
+      "bootstrap_adjusted_rand": 0.9304583444584164,
+      "boundary_agreement": 0.5166666666666666,
+      "boundary_frequency": {
+        "10": 0.06,
+        "100": 0.23,
+        "101": 0.018333333333333333,
+        "102": 0.017499999999999998,
+        "103": 0.01,
+        "106": 0.14,
+        "107": 0.41000000000000003,
+        "108": 0.12,
+        "11": 0.015,
+        "110": 0.095,
+        "111": 0.005,
+        "113": 0.0075,
+        "114": 0.2875,
+        "115": 0.085,
+        "116": 0.1525,
+        "117": 0.02,
+        "118": 0.11,
+        "119": 0.625,
+        "120": 0.08499999999999999,
+        "121": 0.14,
+        "122": 0.1175,
+        "123": 0.023333333333333334,
+        "124": 0.015,
+        "125": 0.005,
+        "129": 0.03,
+        "130": 0.025,
+        "133": 0.05,
+        "135": 0.005,
+        "136": 0.02,
+        "137": 0.075,
+        "138": 0.075,
+        "139": 0.165,
+        "140": 0.08,
+        "141": 0.03,
+        "142": 0.025,
+        "143": 0.005,
+        "144": 0.26,
+        "145": 0.005,
+        "146": 0.175,
+        "147": 0.057499999999999996,
+        "15": 0.01,
+        "150": 0.0625,
+        "151": 0.01,
+        "152": 0.07250000000000001,
+        "153": 0.0325,
+        "154": 0.02,
+        "155": 0.005,
+        "156": 0.005,
+        "16": 0.0175,
+        "164": 0.01,
+        "169": 0.005,
+        "17": 0.025,
+        "170": 0.015,
+        "173": 0.025,
+        "174": 0.015000000000000001,
+        "175": 0.18,
+        "176": 0.20249999999999999,
+        "177": 0.125,
+        "179": 0.0525,
+        "18": 0.0075,
+        "180": 0.025,
+        "181": 0.052500000000000005,
+        "182": 0.005,
+        "183": 0.016666666666666666,
+        "184": 0.005,
+        "186": 0.03,
+        "187": 0.09749999999999999,
+        "188": 0.295,
+        "189": 0.12833333333333333,
+        "19": 0.07,
+        "190": 0.06666666666666667,
+        "191": 0.035,
+        "192": 0.085,
+        "193": 0.01,
+        "194": 0.09000000000000001,
+        "195": 0.12125000000000001,
+        "196": 0.10166666666666667,
+        "197": 0.09200000000000001,
+        "198": 0.061250000000000006,
+        "199": 0.052500000000000005,
+        "20": 0.0075,
+        "200": 0.03,
+        "201": 0.035,
+        "202": 0.0325,
+        "203": 0.05,
+        "204": 0.037500000000000006,
+        "205": 0.04,
+        "206": 0.030000000000000002,
+        "207": 0.0275,
+        "208": 0.025,
+        "209": 0.015000000000000001,
+        "210": 0.03,
+        "212": 0.01,
+        "214": 0.0075,
+        "215": 0.005,
+        "216": 0.005,
+        "217": 0.005,
+        "219": 0.01,
+        "221": 0.02,
+        "224": 0.01,
+        "23": 0.01,
+        "233": 0.005,
+        "24": 0.40750000000000003,
+        "25": 0.1475,
+        "26": 0.0325,
+        "27": 0.20500000000000002,
+        "28": 0.04,
+        "29": 0.27166666666666667,
+        "30": 0.15250000000000002,
+        "34": 0.01,
+        "36": 0.695,
+        "37": 0.015,
+        "38": 0.165,
+        "39": 0.18,
+        "40": 0.2575,
+        "41": 0.0625,
+        "42": 0.04,
+        "43": 0.005,
+        "44": 0.0125,
+        "45": 0.725,
+        "46": 0.0925,
+        "47": 0.045,
+        "48": 0.005,
+        "49": 0.01,
+        "50": 0.005,
+        "52": 0.01,
+        "6": 0.29,
+        "60": 0.035,
+        "61": 0.045,
+        "63": 0.005,
+        "64": 0.15,
+        "65": 0.025,
+        "66": 0.005,
+        "67": 0.575,
+        "68": 0.02,
+        "69": 0.29500000000000004,
+        "70": 0.3333333333333333,
+        "71": 0.2125,
+        "72": 0.01,
+        "73": 0.1675,
+        "74": 0.3325,
+        "76": 0.7050000000000001,
+        "77": 0.08166666666666667,
+        "78": 0.03,
+        "79": 0.035,
+        "8": 0.305,
+        "82": 0.005,
+        "9": 0.275,
+        "93": 0.0175,
+        "96": 0.02,
+        "97": 0.255,
+        "98": 0.68,
+        "99": 0.09500000000000001
+      },
+      "boundary_frequency_by_region": {
+        "1-24": 0.04677083333333333,
+        "121-200": 0.0801323429656763,
+        "201-300": 0.017191558441558445,
+        "25-60": 0.19313492063492063,
+        "61-120": 0.1817960499539447
+      },
+      "replicates": 1200,
+      "singleton_rate": 0.0,
+      "tier_count_cv": 0.03202579651193862,
+      "tier_count_distribution": {
+        "5": 636,
+        "6": 564
+      }
+    },
+    "5.0": {
+      "bootstrap_adjusted_rand": 0.9513971078710238,
+      "boundary_agreement": 0.4583333333333333,
+      "boundary_frequency": {
+        "100": 0.0625,
+        "101": 0.025,
+        "102": 0.052500000000000005,
+        "103": 0.02,
+        "104": 0.085,
+        "106": 0.44,
+        "107": 0.48,
+        "108": 0.14250000000000002,
+        "109": 0.015,
+        "110": 0.115,
+        "111": 0.005,
+        "113": 0.0125,
+        "114": 0.1575,
+        "115": 0.05833333333333334,
+        "116": 0.08125,
+        "117": 0.0275,
+        "118": 0.255,
+        "119": 0.46,
+        "120": 0.09,
+        "121": 0.11833333333333333,
+        "122": 0.1125,
+        "123": 0.025000000000000005,
+        "124": 0.015,
+        "125": 0.005,
+        "164": 0.01,
+        "167": 0.3,
+        "168": 0.27,
+        "169": 0.037500000000000006,
+        "17": 0.005,
+        "170": 0.015,
+        "171": 0.02,
+        "172": 0.015,
+        "173": 0.025,
+        "174": 0.023333333333333334,
+        "175": 0.0975,
+        "176": 0.20833333333333334,
+        "177": 0.125,
+        "178": 0.075,
+        "179": 0.11666666666666665,
+        "180": 0.12,
+        "181": 0.06166666666666667,
+        "182": 0.01,
+        "183": 0.035,
+        "184": 0.005,
+        "185": 0.03,
+        "186": 0.027500000000000004,
+        "187": 0.08199999999999999,
+        "188": 0.191,
+        "189": 0.10124999999999999,
+        "19": 0.035,
+        "190": 0.07166666666666667,
+        "191": 0.03125,
+        "192": 0.07,
+        "193": 0.008333333333333333,
+        "194": 0.09000000000000001,
+        "195": 0.021666666666666667,
+        "196": 0.07166666666666667,
+        "197": 0.08,
+        "198": 0.055,
+        "199": 0.045,
+        "20": 0.005,
+        "200": 0.0225,
+        "202": 0.02,
+        "203": 0.015,
+        "205": 0.005,
+        "23": 0.01,
+        "24": 0.42,
+        "25": 0.15125000000000002,
+        "26": 0.03,
+        "27": 0.1366666666666667,
+        "28": 0.035,
+        "29": 0.27666666666666667,
+        "30": 0.15500000000000003,
+        "34": 0.355,
+        "35": 0.395,
+        "36": 0.39999999999999997,
+        "37": 0.02,
+        "38": 0.10999999999999999,
+        "39": 0.095,
+        "40": 0.18500000000000003,
+        "41": 0.07,
+        "42": 0.04,
+        "43": 0.04,
+        "44": 0.01,
+        "61": 0.045,
+        "64": 0.12,
+        "65": 0.025,
+        "66": 0.005,
+        "67": 0.585,
+        "68": 0.025,
+        "69": 0.265,
+        "70": 0.22166666666666668,
+        "71": 0.4275,
+        "72": 0.01,
+        "73": 0.37166666666666665,
+        "74": 0.22666666666666668,
+        "75": 0.09,
+        "76": 0.30000000000000004,
+        "77": 0.07833333333333334,
+        "78": 0.042499999999999996,
+        "79": 0.065,
+        "98": 0.475,
+        "99": 0.255
+      },
+      "boundary_frequency_by_region": {
+        "1-24": 0.014722222222222222,
+        "121-200": 0.08154769685652039,
+        "201-300": 0.011666666666666665,
+        "25-60": 0.1947308201058201,
+        "61-120": 0.17811553030303026
+      },
+      "replicates": 1200,
+      "singleton_rate": 0.0,
+      "tier_count_cv": 0.0,
+      "tier_count_distribution": {
+        "5": 1200
+      }
+    },
+    "8.0": {
+      "bootstrap_adjusted_rand": 0.9593349811860441,
+      "boundary_agreement": 0.49999999999999994,
+      "boundary_frequency": {
+        "100": 0.285,
+        "101": 0.018333333333333333,
+        "102": 0.0575,
+        "103": 0.085,
+        "105": 0.47750000000000004,
+        "106": 0.0375,
+        "107": 0.045,
+        "108": 0.04,
+        "110": 0.02,
+        "112": 0.5,
+        "113": 0.02,
+        "114": 0.41,
+        "115": 0.1375,
+        "116": 0.08499999999999999,
+        "117": 0.005,
+        "120": 0.005,
+        "156": 0.055,
+        "159": 0.02,
+        "160": 0.075,
+        "161": 0.015,
+        "162": 0.01,
+        "164": 0.245,
+        "165": 0.235,
+        "167": 0.1825,
+        "168": 0.305,
+        "169": 0.052500000000000005,
+        "170": 0.035,
+        "171": 0.02,
+        "172": 0.02,
+        "173": 0.0875,
+        "174": 0.14,
+        "175": 0.030000000000000002,
+        "176": 0.19000000000000003,
+        "177": 0.04,
+        "178": 0.06,
+        "179": 0.049999999999999996,
+        "180": 0.037500000000000006,
+        "181": 0.05666666666666667,
+        "183": 0.09166666666666666,
+        "184": 0.0225,
+        "185": 0.005,
+        "186": 0.2,
+        "187": 0.10666666666666667,
+        "188": 0.28375,
+        "189": 0.02,
+        "190": 0.1525,
+        "191": 0.015,
+        "192": 0.005,
+        "193": 0.01,
+        "194": 0.165,
+        "195": 0.04,
+        "196": 0.08,
+        "197": 0.03,
+        "198": 0.035,
+        "199": 0.005,
+        "200": 0.005,
+        "36": 0.035,
+        "41": 0.175,
+        "42": 0.355,
+        "43": 0.155,
+        "44": 0.125,
+        "45": 0.015,
+        "46": 0.0075,
+        "47": 0.030000000000000002,
+        "49": 0.045,
+        "50": 0.036666666666666674,
+        "51": 0.01,
+        "53": 0.14500000000000002,
+        "54": 0.395,
+        "55": 0.42,
+        "56": 0.11750000000000001,
+        "57": 0.025,
+        "58": 0.12000000000000001,
+        "59": 0.0325,
+        "60": 0.5833333333333334,
+        "61": 0.07666666666666667,
+        "63": 0.03,
+        "65": 0.005,
+        "92": 0.005,
+        "93": 0.055,
+        "95": 0.365,
+        "96": 0.11,
+        "97": 0.20750000000000002,
+        "98": 0.68,
+        "99": 0.0775
+      },
+      "boundary_frequency_by_region": {
+        "121-200": 0.11647364073834661,
+        "201-300": 0.005,
+        "25-60": 0.13218888888888888,
+        "61-120": 0.18891666666666665
+      },
+      "replicates": 1200,
+      "singleton_rate": 0.0,
+      "tier_count_cv": 0.0,
+      "tier_count_distribution": {
+        "4": 1200
+      }
+    }
+  },
+  "stability_decision": {
+    "decisive": false,
+    "evidence": {
+      "criteria": {
+        "criteria_version": "phase4_tier_stability_v1",
+        "max_singleton_rate": 0.2,
+        "max_tier_count_cv": 0.25,
+        "min_bootstrap_adjusted_rand": 0.6,
+        "min_boundary_agreement": 0.5,
+        "min_cross_preset_adjusted_rand": 0.5,
+        "min_monotonic_pair_share": 0.8,
+        "rules": [
+          "bootstrap membership similarity at or above min_bootstrap_adjusted_rand",
+          "at least min_boundary_agreement of promoted boundaries recovered by a majority of bootstrap replicates",
+          "singleton rate at or below max_singleton_rate",
+          "tier-count coefficient of variation at or below max_tier_count_cv",
+          "realized mean VORP non-increasing across at least min_monotonic_pair_share of adjacent tier pairs",
+          "membership similarity between scoring/league presets at or above min_cross_preset_adjusted_rand"
+        ]
+      },
+      "measured": {
+        "bootstrap_adjusted_rand": 0.864869594098204,
+        "boundary_agreement": 0.2394179894179894,
+        "cross_preset_adjusted_rand": 0.5287854887647532,
+        "monotonic_pair_share": 0.8447619047619048,
+        "singleton_rate": 0.03958831908831909,
+        "tier_count_cv": 0.045362248464726224
+      }
+    },
+    "failures": [
+      "boundary agreement 0.2394 below 0.5000"
+    ],
+    "reasons": [
+      "bootstrap ARI 0.8649",
+      "singleton rate 0.0396",
+      "tier-count CV 0.0454",
+      "monotonic tier pairs 0.8448",
+      "cross-preset ARI 0.5288"
+    ],
+    "rule": "phase4_tier_stability_v1",
+    "rules_version": "phase4_rules_v1",
+    "selected": "fail"
+  },
+  "stability_evidence": {
+    "bootstrap_adjusted_rand": 0.864869594098204,
+    "boundary_agreement": 0.2394179894179894,
+    "cross_preset_adjusted_rand": 0.5287854887647532,
+    "monotonic_pair_share": 0.8447619047619048,
+    "singleton_rate": 0.03958831908831909,
+    "tier_count_cv": 0.045362248464726224
+  },
+  "stability_gate": {
+    "criteria_version": "phase4_tier_stability_v1",
+    "max_singleton_rate": 0.2,
+    "max_tier_count_cv": 0.25,
+    "min_bootstrap_adjusted_rand": 0.6,
+    "min_boundary_agreement": 0.5,
+    "min_cross_preset_adjusted_rand": 0.5,
+    "min_monotonic_pair_share": 0.8,
+    "rules": [
+      "bootstrap membership similarity at or above min_bootstrap_adjusted_rand",
+      "at least min_boundary_agreement of promoted boundaries recovered by a majority of bootstrap replicates",
+      "singleton rate at or below max_singleton_rate",
+      "tier-count coefficient of variation at or below max_tier_count_cv",
+      "realized mean VORP non-increasing across at least min_monotonic_pair_share of adjacent tier pairs",
+      "membership similarity between scoring/league presets at or above min_cross_preset_adjusted_rand"
+    ]
+  },
+  "status": "fail",
+  "study": "phase4_tiers_v1",
+  "study_id": "phase4_tiers_v1:20260819:20260819T214120Z",
+  "tier_monotonicity": [
+    {
+      "adjacent_pairs": 8,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 49.93571428571429,
+          "players": 14,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 34.03130434782609,
+          "players": 23,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 11.077647058823528,
+          "players": 34,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 17.642105263157898,
+          "players": 19,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -21.51888888888889,
+          "players": 18,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -34.86577777777778,
+          "players": 45,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -50.55513513513513,
+          "players": 37,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -51.686800000000005,
+          "players": 50,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -64.24833333333333,
+          "players": 60,
+          "tier_ordinal": 8
+        }
+      ],
+      "monotonic_pair_share": 0.875,
+      "monotonic_pairs": 7,
+      "scoring_preset": "STD",
+      "season": 2020,
+      "tiers": 9
+    },
+    {
+      "adjacent_pairs": 7,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 49.881818181818176,
+          "players": 11,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 57.00999999999999,
+          "players": 22,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": -1.744242424242429,
+          "players": 33,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 15.352666666666662,
+          "players": 30,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -28.449629629629634,
+          "players": 27,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -47.89837837837838,
+          "players": 37,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -53.836078431372556,
+          "players": 51,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -81.6876404494382,
+          "players": 89,
+          "tier_ordinal": 7
+        }
+      ],
+      "monotonic_pair_share": 0.7142857142857143,
+      "monotonic_pairs": 5,
+      "scoring_preset": "HALF",
+      "season": 2020,
+      "tiers": 8
+    },
+    {
+      "adjacent_pairs": 8,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 61.93999999999998,
+          "players": 5,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 64.64380952380951,
+          "players": 21,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 12.456666666666647,
+          "players": 24,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 16.312380952380938,
+          "players": 21,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": 2.668888888888878,
+          "players": 27,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -31.689743589743603,
+          "players": 39,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -71.90188679245284,
+          "players": 53,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -82.35640000000001,
+          "players": 50,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -96.55266666666668,
+          "players": 60,
+          "tier_ordinal": 8
+        }
+      ],
+      "monotonic_pair_share": 0.75,
+      "monotonic_pairs": 6,
+      "scoring_preset": "PPR",
+      "season": 2020,
+      "tiers": 9
+    },
+    {
+      "adjacent_pairs": 10,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 35.316,
+          "players": 15,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 37.459999999999994,
+          "players": 20,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 13.827096774193544,
+          "players": 31,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 18.57428571428571,
+          "players": 21,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": 137.10000000000002,
+          "players": 1,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -22.001481481481488,
+          "players": 27,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -27.569047619047627,
+          "players": 42,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": 5.300000000000011,
+          "players": 1,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -31.478709677419364,
+          "players": 31,
+          "tier_ordinal": 8
+        },
+        {
+          "mean_actual_vorp": -65.74363636363637,
+          "players": 44,
+          "tier_ordinal": 9
+        },
+        {
+          "mean_actual_vorp": -71.78865671641792,
+          "players": 67,
+          "tier_ordinal": 10
+        }
+      ],
+      "monotonic_pair_share": 0.6,
+      "monotonic_pairs": 6,
+      "scoring_preset": "STD",
+      "season": 2021,
+      "tiers": 11
+    },
+    {
+      "adjacent_pairs": 8,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 75.29125,
+          "players": 16,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 27.659999999999997,
+          "players": 23,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": -0.8700000000000045,
+          "players": 20,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 15.434838709677422,
+          "players": 31,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -29.00074074074075,
+          "players": 27,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -32.72914285714286,
+          "players": 35,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -46.3808888888889,
+          "players": 45,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -72.91250000000001,
+          "players": 40,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -89.9968253968254,
+          "players": 63,
+          "tier_ordinal": 8
+        }
+      ],
+      "monotonic_pair_share": 0.875,
+      "monotonic_pairs": 7,
+      "scoring_preset": "HALF",
+      "season": 2021,
+      "tiers": 9
+    },
+    {
+      "adjacent_pairs": 6,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 72.47142857142856,
+          "players": 28,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 7.6346666666666625,
+          "players": 30,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 9.26111111111111,
+          "players": 36,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": -32.56777777777778,
+          "players": 36,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -49.13227272727273,
+          "players": 44,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -70.13869565217392,
+          "players": 46,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -102.93700000000001,
+          "players": 80,
+          "tier_ordinal": 6
+        }
+      ],
+      "monotonic_pair_share": 0.8333333333333334,
+      "monotonic_pairs": 5,
+      "scoring_preset": "PPR",
+      "season": 2021,
+      "tiers": 7
+    },
+    {
+      "adjacent_pairs": 9,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 99.14400000000002,
+          "players": 5,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 72.01157894736842,
+          "players": 19,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 35.656666666666666,
+          "players": 18,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 8.384516129032255,
+          "players": 31,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -5.087586206896552,
+          "players": 29,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -39.98350000000001,
+          "players": 40,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -53.91849056603774,
+          "players": 53,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -56.86112676056339,
+          "players": 71,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": 49.359999999999985,
+          "players": 1,
+          "tier_ordinal": 8
+        },
+        {
+          "mean_actual_vorp": -64.01818181818182,
+          "players": 33,
+          "tier_ordinal": 9
+        }
+      ],
+      "monotonic_pair_share": 0.8888888888888888,
+      "monotonic_pairs": 8,
+      "scoring_preset": "STD",
+      "season": 2022,
+      "tiers": 10
+    },
+    {
+      "adjacent_pairs": 7,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 85.26133333333334,
+          "players": 15,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 61.4752380952381,
+          "players": 21,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 24.558823529411764,
+          "players": 34,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": -8.870000000000003,
+          "players": 28,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -47.60631578947368,
+          "players": 38,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -61.78808510638298,
+          "players": 47,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -68.2556923076923,
+          "players": 65,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -77.22384615384615,
+          "players": 52,
+          "tier_ordinal": 7
+        }
+      ],
+      "monotonic_pair_share": 1.0,
+      "monotonic_pairs": 7,
+      "scoring_preset": "HALF",
+      "season": 2022,
+      "tiers": 8
+    },
+    {
+      "adjacent_pairs": 7,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 97.11882352941177,
+          "players": 17,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 54.86451612903225,
+          "players": 31,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 23.620000000000005,
+          "players": 23,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": -23.04206896551724,
+          "players": 29,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -43.790454545454544,
+          "players": 44,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -82.4648,
+          "players": 50,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -83.40067796610168,
+          "players": 59,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -107.09446808510637,
+          "players": 47,
+          "tier_ordinal": 7
+        }
+      ],
+      "monotonic_pair_share": 1.0,
+      "monotonic_pairs": 7,
+      "scoring_preset": "PPR",
+      "season": 2022,
+      "tiers": 8
+    },
+    {
+      "adjacent_pairs": 9,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 57.99076923076924,
+          "players": 13,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 40.609,
+          "players": 20,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 9.905000000000001,
+          "players": 28,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": -29.1225,
+          "players": 24,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -20.219999999999985,
+          "players": 2,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -23.5704,
+          "players": 25,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -33.14372093023256,
+          "players": 43,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": 67.56,
+          "players": 1,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -46.24771428571429,
+          "players": 70,
+          "tier_ordinal": 8
+        },
+        {
+          "mean_actual_vorp": -69.97432432432433,
+          "players": 74,
+          "tier_ordinal": 9
+        }
+      ],
+      "monotonic_pair_share": 0.7777777777777778,
+      "monotonic_pairs": 7,
+      "scoring_preset": "STD",
+      "season": 2023,
+      "tiers": 10
+    },
+    {
+      "adjacent_pairs": 8,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 97.71333333333334,
+          "players": 9,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 33.040000000000006,
+          "players": 18,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 41.20181818181818,
+          "players": 22,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": -5.064999999999997,
+          "players": 20,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -35.458064516129035,
+          "players": 31,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -14.850526315789471,
+          "players": 19,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -43.15702127659575,
+          "players": 47,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -58.17770491803279,
+          "players": 61,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -90.08630136986302,
+          "players": 73,
+          "tier_ordinal": 8
+        }
+      ],
+      "monotonic_pair_share": 0.75,
+      "monotonic_pairs": 6,
+      "scoring_preset": "HALF",
+      "season": 2023,
+      "tiers": 9
+    },
+    {
+      "adjacent_pairs": 7,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 116.88400000000001,
+          "players": 10,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 42.705833333333345,
+          "players": 24,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 21.776521739130434,
+          "players": 23,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": -28.696249999999992,
+          "players": 32,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -13.807692307692305,
+          "players": 26,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -52.342127659574466,
+          "players": 47,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -62.052280701754384,
+          "players": 57,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -106.49259259259259,
+          "players": 81,
+          "tier_ordinal": 7
+        }
+      ],
+      "monotonic_pair_share": 0.8571428571428571,
+      "monotonic_pairs": 6,
+      "scoring_preset": "PPR",
+      "season": 2023,
+      "tiers": 8
+    },
+    {
+      "adjacent_pairs": 8,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 65.73333333333333,
+          "players": 15,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 54.84689655172414,
+          "players": 29,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 10.589565217391302,
+          "players": 23,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": -13.822222222222226,
+          "players": 27,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -13.338125,
+          "players": 32,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -31.284000000000002,
+          "players": 40,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -56.23904761904762,
+          "players": 42,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": 12.0,
+          "players": 1,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -55.70813186813187,
+          "players": 91,
+          "tier_ordinal": 8
+        }
+      ],
+      "monotonic_pair_share": 0.75,
+      "monotonic_pairs": 6,
+      "scoring_preset": "STD",
+      "season": 2024,
+      "tiers": 9
+    },
+    {
+      "adjacent_pairs": 7,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 67.32249999999999,
+          "players": 16,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 42.6296,
+          "players": 25,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 41.388,
+          "players": 20,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 5.3961904761904735,
+          "players": 21,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -27.499411764705883,
+          "players": 34,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -31.11777777777778,
+          "players": 54,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -63.91513513513514,
+          "players": 37,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -73.67827956989247,
+          "players": 93,
+          "tier_ordinal": 7
+        }
+      ],
+      "monotonic_pair_share": 1.0,
+      "monotonic_pairs": 7,
+      "scoring_preset": "HALF",
+      "season": 2024,
+      "tiers": 8
+    },
+    {
+      "adjacent_pairs": 8,
+      "league_preset_id": "redraft-12",
+      "mean_actual_vorp_by_tier": [
+        {
+          "mean_actual_vorp": 104.85000000000002,
+          "players": 8,
+          "tier_ordinal": 0
+        },
+        {
+          "mean_actual_vorp": 40.00538461538463,
+          "players": 26,
+          "tier_ordinal": 1
+        },
+        {
+          "mean_actual_vorp": 36.556521739130446,
+          "players": 23,
+          "tier_ordinal": 2
+        },
+        {
+          "mean_actual_vorp": 20.733636363636375,
+          "players": 22,
+          "tier_ordinal": 3
+        },
+        {
+          "mean_actual_vorp": -22.43371428571428,
+          "players": 35,
+          "tier_ordinal": 4
+        },
+        {
+          "mean_actual_vorp": -38.41799999999999,
+          "players": 30,
+          "tier_ordinal": 5
+        },
+        {
+          "mean_actual_vorp": -59.82227272727271,
+          "players": 44,
+          "tier_ordinal": 6
+        },
+        {
+          "mean_actual_vorp": -79.13481481481482,
+          "players": 54,
+          "tier_ordinal": 7
+        },
+        {
+          "mean_actual_vorp": -100.37275862068965,
+          "players": 58,
+          "tier_ordinal": 8
+        }
+      ],
+      "monotonic_pair_share": 1.0,
+      "monotonic_pairs": 8,
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "tiers": 9
+    }
+  ]
+}

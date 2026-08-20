@@ -16,6 +16,11 @@ data/raw/
 # `ffdraft build-historical`, so it stays out of source commits; the committed record of
 # what it contains is docs/FEATURE_DICTIONARY.md plus the SESSION_STATE.md build summary.
 data/historical/
+# Phase-4 development intermediates: out-of-fold predictions from the promoted
+# architecture, simulated VORP draws and tier working sets. All reproducible from the
+# `ffdraft evaluate-*` commands; the committed record is the experiment reports under
+# docs/experiments/.
+data/phase4/
 
 # Node
 node_modules/

@@ -286,6 +286,29 @@ Monte Carlo combines them.
 
 Potentially more interpretable and responsive to current status, but only promote if it improves out-of-time probabilistic/rank metrics enough to justify complexity.
 
+> **Phase-4 implementation, and the promotion (ADR-033).** `ffdraft.modeling.candidates`
+> implements Candidate B as **CB**, and it is the production model. Two LightGBM quantile
+> components over the same `intrinsic_core_v1` features: **availability**, modelled as the
+> rate `games / fantasy_horizon_weeks` so 16- and 17-week seasons are comparable inside one
+> training window, and **conditional performance**, fantasy points per *active* game, fitted
+> only on training rows with at least one game because the ratio is undefined for the others.
+> The composition is `games x points-per-game` with zero games scoring exactly zero and
+> nothing clipped from below - this project's scoring presets make a negative season total
+> genuinely possible, and 92 occur in the historical dataset.
+>
+> The two components are **not** sampled independently. A Gaussian copula couples them
+> through one correlation per position x scoring preset, estimated inside the fold on an
+> inner chronological split from probability-integral transforms of both components. The
+> fitted value is positive in all sixty development groups (median 0.323), so independence
+> would have been a measurably wrong assumption rather than a harmless simplification. The
+> parameter necessarily describes players who played, since points per game does not exist
+> for the rest; that extrapolation is stated in the model card.
+>
+> Why the separation earns its complexity here: 44% of eligible player-seasons record zero
+> games, so a direct-total model spends much of its capacity on an availability question
+> dressed as a scoring question. Against the calibrated direct model, CB improves MAE,
+> pinball, Spearman and top-K retrieval with every paired interval excluding zero.
+
 ### 9.3 Optional ensemble
 
 A simple average/stack of candidates is allowed only if learned/tuned entirely inside training folds and materially improves holdouts. Avoid model zoo behavior.
@@ -337,6 +360,24 @@ Do not pretend players are independent if future work adds correlations, but V1 
 
 Seed is derived from model version + league preset + build ID or fixed production seed. Re-running the same inputs must reproduce outputs within exact/tight tolerance.
 
+> **Phase-4 implementation.** `ffdraft.simulation.sampler` builds a monotone piecewise-linear
+> quantile function per player and refuses to be constructed from a crossing grid - repair
+> happens upstream, so the sampler can assume monotonicity rather than silently sorting.
+> Interior points interpolate linearly between the two bracketing levels; exterior points
+> continue the slope of the nearest interior segment and clamp to domain bounds derived from
+> the **training** range alone (5% of the range below the observed minimum, 15% above the
+> maximum - asymmetric because records fall upward far more often than a season collapses
+> below the worst ever seen). One formula covers interior and tail because the segment index
+> is clipped rather than special-cased, so there is no discontinuity at P10 or P90.
+>
+> Each player's uniform stream is derived from the model version, the simulation version, the
+> scoring preset, the build id and **his own id**, so a player's draws do not change when
+> another player enters or leaves the pool. The league preset is deliberately *absent* from
+> the seed material: the same simulated seasons are re-allocated under every roster shape, so
+> a preset-to-preset difference in VORP is a scarcity difference rather than Monte Carlo
+> noise. Player draws are independent; V1 models no teammate or game-script correlation, and
+> section 23 states that limitation publicly.
+
 ## 12. Replacement allocation
 
 For every simulation and league preset:
@@ -353,6 +394,18 @@ This produces position-aware scarcity without market ADP.
 
 > **Phase-2 implementation.** The algorithm lives in `ffdraft.simulation.allocation`, independent of where the points came from: Phase 2 feeds it a player's **actual** season total to build realized-VORP labels, and Phase 4 will feed it one Monte Carlo draw per player. There is one implementation, so the realized label and the simulated value cannot disagree about what a league starts. Ties break on `player_id` ascending, making an allocation a pure function of its inputs, and a position whose pool is entirely consumed by starting slots gets a null replacement rather than an invented zero.
 
+> **Phase-4 implementation.** `ffdraft.simulation.vorp` is the draw loop around that one
+> algorithm, and it adds nothing to it. Every draw hands a whole sampled season to
+> `allocate_starters` and subtracts *that draw's* replacement baseline from *that draw's*
+> points. **Replacement is resampled with everyone else**, which is the entire point:
+> subtracting one fixed baseline from every quantile would make VORP a shifted copy of
+> points and would understate uncertainty exactly where scarcity is uncertain. A draw where
+> the top backs collapse is a draw where replacement is low and the survivors are worth more.
+>
+> A player whose position had no replacement baseline in any draw gets a null VORP, and the
+> production build withholds him from the published board with a counted quality check rather
+> than shipping an invented zero. With a production-sized pool that never fires.
+
 ### Superflex future extension
 
 Would require joint QB/RB/WR/TE slot optimization. Do not fake superflex by reusing 1QB replacement ranks.
@@ -364,6 +417,15 @@ Primary fair rank = descending expected or median simulated VORP. Pick one befor
 Tie break is deterministic per `DATA_CONTRACTS.md`.
 
 Do not bake upside preference into rank. Ceiling/floor are displayed separately.
+
+> **Phase-4 implementation (ADR-034).** The choice was settled by measurement rather than
+> preference, under a rule frozen before the evidence existed. Both statistics were scored
+> against the realized VORP labels Phase 2 built, over the full eligible universe of every
+> development season and every scoring x league preset. The rule allowed expected VORP to win
+> only by materially improving top-K retrieval - the part of the board a draft sheet is
+> mostly about, and the part ADR-029 recorded as Q1's weakness - without deteriorating global
+> rank correlation or collapsing a position. The selected statistic, its evidence and the
+> tie-break that applied are in `docs/experiments/phase4-simulation-ranking/`.
 
 ## 14. Natural tier segmentation
 
@@ -392,6 +454,25 @@ Dynamic programming segmentation minimizing within-tier distribution distance (e
 
 Implement only if the simpler PELT candidate proves unstable/unintuitive under measured tests.
 
+> **Phase-4 implementation.** `ffdraft.tiers.dynamic` implements it, and the study reaches it
+> **only** when a frozen rule refuses PELT - either no penalty in the grid is admissible or
+> the promoted one fails the stability gate. Both attempts are recorded in the report, so an
+> escalation is visible rather than inferred.
+>
+> The two algorithms optimize different things, which is the point. PELT with an RBF cost
+> finds where the *kernel mean* of the feature vector changes. This one minimizes within-tier
+> squared quantile distance, and because the L2 distance between two quantile functions on a
+> common level grid is the 2-Wasserstein distance between the distributions, that is
+> minimizing within-tier Wasserstein dispersion directly - the phrase this section uses.
+>
+> Three implementation choices: the solution is **exact** (contiguous segmentation with an
+> additive per-segment cost is a shortest path, solved by dynamic programming in O(n^2) with
+> prefix sums, which removes "a local optimum" from the list of things a boundary could be);
+> it uses **three quantiles rather than four features**, because the interquartile spread the
+> PELT candidate also passes *is* P75 - P25 and would be counted twice under an L2 cost; and
+> its cost is **normalized per feature**, so a penalty means roughly the same thing under
+> both algorithms and the frozen grid stays interpretable across them.
+
 ### 14.4 Boundary diagnostics
 
 For each adjacent boundary compute diagnostics such as:
@@ -414,11 +495,64 @@ Bootstrap/re-simulate model outputs and rerun segmentation. Track:
 
 Tier algorithm promotion requires a declared stability threshold chosen during development and documented in the tier method card. Avoid inventing an arbitrary threshold in code without evaluation.
 
+> **Phase-4 measurement (ADR-035).** The thresholds were declared in `phase4_tier_stability_v1`
+> before any tier existed, and the promoted segmentation **fails** one of the six. The
+> failure is specific and worth reading carefully, because it is not "the algorithm is
+> wrong":
+>
+> | Quantity | Bar | Measured |
+> |---|---|---|
+> | bootstrap adjusted Rand | >= 0.60 | 0.865 |
+> | boundary agreement | >= 0.50 | **0.239** |
+> | singleton rate | <= 0.20 | 0.040 |
+> | tier-count CV | <= 0.25 | 0.045 |
+> | monotonic tier pairs | >= 0.80 | 0.845 |
+> | cross-preset ARI | >= 0.50 | 0.529 |
+>
+> **Membership is reproducible; boundaries are not located.** Over 1,200 replicates the
+> segmentation used 283 of 299 possible cut sites at least once and only 4 survived in a
+> majority. The median promoted boundary sits on a 0.55-point P50 cliff against a 80-130
+> point P10-P90 width, and the median probability that the player below a boundary outscores
+> the player above it is 0.497 - a coin flip.
+>
+> The cause is a conflict between two frozen rules rather than a property of either
+> algorithm. `max_largest_tier_share = 0.25` forbids any tier holding more than a quarter of
+> a 300-deep board, but the deep tail of that board genuinely is one large near-replacement
+> group; the rule therefore forces cuts inside a flat region, which is exactly what a
+> bootstrap cannot reproduce. The same grid offers penalties whose boundary agreement passes
+> (3.0 at 0.517, 8.0 at 0.500) and both are inadmissible on largest tier share. Neither
+> threshold was moved after the fact; the remedy is a new rule version with its own evidence.
+
+> **Phase-4 implementation (ADR-035).** `ffdraft.tiers` implements the PELT candidate on the
+> rank-ordered matrix of standardized P25, P50, P75 and interquartile spread of simulated
+> VORP, with `min_size=1` so a genuinely isolated top player may stand alone. The penalty
+> comes from a fixed six-value grid declared before any of it ran; there is no search outside
+> the grid and no extra value added after seeing the diagnostics.
+>
+> **The bootstrap resamples simulated seasons, not players.** Tiers are a function of the
+> Monte Carlo VORP distribution, so the honest question is how much of the board is a
+> property of the model rather than of these particular draws. Each replicate resamples draw
+> indices with replacement, recomputes every player's VORP summary, **re-ranks** the board and
+> re-segments it - holding the fair ranks fixed would flatter every boundary, because the
+> ranking comes from the same draws.
+>
+> Every boundary carries diagnostics computed identically for boundary and non-boundary
+> adjacent pairs - the P50 cliff, a standardized effect size, and the probability the lower
+> player outscores the higher one under a transparent normal proxy - which is what makes
+> "this boundary separates more than a typical pair inside a tier" a ratio rather than an
+> impression. Thresholds, results and the promoted penalty are in
+> `docs/experiments/phase4-tier-segmentation/` and `models/cards/tier-method.md`.
+
 ## 15. Tier labels
 
 Ordinal 0 -> `S`, 1 -> `A`, 2 -> `B`, etc.
 
 If the board requires more segments than comfortable letter labels, maintain semantic tier ordinal in data and allow UI labels such as `Late 1`, `Late 2` after `F`. Do not merge statistically distinct tiers solely to keep a meme-style alphabet.
+
+> **Phase-4 implementation.** `ffdraft.tiers.labels` maps ordinal 0-6 to `S` through `F` and
+> everything deeper to `Late 1`, `Late 2` and so on. The ordinal is the data and the letter is
+> presentation: nothing downstream computes with a letter, and a letter carries no claim
+> beyond "the segmentation put a break above this group".
 
 ## 16. Arbitrage target construction
 
@@ -530,6 +664,13 @@ Confidence can be derived from transparent data/model diagnostics, e.g.:
 
 Public confidence label may be `high/medium/low` with methodology, or a normalized score if calibrated. It must have a defined meaning.
 
+> **Phase-4 implementation.** The tier artifact publishes `uncertainty` = the interquartile
+> range of simulated VORP (`p75_vorp - p25_vorp`), which is a width in fantasy points with a
+> stated meaning rather than a manufactured 0-100 score. Data-quality context travels
+> separately in `quality_flags`: `rookie`, `no_prior_season_stats`, `no_depth_context`,
+> `no_current_roster_entry` and the current roster status codes. Nothing here is a learned
+> confidence, and no single number pretends to combine them.
+
 ## 22. Model cards
 
 Every promoted intrinsic/arbitrage model needs a Markdown + JSON card with:
@@ -551,6 +692,12 @@ Every promoted intrinsic/arbitrage model needs a Markdown + JSON card with:
 - code SHA
 - promotion decision
 
+> **Phase-4 implementation.** `ffdraft model-card` generates `models/cards/intrinsic-<version>.{md,json}`
+> and `models/cards/tier-method.{md,json}` from the committed experiment reports and the model
+> artifact. They are generated rather than written, for the same reason
+> `docs/FEATURE_DICTIONARY.md` is: a number in a card that no command produces is a number
+> that can drift.
+
 ## 23. Important limitations to state publicly
 
 - fantasy outcomes have substantial injury/role randomness;
@@ -559,3 +706,22 @@ Every promoted intrinsic/arbitrage model needs a Markdown + JSON card with:
 - rookie projections are lower-information;
 - ADP sources may represent specific platforms/league cohorts rather than all fantasy players;
 - model rank is decision support, not certainty.
+
+> **Phase-4 additions, all measured rather than asserted.**
+>
+> - **There is no preseason injury feature, in any season.** No nflverse source publishes an
+>   injury report at a draft anchor (ADR-011), so a player entering the season hurt looks
+>   healthy to this model. This is a coverage gap in the sources, not an oversight.
+> - **The 2021 horizon boundary was measured and left in place.** A horizon-normalized target
+>   was built and rejected (ADR-032); season totals still sit on a ~6% different scale either
+>   side of 2021.
+> - **Pooled interval coverage overstates the interval width** because the promoted model
+>   represents "never plays" as a genuine atom at zero. Coverage is reported split by whether
+>   the player appeared in a game.
+> - **The availability/performance dependence is estimated on active players only**, because
+>   points per game is undefined for the rest, and extrapolated to everyone.
+> - **Tier boundaries move between builds.** How much is measured by bootstrap and published;
+>   deep boundaries are far less stable than the top of the board.
+> - **Current roster status is metadata, never signal.** It can annotate a published row or
+>   remove a retired player from the board, but it cannot move a prediction: it has no
+>   development-era support and could not be validated.

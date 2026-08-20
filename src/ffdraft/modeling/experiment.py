@@ -35,7 +35,16 @@ from ffdraft.modeling.bootstrap import (
     PairedCell,
     paired_bootstrap,
 )
-from ffdraft.modeling.candidates import LightGbmQuantileCandidate
+from ffdraft.modeling.calibration import (
+    HorizonNormalizedTarget,
+    MonotoneOnly,
+    ResidualShiftCalibration,
+)
+from ffdraft.modeling.candidates import (
+    AvailabilityPerformanceCandidate,
+    CalibratedQuantileCandidate,
+    LightGbmQuantileCandidate,
+)
 from ffdraft.modeling.dataset import TARGET_COLUMN, ModelingDataset
 from ffdraft.modeling.estimators import (
     FitContext,
@@ -69,7 +78,18 @@ from ffdraft.modeling.holdout import (
     final_holdout_policy,
     slice_masks,
 )
-from ffdraft.modeling.metrics import QUANTILE_LEVELS, slice_metrics
+from ffdraft.modeling.metrics import (
+    QUANTILE_LEVELS,
+    TOP_K_BY_POSITION,
+    crossing_rate,
+    slice_metrics,
+)
+from ffdraft.modeling.rules import (
+    FINAL_HOLDOUT_GATE,
+    Decision,
+    PairedDelta,
+    evaluate_final_holdout,
+)
 
 __all__ = [
     "EXPERIMENT_VERSION",
@@ -78,6 +98,8 @@ __all__ = [
     "FinalHoldoutResult",
     "aggregate_cells",
     "build_models",
+    "cell_records",
+    "paired_cells",
     "run_experiment",
     "run_final_holdout_evaluation",
 ]
@@ -128,11 +150,28 @@ class ExperimentConfig:
 
 
 def build_models(model_ids: Sequence[str]) -> dict[str, IntrinsicModel]:
-    """Construct the requested models. The registry is explicit rather than discovered."""
+    """Construct the requested models. The registry is explicit rather than discovered.
+
+    Phase 3's three entries are unchanged, so `evaluate-intrinsic` still reproduces its
+    report exactly. Phase 4 adds the four variants its stage-B study compared, which is what
+    lets the sealed final-holdout path evaluate the *promoted* architecture rather than the
+    Phase-3 candidate it superseded.
+    """
     registry: dict[str, IntrinsicModel] = {
         "B0": NaivePriorProductionBaseline(),
         "B1": RidgeBaseline(),
         "Q1": LightGbmQuantileCandidate(),
+        "A0": CalibratedQuantileCandidate("A0", calibration=MonotoneOnly()),
+        "A1": CalibratedQuantileCandidate("A1", calibration=ResidualShiftCalibration()),
+        "AH": CalibratedQuantileCandidate(
+            "AH",
+            calibration=MonotoneOnly(),
+            target=HorizonNormalizedTarget(),
+        ),
+        "CB": AvailabilityPerformanceCandidate(
+            calibration=MonotoneOnly(),
+            seed_material=("candidate_b", "phase4_production"),
+        ),
     }
     unknown = sorted(set(model_ids) - set(registry))
     if unknown:
@@ -169,7 +208,7 @@ class ExperimentResult:
         return any(result.passed for result in self.gate_results)
 
 
-def _cell_records(
+def cell_records(
     dataset: ModelingDataset,
     models: Mapping[str, IntrinsicModel],
     folds: Sequence[Fold],
@@ -287,7 +326,7 @@ def aggregate_cells(
     return records
 
 
-def _paired_cells(
+def paired_cells(
     predictions: pl.DataFrame,
     *,
     baseline: tuple[str, str],
@@ -321,6 +360,7 @@ def _paired_cells(
         cells.append(
             PairedCell(
                 key=f"{season}|{position}|{preset}",
+                top_k=TOP_K_BY_POSITION.get(str(position), 0),
                 actual=block.get_column(TARGET_COLUMN).to_numpy().astype(np.float64),
                 baseline_point=block.get_column("pred_point").to_numpy().astype(np.float64),
                 candidate_point=block.get_column("pred_point_cand").to_numpy().astype(np.float64),
@@ -452,7 +492,7 @@ def run_experiment(
     if settings.include_w1_diagnostic_folds and WindowPolicy.W1 in settings.windows:
         folds.extend(diagnostic_folds(WindowPolicy.W1))
 
-    cells, prediction_blocks, diagnostics = _cell_records(dataset, models, folds, settings)
+    cells, prediction_blocks, diagnostics = cell_records(dataset, models, folds, settings)
     predictions = pl.concat(prediction_blocks) if prediction_blocks else pl.DataFrame()
 
     development_fold_ids = [fold.fold_id for fold in folds if fold.kind is FoldKind.DEVELOPMENT]
@@ -473,7 +513,7 @@ def run_experiment(
         for model_id in settings.model_ids:
             if model_id == baseline_id:
                 continue
-            paired = _paired_cells(
+            paired = paired_cells(
                 predictions,
                 baseline=(baseline_id, str(window)),
                 candidate=(model_id, str(window)),
@@ -562,7 +602,7 @@ def _decide_window(
     ]
     # Both sides predict the same validation rows, so the pairing is exact; W2 is passed as
     # the "baseline" so a negative delta reads as "W1 is better".
-    paired = _paired_cells(
+    paired = paired_cells(
         predictions,
         baseline=(comparison_model, str(WindowPolicy.W2)),
         candidate=(comparison_model, str(WindowPolicy.W1)),
@@ -687,9 +727,17 @@ class FinalHoldoutResult:
     cells: list[dict[str, Any]]
     aggregates: list[dict[str, Any]]
     slices: list[dict[str, Any]]
+    positional: list[dict[str, Any]] = field(default_factory=list)
+    deltas: dict[str, dict[str, Any]] = field(default_factory=dict)
+    acceptance: Decision | None = None
+    candidate_id: str = ""
     checks: list[QualityCheck] = field(default_factory=list)
     predictions: pl.DataFrame | None = None
     runtime_seconds: float = 0.0
+
+    @property
+    def passed(self) -> bool:
+        return self.acceptance is not None and self.acceptance.decisive
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -698,10 +746,17 @@ class FinalHoldoutResult:
             "configuration": self.config.to_dict(),
             "window_policy": str(self.window),
             "authorization_reason": self.authorization_reason,
+            "candidate_model_id": self.candidate_id,
+            "acceptance_criteria": FINAL_HOLDOUT_GATE.to_dict(),
+            "acceptance": self.acceptance.to_dict() if self.acceptance else None,
             "folds": self.folds,
             "models": self.model_definitions,
             "metrics_by_cell": self.cells,
+            "primary": self.aggregates,
             "aggregates": self.aggregates,
+            "aggregates_by_position": self.positional,
+            "paired_deltas": self.deltas,
+            "diagnostic_slices": self.slices,
             "predeclared_slices": self.slices,
             "final_holdout": final_holdout_policy(status="CONSUMED"),
             "checks": [check.to_dict() for check in self.checks],
@@ -732,11 +787,29 @@ def run_final_holdout_evaluation(
         )
     fold = final_holdout_fold(window, authorization=authorization)
     models = build_models(settings.model_ids)
-    cells, prediction_blocks, _ = _cell_records(dataset, models, [fold], settings)
+    cells, prediction_blocks, _ = cell_records(dataset, models, [fold], settings)
     predictions = pl.concat(prediction_blocks) if prediction_blocks else pl.DataFrame()
 
     holdout_frame = dataset.frame.filter(pl.col("season") == fold.validation_season)
     slices = _slice_metrics(predictions, holdout_frame, settings)
+    kind = str(FoldKind.FINAL_HOLDOUT)
+    aggregates = aggregate_cells(cells, kind=kind)
+    positional = aggregate_cells(cells, by=("model_id", "position"), kind=kind)
+
+    baseline_id = settings.criteria.primary_baseline
+    candidate_id = next(
+        (model_id for model_id in settings.model_ids if model_id != baseline_id),
+        "",
+    )
+    deltas, acceptance = _final_acceptance(
+        predictions,
+        cells,
+        positional,
+        baseline_id=baseline_id,
+        candidate_id=candidate_id,
+        fold=fold,
+        settings=settings,
+    )
 
     checks = [
         QualityCheck.fail(
@@ -750,6 +823,25 @@ def run_final_holdout_evaluation(
             severity=Severity.WARNING,
         ),
     ]
+    if acceptance is not None:
+        checks.append(
+            QualityCheck.ok(
+                "phase4.final_holdout_gate",
+                stage="phase4_final_holdout",
+                message=f"{acceptance.rule} passed on the full 2025 universe",
+                observed="; ".join(acceptance.reasons),
+            )
+            if acceptance.decisive
+            else QualityCheck.fail(
+                "phase4.final_holdout_gate",
+                stage="phase4_final_holdout",
+                message=(
+                    "the frozen final-holdout acceptance rule failed; Phase 4 is blocked and "
+                    "the gate may not be weakened after the fact"
+                ),
+                observed="; ".join(acceptance.failures),
+            ),
+        )
     return FinalHoldoutResult(
         config=settings,
         window=window,
@@ -757,12 +849,86 @@ def run_final_holdout_evaluation(
         folds=fold_table([fold]),
         model_definitions={model_id: model.describe() for model_id, model in models.items()},
         cells=cells,
-        aggregates=aggregate_cells(cells, kind=str(FoldKind.FINAL_HOLDOUT)),
+        aggregates=aggregates,
+        positional=positional,
         slices=slices,
+        deltas=deltas,
+        acceptance=acceptance,
+        candidate_id=candidate_id,
         checks=checks,
         predictions=predictions,
         runtime_seconds=round(time.monotonic() - started, 2),
     )
+
+
+def _final_acceptance(
+    predictions: pl.DataFrame,
+    cells: Sequence[Mapping[str, Any]],
+    positional: Sequence[Mapping[str, Any]],
+    *,
+    baseline_id: str,
+    candidate_id: str,
+    fold: Fold,
+    settings: ExperimentConfig,
+) -> tuple[dict[str, dict[str, Any]], Decision | None]:
+    """Apply the frozen ``phase4_final_holdout_v1`` rule to the full-universe result."""
+    if not candidate_id or predictions.is_empty():
+        return {}, None
+    paired = paired_cells(
+        predictions,
+        baseline=(baseline_id, str(fold.window)),
+        candidate=(candidate_id, str(fold.window)),
+        kind_folds=[fold.fold_id],
+    )
+    if not paired:
+        return {}, None
+    bootstrap = paired_bootstrap(
+        paired,
+        metrics=("mae", "mean_pinball", "spearman", "top_k_recall"),
+        seed=settings.seed,
+        replicates=settings.bootstrap_replicates,
+        levels=settings.levels,
+    )
+    deltas = {
+        f"{candidate_id}_vs_{baseline_id}": {
+            name: delta.to_dict() for name, delta in bootstrap.items()
+        },
+    }
+
+    indexed = {(row["model_id"], row["position"]): row for row in positional}
+    mae_regression: dict[str, float] = {}
+    rank_regression: dict[str, float] = {}
+    coverage: dict[str, float] = {}
+    for position in sorted({str(position) for _, position in indexed}):
+        baseline = indexed.get((baseline_id, position))
+        candidate = indexed.get((candidate_id, position))
+        if baseline is None or candidate is None:
+            continue
+        base_mae = float(baseline["macro_mae"])
+        mae_regression[position] = (
+            (float(candidate["macro_mae"]) - base_mae) / base_mae if base_mae else 0.0
+        )
+        rank_regression[position] = float(baseline["macro_spearman"]) - float(
+            candidate["macro_spearman"],
+        )
+        coverage[position] = float(candidate["macro_coverage_p10_p90"])
+
+    quantiles = list(quantile_columns())
+    candidate_rows = predictions.filter(pl.col("model_id") == candidate_id)
+    matrix = candidate_rows.select(quantiles).to_numpy().astype(np.float64)
+    acceptance = evaluate_final_holdout(
+        deltas={
+            name: PairedDelta(name, delta.delta, delta.ci_low, delta.ci_high)
+            for name, delta in bootstrap.items()
+        },
+        positional_mae_regression=mae_regression,
+        positional_rank_regression=rank_regression,
+        positional_coverage=coverage,
+        post_crossing_rate=float(crossing_rate(matrix)),
+        all_finite=bool(np.all(np.isfinite(matrix))),
+    )
+    del cells
+    return deltas, acceptance
 
 
 def _slice_metrics(

@@ -474,3 +474,249 @@ Q1 against B0, paired bootstrap over 1000 replicates: MAE −3.53 (−3.87 to �
 2. **Top-K retrieval does not follow rank correlation.** Q1's macro Spearman (0.726) beats B1's (0.711), but B1 retrieves more of the actual top-K by position (0.593 against Q1's 0.544; B0 is 0.535). A median-quantile point prediction is deliberately robust, and robustness compresses the top of the board — which is the part of the board a draft sheet is mostly about. Phase 4 must decide the production ranking statistic (expected versus median simulated VORP) with this in view, and should measure top-K on the simulated VORP rather than assuming the point prediction's ordering carries over.
 
 **Consequences:** Phase 4 inherits Q1, window W1, feature set `intrinsic_core_v1` (`7203befaa5be25a2`), the frozen fold protocol and an untouched 2025 holdout. Candidate B (availability x performance) remains unimplemented and unjudged; comparing it is Phase-4 work, against the same protocol.
+
+---
+
+## ADR-030 — The Phase-4 decision rules are frozen before their results exist
+
+**Status:** Accepted (2026-08-19)
+
+**Decision:** Every consequential Phase-4 choice is written as a versioned rule in `src/ffdraft/modeling/rules.py` (`phase4_rules_v1`) and committed **before** the study that produces its evidence runs. Eight rules are frozen here:
+
+| Rule | Version | What it decides |
+|---|---|---|
+| calibration acceptance | `phase4_calibration_v1` | whether a fitted calibration layer replaces plain monotone projection |
+| horizon sensitivity | `phase4_horizon_v1` | whether the horizon-normalized target replaces the plain season total |
+| candidate comparison | `phase4_candidate_v1` | whether Candidate B replaces the calibrated Candidate A |
+| Monte Carlo convergence | `phase4_convergence_v1` | the production draw count |
+| ranking statistic | `phase4_ranking_v1` | expected versus median simulated VORP as the fair rank |
+| tier penalty selection | `phase4_tier_v1` | which penalty from the frozen grid is promoted |
+| tier stability | `phase4_tier_stability_v1` | whether the promoted segmentation is trustworthy enough to publish |
+| final-holdout acceptance | `phase4_final_holdout_v1` | whether the frozen production model is released after 2025 |
+
+**Why one module.** ADR-027 froze Phase 3's single gate and the repository history is the evidence that it happened before the comparison. Phase 4 has eight such decisions rather than one, spread across modelling, simulation and tiering. Scattering them next to the code that uses them would make "was this threshold written before or after the number?" a question about eight commits instead of one. They live together, they are versioned together, and `all_rules()` serializes the whole set into every Phase-4 report and into the freeze checkpoint.
+
+**Two conventions run through all eight.**
+
+*Simplicity is the default and complexity must earn itself.* Mixed or indistinguishable evidence always resolves to the simpler incumbent — plain monotone projection over a fitted calibrator, Candidate A over Candidate B, median VORP over expected VORP, the plain season total over a rescaled one. This is `AGENTS.md` section 8's baseline-first principle expressed as a comparator rather than as an intention.
+
+*Deterioration is bounded; improvement is not demanded everywhere.* With sixty-odd evaluation cells, requiring every one to improve selects for luck. Each rule therefore bounds how much worse a position or a fold may get, exactly as `phase3_promotion_v1` does, and uses paired bootstrap intervals where a comparison is close.
+
+**Three choices worth stating explicitly.**
+
+- **Coverage is never judged without width.** A fitted calibrator that reaches nominal coverage by inflating the P10–P90 interval more than 15% is refused. An interval wide enough to swallow every observation is uninformative, not calibrated, and the acceptance rule says so numerically rather than in a comment.
+- **Convergence is measured at the 99th percentile, not the maximum.** One extreme-variance player would otherwise choose the draw count for the whole board. The maximum is still reported; it just does not decide. The rule also requires two comparisons at each candidate count — against the largest count in the ladder, and between two seeds — because the first measures bias against the best available reference and only the second measures Monte Carlo error directly.
+- **The final-holdout gate has no place to put a diagnostic slice.** `evaluate_final_holdout` takes full-universe evidence and nothing else; the ADR-025 slices are reported beside the primary result and cannot enter the decision. A test asserts the signature, so a later "just add the era-stable slice to the gate" is a visible change to a frozen rule rather than a quiet one.
+
+**Consequences:** every Phase-4 study reports the rule version it was judged under, and the rules are pure functions driven by synthetic evidence in `tests/model/test_phase4_rules.py` — including cases that make each rule say no. Changing a threshold after seeing a result is a new decision with a new version and its own ADR; it is never an edit in place. If a rule refuses the outcome Phase 4 wanted, the phase is blocked and the block is recorded.
+
+---
+
+## ADR-031 — Quantile monotonicity is an isotonic projection; the fitted calibration layer is not adopted
+
+**Status:** Accepted (2026-08-19). Closes the Phase-3 open question "how to fix quantile crossing properly" for the direct-total family. Evidence: `docs/experiments/phase4-intrinsic-distribution/`.
+
+**Decision:** the production monotonicity repair is the **L2 projection onto the monotone cone**, computed by pool-adjacent-violators (`monotone_projection_v1`). Plain sorting is not used. The fitted per-level residual calibration (`residual_shift_then_monotone_v1`) was implemented, measured and **not** adopted under `phase4_calibration_v1`.
+
+**Why projection rather than sorting.** Sorting a row's five values is the increasing rearrangement of the estimated quantile curve on that grid. Rearrangement has a real theoretical basis — Chernozhukov, Fernández-Val and Galichon (2010) show it weakly reduces estimation error in *L^p* for the quantile *function* — but the guarantee is stated for the function on [0, 1] and recovering it from a finite grid needs the grid to carry equal weight. This project's levels are 0.10, 0.25, 0.50, 0.75, 0.90, which are not evenly spaced, so a plain sort is not the rearrangement of any weighting of them and no contraction property follows. Isotonic projection needs no such argument: the true quantile vector lies in the monotone cone, the cone is closed and convex, and projection onto a closed convex set cannot increase the distance to any point of it. `tests/model/test_calibration.py` asserts that contraction on random inputs.
+
+**The honest cost.** On the development folds the projection is very slightly *worse* than the sort on every headline number: MAE 22.112 against 22.070, mean pinball 8.142 against 8.132, P10–P90 coverage 0.738 against 0.771. The differences are around 0.1–0.5% and well inside the fold-to-fold spread. The choice is made on the guarantee rather than on a difference that small, and both are reported side by side (`A0` and `Q1`) rather than one being quietly dropped.
+
+**Why the fitted calibration lost.** `A1` did exactly what it was designed to do — P10–P90 coverage moved from 0.738 to 0.826, closing the gap to nominal by 0.036 — and it cost almost nothing in pinball (−0.11%). But it moved the *inner* interval the wrong way: P25–P75 coverage went from 0.477 to 0.542, widening that gap by 0.0189 against the 0.010 tolerance, and the mean P10–P90 width inflated 13.6% (62.5 → 71.0, inside the 15% bound but visibly). The correction is concentrated at the top: the mean fitted shift is −0.21, −0.16, −0.05, +0.14, **+8.41** across the five levels, so the layer is essentially a ceiling-raiser. Buying outer coverage by pushing P90 up eight points while pushing P25–P75 past nominal is not calibration in the sense a draft sheet needs, and the frozen rule said so before the numbers existed.
+
+**Consequences:** the production distribution carries no fitted calibration parameters, which is one fewer thing to version and one fewer thing to drift. The repair is a pure function of a row. If a future season's evidence shows the outer intervals genuinely under-covering *and* an adjustment that does not widen the inner ones, that is a new decision with a new version.
+
+---
+
+## ADR-032 — Horizon normalization is measured and rejected
+
+**Status:** Accepted (2026-08-19). Closes the Phase-3 known risk "the fantasy horizon changed at 2021". Evidence: `docs/experiments/phase4-intrinsic-distribution/`.
+
+**Decision:** the intrinsic model keeps the plain season fantasy-point total as its target. The horizon-normalized variant `AH` — the same architecture trained against `points / fantasy_horizon_weeks` and multiplied back by the validation season's horizon — was built, measured on the identical development folds, and **not** adopted under `phase4_horizon_v1`. No further horizon variant will be built.
+
+**Evidence.** Against the incumbent, paired over 1000 bootstrap replicates:
+
+| Metric | AH − A0 | Paired 95% CI |
+|---|---:|---|
+| macro MAE | **+0.1420** | +0.0458 to +0.2366 |
+| macro mean pinball | −0.0188 | −0.0427 to +0.0063 |
+| macro Spearman | −0.0019 | −0.0048 to +0.0010 |
+
+Route (a) required both primary metrics to improve decisively; MAE moved *against* the variant with an interval excluding zero. Route (b) required the 2021 fold — the one development fold trained entirely on 16-week seasons and validated on a 17-week one — to improve by at least 2% relative. It got **worse** by 0.79% (22.995 → 23.178). Neither route opened.
+
+**What that says about the risk.** The 2021 boundary is real and remains recorded, but rescaling the target does not fix it. The plausible reason is that the horizon change moves the target by about 6% while the season-to-season variance a preseason model faces is an order of magnitude larger, so removing a 6% scale factor from the label removes almost no error and costs a little precision by dividing every training row by a constant it did not need. The models see the boundary as noise either way; normalizing simply relabels it.
+
+**Consequences:** the Phase-2 label contract is untouched, `prev1_team_games` stays excluded (ADR-026), and the horizon boundary remains a documented limitation rather than a corrected one. Revisiting needs a different mechanism, not another rescaling.
+
+---
+
+## ADR-033 — Candidate B, the availability × performance hurdle, is the production intrinsic model
+
+**Status:** Accepted (2026-08-19). Closes the Phase-3 open question "whether Candidate B beats Q1". Supersedes ADR-029's *candidate* selection; ADR-029's window, feature set and fold protocol stand unchanged. Evidence: `docs/experiments/phase4-intrinsic-distribution/`.
+
+**Decision:** the production intrinsic model is **Candidate B** (`cb_hurdle_availability_performance_v1`): two LightGBM quantile components over the same `intrinsic_core_v1` features, composed by deterministic Monte Carlo.
+
+- **availability** — quantiles of `games / fantasy_horizon_weeks`, a rate rather than a count so 16- and 17-week seasons are comparable inside one training window; multiplied back by the target season's horizon and rounded at prediction time;
+- **conditional performance** — quantiles of fantasy points per *active* game, fitted only on training rows with at least one game, because points per game is undefined for the rest;
+- **composition** — `games x points-per-game`, with zero games scoring exactly zero and nothing clipped from below, because interceptions and lost fumbles make a negative season total genuinely possible;
+- **dependence** — a Gaussian copula with one correlation per position × scoring preset, estimated inside the fold on an inner chronological split from probability-integral transforms of both components.
+
+**Evidence** (development folds 2020–2024, window W1, macro over season × position × scoring; paired block bootstrap, 1000 replicates):
+
+| Model | MAE | Spearman | Top-K | Pinball | P10–P90 cov | P25–P75 cov | Raw crossing |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| B0 | 25.602 | 0.659 | 0.535 | 9.978 | 0.793 | 0.528 | 0.000 |
+| Q1 (Phase 3) | 22.070 | 0.726 | 0.544 | 8.132 | 0.771 | 0.513 | 0.387 |
+| A0 (projected) | 22.112 | 0.720 | 0.544 | 8.142 | 0.738 | 0.477 | 0.387 |
+| **CB** | **21.907** | **0.750** | **0.577** | **8.080** | 0.827 | 0.614 | **0.000** |
+
+Against A0: MAE −0.2052 (−0.3322 to −0.0733), mean pinball −0.0614 (−0.1002 to −0.0236), Spearman +0.0298 (+0.0262 to +0.0345), top-K recall +0.0326 (+0.0007 to +0.0354) — every interval excludes zero, which is more than `phase4_candidate_v1` required. Against B0: MAE −3.695, pinball −1.897, Spearman +0.091, top-K +0.042. No position regresses on MAE or Spearman and every position's P10–P90 coverage improves.
+
+**Why the separation actually helps here.** 44% of eligible player-seasons record zero games. A direct-total model spends much of its capacity on an availability question dressed as a scoring question; the hurdle asks the two questions separately and lets the composition put them back together. The clearest evidence is the top of the board: ADR-029 recorded that Q1's robust median ordering retrieved less of the actual top-K than a linear model did, and CB recovers most of that gap (0.577 against Q1's 0.544 and B1's 0.593) while keeping the better rank correlation.
+
+**The dependence is not decorative.** The fitted copula correlation is positive in all sixty groups — minimum 0.205, median 0.323, maximum 0.494, by position RB 0.373, QB 0.345, TE 0.333, WR 0.289. Players who stay on the field also score more per game, so sampling the two components independently would have produced too narrow a spread at both ends. The parameter is estimated on players who actually played, because points per game is undefined for the others; that restriction is a limitation, not an approximation of convenience, and it is stated in the model card.
+
+**Quantile crossing is resolved rather than repaired.** CB's quantiles are empirical quantiles of one Monte Carlo sample, so they cannot cross — the raw crossing rate is 0.000 against Q1's 0.387. The monotone projection remains applied as a safety net and is a no-op in practice.
+
+**One limitation, measured rather than smoothed.** CB's P25–P75 coverage is 0.614 against a nominal 0.50, which the diagnostic check reports. It is not over-dispersion: restricted to players who appeared in at least one game, coverage is 0.456 (P25–P75) and 0.748 (P10–P90) — slightly *under* nominal. The gap comes from the atom the model deliberately represents. 18.4% of evaluation rows have P25 and P75 both exactly zero, and a player who scores exactly zero is inside that interval by definition. A discrete distribution covers its own mass point; that is arithmetic, not miscalibration, and the honest fix is to report both numbers rather than to widen or narrow anything.
+
+**Consequences:** the production model has two components, a per-group correlation and a Monte Carlo composition step, so it is meaningfully more machinery than Q1. It earned that under a rule frozen before the comparison. Q1, A0, A1, AH, B0 and B1 all remain in the repository as comparators.
+
+---
+
+## ADR-034 — Median simulated VORP is the fair rank; the draw count is the predeclared fallback
+
+**Status:** Accepted (2026-08-19). Closes the Phase-3 open question "expected versus median simulated VORP". Evidence: `docs/experiments/phase4-simulation-ranking/`.
+
+**Decision A — the fair-ranking statistic is median simulated VORP.** `phase4_ranking_v1` allowed expected VORP to replace it only by improving macro top-K retrieval by at least 0.010 without losing more than 0.005 of macro Spearman or Kendall. Measured against the realized VORP labels over the full eligible universe of every development season and all nine scoring x league presets:
+
+| Statistic | Spearman | Kendall | Top-K recall | Early-round recall | Seed rank stability |
+|---|---:|---:|---:|---:|---:|
+| **median VORP** | **0.8057** | **0.6528** | 0.6204 | **0.3611** | 0.9998 |
+| expected VORP | 0.7999 | 0.6457 | **0.6218** | 0.3593 | 0.9999 |
+
+Expected VORP gained 0.0014 of top-K — a seventh of the margin the rule required — while giving up 0.0058 of Spearman and 0.0071 of Kendall, both past the 0.005 tolerance. This is not an inconclusive tie resolved by a default; it is a refusal on evidence.
+
+**What it says about the Phase-3 worry.** ADR-029 recorded that Q1's median point prediction retrieved less of the actual top-K than a linear model did, and asked Phase 4 to re-measure top-K on simulated VORP rather than assume the point ordering carried over. It did not carry over: top-K retrieval on simulated VORP is **0.620**, well above the 0.577 the promoted model's point prediction reaches and above every Phase-3 number. Simulating league-relative value recovers what a robust point estimate compresses, which is exactly what the simulation was for.
+
+**Decision B — the production draw count is 10,000, selected by `phase4_convergence_v1`'s predeclared fallback rather than by satisfying it.** No count in the frozen ladder (1,000 / 2,500 / 5,000 / 10,000) met every tolerance. The rule's own text covers this case — "the largest declared count is used and the breaches are recorded" — so 10,000 is the frozen outcome, with the breaches published rather than smoothed.
+
+**What converged and what did not**, comparing two independent seeds at 10,000 draws across the four declared scenarios:
+
+| Quantity | Tolerance | Observed | Verdict |
+|---|---|---|---|
+| fair-rank Spearman | >= 0.9990 | 0.9994 - 0.9995 | pass |
+| top-50 overlap | >= 0.96 | 0.98 - 1.00 | pass |
+| mean rank change, top 150 | <= 1.5 | 0.86 - 1.35 | pass |
+| max replacement shift | <= 0.50 | 0.09 - 0.25 | pass |
+| mean abs outer-quantile VORP shift | <= 0.60 | 0.31 - 0.45 | pass |
+| mean abs expected-VORP shift | <= 0.25 | 0.23 - 0.31 | 2 of 4 fail |
+| mean abs P50-VORP shift | <= 0.35 | 0.29 - 0.42 | 3 of 4 fail |
+| tier adjusted Rand | >= 0.90 | 0.50 - 0.75 | all fail |
+| tier count difference | <= 1 | 1 - 5 | 3 of 4 fail |
+
+**The ordering is converged; the segmentation is not.** Every ranking tolerance passes comfortably, which matters because fair rank is the board's spine. The value tolerances are missed by 10-20% — a further 4x in draws would close them, which the frozen ladder does not offer. The tier clause fails by a wide margin at every count and does not look like something more draws would fix: a tier boundary is a discrete cut on a nearly continuous value curve, and moving it a few ranks costs a lot of adjusted Rand index when nine tiers span three hundred players.
+
+**A flaw in the frozen rule, recorded rather than corrected.** `phase4_convergence_v1` requires tier ARI >= 0.90 between seeds, taken as the worst case over both candidate ranking statistics and all six penalties in the grid. `phase4_tier_stability_v1` — the rule that actually governs whether tiers may be published — asks for >= 0.60 under bootstrap on the *same* quantity. The convergence clause is therefore strictly harder than the promotion clause it was meant to protect, and it is decided partly by penalties the tier rule may never select. That is a design error in ADR-030, discovered by running it. It is not fixed here: changing a threshold after seeing it fail is the move the freeze exists to prevent. It is recorded, the measurement is published, and the tier-stability gate remains the decisive test of whether tiers ship.
+
+**Consequences:** Phase-4 exit criterion 7 ("draw count passed an explicit convergence test") is **not satisfied**. The convergence test ran, was explicit and was decided by a predeclared rule, but the draw count comes from that rule's fallback rather than from meeting its tolerances. Residual Monte Carlo error at 10,000 draws — about 0.3 fantasy points on a player's expected VORP, under one and a half rank positions in the top 150 — is published as a limitation in the model card and the tier-method report. A future revision of the convergence rule should measure the tier clause on the promoted configuration and set its bar consistently with the stability gate; that is a new decision with a new version, not an edit to this one.
+
+## ADR-035 — Tiers are published from the dynamic-programming alternative and the stability gate fails
+
+**Date:** 2026-08-19 (Phase 4, stage C)
+
+**Status:** accepted
+
+**Context:** `phase4_tier_v1` and `phase4_tier_stability_v1` were frozen in ADR-030 before any tier existed. The first selects a penalty from a fixed six-value grid — admissibility first (6-24 tiers, singleton rate <= 0.20, no tier holding more than 25% of the 300-player board, boundaries separating more than a typical within-tier adjacent pair), then the highest bootstrap adjusted Rand index among the admissible. The second decides whether the promoted segmentation may be put in front of a drafter. `docs/MODELING.md` section 14 names PELT as the primary candidate and exact quantile-dispersion dynamic programming as the alternative, to be reached only when the primary proves unstable under measured tests.
+
+The study ran on development folds only, at the draw count and ranking statistic ADR-034 had already fixed (10,000 draws, `median_vorp`), with 200 bootstrap replicates per scenario over six scenarios — 1,200 replicates in total, each re-ranking as well as re-segmenting, because the fair ranks come from the same draws.
+
+**Decision:** the promoted segmentation is **`dp_quantile`** (`dp_quantile_wasserstein_v1`) at **penalty 1.0**, and **the frozen stability gate fails on boundary agreement**. Tiers are published anyway, with the failure recorded in the model card, the tier-method report and the build metadata, because tier *membership* passes every other clause and is useful; tier *boundaries* are not sharply located and the artifacts must not imply that they are.
+
+**Evidence:** PELT was tried first and refused, so the escalation is a measured failure rather than a preference:
+
+| Criterion | Threshold | `pelt_rbf` @ 1.0 | `dp_quantile` @ 1.0 |
+|---|---|---|---|
+| bootstrap adjusted Rand | >= 0.60 | 0.7726 | **0.8649** |
+| boundary agreement | >= 0.50 | 0.3336 **fail** | 0.2394 **fail** |
+| singleton rate | <= 0.20 | 0.1381 | **0.0396** |
+| tier-count CV | <= 0.25 | 0.1061 | **0.0454** |
+| monotonic tier pairs | >= 0.80 | 0.6560 **fail** | **0.8448** |
+| cross-preset ARI | >= 0.50 | 0.4316 **fail** | **0.5288** |
+
+The alternative fixes two of PELT's three failures and improves five of the six quantities. It does not fix the third, and no further algorithm is declared.
+
+**Why boundary agreement fails, measured rather than guessed.** Across 1,200 replicates the segmentation used **283 of the 299 possible cut sites at least once, and only 4 were reproduced by a majority**. The four are real: ranks 267 (0.995), 99 (0.680), 16 (0.587) and 68 (0.585). Everything else is spread thinly. The boundary diagnostics say the same thing in units a drafter would recognise — the median promoted boundary sits on a **0.55-point** P50 cliff against a P10-P90 width of 80-130 points, and the median probability that the player just below a boundary outscores the player just above it is **0.4972**. A coin flip.
+
+So simulated VORP declines almost smoothly down a 300-deep board, and "where a tier ends" is mostly not an identified quantity. The frozen admissibility rule then demands more cuts than the data supports: `max_largest_tier_share = 0.25` forbids any tier larger than 75 players, but the deep tail of a 300-player board genuinely *is* one large near-replacement group — at penalty 3.0 the segmentation wants tiers of 82 and 110 — so the rule forces the tail to be sliced, and slices inside a flat region are exactly what a bootstrap cannot reproduce. The grid shows the trap directly: penalty 3.0 reaches boundary agreement 0.5167 and penalty 8.0 reaches 0.5000, and **both are inadmissible on largest tier share** (0.3409 and 0.3978). The two frozen rules cannot both be satisfied on this distribution.
+
+**Bootstrap ARI 0.865 beside boundary agreement 0.239 is not a contradiction**, it is the finding: which group a player belongs to is reproducible, where the group ends is not. Realized-VORP monotonicity agrees — mean realized VORP falls across 0.845 of adjacent tier pairs, so the groups carry real signal even though their edges are soft.
+
+**What was not done.** No threshold was changed after seeing it fail. No penalty outside the frozen grid was tried, and the admissible-but-better-looking penalty 3.0 was not substituted for the one the rule selected. No boundary was moved by hand. The escalation to the alternative is the response ADR-030 declared in advance for exactly this case, and it was taken only after PELT's measured failure.
+
+**Consequences:** the Phase-4 exit criterion for tier stability is **not satisfied**, and is reported as not satisfied. Tier artifacts ship with `tier_stability_gate: "fail"` in their build metadata and a limitation in the model card, so no consumer can read a boundary as sharper than it is. `docs/MODELING.md` section 14 gains the measurement. The remedy is a Phase-6+ decision, not an edit here: either publish fewer, wider tiers by relaxing `max_largest_tier_share` for the undifferentiated tail (a new rule version with its own evidence), or present tier membership with an explicit boundary-confidence band instead of a hard line. Both are new decisions and both need their own gate.
+
+## ADR-036 — The sealed 2025 holdout was evaluated once, and the production model passed
+
+**Date:** 2026-08-19 (Phase 4, stage E)
+
+**Status:** accepted
+
+**Context:** ADR-025 sealed season 2025 structurally: `load_modeling_dataset` drops it before anything sees the frame, the fold generator refuses to build a fold that validates it, and the only path through requires an explicit `FinalEvalAuthorization` carrying a fixed token and a written reason. ADR-030 froze `phase4_final_holdout_v1` — the acceptance rule — before any Phase-4 model existed. The predeclared primary slice is the full universe against baseline **B0**; the ADR-025 diagnostic slices are reported beside it and are explicitly *not* part of the gate.
+
+Freeze checkpoint `2f0e725` fixed the architecture, calibration, target scale, training window, ranking statistic, draw count, tier algorithm and tier penalty. That commit exists so that the holdout demonstrably could not have informed any of them.
+
+**Decision:** the holdout was consumed **once**, at `2f0e725`, with `--window W1_all_history` and the required token. It **passed**. No parameter, threshold, feature or rule was changed afterwards, and the holdout is now spent: it can never again serve as an untouched test of this project.
+
+**Result — full universe, 3,309 rows, 12 cells, macro over position × scoring:**
+
+| Model | MAE | RMSE | Spearman | Kendall | Pinball | P10-P90 cov | P10-P90 width | Top-K |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| B0 | 23.93 | 42.06 | 0.679 | 0.546 | 9.331 | 0.808 | 80.7 | 0.472 |
+| **CB** | **20.19** | **38.75** | **0.780** | **0.648** | **7.197** | 0.845 | 56.9 | 0.521 |
+
+Paired deltas, 1,000 block-bootstrap replicates: **MAE −3.738 (95% CI −4.364 to −3.102)**, **mean pinball −2.134 (−2.377 to −1.874)**, **Spearman +0.1015 (+0.082 to +0.122)**. Top-K recall +0.049 (−0.017 to +0.083) is not significant and is not required by the rule. Every clause passed: both intervals exclude zero, Spearman improved rather than regressed, no position exceeded a tolerance, positional P10-P90 coverage ran 0.803-0.879 inside the 0.60-0.95 band, and **no production quantile crossed** — 0.0000 against a bar of exactly zero.
+
+**Diagnostics (not part of the gate).** CB improves MAE and pinball on **every** predeclared slice:
+
+| Slice | n | B0 MAE | CB MAE | B0 Spearman | CB Spearman |
+|---|---:|---:|---:|---:|---:|
+| QB | 432 | 37.22 | 29.92 | 0.675 | 0.753 |
+| RB | 789 | 26.03 | 23.74 | 0.643 | 0.744 |
+| TE | 708 | 14.62 | 12.35 | 0.685 | 0.819 |
+| WR | 1380 | 17.86 | 14.77 | 0.676 | 0.803 |
+| rookie | 318 | 34.29 | 29.83 | 0.459 | 0.630 |
+| veteran | 2991 | 22.87 | 19.14 | 0.687 | 0.786 |
+| information-rich | 1113 | 44.89 | 42.36 | 0.688 | 0.718 |
+| low-information | 2196 | 14.76 | 10.20 | 0.340 | 0.582 |
+| depth observed at anchor | 1647 | 38.27 | 35.67 | 0.700 | 0.741 |
+| prior-season role proxy | 591 | 10.61 | 8.74 | 0.358 | 0.326 |
+| depth unavailable | 1071 | 6.61 | 0.74 | 0.048 | 0.020 |
+
+Rookie coverage rises from 0.675 to 0.747, which matters more than the MAE: the baseline's rookie intervals were the least honest thing it produced. The two slices where Spearman falls (`prior_season_role_proxy`, `depth_unavailable`) are the two where MAE is smallest and nearly every player scores near zero, so their rank correlation is close to noise in both models; reporting them unflattered is the point of a predeclared slice.
+
+**A caveat that should not be smoothed over.** CB's holdout MAE (20.19) is *better* than its development MAE (21.91), and its coverage is closer to nominal (0.845 against 0.827). A holdout beating development is a signal to check for leakage, so it was checked: the 2025 fold trains on 2014-2024, the longest training window any fold gets, while the development folds train on 6-10 seasons; and 2025 carries the only draft-time depth observations in the dataset (ADR-018), so its feature rows are the richest in the project. Both explanations are structural and were known before the holdout ran. The seal itself is proved by construction — `tests/model/test_folds_and_holdout.py` poisons every 2025 label and shows a development run stays byte-identical.
+
+**Consequences:** CB is licensed for production, and `--allow-unsealed` may now extend the training window through 2025. Nothing else follows: a passing holdout does not license re-running a development comparison against 2025, and it does not repair the two gates that failed (ADR-034's convergence fallback, ADR-035's tier boundary stability). Those remain published limitations of a model that is otherwise validated.
+
+## ADR-037 — The production model artifact and the 2026 current build
+
+**Date:** 2026-08-19 (Phase 4, post-holdout)
+
+**Status:** accepted
+
+**Context:** ADR-036 licensed CB for production. What remained was to say precisely what "the production model" *is* as a file, and how a build that runs before the 2026 season anchor is allowed to talk about 2026.
+
+**Decision — the model artifact.** `intrinsic-cb-hurdle-v1`, trained on **2014-2025** under window W1, saved as `intrinsic_model_artifact_v1`. Every group (position × scoring preset × quantile, plus the hurdle's two components) is a gzipped LightGBM booster with `mtime=0` so the bytes are reproducible, and each carries its own SHA-256. `ProductionModel.load` verifies every digest before use and refuses a mismatch. The artifact records **two** hashes, because they answer different questions: `feature_set_hash` `7203befaa5be25a2` (`intrinsic_core_v1`) pins which 78 columns the model consumes, and `feature_schema_hash` `c495ba3177dcb989` (`historical_features_v1`) pins the dataset's whole column contract. `assert_compatible` refuses to predict when either disagrees, so a dataset rebuild that quietly changes a column cannot silently change a board. The dataset manifest's content hashes are stored alongside them.
+
+Training through 2025 is gated: `train-production --allow-unsealed` requires the same confirmation token as the holdout and refuses unless the holdout has already been consumed. The seal is one-way and the gate says so in code, not only in prose.
+
+**Decision — what a 2026 build may know.** `current_build_as_of_v1` sets the information cutoff to `min(as_of, season anchor)`. A build that runs *before* the 2026 anchor uses its own timestamp, not the anchor: the anchor is in the future and pretending otherwise would let a build claim knowledge it does not have. A build that runs after the anchor uses the anchor, so a board is not silently refreshed with in-season information. The cutoff, its rule version and both timestamps are written into the build metadata.
+
+Target-season statistics are not loaded at all for a current build (`include_target_statistics=False`). This is correct in general rather than a workaround for 2026 specifically: a preseason board may not consume the season it is predicting, and the historical loader's own behaviour — nflverse returns 404 for a season that has not been played — is a symptom of the same fact, not the reason for the rule.
+
+**Decision — current status is metadata, never signal.** Today's roster status and team annotate a published row and can remove a retired player from the board, but they never enter a prediction. They have no development-era support and could not have been validated, so treating them as features would put an unvalidated input into a validated model.
+
+**Decision — the tier artifacts ship with their failure attached.** `CurrentBuildConfig` records `tier_algorithm`, `tier_algorithm_version`, `tier_penalty` and `tier_stability_gate`, and the production value of the last is **`"fail"`** (ADR-035). A consumer of a Tier artifact can therefore see, from the artifact alone, that the boundaries are not sharply located. Publishing tiers without that field would have been the dishonest option; not publishing them at all would have left the artifact contract untested and the phase's deliverable unbuilt.
+
+**Consequences:** the fixture stub `fixture-stub-0` is replaced by a real, versioned, digest-verified model for every launch preset. `models/` holds the artifact and **is committed**, not gitignored: `PRD.md` section 15 requires every production model artifact needed for deterministic inference to be versioned, and a digest-verified 15 MB of gzipped LightGBM text is the price of a board that can be reproduced months later. `train-production` is the one command that makes it, and a promoted model replaces the previous directory rather than accumulating beside it. The Phase-6 frontend must surface the tier stability caveat rather than drawing a hard line and leaving the reader to assume it was measured as sharp.

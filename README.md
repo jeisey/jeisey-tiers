@@ -47,9 +47,9 @@ The intended production architecture is static and GitHub-native: Python data/mo
 
 ## Repository status
 
-Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. **Phase 2 (historical feature dataset) completed 2026-08-19.**
+Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). Both are published as limitations rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
 
-There is still no model, no production pipeline and no deployed site. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 builds the time-correct data asset every later model result depends on — 11,604 leakage-audited player-seasons across 2014-2025, with independently computed STD/HALF/PPR labels and market-independent realized VORP.
+There is a model now. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 built the time-correct data asset — 11,604 leakage-audited player-seasons across 2014-2025 with independently computed STD/HALF/PPR labels and market-independent realized VORP; Phase 3 built the rolling-origin evaluation harness and the baselines worth beating; Phase 4 turned that into a production intrinsic model, a deterministic Monte Carlo simulation of league-relative value, and natural contiguous tiers. The model passed its single sealed-holdout evaluation on 2025; the tiers are honest about being groups rather than hard lines. There is still no arbitrage board and no deployed site.
 
 | Path | Purpose |
 |---|---|
@@ -59,7 +59,12 @@ There is still no model, no production pipeline and no deployed site. Phase 1 bu
 | `config/` | League presets, source policy registry, human-reviewed identity aliases |
 | `src/ffdraft/anchors.py` + `features/` + `scoring/` + `labels/` + `simulation/` + `leakage.py` | The Phase-2 historical dataset: anchor rule, feature dictionary, eligibility, lagged aggregates, scoring engine, VORP labels, leakage audits |
 | `docs/FEATURE_DICTIONARY.md` | Every model feature with its formula, sources and availability rule — generated from code, kept current by a test |
-| `tests/` | 510 network-free Python tests across unit / contract / integration / data-quality / leakage |
+| `src/ffdraft/modeling/` | The evaluation harness, the frozen Phase-4 decision rules, calibration, the candidates, production model training/serving, and the generated cards |
+| `src/ffdraft/simulation/` | The one starter/FLEX allocation, the deterministic quantile sampler, and the simulated-VORP draw loop |
+| `src/ffdraft/tiers/` | Contiguous natural tier segmentation, its documented alternative, and the stability bootstrap |
+| `models/` | Versioned production model artifacts (text boosters plus JSON metadata, no pickle) and the generated model card and tier-method report |
+| `docs/experiments/` | The committed evidence behind every promotion decision |
+| `tests/` | Network-free Python tests across unit / contract / integration / data-quality / leakage / model |
 | `tests/fixtures/pipeline/` | Synthetic source fixtures covering every documented edge case |
 | `tests/fixtures/historical/` | Synthetic nflverse-shaped history spanning both depth eras |
 | `tests/fixtures/artifacts/` | Committed golden artifacts, also read by the frontend tests |
@@ -90,6 +95,14 @@ uv run ffdraft feature-dictionary
 # The Phase-3 evaluation harness. Offline; reads what build-historical wrote. Season 2025
 # is the sealed final holdout and an ordinary run cannot reach it.
 uv run ffdraft evaluate-intrinsic --git-sha "$(git rev-parse --short HEAD)"
+
+# The Phase-4 development studies, in order. Each writes a committed experiment report and
+# each decision is made by a rule frozen before its evidence existed. See
+# docs/OPERATIONS.md "Phase-4 commands" for the whole sequence, including the single sealed
+# final-holdout evaluation and the production build that follows it.
+uv run ffdraft evaluate-distribution --git-sha "$(git rev-parse --short HEAD)"
+uv run ffdraft evaluate-simulation   --git-sha "$(git rev-parse --short HEAD)"
+uv run ffdraft evaluate-tiers        --git-sha "$(git rev-parse --short HEAD)"
 
 # Frontend
 npm ci
