@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from ffdraft.artifacts.schemas import (
     ARTIFACT_SCHEMA_VERSION,
+    RECORD_SCHEMA_VERSIONS,
     RECORD_SCHEMAS,
     load_schema,
     record_field_order,
+    record_schema_version,
     validate_envelope,
     validate_records,
 )
@@ -37,10 +39,12 @@ __all__ = [
     "BUILD_METADATA_SCHEMA",
     "CSV_LIST_SEPARATOR",
     "RECORD_SCHEMAS",
+    "RECORD_SCHEMA_VERSIONS",
     "ArtifactSpec",
     "build_envelope",
     "load_schema",
     "record_field_order",
+    "record_schema_version",
     "records_to_csv",
     "spec_for",
     "validate_artifact_directory",

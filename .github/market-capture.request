@@ -1,0 +1,18 @@
+# Market/status capture request marker (Phase 5, ADR-038).
+#
+# `.github/workflows/market-capture.yml` triggers on a push that changes THIS file, so a
+# capture is always a deliberate act rather than a side effect of touching market code.
+# Bump `revision` (and say why) to ask a runner for another point-in-time capture.
+#
+# Why a runner at all: the development sandbox sits behind an egress policy that answers
+# 403 to CONNECT for api.myfantasyleague.com and api.sleeper.app (ADR-009). A GitHub runner
+# has open egress and is the environment the Phase-7 production workflow will run in, so
+# evidence gathered there describes the environment that actually matters.
+
+revision: 1
+season: 2026
+cohorts: study
+reason: >-
+  First Phase-5 capture. Retains every candidate cohort so the ADR-012 amendment's cohort
+  re-measurement can run offline against retained evidence, and takes the first Sleeper
+  current-status capture for the player-status artifact.

@@ -77,6 +77,19 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
         sort_fields=("scoring_preset", "player_id"),
         description="Per-player point projections with quantiles",
     ),
+    "player_status": ArtifactSpec(
+        artifact="player_status",
+        schema_name="player_status",
+        json_filename="player_status.json",
+        csv_filename="player_status.csv",
+        key_fields=("build_id", "player_id"),
+        sort_fields=("player_id",),
+        description=(
+            "Current roster/injury/practice status, one row per canonical player. "
+            "Annotation only: Phase 6 joins it by player_id and no field here can move a "
+            "projection, a fair rank, a tier or an arbitrage score (ADR-043)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

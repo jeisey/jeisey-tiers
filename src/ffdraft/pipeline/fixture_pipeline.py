@@ -16,7 +16,8 @@ deliberately parked here rather than in ``ffdraft/modeling``, ``ffdraft/simulati
   pool - not the Monte Carlo starter/FLEX allocation Phase 4 owes;
 * tiers come from a fixed VORP-gap threshold, not the change-point segmentation Phase 4
   owes;
-* the arbitrage score is a linear transform of the rank gap, not the Phase-5 baseline.
+* the arbitrage score is the **real** Phase-5 A0 baseline (ADR-040): the stub transform is
+  gone, and the fixture now exercises production arbitrage code against fixture inputs.
 
 Every artifact it writes records ``intrinsic_model_version="fixture-stub-0"`` so a stub
 build can never be mistaken for production output. Phases 4 and 5 replace the stub sections;
@@ -35,6 +36,7 @@ from typing import Any
 
 import polars as pl
 
+from ffdraft.arbitrage.build import build_arbitrage_records
 from ffdraft.artifacts import (
     ARTIFACT_SCHEMA_VERSION,
     validate_artifact_directory,
@@ -45,9 +47,7 @@ from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_conf
 from ffdraft.contracts import (
     CORE_POSITIONS,
     CanonicalPlayer,
-    Confidence,
     EntityKind,
-    MarketCohort,
     Position,
     QualityCheck,
     ResolutionOutcome,
@@ -64,6 +64,18 @@ from ffdraft.identity import (
     summarize,
 )
 from ffdraft.identity.aliases import AliasMap
+from ffdraft.identity.resolver import FLAG_SECONDARY_ONLY
+from ffdraft.market.cohorts import CohortAssignment, widest_cohort
+from ffdraft.market.current import (
+    LOW_MARKET_SAMPLE,
+    LOW_SAMPLE_THRESHOLD,
+    SECONDARY_IDENTITY_BRIDGE_ONLY,
+    WIDE_MARKET_RANGE,
+    CurrentMarket,
+    MarketPrice,
+)
+from ffdraft.market.snapshot import snapshot_key
+from ffdraft.market.trend import INSUFFICIENT_TREND_HISTORY
 from ffdraft.quality import QualityGate, check_source_freshness
 from ffdraft.quality.forbidden import (
     audit_intrinsic_feature_names,
@@ -210,11 +222,17 @@ def run_fixture_pipeline(
     directory = MflPlayerDirectory(frame=directory_batch.frame)
     batches["mfl_players"] = directory_batch
 
-    cohort = MarketCohort(
+    # The fixture prices one cohort: the unfiltered aggregate, which is what ADR-012 calls
+    # the widest reliable cohort. It is approximate for every preset, and the assignment
+    # below says so rather than the quote rows claiming a preset they do not describe.
+    cohort = widest_cohort()
+    assignment = CohortAssignment(
         scoring_preset=str(_SCORING_PRESET),
         league_size=app.league.default_preset.teams,
-        filters={},
-        approximate=True,
+        cohort=cohort,
+        exact=False,
+        sufficient=True,
+        reason="the fixture prices one cohort; sufficiency is not measured here",
     )
     adp_adapter = MflAdpAdapter()
     adp_rows = inputs.mfl_adp["adp"]["player"]
@@ -316,15 +334,15 @@ def run_fixture_pipeline(
     market_records = _market_snapshot_records(
         market_batch,
         outcomes=market_outcomes,
-        cohort=cohort,
+        assignment=assignment,
     )
     arbitrage = _arbitrage_records(
         tiers,
         market_batch=market_batch,
         outcomes=market_outcomes,
-        registry=registry,
+        assignment=assignment,
         build_id=build_id,
-        arbitrage_mode=app.arbitrage_mode,
+        snapshot_at=now,
     )
 
     records = {
@@ -558,101 +576,124 @@ def _arbitrage_records(
     *,
     market_batch: SourceBatch,
     outcomes: Sequence[ResolutionOutcome],
-    registry: CanonicalRegistry,
+    assignment: CohortAssignment,
     build_id: str,
-    arbitrage_mode: str,
+    snapshot_at: datetime,
 ) -> list[dict[str, Any]]:
+    """The fixture's arbitrage rows, computed by the production A0 baseline.
+
+    Phase 1 used a stub percentile here because Phase 5 did not exist. It does now, so the
+    fixture drives the real thing: `ffdraft.arbitrage` computes the gaps, the score and the
+    confidence, and this function only assembles the market prices to feed it. That means a
+    change to A0 shows up in the golden artifacts, which is exactly what a contract fixture
+    is for.
+    """
     resolved = {
-        outcome.external_player_id: outcome.player_id
+        outcome.external_player_id: outcome
         for outcome in outcomes
         if outcome.resolved and outcome.player_id
     }
-    quotes: dict[str, Mapping[str, Any]] = {}
+    quotes: dict[str, tuple[Mapping[str, Any], ResolutionOutcome]] = {}
     for row in market_batch.frame.iter_rows(named=True):
-        player_id = resolved.get(str(row["external_player_id"]))
-        if player_id:
-            quotes[player_id] = row
+        outcome = resolved.get(str(row["external_player_id"]))
+        if outcome and outcome.player_id:
+            quotes[outcome.player_id] = (row, outcome)
 
-    priced = [
-        (tier, quotes[str(tier["player_id"])]) for tier in tiers if str(tier["player_id"]) in quotes
-    ]
-    gaps = {
-        str(tier["player_id"]): round(float(quote["average_pick"]) - int(tier["fair_rank"]), 2)
-        for tier, quote in priced
-    }
-    scores = _percentile_scores(gaps)
-
-    records: list[dict[str, Any]] = []
-    for tier, quote in priced:
-        # An intrinsic player with no market price simply has no arbitrage row; the tier
-        # board is unaffected (docs/TEST_STRATEGY.md 2.9).
-        market_adp = float(quote["average_pick"])
-        rank_gap = gaps[str(tier["player_id"])]
-        records.append(
-            {
-                "schema_version": ARTIFACT_SCHEMA_VERSION,
-                "build_id": build_id,
-                "league_preset_id": tier["league_preset_id"],
-                "scoring_preset": tier["scoring_preset"],
-                "player_id": tier["player_id"],
-                "display_name": tier["display_name"],
-                "team": tier["team"],
-                "position": tier["position"],
-                "fair_rank": tier["fair_rank"],
-                "market_adp": market_adp,
-                "market_rank": quote["market_rank"],
-                "rank_gap": rank_gap,
-                "arbitrage_mode": arbitrage_mode,
-                "arbitrage_score": scores[str(tier["player_id"])],
-                # ADR-010: baseline mode publishes no learned-model fields.
-                "expected_surplus_vorp": None,
-                "p_positive_surplus": None,
-                "market_trend": None,
-                "market_sample_size": quote["sample_size"],
-                # MFL publishes no standard deviation, so this stays null (Phase-0 13.5).
-                "market_adp_sd": None,
-                "confidence": str(_confidence(quote["sample_size"])),
-                "quality_flags": _split_flags(quote["quality_flags"]),
-            },
+    prices: dict[tuple[str, int, str], MarketPrice] = {}
+    league_sizes: dict[str, int] = {}
+    for tier in tiers:
+        player_id = str(tier["player_id"])
+        found = quotes.get(player_id)
+        if found is None:
+            # An intrinsic player with no market price simply has no arbitrage row; the
+            # tier board is unaffected (docs/TEST_STRATEGY.md 2.9).
+            continue
+        quote_row, outcome = found
+        scoring = str(tier["scoring_preset"])
+        league_size = assignment.league_size
+        league_sizes[str(tier["league_preset_id"])] = league_size
+        prices[(scoring, league_size, player_id)] = _fixture_price(
+            player_id=player_id,
+            scoring=scoring,
+            league_size=league_size,
+            row=quote_row,
+            outcome=outcome,
+            assignment=assignment,
+            snapshot_at=snapshot_at,
         )
-    return records
+
+    market = CurrentMarket(
+        season=FIXTURE_SEASON,
+        source_id=market_batch.source_id,
+        snapshot_key=snapshot_key(snapshot_at),
+        snapshot_at_utc=snapshot_at,
+        prices=prices,
+        assignments={(assignment.scoring_preset, assignment.league_size): assignment},
+    )
+    result = build_arbitrage_records(
+        tiers,
+        market=market,
+        league_size_by_preset=league_sizes,
+        build_id=build_id,
+        season=FIXTURE_SEASON,
+        generated_at=snapshot_at,
+        gate=QualityGate(),
+    )
+    return result.records
 
 
-def _percentile_scores(gaps: Mapping[str, float]) -> dict[str, float]:
-    """Rank the gaps into the schema's 0-100 band. A stub transform, not a model.
-
-    A percentile rather than an affine transform of the gap, because the gap's scale
-    depends on how deep the market board runs: a 16-player fixture priced against a
-    250-pick board produces gaps in the hundreds, and any fixed linear mapping would pin
-    most rows at 100 and tell a reader nothing. A percentile always spreads, is monotone in
-    the gap, and is obviously relative - which is the honest description of a stub. Phase 5
-    replaces it with the deterministic A0 baseline.
-    """
-    if not gaps:
-        return {}
-    ordered = sorted(gaps.items(), key=lambda item: (item[1], item[0]))
-    count = len(ordered)
-    return {
-        player_id: round(100.0 * (index + 0.5) / count, 2)
-        for index, (player_id, _gap) in enumerate(ordered)
-    }
-
-
-def _confidence(sample_size: int | None) -> Confidence:
-    if sample_size is None or sample_size <= 0:
-        return Confidence.UNKNOWN
-    if sample_size >= 100:
-        return Confidence.HIGH
-    if sample_size >= 30:
-        return Confidence.MEDIUM
-    return Confidence.LOW
+def _fixture_price(
+    *,
+    player_id: str,
+    scoring: str,
+    league_size: int,
+    row: Mapping[str, Any],
+    outcome: ResolutionOutcome,
+    assignment: CohortAssignment,
+    snapshot_at: datetime,
+) -> MarketPrice:
+    low = row["min_pick"]
+    high = row["max_pick"]
+    sample = row["sample_size"]
+    secondary = FLAG_SECONDARY_ONLY in outcome.quality_flags
+    flags = {*_split_flags(row["quality_flags"]), *assignment.quality_flags}
+    if sample is not None and int(sample) < LOW_SAMPLE_THRESHOLD:
+        flags.add(LOW_MARKET_SAMPLE)
+    if low is not None and high is not None and (float(high) - float(low)) / league_size >= 5.0:
+        flags.add(WIDE_MARKET_RANGE)
+    if secondary:
+        flags.add(SECONDARY_IDENTITY_BRIDGE_ONLY)
+    # The fixture has one snapshot, so trend history can never be sufficient (ADR-042).
+    flags.add(INSUFFICIENT_TREND_HISTORY)
+    return MarketPrice(
+        player_id=player_id,
+        scoring_preset=scoring,
+        league_size=league_size,
+        market_adp=float(row["average_pick"]),
+        market_rank=row["market_rank"],
+        sample_size=None if sample is None else int(sample),
+        adp_low=None if low is None else float(low),
+        adp_high=None if high is None else float(high),
+        adp_sd=None,
+        source_id=str(row["source_id"]),
+        cohort_id=assignment.cohort.cohort_id,
+        cohort_detail=assignment.source_format_detail,
+        cohort_exact=assignment.exact,
+        cohort_sufficient=assignment.sufficient,
+        snapshot_at_utc=snapshot_at,
+        snapshot_stale=False,
+        secondary_bridge_only=secondary,
+        market_trend=None,
+        trend_flags=(INSUFFICIENT_TREND_HISTORY,),
+        quality_flags=tuple(sorted(flags)),
+    )
 
 
 def _market_snapshot_records(
     market_batch: SourceBatch,
     *,
     outcomes: Sequence[ResolutionOutcome],
-    cohort: MarketCohort,
+    assignment: CohortAssignment,
 ) -> list[dict[str, Any]]:
     resolved = {
         outcome.external_player_id: outcome.player_id
@@ -671,8 +712,10 @@ def _market_snapshot_records(
                 "snapshot_at_utc": isoformat_utc(row["retrieved_at_utc"]),
                 "source_as_of_utc": None,
                 "season": row["season"],
-                "league_size": row["league_size"],
-                "scoring_preset": row["scoring_preset"],
+                # A quote belongs to a cohort; the preset it *serves* comes from the
+                # assignment, which also records that the match is approximate (ADR-039).
+                "league_size": assignment.league_size,
+                "scoring_preset": assignment.scoring_preset,
                 "player_id": player_id,
                 "market_adp": float(row["average_pick"]),
                 "market_rank": row["market_rank"],
@@ -680,8 +723,10 @@ def _market_snapshot_records(
                 "adp_sd": None,
                 "adp_low": row["min_pick"],
                 "adp_high": row["max_pick"],
-                "source_format_detail": cohort.source_format_detail,
-                "quality_flags": _split_flags(row["quality_flags"]),
+                "source_format_detail": assignment.source_format_detail,
+                "quality_flags": sorted(
+                    {*_split_flags(row["quality_flags"]), *assignment.quality_flags},
+                ),
             },
         )
     return records

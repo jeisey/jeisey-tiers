@@ -21,10 +21,12 @@ undrafted rookies accumulate through the preseason.
 Three other rules hold here:
 
 * **Current status is metadata, never a model input.** The production model consumes exactly
-  the frozen `intrinsic_core_v1` feature set. Today's roster status, today's team and today's
-  depth chart may annotate a published row or remove an entity that is demonstrably not a
-  player, but none of them can move a prediction. Anything else would be serving a model on
-  features it was never validated with.
+  the frozen `intrinsic_core_v1` feature set. Today's roster status, today's team, today's
+  depth chart and today's injury report may annotate a published row or remove an entity that
+  is demonstrably not a player, but none of them can move a prediction. Anything else would be
+  serving a model on features it was never validated with. Phase 5 adds the Sleeper
+  injury/practice half of that annotation as a *separate* artifact keyed once per player
+  (ADR-043); it is assembled after the board exists and cannot reach back into it.
 * **Exclusion needs positive evidence.** A player is dropped from the board only when the
   current roster records him as retired. Absence from a roster is not evidence of absence
   from the league - unsigned free agents sign in September - so those rows stay, flagged.
@@ -66,6 +68,8 @@ from ffdraft.simulation.vorp import (
     sample_points,
     simulate_vorp,
 )
+from ffdraft.status.build import build_player_status_records
+from ffdraft.status.capture import StatusCapture, read_status_capture
 from ffdraft.tiers.algorithms import ALGORITHM_VERSIONS, segment_with
 from ffdraft.tiers.labels import tier_label
 from ffdraft.timeutil import isoformat_utc, utc_now
@@ -245,6 +249,8 @@ def run_current_build(
     app: AppConfig | None = None,
     sources: Any | None = None,
     current_roster: pl.DataFrame | None = None,
+    status_capture: StatusCapture | None = None,
+    status_store: Any | None = None,
     write: bool = True,
 ) -> CurrentBuildResult:
     """Build the current season's intrinsic tier board and write its artifacts.
@@ -398,6 +404,21 @@ def run_current_build(
         gate=gate,
     )
 
+    # The status artifact is assembled *after* the board and from a different registry
+    # instance, so it cannot participate in producing a single published number. It is
+    # deliberately restricted to players the board actually names: a status row nobody
+    # references is payload the browser downloads for nothing (ADR-043).
+    status = _player_status(
+        roster=roster,
+        capture=status_capture or _retained_status(status_store, season, gate),
+        build_id=resolved_build_id,
+        season=season,
+        as_of=stamped,
+        published=[str(row["player_id"]) for row in records.get("tiers", ())],
+        gate=gate,
+    )
+    records["player_status"] = status.records
+
     metadata = _build_metadata(
         settings,
         loaded=loaded,
@@ -407,6 +428,7 @@ def run_current_build(
         as_of=stamped,
         git_sha=git_sha,
         model=model,
+        status=status,
     )
     written: list[Path] = []
     if write and gate.passed:
@@ -503,6 +525,62 @@ def _resolve_current_roster(
 
 def _build_id(model_version: str, as_of: datetime, season: int) -> str:
     return f"{season}-{model_version}-{as_of.strftime('%Y%m%dT%H%M%SZ')}"
+
+
+def _retained_status(store: Any, season: int, gate: QualityGate) -> StatusCapture | None:
+    """The latest retained Sleeper capture, when a store was supplied.
+
+    A build behind an egress policy - or any build that wants byte-reproducible output -
+    reads the capture a runner retained instead of calling Sleeper live (ADR-038). No store
+    means no capture, and the status artifact degrades rather than the build failing.
+    """
+    if store is None:
+        return None
+    try:
+        return read_status_capture(store, season=season)
+    except (OSError, ValueError) as exc:
+        gate.add(
+            QualityCheck.fail(
+                "current.status_capture_unreadable",
+                stage="current_build",
+                message="the retained Sleeper capture could not be read; status degrades",
+                observed=str(exc),
+                expected="a readable capture",
+                severity=Severity.WARNING,
+            ),
+        )
+        return None
+
+
+def _player_status(
+    *,
+    roster: pl.DataFrame,
+    capture: StatusCapture | None,
+    build_id: str,
+    season: int,
+    as_of: datetime,
+    published: Sequence[str],
+    gate: QualityGate,
+) -> Any:
+    """Build the annotation artifact from a registry of its own.
+
+    The registry is rebuilt here rather than shared with the feature build, which is not
+    duplication for its own sake: it makes the status path structurally incapable of
+    handing anything to the model path, because the two never touch the same object.
+    """
+    from ffdraft.identity.registry import build_registry
+
+    registry = build_registry(roster) if not roster.is_empty() else build_registry(pl.DataFrame())
+    return build_player_status_records(
+        registry=registry,
+        roster=roster,
+        capture=capture,
+        build_id=build_id,
+        season=season,
+        generated_at=as_of,
+        player_ids=sorted(dict.fromkeys(published)),
+        gate=gate,
+    )
 
 
 def build_board_records(
@@ -727,6 +805,7 @@ def _build_metadata(
     as_of: datetime,
     git_sha: str | None,
     model: ProductionModel,
+    status: Any | None = None,
 ) -> dict[str, Any]:
     summary = gate.summary()
     return {
@@ -738,6 +817,11 @@ def _build_metadata(
         "intrinsic_model_version": model.spec.model_version,
         "arbitrage_mode": settings.arbitrage_mode,
         "arbitrage_model_version": None,
+        # Phase 5 writes this when `build-arbitrage` runs; an intrinsic-only build has no
+        # arbitrage method to name, and inventing one would be a claim about a board that
+        # does not exist yet.
+        "arbitrage_method_version": None,
+        "player_status": status.summary() if status is not None else None,
         "supported_presets": sorted(settings.league.presets),
         "sources": [
             {

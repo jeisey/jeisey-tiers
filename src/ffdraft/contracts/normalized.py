@@ -112,9 +112,12 @@ CANONICAL_PLAYER_CONTRACT = FrameContract(
 )
 
 
+# Contract 1.1 adds the three optional injury/practice fields the verified Sleeper schema
+# publishes and 1.0 did not read (ADR-043). All three are nullable: Sleeper omits them for
+# healthy players, and a required field would have to be fabricated.
 PLAYER_STATUS_CONTRACT = FrameContract(
     contract_id="sleeper_player_status",
-    version="1.0",
+    version="1.1",
     primary_key=("source_id", "external_player_id"),
     columns=(
         ColumnSpec("source_id", pl.String, nullable=False),
@@ -124,7 +127,10 @@ PLAYER_STATUS_CONTRACT = FrameContract(
         ColumnSpec("status", pl.String),
         ColumnSpec("injury_status", pl.String),
         ColumnSpec("injury_body_part", pl.String),
+        ColumnSpec("injury_notes", pl.String),
+        ColumnSpec("injury_start_date", pl.String, description="As published; often absent"),
         ColumnSpec("practice_participation", pl.String),
+        ColumnSpec("practice_description", pl.String),
         ColumnSpec("depth_chart_position", pl.String),
         ColumnSpec("depth_chart_order", pl.Int32),
         ColumnSpec("reported_gsis_id", pl.String, description="Cross-check only, never a key"),
@@ -152,13 +158,19 @@ DEPTH_CHART_CONTRACT = FrameContract(
 )
 
 
+# A quote belongs to a *cohort request*, not to a league preset. Contract 1.0 carried
+# `scoring_preset`, `league_size` and `cohort_approximate`, which forced an unfiltered
+# aggregate to claim a preset it did not describe. Contract 2.0 records `cohort_id`
+# instead; mapping cohorts onto presets is `ffdraft.market.cohorts`' job and its verdict
+# (exact or approximate) is per assignment, not per row (ADR-039).
 MARKET_QUOTE_CONTRACT = FrameContract(
     contract_id="market_quote",
-    version="1.0",
-    primary_key=("source_id", "season", "external_player_id"),
+    version="2.0",
+    primary_key=("source_id", "season", "cohort_id", "external_player_id"),
     columns=(
         ColumnSpec("source_id", pl.String, nullable=False),
         ColumnSpec("season", pl.Int32, nullable=False),
+        ColumnSpec("cohort_id", pl.String, nullable=False),
         ColumnSpec("external_player_id", pl.String, nullable=False),
         ColumnSpec("average_pick", pl.Float64, nullable=False),
         ColumnSpec("market_rank", pl.Int32),
@@ -170,9 +182,6 @@ MARKET_QUOTE_CONTRACT = FrameContract(
         ColumnSpec("source_as_of_utc", _UTC, description="Null for MFL: no data-as-of time"),
         ColumnSpec("entity_kind", pl.String, nullable=False),
         ColumnSpec("raw_position", pl.String),
-        ColumnSpec("scoring_preset", pl.String, nullable=False),
-        ColumnSpec("league_size", pl.Int32, nullable=False),
-        ColumnSpec("cohort_approximate", pl.Boolean, nullable=False),
         ColumnSpec("source_format_detail", pl.String, nullable=False),
         ColumnSpec("quality_flags", pl.String),
     ),

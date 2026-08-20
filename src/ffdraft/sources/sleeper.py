@@ -100,7 +100,9 @@ class SleeperPlayerAdapter(BaseSourceAdapter):
 
     source_id = SLEEPER_SOURCE_ID
     resource = "GET /v1/players/nfl"
-    adapter_version = "1.0"
+    #: 1.1 with `sleeper_player_status` contract 1.1: the three optional injury/practice
+    #: fields the verified schema publishes and 1.0 did not read (ADR-043).
+    adapter_version = "1.1"
     contract = PLAYER_STATUS_CONTRACT
     recorded_schema_fixture = "sleeper_players_nfl"
     license_policy_version = _SLEEPER_LICENSE
@@ -146,7 +148,13 @@ class SleeperPlayerAdapter(BaseSourceAdapter):
                     "status": _text(record.get("status")),
                     "injury_status": _text(record.get("injury_status")),
                     "injury_body_part": _text(record.get("injury_body_part")),
+                    # Present in the verified schema and frequently null: Sleeper omits
+                    # them for healthy players, so they are normalized as nullable rather
+                    # than required (ADR-043). Never invented when absent.
+                    "injury_notes": _text(record.get("injury_notes")),
+                    "injury_start_date": _text(record.get("injury_start_date")),
                     "practice_participation": _text(record.get("practice_participation")),
+                    "practice_description": _text(record.get("practice_description")),
                     "depth_chart_position": _text(record.get("depth_chart_position")),
                     "depth_chart_order": _int(record.get("depth_chart_order")),
                     "reported_gsis_id": gsis.value,

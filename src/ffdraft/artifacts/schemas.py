@@ -27,8 +27,10 @@ __all__ = [
     "ARTIFACT_SCHEMA_VERSION",
     "ENVELOPE_SCHEMA",
     "RECORD_SCHEMAS",
+    "RECORD_SCHEMA_VERSIONS",
     "load_schema",
     "record_field_order",
+    "record_schema_version",
     "validate_envelope",
     "validate_records",
     "validator_for",
@@ -46,8 +48,33 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     "arbitrage_record",
     "player_projection",
     "market_snapshot",
+    "player_status",
     "build_metadata",
 )
+
+#: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
+#: and stays :data:`ARTIFACT_SCHEMA_VERSION`; a record schema versions independently so one
+#: artifact can gain fields without forcing a bundle-wide break. Phase 5 moves
+#: ``arbitrage_record`` to 1.1 (ADR-040) and leaves every other record at 1.0. A record
+#: whose declared version disagrees with its schema's ``const`` fails validation, and
+#: ``tests/contract/test_artifact_contracts.py`` pins this map to the schema files.
+RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
+    "tier_record": "1.0",
+    "arbitrage_record": "1.1",
+    "player_projection": "1.0",
+    "market_snapshot": "1.0",
+    "player_status": "1.0",
+    "build_metadata": "1.0",
+}
+
+
+def record_schema_version(name: str) -> str:
+    """The contract version a record of this schema must declare."""
+    try:
+        return RECORD_SCHEMA_VERSIONS[name]
+    except KeyError as exc:  # pragma: no cover - guarded by a contract test
+        raise KeyError(f"unknown record schema {name!r}") from exc
+
 
 _FORMAT_CHECKER = FormatChecker()
 

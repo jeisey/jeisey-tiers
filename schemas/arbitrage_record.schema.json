@@ -2,15 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/schemas/arbitrage_record.schema.json",
   "title": "ArbitrageRecord",
+  "description": "One player's market-versus-model comparison for one league preset. Record contract 1.1 (Phase 5) adds the A0 draft-region gap and the market provenance a reader needs to judge the row without a second fetch: dispersion, the cohort the price came from, and when it was retrieved (ADR-038, ADR-040).",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version", "build_id", "league_preset_id", "scoring_preset", "player_id",
-    "display_name", "team", "position", "fair_rank", "market_adp", "rank_gap",
-    "arbitrage_mode", "arbitrage_score", "confidence", "quality_flags"
+    "display_name", "team", "position", "fair_rank", "market_adp", "market_rank",
+    "rank_gap", "regional_value_gap", "arbitrage_mode", "arbitrage_score",
+    "expected_surplus_vorp", "p_positive_surplus", "market_trend", "market_sample_size",
+    "market_adp_sd", "market_adp_low", "market_adp_high", "market_source_id",
+    "market_cohort_id", "market_cohort_detail", "market_snapshot_at_utc",
+    "confidence", "quality_flags"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "build_id": {"type": "string", "minLength": 1},
     "league_preset_id": {"type": "string", "minLength": 1},
     "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
@@ -22,6 +27,7 @@
     "market_adp": {"type": "number", "exclusiveMinimum": 0},
     "market_rank": {"type": ["integer", "null"], "minimum": 1},
     "rank_gap": {"type": "number"},
+    "regional_value_gap": {"type": "number"},
     "arbitrage_mode": {"enum": ["baseline", "ml"]},
     "arbitrage_score": {"type": "number", "minimum": 0, "maximum": 100},
     "expected_surplus_vorp": {"type": ["number", "null"]},
@@ -29,6 +35,12 @@
     "market_trend": {"type": ["number", "null"]},
     "market_sample_size": {"type": ["integer", "null"], "minimum": 0},
     "market_adp_sd": {"type": ["number", "null"], "minimum": 0},
+    "market_adp_low": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "market_adp_high": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "market_source_id": {"type": "string", "minLength": 1},
+    "market_cohort_id": {"type": "string", "minLength": 1},
+    "market_cohort_detail": {"type": "string", "minLength": 1},
+    "market_snapshot_at_utc": {"type": "string", "format": "date-time"},
     "confidence": {"enum": ["high", "medium", "low", "unknown"]},
     "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
   },
@@ -41,6 +53,11 @@
           "p_positive_surplus": {"type": "null"}
         }
       }
+    },
+    {
+      "$comment": "MyFantasyLeague publishes no ADP standard deviation (docs/DATA_SOURCES.md 13.5). A populated market_adp_sd from that source would be fabricated.",
+      "if": {"properties": {"market_source_id": {"const": "myfantasyleague_adp"}}},
+      "then": {"properties": {"market_adp_sd": {"type": "null"}}}
     }
   ]
 }

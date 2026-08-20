@@ -60,6 +60,34 @@ own experiment report and each restricted to development folds:
     Generate the intrinsic model card and the tier-method report from the committed
     experiment reports and the model artifact.
 
+Phase 5 adds the market and arbitrage path. Exactly two of its commands touch a vendor
+network; everything else reads retained evidence, which is what makes the analysis
+reproducible offline and diffable against the commit that captured it:
+
+``snapshot-market`` (network)
+    Retrieve every requested MFL cohort plus the player directory and append one immutable
+    point-in-time snapshot to the append-only store (ADR-006, ADR-038).
+
+``capture-status`` (network)
+    Retrieve and normalize Sleeper's current player map and retain it under the same
+    append-only discipline (ADR-043).
+
+``validate-market-history``
+    Re-hash every retained file against its manifest and check the store's append-only
+    invariants.
+
+``measure-market-cohorts``
+    Measure every cohort in a retained snapshot against the published fair board, judge it
+    with the rule ADR-039 froze *before* the measurement existed, and select one cohort per
+    preset. Offline and reproducible.
+
+``build-arbitrage``
+    Compute the deterministic A0 baseline from the published tier artifact and a retained
+    snapshot, and write the arbitrage artifact (ADR-040).
+
+``arbitrage-card``
+    Generate the arbitrage method card from the artifacts and reports that produced it.
+
 Exit status is 0 when the quality gate passes and 1 when a critical check fails, so CI can
 branch on it directly.
 """
@@ -87,6 +115,8 @@ from ffdraft.features.dictionary import (
     to_records,
 )
 from ffdraft.leakage import validate_historical_directory
+from ffdraft.market.capture import capture_market, cohort_set
+from ffdraft.market.snapshot import MARKET_PREFIX, SnapshotStore, verify_store
 from ffdraft.modeling import (
     ExperimentConfig,
     FinalEvalAuthorization,
@@ -136,6 +166,10 @@ DEFAULT_TIER_DIR = Path("docs/experiments/phase4-tier-segmentation")
 DEFAULT_HOLDOUT_DIR = Path("docs/experiments/phase4-final-holdout")
 DEFAULT_MODEL_DIR = Path("models/production")
 DEFAULT_CARD_DIR = Path("models/cards")
+#: A checkout of the long-lived `market-data` branch (ADR-038). Defaulted beside the
+#: repository rather than inside it: the store is a different branch, not a subdirectory.
+DEFAULT_MARKET_STORE = Path("market-data")
+DEFAULT_COHORT_DIR = Path("docs/market-cohorts")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -433,6 +467,15 @@ def _build_parser() -> argparse.ArgumentParser:
     current.add_argument("--statistic", default=None, help="override the ranking statistic")
     current.add_argument("--penalty", type=float, default=None, help="override the tier penalty")
     current.add_argument("--no-write", action="store_true", help="build without writing files")
+    current.add_argument(
+        "--store",
+        type=Path,
+        default=None,
+        help=(
+            "market-data checkout supplying the retained Sleeper status capture; without "
+            "it the status artifact ships degraded and the board is unaffected (ADR-043)"
+        ),
+    )
     current.set_defaults(handler=_build_current)
 
     card = subparsers.add_parser(
@@ -445,6 +488,104 @@ def _build_parser() -> argparse.ArgumentParser:
     card.add_argument("--predictions", type=Path, default=None, help="out-of-fold prediction dir")
     card.add_argument("--git-sha", default=None, help="code SHA to record")
     card.set_defaults(handler=_model_card)
+
+    snapshot = subparsers.add_parser(
+        "snapshot-market",
+        help="retrieve MFL cohorts and append one point-in-time snapshot (network)",
+    )
+    snapshot.add_argument("--season", type=int, default=None, help="market season")
+    snapshot.add_argument(
+        "--store",
+        type=Path,
+        default=None,
+        help="checkout of the market-data branch (ADR-038)",
+    )
+    snapshot.add_argument(
+        "--cohorts",
+        default="production",
+        help="'production', 'study', or a comma-separated cohort id list",
+    )
+    snapshot.add_argument("--as-of", default=None, help="RFC 3339 retrieval timestamp")
+    snapshot.add_argument("--git-sha", default=None, help="code SHA to record")
+    snapshot.add_argument(
+        "--pause",
+        type=float,
+        default=1.0,
+        help="seconds between MFL requests; MFL throttles over-limit clients",
+    )
+    snapshot.add_argument("--no-write", action="store_true", help="fetch without retaining")
+    snapshot.set_defaults(handler=_snapshot_market)
+
+    status_capture = subparsers.add_parser(
+        "capture-status",
+        help="retrieve Sleeper current player status and retain it (network)",
+    )
+    status_capture.add_argument("--season", type=int, default=None)
+    status_capture.add_argument("--store", type=Path, default=None)
+    status_capture.add_argument("--as-of", default=None, help="RFC 3339 retrieval timestamp")
+    status_capture.add_argument("--git-sha", default=None)
+    status_capture.add_argument("--no-write", action="store_true")
+    status_capture.set_defaults(handler=_capture_status)
+
+    history = subparsers.add_parser(
+        "validate-market-history",
+        help="verify the append-only snapshot store against its manifests",
+    )
+    history.add_argument("store", type=Path, nargs="?", default=None)
+    history.add_argument("--season", type=int, default=None)
+    history.add_argument("--source", default=None, help="source id to verify")
+    history.set_defaults(handler=_validate_market_history)
+
+    cohorts = subparsers.add_parser(
+        "measure-market-cohorts",
+        help="measure and select MFL cohorts from a retained snapshot (offline)",
+    )
+    cohorts.add_argument("--season", type=int, default=None)
+    cohorts.add_argument("--store", type=Path, default=None)
+    cohorts.add_argument("--snapshot", default=None, help="snapshot key; default is latest")
+    cohorts.add_argument(
+        "--board",
+        type=Path,
+        default=None,
+        help="tier artifact directory supplying the reference fair board",
+    )
+    cohorts.add_argument("--out", type=Path, default=None, help="report output directory")
+    cohorts.add_argument("--git-sha", default=None)
+    cohorts.set_defaults(handler=_measure_market_cohorts)
+
+    arbitrage = subparsers.add_parser(
+        "build-arbitrage",
+        help="build the deterministic A0 arbitrage board from retained prices (offline)",
+    )
+    arbitrage.add_argument("--season", type=int, default=None)
+    arbitrage.add_argument("--store", type=Path, default=None)
+    arbitrage.add_argument("--snapshot", default=None, help="snapshot key; default is latest")
+    arbitrage.add_argument(
+        "--artifacts",
+        type=Path,
+        default=None,
+        help="artifact directory holding tiers.json; also the output directory",
+    )
+    arbitrage.add_argument(
+        "--selection",
+        type=Path,
+        default=None,
+        help="cohort report JSON; default is the newest under docs/market-cohorts",
+    )
+    arbitrage.add_argument("--as-of", default=None, help="RFC 3339 build timestamp")
+    arbitrage.add_argument("--git-sha", default=None)
+    arbitrage.add_argument("--no-write", action="store_true")
+    arbitrage.set_defaults(handler=_build_arbitrage)
+
+    arbitrage_card = subparsers.add_parser(
+        "arbitrage-card",
+        help="generate the arbitrage method card from the evidence that produced it",
+    )
+    arbitrage_card.add_argument("--artifacts", type=Path, default=None)
+    arbitrage_card.add_argument("--selection", type=Path, default=None)
+    arbitrage_card.add_argument("--out", type=Path, default=None)
+    arbitrage_card.add_argument("--git-sha", default=None)
+    arbitrage_card.set_defaults(handler=_arbitrage_card)
 
     dictionary = subparsers.add_parser(
         "feature-dictionary",
@@ -934,6 +1075,7 @@ def _build_current(args: argparse.Namespace) -> int:
         as_of=as_of,
         build_id=args.build_id,
         git_sha=args.git_sha,
+        status_store=_market_store(args.store) if args.store is not None else None,
         write=not args.no_write,
     )
     print(f"build id       : {result.build_id}")
@@ -966,6 +1108,219 @@ def _model_card(args: argparse.Namespace) -> int:
         git_sha=args.git_sha or "unknown",
     )
     written = [*write_model_card(inputs, out_dir), *write_tier_method_report(inputs, out_dir)]
+    for path in written:
+        print(f"wrote {path}")
+    return 0
+
+
+def _market_store(path: Path | None) -> SnapshotStore:
+    """Resolve a store directory.
+
+    The default sits *beside* the repository, not inside it: the store is a separate
+    long-lived branch (ADR-038), and a default inside the working tree would invite someone
+    to commit a day of captures onto a code branch.
+    """
+    root = path or (repo_root().parent / DEFAULT_MARKET_STORE)
+    return SnapshotStore(root=root, prefix=MARKET_PREFIX)
+
+
+def _snapshot_market(args: argparse.Namespace) -> int:
+    """Retrieve MFL cohorts and append one immutable snapshot. **Network I/O.**"""
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+
+    season = args.season or PRODUCTION_SEASON
+    store = _market_store(args.store)
+    result = capture_market(
+        season=season,
+        store=store,
+        cohorts=cohort_set(args.cohorts),
+        as_of=parse_utc(args.as_of) if args.as_of else None,
+        git_sha=args.git_sha,
+        write=not args.no_write,
+        pause_seconds=args.pause,
+    )
+    print(f"snapshot       : {result.snapshot_key}")
+    print(f"season         : {result.season}")
+    print(f"cohorts        : {len(result.manifest.cohorts)}")
+    for cohort in result.manifest.cohorts:
+        print(
+            f"  {cohort.cohort_id:>18}  rows={cohort.row_count:>4}  "
+            f"drafts={cohort.total_drafts}  resolved="
+            f"{cohort.resolved_players}/{cohort.resolvable_players}",
+        )
+    print(f"normalized rows: {len(result.rows)}")
+    if result.write is not None:
+        verb = "already retained (idempotent)" if result.write.idempotent else "retained"
+        print(f"{verb}: {result.write.directory}")
+    return _report_gate(result.gate)
+
+
+def _capture_status(args: argparse.Namespace) -> int:
+    """Retrieve Sleeper current status and retain it. **Network I/O.**"""
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.status import capture_status, write_status_capture
+
+    season = args.season or PRODUCTION_SEASON
+    store = _market_store(args.store)
+    gate = QualityGate()
+    capture = capture_status(
+        season=season,
+        as_of=parse_utc(args.as_of) if args.as_of else None,
+        git_sha=args.git_sha,
+        gate=gate,
+    )
+    print(f"capture        : {capture.snapshot_key}")
+    print(f"rows           : {len(capture.rows)}")
+    if not args.no_write:
+        for path in write_status_capture(capture, store=store):
+            print(f"wrote {path}")
+    return _report_gate(gate)
+
+
+def _validate_market_history(args: argparse.Namespace) -> int:
+    """Re-hash the retained store and check its append-only invariants."""
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.sources.market import MFL_SOURCE_ID
+
+    store = _market_store(args.store)
+    season = args.season or PRODUCTION_SEASON
+    source_id = args.source or MFL_SOURCE_ID
+    verification = verify_store(store, source_id=source_id, season=season)
+    print(f"store          : {store.root}")
+    print(f"snapshots      : {verification.snapshots}")
+    print(f"files checked  : {verification.files_checked}")
+    for problem in verification.problems:
+        print(f"  [critical] {problem}")
+    print(f"market history : {'pass' if verification.ok else 'fail'}")
+    return 0 if verification.ok else 1
+
+
+def _reference_board(artifacts: Path, league_preset_id: str) -> Any:
+    from ffdraft.market.measure import board_from_tier_records
+
+    payload = json.loads((artifacts / "tiers.json").read_text(encoding="utf-8"))
+    return board_from_tier_records(payload["records"], league_preset_id=league_preset_id)
+
+
+def _launch_presets(app: Any) -> list[tuple[str, int]]:
+    """Every (scoring preset, league size) the launch build publishes."""
+    return sorted(
+        {
+            (str(scoring), preset.teams)
+            for preset in app.league.presets.values()
+            for scoring in ("STD", "HALF", "PPR")
+        },
+    )
+
+
+def _measure_market_cohorts(args: argparse.Namespace) -> int:
+    """Measure, judge and select cohorts from a retained snapshot. Offline."""
+    from ffdraft.market.measure import measure_cohorts, report_markdown
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.sources.market import MFL_SOURCE_ID
+    from ffdraft.timeutil import utc_now
+
+    app = load_app_config()
+    season = args.season or PRODUCTION_SEASON
+    store = _market_store(args.store)
+    key = args.snapshot or store.latest_key(MFL_SOURCE_ID, season)
+    if key is None:
+        print(f"no retained snapshot for {MFL_SOURCE_ID}/{season} under {store.root}")
+        return 1
+    snapshot = store.read(MFL_SOURCE_ID, season, key)
+    artifacts = args.board or (repo_root() / DEFAULT_ARTIFACT_DIR)
+    board = _reference_board(artifacts, app.league.default_preset.preset_id)
+
+    report = measure_cohorts(
+        snapshot,
+        board=board,
+        presets=_launch_presets(app),
+        generated_at=utc_now(),
+        git_sha=args.git_sha,
+    )
+    out_dir = args.out or (repo_root() / DEFAULT_COHORT_DIR / key[:10])
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "cohorts.json").write_text(
+        json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (out_dir / "cohorts.md").write_text(report_markdown(report), encoding="utf-8")
+    print(f"snapshot       : {key}")
+    print(f"board          : {board.league_preset_id}, {', '.join(board.scoring_presets)}")
+    for cohort_id in sorted(report.measurements):
+        measurement = report.measurements[cohort_id]
+        verdict = report.verdicts[cohort_id]
+        print(
+            f"  {cohort_id:>18}  priced={measurement.priced_players:>4}  "
+            f"drafts={measurement.total_drafts}  top100={measurement.top100_board_coverage:.3f}  "
+            f"{'SUFFICIENT' if verdict.sufficient else 'insufficient'}",
+        )
+    for _, assignment in sorted(report.assignments.items()):
+        print(
+            f"  {assignment.scoring_preset}/{assignment.league_size}: "
+            f"{assignment.cohort.cohort_id} "
+            f"({'exact' if assignment.exact else 'approximate'}) — {assignment.reason}",
+        )
+    print(f"wrote {out_dir / 'cohorts.json'}")
+    print(f"wrote {out_dir / 'cohorts.md'}")
+    return 0
+
+
+def _newest_selection(root: Path) -> Path | None:
+    candidates = sorted(root.glob("*/cohorts.json"))
+    return candidates[-1] if candidates else None
+
+
+def _build_arbitrage(args: argparse.Namespace) -> int:
+    """Build the deterministic A0 arbitrage board. Offline."""
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.pipeline.market import ArbitrageBuildRequest, run_arbitrage_build
+
+    season = args.season or PRODUCTION_SEASON
+    artifacts = args.artifacts or (repo_root() / DEFAULT_ARTIFACT_DIR)
+    selection = args.selection or _newest_selection(repo_root() / DEFAULT_COHORT_DIR)
+    if selection is None:
+        print(
+            "no cohort selection found; run `ffdraft measure-market-cohorts` first "
+            "(ADR-039 requires the rule to decide before a board is published)",
+        )
+        return 1
+    result = run_arbitrage_build(
+        ArbitrageBuildRequest(
+            season=season,
+            store=_market_store(args.store),
+            snapshot_key=args.snapshot,
+            artifacts_dir=artifacts,
+            selection_path=selection,
+            as_of=parse_utc(args.as_of) if args.as_of else None,
+            git_sha=args.git_sha,
+            write=not args.no_write,
+        ),
+    )
+    print(f"build id       : {result.build_id}")
+    print(f"snapshot       : {result.snapshot_key}")
+    print(f"arbitrage mode : {result.arbitrage_mode} ({result.method_version})")
+    print(f"records        : {len(result.records)}")
+    print(f"confidence     : {result.confidence_counts}")
+    print(f"trend          : {'available' if result.trend_available else 'null (no history)'}")
+    for path in result.written:
+        print(f"wrote {path}")
+    return _report_gate(result.gate)
+
+
+def _arbitrage_card(args: argparse.Namespace) -> int:
+    """Generate the arbitrage method card from committed evidence."""
+    from ffdraft.arbitrage.card import write_arbitrage_card
+
+    artifacts = args.artifacts or (repo_root() / DEFAULT_ARTIFACT_DIR)
+    selection = args.selection or _newest_selection(repo_root() / DEFAULT_COHORT_DIR)
+    out_dir = args.out or (repo_root() / DEFAULT_CARD_DIR)
+    written = write_arbitrage_card(
+        artifacts_dir=artifacts,
+        selection_path=selection,
+        out_dir=out_dir,
+        git_sha=args.git_sha or "unknown",
+    )
     for path in written:
         print(f"wrote {path}")
     return 0

@@ -720,3 +720,186 @@ Target-season statistics are not loaded at all for a current build (`include_tar
 **Decision — the tier artifacts ship with their failure attached.** `CurrentBuildConfig` records `tier_algorithm`, `tier_algorithm_version`, `tier_penalty` and `tier_stability_gate`, and the production value of the last is **`"fail"`** (ADR-035). A consumer of a Tier artifact can therefore see, from the artifact alone, that the boundaries are not sharply located. Publishing tiers without that field would have been the dishonest option; not publishing them at all would have left the artifact contract untested and the phase's deliverable unbuilt.
 
 **Consequences:** the fixture stub `fixture-stub-0` is replaced by a real, versioned, digest-verified model for every launch preset. `models/` holds the artifact and **is committed**, not gitignored: `PRD.md` section 15 requires every production model artifact needed for deterministic inference to be versioned, and a digest-verified 15 MB of gzipped LightGBM text is the price of a board that can be reproduced months later. `train-production` is the one command that makes it, and a promoted model replaces the previous directory rather than accumulating beside it. The Phase-6 frontend must surface the tier stability caveat rather than drawing a hard line and leaving the reader to assume it was measured as sharp.
+
+## ADR-038 — Point-in-time market history lives on a dedicated long-lived `market-data` branch
+
+**Date:** 2026-08-20 (Phase 5, before the first retained snapshot)
+
+**Status:** accepted
+
+**Context:** ADR-006 requires point-in-time market history to be persisted in a durable versioned mechanism separate from transient Actions artifacts, and ADR-010 makes that history the *only* route to a future learned arbitrage model: MFL's historical export is a season-long aggregate recomputed at request time, so a price we do not capture on the day is a price that can never be reconstructed. `PRD.md` section 15 suggests a dedicated data branch. This ADR is written **before** the first snapshot is retained, because a retention scheme chosen after a month of snapshots exist is a migration rather than a decision.
+
+**Decision — the store.** Snapshots live on a dedicated, permanently long-lived Git branch named **`market-data`**, in the same repository, sharing no history with `main` (an orphan branch). It is not a feature branch, is never merged into `main` and never rebased. Normal Phase-5 source code changes go on the ordinary implementation branch and its pull request; nothing but captures is ever committed to `market-data`.
+
+Reasons, in order of weight: Actions artifacts expire and these captures must not; a data branch keeps a daily binary churn out of code review; Git already supplies immutable history and content addressing; and Phase 7's scheduled workflow can push to exactly the same store without a new mechanism.
+
+**Decision — the layout.** Immutable, timestamp-keyed, one directory per retrieval run:
+
+```text
+market/myfantasyleague/<season>/<YYYY-MM-DDTHH-MM-SSZ>/
+    manifest.json                        # schemas/market_snapshot_manifest.schema.json
+    players.raw.json.gz                  # exact MFL player-directory payload bytes
+    cohorts/<cohort_id>/adp.raw.json.gz  # exact MFL ADP payload bytes, one per cohort
+    market.normalized.json.gz            # normalized, identity-resolved quotes
+status/sleeper/<season>/<YYYY-MM-DDTHH-MM-SSZ>/
+    manifest.json
+    status.normalized.json.gz            # normalized Sleeper current-status rows
+```
+
+The `status/` prefix applies the same discipline to Sleeper current-state captures. It is retained for a different reason from the market prefix — not as future training data, which ADR-044 forbids, but so that a status artifact can be rebuilt offline and byte-for-byte from evidence rather than from a live feed that has since moved. Only the *normalized* Sleeper rows are retained; the 14.6 MB raw player map is not, because nothing downstream reads a field outside the normalized contract.
+
+**Decision — what a snapshot must record.** `manifest.json` carries everything needed to reconstruct the capture's meaning without the code that wrote it: source id, target season, adapter version, source-policy/licence version, capture (retrieval) timestamp, the MFL response `timestamp` **as vendor response metadata only**, the filters actually sent per cohort, `totalDrafts`/`totalPicks` where supplied, raw and normalized content hashes, the player-directory hash, row counts, identity-resolution counts, cohort exact/approximate status, and the code SHA when available.
+
+`source_as_of_utc` is **never** populated from MFL's response `timestamp`. That field is response-generation time (`docs/DATA_SOURCES.md` 13.5) and treating it as a data-as-of time would manufacture a freshness claim.
+
+**Decision — append-only semantics.** A timestamped snapshot directory is immutable. Writing a *new* timestamp appends. Writing an *existing* path whose content hashes match is an idempotent no-op, so a retried workflow run is safe. Writing an existing path with different content **fails closed** and writes nothing. A later snapshot may never mutate an earlier one, and `ffdraft validate-market-history` re-hashes every retained file against its manifest so tampering or truncation is detected rather than assumed away.
+
+**Consequences:** the repository stays private (ADR-016 still binds through Phase 6), so retaining a vendor payload here is a private research cache and not redistribution. `market-data` must be excluded from any future release archive or Pages publish. The store grows by roughly one hundred kilobytes a day at the retained cohort count, which is affordable for the three seasons ADR-010 needs before a learned arbitrage model can be revisited. Phase 7 owns scheduling the capture; Phase 5 ships the command and a manually triggered workflow, which is the minimum needed to prove the path works.
+
+**Revisit if:** the branch outgrows what a clone can carry (move to release assets keyed by the same layout), or the repository becomes public and the retained vendor payloads need a redistribution review first.
+
+## ADR-039 — The Phase-5 cohort sufficiency rule, frozen before its measurement
+
+**Date:** 2026-08-20 (Phase 5, before the cohort measurement was run)
+
+**Status:** accepted
+
+**Context:** ADR-012 chose the widest reliable MFL cohort and required the measurement to be repeated at the start of Phase 5, because the 2026-08-17 counts came from only 410 aggregated drafts. The risk in repeating it is obvious: run the measurement first, then pick the threshold that blesses whichever cohort looks appealing. Phase 4 solved the same problem by writing the rule into code before the run that decided it (ADR-030), and Phase 5 does the same.
+
+**Decision — the rule.** `phase5_cohort_v1`, implemented in `ffdraft.market.cohorts` as a frozen dataclass with a pure evaluator. A candidate cohort is **sufficient** only if all of:
+
+| Clause | Bound | Why this bound |
+|---|---:|---|
+| priced players | >= 200 | A structural floor. The published board is 300 deep; a cohort pricing fewer than 200 players cannot describe it. |
+| cohort drafts (`totalDrafts`) | >= 300 | The 2026-08-17 unfiltered aggregate carried 410 drafts and was already judged usable. Three hundred is the point below which a cohort is thinner than the evidence ADR-012 was written against. |
+| top-100 fair-board coverage | >= 0.95 | The top 100 is where a draft is decided. Five missing prices out of a hundred is the most an arbitrage board can lose there and still be worth reading. |
+| top-150 fair-board coverage | >= 0.90 | The deeper board tolerates more gaps, because a missing price there costs one row rather than a first-round decision. |
+| median `draftsSelectedIn` over priced top-150 players | >= 25 | Cohort-level draft counts can be inflated by drafts that touched only a handful of players. The per-player median is the direct question: how many drafts actually priced *this* player? |
+| identity coverage | >= 0.95 | The launch identity threshold (`docs/DATA_CONTRACTS.md` 12). A cohort we cannot join is not a cohort we can publish. |
+
+**Decision — the selection policy.** For each launch (scoring preset, league size) pair, candidates are ordered by **specificity** — a cohort constraining both scoring and league size outranks one constraining a single axis, which outranks the unfiltered aggregate — and the **most specific sufficient** candidate wins. If no specific candidate is sufficient, the widest sufficient candidate wins. If nothing is sufficient, the widest candidate is used anyway and the assignment is flagged `cohort_insufficient`; a market that is thin is still the market, and refusing to publish would help nobody.
+
+Specificity never beats sufficiency. A cohort whose filter text exactly matches a preset but which prices 40 players loses to the unfiltered aggregate, and the rule says so before the numbers are known.
+
+**Decision — HALF-PPR can never be exact.** MFL exposes `IS_PPR` as a boolean. There is no verified filter that means half-PPR, so every HALF assignment is `cohort_approximate` regardless of what the measurement shows. Calling it exact would be a truthfulness failure of exactly the kind ADR-012 exists to prevent.
+
+**Consequences:** the measurement command is offline and reproducible — it reads a retained snapshot (ADR-038) rather than the network, so its report can be regenerated and diffed. The selection is recorded per preset with the filters actually sent, the sufficiency verdict per clause, and the exact/approximate flag. Re-running the rule against a later snapshot may legitimately select a different cohort as the draft season matures; that is the rule working, and each build records which cohort it used.
+
+**Revisit if:** MFL publishes a half-PPR filter or a per-cohort dispersion statistic, or a season of retained snapshots shows a clause is systematically un-meetable and the bound was wrong rather than the source.
+
+## ADR-040 — A0, the deterministic arbitrage baseline, frozen before its ranking
+
+**Date:** 2026-08-20 (Phase 5, before the 2026 arbitrage board was produced)
+
+**Status:** accepted. Implements ADR-003 and ADR-010.
+
+**Context:** V1 ships `arbitrage_mode = baseline` (ADR-010). What that baseline computes has to be fixed before anyone looks at which players it likes, for the same reason every Phase-4 rule was.
+
+**Decision — the raw quantity stays raw.**
+
+```text
+rank_gap = market_adp - fair_rank
+```
+
+Positive means the model would take the player earlier than the market does — a bargain. Zero is agreement. Negative means the market is paying up relative to intrinsic value. This is published on every row and is never replaced by a derived score.
+
+**Decision — draft-region normalization is a log ratio.**
+
+```text
+regional_value_gap = ln(market_adp / fair_rank)
+```
+
+Zero is exact agreement, positive is a bargain and negative is a market premium, with the same sign convention as `rank_gap`. It is used because the same absolute gap means different things in different regions of a draft: eight picks between fair rank 3 and ADP 11 is a round of value in the first round; eight picks between 180 and 188 is noise. A ratio says that directly, is monotone in `market_adp` for a fixed fair rank, and has no fitted parameter to tune. Both `market_adp > 0` and `fair_rank >= 1` hold by contract, so the logarithm is always finite.
+
+**Decision — the score is a within-preset percentile of `regional_value_gap`.** `arbitrage_score` is the midpoint percentile of a row's `regional_value_gap` within its own (league preset, scoring preset) block, on 0-100, rounded to two decimals, with tied gaps receiving the mean of their group's midpoint percentiles. It is an *ordering*, not a magnitude: 100 means "the biggest bargain signal on this board", not "worth 100 of anything". Percentile rather than an affine transform because the gap's scale depends on how deep the market board runs, and any fixed linear mapping would pin most rows at one end.
+
+**Decision — no reliability multiplier.** Market-data quality reaches the reader through `confidence` and `quality_flags` (ADR-041) and nowhere else. Folding a reliability weight into the score would produce a number that is neither a clean ordering of the signal nor an honest statement about the data, and would make two rows with the same gap incomparable for a reason the reader cannot see.
+
+**Decision — what stays null.** Under `arbitrage_mode = baseline`, `expected_surplus_vorp` and `p_positive_surplus` are null on every row, `market_adp_sd` is null because MFL publishes no standard deviation, and `market_trend` is null until ADR-042's history requirement is met. None of them is approximated by a stand-in.
+
+**Decision — fair rank, not tier.** A0 consumes the promoted median-simulated-VORP fair rank (ADR-034) and never the tier ordinal or a tier edge. Tier boundaries failed their stability gate (ADR-035); fair rank did not, and the two must not be confused. The tier instability therefore does *not* become an arbitrage confidence penalty, because A0 does not depend on the quantity that is unstable.
+
+**Consequences:** the method version `a0_rank_gap_v1` is recorded in the arbitrage method card, in `build_metadata.json` and on the build. Changing the formula is a new version with its own ADR, not an edit. Because the score is a within-block percentile, an arbitrage board cannot be compared row-for-row across presets by score alone — `rank_gap` and `regional_value_gap` are the cross-preset comparable quantities, and both are published.
+
+## ADR-041 — Arbitrage confidence is a data-quality rubric, not a probability
+
+**Date:** 2026-08-20 (Phase 5, before the 2026 arbitrage board was produced)
+
+**Status:** accepted
+
+**Context:** `arbitrage_record.confidence` takes `high|medium|low|unknown`. In baseline mode there is no fitted model and therefore no probability of anything, so the field has to mean something else — or it would be read as one.
+
+**Decision.** `confidence` states **how much the market price on this row can be trusted as a description of the reader's league**. It is computed by `phase5_confidence_v1`, a deterministic rubric over observable source properties, evaluated in a fixed order so that exactly one clause decides and Phase 6 can say which:
+
+1. **unknown** — no market sample size at all.
+2. **low** — any of: the cohort failed ADR-039's sufficiency rule; fewer than 30 drafts priced the player; identity resolved through the secondary (unlicensed-mirror) bridge only; the snapshot is older than the market freshness budget.
+3. **high** — all of: the cohort is *exact* for this preset; at least 200 drafts priced the player; the snapshot is fresh; identity resolved through the primary bridge or both.
+4. **medium** — everything else.
+
+Every fired clause is recorded, so a row can be explained rather than merely labelled.
+
+**Decision — dispersion is described, not scored.** `adp_low`/`adp_high` come from MFL's `minPick`/`maxPick`, which are extreme order statistics: they widen as more drafts are sampled. Two players with different sample sizes therefore cannot be compared on that range, and using it as a confidence input would systematically punish the best-sampled players. It is published, and a `wide_market_range` flag fires when the range spans five rounds or more, but it does not move the confidence tier.
+
+**Decision — the flag vocabulary.** `cohort_approximate`, `cohort_insufficient`, `low_market_sample`, `wide_market_range`, `insufficient_trend_history`, `market_snapshot_stale`, `secondary_identity_bridge_only`. Flags are additive and orthogonal to the tier; a `medium` row can carry three of them.
+
+**Consequences:** `confidence` never appears in the score arithmetic (ADR-040), so a reader can sort by signal and filter by data quality independently. Because HALF is permanently approximate (ADR-039), HALF rows cannot reach `high`; that is the source's limitation stated plainly rather than smoothed over.
+
+## ADR-042 — Market trend is a trailing seven-day slope over our own retained snapshots
+
+**Date:** 2026-08-20 (Phase 5)
+
+**Status:** accepted
+
+**Context:** `arbitrage_record.market_trend` exists in the contract and has never had a definition. MFL's historical export cannot supply one (ADR-010): it is a season aggregate, not a series.
+
+**Decision — the definition.** `phase5_trend_v1`. Over the retained snapshots (ADR-038) of the **same source, season and cohort**, in the seven days ending at the latest snapshot, fit an ordinary least-squares line of `market_adp` on days elapsed and publish
+
+```text
+market_trend = -slope        # picks per day
+```
+
+so that **positive means the player is moving earlier — getting more expensive**, matching the sign convention of `rank_gap`.
+
+**Decision — the sufficiency requirement.** At least **three distinct observation days** spanning at least **three days**. Below that, `market_trend` is null and the row carries `insufficient_trend_history`. The window length never silently changes: a "7-day trend" computed over whatever history happens to exist would mean a different thing on every row, which is worse than no number.
+
+**Decision — the mechanics.** Observations are keyed by canonical `player_id`; cohorts are never mixed, because a change of cohort changes the population being priced and would masquerade as movement. Duplicate snapshot timestamps are impossible by the store's own uniqueness rule; multiple snapshots within one day are all used as observations while still counting as one observation *day*. No outlier rejection: with three to seven points there is nothing to reject robustly, and silently dropping a point is how a trend becomes an artefact.
+
+**Consequences:** the first production snapshot has no history, so **every 2026 launch row publishes `market_trend = null` with `insufficient_trend_history`**. That is the correct output and must not be replaced by a fabricated movement. The infrastructure and its tests exist now, driven by synthetic multi-day histories, so the field becomes informative on its own as the store fills — roughly three days after daily capture begins.
+
+## ADR-043 — Current player status is a separate canonical artifact, and it is annotation only
+
+**Date:** 2026-08-20 (Phase 5)
+
+**Status:** accepted. Implements ADR-011 for the public layer.
+
+**Context:** ADR-011 named Sleeper the current injury/status source. Phase 6 wants that data on the draft sheet. Two ways to deliver it are wrong: copying mutable injury text onto all nine tier rows per player (and again onto every arbitrage row), and letting it near the model.
+
+**Decision — a dedicated artifact.** `player_status.json` / `player_status.csv`, one row per canonical `player_id`, validated against `schemas/player_status.schema.json` (1.0). Phase 6 joins it to Tier and Arbitrage rows in the browser by `player_id`. Keeping it physically separate keeps a nine-fold duplication out of the payload and keeps mutable current-state data out of artifacts whose numbers come from a frozen model.
+
+**Decision — the fields.** nflverse roster status, team and depth-chart position; Sleeper `status`, `injury_status`, `injury_body_part`, `injury_notes`, `injury_start_date`, `practice_participation`, `practice_description`, `depth_chart_position`, `depth_chart_order`; the observation time; the contributing source ids; quality flags. The Sleeper contract (`sleeper_player_status`) moves to **1.1** to carry the three fields it did not previously normalize. All of them are nullable: Sleeper legitimately omits injury fields for healthy players, and making them required would force a fabricated value.
+
+**Decision — the join direction is unchanged.** nflverse → Sleeper on `sleeper_id` (ADR-011/ADR-019). Sleeper's own `gsis_id` remains a cross-check that fails the record closed on a mismatch, never a key.
+
+**Decision — annotation only, proved by test.** No status field may enter the intrinsic feature matrix, a projection, a VORP, a fair rank, a tier, or an arbitrage score. A test mutates every status field on a fixture and asserts the tier and arbitrage artifacts are byte-identical. The intrinsic model was validated on `intrinsic_core_v1` and on nothing else; a current-state field has no development-era support and could not have been.
+
+**Decision — degraded mode.** If Sleeper is unreachable the build does not fail. nflverse roster status still populates the artifact, every Sleeper-specific field is null, the source is recorded `failed` in `build_metadata.json` with a warning, and the Tier board is untouched. A market or status outage may never invalidate or retrain the intrinsic model.
+
+**Consequences:** Sleeper's non-commercial obligation (ADR-013 note, `docs/SECURITY_LICENSE.md` 10) now binds a published artifact, so the attribution and source metadata travel with the build for Phase 6's methodology panel. `player_status` joins the artifact envelope's `artifact` vocabulary, which is an additive change to a 1.0 contract.
+
+## ADR-044 — Richer lagged historical injury features are a 2027 intrinsic-refresh candidate, not a Phase-5 addition
+
+**Date:** 2026-08-20 (Phase 5)
+
+**Status:** accepted
+
+**Context:** integrating Sleeper's current injury data makes an adjacent idea tempting: nflverse publishes historical weekly injury reports, so the intrinsic model could learn from prior-season injury history. It probably should, eventually. It must not now.
+
+**Decision.** No injury feature is added to `intrinsic_core_v1`, no `intrinsic_core_v2` is created, and `intrinsic-cb-hurdle-v1` is not retrained during Phase 5. The idea is recorded as a **2027 intrinsic-refresh candidate** in `docs/MODELING.md` and carried in `SESSION_STATE.md`'s open questions.
+
+**Why not now.** Adding the family would require a new feature-set version, a full historical feature rebuild, a new rolling evaluation and a new candidate comparison — and, critically, a **new final holdout**. The 2025 holdout was evaluated once and is spent (ADR-036). There is no untouched season left to promote a new feature set against in 2026, and promoting one without a holdout would abandon the discipline that makes every other number in this project mean something.
+
+**What a future refresh may investigate** (only if each can be reconstructed leakage-safely against the draft anchor, and the licensing and semantics still hold): prior-season injury-report weeks; repeated limited/DNP practice patterns; prior-season games missed by injury category; recurring body-part or injury-category signals.
+
+**Decision — current annotations are not a substitute.** The Sleeper status artifact (ADR-043) describes *today*. It is not a model feature, it is not a proxy for one, and a reader who sees an injury badge next to a fair rank is seeing two independent things — a frozen preseason projection, and a current-state note the projection has never seen.
+
+**Revisit at:** the 2027 model refresh, which gets its own feature-set version and its own untouched evaluation season.
