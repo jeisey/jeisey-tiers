@@ -28,7 +28,7 @@ from ffdraft.arbitrage.frozen import (
 )
 from ffdraft.market.cohorts import COHORT_SUFFICIENCY_RULE
 from ffdraft.market.trend import TREND_RULE
-from ffdraft.timeutil import utc_now
+from ffdraft.timeutil import isoformat_utc, utc_now
 
 __all__ = ["ARBITRAGE_CARD_NAME", "build_card", "card_markdown", "write_arbitrage_card"]
 
@@ -61,7 +61,7 @@ def build_card(
 
     return {
         "card_version": "1.0",
-        "generated_at_utc": utc_now().isoformat().replace("+00:00", "Z"),
+        "generated_at_utc": isoformat_utc(utc_now()),
         "git_sha": git_sha,
         "method": {
             "name": "A0 — fair rank versus ADP",

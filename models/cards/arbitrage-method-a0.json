@@ -272,8 +272,8 @@
     "player_unpriced": "no arbitrage row; the player keeps his tier row",
     "stale_snapshot": "every row flagged market_snapshot_stale and capped at low confidence"
   },
-  "generated_at_utc": "2026-08-20T14:47:07.909298Z",
-  "git_sha": "239db00",
+  "generated_at_utc": "2026-08-20T18:19:30Z",
+  "git_sha": "5346376",
   "identity": {
     "name_matching": "never resolves a production record",
     "policy": "namespaced canonical ids, two independent bridges, fail closed (ADR-019)",

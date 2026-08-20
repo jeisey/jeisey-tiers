@@ -1,6 +1,6 @@
 # Arbitrage method card — A0, fair rank versus ADP
 
-**Version** `a0_rank_gap_v1` · **mode** `baseline` · **generated** 2026-08-20T14:47:07.909298Z · **code** `239db00`
+**Version** `a0_rank_gap_v1` · **mode** `baseline` · **generated** 2026-08-20T18:19:30Z · **code** `5346376`
 
 ## Why there is no model here
 
