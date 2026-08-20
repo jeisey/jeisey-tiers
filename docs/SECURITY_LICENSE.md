@@ -137,6 +137,13 @@ Because an optional source may permit only non-commercial reuse, treat any of th
 
 The code may remain open/public, but source rights are separate.
 
+**Phase-5 change of exposure (2026-08-20).** Sleeper's obligation used to bind only what the pipeline *read*. It now binds what the site *publishes*: `player_status.json` and `player_status.csv` carry Sleeper's `status`, `injury_status`, `injury_body_part`, `injury_notes`, `practice_participation` and depth-chart fields into a public artifact (ADR-043). Two consequences:
+
+- Sleeper attribution is no longer optional politeness on a methodology panel. The artifact records its contributing `source_ids` per row and `build_metadata.player_status.source_ids` records them per build, so a Phase-6 UI has what it needs to attribute; section 9 requires it to.
+- The retained status captures on the `market-data` branch are a **private research cache**, not redistribution: the repository is private through Phase 6 (ADR-016), only normalized rows are kept, and the branch must be excluded from any release archive or Pages publish. If ADR-016 is revisited in Phase 7, that exclusion is part of the decision, not an implementation detail.
+
+MyFantasyLeague's published rules permit the ADP read and are unchanged; the Phase-5 obligations the adapter honours (registered User-Agent, one player-database request per day, bounded 429 backoff, no credentials on the public path) are recorded in ADR-017 and `config/source-registry.yaml`.
+
 ## 11. Privacy
 
 No user accounts/analytics are needed for V1. Prefer no third-party behavioral analytics. If basic analytics are later desired, require a privacy decision and avoid collecting draft/user data by default.

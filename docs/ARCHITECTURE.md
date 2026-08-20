@@ -62,6 +62,10 @@ Forbidden:
 
 Enforce the boundary in code by keeping market-source modules outside the intrinsic feature package and adding a forbidden-feature test.
 
+**Phase-5 implementation.** The boundary is now checked by walking the import graph, not by inspection. `tests/contract/test_architecture_boundary.py` parses every module under `ffdraft.features`, `ffdraft.labels`, `ffdraft.modeling`, `ffdraft.simulation`, `ffdraft.tiers` and `ffdraft.scoring`, follows first-party imports transitively — function-local imports included, since a deferred import is still an import — and fails on any path that reaches `ffdraft.market`, `ffdraft.sources.market` or `ffdraft.arbitrage`. It also asserts the *allowed* direction exists, so a market layer that touched nothing could not pass by being inert.
+
+That test found a real edge on its first run: the Sleeper status capture imported the market snapshot store for its append-only primitives, which pulled `pipeline.current` and `modeling.frozen` across the line. The retention mechanism — immutable timestamped directories, content hashes, deterministic bytes — is a filesystem discipline rather than market data, so it moved to `ffdraft.retention`, which both packages build on without either importing the other.
+
 ### 3.2 Browser boundary
 
 The frontend may load only generated public files under `public/data/` (or Vite-equivalent asset paths). It must not directly call MFL/Sleeper/FantasyCalc/nflverse in the critical render path.
@@ -236,6 +240,8 @@ Pure-ish transforms from canonical historical snapshots to model matrices. No so
 
 ### `modeling/`
 
+Includes `build_config.py`, which holds the current build's frozen parameter shape. It lives here rather than in `pipeline/` because `modeling/frozen.py` names it, and importing it from the pipeline dragged the whole current-build dependency tree — the Sleeper status package included — onto the intrinsic side of the import graph.
+
 Training, fold generation, metrics, calibration, artifact versioning. Separate intrinsic and arbitrage subpackages.
 
 ### `simulation/`
@@ -258,9 +264,21 @@ Contiguous segmentation only. It consumes ranked intrinsic distribution summarie
 > gate). Nothing in the package imports a market source, and nothing in it knows what a
 > market is.
 
+### `market/`
+
+Cohort catalogue and the frozen sufficiency rule, point-in-time capture, the snapshot manifest, cohort measurement, market trend, and the current price layer. **Market data only**; the boundary in 3.1 is enforced against this package by name.
+
+### `retention/`
+
+The append-only, content-addressed capture store: immutable timestamped directories, fail-closed rewrites, deterministic gzip and JSON. Source-neutral on purpose, so market snapshots and status captures share one mechanism without importing each other.
+
 ### `arbitrage/`
 
-Market normalization features, realized-surplus target, baseline score, optional learned model, calibration.
+The frozen A0 baseline (`rank_gap`, `regional_value_gap`, the within-preset percentile score), the data-quality confidence rubric, the board build, and the generated method card. Realized-surplus targets and a learned model remain out of scope until ADR-010's revisit condition is met.
+
+### `status/`
+
+Current player status: the Sleeper capture, its retention, and the annotation-only `player_status` artifact. Nothing here may enter a prediction (ADR-043).
 
 ### `artifacts/`
 
@@ -303,6 +321,25 @@ Daily ADP history is analytically valuable and may not be reconstructable later.
 - include source terms decision and schema version in manifest.
 
 Alternative acceptable designs: versioned GitHub release assets or another free append-only artifact store, provided history survives workflow retention and remains reproducible. Normal transient GitHub Actions artifacts alone are not sufficient as the sole historical market store.
+
+**Phase-5 implementation (ADR-038).** Captures live on the dedicated long-lived orphan branch **`market-data`**, in this repository, never merged into `main` and never rebased:
+
+```text
+market/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/
+    manifest.json                        # provenance, filters, hashes, resolution counts
+    players.raw.json.gz                  # exact MFL player-directory payload bytes
+    cohorts/<cohort_id>/adp.raw.json.gz  # exact MFL ADP payload bytes, one per cohort
+    market.normalized.json.gz            # normalized, identity-resolved quotes
+status/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/
+    manifest.json
+    status.normalized.json.gz            # normalized Sleeper current-status rows
+```
+
+A retained directory is immutable: a new timestamp appends, an identical re-capture is an idempotent no-op, and a differing rewrite fails closed and writes nothing. Every file carries a SHA-256 in its manifest, and `ffdraft validate-market-history` re-hashes them. `source_as_of_utc` is always null for MyFantasyLeague — its response `timestamp` is generation time, retained as vendor metadata and never promoted to a data-as-of claim.
+
+The `status/` prefix applies the same discipline to Sleeper captures, for a different reason: not as future training data, which ADR-044 forbids, but so a status artifact can be rebuilt offline and byte-for-byte from evidence rather than from a feed that has since moved. Only the normalized rows are retained; the 14.6 MB raw player map is not.
+
+`market-data` must be excluded from any future release archive or Pages publish.
 
 ## 7. Model registry strategy
 

@@ -16,7 +16,9 @@ The Phase-0 contract this implements (`docs/DATA_SOURCES.md` 13.5):
 * The envelope ``timestamp`` is response-generation time, not a data-as-of time, so
   ``source_as_of_utc`` stays null rather than inventing freshness.
 * Cohort intersections collapse (``IS_PPR=0&FCOUNT=10`` returned two players), so a quote
-  records the filters actually sent and flags itself approximate (ADR-012).
+  records the cohort it came from and the filters actually sent. Whether that cohort is an
+  *exact* match for a published preset is decided later, per preset, by
+  :mod:`ffdraft.market.cohorts` under the rule ADR-039 froze — never per row here.
 * HTTP 429 means throttled: back off, never retry blindly.
 """
 
@@ -55,21 +57,20 @@ __all__ = [
     "MFL_API_BASE_URL",
     "MFL_SOURCE_ID",
     "ADP_SD_UNAVAILABLE",
-    "COHORT_APPROXIMATE",
     "SOURCE_AS_OF_UNAVAILABLE",
     "MflAdpAdapter",
     "MflPlayerDirectory",
     "MflPlayerDirectoryAdapter",
     "classify_mfl_entity",
-    "widest_cohort",
 ]
 
 MFL_SOURCE_ID = "myfantasyleague_adp"
 MFL_API_BASE_URL = "https://api.myfantasyleague.com/"
 _MFL_LICENSE = "mfl-developer-rules/2026-08-17"
 
-#: Row-level quality flags, serialized into ``market_snapshot.quality_flags``.
-COHORT_APPROXIMATE = "cohort_approximate"
+#: Row-level quality flags, serialized into ``market_snapshot.quality_flags``. Cohort
+#: approximation is *not* one of them: it is a property of a preset assignment, not of a
+#: quote, and lives in :mod:`ffdraft.market.cohorts` (ADR-039).
 ADP_SD_UNAVAILABLE = "adp_sd_unavailable"
 SOURCE_AS_OF_UNAVAILABLE = "source_as_of_unavailable"
 
@@ -90,21 +91,6 @@ def classify_mfl_entity(raw_position: str | None) -> EntityKind:
     if token in _TEAM_UNIT_POSITIONS or token.startswith(_TEAM_UNIT_PREFIX):
         return EntityKind.TEAM_UNIT
     return EntityKind.PLAYER
-
-
-def widest_cohort(scoring_preset: str, league_size: int) -> MarketCohort:
-    """The default cohort: no filters at all.
-
-    ADR-012's "widest reliable cohort". Filtering by scoring *and* league size collapses the
-    sample, so V1 requests the unfiltered aggregate and labels every quote approximate
-    rather than serving a two-player cohort as though it were preset-specific.
-    """
-    return MarketCohort(
-        scoring_preset=scoring_preset,
-        league_size=league_size,
-        filters={},
-        approximate=True,
-    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -214,7 +200,8 @@ class MflAdpAdapter(BaseSourceAdapter):
 
     source_id = MFL_SOURCE_ID
     resource = "export?TYPE=adp"
-    adapter_version = "1.0"
+    #: 2.0 with `market_quote` contract 2.0: a quote records its cohort, not a preset.
+    adapter_version = "2.0"
     contract = MARKET_QUOTE_CONTRACT
     recorded_schema_fixture = "mfl_adp_current_default"
     license_policy_version = _MFL_LICENSE
@@ -240,8 +227,6 @@ class MflAdpAdapter(BaseSourceAdapter):
         dropped = 0
 
         base_flags = [ADP_SD_UNAVAILABLE, SOURCE_AS_OF_UNAVAILABLE]
-        if cohort.approximate:
-            base_flags.insert(0, COHORT_APPROXIMATE)
 
         for record in records:
             mfl = normalize_id(IdNamespace.MFL, record.get("id"))
@@ -258,6 +243,7 @@ class MflAdpAdapter(BaseSourceAdapter):
                 {
                     "source_id": self.source_id,
                     "season": season,
+                    "cohort_id": cohort.cohort_id,
                     "external_player_id": mfl.value,
                     "average_pick": average,
                     "market_rank": _int(record.get("rank")),
@@ -270,10 +256,7 @@ class MflAdpAdapter(BaseSourceAdapter):
                     "source_as_of_utc": None,
                     "entity_kind": str(kind),
                     "raw_position": raw_position,
-                    "scoring_preset": cohort.scoring_preset,
-                    "league_size": cohort.league_size,
-                    "cohort_approximate": cohort.approximate,
-                    "source_format_detail": cohort.source_format_detail,
+                    "source_format_detail": cohort.filter_query,
                     "quality_flags": ",".join(base_flags),
                 }
             )
@@ -281,7 +264,8 @@ class MflAdpAdapter(BaseSourceAdapter):
         flags.note("market_rows_without_usable_price", dropped)
         detail: dict[str, str] = {
             "season": str(season),
-            "cohort": cohort.source_format_detail,
+            "cohort_id": cohort.cohort_id,
+            "cohort_filters": cohort.filter_query,
             **flags.detail,
         }
         if envelope:
@@ -332,21 +316,6 @@ class MflAdpAdapter(BaseSourceAdapter):
                     ),
                     observed="populated",
                     expected="null for every row",
-                ),
-            )
-        approximate = batch.frame.filter(pl.col("cohort_approximate")).height
-        if approximate:
-            checks.append(
-                QualityCheck.fail(
-                    "market.cohort_approximate",
-                    stage=self.source_id,
-                    message=(
-                        "cohort is approximate; the UI must not present it as "
-                        "preset-specific ADP (ADR-012)"
-                    ),
-                    observed=f"{approximate} of {batch.frame.height} row(s)",
-                    expected="labelled, not exact",
-                    severity=Severity.WARNING,
                 ),
             )
         unknown = batch.frame.filter(pl.col("entity_kind") == str(EntityKind.UNKNOWN)).height

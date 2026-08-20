@@ -130,24 +130,74 @@ class CanonicalPlayer:
 
 @dataclass(frozen=True, slots=True)
 class MarketCohort:
-    """Which slice of the market a quote describes.
+    """One slice of the market, identified by the filters that define it.
 
-    ADR-012: MFL cohort intersections collapse, so a snapshot usually comes from a wider
-    cohort than the preset it is attached to. ``approximate`` records that honestly and
+    A cohort is a *request*, not a preset. Phase 1 conflated the two, which meant an
+    unfiltered aggregate had to claim a scoring preset and a league size it did not
+    describe. Phase 5 separates them: a cohort states what its filters actually constrain
+    (``scoring_semantics`` / ``league_size_semantics``, either of which may be ``None`` for
+    "unconstrained"), and :class:`~ffdraft.market.cohorts.CohortAssignment` records which
+    cohort a given preset was served from and whether that was exact (ADR-039).
+
     ``filters`` records exactly what was sent, so nothing has to be reconstructed later.
     """
 
-    scoring_preset: str
-    league_size: int
+    cohort_id: str
     filters: Mapping[str, str] = field(default_factory=dict)
-    approximate: bool = True
+    label: str = ""
+    #: The scoring preset this cohort's filters actually select, or ``None`` when the
+    #: request does not constrain scoring. MFL exposes ``IS_PPR`` as a boolean, so HALF is
+    #: never expressible here (ADR-039).
+    scoring_semantics: str | None = None
+    #: The league size this cohort's filters actually select, or ``None`` when unconstrained.
+    league_size_semantics: int | None = None
+
+    def __post_init__(self) -> None:
+        if not self.cohort_id.strip():
+            raise ValueError("a market cohort needs a non-empty cohort_id")
+        object.__setattr__(self, "filters", dict(self.filters))
 
     @property
-    def source_format_detail(self) -> str:
-        """Human-readable filter record for ``market_snapshot.source_format_detail``."""
+    def filter_query(self) -> str:
+        """The filters as a stable ``KEY=value&KEY=value`` string, or ``"no filters"``."""
         rendered = "&".join(f"{key}={value}" for key, value in sorted(self.filters.items()))
-        label = rendered or "no filters"
-        return f"{label} ({'approximate' if self.approximate else 'exact'} cohort)"
+        return rendered or "no filters"
+
+    @property
+    def excludes_keepers(self) -> bool:
+        """Whether this cohort's filters exclude keeper and dynasty drafts (ADR-045).
+
+        A dynasty *rookie* draft prices only rookies, so a rookie's "average pick" there is
+        a pick number in a rookie-only draft rather than a redraft ADP. A board this
+        project publishes is a redraft board (``season_mode: redraft``), so a cohort that
+        cannot say it excludes those drafts cannot price it.
+        """
+        return str(self.filters.get("IS_KEEPER", "")).upper() == "N"
+
+    @property
+    def specificity(self) -> int:
+        """How many axes this cohort constrains. Higher is more specific (ADR-039)."""
+        return int(self.scoring_semantics is not None) + int(
+            self.league_size_semantics is not None,
+        )
+
+    def is_exact_for(self, scoring_preset: str, league_size: int) -> bool:
+        """Whether this cohort exactly describes ``(scoring_preset, league_size)``.
+
+        Both axes must be constrained *and* match. An unconstrained axis is never exact:
+        "any league size" is not "twelve teams", and saying otherwise is the truthfulness
+        failure ADR-012 exists to prevent.
+        """
+        return (
+            self.scoring_semantics is not None
+            and self.league_size_semantics is not None
+            and self.scoring_semantics == scoring_preset
+            and self.league_size_semantics == league_size
+        )
+
+    def source_format_detail(self, *, approximate: bool) -> str:
+        """Human-readable filter record for ``market_snapshot.source_format_detail``."""
+        return f"{self.filter_query} ({'approximate' if approximate else 'exact'} cohort)"
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,7 +213,7 @@ class MarketQuote:
     external_player_id: str
     average_pick: float
     retrieved_at_utc: datetime
-    cohort: MarketCohort
+    cohort_id: str
     market_rank: int | None = None
     min_pick: float | None = None
     max_pick: float | None = None
@@ -196,7 +246,12 @@ class PlayerStatusObservation:
     status: str | None = None
     injury_status: str | None = None
     injury_body_part: str | None = None
+    #: Sleeper publishes these for some injured players and omits them for healthy ones.
+    #: Nullable by design (ADR-043); never fabricated to satisfy a required field.
+    injury_notes: str | None = None
+    injury_start_date: str | None = None
     practice_participation: str | None = None
+    practice_description: str | None = None
     depth_chart_position: str | None = None
     depth_chart_order: int | None = None
     #: Sleeper publishes ``gsis_id`` on only ~32% of records, so it is a cross-check, never

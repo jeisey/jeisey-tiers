@@ -1,0 +1,346 @@
+{
+  "board": {
+    "build_id": "2026-intrinsic-cb-hurdle-v1-20260820T142628Z",
+    "confidence_counts": {
+      "low": 2124
+    },
+    "presets": [
+      {
+        "league_preset_id": "redraft-10",
+        "scoring_preset": "HALF"
+      },
+      {
+        "league_preset_id": "redraft-10",
+        "scoring_preset": "PPR"
+      },
+      {
+        "league_preset_id": "redraft-10",
+        "scoring_preset": "STD"
+      },
+      {
+        "league_preset_id": "redraft-12",
+        "scoring_preset": "HALF"
+      },
+      {
+        "league_preset_id": "redraft-12",
+        "scoring_preset": "PPR"
+      },
+      {
+        "league_preset_id": "redraft-12",
+        "scoring_preset": "STD"
+      },
+      {
+        "league_preset_id": "redraft-14",
+        "scoring_preset": "HALF"
+      },
+      {
+        "league_preset_id": "redraft-14",
+        "scoring_preset": "PPR"
+      },
+      {
+        "league_preset_id": "redraft-14",
+        "scoring_preset": "STD"
+      }
+    ],
+    "quality_flag_counts": {
+      "cohort_approximate": 2124,
+      "cohort_insufficient": 2124,
+      "insufficient_trend_history": 2124,
+      "low_market_sample": 525,
+      "secondary_identity_bridge_only": 54,
+      "wide_market_range": 1914
+    },
+    "records": 2124
+  },
+  "card_version": "1.0",
+  "cohort_policy": {
+    "assignments": [
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 10,
+        "scoring_preset": "HALF",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 12,
+        "scoring_preset": "HALF",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 14,
+        "scoring_preset": "HALF",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 10,
+        "scoring_preset": "PPR",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 12,
+        "scoring_preset": "PPR",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 14,
+        "scoring_preset": "PPR",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 10,
+        "scoring_preset": "STD",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 12,
+        "scoring_preset": "STD",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      },
+      {
+        "cohort_id": "no-mock-no-keeper",
+        "exact": false,
+        "league_size": 14,
+        "scoring_preset": "STD",
+        "source_format_detail": "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
+        "sufficient": false
+      }
+    ],
+    "half_ppr_note": "MFL exposes IS_PPR as a boolean and publishes no half-PPR filter, so a HALF assignment is never exact (ADR-039)",
+    "insufficient_note": "Filtering to redraft leagues shrinks the cohort-level draft count, so no qualifying cohort clears min_total_drafts. The rule falls through to its documented last resort - widest qualifying candidate, flagged - which puts cohort_insufficient and therefore low confidence on every row. Published rather than repaired (ADR-045)",
+    "measured_from_snapshot": "2026-08-20T14-38-44Z",
+    "redraft_note": "A cohort may price this board only if its filters exclude keeper and dynasty drafts. The 2026 measurement found rookies priced three to five times earlier in the aggregate than in IS_KEEPER=N while veterans did not move: dynasty rookie drafts, where a rookie's average pick is a pick number in a rookie-only draft (ADR-045)",
+    "rule": {
+      "min_identity_coverage": 0.95,
+      "min_median_top150_sample_size": 25.0,
+      "min_priced_players": 200,
+      "min_top100_board_coverage": 0.95,
+      "min_top150_board_coverage": 0.9,
+      "min_total_drafts": 300,
+      "rule_version": "phase5_cohort_v2"
+    },
+    "rule_version": "phase5_cohort_v2"
+  },
+  "confidence": {
+    "dispersion_excluded_because": "minPick/maxPick are extreme order statistics that widen with sample size, so they are not comparable across players",
+    "high": "exact cohort for the preset AND at least 200 drafts priced the player AND a fresh snapshot AND primary-bridge identity",
+    "low": "cohort failed the sufficiency rule, OR fewer than 30 drafts priced the player, OR identity resolved through the secondary bridge only, OR the snapshot is stale",
+    "meaning": "market-data quality, not a probability that the player is a bargain",
+    "medium": "everything else",
+    "rubric_version": "phase5_confidence_v1",
+    "unknown": "no market sample size"
+  },
+  "coverage": {
+    "blocks": [
+      {
+        "board_coverage": 0.7867,
+        "board_players": 300,
+        "league_preset_id": "redraft-10",
+        "priced_players": 236,
+        "scoring_preset": "HALF",
+        "top100_players": 100,
+        "top100_priced": 98,
+        "top150_coverage": 0.9667,
+        "top150_players": 150,
+        "top150_priced": 145
+      },
+      {
+        "board_coverage": 0.7933,
+        "board_players": 300,
+        "league_preset_id": "redraft-10",
+        "priced_players": 238,
+        "scoring_preset": "PPR",
+        "top100_players": 100,
+        "top100_priced": 97,
+        "top150_coverage": 0.9733,
+        "top150_players": 150,
+        "top150_priced": 146
+      },
+      {
+        "board_coverage": 0.77,
+        "board_players": 300,
+        "league_preset_id": "redraft-10",
+        "priced_players": 231,
+        "scoring_preset": "STD",
+        "top100_players": 100,
+        "top100_priced": 98,
+        "top150_coverage": 0.9667,
+        "top150_players": 150,
+        "top150_priced": 145
+      },
+      {
+        "board_coverage": 0.79,
+        "board_players": 300,
+        "league_preset_id": "redraft-12",
+        "priced_players": 237,
+        "scoring_preset": "HALF",
+        "top100_players": 100,
+        "top100_priced": 98,
+        "top150_coverage": 0.9667,
+        "top150_players": 150,
+        "top150_priced": 145
+      },
+      {
+        "board_coverage": 0.7967,
+        "board_players": 300,
+        "league_preset_id": "redraft-12",
+        "priced_players": 239,
+        "scoring_preset": "PPR",
+        "top100_players": 100,
+        "top100_priced": 97,
+        "top150_coverage": 0.9733,
+        "top150_players": 150,
+        "top150_priced": 146
+      },
+      {
+        "board_coverage": 0.7733,
+        "board_players": 300,
+        "league_preset_id": "redraft-12",
+        "priced_players": 232,
+        "scoring_preset": "STD",
+        "top100_players": 100,
+        "top100_priced": 98,
+        "top150_coverage": 0.9667,
+        "top150_players": 150,
+        "top150_priced": 145
+      },
+      {
+        "board_coverage": 0.79,
+        "board_players": 300,
+        "league_preset_id": "redraft-14",
+        "priced_players": 237,
+        "scoring_preset": "HALF",
+        "top100_players": 100,
+        "top100_priced": 97,
+        "top150_coverage": 0.9733,
+        "top150_players": 150,
+        "top150_priced": 146
+      },
+      {
+        "board_coverage": 0.8,
+        "board_players": 300,
+        "league_preset_id": "redraft-14",
+        "priced_players": 240,
+        "scoring_preset": "PPR",
+        "top100_players": 100,
+        "top100_priced": 97,
+        "top150_coverage": 0.9667,
+        "top150_players": 150,
+        "top150_priced": 145
+      },
+      {
+        "board_coverage": 0.78,
+        "board_players": 300,
+        "league_preset_id": "redraft-14",
+        "priced_players": 234,
+        "scoring_preset": "STD",
+        "top100_players": 100,
+        "top100_priced": 98,
+        "top150_coverage": 0.9667,
+        "top150_players": 150,
+        "top150_priced": 145
+      }
+    ],
+    "min_board_coverage": 0.77,
+    "min_top150_coverage": 0.9667,
+    "total_priced_rows": 2124
+  },
+  "degraded_behaviour": {
+    "market_unavailable": "no arbitrage artifact; the Tier board is unaffected",
+    "player_unpriced": "no arbitrage row; the player keeps his tier row",
+    "stale_snapshot": "every row flagged market_snapshot_stale and capped at low confidence"
+  },
+  "generated_at_utc": "2026-08-20T18:19:30Z",
+  "git_sha": "5346376",
+  "identity": {
+    "name_matching": "never resolves a production record",
+    "policy": "namespaced canonical ids, two independent bridges, fail closed (ADR-019)",
+    "unpriced_top_players": 42
+  },
+  "licensing": {
+    "attribution": "MyFantasyLeague ADP export; Sleeper (non-commercial) for status",
+    "decisions": [
+      "ADR-017",
+      "ADR-013",
+      "ADR-016"
+    ],
+    "market": "MyFantasyLeague developer rules: free use, registered client User-Agent transmitted, player database requested at most once per day, 429 backed off"
+  },
+  "limitations": [
+    "No learned model. expected_surplus_vorp and p_positive_surplus are null on every row and are not approximated (ADR-010).",
+    "Cohorts are approximate wherever the source cannot express a preset; HALF always is.",
+    "adp_low/adp_high are extreme order statistics that widen with sample size, so they describe dispersion but do not move confidence (ADR-041).",
+    "wide_market_range fires on most rows at this sample size, which makes it a poor discriminator: with roughly 125 drafts the min-to-max span genuinely does exceed five rounds for most players. The flag is true and unhelpful; a reader should use market_adp_low/market_adp_high directly, which every row carries.",
+    "market_trend is null until at least three observation days spanning three days exist in the retained store (ADR-042).",
+    "Every row carries cohort_insufficient and therefore low confidence: no keeper-free cohort clears the frozen cohort-level draft-count bar. That bar may be the wrong instrument for a filtered cohort - the same cohort carries a median of 105 drafts per top-150 player - but re-specifying it is a separate decision with its own evidence (ADR-045).",
+    "The intrinsic fair rank this compares against carries its own published limitations: the Monte Carlo convergence rule fell through to its fallback (ADR-034) and the tier stability gate failed (ADR-035). A0 uses fair rank, not tier boundaries, so the second does not propagate into this score."
+  ],
+  "market_source": {
+    "adp_sd": null,
+    "adp_sd_note": "MyFantasyLeague publishes no standard deviation; dispersion is min/max pick",
+    "retention": {
+      "decision": "ADR-038",
+      "layout": "market/<source>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/",
+      "mechanism": "dedicated long-lived `market-data` git branch, append-only"
+    },
+    "snapshot_at_utc": "2026-08-20T14:38:44Z",
+    "snapshot_key": "2026-08-20T14-38-44Z",
+    "source_as_of_note": "MyFantasyLeague publishes no data-as-of time; its response timestamp is generation time and is retained as vendor metadata only",
+    "source_as_of_utc": null,
+    "source_id": "myfantasyleague_adp"
+  },
+  "method": {
+    "arbitrage_score": "midpoint percentile of regional_value_gap within one (league preset, scoring preset) block, 0-100; ties share the mean of their group's percentiles",
+    "fair_rank_source": {
+      "artifact": "tiers.json",
+      "intrinsic_model_version": "intrinsic-cb-hurdle-v1",
+      "statistic": "median_vorp",
+      "uses_tier_boundaries": false
+    },
+    "learned_model": null,
+    "ml_historical_feasible": false,
+    "mode": "baseline",
+    "name": "A0 \u2014 fair rank versus ADP",
+    "rank_gap": "market_adp - fair_rank; positive = model would take him earlier",
+    "regional_value_gap": "ln(market_adp / fair_rank); 0 = agreement",
+    "reliability_adjustment": null,
+    "version": "a0_rank_gap_v1"
+  },
+  "revisit_condition": {
+    "decision": "ADR-010",
+    "learned_arbitrage": "at least 3 draft seasons of our own point-in-time snapshots, then an out-of-time promotion gate against A0"
+  },
+  "trend": {
+    "available": false,
+    "history_snapshots": 2,
+    "min_observation_days": 3,
+    "min_span_days": 3.0,
+    "rule_version": "phase5_trend_v1",
+    "sign_convention": "positive = moving earlier (more expensive)",
+    "source": "our own retained point-in-time snapshots only, never MFL history",
+    "statistic": "negated OLS slope of market_adp on days elapsed, picks/day",
+    "window_days": 7.0
+  }
+}

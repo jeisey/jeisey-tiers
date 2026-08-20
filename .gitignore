@@ -31,6 +31,11 @@ web/dist/
 web/public/data/
 *.tsbuildinfo
 
+# A local checkout of the append-only capture store (ADR-038). It is a separate long-lived
+# branch that shares no history with `main`, so a checkout of it must never be committed
+# into a code branch. Clone it beside the repository, or here under this name.
+/market-data/
+
 # Editor / OS noise
 .DS_Store
 .idea/

@@ -140,6 +140,40 @@ Snapshot manifest includes:
 
 If snapshot persistence fails after current public output was otherwise computed, decide whether this is critical. Recommended: during draft season, treat failure as **critical for arbitrage deployment** because losing history undermines future modelability; Tier deployment may proceed independently if workflow architecture supports separate artifacts safely.
 
+### 5.1 Phase-5 implementation
+
+`.github/workflows/market-capture.yml` is the live mechanism, and it is deliberately the *minimum* Phase 5 needed: a manual `workflow_dispatch` plus a push trigger on a single request file, `.github/market-capture.request`. Editing market code never spends a runner or appends a snapshot; bumping `revision:` in the request file (and saying why) does. Scheduling remains a Phase-7 deliverable.
+
+It runs on a GitHub runner for the reason ADR-009 recorded — the development sandbox answers 403 to `CONNECT` for `api.myfantasyleague.com` and `api.sleeper.app`, so verification there is impossible by construction — and it writes to the dedicated long-lived `market-data` branch, never to a code branch.
+
+Order of operations, and why:
+
+1. `ffdraft snapshot-market` retrieves the requested cohorts plus the player directory, normalizes, resolves identity and writes the snapshot into a checkout of `market-data`;
+2. `ffdraft capture-status` retrieves and retains the Sleeper current-status capture;
+3. `ffdraft validate-market-history` re-hashes the whole store **before** anything is pushed, so a corrupt write is caught locally rather than committed;
+4. only then does the job commit and push.
+
+The job is serialized against itself with a `concurrency` group: two concurrent captures could race on the same push, and an append-only store would rather not find out.
+
+**Idempotency is the retry story.** A re-run that produces identical bytes is a no-op, so a failed push can simply be re-run. A re-run that produces *different* bytes for an existing timestamp fails closed — take a new snapshot instead.
+
+### 5.2 Phase-5 commands
+
+```bash
+# network, runner only
+uv run ffdraft snapshot-market --season 2026 --cohorts study --store ../market-data
+uv run ffdraft capture-status  --season 2026 --store ../market-data
+
+# offline, reproducible from retained bytes
+uv run ffdraft validate-market-history ../market-data --season 2026   # market and status
+uv run ffdraft measure-market-cohorts --store ../market-data     # writes docs/market-cohorts/
+uv run ffdraft build-current --store ../market-data              # tiers + player_status
+uv run ffdraft build-arbitrage --store ../market-data            # A0 board, merges metadata
+uv run ffdraft arbitrage-card
+```
+
+`--cohorts` takes `production` (the three cohorts a routine capture retains), `study` (every candidate, for a cohort measurement) or an explicit id list. `build-current --store` reads the retained Sleeper capture instead of calling Sleeper live, which is what makes the status artifact reproducible offline; without it the artifact degrades to nflverse-only and the Tier board is unaffected.
+
 ## 6. Least-privilege permissions
 
 Suggested separation:

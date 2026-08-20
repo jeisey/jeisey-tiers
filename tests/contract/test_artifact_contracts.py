@@ -15,10 +15,12 @@ import pytest
 from ffdraft.artifacts import (
     ARTIFACT_SCHEMA_VERSION,
     ARTIFACT_SPECS,
+    RECORD_SCHEMA_VERSIONS,
     RECORD_SCHEMAS,
     build_envelope,
     load_schema,
     record_field_order,
+    record_schema_version,
     records_to_csv,
     validate_envelope,
     validate_records,
@@ -35,7 +37,21 @@ def test_every_record_schema_is_a_valid_2020_12_document(name):
     schema = load_schema(name)
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
     assert schema["additionalProperties"] is False, "public contracts must be closed"
-    assert schema["properties"]["schema_version"]["const"] == ARTIFACT_SCHEMA_VERSION
+    # A record schema versions independently of the envelope bundle, so one artifact can
+    # gain fields without forcing a bundle-wide break (Phase 5 moved arbitrage_record to
+    # 1.1). The map and the schema file must never disagree about which version that is.
+    assert schema["properties"]["schema_version"]["const"] == record_schema_version(name)
+
+
+def test_the_record_version_map_covers_exactly_the_record_schemas():
+    assert set(RECORD_SCHEMA_VERSIONS) == set(RECORD_SCHEMAS)
+
+
+def test_the_envelope_version_is_the_bundle_version_not_a_record_version():
+    """The envelope carries the bundle version; records carry their own contract version."""
+    envelope = load_schema("artifact_envelope")
+    assert envelope["properties"]["schema_version"]["const"] == ARTIFACT_SCHEMA_VERSION
+    assert set(ARTIFACT_SPECS) <= set(envelope["properties"]["artifact"]["enum"])
 
 
 @pytest.mark.parametrize("artifact", sorted(ARTIFACT_SPECS))

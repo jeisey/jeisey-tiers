@@ -17,6 +17,7 @@ import {
   ARTIFACT_FILENAMES,
   ARTIFACT_SCHEMA_VERSION,
   BUILD_METADATA_FILENAME,
+  RECORD_SCHEMA_VERSIONS,
   type ArtifactName,
 } from "../src/data/contracts";
 
@@ -29,6 +30,7 @@ const SCHEMA_BY_ARTIFACT: Readonly<Record<ArtifactName, string>> = {
   arbitrage: "arbitrage_record",
   projections: "player_projection",
   market_snapshot: "market_snapshot",
+  player_status: "player_status",
 };
 
 function readJson(path: string): Record<string, unknown> {
@@ -62,6 +64,21 @@ describe("TypeScript record types match the JSON Schemas", () => {
     const envelope = readJson(resolve(GOLDEN_DIR, ARTIFACT_FILENAMES[artifact]));
     expect(envelope.schema_version).toBe(ARTIFACT_SCHEMA_VERSION);
     expect(envelope.artifact).toBe(artifact);
+  });
+
+  // A record contract versions independently of the envelope bundle (Phase 5 moved
+  // arbitrage_record to 1.1). Three descriptions of that number now exist — the schema
+  // file, the Python map and this one — so all three are pinned to each other.
+  it.each(ARTIFACTS)("%s records declare their own contract version", (artifact) => {
+    const schema = readJson(resolve(SCHEMA_DIR, `${SCHEMA_BY_ARTIFACT[artifact]}.schema.json`));
+    const properties = schema.properties as Record<string, { const?: string } | undefined>;
+    const declared = RECORD_SCHEMA_VERSIONS[artifact];
+    expect(properties.schema_version?.const).toBe(declared);
+
+    const envelope = readJson(resolve(GOLDEN_DIR, ARTIFACT_FILENAMES[artifact]));
+    for (const record of envelope.records as Record<string, unknown>[]) {
+      expect(record.schema_version).toBe(declared);
+    }
   });
 });
 

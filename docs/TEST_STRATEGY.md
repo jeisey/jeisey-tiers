@@ -298,6 +298,42 @@ Do not chase a vanity percentage. Prioritize high coverage on:
 
 Coverage reporting is useful, but missing a critical invariant is worse than 95% line coverage.
 
+## 8.1 Phase-5 invariants (market, arbitrage, status)
+
+The Phase-5 suites are network-free and driven by synthetic stores, retained fixtures and
+committed source schemas. Five invariants are worth naming because each one fails
+*silently* if it is not tested:
+
+**The intrinsic/market firewall is checked by walking the import graph.**
+`tests/contract/test_architecture_boundary.py` parses every module under the intrinsic
+packages, follows first-party imports transitively — function-local ones included, since a
+deferred import is still an import — and fails on any path reaching `ffdraft.market`,
+`ffdraft.sources.market` or `ffdraft.arbitrage`. It also asserts the *allowed* direction
+exists, so a market layer that touched nothing could not pass by being inert. It found a
+real edge on its first run.
+
+**The store is attacked, not described.** `tests/unit/test_market_snapshot_store.py`
+rewrites a retained snapshot with different bytes, corrupts a payload behind its manifest,
+edits a manifest to disagree with its own path, deletes a file the manifest names, and
+re-runs an identical capture. Determinism is asserted directly, because idempotency is only
+real if unchanged data produces unchanged bytes.
+
+**The A0 sign convention is tested at every interesting value.** A flipped sign crashes
+nothing and quietly tells a drafter to reach for players the model thinks are expensive.
+
+**Confidence is tested for what it ignores.** Dispersion and trend availability must not
+move the tier (ADR-041), so both have negative tests.
+
+**"Annotation only" is proved by mutation.** `tests/integration/test_status_annotation_only.py`
+rewrites every injury, practice and depth field on every fixture player, rebuilds, and
+asserts the tier, projection and arbitrage artifacts are **byte-identical** — plus a
+positive control asserting the status artifact itself did change, so the negative tests
+cannot pass by reading nothing.
+
+Trend tests use synthetic multi-day histories, because the production store cannot yet
+contain one: the correct output at launch is `null`, and a test that only checked the null
+path would prove nothing about the slope.
+
 ## 9. Manual review requirements
 
 Before V1 release, a human/agent visual review should inspect:

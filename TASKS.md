@@ -117,19 +117,28 @@ Tiers ship anyway, with the failure attached: `build_metadata.json` carries a `c
 
 ## Phase 5 — Market snapshots + arbitrage
 
-- [ ] Implement verified current market adapter(s).
-- [ ] Implement append-only daily market snapshot strategy.
-- [ ] Normalize ADP, sample size, spread, scoring/league filters, and IDs.
-- [ ] Implement transparent deterministic fair-rank-vs-ADP baseline.
-- [ ] If Phase 0 says ML feasible: construct historical realized-surplus target.
-- [ ] If ML feasible: generate historical rolling OOF intrinsic predictions.
-- [ ] If ML feasible: train/evaluate arbitrage candidates against simple gap baseline.
-- [ ] Promote ML only if declared out-of-time gates pass; otherwise retain baseline labeling.
-- [ ] Compute daily trend features from retained snapshots.
-- [ ] Generate arbitrage model/method card.
-- [ ] Emit schema-valid arbitrage JSON/CSV.
+- [x] Implement verified current market adapter(s). — `MflAdpAdapter` 2.0 on `market_quote` 2.0; unauthenticated ADP path, registered User-Agent only, 429 backoff, one player-directory request per capture, `adp_sd` permanently null.
+- [x] Implement append-only daily market snapshot strategy. — `ffdraft.retention` + the `market-data` branch (ADR-038). New timestamp appends; identical re-capture is idempotent; a differing rewrite fails closed; every file hashed and re-verified by `validate-market-history`.
+- [x] Normalize ADP, sample size, spread, scoring/league filters, and IDs. — a quote records its cohort, not a preset; identity through the existing fail-closed two-bridge resolver.
+- [x] Implement transparent deterministic fair-rank-vs-ADP baseline. — A0, frozen in `ffdraft.arbitrage` before the board existed (ADR-040).
+- [x] ~~If Phase 0 says ML feasible: construct historical realized-surplus target.~~ — **not feasible** (ADR-010). Historical MFL ADP is a season aggregate recomputed at request time; there is no honest draft-time price to build a surplus label against.
+- [x] ~~If ML feasible: generate historical rolling OOF intrinsic predictions.~~ — not applicable.
+- [x] ~~If ML feasible: train/evaluate arbitrage candidates against simple gap baseline.~~ — not applicable.
+- [x] Promote ML only if declared out-of-time gates pass; otherwise retain baseline labeling. — `arbitrage_mode = baseline` on every row and in the envelope; `expected_surplus_vorp` and `p_positive_surplus` null throughout, enforced by the schema and by a build-time check.
+- [x] Compute daily trend features from retained snapshots. — `phase5_trend_v1` (ADR-042). **Null on every launch row**, correctly: the store holds two snapshots and the rule requires three observation days spanning three days.
+- [x] Generate arbitrage model/method card. — `models/cards/arbitrage-method-a0.{json,md}`, generated from the artifacts, the cohort report and the frozen constants.
+- [x] Emit schema-valid arbitrage JSON/CSV. — 2,124 records across nine preset blocks; `arbitrage_record` 1.1; `validate-artifacts` clean.
 
-**Exit gate:** current arbitrage artifact is reliable and transparent. If ML label is used, it has demonstrably beaten the baseline out-of-time; otherwise baseline mode is explicit.
+Added in the course of the phase, and not in the original list:
+
+- [x] Re-measure the MFL cohort mix (ADR-012 amendment). — `ffdraft measure-market-cohorts`, offline and reproducible from a retained snapshot; report in `docs/market-cohorts/2026-08-20/`.
+- [x] Current player-status artifact. — `player_status` 1.0, one row per canonical player, annotation only (ADR-043).
+- [x] Import-graph enforcement of the intrinsic/market firewall.
+
+**Exit gate: met.** The arbitrage artifact is reliable and transparent, no learned model is claimed, and baseline mode is explicit. Two findings are published rather than repaired, in the ADR-034/ADR-035 tradition:
+
+- **the cohort rule's volume clause blocks every keeper-free cohort.** Filtering to redraft leagues necessarily shrinks the cohort-level draft count, so the selection falls through to its documented last resort and every row carries `cohort_insufficient` and therefore `low` confidence. Re-specifying that clause is a separate decision with its own evidence (ADR-045).
+- **`wide_market_range` fires on 90% of rows** at this sample size. The flag is true and useless; Phase 6 should render `market_adp_low`/`market_adp_high` directly.
 
 ## Phase 6 — Frontend product
 

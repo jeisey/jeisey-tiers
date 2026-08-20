@@ -76,16 +76,17 @@
     "status": "Active",
     "injury_status": "Questionable",
     "injury_body_part": "Hamstring",
-    "injury_notes": null,
+    "injury_notes": "Tweaked it in Thursday's walkthrough; day to day.",
     "practice_participation": "Limited Participation",
-    "practice_description": null,
+    "practice_description": "Limited in team drills, full in individual.",
     "depth_chart_position": "WR",
     "depth_chart_order": 1,
     "gsis_id": "00-0000004",
     "espn_id": 4000004,
     "sportradar_id": "00000003-0000-4000-8000-000000000003",
     "years_exp": 7,
-    "search_rank": 103
+    "search_rank": 103,
+    "injury_start_date": "2026-08-14"
   },
   "5000005": {
     "player_id": "5000005",
@@ -316,8 +317,8 @@
     "team": "NO",
     "team_abbr": "NO",
     "status": "Injured Reserve",
-    "injury_status": null,
-    "injury_body_part": null,
+    "injury_status": "IR",
+    "injury_body_part": "Knee",
     "injury_notes": null,
     "practice_participation": null,
     "practice_description": null,
@@ -327,7 +328,8 @@
     "espn_id": 4000016,
     "sportradar_id": "00000015-0000-4000-8000-000000000015",
     "years_exp": 6,
-    "search_rank": 115
+    "search_rank": 115,
+    "injury_start_date": null
   },
   "5009999": {
     "player_id": "5009999",

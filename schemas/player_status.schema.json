@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/player_status.schema.json",
+  "title": "PlayerStatusRecord",
+  "description": "Current roster and injury/practice status for one canonical player, keyed once by player_id rather than duplicated across every tier and arbitrage row (ADR-043). ANNOTATION ONLY: no field here may enter a projection, a VORP, a fair rank, a tier or an arbitrage score. Optional injury and practice fields are null for healthy players by design, because Sleeper legitimately omits them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "player_id", "display_name",
+    "current_team", "position", "roster_status", "roster_depth_chart_position",
+    "sleeper_status", "injury_status", "injury_body_part", "injury_notes",
+    "injury_start_date", "practice_participation", "practice_description",
+    "depth_chart_position", "depth_chart_order", "observed_at_utc", "source_ids",
+    "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 2000},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "current_team": {"type": ["string", "null"]},
+    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
+    "roster_status": {"type": ["string", "null"], "description": "nflverse roster status, as published (ACT/RES/CUT/...)"},
+    "roster_depth_chart_position": {"type": ["string", "null"]},
+    "sleeper_status": {"type": ["string", "null"]},
+    "injury_status": {"type": ["string", "null"]},
+    "injury_body_part": {"type": ["string", "null"]},
+    "injury_notes": {"type": ["string", "null"]},
+    "injury_start_date": {"type": ["string", "null"]},
+    "practice_participation": {"type": ["string", "null"]},
+    "practice_description": {"type": ["string", "null"]},
+    "depth_chart_position": {"type": ["string", "null"], "description": "Sleeper depth-chart slot"},
+    "depth_chart_order": {"type": ["integer", "null"], "minimum": 1},
+    "observed_at_utc": {"type": "string", "format": "date-time"},
+    "source_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}
