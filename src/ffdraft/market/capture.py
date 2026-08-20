@@ -214,6 +214,7 @@ def build_snapshot(
             ),
         )
 
+    checks.extend(_capture_checks(rows, len(raw_by_cohort)))
     manifest = SnapshotManifest(
         manifest_version=SNAPSHOT_MANIFEST_VERSION,
         source_id=MFL_SOURCE_ID,
@@ -261,32 +262,62 @@ def _cohort_checks(
     batch: SourceBatch,
     cohort_id: str,
 ) -> list[QualityCheck]:
-    """Adapter validation, re-staged so a failure names the cohort that produced it."""
+    """Adapter validation, re-staged so a failure names the cohort that produced it.
+
+    One severity is deliberately downgraded here. The adapter treats an empty payload as a
+    critical source failure, which is right when a source is *supposed* to have data; it is
+    wrong for a candidate cohort in a measurement, because "this cohort is empty" is the
+    finding the measurement exists to produce. ADR-012 was written precisely because MFL's
+    cohort intersections collapse, and a study that refused to record a collapsed cohort
+    would be unable to prove the collapse. Emptiness of the *capture as a whole* is still
+    critical — see :func:`_capture_checks`.
+    """
     report = adapter.validate_raw(batch)
-    checks = [
-        QualityCheck(
-            check_id=check.check_id,
-            stage=f"market.capture.{cohort_id}",
-            status=check.status,
-            severity=check.severity,
-            message=check.message,
-            observed=check.observed,
-            expected=check.expected,
-        )
-        for check in report.checks
-    ]
-    if batch.frame.is_empty():
+    checks: list[QualityCheck] = []
+    for check in report.checks:
+        empty_cohort = check.check_id == "source.too_few_records" and batch.frame.is_empty()
         checks.append(
-            QualityCheck.fail(
-                "market.empty_cohort",
+            QualityCheck(
+                check_id="market.empty_cohort" if empty_cohort else check.check_id,
                 stage=f"market.capture.{cohort_id}",
-                message="cohort returned no usable prices; retained for the record",
-                observed="0 rows",
-                expected="> 0",
-                severity=Severity.WARNING,
+                status=check.status,
+                severity=Severity.WARNING if empty_cohort else check.severity,
+                message=(
+                    "cohort returned no usable prices; retained as evidence that this "
+                    "filter intersection collapses (ADR-012)"
+                    if empty_cohort
+                    else check.message
+                ),
+                observed=check.observed,
+                expected=check.expected,
             ),
         )
     return checks
+
+
+def _capture_checks(rows: Sequence[Mapping[str, Any]], cohorts: int) -> list[QualityCheck]:
+    """Capture-level checks. An empty *capture* is a source outage, not a finding."""
+    if not rows:
+        return [
+            QualityCheck.fail(
+                "market.capture_empty",
+                stage="market.capture",
+                message=(
+                    "no cohort returned a usable price; this is a source failure rather "
+                    "than a cohort measurement"
+                ),
+                observed=f"0 rows across {cohorts} cohort(s)",
+                expected="> 0",
+            ),
+        ]
+    return [
+        QualityCheck.ok(
+            "market.capture_nonempty",
+            stage="market.capture",
+            message="the capture retained usable prices",
+            observed=f"{len(rows)} row(s) across {cohorts} cohort(s)",
+        ),
+    ]
 
 
 def _snapshot_rows(

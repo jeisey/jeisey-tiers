@@ -785,6 +785,12 @@ Specificity never beats sufficiency. A cohort whose filter text exactly matches 
 
 **Consequences:** the measurement command is offline and reproducible — it reads a retained snapshot (ADR-038) rather than the network, so its report can be regenerated and diffed. The selection is recorded per preset with the filters actually sent, the sufficiency verdict per clause, and the exact/approximate flag. Re-running the rule against a later snapshot may legitimately select a different cohort as the draft season matures; that is the rule working, and each build records which cohort it used.
 
+**Clarification (2026-08-20, before the measurement was run).** The measured population is **core positions only** — QB/RB/WR/TE. No bound above changes; this fixes what the bounds are counted over, and it is recorded here because the first capture made the ambiguity visible before the decisive measurement existed.
+
+MFL's ADP export also prices kickers, team defences and IDP. Every clause above is written about the published board, which is core-position only, and the identity clause cites `docs/DATA_CONTRACTS.md` 12, which defines its threshold over "current model-eligible QB/RB/WR/TE players". Counting a kicker in `priced_players` would inflate it, and counting one in the identity denominator would depress coverage for a population the threshold was never about — the first 2026 capture showed 360 unfiltered rows against 342 non-team-unit rows and 297 resolutions, a difference driven almost entirely by positions this project does not model. `total_rows`, `non_core_rows` and `unclassified_rows` are reported alongside so the whole payload stays visible; only the core-position counts feed the rule.
+
+A row is core when the MFL player directory's position token parses exactly to QB/RB/WR/TE. Rows the directory cannot position at all are counted as `unclassified_rows` and excluded from both numerator and denominator, because an unclassifiable row is a directory gap worth seeing rather than a coverage failure to absorb.
+
 **Revisit if:** MFL publishes a half-PPR filter or a per-cohort dispersion statistic, or a season of retained snapshots shows a clause is systematically un-meetable and the bound was wrong rather than the source.
 
 ## ADR-040 — A0, the deterministic arbitrage baseline, frozen before its ranking

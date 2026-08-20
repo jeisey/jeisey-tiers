@@ -151,12 +151,16 @@ class CohortMeasurement:
 
     cohort_id: str
     filters: Mapping[str, str]
-    #: Rows the cohort priced, before identity resolution.
+    #: Core-position (QB/RB/WR/TE) rows the cohort priced, before identity resolution.
+    #: This is the population every rule clause is written about: the published board is
+    #: core-position only, and `docs/DATA_CONTRACTS.md` 12 defines the identity threshold
+    #: over "current model-eligible QB/RB/WR/TE players". Kickers, team defences and IDP
+    #: rows are counted separately below rather than diluting either denominator.
     priced_players: int
     #: MFL's per-cohort ``totalDrafts``, when the envelope supplied one.
     total_drafts: int | None
     total_picks: int | None
-    #: Rows that resolved to a canonical player, and the resolvable denominator.
+    #: Core-position rows that resolved to a canonical player, and their denominator.
     resolved_players: int
     resolvable_players: int
     ambiguous_players: int
@@ -170,6 +174,13 @@ class CohortMeasurement:
     max_pick_available: int
     adp_min: float | None
     adp_max: float | None
+    #: Descriptive counts over the whole cohort payload, core and non-core alike.
+    total_rows: int = 0
+    non_core_rows: int = 0
+    #: Rows the player directory could not position at all. Reported rather than assumed
+    #: non-core: an unclassifiable row is a directory gap, and hiding it in the "not our
+    #: problem" bucket is how a coverage regression goes unnoticed.
+    unclassified_rows: int = 0
 
     @property
     def identity_coverage(self) -> float:
@@ -186,6 +197,9 @@ class CohortMeasurement:
             "resolvable_players": self.resolvable_players,
             "ambiguous_players": self.ambiguous_players,
             "non_player_entities": self.non_player_entities,
+            "total_rows": self.total_rows,
+            "non_core_rows": self.non_core_rows,
+            "unclassified_rows": self.unclassified_rows,
             "identity_coverage": round(self.identity_coverage, 4),
             "top100_board_coverage": round(self.top100_board_coverage, 4),
             "top150_board_coverage": round(self.top150_board_coverage, 4),

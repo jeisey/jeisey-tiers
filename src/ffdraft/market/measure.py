@@ -23,7 +23,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from ffdraft.contracts import EntityKind
+from ffdraft.contracts import CORE_POSITIONS, EntityKind, Position
 from ffdraft.market.cohorts import (
     COHORT_RULE_VERSION,
     COHORT_SUFFICIENCY_RULE,
@@ -138,6 +138,32 @@ class CohortReport:
         }
 
 
+def _core_rows(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[Mapping[str, Any]], int, int]:
+    """Split player rows into core-position, non-core and unclassifiable.
+
+    Position comes from the MFL player directory's raw token, which is available whether or
+    not the row resolved - so an unresolved quarterback still counts in the identity
+    denominator, which is the whole point of measuring coverage. ``Position.parse`` matches
+    exactly, so MFL's team aggregates can never be read as a player position (AGENTS.md
+    section 6).
+    """
+    core: list[Mapping[str, Any]] = []
+    non_core = 0
+    unclassified = 0
+    for row in rows:
+        raw = row.get("raw_position") or row.get("position")
+        position = Position.parse(str(raw)) if raw else None
+        if position is None:
+            unclassified += 1
+        elif position in CORE_POSITIONS:
+            core.append(row)
+        else:
+            non_core += 1
+    return core, non_core, unclassified
+
+
 def _coverage(priced: frozenset[str], board: Sequence[str]) -> float:
     if not board:
         return 0.0
@@ -160,11 +186,11 @@ def measure_cohorts(
     union_top150 = board.union_top(TOP_150)
 
     for capture in manifest.cohorts:
-        rows = [
-            row
-            for row in snapshot.rows_for(capture.cohort_id)
-            if str(row.get("entity_kind")) == str(EntityKind.PLAYER)
+        all_rows = list(snapshot.rows_for(capture.cohort_id))
+        player_rows = [
+            row for row in all_rows if str(row.get("entity_kind")) == str(EntityKind.PLAYER)
         ]
+        rows, non_core, unclassified = _core_rows(player_rows)
         priced_ids = frozenset(str(row["player_id"]) for row in rows if row.get("player_id"))
         top100 = {
             scoring: _coverage(priced_ids, board.top(scoring, TOP_100))
@@ -187,13 +213,16 @@ def measure_cohorts(
         measurements[capture.cohort_id] = CohortMeasurement(
             cohort_id=capture.cohort_id,
             filters=dict(capture.filters),
-            priced_players=capture.row_count,
+            priced_players=len(rows),
             total_drafts=capture.total_drafts,
             total_picks=capture.total_picks,
-            resolved_players=capture.resolved_players,
-            resolvable_players=capture.resolvable_players,
+            resolved_players=len(priced_ids),
+            resolvable_players=len(rows),
             ambiguous_players=capture.ambiguous_players,
             non_player_entities=capture.non_player_entities,
+            total_rows=len(all_rows),
+            non_core_rows=non_core,
+            unclassified_rows=unclassified,
             top100_board_coverage=min(top100.values()) if top100 else 0.0,
             top150_board_coverage=min(top150.values()) if top150 else 0.0,
             median_top150_sample_size=(float(statistics.median(samples)) if samples else None),

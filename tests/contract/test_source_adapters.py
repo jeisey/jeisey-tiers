@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import pytest
 
-from ffdraft.contracts import DepthChartEra, EntityKind, MarketCohort, SourceStatus
+from ffdraft.contracts import DepthChartEra, EntityKind, SourceStatus
+from ffdraft.market.cohorts import COHORT_APPROXIMATE, CohortAssignment, cohort_by_id, widest_cohort
 from ffdraft.sources import (
     NflverseDepthChartAdapter,
     NflversePlayerIdsAdapter,
@@ -27,13 +28,11 @@ from ffdraft.sources import (
 )
 from ffdraft.sources.market import (
     ADP_SD_UNAVAILABLE,
-    COHORT_APPROXIMATE,
     SOURCE_AS_OF_UNAVAILABLE,
     MflAdpAdapter,
     MflPlayerDirectory,
     MflPlayerDirectoryAdapter,
     classify_mfl_entity,
-    widest_cohort,
 )
 from ffdraft.sources.nflverse_history import (
     NflverseCombineAdapter,
@@ -255,7 +254,7 @@ def test_market_quotes_never_claim_a_data_as_of_time(fixture_inputs):
     batch = adapter.normalize(
         fixture_inputs.mfl_adp,
         season=2026,
-        cohort=widest_cohort("PPR", 12),
+        cohort=widest_cohort(),
     )
     assert batch.metadata.source_as_of_utc is None
     assert batch.frame.get_column("source_as_of_utc").null_count() == batch.frame.height
@@ -268,27 +267,68 @@ def test_every_quote_is_flagged_for_the_missing_standard_deviation(fixture_input
     batch = MflAdpAdapter().normalize(
         fixture_inputs.mfl_adp,
         season=2026,
-        cohort=widest_cohort("PPR", 12),
+        cohort=widest_cohort(),
     )
     for flags in batch.frame.get_column("quality_flags").to_list():
         assert ADP_SD_UNAVAILABLE in flags
         assert SOURCE_AS_OF_UNAVAILABLE in flags
 
 
-def test_approximate_cohorts_are_labelled(fixture_inputs):
-    """ADR-012: never present an approximate cohort as preset-specific ADP."""
-    cohort = widest_cohort("PPR", 12)
-    assert cohort.approximate is True
+def test_a_quote_records_its_cohort_not_a_preset(fixture_inputs):
+    """Contract 2.0: cohort approximation is a per-preset verdict, not a row property.
+
+    A quote knows which *request* produced it. Whether that request is an exact match for
+    a published preset is decided later by the frozen selection rule (ADR-039), which is
+    why the row carries `cohort_id` and the assignment carries `exact`.
+    """
+    cohort = widest_cohort()
     assert cohort.filters == {}
-    assert "approximate cohort" in cohort.source_format_detail
+    assert cohort.specificity == 0
+    assert cohort.is_exact_for("PPR", 12) is False
 
     batch = MflAdpAdapter().normalize(fixture_inputs.mfl_adp, season=2026, cohort=cohort)
-    assert batch.frame.get_column("cohort_approximate").all()
-    for flags in batch.frame.get_column("quality_flags").to_list():
-        assert COHORT_APPROXIMATE in flags
+    assert set(batch.frame.get_column("cohort_id").to_list()) == {"unfiltered"}
+    assert "cohort_approximate" not in batch.frame.columns
+    assert set(batch.frame.get_column("source_format_detail").to_list()) == {"no filters"}
 
-    exact = MarketCohort("PPR", 12, filters={"IS_PPR": "1"}, approximate=False)
-    assert exact.source_format_detail == "IS_PPR=1 (exact cohort)"
+
+def test_a_single_axis_cohort_is_never_exact_for_a_preset():
+    """ADR-012/ADR-039: "any league size" is not "twelve teams"."""
+    ppr = cohort_by_id("ppr")
+    assert ppr.scoring_semantics == "PPR"
+    assert ppr.league_size_semantics is None
+    assert ppr.is_exact_for("PPR", 12) is False
+
+    exact = cohort_by_id("ppr-fcount12")
+    assert exact.is_exact_for("PPR", 12) is True
+    assert exact.is_exact_for("PPR", 14) is False
+    assert exact.filter_query == "FCOUNT=12&IS_PPR=1"
+
+
+def test_an_approximate_assignment_labels_itself(fixture_inputs):
+    """ADR-012: never present an approximate cohort as preset-specific ADP."""
+    approximate = CohortAssignment(
+        scoring_preset="HALF",
+        league_size=12,
+        cohort=widest_cohort(),
+        exact=False,
+        sufficient=True,
+        reason="widest sufficient candidate",
+    )
+    assert approximate.approximate is True
+    assert COHORT_APPROXIMATE in approximate.quality_flags
+    assert approximate.source_format_detail == "no filters (approximate cohort)"
+
+    exact = CohortAssignment(
+        scoring_preset="PPR",
+        league_size=12,
+        cohort=cohort_by_id("ppr-fcount12"),
+        exact=True,
+        sufficient=True,
+        reason="most specific sufficient candidate",
+    )
+    assert exact.quality_flags == ()
+    assert exact.source_format_detail == "FCOUNT=12&IS_PPR=1 (exact cohort)"
 
 
 def test_directory_classifies_team_units_and_supplies_the_espn_bridge(fixture_inputs):
@@ -306,7 +346,7 @@ def test_quotes_without_a_directory_are_flagged_as_unclassified(fixture_inputs):
     batch = adapter.normalize(
         fixture_inputs.mfl_adp,
         season=2026,
-        cohort=widest_cohort("PPR", 12),
+        cohort=widest_cohort(),
     )
     checks = adapter.validate_raw(batch).checks
     assert any(check.check_id == "market.unclassified_entities" for check in checks)
@@ -317,7 +357,7 @@ def test_adp_envelope_and_bare_rows_normalize_identically(fixture_inputs):
     from ffdraft.timeutil import parse_utc
 
     adapter = MflAdpAdapter()
-    cohort = widest_cohort("PPR", 12)
+    cohort = widest_cohort()
     when = parse_utc("2026-08-18T12:00:00Z")
     from_envelope = adapter.normalize(
         fixture_inputs.mfl_adp,
@@ -343,7 +383,7 @@ def test_zero_or_missing_prices_are_dropped_and_counted():
             {"id": "6000003", "averagePick": "4.5", "rank": "3"},
         ],
         season=2026,
-        cohort=widest_cohort("PPR", 12),
+        cohort=widest_cohort(),
     )
     assert batch.frame.height == 1
     assert batch.metadata.detail["market_rows_without_usable_price"] == "2"
