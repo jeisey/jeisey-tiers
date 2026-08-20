@@ -9,7 +9,7 @@
 # has open egress and is the environment the Phase-7 production workflow will run in, so
 # evidence gathered there describes the environment that actually matters.
 
-revision: 2
+revision: 3
 season: 2026
 cohorts: study
 reason: >-
@@ -21,3 +21,9 @@ reason: >-
   IS_PPR=0&FCOUNT=14 returned zero rows, which the adapter reported as a critical source
   failure. For a candidate cohort in a measurement that is the finding, not an outage, so
   per-cohort emptiness is now a warning and only an empty capture is critical.
+
+  Revision 3 widens the candidate set after the revision-2 measurement showed 2026 rookies
+  priced three to five times earlier in the aggregate than in IS_MOCK=0&IS_KEEPER=N, while
+  established veterans barely moved - the signature of dynasty rookie drafts inside the
+  aggregate. IS_KEEPER=N and IS_MOCK=0 are now measured separately so the report can say
+  which of the two is responsible and how much data each leaves.

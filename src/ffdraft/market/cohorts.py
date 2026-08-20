@@ -101,14 +101,35 @@ _INTERSECTION_COHORTS = tuple(
     for size in (10, 12, 14)
 )
 
-# Real drafts only. Mocks and keeper leagues price players differently, and Phase 0 measured
-# both filters as honoured. This candidate is unconstrained on scoring and size, so it can
-# only ever win as a wide fallback - it is measured because "is the aggregate polluted by
-# mock drafts?" is a question the report should be able to answer.
-_REAL_DRAFTS = MarketCohort(
-    cohort_id="no-mock-no-keeper",
-    filters={"IS_MOCK": "0", "IS_KEEPER": "N"},
-    label="non-mock, non-keeper drafts",
+# Draft *format* candidates. Mocks and keeper/dynasty leagues price players differently, and
+# Phase 0 measured both filters as honoured. These are measured because "is the aggregate
+# polluted, and by which of the two?" is a question the report has to be able to answer -
+# and the 2026-08-20 measurement showed it is: 2026 rookies priced three to five times
+# earlier in the aggregate than in the non-keeper cohort, while established veterans barely
+# moved. That is the signature of dynasty rookie drafts, where only rookies are selectable
+# and a rookie's "average pick" is a pick number in a rookie-only draft.
+_FORMAT_COHORTS = (
+    MarketCohort(
+        cohort_id="no-keeper",
+        filters={"IS_KEEPER": "N"},
+        label="non-keeper drafts",
+    ),
+    MarketCohort(
+        cohort_id="no-mock",
+        filters={"IS_MOCK": "0"},
+        label="non-mock drafts",
+    ),
+    MarketCohort(
+        cohort_id="no-mock-no-keeper",
+        filters={"IS_MOCK": "0", "IS_KEEPER": "N"},
+        label="non-mock, non-keeper drafts",
+    ),
+    MarketCohort(
+        cohort_id="ppr-no-keeper",
+        filters={"IS_PPR": "1", "IS_KEEPER": "N"},
+        label="non-keeper PPR drafts",
+        scoring_semantics="PPR",
+    ),
 )
 
 #: Every cohort the Phase-5 measurement requests, in a stable order.
@@ -117,7 +138,7 @@ CANDIDATE_COHORTS: tuple[MarketCohort, ...] = (
     *_SCORING_COHORTS,
     *_SIZE_COHORTS,
     *_INTERSECTION_COHORTS,
-    _REAL_DRAFTS,
+    *_FORMAT_COHORTS,
 )
 
 _BY_ID: Mapping[str, MarketCohort] = {cohort.cohort_id: cohort for cohort in CANDIDATE_COHORTS}

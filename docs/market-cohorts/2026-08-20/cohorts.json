@@ -1,0 +1,665 @@
+{
+  "assignments": [
+    {
+      "approximate": true,
+      "cohort_id": "unfiltered",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {},
+      "league_size": 10,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "widest sufficient candidate",
+      "scoring_preset": "HALF",
+      "source_format_detail": "no filters (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "unfiltered",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {},
+      "league_size": 12,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "widest sufficient candidate",
+      "scoring_preset": "HALF",
+      "source_format_detail": "no filters (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "unfiltered",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {},
+      "league_size": 14,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "widest sufficient candidate",
+      "scoring_preset": "HALF",
+      "source_format_detail": "no filters (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "ppr",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {
+        "IS_PPR": "1"
+      },
+      "league_size": 10,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "most specific sufficient candidate",
+      "scoring_preset": "PPR",
+      "source_format_detail": "IS_PPR=1 (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "ppr",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {
+        "IS_PPR": "1"
+      },
+      "league_size": 12,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "most specific sufficient candidate",
+      "scoring_preset": "PPR",
+      "source_format_detail": "IS_PPR=1 (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "ppr",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {
+        "IS_PPR": "1"
+      },
+      "league_size": 14,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "most specific sufficient candidate",
+      "scoring_preset": "PPR",
+      "source_format_detail": "IS_PPR=1 (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "unfiltered",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {},
+      "league_size": 10,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "widest sufficient candidate",
+      "scoring_preset": "STD",
+      "source_format_detail": "no filters (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "unfiltered",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {},
+      "league_size": 12,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "widest sufficient candidate",
+      "scoring_preset": "STD",
+      "source_format_detail": "no filters (approximate cohort)",
+      "sufficient": true
+    },
+    {
+      "approximate": true,
+      "cohort_id": "unfiltered",
+      "exact": false,
+      "failed_clauses": [],
+      "filters": {},
+      "league_size": 14,
+      "quality_flags": [
+        "cohort_approximate"
+      ],
+      "reason": "widest sufficient candidate",
+      "scoring_preset": "STD",
+      "source_format_detail": "no filters (approximate cohort)",
+      "sufficient": true
+    }
+  ],
+  "board": {
+    "depths": {
+      "HALF": 300,
+      "PPR": 300,
+      "STD": 300
+    },
+    "league_preset_id": "redraft-12"
+  },
+  "cohorts": [
+    {
+      "adp_max": 192.5,
+      "adp_min": 2.24,
+      "ambiguous_players": 0,
+      "cohort_id": "fcount10",
+      "filters": {
+        "FCOUNT": "10"
+      },
+      "identity_coverage": 0.9844,
+      "max_pick_available": 257,
+      "median_top150_sample_size": 39.0,
+      "min_pick_available": 257,
+      "non_core_rows": 20,
+      "non_player_entities": 17,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.97,
+        "PPR": 0.96,
+        "STD": 0.97
+      },
+      "priced_players": 257,
+      "resolvable_players": 257,
+      "resolved_players": 253,
+      "top100_board_coverage": 0.96,
+      "top150_board_coverage": 0.9267,
+      "total_drafts": 102,
+      "total_picks": 334,
+      "total_rows": 319,
+      "unclassified_rows": 25,
+      "verdict": {
+        "cohort_id": "fcount10",
+        "failed_clauses": [
+          "total_drafts 102 < 300"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 220.08,
+      "adp_min": 2.43,
+      "ambiguous_players": 0,
+      "cohort_id": "fcount12",
+      "filters": {
+        "FCOUNT": "12"
+      },
+      "identity_coverage": 0.9825,
+      "max_pick_available": 285,
+      "median_top150_sample_size": 62.0,
+      "min_pick_available": 285,
+      "non_core_rows": 17,
+      "non_player_entities": 16,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 285,
+      "resolvable_players": 285,
+      "resolved_players": 280,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.9533,
+      "total_drafts": 222,
+      "total_picks": 459,
+      "total_rows": 353,
+      "unclassified_rows": 35,
+      "verdict": {
+        "cohort_id": "fcount12",
+        "failed_clauses": [
+          "total_drafts 222 < 300"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 231.0,
+      "adp_min": 2.12,
+      "ambiguous_players": 0,
+      "cohort_id": "fcount14",
+      "filters": {
+        "FCOUNT": "14"
+      },
+      "identity_coverage": 0.9818,
+      "max_pick_available": 220,
+      "median_top150_sample_size": 7.0,
+      "min_pick_available": 220,
+      "non_core_rows": 1,
+      "non_player_entities": 3,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.94,
+        "PPR": 0.93,
+        "STD": 0.95
+      },
+      "priced_players": 220,
+      "resolvable_players": 220,
+      "resolved_players": 216,
+      "top100_board_coverage": 0.93,
+      "top150_board_coverage": 0.8733,
+      "total_drafts": 27,
+      "total_picks": 247,
+      "total_rows": 247,
+      "unclassified_rows": 23,
+      "verdict": {
+        "cohort_id": "fcount14",
+        "failed_clauses": [
+          "total_drafts 27 < 300",
+          "top100_board_coverage 0.930 < 0.95",
+          "top150_board_coverage 0.873 < 0.9",
+          "median_top150_sample_size 7.0 < 25.0"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 352.57,
+      "adp_min": 2.46,
+      "ambiguous_players": 0,
+      "cohort_id": "no-mock-no-keeper",
+      "filters": {
+        "IS_KEEPER": "N",
+        "IS_MOCK": "0"
+      },
+      "identity_coverage": 0.9725,
+      "max_pick_available": 291,
+      "median_top150_sample_size": 105.0,
+      "min_pick_available": 291,
+      "non_core_rows": 21,
+      "non_player_entities": 23,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 291,
+      "resolvable_players": 291,
+      "resolved_players": 283,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.9667,
+      "total_drafts": 125,
+      "total_picks": 407,
+      "total_rows": 353,
+      "unclassified_rows": 18,
+      "verdict": {
+        "cohort_id": "no-mock-no-keeper",
+        "failed_clauses": [
+          "total_drafts 125 < 300"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 202.31,
+      "adp_min": 2.33,
+      "ambiguous_players": 0,
+      "cohort_id": "ppr",
+      "filters": {
+        "IS_PPR": "1"
+      },
+      "identity_coverage": 0.9822,
+      "max_pick_available": 281,
+      "median_top150_sample_size": 129.0,
+      "min_pick_available": 281,
+      "non_core_rows": 19,
+      "non_player_entities": 18,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 281,
+      "resolvable_players": 281,
+      "resolved_players": 276,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.96,
+      "total_drafts": 401,
+      "total_picks": 605,
+      "total_rows": 358,
+      "unclassified_rows": 40,
+      "verdict": {
+        "cohort_id": "ppr",
+        "failed_clauses": [],
+        "sufficient": true
+      }
+    },
+    {
+      "adp_max": 199.0,
+      "adp_min": 2.24,
+      "ambiguous_players": 0,
+      "cohort_id": "ppr-fcount10",
+      "filters": {
+        "FCOUNT": "10",
+        "IS_PPR": "1"
+      },
+      "identity_coverage": 0.9848,
+      "max_pick_available": 264,
+      "median_top150_sample_size": 36.0,
+      "min_pick_available": 264,
+      "non_core_rows": 20,
+      "non_player_entities": 18,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.97,
+        "PPR": 0.96,
+        "STD": 0.97
+      },
+      "priced_players": 264,
+      "resolvable_players": 264,
+      "resolved_players": 260,
+      "top100_board_coverage": 0.96,
+      "top150_board_coverage": 0.94,
+      "total_drafts": 94,
+      "total_picks": 325,
+      "total_rows": 325,
+      "unclassified_rows": 23,
+      "verdict": {
+        "cohort_id": "ppr-fcount10",
+        "failed_clauses": [
+          "total_drafts 94 < 300"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 220.08,
+      "adp_min": 2.53,
+      "ambiguous_players": 0,
+      "cohort_id": "ppr-fcount12",
+      "filters": {
+        "FCOUNT": "12",
+        "IS_PPR": "1"
+      },
+      "identity_coverage": 0.9826,
+      "max_pick_available": 287,
+      "median_top150_sample_size": 57.0,
+      "min_pick_available": 287,
+      "non_core_rows": 17,
+      "non_player_entities": 16,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 287,
+      "resolvable_players": 287,
+      "resolved_players": 282,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.9533,
+      "total_drafts": 211,
+      "total_picks": 457,
+      "total_rows": 355,
+      "unclassified_rows": 35,
+      "verdict": {
+        "cohort_id": "ppr-fcount12",
+        "failed_clauses": [
+          "total_drafts 211 < 300"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 177.6,
+      "adp_min": 2.14,
+      "ambiguous_players": 0,
+      "cohort_id": "ppr-fcount14",
+      "filters": {
+        "FCOUNT": "14",
+        "IS_PPR": "1"
+      },
+      "identity_coverage": 0.9839,
+      "max_pick_available": 186,
+      "median_top150_sample_size": 6.0,
+      "min_pick_available": 186,
+      "non_core_rows": 1,
+      "non_player_entities": 0,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.89,
+        "PPR": 0.88,
+        "STD": 0.9
+      },
+      "priced_players": 186,
+      "resolvable_players": 186,
+      "resolved_players": 183,
+      "top100_board_coverage": 0.88,
+      "top150_board_coverage": 0.78,
+      "total_drafts": 25,
+      "total_picks": 210,
+      "total_rows": 210,
+      "unclassified_rows": 23,
+      "verdict": {
+        "cohort_id": "ppr-fcount14",
+        "failed_clauses": [
+          "priced_players 186 < 200",
+          "total_drafts 25 < 300",
+          "top100_board_coverage 0.880 < 0.95",
+          "top150_board_coverage 0.780 < 0.9",
+          "median_top150_sample_size 6.0 < 25.0"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 173.17,
+      "adp_min": 1.67,
+      "ambiguous_players": 0,
+      "cohort_id": "std",
+      "filters": {
+        "IS_PPR": "0"
+      },
+      "identity_coverage": 0.9851,
+      "max_pick_available": 201,
+      "median_top150_sample_size": 12.0,
+      "min_pick_available": 201,
+      "non_core_rows": 16,
+      "non_player_entities": 14,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.94,
+        "PPR": 0.93,
+        "STD": 0.95
+      },
+      "priced_players": 201,
+      "resolvable_players": 201,
+      "resolved_players": 198,
+      "top100_board_coverage": 0.93,
+      "top150_board_coverage": 0.86,
+      "total_drafts": 25,
+      "total_picks": 251,
+      "total_rows": 251,
+      "unclassified_rows": 20,
+      "verdict": {
+        "cohort_id": "std",
+        "failed_clauses": [
+          "total_drafts 25 < 300",
+          "top100_board_coverage 0.930 < 0.95",
+          "top150_board_coverage 0.860 < 0.9",
+          "median_top150_sample_size 12.0 < 25.0"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 78.6,
+      "adp_min": 18.86,
+      "ambiguous_players": 0,
+      "cohort_id": "std-fcount10",
+      "filters": {
+        "FCOUNT": "10",
+        "IS_PPR": "0"
+      },
+      "identity_coverage": 0.9444,
+      "max_pick_available": 18,
+      "median_top150_sample_size": 6.5,
+      "min_pick_available": 18,
+      "non_core_rows": 0,
+      "non_player_entities": 0,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.04,
+        "PPR": 0.03,
+        "STD": 0.04
+      },
+      "priced_players": 18,
+      "resolvable_players": 18,
+      "resolved_players": 17,
+      "top100_board_coverage": 0.03,
+      "top150_board_coverage": 0.0533,
+      "total_drafts": 8,
+      "total_picks": 18,
+      "total_rows": 18,
+      "unclassified_rows": 0,
+      "verdict": {
+        "cohort_id": "std-fcount10",
+        "failed_clauses": [
+          "priced_players 18 < 200",
+          "total_drafts 8 < 300",
+          "top100_board_coverage 0.030 < 0.95",
+          "top150_board_coverage 0.053 < 0.9",
+          "median_top150_sample_size 6.5 < 25.0",
+          "identity_coverage 0.944 < 0.95"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 131.0,
+      "adp_min": 1.0,
+      "ambiguous_players": 0,
+      "cohort_id": "std-fcount12",
+      "filters": {
+        "FCOUNT": "12",
+        "IS_PPR": "0"
+      },
+      "identity_coverage": 0.9784,
+      "max_pick_available": 139,
+      "median_top150_sample_size": 5.0,
+      "min_pick_available": 139,
+      "non_core_rows": 5,
+      "non_player_entities": 0,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.77,
+        "PPR": 0.77,
+        "STD": 0.79
+      },
+      "priced_players": 139,
+      "resolvable_players": 139,
+      "resolved_players": 136,
+      "top100_board_coverage": 0.77,
+      "top150_board_coverage": 0.6733,
+      "total_drafts": 11,
+      "total_picks": 144,
+      "total_rows": 144,
+      "unclassified_rows": 0,
+      "verdict": {
+        "cohort_id": "std-fcount12",
+        "failed_clauses": [
+          "priced_players 139 < 200",
+          "total_drafts 11 < 300",
+          "top100_board_coverage 0.770 < 0.95",
+          "top150_board_coverage 0.673 < 0.9",
+          "median_top150_sample_size 5.0 < 25.0"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": null,
+      "adp_min": null,
+      "ambiguous_players": 0,
+      "cohort_id": "std-fcount14",
+      "filters": {
+        "FCOUNT": "14",
+        "IS_PPR": "0"
+      },
+      "identity_coverage": 0.0,
+      "max_pick_available": 0,
+      "median_top150_sample_size": null,
+      "min_pick_available": 0,
+      "non_core_rows": 0,
+      "non_player_entities": 0,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.0,
+        "PPR": 0.0,
+        "STD": 0.0
+      },
+      "priced_players": 0,
+      "resolvable_players": 0,
+      "resolved_players": 0,
+      "top100_board_coverage": 0.0,
+      "top150_board_coverage": 0.0,
+      "total_drafts": 2,
+      "total_picks": 0,
+      "total_rows": 0,
+      "unclassified_rows": 0,
+      "verdict": {
+        "cohort_id": "std-fcount14",
+        "failed_clauses": [
+          "priced_players 0 < 200",
+          "total_drafts 2 < 300",
+          "top100_board_coverage 0.000 < 0.95",
+          "top150_board_coverage 0.000 < 0.9",
+          "median_top150_sample_size None < 25.0",
+          "identity_coverage 0.000 < 0.95"
+        ],
+        "sufficient": false
+      }
+    },
+    {
+      "adp_max": 202.31,
+      "adp_min": 2.28,
+      "ambiguous_players": 0,
+      "cohort_id": "unfiltered",
+      "filters": {},
+      "identity_coverage": 0.9823,
+      "max_pick_available": 283,
+      "median_top150_sample_size": 141.0,
+      "min_pick_available": 283,
+      "non_core_rows": 19,
+      "non_player_entities": 18,
+      "per_scoring_top100_coverage": {
+        "HALF": 0.98,
+        "PPR": 0.97,
+        "STD": 0.98
+      },
+      "priced_players": 283,
+      "resolvable_players": 283,
+      "resolved_players": 278,
+      "top100_board_coverage": 0.97,
+      "top150_board_coverage": 0.96,
+      "total_drafts": 426,
+      "total_picks": 612,
+      "total_rows": 360,
+      "unclassified_rows": 40,
+      "verdict": {
+        "cohort_id": "unfiltered",
+        "failed_clauses": [],
+        "sufficient": true
+      }
+    }
+  ],
+  "generated_at_utc": "2026-08-20T14:34:51Z",
+  "git_sha": "61e1e74",
+  "report_version": "1.0",
+  "rule": {
+    "min_identity_coverage": 0.95,
+    "min_median_top150_sample_size": 25.0,
+    "min_priced_players": 200,
+    "min_top100_board_coverage": 0.95,
+    "min_top150_board_coverage": 0.9,
+    "min_total_drafts": 300,
+    "rule_version": "phase5_cohort_v1"
+  },
+  "rule_version": "phase5_cohort_v1",
+  "season": 2026,
+  "snapshot_at_utc": "2026-08-20T14:11:48Z",
+  "snapshot_key": "2026-08-20T14-11-48Z",
+  "source_id": "myfantasyleague_adp"
+}

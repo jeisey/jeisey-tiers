@@ -1,4 +1,4 @@
-schema_version: "1.2"
+schema_version: "1.3"
 research_as_of: "2026-08-12"
 # Phase-0 live verification. Every `verified: true` entry below was proved by
 # scripts/source_probe.py; the evidence is docs/source-probes/2026-08-17/report.json and the
@@ -12,6 +12,15 @@ phase0_probe_environment: "github-actions ubuntu-latest (see docs/DECISIONS.md A
 #   ADR-017 - MFL developer client provisioned; env-variable NAMES recorded below, never values.
 #   ADR-012 amendment - re-measure MFL cohort mix at the start of Phase 5.
 owner_decisions_as_of: "2026-08-18"
+# Phase-5 decisions (2026-08-20, see docs/DECISIONS.md):
+#   ADR-038 - point-in-time captures live on the long-lived `market-data` branch.
+#   ADR-039 - the cohort sufficiency rule and its selection policy, frozen before measurement.
+#   ADR-040 - A0, the deterministic arbitrage baseline.
+#   ADR-041 - `confidence` is market-data quality, not a probability.
+#   ADR-042 - trend is a trailing 7-day slope over our own retained snapshots.
+#   ADR-043 - current player status is a separate, annotation-only artifact.
+#   ADR-044 - richer historical injury features are a 2027 refresh candidate.
+phase5_decisions_as_of: "2026-08-20"
 policy_states:
   - production_allowed
   - allowed_optional
@@ -41,6 +50,24 @@ decisions:
     market adapter. The 2026-08-17 counts came from only 410 aggregated drafts; peak-season
     samples may allow tighter preset matching than ADR-012 assumes. Until then use the
     widest reliable cohort, record the filters actually sent, and flag approximate cohorts.
+  # Done. The measurement is reproducible offline from a retained snapshot rather than from
+  # a live re-fetch, so its report can be regenerated and diffed against the evidence commit.
+  market_cohort_remeasured_at: "2026-08-20"
+  market_cohort_rule_version: phase5_cohort_v1
+  market_cohort_report: "docs/market-cohorts/"
+  # ADR-038. A dedicated long-lived branch, not a feature branch and never merged to main.
+  market_history_branch: market-data
+  market_history_layout: "market/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/"
+  status_history_layout: "status/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/"
+  market_history_append_only: true
+  # ADR-040/041/042. Versions travel with every build and every published card.
+  arbitrage_method_version: a0_rank_gap_v1
+  arbitrage_confidence_rubric_version: phase5_confidence_v1
+  market_trend_rule_version: phase5_trend_v1
+  # ADR-043/044. Sleeper status annotates a published row and never enters a model.
+  player_status_artifact: player_status.json
+  player_status_is_model_feature: false
+  historical_injury_features_revisit: "2027 intrinsic refresh (ADR-044)"
 sources:
   nflreadpy:
     policy: production_allowed

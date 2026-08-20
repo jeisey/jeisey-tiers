@@ -263,11 +263,16 @@ def report_markdown(report: CohortReport) -> str:
         "and reported as the minimum over the launch scoring presets, so a cohort cannot pass "
         "by covering one preset well and another badly.",
         "",
+        "`rows` is the whole cohort payload; `core` counts the QB/RB/WR/TE rows every rule "
+        "clause is written about. MyFantasyLeague also prices kickers, team defences and IDP, "
+        "and counting those would inflate `priced_players` and depress an identity threshold "
+        "that was never about them (ADR-039).",
+        "",
         "## Cohorts",
         "",
-        "| cohort | filters | priced | drafts | top-100 | top-150 | median sample "
+        "| cohort | filters | rows | core | drafts | top-100 | top-150 | median sample "
         "| identity | verdict |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---|",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for cohort_id in sorted(report.measurements):
         m = report.measurements[cohort_id]
@@ -278,7 +283,7 @@ def report_markdown(report: CohortReport) -> str:
         )
         drafts = "—" if m.total_drafts is None else str(m.total_drafts)
         lines.append(
-            f"| `{cohort_id}` | `{filters}` | {m.priced_players} | {drafts} | "
+            f"| `{cohort_id}` | `{filters}` | {m.total_rows} | {m.priced_players} | {drafts} | "
             f"{m.top100_board_coverage:.3f} | {m.top150_board_coverage:.3f} | {median} | "
             f"{m.identity_coverage:.3f} | {'**sufficient**' if v.sufficient else 'insufficient'} |",
         )
@@ -315,5 +320,48 @@ def report_markdown(report: CohortReport) -> str:
         "HALF-PPR can never be exact on this source: MFL exposes `IS_PPR` as a boolean and "
         "publishes no half-PPR filter (ADR-039).",
         "",
+        *_composition_notes(report),
     ]
     return "\n".join(lines)
+
+
+def _composition_notes(report: CohortReport) -> list[str]:
+    """Caveats the selection table cannot express on its own.
+
+    The one that matters: a scoring preset served by the unfiltered aggregate is being
+    priced by whatever mix of scoring rules that aggregate happens to contain. When the mix
+    is lopsided, the approximation has a *direction*, and a reader deserves to know which
+    way rather than only that it exists.
+    """
+    measurements = report.measurements
+    ppr = measurements.get("ppr")
+    std = measurements.get("std")
+    unfiltered = measurements.get("unfiltered")
+    served_by_widest = sorted(
+        {
+            assignment.scoring_preset
+            for assignment in report.assignments.values()
+            if assignment.cohort.cohort_id == "unfiltered"
+        },
+    )
+    if not (ppr and std and unfiltered and served_by_widest):
+        return []
+    ppr_drafts = ppr.total_drafts or 0
+    std_drafts = std.total_drafts or 0
+    total = unfiltered.total_drafts or 0
+    share = ppr_drafts / total if total else 0.0
+    return [
+        "## Composition caveat",
+        "",
+        f"The unfiltered aggregate carries {total} drafts, of which {ppr_drafts} are PPR "
+        f"({share:.0%}) and {std_drafts} are non-PPR. It therefore serves "
+        f"{', '.join(served_by_widest)} with a price set overwhelmingly by PPR drafters.",
+        "",
+        "That is a *directional* approximation, not merely a wide one: PPR drafting lifts "
+        "pass-catching backs and high-target receivers relative to standard scoring, so a "
+        "standard-scoring reader should expect this board to read those players as slightly "
+        "more expensive than their own league would. The rule still prefers it to the "
+        f"`std` cohort's {std_drafts} drafts, and every row says `cohort_approximate`, but "
+        "the direction is worth stating rather than leaving to be inferred.",
+        "",
+    ]
