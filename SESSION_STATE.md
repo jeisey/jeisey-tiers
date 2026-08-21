@@ -27,7 +27,7 @@ uv sync --frozen
 uv run ruff check .                 # clean
 uv run ruff format --check .        # clean
 uv run mypy                         # clean, strict
-uv run pytest                       # 4 live deselected
+uv run pytest                       # 991 selected, all pass (4 live-network deselected)
 uv run ffdraft config-check
 
 # Offline from a clone of the market-data branch (docs/ARCHITECTURE.md 6.3)
@@ -38,7 +38,7 @@ uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
 npm ci
 npm run lint            # clean (2 known React-Compiler/TanStack warnings, ADR-048)
 npm run typecheck       # clean, strict
-npm run test -- --run   # 193 frontend tests
+npm run test -- --run   # 194 frontend tests
 npm run build                                    # root base path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages base path
 npm run e2e             # 39 Playwright tests over five built sites
@@ -68,7 +68,7 @@ What was there before and still is:
 - `docs/visual-qa/` — committed screenshots and the written review, regenerated with `npm run e2e:screens`.
 - `.github/workflows/market-capture.yml` — the Phase-5 live capture, triggered by bumping `.github/market-capture.request`. Deliberately the minimum needed to prove the source path; scheduling is Phase-7 work.
 - `web/` — the Phase-6 draft sheet: `src/data/` (contracts, loader, indexes, market derivations, flags, formats, CSV, URL state), `src/app/` (shell, controls, two tables, player detail, data view), `src/charts/` (Tier Board, Draft Rail), `src/components/`, `src/styles/base.css`.
-- `tests/` — 987 network-free Python tests (4 live-network deselected); `web/tests/` adds 193 vitest plus 39 Playwright.
+- `tests/` — 991 network-free Python tests (4 live-network deselected); `web/tests/` adds 194 vitest plus 39 Playwright.
 - `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
 
 ## Phase-2 dataset — the validated build

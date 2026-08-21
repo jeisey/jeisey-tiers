@@ -38,6 +38,25 @@ describe("cohort assignment", () => {
   it("survives a build that published no market block at all", () => {
     expect(cohortAssignment(buildMetadata({ market: null }), "PPR", 12)).toBeNull();
   });
+
+  it("treats an assignment with no failed_clauses as an empty list, not undefined", () => {
+    // The Phase-1 fixture pipeline writes a leaner assignment block than the production
+    // arbitrage build does, and an older retained build predates the field entirely.
+    const metadata = buildMetadata();
+    const market = metadata.market;
+    const lean = {
+      ...metadata,
+      market: {
+        ...market,
+        assignments: (market?.assignments ?? []).map((assignment) => {
+          const lean: Record<string, unknown> = { ...assignment };
+          delete lean.failed_clauses;
+          return lean as (typeof assignment);
+        }),
+      },
+    };
+    expect(cohortAssignment(lean, "PPR", 12)?.failedClauses).toEqual([]);
+  });
 });
 
 describe("explainClause", () => {

@@ -157,7 +157,7 @@ Added in the course of the phase, and not in the original list:
 **Exit gate: met (2026-08-21).** Verified against the real 2026 build — 2,700 tier rows,
 2,122 arbitrage rows, 315 status rows.
 
-- 193 vitest tests and 39 Playwright tests, both green; frontend lint, typecheck and build clean.
+- 194 vitest tests and 39 Playwright tests, both green; frontend lint, typecheck and build clean.
 - `npm run verify:board` cross-checks the rendered board against the artifact bytes on the live
   build: 40 tier rows, 25 chart marks, 30 arbitrage rows and 56 injury badges agree exactly.
 - Built and end-to-end tested under both `/` and the project Pages base path `/jeisey-tiers/`.
