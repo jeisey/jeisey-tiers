@@ -142,19 +142,33 @@ Added in the course of the phase, and not in the original list:
 
 ## Phase 6 — Frontend product
 
-- [ ] Implement compact global configuration controls + URL query state.
-- [ ] Implement Tier Board D3 visualization.
-- [ ] Implement Draft Rail D3 visualization.
-- [ ] Implement Tier table with search/filter/sort/export.
-- [ ] Implement Arbitrage table with search/filter/sort/export.
-- [ ] Implement methodology/freshness/source panel.
-- [ ] Implement player details/tooltip behavior.
-- [ ] Implement loading/error/degraded-source states from static metadata.
-- [ ] Implement responsive tablet/mobile layouts.
-- [ ] Implement keyboard/accessibility and reduced-motion requirements.
-- [ ] Add component/unit/E2E tests.
+- [x] Implement compact global configuration controls + URL query state.
+- [x] Implement Tier Board D3 visualization.
+- [x] Implement Draft Rail D3 visualization.
+- [x] Implement Tier table with search/filter/sort/export.
+- [x] Implement Arbitrage table with search/filter/sort/export.
+- [x] Implement methodology/freshness/source panel.
+- [x] Implement player details/tooltip behavior.
+- [x] Implement loading/error/degraded-source states from static metadata.
+- [x] Implement responsive tablet/mobile layouts.
+- [x] Implement keyboard/accessibility and reduced-motion requirements.
+- [x] Add component/unit/E2E tests.
 
-**Exit gate:** all primary draft-sheet flows work against real generated artifacts, exports are correct, and accessibility/responsive smoke tests pass.
+**Exit gate: met (2026-08-21).** Verified against the real 2026 build — 2,700 tier rows,
+2,122 arbitrage rows, 315 status rows.
+
+- 193 vitest tests and 39 Playwright tests, both green; frontend lint, typecheck and build clean.
+- `npm run verify:board` cross-checks the rendered board against the artifact bytes on the live
+  build: 40 tier rows, 25 chart marks, 30 arbitrage rows and 56 injury badges agree exactly.
+- Built and end-to-end tested under both `/` and the project Pages base path `/jeisey-tiers/`.
+- Eleven visual-QA screens captured, reviewed and committed to `docs/visual-qa/2026-08-21/`,
+  with nine defects found and fixed (`REVIEW.md`).
+- A tier is drawn as a band, not a line (ADR-046). Status is annotation only and a null injury
+  designation never renders as "Healthy" (ADR-043). The shared low-confidence condition is
+  explained once from build metadata rather than hardcoded (ADR-047).
+
+**Not done, deliberately:** no Pages deployment, no repository visibility change, no schedule,
+no model or methodology change. Those are Phase 7.
 
 ## Phase 7 — Production GitHub Actions + Pages
 

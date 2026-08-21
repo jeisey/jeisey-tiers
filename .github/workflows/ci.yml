@@ -141,3 +141,37 @@ jobs:
             cat web/dist/index.html
             exit 1
           fi
+
+  e2e:
+    name: Frontend end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # `globalSetup` builds the root site, the /jeisey-tiers/ project-Pages site and three
+      # degraded-artifact scenarios, then writes deterministic fixture artifacts into each.
+      # No vendor is reachable: the suite fails any request that leaves localhost.
+      - name: End-to-end
+        run: npm run e2e
+
+      - name: Upload the report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            web/test-results
+          retention-days: 7

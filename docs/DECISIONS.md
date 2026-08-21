@@ -150,9 +150,9 @@ This file records binding architecture/product decisions. Coding agents should a
 
 ---
 
-## ADR-014 — FantasyPros-derived ECR benchmark is disabled pending a human terms review
+## ADR-014 — FantasyPros-derived ECR is benchmark-only (originally: disabled pending a human terms review)
 
-**Status:** Accepted (2026-08-17)
+**Status:** Accepted (2026-08-17), **amended 2026-08-18 — the terms review is complete and the source is `benchmark_only`.** The original decision below is retained as the record of why the gate existed; the amendment at the end of this entry is the live policy.
 
 **Decision:** `load_ff_rankings` is not used, even for internal benchmarking, until a human reads the current FantasyPros terms and records a decision. Consensus comparison for V1 uses the verified public MFL ADP and the declared naive baselines. No ECR-derived value, and no metric computed from ECR, appears in any public artifact.
 
@@ -203,6 +203,20 @@ This file records binding architecture/product decisions. Coding agents should a
 **Consequences:** Phase-1 CI is written to run on a private repository (no `pull_request_target`, no Pages permissions, no assumption of unlimited minutes). Phase 7 must choose between making the repository public and accepting the Actions-minutes/Pages terms for a private repository, and must record that choice as an ADR amendment before its exit gate. The Phase-0 observation in `docs/OPERATIONS.md` section 3 stays, now pointing here.
 
 **Revisit at:** Phase 7 (mandatory), or earlier if a Phase 1–6 deliverable turns out to require a public repository.
+
+### Amendment (2026-08-21) — the Phase-7 intent is settled; the Phase-6 constraint is unchanged
+
+**Status:** Amended. The deferral above still binds through Phase 6; what changes is that the question it deferred now has an answer waiting for it.
+
+**Decision (project owner).** The V1 deployment target is a **public `jeisey/jeisey-tiers` repository serving a public GitHub Pages project site**, built and deployed by standard GitHub-hosted Actions. There is no external paid web host. A custom domain is optional future work and is not required for V1.
+
+**What does not change.** The repository stays **private for the whole of Phase 6**. Phase 6 did not make it public, did not configure Pages, and did not add deploy permissions. The first action of Phase 7 is to make the repository public; nothing before that may assume publicity.
+
+**What Phase 6 did instead.** It removed the discovery risk from that first action by proving the project Pages base path now: the frontend builds and is tested under both `/` and `/jeisey-tiers/`, and an end-to-end test asserts that assets, artifacts, CSV links, query state and reload all resolve under the base path with no absolute `/data/...` assumption surviving (`docs/ARCHITECTURE.md` section 11).
+
+**Consequences for Phase 7.** Two obligations follow from the visibility change rather than from the deploy itself. The `market-data` branch holds retained vendor payloads that are a private research cache today; making the repository public turns that into publication, so the exclusion recorded in ADR-038 and `docs/SECURITY_LICENSE.md` section 10 becomes part of the visibility decision rather than an implementation detail. And Sleeper's non-commercial terms bind what the site publishes (`player_status.json` carries its fields), so the free, ad-free, non-commercial character of the deployment is a licence condition, not a preference.
+
+**Revisit if:** the deployment stops being free and non-commercial, or the retained-capture exclusion cannot be honoured on a public repository.
 
 ---
 
@@ -950,3 +964,55 @@ That is a worse-looking confidence distribution than v1 would have produced and 
 **A second open question, also left alone.** When nothing is sufficient, the fallback takes the *widest* qualifying candidate, because ADR-039 reasoned that a failed rule should fall back on more data. Here that hands the PPR presets `no-mock-no-keeper` (125 drafts, all scoring) rather than `ppr-no-keeper` (115 drafts, PPR only) — trading scoring specificity for an eight-per-cent larger sample. Whether a fallback should prefer specificity when the candidates are this close is a genuine question, and answering it *after* seeing which cohort it picks is exactly the trap this ADR is written to avoid. The dilution is roughly ten non-PPR drafts out of 125 and is covered by the report's composition caveat.
 
 **Revisit when:** the volume clause is re-specified with evidence, MFL exposes a redraft-only or half-PPR filter, or the non-keeper cohort's own draft count clears the existing bar as the season matures — at which point the same rule selects it without any change at all.
+
+---
+
+## ADR-046 — The frontend presents a tier as a band, never as a line
+
+**Status:** Accepted (2026-08-21, Phase 6)
+
+**Decision:** the Tier Board separates tier groups with **whitespace and a change of surface** and draws no rule, no arrow, no divider stroke and no "value cliff" annotation between two tiers. Tier ordinals and labels are rendered exactly as the artifact publishes them; nothing is merged, split or moved in the browser. The chart, the legend and the player detail each carry a short standing note that tier groups are useful while exact tier edges are statistically soft.
+
+**Why:** ADR-035 published the measurement rather than repairing it. Tier *membership* reproduces — bootstrap ARI 0.865 — while tier *boundaries* do not: boundary agreement 0.239 against a 0.500 bar, only about four of 299 candidate cut sites surviving in a majority across 1,200 replicates, and a median promoted boundary sitting on a 0.55-point P50 cliff against an 80-130-point interval, with P(player below outscores player above) = 0.497. A hard edge drawn between two such players is the interface asserting a quantity the measurement says is not identified. The UX spec's own section 5.4 offered a "value cliff" annotation; that offer predates the measurement and is declined here.
+
+**What was considered and rejected.** Inventing a per-boundary confidence band would be the frontend manufacturing a statistic no artifact publishes — the same failure mode in the opposite direction. The remedy for unstable boundaries is a tier rule with its own evidence (ADR-035's open question), not a visual estimate.
+
+**Consequences:** the board reads as an ordered set of comparable groups rather than as a ladder of thresholds, which is what the measurement supports. A component test asserts the strings "value cliff" and any hard-boundary stroke are absent, so a future contributor restoring the spec's original sketch fails a test rather than quietly overstating the model.
+
+**Revisit if:** a new tier rule passes `phase4_tier_stability_v1`, or a boundary-confidence quantity is added to the tier artifact by a decision with its own evidence.
+
+---
+
+## ADR-047 — The browser explains a shared market condition once, at view level
+
+**Status:** Accepted (2026-08-21, Phase 6)
+
+**Decision:** where every arbitrage row in scope shares one `confidence` label, the Arbitrage view states the condition once at the top of the board and derives the reason from `build_metadata.market.assignments[].failed_clauses`. Per-row confidence remains a table column with an accessible expansion of what the word means. `wide_market_range` earns no per-row badge. `market_trend: null` renders as an em dash with the accessible text "Trend collecting", never as `0`, `Flat` or `No movement`.
+
+To make that possible without embedding a measurement in TypeScript, the arbitrage build now publishes `failed_clauses` on each cohort assignment — the frozen rule's own words, e.g. `total_drafts 125 < 300`. `schemas/build_metadata.schema.json` declares the field; the market block was already `additionalProperties: true`, so no version moved.
+
+**Why:** at launch all 2,122 rows read `low` for one recorded reason (ADR-045). Rendering 2,122 identical unexplained pills would be worse than useless: `confidence` is market-data quality (ADR-041), and an unexplained "low" beside a player's name reads as "the model is unsure about him", which is the opposite of what the field says. The alternative to publishing the clause was hardcoding "125 drafts" in a React component, which would be a stale lie within days as draft season fills the cohort out — the frontend must not become a second, drifting source of a measured number.
+
+The view also shows the median per-player sample size computed over the rows in scope, because the direct evidence is materially better than the cohort-level label suggests and ADR-045 explicitly records that tension rather than resolving it.
+
+**Consequences:** the reason travels in the artifact, so the sentence changes on its own when the market matures and no code changes when the cohort finally clears the bar. A unit test parses the clause format and passes an unrecognised clause through verbatim, so a future `phase5_cohort_v3` degrades to "readable" rather than "invisible".
+
+**Revisit if:** the cohort rule is re-specified, or a build ever publishes a genuinely mixed confidence distribution — at which point the view-level notice suppresses itself and the per-row column carries the signal.
+
+---
+
+## ADR-048 — The frontend's dependency set, and what it is allowed to own
+
+**Status:** Accepted (2026-08-21, Phase 6)
+
+**Decision:** Phase 6 adds four runtime/dev dependencies and no more: **TanStack Table v8** for table state, **d3-scale** and **d3-array** for chart scales and geometry, and **Playwright** for end-to-end and visual QA. React owns state and DOM composition; D3 owns chart mathematics only, and no D3 selection touches a React-managed node. URL query state is `URLSearchParams` read through `useSyncExternalStore`; there is no router.
+
+Explicitly not added: Next.js, any backend framework, Redux, a UI component library, Tailwind, a client router, or a charting framework that would replace the specified geometry.
+
+**Why:** `docs/ARCHITECTURE.md` section 10 already assigned these responsibilities; this ADR records what was actually installed against them. Three tabs do not justify a routing dependency, and a router would add GitHub Pages SPA-fallback complexity to a site that has none. The CSS system is about 900 lines of tokens and component classes, which is smaller than the utility framework that would replace it. TanStack Table is pinned to **v8** rather than the v9 rewrite because v8 is the mature line and this is a launch, not an evaluation.
+
+**One accepted cost.** `eslint-plugin-react-hooks`' compiler rules report that `useReactTable` returns functions the React Compiler cannot memoise, so it skips optimising the two table components. That is a warning, not an error, and it is left visible rather than silenced: the alternative is dropping the table library the UX spec asks for, and two unmemoised components on a 300-row board is not a measurable cost.
+
+**Consequences:** the production bundle is roughly 105 KB gzipped including React. Everything the page needs is a static file under the artifact base path, and an end-to-end test fails any request that leaves localhost, so the browser boundary in `docs/ARCHITECTURE.md` section 3.2 is a check rather than a convention.
+
+**Revisit if:** a chart genuinely needs D3-owned DOM (record the reason), or a fourth board makes hand-rolled tab state worse than a router.
