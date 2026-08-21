@@ -36,7 +36,7 @@
         "confidence_rubric_version": {"type": "string"},
         "trend_rule_version": {"type": "string"},
         "trend_available": {"type": "boolean"},
-        "assignments": {"type": "array", "items": {"type": "object"}}
+        "assignments": {"type": "array", "items": {"type": "object", "properties": {"failed_clauses": {"type": "array", "items": {"type": "string"}, "description": "Sufficiency clauses this cohort failed, verbatim (\"total_drafts 125 < 300\"). Present so a consumer can explain a low-confidence board from metadata rather than embedding a measurement in its own source (ADR-041, ADR-045)."}}}}
       }
     },
     "player_status": {

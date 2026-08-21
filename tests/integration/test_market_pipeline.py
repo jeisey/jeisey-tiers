@@ -9,6 +9,7 @@ so it can be rebuilt months later and diffed against the commit that captured it
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 
@@ -201,9 +202,25 @@ def _sufficient(cohort_id: str) -> CohortMeasurement:
     )
 
 
-def _selection(path: Path, *, cohort_id: str = "no-keeper") -> Path:
+def _insufficient(cohort_id: str) -> CohortMeasurement:
+    """A cohort that clears every clause except the volume bar - the 2026 launch condition.
+
+    ADR-045: filtering to keeper-free drafts necessarily shrinks the cohort-level count, so
+    ``min_total_drafts`` is the one clause a qualifying cohort fails while its per-player
+    evidence stays intact.
+    """
+    return replace(_sufficient(cohort_id), total_drafts=125)
+
+
+def _selection(
+    path: Path,
+    *,
+    cohort_id: str = "no-keeper",
+    sufficient: bool = True,
+) -> Path:
+    measure = _sufficient if sufficient else _insufficient
     measurements = {
-        cohort.cohort_id: _sufficient(cohort.cohort_id)
+        cohort.cohort_id: measure(cohort.cohort_id)
         for cohort in CANDIDATE_COHORTS
         if cohort.cohort_id == cohort_id
     }
@@ -276,11 +293,11 @@ def store(tmp_path) -> MarketSnapshotStore:
 
 
 def _run(store, artifacts, tmp_path, **overrides):
+    overrides.setdefault("selection_path", _selection(tmp_path / "cohorts.json"))
     request = ArbitrageBuildRequest(
         season=SEASON,
         store=store,
         artifacts_dir=artifacts,
-        selection_path=_selection(tmp_path / "cohorts.json"),
         as_of=GENERATED_AT,
         **overrides,
     )
@@ -515,3 +532,42 @@ def test_the_arbitrage_build_merges_metadata_and_keeps_phase_4_warnings(
     assert market["trend_available"] is False
     assert metadata["arbitrage_method_version"] == "a0_rank_gap_v1"
     assert metadata["arbitrage_model_version"] is None
+
+
+def test_a_failed_sufficiency_clause_travels_into_build_metadata(store, artifacts, tmp_path):
+    """ADR-047: the frontend must be able to say *why* a whole board reads `low`.
+
+    Every row on the 2026 launch board carries `low` confidence for one shared reason. A UI
+    that showed 2,122 identical unexplained pills would read as "the model is unsure about
+    these players", which is the opposite of what `confidence` means (ADR-041). The reason it
+    needs is the clause the frozen rule actually failed, in the rule's own words - so the
+    build publishes it rather than leaving a consumer to hardcode today's measurement, which
+    goes stale as draft season fills the cohort out.
+    """
+    _write_snapshot(store, "2026-08-20T11:00:00Z")
+    selection = _selection(tmp_path / "selection.json", sufficient=False)
+    result = _run(store, artifacts, tmp_path, selection_path=selection)
+
+    metadata = json.loads((artifacts / "build_metadata.json").read_text())
+    assignments = metadata["market"]["assignments"]
+    assert assignments, "the build recorded no cohort assignment"
+    for assignment in assignments:
+        assert assignment["sufficient"] is False
+        # The observed value and the bound both travel; neither is rounded or reworded.
+        assert assignment["failed_clauses"] == ["total_drafts 125 < 300"]
+
+    # And the rows agree with the metadata that explains them.
+    assert {record["confidence"] for record in result.records} == {"low"}
+    for record in result.records:
+        assert "cohort_insufficient" in record["quality_flags"]
+
+
+def test_a_sufficient_cohort_publishes_an_empty_clause_list(store, artifacts, tmp_path):
+    """The field is always present, so a consumer never has to distinguish absent from empty."""
+    _write_snapshot(store, "2026-08-20T11:00:00Z")
+    _run(store, artifacts, tmp_path)
+
+    metadata = json.loads((artifacts / "build_metadata.json").read_text())
+    for assignment in metadata["market"]["assignments"]:
+        assert assignment["sufficient"] is True
+        assert assignment["failed_clauses"] == []

@@ -47,16 +47,18 @@ The intended production architecture is static and GitHub-native: Python data/mo
 
 ## Repository status
 
-Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). **Phase 5 (market snapshots and arbitrage) completed 2026-08-20.** Every shortfall is published as a limitation rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
+Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). **Phase 5 (market snapshots and arbitrage) completed 2026-08-20. Phase 6 (the frontend draft sheet) completed 2026-08-21.** Every shortfall is published as a limitation rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
 
 There is a model and an arbitrage board now. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 built the time-correct data asset — 11,604 leakage-audited player-seasons across 2014-2025 with independently computed STD/HALF/PPR labels and market-independent realized VORP; Phase 3 built the rolling-origin evaluation harness and the baselines worth beating; Phase 4 turned that into a production intrinsic model, a deterministic Monte Carlo simulation of league-relative value, and natural contiguous tiers. The model passed its single sealed-holdout evaluation on 2025; the tiers are honest about being groups rather than hard lines.
 
-Phase 5 added the market half without letting it near the model. Point-in-time ADP snapshots are retained append-only on a dedicated `market-data` branch, because MyFantasyLeague's historical export is a season aggregate recomputed at request time and a price we do not capture today can never be reconstructed. The arbitrage board is a transparent fair-rank-versus-ADP baseline and says so; no learned model is claimed and no surplus or probability is invented. Current injury and roster status ships as a separate artifact that annotates a row and can never move one. The cohort study found dynasty rookie drafts inside the ADP aggregate — rookies priced three to five times earlier than in real redraft leagues, while veterans did not move — so a redraft board is now priced only by keeper-free cohorts. There is still no deployed site.
+Phase 5 added the market half without letting it near the model. Point-in-time ADP snapshots are retained append-only on a dedicated `market-data` branch, because MyFantasyLeague's historical export is a season aggregate recomputed at request time and a price we do not capture today can never be reconstructed. The arbitrage board is a transparent fair-rank-versus-ADP baseline and says so; no learned model is claimed and no surplus or probability is invented. Current injury and roster status ships as a separate artifact that annotates a row and can never move one. The cohort study found dynasty rookie drafts inside the ADP aggregate — rookies priced three to five times earlier than in real redraft leagues, while veterans did not move — so a redraft board is now priced only by keeper-free cohorts.
+
+Phase 6 put a product in front of all of it: a Tier board and a Draft rail drawn with D3 geometry and React DOM, two sortable tables, filtered and full CSV export, a methodology and freshness surface read entirely from build metadata, degraded-artifact states, layouts down to 390px, and keyboard and reduced-motion behaviour. The interface is built around the same three findings the modelling phases published rather than around them — a tier is drawn as a band because its boundaries were measured as unstable, an injury badge says outright that the projection never saw it, and the market-confidence label is explained as data quality with its reason pulled from the build rather than written into the source. It is validated against the real 2026 artifacts, and it builds and passes its end-to-end suite under the GitHub Pages project base path. There is still no deployed site; that is Phase 7.
 
 | Path | Purpose |
 |---|---|
 | `src/ffdraft/` | Config, typed contracts, source adapters, canonical identity, quality gate, artifact serializers, CLI |
-| `web/` + root `package.json` | Vite/React/TypeScript skeleton with a typed, version-checked artifact loader |
+| `web/` + root `package.json` | The React/TypeScript draft sheet: typed artifact loader, Tier board and Draft rail (D3 geometry, React DOM), tables, exports and the methodology surface |
 | `schemas/` | Public artifact contracts, plus the shared `artifact_envelope` wrapper |
 | `config/` | League presets, source policy registry, human-reviewed identity aliases |
 | `src/ffdraft/anchors.py` + `features/` + `scoring/` + `labels/` + `simulation/` + `leakage.py` | The Phase-2 historical dataset: anchor rule, feature dictionary, eligibility, lagged aggregates, scoring engine, VORP labels, leakage audits |
@@ -125,8 +127,11 @@ uv run ffdraft arbitrage-card
 # Frontend
 npm ci
 npm run lint && npm run typecheck
-npm run test -- --run
-npm run build
+npm run test -- --run                            # 193 component and unit tests
+npm run build                                    # root path
+VITE_BASE_PATH=/jeisey-tiers/ npm run build      # GitHub Pages project path
+npm run e2e                                      # 39 Playwright tests over five built sites
+npm run verify:board                             # rendered board vs artifact bytes
 ```
 
 Artifacts written to `web/public/data/` and the historical dataset in `data/historical/` are generated and gitignored; both are reproducible from code plus source releases, and the historical build writes a manifest of content hashes so a rebuild that disagrees is detectable. The `market-data` branch is *not* in this working tree — it shares no history with `main`, is never merged, and holds the retained captures the market path reads. `ffdraft config-check` prints the loaded configuration and which MFL client secrets are present — never their values.

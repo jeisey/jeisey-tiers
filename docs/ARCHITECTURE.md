@@ -341,6 +341,34 @@ The `status/` prefix applies the same discipline to Sleeper captures, for a diff
 
 `market-data` must be excluded from any future release archive or Pages publish.
 
+### 6.3 What "offline" means in this repository
+
+Used throughout `docs/OPERATIONS.md` and `SESSION_STATE.md`, and worth stating once rather than implying:
+
+> **Offline** means *the computation does not call a vendor, because it consumes source bytes that were already retained.* It does not mean local-only, and it does not mean unreproducible.
+
+There is exactly one durable source-history store and it is in Git. The topology is:
+
+```text
+main                      source code, schemas, the production model, the frontend
+market-data               immutable timestamped MFL captures and Sleeper captures
+a build workspace         a checkout of both, side by side
+  -> web/public/data/     deterministic artifact generation (gitignored output)
+  -> web/dist/            the Vite build
+```
+
+Only two commands touch a vendor: `snapshot-market` and `capture-status`, both of which write into `market-data`. Everything downstream — cohort measurement, `build-current`, `build-arbitrage`, the method cards, artifact validation and the whole frontend build — reads retained bytes and runs with no network at all. That is why a session behind an egress policy can still build and validate the entire product, and why every report can be regenerated and diffed against its committed evidence.
+
+The store is **not** laptop-local state. It is a branch in this repository, cloned beside the working tree:
+
+```bash
+git clone --branch market-data <this repo> ../market-data
+uv run ffdraft build-current   --store ../market-data
+uv run ffdraft build-arbitrage --store ../market-data
+```
+
+Phase 7 automates exactly these operations on a clean GitHub runner: check out `main`, check out `market-data`, capture if scheduled, build, validate, deploy. Nothing about the commands changes.
+
 ## 7. Model registry strategy
 
 Production model directory contains only explicitly promoted artifacts, e.g.:
@@ -441,6 +469,12 @@ Prefer React-rendered SVG elements driven by D3 scales, rather than opaque D3-ow
 
 No routing library is required for V1. A single page with tabs and `URLSearchParams` avoids GitHub Pages SPA fallback complexity.
 
+> **Phase-6 implementation (ADR-048).** `web/src/data/` is the whole data layer: `contracts.ts` mirrors the JSON Schemas, `load.ts` fetches and version-checks, `bundle.ts` splits critical (`build_metadata`, `tiers`) from degradable (`arbitrage`, `player_status`, `projections`), `model.ts` builds the indexes and the joins, and `market.ts`, `flags.ts`, `format.ts`, `csv.ts` and `state.ts` hold the derivations, the flag vocabulary, the number formats, the export and the URL state. `web/src/app/` composes; `web/src/charts/` holds the two bespoke charts, which take D3 scales and render React-owned SVG.
+>
+> URL state is read through `useSyncExternalStore` rather than mirrored into component state, so the address bar and the board cannot disagree for a frame. Every chart is one tab stop with arrow-key movement between marks (`useRovingMarks`), because three hundred tab stops in front of a table is not accessibility.
+>
+> Added dependencies: TanStack Table v8, `d3-scale`, `d3-array`, `@playwright/test`. Nothing else.
+
 ## 11. Pages base path
 
 The Vite build must work for both:
@@ -449,6 +483,8 @@ The Vite build must work for both:
 - optional custom domain/root path later
 
 Derive base path from an environment/config value or Vite base. Test generated asset URLs in CI.
+
+> **Phase-6 verification.** `vite.config.ts` reads `VITE_BASE_PATH`, and the end-to-end run builds the site twice — at `/` and at `/jeisey-tiers/` — and serves both from one static server. A test asserts that under the base path the JS and CSS load, `data/*.json` resolves to `/jeisey-tiers/data/...`, the full-CSV link points inside the base path, query state survives a reload, and **no request is made to an absolute `/data/...`**. Phase 7 therefore inherits a proven base path rather than discovering one after a deploy. Nothing here deploys anything.
 
 ## 12. Quality gate architecture
 

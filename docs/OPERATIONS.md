@@ -174,6 +174,32 @@ uv run ffdraft arbitrage-card
 
 `--cohorts` takes `production` (the three cohorts a routine capture retains), `study` (every candidate, for a cohort measurement) or an explicit id list. `build-current --store` reads the retained Sleeper capture instead of calling Sleeper live, which is what makes the status artifact reproducible offline; without it the artifact degrades to nflverse-only and the Tier board is unaffected.
 
+**"Offline" here means network-independent replay from the Git-backed store, not local-only state.** `../market-data` is a clone of this repository's `market-data` branch, sitting beside the working tree; see `docs/ARCHITECTURE.md` section 6.3 for the topology and the exact clone command. Everything in the second block above reads retained bytes and calls no vendor.
+
+### 5.3 Phase-6 commands
+
+```bash
+# the whole frontend gate, all offline
+npm ci
+npm run lint
+npm run typecheck
+npm run test -- --run
+npm run build                                    # root path
+VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages path
+npm run e2e                                      # builds five sites, then 39 Playwright tests
+
+# review aids
+npm run e2e:build                                # just the sites + fixture artifacts
+npm run e2e:screens -- docs/visual-qa/<date>     # the eleven visual-QA screens
+npm run verify:board                             # rendered board vs artifact bytes, live build
+```
+
+`npm run e2e` produces its own builds through `globalSetup`, so it needs no prior `npm run build`; `E2E_SKIP_BUILD=1` reuses what is on disk while iterating on a spec. The end-to-end server is `web/tests/e2e/static-server.mjs`, which maps URLs to files under `web/dist*` and serves nothing else — every spec additionally fails on a request that leaves localhost.
+
+`npm run verify:board` is the one command that needs the **real** generated artifacts rather than fixtures: build the site with `web/public/data/` populated, serve it, and it cross-checks rendered tier rows, chart-mark labels, arbitrage rows and injury badges against the artifact bytes. That is the check behind the Phase-6 exit gate's "chart values agree with the table" clause.
+
+Two environment variables matter in a sandbox: `PLAYWRIGHT_CHROMIUM_EXECUTABLE` points at a preinstalled Chromium when the image's build number does not match the pinned Playwright release, and `E2E_PORT` moves the static server.
+
 ## 6. Least-privilege permissions
 
 Suggested separation:

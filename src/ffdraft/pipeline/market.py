@@ -272,6 +272,12 @@ def _merge_metadata(
                 "exact": assignment.exact,
                 "sufficient": assignment.sufficient,
                 "source_format_detail": assignment.source_format_detail,
+                # The clauses that failed, verbatim ("total_drafts 125 < 300"). Published so a
+                # consumer can say *why* every row on this board reads `low` confidence
+                # without embedding today's measurement in its own source. Without it the
+                # frontend would either hardcode a number that goes stale within a day or
+                # show an unexplained label on 2,122 rows (ADR-041, ADR-045).
+                "failed_clauses": list(assignment.failed_clauses),
             }
             for _, assignment in sorted(market.assignments.items())
         ],

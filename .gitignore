@@ -25,6 +25,11 @@ data/phase4/
 # Node
 node_modules/
 web/dist/
+# The end-to-end run builds the project-Pages site and the degraded-artifact scenarios
+# beside it, and `verify:board` builds one from the real generated artifacts.
+web/dist-*/
+web/test-results/
+playwright-report/
 # Generated public artifacts. Reproducible from `ffdraft build-fixture-artifacts` or the
 # daily refresh, so they stay out of source commits (AGENTS.md section 15). The committed
 # fixture artifacts under tests/fixtures/artifacts/ are a different thing and are tracked.

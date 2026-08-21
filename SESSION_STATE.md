@@ -4,52 +4,46 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 5 — **complete** (2026-08-20). Point-in-time market history is being retained on a dedicated branch, the cohort mix has been re-measured and the selection frozen, the deterministic A0 arbitrage baseline is built for every launch preset, and current player status ships as a separate annotation-only artifact. Phase 6 (frontend) has not been started.
+Phase 6 — **complete** (2026-08-21). The three browser-ready Phase-5 data products now have a product in front of them: a compact draft sheet with a Tier board, a Draft rail, two sortable tables, filtered and full CSV export, a methodology and freshness surface, degraded-artifact states, responsive layouts down to 390px and keyboard/reduced-motion behaviour. It is validated against the **real** 2026 build, not fixtures. Phase 7 (Actions and Pages) has not been started.
 
-Two Phase-5 findings are **published rather than repaired**, in the ADR-034/ADR-035 tradition: no keeper-free cohort clears the frozen cohort-level draft-count bar, so every arbitrage row carries `cohort_insufficient` and `low` confidence; and `wide_market_range` fires on 90% of rows, which makes it true and useless.
+Three repository findings drive the interface rather than decorate it, and each is now enforced by a test:
 
-Two Phase-4 criteria remain open and were **not** touched: the Monte Carlo convergence rule (ADR-034) and tier boundary stability (ADR-035). Phase 5 did not lower a tier threshold, change the tier penalty, change the draw count, reopen expected-vs-median VORP, retrain the intrinsic model or alter `intrinsic_core_v1`. A0 consumes fair rank and never a tier boundary, so the failed quantity does not propagate into the arbitrage score.
+1. **A tier is a band, not a line** (ADR-035 → ADR-046). Whitespace and a surface change separate lanes; no rule, arrow or "value cliff" is drawn anywhere.
+2. **An injury badge is not a model input** (ADR-043). A null `injury_status` renders as nothing, never as "Healthy", and every status surface says the projection never saw it.
+3. **`confidence` is data quality, not probability** (ADR-041 → ADR-047). All 2,122 rows read `low` for one recorded reason, so the reason is explained once at view level from `build_metadata`, never hardcoded.
 
 ## Current target gate
 
-Phase 6 exit gate: all primary draft-sheet flows work against the real generated artifacts — Tier Board and Draft Rail visualizations, Tier and Arbitrage tables with search/filter/sort/export, URL query state, methodology/freshness panel, degraded-source states, responsive layouts, accessibility and reduced-motion — with exports correct and chart values agreeing with the tables.
+Phase 7 exit gate: a clean GitHub-hosted run can build and deploy the site; the daily refresh can update it; a forced data-quality failure leaves existing production intact.
 
-Phase 6 inherits three browser-ready data products and two obligations. The products: intrinsic Tier data, deterministic Arbitrage data, and current Player Status. The obligations: **a tier is a group, not a line** (ADR-035 — the measurement supports about four reproducible cut sites on a 300-deep board, so any UI that draws a hard edge overstates it), and **an injury badge is not a model input** (ADR-043 — the projection has never seen it, and the UI must not imply otherwise).
+The owner has settled the deployment target (ADR-016 as amended 2026-08-21): **public repository, public GitHub Pages project site, standard GitHub-hosted Actions, no external paid host.** A custom domain is optional future work. The repository is still **private** — Phase 6 did not change visibility, configure Pages or add deploy permissions.
 
 ## Last validated commit
 
-The Phase-5 branch `claude/ffdraft-phase-5-hpjbmm`, branched from the merged Phase-4 state on `main` (`1a7fe8b`).
-
-**The Phase-5 freeze checkpoint is `455f08b`.** ADR-038 through ADR-044 — the retention architecture, the cohort sufficiency rule, the A0 formula, the confidence rubric and the trend definition — were written and committed *before* any of them had been run against live data. A later session auditing whether a Phase-5 decision could have seen its own evidence should check whether it predates that SHA. The two exceptions are recorded as such: the ADR-039 population clarification (`239db00`, still before the decisive measurement) and ADR-045 (after the v1 measurement, which is the whole subject of that ADR).
+The Phase-6 branch `claude/fantasy-draft-phase-6-gb9b4x`, branched from the merged Phase-5 state on `main` (`cbf5e5e`).
 
 ```
 uv sync --frozen
 uv run ruff check .                 # clean
-uv run ruff format --check .        # clean, 163 files
-uv run mypy                         # clean, 110 source files, strict
-uv run pytest                       # 987 passed, 4 live deselected
+uv run ruff format --check .        # clean
+uv run mypy                         # clean, strict
+uv run pytest                       # 991 selected, all pass (4 live-network deselected)
 uv run ffdraft config-check
 
-# Phase-2, network-bound (nflverse only) — data/historical/ is gitignored
-uv run ffdraft build-historical --last-season 2025
-uv run ffdraft validate-historical data/historical
-
-# Phase-5 capture, network-bound, GitHub runner only (ADR-009)
-#   .github/workflows/market-capture.yml, triggered by bumping
-#   .github/market-capture.request
-uv run ffdraft snapshot-market --season 2026 --cohorts study --store ../market-data
-uv run ffdraft capture-status  --season 2026 --store ../market-data
-
-# Phase-5 analysis and build, entirely offline from retained bytes
-uv run ffdraft validate-market-history ../market-data --season 2026   # 2 snapshots, 35 files
-uv run ffdraft measure-market-cohorts --store ../market-data
-uv run ffdraft build-current --store ../market-data     # 2,700 tiers, 315 status rows
-uv run ffdraft build-arbitrage --store ../market-data   # 2,124 arbitrage rows
-uv run ffdraft arbitrage-card
+# Offline from a clone of the market-data branch (docs/ARCHITECTURE.md 6.3)
+uv run ffdraft build-current   --store ../market-data   # 2,700 tiers, 3,510 projections, 315 status
+uv run ffdraft build-arbitrage --store ../market-data   # 2,122 arbitrage rows
 uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
 
 npm ci
-npm run lint / typecheck / test -- --run / build     # all clean, 39 frontend tests
+npm run lint            # clean (2 known React-Compiler/TanStack warnings, ADR-048)
+npm run typecheck       # clean, strict
+npm run test -- --run   # 194 frontend tests
+npm run build                                    # root base path
+VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages base path
+npm run e2e             # 39 Playwright tests over five built sites
+npm run verify:board    # rendered board vs artifact bytes on the real build: 0 disagreements
+npm run e2e:screens -- docs/visual-qa/2026-08-21  # 11 screens, reviewed
 ```
 
 ## Production status
@@ -70,10 +64,11 @@ What was there before and still is:
 - `data/historical/` — the modelling dataset. Gitignored and reproducible; see "Phase-2 dataset" below.
 - `docs/FEATURE_DICTIONARY.md` — every model feature with formula, sources and availability rule, generated from code and pinned by a test.
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
-- `.github/workflows/ci.yml` — Python and frontend gates, fixture-only, no vendor network.
+- `.github/workflows/ci.yml` — Python, frontend and end-to-end gates, fixture-only, no vendor network.
+- `docs/visual-qa/` — committed screenshots and the written review, regenerated with `npm run e2e:screens`.
 - `.github/workflows/market-capture.yml` — the Phase-5 live capture, triggered by bumping `.github/market-capture.request`. Deliberately the minimum needed to prove the source path; scheduling is Phase-7 work.
-- `web/` — Vite/React/TypeScript skeleton with a typed artifact loader.
-- `tests/` — 987 network-free Python tests (4 live-network deselected); `web/tests/` adds 39.
+- `web/` — the Phase-6 draft sheet: `src/data/` (contracts, loader, indexes, market derivations, flags, formats, CSV, URL state), `src/app/` (shell, controls, two tables, player detail, data view), `src/charts/` (Tier Board, Draft Rail), `src/components/`, `src/styles/base.css`.
+- `tests/` — 991 network-free Python tests (4 live-network deselected); `web/tests/` adds 194 vitest plus 39 Playwright.
 - `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
 
 ## Phase-2 dataset — the validated build
@@ -186,6 +181,33 @@ The quarterbacks are the known 1-QB-league VORP compression from Phase 4, not a 
 
 **Player status.** 315 rows for the published board, 309 matched through `sleeper_id`, one failed the `gsis_id` cross-check closed. 61 players carry an `injury_status`, 13 carry `injury_notes`. `injury_start_date`, `practice_participation` and `practice_description` are published by Sleeper as keys with null values across the whole preseason payload; they are normalized anyway because Sleeper declares them and they populate in season.
 
+## Phase-6 results — the draft sheet
+
+Built against the real 2026 build, in ADR-008's order: tables first, because a table is the truth surface a chart is checked against.
+
+**What shipped.** One page, three tabs, state in the URL.
+
+| Surface | What it does |
+|---|---|
+| Tier board | Tier groups as soft bands over a **median simulated VORP** axis, P25-P75 interval per player, position-coloured marks with position rank, one tab stop with arrow-key movement. Defaults to the top 100; a shareable control shows the whole board. |
+| Tier table | TanStack v8, default `fair_rank` ASC, sticky header, 11 columns, ~38px rows. The canonical accessible equivalent of the board. |
+| Draft rail | Paired anchors per player — filled diamond for fair rank, open circle for MFL ADP — with a signed sentence per row (`+14.5 picks later`). Bargains / Premiums / All, top 30. |
+| Arbitrage table | Default `arbitrage_score` DESC. **No** surplus columns: V1 has no learned model and will not grow a header for one. |
+| Player detail | One `<dialog>` reachable from all four surfaces: intrinsic, market and current-status sections, with the annotation-only disclosure standing in the status section. |
+| Data | Definitions, the build read from metadata, a source freshness table, market provenance, ten current limitations and source attribution. No metric is hardcoded; the model cards are linked. |
+| Export | `Download full CSV` links the artifact the build wrote; `Export filtered CSV` writes exactly the visible rows in visible order, named `ffdraft-<board>-<scoring>-<teams>-<build date>.csv`. |
+
+**Verified against the real artifacts** (`npm run verify:board`, 0 disagreements): 40 tier rows, 25 chart-mark labels, 30 arbitrage rows and 56 injury badges match `tiers.json`, `arbitrage.json` and `player_status.json` exactly. The 2026 PPR/redraft-12 board renders 300 tier rows, 238 priced arbitrage rows and the expected quarterback premiums (Joe Burrow −207.9, Jayden Daniels −230.5, Christian McCaffrey −31.1 picks).
+
+**Two contract corrections the frontend surfaced.**
+
+- `build_metadata.market.assignments[]` now carries `failed_clauses` — the frozen rule's own words, e.g. `total_drafts 125 < 300`. Without it the UI would have to hardcode today's measurement to explain a low-confidence board (ADR-047). The market block was already `additionalProperties: true`, so no version moved; the schema now declares the field.
+- `expected_games` is **optional** in `player_projection.schema.json` and the production current build omits it while the fixture pipeline emits it. `web/src/data/contracts.ts` claimed it was always present; it is now optional there too.
+
+**Visual QA found nine real defects**, all fixed and written up in `docs/visual-qa/2026-08-21/REVIEW.md`. The two worth remembering: the Tier Board was scaled to P10-P90 while drawing P25-P75, which parked every median in the middle third of the plot; and the arbitrage page scrolled sideways by ~700px on a phone because `.table-scroll` was not a containing block, so the absolutely positioned screen-reader-only spans inside its cells escaped the scroller and dragged the document's scroll width out to the table's width — an accessibility affordance silently breaking the mobile layout.
+
+**Dependencies added:** TanStack Table v8, `d3-scale`, `d3-array`, `@playwright/test`, `@testing-library/user-event` (ADR-048). No router, no UI kit, no charting framework, no CSS framework.
+
 ## Confirmed decisions
 
 - Static GitHub Pages runtime.
@@ -228,6 +250,11 @@ The quarterbacks are the known 1-QB-league VORP compression from Phase 4, not a 
 - **Current player status is a separate artifact, keyed once per player, and is annotation only** (ADR-043).
 - **Richer historical injury features are a 2027 refresh candidate**; the 2025 holdout is spent, so there is nothing to promote them against (ADR-044).
 - **A redraft board may only be priced by a keeper-free cohort** (`phase5_cohort_v2`, ADR-045). No bound moved; the resulting insufficiency is published.
+- **The frontend draws a tier as a band, never as a line** (ADR-046).
+- **A shared market condition is explained once at view level, from `build_metadata`** (ADR-047).
+- **The frontend's dependency set is TanStack Table v8, d3-scale/d3-array and Playwright** — no router, no UI kit, no charting framework (ADR-048).
+- **V1 deploys as a public repository on a public GitHub Pages project site**, standard GitHub-hosted Actions, no external paid host; the repository stays private through Phase 6 (ADR-016 as amended 2026-08-21).
+- **FantasyPros terms review is complete**; the source is `benchmark_only` and is *not* a production input, so it is absent from the site's source list (ADR-014 as amended).
 - Source verification runs on a GitHub runner, not in an egress-restricted sandbox (ADR-009).
 
 ## Verified source facts a later phase should not re-derive
@@ -311,6 +338,20 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **An empty *cohort* is a finding; an empty *capture* is an outage.** The adapter's `source.too_few_records` is downgraded per cohort and re-raised at capture level, because a study that refused to record a collapsed cohort could not prove the collapse.
 - **`no-keeper` and `no-mock-no-keeper` are the same cohort on this data**, because `IS_MOCK=0` does nothing. The fallback tie-break picks the latter; it is an arbitrary but deterministic choice between identical populations.
 
+## Phase-6 facts a later phase should not re-derive
+
+- **The browser filters, joins and formats. It computes nothing.** No component derives a VORP, a fair rank, a tier or an arbitrage score. `npm run verify:board` proves it against the artifact bytes on the live build; if a future change makes a chart "smarter", that command is what fails.
+- **`web/tests/fixtures/artifacts.ts` is the test board, and it is not the real one.** Ten players carrying the cases that are easy to get wrong: an injury designation, a status record with no designation, no status record at all, a tier player with no market price, a generational suffix, and two quarterback premiums. Every arbitrage row reads `low` with a null trend, mirroring the launch condition. The real generated artifacts change on every rebuild; a test bound to them proves nothing.
+- **An overflow container only clips absolutely positioned descendants when it is itself positioned.** `.table-scroll` carries `position: relative` for that reason and only that reason. Remove it and the screen-reader-only spans inside table cells escape a horizontally scrolled table and give the whole page an invisible horizontal scrollbar on mobile.
+- **The tier axis spans the interval the chart draws.** P25-P75, not P10-P90. Scaling to the outer interval spends a third of the width on tails the chart does not render and parks every median in the middle third. P10-P90 lives in player detail and in every mark's accessible label.
+- **Almost nothing shares a lane row on the real board, and that is the finding.** A top back's interquartile interval is wider than the entire gap between the first and twentieth median. Packing two players side by side would only be possible by drawing intervals too short to be true.
+- **Charts are one tab stop, not three hundred.** `useRovingMarks` implements the composite-widget pattern; the table beside each chart remains the definitive accessible equivalent.
+- **The end-to-end run builds five sites**: root, `/jeisey-tiers/`, and three that withhold or corrupt an artifact. Each scenario is its own build at its own base path, so no test can see another's outage, and none of them can silently read the healthy build's `data/`.
+- **Every spec fails a request that leaves localhost.** That is what makes `docs/ARCHITECTURE.md` section 3.2 a check rather than a convention.
+- **`docs/visual-qa/` captures the *fixture* build, deliberately.** Two runs of the same code produce the same images, so a review is reproducible; the real board is reviewed live during a build because it changes every time.
+- **jsdom has no `HTMLDialogElement.showModal` and no `ResizeObserver`.** Both are polyfilled in `web/tests/setup.ts` rather than worked around in components; production code should use the platform API.
+- **TanStack Table is pinned to v8**, not the v9 rewrite (ADR-048). The two React-Compiler warnings it produces are left visible rather than silenced.
+
 ## Open questions requiring evidence
 
 - **How to make tier boundaries meet a stability bar, or how to stop pretending they are lines.** The measurement says a 300-deep board supports about four reproducible cut sites. Two candidate remedies, both new decisions needing their own rule version and evidence: let the undifferentiated tail be one wide tier by re-specifying `max_largest_tier_share`, or keep the segmentation and present membership with a boundary-confidence band instead of a hard edge. **Do not simply lower the threshold** (ADR-035).
@@ -344,6 +385,11 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **`mypy --strict` covers `src/ffdraft` only.** Tests are covered by execution.
 - **The historical build takes a few minutes** of nflverse downloads plus the independence proof. There is no incremental mode; if that becomes painful, cache the normalized frames rather than weakening the proof.
 
+- **The Tier Board is tall by construction.** One hundred players at ~17px plus lane padding is roughly 1,800px, because intervals this wide force one player per row. It reads as a board and scrolls like one; a future tier rule that produced fewer, wider tiers would not change that, since the constraint is interval width rather than tier count.
+- **The React Compiler skips optimising the two table components**, because `useReactTable` returns functions it cannot memoise. A warning, not an error, and not measurable on a 300-row board (ADR-048).
+- **`expected_games` is absent from the production projection artifact** even though the schema allows it and the fixture pipeline emits it. The UI hides the field rather than showing an em dash. If a future build starts emitting it, it appears with no code change.
+- **The visual-QA screenshots are of the fixture board.** They prove layout, not data. A regression that only appears at production row counts would not show up there; `npm run verify:board` and a live look are what cover that.
+
 ## Repository notes
 
 - **`BUNDLE_MANIFEST.txt` is a snapshot of the original specification bundle, not a live checksum.** The frozen set (`AGENTS.md`, `PRD.md`, `MASTER_SPEC.md`, `PROMPT_START_HERE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TEST_STRATEGY.md`, `docs/UX_SPEC.md`, `docs/BASELINE_FFTIERS_ANALYSIS.md`, `repo-tree.txt`) is untouched. The living records — `README.md`, `TASKS.md`, `SESSION_STATE.md`, `docs/DECISIONS.md`, `docs/DATA_SOURCES.md`, `docs/DATA_CONTRACTS.md`, `docs/MODELING.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/SECURITY_LICENSE.md`, `docs/FEATURE_DICTIONARY.md`, `config/*` — are updated as the contract requires.
@@ -358,18 +404,19 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 ## Known blockers
 
-None blocking Phase 6. Three Phase-5 findings are **open, not blocking**: the cohort volume clause (ADR-045), the non-discriminating `wide_market_range` flag (ADR-041), and the two Phase-4 gates that were already open (ADR-034, ADR-035). All four are published limitations of a system that otherwise passes every gate, and none should be closed by editing a threshold.
+None blocking Phase 7. The four open findings are unchanged and none of them is a blocker: the Monte Carlo convergence rule (ADR-034), tier boundary stability (ADR-035), the cohort volume clause (ADR-045) and the non-discriminating `wide_market_range` flag (ADR-041). Phase 6 rendered all four rather than closing any of them, which is the whole point of the exercise — a frontend can expose a limitation faithfully without owning its statistical remedy.
 
 ## Next action
 
-Begin Phase 6 (`docs/IMPLEMENTATION_PLAN.md`). The concrete first step, following ADR-008's build order — tables before bespoke charts, because a table is the truth surface a chart is checked against:
+Begin Phase 7 (`docs/IMPLEMENTATION_PLAN.md`). The owner's deployment decision is recorded in ADR-016 as amended, so the concrete first step is the one that ADR now names:
 
-**Build the typed Tier table against the real `web/public/data/` artifacts, with URL query state for the scoring and league preset.** The loader, the contracts and the version checks already exist in `web/src/data/`; what does not exist is anything that renders a row. Start there, get the preset switch and the export correct, and only then draw the Tier Board.
+**Make `jeisey/jeisey-tiers` public.** Everything else in Phase 7 — the Pages environment, `pages: write` and `id-token: write`, the deploy job, the daily refresh schedule — depends on that being done first, and it is the one step that is not a code change.
 
-Three things Phase 6 must get right, none of which are the frontend's own idea:
+Two obligations travel with it and must be handled in the same change, not after it:
 
-1. **A tier is a group, not a line** (ADR-035). Boundary agreement measured 0.239 against a 0.500 bar while membership ARI measured 0.865, and the board's deep tail genuinely is one undifferentiated group. Any hard edge drawn between tiers overstates a quantity that was measured as unidentified. `build_metadata.json` carries the warning; the UI has to act on it.
-2. **An injury badge is not a model input** (ADR-043). `player_status.json` joins by `player_id` and describes *today*; the projection beside it has never seen it. The UI must not imply the model priced the injury in.
-3. **`confidence` is data quality, not probability** (ADR-041), and at launch every arbitrage row reads `low` for one recorded reason. Show the reason, not just the label — otherwise the field reads as "the model is unsure", which is the opposite of what it says.
+1. **`market-data` must not be published.** It holds retained MFL and Sleeper payloads that are a private research cache while the repository is private (ADR-038, `docs/SECURITY_LICENSE.md` section 10). Making the repository public makes them public. Confirm the exclusion from any release archive and any Pages publish as part of the visibility change.
+2. **Sleeper's non-commercial terms bind what the site publishes.** `player_status.json` carries Sleeper fields into a public artifact (ADR-043). The free, ad-free character of the deployment is a licence condition, not a preference.
 
-Data is ready and reproducible: `uv run ffdraft build-current --store ../market-data` then `build-arbitrage --store ../market-data`, both from a clone of the `market-data` branch. Rebuild `data/historical/` only if a model question comes up; Phase 6 needs none of it.
+Phase 6 already removed the routing risk from the deploy: the frontend builds and is end-to-end tested under `/jeisey-tiers/`, and a test asserts no absolute `/data/...` request survives. The workflow needs `VITE_BASE_PATH=/jeisey-tiers/` and nothing more from the frontend.
+
+Data is ready and reproducible offline from a clone of `market-data`: `uv run ffdraft build-current --store ../market-data` then `build-arbitrage --store ../market-data`, then `validate-artifacts web/public/data`, then `npm run build`. That is the exact job graph `daily-refresh.yml` has to automate.
