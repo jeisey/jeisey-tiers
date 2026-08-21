@@ -245,8 +245,11 @@ describe("arbitrage view", () => {
     await waitFor(() => {
       expect(screen.getByText(/Every row on this board reads low market-data confidence/i)).toBeDefined();
     });
+    // The headline states what the label is about; the disclosure beside it carries the
+    // evidence, and both are in the document rather than behind a fetch.
+    expect(screen.getByText(/not a probability that a player is a bargain/)).toBeDefined();
     expect(screen.getByText(/125 drafts against the 300/)).toBeDefined();
-    expect(screen.getByText(/Market-data quality/)).toBeDefined();
+    expect(screen.getByText(/Why, and what the market evidence actually is/)).toBeDefined();
   });
 
   it("renders a null trend as an em dash with a spoken explanation, never as zero", async () => {

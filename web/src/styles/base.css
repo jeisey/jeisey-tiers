@@ -489,6 +489,31 @@ a {
   background: var(--danger-surface);
 }
 
+/* A disclosure inside a notice: the headline stays, the evidence is one click away. */
+.market-details {
+  margin-top: var(--space-2);
+}
+
+.market-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+  list-style-position: outside;
+}
+
+.market-details > summary:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.market-details ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .notice-inline {
   display: flex;
   flex-wrap: wrap;
@@ -535,6 +560,12 @@ a {
 /* ------------------------------------------------------------------ table */
 
 .table-scroll {
+  /* `position: relative` is load-bearing, not decoration. An overflow container only clips
+     absolutely positioned descendants when it is itself a containing block, and the accessible
+     `.visually-hidden` text inside table cells is absolutely positioned. Without this the
+     screen-reader-only spans escape a horizontally scrolled table and drag the whole page's
+     scroll width out to the table's width — an invisible horizontal scrollbar on mobile. */
+  position: relative;
   overflow-x: auto;
   overflow-y: visible;
   border: 1px solid var(--rule);
@@ -768,6 +799,7 @@ table.sheet tbody tr[data-selected="true"] td {
 /* ------------------------------------------------------------------ charts */
 
 .chart-frame {
+  position: relative;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--surface-raised);

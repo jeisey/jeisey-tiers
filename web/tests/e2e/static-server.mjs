@@ -67,14 +67,24 @@ export function createStaticServer({ roots }) {
 }
 
 const port = Number(process.env.PORT ?? 4173);
-const rootDir = resolve(process.env.E2E_DIST ?? "web/dist");
-const baseDir = resolve(process.env.E2E_DIST_BASE ?? "web/dist-base");
+
+/**
+ * Mounts, most specific first.
+ *
+ * The degraded scenarios are separate builds served at separate prefixes rather than one build
+ * whose files a test mutates: a run then has no shared state to reset, and two tests can never
+ * see each other's outage.
+ */
+const MOUNTS = [
+  { base: "/jeisey-tiers/", dir: "web/dist-base" },
+  { base: "/scenario/no-market/", dir: "web/dist-no-market" },
+  { base: "/scenario/no-status/", dir: "web/dist-no-status" },
+  { base: "/scenario/bad-schema/", dir: "web/dist-bad-schema" },
+  { base: "/", dir: "web/dist" },
+];
 
 createStaticServer({
-  roots: [
-    { base: "/jeisey-tiers/", dir: baseDir },
-    { base: "/", dir: rootDir },
-  ],
+  roots: MOUNTS.map((mount) => ({ base: mount.base, dir: resolve(mount.dir) })),
 }).listen(port, () => {
   process.stdout.write(`static server on http://localhost:${String(port)}/\n`);
 });

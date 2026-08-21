@@ -198,46 +198,60 @@ export function MarketConditionNotice({
   const clauses = assignment?.failedClauses ?? [];
   const uniformLow = uniform !== null && uniform !== "high";
 
+  // One block, not three. The headline states the condition — which must be explained rather
+  // than hidden — and the disclosure carries the evidence. Three stacked panels pushed the
+  // board itself off a phone screen, which is a worse way of being honest.
   return (
-    <>
-      {uniformLow && (
-        <Notice severity="warning" title={`Every row on this board reads ${CONFIDENCE_SHORT[uniform].toLowerCase()} market-data confidence.`}>
-          {clauses.length > 0 ? (
-            <>
-              {`Under the frozen cohort rule, ${clauses.map(explainClause).join("; ")}. `}
-            </>
-          ) : (
-            "The market cohort serving this preset did not clear the frozen sufficiency rule. "
-          )}
-          {summary.medianSampleSize !== null && (
-            <>
-              {`The direct per-player evidence is better than that label suggests: the median priced player here was selected in ${formatInteger(summary.medianSampleSize)} drafts. `}
-            </>
-          )}
-          {CONFIDENCE_MEANING}
-        </Notice>
+    <div className="notice" data-severity={uniformLow ? "warning" : "info"}>
+      {uniformLow ? (
+        <>
+          <strong>
+            {`Every row on this board reads ${CONFIDENCE_SHORT[uniform].toLowerCase()} market-data confidence.`}
+          </strong>{" "}
+          That is a statement about how much draft evidence stands behind these prices — not a
+          probability that a player is a bargain, and nothing at all about the projection beside
+          it.
+        </>
+      ) : (
+        <>
+          <strong>Market data.</strong> {CONFIDENCE_MEANING}
+        </>
       )}
-      {/* Two further facts about the market, kept as one dense line rather than two more
-          boxes: neither is an alarm, and stacking three panels above the chart would bury it. */}
-      <p className="view-notes">
-        {!summary.trendAvailable && (
-          <>
-            <strong>Trend collecting.</strong> {TREND_UNAVAILABLE_EXPLANATION}
-            {summary.trendSnapshots !== null &&
-              ` The store holds ${formatInteger(summary.trendSnapshots)} snapshot${summary.trendSnapshots === 1 ? "" : "s"} in the window.`}{" "}
-          </>
-        )}
-        {assignment !== null && !assignment.exact && (
-          <>
-            <strong>Approximate cohort.</strong>{" "}
-            {`${marketSourceLabel(summary.sourceId)} cannot filter drafts to this exact scoring and league size, so prices come from the ${assignment.cohortId} population (${assignment.sourceFormatDetail}).`}
-            {assignment.scoringPreset !== "PPR" &&
-              " That population is not scoring-specific, so this board is priced largely by PPR drafters."}
-          </>
-        )}
-        {summary.snapshotAtUtc !== null && ` Snapshot taken ${formatEastern(summary.snapshotAtUtc)}.`}
-      </p>
-    </>
+      <details className="market-details">
+        <summary>Why, and what the market evidence actually is</summary>
+        <ul>
+          {clauses.length > 0 && (
+            <li>
+              <strong>Cohort rule.</strong>{" "}
+              {`Under the frozen sufficiency rule, ${clauses.map(explainClause).join("; ")}.`}
+              {summary.medianSampleSize !== null &&
+                ` The direct per-player evidence is better than that label suggests: the median priced player here was selected in ${formatInteger(summary.medianSampleSize)} drafts.`}
+            </li>
+          )}
+          {!summary.trendAvailable && (
+            <li>
+              <strong>Trend collecting.</strong> {TREND_UNAVAILABLE_EXPLANATION}
+              {summary.trendSnapshots !== null &&
+                ` The store holds ${formatInteger(summary.trendSnapshots)} snapshot${summary.trendSnapshots === 1 ? "" : "s"} in the window.`}
+            </li>
+          )}
+          {assignment !== null && !assignment.exact && (
+            <li>
+              <strong>Approximate cohort.</strong>{" "}
+              {`${marketSourceLabel(summary.sourceId)} cannot filter drafts to this exact scoring and league size, so prices come from the ${assignment.cohortId} population (${assignment.sourceFormatDetail}).`}
+              {assignment.scoringPreset !== "PPR" &&
+                " That population is not scoring-specific, so this board is priced largely by PPR drafters."}
+            </li>
+          )}
+          {summary.snapshotAtUtc !== null && (
+            <li>
+              <strong>Snapshot.</strong>{" "}
+              {`${marketSourceLabel(summary.sourceId)} prices retained ${formatEastern(summary.snapshotAtUtc)}.`}
+            </li>
+          )}
+        </ul>
+      </details>
+    </div>
   );
 }
 

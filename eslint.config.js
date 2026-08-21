@@ -35,7 +35,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["vite.config.ts", "eslint.config.js"],
+    files: ["vite.config.ts", "playwright.config.ts", "eslint.config.js"],
     extends: [tseslint.configs.disableTypeChecked],
   },
 );

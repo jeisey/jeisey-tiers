@@ -13,7 +13,10 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --build --force",
-    "test": "vitest"
+    "test": "vitest",
+    "e2e": "playwright test",
+    "e2e:build": "node --experimental-strip-types web/tests/e2e/build-fixtures.ts",
+    "e2e:screens": "node web/tests/e2e/capture-screens.mjs"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
