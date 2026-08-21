@@ -44,8 +44,8 @@ function index(overrides: Partial<ConstructorParameters<typeof ArtifactIndex>[0]
 describe("ArtifactIndex", () => {
   it("indexes tiers by preset block in fair-rank order", () => {
     const rows = index().tiersFor("redraft-12", "PPR");
-    expect(rows).toHaveLength(10);
-    expect(rows.map((row) => row.fair_rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(rows).toHaveLength(18);
+    expect(rows.map((row) => row.fair_rank)).toEqual([...Array(18).keys()].map((n) => n + 1));
   });
 
   it("indexes arbitrage by preset block in arbitrage-score order", () => {
@@ -62,7 +62,7 @@ describe("ArtifactIndex", () => {
     expect(degraded.hasArbitrage).toBe(false);
     expect(degraded.hasPlayerStatus).toBe(false);
     // The intrinsic board is unchanged by either absence.
-    expect(degraded.tiersFor("redraft-12", "PPR")).toHaveLength(10);
+    expect(degraded.tiersFor("redraft-12", "PPR")).toHaveLength(18);
   });
 
   it("only advertises preset blocks the build actually published", () => {
@@ -152,7 +152,7 @@ describe("groupByTier", () => {
   it("produces contiguous groups in fair-rank order", () => {
     const groups = groupByTier(selectTierRows(index(), DEFAULT_STATE));
     expect(groups.map((group) => group.label)).toEqual(["S", "A", "B"]);
-    expect(groups.map((group) => group.rows.length)).toEqual([3, 3, 4]);
+    expect(groups.map((group) => group.rows.length)).toEqual([3, 5, 10]);
     const ranks = groups.flatMap((group) => group.rows.map((row) => row.record.fair_rank));
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
   });

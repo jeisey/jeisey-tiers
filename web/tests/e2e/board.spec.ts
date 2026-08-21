@@ -37,7 +37,7 @@ test.describe("default tier experience", () => {
     await openBoard(page);
     await expect(page.getByText("Aug 21 · 10:38 AM ET")).toBeVisible();
     const table = page.getByRole("table", { name: /Intrinsic tier board/ });
-    await expect(table.getByRole("row")).toHaveCount(11);
+    await expect(table.getByRole("row")).toHaveCount(19);
     await expect(table.getByRole("row").nth(1)).toContainText("Bijan Robinson");
     await expect(page.getByText("Median simulated VORP", { exact: true })).toBeVisible();
   });
@@ -342,7 +342,7 @@ test.describe("data and methodology", () => {
 test.describe("degraded artifacts", () => {
   test("keeps the tier board when the market artifact is gone", async ({ page }) => {
     await openBoard(page, "/scenario/no-market/");
-    await expect(page.getByRole("table", { name: /Intrinsic tier board/ }).getByRole("row")).toHaveCount(11);
+    await expect(page.getByRole("table", { name: /Intrinsic tier board/ }).getByRole("row")).toHaveCount(19);
     await page.getByRole("tab", { name: "Arbitrage" }).click();
     await expect(page.getByText(/Market comparison unavailable/)).toBeVisible();
     await expect(page.getByText(/tier board is unaffected/)).toBeVisible();
@@ -373,7 +373,7 @@ test.describe("project Pages base path", () => {
     page.on("request", (request) => requested.push(new URL(request.url()).pathname));
     await openBoard(page, "/jeisey-tiers/");
 
-    await expect(page.getByRole("table", { name: /Intrinsic tier board/ }).getByRole("row")).toHaveCount(11);
+    await expect(page.getByRole("table", { name: /Intrinsic tier board/ }).getByRole("row")).toHaveCount(19);
     expect(requested.some((path) => path.startsWith("/jeisey-tiers/assets/"))).toBe(true);
     expect(requested.some((path) => path === "/jeisey-tiers/data/tiers.json")).toBe(true);
     // No absolute `/data/...` assumption may survive under a base path.

@@ -54,7 +54,7 @@ describe("loadBundle", () => {
     expect(bundle.degradations).toEqual([]);
     expect(bundle.index.hasArbitrage).toBe(true);
     expect(bundle.index.hasPlayerStatus).toBe(true);
-    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(10);
+    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(18);
   });
 
   it("refuses an incompatible tier contract rather than rendering it", async () => {
@@ -86,7 +86,7 @@ describe("loadBundle", () => {
     expect(bundle.degradations.map((entry) => entry.artifact)).toEqual(["arbitrage"]);
     expect(bundle.degradations[0]?.reason).toBe("unavailable");
     // The intrinsic board is untouched.
-    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(10);
+    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(18);
   });
 
   it("degrades gracefully when player status is unavailable", async () => {
@@ -103,7 +103,7 @@ describe("loadBundle", () => {
     serve(everything({ "projections.json": MISSING }));
     const bundle = await loadBundle();
     expect(bundle.index.hasProjections).toBe(false);
-    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(10);
+    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(18);
     expect(bundle.index.arbitrageFor("redraft-12", "PPR").length).toBeGreaterThan(0);
   });
 

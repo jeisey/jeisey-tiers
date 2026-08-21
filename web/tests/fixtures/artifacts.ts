@@ -13,6 +13,7 @@
  * | Zach Ertz       | on the tier board, **no market price** at all                 |
  * | Deebo Gray      | priced, **no player-status record at all**                    |
  * | Kyle Pitts Sr.  | generational suffix, so the short-name path is exercised      |
+ * | James Cook III  | the other suffix form, which must not shorten to "III"         |
  *
  * Every arbitrage row carries `low` confidence and a null trend, which mirrors the launch
  * condition the UI has to explain rather than hide.
@@ -49,13 +50,19 @@ const SEEDS: readonly Seed[] = [
   { id: "gsis:00-0000001", name: "Bijan Robinson", position: "RB", team: "ATL", p50: 135.4, adp: 2.6, sample: 125 },
   { id: "gsis:00-0000002", name: "Amon-Ra Bright", position: "WR", team: "DET", p50: 133.6, adp: 10.5, sample: 126 },
   { id: "gsis:00-0000003", name: "Ja'Marr Swift", position: "WR", team: "CIN", p50: 130.9, adp: 4.1, sample: 124 },
+  { id: "gsis:00-0000011", name: "Jahmyr Cook", position: "RB", team: "DET", p50: 124.2, adp: 6.8, sample: 123 },
+  { id: "gsis:00-0000012", name: "Puka Nightingale", position: "WR", team: "LAR", p50: 118.7, adp: 21.4, sample: 120 },
+  { id: "gsis:00-0000013", name: "James Cook III", position: "RB", team: "BUF", p50: 101.2, adp: 33.7, sample: 117 },
   { id: "gsis:00-0000004", name: "Kyle Pitts Sr.", position: "TE", team: "ATL", p50: 74.2, adp: 96.4, sample: 88 },
   { id: "gsis:00-0000005", name: "Trey McBride", position: "TE", team: "ARI", p50: 71.0, adp: 40.2, sample: 118 },
+  { id: "gsis:00-0000014", name: "Derrick Hampton", position: "RB", team: "BAL", p50: 66.5, adp: 58.9, sample: 111 },
+  { id: "gsis:00-0000015", name: "Zay Meadows", position: "WR", team: "BAL", p50: 61.8, adp: 47.3, sample: 114 },
   { id: "gsis:00-0000006", name: "Deebo Gray", position: "WR", team: "SF", p50: 55.3, adp: 61.5, sample: 22 },
+  { id: "gsis:00-0000016", name: "Omarion Vance", position: "RB", team: "LAC", p50: 48.9, adp: 72.6, sample: 104 },
   { id: "gsis:00-0000007", name: "Zach Ertz", position: "TE", team: "WAS", p50: 40.8, adp: null, sample: null },
-  // The two quarterbacks are premiums, which is what the real 2026 board looks like: a 1-QB
-  // league compresses their VORP, so the model ranks them late and the market takes them early.
+  { id: "gsis:00-0000017", name: "Rashee Kirk", position: "WR", team: "KC", p50: 37.4, adp: 84.1, sample: 97 },
   { id: "gsis:00-0000008", name: "Josh Allen", position: "QB", team: "BUF", p50: 33.1, adp: 4.0, sample: 121 },
+  { id: "gsis:00-0000018", name: "Jalen Marsh", position: "QB", team: "PHI", p50: 12.6, adp: 31.8, sample: 119 },
   { id: "gsis:00-0000009", name: "Joe Burrow", position: "QB", team: "CIN", p50: -18.4, adp: 3.2, sample: 125 },
   { id: "gsis:00-0000010", name: "Jaylin Lane", position: "WR", team: "WAS", p50: -32.7, adp: 188.2, sample: 41 },
 ];
@@ -86,7 +93,7 @@ function round(value: number): number {
  */
 function tierOf(fairRank: number): { ordinal: number; label: string } {
   if (fairRank <= 3) return { ordinal: 0, label: "S" };
-  if (fairRank <= 6) return { ordinal: 1, label: "A" };
+  if (fairRank <= 8) return { ordinal: 1, label: "A" };
   return { ordinal: 2, label: "B" };
 }
 
@@ -297,13 +304,13 @@ export function buildMetadata(overrides: Partial<BuildMetadata> = {}): BuildMeta
           failed_clauses: ["total_drafts 125 < 300"],
         })),
       ),
-      confidence_counts: { low: 81 },
+      confidence_counts: { low: 153 },
       unpriced_top_players: 9,
     },
     player_status: {
-      players: 9,
+      players: 17,
       sleeper_available: true,
-      sleeper_matched: 9,
+      sleeper_matched: 17,
       sleeper_identity_conflicts: 0,
       observed_at_utc: "2026-08-20T14:39:19Z",
       source_ids: ["nflreadpy", "sleeper"],

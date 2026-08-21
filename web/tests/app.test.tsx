@@ -366,7 +366,7 @@ describe("degraded states", () => {
     render(<App />);
     await boardReady();
     const table = screen.getByRole("table", { name: /Intrinsic tier board/ });
-    expect(within(table).getAllByRole("row")).toHaveLength(11);
+    expect(within(table).getAllByRole("row")).toHaveLength(19);
     fireEvent.click(screen.getByRole("tab", { name: /Arbitrage/ }));
     await waitFor(() => {
       expect(screen.getByText(/Market comparison unavailable/)).toBeDefined();

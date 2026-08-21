@@ -120,14 +120,14 @@
       }
     ],
     "confidence_counts": {
-      "low": 81
+      "low": 153
     },
     "unpriced_top_players": 9
   },
   "player_status": {
-    "players": 9,
+    "players": 17,
     "sleeper_available": true,
-    "sleeper_matched": 9,
+    "sleeper_matched": 17,
     "sleeper_identity_conflicts": 0,
     "observed_at_utc": "2026-08-20T14:39:19Z",
     "source_ids": [

@@ -16,6 +16,7 @@ were fixed and the set recaptured; what follows records both.
 | Arbitrage table (mobile) | The page scrolled horizontally by ~700px with no visible cause. | `.table-scroll` was not a containing block, so the absolutely positioned screen-reader-only spans inside table cells escaped the scroller and dragged the document's scroll width out to the table's width. `position: relative` on the scroller. |
 | Controls (tablet) | The search field filled the full row width. | Capped at 24rem. |
 | Data view | Every reference section rendered as a narrow ribbon down the left of a 1440px page. | The three reference sections flow into a responsive two-column grid, each column keeping its own readable measure. |
+| Tablet, RB filter | The screen showed one row, because the fixture board held one running back. A one-row screen catches no layout defect. | The fixture board grew from ten players to eighteen — five RB, seven WR, three TE, three QB across three tier bands — which also gives the position filter, the tier grouping and the export counts something to be wrong about. |
 
 ## Checked and clean
 

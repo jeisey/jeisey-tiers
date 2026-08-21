@@ -181,7 +181,7 @@ describe("export controls", () => {
   it("names the filtered export with the row count it will write", async () => {
     render(<App />);
     await boardReady();
-    expect(screen.getByRole("button", { name: "Export filtered CSV (10)" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Export filtered CSV (18)" })).toBeDefined();
     fireEvent.click(screen.getByRole("radio", { name: "TE" }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Export filtered CSV (3)" })).toBeDefined();
