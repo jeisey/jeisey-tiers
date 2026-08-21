@@ -160,7 +160,13 @@ export interface PlayerProjectionRecord {
   readonly p75_points: number;
   readonly p90_points: number;
   readonly uncertainty_points: number;
-  readonly expected_games: number | null;
+  /**
+   * Optional in `schemas/player_projection.schema.json` — it is not in that schema's
+   * `required` list, and the production current build omits it while the fixture pipeline
+   * emits it. Declared optional here so a consumer has to handle its absence rather than
+   * reading `undefined` out of a field the type promised was present.
+   */
+  readonly expected_games?: number | null;
   readonly quality_flags: readonly string[];
 }
 
@@ -205,6 +211,9 @@ export interface BuildMarketMetadata {
   readonly confidence_rubric_version?: string;
   readonly trend_rule_version?: string;
   readonly trend_available?: boolean;
+  /** How many retained snapshots the trend window saw. Two is not three (ADR-042). */
+  readonly trend_history_snapshots?: number;
+  readonly cohort_report?: string;
   readonly assignments?: readonly {
     readonly scoring_preset: ScoringPreset;
     readonly league_size: number;
@@ -212,7 +221,33 @@ export interface BuildMarketMetadata {
     readonly exact: boolean;
     readonly sufficient: boolean;
     readonly source_format_detail: string;
+    /**
+     * The sufficiency clauses this cohort failed, verbatim (`total_drafts 125 < 300`).
+     *
+     * Published by the build so the Arbitrage view can say *why* every row reads `low`
+     * without embedding a measurement in frontend source, which would go stale as the
+     * draft season fills the cohort out (ADR-041, ADR-045).
+     */
+    readonly failed_clauses?: readonly string[];
   }[];
+  /** Per-preset priced-versus-board counts, so "42 unpriced" is read, not asserted. */
+  readonly coverage?: {
+    readonly blocks?: readonly {
+      readonly league_preset_id: string;
+      readonly scoring_preset: ScoringPreset;
+      readonly board_players: number;
+      readonly priced_players: number;
+      readonly board_coverage: number;
+      readonly top150_priced: number;
+      readonly top150_players: number;
+      readonly top150_coverage: number;
+    }[];
+    readonly total_priced_rows?: number;
+    readonly min_top150_coverage?: number;
+    readonly min_board_coverage?: number;
+  };
+  readonly confidence_counts?: Readonly<Partial<Record<Confidence, number>>>;
+  readonly unpriced_top_players?: number;
 }
 
 /** Player-status artifact provenance (ADR-043). Annotation only. */
