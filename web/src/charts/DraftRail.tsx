@@ -21,6 +21,7 @@ import { scaleLinear } from "d3-scale";
 import { useCallback, useMemo, useRef } from "react";
 
 import { useElementWidth } from "../components/useElementWidth";
+import { shortName } from "./TierBoard";
 import { useRovingMarks } from "./useRovingMarks";
 import { formatAdp, formatRank } from "../data/format";
 import { describeGap } from "../data/market";
@@ -30,8 +31,20 @@ import { statusBadge } from "../data/model";
 const MARGIN = { top: 26, right: 16, bottom: 30, left: 14 };
 const ROW_HEIGHT = 22;
 const NAME_WIDTH_WIDE = 168;
-const NAME_WIDTH_COMPACT = 116;
-const GAP_WIDTH = 136;
+const NAME_WIDTH_COMPACT = 96;
+const GAP_WIDTH_WIDE = 136;
+const GAP_WIDTH_COMPACT = 120;
+/** Below this the rail is too short to read, so the name column gives up space instead. */
+const MIN_RAIL_WIDTH = 120;
+/**
+ * Measured advance width of the 11px `.rail-name` face, in pixels per character.
+ *
+ * Truncating by a fixed character count is what put a player's name under the first anchor at
+ * 390px: the column is derived from the viewport and the name was not. This derives the name
+ * from the column instead.
+ */
+const NAME_CHAR_WIDTH = 6.7;
+const NAME_GUTTER = 10;
 
 export function DraftRail({
   rows,
@@ -45,9 +58,15 @@ export function DraftRail({
   const container = useRef<HTMLDivElement>(null);
   const width = useElementWidth(container, 1040);
   const compact = width < 720;
-  const nameWidth = compact ? NAME_WIDTH_COMPACT : NAME_WIDTH_WIDE;
-  const gapWidth = compact ? 112 : GAP_WIDTH;
-  const railWidth = Math.max(width - MARGIN.left - MARGIN.right - nameWidth - gapWidth, 140);
+  const gapWidth = compact ? GAP_WIDTH_COMPACT : GAP_WIDTH_WIDE;
+  // The gap column is reserved, never encroached on: its text sits at the right edge, and a
+  // rail allowed to overrun into it draws a line straight through the sentence that explains
+  // it. When space is tight the *name* column shrinks; the rail never grows past what is left.
+  const columns = Math.max(width - MARGIN.left - MARGIN.right - gapWidth, 80);
+  const preferredName = compact ? NAME_WIDTH_COMPACT : NAME_WIDTH_WIDE;
+  const nameWidth = Math.max(Math.min(preferredName, columns - MIN_RAIL_WIDTH), 56);
+  const railWidth = Math.max(columns - nameWidth, 60);
+  const nameChars = Math.max(6, Math.floor((nameWidth - NAME_GUTTER) / NAME_CHAR_WIDTH));
 
   const scale = useMemo(() => {
     const picks = rows.flatMap((row) => [row.record.fair_rank, row.record.market_adp]);
@@ -76,7 +95,7 @@ export function DraftRail({
 
   const height = MARGIN.top + rows.length * ROW_HEIGHT + MARGIN.bottom;
   const railLeft = MARGIN.left + nameWidth;
-  const ticks = scale.ticks(compact ? 4 : 7);
+  const ticks = scale.ticks(railWidth < 200 ? 3 : compact ? 4 : 7);
 
   return (
     <div className="chart-frame" ref={container}>
@@ -154,7 +173,7 @@ export function DraftRail({
                 />
               )}
               <text className="rail-name" x={MARGIN.left} y={y + 4} aria-hidden="true">
-                {truncate(record.display_name, compact ? 15 : 22)}
+                {truncate(compact ? shortName(record.display_name) : record.display_name, nameChars)}
               </text>
               <line
                 className="rail-connector"
@@ -203,6 +222,12 @@ export function DraftRail({
   );
 }
 
+/**
+ * Fit a name to the column.
+ *
+ * On a phone the surname alone is what fits and what a drafter reads; the full name is in the
+ * mark's accessible label and in the player detail either way.
+ */
 function truncate(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
 }

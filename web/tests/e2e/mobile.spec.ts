@@ -42,6 +42,34 @@ test("the arbitrage rail stacks cleanly on a phone", async ({ page }) => {
   // chart's own box is what a reader actually sees.
   await expect(page.locator(".chart-frame svg").first()).toBeVisible();
   expect(await page.locator("svg .rail-connector").count()).toBeGreaterThan(0);
+
+  // The three columns must not collide. A name running under the first anchor, or a rail
+  // running through the sentence that explains it, is the failure mode a narrow viewport
+  // produces and a wide one hides.
+  const geometry = await page.evaluate(() => {
+    const svg = document.querySelector(".chart-frame svg");
+    if (svg === null) return null;
+    const right = (selector: string): number =>
+      Math.max(
+        ...[...svg.querySelectorAll(selector)].map((node) => {
+          const box = (node as SVGGraphicsElement).getBBox();
+          return box.x + box.width;
+        }),
+      );
+    const left = (selector: string): number =>
+      Math.min(
+        ...[...svg.querySelectorAll(selector)].map((node) => (node as SVGGraphicsElement).getBBox().x),
+      );
+    return {
+      nameRight: right("text.rail-name"),
+      anchorLeft: left("path.rail-fair"),
+      markRight: right("circle.rail-market"),
+      gapLeft: left("text.rail-gap"),
+    };
+  });
+  expect(geometry).not.toBeNull();
+  expect(geometry?.nameRight ?? 0).toBeLessThanOrEqual(geometry?.anchorLeft ?? 0);
+  expect(geometry?.markRight ?? 0).toBeLessThanOrEqual(geometry?.gapLeft ?? 0);
   await expect(page.getByText(/Every row on this board reads low market-data confidence/i)).toBeVisible();
   // The board itself has to be reachable on a phone, not buried under explanation.
   await expect(page.getByRole("heading", { name: "Draft rail" })).toBeInViewport();

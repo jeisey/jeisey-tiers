@@ -144,9 +144,11 @@ export function TierBoard({
     const max = values.length === 0 ? 1 : Math.max(...values);
     const x = scaleLinear().domain([min, max]).nice().range([0, plotWidth]);
 
-    // Character-width estimate rather than a DOM measurement: laying out 150 marks must not
-    // cost 150 synchronous text metrics on every resize.
-    const charWidth = compact ? 5.2 : 5.6;
+    // Measured advance width of the 10px `.mark-label` face. A character estimate rather than
+    // a DOM measurement, because laying out 150 marks must not cost 150 synchronous text
+    // metrics on every resize — but it is measured rather than guessed, since underestimating
+    // it packs labels into space they do not have.
+    const charWidth = compact ? 5.8 : 6.1;
     const labelWidth = (row: TierRow): number =>
       markLabel(row, compact).length * charWidth + (compact ? 0 : 26);
 
