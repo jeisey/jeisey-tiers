@@ -479,3 +479,81 @@ current build.** ADR-011 lists it as a current-status source and it remains avai
 nflverse roster already answers the only question the board asks of current status — is this
 person a retired player — without a second identity bridge or a 14.6 MB daily fetch. Phase 5
 revisits it when the market join needs Sleeper's identifiers anyway.
+
+## 16. Phase-8 research item — a multi-source fantasy market-price study
+
+**Status: recorded, not started. Phase 7 changed nothing about production pricing.**
+
+MyFantasyLeague remains the **sole** production price source for the V1 deployment. This
+section exists so that a Phase-8 session inherits the question with its evidence attached
+rather than rediscovering it, and so that nobody adds a second price source casually.
+
+### The question
+
+MFL's aggregate is real drafts and it is free, but it has three properties this project has
+measured and cannot fix from inside it: exact scoring × league-size intersections are thin
+(ADR-012), the aggregate mixes draft formats so a keeper-free cohort is the only honest
+redraft price (ADR-045), and the resulting keeper-free cohort fails the frozen cohort-level
+sufficiency bar at 125 drafts against 300, which is why every 2026 arbitrage row reads `low`
+confidence (ADR-041).
+
+So: **would a cleaner semantic ADP layer price the board better than MFL alone?** That is
+the study. It is not "add FantasyPros".
+
+### What the evidence already says, so it is not re-derived
+
+**nflverse / nflreadpy — no global fantasy ADP feed.** The fantasy loaders expose
+FantasyPros-derived rankings/ECR (`load_ff_rankings`), which is a *ranking*, is
+`benchmark_only` here, and is not an ADP. There is no verified nflverse global mock-draft or
+draft-event feed. `load_draft_picks` is the **NFL** draft — real teams selecting real
+players in April. It is not a fantasy draft and must never be treated as one.
+
+**Sleeper — no verified global endpoint.** The official API exposes drafts belonging to a
+known user, a known league or a known draft id. There is no currently verified official
+endpoint returning all Sleeper drafts or a platform-wide ADP aggregate. Reaching one would
+mean crawling the user/league graph, which Phase 7 explicitly does not do and which no future
+phase may start without answering all of:
+
+- legal and terms review (Sleeper is non-commercial-only and already binds what this site
+  publishes, `docs/SECURITY_LICENSE.md` section 10);
+- a discoverability and sampling design — which leagues, found how, and what population do
+  they represent;
+- representation-bias analysis, because a crawlable league is not a random league;
+- rate-limit design against the documented 1000 calls/minute;
+- duplicate-league and duplicate-user protection, since one league reachable by two paths
+  would silently double-weight its picks.
+
+**FantasyPros — a real candidate, and a genuine policy change.** FantasyPros publishes
+multi-platform fantasy ADP products including platform-specific sources such as Sleeper. The
+owner completed the non-commercial terms review in Phase 5, and current repository policy
+still treats FantasyPros-derived data as **`benchmark_only`**: internal comparison allowed,
+redistribution and DraftValue use forbidden (ADR-014 as amended).
+
+Moving FantasyPros from `benchmark_only` to a production `market_price` role is a **new
+architecture and source-policy decision**. Permission to compare is not permission to
+republish. It needs its own ADR and its own evidence — it is not a configuration change, and
+this section does not pre-approve it.
+
+### What the study must evaluate, per candidate source
+
+Acquisition mechanism and API; current pricing and access requirements; **redistribution
+rights for public output**, which is the clause most likely to be decisive; scoring
+semantics; redraft versus dynasty semantics; mock versus real-draft population; sample
+freshness; source-specific timestamps (and whether the source publishes a data-as-of time at
+all, which MFL does not); overlap and double-counting against sources already in use;
+availability of canonical player identifiers; and league-size compatibility.
+
+### If more than one source is ever approved
+
+**Do not average the numbers.** A future architecture normalizes to source-specific *quotes*
+first — source, cohort, scoring, league-size semantics, draft type, retrieved time, player,
+ADP/rank, sample support, quality metadata — which is the shape `market_quote` 2.0 already
+has, and only then defines a versioned consensus method over them.
+
+Plausible methods include a median source ADP, reliability-weighted aggregation, or showing
+platform prices separately beside a consensus. **The formula must be frozen before anyone
+looks at which players it makes look best**, exactly as the Phase-4 and Phase-5 rules were
+(ADR-030, ADR-039). Choosing a composite after seeing its board is the trap the whole
+freeze-first discipline exists to avoid.
+
+None of this is implemented, and none of it may change current A0 scores as a side effect.

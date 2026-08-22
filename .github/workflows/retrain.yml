@@ -1,0 +1,248 @@
+# Candidate retraining. Never deploys, never promotes, never writes a production model.
+#
+# The thing this workflow mostly does is **decline to run**, and that is the design.
+#
+# `intrinsic-cb-hurdle-v1` was trained on 2014-2025. Season 2025 was the sealed final holdout
+# and it has been spent (ADR-025, ADR-036): it cannot become a fresh untouched holdout again.
+# Season 2026 has not been played. So during the 2026 preseason there is no new labelled
+# evidence, and a retrain could only do one of two things — reproduce the same artifact from
+# the same rows, or pull partial in-season 2026 outcomes into the training corpus and call the
+# result an improvement. The second is a leak, and the first is a waste of a runner.
+#
+# `scripts/retrain_gate.py` therefore decides with evidence rather than with a calendar: is
+# there a season after the model's last training season whose *fantasy horizon* is complete in
+# the upstream weekly statistics? An unplayed season (nflverse answers 404) is "no". An
+# in-progress season whose weekly file stops short of the horizon is "no". Only a finished
+# season is "yes", and even then all this workflow produces is a **candidate** and a report.
+#
+# What promotion needs, and what this file deliberately cannot supply:
+#
+#   * a new evaluation/holdout protocol, because 2025 is spent (ADR-025);
+#   * `ffdraft train-production`, which refuses to run without a fixed confirmation token AND
+#     a written reason — a deliberate human act that is not, and must not become, a secret;
+#   * a normal validated `daily-refresh` run afterwards, which is the only path to Pages.
+#
+# `tests/unit/test_workflows.py` pins those properties structurally: this file may not grow a
+# `pages:` permission, a Pages action, a `train-production` call or a push.
+name: retrain
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_candidate_anyway:
+        description: >-
+          Run the development-fold candidate evaluation even when the evidence gate says
+          there is nothing new. Useful for reproducing the committed Phase-3/4 reports on a
+          clean runner; it still cannot promote anything.
+        type: boolean
+        default: false
+      bootstrap_replicates:
+        description: Paired-bootstrap replicates for the candidate evaluation
+        type: string
+        default: "1000"
+  schedule:
+    # Sunday 06:43 America/New_York, off the hour for the same reason the daily refresh is.
+    # In the 2026 preseason every one of these runs will stop at the evidence gate in about
+    # two minutes, which is the point: the gate is exercised continuously rather than being a
+    # claim in a document, and the run history records that nothing changed.
+    - cron: "43 6 * * 0"
+      timezone: America/New_York
+
+# Read-only, and it stays read-only. No `pages:`, no `contents: write`, no data-store token:
+# retraining reads the historical sources and writes nothing anywhere but a workflow artifact.
+permissions:
+  contents: read
+
+concurrency:
+  group: retrain
+  cancel-in-progress: false
+
+env:
+  UV_VERSION: "0.8.17"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  gate:
+    name: Is there anything legitimate to retrain?
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      should_retrain: ${{ steps.gate.outputs.should_retrain }}
+      model_version: ${{ steps.gate.outputs.model_version }}
+      last_training_season: ${{ steps.gate.outputs.last_training_season }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Stamp the cache day
+        id: day
+        run: echo "utc=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache nflverse downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/nflreadpy-cache
+          key: >-
+            nflverse-${{ runner.os }}-${{ hashFiles('uv.lock') }}-retrain-${{ hashFiles('config/source-registry.yaml') }}-${{ steps.day.outputs.utc }}
+
+      - name: Evaluate the evidence gate
+        id: gate
+        env:
+          NFLREADPY_CACHE: filesystem
+          NFLREADPY_CACHE_DIR: ${{ runner.temp }}/nflreadpy-cache
+        run: |
+          set -euo pipefail
+          uv run python scripts/retrain_gate.py \
+            --json-out retrain-gate.json \
+            --github-output "$GITHUB_OUTPUT" \
+            --summary-out "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the gate verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrain-gate-${{ github.run_id }}
+          path: retrain-gate.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  candidate:
+    name: Candidate evaluation (no promotion)
+    needs: gate
+    if: >-
+      needs.gate.outputs.should_retrain == 'true' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_candidate_anyway == true)
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Stamp the cache day
+        id: day
+        run: echo "utc=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache nflverse downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/nflreadpy-cache
+          key: >-
+            nflverse-${{ runner.os }}-${{ hashFiles('uv.lock') }}-retrain-${{ hashFiles('config/source-registry.yaml') }}-${{ steps.day.outputs.utc }}
+
+      # The dataset is rebuilt rather than restored from a cache, and the independence proof
+      # is left ON. It rebuilds each season with its own statistics deleted and compares
+      # content hashes, which is the only thing that makes "no target-season leakage" a proof
+      # rather than a claim (SESSION_STATE, Phase-2 facts). A retrain is exactly the moment
+      # not to skip it.
+      - name: Build the historical modelling dataset
+        env:
+          NFLREADPY_CACHE: filesystem
+          NFLREADPY_CACHE_DIR: ${{ runner.temp }}/nflreadpy-cache
+        run: |
+          set -euo pipefail
+          uv run ffdraft build-historical \
+            --last-season "${{ needs.gate.outputs.last_training_season }}" \
+            --git-sha "${GITHUB_SHA::7}" | tee build-historical.log
+
+      - name: Validate the dataset
+        run: uv run ffdraft validate-historical data/historical | tee validate-historical.log
+
+      # Development folds only. `load_modeling_dataset` drops sealed seasons before anything
+      # sees the frame and the fold generator refuses to build a fold that validates one, so
+      # this cannot reach the holdout even if someone asked it to. `--final-eval` needs a
+      # fixed token and a written reason and is not available here on purpose.
+      - name: Evaluate candidates on development folds
+        run: |
+          set -euo pipefail
+          uv run ffdraft evaluate-intrinsic \
+            --bootstrap-replicates "${{ inputs.bootstrap_replicates || '1000' }}" \
+            --out "${RUNNER_TEMP}/candidate-report" \
+            --git-sha "${GITHUB_SHA::7}" | tee evaluate.log
+
+      # Candidate output lives in a workflow artifact and nowhere else. Nothing is committed,
+      # `models/production/` is not touched, and the assertion below says so rather than
+      # trusting that no step above did it by accident.
+      - name: Assert nothing production-facing was modified
+        if: always()
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- models/; then
+            echo "::error::a retrain run modified models/. Promotion is a deliberate human"
+            echo "act requiring ffdraft train-production with its confirmation token and a"
+            echo "written reason (ADR-036); it is not a workflow step."
+            git --no-pager diff --stat -- models/
+            exit 1
+          fi
+          echo "models/ is unchanged, as it must be."
+
+      - name: Upload the candidate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrain-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/candidate-report
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo '## Candidate evaluation'
+            echo
+            echo "Incumbent: \`${{ needs.gate.outputs.model_version }}\`, trained through"
+            echo "\`${{ needs.gate.outputs.last_training_season }}\`."
+            echo
+            echo '**This run promoted nothing.** The candidate report is attached to this run'
+            echo 'as an artifact. Promoting a model needs, in order:'
+            echo
+            echo '1. a new evaluation/holdout protocol, because the 2025 holdout is spent (ADR-025, ADR-036);'
+            echo '2. `ffdraft train-production`, run deliberately with its confirmation token and a written reason;'
+            echo '3. a model card regenerated from the new reports (`ffdraft model-card`);'
+            echo '4. a normal `daily-refresh` run, which is the only path to Pages.'
+            echo
+            if [ -f evaluate.log ]; then
+              echo '<details><summary>evaluate-intrinsic</summary>'
+              echo
+              echo '```'
+              tail -n 120 evaluate.log
+              echo '```'
+              echo
+              echo '</details>'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

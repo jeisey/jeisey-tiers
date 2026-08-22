@@ -19,6 +19,16 @@ V1 should not require vendor secrets if free source plan succeeds.
 
 **Recorded 2026-08-18 (ADR-017).** The one secret set that exists is the MyFantasyLeague developer-client configuration — `MFL_API_CLIENT_NAME`, `MFL_API_USERNAME`, `MFL_API_PASSWORD`, `MFL_API_USER_AGENT` — held as GitHub repository secrets. It is a *client-identity* secret, not an access credential: the public ADP export needs no authentication, so the adapter transmits only the User-Agent and never attaches a username, password, `APIKEY` or `Authorization` header. Configuration objects record which environment variable a value came from and whether it is present, never the value; their `repr` is redacted; and no secret may enter a log line, a cache key, a URL query, a committed fixture or a serialized artifact. Absence degrades the request identity, it does not block the source. Network-free tests must not read these variables at all.
 
+**Recorded 2026-08-22 (ADR-049).** A second secret now exists: **`MARKET_DATA_REPO_TOKEN`**, a fine-grained personal access token whose scope is `jeisey/jeisey-tiers-market-data` alone, with Contents: Read and write and nothing else. It exists because the application repository became public and a workflow's ordinary `GITHUB_TOKEN` cannot write another repository's contents.
+
+Unlike the MFL client identity, this *is* an access credential, so it is bounded three ways and each is enforced rather than remembered:
+
+- **It never reaches a shell.** It is passed to `actions/checkout` through its `token:` input, which stores it as a git extraheader in the checkout. The pre-Phase-7 workflow built `https://x-access-token:${GH_TOKEN}@github.com/...` in a shell block; that construction is gone, and `tests/unit/test_workflows.py` asserts the secret appears only as a `token:` input to `.github/actions/market-data-store`.
+- **It does not survive into replaceable work.** Jobs that only read the store check out with `persist-credentials: false`, so no credential is present in the workspace when the frontend builds or the Pages artifact is packaged.
+- **Untrusted code cannot ask for it.** `ci.yml` — the workflow a pull request from a fork runs — never references it and never checks out the store. A test asserts that too.
+
+Its blast radius if leaked is one private repository of retained vendor payloads, not the application repository, not Pages, and not the model. It carries an expiry; renewal is in `docs/OPERATIONS.md` section 5.3, and expiry fails the daily refresh loudly at its first job rather than degrading anything.
+
 If a future paid/API-key source is added:
 
 - GitHub Actions secret only;
@@ -35,6 +45,10 @@ PR workflows from forks must not receive production secrets/write tokens.
 Pages job receives only official required Pages/OIDC permissions.
 
 Data-branch writer receives `contents: write` narrowly.
+
+**Phase-7 implementation.** Every workflow declares `contents: read` at the top level. Exactly one job in the repository elevates: `daily-refresh.yml`'s `deploy`, to `pages: write` + `id-token: write` under the `github-pages` environment. The full per-job table is in `docs/OPERATIONS.md` section 6 and is asserted by `tests/unit/test_workflows.py`.
+
+The data-writer clause above became *unnecessary* rather than merely satisfied. Since the store moved to its own repository (ADR-049), the capture jobs write through a repository-scoped token and need **no** write scope on this repository at all. Splitting data from code made this repository's own permissions strictly narrower than they were when it was private.
 
 Do not use `pull_request_target` with untrusted code execution.
 
@@ -115,6 +129,12 @@ MFL publicly promotes its developer API for third-party add-ons, but exact 2026 
 
 Commercial; use only under purchased agreement/license.
 
+### Software licence
+
+**Deliberately unresolved (Phase 7, 2026-08-22).** The repository carries no `LICENSE` file, and Phase 7 did not add one. Making a repository public is a visibility decision; choosing a software licence is a separate rights decision that belongs to the project owner, and picking one on their behalf because the code became readable would be choosing for them.
+
+Until the owner records a choice, the ordinary default applies: the source is publicly *viewable*, and no reuse rights are granted. Note that this is independent of the **data** licensing above — nflverse's CC-BY, ffopportunity's CC-BY-SA and Sleeper's non-commercial terms bind the data regardless of what licence the code eventually carries.
+
 ## 9. Attribution UI
 
 Methodology/Data section should contain concise source acknowledgements and links. Repository `README` or `NOTICE` should contain full attribution/license notes if required.
@@ -140,7 +160,18 @@ The code may remain open/public, but source rights are separate.
 **Phase-5 change of exposure (2026-08-20).** Sleeper's obligation used to bind only what the pipeline *read*. It now binds what the site *publishes*: `player_status.json` and `player_status.csv` carry Sleeper's `status`, `injury_status`, `injury_body_part`, `injury_notes`, `practice_participation` and depth-chart fields into a public artifact (ADR-043). Two consequences:
 
 - Sleeper attribution is no longer optional politeness on a methodology panel. The artifact records its contributing `source_ids` per row and `build_metadata.player_status.source_ids` records them per build, so a Phase-6 UI has what it needs to attribute; section 9 requires it to.
-- The retained status captures on the `market-data` branch are a **private research cache**, not redistribution: the repository is private through Phase 6 (ADR-016), only normalized rows are kept, and the branch must be excluded from any release archive or Pages publish. If ADR-016 is revisited in Phase 7, that exclusion is part of the decision, not an implementation detail.
+- The retained status captures are a **private research cache**, not redistribution: only normalized rows are kept, and they are excluded from any release archive or Pages publish.
+
+**Phase-7 resolution of that exclusion (2026-08-22, ADR-049).** The sentence above used to end "if ADR-016 is revisited in Phase 7, that exclusion is part of the decision, not an implementation detail." It was revisited, and the exclusion could not be honoured by workflow care: **GitHub visibility is a property of a repository, not of a branch**, so a `market-data` branch inside a public `jeisey/jeisey-tiers` would have been published by any `git clone`, no matter what the Pages artifact contained.
+
+The store therefore moved to a separate private repository, `jeisey/jeisey-tiers-market-data`, **before** visibility changed, and the old branch was deleted **before** that. The retained MFL payloads and normalized Sleeper rows have never been publicly readable, and the objects were never reachable from `main` — the store branch shared no history with it, which was verified rather than assumed.
+
+Two consequences for this section's boundary:
+
+- Sleeper's non-commercial terms now bind a **published** artifact. `player_status.json` and `player_status.csv` carry Sleeper fields to every visitor of a public site, so the free, ad-free, non-commercial character of the deployment is a licence condition rather than a preference, and the attribution required by section 9 is live on the Data / Methodology view rather than planned.
+- The *retained* payloads remain unpublished, which is what keeps the research cache a cache. `daily-refresh.yml` asserts the Pages artifact's contents before uploading it, so the boundary is a check rather than a promise.
+
+**Public-release audit, 2026-08-22, before visibility changed.** Every path ever added on `main` (517), scanned for `.env` files, key material, raw retained payloads, generated artifacts and modelling datasets: **none**. Every commit reachable from `main` (56), content-scanned for credential-shaped literals — GitHub/Slack/AWS token prefixes, PEM private-key headers, `Authorization:` headers, credentials embedded in URLs: **one match, and it is not a secret** — the old `market-capture.yml` contained the shell text `https://x-access-token:${GH_TOKEN}@github.com/...`, a variable reference expanded at runtime, and the Phase-7 rewrite removes that construction entirely. No local filesystem path identifying a person. `web/public/data/` and `data/historical/` are gitignored and were never committed. The full record is `docs/PHASE7_DEPLOYMENT.md`.
 
 MyFantasyLeague's published rules permit the ADP read and are unchanged; the Phase-5 obligations the adapter honours (registered User-Agent, one player-database request per day, bounded 429 backoff, no credentials on the public path) are recorded in ADR-017 and `config/source-registry.yaml`.
 

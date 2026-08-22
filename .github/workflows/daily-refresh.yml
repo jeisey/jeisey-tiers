@@ -1,0 +1,592 @@
+# Production refresh: capture the day's sources, rebuild the board, deploy the site.
+#
+# The invariant this file exists to enforce is `docs/OPERATIONS.md` section 1: the site should
+# fail **safe**, not fail **fresh**. A stale correct site beats a newly deployed corrupt one.
+# That is not a convention anyone has to remember here — it is the job graph. Deploying is the
+# last job, it `needs:` every gate before it, and a failed gate means the deploy job never runs
+# and the previously deployed Pages site stays exactly where it is.
+#
+#   capture ──▶ build ──▶ deploy
+#      │          │          │
+#      │          │          └─ pages: write + id-token: write, github-pages environment
+#      │          └─ offline: inference, arbitrage, artifact validation, frontend, verify
+#      └─ the only vendor calls; appends to the PRIVATE retained store (ADR-049)
+#
+# Two orderings are deliberate.
+#
+# **Capture persists before anything replaceable runs.** A retained snapshot is future
+# training evidence and MFL's historical export cannot reproduce a price we did not take on
+# the day (ADR-010). So the append happens first, in its own job, and it is committed as soon
+# as it validates. If the frontend later fails to build, the history still records what was
+# observed and the old site stays live. That is the correct outcome, not a leak.
+#
+# **Validation happens before the Pages artifact is uploaded**, not after. There is no window
+# in which a bad build exists as a deployable artifact.
+name: daily-refresh
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: Season to refresh; blank uses the configured production season
+        type: string
+        default: ""
+      cohorts:
+        description: "'production', 'study', or a comma-separated cohort id list"
+        type: string
+        default: production
+      skip_capture:
+        description: >-
+          Rebuild and redeploy from the retained history without calling a vendor. Use this
+          to re-run a deploy after a code fix: MFL asks that the player database be requested
+          at most once a day (ADR-017), so a second capture in one day is a source-policy
+          problem, not just wasted time.
+        type: boolean
+        default: false
+      force_validation_failure:
+        description: >-
+          PROOF RUN. Corrupt a generated artifact so the real pre-deploy validation gate
+          rejects it, demonstrating that a critical data-quality failure cannot reach
+          production. Deploy must be skipped and the live site must be untouched.
+        type: boolean
+        default: false
+  schedule:
+    # 07:17 America/New_York. The minute is off the hour because GitHub documents that
+    # scheduled workflows can be delayed when load spikes at the top of an hour, and the hour
+    # is chosen from Phase-0 evidence: 2026 depth-chart snapshots land at roughly 07:25-08:25
+    # UTC, so a late-morning-UTC run reads a same-day snapshot (docs/OPERATIONS.md 2.4).
+    #
+    # The timezone is declared rather than encoded as a UTC offset, so the wall-clock time
+    # survives daylight saving without an edit. `timezone:` on a schedule entry is current
+    # GitHub workflow syntax (shipped March 2026); see docs/OPERATIONS.md section 2.2.
+    - cron: "17 7 * * *"
+      timezone: America/New_York
+
+# Least privilege at the top; exactly two jobs elevate, and only in the direction they need
+# (docs/SECURITY_LICENSE.md section 3). Note what `capture` does NOT need: it writes to the
+# retained store in a different repository through a dedicated fine-grained token, so it
+# never asks for `contents: write` on this repository at all.
+permissions:
+  contents: read
+
+# One production refresh at a time, and never cancelled.
+#
+# `cancel-in-progress: false` is the load-bearing half. The capture job appends to an
+# immutable store; cancelling it between "commit" and "push" would leave a validated snapshot
+# that never reached the history. Queueing instead of cancelling also gives the ordering the
+# operations doc asks for: a superseding run waits, so it deploys after the run it superseded
+# rather than racing it, and an older build can never land on top of a newer one.
+concurrency:
+  group: production-refresh
+  cancel-in-progress: false
+
+env:
+  UV_VERSION: "0.8.17"
+  NODE_VERSION: "22"
+  PYTHON_VERSION: "3.12"
+  # Phase 6 proved the project Pages base path end to end (docs/ARCHITECTURE.md section 11).
+  # Phase 7 only has to use it.
+  VITE_BASE_PATH: /jeisey-tiers/
+
+jobs:
+  # ---------------------------------------------------------------------------------------
+  # 1. Capture. The only job that talks to a vendor, and the only irreversible one.
+  # ---------------------------------------------------------------------------------------
+  capture:
+    name: Capture and retain today's sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      store_commit: ${{ steps.persist.outputs.commit }}
+      store_before: ${{ steps.store.outputs.commit }}
+      appended: ${{ steps.persist.outputs.appended }}
+      repository: ${{ steps.store.outputs.repository }}
+      season: ${{ steps.plan.outputs.season }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      # Cache key context: the runner OS, the Python minor and the lockfile. A different
+      # lockfile is a different key, so a cache hit can only ever be the same resolved set —
+      # a miss is slower, never different (docs/OPERATIONS.md section 4).
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Check out the retained store
+        id: store
+        uses: ./.github/actions/market-data-store
+        with:
+          token: ${{ secrets.MARKET_DATA_REPO_TOKEN }}
+          path: market-data
+          # This job pushes, so the checkout keeps its credential in git config. No shell
+          # block here ever builds an authenticated remote URL or echoes one.
+          persist-credentials: "true"
+
+      - name: Plan the capture
+        id: plan
+        run: |
+          set -euo pipefail
+          season="${{ inputs.season }}"
+          if [ -z "${season}" ]; then
+            # `nflreadpy.get_current_season()` returns the PRIOR season in August, so the
+            # draft-target season comes from config, never from the clock.
+            season="$(uv run python -c 'from ffdraft.modeling.frozen import PRODUCTION_SEASON; print(PRODUCTION_SEASON)')"
+          fi
+          cohorts="${{ inputs.cohorts }}"
+          echo "season=${season}" >> "$GITHUB_OUTPUT"
+          echo "cohorts=${cohorts:-production}" >> "$GITHUB_OUTPUT"
+
+      - name: Capture the market snapshot
+        if: ${{ inputs.skip_capture != true }}
+        env:
+          # ADR-017: only the registered User-Agent is transmitted. The public ADP export
+          # needs no authentication, so no username, password, APIKEY or Authorization
+          # header is ever attached, and a missing secret degrades request identity rather
+          # than failing the run.
+          MFL_API_USER_AGENT: ${{ secrets.MFL_API_USER_AGENT }}
+          MFL_API_CLIENT_NAME: ${{ secrets.MFL_API_CLIENT_NAME }}
+        run: |
+          set -euo pipefail
+          uv run ffdraft snapshot-market \
+            --season "${{ steps.plan.outputs.season }}" \
+            --cohorts "${{ steps.plan.outputs.cohorts }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" \
+            --pause 1.5 | tee snapshot.log
+
+      - name: Capture current player status
+        if: ${{ inputs.skip_capture != true }}
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-status \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee status.log
+
+      # The store is re-hashed against its own manifests BEFORE anything is pushed, so a
+      # corrupt or truncated write is caught in the workspace rather than committed. This is
+      # the gate that stops a bad capture becoming permanent history.
+      - name: Validate the retained store
+        run: |
+          set -euo pipefail
+          uv run ffdraft validate-market-history market-data \
+            --season "${{ steps.plan.outputs.season }}"
+
+      - name: Commit and push the capture
+        id: persist
+        working-directory: market-data
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing new to retain (an identical re-capture is an idempotent no-op)."
+            echo "appended=false" >> "$GITHUB_OUTPUT"
+            echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "data(market): retain ${{ steps.plan.outputs.season }} capture from ${GITHUB_SHA::7}"
+          # A retained snapshot is immutable, so a rebase here can only ever replay an
+          # append. `--ff-only` would be wrong: it would refuse a legitimate concurrent
+          # append instead of ordering it.
+          git pull --rebase origin "${{ steps.store.outputs.branch }}"
+          git push origin "HEAD:${{ steps.store.outputs.branch }}"
+          echo "appended=true" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Capture summary
+        if: always()
+        run: |
+          {
+            echo '## Source capture'
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Season | \`${{ steps.plan.outputs.season }}\` |"
+            echo "| Cohorts | \`${{ steps.plan.outputs.cohorts }}\` |"
+            echo "| Store | \`${{ steps.store.outputs.repository }}@${{ steps.store.outputs.branch }}\` |"
+            echo "| Store head before | \`${{ steps.store.outputs.commit }}\` |"
+            echo "| Store head after | \`${{ steps.persist.outputs.commit || 'unchanged' }}\` |"
+            echo "| Appended | \`${{ steps.persist.outputs.appended || 'no' }}\` |"
+            echo
+            for log in snapshot.log status.log; do
+              if [ -f "${log}" ]; then
+                echo "<details><summary>${log}</summary>"
+                echo
+                echo '```'
+                cat "${log}"
+                echo '```'
+                echo
+                echo '</details>'
+                echo
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------------------
+  # 2. Build. Entirely offline: it reads retained bytes and the committed production model.
+  #    Every gate that can stop a deploy lives here.
+  # ---------------------------------------------------------------------------------------
+  build:
+    name: Build, validate and package the site
+    needs: capture
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      build_id: ${{ steps.facts.outputs.build_id }}
+      model_version: ${{ steps.facts.outputs.model_version }}
+      tier_rows: ${{ steps.facts.outputs.tier_rows }}
+      arbitrage_rows: ${{ steps.facts.outputs.arbitrage_rows }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      # The store is checked out at the exact commit the capture job pushed, not at the
+      # branch head, so this build is reproducible from bytes this run can name. Read-only:
+      # `persist-credentials: false` leaves no credential in the workspace for the frontend
+      # build or the Pages packaging step to encounter.
+      - name: Check out the retained store
+        id: store
+        uses: ./.github/actions/market-data-store
+        with:
+          token: ${{ secrets.MARKET_DATA_REPO_TOKEN }}
+          path: market-data
+          ref: ${{ needs.capture.outputs.store_commit }}
+          persist-credentials: "false"
+
+      # nflverse downloads are cached per UTC day. The date is IN the key and there are no
+      # restore-keys, deliberately: a hit can only be the same day's release, so a hit and a
+      # miss produce identical data. A key that fell back to yesterday would make a cache hit
+      # mean *staler rosters*, which is the one thing section 4 forbids.
+      - name: Stamp the cache day
+        id: day
+        run: echo "utc=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      # nflverse downloads are cached per UTC day, and there are deliberately NO restore-keys.
+      # The date is part of the key, so a hit can only ever be the same day's release: a hit
+      # and a miss produce identical data, and the miss is merely slower. A prefix fallback
+      # would make a cache hit mean *staler rosters than a miss*, which is exactly the
+      # "cache miss must be correct, only slower" rule in docs/OPERATIONS.md section 4.
+      # The lockfile pins the client and the registry hash pins the source contract, so a
+      # dependency or source-policy change also lands on a fresh key.
+      - name: Cache nflverse downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/nflreadpy-cache
+          key: >-
+            nflverse-${{ runner.os }}-${{ hashFiles('uv.lock') }}-s${{ needs.capture.outputs.season }}-${{ hashFiles('config/source-registry.yaml') }}-${{ steps.day.outputs.utc }}
+
+      - name: Build the current board
+        env:
+          NFLREADPY_CACHE: filesystem
+          NFLREADPY_CACHE_DIR: ${{ runner.temp }}/nflreadpy-cache
+        run: |
+          set -euo pipefail
+          # No retraining here. `build-current` loads the committed production model, checks
+          # its feature-set and feature-schema hashes against the build's, and refuses to run
+          # on a contract it was not validated against (ADR-037).
+          uv run ffdraft build-current \
+            --season "${{ needs.capture.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee build-current.log
+
+      # ADR-039's consequence in operational form: the frozen rule is re-run against the
+      # newest retained snapshot, because a later snapshot may legitimately select a
+      # different cohort as the draft season matures. The report is a build input here, not a
+      # committed document, so it is written outside the checkout and uploaded for the record.
+      - name: Select the market cohort
+        run: |
+          set -euo pipefail
+          uv run ffdraft measure-market-cohorts \
+            --season "${{ needs.capture.outputs.season }}" \
+            --store market-data \
+            --out "${RUNNER_TEMP}/market-cohorts" \
+            --git-sha "${GITHUB_SHA::7}" | tee cohorts.log
+
+      - name: Build the arbitrage board
+        run: |
+          set -euo pipefail
+          uv run ffdraft build-arbitrage \
+            --season "${{ needs.capture.outputs.season }}" \
+            --store market-data \
+            --selection "${RUNNER_TEMP}/market-cohorts/cohorts.json" \
+            --git-sha "${GITHUB_SHA::7}" | tee build-arbitrage.log
+
+      # ---- The pre-deploy gate ------------------------------------------------------------
+      #
+      # `force_validation_failure` does not fake a failure. It breaks a real invariant —
+      # VORP quantiles must be non-decreasing p10 -> p90 — in a generated artifact and then
+      # runs the ordinary validator, so what rejects the build is the production gate itself
+      # (`artifact.non_monotonic_quantiles`, docs/ARCHITECTURE.md section 12), not an
+      # `exit 1` bolted on for the test. The corruption is applied to the workspace copy only
+      # and nothing downstream of this step runs, so no artifact is uploaded and no
+      # deployment is attempted.
+      #
+      # The flag is unreachable from the schedule: `inputs` is empty on a scheduled run, and
+      # the event name is asserted as well.
+      - name: Corrupt an artifact on purpose (forced-failure proof)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.force_validation_failure == true }}
+        run: |
+          set -euo pipefail
+          echo "::warning::Forced-failure proof run: deliberately violating quantile monotonicity."
+          uv run python - <<'PY'
+          import json
+          import pathlib
+
+          path = pathlib.Path("web/public/data/tiers.json")
+          envelope = json.loads(path.read_text(encoding="utf-8"))
+          record = envelope["records"][0]
+          # p25 above p75 is a critical `artifact.non_monotonic_quantiles` failure.
+          record["p25_vorp"] = float(record["p75_vorp"]) + 25.0
+          path.write_text(json.dumps(envelope, indent=1) + "\n", encoding="utf-8")
+          print(f"corrupted {record['display_name']}: p25_vorp -> {record['p25_vorp']}")
+          PY
+
+      - name: Validate the public artifacts
+        run: |
+          set -euo pipefail
+          uv run python -m ffdraft.cli validate-artifacts web/public/data | tee validate.log
+
+      - name: Read the build facts
+        id: facts
+        run: |
+          set -euo pipefail
+          uv run python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import pathlib
+
+          data = pathlib.Path("web/public/data")
+          meta = json.loads((data / "build_metadata.json").read_text(encoding="utf-8"))
+          def count(name: str) -> int:
+              return len(json.loads((data / name).read_text(encoding="utf-8"))["records"])
+          print(f"build_id={meta['build_id']}")
+          print(f"model_version={meta['intrinsic_model_version']}")
+          print(f"tier_rows={count('tiers.json')}")
+          print(f"arbitrage_rows={count('arbitrage.json')}")
+          PY
+
+      # ---- Frontend -----------------------------------------------------------------------
+      - name: Install locked frontend dependencies
+        run: npm ci
+
+      - name: Build the site at the project Pages base path
+        run: |
+          set -euo pipefail
+          npm run build
+          if ! grep -q 'src="/jeisey-tiers/assets/' web/dist/index.html; then
+            echo "::error::built asset URLs do not respect VITE_BASE_PATH"
+            exit 1
+          fi
+          for artifact in tiers projections arbitrage player_status build_metadata; do
+            test -f "web/dist/data/${artifact}.json" \
+              || { echo "::error::web/dist/data/${artifact}.json missing from the build"; exit 1; }
+          done
+
+      - name: Cache the Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # The Phase-6 exit gate's own check, run against the REAL board rather than fixtures:
+      # every rendered tier row, chart mark, arbitrage row and injury badge is compared with
+      # the artifact bytes the browser was served.
+      - name: Verify the rendered board against the artifact bytes
+        run: npm run verify:board -- --base-path "${VITE_BASE_PATH}"
+
+      # ---- What actually gets published ----------------------------------------------------
+      #
+      # Only `web/dist` is uploaded. Not the repository, not `.git`, not `market-data`, not
+      # the historical dataset, not a Python cache, not a Playwright report. The assertion
+      # below is the test of that boundary rather than a comment claiming it.
+      - name: Assert the Pages artifact boundary
+        run: |
+          set -euo pipefail
+          forbidden=0
+          while IFS= read -r path; do
+            echo "::error::forbidden path in the Pages artifact: ${path}"
+            forbidden=1
+          done < <(find web/dist \( \
+              -name '.git' -o -name '.env' -o -name '__pycache__' -o -name '*.parquet' \
+              -o -name '*.py' -o -name '*.gz' -o -name 'market-data' -o -name 'node_modules' \
+            \) -print)
+          test "${forbidden}" -eq 0
+          echo "Pages artifact contents:"
+          find web/dist -maxdepth 2 | sort
+
+      # Only `web/dist` is uploaded, and this is the last thing the build job does: there is
+      # no window in which a build that failed a gate exists as a deployable artifact.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+      # Staged into one directory so the artifact has a predictable shape for the report job,
+      # rather than letting upload-artifact compute a least-common-ancestor across
+      # `web/`, `$RUNNER_TEMP` and the workspace root.
+      - name: Stage the build record
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p build-record
+          cp -r web/public/data build-record/data 2>/dev/null || true
+          cp -r "${RUNNER_TEMP}/market-cohorts" build-record/market-cohorts 2>/dev/null || true
+          for log in build-current build-arbitrage cohorts validate; do
+            cp "${log}.log" build-record/ 2>/dev/null || true
+          done
+          find build-record -maxdepth 2 | sort
+
+      - name: Upload the build record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: refresh-build-${{ github.run_id }}
+          path: build-record
+          if-no-files-found: warn
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------------------
+  # 3. Deploy. Reached only when every gate above passed. This is the whole last-known-good
+  #    mechanism: there is no step anywhere that clears or replaces the live site first, so
+  #    "no deploy" and "previous site stays live" are the same event.
+  # ---------------------------------------------------------------------------------------
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Serializes against any other Pages publisher as well as against this workflow, and
+    # never cancels a deployment that has started.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # `configure-pages` lives here rather than in the build job on purpose. It is the only
+      # step in this workflow that needs a `pages:` scope for its own sake, and the deploy
+      # job is the one job that legitimately holds one; putting it in the build job would
+      # have meant widening that job's permissions for an output nothing consumes.
+      - uses: actions/configure-pages@v5
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ---------------------------------------------------------------------------------------
+  # 4. Report. Runs whatever happened, so a failed refresh explains itself in the same place
+  #    a successful one does (docs/OPERATIONS.md section 10).
+  # ---------------------------------------------------------------------------------------
+  report:
+    name: Refresh summary
+    needs: [capture, build, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Download the build record
+        if: ${{ needs.build.result != 'skipped' }}
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: refresh-build-${{ github.run_id }}
+          path: build-record
+
+      - name: Render the summary
+        env:
+          CAPTURE: ${{ needs.capture.result }}
+          BUILD: ${{ needs.build.result }}
+          DEPLOY: ${{ needs.deploy.result }}
+        run: |
+          set -euo pipefail
+          artifacts="build-record/data"
+          python3 scripts/workflow_summary.py \
+            --artifacts "${artifacts}" \
+            --title "Daily refresh — ${BUILD}" \
+            --out "$GITHUB_STEP_SUMMARY" \
+            --fact "trigger=${{ github.event_name }}" \
+            --fact "run_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --fact "code_sha=${{ github.sha }}" \
+            --fact "capture_result=${CAPTURE}" \
+            --fact "store_repository=${{ needs.capture.outputs.repository }}" \
+            --fact "store_commit_before=${{ needs.capture.outputs.store_before }}" \
+            --fact "store_commit=${{ needs.capture.outputs.store_commit }}" \
+            --fact "store_appended=${{ needs.capture.outputs.appended }}" \
+            --fact "deploy_result=${DEPLOY}" \
+            --fact "forced_failure=${{ inputs.force_validation_failure == true && 'yes — deploy must be skipped' || '' }}" \
+            --fact "pages_url=${{ needs.deploy.outputs.page_url || 'not deployed — previous production remains live' }}"
+
+      - name: Restate the deployment outcome
+        env:
+          BUILD: ${{ needs.build.result }}
+          DEPLOY: ${{ needs.deploy.result }}
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          {
+            echo
+            if [ "${DEPLOY}" = "success" ]; then
+              echo "### Deployment: **published**"
+              echo
+              echo "<${PAGE_URL}>"
+            else
+              echo "### Deployment: **not published** (build \`${BUILD}\`, deploy \`${DEPLOY}\`)"
+              echo
+              echo "No Pages artifact was deployed, so the previously deployed site is still"
+              echo "live and unchanged. Stale correct production beats fresh incorrect"
+              echo "production (docs/OPERATIONS.md sections 1 and 8)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
