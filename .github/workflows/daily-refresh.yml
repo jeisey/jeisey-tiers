@@ -463,13 +463,25 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          mkdir -p build-record
+          mkdir -p build-record/store
           cp -r web/public/data build-record/data 2>/dev/null || true
           cp -r "${RUNNER_TEMP}/market-cohorts" build-record/market-cohorts 2>/dev/null || true
           for log in build-current build-arbitrage cohorts validate; do
             cp "${log}.log" build-record/ 2>/dev/null || true
           done
+          # The store's manifests only — provenance, content hashes, per-cohort draft and
+          # identity-resolution counts — so the report job can render identity coverage
+          # without being handed a credential of its own. No retained payload is copied:
+          # the `.json.gz` files that hold vendor bytes stay in the private repository, and
+          # this artifact is world-readable on a public repository.
+          (cd market-data && find . -name manifest.json -print0 \
+            | xargs -0 -r -I{} cp --parents {} ../build-record/store/) 2>/dev/null || true
           find build-record -maxdepth 2 | sort
+          echo "manifests staged: $(find build-record/store -name manifest.json | wc -l)"
+          if find build-record/store -name '*.gz' | grep -q .; then
+            echo "::error::a retained payload reached the build record"
+            exit 1
+          fi
 
       - name: Upload the build record
         if: always()
@@ -557,6 +569,7 @@ jobs:
           artifacts="build-record/data"
           python3 scripts/workflow_summary.py \
             --artifacts "${artifacts}" \
+            --store build-record/store \
             --title "Daily refresh — ${BUILD}" \
             --out "$GITHUB_STEP_SUMMARY" \
             --fact "trigger=${{ github.event_name }}" \

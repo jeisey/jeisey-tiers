@@ -4,7 +4,9 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 7 — **complete** (2026-08-22). The product is deployed. `jeisey/jeisey-tiers` is public, GitHub Pages serves the 2026 board at **https://jeisey.github.io/jeisey-tiers/**, and a scheduled workflow rebuilds it every morning from sources it captures itself. Phase 8 (hardening, and the owner's live UI feedback) has not been started.
+Phase 7 — **implementation complete and validated on GitHub-hosted runners; blocked on one owner-only action** (2026-08-22). Everything that can be built, migrated, proved or documented has been. What remains is a single click nobody but the repository owner can make: **flipping `jeisey/jeisey-tiers` from private to public.** The GitHub API for repository visibility is not reachable from this environment — the egress policy answers 403 to `api.github.com`, and the MCP GitHub surface has no repository-update method — so the gate was stopped at rather than worked around. `docs/PHASE7_DEPLOYMENT.md` section 7 has the exact steps.
+
+Everything downstream of that flip is already wired and waits on nothing else: `actions/configure-pages` runs with `enablement: true`, so the first successful `daily-refresh` after the repository is public creates the Pages site with the Actions build type by itself. The expected URL is **https://jeisey.github.io/jeisey-tiers/**.
 
 **The phase did not start where its task list said it did.** The append-only capture store lived on a `market-data` branch of this repository, and ADR-038's own consequences said that was safe *because the repository is private*. GitHub visibility is a property of a repository, not of a branch — there is no private branch inside a public repository — so going public would have published thousands of retained MyFantasyLeague payloads and normalized Sleeper rows, which are a private research cache under non-commercial terms. Excluding the branch from the Pages artifact would have done nothing, because `git clone` hands any visitor every branch. The store had to move first (ADR-049), and that reordered everything after it.
 
@@ -22,20 +24,19 @@ The visibility question ADR-016 deferred is closed: the repository is **public**
 
 ## Last validated commit
 
-The Phase-6 branch `claude/fantasy-draft-phase-6-gb9b4x`, branched from the merged Phase-5 state on `main` (`cbf5e5e`).
+The Phase-7 branch `claude/fantasy-draft-phase-7-ktp7qm`, branched from the merged Phase-6 state on `main` (`86e2857`).
 
 ```
 uv sync --frozen
 uv run ruff check .                 # clean
 uv run ruff format --check .        # clean
-uv run mypy                         # clean, strict
-uv run pytest                       # 991 selected, all pass (4 live-network deselected)
+uv run mypy                         # clean, strict, 110 source files
+uv run pytest                       # 1013 selected, all pass (4 live-network deselected)
 uv run ffdraft config-check
 
-# Offline from a clone of the market-data branch (docs/ARCHITECTURE.md 6.3)
-uv run ffdraft build-current   --store ../market-data   # 2,700 tiers, 3,510 projections, 315 status
-uv run ffdraft build-arbitrage --store ../market-data   # 2,122 arbitrage rows
-uv run python -m ffdraft.cli validate-artifacts web/public/data   # gate: pass
+# The retained store, now a separate PRIVATE repository (ADR-049)
+git clone https://github.com/jeisey/jeisey-tiers-market-data ../market-data
+uv run ffdraft validate-market-history ../market-data --season 2026   # 3 snapshots, 3 status captures: pass
 
 npm ci
 npm run lint            # clean (2 known React-Compiler/TanStack warnings, ADR-048)
@@ -44,9 +45,11 @@ npm run test -- --run   # 194 frontend tests
 npm run build                                    # root base path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages base path
 npm run e2e             # 39 Playwright tests over five built sites
-npm run verify:board    # rendered board vs artifact bytes on the real build: 0 disagreements
-npm run e2e:screens -- docs/visual-qa/2026-08-21  # 11 screens, reviewed
 ```
+
+**One environment note that cost time and should not cost it again.** This sandbox ships Chromium build 1194 at `/opt/pw-browsers` while the pinned Playwright 1.62.1 wants 1234, so `npm run e2e` fails every test with "Executable doesn't exist" until `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` is exported. `playwright.config.ts` already reads that variable. And **`npm run e2e | tail` reports `tail`'s exit code, not Playwright's** — without `set -o pipefail` a completely red suite looks green. On the runner neither applies: `npx playwright install` fetches the matching build.
+
+`build-current`, `build-arbitrage` and `verify:board` on real data are **runner-only** here: the sandbox answers 403 to CONNECT for nflverse, MyFantasyLeague and Sleeper (ADR-009), which is the whole reason source work happens in Actions.
 
 ## Production status
 
@@ -56,7 +59,7 @@ npm run e2e:screens -- docs/visual-qa/2026-08-21  # 11 screens, reviewed
 - `models/cards/` — the model card and the tier-method report, generated from the committed experiment reports and the artifact, never hand-written.
 - `models/cards/arbitrage-method-a0.{json,md}` — the arbitrage method card, generated from the artifacts, the cohort report and the frozen constants.
 - `web/public/data/` — the 2026 build: `tiers`, `projections`, `arbitrage`, `player_status`, `build_metadata`. Gitignored and reproducible.
-- **`market-data` branch** — the append-only point-in-time capture store (ADR-038). Not in this working tree; clone it separately.
+- **`jeisey/jeisey-tiers-market-data`** — the append-only point-in-time capture store, a private repository since Phase 7 (ADR-038 as amended by ADR-049). Not in this working tree; clone it separately.
 
 The fixture stub `fixture-stub-0` is gone from the production path, and so is the Phase-1 stub arbitrage score: the fixture pipeline now drives the real A0 code.
 
@@ -66,9 +69,9 @@ What was there before and still is:
 - `data/historical/` — the modelling dataset. Gitignored and reproducible; see "Phase-2 dataset" below.
 - `docs/FEATURE_DICTIONARY.md` — every model feature with formula, sources and availability rule, generated from code and pinned by a test.
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
-- `.github/workflows/ci.yml` — Python, frontend and end-to-end gates, fixture-only, no vendor network.
+- `.github/workflows/` — `ci.yml` (fixture-only gates, no vendor network, no store credential), `daily-refresh.yml` (the production path), `retrain.yml` (an evidence gate that mostly declines), `market-capture.yml` (out-of-band capture) and `source-probe.yml` (Phase-0). `.github/actions/market-data-store/` is the one way any of them reaches the private store.
 - `docs/visual-qa/` — committed screenshots and the written review, regenerated with `npm run e2e:screens`.
-- `.github/workflows/market-capture.yml` — the Phase-5 live capture, triggered by bumping `.github/market-capture.request`. Deliberately the minimum needed to prove the source path; scheduling is Phase-7 work.
+- `scripts/workflow_summary.py` and `scripts/retrain_gate.py` — the two Phase-7 gate/report scripts, both runnable locally.
 - `web/` — the Phase-6 draft sheet: `src/data/` (contracts, loader, indexes, market derivations, flags, formats, CSV, URL state), `src/app/` (shell, controls, two tables, player detail, data view), `src/charts/` (Tier Board, Draft Rail), `src/components/`, `src/styles/base.css`.
 - `tests/` — 991 network-free Python tests (4 live-network deselected); `web/tests/` adds 194 vitest plus 39 Playwright.
 - `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
@@ -209,6 +212,37 @@ Built against the real 2026 build, in ADR-008's order: tables first, because a t
 **Visual QA found nine real defects**, all fixed and written up in `docs/visual-qa/2026-08-21/REVIEW.md`. The two worth remembering: the Tier Board was scaled to P10-P90 while drawing P25-P75, which parked every median in the middle third of the plot; and the arbitrage page scrolled sideways by ~700px on a phone because `.table-scroll` was not a containing block, so the absolutely positioned screen-reader-only spans inside its cells escaped the scroller and dragged the document's scroll width out to the table's width — an accessibility affordance silently breaking the mobile layout.
 
 **Dependencies added:** TanStack Table v8, `d3-scale`, `d3-array`, `@playwright/test`, `@testing-library/user-event` (ADR-048). No router, no UI kit, no charting framework, no CSS framework.
+
+## Phase-7 results — deployment, and the storage change it forced
+
+**The topology, which is the durable part.**
+
+```text
+jeisey/jeisey-tiers                PUBLIC     code, schemas, the production model, the frontend
+  main                                        -> GitHub Pages at /jeisey-tiers/
+
+jeisey/jeisey-tiers-market-data    PRIVATE    the append-only capture store
+  market-data                                 immutable MFL + Sleeper captures
+```
+
+**The migration.** Byte-faithful and verified before anything irreversible happened: 40/40 files compare equal, both trees hash to `1e60a55283e69c763a9dbc0bbb5fe4eb2e10cd476716fa2fbd5653c4822434f2`, and `validate-market-history` passes on the migrated checkout. Zero objects from the old branch were reachable from `main` — it shared no history with it — which is why deleting the branch while still private left nothing recoverable in a public repository.
+
+**The credential.** `MARKET_DATA_REPO_TOKEN`, a fine-grained token scoped to the data repository alone. It reaches `actions/checkout` through `token:` and never a shell; read-only jobs use `persist-credentials: false`; `ci.yml` never references it. The address is in `config/source-registry.yaml` and nowhere else.
+
+**The workflows.**
+
+| workflow | trigger | may do |
+|---|---|---|
+| `ci.yml` | PR, push to `main`, dispatch | fixtures only — no vendor, no store, no `pages:` scope |
+| `daily-refresh.yml` | 07:17 America/New_York, dispatch | capture → build → deploy |
+| `retrain.yml` | Sunday 06:43 America/New_York, dispatch | an evidence gate, and at most a candidate report |
+| `market-capture.yml` | dispatch, or a request-file bump | an out-of-band capture |
+
+Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `deploy`, which also holds `id-token: write` and the `github-pages` environment. Everything else is `contents: read`, including both capture jobs — they write to another repository through a token scoped to it, so they need no write scope here at all.
+
+**The public-release audit.** 517 paths and 56 commits scanned. No `.env`, no key material, no raw payload, no `data/historical/`, no `web/public/data/`, no identifying filesystem path. One credential-*shaped* match: the old workflow's `https://x-access-token:${GH_TOKEN}@github.com/...`, a shell variable reference expanded at runtime, and that construction is now gone. Full record in `docs/PHASE7_DEPLOYMENT.md`.
+
+**The retrain gate, and why it says no.** `intrinsic-cb-hurdle-v1` trained through 2025; 2025 is the spent holdout; 2026 unplayed. `scripts/retrain_gate.py` asks whether a season after the last training season has a **complete fantasy horizon** upstream. 404 is "no", a short weekly file is "no", and it exits 0 either way. Every weekly run this preseason stops there in about two minutes, which is the gate being exercised rather than asserted.
 
 ## Confirmed decisions
 
@@ -399,7 +433,7 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **Regenerating the golden artifacts is a deliberate act**, not a fix for a red test: `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`. Read the diff first.
 - **`docs/FEATURE_DICTIONARY.md` is generated.** Regenerate from `uv run ffdraft feature-dictionary` after changing `ffdraft.features.dictionary`; a test fails if it is stale.
 - **`data/historical/` is gitignored.** Rebuild it rather than looking for it in a clone.
-- **The `market-data` branch is not in this working tree.** Clone it beside the repository (`git clone --branch market-data ...`) and pass `--store` to the Phase-5 commands. It shares no history with `main`, is never merged, and must be excluded from any future release archive or Pages publish.
+- **The retained store is a separate private repository** (ADR-049). `git clone https://github.com/jeisey/jeisey-tiers-market-data ../market-data`, then pass `--store ../market-data` to the Phase-5 commands. It is not in this working tree, is never merged, and is not in this repository at all — which is what makes a public application repository safe. A contributor without access to it can still run every fixture-based gate, the whole frontend and the entire test suite; the only thing they cannot do is rebuild the production board.
 - **`docs/market-cohorts/` is committed evidence**, like `docs/source-probes/` and `docs/experiments/`. Regenerate with `ffdraft measure-market-cohorts` and read the diff.
 - **`models/cards/arbitrage-method-a0.*` is generated.** Regenerate with `ffdraft arbitrage-card` after any rebuild; a number in a card that no command produces is a number that can drift.
 - **The Phase-3 experiment reports are committed; the row-level predictions are not.** `docs/experiments/phase3-intrinsic-baselines/{experiment.json,experiment.md}` are the evidence behind ADR-028 and ADR-029, in the same spirit as `docs/source-probes/`. `predictions.parquet` is written only with `--write-predictions` and is gitignored.

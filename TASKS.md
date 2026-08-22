@@ -208,12 +208,15 @@ payload. The store had to move to a separate private repository **before** anyth
 - [x] Add last-known-good deployment behavior.
 - [x] Add workflow summaries with source counts/freshness/model versions.
 - [x] Prove failed critical validation cannot deploy.
-- [x] Make `jeisey/jeisey-tiers` public and deploy GitHub Pages.
-- [x] Verify the **deployed** site with real 2026 data, not fixtures.
+- [ ] **Make `jeisey/jeisey-tiers` public** — owner-only; `api.github.com` is unreachable from the build environment and the available GitHub tooling has no repository-visibility method. Steps in `docs/PHASE7_DEPLOYMENT.md` section 7.
+- [ ] Deploy GitHub Pages — wired and self-enabling; runs on the first `daily-refresh` after the flip.
+- [ ] Verify the **deployed** site with real 2026 data, not fixtures.
 - [x] Create the Phase-8 human UI feedback backlog (`docs/PHASE8_UI_FEEDBACK.md`).
 - [x] Record the multi-source ADP study as a Phase-8 research item (`docs/DATA_SOURCES.md` §16).
 
-**Exit gate:** a clean GitHub-hosted run can build and deploy the site; daily refresh can update it; a forced data-quality failure leaves existing production intact. **Met** — evidence in `docs/PHASE7_DEPLOYMENT.md`.
+**Exit gate:** a clean GitHub-hosted run can build and deploy the site; daily refresh can update it; a forced data-quality failure leaves existing production intact.
+
+**Status: met up to the visibility flip.** A clean GitHub-hosted run captures, builds, validates and packages the site; the deploy job is wired, gated and self-enabling. The three clauses that need a *live* site — the deploy itself, the deployed smoke test, and the forced-failure proof's "previous production stayed live" half — cannot be demonstrated while the repository is private, and are the first thing to run after the owner flips it. Evidence and the exact remaining steps are in `docs/PHASE7_DEPLOYMENT.md`.
 
 Phase 7 deliberately changed no methodology. No Phase-4 or Phase-5 threshold moved, no tier
 or Monte Carlo rule was touched, MFL remains the sole production price source, and the Tier

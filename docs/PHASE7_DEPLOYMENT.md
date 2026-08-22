@@ -158,8 +158,6 @@ agree.
 
 ## 4. Forced-failure proof
 
-_Filled in from the run that demonstrates it; see section 6._
-
 The design: `workflow_dispatch` carries `force_validation_failure`, default false and
 unreachable from the schedule. When true the run does **not** call `exit 1` — it corrupts a
 generated artifact so VORP quantiles are no longer non-decreasing, then runs the ordinary
@@ -169,14 +167,91 @@ production critical check from `docs/ARCHITECTURE.md` section 12.
 A proof that only shows `exit 1` works would prove nothing about the gate. This one proves
 the gate.
 
+The run evidence is in section 6.
+
 ---
 
 ## 5. Live production smoke verification
 
-_Filled in from the deployed site; see section 6._
+_Waits on section 7._ The command is already written and is the same one the build job runs,
+pointed at a remote host instead of a local one:
+
+```bash
+npm run verify:board -- --url https://jeisey.github.io/jeisey-tiers --data web/public/data
+```
+
+It compares the **deployed page** against the artifact bytes the build produced: tier table
+rows, chart-mark labels, arbitrage rows and injury badges. Beside it, the checks that need
+eyes rather than a script: the Tier / Arbitrage / Data views render, CSV download works,
+query links and reload survive under `/jeisey-tiers/`, the console is clean, and the network
+panel shows requests to the Pages origin only — no vendor, no `api.github.com`, no
+`jeisey-tiers-market-data`. The end-to-end suite already fails any request that leaves
+localhost, so a vendor call in the browser would have been caught before deployment; the live
+check is confirmation on the real origin rather than the first look.
 
 ---
 
 ## 6. Run evidence
 
 _Populated as the runs complete._
+
+---
+
+## 7. The one thing this phase could not do for itself
+
+**Making `jeisey/jeisey-tiers` public is an owner-only action, and it was stopped at rather
+than worked around.**
+
+Why it could not be automated here: the build environment's egress policy answers **403** to
+`api.github.com` (only the sanctioned GitHub tool surface can reach GitHub, and git traffic
+goes through a separate proxy), and that tool surface exposes no repository-update method —
+it can create a repository and fork one, but not change an existing one's visibility. There
+is no supported path from this environment to that setting.
+
+Everything that depends on it is already wired and waits on nothing else.
+
+### What the owner needs to do
+
+1. **Confirm the retained store is safe to leave behind.** It already is, and the evidence is
+   in sections 1 and 2 of this document: the migration is byte-faithful, the private
+   repository is private, and no retained payload object is reachable from `main`.
+
+2. **Delete the old `market-data` branch from `jeisey/jeisey-tiers`** if it is still there.
+   Check first:
+
+   ```bash
+   git ls-remote --heads https://github.com/jeisey/jeisey-tiers market-data
+   ```
+
+   Empty output means it is already gone. **Do not skip this check** — publishing while that
+   branch exists is the one thing that must not happen.
+
+3. **Flip visibility.** `github.com/jeisey/jeisey-tiers` → **Settings** → scroll to **Danger
+   Zone** → **Change repository visibility** → *Change to public* → confirm by typing the
+   repository name.
+
+4. **Run the first production refresh.** Actions → **daily-refresh** → *Run workflow* on
+   `main`, leaving the inputs at their defaults. The deploy job's `configure-pages` step runs
+   with `enablement: true`, so it creates the Pages site with the Actions build type itself —
+   there is no Settings → Pages step to remember. The site appears at
+   **https://jeisey.github.io/jeisey-tiers/**.
+
+5. **Smoke-test the deployed site** with the command in section 5, plus the by-eye checks
+   beside it.
+
+6. **Prove the deploy gate.** Actions → **daily-refresh** → *Run workflow*, with
+   **`force_validation_failure` = true**. Expected: `capture` succeeds and its snapshot is
+   committed to the private store; `build` fails at *Validate the public artifacts* with
+   `artifact.non_monotonic_quantiles`; `deploy` is **skipped**; and the site from step 4 is
+   still serving, unchanged. Record the run URL in section 6.
+
+7. **Optionally shorten the daily schedule's first wait** by leaving it alone — it fires at
+   07:17 America/New_York on its own.
+
+### What is *not* needed
+
+- No Settings → Pages configuration (step 4 does it).
+- No new secret. `MARKET_DATA_REPO_TOKEN` and the MFL client-identity secrets already exist
+  and are already proven working by run 32590470088.
+- No branch protection change, no licence decision (see `docs/SECURITY_LICENSE.md` section 8),
+  and no change to any workflow file.
