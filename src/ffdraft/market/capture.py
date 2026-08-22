@@ -70,10 +70,30 @@ __all__ = [
     "cohort_set",
 ]
 
-#: The cohorts a routine production capture retains: the widest aggregate plus the two
-#: single-axis scoring cohorts, which are the only candidates ADR-039's rule can plausibly
-#: pick from once the season matures. Kept small because a daily capture is committed.
-PRODUCTION_COHORT_IDS: tuple[str, ...] = ("unfiltered", "ppr", "std")
+#: The cohorts a routine production capture retains.
+#:
+#: The set is derived from what the frozen selection rule can *legally choose*, not from
+#: what looks representative. ADR-045 made "excludes keeper and dynasty drafts" a qualifying
+#: condition for a redraft board, so a cohort without it can never be selected however much
+#: volume it has — which leaves exactly three selectable candidates, and all three are here.
+#: `unfiltered` is retained as well although it can never be picked: ADR-045 was found by
+#: comparing a keeper-free cohort against the contaminated aggregate, and keeping the
+#: reference is what lets that comparison be re-run on any day's capture rather than once.
+#:
+#: `ppr` and `std` used to be in this list and are deliberately not any more. They were
+#: chosen under `phase5_cohort_v1`, before the keeper-free requirement existed, and neither
+#: can be selected now; `ppr-no-keeper` carries the PPR axis instead. Retaining a cohort the
+#: rule cannot use is bytes committed every day for nothing.
+#:
+#: Kept small because a daily capture is committed:`tests/unit/test_market_cohorts.py`
+#: asserts that every launch preset can be priced from this set alone, which is the check
+#: whose absence let the previous list ship un-priceable.
+PRODUCTION_COHORT_IDS: tuple[str, ...] = (
+    "unfiltered",
+    "no-keeper",
+    "no-mock-no-keeper",
+    "ppr-no-keeper",
+)
 
 #: Every candidate, for the Phase-5 cohort study (ADR-012 amendment, ADR-039).
 STUDY_COHORT_IDS: tuple[str, ...] = tuple(cohort.cohort_id for cohort in CANDIDATE_COHORTS)

@@ -967,6 +967,62 @@ That is a worse-looking confidence distribution than v1 would have produced and 
 
 ---
 
+### Amendment (2026-08-22, Phase 7) — the production capture did not retain a cohort this rule can choose
+
+**Status:** implementation correction. **No threshold, clause or rule version changed.**
+
+The first production run of `daily-refresh.yml` failed at cohort selection with
+
+```
+ValueError: no cohort qualifies for HALF/10-team; a board cannot be priced by a cohort
+that contradicts it (ADR-039/ADR-045)
+```
+
+and the diagnosis is entirely on this ADR's side of the line. `phase5_cohort_v2` made
+"excludes keeper and dynasty drafts" a **qualifying** condition, so a cohort without it can
+never be selected however much volume it carries. But `PRODUCTION_COHORT_IDS` — the small set
+a routine daily capture retains — was frozen earlier, under `phase5_cohort_v1`, and held
+`("unfiltered", "ppr", "std")`. **Not one of those excludes keepers.** A production capture
+therefore retained nothing the rule could legally choose, and `select_cohorts` refused to
+price a board.
+
+Phase 5 never noticed because the only capture it ever measured was a `study` capture, which
+retains all sixteen candidates. The published 2026 board was built from `2026-08-20T14-38-44Z`
+— a study snapshot — so the production path had, until now, never actually been run.
+
+**What was wrong, and what was not.** The rule was right and behaved exactly as designed: it
+failed closed rather than pricing a redraft board with dynasty rookie drafts in it, which is
+the whole point of ADR-045. What was wrong is that the capture retained the wrong bytes. The
+fix is therefore to retain what the rule needs, **never** to relax the requirement:
+
+```python
+PRODUCTION_COHORT_IDS = ("unfiltered", "no-keeper", "no-mock-no-keeper", "ppr-no-keeper")
+```
+
+Those are the three cohorts `_candidates_for` can return for a launch preset, plus
+`unfiltered` — which can never be selected, and is retained anyway because ADR-045 was found
+by *comparing* a keeper-free cohort against the contaminated aggregate, and keeping the
+reference is what lets that comparison be re-run on any day's capture rather than once.
+`ppr` and `std` are dropped: neither can be selected now, and `ppr-no-keeper` carries the
+PPR axis.
+
+**Why the tests did not catch it.** Every selection test in
+`tests/unit/test_market_cohorts.py` handed `select_cohorts` measurements for all sixteen
+candidates, so all of them passed on a set no daily capture would ever hold. Two tests now
+close that gap: one asserts every launch preset can be priced **from `PRODUCTION_COHORT_IDS`
+alone** and that each assignment excludes keepers, and one pins the contaminated reference's
+presence and its unselectability.
+
+**Consequences.** Daily captures grow slightly — four cohorts rather than three, still well
+inside ADR-038's budget — and the retained per-cohort series for the keeper-free cohorts
+continues from `2026-08-20T14-38-44Z`, which already contained all three, so ADR-042's trend
+window is not restarted. The two captures taken on 2026-08-22 before this fix hold only the
+old three cohorts and are left exactly as they are: the store is append-only, and a snapshot
+records what was retrieved at the time, including when what was retrieved turned out to be
+the wrong set.
+
+---
+
 ## ADR-046 — The frontend presents a tier as a band, never as a line
 
 **Status:** Accepted (2026-08-21, Phase 6)

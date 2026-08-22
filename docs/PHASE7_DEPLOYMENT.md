@@ -193,7 +193,64 @@ check is confirmation on the real origin rather than the first look.
 
 ## 6. Run evidence
 
-_Populated as the runs complete._
+### Runs so far
+
+| run | workflow | trigger | outcome |
+|---|---|---|---|
+| [32590470088](https://github.com/jeisey/jeisey-tiers/actions/runs/32590470088) | `market-capture` | dispatch | **success** — first capture into the private repository; store head `ccd3ce1` → `fd661ae` |
+| [32590972677](https://github.com/jeisey/jeisey-tiers/actions/runs/32590972677) | `ci` | pull request #8 | **success** — all three jobs green |
+| [32591545618](https://github.com/jeisey/jeisey-tiers/actions/runs/32591545618) | `daily-refresh` | dispatch | **capture success, build failure, deploy skipped** — see below |
+
+### What the first production refresh found
+
+This run is the reason the phase is worth more than its diff. `capture` succeeded — a real
+MFL and Sleeper capture, validated and pushed to the private store. `Build the current board`
+succeeded in 3.5 minutes against that store, loading the committed production model. Then
+`Select the market cohort` failed in one second:
+
+```
+ValueError: no cohort qualifies for HALF/10-team; a board cannot be priced by a cohort
+that contradicts it (ADR-039/ADR-045)
+```
+
+**That is a genuine latent Phase-5 defect, and the production path had never been run before
+today.** `PRODUCTION_COHORT_IDS` — the small cohort set a routine daily capture retains — was
+frozen under `phase5_cohort_v1` as `("unfiltered", "ppr", "std")`. ADR-045 then made
+keeper-free a *qualifying* condition, and none of those three excludes keepers. So a
+production capture retained nothing the frozen rule could legally select. Phase 5 never met
+this because every board it built came from a `study` capture, which retains all sixteen
+candidates.
+
+The rule was right and did its job: it refused to price a redraft board with dynasty rookie
+drafts in it. The capture was wrong. The fix retains what the rule needs — see the ADR-045
+amendment (2026-08-22) — and two new tests in `tests/unit/test_market_cohorts.py` assert that
+every launch preset can be priced from `PRODUCTION_COHORT_IDS` alone, which is the check
+whose absence let an un-priceable set ship.
+
+### What the failure also demonstrated, for free
+
+Nobody designed this run as a last-known-good test, and it is the better for that. An
+**unanticipated** failure, three steps into a build:
+
+| step | outcome |
+|---|---|
+| Build the current board | success |
+| **Select the market cohort** | **failure** |
+| Build the arbitrage board … Verify the rendered board … Assert the Pages artifact boundary | **skipped** |
+| `actions/upload-pages-artifact` | **skipped** |
+| **Deploy to GitHub Pages** | **skipped** |
+| Stage / upload the build record | success (`if: always()`) |
+| Refresh summary | success |
+
+No Pages artifact was produced, the deploy job was never entered, and the retained capture
+from the same run stayed committed in the private store — exactly the semantics
+`docs/OPERATIONS.md` sections 1 and 8 ask for, arrived at by a real fault rather than a
+rehearsed one.
+
+It also confirmed two smaller things: `persist-credentials: false` left no git credential in
+the build workspace (the post-job cleanup found an extraheader for the application checkout
+and none for the store), and the build record staged 8 manifests with **zero** `.gz` files,
+so no retained payload reached a world-readable artifact.
 
 ---
 
@@ -202,11 +259,19 @@ _Populated as the runs complete._
 **Making `jeisey/jeisey-tiers` public is an owner-only action, and it was stopped at rather
 than worked around.**
 
-Why it could not be automated here: the build environment's egress policy answers **403** to
-`api.github.com` (only the sanctioned GitHub tool surface can reach GitHub, and git traffic
-goes through a separate proxy), and that tool surface exposes no repository-update method —
-it can create a repository and fork one, but not change an existing one's visibility. There
-is no supported path from this environment to that setting.
+Two actions, in this order, and neither is reachable from here.
+
+Why not: the build environment's egress policy answers **403** to `api.github.com` — only the
+sanctioned GitHub tool surface can reach GitHub, and git traffic goes through a separate
+proxy — and neither route offers what is needed. The tool surface can create a repository and
+fork one, but has no repository-update method and no ref-deletion method. The git proxy
+accepts pushes that create or update a ref and **rejects a push that deletes one** (`HTTP
+403`), which is a sensible thing for a proxy to refuse and exactly what deleting a branch
+requires.
+
+So the old `market-data` branch is still on `jeisey/jeisey-tiers` and the repository is still
+private, which is the correct and safe state to leave it in: **both**, or **neither**. What
+must never happen is the flip without the deletion.
 
 Everything that depends on it is already wired and waits on nothing else.
 
@@ -216,15 +281,23 @@ Everything that depends on it is already wired and waits on nothing else.
    in sections 1 and 2 of this document: the migration is byte-faithful, the private
    repository is private, and no retained payload object is reachable from `main`.
 
-2. **Delete the old `market-data` branch from `jeisey/jeisey-tiers`** if it is still there.
-   Check first:
+2. **Delete the old `market-data` branch from `jeisey/jeisey-tiers`.** It still exists at
+   `57ee0c1`, and every one of its 40 files was verified byte-identical to the private
+   repository immediately before this was written, so nothing is lost by deleting it.
 
    ```bash
-   git ls-remote --heads https://github.com/jeisey/jeisey-tiers market-data
+   git push https://github.com/jeisey/jeisey-tiers --delete market-data
+   # or: github.com/jeisey/jeisey-tiers → Branches → the bin icon beside market-data
    ```
 
-   Empty output means it is already gone. **Do not skip this check** — publishing while that
-   branch exists is the one thing that must not happen.
+   Then confirm it is gone — this is the check that gates everything after it:
+
+   ```bash
+   git ls-remote --heads https://github.com/jeisey/jeisey-tiers market-data   # must print nothing
+   ```
+
+   **Do not skip this.** Publishing while that branch exists is the one thing that must not
+   happen, and it is not recoverable by deleting the branch afterwards.
 
 3. **Flip visibility.** `github.com/jeisey/jeisey-tiers` → **Settings** → scroll to **Danger
    Zone** → **Change repository visibility** → *Change to public* → confirm by typing the

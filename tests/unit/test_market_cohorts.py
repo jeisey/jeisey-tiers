@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import pytest
 
+from ffdraft.market.capture import PRODUCTION_COHORT_IDS
 from ffdraft.market.cohorts import (
     CANDIDATE_COHORTS,
     COHORT_APPROXIMATE,
@@ -266,6 +267,41 @@ def test_every_launch_preset_gets_an_assignment():
     assignments, verdicts = select_cohorts(measurements, presets=LAUNCH_PRESETS)
     assert set(assignments) == set(LAUNCH_PRESETS)
     assert set(verdicts) == {cohort.cohort_id for cohort in CANDIDATE_COHORTS}
+
+
+def test_a_routine_production_capture_can_actually_price_every_launch_preset():
+    """The set a daily capture retains must contain something the frozen rule can pick.
+
+    This is the test that was missing, and its absence cost a production run. Every other
+    selection test here hands `select_cohorts` measurements for *all sixteen* candidates,
+    so all of them passed while `PRODUCTION_COHORT_IDS` held only keeper-contaminated
+    cohorts — a set frozen under `phase5_cohort_v1`, before ADR-045 made a keeper-free
+    cohort a qualifying condition for a redraft board. A production capture therefore
+    retained nothing the rule could legally choose, and `select_cohorts` correctly refused
+    to price a board. It failed closed, which is the design working; but it failed on every
+    run, which is a capture-set bug.
+
+    The fix is not to relax the rule. It is to retain what the rule needs.
+    """
+    measurements = {cohort_id: measurement(cohort_id) for cohort_id in PRODUCTION_COHORT_IDS}
+    assignments, _ = select_cohorts(measurements, presets=LAUNCH_PRESETS)
+    assert set(assignments) == set(LAUNCH_PRESETS)
+    for preset, assignment in assignments.items():
+        assert assignment.cohort.excludes_keepers, (
+            f"{preset} would be priced by {assignment.cohort.cohort_id}, which does not "
+            "exclude keeper and dynasty drafts (ADR-045)"
+        )
+
+
+def test_the_production_capture_keeps_the_reference_the_keeper_finding_needs():
+    """ADR-045 was found by *comparing* a keeper-free cohort against the aggregate.
+
+    Retaining only the cohorts the rule picks would make that comparison unrepeatable, so
+    the contaminated reference is captured on purpose. It can never be selected — it does
+    not exclude keepers — which is exactly why keeping it costs nothing but bytes.
+    """
+    assert "unfiltered" in PRODUCTION_COHORT_IDS
+    assert not cohort_by_id("unfiltered").excludes_keepers
 
 
 def test_selection_is_deterministic_under_input_permutation():
