@@ -322,7 +322,7 @@ Daily ADP history is analytically valuable and may not be reconstructable later.
 
 Alternative acceptable designs: versioned GitHub release assets or another free append-only artifact store, provided history survives workflow retention and remains reproducible. Normal transient GitHub Actions artifacts alone are not sufficient as the sole historical market store.
 
-**Phase-5 implementation (ADR-038).** Captures live on the dedicated long-lived orphan branch **`market-data`**, in this repository, never merged into `main` and never rebased:
+**Phase-5 implementation (ADR-038), as amended in Phase 7 (ADR-049).** Captures live on a dedicated long-lived branch named **`market-data`**, never merged into a code branch and never rebased. Phase 7 moved that branch out of this repository and into a **separate private repository**, `jeisey/jeisey-tiers-market-data`, where it is the default and only branch — because the application repository became public and GitHub visibility is a property of a repository, not of a branch. Nothing else about the store changed; a checkout is byte-identical to what the old branch held. The layout is:
 
 ```text
 market/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/
@@ -339,7 +339,9 @@ A retained directory is immutable: a new timestamp appends, an identical re-capt
 
 The `status/` prefix applies the same discipline to Sleeper captures, for a different reason: not as future training data, which ADR-044 forbids, but so a status artifact can be rebuilt offline and byte-for-byte from evidence rather than from a feed that has since moved. Only the normalized rows are retained; the 14.6 MB raw player map is not.
 
-`market-data` must be excluded from any future release archive or Pages publish.
+The store is never included in a release archive or a Pages publish, and it now cannot be: it is not in this repository. `daily-refresh.yml` asserts the Pages artifact's contents before uploading it, so the boundary is a check rather than a promise.
+
+The repository address is recorded in exactly one place — `config/source-registry.yaml`'s `market_history_repository` — and read from there by `.github/actions/market-data-store`, which is the only way any workflow checks the store out. `tests/unit/test_workflows.py` fails if a workflow grows the literal or touches the credential outside that action.
 
 ### 6.3 What "offline" means in this repository
 
@@ -350,24 +352,31 @@ Used throughout `docs/OPERATIONS.md` and `SESSION_STATE.md`, and worth stating o
 There is exactly one durable source-history store and it is in Git. The topology is:
 
 ```text
-main                      source code, schemas, the production model, the frontend
-market-data               immutable timestamped MFL captures and Sleeper captures
-a build workspace         a checkout of both, side by side
-  -> web/public/data/     deterministic artifact generation (gitignored output)
-  -> web/dist/            the Vite build
+jeisey/jeisey-tiers                PUBLIC
+  main                             source code, schemas, the production model, the frontend
+                                   -> GitHub Pages at /jeisey-tiers/
+
+jeisey/jeisey-tiers-market-data    PRIVATE
+  market-data                      immutable timestamped MFL captures and Sleeper captures
+
+a build workspace                  a checkout of both, side by side
+  -> web/public/data/              deterministic artifact generation (gitignored output)
+  -> web/dist/                     the Vite build, and the whole of the Pages artifact
 ```
 
 Only two commands touch a vendor: `snapshot-market` and `capture-status`, both of which write into `market-data`. Everything downstream — cohort measurement, `build-current`, `build-arbitrage`, the method cards, artifact validation and the whole frontend build — reads retained bytes and runs with no network at all. That is why a session behind an egress policy can still build and validate the entire product, and why every report can be regenerated and diffed against its committed evidence.
 
-The store is **not** laptop-local state. It is a branch in this repository, cloned beside the working tree:
+The store is **not** laptop-local state. It is a branch in a repository, cloned beside the working tree:
 
 ```bash
-git clone --branch market-data <this repo> ../market-data
+git clone https://github.com/jeisey/jeisey-tiers-market-data ../market-data
 uv run ffdraft build-current   --store ../market-data
 uv run ffdraft build-arbitrage --store ../market-data
 ```
 
-Phase 7 automates exactly these operations on a clean GitHub runner: check out `main`, check out `market-data`, capture if scheduled, build, validate, deploy. Nothing about the commands changes.
+The store repository is private, so that clone needs an account with access to it — which is the point of ADR-049 rather than a friction to work around. A contributor without that access can still run every fixture-based gate, the whole frontend and the entire test suite; what they cannot do is rebuild the production board, which needs retained vendor bytes.
+
+Phase 7 automates exactly these operations on a clean GitHub runner: check out `main`, check out the store, capture, build, validate, deploy. Nothing about the commands changed when the store moved — only the address `.github/actions/market-data-store` resolves.
 
 ## 7. Model registry strategy
 

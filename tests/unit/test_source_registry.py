@@ -153,12 +153,38 @@ def test_the_registry_file_contains_no_secret_looking_values():
         assert forbidden not in raw.lower(), f"{forbidden} suggests a committed credential"
 
 
-def test_repository_visibility_decision_is_recorded_for_phase_7(registry):
-    """ADR-016: private through Phase 6; the choice is a required Phase-7 decision."""
+def test_repository_visibility_decision_was_made_in_phase_7(registry):
+    """ADR-016 as amended: the application repository is public and serves a public site."""
     decisions = registry["decisions"]
-    assert decisions["repository_visibility"] == "private"
-    assert decisions["repository_visibility_revisit_phase"] == 7
+    assert decisions["repository_visibility"] == "public"
+    assert decisions["repository_visibility_decided_phase"] == 7
     assert "ADR-016" in decisions["repository_visibility_decision_ref"]
+
+
+def test_the_retained_store_lives_in_a_separate_private_repository(registry):
+    """ADR-049. A public repository has no private branch, so the store had to move.
+
+    This is the single place the address is written down: `.github/actions/market-data-store`
+    reads it, and `tests/unit/test_workflows.py` proves no workflow repeats the literal.
+    """
+    decisions = registry["decisions"]
+    repository = decisions["market_history_repository"]
+    assert repository.count("/") == 1, "owner/name, not a URL"
+    assert repository != "jeisey/jeisey-tiers", (
+        "the retained vendor payloads may not live in the public application repository"
+    )
+    assert decisions["market_history_repository_visibility"] == "private"
+    # The branch name is deliberately unchanged: only the repository moved (ADR-049).
+    assert decisions["market_history_branch"] == "market-data"
+    assert decisions["market_history_append_only"] is True
+
+
+def test_the_store_credential_is_recorded_as_a_name_and_never_a_value(registry):
+    """The ADR-017 convention: configuration records which secret, never what it is."""
+    name = registry["decisions"]["market_history_repository_secret_name"]
+    assert name.isupper()
+    assert name.replace("_", "").isalnum()
+    assert len(name) < 64
 
 
 def test_market_cohort_remeasurement_is_scheduled_for_phase_5(registry):

@@ -13,6 +13,7 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -83,8 +84,13 @@ const MOUNTS = [
   { base: "/", dir: "web/dist" },
 ];
 
-createStaticServer({
-  roots: MOUNTS.map((mount) => ({ base: mount.base, dir: resolve(mount.dir) })),
-}).listen(port, () => {
-  process.stdout.write(`static server on http://localhost:${String(port)}/\n`);
-});
+// Started only when this file IS the command, so `verify-board.mjs` can import
+// `createStaticServer` and mount one build at one base path without a second server
+// appearing on port 4173 as a side effect of the import.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  createStaticServer({
+    roots: MOUNTS.map((mount) => ({ base: mount.base, dir: resolve(mount.dir) })),
+  }).listen(port, () => {
+    process.stdout.write(`static server on http://localhost:${String(port)}/\n`);
+  });
+}

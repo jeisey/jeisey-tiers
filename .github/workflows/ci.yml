@@ -1,20 +1,23 @@
-# Phase-1 continuous integration.
+# Pull-request continuous integration.
 #
-# Both gates run against committed fixtures with **no live vendor access**, which is the
+# Every gate here runs against committed fixtures with **no live vendor access**, which is the
 # property `docs/OPERATIONS.md` section 2.1 asks for: a pull request must be checkable when
 # MyFantasyLeague is down, and a source outage must never look like a code failure. The only
-# network this workflow needs is PyPI and the npm registry.
+# network this workflow needs is PyPI, the npm registry and the Playwright browser download.
 #
-# Phase 7 completes this file (caching, richer summaries) and adds `daily-refresh.yml` and
-# `retrain.yml`. The repository is private through Phase 6 (ADR-016), so nothing here
-# assumes public-repository runner economics, and no job requests Pages permissions.
+# Three things it deliberately does not do, now that the production workflows exist beside it:
+#
+#   * it never touches the private retained-data repository — no store checkout, no
+#     `MARKET_DATA_REPO_TOKEN`, so a pull request from anywhere cannot reach it;
+#   * it never calls MyFantasyLeague, Sleeper or the nflverse release hosts;
+#   * it never requests a `pages:` scope, so it cannot deploy anything.
+#
+# `tests/unit/test_workflows.py` pins all three structurally.
 name: ci
 
-# Pull requests plus the default branch, exactly as docs/OPERATIONS.md section 2.1 specifies.
-# Feature branches are covered by their pull request; adding a `claude/**` push trigger as
-# well would run every commit twice, because a PR event and a branch push land in different
-# concurrency groups. On a private repository (ADR-016) that is metered runner time for no
-# extra signal.
+# Pull requests plus the default branch. Feature branches are covered by their pull request;
+# adding a `claude/**` push trigger as well would run every commit twice, because a PR event
+# and a branch push land in different concurrency groups.
 on:
   pull_request:
   push:
@@ -34,29 +37,41 @@ concurrency:
 
 env:
   UV_VERSION: "0.8.17"
+  NODE_VERSION: "22"
+  PYTHON_VERSION: "3.12"
 
 jobs:
   python:
     name: Python lint, types, tests, fixture pipeline
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    outputs:
+      tests: ${{ steps.report.outputs.tests }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       # Official actions plus a pinned pip install; no `curl | bash`
       # (docs/SECURITY_LICENSE.md sections 4 and 5).
       - name: Install uv
         run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
 
+      # The lockfile is in the key, so a hit can only ever restore the same resolved set:
+      # a cache miss here is slower, never different (docs/OPERATIONS.md section 4).
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
       - name: Install locked dependencies
         run: uv sync --frozen
 
       - name: Lint
-        run: uv run ruff check .
+        run: uv run ruff check --output-format=github .
 
       - name: Format check
         run: uv run ruff format --check .
@@ -65,10 +80,11 @@ jobs:
         run: uv run mypy
 
       - name: Tests
-        run: uv run pytest
+        id: tests
+        run: uv run pytest --junit-xml=pytest.xml
 
       - name: Configuration check
-        run: uv run ffdraft config-check
+        run: uv run ffdraft config-check | tee config-check.log
 
       # The Phase-1 exit gate, executed end to end: fixtures flow through normalization,
       # canonical identity, contracts and serialization, then the artifacts are validated
@@ -77,7 +93,7 @@ jobs:
         run: uv run ffdraft build-fixture-artifacts --out web/public/data --git-sha "${GITHUB_SHA}"
 
       - name: Validate generated artifacts
-        run: uv run python -m ffdraft.cli validate-artifacts web/public/data
+        run: uv run python -m ffdraft.cli validate-artifacts web/public/data | tee validate.log
 
       - name: Confirm committed golden artifacts are current
         run: |
@@ -90,12 +106,50 @@ jobs:
             exit 1
           fi
 
+      - name: Summarise the Python gates
+        id: report
+        if: always()
+        run: |
+          set -euo pipefail
+          summary="$(uv run python - <<'PY'
+          import pathlib
+          import xml.etree.ElementTree as ET
+
+          path = pathlib.Path("pytest.xml")
+          if not path.exists():
+              print("pytest did not produce a report")
+              raise SystemExit(0)
+          suite = ET.parse(path).getroot().find("testsuite")
+          if suite is None:
+              print("pytest report has no testsuite")
+              raise SystemExit(0)
+          total = int(suite.get("tests", 0))
+          failures = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+          skipped = int(suite.get("skipped", 0))
+          print(f"{total - skipped - failures} passed, {failures} failed, {skipped} skipped")
+          PY
+          )"
+          echo "tests=${summary}" >> "$GITHUB_OUTPUT"
+          {
+            echo '## Python'
+            echo
+            echo "| gate | result |"
+            echo "|---|---|"
+            echo "| ruff / mypy | \`${{ job.status }}\` |"
+            echo "| pytest | \`${summary}\` |"
+            echo "| fixture artifacts | validated against \`schemas/*.schema.json\` |"
+            echo
+            echo 'No vendor was contacted: every gate above runs on committed fixtures.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload generated artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fixture-artifacts-${{ github.run_id }}
-          path: web/public/data
+          path: |
+            web/public/data
+            pytest.xml
           if-no-files-found: warn
           retention-days: 7
 
@@ -108,7 +162,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install locked dependencies
@@ -129,8 +183,9 @@ jobs:
         run: npm run build
 
       # docs/ARCHITECTURE.md section 11: the build must work for a project Pages path as
-      # well as a custom domain. Asserting the emitted asset URLs is the cheap way to know.
-      - name: Build for a project Pages base path
+      # well as a custom domain. Asserting the emitted asset URLs is the cheap way to know,
+      # and `daily-refresh.yml` deploys exactly this base path.
+      - name: Build for the project Pages base path
         env:
           VITE_BASE_PATH: /jeisey-tiers/
         run: |
@@ -141,21 +196,48 @@ jobs:
             cat web/dist/index.html
             exit 1
           fi
+          if grep -qE '(src|href)="/(assets|data)/' web/dist/index.html; then
+            echo "::error::an absolute root path survived the base-path build"
+            exit 1
+          fi
+
+      - name: Summarise the frontend gates
+        if: always()
+        run: |
+          {
+            echo '## Frontend'
+            echo
+            echo "| gate | result |"
+            echo "|---|---|"
+            echo "| eslint / tsc | \`${{ job.status }}\` |"
+            echo "| vitest | see the job log |"
+            echo "| build (\`/\`) | ok |"
+            echo "| build (\`/jeisey-tiers/\`) | asset URLs asserted |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   e2e:
     name: Frontend end-to-end
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install locked dependencies
         run: npm ci
+
+      # The browser is keyed on the lockfile, which pins @playwright/test: a Playwright
+      # upgrade changes the key, so a cache hit can never pair a new client with an old
+      # browser build.
+      - name: Cache the Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -165,6 +247,19 @@ jobs:
       # No vendor is reachable: the suite fails any request that leaves localhost.
       - name: End-to-end
         run: npm run e2e
+
+      - name: Summarise the end-to-end run
+        if: always()
+        run: |
+          {
+            echo '## End-to-end'
+            echo
+            echo "Five built sites — root, \`/jeisey-tiers/\`, and three degraded-artifact"
+            echo "scenarios — served from disk. Result: \`${{ job.status }}\`."
+            echo
+            echo 'Every spec fails a request that leaves localhost, so this run is offline by'
+            echo 'construction rather than by convention.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the report on failure
         if: failure()

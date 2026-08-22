@@ -1,0 +1,131 @@
+# Check out the retained point-in-time capture store (ADR-038 as amended by ADR-049).
+#
+# The store is an immutable, append-only Git history on a long-lived branch called
+# `market-data`. Phase 7 moved that branch out of the application repository and into a
+# separate PRIVATE one, because the application repository became public and a public
+# repository has no private branch. Nothing about the store's layout, manifests or
+# append-only rules changed; only its address did.
+#
+# The address is written down in exactly one place — `config/source-registry.yaml`, which
+# `docs/AGENTS.md` section 18 already makes the source of truth for source topology — and
+# this action is how a workflow reads it. No workflow repeats the literal, and
+# `tests/unit/test_source_registry.py` pins the value the action will find.
+#
+# The token never reaches a shell block. `actions/checkout` receives it through `with:` and
+# stores it as a git extraheader in the checkout, which is what lets a later `git push`
+# work without an authenticated remote URL ever being constructed, echoed or logged.
+name: Retained market-data store
+description: Check out the private append-only point-in-time capture store named by the source registry.
+
+inputs:
+  token:
+    description: >-
+      Fine-grained token with contents access limited to the private data repository, i.e.
+      the `MARKET_DATA_REPO_TOKEN` repository secret. The store is private, so this is
+      required even to read it.
+    required: true
+  path:
+    description: Where to place the checkout, relative to the workspace.
+    required: false
+    default: market-data
+  registry:
+    description: The source registry that records the topology.
+    required: false
+    default: config/source-registry.yaml
+  persist-credentials:
+    description: >-
+      Leave the token in the checkout's git config so the job can push. Set to 'false' for
+      read-only jobs so no credential survives into a build step.
+    required: false
+    default: "false"
+  ref:
+    description: >-
+      An exact store commit to check out. Leave empty for the branch head. The build job of
+      a refresh passes the commit its own capture job pushed, so the artifacts are built
+      from bytes this run can name rather than from whatever the branch happened to be.
+    required: false
+    default: ""
+  fetch-depth:
+    description: History depth. '1' is enough to append; '0' is a full clone.
+    required: false
+    default: "1"
+
+outputs:
+  repository:
+    description: The owner/name of the private data repository, as read from the registry.
+    value: ${{ steps.topology.outputs.repository }}
+  branch:
+    description: The long-lived store branch.
+    value: ${{ steps.topology.outputs.branch }}
+  path:
+    description: The checkout path.
+    value: ${{ inputs.path }}
+  commit:
+    description: The store commit this job checked out.
+    value: ${{ steps.head.outputs.commit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve the store location from the source registry
+      id: topology
+      shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+      run: |
+        set -euo pipefail
+        if [ ! -f "${REGISTRY}" ]; then
+          echo "::error::${REGISTRY} not found; check out the application repository first"
+          exit 1
+        fi
+        read_key() {
+          awk -v key="  $1:" '
+            index($0, key) == 1 { sub(/^[^:]*: */, ""); gsub(/^"|"$/, ""); print; exit }
+          ' "${REGISTRY}"
+        }
+        repository="$(read_key market_history_repository)"
+        branch="$(read_key market_history_branch)"
+        if [ -z "${repository}" ] || [ -z "${branch}" ]; then
+          echo "::error::${REGISTRY} does not record market_history_repository / market_history_branch"
+          exit 1
+        fi
+        echo "repository=${repository}" >> "$GITHUB_OUTPUT"
+        echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+        echo "Retained store: ${repository}@${branch}"
+
+    - name: Fail early with a useful message when the credential is missing
+      shell: bash
+      env:
+        # Only ever tested for emptiness. The value is never printed, compared against a
+        # literal, or written to a file (docs/SECURITY_LICENSE.md section 2).
+        STORE_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        if [ -z "${STORE_TOKEN}" ]; then
+          echo "::error::The MARKET_DATA_REPO_TOKEN secret is not available to this job."
+          echo "The retained capture store is a private repository (ADR-049), so reading it"
+          echo "needs a fine-grained token with Contents access to"
+          echo "  ${{ steps.topology.outputs.repository }}"
+          echo "See docs/OPERATIONS.md section 5.3 for how to provision it."
+          exit 1
+        fi
+
+    - name: Check out the store
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ steps.topology.outputs.repository }}
+        ref: ${{ inputs.ref != '' && inputs.ref || steps.topology.outputs.branch }}
+        token: ${{ inputs.token }}
+        path: ${{ inputs.path }}
+        persist-credentials: ${{ inputs.persist-credentials }}
+        fetch-depth: ${{ inputs.fetch-depth }}
+
+    - name: Record the store head
+      id: head
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+        commit="$(git rev-parse HEAD)"
+        echo "commit=${commit}" >> "$GITHUB_OUTPUT"
+        echo "Store head: ${commit}"

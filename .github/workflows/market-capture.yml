@@ -1,12 +1,16 @@
-# Point-in-time market and status capture (Phase 5).
+# On-demand point-in-time market and status capture.
 #
-# This is the *minimum* live mechanism Phase 5 needs to prove its source path works and to
-# retain the first real snapshot (ADR-006, ADR-038). It is not the production daily refresh:
-# scheduling, last-known-good deployment and the retrain gates remain Phase-7 deliverables.
+# `daily-refresh.yml` is the production path and takes a capture every morning. This workflow
+# is the deliberate, out-of-band one: retain an extra snapshot before a rules change, take a
+# wide `study` capture for a cohort re-measurement, or re-run a capture that failed without
+# waiting for tomorrow. It does not build, validate or deploy anything.
 #
-# It runs on a GitHub-hosted runner for the reason ADR-009 recorded — the development
-# sandbox cannot reach MyFantasyLeague or Sleeper at all — and it writes to the dedicated
-# long-lived `market-data` branch, never to a code branch.
+# Phase 7 changed exactly one thing about it. The retained store used to be a branch of THIS
+# repository; the application repository is now public, and a public repository has no private
+# branch, so the store lives in a separate private repository (ADR-038 as amended by ADR-049).
+# The capture commands, the layout, the manifests and the append-only rules are unchanged —
+# `.github/actions/market-data-store` simply checks out a different address, read from
+# `config/source-registry.yaml` so the literal exists in one place.
 name: market-capture
 
 on:
@@ -15,62 +19,81 @@ on:
       season:
         description: Market season to capture
         type: string
-        default: "2026"
+        default: ""
       cohorts:
         description: "'production', 'study', or a comma-separated cohort id list"
         type: string
-        default: production
+        default: study
       capture_status:
         description: Also capture Sleeper current player status
         type: boolean
         default: true
   push:
     branches:
-      - "claude/ffdraft-phase-5-**"
-    # Only an explicit request triggers a capture. Editing market code does not, so a
-    # normal development push never spends a runner or appends a snapshot.
+      - main
+      - "claude/**"
+    # Only an explicit request triggers a capture. Editing market code does not, so a normal
+    # development push never spends a runner or appends a snapshot.
     paths:
       - ".github/market-capture.request"
 
+# The job writes to the private data repository through its own fine-grained token, so it
+# needs no write scope on this repository at all — an improvement the repository split made
+# possible rather than a cost it imposed.
 permissions:
   contents: read
 
 concurrency:
-  # Serialized against itself: two concurrent captures could race on the same push to
-  # `market-data`, and the append-only store would rather not find out.
+  # Shares a group with the production refresh's capture semantics in spirit but not in name:
+  # this workflow may run while a refresh is building, but two captures must never race on
+  # the same append. `cancel-in-progress: false` because an append is not interruptible.
   group: market-capture
   cancel-in-progress: false
 
+env:
+  UV_VERSION: "0.8.17"
+  PYTHON_VERSION: "3.12"
+
 jobs:
   capture:
+    name: Capture and retain
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      # Narrow write scope: the job pushes captures to the market-data branch.
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: repo
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        run: python -m pip install --disable-pip-version-check "uv==0.8.17"
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
 
       - name: Install locked dependencies
-        working-directory: repo
         run: uv sync --frozen
+
+      - name: Check out the retained store
+        id: store
+        uses: ./.github/actions/market-data-store
+        with:
+          token: ${{ secrets.MARKET_DATA_REPO_TOKEN }}
+          path: market-data
+          persist-credentials: "true"
 
       - name: Read the capture request
         id: request
-        working-directory: repo
         run: |
           set -euo pipefail
-          season="${{ inputs.season || '' }}"
-          cohorts="${{ inputs.cohorts || '' }}"
+          season="${{ inputs.season }}"
+          cohorts="${{ inputs.cohorts }}"
           if [ -z "${season}" ]; then
             season="$(awk '/^season:/ {print $2}' .github/market-capture.request)"
           fi
@@ -80,33 +103,7 @@ jobs:
           echo "season=${season:-2026}" >> "$GITHUB_OUTPUT"
           echo "cohorts=${cohorts:-production}" >> "$GITHUB_OUTPUT"
 
-      - name: Check out the market-data store
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git clone --depth 1 "${url}" market-data
-          cd market-data
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --exit-code --heads origin market-data >/dev/null 2>&1; then
-            git fetch --depth 1 origin market-data:refs/remotes/origin/market-data
-            git checkout -B market-data refs/remotes/origin/market-data
-            echo "market-data branch exists; appending."
-          else
-            # The store shares no history with main: it is a data branch, not a fork of the
-            # code (ADR-038). An orphan branch keeps a daily binary churn out of code review.
-            git checkout --orphan market-data
-            git rm -rf . >/dev/null 2>&1 || true
-            cp ../repo/docs/market-data-branch-README.md README.md
-            git add README.md
-            git commit -m "chore(market-data): create the append-only capture store (ADR-038)"
-            echo "market-data branch created."
-          fi
-
       - name: Capture the market snapshot
-        working-directory: repo
         env:
           # ADR-017: only the registered User-Agent is transmitted. No username, password,
           # APIKEY or Authorization header ever goes out on the public ADP path, and a
@@ -118,25 +115,23 @@ jobs:
           uv run ffdraft snapshot-market \
             --season "${{ steps.request.outputs.season }}" \
             --cohorts "${{ steps.request.outputs.cohorts }}" \
-            --store ../market-data \
+            --store market-data \
             --git-sha "${GITHUB_SHA::7}" \
-            --pause 1.5 | tee ../snapshot.log
+            --pause 1.5 | tee snapshot.log
 
       - name: Capture current player status
         if: ${{ github.event_name == 'push' || inputs.capture_status }}
-        working-directory: repo
         run: |
           set -euo pipefail
           uv run ffdraft capture-status \
             --season "${{ steps.request.outputs.season }}" \
-            --store ../market-data \
-            --git-sha "${GITHUB_SHA::7}" | tee ../status.log
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee status.log
 
       - name: Verify the store before pushing
-        working-directory: repo
         run: |
           set -euo pipefail
-          uv run ffdraft validate-market-history ../market-data \
+          uv run ffdraft validate-market-history market-data \
             --season "${{ steps.request.outputs.season }}"
 
       - name: Commit and push the capture
@@ -144,6 +139,8 @@ jobs:
         working-directory: market-data
         run: |
           set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
             echo "Nothing new to retain (idempotent re-capture)."
@@ -153,27 +150,34 @@ jobs:
           git commit -m "data(market): retain ${{ steps.request.outputs.season }} capture from ${GITHUB_SHA::7}"
           # The branch may have moved on while the capture ran. A retained snapshot is
           # immutable, so a rebase can only ever replay an append.
-          git pull --rebase origin market-data || true
-          git push origin HEAD:market-data
+          git pull --rebase origin "${{ steps.store.outputs.branch }}"
+          git push origin "HEAD:${{ steps.store.outputs.branch }}"
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Summary
+        if: always()
         run: |
           {
             echo '## Market capture'
             echo
             echo "Season: ${{ steps.request.outputs.season }} · cohorts: ${{ steps.request.outputs.cohorts }}"
             echo
-            echo '```'
-            cat snapshot.log
-            echo '```'
-            if [ -f status.log ]; then
-              echo
-              echo '### Sleeper status'
-              echo '```'
-              cat status.log
-              echo '```'
-            fi
+            echo "Store: \`${{ steps.store.outputs.repository }}@${{ steps.store.outputs.branch }}\`"
             echo
-            echo "market-data commit: \`${{ steps.push.outputs.commit || 'no change' }}\`"
+            echo "Head before: \`${{ steps.store.outputs.commit }}\`"
+            echo
+            echo "Head after: \`${{ steps.push.outputs.commit || 'no change' }}\`"
+            echo
+            for log in snapshot.log status.log; do
+              if [ -f "${log}" ]; then
+                echo "<details><summary>${log}</summary>"
+                echo
+                echo '```'
+                cat "${log}"
+                echo '```'
+                echo
+                echo '</details>'
+                echo
+              fi
+            done
           } >> "$GITHUB_STEP_SUMMARY"

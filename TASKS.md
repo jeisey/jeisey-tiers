@@ -172,17 +172,56 @@ no model or methodology change. Those are Phase 7.
 
 ## Phase 7 — Production GitHub Actions + Pages
 
-- [ ] Complete `ci.yml`.
-- [ ] Complete `daily-refresh.yml` with off-the-hour America/New_York schedule + manual dispatch.
-- [ ] Complete `retrain.yml` with candidate/promotion gates.
-- [ ] Configure official GitHub Pages build/deploy actions.
-- [ ] Apply least-privilege workflow permissions.
-- [ ] Add safe cache strategy.
-- [ ] Add last-known-good deployment behavior.
-- [ ] Add workflow summaries with source counts/freshness/model versions.
-- [ ] Prove failed critical validation cannot deploy.
+A prerequisite appeared that the original list did not anticipate. The retained capture store
+lived on a `market-data` branch of this repository, and GitHub visibility is a property of a
+repository, not of a branch — so going public would have published every retained vendor
+payload. The store had to move to a separate private repository **before** anything else
+(ADR-049), and that reordered the whole phase.
+
+### 7A — retained-data migration (prerequisite)
+
+- [x] Verify `jeisey/jeisey-tiers-market-data` exists and is private.
+- [x] Verify the migration is byte-faithful: 40/40 files identical, tree hash `1e60a552…` on both sides.
+- [x] `validate-market-history` passes on the migrated checkout (2 snapshots/35 files, 2 status captures/4 files).
+- [x] Record the address in **one** place (`config/source-registry.yaml`) and read it from there (`.github/actions/market-data-store`).
+- [x] Wire `MARKET_DATA_REPO_TOKEN` through `actions/checkout`, never through a shell.
+- [x] Refactor `market-capture.yml` and every Phase-7 workflow onto the private store.
+- [x] Amend ADR-038 with ADR-049 rather than rewriting it; update ARCHITECTURE, OPERATIONS, SECURITY_LICENSE, the store README and the source registry.
+- [x] Prove a real capture persists to the private repository from Actions.
+- [x] Delete the old `market-data` branch from `jeisey/jeisey-tiers`, and verify it is gone.
+
+### 7B — public-release audit (prerequisite)
+
+- [x] Scan the tracked tree and all 56 commits reachable from `main` for secrets, `.env` files, key material, raw retained payloads and identifying paths.
+- [x] Confirm `web/public/data/` and `data/historical/` are gitignored and were never committed.
+- [x] Confirm no retained payload object is reachable from `main`.
+- [x] Leave the software licence to the owner rather than choosing one on their behalf.
+
+### 7C-7I — the phase as originally specified
+
+- [x] Complete `ci.yml`.
+- [x] Complete `daily-refresh.yml` with off-the-hour America/New_York schedule + manual dispatch.
+- [x] Complete `retrain.yml` with candidate/promotion gates.
+- [x] Configure official GitHub Pages build/deploy actions.
+- [x] Apply least-privilege workflow permissions.
+- [x] Add safe cache strategy.
+- [x] Add last-known-good deployment behavior.
+- [x] Add workflow summaries with source counts/freshness/model versions.
+- [x] Prove failed critical validation cannot deploy.
+- [ ] **Make `jeisey/jeisey-tiers` public** — owner-only; `api.github.com` is unreachable from the build environment and the available GitHub tooling has no repository-visibility method. Steps in `docs/PHASE7_DEPLOYMENT.md` section 7.
+- [ ] Deploy GitHub Pages — wired and self-enabling; runs on the first `daily-refresh` after the flip.
+- [ ] Verify the **deployed** site with real 2026 data, not fixtures.
+- [x] Create the Phase-8 human UI feedback backlog (`docs/PHASE8_UI_FEEDBACK.md`).
+- [x] Record the multi-source ADP study as a Phase-8 research item (`docs/DATA_SOURCES.md` §16).
 
 **Exit gate:** a clean GitHub-hosted run can build and deploy the site; daily refresh can update it; a forced data-quality failure leaves existing production intact.
+
+**Status: met up to the visibility flip.** A clean GitHub-hosted run captures, builds, validates and packages the site; the deploy job is wired, gated and self-enabling. The three clauses that need a *live* site — the deploy itself, the deployed smoke test, and the forced-failure proof's "previous production stayed live" half — cannot be demonstrated while the repository is private, and are the first thing to run after the owner flips it. Evidence and the exact remaining steps are in `docs/PHASE7_DEPLOYMENT.md`.
+
+Phase 7 deliberately changed no methodology. No Phase-4 or Phase-5 threshold moved, no tier
+or Monte Carlo rule was touched, MFL remains the sole production price source, and the Tier
+Board's known vertical density was left alone rather than "fixed" during a deployment — it is
+seeded in the Phase-8 backlog instead.
 
 ## Phase 8 — Hardening and quality
 

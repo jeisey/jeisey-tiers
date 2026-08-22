@@ -21,6 +21,12 @@ owner_decisions_as_of: "2026-08-18"
 #   ADR-043 - current player status is a separate, annotation-only artifact.
 #   ADR-044 - richer historical injury features are a 2027 refresh candidate.
 phase5_decisions_as_of: "2026-08-20"
+# Phase-7 decisions (2026-08-22, see docs/DECISIONS.md):
+#   ADR-016 amendment - the application repository is now PUBLIC and serves a public Pages site.
+#   ADR-049 - the retained capture store moved to a separate PRIVATE repository, because a
+#             public repository has no private branch. The store's semantics are unchanged.
+#   ADR-050 - production deployment: last-known-good Pages, job-graph gating, concurrency.
+phase7_decisions_as_of: "2026-08-22"
 policy_states:
   - production_allowed
   - allowed_optional
@@ -41,9 +47,12 @@ decisions:
   # Sources permitted for internal comparison only. Nothing here may reach a public
   # artifact, an intrinsic feature, or any DraftValue input.
   benchmark_only_sources: [fantasypros_ecr_via_dynastyprocess]
-  repository_visibility: private
+  # ADR-016 as amended 2026-08-22 (Phase 7). The application repository is public and serves
+  # a public GitHub Pages project site. The retained source history is NOT here; see
+  # `market_history_repository` below and ADR-049.
+  repository_visibility: public
   repository_visibility_decision_ref: "docs/DECISIONS.md ADR-016"
-  repository_visibility_revisit_phase: 7
+  repository_visibility_decided_phase: 7
   market_cohort_remeasure_phase: 5
   market_cohort_remeasure_rule: >-
     Re-measure MFL scoring x league-size cohort counts before implementing the Phase-5
@@ -55,7 +64,18 @@ decisions:
   market_cohort_remeasured_at: "2026-08-20"
   market_cohort_rule_version: phase5_cohort_v1
   market_cohort_report: "docs/market-cohorts/"
-  # ADR-038. A dedicated long-lived branch, not a feature branch and never merged to main.
+  # ADR-038 as amended by ADR-049. The store is still one immutable Git-backed append-only
+  # history on a long-lived branch called `market-data`; what moved in Phase 7 is which
+  # repository that branch lives in. It is now a SEPARATE PRIVATE repository, because the
+  # application repository became public and a public repository has no private branch.
+  #
+  # This is the one place the location is written down. Workflows read it from here
+  # (`.github/actions/market-data-store`) rather than repeating the literal, and
+  # `tests/unit/test_source_registry.py` pins it.
+  market_history_repository: jeisey/jeisey-tiers-market-data
+  market_history_repository_visibility: private
+  # A NAME, never a value (the ADR-017 convention).
+  market_history_repository_secret_name: MARKET_DATA_REPO_TOKEN
   market_history_branch: market-data
   market_history_layout: "market/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/"
   status_history_layout: "status/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/"

@@ -1016,3 +1016,92 @@ Explicitly not added: Next.js, any backend framework, Redux, a UI component libr
 **Consequences:** the production bundle is roughly 105 KB gzipped including React. Everything the page needs is a static file under the artifact base path, and an end-to-end test fails any request that leaves localhost, so the browser boundary in `docs/ARCHITECTURE.md` section 3.2 is a check rather than a convention.
 
 **Revisit if:** a chart genuinely needs D3-owned DOM (record the reason), or a fourth board makes hand-rolled tab state worse than a router.
+
+---
+
+## ADR-049 — The retained capture store moves to a separate private repository
+
+**Date:** 2026-08-22 (Phase 7, before the application repository was made public)
+
+**Status:** accepted. **Amends ADR-038**, which is otherwise unchanged and still binding.
+
+**Context:** ADR-038 put the append-only point-in-time capture store on a dedicated long-lived branch named `market-data` **in this repository**, and its consequences paragraph said explicitly that this was safe *because the repository is private*, that the branch "must be excluded from any future release archive or Pages publish", and that the decision should be revisited "if the repository becomes public and the retained vendor payloads need a redistribution review first". ADR-016's amendment then settled that the repository becomes public in Phase 7.
+
+That revisit condition has now fired, and it has an answer that no amount of workflow care could supply: **GitHub visibility is a property of a repository, not of a branch.** There is no private branch inside a public repository. Excluding `market-data` from the Pages artifact and from release packaging — which the workflows do — would not have helped at all, because `git clone` would hand any visitor the whole branch.
+
+What is at stake is not a secret. It is the redistribution position recorded in `docs/SECURITY_LICENSE.md` section 10: the retained MyFantasyLeague payloads and the normalized Sleeper status captures are a **private research cache**, and Sleeper's terms are non-commercial with attribution requested. Publishing thousands of retained vendor payloads is a different act from publishing a derived board with attribution, and it is not one this project has cleared or wants to.
+
+**Decision.** The store keeps every property ADR-038 gave it and changes exactly one: its address.
+
+- It remains **one immutable, append-only, Git-backed history**, on a long-lived branch still named **`market-data`** — keeping the branch name means no command, path, manifest or document that names it has to change.
+- That branch now lives in a **separate private repository**, `jeisey/jeisey-tiers-market-data`, where it is the default and only branch.
+- The layout, the manifest contract, the immutability rules, the fail-closed rewrite behaviour, `source_as_of_utc` remaining null for MFL, and `ffdraft validate-market-history` are all **unchanged**. The store is the same store; a checkout is byte-identical to what the old branch held.
+- The address is recorded in **one place**, `config/source-registry.yaml` (`market_history_repository`), and read from there by `.github/actions/market-data-store`. No workflow contains the literal, and `tests/unit/test_workflows.py` fails if one grows it.
+
+**Decision — the credential.** A workflow in the public application repository cannot use its ordinary `GITHUB_TOKEN` to write another repository's contents, so a **fine-grained token scoped to `jeisey/jeisey-tiers-market-data` alone** is held as the `MARKET_DATA_REPO_TOKEN` repository secret. Following the ADR-017 convention, configuration records the secret's *name* and never its value.
+
+Three rules bound it, and all three are enforced structurally rather than by care:
+
+1. It is passed to `actions/checkout` through its `token:` input and never interpolated into a URL, a log line or a shell variable. The old workflow built `https://x-access-token:${GH_TOKEN}@github.com/...` in a shell block; that construction is gone.
+2. Jobs that only read the store check out with `persist-credentials: false`, so no credential survives into a frontend build or a Pages artifact.
+3. `ci.yml` — the workflow a pull request from anywhere can run — never references the secret and never checks out the store. A test asserts it.
+
+**Consequences.**
+
+- **The migration was byte-faithful and was verified as such.** Every one of the 40 retained files compares equal, the two trees hash identically (`1e60a552…`), and `validate-market-history` re-hashes the migrated checkout clean: 2 market snapshots (35 files), 2 status captures (4 files).
+- **The capture job's privilege went down, not up.** It used to need `contents: write` on this repository to push to a branch here. It now needs `contents: read` here, plus a token scoped to one other repository. Separating the data from the code made the application repository's own permissions strictly narrower.
+- **The old branch is deleted before the repository becomes public**, in that order, so no retained payload object is ever reachable in a public repository. It never shared history with `main`: no object on the old `market-data` branch is reachable from `main`, verified before deletion.
+- **A contributor's clone no longer carries the store**, which was already true in practice (ADR-038 said to clone it separately) and is now true by construction. `docs/ARCHITECTURE.md` section 6.3 records the clone command.
+- **A second repository is a second thing to keep alive.** If the token expires, captures stop; the daily refresh fails loudly at its first job with a message naming the secret, and the deployed site stays live and stale rather than degrading silently.
+
+**Revisit if:** the store outgrows what a clone can carry (move to release assets keyed by the same layout, inside the same private repository), or a redistribution review ever concludes the retained payloads may be published — at which point this ADR is what has to be re-argued, not ADR-038.
+
+---
+
+## ADR-050 — Production deploys are a job graph, not a checklist
+
+**Date:** 2026-08-22 (Phase 7)
+
+**Status:** accepted
+
+**Context:** `docs/OPERATIONS.md` sections 1, 7 and 8 ask for three properties that are easy to state and easy to lose: a stale correct site must beat a fresh incorrect one; two refreshes must not race or deploy out of order; and a critical validation failure must leave production untouched. Written as steps in one job with `if:` guards, all three decay the first time someone adds a step in the wrong place.
+
+**Decision — last-known-good is the graph.** `daily-refresh.yml` is three jobs — `capture` → `build` → `deploy` — and the deploy job's only content is `actions/deploy-pages`. Every gate lives upstream of it, so "a gate failed" and "no deployment happened" are the same event rather than two things that have to agree. Nothing anywhere clears, empties or replaces the live site before a new one is validated, so "no deploy" leaves the previous deployment serving.
+
+The Pages artifact is uploaded as the **last** step of the build job, after artifact validation, the frontend build, the rendered-board verification and the artifact-boundary assertion. There is no window in which a build that failed a gate exists as a deployable artifact.
+
+**Decision — capture is separated from replaceable work.** The capture job appends to the immutable store and pushes, and only then does anything replaceable run. A retained snapshot is future training evidence that MFL's historical export cannot reconstruct (ADR-010), so if the frontend later fails to build, the correct outcome is that the history records what was observed *and* the old site stays live. That is why capture is its own job and why the store's push happens before the build begins.
+
+**Decision — concurrency queues, it does not cancel.** The workflow-level group is `production-refresh` with `cancel-in-progress: false`. Cancelling is the dangerous option here: a cancellation between `git commit` and `git push` drops a validated snapshot on the floor. Queueing also supplies the ordering `docs/OPERATIONS.md` section 7 asks for — a superseding run waits, so it deploys *after* the run it superseded, and an older build can never land on top of a newer one. The deploy job additionally joins the `pages` group, again without cancellation, so it serializes against any other publisher.
+
+**Decision — the forced-failure proof breaks a real invariant.** `workflow_dispatch` carries a `force_validation_failure` boolean, default false and unreachable from the schedule (`inputs` is empty on a scheduled run, and the step asserts the event name as well). When set, the run does **not** call `exit 1`. It corrupts a generated artifact so that VORP quantiles are no longer non-decreasing, and then runs the ordinary `validate-artifacts` gate. What rejects the build is `artifact.non_monotonic_quantiles` — the production check listed in `docs/ARCHITECTURE.md` section 12 — not a switch added for the test. A proof that only demonstrates `exit 1` works proves nothing about the gate.
+
+**Decision — least privilege per job.** The workflow grants `contents: read`. The deploy job alone adds `pages: write` and `id-token: write` and uses the `github-pages` environment. `actions/configure-pages` lives in the deploy job for that reason: it is the only step needing a `pages:` scope for its own sake, and putting it in the build job would have meant widening that job's permissions for an output nothing consumes.
+
+**Consequences:** the properties above are checkable, and `tests/unit/test_workflows.py` checks them — job dependencies, per-job permission maps, the environment name, both `cancel-in-progress: false` settings, the off-the-hour New York schedule, the dispatch-only guard on the proof flag, and the absence of any training command from the refresh. A change that quietly merges the deploy into the build, or grants the build a Pages scope, fails a test rather than passing review.
+
+**Revisit if:** a second deployable surface appears (the `pages` group would then need to be shared deliberately), or Pages gains a documented atomic rollback that would make a different failure posture possible.
+
+---
+
+## ADR-051 — Retraining is gated on evidence, and cannot promote or deploy
+
+**Date:** 2026-08-22 (Phase 7)
+
+**Status:** accepted
+
+**Context:** `docs/OPERATIONS.md` section 2.3 specifies a weekly retrain during draft season. Implemented literally in August 2026 that would be actively harmful. `intrinsic-cb-hurdle-v1` is trained on 2014-2025; 2025 was the sealed final holdout and has been **spent** (ADR-025, ADR-036), so it cannot become a fresh untouched holdout again; and 2026 has not been played. A weekly job would therefore either rebuild the same artifact from the same rows, or — the real hazard — pull partial in-season 2026 outcomes into a training corpus and present the result as an improvement.
+
+**Decision — the gate is evidence, not a calendar.** `scripts/retrain_gate.py` asks one question: is there a season after the model's last training season whose **fantasy horizon** is complete in the upstream weekly statistics? The horizon rather than the NFL calendar, because that is what the label builder sums over and it moved from weeks 1-16 to 1-17 at 2021. The gate is conservative in both directions it could be wrong: an unplayed season (nflverse answers 404) is "no", and an in-progress season whose weekly file stops short of the horizon is "no". Only a finished season is "yes".
+
+"Nothing to retrain" exits **0**. It is a correct outcome, not a failure, and the run summary says which season was checked and why it did not qualify.
+
+**Decision — the workflow cannot promote.** `retrain.yml` holds `contents: read` at every level, has no `pages:` scope, contains no Pages action, never pushes, and asserts at the end that `models/` is unchanged. What it can produce is a **candidate**: development-fold evaluation reports, attached to the run as an artifact. Promotion needs, in order, a new evaluation/holdout protocol; a deliberate `ffdraft train-production` run with its confirmation token and a written reason; a regenerated model card; and then an ordinary `daily-refresh`, which is the only path to Pages.
+
+The confirmation token stays out of the repository and out of GitHub secrets on purpose. A token in a secret is a token a scheduled job can use, which would convert a deliberate human act into an automatable one.
+
+**Decision — the seal is not re-litigated here.** The candidate job runs `evaluate-intrinsic` on development folds only. `load_modeling_dataset` drops sealed seasons before anything sees the frame and the fold generator refuses to build a fold that validates one, so the job cannot reach the holdout even if asked; `--final-eval` needs a fixed token and a written reason and does not appear in the workflow.
+
+**Consequences:** the weekly schedule is kept, and in the 2026 preseason every run stops at the gate in about two minutes. That is deliberate — the gate is exercised continuously rather than being a claim in a document, and the run history records that the evidence did not change. When 2026 completes, the same gate turns green on its own and produces a candidate report; what it will *not* do is promote it, because ADR-044's injury-feature question and a fresh holdout protocol both have to be answered first.
+
+**Revisit at:** the 2027 refresh, which needs completed 2026 labels, a new holdout protocol, and a decision on ADR-044's historical injury features.
