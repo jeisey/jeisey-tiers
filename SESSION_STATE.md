@@ -229,6 +229,21 @@ jeisey/jeisey-tiers-market-data    PRIVATE    the append-only capture store
 
 **The credential.** `MARKET_DATA_REPO_TOKEN`, a fine-grained token scoped to the data repository alone. It reaches `actions/checkout` through `token:` and never a shell; read-only jobs use `persist-credentials: false`; `ci.yml` never references it. The address is in `config/source-registry.yaml` and nowhere else.
 
+**What ran on GitHub-hosted runners, and what it proved.**
+
+| run | outcome |
+|---|---|
+| `market-capture` [32590470088](https://github.com/jeisey/jeisey-tiers/actions/runs/32590470088) | first capture into the private repository |
+| `ci` [32590972677](https://github.com/jeisey/jeisey-tiers/actions/runs/32590972677) | three jobs green on a clean checkout |
+| `daily-refresh` [32591545618](https://github.com/jeisey/jeisey-tiers/actions/runs/32591545618) | **found a real Phase-5 defect** — see below |
+| `daily-refresh` [32594084631](https://github.com/jeisey/jeisey-tiers/actions/runs/32594084631) | capture + build green end to end; deploy blocked at the visibility gate |
+| `daily-refresh` [32594602638](https://github.com/jeisey/jeisey-tiers/actions/runs/32594602638) | forced-failure proof: real gate rejected it, deploy skipped |
+| `retrain` [32594603959](https://github.com/jeisey/jeisey-tiers/actions/runs/32594603959) | declined in 23 seconds, candidate job skipped |
+
+**The 2026 production build, from the runner's own summary** (build `2026-intrinsic-cb-hurdle-v1-20260822T193501Z`, snapshot `2026-08-22T19-34-24Z`): 2,700 tier rows, 3,510 projections, 2,021 arbitrage rows, 315 player-status rows with 309 matched through Sleeper. Nine preset blocks — `redraft-14` joined the supported set. Quality gate **pass**, 0 critical, 3 warnings (the tier-stability warning, Sleeper `gsis_id` conflicts failing closed, unpriced top-150 players excluded). Cohort `no-mock-no-keeper` for every preset: **143 drafts**, up from Phase 5's 125, still `low` confidence on `total_drafts 143 < 300`, median per-player sample 93. Trend still null — ADR-042 wants three observation days spanning three days. `verify:board` at the project base path: 40 tier rows, 25 chart marks, 30 arbitrage rows, 63 injury badges, **0 disagreements**.
+
+**Running the production path for the first time found a defect nothing else could have.** `PRODUCTION_COHORT_IDS` was frozen under `phase5_cohort_v1` as `("unfiltered", "ppr", "std")`; ADR-045 later made keeper-free a *qualifying* condition; so a daily capture retained nothing the frozen rule could legally select and `select_cohorts` refused to price a board. Every board Phase 5 built came from a `study` capture, which retains all sixteen candidates — so the production path had never actually been run. The rule was right; the capture was wrong. Fixed by retaining what the rule needs (ADR-045 amendment, 2026-08-22), with two tests that price every launch preset from `PRODUCTION_COHORT_IDS` alone.
+
 **The workflows.**
 
 | workflow | trigger | may do |
@@ -388,6 +403,21 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **jsdom has no `HTMLDialogElement.showModal` and no `ResizeObserver`.** Both are polyfilled in `web/tests/setup.ts` rather than worked around in components; production code should use the platform API.
 - **TanStack Table is pinned to v8**, not the v9 rewrite (ADR-048). The two React-Compiler warnings it produces are left visible rather than silenced.
 
+## Phase-7 facts a later phase should not re-derive
+
+- **Visibility is a repository property, not a branch property.** This is the fact the whole phase turned on. There is no private branch inside a public repository, and no amount of Pages-artifact hygiene changes that, because `git clone` hands over every branch. If a future phase wants to publish something new, ask what a clone would carry before asking what the build copies.
+- **The store's address lives in `config/source-registry.yaml` and nowhere else.** `.github/actions/market-data-store` reads it; `tests/unit/test_workflows.py` fails if a workflow grows the literal. Moving the store again is one edit to one file.
+- **Last-known-good is `needs:`, not `if:`.** `deploy` needs `build` needs `capture`, and the deploy job contains only the Pages actions. Do not merge them "for speed" — the separation *is* the guarantee, and a real unplanned failure ([32591545618](https://github.com/jeisey/jeisey-tiers/actions/runs/32591545618)) demonstrated it before the rehearsed one did.
+- **Concurrency queues rather than cancels, on purpose.** A cancellation between `git commit` and `git push` in the capture job would drop a validated snapshot. Queueing also gives the ordering: a superseding run deploys *after* the one it supersedes.
+- **The forced-failure proof breaks a real invariant.** It corrupts quantile monotonicity and lets `validate-artifacts` reject it, so `artifact.non_monotonic_quantiles` is what stops the deploy. If a future change makes this an `exit 1`, the proof stops proving anything.
+- **A production capture must retain a cohort the frozen rule can pick.** This was not true for two phases and no test noticed, because every selection test handed `select_cohorts` all sixteen candidates. When a rule gains a qualifying condition, check the *capture set* against it, not only the rule.
+- **The nflverse cache key contains the UTC date and has no `restore-keys`.** A prefix fallback would make a cache hit serve staler rosters than a miss, which inverts the "correct, only slower" rule. Do not add restore-keys to that one.
+- **A workflow artifact on a public repository is world-readable.** The build record therefore stages the store's *manifests* only, and asserts no `.gz` reached it. Adding anything from `market-data/` to an artifact needs that same thought.
+- **`persist-credentials: false` on read-only store checkouts is load-bearing**, not tidiness: it is what keeps a credential out of the workspace while the frontend builds and the Pages artifact is packaged. Confirmed in the post-job cleanup logs.
+- **`npm run e2e | tail` reports `tail`'s exit code.** Without `set -o pipefail` a completely red Playwright suite reads as green. This cost real time; do not pipe a gate's output without pipefail.
+- **This sandbox's Chromium build does not match the pinned Playwright release.** Export `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` before `npm run e2e` here. On a runner, `npx playwright install` fetches the matching build and none of this applies.
+- **`api.github.com` is unreachable from this environment and the git proxy rejects ref deletions.** Repository visibility and branch deletion are owner actions; do not plan a phase around automating them.
+
 ## Open questions requiring evidence
 
 - **How to make tier boundaries meet a stability bar, or how to stop pretending they are lines.** The measurement says a 300-deep board supports about four reproducible cut sites. Two candidate remedies, both new decisions needing their own rule version and evidence: let the undifferentiated tail be one wide tier by re-specifying `max_largest_tier_share`, or keep the segmentation and present membership with a boundary-confidence band instead of a hard edge. **Do not simply lower the threshold** (ADR-035).
@@ -401,6 +431,11 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **Whether `load_ftn_charting` earns its CC-BY-SA obligation** — still open, and still not needed.
 
 ## Known risks (non-blocking)
+
+- **Two owner actions gate the live site**, and they are ordered: delete `market-data` from `jeisey/jeisey-tiers`, *then* make it public. Doing the second without the first publishes every retained vendor payload, and that is not undone by deleting the branch afterwards. `docs/PHASE7_DEPLOYMENT.md` section 7 is the checklist.
+- **`MARKET_DATA_REPO_TOKEN` expires.** When it does the daily refresh fails at its first job with a message naming the secret, the deploy job is never reached, and the deployed site stays live and stale. Loud and non-destructive, but it needs a calendar reminder; rotation steps are `docs/OPERATIONS.md` section 5.3.
+- **Scheduled-workflow inactivity got slightly worse.** The daily capture now commits to the *private data* repository, so a run of `daily-refresh.yml` creates no activity in the application repository at all. GitHub disables scheduled workflows in public repositories after long inactivity; re-enabling steps are in `docs/OPERATIONS.md` section 12.
+- **Three MyFantasyLeague player-database requests were made on 2026-08-22** — the out-of-band capture, the first production refresh, and the refresh that validated the cohort fix. MFL asks for at most one per day. This was a migration day and the third was needed to prove the fix; a routine day takes exactly one, and `skip_capture` exists so a re-deploy does not take a second.
 
 - **Every arbitrage row reads `low` confidence**, because no keeper-free cohort clears the frozen cohort-level draft-count bar. The label is correct under the rule and pessimistic against the per-player evidence, and it makes `confidence` non-discriminating for Phase 6. The rubric returns the clause that fired, so the UI can explain it rather than just show it.
 - **`wide_market_range` fires on 1,914 of 2,124 rows.** True and useless at this sample size: with ~125 drafts the min-to-max span really does exceed five rounds for most players. Phase 6 should render `market_adp_low`/`market_adp_high` directly and treat the flag as a footnote.
@@ -440,19 +475,21 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 ## Known blockers
 
-None blocking Phase 7. The four open findings are unchanged and none of them is a blocker: the Monte Carlo convergence rule (ADR-034), tier boundary stability (ADR-035), the cohort volume clause (ADR-045) and the non-discriminating `wide_market_range` flag (ADR-041). Phase 6 rendered all four rather than closing any of them, which is the whole point of the exercise — a frontend can expose a limitation faithfully without owning its statistical remedy.
+**Two owner-only actions, in this order.** Neither is reachable from the build environment: `api.github.com` answers 403 to the egress policy, the GitHub tool surface here has no repository-update or ref-deletion method, and the git proxy rejects a push that deletes a ref. So the gate was stopped at rather than worked around.
+
+1. **Delete the `market-data` branch from `jeisey/jeisey-tiers`.** It still exists at `57ee0c1`. Every one of its 40 files was verified byte-identical to the private repository first, so nothing is lost.
+2. **Then** make `jeisey/jeisey-tiers` public.
+
+The order is not a preference. Publishing while that branch exists releases every retained MyFantasyLeague payload and normalized Sleeper row, and deleting the branch afterwards does not undo it. `docs/PHASE7_DEPLOYMENT.md` section 7 is the checklist, including the `git ls-remote` check that gates the flip.
+
+Everything downstream is wired and waits on nothing else: `configure-pages` runs with `enablement: true`, so the first successful `daily-refresh` after the flip creates the Pages site itself. There is no Settings → Pages step and no new secret.
+
+The four analytical findings are unchanged and none is a blocker: the Monte Carlo convergence rule (ADR-034), tier boundary stability (ADR-035), the cohort volume clause (ADR-045) and the non-discriminating `wide_market_range` flag (ADR-041). Phase 7 rendered and deployed all four honestly rather than closing any of them.
 
 ## Next action
 
-Begin Phase 7 (`docs/IMPLEMENTATION_PLAN.md`). The owner's deployment decision is recorded in ADR-016 as amended, so the concrete first step is the one that ADR now names:
+**Owner:** the two steps above, then dispatch `daily-refresh` on `main` with default inputs. That deploys the site. Then dispatch it once more with `force_validation_failure = true` and confirm the site from the first run is still serving, unchanged — the mechanism is proven ([32594602638](https://github.com/jeisey/jeisey-tiers/actions/runs/32594602638)); what is left is observing it against a live site.
 
-**Make `jeisey/jeisey-tiers` public.** Everything else in Phase 7 — the Pages environment, `pages: write` and `id-token: write`, the deploy job, the daily refresh schedule — depends on that being done first, and it is the one step that is not a code change.
+**Then Phase 8**, and its first action is not code. Open the live site, use it as you would the night before a real draft, and write what you notice into `docs/PHASE8_UI_FEEDBACK.md`. That file is seeded with what is already known — the Tier Board is ~1,800px because interval width, not tier count, forbids packing; the tier lane treatment, Draft Rail and player card are all up for review — and Phase 7 deliberately did not pre-empt any of it. A preference formed from a fixture screenshot is worth much less than one formed while scrolling a 300-deep board on a phone.
 
-Two obligations travel with it and must be handled in the same change, not after it:
-
-1. **`market-data` must not be published.** It holds retained MFL and Sleeper payloads that are a private research cache while the repository is private (ADR-038, `docs/SECURITY_LICENSE.md` section 10). Making the repository public makes them public. Confirm the exclusion from any release archive and any Pages publish as part of the visibility change.
-2. **Sleeper's non-commercial terms bind what the site publishes.** `player_status.json` carries Sleeper fields into a public artifact (ADR-043). The free, ad-free character of the deployment is a licence condition, not a preference.
-
-Phase 6 already removed the routing risk from the deploy: the frontend builds and is end-to-end tested under `/jeisey-tiers/`, and a test asserts no absolute `/data/...` request survives. The workflow needs `VITE_BASE_PATH=/jeisey-tiers/` and nothing more from the frontend.
-
-Data is ready and reproducible offline from a clone of `market-data`: `uv run ffdraft build-current --store ../market-data` then `build-arbitrage --store ../market-data`, then `validate-artifacts web/public/data`, then `npm run build`. That is the exact job graph `daily-refresh.yml` has to automate.
+The non-UI Phase-8 queue is listed at the bottom of that same file so a session sees the whole thing at once: the multi-source ADP study (`docs/DATA_SOURCES.md` §16), ADR-034's convergence rule, ADR-035's tier stability, ADR-041's `wide_market_range`, ADR-045's `min_total_drafts` clause, correlated player draws, ADR-044's injury features and ADR-010's learned arbitrage. None of them is answered by looking at the site.

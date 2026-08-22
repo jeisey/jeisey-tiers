@@ -187,8 +187,8 @@ payload. The store had to move to a separate private repository **before** anyth
 - [x] Wire `MARKET_DATA_REPO_TOKEN` through `actions/checkout`, never through a shell.
 - [x] Refactor `market-capture.yml` and every Phase-7 workflow onto the private store.
 - [x] Amend ADR-038 with ADR-049 rather than rewriting it; update ARCHITECTURE, OPERATIONS, SECURITY_LICENSE, the store README and the source registry.
-- [x] Prove a real capture persists to the private repository from Actions.
-- [x] Delete the old `market-data` branch from `jeisey/jeisey-tiers`, and verify it is gone.
+- [x] Prove a real capture persists to the private repository from Actions (run 32590470088).
+- [ ] **Delete the old `market-data` branch from `jeisey/jeisey-tiers`** — owner-only; the git proxy rejects a push that deletes a ref and the GitHub tooling here has no ref-deletion method. Must happen **before** the visibility flip; steps in `docs/PHASE7_DEPLOYMENT.md` section 7.
 
 ### 7B — public-release audit (prerequisite)
 
@@ -200,14 +200,14 @@ payload. The store had to move to a separate private repository **before** anyth
 ### 7C-7I — the phase as originally specified
 
 - [x] Complete `ci.yml`.
-- [x] Complete `daily-refresh.yml` with off-the-hour America/New_York schedule + manual dispatch.
-- [x] Complete `retrain.yml` with candidate/promotion gates.
-- [x] Configure official GitHub Pages build/deploy actions.
+- [x] Complete `daily-refresh.yml` with off-the-hour America/New_York schedule + manual dispatch (`cron: "17 7 * * *"`, `timezone: America/New_York`; capture → build green on runs 32594084631 and 32594602638).
+- [x] Complete `retrain.yml` with candidate/promotion gates (run 32594603959 declined in 23s; candidate job skipped).
+- [x] Configure official GitHub Pages build/deploy actions (`upload-pages-artifact@v3` in build; `configure-pages@v5` with `enablement: true` and `deploy-pages@v4` in the deploy job).
 - [x] Apply least-privilege workflow permissions.
 - [x] Add safe cache strategy.
 - [x] Add last-known-good deployment behavior.
 - [x] Add workflow summaries with source counts/freshness/model versions.
-- [x] Prove failed critical validation cannot deploy.
+- [x] Prove failed critical validation cannot deploy (run 32594602638: `artifact.non_monotonic_quantiles` rejected the build, `upload-pages-artifact` skipped, deploy job skipped).
 - [ ] **Make `jeisey/jeisey-tiers` public** — owner-only; `api.github.com` is unreachable from the build environment and the available GitHub tooling has no repository-visibility method. Steps in `docs/PHASE7_DEPLOYMENT.md` section 7.
 - [ ] Deploy GitHub Pages — wired and self-enabling; runs on the first `daily-refresh` after the flip.
 - [ ] Verify the **deployed** site with real 2026 data, not fixtures.
@@ -218,7 +218,13 @@ payload. The store had to move to a separate private repository **before** anyth
 
 **Status: met up to the visibility flip.** A clean GitHub-hosted run captures, builds, validates and packages the site; the deploy job is wired, gated and self-enabling. The three clauses that need a *live* site — the deploy itself, the deployed smoke test, and the forced-failure proof's "previous production stayed live" half — cannot be demonstrated while the repository is private, and are the first thing to run after the owner flips it. Evidence and the exact remaining steps are in `docs/PHASE7_DEPLOYMENT.md`.
 
-Phase 7 deliberately changed no methodology. No Phase-4 or Phase-5 threshold moved, no tier
+One defect was found and fixed, and only because the production path was run for the first
+time: `PRODUCTION_COHORT_IDS` predated ADR-045's keeper-free requirement, so a routine daily
+capture retained nothing the frozen rule could select. The rule was right and failed closed;
+the capture set was wrong. Fixed by retaining what the rule needs, recorded as an ADR-045
+amendment, and pinned by two new tests. **No threshold moved.**
+
+Otherwise Phase 7 deliberately changed no methodology. No Phase-4 or Phase-5 threshold moved, no tier
 or Monte Carlo rule was touched, MFL remains the sole production price source, and the Tier
 Board's known vertical density was left alone rather than "fixed" during a deployment — it is
 seeded in the Phase-8 backlog instead.
