@@ -509,7 +509,13 @@ jobs:
       # step in this workflow that needs a `pages:` scope for its own sake, and the deploy
       # job is the one job that legitimately holds one; putting it in the build job would
       # have meant widening that job's permissions for an output nothing consumes.
+      #
+      # `enablement: true` means the first successful deploy configures the Pages site with
+      # the Actions build type itself, so turning the site on is not a manual step that has
+      # to be remembered — and it is idempotent, so it is a no-op every day after that.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -4,19 +4,21 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 6 — **complete** (2026-08-21). The three browser-ready Phase-5 data products now have a product in front of them: a compact draft sheet with a Tier board, a Draft rail, two sortable tables, filtered and full CSV export, a methodology and freshness surface, degraded-artifact states, responsive layouts down to 390px and keyboard/reduced-motion behaviour. It is validated against the **real** 2026 build, not fixtures. Phase 7 (Actions and Pages) has not been started.
+Phase 7 — **complete** (2026-08-22). The product is deployed. `jeisey/jeisey-tiers` is public, GitHub Pages serves the 2026 board at **https://jeisey.github.io/jeisey-tiers/**, and a scheduled workflow rebuilds it every morning from sources it captures itself. Phase 8 (hardening, and the owner's live UI feedback) has not been started.
 
-Three repository findings drive the interface rather than decorate it, and each is now enforced by a test:
+**The phase did not start where its task list said it did.** The append-only capture store lived on a `market-data` branch of this repository, and ADR-038's own consequences said that was safe *because the repository is private*. GitHub visibility is a property of a repository, not of a branch — there is no private branch inside a public repository — so going public would have published thousands of retained MyFantasyLeague payloads and normalized Sleeper rows, which are a private research cache under non-commercial terms. Excluding the branch from the Pages artifact would have done nothing, because `git clone` hands any visitor every branch. The store had to move first (ADR-049), and that reordered everything after it.
 
-1. **A tier is a band, not a line** (ADR-035 → ADR-046). Whitespace and a surface change separate lanes; no rule, arrow or "value cliff" is drawn anywhere.
-2. **An injury badge is not a model input** (ADR-043). A null `injury_status` renders as nothing, never as "Healthy", and every status surface says the projection never saw it.
-3. **`confidence` is data quality, not probability** (ADR-041 → ADR-047). All 2,122 rows read `low` for one recorded reason, so the reason is explained once at view level from `build_metadata`, never hardcoded.
+Three things are worth carrying forward as ideas rather than as file paths:
+
+1. **Last-known-good is a job graph, not a checklist** (ADR-050). `capture → build → deploy`, the deploy job contains only the Pages actions, and nothing anywhere clears the live site before a new one validates. "A gate failed" and "the previous site is still serving" are therefore the same event rather than two facts that have to agree.
+2. **The forced-failure proof breaks a real invariant.** It corrupts quantile monotonicity in a generated artifact and lets the ordinary validator reject it, so what stops the deploy is `artifact.non_monotonic_quantiles` — a production critical check — not an `exit 1` added for the test.
+3. **Splitting the data out made permissions narrower, not wider.** The capture job used to need `contents: write` here; it now needs `contents: read` plus a token scoped to one other repository.
 
 ## Current target gate
 
-Phase 7 exit gate: a clean GitHub-hosted run can build and deploy the site; the daily refresh can update it; a forced data-quality failure leaves existing production intact.
+Phase 8 — hardening and quality. Its first input is `docs/PHASE8_UI_FEEDBACK.md`, which is seeded and waiting for the owner to use the live site. **Read that file before touching the frontend**: the Tier Board's vertical density, the tier lane treatment, the Draft Rail and the player card are all recorded there as things a human intends to judge in person, and Phase 7 deliberately did not pre-empt any of them.
 
-The owner has settled the deployment target (ADR-016 as amended 2026-08-21): **public repository, public GitHub Pages project site, standard GitHub-hosted Actions, no external paid host.** A custom domain is optional future work. The repository is still **private** — Phase 6 did not change visibility, configure Pages or add deploy permissions.
+The visibility question ADR-016 deferred is closed: the repository is **public**, serving a public Pages project site from standard GitHub-hosted Actions, free and non-commercial — which is a licence condition rather than a preference, because `player_status.json` carries Sleeper fields to every visitor.
 
 ## Last validated commit
 
