@@ -167,7 +167,77 @@ production critical check from `docs/ARCHITECTURE.md` section 12.
 A proof that only shows `exit 1` works would prove nothing about the gate. This one proves
 the gate.
 
-The run evidence is in section 6.
+### The run: [32594602638](https://github.com/jeisey/jeisey-tiers/actions/runs/32594602638)
+
+Dispatched with `force_validation_failure=true` and `skip_capture=true` — the latter so the
+proof did not spend a fourth MyFantasyLeague player-database request in one day, which
+ADR-017 asks us not to do.
+
+```
+Corrupt an artifact on purpose (forced-failure proof) ..... success
+    ##[warning]Forced-failure proof run: deliberately violating quantile monotonicity.
+    corrupted Bijan Robinson: p25_vorp -> 197.2161
+
+Validate the public artifacts ............................ FAILURE
+    validating web/public/data
+      [critical] artifact.non_monotonic_quantiles (artifacts.tiers):
+      vorp quantiles must be non-decreasing p10 -> p90 — observed:
+      gsis:00-0038542 ([-27.4307, 197.2161, 117.6581, 172.2161, 218.1891]);
+      expected: p10 <= p25 <= p50 <= p75 <= p90
+    quality gate: fail (1 critical, 0 warning)
+    ##[error]Process completed with exit code 1.
+
+Read the build facts ..................................... skipped
+Install locked frontend dependencies ..................... skipped
+Build the site at the project Pages base path ............ skipped
+Install Chromium ......................................... skipped
+Verify the rendered board against the artifact bytes ..... skipped
+Assert the Pages artifact boundary ....................... skipped
+actions/upload-pages-artifact ............................ skipped
+Deploy to GitHub Pages ................................... SKIPPED  (whole job)
+
+Stage / upload the build record .......................... success  (if: always())
+Refresh summary .......................................... success
+```
+
+**What this establishes.**
+
+1. The build was rejected by `artifact.non_monotonic_quantiles` — a production critical check
+   from `docs/ARCHITECTURE.md` section 12 — reading the real corrupted values back out. Not
+   an `exit 1`.
+2. **No Pages artifact was produced.** `upload-pages-artifact` never ran, so there was
+   nothing deployable at any point, not merely nothing deployed.
+3. **The deploy job was skipped entirely**, not failed. `needs: build` is what did that.
+4. The diagnostic path still worked: the build record uploaded under `if: always()`, and the
+   summary rendered with the deployment outcome restated in words.
+
+**On the "previous production stayed live" half.** There is no deployed site yet — the
+visibility gate in section 7 has not been passed — so this run left production exactly as it
+found it: absent. The mechanism is proven; the observation on a live site is the owner's step
+6 in section 7, and it is the same run with the same flag.
+
+### 4b. The retrain gate declined, in 23 seconds
+
+Run [32594603959](https://github.com/jeisey/jeisey-tiers/actions/runs/32594603959), exit 0:
+
+```json
+{ "model_version": "intrinsic-cb-hurdle-v1",
+  "training_seasons": "2014-2025",
+  "artifact_feature_schema_hash": "c495ba3177dcb989",
+  "code_feature_schema_hash":     "c495ba3177dcb989",
+  "candidate_seasons": [
+    { "season": 2026, "complete": false,
+      "detail": "weekly statistics unavailable for 2026 (ConnectionError)" } ],
+  "new_evidence": false,
+  "should_retrain": false,
+  "reasons": ["no completed season exists beyond the training corpus, so retraining could
+               only reproduce the same artifact or consume unplayed/in-season outcomes"] }
+```
+
+The **candidate job was skipped**, no model was trained, nothing was promoted, and the run is
+green — because "nothing to retrain" is a correct outcome, not a failure. Note the two
+feature-schema hashes agreeing: the contract in code still matches the production artifact,
+so there is no drift excuse for a retrain either.
 
 ---
 
@@ -199,7 +269,11 @@ check is confirmation on the real origin rather than the first look.
 |---|---|---|---|
 | [32590470088](https://github.com/jeisey/jeisey-tiers/actions/runs/32590470088) | `market-capture` | dispatch | **success** — first capture into the private repository; store head `ccd3ce1` → `fd661ae` |
 | [32590972677](https://github.com/jeisey/jeisey-tiers/actions/runs/32590972677) | `ci` | pull request #8 | **success** — all three jobs green |
-| [32591545618](https://github.com/jeisey/jeisey-tiers/actions/runs/32591545618) | `daily-refresh` | dispatch | **capture success, build failure, deploy skipped** — see below |
+| [32591545618](https://github.com/jeisey/jeisey-tiers/actions/runs/32591545618) | `daily-refresh` | dispatch | **capture success, build failure, deploy skipped** — found a real defect, see below |
+| [32593621903](https://github.com/jeisey/jeisey-tiers/actions/runs/32593621903) | `ci` | pull request #9 | **success** — the cohort fix |
+| [32594084631](https://github.com/jeisey/jeisey-tiers/actions/runs/32594084631) | `daily-refresh` | dispatch | **capture success, build success, deploy failure at `configure-pages`** — the visibility gate, see section 7 |
+| [32594602638](https://github.com/jeisey/jeisey-tiers/actions/runs/32594602638) | `daily-refresh` | dispatch, `force_validation_failure=true` | **the forced-failure proof** — section 4 |
+| [32594603959](https://github.com/jeisey/jeisey-tiers/actions/runs/32594603959) | `retrain` | dispatch | **success, and it declined to retrain** — section 4b |
 
 ### What the first production refresh found
 
@@ -251,6 +325,86 @@ It also confirmed two smaller things: `persist-credentials: false` left no git c
 the build workspace (the post-job cleanup found an extraheader for the application checkout
 and none for the store), and the build record staged 8 manifests with **zero** `.gz` files,
 so no retained payload reached a world-readable artifact.
+
+### The production build, green end to end
+
+Run [32594084631](https://github.com/jeisey/jeisey-tiers/actions/runs/32594084631), on `main`
+at `36b4e48`, after the cohort fix. `capture` and `build` both succeeded; only `deploy`
+failed, and only at the visibility gate.
+
+```
+Capture and retain today's sources ......... success   (38s)
+Build, validate and package the site ....... success   (4m43s)
+  Build the current board .................. success   (3m44s)
+  Select the market cohort ................. success
+  Build the arbitrage board ................ success
+  Corrupt an artifact on purpose ........... skipped   (flag false)
+  Validate the public artifacts ............ success
+  Build the site at /jeisey-tiers/ ......... success
+  Verify the rendered board ................ success
+  Assert the Pages artifact boundary ....... success
+  upload-pages-artifact .................... success   (1,356,568 bytes)
+Deploy to GitHub Pages ..................... FAILURE   at configure-pages
+  deploy-pages ............................. skipped
+Refresh summary ............................ success
+```
+
+**What the build produced**, from the run's own summary:
+
+| | |
+|---|---|
+| Build id | `2026-intrinsic-cb-hurdle-v1-20260822T193501Z` |
+| Model / methodology | `intrinsic-cb-hurdle-v1` / `phase4_intrinsic_v1` — **loaded, not retrained** |
+| Snapshot | `2026-08-22T19-34-24Z`, cohort rule `phase5_cohort_v2` |
+| Cohort selected, all nine preset blocks | `no-mock-no-keeper` — approximate, **insufficient** (`total_drafts 143 < 300`) |
+| `tiers.json` / `projections.json` / `arbitrage.json` / `player_status.json` | 2,700 / 3,510 / 2,021 / 315 |
+| Player status matched | 309 of 315 via Sleeper |
+| Confidence | 2,021 rows `low`, one recorded reason; median per-player sample 93 drafts |
+| Trend | null — ADR-042 needs three observation days spanning three days |
+| Identity coverage | `no-keeper` 0.917, `ppr-no-keeper` 0.953, `unfiltered` 0.868 |
+| Quality gate | **PASS** — 0 critical, 3 warnings |
+
+The three warnings are the ones this project publishes rather than hides: tiers ship having
+failed their stability gate (ADR-035), Sleeper `gsis_id` conflicts fail closed, and top-150
+players with no market price are excluded rather than filled in.
+
+Two things worth noticing in those numbers. The keeper-free cohort is now **143 drafts**
+against Phase 5's 125 — the market is maturing exactly as ADR-039 said it would, and the
+board is priced by real redraft drafts as ADR-045 requires. And the board is a preset wider
+than Phase 5's: `redraft-14` is in the supported set, so nine preset blocks are priced rather
+than six.
+
+**`verify:board` on the real 2026 build, served at the project Pages base path:**
+
+```
+verifying web/dist served at http://localhost:4180/jeisey-tiers against web/dist/data
+{ "tierRowsChecked": 40, "tierMarksChecked": 25,
+  "arbRowsChecked": 30, "badgesRendered": 63, "failures": [] }
+```
+
+**Zero disagreements** between what the browser rendered and the artifact bytes it was
+served — on production data, at the production base path, in the same job that packaged the
+site. (63 injury badges against Phase 6's 56: a fresher Sleeper capture, not a regression.)
+
+**The Pages artifact contains exactly this and nothing else:**
+
+```
+index.html
+assets/index-D5_pUE1R.css   assets/index-cotNIuEY.js   assets/index-cotNIuEY.js.map
+data/{tiers,projections,arbitrage,player_status,build_metadata}.json
+data/{tiers,projections,arbitrage,player_status}.csv
+```
+
+No `.git`, no `market-data`, no `.py`, no `.gz`, no `node_modules`, no Playwright report —
+asserted by the step, not claimed by a comment.
+
+**Caching behaved as designed.** uv, npm and Playwright all hit their primary keys; the
+nflverse cache was saved under
+`nflverse-Linux-<uv.lock>-s2026-<source-registry>-2026-08-22`, with the UTC date in the key
+and no restore-keys, so tomorrow's run re-downloads rather than serving today's rosters.
+
+**Least privilege, from the deploy job's own log:** `Contents: read`, `Metadata: read`,
+`Pages: write`. Nothing else was granted.
 
 ---
 
