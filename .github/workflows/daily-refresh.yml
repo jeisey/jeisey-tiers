@@ -291,10 +291,6 @@ jobs:
           ref: ${{ needs.capture.outputs.store_commit }}
           persist-credentials: "false"
 
-      # nflverse downloads are cached per UTC day. The date is IN the key and there are no
-      # restore-keys, deliberately: a hit can only be the same day's release, so a hit and a
-      # miss produce identical data. A key that fell back to yesterday would make a cache hit
-      # mean *staler rosters*, which is the one thing section 4 forbids.
       - name: Stamp the cache day
         id: day
         run: echo "utc=$(date -u +%F)" >> "$GITHUB_OUTPUT"
@@ -420,7 +416,6 @@ jobs:
           done
 
       - name: Cache the Playwright browser
-        id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
