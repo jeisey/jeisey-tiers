@@ -56,7 +56,7 @@ export function Masthead({
   readonly metadata: BuildMetadata;
   readonly degradations: readonly Degradation[];
   readonly onOpenData: () => void;
-  readonly now?: Date;
+  readonly now?: Date | undefined;
 }): React.JSX.Element {
   const ageHours = buildAgeHours(metadata, now);
   const status = mastheadStatus(metadata, degradations, ageHours);

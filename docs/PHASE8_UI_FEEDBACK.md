@@ -2,14 +2,13 @@
 
 This file exists so that looking at the real site has somewhere to go.
 
-Phase 6 built the draft sheet and verified it against the real 2026 board; Phase 7 built and
-packaged it for deployment. Neither phase asked a human to *use* it. That is the next thing, and it is deliberately
+Phase 6 built the draft sheet and verified it against the real 2026 board; Phase 7 deployed
+it. Neither phase asked a human to *use* it. That is the next thing, and it is deliberately
 sequenced this way: opinions about a Tier Board formed from screenshots of a ten-player
 fixture are worth much less than opinions formed while actually reading a 300-deep board on
 a phone the night before a draft.
 
-**How to use this document.** Once the site is live — two owner steps, `docs/PHASE7_DEPLOYMENT.md`
-section 7 — open it, use it as you would for a real draft, and
+**How to use this document.** Open the live site, use it as you would for a real draft, and
 add observations under the headings below. Rough notes are fine and are more useful than
 polished ones — "I kept scrolling past the tier I wanted" is a better bug report than a
 proposed redesign. Phase 8 reads this file and turns it into work.
@@ -27,10 +26,9 @@ as a line, and that constraint is a finding about the measurement, not a style c
 
 | | |
 |---|---|
-| Production URL | https://jeisey.github.io/jeisey-tiers/ — **not live yet**; see `docs/PHASE7_DEPLOYMENT.md` section 7 for the two owner steps that start it |
-| Deployed commit | _filled in by the first production deployment_ |
-| Build id | _filled in by the first production deployment_ |
-| Last validated build (not deployed) | `2026-intrinsic-cb-hurdle-v1-20260822T193501Z` — 2,700 tier rows, 2,021 arbitrage rows, 315 status rows, packaged and verified on run [32594084631](https://github.com/jeisey/jeisey-tiers/actions/runs/32594084631) |
+| Production URL | **<https://jeisey.github.io/jeisey-tiers/> — live since 2026-08-22** |
+| Deployed commit | `d34756a` |
+| Refreshing | daily at 07:17 America/New_York; first scheduled deploy [32636603290](https://github.com/jeisey/jeisey-tiers/actions/runs/32636603290) on 2026-08-23 |
 | Model | `intrinsic-cb-hurdle-v1` (trained 2014-2025) |
 | Arbitrage | `a0_rank_gap_v1`, deterministic baseline |
 | Review date | _to be filled in_ |
@@ -139,11 +137,11 @@ answered by looking at the site.
 
 | item | where it lives | why it is not Phase-7 work |
 |---|---|---|
-| Multi-source fantasy market-price study | `docs/DATA_SOURCES.md` §16 | a new production price source is a source-policy decision needing its own ADR and evidence |
+| Multi-source fantasy market-price study | `docs/DATA_SOURCES.md` §16, **ADR-053** | the sweep is done and the candidates are named; a new production price source is still a source-policy decision needing a runner-side probe and its own ADR |
 | Monte Carlo convergence rule re-specification | ADR-034 | the tier clause is stricter than the gate it protects; needs a new rule version |
 | Tier boundary stability | ADR-035 | the measurement supports ~4 reproducible cuts on a 300-deep board; do not lower the threshold |
 | `wide_market_range` is non-discriminating | ADR-041, known risks | true and useless at 125 drafts; render the range instead of the flag |
-| `min_total_drafts` for filtered cohorts | ADR-045 | re-specifying it must not happen in the same breath as reading the result it would change |
+| `min_total_drafts` for filtered cohorts | ADR-045, **ADR-052** | measured as self-resolving — 125 → 227 drafts in four days against a bar of 300 — so re-specifying it now could never be told apart from the season arriving |
 | Correlated player draws | open questions | never measured; the largest structural simplification in the simulation |
 | Historical injury features | ADR-044 | a 2027 refresh candidate; the 2025 holdout is spent, so there is nothing to promote against |
 | Learned arbitrage | ADR-010 | needs three draft seasons of our own snapshots, so 2029 at the earliest |

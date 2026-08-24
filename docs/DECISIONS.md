@@ -1161,3 +1161,98 @@ The confirmation token stays out of the repository and out of GitHub secrets on 
 **Consequences:** the weekly schedule is kept, and in the 2026 preseason every run stops at the gate in about two minutes. That is deliberate — the gate is exercised continuously rather than being a claim in a document, and the run history records that the evidence did not change. When 2026 completes, the same gate turns green on its own and produces a candidate report; what it will *not* do is promote it, because ADR-044's injury-feature question and a fresh holdout protocol both have to be answered first.
 
 **Revisit at:** the 2027 refresh, which needs completed 2026 labels, a new holdout protocol, and a decision on ADR-044's historical injury features.
+
+---
+
+## ADR-052 — Market-data confidence is resolving on its own; do not re-specify `min_total_drafts` to make it pass
+
+**Date:** 2026-08-24 (Phase 7 operations, four days after the first production capture)
+
+**Status:** **Proposed — awaiting owner review.** Nothing in the code changes on the strength of this ADR; its whole point is to argue for *not* changing something.
+
+**Context.** Every arbitrage row this project has ever published reads `low` confidence, for one recorded reason: the keeper-free cohort the frozen rule must use (ADR-045) fails a single clause, `min_total_drafts 300`. ADR-045 left an explicit open question about it:
+
+> Whether `min_total_drafts` is the right instrument for a filtered cohort. It is the only clause any format-pure or preset-specific cohort fails, and **filtering shrinks the cohort-level count structurally** while leaving per-player evidence intact.
+
+That "structurally" was the suspicion: that requiring `IS_KEEPER=N` caps the achievable count, so the clause could never pass and was measuring the filter rather than the evidence. Under that reading the clause is a badly chosen instrument and wants a new version.
+
+**The measurement that settles it.** Four days of production captures, same cohort, same filter, same rule:
+
+| observation day | `no-mock-no-keeper` total drafts | change |
+|---|---:|---:|
+| 2026-08-20 | 125 | — |
+| 2026-08-22 | 143 | +18 |
+| 2026-08-23 | 188 | +45 |
+| 2026-08-24 | 227 | +39 |
+
+Mean 25.5 drafts/day over the span; 39/day most recently; and **accelerating**, which is what late August does to fantasy drafting. The bar is 300. The gap is 73. At the recent rate that is **about two days**; at the mean, three.
+
+**The cohort-level count was not structurally capped. It was early.** The filter has not changed and the count has grown 82% in four days. A rule that would have been re-specified on 2026-08-20 to "fix" a thin sample is about to pass unaided, on the sample maturing, which is exactly what a volume clause is for.
+
+**Decision (proposed).**
+
+1. **Do not touch `min_total_drafts`, `phase5_cohort_v2`, or any other clause.** Not now, and specifically not in the window where it is about to cross. ADR-045 named the trap — "re-specifying it must not happen in the same breath as reading the result it would change" — and the current timing is the worst possible version of it: a change made this week could never be distinguished from the season arriving.
+2. **Let it cross, then re-read.** Once a build publishes a cohort at or above 300, the confidence label moves off `low` under the existing rubric with no code change, and ADR-047's view-level explanation suppresses itself once the distribution stops being uniform. That is the designed behaviour, and observing it is worth more than any argument here.
+3. **Re-open the instrument question only if it does *not* cross** by roughly the first week of September. If the count stalls short of 300 at peak draft season, the structural reading was right after all, and *that* is the evidence a new rule version would need.
+
+**What else the four days established.**
+
+- **The store accumulates, and the trend went live.** Nine snapshots across four observation days now satisfy ADR-042's "three observation days spanning three days", and `market_trend` is populated on the board for the first time. It surfaced by breaking a stale check — `verify:board` was asserting that every trend cell renders an em dash, which was true only while the store was too young. A green product failed a test that had frozen the launch condition; the check now compares against the artifact's own value. Auditing the rest of that script for the same species found a second instance: the tier row's name assertion stripped the injury badge out of the cell text with a pattern that assumed the badge always reads `IR · Knee`, so a designation reported without a body part would have failed a correct board. It now reads the name from its own element. **A verification check must assert the contract, not the day's data.**
+- **`wide_market_range` (ADR-041) should be re-measured, not re-specified.** It fires on ~90% of rows and was called "true and useless at this sample size". A min-to-max span narrows as drafts accumulate, so the flag may begin discriminating on its own for the same reason confidence will. Measure it after the crossing before deciding it is the wrong flag.
+- **Identity coverage over the whole priced payload is drifting down** — 0.921 → 0.836 on the selected cohort across the four days — because a larger aggregate prices more obscure players. This is *not* the number `min_identity_coverage` judges, which is measured over core positions only (ADR-039 clarification) and is not close to its bound. Recorded as a thing to watch, not a finding.
+
+**Consequences if accepted:** nothing is implemented. The site keeps publishing `low` and explaining exactly why, which is honest, until the evidence changes it. The open question in ADR-045 narrows from "is this the wrong instrument?" to "did it release on time?", which a week of captures answers by itself.
+
+**Revisit at:** the first build whose selected cohort reports ≥ 300 drafts, or 2026-09-07 if that has not happened.
+
+---
+
+## ADR-053 — The free market-source sweep: what exists, what each would fix, and why none of it ships yet
+
+**Date:** 2026-08-24 (Phase 7 operations)
+
+**Status:** **Proposed — awaiting owner review.** No source is added, no policy changes, and `config/source-registry.yaml` is untouched by this ADR.
+
+**Context.** The owner asked what else is out there: whether FantasyPros is being used, whether other free market-price sources exist, and whether sportsbook odds belong anywhere. `docs/DATA_SOURCES.md` §16 already records the *shape* of a multi-source study; this ADR records the **sweep's actual findings** so a Phase-8 session inherits candidates rather than a search.
+
+**Evidence quality, stated up front.** This sweep was done by search from an egress-restricted environment: `help.fantasyfootballcalculator.com` and other candidate hosts answer 403 to `CONNECT` (ADR-009). **No endpoint below has been verified against the live service**, and none may become a production dependency until a runner-side probe records its contract and terms, per `AGENTS.md` §5. Everything here is a lead, not a verification.
+
+### What is used today
+
+**MyFantasyLeague only.** And, answering the question directly: **FantasyPros is used nowhere.** It is registered (`fantasypros_ecr_via_dynastyprocess`), terms-reviewed, `benchmark_only`, `criticality: optional` — and carries **no roles**. It is not fetched by any build, appears in no schema and no artifact, and its name is in `ffdraft/quality/forbidden.py`, so the intrinsic firewall actively rejects it as a feature. Approval to compare was granted in ADR-014 and never spent; no benchmark comparison was ever wired up.
+
+### The candidates
+
+**1. Fantasy Football Calculator — the only genuinely new candidate.**
+
+A documented free REST ADP API (`/api/v1/adp/{format}?teams={n}&year={y}`) whose published terms reportedly permit personal *and commercial* use with attribution and a politeness rate limit. If that holds on inspection it is a **better redistribution position than anything else in the sweep, FantasyPros included.**
+
+What it would fix, and it is the thing MFL structurally cannot: **exact cohorts.** `format` × `teams` gives PPR/12 as a real intersection rather than an approximation. ADR-012 exists because MFL's exact intersections are thin or empty, and every assignment this project publishes is flagged `approximate`.
+
+What it would introduce: **a population problem in exchange.** FFC's ADP is generated from **mock drafts run on its own site**. MFL's aggregate is real league drafts. Phase 5 spent its cohort study proving that population differences are not cosmetic — dynasty rookie drafts inside the MFL aggregate moved rookie prices 3–5× while veterans did not move at all (ADR-045). A mock-draft population is a different distortion, not an absent one: mocks are cheap, abandonable and drafted by a self-selecting audience. Swapping one approximate cohort for one exact-but-mock cohort is not obviously an improvement, and asserting that it is without measuring would repeat the mistake ADR-045 was written to prevent.
+
+**2. FantasyPros.** A public API exists with a free tier tied to membership. Repository policy is unchanged: `benchmark_only`, redistribution forbidden, so it cannot feed a published artifact. Promoting it is a source-policy decision needing its own ADR and evidence (ADR-014 as amended, `docs/DATA_SOURCES.md` §16). Nothing in this sweep changes that.
+
+**3. Sleeper.** Still no verified global or platform-wide ADP endpoint; drafts are addressable only by a known user, league or draft id. Unchanged from §16, and the crawl design it would require — discoverability, representation bias, duplicate-league protection, rate limits, and a non-commercial licence that already binds what this site publishes — remains out of scope.
+
+**4. Sportsbook odds — a category error, and worth saying plainly.**
+
+Free-tier odds APIs exist (The Odds API, SportsGameOdds, SharpAPI; all key-gated with quotas). **None of them is an ADP substitute.** Arbitrage in this project is *fair rank versus draft cost*. Odds price expected production and game outcomes — they are neither the fair rank nor the cost, so they cannot enter the A0 comparison at all without redefining what arbitrage means.
+
+They also cannot enter the intrinsic model. `AGENTS.md` §8 names "sportsbook/fantasy market rank intended as a proxy for crowd expectation" in the forbidden-feature list explicitly, and season win totals and player props are exactly that. Using them would breach the invariant the whole project is built around.
+
+That leaves two legitimate homes, both new decisions rather than integrations: an **external benchmark** for evaluating the intrinsic model out-of-sample, or a **separately labelled published signal** that is not arbitrage and is not a model input. Either would also add a first API key with a quota — a new secret, a new failure mode, and a rate limit that a daily build must respect.
+
+**5. Aggregators and scrapers** (BeatADP, RotoWire, DraftSharks, marketplace scrapers). Display products, not licensed APIs. Scraping them is outside `docs/SECURITY_LICENSE.md` §8 and is not considered.
+
+### Decision (proposed)
+
+1. **Add nothing now.** MFL remains the sole production price source.
+2. **Sequence this behind ADR-052.** The motivating complaint is `low` confidence, and the measurement says that resolves itself in about two days. If it does, the case for a second source shrinks to a smaller and much more precise question — *exact cohorts, and HALF-PPR, which a boolean `IS_PPR` can never represent* — worth its own study rather than a rushed integration.
+3. **If a study happens, Fantasy Football Calculator is the one to probe first**, and the probe must answer, on the runner: the endpoint contract and response fields; the terms text verbatim; whether the population is mock-only and in what proportion; per-player sample sizes at the cohorts we would actually use; the player-identity join path (MFL took two independent id bridges to reach 100% on core positions — FFC's is unknown); rate limits; and whether it publishes a data-as-of time, which MFL does not.
+4. **Record it as `verify_before_use`** in the registry when and only when a study is commissioned. Until then it stays out of the registry entirely, because a listed source implies a checked one.
+5. **The composite warning in §16 stands and is repeated here because it is the easiest thing to get wrong:** if more than one price source is ever approved, do not average the numbers. Normalize to source-specific quotes first — the shape `market_quote` 2.0 already has — and freeze the consensus formula **before** looking at which players it flatters.
+
+**Consequences if accepted:** the sweep is on the record with its evidence quality labelled, the "why aren't we using FantasyPros" question has a durable answer, and nobody re-derives the odds-are-not-ADP argument. Nothing in the pipeline moves.
+
+**Revisit at:** whichever comes first — ADR-052 resolving, or a decision to commission the multi-source study in `docs/DATA_SOURCES.md` §16.

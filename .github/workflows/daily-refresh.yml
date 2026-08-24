@@ -522,12 +522,13 @@ jobs:
       # job is the one job that legitimately holds one; putting it in the build job would
       # have meant widening that job's permissions for an output nothing consumes.
       #
-      # `enablement: true` means the first successful deploy configures the Pages site with
-      # the Actions build type itself, so turning the site on is not a manual step that has
-      # to be remembered — and it is idempotent, so it is a no-op every day after that.
+      # It does **not** carry `enablement: true`. That was tried and does not work with the
+      # stock `GITHUB_TOKEN`: creating a Pages site is an admin-level API call, and an app
+      # installation token can never hold admin, so the first deploy failed with
+      # `Create Pages site failed: Resource not accessible by integration`. Turning Pages on
+      # is a one-time owner action — Settings → Pages → Source → **GitHub Actions** — and
+      # `enablement: true` only papers over that when handed a PAT with admin rights.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - id: deployment
         uses: actions/deploy-pages@v4

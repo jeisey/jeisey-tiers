@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
 import { ANNOTATION_DISCLOSURE } from "../src/app/PlayerDetail";
 import {
+  FIXTURE_GENERATED_AT,
   arbitrageEnvelope,
   arbitrageRecords,
   buildMetadata,
@@ -21,6 +22,17 @@ import {
   tierEnvelope,
   tierRecords,
 } from "./fixtures/artifacts";
+
+/**
+ * The clock these tests render against: three hours after the fixture board was built.
+ *
+ * Without it the suite silently expires. `STALE_WARNING_HOURS` is 48, so a test asserting
+ * the "build notes" chip only passed while the wall clock was within two days of
+ * `FIXTURE_GENERATED_AT` — it went green in CI and started failing two days later with no
+ * code change, which is a test measuring the calendar rather than the component. The fixture
+ * stays a fixed board, deterministic by design; the *clock* is what the test now pins.
+ */
+const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 1000);
 
 type Payloads = Record<string, unknown>;
 
@@ -76,9 +88,19 @@ describe("shell", () => {
   });
 
   it("shows a compact status chip rather than a full-width alarm", async () => {
-    render(<App />);
+    render(<App now={FIXTURE_NOW} />);
     await boardReady();
     const chip = screen.getByRole("button", { name: /build note/i });
+    expect(chip.className).toContain("status-chip");
+  });
+
+  it("escalates the same chip to a stale warning once the build ages out", async () => {
+    // The other half of the contract, and the branch that had quietly been swallowing the
+    // test above: past STALE_WARNING_HOURS the chip says so. Still a chip, never an alarm.
+    const stale = new Date(Date.parse(FIXTURE_GENERATED_AT) + 49 * 60 * 60 * 1000);
+    render(<App now={stale} />);
+    await boardReady();
+    const chip = screen.getByRole("button", { name: /build is stale/i });
     expect(chip.className).toContain("status-chip");
   });
 

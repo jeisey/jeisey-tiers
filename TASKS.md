@@ -208,15 +208,17 @@ payload. The store had to move to a separate private repository **before** anyth
 - [x] Add last-known-good deployment behavior.
 - [x] Add workflow summaries with source counts/freshness/model versions.
 - [x] Prove failed critical validation cannot deploy (run 32594602638: `artifact.non_monotonic_quantiles` rejected the build, `upload-pages-artifact` skipped, deploy job skipped).
-- [ ] **Make `jeisey/jeisey-tiers` public** — owner-only; `api.github.com` is unreachable from the build environment and the available GitHub tooling has no repository-visibility method. Steps in `docs/PHASE7_DEPLOYMENT.md` section 7.
-- [ ] Deploy GitHub Pages — wired and self-enabling; runs on the first `daily-refresh` after the flip.
-- [ ] Verify the **deployed** site with real 2026 data, not fixtures.
+- [x] **Make `jeisey/jeisey-tiers` public** — owner action, completed 2026-08-22 after the `market-data` branch was deleted.
+- [x] Deploy GitHub Pages — live at <https://jeisey.github.io/jeisey-tiers/> (run 32597324898); first *scheduled* deploy 2026-08-23 (run 32636603290). Needed one owner setting the workflow could not make for itself: Settings → Pages → Source → **GitHub Actions**.
+- [x] Verify the **deployed** site with real 2026 data, not fixtures.
 - [x] Create the Phase-8 human UI feedback backlog (`docs/PHASE8_UI_FEEDBACK.md`).
 - [x] Record the multi-source ADP study as a Phase-8 research item (`docs/DATA_SOURCES.md` §16).
 
 **Exit gate:** a clean GitHub-hosted run can build and deploy the site; daily refresh can update it; a forced data-quality failure leaves existing production intact.
 
-**Status: met up to the visibility flip.** A clean GitHub-hosted run captures, builds, validates and packages the site; the deploy job is wired, gated and self-enabling. The three clauses that need a *live* site — the deploy itself, the deployed smoke test, and the forced-failure proof's "previous production stayed live" half — cannot be demonstrated while the repository is private, and are the first thing to run after the owner flips it. Evidence and the exact remaining steps are in `docs/PHASE7_DEPLOYMENT.md`.
+**Status: met.** A clean GitHub-hosted run captures, builds, validates, packages and deploys the site; the daily schedule has updated it unattended; and a forced data-quality failure leaves the previous deployment serving. Evidence is in `docs/PHASE7_DEPLOYMENT.md`.
+
+The last-known-good property has now held **three times in production**, and only once was it the rehearsed test — the other two were a real cohort-selection defect and a stale test assertion. That is the better evidence.
 
 One defect was found and fixed, and only because the production path was run for the first
 time: `PRODUCTION_COHORT_IDS` predated ADR-045's keeper-free requirement, so a routine daily

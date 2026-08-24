@@ -32,6 +32,20 @@ async function openBoard(page: Page, path = "/"): Promise<void> {
   await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
 }
 
+/**
+ * The masthead's freshness chip, selected by the invariant half of its accessible name.
+ *
+ * Its visible label is the freshness *state* — "build note", "build is a day old", "build is
+ * stale" — which depends on the wall clock at the moment the browser runs, so a test that
+ * matches on it starts failing on a date nobody chose. Which label each age produces is
+ * asserted directly, against an injected clock, in `tests/app.test.tsx`; a build served from
+ * disk cannot be handed one. The tests below are about where the chip goes and where it sits
+ * in the tab order, so they select the part of the name that never changes.
+ */
+function statusChip(page: Page) {
+  return page.getByRole("button", { name: /Open the data and methodology view/ });
+}
+
 test.describe("default tier experience", () => {
   test("renders the board, the freshness stamp and the tier table", async ({ page }) => {
     await openBoard(page);
@@ -334,7 +348,7 @@ test.describe("data and methodology", () => {
 
   test("is reachable from the header status chip", async ({ page }) => {
     await openBoard(page);
-    await page.getByRole("button", { name: /build note/ }).click();
+    await statusChip(page).click();
     await expect(page).toHaveURL(/view=data/);
   });
 });
@@ -400,7 +414,7 @@ test.describe("accessibility", () => {
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: /Skip to the board/ })).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(page.getByRole("button", { name: /build note/ })).toBeFocused();
+    await expect(statusChip(page)).toBeFocused();
     await page.keyboard.press("Tab");
     // The group's one tab stop is the *selected* option, per the roving-tabindex pattern.
     await expect(page.getByRole("radio", { name: "PPR", exact: true })).toBeFocused();

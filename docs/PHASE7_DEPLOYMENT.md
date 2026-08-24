@@ -408,7 +408,27 @@ and no restore-keys, so tomorrow's run re-downloads rather than serving today's 
 
 ---
 
-## 7. The one thing this phase could not do for itself
+## 7. The owner actions — completed 2026-08-22
+
+**All three were done, in order, and the site is live at
+<https://jeisey.github.io/jeisey-tiers/>.**
+
+| | |
+|---|---|
+| `market-data` branch deleted from `jeisey/jeisey-tiers` | done, before the flip |
+| Repository made public | done |
+| Settings → Pages → Source → **GitHub Actions** | done, after the first deploy failed without it |
+| First deploy | [32597324898](https://github.com/jeisey/jeisey-tiers/actions/runs/32597324898), 2026-08-22, dispatch |
+| First **scheduled** deploy | [32636603290](https://github.com/jeisey/jeisey-tiers/actions/runs/32636603290), 2026-08-23 |
+
+The scheduled run fired at 11:27 UTC against a configured 07:17 America/New_York (11:17 UTC)
+— about ten minutes of GitHub scheduling delay, which is the documented behaviour the
+off-the-hour minute was chosen to reduce rather than eliminate.
+
+The checklist below is kept as the record of what had to be done, and because it is the
+procedure to repeat if the site is ever torn down.
+
+### The one thing this phase could not do for itself
 
 **Making `jeisey/jeisey-tiers` public is an owner-only action, and it was stopped at rather
 than worked around.**
@@ -457,27 +477,39 @@ Everything that depends on it is already wired and waits on nothing else.
    Zone** → **Change repository visibility** → *Change to public* → confirm by typing the
    repository name.
 
-4. **Run the first production refresh.** Actions → **daily-refresh** → *Run workflow* on
-   `main`, leaving the inputs at their defaults. The deploy job's `configure-pages` step runs
-   with `enablement: true`, so it creates the Pages site with the Actions build type itself —
-   there is no Settings → Pages step to remember. The site appears at
+4. **Turn Pages on.** Settings → **Pages** → Build and deployment → Source → **GitHub
+   Actions**. That exact value: "Deploy from a branch" is the legacy build type, is mutually
+   exclusive with Actions deployment, and would make `actions/deploy-pages` fail.
+
+   This step is required, and an earlier version of this document wrongly said it was not.
+   `actions/configure-pages` was carrying `enablement: true`, which is supposed to create the
+   site from the workflow — but creating a Pages site is an **admin-level** API call and a
+   `GITHUB_TOKEN` is an app installation token that can never hold admin, so the first real
+   deploy failed with `Create Pages site failed: Resource not accessible by integration`.
+   `enablement: true` only works when handed a personal access token with admin rights, so it
+   has been removed rather than left as a false promise.
+
+5. **Run the first production refresh.** Actions → **daily-refresh** → *Run workflow* on
+   `main`, leaving the inputs at their defaults. The site appears at
    **https://jeisey.github.io/jeisey-tiers/**.
 
-5. **Smoke-test the deployed site** with the command in section 5, plus the by-eye checks
+6. **Smoke-test the deployed site** with the command in section 5, plus the by-eye checks
    beside it.
 
-6. **Prove the deploy gate.** Actions → **daily-refresh** → *Run workflow*, with
+7. **Prove the deploy gate.** Actions → **daily-refresh** → *Run workflow*, with
    **`force_validation_failure` = true**. Expected: `capture` succeeds and its snapshot is
    committed to the private store; `build` fails at *Validate the public artifacts* with
-   `artifact.non_monotonic_quantiles`; `deploy` is **skipped**; and the site from step 4 is
+   `artifact.non_monotonic_quantiles`; `deploy` is **skipped**; and the site from step 5 is
    still serving, unchanged. Record the run URL in section 6.
 
-7. **Optionally shorten the daily schedule's first wait** by leaving it alone — it fires at
+8. **Optionally shorten the daily schedule's first wait** by leaving it alone — it fires at
    07:17 America/New_York on its own.
 
 ### What is *not* needed
 
-- No Settings → Pages configuration (step 4 does it).
+- No `gh-pages` branch, and no "Deploy from a branch" source. The site is deployed from the
+  validated workflow artifact; a branch source would break that and would put the built site
+  back into the repository.
 - No new secret. `MARKET_DATA_REPO_TOKEN` and the MFL client-identity secrets already exist
   and are already proven working by run 32590470088.
 - No branch protection change, no licence decision (see `docs/SECURITY_LICENSE.md` section 8),
