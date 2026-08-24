@@ -27,7 +27,12 @@ type LoadState =
   | { readonly status: "ready"; readonly index: ArtifactIndex; readonly degradations: readonly Degradation[] }
   | { readonly status: "error"; readonly error: CriticalArtifactError };
 
-export function App(): React.JSX.Element {
+/**
+ * `now` exists for the same reason `Masthead` already accepts one: freshness is measured
+ * against the clock, and a test that renders a fixed fixture board must be able to say what
+ * time it is. Production never passes it, so the default is the real clock.
+ */
+export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
   const { state, setState } = useAppState();
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -85,6 +90,7 @@ export function App(): React.JSX.Element {
       selectedPlayerId={selectedPlayerId}
       onSelect={onSelect}
       onCloseDetail={onCloseDetail}
+      now={now}
     />
   );
 }
@@ -97,6 +103,7 @@ function Board({
   selectedPlayerId,
   onSelect,
   onCloseDetail,
+  now,
 }: {
   readonly index: ArtifactIndex;
   readonly degradations: readonly Degradation[];
@@ -105,6 +112,12 @@ function Board({
   readonly selectedPlayerId: string | null;
   readonly onSelect: (playerId: string) => void;
   readonly onCloseDetail: () => void;
+  /**
+   * Injected only by tests; the masthead's freshness clock (see `App`). Spelled
+   * `| undefined` because `exactOptionalPropertyTypes` distinguishes an absent
+   * property from a present one holding `undefined`, and `App` forwards the latter.
+   */
+  readonly now?: Date | undefined;
 }): React.JSX.Element {
   const metadata = index.metadata;
   const buildDate = easternIsoDate(metadata.generated_at_utc);
@@ -148,6 +161,7 @@ function Board({
         <Masthead
           metadata={metadata}
           degradations={degradations}
+          now={now}
           onOpenData={() => {
             setState({ view: "data" });
           }}

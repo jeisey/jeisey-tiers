@@ -2,14 +2,13 @@
 
 This file exists so that looking at the real site has somewhere to go.
 
-Phase 6 built the draft sheet and verified it against the real 2026 board; Phase 7 built and
-packaged it for deployment. Neither phase asked a human to *use* it. That is the next thing, and it is deliberately
+Phase 6 built the draft sheet and verified it against the real 2026 board; Phase 7 deployed
+it. Neither phase asked a human to *use* it. That is the next thing, and it is deliberately
 sequenced this way: opinions about a Tier Board formed from screenshots of a ten-player
 fixture are worth much less than opinions formed while actually reading a 300-deep board on
 a phone the night before a draft.
 
-**How to use this document.** Once the site is live — two owner steps, `docs/PHASE7_DEPLOYMENT.md`
-section 7 — open it, use it as you would for a real draft, and
+**How to use this document.** Open the live site, use it as you would for a real draft, and
 add observations under the headings below. Rough notes are fine and are more useful than
 polished ones — "I kept scrolling past the tier I wanted" is a better bug report than a
 proposed redesign. Phase 8 reads this file and turns it into work.
@@ -27,10 +26,9 @@ as a line, and that constraint is a finding about the measurement, not a style c
 
 | | |
 |---|---|
-| Production URL | https://jeisey.github.io/jeisey-tiers/ — **not live yet**; see `docs/PHASE7_DEPLOYMENT.md` section 7 for the two owner steps that start it |
-| Deployed commit | _filled in by the first production deployment_ |
-| Build id | _filled in by the first production deployment_ |
-| Last validated build (not deployed) | `2026-intrinsic-cb-hurdle-v1-20260822T193501Z` — 2,700 tier rows, 2,021 arbitrage rows, 315 status rows, packaged and verified on run [32594084631](https://github.com/jeisey/jeisey-tiers/actions/runs/32594084631) |
+| Production URL | **<https://jeisey.github.io/jeisey-tiers/> — live since 2026-08-22** |
+| Deployed commit | `d34756a` |
+| Refreshing | daily at 07:17 America/New_York; first scheduled deploy [32636603290](https://github.com/jeisey/jeisey-tiers/actions/runs/32636603290) on 2026-08-23 |
 | Model | `intrinsic-cb-hurdle-v1` (trained 2014-2025) |
 | Arbitrage | `a0_rank_gap_v1`, deterministic baseline |
 | Review date | _to be filled in_ |
