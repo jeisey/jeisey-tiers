@@ -137,11 +137,11 @@ answered by looking at the site.
 
 | item | where it lives | why it is not Phase-7 work |
 |---|---|---|
-| Multi-source fantasy market-price study | `docs/DATA_SOURCES.md` §16 | a new production price source is a source-policy decision needing its own ADR and evidence |
+| Multi-source fantasy market-price study | `docs/DATA_SOURCES.md` §16, **ADR-053** | the sweep is done and the candidates are named; a new production price source is still a source-policy decision needing a runner-side probe and its own ADR |
 | Monte Carlo convergence rule re-specification | ADR-034 | the tier clause is stricter than the gate it protects; needs a new rule version |
 | Tier boundary stability | ADR-035 | the measurement supports ~4 reproducible cuts on a 300-deep board; do not lower the threshold |
 | `wide_market_range` is non-discriminating | ADR-041, known risks | true and useless at 125 drafts; render the range instead of the flag |
-| `min_total_drafts` for filtered cohorts | ADR-045 | re-specifying it must not happen in the same breath as reading the result it would change |
+| `min_total_drafts` for filtered cohorts | ADR-045, **ADR-052** | measured as self-resolving — 125 → 227 drafts in four days against a bar of 300 — so re-specifying it now could never be told apart from the season arriving |
 | Correlated player draws | open questions | never measured; the largest structural simplification in the simulation |
 | Historical injury features | ADR-044 | a 2027 refresh candidate; the 2025 holdout is spent, so there is nothing to promote against |
 | Learned arbitrage | ADR-010 | needs three draft seasons of our own snapshots, so 2029 at the earliest |
