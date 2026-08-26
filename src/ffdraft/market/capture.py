@@ -35,6 +35,7 @@ import polars as pl
 from ffdraft.config import AppConfig, load_app_config
 from ffdraft.contracts import CORE_POSITIONS, EntityKind, MarketCohort, QualityCheck, SourceBatch
 from ffdraft.contracts.enums import Severity
+from ffdraft.identity.aliases import AliasMap, default_alias_path, load_alias_map
 from ffdraft.identity.resolver import (
     resolve_market_quotes,
     summarize,
@@ -155,13 +156,20 @@ def build_snapshot(
     identity: MarketIdentity,
     git_sha: str | None = None,
     gate: QualityGate | None = None,
+    aliases: AliasMap | None = None,
 ) -> CaptureResult:
     """Normalize, resolve and assemble a snapshot from already-retrieved payloads.
 
     Pure with respect to the network: every fixture test drives this, and the live capture
     path is a thin wrapper that supplies ``raw_by_cohort`` and ``raw_players``.
+
+    ``aliases`` defaults to the repository's reviewed alias file. That default is the whole
+    point of the escape hatch: the resolver refuses to guess, so the only way a genuinely
+    unreachable id ever resolves is a review someone wrote down, and a review that is not
+    loaded is not a review. Pass ``AliasMap.empty()`` to resolve on live bridges alone.
     """
     checks = gate or QualityGate()
+    alias_map = aliases if aliases is not None else load_alias_map(default_alias_path())
     key = snapshot_key(retrieved_at)
 
     directory_adapter = MflPlayerDirectoryAdapter()
@@ -195,6 +203,7 @@ def build_snapshot(
             espn_by_mfl_id=espn_by_mfl,
             gsis_by_mfl_id=identity.gsis_by_mfl_id,
             names_by_mfl_id=names_by_mfl,
+            aliases=alias_map,
             source_id=MFL_SOURCE_ID,
         )
         summary = summarize(outcomes, source_id=MFL_SOURCE_ID)

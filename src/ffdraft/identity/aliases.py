@@ -30,7 +30,13 @@ from typing import Any
 
 import yaml
 
-__all__ = ["AliasEntry", "AliasMap", "load_alias_map"]
+from ffdraft.paths import config_dir
+
+__all__ = ["ALIAS_FILENAME", "AliasEntry", "AliasMap", "default_alias_path", "load_alias_map"]
+
+#: The reviewed alias file, relative to ``config/``. One agreed location, so a capture and
+#: the fixture pipeline cannot disagree about which reviews are in force.
+ALIAS_FILENAME = "identity-aliases.yaml"
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,3 +88,8 @@ def load_alias_map(path: Path | None) -> AliasMap:
             raise ValueError(f"{path}: duplicate alias for {key}")
         entries[key] = entry
     return AliasMap(entries=entries)
+
+
+def default_alias_path(*, root: Path | None = None) -> Path:
+    """The repository's reviewed alias file."""
+    return config_dir(root=root) / ALIAS_FILENAME

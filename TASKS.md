@@ -226,6 +226,33 @@ capture retained nothing the frozen rule could select. The rule was right and fa
 the capture set was wrong. Fixed by retaining what the rule needs, recorded as an ADR-045
 amendment, and pinned by two new tests. **No threshold moved.**
 
+### Post-deployment operations (7b, 7c)
+
+Three defects surfaced by running the thing daily rather than by review, all fixed without
+moving a threshold:
+
+- **7b — three checks pinned the day's data instead of the contract.** `verify:board`
+  asserted every arbitrage Trend cell renders an em dash (true only while the store was too
+  young for ADR-042) and stripped injury badges with a pattern that assumed a body part is
+  always reported; three frontend tests keyed on the masthead chip's freshness label, which
+  expires 48h after the fixture's build time. All now assert against the artifact or an
+  injected clock.
+- **7b — `enablement: true` on `configure-pages` was a false promise.** Creating a Pages site
+  is an admin API call and `GITHUB_TOKEN` never holds admin. Removed; the owner action is
+  documented instead.
+- **7c — the reviewed-alias escape hatch was never wired into production** (ADR-054).
+  `config/identity-aliases.yaml`, `load_alias_map` and the resolver's alias path all existed
+  and were tested, and the fixture pipeline used them, but `ffdraft.market.capture` — the
+  module every real snapshot runs — never loaded the file. Wired through `build_snapshot`,
+  with a negative-control test proving the wiring rather than the parameter.
+
+- [ ] **Open, and the reason the daily refresh is red: the board ranks unrostered free
+      agents** (ADR-054, `Proposed`). `HALF/redraft-10` prices 141 of its top 150 against a
+      95% bar. All nine misses are accounted for individually; four are players on no NFL
+      roster that the board still ranks inside the top 126 of a ten-team league. Restricting
+      the published board to rostered players would fix most of it but renumbers every fair
+      rank, so it is an owner decision, not a patch.
+
 Otherwise Phase 7 deliberately changed no methodology. No Phase-4 or Phase-5 threshold moved, no tier
 or Monte Carlo rule was touched, MFL remains the sole production price source, and the Tier
 Board's known vertical density was left alone rather than "fixed" during a deployment — it is
