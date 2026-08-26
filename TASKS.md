@@ -246,12 +246,23 @@ moving a threshold:
   module every real snapshot runs — never loaded the file. Wired through `build_snapshot`,
   with a negative-control test proving the wiring rather than the parameter.
 
-- [ ] **Open, and the reason the daily refresh is red: the board ranks unrostered free
-      agents** (ADR-054, `Proposed`). `HALF/redraft-10` prices 141 of its top 150 against a
-      95% bar. All nine misses are accounted for individually; four are players on no NFL
-      roster that the board still ranks inside the top 126 of a ten-team league. Restricting
-      the published board to rostered players would fix most of it but renumbers every fair
-      rank, so it is an owner decision, not a patch.
+- **7d — the registry's player universe was incomplete** (ADR-055). `load_rosters(2026)`
+  omits 101 skill-position players who are on NFL rosters, including Stefon Diggs (WAS),
+  Keenan Allen (IND) and Deebo Samuel Sr. (SF). Both market bridges terminate at
+  `registry.lookup`, so those players were unreachable and their real ADPs could not join the
+  board — which is what failed `arbitrage.top_board_priced` on 2026-08-26. The spine is now
+  the roster plus nflverse's own player master, filtered to the season. Re-resolving the real
+  capture: 258 → 263 resolved on the primary bridge alone.
+
+  ADR-054's first diagnosis — that those players were free agents — was **wrong**, drawn from
+  a single search against the roster file, and is retracted in place. It had recommended
+  removing unrostered players from the published board, which would have deleted three
+  genuine starters to cover our own defect.
+
+- [ ] **ADR-056, `Proposed`:** what `top_board_priced` measures (it is our board's coverage
+      *by* the market, not the reverse), its threshold inherited from the identity bar, and a
+      scoped first step for a second price source — probe Fantasy Football Calculator on a
+      runner and answer terms, identity-join path and population before building anything.
 
 Otherwise Phase 7 deliberately changed no methodology. No Phase-4 or Phase-5 threshold moved, no tier
 or Monte Carlo rule was touched, MFL remains the sole production price source, and the Tier

@@ -44,6 +44,7 @@ __all__ = [
     "collided_gsis_ids",
     "NflverseDepthChartAdapter",
     "NflversePlayerIdsAdapter",
+    "NflversePlayersAdapter",
     "NflverseRosterAdapter",
 ]
 
@@ -246,6 +247,111 @@ class NflverseRosterAdapter(BaseSourceAdapter):
                 ),
             )
         return tuple(checks)
+
+
+class NflversePlayersAdapter(BaseSourceAdapter):
+    """``load_players()`` -> the players a season's roster file leaves out.
+
+    `load_rosters(season)` is the canonical spine and stays that. It is also **incomplete**:
+    on 2026-08-26 it was missing 101 skill-position players who were on NFL rosters, among
+    them Stefon Diggs (WAS), Keenan Allen (IND) and Deebo Samuel Sr. (SF) — each of them
+    priced by a real market with 96-201 drafts behind the number. Because the canonical
+    registry is built from the roster alone, those players did not exist as far as market
+    identity was concerned, and their prices could not be joined to the board (ADR-055).
+
+    This adapter emits the same ``ROSTER_CONTRACT`` rows, because that is exactly what it is
+    for: additional rows of the same spine, from the *same provider*, filtered to players
+    whose ``last_season`` reaches the target season. It is nflverse's own player master, not
+    the unlicensed dynastyprocess mirror, so using it does not weaken the rule that a mirror
+    may never expand the canonical player set.
+
+    Two columns the roster has are simply absent upstream: ``sleeper_id`` and
+    ``sportradar_id``/``yahoo_id``. A supplemented player therefore carries no Sleeper join
+    and picks up no status annotation. That is a real and accepted cost — status is
+    annotation-only (ADR-030), while a missing *price* silently distorts the arbitrage board.
+    """
+
+    source_id = NFLVERSE_SOURCE_ID
+    resource = "load_players"
+    adapter_version = "1.0"
+    contract = ROSTER_CONTRACT
+    recorded_schema_fixture = "nflverse_players"
+    license_policy_version = _NFLVERSE_LICENSE
+    min_expected_records = 1
+    required_source_columns = frozenset(
+        {"gsis_id", "display_name", "position", "latest_team", "status", "last_season", "espn_id"},
+    )
+
+    def normalize(
+        self,
+        records: RawRecords,
+        *,
+        season: int,
+        retrieved_at: datetime | None = None,
+    ) -> SourceBatch:
+        flags = FlagCounter()
+        rows: list[dict[str, Any]] = []
+        dropped_without_gsis = 0
+        dropped_before_season = 0
+
+        for record in as_rows(records):
+            last_season = _int(record.get("last_season"))
+            if last_season is None or last_season < season:
+                # A player whose last recorded season predates the target has retired or
+                # left the league. Adding him would expand the canonical set with people
+                # nobody can draft, which is the opposite of the point.
+                dropped_before_season += 1
+                continue
+            gsis = flags.take(normalize_id(IdNamespace.GSIS, record.get("gsis_id")))
+            if gsis is None:
+                dropped_without_gsis += 1
+                continue
+            rows.append(
+                {
+                    "season": season,
+                    "gsis_id": gsis,
+                    "display_name": _text(record.get("display_name"))
+                    or _text(record.get("football_name"))
+                    or gsis,
+                    "position": _text(record.get("position")) or "",
+                    "team": _text(record.get("latest_team")),
+                    "status": _text(record.get("status")),
+                    "depth_chart_position": None,
+                    "espn_id": flags.take(normalize_id(IdNamespace.ESPN, record.get("espn_id"))),
+                    "sleeper_id": None,
+                    "pfr_id": flags.take(normalize_id(IdNamespace.PFR, record.get("pfr_id"))),
+                    "sportradar_id": None,
+                    "yahoo_id": None,
+                    "birth_date": _date(record.get("birth_date")),
+                    "years_exp": _int(record.get("years_of_experience")),
+                    "rookie_season": _int(record.get("rookie_season")),
+                }
+            )
+
+        flags.note("players_rows_without_gsis_id", dropped_without_gsis)
+        flags.note("players_rows_before_target_season", dropped_before_season)
+        return self.build_batch(
+            self.contract.build(rows),
+            retrieved_at=retrieved_at,
+            warning_codes=flags.codes,
+            detail={"season": str(season), **flags.detail},
+        )
+
+    def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
+        import nflreadpy
+
+        frame = nflreadpy.load_players()
+        checks = self.check_source_schema(frame)
+        batch = self.normalize(frame, season=config.season, retrieved_at=as_of or utc_now())
+        blocking = [check.check_id for check in checks if check.blocking]
+        if blocking:
+            return self.build_batch(
+                batch.frame,
+                retrieved_at=batch.metadata.retrieved_at_utc,
+                warning_codes=(*batch.metadata.warning_codes, *blocking),
+                detail=dict(batch.metadata.detail),
+            )
+        return batch
 
 
 class NflversePlayerIdsAdapter(BaseSourceAdapter):
