@@ -98,6 +98,30 @@ def describe_fields(rows: list[dict[str, Any]]) -> list[tuple[str, str, float]]:
     return out
 
 
+#: The publisher's own terms for this endpoint. Fetched so the wording is recorded in a run
+#: log verbatim rather than transcribed by hand.
+TERMS_URL = "https://help.fantasyfootballcalculator.com/article/42-adp-rest-api"
+
+
+def probe_terms() -> None:
+    section("0. Published terms for the ADP REST API")
+    print(f"source: {TERMS_URL}")
+    try:
+        response = get(TERMS_URL, accept="text/html")
+        print(f"status {response.status_code}  bytes={len(response.content)}")
+        # Crude, deliberately: this records the sentences that carry the obligations, so a
+        # reader of the log sees the grant rather than a summary of it.
+        text = response.text
+        for token in ("free for personal", "attribution", "too frequently", "once per day"):
+            index = text.lower().find(token)
+            if index >= 0:
+                excerpt = " ".join(text[max(0, index - 220) : index + 220].split())
+                print(f"  ...{excerpt}...")
+    except Exception as exc:  # noqa: BLE001
+        print(f"FAILED: {exc}")
+        print("  Terms could not be fetched. Do not proceed on a remembered summary.")
+
+
 def probe_robots() -> None:
     section("1. robots.txt, recorded verbatim for the terms review")
     try:
@@ -139,6 +163,7 @@ def main() -> int:
     print(f"base: {BASE}")
     print("Requests are paced at 1.5s and total fewer than twenty.")
 
+    probe_terms()
     probe_robots()
 
     section("2. Cohort coverage: does every format x teams exist for this season?")

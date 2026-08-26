@@ -1457,9 +1457,48 @@ runner, where egress is open. **Everything in this section is measured**, from r
 [32996744422](https://github.com/jeisey/jeisey-tiers/actions/runs/32996744422). Re-run it
 before acting on any of it — a source can change.
 
-#### 3.1 Two findings that block the plan as proposed
+#### 3.1 Two findings that blocked the plan as proposed — one resolved, one open
 
-**BLOCKER 1 — `robots.txt` disallows both endpoints, to every user agent.** Fetched verbatim:
+**BLOCKER 1 — RESOLVED, 2026-08-26, by the publisher's own terms.** Read this subsection
+in full before acting on it; the finding below was real, and so is its resolution.
+
+Fantasy Football Calculator publishes terms for this exact endpoint at
+<https://help.fantasyfootballcalculator.com/article/42-adp-rest-api>, and they are a grant:
+
+> **Usage and Attribution.** Use of the ADP REST API is free for personal and commercial use.
+> Fantasy Football Calculator requests that you provide attribution back to us in the form of
+> a link or mention of some kind.
+>
+> Please do not call this API too frequently. The data only updates once per day.
+
+The article also documents the four parameters — scoring format, number of teams, year,
+position — and gives the canonical example
+`https://fantasyfootballcalculator.com/api/v1/adp/standard?teams=12&year=2018`.
+
+**How that squares with the `robots.txt` finding, which stands as measured.** Both are true at
+once, and the reconciliation is the ordinary one: `robots.txt` is a directive to **crawlers**
+— agents that discover and index by following links — and its `Disallow: /api/` keeps search
+indexers out of a path whose responses would be junk in an index. The help article is the
+**publisher's specific, published grant for that same path**, addressed to exactly the kind of
+client this project would be. A blanket crawler directive and a specific documented licence
+for the same endpoint do not conflict so much as address different audiences, and where they
+appear to, the specific grant from the publisher governs — they are actively advertising the
+endpoint for this use.
+
+**This is a judgment, so it is recorded as one**, and it comes with a conservative posture
+rather than a shrug: exactly one fetch per format per day (their own documentation says the
+data updates daily, so a second fetch buys nothing), a descriptive User-Agent naming the
+project, and visible attribution. If FFC ever asks this project to stop, it stops.
+
+**Provenance:** the terms text above was supplied by the project owner from the help site;
+this sandbox answers 403 to that host too. `scripts/probe_ffc.py` should fetch and echo the
+help article on its next run so the wording is recorded verbatim in a run log rather than
+transcribed.
+
+<details>
+<summary>The original finding, kept because the measurement is still the record</summary>
+
+`robots.txt`, fetched verbatim by the probe:
 
 ```
 User-agent: *
@@ -1474,14 +1513,17 @@ Disallow: /rankings/custom/
 ```
 
 `/api/` and `/adp/csv/` are the two paths a daily snapshot would use, and both are
-`Disallow`ed. A person clicking a CSV button in a browser is not a robot; **a scheduled
-job fetching the same path every morning is exactly one.** `AGENTS.md` §5 ("publicly visible
-does not mean redistributable") and `docs/SECURITY_LICENSE.md` §8 both land on the same
-answer, and this project has refused softer versions of this before — the Sleeper draft-id
-enumeration in §4 below, and the aggregator scrapers in ADR-053.
+`Disallow`ed. Read alone, that says a scheduled job fetching either path every morning is
+doing the thing the file asks robots not to do — which is why the first version of this ADR
+recommended writing to FFC before writing any code. The help article answers that question
+directly and more authoritatively, so the recommendation changed rather than the measurement.
 
-**This is not a technical obstacle to route around. It is the answer to "may we", and it is
-currently no.** It is also the cheapest one to change: see §3.4.
+**One thing does survive from it:** `/adp/csv/` is disallowed *and* is not covered by the API
+terms, which name the REST API specifically. The CSV path also returns `text/html` and takes
+no `year`. **Use the JSON API and leave the CSV path alone** — that is now a rule, not a
+preference.
+
+</details>
 
 **BLOCKER 2 — the `teams` parameter does not appear to do anything.** The single biggest
 reason to want FFC was exact `format × teams` cohorts. Measured across all twelve
@@ -1563,27 +1605,28 @@ plus `load_alias_map`, now wired into the production capture path (ADR-054). Boo
 from name + team + position *with human review recorded per entry* is legitimate; doing the
 same match silently at runtime is not. The difference is the whole point of that file.
 
-#### 3.4 Recommendation — do not implement yet; ask first
+#### 3.4 Recommendation — build it, scoped by what the terms and the measurements allow
 
-**Do not build the daily snapshot.** Not because of the identity work, which is tractable, but
-because `robots.txt` says no to the only two paths that would serve it. Building it anyway
-would break a rule this repository applies to everyone else.
+**Proceed.** The access question is answered by the publisher in writing, the volume is real,
+and half-PPR is a capability MFL cannot supply at any sample size. Three things bound the
+build, and none of them is optional:
 
-**The unlock is a short email, and it is worth sending today.** FFC publishes a contact
-address. Describe precisely what is proposed, because it is modest and easy to say yes to:
+1. **The JSON API only.** `/api/v1/adp/{format}?teams={n}&year={y}&position=all`. The CSV
+   path is `Disallow`ed, is not named in the terms, returns `text/html`, and takes no `year`.
+2. **One fetch per format per day — three requests total.** Their documentation says the data
+   updates once daily, so a second call is pure cost to them and buys nothing. This lands
+   naturally inside the existing `daily-refresh` capture job.
+3. **Attribution, visibly.** They ask for "a link or mention of some kind": the site's Data
+   tab under sources, and `docs/DATA_SOURCES.md`. This is a condition of the grant, not a
+   courtesy, so it ships in the same change as the adapter — not after it.
 
-- **three requests per day, total** — one per scoring format, since `teams` changes nothing;
-- a descriptive User-Agent naming the project and linking the repository, as ADR-017 already
-  requires for MFL;
-- attribution on the site's Data tab and in `docs/DATA_SOURCES.md`;
-- no redistribution of their rows — the published artifacts carry derived comparisons, and
-  raw payloads stay in the private retention store;
-- a non-commercial hobby project with a public methodology.
-
-**If permission is granted in writing**, record the grant and its date in
-`config/source-registry.yaml` alongside the `verify_before_use` clearance, and proceed to
-§3.5. **If it is refused or unanswered, stop.** FFC then becomes what FantasyPros already is:
-a benchmark a human may consult, never a pipeline input.
+**What is still open, and must be settled first:** whether `teams` does anything (§3.1
+BLOCKER 2). Their documentation lists it as a supported parameter; the measurement says all
+four sizes return identical aggregates. Documentation and behaviour disagree, and behaviour
+decides what may be published. The probe now compares per-player `adp` and `times_drafted`
+across sizes, which answers it on the next run. **Until it is answered, treat league size as
+not-exact** and flag every FFC quote accordingly — claiming a 14-team price that is really an
+all-sizes aggregate would be the same error ADR-039 refuses for HALF on MFL.
 
 #### 3.5 The implementation path, for the session that picks this up
 
@@ -1592,10 +1635,17 @@ Ordered so that the cheapest disqualifying answer comes first. Do not skip ahead
 1. **Re-run the probe** (`source-probe-ffc.yml`) and confirm §3.1 still holds. Fix the
    `meta`-nested timestamp scan first, and add the per-player `adp` diff across `teams=8` vs
    `teams=14` that settles BLOCKER 2 conclusively.
-2. **Do not proceed past this point without the written permission from §3.4.**
+2. **Settle `teams` from step 1's per-player diff before designing the cohort model.** If it
+   is ignored, FFC supplies three cohorts, not twelve, and every quote is league-size
+   `approximate`. If it turns out to filter, the cohort model is twelve and the value of this
+   source roughly triples. Nothing else in the design survives getting this wrong.
 3. **Register the source** in `config/source-registry.yaml`: `fantasyfootballcalculator_adp`,
-   roles empty at first, `verify_before_use` cleared with the probe run id and the permission
-   reference, licence/terms recorded verbatim, cadence one fetch per format per day.
+   roles empty at first, `verify_before_use` cleared with the probe run id, the terms recorded
+   verbatim with their source URL
+   (<https://help.fantasyfootballcalculator.com/article/42-adp-rest-api>), and the cadence
+   pinned at one fetch per format per day because the publisher says the data updates daily.
+   Record the attribution obligation as a **requirement of the grant**, so a future reader
+   cannot mistake it for a nicety and drop it.
 4. **Record the schema fixture** — `tests/fixtures/source_schemas/ffc_adp.schema.json`, in the
    shape Phase 0 used, so a silent upstream change fails a check rather than a board.
 5. **Write the adapter** — `FfcAdpAdapter` in `ffdraft/sources/`, emitting `market_quote`
@@ -1650,13 +1700,16 @@ data under no licence this project can rely on.
 ### 5. Consequences
 
 The gate's meaning is written down and its inherited threshold is flagged as inherited. FFC is
-**measured rather than assumed**, and the measurement changed the answer twice: the headline
-feature (team-size cohorts) does not work, and the access question is settled by `robots.txt`
-rather than by terms nobody had read. Nothing is added to the registry, no adapter is written,
-and the pipeline is untouched.
+**measured rather than assumed**, and both the measurement and the reading changed: the
+headline feature (team-size cohorts) does not appear to work, while the access question — which
+`robots.txt` alone would have answered "no" — is answered "yes, with attribution and restraint"
+by the publisher's own documented terms. Nothing is added to the registry yet, no adapter is
+written, and the pipeline is untouched; §3.5 is the path from here.
 
-What a fresh session needs is here: the endpoints, the schema, the volumes, the blockers, the
-identity gap with its size, and a ten-step path that starts with an email rather than a commit.
+What a fresh session needs is here: the endpoints, the terms and where they are published,
+the schema, the volumes, the one open question and the probe change that answers it, the
+identity gap with its size, and a ten-step path ordered so the cheapest disqualifying answer
+comes first.
 
-**Revisit at:** a reply from Fantasy Football Calculator, or the next `top_board_priced`
-failure that is not an identity defect.
+**Revisit at:** the next probe run — which settles `teams` and therefore the cohort model —
+or the next `top_board_priced` failure that is not an identity defect.
