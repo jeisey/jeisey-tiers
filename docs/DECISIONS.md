@@ -1525,9 +1525,25 @@ preference.
 
 </details>
 
-**BLOCKER 2 — the `teams` parameter does not appear to do anything.** The single biggest
-reason to want FFC was exact `format × teams` cohorts. Measured across all twelve
-combinations:
+**BLOCKER 2 — CONFIRMED: the `teams` parameter is accepted and ignored.** The single biggest
+reason to want FFC was exact `format × teams` cohorts. It does not have them.
+
+A second probe run ([32998697322](https://github.com/jeisey/jeisey-tiers/actions/runs/32998697322))
+compared the **per-player** `adp` and `times_drafted` across sizes rather than inferring from
+totals, which settles it beyond argument:
+
+```
+standard  teams=8 vs 10 / 12 / 14:  shared=218  rows differing = 0  -> byte-identical
+ppr       teams=8 vs 10 / 12 / 14:  shared=266  rows differing = 0  -> byte-identical
+half-ppr  teams=8 vs 10 / 12 / 14:  shared=228  rows differing = 0  -> byte-identical
+```
+
+Not one player's ADP or sample size moves between an 8-team and a 14-team request. **FFC
+supplies three cohorts, not twelve**, and every FFC quote is league-size *approximate*. The
+help article lists `teams` as a supported parameter; the behaviour disagrees, and behaviour
+is what may be published.
+
+The aggregate evidence that first raised it:
 
 | format | teams | players | total_drafts | deepest ADP | min/max times_drafted |
 |---|---:|---:|---:|---:|---|
@@ -1536,17 +1552,13 @@ combinations:
 | half-ppr | 8, 10, 12, 14 | 228 (all four) | **3027 (all four)** | 201.5 (all four) | 5 / 727 (all four) |
 
 The response `meta` faithfully echoes back whatever `teams` you asked for — and then returns
-the same aggregate. Identical draft counts across four league sizes is not a coincidence.
+the same aggregate.
 
 This is the same shape as a Phase-0 finding about MFL: `CUTOFF` is accepted with no effect and
 `DAYS` is ignored, which is why `config/source-registry.yaml` says *"Only honoured filters
 appear here, because a candidate built on an ignored filter would be a duplicate of the
-unfiltered aggregate wearing a label."* **The same rule applies to `teams` here.**
-
-*Confirm before relying on this.* The probe compared aggregates, not the per-player arrays. A
-follow-up should diff the actual `adp` values for the same player across `teams=8` and
-`teams=14`. If they are identical the finding is conclusive; if they differ slightly, the
-parameter does something and the aggregates coincide, which would be surprising.
+unfiltered aggregate wearing a label."* **That rule now applies to `teams` here**, and the
+registry entry must say so rather than repeating the vendor's parameter list.
 
 #### 3.2 What the probe found that is genuinely good
 
@@ -1620,25 +1632,26 @@ build, and none of them is optional:
    tab under sources, and `docs/DATA_SOURCES.md`. This is a condition of the grant, not a
    courtesy, so it ships in the same change as the adapter — not after it.
 
-**What is still open, and must be settled first:** whether `teams` does anything (§3.1
-BLOCKER 2). Their documentation lists it as a supported parameter; the measurement says all
-four sizes return identical aggregates. Documentation and behaviour disagree, and behaviour
-decides what may be published. The probe now compares per-player `adp` and `times_drafted`
-across sizes, which answers it on the next run. **Until it is answered, treat league size as
-not-exact** and flag every FFC quote accordingly — claiming a 14-team price that is really an
-all-sizes aggregate would be the same error ADR-039 refuses for HALF on MFL.
+**And the shape of what gets built is now settled: three cohorts, not twelve.** `teams` is
+ignored (§3.1 BLOCKER 2, confirmed per-player). Every FFC quote is league-size `approximate`,
+and the UI and model card must not claim otherwise — publishing a 14-team price that is really
+an all-sizes aggregate is precisely the error ADR-039 refuses for HALF on MFL.
+
+**What FFC is therefore worth, stated honestly:** a genuine half-PPR *scoring* price with
+7-30× MFL's sample and a published dispersion measure. That is a real gain and it is smaller
+than the twelve-cohort version anyone would have designed from the documentation alone.
 
 #### 3.5 The implementation path, for the session that picks this up
 
 Ordered so that the cheapest disqualifying answer comes first. Do not skip ahead.
 
-1. **Re-run the probe** (`source-probe-ffc.yml`) and confirm §3.1 still holds. Fix the
-   `meta`-nested timestamp scan first, and add the per-player `adp` diff across `teams=8` vs
-   `teams=14` that settles BLOCKER 2 conclusively.
-2. **Settle `teams` from step 1's per-player diff before designing the cohort model.** If it
-   is ignored, FFC supplies three cohorts, not twelve, and every quote is league-size
-   `approximate`. If it turns out to filter, the cohort model is twelve and the value of this
-   source roughly triples. Nothing else in the design survives getting this wrong.
+1. **Re-run the probe** (`source-probe-ffc.yml`) and confirm §3.1 and §3.2 still hold. A
+   source can change, and everything below is built on one afternoon's measurements. The
+   probe now also fetches and echoes the terms article, so a run log carries the grant
+   verbatim.
+2. **The cohort model is three, not twelve** — settled per-player, §3.1 BLOCKER 2. Do not
+   re-derive it from the vendor's parameter list. If a future probe run ever shows `teams`
+   differentiating, that is a new finding and a new ADR, not a quiet change.
 3. **Register the source** in `config/source-registry.yaml`: `fantasyfootballcalculator_adp`,
    roles empty at first, `verify_before_use` cleared with the probe run id, the terms recorded
    verbatim with their source URL
@@ -1701,8 +1714,9 @@ data under no licence this project can rely on.
 
 The gate's meaning is written down and its inherited threshold is flagged as inherited. FFC is
 **measured rather than assumed**, and both the measurement and the reading changed: the
-headline feature (team-size cohorts) does not appear to work, while the access question — which
-`robots.txt` alone would have answered "no" — is answered "yes, with attribution and restraint"
+headline feature (team-size cohorts) is confirmed not to work — `teams` is accepted and
+ignored, byte-identical per player across all four sizes — while the access question, which
+`robots.txt` alone would have answered "no", is answered "yes, with attribution and restraint"
 by the publisher's own documented terms. Nothing is added to the registry yet, no adapter is
 written, and the pipeline is untouched; §3.5 is the path from here.
 
@@ -1711,5 +1725,5 @@ the schema, the volumes, the one open question and the probe change that answers
 identity gap with its size, and a ten-step path ordered so the cheapest disqualifying answer
 comes first.
 
-**Revisit at:** the next probe run — which settles `teams` and therefore the cohort model —
-or the next `top_board_priced` failure that is not an identity defect.
+**Revisit at:** a probe run that contradicts any of §3.1-§3.2, or the next
+`top_board_priced` failure that is not an identity defect.

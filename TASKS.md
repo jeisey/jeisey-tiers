@@ -259,10 +259,22 @@ moving a threshold:
   removing unrostered players from the published board, which would have deleted three
   genuine starters to cover our own defect.
 
-- [ ] **ADR-056, `Proposed`:** what `top_board_priced` measures (it is our board's coverage
-      *by* the market, not the reverse), its threshold inherited from the identity bar, and a
-      scoped first step for a second price source — probe Fantasy Football Calculator on a
-      runner and answer terms, identity-join path and population before building anything.
+- [ ] **ADR-056, `Proposed` — now measured, not speculative.** What `top_board_priced` measures
+      (our board's coverage *by* the market, not the reverse) and its threshold inherited from
+      the identity bar. Section 3 was rewritten from two runner probes of the live Fantasy
+      Football Calculator endpoints:
+
+      - **terms permit it** — the publisher documents the ADP REST API as free for personal and
+        commercial use with attribution, and asks that it not be called more than daily;
+      - **`teams` is accepted and ignored** — byte-identical per-player data across 8/10/12/14,
+        so FFC supplies three scoring cohorts, not twelve, and every quote is league-size
+        approximate;
+      - **half-PPR is the prize** — the one cohort MFL structurally cannot express, with 7-30×
+        the sample and a published `stdev` that MFL flags as unavailable;
+      - **identity is the work** — `player_id` is FFC-internal and bridges to nothing, so a
+        human-reviewed crosswalk of ~270 entries is required before a single price is used.
+
+      §3.5 is a ten-step implementation path for a dedicated session.
 
 Otherwise Phase 7 deliberately changed no methodology. No Phase-4 or Phase-5 threshold moved, no tier
 or Monte Carlo rule was touched, MFL remains the sole production price source, and the Tier
