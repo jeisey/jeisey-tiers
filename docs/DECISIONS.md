@@ -1417,7 +1417,7 @@ A player the registry does not contain is unreachable by *either*, no matter how
 
 **Date:** 2026-08-26 (Phase 7 operations)
 
-**Status:** **Proposed — awaiting owner review.** Section 1 is a clarification of existing behaviour and changes nothing. Sections 2-4 propose no source and change no policy; they exist so a Phase-8 study starts from evidence rather than a search.
+**Status:** **Proposed — awaiting owner review.** Section 1 clarifies existing behaviour and changes nothing. Section 3 was rewritten on 2026-08-26 from a **runner probe of the live endpoints** rather than from search; it changed the recommendation twice. No source is added, no adapter is written, `config/source-registry.yaml` is untouched, and the pipeline does not move.
 
 ### 1. The gate, stated plainly
 
@@ -1448,35 +1448,215 @@ The owner's instinct is right, and the numbers are not close. From the 2026-08-2
 A ~266-player priced universe against nine 150-deep boards leaves almost no margin, which is why a single player crossing into a top 150 flipped a gate. And 265 drafts in the last week of August is a thin sample for a public aggregate.
 
 **But adding a source would not have fixed 2026-08-26.** Of `HALF/redraft-10`'s eight blockers: **three** were identity (Diggs, Samuel, Allen — fixed by ADR-055), **three** were priced by MFL only in `ppr-no-keeper`, a cohort a HALF board may not use, and **two** were not in MFL's list at all. A second source addresses the last two and possibly the middle three. It would not have touched the largest group. Diagnosing before buying is the whole point.
+### 3. The FFC probe — measured on a runner, 2026-08-26
 
-### 3. The candidates, corrected and assessed
+ADR-053 and the first draft of this ADR could only say "unverified", because this project's
+development sandbox answers 403 to `CONNECT` for `fantasyfootballcalculator.com`. That is now
+fixed: `.github/workflows/source-probe-ffc.yml` runs `scripts/probe_ffc.py` on a GitHub
+runner, where egress is open. **Everything in this section is measured**, from run
+[32996744422](https://github.com/jeisey/jeisey-tiers/actions/runs/32996744422). Re-run it
+before acting on any of it — a source can change.
 
-The endpoint shapes circulating in the owner's research are garbled; the real ones, **none verified from here** — this environment answers 403 to every one of these hosts, exactly as ADR-053 recorded:
+#### 3.1 Two findings that block the plan as proposed
 
-**Fantasy Football Calculator — still the one to probe first.**
-`https://fantasyfootballcalculator.com/api/v1/adp/{format}?teams={n}&year={y}`, `format` ∈ `standard|ppr|half`, `teams` ∈ `8|10|12|14`. Also a CSV download behind the same parameters.
-It offers the one thing MFL structurally cannot: **`format` × `teams` as a real intersection, including half-PPR**, which a boolean `IS_PPR` can never express (ADR-039). Its population is mock drafts run on its own site — a different distortion from MFL's real-league aggregate, not an absent one. That trade must be *measured*, not assumed, which is the mistake ADR-045 exists to prevent.
+**BLOCKER 1 — `robots.txt` disallows both endpoints, to every user agent.** Fetched verbatim:
 
-**FantasyPros / DraftWizard mock-draft directory — benchmark only, unchanged.**
-The directory is a display product, and the API is membership-gated. This repository already registers FantasyPros as `benchmark_only` with redistribution forbidden, and its name is in `ffdraft/quality/forbidden.py` so the intrinsic firewall rejects it as a feature. Scraping the directory would breach both its terms and `docs/SECURITY_LICENSE.md` §8. It may inform a comparison; it may never feed a published artifact.
+```
+User-agent: *
+Disallow: /api/
+Disallow: /ajax/
+Disallow: /ajax-v2/
+Disallow: /import/
+Disallow: /adp/csv/
+Disallow: /draft/
+Disallow: /rate-my-team/results/
+Disallow: /rankings/custom/
+```
 
-**Sleeper by draft-id enumeration — recommended against, and not merely on taste.**
-The technique described (iterate sequential integers against `https://api.sleeper.app/v1/draft/{draft_id}/picks`, then filter by league settings) is a bulk scrape rather than an API use. Three independent objections: Sleeper's terms are non-commercial and already constrain what this site publishes; the sample is biased in a way that cannot be corrected after the fact, because which drafts you reach is an artefact of id allocation rather than of the population; and the request volume needed for a usable sample is exactly the behaviour `AGENTS.md` §5 forbids. Sleeper stays a **status** source.
+`/api/` and `/adp/csv/` are the two paths a daily snapshot would use, and both are
+`Disallow`ed. A person clicking a CSV button in a browser is not a robot; **a scheduled
+job fetching the same path every morning is exactly one.** `AGENTS.md` §5 ("publicly visible
+does not mean redistributable") and `docs/SECURITY_LICENSE.md` §8 both land on the same
+answer, and this project has refused softer versions of this before — the Sleeper draft-id
+enumeration in §4 below, and the aggregator scrapers in ADR-053.
 
-**MockoSheet and community aggregate sheets.** Redistribution of other vendors' aggregated data with no licence this project can rely on. Useful for a human sanity check, not as an input.
+**This is not a technical obstacle to route around. It is the answer to "may we", and it is
+currently no.** It is also the cheapest one to change: see §3.4.
 
-### 4. What "spin up a scraper" actually costs
+**BLOCKER 2 — the `teams` parameter does not appear to do anything.** The single biggest
+reason to want FFC was exact `format × teams` cohorts. Measured across all twelve
+combinations:
 
-Not an argument against doing it — an argument for scoping it as a study rather than a hotfix. A second price source needs, at minimum:
+| format | teams | players | total_drafts | deepest ADP | min/max times_drafted |
+|---|---:|---:|---:|---:|---|
+| standard | 8, 10, 12, 14 | 218 (all four) | **1828 (all four)** | 175.8 (all four) | 5 / 478 (all four) |
+| ppr | 8, 10, 12, 14 | 266 (all four) | **7830 (all four)** | 192.8 (all four) | 5 / 3036 (all four) |
+| half-ppr | 8, 10, 12, 14 | 228 (all four) | **3027 (all four)** | 201.5 (all four) | 5 / 727 (all four) |
 
-1. **Terms verified on a runner and recorded**, before a single production request (`AGENTS.md` §5; registry `verify_before_use`).
-2. **An identity join.** MFL needed two independent id bridges to reach 100% on core positions. FFC's join path is unknown and may be name-and-team, which this repository forbids as a production join (`AGENTS.md` §6). If it is, the source cannot be used regardless of how good its cohorts are — and that single question should be answered before anything else is built.
-3. **Population measurement** — mock share, drafts per cohort, per-player sample sizes at the cohorts actually published.
-4. **No averaging.** ADR-053 §5, repeated because it is the easiest thing to get wrong: normalize to source-specific quotes (`market_quote` 2.0 already has the shape) and **freeze the consensus formula before looking at which players it flatters.**
-5. **Retention and licensing** for a second vendor's bytes in the private store, which is a separate terms question from reading the API.
+The response `meta` faithfully echoes back whatever `teams` you asked for — and then returns
+the same aggregate. Identical draft counts across four league sizes is not a coincidence.
 
-**Proposed sequence:** probe FFC on a runner and answer (1), (2) and (3) — a day of work that produces evidence rather than an integration. Only then decide whether it becomes a second production source, a benchmark, or nothing. Keep the fair-rank-vs-ADP baseline as the permanent reference either way (ADR-010).
+This is the same shape as a Phase-0 finding about MFL: `CUTOFF` is accepted with no effect and
+`DAYS` is ignored, which is why `config/source-registry.yaml` says *"Only honoured filters
+appear here, because a candidate built on an ignored filter would be a duplicate of the
+unfiltered aggregate wearing a label."* **The same rule applies to `teams` here.**
 
-**Consequences if accepted:** no source is added, no policy changes, and the gate keeps its current bar. What changes is that the gate's meaning is written down, its inherited threshold is flagged as inherited, and the multi-source question has a scoped first step whose failure condition (a name-based join) is known in advance.
+*Confirm before relying on this.* The probe compared aggregates, not the per-player arrays. A
+follow-up should diff the actual `adp` values for the same player across `teams=8` and
+`teams=14`. If they are identical the finding is conclusive; if they differ slightly, the
+parameter does something and the aggregates coincide, which would be surprising.
 
-**Revisit at:** the FFC probe, or the next `top_board_priced` failure that is *not* an identity defect.
+#### 3.2 What the probe found that is genuinely good
+
+**Scoring cohorts are real, and half-PPR is the prize.** Non-PPR, PPR and Half-PPR return
+different player counts, different depths and different draft volumes. **A true half-PPR
+market price is the one thing MFL structurally cannot produce** — `IS_PPR` is a boolean
+(ADR-039) — and it is exactly the gap that makes the HALF board's ADP column an
+approximation today.
+
+**Volume is 7 to 30 times MFL's.** PPR carries 7,830 drafts against the 265 in the cohort
+the frozen rule currently selects. The owner's instinct that MFL is systemically thin is
+correct and now quantified.
+
+**`stdev` is published per player.** MFL is not: every retained row carries the
+`adp_sd_unavailable` quality flag, which is why ADR-041's `wide_market_range` had to be built
+on min-to-max — an extreme order statistic that widens with sample size and was measured as
+non-discriminating. A real standard deviation would let that flag be replaced rather than
+re-tuned.
+
+**A window is published.** `meta.start_date` / `meta.end_date` bound each aggregate: 7 days
+for standard and PPR, 5 for half-PPR on the probe date. That is *better* than MFL, which
+publishes no data-as-of time at all. (The probe's section 8 reported "no temporal keys"
+because it scanned only top-level envelope keys and these are nested under `meta` — a probe
+limitation, not a source one. Fix the probe before re-running.)
+
+**Full player-row schema, all fields 100 % populated over 218 rows:**
+
+| field | type | notes |
+|---|---|---|
+| `player_id` | int | FFC-internal; 218 distinct over 218 rows |
+| `name` | str | |
+| `position` | str | |
+| `team` | str | |
+| `adp` | float | |
+| `adp_formatted` | str | display string, e.g. round.pick |
+| `times_drafted` | int | per-player sample size |
+| `high` / `low` | int | extreme order statistics, like MFL's min/max |
+| `stdev` | float | **the field MFL lacks** |
+| `bye` | int | |
+
+#### 3.3 The identity problem, and why it is solvable but not free
+
+`player_id` exists and is well-behaved — an integer, unique per player, populated on every
+row. **But it is an FFC-internal id that bridges to nothing this project holds.** No
+`gsis_id`, no `espn_id`, no `sleeper_id`, no `mfl_id`. An id that maps to nothing is not a
+bridge.
+
+The name diagnostic — **198 of 218 matched, 20 unmatched (90.8 %)** — is recorded only to
+size the gap. It is not a route: `AGENTS.md` §6 forbids a production join that depends solely
+on normalized names, and 90.8 % would be disqualifying even if it were allowed.
+
+So a production integration needs a **built crosswalk**: FFC `player_id` → `gsis`, roughly
+270 entries, established once and maintained as rookies and signings appear. This project
+already has the machinery and the discipline for exactly that — `config/identity-aliases.yaml`
+plus `load_alias_map`, now wired into the production capture path (ADR-054). Bootstrapping it
+from name + team + position *with human review recorded per entry* is legitimate; doing the
+same match silently at runtime is not. The difference is the whole point of that file.
+
+#### 3.4 Recommendation — do not implement yet; ask first
+
+**Do not build the daily snapshot.** Not because of the identity work, which is tractable, but
+because `robots.txt` says no to the only two paths that would serve it. Building it anyway
+would break a rule this repository applies to everyone else.
+
+**The unlock is a short email, and it is worth sending today.** FFC publishes a contact
+address. Describe precisely what is proposed, because it is modest and easy to say yes to:
+
+- **three requests per day, total** — one per scoring format, since `teams` changes nothing;
+- a descriptive User-Agent naming the project and linking the repository, as ADR-017 already
+  requires for MFL;
+- attribution on the site's Data tab and in `docs/DATA_SOURCES.md`;
+- no redistribution of their rows — the published artifacts carry derived comparisons, and
+  raw payloads stay in the private retention store;
+- a non-commercial hobby project with a public methodology.
+
+**If permission is granted in writing**, record the grant and its date in
+`config/source-registry.yaml` alongside the `verify_before_use` clearance, and proceed to
+§3.5. **If it is refused or unanswered, stop.** FFC then becomes what FantasyPros already is:
+a benchmark a human may consult, never a pipeline input.
+
+#### 3.5 The implementation path, for the session that picks this up
+
+Ordered so that the cheapest disqualifying answer comes first. Do not skip ahead.
+
+1. **Re-run the probe** (`source-probe-ffc.yml`) and confirm §3.1 still holds. Fix the
+   `meta`-nested timestamp scan first, and add the per-player `adp` diff across `teams=8` vs
+   `teams=14` that settles BLOCKER 2 conclusively.
+2. **Do not proceed past this point without the written permission from §3.4.**
+3. **Register the source** in `config/source-registry.yaml`: `fantasyfootballcalculator_adp`,
+   roles empty at first, `verify_before_use` cleared with the probe run id and the permission
+   reference, licence/terms recorded verbatim, cadence one fetch per format per day.
+4. **Record the schema fixture** — `tests/fixtures/source_schemas/ffc_adp.schema.json`, in the
+   shape Phase 0 used, so a silent upstream change fails a check rather than a board.
+5. **Write the adapter** — `FfcAdpAdapter` in `ffdraft/sources/`, emitting `market_quote`
+   rows. Three cohorts only (`standard`, `ppr`, `half-ppr`), each flagged
+   **`exact_cohort: true` for scoring and `false` for league size**, which is the honest
+   reading of BLOCKER 2. Map `stdev` into the quote; keep `high`/`low` as MFL's min/max
+   analogues; carry `times_drafted` as the per-player sample size; carry
+   `meta.start_date`/`meta.end_date` as the source window, **separate** from retrieval time.
+6. **Build the crosswalk** — `config/ffc-player-crosswalk.yaml` or an extension of
+   `identity-aliases.yaml` keyed by `(source_id, external_id)`. Bootstrap by name + team +
+   position, **review every entry by hand**, and record reviewer and date. Fail closed on
+   anything unreviewed. Expect ~270 entries and a weekly trickle after that.
+7. **Retain, do not merge.** Append FFC snapshots to the private store beside MFL's, under
+   `market/fantasyfootballcalculator_adp/<season>/<snapshot>/`. Two sources, two retention
+   trees, one manifest shape.
+8. **Never average the two.** ADR-053 §5, and it is more important here than it was
+   hypothetically: MFL publishes a **season-long cumulative** aggregate and FFC a **rolling
+   5-to-7-day window**. Those are different statistics about different populations. Normalize
+   to source-specific quotes — `market_quote` 2.0 already has the shape — and freeze any
+   consensus formula **before** looking at which players it flatters.
+9. **Measure the mock-draft population before promoting.** FFC's drafts are mocks run on its
+   own site; MFL's are real league drafts. ADR-045 measured what a population difference does
+   — dynasty rookie drafts moved rookie prices 3-5× while veterans did not move at all. Do the
+   same measurement here, per position and per ADP band, and write it down before FFC prices
+   anything the site publishes.
+10. **Sequence the pay-off.** The first thing worth shipping is the **half-PPR** cohort, because
+    it is the only place FFC can do something MFL cannot. Team-size exactness is *not*
+    available and must not be claimed in the UI or the model card.
+
+**A caution about the trend idea.** Snapshotting daily to compute per-player movement is
+sound, and this project already retains and trends MFL that way (ADR-042). But FFC's window is
+already rolling, so a day-over-day delta on FFC measures *"how the last week's drafters
+differ from the week before"*, while the same delta on MFL measures *"how the season-to-date
+aggregate shifted"*. They are not the same quantity and must not share a trend rule version.
+
+### 4. The other candidates, unchanged
+
+**FantasyPros / DraftWizard.** The mock-draft directory is a display product and the API is
+membership-gated. Already registered `benchmark_only` with redistribution forbidden, and named
+in `ffdraft/quality/forbidden.py` so the intrinsic firewall rejects it as a feature. May inform
+a comparison; may never feed a published artifact.
+
+**Sleeper by draft-id enumeration.** Recommended against, and the FFC `robots.txt` finding
+sharpens why: iterating sequential ids against `https://api.sleeper.app/v1/draft/{id}/picks`
+is a bulk scrape, their terms are non-commercial, the sample is biased by id allocation in a
+way no post-hoc correction fixes, and the request volume is exactly what `AGENTS.md` §5
+forbids. Sleeper stays a **status** source.
+
+**MockoSheet and community aggregate sheets.** Redistribution of other vendors' aggregated
+data under no licence this project can rely on.
+
+### 5. Consequences
+
+The gate's meaning is written down and its inherited threshold is flagged as inherited. FFC is
+**measured rather than assumed**, and the measurement changed the answer twice: the headline
+feature (team-size cohorts) does not work, and the access question is settled by `robots.txt`
+rather than by terms nobody had read. Nothing is added to the registry, no adapter is written,
+and the pipeline is untouched.
+
+What a fresh session needs is here: the endpoints, the schema, the volumes, the blockers, the
+identity gap with its size, and a ten-step path that starts with an email rather than a commit.
+
+**Revisit at:** a reply from Fantasy Football Calculator, or the next `top_board_priced`
+failure that is not an identity defect.

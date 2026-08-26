@@ -242,17 +242,31 @@ def main() -> int:
         )
 
     section("8. Is a data-as-of time published?")
+    # Scan one level down as well: FFC nests the aggregation window under `meta`, and a
+    # top-level-only scan reported "none" when the answer was in fact yes.
+    flat: dict[str, Any] = {}
+    if isinstance(envelope, dict):
+        for key, value in envelope.items():
+            if key == "players":
+                continue
+            if isinstance(value, dict):
+                flat.update({f"{key}.{k}": v for k, v in value.items()})
+            else:
+                flat[key] = value
     stamp_keys = [
         k
-        for k in (envelope if isinstance(envelope, dict) else {})
-        if any(t in k.lower() for t in ("date", "time", "updated", "as_of", "stamp"))
+        for k in flat
+        if any(tok in k.lower() for tok in ("date", "time", "updated", "as_of", "stamp"))
     ]
-    print(f"  envelope keys that look temporal: {stamp_keys or 'NONE'}")
+    print(f"  temporal keys (envelope and one level down): {stamp_keys or 'NONE'}")
     for key in stamp_keys:
-        print(f"    {key} = {envelope[key]!r}")
+        print(f"    {key} = {flat[key]!r}")
     if not stamp_keys:
         print("  >>> Like MFL, no data-as-of time. Retrieval time and source time must stay")
         print("  >>> separate fields (AGENTS.md section 5).")
+    else:
+        print("  >>> A window IS published. It is a source window, not a retrieval time, and")
+        print("  >>> the two must stay separate fields (AGENTS.md section 5).")
 
     section("9. CSV variant — same data, different transport?")
     csv_url = f"{BASE}{CSV_PATH.format(fmt='half-ppr')}?teams=12&position=all"
@@ -267,6 +281,33 @@ def main() -> int:
         print("  the reproducible one; a retained snapshot must pin the season.")
     except Exception as exc:  # noqa: BLE001
         print(f"  FAILED: {exc}")
+
+    section("10. DOES `teams` DO ANYTHING? per-player comparison, not just totals")
+    for fmt in FORMATS:
+        cohorts = {got["teams"]: got["players"] for got in results if got["format"] == fmt}
+        if len(cohorts) < 2:
+            continue
+        sizes = sorted(cohorts)
+        base_size = sizes[0]
+        base = {row.get("player_id"): row for row in cohorts[base_size]}
+        for size in sizes[1:]:
+            other = {row.get("player_id"): row for row in cohorts[size]}
+            shared = set(base) & set(other)
+            differing = [
+                pid
+                for pid in shared
+                if base[pid].get("adp") != other[pid].get("adp")
+                or base[pid].get("times_drafted") != other[pid].get("times_drafted")
+            ]
+            verdict = "DIFFERENT" if differing else "byte-identical"
+            print(
+                f"  {fmt:9} teams={base_size} vs teams={size}: "
+                f"shared={len(shared):4} rows differing on adp/times_drafted={len(differing):4} "
+                f"-> {verdict}"
+            )
+    print("  >>> If every comparison is byte-identical, `teams` is accepted and ignored, and")
+    print("  >>> a cohort built on it would be the unfiltered aggregate wearing a label")
+    print("  >>> (the rule config/source-registry.yaml already applies to MFL's CUTOFF).")
 
     print("\nProbe complete. Nothing was retained.")
     return 0
