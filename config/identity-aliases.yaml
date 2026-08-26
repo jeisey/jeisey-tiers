@@ -17,4 +17,21 @@
 #     reviewed_at: "2026-08-18"
 #     note: why no id bridge could resolve this
 schema_version: "1.0"
-aliases: []
+aliases:
+  # Measured on 2026-08-26 against the live 2026 nflverse roster, not inferred from a name.
+  # MFL prices this player (ADP 136.53 across 156 drafts in `no-mock-no-keeper`) and carries
+  # `espn_id: 4686658` for him, but the 2026 roster row that *does* exist for him publishes
+  # no `espn_id` at all, so the primary bridge has nothing to look up. Recorded here rather
+  # than by relaxing the bridge, because the roster row is the evidence:
+  #   full_name="Mike Washington"  team=LV  position=RB  gsis_id="00-0040878"  status=ACT
+  # If nflverse later publishes his espn_id, the bridges resolve him to this same player and
+  # the alias becomes redundant; if they ever resolve him to a *different* player, the record
+  # fails closed as ambiguous, which is the behaviour this file is designed to keep.
+  - source_id: myfantasyleague_adp
+    external_id: "17482"
+    player_id: "gsis:00-0040878"
+    reviewed_by: claude-code
+    reviewed_at: "2026-08-26"
+    note: >-
+      2026 rookie RB (LV). Primary bridge unavailable - his 2026 nflverse roster row
+      carries a null espn_id - so neither id bridge can reach him. ADR-054.

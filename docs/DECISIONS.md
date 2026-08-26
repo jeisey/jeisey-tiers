@@ -1256,3 +1256,78 @@ That leaves two legitimate homes, both new decisions rather than integrations: a
 **Consequences if accepted:** the sweep is on the record with its evidence quality labelled, the "why aren't we using FantasyPros" question has a durable answer, and nobody re-derives the odds-are-not-ADP argument. Nothing in the pipeline moves.
 
 **Revisit at:** whichever comes first — ADR-052 resolving, or a decision to commission the multi-source study in `docs/DATA_SOURCES.md` §16.
+
+---
+
+## ADR-054 — Why the top-150 coverage gate failed on 2026-08-26, measured rather than guessed
+
+**Date:** 2026-08-26 (Phase 7 operations)
+
+**Status:** **Accepted** for the one change it makes (wiring the reviewed-alias file into the production capture). **The larger question it uncovered is Proposed — awaiting owner review.**
+
+**What happened.** The scheduled refresh ([32963529477](https://github.com/jeisey/jeisey-tiers/actions/runs/32963529477)) failed a critical gate:
+
+> `[critical] arbitrage.top_board_priced` — the market layer has no price for too much of the published top-150 board — observed: worst block 94.0%; expected: >= 95%
+
+Nine of `HALF/redraft-10`'s top 150 had no price. The bar is 95%; nine misses is 94.0%. Last-known-good held and the 2026-08-25 site stayed up.
+
+### The nine, each one accounted for
+
+The retained snapshot `2026-08-26T11-29-17Z` and the live 2026 nflverse roster answer this exactly. There is no residual "and some others":
+
+| blocker | in MFL's payload? | on the 2026 NFL roster? | why it has no price |
+|---|---|---|---|
+| Stefon Diggs #77 | **yes**, ADP 115.33 / 201 drafts | **no** | in the payload but unresolvable |
+| Deebo Samuel #80 | **yes**, ADP 124.23 / 178 drafts | **no** | in the payload but unresolvable |
+| Keenan Allen #104 | **yes**, ADP 155.18 / 96 drafts | **no** | in the payload but unresolvable |
+| Theo Johnson #115 | only in `ppr-no-keeper`, ADP 221.15 | yes | priced in a cohort a HALF board may not use |
+| Mason Taylor #133 | only in `ppr-no-keeper`, ADP 203.00 | yes | priced in a cohort a HALF board may not use |
+| DeMario Douglas #148 | only in `ppr-no-keeper`, ADP 234.27 | yes | priced in a cohort a HALF board may not use |
+| Zach Ertz #126 | **no** | no | MFL does not price him |
+| Ricky Pearsall #140 | **no** | yes | MFL's list does not reach him |
+| Dawson Knox #150 | **no** | yes | MFL's list does not reach him |
+
+**This was not drift and not a regression.** Nothing in the pipeline changed between the run that passed on 2026-08-25 and the one that failed. What moved was the *board*: `build-current` reprojects daily, and one more permanently-unpriceable player crossed into `HALF/redraft-10`'s top 150. The gate had been sitting one player above its bar.
+
+### Finding 1 — both "independent" bridges terminate at the same roster-scoped registry
+
+`_resolve_one_quote` reads:
+
+```python
+primary   = registry.lookup(IdNamespace.ESPN, espn_by_mfl_id.get(external_id))
+secondary = registry.lookup(IdNamespace.GSIS, gsis_by_mfl_id.get(external_id))
+```
+
+Both end in `registry.lookup`, and `build_registry` builds the canonical player set **from the current season's roster**, deliberately: "an unlicensed mirror must not be able to expand the canonical player set". The consequence is structural rather than accidental — **a player who is not on an NFL roster cannot be resolved by any bridge, however good the crosswalk is.** Diggs, Samuel and Allen are each priced by a real market with 96–201 drafts behind them and are each unrostered, so the market layer cannot represent them at all.
+
+Six offensive rows fail to resolve in the selected cohort. Five are unrostered (Diggs, Samuel, Allen, Najee Harris, Darren Waller). The sixth is the one recoverable case, below. The other 47 unresolved rows are IDP and team defenses, which this project does not model — that is the whole of the "identity coverage is drifting down" effect ADR-052 flagged as a thing to watch, and it turns out to be benign.
+
+### Finding 2 — the reviewed-alias escape hatch was never wired into production
+
+`config/identity-aliases.yaml` exists, `load_alias_map` exists, the resolver implements the alias path with a fail-closed conflict rule, `docs/DATA_CONTRACTS.md` §2.3 documents it, and `ffdraft.pipeline.fixture_pipeline` passes it. **`ffdraft.market.capture` — the module every production snapshot actually runs — never loaded the file.** The hatch was shut in exactly the place it was built for. A review nobody loads is not a review.
+
+**This ADR fixes that**, and adds the one alias the evidence supports: MFL `17482` is on the 2026 roster as `full_name="Mike Washington", team=LV, position=RB, gsis_id="00-0040878", status=ACT`, and MFL prices him at ADP 136.53 across 156 drafts — but his roster row publishes **no `espn_id`**, so the primary bridge has nothing to look up and the crosswalk has no row for him either. The alias is read off the live roster, not inferred from a name.
+
+### What this change does *not* do
+
+**It does not clear the gate.** Mike Washington is not among `HALF/redraft-10`'s nine, so that block stays at 94.0% and the next refresh fails the same way. This is stated plainly rather than discovered by running it: of the nine, three need a canonical player that does not exist, three are priced only in a cohort a HALF board may not use, and three are not priced by MFL at all. **Nothing in the identity lane can reach any of them.**
+
+### Finding 3 — the question actually worth deciding
+
+Four of the nine are **free agents on no NFL roster that the board ranks inside its top 126 of a ten-team redraft league** — Stefon Diggs at fair rank 77. The market is not failing to price them; the market is correctly declining to. The board is ranking players who cannot be drafted onto an NFL team, and the coverage gate is the first thing that noticed.
+
+That is a board-universe defect, not a market defect, and fixing it would also fix most of the coverage shortfall. It is **not** made here, because it changes which players a published board contains and therefore renumbers every fair rank — a contract change that belongs to the owner (`AGENTS.md` §12, §19).
+
+**Options, for the owner:**
+
+1. **Restrict the published board to rostered players.** Most likely correct as a product: a redraft board should rank draftable players. It is an *eligibility* filter, not a model feature, so it does not put status into the model (ADR-030's annotation-only rule survives). It renumbers fair ranks and changes tier composition, so it needs a rule version and a re-measurement.
+2. **Leave the board alone and accept that the gate fails whenever a marginal unrostered player crosses into a top-150.** Honest, and stops the site refreshing on an ordinary August morning.
+3. **Reconsider the failure's blast radius** — one block below the bar currently withholds the tier board too, which has no market dependency at all. Rejected for now on the owner's instruction to fix the input rather than the gate; recorded because it will come back.
+
+A fourth thing is worth measuring before any of the above: for the PPR blocks, `ppr-no-keeper` is the *exact* cohort, prices 254 players against `no-mock-no-keeper`'s 249, and covers three of these blockers — yet the fallback rule picks the **widest** qualifying candidate, so it went unused. That is ADR-039/ADR-045 territory and must not be changed in the same breath as reading the result it would change.
+
+**Decision.** Wire the alias file into the production capture path; add the one measured alias; record the diagnosis. Change no threshold, no cohort rule, and no board universe.
+
+**Consequences.** The escape hatch works for the first time in production, and one real price is recovered. The refresh still fails until option 1, 2 or 3 is chosen. Nobody has to re-derive any of the above: the table names all nine.
+
+**Revisit at:** the owner's decision on the board universe, or the next coverage failure, whichever comes first.
