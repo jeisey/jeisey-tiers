@@ -1,77 +1,111 @@
-# On-demand source feasibility probe.
+# Phase-0 evidence generator.
 #
-# `AGENTS.md` section 5: a source marked `verify_before_use` cannot become a production
-# dependency until the check is completed and documented, and "never invent an endpoint or
-# schema". This workflow is where that check runs, because the development sandbox's egress
-# policy denies most vendor hosts (ADR-009, ADR-053) and a probe that cannot reach the source
-# is not a probe.
-#
-# It is deliberately inert: dispatch-only, `contents: read`, no store credential, no vendor
-# secret, no artifact, and nothing written anywhere. Its whole output is the job log, which a
-# human reads and then writes into `docs/DATA_SOURCES.md` and an ADR.
-#
-# It must never gain a schedule. A probe that runs on a timer is an undeclared production
-# dependency on a source whose terms have not been reviewed.
+# The probe has to reach MyFantasyLeague, Sleeper, FantasyCalc and the nflverse release
+# hosts. Development sandboxes may sit behind a restrictive egress policy (see
+# docs/DECISIONS.md ADR-009), so a GitHub-hosted runner is the reference environment for
+# source verification. This workflow is Phase-0 infrastructure only; `ci.yml`,
+# `daily-refresh.yml` and `retrain.yml` remain Phase-7 deliverables.
 name: source-probe
 
 on:
   workflow_dispatch:
     inputs:
-      source:
-        description: Which source to probe
-        type: choice
-        options:
-          - fantasy-football-calculator
-        default: fantasy-football-calculator
+      commit_results:
+        description: Commit the probe report back to the branch
+        type: boolean
+        default: true
+      current_year:
+        description: Market season to treat as current
+        type: string
+        default: "2026"
+  push:
+    branches:
+      - "claude/phase-0-**"
+    # Only the probe's own inputs retrigger it; the report it commits lives under docs/
+    # and tests/fixtures/, so a results commit cannot cause a loop.
+    paths:
+      - "scripts/source_probe.py"
+      - ".github/workflows/source-probe.yml"
+      - "pyproject.toml"
+      - "uv.lock"
 
 permissions:
   contents: read
 
 concurrency:
-  group: source-probe
+  group: source-probe-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  UV_VERSION: "0.8.17"
-  PYTHON_VERSION: "3.12"
 
 jobs:
   probe:
-    name: Probe a candidate source
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
-      contents: read
+      # Narrow write scope: the job commits its own evidence to the feature branch.
+      contents: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Nothing here pushes, and the probe runs third-party requests in this workspace.
-          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.12"
 
+      # Installing uv from PyPI keeps this to official actions plus a pinned pip install,
+      # per docs/SECURITY_LICENSE.md section 4/5 (no curl | bash, no unpinned third party).
       - name: Install uv
-        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+        run: python -m pip install --disable-pip-version-check "uv==0.8.17"
 
       - name: Install locked dependencies
         run: uv sync --frozen
 
-      - name: Probe Fantasy Football Calculator
-        if: ${{ inputs.source == 'fantasy-football-calculator' }}
-        run: uv run python scripts/probe_ffc.py | tee probe.log
-
-      - name: Summary
-        if: always()
+      - name: Lint and unit-test the probe
         run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run pytest
+
+      - name: Run source probe
+        id: probe
+        env:
+          PROBE_DATE: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          out_dir="docs/source-probes/$(date -u +%F)"
+          echo "out_dir=${out_dir}" >> "$GITHUB_OUTPUT"
+          uv run python scripts/source_probe.py \
+            --out "${out_dir}" \
+            --current-year "${{ inputs.current_year || '2026' }}" \
+            --sleep 1.0
           {
-            echo '## Source probe — ${{ inputs.source }}'
+            echo '## Source probe'
             echo
-            echo 'Findings below are **not** a decision. They belong in `docs/DATA_SOURCES.md`'
-            echo 'and an ADR before this source may be used for anything.'
-            echo
-            echo '```'
-            cat probe.log 2>/dev/null || echo 'the probe produced no output'
-            echo '```'
+            cat "${out_dir}/summary.md"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload probe report
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-probe-${{ github.run_id }}
+          path: |
+            ${{ steps.probe.outputs.out_dir }}
+            tests/fixtures/source_schemas
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Commit probe evidence
+        if: github.event_name == 'push' || inputs.commit_results
+        env:
+          OUT_DIR: ${{ steps.probe.outputs.out_dir }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${OUT_DIR}" tests/fixtures/source_schemas
+          if git diff --cached --quiet; then
+            echo "No probe evidence changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(phase-0): record source probe evidence from runner [skip ci]"
+          # The branch may have moved on while the probe ran; rebase rather than force.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

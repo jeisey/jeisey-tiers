@@ -98,6 +98,30 @@ def describe_fields(rows: list[dict[str, Any]]) -> list[tuple[str, str, float]]:
     return out
 
 
+#: The publisher's own terms for this endpoint. Fetched so the wording is recorded in a run
+#: log verbatim rather than transcribed by hand.
+TERMS_URL = "https://help.fantasyfootballcalculator.com/article/42-adp-rest-api"
+
+
+def probe_terms() -> None:
+    section("0. Published terms for the ADP REST API")
+    print(f"source: {TERMS_URL}")
+    try:
+        response = get(TERMS_URL, accept="text/html")
+        print(f"status {response.status_code}  bytes={len(response.content)}")
+        # Crude, deliberately: this records the sentences that carry the obligations, so a
+        # reader of the log sees the grant rather than a summary of it.
+        text = response.text
+        for token in ("free for personal", "attribution", "too frequently", "once per day"):
+            index = text.lower().find(token)
+            if index >= 0:
+                excerpt = " ".join(text[max(0, index - 220) : index + 220].split())
+                print(f"  ...{excerpt}...")
+    except Exception as exc:  # noqa: BLE001
+        print(f"FAILED: {exc}")
+        print("  Terms could not be fetched. Do not proceed on a remembered summary.")
+
+
 def probe_robots() -> None:
     section("1. robots.txt, recorded verbatim for the terms review")
     try:
@@ -139,6 +163,7 @@ def main() -> int:
     print(f"base: {BASE}")
     print("Requests are paced at 1.5s and total fewer than twenty.")
 
+    probe_terms()
     probe_robots()
 
     section("2. Cohort coverage: does every format x teams exist for this season?")
@@ -242,17 +267,31 @@ def main() -> int:
         )
 
     section("8. Is a data-as-of time published?")
+    # Scan one level down as well: FFC nests the aggregation window under `meta`, and a
+    # top-level-only scan reported "none" when the answer was in fact yes.
+    flat: dict[str, Any] = {}
+    if isinstance(envelope, dict):
+        for key, value in envelope.items():
+            if key == "players":
+                continue
+            if isinstance(value, dict):
+                flat.update({f"{key}.{k}": v for k, v in value.items()})
+            else:
+                flat[key] = value
     stamp_keys = [
         k
-        for k in (envelope if isinstance(envelope, dict) else {})
-        if any(t in k.lower() for t in ("date", "time", "updated", "as_of", "stamp"))
+        for k in flat
+        if any(tok in k.lower() for tok in ("date", "time", "updated", "as_of", "stamp"))
     ]
-    print(f"  envelope keys that look temporal: {stamp_keys or 'NONE'}")
+    print(f"  temporal keys (envelope and one level down): {stamp_keys or 'NONE'}")
     for key in stamp_keys:
-        print(f"    {key} = {envelope[key]!r}")
+        print(f"    {key} = {flat[key]!r}")
     if not stamp_keys:
         print("  >>> Like MFL, no data-as-of time. Retrieval time and source time must stay")
         print("  >>> separate fields (AGENTS.md section 5).")
+    else:
+        print("  >>> A window IS published. It is a source window, not a retrieval time, and")
+        print("  >>> the two must stay separate fields (AGENTS.md section 5).")
 
     section("9. CSV variant — same data, different transport?")
     csv_url = f"{BASE}{CSV_PATH.format(fmt='half-ppr')}?teams=12&position=all"
@@ -267,6 +306,33 @@ def main() -> int:
         print("  the reproducible one; a retained snapshot must pin the season.")
     except Exception as exc:  # noqa: BLE001
         print(f"  FAILED: {exc}")
+
+    section("10. DOES `teams` DO ANYTHING? per-player comparison, not just totals")
+    for fmt in FORMATS:
+        cohorts = {got["teams"]: got["players"] for got in results if got["format"] == fmt}
+        if len(cohorts) < 2:
+            continue
+        sizes = sorted(cohorts)
+        base_size = sizes[0]
+        base = {row.get("player_id"): row for row in cohorts[base_size]}
+        for size in sizes[1:]:
+            other = {row.get("player_id"): row for row in cohorts[size]}
+            shared = set(base) & set(other)
+            differing = [
+                pid
+                for pid in shared
+                if base[pid].get("adp") != other[pid].get("adp")
+                or base[pid].get("times_drafted") != other[pid].get("times_drafted")
+            ]
+            verdict = "DIFFERENT" if differing else "byte-identical"
+            print(
+                f"  {fmt:9} teams={base_size} vs teams={size}: "
+                f"shared={len(shared):4} rows differing on adp/times_drafted={len(differing):4} "
+                f"-> {verdict}"
+            )
+    print("  >>> If every comparison is byte-identical, `teams` is accepted and ignored, and")
+    print("  >>> a cohort built on it would be the unfiltered aggregate wearing a label")
+    print("  >>> (the rule config/source-registry.yaml already applies to MFL's CUTOFF).")
 
     print("\nProbe complete. Nothing was retained.")
     return 0
