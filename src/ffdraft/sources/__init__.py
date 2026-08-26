@@ -20,6 +20,7 @@ from ffdraft.sources.nflverse import (
     NFLVERSE_SOURCE_ID,
     NflverseDepthChartAdapter,
     NflversePlayerIdsAdapter,
+    NflversePlayersAdapter,
     NflverseRosterAdapter,
 )
 from ffdraft.sources.sleeper import (
@@ -35,6 +36,7 @@ __all__ = [
     "BaseSourceAdapter",
     "NflverseDepthChartAdapter",
     "NflversePlayerIdsAdapter",
+    "NflversePlayersAdapter",
     "NflverseRosterAdapter",
     "RawRecords",
     "SleeperPlayerAdapter",

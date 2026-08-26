@@ -1330,4 +1330,153 @@ A fourth thing is worth measuring before any of the above: for the PPR blocks, `
 
 **Consequences.** The escape hatch works for the first time in production, and one real price is recovered. The refresh still fails until option 1, 2 or 3 is chosen. Nobody has to re-derive any of the above: the table names all nine.
 
-**Revisit at:** the owner's decision on the board universe, or the next coverage failure, whichever comes first.
+**Revisit at:** superseded the same day — see the correction below.
+
+### Correction, 2026-08-26 (later the same day): Finding 3 was wrong
+
+**Finding 3 above is retracted.** It claimed that Stefon Diggs, Deebo Samuel, Keenan Allen and Zach Ertz are "free agents on no NFL roster that the board ranks inside its top 126", and recommended restricting the published board to rostered players. **They are on NFL teams.** The owner said so, and nflverse's own player master agrees:
+
+| player | `latest_team` | `status` | `last_season` | `espn_id` |
+|---|---|---|---|---|
+| Stefon Diggs | WAS | ACT | 2026 | 2976212 |
+| Keenan Allen | IND | ACT | 2026 | 15818 |
+| Deebo Samuel Sr. | SF | ACT | 2026 | 3126486 |
+| Najee Harris | NYG | ACT | 2026 | 4241457 |
+| Darren Waller | CAR | ACT | 2026 | 2576925 |
+
+Those `espn_id` values are exactly what MFL publishes for them, so the primary bridge would have resolved every one of them on sight.
+
+**How the error was made, which is the part worth keeping.** The claim rested on a single check: a name and `espn_id` search against `nflreadpy.load_rosters(seasons=[2026])`. They are absent from that file. From "absent from the roster file" the conclusion drawn was "not on a roster" — treating one source as the world. The file is 2930 rows, about 91 per team, so it *looked* complete, and nothing prompted a second source. `nflreadpy.load_players()` was one call away and answers the question directly.
+
+The right lesson is not "check twice". It is that **a source's silence is not evidence of absence**, and that this repository already has a rule for exactly this shape — a source marked `verify_before_use` cannot become a production dependency until the check is done — which was applied to vendors and not to the source we trusted most.
+
+**The real root cause, and the fix,** are in **ADR-055**: `load_rosters(2026)` omitted 101 skill-position players who are on NFL rosters, the canonical registry is built from that file alone, and both market bridges terminate at `registry.lookup`. So the price existed, the player existed, and the board could not join them.
+
+**What survives from ADR-054:** the per-blocker table's *structure* (three groups: unresolvable, priced only in a cohort the block may not use, not priced at all) and its membership, except that the first group's cause was identity, not roster status. Finding 1 stands but is sharpened by ADR-055: both bridges do terminate at the registry, and that is precisely why the registry's universe has to be right. Finding 2 stands unchanged — the alias hatch really was never wired in, and the Mike Washington alias is still correct and still needed, because he *is* in the roster file and it is his `espn_id` that is missing.
+
+**Also retracted:** the recommendation to restrict the published board to rostered players. On the corrected facts it would have removed three genuine starters from the board to fix a defect in our own identity layer. The owner's second point stands on its own merits regardless: a player between teams still carries a real ADP, because drafters price the job he is expected to get, so roster presence was never the right gate for *publication* either.
+
+---
+
+## ADR-055 — The canonical registry is built from nflverse's player universe, not from its roster file alone
+
+**Date:** 2026-08-26 (Phase 7 operations)
+
+**Status:** **Accepted and implemented.**
+
+**Context.** `ffdraft.identity.registry.build_registry` builds the canonical player set by iterating a season roster frame, and `ffdraft.market.identity.load_market_identity` supplied `load_rosters(season)`. Its docstring gave the reasoning: "a current capture is asking *who is on a roster now*, which is exactly what that season's roster answers."
+
+It does not answer that. Measured on 2026-08-26:
+
+| | count |
+|---|---:|
+| `load_rosters(2026)` rows | 2,930 |
+| `load_players()` rows with `last_season >= 2026` | 3,099 |
+| …of those, QB/RB/WR/TE | 972 |
+| **skill-position players active in 2026 and *missing* from the roster file** | **101** |
+
+Among the 101: Stefon Diggs (WAS, ACT), Keenan Allen (IND, ACT), Deebo Samuel Sr. (SF, ACT), Brandon Aiyuk (SF), Joshua Dobbs (DET). Not fringe names — starters, and three of them were the direct cause of a critical production gate failure (ADR-054).
+
+**Why this is severe rather than cosmetic.** Both market bridges end at `registry.lookup`:
+
+```python
+primary   = registry.lookup(IdNamespace.ESPN, espn_by_mfl_id.get(external_id))
+secondary = registry.lookup(IdNamespace.GSIS, gsis_by_mfl_id.get(external_id))
+```
+
+A player the registry does not contain is unreachable by *either*, no matter how good the crosswalk is — and unreachable by a reviewed alias too, which fails `alias_target_unknown` for the same reason. Two bridges are a defence against a **wrong** answer. Neither is a defence against an **absent** one. So the failure mode is silent: MFL published Diggs at ADP 115.33 across 201 drafts, nflverse had him on Washington, and the board could not join the two.
+
+**Decision.** The canonical spine for a current capture is the season roster **plus** nflverse's own player master, filtered to players whose `last_season` reaches the target season.
+
+- A new `NflversePlayersAdapter` emits `ROSTER_CONTRACT` rows from `load_players()`. Same contract because it is the same thing: more rows of the same spine.
+- `supplement_roster` concatenates, and **the roster wins every collision.** The roster record is richer — depth chart position, Sleeper id, sportradar and yahoo crosswalks — and the supplement exists to add players, never to restate them.
+- The count is reported as a passing check, `identity.roster_supplemented`, so a build log says how many players the two files disagreed about. A supplement that suddenly adds hundreds or none means the upstream files disagree about who is in the league, and that is worth seeing before it is worth debugging.
+
+**What this does not do.** It does not weaken ADR-019. The rule that an unlicensed mirror may not expand the canonical player set is about the dynastyprocess crosswalk; `load_players()` is nflverse's own master file under the same licence as the roster, and its schema was recorded in Phase 0 (`tests/fixtures/source_schemas/nflverse_players.schema.json`, captured 2026-08-17). No bridge is relaxed, nothing resolves by name, and a disagreement still fails closed.
+
+**Accepted cost.** `load_players()` publishes no `sleeper_id`, `sportradar_id` or `yahoo_id`, so a supplemented player carries no Sleeper join and picks up **no injury or status annotation**. That is the right trade in this direction: status is annotation-only and never a model input (ADR-030), while a missing *price* silently distorts the arbitrage board. It should be revisited if a supplemented player ever needs a status badge.
+
+**Validation.** Re-resolved the real retained capture `2026-08-26T13-45-18Z` through the production code path, with the secondary bridge deliberately withheld to prove the nflverse-native primary is sufficient:
+
+| spine | resolved rows | Diggs / Allen / Samuel |
+|---|---:|---|
+| roster only | 258 | none |
+| roster + players | **263** | all three |
+
+`identity.roster_supplemented: 272 player(s) added to 2930 roster row(s)`. Six new unit tests pin that the supplement only adds, that the roster wins a collision, that players who left the league are excluded, and the end-to-end case: a priced player missing from the roster file resolves on the primary bridge only once supplemented.
+
+**Expected effect on the gate that started this.** `HALF/redraft-10` had eight unpriced players in its top 150. Three of them — Diggs, Samuel, Allen — are recovered by this change, taking that block to 145/150 (96.7%) and clear of the 95% bar. The remaining five are not identity problems and are ADR-056's subject.
+
+**Consequences.** Market coverage rises by a few players a day, permanently. No threshold, cohort rule, model or board universe changed. The alias hatch stays as the escape route for the residue — the Mike Washington case is unaffected, because he *is* in the roster file and it is his `espn_id` that is missing.
+
+**Revisit at:** the first build where `identity.roster_supplemented` reports an implausible count, or a supplemented player needing a status annotation.
+
+---
+
+## ADR-056 — What `top_board_priced` actually measures, and whether one market source is enough
+
+**Date:** 2026-08-26 (Phase 7 operations)
+
+**Status:** **Proposed — awaiting owner review.** Section 1 is a clarification of existing behaviour and changes nothing. Sections 2-4 propose no source and change no policy; they exist so a Phase-8 study starts from evidence rather than a search.
+
+### 1. The gate, stated plainly
+
+The owner asked whether `min_top150_coverage >= 95%` means "at least 95% of players across MFL drafts need to be present in the top 150". **It is the other direction, and the difference matters.**
+
+For each published block — one of the nine (scoring × league size) combinations — the check takes **our own board's top 150 by fair rank** and asks what fraction of *those players* the market has a price for. `coverage_summary` then takes the **minimum across the nine blocks**, deliberately: "a mean would hide the case this gate exists to catch: eight healthy presets and one that lost its cohort."
+
+So it measures **how much of our board the market can price**. It says nothing about how much of the market our board covers, and nothing about draft volume. Nine missing prices out of 150 is 94.0%, and that is what failed on 2026-08-26.
+
+Two properties are worth knowing:
+
+- **`TOP_BOARD_PRICED_MINIMUM = IDENTITY_COVERAGE_MINIMUM`.** The board-coverage bar is an *alias* of the identity-resolution bar. They measure different quantities — "can we resolve the names a vendor sent" versus "does the vendor price the players we rank" — and 0.95 was chosen for the first and inherited by the second. **Proposed:** give it its own named constant and a stated derivation, changed at a moment when nobody is reading a number it would move.
+- **The bar is hardest exactly where the board is thinnest.** In a ten-team league a top-150 *is* the entire draft, and ranks 100-150 are near-replacement players whose ordering is close to noise; in a fourteen-team league 150 picks is under eleven rounds of players who matter. The same constant is applied to all nine. Not wrong, but not derived either.
+
+### 2. Is MFL systemically too thin? Measured: yes
+
+The owner's instinct is right, and the numbers are not close. From the 2026-08-26 capture:
+
+| | |
+|---|---:|
+| rows in the selected cohort (`no-mock-no-keeper`) | 346 |
+| of those, resolvable players (not team units) | 319 |
+| **actually priced and joined** | **~266** |
+| total drafts behind that cohort | 265 |
+| deepest resolved ADP | 222.7 |
+| what the board publishes | 9 blocks × 150 deep |
+
+A ~266-player priced universe against nine 150-deep boards leaves almost no margin, which is why a single player crossing into a top 150 flipped a gate. And 265 drafts in the last week of August is a thin sample for a public aggregate.
+
+**But adding a source would not have fixed 2026-08-26.** Of `HALF/redraft-10`'s eight blockers: **three** were identity (Diggs, Samuel, Allen — fixed by ADR-055), **three** were priced by MFL only in `ppr-no-keeper`, a cohort a HALF board may not use, and **two** were not in MFL's list at all. A second source addresses the last two and possibly the middle three. It would not have touched the largest group. Diagnosing before buying is the whole point.
+
+### 3. The candidates, corrected and assessed
+
+The endpoint shapes circulating in the owner's research are garbled; the real ones, **none verified from here** — this environment answers 403 to every one of these hosts, exactly as ADR-053 recorded:
+
+**Fantasy Football Calculator — still the one to probe first.**
+`https://fantasyfootballcalculator.com/api/v1/adp/{format}?teams={n}&year={y}`, `format` ∈ `standard|ppr|half`, `teams` ∈ `8|10|12|14`. Also a CSV download behind the same parameters.
+It offers the one thing MFL structurally cannot: **`format` × `teams` as a real intersection, including half-PPR**, which a boolean `IS_PPR` can never express (ADR-039). Its population is mock drafts run on its own site — a different distortion from MFL's real-league aggregate, not an absent one. That trade must be *measured*, not assumed, which is the mistake ADR-045 exists to prevent.
+
+**FantasyPros / DraftWizard mock-draft directory — benchmark only, unchanged.**
+The directory is a display product, and the API is membership-gated. This repository already registers FantasyPros as `benchmark_only` with redistribution forbidden, and its name is in `ffdraft/quality/forbidden.py` so the intrinsic firewall rejects it as a feature. Scraping the directory would breach both its terms and `docs/SECURITY_LICENSE.md` §8. It may inform a comparison; it may never feed a published artifact.
+
+**Sleeper by draft-id enumeration — recommended against, and not merely on taste.**
+The technique described (iterate sequential integers against `https://api.sleeper.app/v1/draft/{draft_id}/picks`, then filter by league settings) is a bulk scrape rather than an API use. Three independent objections: Sleeper's terms are non-commercial and already constrain what this site publishes; the sample is biased in a way that cannot be corrected after the fact, because which drafts you reach is an artefact of id allocation rather than of the population; and the request volume needed for a usable sample is exactly the behaviour `AGENTS.md` §5 forbids. Sleeper stays a **status** source.
+
+**MockoSheet and community aggregate sheets.** Redistribution of other vendors' aggregated data with no licence this project can rely on. Useful for a human sanity check, not as an input.
+
+### 4. What "spin up a scraper" actually costs
+
+Not an argument against doing it — an argument for scoping it as a study rather than a hotfix. A second price source needs, at minimum:
+
+1. **Terms verified on a runner and recorded**, before a single production request (`AGENTS.md` §5; registry `verify_before_use`).
+2. **An identity join.** MFL needed two independent id bridges to reach 100% on core positions. FFC's join path is unknown and may be name-and-team, which this repository forbids as a production join (`AGENTS.md` §6). If it is, the source cannot be used regardless of how good its cohorts are — and that single question should be answered before anything else is built.
+3. **Population measurement** — mock share, drafts per cohort, per-player sample sizes at the cohorts actually published.
+4. **No averaging.** ADR-053 §5, repeated because it is the easiest thing to get wrong: normalize to source-specific quotes (`market_quote` 2.0 already has the shape) and **freeze the consensus formula before looking at which players it flatters.**
+5. **Retention and licensing** for a second vendor's bytes in the private store, which is a separate terms question from reading the API.
+
+**Proposed sequence:** probe FFC on a runner and answer (1), (2) and (3) — a day of work that produces evidence rather than an integration. Only then decide whether it becomes a second production source, a benchmark, or nothing. Keep the fair-rank-vs-ADP baseline as the permanent reference either way (ADR-010).
+
+**Consequences if accepted:** no source is added, no policy changes, and the gate keeps its current bar. What changes is that the gate's meaning is written down, its inherited threshold is flagged as inherited, and the multi-source question has a scoped first step whose failure condition (a name-based join) is known in advance.
+
+**Revisit at:** the FFC probe, or the next `top_board_priced` failure that is *not* an identity defect.
