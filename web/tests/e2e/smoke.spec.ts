@@ -14,7 +14,7 @@
  * varies is layout, focus, dialog semantics, downloads and the primary flows that string them
  * together, so that is what runs everywhere.
  *
- * `docs/TEST_STRATEGY.md` section 8 records the split.
+ * `docs/TEST_STRATEGY.md` section 8.2 records the split.
  */
 
 import { expect, test, type Page } from "@playwright/test";

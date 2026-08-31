@@ -484,6 +484,23 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 >
 > Added dependencies: TanStack Table v8, `d3-scale`, `d3-array`, `@playwright/test`. Nothing else.
 
+> **Phase-8 revision (ADR-058, ADR-059).** Both bespoke charts moved off SVG. The Tier Board is
+> a CSS grid of HUD rows with the P25-P75 interval drawn as a positioned bar, and the Draft
+> Rail is the signed rank gap on a symmetric bar; neither needs a continuous scale function, so
+> `d3-scale` and `d3-array` were **removed**. The section above still describes the rule for a
+> chart that *does* need one — React owns the elements, D3 would own the geometry, and no D3
+> selection touches a React-managed node — and that rule is why nothing broke when the
+> geometry moved into CSS.
+>
+> The property that replaced the shared D3 scale is a shared **grid**: the board's axis, each
+> tier header's band and each player's interval bar all occupy the same grid column, driven by
+> three custom properties on `.tier-board`. That is load-bearing rather than tidy — "adjacent
+> tier bands overlap" is a claim about the measurement (ADR-035), and it is only a true
+> statement about the picture if all three tracks are the same pixels.
+>
+> Dependencies now: TanStack Table v8, `@playwright/test`, `@axe-core/playwright`. The
+> production bundle is React, ReactDOM and TanStack Table.
+
 ## 11. Pages base path
 
 The Vite build must work for both:

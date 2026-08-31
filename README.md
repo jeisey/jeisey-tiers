@@ -131,10 +131,11 @@ uv run ffdraft arbitrage-card
 # Frontend
 npm ci
 npm run lint && npm run typecheck
-npm run test -- --run                            # 193 component and unit tests
+npm run test -- --run                            # 226 component and unit tests
 npm run build                                    # root path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # GitHub Pages project path
-npm run e2e                                      # 39 Playwright tests over five built sites
+npm run e2e                                      # 61 Playwright tests: behaviour, mobile, accessibility
+npm run e2e:browsers                             # 36 smoke tests on Chromium, Firefox and WebKit
 npm run verify:board                             # rendered board vs artifact bytes
 ```
 

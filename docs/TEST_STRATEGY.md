@@ -334,6 +334,78 @@ Trend tests use synthetic multi-day histories, because the production store cann
 contain one: the correct output at launch is `null`, and a test that only checked the null
 path would prove nothing about the slope.
 
+## 8.2 Phase-8 invariants (browser coverage, accessibility, failure drills)
+
+### Which engine runs which suite (ADR-059)
+
+Two suites, split by whether the property under test is engine-dependent.
+
+| suite | project(s) | engines | what it covers |
+|---|---|---|---|
+| `board.spec.ts` | `chromium` | Chromium | behaviour, URL state, degraded modes, exports |
+| `mobile.spec.ts` | `mobile` | Chromium (Pixel 7) | phone layout, the card-as-sheet, touch targets |
+| `a11y.spec.ts` | `a11y` | Chromium | axe at WCAG 2.2 AA, plus what a scanner cannot judge |
+| `smoke.spec.ts` | `smoke-chromium`, `smoke-firefox`, `smoke-webkit` | all three | primary flows, layout, focus, dialog semantics, downloads, base path, reduced motion |
+
+The behavioural suite is deliberately **not** tripled. Sorting a table, parsing a query string
+and joining two artifacts do not vary by rendering engine, and running forty such assertions
+three times would triple the slowest gate to re-prove logic with no engine dependency. What
+does vary is layout, focus, `<dialog>`, downloads and reflow, and that is what runs everywhere.
+
+Chromium is in the smoke suite as well as the other two on purpose: a smoke failure can then be
+told apart from an engine difference. Red everywhere is the product; red in one is the browser.
+
+**`npm run e2e:browsers` is runner-only.** Playwright downloads Firefox and WebKit from
+`cdn.playwright.dev`, which a sandboxed development environment behind an egress policy blocks;
+Chromium is preinstalled there and the other two cannot be fetched at all. `ci.yml`'s
+`browsers` job is where it runs — the same reasoning as ADR-009's source probes.
+
+### Accessibility
+
+`a11y.spec.ts` is two halves, and the file says in code that the second is the one that matters.
+
+**Automated:** axe-core at `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa` over the
+tiers view in three tier states, the arbitrage view in two rail states, the data view, both
+degraded scenarios, and the open player dialog. Zero violations required.
+
+**Not automated, because a scanner cannot judge it:** landmark and heading structure, the
+board being one tab stop with arrow-key movement inside it, every tier toggle carrying
+`aria-expanded`/`aria-controls` and being keyboard-operable, direction and status surviving
+without colour, 24px minimum target size, a visible focus indicator on every custom control,
+and reflow at 320 CSS pixels.
+
+Zero automated violations is a floor. Automated tooling is commonly reckoned to find a third
+to a half of real barriers, and every genuinely hard case in this product is in the other half.
+
+### Failure drills
+
+`tests/integration/test_failure_drills.py`. Offline by construction; every vendor call is a
+raising or malformed stub. The property under test is **the state of the world after the
+failure**, not that a function raised:
+
+| drill | property |
+|---|---|
+| MyFantasyLeague unreachable | the capture raises and writes **nothing** — an empty snapshot in an append-only store can never be corrected |
+| a vendor error body | fails closed rather than normalizing into an empty board |
+| a missing required column | schema drift is a refusal, not a best-effort parse |
+| Sleeper unreachable | raises rather than publishing an empty status artifact; no intrinsic value can move, because no intrinsic module can import the package |
+| the store cannot be written | fails before any partial state |
+| a truncated payload | refused by re-validation; restoring the bytes restores the verdict |
+| an equal-length edit | still detected — content hashing, not size |
+| the job graph | `deploy` needs `build` needs `capture`, and the deploy job does no work |
+| the Pages artifact boundary | asserted by the workflow, and the assertion is asserted here |
+| least privilege | exactly one `pages: write` declaration, inside the deploy job |
+| the credential | CI cannot reach the store, no workflow echoes a secret or builds an authenticated remote URL, read-only checkouts do not persist one |
+
+### Performance
+
+`web/tests/e2e/measure-performance.mjs` builds a synthetic board at **production dimensions**
+— 2,700 tier rows with the real board's tier sizes, ~1,800 arbitrage rows, 3,438 projections —
+and times the interactions a drafter performs, median of five. It is not a gate: it prints a
+table and writes a JSON record, and a human decides whether a number in it is a problem.
+An eighteen-player fixture proves layout and measures nothing.
+
+
 ## 9. Manual review requirements
 
 Before V1 release, a human/agent visual review should inspect:
