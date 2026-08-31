@@ -489,6 +489,19 @@ def _build_parser() -> argparse.ArgumentParser:
     card.add_argument("--git-sha", default=None, help="code SHA to record")
     card.set_defaults(handler=_model_card)
 
+    audit = subparsers.add_parser(
+        "audit-convergence",
+        help="judge simulation convergence at the promoted draw count (ADR-034, Phase 8)",
+    )
+    audit.add_argument(
+        "--report",
+        type=Path,
+        default=None,
+        help="Phase-4 simulation experiment report (defaults to the committed one)",
+    )
+    audit.add_argument("--out", type=Path, default=None, help="where to write the audit report")
+    audit.set_defaults(handler=_audit_convergence)
+
     snapshot = subparsers.add_parser(
         "snapshot-market",
         help="retrieve MFL cohorts and append one point-in-time snapshot (network)",
@@ -1110,6 +1123,76 @@ def _model_card(args: argparse.Namespace) -> int:
     written = [*write_model_card(inputs, out_dir), *write_tier_method_report(inputs, out_dir)]
     for path in written:
         print(f"wrote {path}")
+    return 0
+
+
+def _audit_convergence(args: argparse.Namespace) -> int:
+    """Re-ask ADR-034's question of the promoted configuration only.
+
+    The rule is frozen in :mod:`ffdraft.modeling.convergence_audit` and was committed before
+    it was ever pointed at this report. The command reads the committed Phase-4 measurements
+    rather than re-running the simulation: re-deriving them would make this a different
+    measurement rather than a different question about the same one.
+
+    Exit status is 0 whether or not the audit passes. It is a measurement, not a gate — no
+    result of it changes the production draw count, in either direction.
+    """
+    from ffdraft.modeling.convergence_audit import (
+        SIMULATION_CONVERGENCE_AUDIT,
+        evidence_from_report,
+    )
+    from ffdraft.modeling.frozen import PRODUCTION_BUILD_CONFIG
+
+    root = repo_root()
+    report_path = args.report or (root / DEFAULT_SIMULATION_DIR / "experiment.json")
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    evidence = evidence_from_report(payload["convergence_measurements"])
+    result = SIMULATION_CONVERGENCE_AUDIT.evaluate(
+        evidence,
+        promoted_draws=PRODUCTION_BUILD_CONFIG.draws,
+    )
+
+    print(f"rule              : {result.rule}")
+    print(f"promoted draws    : {result.promoted_draws}")
+    print(f"comparisons       : {result.comparisons}")
+    print(f"simulation verdict: {'converged' if result.converged else 'NOT converged'}")
+    print("residual, worst observation per criterion:")
+    for name, record in result.residuals.items():
+        bound = record["bound"]
+        worst = record["worst"]
+        upper = record["direction"] > 0
+        ok = worst <= bound if upper else worst >= bound
+        print(
+            f"  {'pass' if ok else 'FAIL'}  {name:<30} {worst:>10.4f} "
+            f"{'<=' if upper else '>='} {bound:.4f}",
+        )
+    for failure in result.failures:
+        print(f"  [breach] {failure}")
+    print(
+        "tier agreement (reported, not decisive; ADR-035 owns it): "
+        f"ARI {result.tier_observations['worst_tier_adjusted_rand']:.4f}, "
+        f"tier-count difference {result.tier_observations['worst_abs_tier_count_difference']:.0f}",
+    )
+    for note in result.notes:
+        print(f"  [note] {note}")
+
+    if args.out is not None:
+        args.out.mkdir(parents=True, exist_ok=True)
+        target = args.out / "convergence_audit.json"
+        target.write_text(
+            json.dumps(
+                {
+                    "audit": SIMULATION_CONVERGENCE_AUDIT.to_dict(),
+                    "source_report": str(report_path.relative_to(root)),
+                    "result": result.to_dict(),
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        print(f"wrote {target}")
     return 0
 
 
