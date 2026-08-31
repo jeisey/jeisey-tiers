@@ -27,11 +27,11 @@ as a line, and that constraint is a finding about the measurement, not a style c
 | | |
 |---|---|
 | Production URL | **<https://jeisey.github.io/jeisey-tiers/> — live since 2026-08-22** |
-| Deployed commit | `d34756a` |
+| Deployed commit at review | `645409b` |
 | Refreshing | daily at 07:17 America/New_York; first scheduled deploy [32636603290](https://github.com/jeisey/jeisey-tiers/actions/runs/32636603290) on 2026-08-23 |
 | Model | `intrinsic-cb-hurdle-v1` (trained 2014-2025) |
 | Arbitrage | `a0_rank_gap_v1`, deterministic baseline |
-| Review date | _to be filled in_ |
+| Review date | **2026-08-31** |
 | Reviewer | project owner |
 
 The build id, code SHA and source timestamps for whatever is live right now are always on
@@ -97,35 +97,176 @@ over 300 rows, and how the quarterback premiums read to someone who has not read
 
 ## Observations
 
-Add below. One heading per surface; anything that does not fit goes in **Other**.
+Add below. One heading per surface; anything that does not fit goes in **Other**. The
+seeded items above were written before anyone opened the site; the section that follows is
+what the owner actually said after using it.
+
+---
+
+## Owner feedback — 2026-08-31
+
+Recorded verbatim in substance by the Phase-8 session, from the owner's own notes. This is
+**feedback**, not a decision record: nothing below is binding until it is implemented, and
+anything here that would move a product, data or methodology contract gets its own ADR.
+
+The status column in [Implementation trace](#implementation-trace-2026-08-31) is filled in
+as the work lands.
+
+### Global design direction
+
+The frontend should be substantially re-skinned using the supplied Claude Design project.
+The design is the **visual and interaction source of truth**. The repository remains the
+source of truth for model semantics, artifact values, fair ranks, tiers, arbitrage
+calculations, source provenance, accessibility and degraded-mode behaviour.
+
+No number may change because a prettier layout would look better.
+
+### Redundant explanatory copy
+
+The UI repeats methodology caveats too aggressively. Durable methodology explanations belong
+in the **Data** tab once, not on every player and every board.
+
+Specifically, remove this from every Player Detail modal:
+
+> Current status annotation — not included in the projection or the model. The board above
+> was produced without any of these fields. Source: nflreadpy, sleeper.
+
+and remove repeated per-view/per-player paragraphs like:
+
+> Approximate cohort. MyFantasyLeague ADP cannot filter drafts to this exact scoring and
+> league size...
+
+> Approximate cohort. MyFantasyLeague cannot filter drafts to this exact scoring and league
+> size, so the price comes from the closest population it can express.
+
+The board may keep a concise, non-intrusive indicator — `MFL ADP · approximate cohort` —
+where truthfulness needs it. Player detail may show `Market confidence: Medium` and the
+relevant direct data without a paragraph re-teaching the confidence rubric every time.
+
+**Truthfulness must not be reduced — only repetition.** Every disclosure removed from a
+repeated surface must still exist, once, in Data / Methodology.
+
+### Player detail
+
+The dialog carries too much repeated descriptive information. The redesigned card should
+lead with what a drafter needs immediately:
+
+player · position/team · fair rank · position rank · tier · projection/value · uncertainty ·
+MFL ADP · rank/value gap · arbitrage score · recent market trend · relevant current
+injury/practice/status · concise market evidence or sample where useful.
+
+Long methodology explanations belong in Data.
+
+### Visual redesign
+
+The Claude Design source should drive the redesign of the application shell, the player
+card, the Tier Board, the Draft Rail, the controls, the tables, status/injury presentation,
+information hierarchy and responsive behaviour.
+
+The design project contains multiple views and variants. **Do not mechanically reproduce a
+single desktop screenshot across every component and device** — reason about which treatment
+suits each surface and viewport.
+
+### Player-card responsive decision
+
+Choose the best variant by device and context:
+
+- **desktop / large tablet** — the richer HUD/detail-card treatment, where the width exists;
+- **narrow tablet / mobile** — a compact variant or a sheet/full-screen presentation, if that
+  better preserves readable hierarchy, touch targets, no horizontal scrolling and immediate
+  access to the highest-value draft information.
+
+Modal semantics are not negotiable: focus trapping, Escape dismissal, focus restored to the
+trigger, an accessible title, keyboard usability and backdrop behaviour. Native `<dialog>`
+semantics may be kept while its visual treatment changes. Do not sacrifice accessibility to
+mimic static design markup.
 
 ### Tier Board
 
-_(nothing recorded yet)_
+The board is about 1,800px tall for the top 100 because wide uncertainty intervals prevent
+dense row packing. The visual encoding may now be redesigned. **Do not fake narrow
+uncertainty intervals to reduce height.** Legitimate approaches include denser tier
+cards/rows with a compact uncertainty glyph, expandable tier groups, progressive disclosure
+beyond the draft-relevant portion, a compact interval mini-bar rather than a full chart row
+per player, virtualisation, or another design-derived encoding.
+
+Required invariants: fair rank exact; tier membership exact; P25/P75 (or the uncertainty
+information) still available; tier boundaries still statistically soft; no hard cliff drawn
+between adjacent tiers; no implied separation stronger than the model measured; the complete
+300-player table still reachable.
+
+The redesign should make the product materially easier to scan during a live draft.
+
+### Tier boundary finding
+
+Do **not** lower ADR-035's stability threshold to make the tier methodology "pass". The
+empirical result is meaningful: membership is relatively reproducible, precise boundaries are
+not. For V1 that is an accepted limitation, not a defect needing a new statistical algorithm
+during final hardening. If the new visual treatment makes individual boundary positions less
+prominent, that is a feature. Do not alter tier generation in Phase 8 unless an actual
+correctness defect is found.
 
 ### Draft Rail
 
-_(nothing recorded yet)_
+Reassess the rail against the design language. The paired-anchor semantics stay: fair rank,
+MFL ADP, signed difference, bargain/premium direction. Evaluate whether the line is
+necessary, whether the signed text is redundant, whether a more compact HUD row reads faster,
+whether top-30 is still the right depth, and whether Bargains / Premiums / All should remain.
+Use real 2026 data. Do not turn rank-gap arbitrage into an implied probability or a projected
+surplus — A0 stays deterministic.
 
-### Tables
+### Remove redundant methodology copy
 
-_(nothing recorded yet)_
+Systematic copy audit across Arbitrage, Player Detail, status blocks, notices, legends and
+Data. The principle: **context on the board; methodology in Data.** A board should explain
+enough to stop a user misreading a number; it should not re-teach the methodology.
 
-### Player Details
+Keep `Market confidence · Medium`; move the full rubric to Data. Keep `MFL ADP · approximate`;
+move the full filter/cohort explanation to Data. Keep an injury/status badge; move the
+standing "status is annotation only" explanation to Data.
 
-_(nothing recorded yet)_
+### Audit stale launch-state UI copy
 
-### Mobile
+The system has matured since Phase 6. Search frontend code and docs for language true only at
+launch: *every row has low confidence*, *market data is early*, *trend is still collecting*,
+*trend is always null*, *cohort has 125 drafts*, *player status fields are always null*, *no
+site has deployed*, *no current market trend exists*.
 
-_(nothing recorded yet)_
+Do not replace one hardcoded contemporary value with another. Prefer data-driven conditional
+UI: the product must move low → medium → high with no code change, and a future null trend
+must still render correctly from the same component.
 
-### Data / Methodology
+### `wide_market_range`
 
-_(nothing recorded yet)_
+Technically true and weakly discriminating. Do not retune the threshold to make it fire less.
+De-emphasise or remove it from repetitive visual treatment, keep exposing the actual ADP
+low/high range where useful, explain the meaning once in Data, and retain artifact provenance
+if downstream compatibility requires it.
 
-### Other
+---
 
-_(nothing recorded yet)_
+## Implementation trace (2026-08-31)
+
+One row per owner item. `implemented` / `partially implemented` / `deferred`, with what was
+done, why, and where.
+
+| # | Owner item | Status | Implementation | Where |
+|---|---|---|---|---|
+| 1 | Claude Design MCP as design source | _pending_ | | |
+| 2 | Re-skin shell / card / board / rail / controls / tables | _pending_ | | |
+| 3 | Player detail: lead with draft-relevant facts | _pending_ | | |
+| 4 | Player-card responsive variants, modal semantics kept | _pending_ | | |
+| 5 | Tier Board denser without falsifying uncertainty | _pending_ | | |
+| 6 | Tier groups stay soft; no hard cliff | _pending_ | | |
+| 7 | Draft Rail reconsidered against real data | _pending_ | | |
+| 8 | Remove per-modal status disclosure paragraph | _pending_ | | |
+| 9 | Remove repeated cohort paragraphs | _pending_ | | |
+| 10 | Removed disclosures still present once in Data | _pending_ | | |
+| 11 | Confidence state data-driven (low → medium → high) | _pending_ | | |
+| 12 | Trend state data-driven (null and non-null) | _pending_ | | |
+| 13 | No launch-only assumption survives in copy or tests | _pending_ | | |
+| 14 | `wide_market_range` de-emphasised, range shown, explained once | _pending_ | | |
+| 15 | Tier stability threshold untouched | _pending_ | | |
 
 ---
 
