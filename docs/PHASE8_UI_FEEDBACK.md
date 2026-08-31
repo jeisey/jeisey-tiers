@@ -247,42 +247,66 @@ if downstream compatibility requires it.
 
 ## Implementation trace (2026-08-31)
 
-One row per owner item. `implemented` / `partially implemented` / `deferred`, with what was
-done, why, and where.
+One row per owner item, with what was done and where. Visual choices are not ADRs; three
+changes here did move a binding rule and have one each.
 
-| # | Owner item | Status | Implementation | Where |
-|---|---|---|---|---|
-| 1 | Claude Design MCP as design source | _pending_ | | |
-| 2 | Re-skin shell / card / board / rail / controls / tables | _pending_ | | |
-| 3 | Player detail: lead with draft-relevant facts | _pending_ | | |
-| 4 | Player-card responsive variants, modal semantics kept | _pending_ | | |
-| 5 | Tier Board denser without falsifying uncertainty | _pending_ | | |
-| 6 | Tier groups stay soft; no hard cliff | _pending_ | | |
-| 7 | Draft Rail reconsidered against real data | _pending_ | | |
-| 8 | Remove per-modal status disclosure paragraph | _pending_ | | |
-| 9 | Remove repeated cohort paragraphs | _pending_ | | |
-| 10 | Removed disclosures still present once in Data | _pending_ | | |
-| 11 | Confidence state data-driven (low → medium → high) | _pending_ | | |
-| 12 | Trend state data-driven (null and non-null) | _pending_ | | |
-| 13 | No launch-only assumption survives in copy or tests | _pending_ | | |
-| 14 | `wide_market_range` de-emphasised, range shown, explained once | _pending_ | | |
-| 15 | Tier stability threshold untouched | _pending_ | | |
+| # | Owner item | Status | What was done, and where |
+|---|---|---|---|
+| 1 | Claude Design MCP as the design source | **blocked — owner action** | The MCP could not be reached from this session: `DesignSync` refuses without `/design-login`, which cannot run non-interactively, and an unauthenticated fetch of the project URL returns 403. Nothing was seeded into the workspace. The design language below was therefore **derived from the owner's written brief**, which is specific about HUD treatment, density, number treatment, status treatment, panels, hierarchy and responsive variants — but it is not the same as having read `Player Card HUD.dc.html`, and this row says so rather than claiming otherwise. See the note under this table. |
+| 2 | Re-skin shell, card, board, rail, controls, tables | **implemented** | A HUD vocabulary shared by all three surfaces: a hairline panel on a recessed ground, a small-caps micro-label over a tabular readout, geometry that carries a value. `web/src/styles/base.css`, `charts/TierBoard.tsx`, `charts/DraftRail.tsx`, `app/PlayerDetail.tsx`, `app/ArbitrageView.tsx`. |
+| 3 | Player detail leads with what a drafter needs | **implemented** | Two readout grids on a recessed panel: fair rank, position rank, tier, median VORP, P25–P75, uncertainty; then MFL ADP, value gap, arbitrage score, market trend, market data, observed picks. Everything else moved into one `<details>`. `app/PlayerDetail.tsx`. |
+| 4 | Player-card responsive variants; modal semantics kept | **implemented** | One DOM, two presentations chosen by width: a centred card ≥768px, a bottom-anchored full-width sheet below it. Native `<dialog>` + `showModal()` in both, plus explicit focus restoration to the trigger — verified on Chromium, Firefox and WebKit. `base.css`, `PlayerDetail.tsx`, `web/tests/e2e/mobile.spec.ts`, `smoke.spec.ts`. |
+| 5 | Tier Board denser, without falsifying uncertainty | **implemented** | Same P25–P75 interval on the same shared scale; the bar is narrower only because it no longer shares horizontal space with a name label. Tiers collapse past the draft-relevant top, and the open set is in the URL. **1,800px → 1,405px** default and **~230px** with every tier closed, measured on a production-scale board. `charts/TierBoard.tsx`, `app/TiersView.tsx`, `data/state.ts`. |
+| 6 | Tier groups stay soft; no hard cliff | **implemented** | No rule, arrow or cliff anywhere. A collapsed tier draws its own P25–P75 span as a band on the *same grid column* as the player bars, so adjacent bands visibly overlap — the measurement drawn rather than footnoted. `12-tiers-all-collapsed.png`. |
+| 7 | Draft Rail reconsidered against real data | **implemented** | The 1-to-300 pick axis is gone: it had to reach a −206-pick quarterback premium, leaving a real 8.5-pick bargain at 3% of the width. The bar is now the signed gap on a symmetric scale sized to the rows shown, clipped with the exact number kept. Top-30 and Bargains/Premiums/All both retained. `charts/DraftRail.tsx`. |
+| 8 | Remove the per-modal status paragraph | **implemented** | Replaced by `Annotation only — not a model input.` The full disclosure is in Data. `PlayerDetail.tsx`, `DataView.tsx`, pinned by `app.test.tsx`. |
+| 9 | Remove repeated cohort paragraphs | **implemented** | The card shows `approximate cohort` under the ADP when the build says so; the Arbitrage panel shows `MyFantasyLeague ADP · approximate cohort` once. Build-level flags are suppressed per row by `BUILD_LEVEL_MARKET_FLAGS`. `data/flags.ts`, `ArbitrageView.tsx`. |
+| 10 | Removed disclosures still present once in Data | **implemented** | Data gained definitions for market-data confidence, observed pick range, approximate cohort and current status, plus the trend rule. `app.test.tsx` fails if the card drops a marker *or* if Data drops a definition. **ADR-058.** |
+| 11 | Confidence state data-driven | **implemented** | `marketHeadline` reports whatever the rows carry — one label or a distribution — and the tone follows the evidence. No branch assumes a condition. `data/market.ts`. |
+| 12 | Trend state data-driven | **implemented** | The panel says `measured` or `collecting` from `build_metadata`; a null row still renders an em dash and never a zero. Both paths exercised by both fixture conditions. |
+| 13 | No launch-only assumption survives | **implemented** | Three pieces of asserted copy replaced by derived copy, and a second fixture market condition added so the *tests* can no longer pin one either. `web/tests/fixtures/artifacts.ts`. |
+| 14 | `wide_market_range` de-emphasised, range shown, explained once | **implemented** | Not rendered anywhere; the actual `market_adp_low`/`market_adp_high` range is shown on the card and in the table; Data defines what the range is. Threshold untouched, flag still on the artifact and in the CSV. |
+| 15 | Tier stability threshold untouched | **implemented** | `min_boundary_agreement` is 0.50, unchanged. The redesign makes boundary positions *less* prominent, which is the feature the owner asked for. |
+
+### On item 1, in more detail
+
+The brief was explicit that the literal Claude Design request is how to *acquire* the project,
+not a instruction to reproduce one HTML file. That reading was followed — what is missing is the
+acquisition itself. Concretely, this is what could **not** be checked against the source:
+exact type scale and weights, the project's own spacing ramp, its panel and border treatment,
+its status-chip vocabulary, and whichever player-card variants it offers.
+
+What was implemented instead came from the brief's own vocabulary, and every choice is written
+down where it can be diffed later: the design tokens and component classes are in one
+stylesheet with comments explaining each decision, and `docs/visual-qa/2026-08-31/REVIEW.md`
+shows eighteen screens.
+
+To unblock, one owner action: run `/design-login` once from an interactive Claude Code session,
+or use Claude Design's **Send to Claude Code Web**.
+
+### Decisions this produced
+
+- **ADR-057** — simulation convergence audited separately from tier-boundary stability.
+- **ADR-058** — methodology once in Data; a board carries only what stops a number being misread.
+- **ADR-059** — single-engine behavioural suite, three-engine smoke; dependency set amended.
+
+Everything else was a presentation change and correctly has no ADR.
 
 ---
 
-## Also waiting for Phase 8, from elsewhere
+## Also waiting for Phase 8, from elsewhere — all now answered
 
-These are recorded in full in their own places and are listed here only so a Phase-8 session
-sees the whole queue in one view. **None of them is a UI question**, and none should be
-answered by looking at the site.
+Recorded in full in their own places. None was a UI question and none was answered by looking
+at the site.
 
-| item | where it lives | why it is not Phase-7 work |
+| item | where it lives | Phase-8 outcome |
 |---|---|---|
-| Multi-source fantasy market-price study | `docs/DATA_SOURCES.md` §16, **ADR-053** | the sweep is done and the candidates are named; a new production price source is still a source-policy decision needing a runner-side probe and its own ADR |
-| Monte Carlo convergence rule re-specification | ADR-034 | the tier clause is stricter than the gate it protects; needs a new rule version |
-| Tier boundary stability | ADR-035 | the measurement supports ~4 reproducible cuts on a 300-deep board; do not lower the threshold |
-| `wide_market_range` is non-discriminating | ADR-041, known risks | true and useless at 125 drafts; render the range instead of the flag |
-| `min_total_drafts` for filtered cohorts | ADR-045, **ADR-052** | measured as self-resolving — 125 → 227 drafts in four days against a bar of 300 — so re-specifying it now could never be told apart from the season arriving |
-| Correlated player draws | open questions | never measured; the largest structural simplification in the simulation |
-| Historical injury features | ADR-044 | a 2027 refresh candidate; the 2025 holdout is spent, so there is nothing to promote against |
-| Learned arbitrage | ADR-010 | needs three draft seasons of our own snapshots, so 2029 at the earliest |
+| Multi-source fantasy market-price study | `docs/DATA_SOURCES.md` §16, **ADR-053**, **ADR-056** | **Deferred, deliberately.** FFC's findings are accepted as measured fact; integration is a post-V1 market-methodology change, not a hardening change. MFL remains the sole V1 price source. No multi-source ADP, no averaging. |
+| Monte Carlo convergence rule re-specification | ADR-034, **ADR-057** | **Done.** Frozen first, run second. Ranking is converged at 10,000 draws and value is not, by 19-29%. Production draw count unchanged and unchangeable by this rule. |
+| Tier boundary stability | ADR-035 | **Threshold untouched**, as instructed. The redesign makes individual boundary positions less prominent and draws the tier spans overlapping, which is the honest picture. |
+| `wide_market_range` is non-discriminating | ADR-041 | **De-emphasised, not retuned.** Not rendered; the actual range is; Data explains it once; the flag stays on the artifact. |
+| `min_total_drafts` for filtered cohorts | ADR-045, **ADR-052** | **Resolved by the event ADR-052 predicted.** 125 → 735 drafts in eleven days with the rule untouched; every preset now sufficient. What it exposed — no test rendered the new state — is the more valuable finding. |
+| Correlated player draws | open questions | **Deferred to a 2027 simulation refresh.** The 2025 holdout is spent, so a structural change to the joint distribution has nothing to be promoted against. Recorded as a concrete research item. |
+| Historical injury features | ADR-044 | **Still deferred to the 2027 refresh.** No `intrinsic_core_v2` in Phase 8. |
+| Learned arbitrage | ADR-010 | **Still deferred.** Needs three complete seasons of retained point-in-time market history; a growing 2026 snapshot history is not a substitute. 2029 at the earliest. |
+| FTN charting | open questions | **Still deferred.** Nothing in current evidence shows the feature family earns its share-alike obligation. |

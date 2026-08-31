@@ -283,17 +283,46 @@ seeded in the Phase-8 backlog instead.
 
 ## Phase 8 — Hardening and quality
 
-- [ ] Full model backtest/model-card review.
-- [ ] Data-source failure/fallback drills.
-- [ ] Dependency/security review.
-- [ ] Frontend performance review.
-- [ ] Accessibility review.
-- [ ] Browser compatibility smoke test.
-- [ ] Documentation/source attribution review.
-- [ ] Reproducibility run from clean clone.
-- [ ] Resolve critical/high defects.
+**Complete — 2026-08-31.** Two tracks: the owner's frontend redesign, and an adversarial audit
+of everything five green production days do not prove.
 
-**Exit gate:** no known launch-blocking defect, leakage issue, source-rights ambiguity, or broken primary flow.
+### Track A — the redesign
+
+- [x] Record the owner's 2026-08-31 feedback in `docs/PHASE8_UI_FEEDBACK.md`, with a status row per item.
+- [ ] **Import the design through the Claude Design MCP.** *Blocked, owner action.* `/design-login` cannot run in a non-interactive session and the design app 403s an unauthenticated fetch; the implemented design language was derived from the owner's written brief instead. See `SESSION_STATE.md` "Known blockers".
+- [x] A coherent HUD design system across shell, board, rail, tables, controls and card.
+- [x] Tier Board: dense HUD rows, a compact interval glyph on the shared scale, collapsible tiers. 1,800px → 1,405px default, ~230px collapsed.
+- [x] Tier groups stay soft — a band per tier on the shared scale, overlapping where the values do; no rule, arrow or cliff (ADR-035, ADR-046).
+- [x] Draft Rail: the signed gap on a symmetric scale, reconsidered against the real 2026 board.
+- [x] Player Detail: readouts first, methodology gone, deliberate desktop card / mobile sheet variants.
+- [x] Copy audit — methodology once in Data, markers on the board (ADR-058).
+- [x] Every removed disclosure still present, once, in Data; pinned by test.
+- [x] Confidence and trend states data-driven; `low` → `medium` → `high` and a null trend all render from the same components.
+- [x] No launch-only assumption left in copy, and a second fixture market condition so tests can no longer pin one.
+
+### Track B — the audit
+
+- [x] Production-run audit over seven daily-refresh runs — `docs/PHASE8_OPERATIONS_AUDIT.md`.
+- [x] Verification-layer audit for today's-data assumptions; two high-severity findings fixed.
+- [x] Full model/backtest/model-card review: 120 boosters re-hashed (0 mismatches), feature-set hash matched, forbidden-feature audit green, cards regenerated and deep-diffed (0 differences).
+- [x] Monte Carlo convergence rule re-specified and evaluated — frozen first, run second (ADR-057).
+- [x] `min_total_drafts` / ADR-052 resolved from current evidence, with no bound moved.
+- [x] ADR-056 FFC evidence reconciled; **not** added to production V1.
+- [x] Data-source failure/fallback drills — nineteen, offline (`tests/integration/test_failure_drills.py`).
+- [x] Source freshness / schema-drift probe re-run on a GitHub runner.
+- [x] Private-store security audit — `docs/PHASE8_SECURITY_REVIEW.md`; every credential property is now a test.
+- [x] Dependency/security review — `pip-audit` and `npm audit` both clean; two unused dependencies removed.
+- [x] Frontend performance review on a production-scale board; no launch-blocking problem.
+- [x] Accessibility review — axe at WCAG 2.2 AA plus a manual keyboard pass; four real defects found and fixed.
+- [x] Browser compatibility — Chromium, Firefox and WebKit green on a runner.
+- [x] Visual QA after the redesign — eighteen screens, `docs/visual-qa/2026-08-31/`.
+- [x] Reproducibility run from a clean clone.
+- [x] Documentation / source attribution review.
+- [x] Resolve critical/high defects.
+
+**Exit gate:** no known launch-blocking defect, leakage issue, source-rights ambiguity, or
+broken primary flow. **Met**, with the design-import item above outstanding as an owner action
+rather than a defect.
 
 ## Phase 9 — Launch release
 

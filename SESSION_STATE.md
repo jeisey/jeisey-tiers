@@ -4,7 +4,9 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 7 — **complete** (2026-08-22; owner actions completed the same day). The site is live at **<https://jeisey.github.io/jeisey-tiers/>**, public, and refreshing itself daily at 07:17 America/New_York from sources it captures into a private store. Phase 8 (hardening, and the owner's live UI feedback) has not been started.
+Phase 8 — **complete** (2026-08-31). The site is live at **<https://jeisey.github.io/jeisey-tiers/>**, public, and refreshing itself daily at 07:17 America/New_York from sources it captures into a private store. The frontend has been rebuilt around the owner's review, and every hardening track in the Phase-8 brief has been run. **Phase 9 (release) has not been started and is deliberately untouched.**
+
+Phase 7 completed on 2026-08-22; the note below is its record and stays because it explains why the store lives where it does.
 
 **The phase did not start where its task list said it did.** The append-only capture store lived on a `market-data` branch of this repository, and ADR-038's own consequences said that was safe *because the repository is private*. GitHub visibility is a property of a repository, not of a branch — there is no private branch inside a public repository — so going public would have published thousands of retained MyFantasyLeague payloads and normalized Sleeper rows, which are a private research cache under non-commercial terms. Excluding the branch from the Pages artifact would have done nothing, because `git clone` hands any visitor every branch. The store had to move first (ADR-049), and that reordered everything after it.
 
@@ -16,42 +18,50 @@ Three things are worth carrying forward as ideas rather than as file paths:
 
 ## Current target gate
 
-Phase 8 — hardening and quality. Its first input is `docs/PHASE8_UI_FEEDBACK.md`, which is seeded and waiting for the owner to use the live site. **Read that file before touching the frontend**: the Tier Board's vertical density, the tier lane treatment, the Draft Rail and the player card are all recorded there as things a human intends to judge in person, and Phase 7 deliberately did not pre-empt any of them.
+Phase 9 — release. Its checklist is in `TASKS.md` and nothing in it has been started. Phase 8's exit gate is met apart from one item that needs an owner action, recorded under "Known blockers" below.
+
+`docs/PHASE8_UI_FEEDBACK.md` is now the human-to-implementation trace for the redesign: the owner's 2026-08-31 feedback, and a status row per item. Read it before touching the frontend again.
 
 The visibility question ADR-016 deferred is closed: the repository is **public**, serving a public Pages project site from standard GitHub-hosted Actions, free and non-commercial — which is a licence condition rather than a preference, because `player_status.json` carries Sleeper fields to every visitor.
 
 ## Last validated commit
 
-The Phase-7 branch `claude/fantasy-draft-phase-7-ktp7qm`, branched from the merged Phase-6 state on `main` (`86e2857`).
+The Phase-8 branch `claude/jeisey-tiers-phase-8-dz8ivm`, branched from the merged Phase-7 state on `main` (`645409b`).
 
 ```
 uv sync --frozen
 uv run ruff check .                 # clean
-uv run ruff format --check .        # clean
-uv run mypy                         # clean, strict, 110 source files
-uv run pytest                       # 1013 selected, all pass (4 live-network deselected)
+uv run ruff format --check .        # clean, 172 files
+uv run mypy                         # clean, strict, 111 source files
+uv run pytest                       # 1055 passed, 4 live-network deselected
 uv run ffdraft config-check
+uv run ffdraft audit-convergence    # phase8_simulation_convergence_v1 (ADR-057)
 
-# The retained store, now a separate PRIVATE repository (ADR-049)
+# The retained store, a separate PRIVATE repository (ADR-049)
 git clone https://github.com/jeisey/jeisey-tiers-market-data ../market-data
-uv run ffdraft validate-market-history ../market-data --season 2026   # 3 snapshots, 3 status captures: pass
+uv run ffdraft validate-market-history ../market-data --season 2026
 
 npm ci
 npm run lint            # clean (2 known React-Compiler/TanStack warnings, ADR-048)
 npm run typecheck       # clean, strict
-npm run test -- --run   # 194 frontend tests
+npm run test -- --run   # 226 frontend tests
 npm run build                                    # root base path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages base path
-npm run e2e             # 39 Playwright tests over five built sites
+npm run e2e             # 61 Playwright tests: chromium + mobile + a11y
+npm run e2e:browsers    # 36 smoke tests across Chromium, Firefox and WebKit — RUNNER ONLY
 ```
 
-**One environment note that cost time and should not cost it again.** This sandbox ships Chromium build 1194 at `/opt/pw-browsers` while the pinned Playwright 1.62.1 wants 1234, so `npm run e2e` fails every test with "Executable doesn't exist" until `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` is exported. `playwright.config.ts` already reads that variable. And **`npm run e2e | tail` reports `tail`'s exit code, not Playwright's** — without `set -o pipefail` a completely red suite looks green. On the runner neither applies: `npx playwright install` fetches the matching build.
+**Three environment notes that cost time and should not cost it again.**
 
-`build-current`, `build-arbitrage` and `verify:board` on real data are **runner-only** here: the sandbox answers 403 to CONNECT for nflverse, MyFantasyLeague and Sleeper (ADR-009), which is the whole reason source work happens in Actions.
+1. This sandbox ships Chromium build 1194 at `/opt/pw-browsers` while the pinned Playwright wants a newer one, so `npm run e2e` fails every test with "Executable doesn't exist" until `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` is exported. `playwright.config.ts` reads that variable **per project**, and never hands it to Firefox or WebKit.
+2. **`npm run e2e | tail` reports `tail`'s exit code, not Playwright's** — without `set -o pipefail` a completely red suite looks green.
+3. **Firefox and WebKit cannot be installed here at all.** The egress policy blocks `cdn.playwright.dev` and `playwright.download.prss.microsoft.com`, so `npm run e2e:browsers` is a runner-only gate, the same shape as the source probes (ADR-009, ADR-059). `ci.yml`'s `browsers` job is where it runs.
+
+`build-current`, `build-arbitrage` and `verify:board` on real data are **runner-only** here: the sandbox answers 403 to CONNECT for nflverse, MyFantasyLeague and Sleeper (ADR-009), which is the whole reason source work happens in Actions. The live site is unreachable from here too, so a deployed-site smoke is a runner or owner action.
 
 ## Production status
 
-**A production model and a production arbitrage board exist.** `intrinsic-cb-hurdle-v1`, trained on 2014-2025, promoted through a sealed single-use holdout, serving a 2026 board for every launch preset; and the deterministic A0 arbitrage baseline built on top of it from retained market history. There is still no deployed site.
+**A production model and a production arbitrage board exist.** `intrinsic-cb-hurdle-v1`, trained on 2014-2025, promoted through a sealed single-use holdout, serving a 2026 board for every launch preset; and the deterministic A0 arbitrage baseline built on top of it from retained market history, deployed and refreshing daily since 2026-08-22.
 
 - `models/production/intrinsic-cb-hurdle-v1/` — **committed**, not gitignored (`PRD.md` section 15). 120 gzipped LightGBM boosters plus `metadata.json` carrying the spec, seed, training seasons, library versions, dataset manifest, `feature_set_hash` `7203befaa5be25a2`, `feature_schema_hash` `c495ba3177dcb989` and a SHA-256 per booster. No pickles anywhere: loading reads JSON and LightGBM's documented text format, and a tampered booster fails closed.
 - `models/cards/` — the model card and the tier-method report, generated from the committed experiment reports and the artifact, never hand-written.
@@ -257,6 +267,52 @@ Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `dep
 
 **The retrain gate, and why it says no.** `intrinsic-cb-hurdle-v1` trained through 2025; 2025 is the spent holdout; 2026 unplayed. `scripts/retrain_gate.py` asks whether a season after the last training season has a **complete fantasy horizon** upstream. 404 is "no", a short weekly file is "no", and it exits 0 either way. Every weekly run this preseason stops there in about two minutes, which is the gate being exercised rather than asserted.
 
+## Phase-8 results — the redesign, and what the audit found
+
+**Two tracks, and the second is the one that produced findings.**
+
+### The frontend
+
+| surface | before | after |
+|---|---|---|
+| Tier board | one SVG chart row per player; ~1,800px for the top 100 | HUD rows with the same P25-P75 bar on a shared scale, tiers collapsible; **1,405px** default, **~230px** with every tier closed, 7,670px fully expanded |
+| Draft rail | a 1-to-300 pick axis, paired diamond/circle anchors | the signed gap on a symmetric scale sized to the rows shown, with numeric anchors beside it |
+| Player card | three sections each ending in a paragraph of methodology | a HUD card of labelled readouts, a status strip of fields, one `<details>`, one link to Data — and a sheet at 390px |
+| SVG elements on the two chart views | ~700 | **0** |
+| Frontend production dependencies | React, ReactDOM, TanStack Table, d3-scale, d3-array | React, ReactDOM, TanStack Table |
+
+**Nothing a number means changed.** No projection, feature, fair rank, VORP, tier membership, ADP, arbitrage score, confidence calculation, trend calculation, cohort selection or status meaning moved. `npm run verify:board` compares the rendered board against the artifact bytes on every production build and is the check that would fail if one had.
+
+### The audit
+
+- **Production, seven runs:** `docs/PHASE8_OPERATIONS_AUDIT.md`. Zero critical, three warnings, flat and identical for the whole window. Tier rows exactly constant; projection and arbitrage row counts drifting down for two unrelated and explainable reasons.
+- **Model artifact:** 120 boosters re-hashed against `metadata.json`, **0 mismatches**; feature set and `feature_set_hash` identical to the code's own; the repository's forbidden-feature rule passes; no serialized object anywhere. Model card and tier-method card regenerated and deep-diffed against the committed ones: **0 differences** outside `generated_at_utc`, `git_sha` and one block whose input is gitignored.
+- **Convergence:** ADR-057. Ranking is converged at 10,000 draws and value is not; the residual is 19-29% over tolerance on expected and median VORP across three of four scenarios. The production draw count did not move and cannot move on this rule.
+- **Security and dependencies:** `docs/PHASE8_SECURITY_REVIEW.md`. `pip-audit` and `npm audit` both clean. Every credential property is now a test.
+- **Accessibility:** axe at WCAG 2.2 AA over eight surfaces plus the open dialog, clean, plus eight keyboard and semantic checks a scanner cannot make. **Four real defects found and fixed**, all introduced by the redesign.
+- **Browsers:** Chromium, Firefox and WebKit green on a runner ([33407642729](https://github.com/jeisey/jeisey-tiers/actions/runs/33407642729)).
+- **Failure drills:** nineteen, offline, in `tests/integration/test_failure_drills.py`.
+
+### The two findings that mattered
+
+1. **The verification layer had frozen the launch condition.** Every market-sensitive test — vitest, Playwright, mobile — was written against a uniformly `low` board with a null trend and an insufficient cohort. Production reached the opposite state a week before this phase started and nothing in the repository rendered it. Fixed with a second fixture condition; both are exercised and neither is "the normal one".
+2. **Three pieces of UI copy asserted a condition the build computes.** All three now read from `build_metadata`.
+
+## Phase-8 facts a later phase should not re-derive
+
+- **A tier band, a player's interval bar and the axis are one CSS grid, not three similar ones.** `--board-cols`, `--board-gap` and `--board-pad` on `.tier-board` drive all three, and every breakpoint redefines only those. This is load-bearing: "adjacent tier bands overlap" is a claim about the measurement, and it is only true of the picture if the tracks are the same pixels. The first draft had them 45px apart.
+- **Zero-based tier ordinals.** `schemas/tier_record.schema.json` says `minimum: 0` and the first tier really is 0. A URL parser that required a positive integer silently dropped it from every shared link. Take a bound from the contract, never from what looks reasonable.
+- **`tiers=none` and an absent `tiers` are different states.** Empty means every tier closed; absent means the board chooses. A resolved default written into the URL on first paint would freeze one build's tier structure into a shared link.
+- **A closed tier renders no rows, not hidden ones.** The container stays so `aria-controls` resolves; the `<li>`s do not.
+- **axe reads the composited pixel, not the declaration.** A hue that passes in the token table fails on screen once an `opacity` multiplies it. There is no `opacity` on any text in the stylesheet for that reason.
+- **The stylesheet contains no transition and no animation at all.** The one that existed was a 120ms slide on the skip link. That makes the reduced-motion assertion a true invariant rather than a check on one media query — keep it that way.
+- **`--ink-faint` is a text colour and must clear 4.5:1.** It was 3.15:1 for two phases and only became a problem when the HUD gave it every micro-label.
+- **`minmax(30rem, 1fr)` is a grid track wider than a 320px viewport.** Use `minmax(min(30rem, 100%), 1fr)`. WCAG Reflow names 320px and the Data view failed it by 168px.
+- **`test.use({ reducedMotion })` did not typecheck against the pinned Playwright; `page.emulateMedia` does**, and reads better in one place anyway.
+- **Two fixture market conditions, and neither is normal.** `MARKET_CONDITIONS` in `web/tests/fixtures/artifacts.ts`. A market-sensitive test that runs against only one of them is the defect this phase existed to find.
+- **The performance board is synthetic and production-shaped.** `web/tests/e2e/measure-performance.mjs` builds 2,700 tier rows with the real board's tier sizes. The values are nonsense; the dimensions are not, and an 18-player fixture measures nothing.
+- **The convergence audit was committed before it was run.** `87db5e5`, then the result. A rule written after its result is not a rule.
+
 ## Confirmed decisions
 
 - Static GitHub Pages runtime.
@@ -305,6 +361,11 @@ Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `dep
 - **V1 deploys as a public repository on a public GitHub Pages project site**, standard GitHub-hosted Actions, no external paid host; the repository stays private through Phase 6 (ADR-016 as amended 2026-08-21).
 - **FantasyPros terms review is complete**; the source is `benchmark_only` and is *not* a production input, so it is absent from the site's source list (ADR-014 as amended).
 - Source verification runs on a GitHub runner, not in an egress-restricted sandbox (ADR-009).
+- **`min_total_drafts` was measuring the evidence, not the filter** — the keeper-free cohort crossed its own bar unaided, so no bound moved (ADR-052, resolved 2026-08-31).
+- **FFC is not a production V1 price source and MFL remains the only one**; ADR-056's runner-measured findings are accepted and its integration is deferred to a dedicated post-V1 market-methodology change. No multi-source ADP, no averaging (ADR-056 Phase-8 disposition).
+- **Simulation convergence is audited separately from tier-boundary stability**, on the promoted configuration only, with every Phase-4 bound inherited unchanged and no power to select a draw count (ADR-057).
+- **Methodology is stated once in Data**; a repeated surface carries only what stops a number being misread (ADR-058).
+- **The behavioural end-to-end suite is single-engine; a smoke suite is three-engine**, and the three-engine gate is runner-only (ADR-059).
 
 ## Verified source facts a later phase should not re-derive
 
@@ -426,10 +487,10 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 ## Open questions requiring evidence
 
 - **How to make tier boundaries meet a stability bar, or how to stop pretending they are lines.** The measurement says a 300-deep board supports about four reproducible cut sites. Two candidate remedies, both new decisions needing their own rule version and evidence: let the undifferentiated tail be one wide tier by re-specifying `max_largest_tier_share`, or keep the segmentation and present membership with a boundary-confidence band instead of a hard edge. **Do not simply lower the threshold** (ADR-035).
-- **How to re-specify the Monte Carlo convergence rule.** Its tier clause is stricter than the tier stability gate it was meant to protect and is decided partly by penalties the tier rule may never select. A revision should measure the tier clause on the promoted configuration only, and set its bar consistently with the gate (ADR-034).
+- ~~**How to re-specify the Monte Carlo convergence rule.**~~ **Done** (ADR-057). `phase8_simulation_convergence_v1` evaluates the promoted configuration only, inherits every bound unchanged, reports tier agreement instead of deciding on it, and cannot select a draw count. **What remains open is narrower and has a number:** at 10,000 draws the ranking criteria pass (fair-rank Spearman 0.9994, top-50 overlap 0.98, mean top-150 rank change 1.35, replacement 0.249 against a 0.5 bar) and the value criteria do not (mean |Δ expected VORP| 0.314 against 0.25; mean |Δ P50| 0.416 against 0.35; p99 |Δ expected| 1.93 against 1.50). Closing that last ~25% is a simulation-refresh question, and lowering the draw count is not an answer to it.
 - **Whether correlated player draws are worth building.** V1 samples every player independently, so it cannot express that a quarterback's collapse takes his receivers with him. That is the largest structural simplification in the simulation and it was never measured.
-- **Whether `min_total_drafts` is the right instrument for a filtered cohort.** It is the only clause any format-pure or preset-specific cohort fails, and filtering shrinks the cohort-level count structurally while leaving per-player evidence intact — `no-keeper` carries 125 drafts but a median of 105 drafts per top-150 player, against a bar of 25, with the best top-150 coverage of any cohort measured. Re-specifying it needs its own rule version and its own evidence, and must not be done in the same breath as reading the result it would change (ADR-045).
-- **Whether the fallback should prefer specificity when candidates are close.** With nothing sufficient, "widest" hands the PPR presets a 125-draft all-scoring cohort over a 115-draft PPR-only one. Answering this after seeing which cohort it picks is the trap ADR-045 avoids.
+- ~~**Whether `min_total_drafts` is the right instrument for a filtered cohort.**~~ **Closed 2026-08-31** (ADR-052 resolution). The keeper-free cohort went 125 → 735 drafts in eleven days with the filter, the clause and the bound all untouched; every preset now reports `sufficient: yes` with no failed clause and a median per-player sample of 487. The structural reading — that `IS_KEEPER=N` caps the achievable count — is refuted. **No bound moved, and none should.**
+- ~~**Whether the fallback should prefer specificity when candidates are close.**~~ **Moot for V1.** With qualifying cohorts available the rule now selects `ppr-no-keeper` for the PPR presets and `no-keeper` for the others, on its own. The tie-break question only arises when nothing is sufficient; it is not a launch blocker and any future change still needs a comparison rule predeclared before player-level results are read.
 - **Whether a learned arbitrage model is ever worth it.** Not before three draft seasons of our own snapshots (ADR-010), which is 2029 at the earliest. Until then, snapshot retention is still the highest-value arbitrage work in the repository.
 - **Repository visibility** — deferred to Phase 7 by ADR-016.
 - **Market cohort mix closer to peak draft season** — re-measure at the start of Phase 5 (ADR-012 amendment).
@@ -442,10 +503,10 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **Scheduled-workflow inactivity got slightly worse.** The daily capture now commits to the *private data* repository, so a run of `daily-refresh.yml` creates no activity in the application repository at all. GitHub disables scheduled workflows in public repositories after long inactivity; re-enabling steps are in `docs/OPERATIONS.md` section 12.
 - **Three MyFantasyLeague player-database requests were made on 2026-08-22** — the out-of-band capture, the first production refresh, and the refresh that validated the cohort fix. MFL asks for at most one per day. This was a migration day and the third was needed to prove the fix; a routine day takes exactly one, and `skip_capture` exists so a re-deploy does not take a second.
 
-- **Every arbitrage row reads `low` confidence**, because no keeper-free cohort clears the frozen cohort-level draft-count bar. The label is correct under the rule and pessimistic against the per-player evidence, and it makes `confidence` non-discriminating for Phase 6. The rubric returns the clause that fired, so the UI can explain it rather than just show it.
-- **`wide_market_range` fires on 1,914 of 2,124 rows.** True and useless at this sample size: with ~125 drafts the min-to-max span really does exceed five rounds for most players. Phase 6 should render `market_adp_low`/`market_adp_high` directly and treat the flag as a footnote.
-- **The 2026 board is priced by 125 real redraft drafts** taken on one afternoon in late August. It will get better on its own as the season matures and the store fills; nothing about the code needs to change for that.
-- **STD and HALF are served by an all-scoring cohort.** The dilution is about ten non-PPR drafts out of 125 and is stated in the cohort report's composition caveat, but a standard-scoring reader is looking at a board whose price is set mostly by PPR drafters.
+- ~~**Every arbitrage row reads `low` confidence**~~ — **no longer true, and the way it stopped being true is the point.** The 2026-08-31 board is 1,889 `medium` against 45 `low`, with the frozen rule untouched (ADR-052 resolution). What this exposed is recorded above: no test rendered the new state. `confidence` is now discriminating, and both conditions are exercised.
+- **`wide_market_range` is still non-discriminating, and is no longer rendered.** The min-to-max span widens with sample size, so it fires on most of the board at any realistic draft count and always will. Phase 8's instruction was to stop giving it repetitive visual treatment rather than to retune its threshold: the flag stays on the artifact and in the CSV, the actual `market_adp_low`/`market_adp_high` range is shown directly, and Data explains what the range is once (ADR-041, ADR-058).
+- **The 2026 board is priced by 735 keeper-free redraft drafts** as of 2026-08-31, up from 125 at launch, with a median of 487 drafts behind each top-150 player. It got there on its own.
+- **STD and HALF are still served by an all-scoring cohort.** MyFantasyLeague exposes a PPR flag and no half-PPR filter, so a standard-scoring reader is looking at a board priced mostly by PPR drafters. Stated on the Data view. This is the one thing Fantasy Football Calculator could genuinely fix, and is the aim of the deferred post-V1 market-methodology change (ADR-056 Phase-8 disposition).
 - **Sleeper publishes `practice_participation`, `practice_description` and `injury_start_date` as keys with null values in the preseason.** They are normalized and will populate in season; a Phase-6 UI must not assume they are present.
 - **Tiers are published having failed their stability gate.** `build_metadata.json` carries a `current.tier_stability` warning and the cards say so, but nothing stops a consumer from rendering a hard line anyway. The Phase-6 frontend is where this becomes a user-visible risk rather than a documented one.
 - **Residual Monte Carlo error is real and unmeasured beyond the ladder.** At 10,000 draws two seeds differ by about 0.3 fantasy points on a player's expected VORP and under 1.5 rank positions in the top 150. Tier boundaries move more than that, which is part of why boundary agreement is low. A build is deterministic for a fixed seed; it is not seed-invariant.
@@ -480,24 +541,19 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 ## Known blockers
 
-**The daily refresh went red on 2026-08-26 on `arbitrage.top_board_priced` and the cause is fixed** (ADR-055), pending the next run to confirm. `HALF/redraft-10` priced 141 of its top 150 against a 95% bar.
+**One, and it needs an owner action rather than code.**
 
-**The root cause was our own identity layer, not the market.** `load_rosters(2026)` omits 101 skill-position players who are on NFL rosters — Stefon Diggs (WAS), Keenan Allen (IND), Deebo Samuel Sr. (SF) among them — and the canonical registry was built from that file alone. Both market bridges terminate at `registry.lookup`, so a player the registry lacks is unreachable by either, and by a reviewed alias too. MFL published Diggs at ADP 115.33 across 201 drafts, nflverse had him on Washington, and nothing could join them. The spine is now the roster **plus** nflverse's own player master filtered to the target season; re-resolving the real capture took the cohort from 258 to 263 resolved on the primary bridge alone, recovering all three.
+**The Claude Design MCP could not be reached from this session.** The Phase-8 brief made the owner's Claude Design project the design source and named the import prompt. `DesignSync` refuses with *"needs design-system authorization, and `/design-login` cannot run in this non-interactive session"*; `WebFetch` on `https://claude.ai/design/p/fc6e4919-…` returns 403 because the design app requires an authenticated session; and nothing was seeded into the workspace. So **the design language implemented here was derived from the owner's written brief rather than read out of the project files.** That brief is specific — HUD treatments, density, number treatment, status treatment, panels, hierarchy, responsive variants, and a named `Player Card HUD` — and `docs/PHASE8_UI_FEEDBACK.md` records exactly what was inferred from it. It is not the same thing as having read `Player Card HUD.dc.html`.
 
-**ADR-054's Finding 3 is retracted and the correction is recorded in place.** It asserted those players were free agents, on the strength of a single search against the roster file, and recommended restricting the published board to rostered players — which on the corrected facts would have deleted three genuine starters from the board to paper over our own bug. A source's silence is not evidence of absence.
+To unblock: run `/design-login` once from an interactive Claude Code session on the owner's machine (headless and SDK runs then reuse it), or use Claude Design's **Send to Claude Code Web**, which seeds the project into the workspace. A later session can then diff the implemented system against the imported one.
 
-Two things that are *not* the cause, both checked: nothing in the pipeline changed between the 2026-08-25 pass and the failure — the board reprojects daily and one more unjoinable player crossed into a top 150 — and the falling identity-resolution *rate* (86% → 77%) is IDP and team defenses entering the aggregate, which this project does not model. ADR-052 flagged that drift as a thing to watch; it is benign.
-
-The owner-only actions Phase 7 stopped at were completed on 2026-08-22, in order: the `market-data` branch was deleted from `jeisey/jeisey-tiers`, then the repository was made public. A third was discovered by doing it — **Settings → Pages → Source → GitHub Actions** is required, and `enablement: true` on `configure-pages` cannot substitute for it, because creating a Pages site is an admin-level API call and a `GITHUB_TOKEN` never holds admin. That flag has been removed rather than left as a false promise.
-
-The four analytical findings are unchanged and none is a blocker: the Monte Carlo convergence rule (ADR-034), tier boundary stability (ADR-035), the cohort volume clause (ADR-045, now re-framed by ADR-052) and the non-discriminating `wide_market_range` flag (ADR-041).
+Nothing else is blocking. The four analytical findings are unchanged and none is a blocker: the Monte Carlo residual (ADR-034 as narrowed by ADR-057), tier boundary stability (ADR-035), the non-discriminating `wide_market_range` flag (ADR-041) and the all-scoring cohort serving STD and HALF (ADR-012).
 
 ## Next action
 
-**Confirm the next daily refresh is green.** ADR-055 should take the worst block from 94.0% to about 96.7%; the remaining unpriced players are not identity defects (ADR-056).
+**Phase 9 — release. Nothing in it has been started.** `TASKS.md` holds the checklist: a final daily refresh, final metrics and build metadata, a visual and artifact-validation pass over every supported preset, CSV verification, the Pages URL and base path, the V1 tag, and a `SESSION_STATE.md` stamp of the production model and data versions.
 
-**Phase 8, and its first action is not code.** The site has been live and refreshing since 2026-08-22. Open it, use it as you would the night before a real draft, and write what you notice into `docs/PHASE8_UI_FEEDBACK.md`. That file is seeded with what is already known — the Tier Board is ~1,800px because interval width, not tier count, forbids packing; the tier lane treatment, Draft Rail and player card are all up for review — and Phase 7 deliberately did not pre-empt any of it.
+Two things to do first, neither of which is Phase-9 work:
 
-**Three ADRs are waiting for an owner decision** and should be read before any market work: **ADR-052** (market-data confidence is self-resolving; do not re-specify `min_total_drafts` to make it pass) **ADR-053** (the free-source sweep, and what each candidate would and would not fix), and **ADR-056** (what the coverage gate actually measures, its inherited threshold, and — rewritten 2026-08-26 from two runner probes of the live endpoints — the measured case for adding Fantasy Football Calculator as a second price source). ADR-054/055 are Accepted and need no decision.
-
-The rest of the non-UI Phase-8 queue is listed at the bottom of `docs/PHASE8_UI_FEEDBACK.md` so a session sees it at once: ADR-034's convergence rule, ADR-035's tier stability, ADR-041's `wide_market_range`, correlated player draws, ADR-044's injury features and ADR-010's learned arbitrage. None of them is answered by looking at the site.
+1. **Merge this branch and let one scheduled `daily-refresh` run on it.** The Phase-8 frontend has been proved against fixtures, a production-shaped synthetic board and three browsers, but `verify:board` on the *real* artifacts runs inside the daily refresh and has not yet run against the redesigned DOM. It is the check that would catch a rendered value disagreeing with the artifact bytes, and it was updated for the new selectors in this phase.
+2. **Resolve the Claude Design blocker above** if the design import still matters for V1.
