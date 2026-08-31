@@ -66,6 +66,54 @@ test.describe("default tier experience", () => {
     await expect(page.locator(".tier-head-band")).toHaveCount(3);
   });
 
+  /**
+   * The tier band and the player bars are one track, measured rather than assumed.
+   *
+   * "Adjacent tier bands overlap" is a claim about the measurement (ADR-035), and it is only
+   * true of the *picture* if the band and the bars are drawn on the same pixels. Phase 9A
+   * broke this twice while restyling — once by numbering the strip's grid columns off by one,
+   * and once by naming a grid area `span`, which is a reserved keyword, so the rule was
+   * dropped silently and the band shrank to two thirds of the track. Neither showed up in any
+   * other check, and neither is visible without a ruler.
+   */
+  test("draws the tier band on exactly the track the player bars use", async ({ page }) => {
+    await openBoard(page);
+    for (const width of [1440, 900, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const box = await page.evaluate(() => {
+        const rect = (root: ParentNode | null, selector: string) => {
+          const el = root?.querySelector(selector);
+          if (el === null || el === undefined) return null;
+          const r = el.getBoundingClientRect();
+          // A `display: none` element still answers `querySelector` and reports a zero box.
+          if (r.width === 0) return null;
+          return { left: Math.round(r.left), right: Math.round(r.right) };
+        };
+        const lane = document.querySelector(".tier-lane");
+        return {
+          band: rect(lane, ".tier-head-band"),
+          bar: rect(lane, ".board-row .row-interval"),
+          // The tick strip is hidden in the stack variant, where artboard 2b has no shared
+          // axis; where it *is* drawn it has to be the same track too.
+          axis: rect(document, ".board-scale-track"),
+        };
+      });
+      const at = `at ${String(width)}px`;
+      expect(box.band, `no band ${at}`).not.toBeNull();
+      expect(box.bar, `no bar ${at}`).not.toBeNull();
+      expect(Math.abs((box.band?.left ?? 0) - (box.bar?.left ?? 0)), `band left ${at}`)
+        .toBeLessThanOrEqual(1);
+      expect(Math.abs((box.band?.right ?? 0) - (box.bar?.right ?? 0)), `band right ${at}`)
+        .toBeLessThanOrEqual(1);
+      if (box.axis !== null) {
+        expect(Math.abs(box.axis.left - (box.bar?.left ?? 0)), `axis left ${at}`)
+          .toBeLessThanOrEqual(1);
+        expect(Math.abs(box.axis.right - (box.bar?.right ?? 0)), `axis right ${at}`)
+          .toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
   test("collapses and expands a tier, and puts the open set in the URL", async ({ page }) => {
     await openBoard(page);
     const firstTier = page.locator(".tier-head").first();
@@ -368,7 +416,9 @@ test.describe("player detail", () => {
     await openBoard(page);
     await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("None reported")).toBeVisible();
+    // Phase 9A took the design source's own status headline in place of Phase 8's
+    // "None reported" field. Same claim, same number of words, reads as a sentence.
+    await expect(dialog.getByText("No injury designation reported")).toBeVisible();
     await expect(dialog).not.toContainText(/\bhealthy\b/i);
     await expect(dialog).not.toContainText(/\bcleared\b/i);
   });

@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bundle";
 import { easternIsoDate } from "../data/format";
 import { cohortAssignment } from "../data/market";
-import { type ArtifactIndex } from "../data/model";
+import { selectArbitrageRows, selectTierRows, type ArtifactIndex } from "../data/model";
 import { SCORING_TO_PRESET, leaguePresetId, type ScoringValue, type TeamCount } from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
@@ -143,6 +143,31 @@ function Board({
     setState({ view: "data" });
   }, [setState]);
 
+  /**
+   * The row count beside the navigation, from the design source.
+   *
+   * `shown` is what the current filters select and `total` is what the build published for the
+   * active preset. Both are counts of artifact rows; the Data view has no board and shows
+   * none. This is a filter readout, not a derived quantity.
+   */
+  const rowCount = useMemo(() => {
+    const leaguePreset = leaguePresetId(state.teams);
+    const scoring = SCORING_TO_PRESET[state.scoring];
+    if (state.view === "tiers") {
+      return {
+        shown: selectTierRows(index, state).length,
+        total: index.tiersFor(leaguePreset, scoring).length,
+      };
+    }
+    if (state.view === "arbitrage" && index.hasArbitrage) {
+      return {
+        shown: selectArbitrageRows(index, state).length,
+        total: index.arbitrageFor(leaguePreset, scoring).length,
+      };
+    }
+    return undefined;
+  }, [index, state]);
+
   const detail: PlayerDetailData | null = useMemo(() => {
     if (selectedPlayerId === null) return null;
     const leaguePreset = leaguePresetId(state.teams);
@@ -181,6 +206,7 @@ function Board({
           <ViewTabs
             view={state.view}
             arbitrageAvailable={index.hasArbitrage}
+            rowCount={rowCount}
             onChange={(view) => {
               setState({ view });
             }}
@@ -252,8 +278,12 @@ function CriticalError({ error }: { readonly error: CriticalArtifactError }): Re
   return (
     <main className="app">
       <header className="masthead">
-        <div className="wordmark">
-          ffdraft <span>· tiers &amp; arbitrage</span>
+        <div className="masthead-brand">
+          <span className="masthead-glyph chamfer" aria-hidden="true" />
+          <span className="wordmark">jeisey-tiers</span>
+          <span className="wordmark-sub" aria-hidden="true">
+            / Tiers &amp; arbitrage
+          </span>
         </div>
       </header>
       <div className="notice" data-severity="error" role="alert" style={{ marginTop: "1.5rem" }}>

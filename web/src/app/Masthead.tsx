@@ -4,6 +4,12 @@
  * `docs/UX_SPEC.md` section 4 allows a wordmark, a timestamp and a degraded marker. No hero,
  * no tagline above the data. The freshness stamp is derived from `build_metadata.json`; there
  * is no date anywhere in this source (`docs/DATA_CONTRACTS.md` section 11).
+ *
+ * Phase 9A adopted the design source's command-board header, which is the same five elements
+ * in the same order — including a build-notes chip that already matched `mastheadStatus`. The
+ * wordmark is the source's: it names the product `jeisey-tiers`, which is what the repository,
+ * the Pages URL and the owner call it. The `ffdraft-` CSV prefix is an export contract and is
+ * deliberately untouched (`web/src/data/csv.ts`).
  */
 
 import type { BuildMetadata } from "../data/contracts";
@@ -62,8 +68,13 @@ export function Masthead({
   const status = mastheadStatus(metadata, degradations, ageHours);
   return (
     <header className="masthead">
-      <div className="wordmark">
-        ffdraft <span>· tiers &amp; arbitrage</span>
+      <div className="masthead-brand">
+        {/* The design source's notched command glyph. Decoration, and marked as such. */}
+        <span className="masthead-glyph chamfer" aria-hidden="true" />
+        <span className="wordmark">jeisey-tiers</span>
+        <span className="wordmark-sub" aria-hidden="true">
+          / Tiers &amp; arbitrage
+        </span>
       </div>
       <div className="masthead-meta">
         <span className="freshness">

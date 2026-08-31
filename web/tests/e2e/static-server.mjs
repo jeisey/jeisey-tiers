@@ -81,6 +81,7 @@ const MOUNTS = [
   { base: "/scenario/no-market/", dir: "web/dist-no-market" },
   { base: "/scenario/no-status/", dir: "web/dist-no-status" },
   { base: "/scenario/bad-schema/", dir: "web/dist-bad-schema" },
+  { base: "/scenario/matured/", dir: "web/dist-matured" },
   { base: "/", dir: "web/dist" },
 ];
 

@@ -6,11 +6,12 @@
  * an unsupported contract refuses rather than guesses.
  */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../src/app/App";
+import { setMediaQuery } from "./setup";
 import {
   FIXTURE_GENERATED_AT,
   arbitrageEnvelope,
@@ -468,11 +469,13 @@ describe("player detail", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Bijan Robinson" })).toBeDefined();
     });
-    // "None reported" is the absence of a designation. The sentence explaining that an
-    // absence is not a clearance is a property of the product, not of this player, so it
-    // moved to Data — where `data view > keeps every disclosure the card stopped repeating`
-    // pins it.
-    expect(screen.getByText("None reported")).toBeDefined();
+    // The absence of a designation is stated as an absence. Phase 9A took the design source's
+    // own status headline — "NO INJURY DESIGNATION REPORTED" — in place of Phase 8's
+    // "None reported" field, which says the same thing in the same number of words and reads
+    // as a sentence rather than as a value. The sentence explaining that an absence is not a
+    // clearance is a property of the product, not of this player, so it stays in Data — where
+    // `data view > keeps every disclosure the card stopped repeating` pins it.
+    expect(screen.getByText("No injury designation reported")).toBeDefined();
     expect(document.body.textContent).not.toMatch(/\bhealthy\b/i);
     expect(document.body.textContent).not.toMatch(/\bcleared\b/i);
   });
@@ -627,5 +630,158 @@ describe("data view", () => {
     expect(screen.getByText("MyFantasyLeague")).toBeDefined();
     expect(screen.getByText(/free for non-commercial use/)).toBeDefined();
     expect(document.body.textContent).not.toMatch(/fantasypros|fantasycalc/i);
+  });
+});
+
+/**
+ * Phase 9A — the design source's three player-card variants, and the shell it sits in.
+ *
+ * `docs/DESIGN_SOURCE_MAP.md` section 4 is the mapping: 1c on a desktop, 1a on a tablet, 1b —
+ * a tabbed sheet — on a phone. Two of the three are pure layout and belong to the visual-QA
+ * pass; the sheet is not, because a tab list is a different accessibility tree, so it is a
+ * real branch and it is tested here.
+ */
+describe("player card variants", () => {
+  const SHEET = "(max-width: 767px)";
+
+  async function openCard(name: string): Promise<HTMLElement> {
+    render(<App now={FIXTURE_NOW} />);
+    await boardReady();
+    fireEvent.click(screen.getByRole("button", { name }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name })).toBeDefined();
+    });
+    return screen.getByRole("dialog");
+  }
+
+  it("renders every section at once above the sheet breakpoint, with no tab list", async () => {
+    const dialog = await openCard("Amon-Ra Bright");
+    expect(within(dialog).queryByRole("tablist")).toBeNull();
+    for (const heading of ["Intrinsic value", "Draft market", "Current status"]) {
+      expect(within(dialog).getByRole("heading", { name: heading })).toBeDefined();
+    }
+  });
+
+  it("becomes a tabbed sheet below it, showing one section at a time", async () => {
+    setMediaQuery(SHEET, true);
+    const dialog = await openCard("Amon-Ra Bright");
+
+    const tabs = within(dialog).getByRole("tablist");
+    expect(within(tabs).getAllByRole("tab")).toHaveLength(3);
+    // One panel, and it is the first tab's.
+    expect(within(dialog).getAllByRole("tabpanel")).toHaveLength(1);
+    expect(within(dialog).getByRole("heading", { name: "Intrinsic value" })).toBeDefined();
+    expect(within(dialog).queryByRole("heading", { name: "Draft market" })).toBeNull();
+
+    fireEvent.click(within(tabs).getByRole("tab", { name: "Draft market" }));
+    expect(within(dialog).getByRole("heading", { name: "Draft market" })).toBeDefined();
+    expect(within(dialog).queryByRole("heading", { name: "Intrinsic value" })).toBeNull();
+    expect(within(tabs).getByRole("tab", { name: "Draft market" }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("moves between tabs with the arrow keys, and wraps", async () => {
+    setMediaQuery(SHEET, true);
+    const dialog = await openCard("Amon-Ra Bright");
+    const tabs = within(dialog).getByRole("tablist");
+    const first = within(tabs).getByRole("tab", { name: "Intrinsic value" });
+
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    expect(within(dialog).getByRole("heading", { name: "Draft market" })).toBeDefined();
+
+    fireEvent.keyDown(within(tabs).getByRole("tab", { name: "Draft market" }), { key: "ArrowLeft" });
+    expect(within(dialog).getByRole("heading", { name: "Intrinsic value" })).toBeDefined();
+
+    fireEvent.keyDown(first, { key: "ArrowLeft" });
+    expect(within(dialog).getByRole("heading", { name: "Current status" })).toBeDefined();
+  });
+
+  /**
+   * A player the market has not priced still gets a market tab, and it says so. Dropping the
+   * tab would make the tab set vary by player and would hide the very fact a drafter needs —
+   * that he is fully ranked and simply has no price to compare against.
+   */
+  it("keeps the market tab for an unpriced player, and says there is no price", async () => {
+    setMediaQuery(SHEET, true);
+    const dialog = await openCard("Zach Ertz");
+    const tabs = within(dialog).getByRole("tablist");
+    expect(within(tabs).getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+      "Intrinsic value",
+      "Draft market",
+      "Current status",
+    ]);
+    fireEvent.click(within(tabs).getByRole("tab", { name: "Draft market" }));
+    expect(within(dialog).getByText(/No current MyFantasyLeague ADP/)).toBeDefined();
+  });
+
+  /**
+   * The rail is the same DOM in all three variants and always carries the accessible title,
+   * which is what lets the layout move it without any variant duplicating the heading.
+   */
+  it("keeps one accessible title, in both variants", async () => {
+    const wide = await openCard("Amon-Ra Bright");
+    expect(within(wide).getAllByRole("heading", { name: "Amon-Ra Bright" })).toHaveLength(1);
+    expect(wide.getAttribute("aria-labelledby")).not.toBeNull();
+  });
+
+  it("leads with fair rank, the market verdict and the status line, in every variant", async () => {
+    for (const sheet of [false, true]) {
+      setMediaQuery(SHEET, sheet);
+      const dialog = await openCard("Amon-Ra Bright");
+      for (const label of ["Fair rank", "Market verdict", "Arbitrage score", "Status"]) {
+        expect(within(dialog).getByText(label, { exact: true })).toBeDefined();
+      }
+      cleanup();
+    }
+  });
+});
+
+describe("the shell", () => {
+  it("prints the shown and published row counts beside the navigation", async () => {
+    render(<App now={FIXTURE_NOW} />);
+    await boardReady();
+
+    /*
+     * Both numbers are counts of artifact rows for the preset on screen. They are checked
+     * against the table beside them rather than against a fixture length: `tierRecords()`
+     * spans every published preset, and a readout that agreed with *that* would be counting
+     * rows this board does not show.
+     */
+    const rowsInTable = (): number =>
+      within(screen.getByRole("table", { name: /Intrinsic tier board/ })).getAllByRole("row")
+        .length - 1;
+
+    const total = rowsInTable();
+    expect(total).toBeGreaterThan(0);
+    expect(screen.getByText(`${String(total)} of ${String(total)} rows`)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("radio", { name: "QB" }));
+    await waitFor(() => {
+      const shown = rowsInTable();
+      expect(shown).toBeLessThan(total);
+      expect(screen.getByText(`${String(shown)} of ${String(total)} rows`)).toBeDefined();
+    });
+  });
+
+  /**
+   * The slash shortcut the design source advertises with a key hint inside the field. It must
+   * never eat a character someone is typing, which is the whole risk of a bare-key shortcut.
+   */
+  it("focuses the search box on / but never while text is being typed", async () => {
+    render(<App now={FIXTURE_NOW} />);
+    await boardReady();
+    const search = screen.getByLabelText("Player search");
+
+    fireEvent.keyDown(document.body, { key: "/" });
+    expect(document.activeElement).toBe(search);
+
+    // Already in the field: the keystroke is a character, not a command.
+    const before = document.activeElement;
+    fireEvent.keyDown(search, { key: "/" });
+    expect(document.activeElement).toBe(before);
+
+    // A modifier is somebody else's shortcut.
+    (document.activeElement as HTMLElement).blur();
+    fireEvent.keyDown(document.body, { key: "/", ctrlKey: true });
+    expect(document.activeElement).not.toBe(search);
   });
 });

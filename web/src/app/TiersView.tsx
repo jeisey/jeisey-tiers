@@ -17,7 +17,7 @@
 import { useCallback, useMemo, useRef } from "react";
 
 import { TierBoard, TIER_SOFT_EDGE_NOTE, defaultOpenTiers } from "../charts/TierBoard";
-import { Notice } from "../components/primitives";
+import { Notice, SectionHead } from "../components/primitives";
 import { tierRowsToCsv } from "../data/csv";
 import { groupByTier, type ArtifactIndex, type TierRow } from "../data/model";
 import { selectTierRows } from "../data/model";
@@ -83,27 +83,24 @@ export function TiersView({
   return (
     <>
       <section className="section" aria-labelledby="tier-board-heading">
-        <div className="section-head">
-          <h2 id="tier-board-heading">Tier board</h2>
-          <p className="section-note">{TIER_SOFT_EDGE_NOTE}</p>
-          <div className="section-actions">
-            <button type="button" className="button" onClick={onToggleAll}>
-              {allOpen ? "Collapse all tiers" : "Expand all tiers"}
-            </button>
-            <button
-              type="button"
-              className="button"
-              aria-pressed={state.board === "full"}
-              onClick={() => {
-                onChange({ board: state.board === "full" ? "top" : "full" });
-              }}
-            >
-              {state.board === "full"
-                ? `Show top ${String(BOARD_PREVIEW_DEPTH)}`
-                : `Show full board (${String(rows.length)})`}
-            </button>
-          </div>
-        </div>
+        <SectionHead index="01" id="tier-board-heading" title="Tier board" note={TIER_SOFT_EDGE_NOTE}>
+          <button type="button" className="button" onClick={onToggleAll}>
+            {allOpen ? "Collapse all tiers" : "Expand all tiers"}
+          </button>
+          <button
+            type="button"
+            className="button chamfer"
+            data-variant="primary"
+            aria-pressed={state.board === "full"}
+            onClick={() => {
+              onChange({ board: state.board === "full" ? "top" : "full" });
+            }}
+          >
+            {state.board === "full"
+              ? `Show top ${String(BOARD_PREVIEW_DEPTH)}`
+              : `Show full board (${String(rows.length)})`}
+          </button>
+        </SectionHead>
 
         {groups.length === 0 ? (
           <Notice title="No players match.">
@@ -122,6 +119,8 @@ export function TiersView({
           />
         )}
 
+        {/* The design source's legend strip: the four position marks, a vertical rule, then
+            what the geometry means. */}
         <div className="legend">
           {(["QB", "RB", "WR", "TE"] as const).map((position) => (
             <span className="legend-item" key={position}>
@@ -129,13 +128,14 @@ export function TiersView({
               {position}
             </span>
           ))}
+          <span className="legend-sep" aria-hidden="true" />
           <span className="legend-item">
             <span className="legend-rule" />
-            P25–P75 simulated VORP; the tick is the median. P10–P90 is in player detail
+            P25–P75 simulated VORP; the mark is the median. P10–P90 is in player detail
           </span>
           <span className="legend-item">
-            A tier header&apos;s band is that tier&apos;s own P25–P75 span. Neighbouring bands
-            overlap, because exact tier edges are soft
+            A tier&apos;s band is that tier&apos;s own P25–P75 span. Neighbouring bands overlap,
+            because exact tier edges are soft
           </span>
           <span className="legend-item muted">
             {`${String(openCount)} of ${String(charted.length)} charted players are in open tiers`}
@@ -146,19 +146,24 @@ export function TiersView({
       </section>
 
       <section className="section" aria-labelledby="tier-table-heading">
-        <div className="section-head">
-          <h2 id="tier-table-heading">Tier table</h2>
-          <div className="section-actions">
-            <ExportControls
-              board="tiers"
-              scoring={state.scoring}
-              teams={state.teams}
-              buildDate={buildDate}
-              filteredCount={rows.length}
-              buildFilteredCsv={() => tierRowsToCsv(visibleRows.current)}
-            />
-          </div>
-        </div>
+        <SectionHead
+          index="02"
+          id="tier-table-heading"
+          title="Tier table"
+          note={
+            "Fair rank is the published order — sorting re-orders these rows without changing " +
+            "it. Every value is read from the tier artifact."
+          }
+        >
+          <ExportControls
+            board="tiers"
+            scoring={state.scoring}
+            teams={state.teams}
+            buildDate={buildDate}
+            filteredCount={rows.length}
+            buildFilteredCsv={() => tierRowsToCsv(visibleRows.current)}
+          />
+        </SectionHead>
 
         {rows.length === 0 ? (
           <Notice title="No players match.">

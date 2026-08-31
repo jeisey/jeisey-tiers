@@ -1,0 +1,78 @@
+{
+ "generated_at_utc": "2026-08-31T23:38:39.971Z",
+ "board": {
+  "tier_rows": 2700,
+  "arbitrage_rows": 2313,
+  "projection_rows": 900,
+  "status_rows": 300
+ },
+ "artifact_bytes": {
+  "build_metadata.json": 3027,
+  "tiers.json": 1274446,
+  "arbitrage.json": 1799702,
+  "projections.json": 304553,
+  "player_status.json": 156787
+ },
+ "default_view": {
+  "domNodes": 8203,
+  "boardHeightPx": 1690,
+  "tableRows": 300,
+  "boardRows": 47,
+  "svgNodes": 0
+ },
+ "full_board_view": {
+  "domNodes": 11239,
+  "boardRows": 300,
+  "boardHeightPx": 8827
+ },
+ "timings_ms": [
+  {
+   "label": "cold load to first board row",
+   "ms": 629,
+   "min": 514,
+   "max": 1419
+  },
+  {
+   "label": "sort the 300-row tier table",
+   "ms": 423,
+   "min": 377,
+   "max": 627
+  },
+  {
+   "label": "expand all tiers",
+   "ms": 683,
+   "min": 416,
+   "max": 921
+  },
+  {
+   "label": "switch to the full 300-player board",
+   "ms": 570,
+   "min": 455,
+   "max": 670
+  },
+  {
+   "label": "filter to one position",
+   "ms": 214,
+   "min": 189,
+   "max": 241
+  },
+  {
+   "label": "search, after the declared debounce",
+   "ms": 411,
+   "min": 389,
+   "max": 494
+  },
+  {
+   "label": "open the player card",
+   "ms": 379,
+   "min": 281,
+   "max": 418
+  },
+  {
+   "label": "render the arbitrage view",
+   "ms": 674,
+   "min": 438,
+   "max": 864
+  }
+ ]
+}

@@ -27,6 +27,13 @@
  *
  * Tier boundaries are deliberately absent: A0 consumes fair rank and never a tier edge
  * (ADR-040), so drawing one here would imply an input the score does not have.
+ *
+ * **Phase 9A: this surface has no design source.** The owner's Claude Design document draws
+ * the Arbitrage view as a hatched placeholder reading "ARBITRAGE VIEW — NOT PART OF THIS
+ * PASS". So the rail keeps its Phase-8 encoding, which was judged against the real board, and
+ * takes the vocabulary the rest of the product now speaks: the source's outlined bar rather
+ * than a solid fill, its micro-label-over-mono-readout anchors, its hairline row rule. The
+ * semantics did not move and no value here is computed.
  */
 
 import { useCallback, useMemo, useRef } from "react";
@@ -97,11 +104,19 @@ export function DraftRail({
           "is the bargain direction. The arbitrage table below carries the same numbers."}
       </p>
 
+      {/*
+        Two forms of one scale. The three-part strip sits in the bar's own column so its centre
+        label is over the bar's centre; on a phone that column is too narrow for the words, so
+        the same statement is made as a full-width sentence instead. The stylesheet picks.
+      */}
       <div className="rail-scale" aria-hidden="true">
         <span className="rail-scale-track">
           <span className="rail-scale-end">{`← ${String(bound)} picks earlier`}</span>
           <span className="rail-scale-mid">fair rank</span>
           <span className="rail-scale-end">{`${String(bound)} picks later →`}</span>
+        </span>
+        <span className="rail-scale-note">
+          {`Bar scale ±${String(bound)} picks · centre is fair rank`}
         </span>
       </div>
 

@@ -18,7 +18,7 @@
  * a problem.
  */
 
-import { mkdirSync, mkdtempSync, cpSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, cpSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -288,6 +288,18 @@ function metadata() {
 const outArg = process.argv.indexOf("--out");
 const outPath = outArg === -1 ? null : resolve(repo, process.argv[outArg + 1]);
 
+/**
+ * `--css <file>` injects an override stylesheet into every page.
+ *
+ * This is how "which motif is expensive" gets an answer instead of a guess. AGENTS.md says a
+ * visual motif that costs too much should be simplified rather than removed, and you cannot
+ * simplify the right one without attributing the cost first: run the suite, run it again with
+ * one motif neutralised, and read the difference. Nothing in a committed record uses it.
+ */
+const cssArg = process.argv.indexOf("--css");
+const overrideCss =
+  cssArg === -1 ? null : readFileSync(resolve(repo, process.argv[cssArg + 1]), "utf-8");
+
 const dist = mkdtempSync(join(tmpdir(), "ffdraft-perf-"));
 cpSync(resolve(repo, "web/dist"), dist, { recursive: true });
 const dataDir = join(dist, "data");
@@ -322,13 +334,30 @@ async function median(label, run) {
   return { label, ms: Number(samples[2].toFixed(1)), min: Number(samples[0].toFixed(1)), max: Number(samples[4].toFixed(1)) };
 }
 
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+/** Every page the run opens, with the diagnostic override applied when one was asked for. */
+async function newPage() {
+  const created = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  if (overrideCss !== null) await created.addInitScript(injectCss, overrideCss);
+  return created;
+}
+
+function injectCss(css) {
+  const add = () => {
+    const style = document.createElement("style");
+    style.textContent = css;
+    document.head.append(style);
+  };
+  if (document.head) add();
+  else document.addEventListener("DOMContentLoaded", add);
+}
+
+const page = await newPage();
 const results = [];
 
 // Cold load: navigation start to the first rendered board row.
 results.push(
   await median("cold load to first board row", async () => {
-    const fresh = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const fresh = await newPage();
     const started = Date.now();
     await fresh.goto(`${base}/`, { waitUntil: "commit" });
     await fresh.locator(".board-row").first().waitFor();

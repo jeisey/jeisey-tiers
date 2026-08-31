@@ -93,6 +93,15 @@ export async function prepare(): Promise<void> {
   const scenarios: Record<string, Record<string, unknown>> = {
     "no-market": omit("arbitrage.json"),
     "no-status": omit("player_status.json"),
+    /*
+     * The *other* market condition, as its own site.
+     *
+     * `MARKET_CONDITIONS` exists because Phase 8 found every market-sensitive test written
+     * against a uniformly `low` board with a null trend, a state production had already left.
+     * The component tests exercise both; without a build there was no way to *look* at the
+     * matured one, so a visual review could only ever see the launch condition.
+     */
+    matured: fixtures.fixtureFiles("matured"),
     "bad-schema": {
       ...fixtures.fixtureFiles(),
       "tiers.json": { ...fixtures.tierEnvelope(), schema_version: "2.0" },

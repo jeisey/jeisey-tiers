@@ -17,10 +17,11 @@
 import { useMemo, useRef } from "react";
 
 import { DraftRail } from "../charts/DraftRail";
-import { Notice } from "../components/primitives";
+import { ConfidenceMeter, Notice, SectionHead } from "../components/primitives";
 import { arbitrageRowsToCsv } from "../data/csv";
 import { formatEastern, formatInteger } from "../data/format";
 import {
+  CONFIDENCE_SHORT,
   explainClause,
   marketHeadline,
   marketSourceLabel,
@@ -106,30 +107,29 @@ export function ArbitrageView({
       <MarketConditionNotice summary={summary} onOpenData={onOpenData} />
 
       <section className="section" aria-labelledby="draft-rail-heading">
-        <div className="section-head">
-          <h2 id="draft-rail-heading">Draft rail</h2>
-          <p className="section-note">
-            {`${METHOD_LABEL}: fair rank against ${marketSourceLabel(summary.sourceId)}. The bar is the signed difference in picks — not points, not dollars and not a probability.`}
-          </p>
-          <div className="section-actions">
-            <div className="segmented" role="radiogroup" aria-label="Draft rail population">
-              {RAIL_MODES.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  role="radio"
-                  aria-checked={state.rail === mode}
-                  tabIndex={state.rail === mode ? 0 : -1}
-                  onClick={() => {
-                    onChange({ rail: mode });
-                  }}
-                >
-                  {RAIL_LABELS[mode]}
-                </button>
-              ))}
-            </div>
+        <SectionHead
+          index="01"
+          id="draft-rail-heading"
+          title="Draft rail"
+          note={`${METHOD_LABEL}: fair rank against ${marketSourceLabel(summary.sourceId)}. The bar is the signed difference in picks — not points, not dollars and not a probability.`}
+        >
+          <div className="segmented" role="radiogroup" aria-label="Draft rail population">
+            {RAIL_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={state.rail === mode}
+                tabIndex={state.rail === mode ? 0 : -1}
+                onClick={() => {
+                  onChange({ rail: mode });
+                }}
+              >
+                {RAIL_LABELS[mode]}
+              </button>
+            ))}
           </div>
-        </div>
+        </SectionHead>
 
         <DraftRail rows={railRows} onSelect={onSelect} selectedPlayerId={selectedPlayerId} />
 
@@ -152,19 +152,24 @@ export function ArbitrageView({
       </section>
 
       <section className="section" aria-labelledby="arbitrage-table-heading">
-        <div className="section-head">
-          <h2 id="arbitrage-table-heading">Arbitrage table</h2>
-          <div className="section-actions">
-            <ExportControls
-              board="arbitrage"
-              scoring={state.scoring}
-              teams={state.teams}
-              buildDate={buildDate}
-              filteredCount={rows.length}
-              buildFilteredCsv={() => arbitrageRowsToCsv(visibleRows.current)}
-            />
-          </div>
-        </div>
+        <SectionHead
+          index="02"
+          id="arbitrage-table-heading"
+          title="Arbitrage table"
+          note={
+            "Every priced player, default order by arbitrage score. Sorting re-orders these " +
+            "rows; every value is read from the arbitrage artifact."
+          }
+        >
+          <ExportControls
+            board="arbitrage"
+            scoring={state.scoring}
+            teams={state.teams}
+            buildDate={buildDate}
+            filteredCount={rows.length}
+            buildFilteredCsv={() => arbitrageRowsToCsv(visibleRows.current)}
+          />
+        </SectionHead>
 
         {rows.length === 0 ? (
           <UnpricedEmptyState search={state.search} unpriced={unpriced} />
@@ -208,6 +213,9 @@ export function MarketConditionNotice({
   if (headline === null) return null;
   const { assignment } = summary;
   const clauses = assignment?.failedClauses ?? [];
+  // The one label when the board is uniform, the most common one when it is mixed. Whatever
+  // the rows carry — there is no branch here that assumes a condition (ADR-052).
+  const level = summary.uniform ?? summary.dominant;
 
   return (
     <div className="notice market-condition" data-severity={headline.tone}>
@@ -236,6 +244,18 @@ export function MarketConditionNotice({
               <span className="market-fact-qualifier">
                 {assignment.sufficient ? " · clears the frozen rule" : " · below the frozen bar"}
               </span>
+            </span>
+          </li>
+        )}
+        {/* The design source's confidence meter, driven by whatever the rows carry: the one
+            label when the board is uniform, the most common one when it is mixed. */}
+        {level !== null && (
+          <li>
+            <span className="market-fact-label">
+              {summary.uniform === null ? "Most common" : "Market data"}
+            </span>
+            <span className="market-fact-value">
+              <ConfidenceMeter confidence={level} label={CONFIDENCE_SHORT[level]} />
             </span>
           </li>
         )}
