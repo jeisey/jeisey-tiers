@@ -14,26 +14,25 @@
     "lint": "eslint .",
     "typecheck": "tsc --build --force",
     "test": "vitest",
-    "e2e": "playwright test",
+    "e2e": "playwright test --project=chromium --project=mobile --project=a11y",
     "e2e:build": "node --experimental-strip-types web/tests/e2e/build-fixtures.ts",
     "e2e:screens": "node web/tests/e2e/capture-screens.mjs",
-    "verify:board": "node web/tests/e2e/verify-board.mjs"
+    "verify:board": "node web/tests/e2e/verify-board.mjs",
+    "e2e:browsers": "playwright test --project=smoke-chromium --project=smoke-firefox --project=smoke-webkit",
+    "e2e:all": "playwright test"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
-    "d3-array": "^3.2.4",
-    "d3-scale": "^4.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^9.39.0",
     "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.5",
-    "@types/d3-array": "^3.2.2",
-    "@types/d3-scale": "^4.0.9",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

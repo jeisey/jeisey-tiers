@@ -17,7 +17,14 @@
   --ink: #14181d;
   --ink-strong: #05070a;
   --ink-muted: #5b6676;
-  --ink-faint: #8792a3;
+  /*
+   * `--ink-faint` is a *text* colour and therefore has to clear 4.5:1, which the previous
+   * value (#8792a3, 3.15:1 on white) did not. It was tolerable while it only tinted a handful
+   * of em dashes; the Phase-8 HUD gave it every micro-label on the board, the rail and the
+   * player card, and the axe scan found it on the first run. 5.50:1 on the page surface,
+   * 5.12:1 on the sunken one, 4.53:1 on the selected-row surface.
+   */
+  --ink-faint: #5f6a78;
   --surface: #ffffff;
   --surface-sunken: #f5f7f9;
   --surface-raised: #ffffff;
@@ -39,11 +46,17 @@
   --good: #14653a;
   --good-surface: #e7f4ec;
 
-  /* Position hues, low chroma so a table of 300 rows does not vibrate. */
+  /*
+   * Position hues, low chroma so a table of 300 rows does not vibrate — and dark enough to
+   * carry text on all three light surfaces. Running blue and orange at their previous values
+   * left RB at 4.52:1 and TE at 4.14:1 against a selected row, which is under AA for the
+   * small chips the tier headers use. Every hue below clears 4.5:1 on the page, the sunken
+   * panel and a selected row.
+   */
   --pos-qb: #7c3aed;
-  --pos-rb: #047857;
+  --pos-rb: #03684b;
   --pos-wr: #1d4ed8;
-  --pos-te: #b45309;
+  --pos-te: #9a4b06;
 
   /* Arbitrage direction. Paired with a sign and a word everywhere they appear. */
   --bargain: #0f766e;
@@ -71,7 +84,9 @@
     --ink: #e6eaf0;
     --ink-strong: #f7f9fc;
     --ink-muted: #98a4b5;
-    --ink-faint: #6f7c8f;
+    /* 6.70:1 on the page surface, 4.81:1 on a selected row. The previous #6f7c8f was 3.16:1
+       against a selected row, which is where the board's micro-labels sit most often. */
+    --ink-faint: #909cae;
     --surface: #0f1318;
     --surface-sunken: #161b22;
     --surface-raised: #171d25;
@@ -183,7 +198,6 @@ a {
   border: 1px solid var(--rule-strong);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius);
-  transition: top 120ms ease;
 }
 
 .skip-link:focus {
@@ -952,6 +966,14 @@ table.sheet tbody tr[data-selected="true"] td {
 
 .tier-head:hover { background: var(--surface-hover); }
 
+.tier-head:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  /* The global focus style is a box-shadow ring; inside a dense row an outline reads better
+     and two rings read worse, so this one replaces it rather than stacking on it. */
+  box-shadow: none;
+}
+
 .tier-head-mark {
   text-align: right;
 }
@@ -1008,7 +1030,9 @@ table.sheet tbody tr[data-selected="true"] td {
   padding: 1px 4px;
   border-radius: 2px;
   border: 1px solid currentcolor;
-  opacity: 0.85;
+  /* No opacity. A 0.85 multiplier on a hue already close to the AA floor is how a colour that
+     passes in the token table fails in the rendered page, and axe reads the composited pixel
+     rather than the declaration. */
 }
 
 .mix-chip b {
@@ -1071,6 +1095,9 @@ table.sheet tbody tr[data-selected="true"] td {
 .board-row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+  /* The global focus style is a box-shadow ring; inside a dense row an outline reads better
+     and two rings read worse, so this one replaces it rather than stacking on it. */
+  box-shadow: none;
 }
 
 .board-row[data-selected="true"] {
@@ -1222,6 +1249,9 @@ table.sheet tbody tr[data-selected="true"] td {
 .rail-row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+  /* The global focus style is a box-shadow ring; inside a dense row an outline reads better
+     and two rings read worse, so this one replaces it rather than stacking on it. */
+  box-shadow: none;
 }
 
 .rail-row[data-selected="true"] { background: var(--surface-active); }
@@ -1532,7 +1562,7 @@ dialog.player-detail::backdrop {
 .readout-grid {
   display: grid;
   gap: var(--space-3);
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 100%), 1fr));
 }
 
 /* The two grids a drafter reads first sit on a recessed panel; everything else is plain, so
@@ -1546,7 +1576,7 @@ dialog.player-detail::backdrop {
 
 .readout-grid-more,
 .readout-grid-status {
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 1fr));
   gap: var(--space-2) var(--space-3);
 }
 
@@ -1625,7 +1655,7 @@ dialog.player-detail::backdrop {
 /* Kept for the Data view's build table, which is a definition list of the same shape. */
 dl.facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
   gap: var(--space-2) var(--space-4);
   margin: 0;
 }
@@ -1666,7 +1696,10 @@ dl.facts dd {
    keeps its own line length; the page stops being a narrow ribbon on a wide monitor. */
 .data-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  /* `min(30rem, 100%)` rather than a bare `30rem`: a bare minimum larger than the container
+     is a grid track wider than the page, which is how the Data view acquired 168px of
+     horizontal overflow at the 320px width WCAG Reflow names. */
+  grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
   gap: var(--space-2) var(--space-6);
   align-items: start;
 }
@@ -1682,7 +1715,7 @@ dl.facts dd {
 
 .definition-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
   gap: var(--space-3) var(--space-5);
   margin: 0;
   font-size: 0.82rem;
