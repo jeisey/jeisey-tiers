@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "captured_at_utc": "2026-08-31T16:22:21Z",
   "check_id": "mfl_players_details",
   "columns": [
     {
@@ -96,23 +96,23 @@
     }
   ],
   "coverage": {
-    "espn_id_fraction": 0.8212,
-    "espn_id_present": 2135,
-    "espn_id_total": 2600,
+    "espn_id_fraction": 0.8243,
+    "espn_id_present": 2153,
+    "espn_id_total": 2612,
     "gsis_id_fraction": 0.0,
     "gsis_id_present": 0,
-    "gsis_id_total": 2600,
+    "gsis_id_total": 2612,
     "id_fraction": 1.0,
-    "id_present": 2600,
-    "id_total": 2600,
-    "nfl_id_fraction": 0.0342,
+    "id_present": 2612,
+    "id_total": 2612,
+    "nfl_id_fraction": 0.0341,
     "nfl_id_present": 89,
-    "nfl_id_total": 2600,
+    "nfl_id_total": 2612,
     "sportradar_id_fraction": 0.0,
     "sportradar_id_present": 0,
-    "sportradar_id_total": 2600
+    "sportradar_id_total": 2612
   },
-  "record_count": 2600,
+  "record_count": 2612,
   "sample_rows": [
     {
       "draft_team": "BUF",

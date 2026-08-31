@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "captured_at_utc": "2026-08-31T16:22:21Z",
   "check_id": "sleeper_players_nfl",
   "columns": [
     {
@@ -216,27 +216,27 @@
     }
   ],
   "coverage": {
-    "active_skill_gsis_id_fraction": 0.3143,
+    "active_skill_gsis_id_fraction": 0.3141,
     "active_skill_gsis_id_present": 964,
-    "active_skill_gsis_id_total": 3067,
-    "active_skill_position_records": 3067,
-    "espn_id_fraction": 0.5512,
+    "active_skill_gsis_id_total": 3069,
+    "active_skill_position_records": 3069,
+    "espn_id_fraction": 0.551,
     "espn_id_present": 6736,
-    "espn_id_total": 12220,
-    "gsis_id_fraction": 0.3186,
+    "espn_id_total": 12225,
+    "gsis_id_fraction": 0.3184,
     "gsis_id_present": 3893,
-    "gsis_id_total": 12220,
-    "injury_status_fraction": 0.0507,
-    "injury_status_present": 620,
-    "injury_status_total": 12220,
+    "gsis_id_total": 12225,
+    "injury_status_fraction": 0.0649,
+    "injury_status_present": 794,
+    "injury_status_total": 12225,
     "player_id_fraction": 1.0,
-    "player_id_present": 12220,
-    "player_id_total": 12220,
+    "player_id_present": 12225,
+    "player_id_total": 12225,
     "sportradar_id_fraction": 0.9471,
-    "sportradar_id_present": 11573,
-    "sportradar_id_total": 12220
+    "sportradar_id_present": 11578,
+    "sportradar_id_total": 12225
   },
-  "record_count": 12220,
+  "record_count": 12225,
   "sample_rows": [
     {
       "active": true,

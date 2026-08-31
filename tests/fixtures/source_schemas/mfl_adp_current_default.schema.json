@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "captured_at_utc": "2026-08-31T16:22:21Z",
   "check_id": "mfl_adp_current_default",
   "columns": [
     {
@@ -32,33 +32,33 @@
     }
   ],
   "coverage": {
-    "averagePick_max": 218.41,
-    "averagePick_min": 2.57,
+    "averagePick_max": 200.88,
+    "averagePick_min": 1.68,
     "response_envelope": {
       "encoding": "utf-8",
-      "timestamp": "1786974291",
-      "totalDrafts": "410",
-      "totalPicks": "646",
+      "timestamp": "1788188866",
+      "totalDrafts": "1415",
+      "totalPicks": "888",
       "version": "1.0"
     }
   },
-  "record_count": 367,
+  "record_count": 400,
   "sample_rows": [
     {
-      "averagePick": "2.57",
-      "draftSelPct": "30",
-      "draftsSelectedIn": "127",
+      "averagePick": "1.68",
+      "draftSelPct": "64",
+      "draftsSelectedIn": "911",
       "id": "16162",
-      "maxPick": "10",
+      "maxPick": "34",
       "minPick": "1",
       "rank": "1"
     },
     {
-      "averagePick": "2.64",
-      "draftSelPct": "32",
-      "draftsSelectedIn": "132",
+      "averagePick": "2.49",
+      "draftSelPct": "63",
+      "draftsSelectedIn": "901",
       "id": "16161",
-      "maxPick": "8",
+      "maxPick": "11",
       "minPick": "1",
       "rank": "2"
     }
