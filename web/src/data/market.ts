@@ -2,14 +2,20 @@
  * What the market metadata means, derived rather than asserted.
  *
  * Every number in this file comes out of `build_metadata.json` or the arbitrage records. None
- * of it is written down in TypeScript, because the launch measurement — 125 keeper-free
- * drafts against a frozen bar of 300 — will change on its own as draft season matures, and a
- * panel that still said "125" a week later would be lying with confidence (ADR-045).
+ * of it is written down in TypeScript, and that decision has now been tested by events: the
+ * launch board was priced by 125 keeper-free drafts against a frozen bar of 300 and every row
+ * read `low`; a week later the same frozen rule was clearing the same bar and most rows read
+ * `medium`. A panel that had hardcoded either state would have been wrong within days
+ * (ADR-045, ADR-052).
  *
- * The distinction this module exists to keep straight: **`confidence` is market-data quality,
+ * So this module has no notion of a normal condition. `summarizeMarket` reports whatever the
+ * rows say — one label or several — and `marketHeadline` turns that into a sentence for any
+ * of them. The same components render `low`, `medium`, `high` and a mixed board, and a trend
+ * that is null renders exactly as correctly as one that is not.
+ *
+ * The distinction the module exists to keep straight: **`confidence` is market-data quality,
  * not a probability** (ADR-041). A `low` row is not a player the model is unsure about. It is
- * a price we do not yet have much evidence for. At launch every row reads `low` for one shared
- * reason, so the reason is explained once at the view level instead of 2,122 times.
+ * a price with little draft evidence behind it.
  */
 
 import type { ArbitrageRecord, BuildMetadata, Confidence, ScoringPreset } from "./contracts";
@@ -45,7 +51,7 @@ export function cohortAssignment(
 }
 
 /**
- * A frozen sufficiency clause, e.g. `total_drafts 125 < 300`, turned into a sentence.
+ * A frozen sufficiency clause, e.g. `total_drafts 214 < 300`, turned into a sentence.
  *
  * The clause strings are the build's own words. Parsing them keeps the observed value and
  * the bound out of this file; an unrecognized clause is passed through verbatim rather than
@@ -74,8 +80,10 @@ export function explainClause(clause: string): string {
 export interface MarketConditionSummary {
   /** Distinct confidence labels on the rows currently in scope. */
   readonly confidenceCounts: Readonly<Record<Confidence, number>>;
-  /** True when every row in scope carries the same label — the launch condition. */
+  /** The single label, when every row in scope carries the same one. Null on a mixed board. */
   readonly uniform: Confidence | null;
+  /** The label the largest number of rows carry. Never null when there is a row. */
+  readonly dominant: Confidence | null;
   readonly assignment: CohortAssignmentView | null;
   /** Median `market_sample_size` over the rows in scope. The direct per-player evidence. */
   readonly medianSampleSize: number | null;
@@ -106,6 +114,10 @@ export function summarizeMarket(
     if (record.market_sample_size !== null) samples.push(record.market_sample_size);
   }
   const present = (Object.keys(counts) as Confidence[]).filter((key) => counts[key] > 0);
+  let dominant: Confidence | null = null;
+  for (const key of present) {
+    if (dominant === null || counts[key] > counts[dominant]) dominant = key;
+  }
   samples.sort((a, b) => a - b);
   const middle = Math.floor(samples.length / 2);
   const medianSampleSize =
@@ -118,6 +130,7 @@ export function summarizeMarket(
   return {
     confidenceCounts: counts,
     uniform: present.length === 1 ? (present[0] ?? null) : null,
+    dominant,
     assignment: cohortAssignment(metadata, scoring, teams),
     medianSampleSize,
     rows: records.length,
@@ -202,5 +215,52 @@ export function describeGap(rankGap: number): {
     kind: "premium",
     sentence: `The market drafts him ${magnitude} picks earlier than his fair rank.`,
     compact: `\u2212${magnitude} picks earlier`,
+  };
+}
+
+/**
+ * Confidence labels, ordered weakest to strongest.
+ *
+ * Used to decide whether a board's market condition needs a warning tone or an informational
+ * one. `unknown` sits below `low`: a row with no sample at all is weaker evidence than a row
+ * with a small one.
+ */
+export const CONFIDENCE_ORDER: readonly Confidence[] = ["unknown", "low", "medium", "high"];
+
+/** True when this label is weak enough that a board carrying it should say so up front. */
+export function isWeakConfidence(confidence: Confidence): boolean {
+  return confidence === "low" || confidence === "unknown";
+}
+
+export interface MarketHeadline {
+  readonly tone: "info" | "warning";
+  readonly sentence: string;
+}
+
+/**
+ * The one-line market condition, for whatever the board actually is.
+ *
+ * Three shapes, all derived: every row carrying one label, a mixed board, and no rows at all.
+ * There is no branch here that assumes a particular label, which is the whole point — the
+ * product moved `low` -> `medium` on its own between two daily refreshes and this sentence
+ * had to move with it without a code change.
+ */
+export function marketHeadline(summary: MarketConditionSummary): MarketHeadline | null {
+  if (summary.rows === 0) return null;
+  const { uniform, confidenceCounts, dominant } = summary;
+  if (uniform !== null) {
+    return {
+      tone: isWeakConfidence(uniform) ? "warning" : "info",
+      sentence: `Every priced row on this board carries ${CONFIDENCE_SHORT[
+        uniform
+      ].toLowerCase()} market-data confidence.`,
+    };
+  }
+  const parts = CONFIDENCE_ORDER.filter((key) => confidenceCounts[key] > 0)
+    .reverse()
+    .map((key) => `${String(confidenceCounts[key])} ${CONFIDENCE_SHORT[key].toLowerCase()}`);
+  return {
+    tone: dominant !== null && isWeakConfidence(dominant) ? "warning" : "info",
+    sentence: `Market-data confidence across these ${String(summary.rows)} priced rows: ${parts.join(", ")}.`,
   };
 }

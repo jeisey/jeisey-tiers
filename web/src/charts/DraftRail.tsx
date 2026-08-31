@@ -1,50 +1,60 @@
 /**
- * The Draft Rail: fair rank against MyFantasyLeague ADP, one paired rail per player.
+ * The Draft Rail: fair rank against MyFantasyLeague ADP, one HUD row per player.
  *
- * D3 supplies the pick scale; React draws. Every coordinate is an artifact value — the fair
- * anchor is `fair_rank` from the arbitrage record and the market anchor is `market_adp`.
- * Nothing here recomputes a gap or a score.
+ * **What changed in Phase 8, and why.** Phase 6 drew an absolute pick-space rail — a shared
+ * 1-to-300 axis with a filled diamond at `fair_rank`, an open circle at `market_adp` and a
+ * connector between them. Judged against the real 2026 board it does not read: the axis has
+ * to reach the quarterback premiums (Joe Burrow's gap is about −206 picks), so a genuine
+ * eight-and-a-half-pick bargain at the top of the board is three percent of the width and
+ * invisible. The sentence beside each row was doing all the work and the geometry none of it.
  *
- * Two things the chart has to make obvious without colour:
+ * So the geometry now encodes the quantity the view is about: the **signed gap**, on a
+ * symmetric scale centred on zero. Bargains extend right, premiums left, and the scale is
+ * sized to the population actually shown so ordinary gaps have room. A row whose gap runs off
+ * the scale keeps its exact number and gains an overflow chevron — clipped, never rescaled to
+ * imply a magnitude it does not have.
  *
- * - **direction.** Pick numbers run the wrong way round for intuition (earlier is smaller), so
- *   the axis says which end is which and every row carries a sentence: "market drafts him 14.5
- *   picks later".
- * - **what it is not.** V1 has no learned surplus model, so no rail claims expected points or
- *   dollars gained (ADR-010). The length of a connector is picks, and only picks.
+ * What did **not** change: every coordinate is still an artifact value. `fair_rank` and
+ * `market_adp` are printed as their own readouts beside the bar, `rank_gap` is the bar, and
+ * `arbitrage_score` is the published percentile. Nothing here recomputes a gap or a score.
+ *
+ * Two things the rail still has to make obvious without colour:
+ *
+ * - **direction** — a glyph, a word and a side, not a hue. Pick numbers run the wrong way
+ *   round for intuition, so "later" and "earlier" are spelled out on every row.
+ * - **what it is not** — V1 has no learned surplus model, so no row claims expected points,
+ *   dollars or a probability (ADR-010). The bar is picks, and only picks.
  *
  * Tier boundaries are deliberately absent: A0 consumes fair rank and never a tier edge
  * (ADR-040), so drawing one here would imply an input the score does not have.
  */
 
-import { scaleLinear } from "d3-scale";
 import { useCallback, useMemo, useRef } from "react";
 
+import { StatusBadge } from "../components/primitives";
 import { useElementWidth } from "../components/useElementWidth";
 import { shortName } from "./TierBoard";
 import { useRovingMarks } from "./useRovingMarks";
-import { formatAdp, formatRank } from "../data/format";
+import { formatAdp, formatRank, formatScore, formatSigned } from "../data/format";
 import { describeGap } from "../data/market";
-import type { ArbitrageRow } from "../data/model";
 import { statusBadge } from "../data/model";
+import type { ArbitrageRow } from "../data/model";
 
-const MARGIN = { top: 26, right: 16, bottom: 30, left: 14 };
-const ROW_HEIGHT = 22;
-const NAME_WIDTH_WIDE = 168;
-const NAME_WIDTH_COMPACT = 96;
-const GAP_WIDTH_WIDE = 136;
-const GAP_WIDTH_COMPACT = 120;
-/** Below this the rail is too short to read, so the name column gives up space instead. */
-const MIN_RAIL_WIDTH = 120;
 /**
- * Measured advance width of the 11px `.rail-name` face, in pixels per character.
+ * The scale bound, in picks.
  *
- * Truncating by a fixed character count is what put a player's name under the first anchor at
- * 390px: the column is derived from the viewport and the name was not. This derives the name
- * from the column instead.
+ * The 85th percentile of the shown population's absolute gaps, floored at 10 so a board of
+ * near-even rows does not turn rounding into a full-width bar, and ceilinged at 120 so one
+ * structural quarterback premium cannot flatten every other row to a hairline. Rows beyond it
+ * are marked as beyond it.
  */
-const NAME_CHAR_WIDTH = 6.7;
-const NAME_GUTTER = 10;
+export function railBound(gaps: readonly number[]): number {
+  if (gaps.length === 0) return 10;
+  const sorted = [...gaps].map(Math.abs).sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.floor(sorted.length * 0.85));
+  const percentile = sorted[index] ?? 10;
+  return Math.max(10, Math.min(120, Math.ceil(percentile / 5) * 5));
+}
 
 export function DraftRail({
   rows,
@@ -58,23 +68,8 @@ export function DraftRail({
   const container = useRef<HTMLDivElement>(null);
   const width = useElementWidth(container, 1040);
   const compact = width < 720;
-  const gapWidth = compact ? GAP_WIDTH_COMPACT : GAP_WIDTH_WIDE;
-  // The gap column is reserved, never encroached on: its text sits at the right edge, and a
-  // rail allowed to overrun into it draws a line straight through the sentence that explains
-  // it. When space is tight the *name* column shrinks; the rail never grows past what is left.
-  const columns = Math.max(width - MARGIN.left - MARGIN.right - gapWidth, 80);
-  const preferredName = compact ? NAME_WIDTH_COMPACT : NAME_WIDTH_WIDE;
-  const nameWidth = Math.max(Math.min(preferredName, columns - MIN_RAIL_WIDTH), 56);
-  const railWidth = Math.max(columns - nameWidth, 60);
-  const nameChars = Math.max(6, Math.floor((nameWidth - NAME_GUTTER) / NAME_CHAR_WIDTH));
 
-  const scale = useMemo(() => {
-    const picks = rows.flatMap((row) => [row.record.fair_rank, row.record.market_adp]);
-    const max = picks.length === 0 ? 300 : Math.max(...picks);
-    // Pick 1 sits at the left. Numbers increase rightward, and the axis title names both ends
-    // so nobody has to work out which direction is "cheap".
-    return scaleLinear().domain([1, Math.ceil(max / 25) * 25]).range([0, railWidth]);
-  }, [railWidth, rows]);
+  const bound = useMemo(() => railBound(rows.map((row) => row.record.rank_gap)), [rows]);
 
   const activate = useCallback(
     (index: number) => {
@@ -87,147 +82,114 @@ export function DraftRail({
 
   if (rows.length === 0) {
     return (
-      <div className="chart-frame" ref={container}>
+      <div className="draft-rail" ref={container}>
         <p className="muted">No priced players match the current filters.</p>
       </div>
     );
   }
 
-  const height = MARGIN.top + rows.length * ROW_HEIGHT + MARGIN.bottom;
-  const railLeft = MARGIN.left + nameWidth;
-  const ticks = scale.ticks(railWidth < 200 ? 3 : compact ? 4 : 7);
-
   return (
-    <div className="chart-frame" ref={container}>
-      <svg
-        role="img"
-        viewBox={`0 0 ${String(Math.max(width, 320))} ${String(height)}`}
-        aria-labelledby="draft-rail-title draft-rail-desc"
-      >
-        <title id="draft-rail-title">Draft rail</title>
-        <desc id="draft-rail-desc">
-          {`${String(rows.length)} players. Each row pairs the model's fair rank, drawn as a filled ` +
-            "diamond, with the MyFantasyLeague average draft position, drawn as an open circle. " +
-            "A market anchor to the right of the fair anchor means the market drafts him later " +
-            "than his fair rank, which is the bargain direction. The arbitrage table below " +
-            "carries the same numbers."}
-        </desc>
+    <div className="draft-rail" ref={container}>
+      <p className="visually-hidden">
+        {`${String(rows.length)} players. Each row pairs the model's fair rank with the ` +
+          "MyFantasyLeague average draft position and shows the signed difference in picks. " +
+          "A positive difference means the market drafts him later than his fair rank, which " +
+          "is the bargain direction. The arbitrage table below carries the same numbers."}
+      </p>
 
-        <g transform={`translate(${String(railLeft)},0)`}>
-          {ticks.map((tick) => (
-            <line
-              key={tick}
-              className="grid-line"
-              x1={scale(tick)}
-              x2={scale(tick)}
-              y1={MARGIN.top - 8}
-              y2={height - MARGIN.bottom}
-            />
-          ))}
-          {ticks.map((tick) => (
-            <text
-              key={tick}
-              className="axis-label"
-              x={scale(tick)}
-              y={MARGIN.top - 12}
-              textAnchor="middle"
-            >
-              {tick}
-            </text>
-          ))}
-        </g>
+      <div className="rail-scale" aria-hidden="true">
+        <span className="rail-scale-track">
+          <span className="rail-scale-end">{`← ${String(bound)} picks earlier`}</span>
+          <span className="rail-scale-mid">fair rank</span>
+          <span className="rail-scale-end">{`${String(bound)} picks later →`}</span>
+        </span>
+      </div>
 
+      <ol className="rail-rows">
         {rows.map((row, index) => {
           const record = row.record;
-          const y = MARGIN.top + index * ROW_HEIGHT + ROW_HEIGHT / 2;
           const gap = describeGap(record.rank_gap);
-          const fairX = railLeft + scale(record.fair_rank);
-          const marketX = railLeft + scale(record.market_adp);
           const badge = statusBadge(row.status);
-          const selected = record.player_id === selectedPlayerId;
+          const magnitude = Math.min(Math.abs(record.rank_gap), bound) / bound;
+          const overflow = Math.abs(record.rank_gap) > bound;
           return (
-            <g
-              key={record.player_id}
-              className="player-mark"
-              role="button"
-              {...roving.markProps(index)}
-              aria-label={
-                `${record.display_name}, ${record.position}, fair rank ` +
-                `${formatRank(record.fair_rank)}, MyFantasyLeague ADP ${formatAdp(record.market_adp)}. ` +
-                gap.sentence +
-                (badge === null ? "" : ` Current status ${badge.full}, annotation only.`)
-              }
-              onClick={() => {
-                onSelect(record.player_id);
-              }}
-            >
-              {selected && (
-                <rect
-                  x={MARGIN.left - 4}
-                  y={y - ROW_HEIGHT / 2}
-                  width={Math.max(width - MARGIN.left - MARGIN.right + 8, 0)}
-                  height={ROW_HEIGHT}
-                  fill="currentColor"
-                  opacity={0.06}
-                  rx={3}
-                />
-              )}
-              <text className="rail-name" x={MARGIN.left} y={y + 4} aria-hidden="true">
-                {truncate(compact ? shortName(record.display_name) : record.display_name, nameChars)}
-              </text>
-              <line
-                className="rail-connector"
+            <li key={record.player_id}>
+              <div
+                className="rail-row"
+                role="button"
+                data-selected={record.player_id === selectedPlayerId}
+                data-player={record.player_id}
                 data-kind={gap.kind}
-                x1={fairX}
-                x2={marketX}
-                y1={y}
-                y2={y}
-                strokeWidth={2}
-                strokeLinecap="round"
-              />
-              {/* Fair anchor: a filled diamond. Market anchor: an open circle. Two shapes, so
-                  the pair reads without relying on hue. */}
-              <path
-                className="rail-fair"
-                d={`M ${String(fairX)} ${String(y - 4.6)} L ${String(fairX + 4.6)} ${String(y)} L ${String(fairX)} ${String(y + 4.6)} L ${String(fairX - 4.6)} ${String(y)} Z`}
-              />
-              <circle className="rail-market" cx={marketX} cy={y} r={4.2} />
-              <text
-                className="rail-gap"
-                data-kind={gap.kind}
-                x={Math.max(width - MARGIN.right, 0)}
-                y={y + 4}
-                textAnchor="end"
-                aria-hidden="true"
+                aria-label={
+                  `${record.display_name}, ${record.position}, fair rank ` +
+                  `${formatRank(record.fair_rank)}, MyFantasyLeague ADP ` +
+                  `${formatAdp(record.market_adp)}. ${gap.sentence} ` +
+                  `Arbitrage score ${formatScore(record.arbitrage_score)}.` +
+                  (badge === null ? "" : ` Current status ${badge.full}, annotation only.`)
+                }
+                {...roving.markProps(index)}
+                onClick={() => {
+                  onSelect(record.player_id);
+                }}
               >
-                {`${gap.kind === "bargain" ? "→ " : gap.kind === "premium" ? "← " : ""}${gap.compact}`}
-              </text>
-            </g>
+                <span className="rail-pos pos-tag" data-pos={record.position}>
+                  {record.position}
+                </span>
+                <span className="rail-name">
+                  <span className="rail-name-text">
+                    {compact ? shortName(record.display_name) : record.display_name}
+                  </span>
+                  <StatusBadge status={row.status} />
+                </span>
+
+                <span className="rail-anchors" aria-hidden="true">
+                  <span className="rail-anchor">
+                    <span className="rail-anchor-label">Fair</span>
+                    {formatRank(record.fair_rank)}
+                  </span>
+                  <span className="rail-anchor">
+                    <span className="rail-anchor-label">ADP</span>
+                    {formatAdp(record.market_adp)}
+                  </span>
+                </span>
+
+                {/* Zero is the centre and it is where fair rank sits. The bar grows toward the
+                    side the market is on: right when it drafts him later (a bargain), left
+                    when it drafts him earlier (a premium). */}
+                <span className="rail-delta" aria-hidden="true">
+                  <span className="rail-axis" />
+                  <span
+                    className="rail-fill"
+                    data-kind={gap.kind}
+                    style={
+                      gap.kind === "bargain"
+                        ? { left: "50%", width: `${String(magnitude * 50)}%` }
+                        : gap.kind === "premium"
+                          ? { right: "50%", width: `${String(magnitude * 50)}%` }
+                          : { left: "50%", width: "0%" }
+                    }
+                  />
+                  {overflow && (
+                    <span className="rail-overflow" data-kind={gap.kind}>
+                      {gap.kind === "bargain" ? "▸" : "◂"}
+                    </span>
+                  )}
+                </span>
+
+                <span className="rail-gap" data-kind={gap.kind} aria-hidden="true">
+                  <span className="rail-gap-value">{formatSigned(record.rank_gap)}</span>
+                  <span className="rail-gap-word">
+                    {gap.kind === "bargain" ? "later" : gap.kind === "premium" ? "earlier" : "even"}
+                  </span>
+                </span>
+                <span className="rail-score" aria-hidden="true">
+                  {formatScore(record.arbitrage_score)}
+                </span>
+              </div>
+            </li>
           );
         })}
-
-        <text className="axis-title" x={railLeft} y={height - 8}>
-          Earlier picks
-        </text>
-        <text
-          className="axis-title"
-          x={Math.max(width - MARGIN.right, 0)}
-          y={height - 8}
-          textAnchor="end"
-        >
-          Later picks
-        </text>
-      </svg>
+      </ol>
     </div>
   );
-}
-
-/**
- * Fit a name to the column.
- *
- * On a phone the surname alone is what fits and what a drafter reads; the full name is in the
- * mark's accessible label and in the player detail either way.
- */
-function truncate(value: string, max: number): string {
-  return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
 }

@@ -16,6 +16,19 @@ const status = JSON.parse(readFileSync(`${dataDir}/player_status.json`, "utf-8")
 const block = tiers.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => a.fair_rank - b.fair_rank);
+
+/**
+ * Every tier the block publishes, so the board is opened from the artifact rather than from
+ * an assumption about how deep the default open set reaches.
+ *
+ * The Phase-8 board collapses tiers past the draft-relevant top. A checker that assumed the
+ * first N players are always rendered would be pinning today's tier sizes — exactly the
+ * class of assertion this file was corrected for once already. Reading the ordinals out of
+ * `tiers.json` and asking for all of them is the contract-shaped way to say "show me the
+ * whole board".
+ */
+const allTiers = [...new Set(block.map((r) => r.tier_ordinal))].sort((a, b) => a - b).join(".");
+const OPEN_ALL = `?tiers=${allTiers}`;
 const arbBlock = arb.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => b.arbitrage_score - a.arbitrage_score);
@@ -48,7 +61,7 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 const failures = [];
 
 // --- Tier table rows against the artifact -------------------------------------------------
-await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/${OPEN_ALL}`, { waitUntil: "networkidle" });
 await page.waitForSelector("table.sheet tbody tr");
 const rows = await page.$$eval("table.sheet tbody tr", (trs) =>
   trs.slice(0, 40).map((tr) => ({
@@ -74,8 +87,8 @@ rows.forEach(({ cells, name }, i) => {
   expect("expected_points", cells[9], record.expected_points.toFixed(1));
 });
 
-// --- Tier chart marks against the artifact -------------------------------------------------
-const marks = await page.$$eval("svg g.player-mark", (gs) => gs.map((g) => g.getAttribute("aria-label")));
+// --- Tier board rows against the artifact ---------------------------------------------------
+const marks = await page.$$eval(".board-row", (gs) => gs.map((g) => g.getAttribute("aria-label")));
 for (const record of block.slice(0, 25)) {
   const label = marks.find((l) => l.startsWith(`${record.display_name},`));
   if (!label) {
@@ -109,7 +122,7 @@ arbRows.forEach((cells, i) => {
     failures.push(`arb row ${i + 1} trend: rendered ${cells[9]}, artifact wants ${trend}`);
   }
 });
-const railLabels = await page.$$eval("svg g.player-mark", (gs) => gs.map((g) => g.getAttribute("aria-label")));
+const railLabels = await page.$$eval(".rail-row", (gs) => gs.map((g) => g.getAttribute("aria-label")));
 for (const record of arbBlock.filter((r) => r.rank_gap > 0).slice(0, 20)) {
   const label = railLabels.find((l) => l.startsWith(`${record.display_name},`));
   if (!label) { failures.push(`rail: no mark for ${record.display_name}`); continue; }
@@ -118,7 +131,7 @@ for (const record of arbBlock.filter((r) => r.rank_gap > 0).slice(0, 20)) {
 }
 
 // --- Injury badges against the status artifact ----------------------------------------------
-await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/${OPEN_ALL}`, { waitUntil: "networkidle" });
 const badges = await page.$$eval("table.sheet tbody tr", (trs) =>
   trs.map((tr) => ({
     name: tr.querySelector(".player-name")?.textContent?.trim(),
@@ -142,6 +155,7 @@ const withBadge = badges.filter((b) => b.badge !== null).length;
 await browser.close();
 console.log(JSON.stringify({
   tierRowsChecked: rows.length,
+  tierBoardRowsRendered: marks.length,
   tierMarksChecked: 25,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,

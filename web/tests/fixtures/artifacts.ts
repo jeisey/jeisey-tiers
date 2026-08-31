@@ -15,8 +15,25 @@
  * | Kyle Pitts Sr.  | generational suffix, so the short-name path is exercised      |
  * | James Cook III  | the other suffix form, which must not shorten to "III"         |
  *
- * Every arbitrage row carries `low` confidence and a null trend, which mirrors the launch
- * condition the UI has to explain rather than hide.
+ * **Two market conditions, because one of them was a trap.** Until Phase 8 this file only
+ * described the launch board: every arbitrage row `low`, every trend null, the cohort below
+ * the frozen sufficiency bar. That was the real condition in August 2026 and it made the
+ * whole verification layer blind — production moved to a mostly-`medium` board with a
+ * measured trend and a cohort that *clears* the bar within a week, and not one test in the
+ * repository rendered that state. The same class of defect as the Phase-7 trend verifier,
+ * which had frozen the null launch condition into an assertion (ADR-052, and the
+ * `verify-real-build.mjs` note).
+ *
+ * So `MARKET_CONDITIONS` describes both, and the market-sensitive tests run against each:
+ *
+ * | condition  | confidence          | trend            | cohort                        |
+ * |------------|---------------------|------------------|-------------------------------|
+ * | `launch`   | every row `low`     | null everywhere  | below the frozen bar          |
+ * | `matured`  | mixed medium/low    | mostly non-null  | clears every clause           |
+ *
+ * The matured board deliberately keeps one row with a null trend and one `low` row, because
+ * a mature market does not make either impossible and a component that only handles the
+ * uniform case would still be wrong.
  */
 
 import type {
@@ -30,9 +47,22 @@ import type {
   TierRecord,
 } from "../../src/data/contracts";
 
+/**
+ * The market condition a fixture board describes.
+ *
+ * `launch` is August 2026: a thin keeper-free cohort, no trend history, one confidence label.
+ * `matured` is the same board a fortnight later. Neither is "the normal one" — that is the
+ * point, and every market-sensitive component is checked against both.
+ */
+export type MarketCondition = "launch" | "matured";
+
+export const MARKET_CONDITIONS: readonly MarketCondition[] = ["launch", "matured"];
+
 export const FIXTURE_BUILD_ID = "fixture-20260821T120000Z";
 export const FIXTURE_GENERATED_AT = "2026-08-21T14:38:00Z";
 export const FIXTURE_SNAPSHOT_AT = "2026-08-20T14:38:44Z";
+/** The same board a fortnight later: a fuller cohort, a trend window, mixed confidence. */
+export const FIXTURE_MATURED_SNAPSHOT_AT = "2026-09-03T11:25:57Z";
 
 interface Seed {
   readonly id: string;
@@ -81,8 +111,22 @@ function scale(p50: number, scoring: ScoringPreset, teams: number): number {
   return Number((p50 * scoringFactor * leagueFactor).toFixed(4));
 }
 
-function round(value: number): number {
-  return Number(value.toFixed(4));
+function round(value: number, digits = 4): number {
+  return Number(value.toFixed(digits));
+}
+
+/**
+ * The one matured-board row that still has no trend estimate.
+ *
+ * Deebo Gray: 22 drafts at launch, and the thinnest sample on the board afterwards. A window
+ * with enough observation days does not guarantee an estimate for every player, so the
+ * matured fixture keeps a row that proves the em-dash path is still reachable.
+ */
+const NULL_TREND_PLAYER_ID = "gsis:00-0000006";
+
+/** Two more weeks of drafts. Not a rescale of the price — only of the evidence behind it. */
+function maturedSample(sample: number | null): number | null {
+  return sample === null ? null : Math.round(sample * 3.9);
 }
 
 /**
@@ -139,7 +183,7 @@ export function tierRecords(): TierRecord[] {
   return records;
 }
 
-export function arbitrageRecords(): ArbitrageRecord[] {
+export function arbitrageRecords(condition: MarketCondition = "launch"): ArbitrageRecord[] {
   const tiers = tierRecords();
   const records: ArbitrageRecord[] = [];
   for (const league of LEAGUES) {
@@ -165,9 +209,22 @@ export function arbitrageRecords(): ArbitrageRecord[] {
         const rank = sorted.findIndex((candidate) => candidate.tier.player_id === entry.tier.player_id);
         const score = Number((((rank + 0.5) / sorted.length) * 100).toFixed(2));
         const adp = entry.seed.adp ?? 0;
-        const flags = ["cohort_approximate", "cohort_insufficient", "insufficient_trend_history"];
-        if ((entry.seed.sample ?? 0) < 30) flags.push("low_market_sample");
+        const thinSample = (entry.seed.sample ?? 0) < 30;
+        const flags = condition === "launch"
+          ? ["cohort_approximate", "cohort_insufficient", "insufficient_trend_history"]
+          : ["cohort_approximate"];
+        if (thinSample) flags.push("low_market_sample");
         if (adp > 50) flags.push("wide_market_range");
+        // A matured board is mixed, not uniformly `medium`: a player only 22 drafts selected
+        // still has a thin price, and a component that assumed one label per board would be
+        // wrong on the very first row that disagreed.
+        const confidence = condition === "launch" ? "low" : thinSample ? "low" : "medium";
+        // ...and one player deliberately keeps a null trend on the matured board, because a
+        // present trend window does not guarantee an estimate for every row (ADR-042).
+        const trend =
+          condition === "launch" || entry.tier.player_id === NULL_TREND_PLAYER_ID
+            ? null
+            : round(Math.sin(entry.tier.fair_rank * 1.7) * 0.42, 2);
         records.push({
           schema_version: "1.1",
           build_id: FIXTURE_BUILD_ID,
@@ -186,16 +243,21 @@ export function arbitrageRecords(): ArbitrageRecord[] {
           arbitrage_score: score,
           expected_surplus_vorp: null,
           p_positive_surplus: null,
-          market_trend: null,
-          market_sample_size: entry.seed.sample,
+          market_trend: trend,
+          market_sample_size:
+            condition === "launch" ? entry.seed.sample : maturedSample(entry.seed.sample),
           market_adp_sd: null,
           market_adp_low: round(Math.max(1, adp - 18)),
           market_adp_high: round(adp + 44),
           market_source_id: "myfantasyleague_adp",
-          market_cohort_id: "no-mock-no-keeper",
-          market_cohort_detail: "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
-          market_snapshot_at_utc: FIXTURE_SNAPSHOT_AT,
-          confidence: "low",
+          market_cohort_id: condition === "launch" ? "no-mock-no-keeper" : "no-keeper",
+          market_cohort_detail:
+            condition === "launch"
+              ? "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)"
+              : "IS_KEEPER=N (approximate cohort)",
+          market_snapshot_at_utc:
+            condition === "launch" ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT,
+          confidence,
           quality_flags: flags.sort(),
         });
       }
@@ -272,7 +334,11 @@ export function projectionRecords(): PlayerProjectionRecord[] {
   return records;
 }
 
-export function buildMetadata(overrides: Partial<BuildMetadata> = {}): BuildMetadata {
+export function buildMetadata(
+  overrides: Partial<BuildMetadata> = {},
+  condition: MarketCondition = "launch",
+): BuildMetadata {
+  const launch = condition === "launch";
   return {
     schema_version: "1.0",
     build_id: FIXTURE_BUILD_ID,
@@ -285,26 +351,30 @@ export function buildMetadata(overrides: Partial<BuildMetadata> = {}): BuildMeta
     arbitrage_method_version: "a0_rank_gap_v1",
     market: {
       source_id: "myfantasyleague_adp",
-      snapshot_key: "2026-08-20T14-38-44Z",
-      snapshot_at_utc: FIXTURE_SNAPSHOT_AT,
+      snapshot_key: launch ? "2026-08-20T14-38-44Z" : "2026-09-03T11-25-57Z",
+      snapshot_at_utc: launch ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT,
       source_as_of_utc: null,
       cohort_rule_version: "phase5_cohort_v2",
       confidence_rubric_version: "phase5_confidence_v1",
       trend_rule_version: "phase5_trend_v1",
-      trend_available: false,
-      trend_history_snapshots: 2,
+      trend_available: !launch,
+      trend_history_snapshots: launch ? 2 : 7,
       assignments: LEAGUES.flatMap((league) =>
         SCORING.map((scoring) => ({
           scoring_preset: scoring,
           league_size: league.teams,
-          cohort_id: "no-mock-no-keeper",
-          exact: false,
-          sufficient: false,
-          source_format_detail: "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)",
-          failed_clauses: ["total_drafts 125 < 300"],
+          cohort_id: launch ? "no-mock-no-keeper" : "no-keeper",
+          // One matured block is exact, so the "approximate" qualifier has to be *derived*
+          // rather than assumed: a UI that hardcoded the word would fail this row.
+          exact: !launch && league.teams === 10 && scoring === "STD",
+          sufficient: !launch,
+          source_format_detail: launch
+            ? "IS_KEEPER=N&IS_MOCK=0 (approximate cohort)"
+            : "IS_KEEPER=N (approximate cohort)",
+          failed_clauses: launch ? ["total_drafts 125 < 300"] : [],
         })),
       ),
-      confidence_counts: { low: 153 },
+      confidence_counts: launch ? { low: 153 } : { medium: 135, low: 18 },
       unpriced_top_players: 9,
     },
     player_status: {
@@ -320,10 +390,10 @@ export function buildMetadata(overrides: Partial<BuildMetadata> = {}): BuildMeta
       {
         source_id: "myfantasyleague_adp",
         status: "warning",
-        retrieved_at_utc: FIXTURE_SNAPSHOT_AT,
+        retrieved_at_utc: launch ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT,
         source_as_of_utc: null,
         record_count: 4364,
-        warnings: ["cohort_approximate", "cohort_insufficient"],
+        warnings: launch ? ["cohort_approximate", "cohort_insufficient"] : ["cohort_approximate"],
       },
       {
         source_id: "nflreadpy",
@@ -373,8 +443,13 @@ export function tierEnvelope(schemaVersion?: string): ArtifactEnvelope<TierRecor
   return envelope("tiers", "tier_record", tierRecords(), schemaVersion);
 }
 
-export function arbitrageEnvelope(): ArtifactEnvelope<ArbitrageRecord> {
-  return { ...envelope("arbitrage", "arbitrage_record", arbitrageRecords()), arbitrage_mode: "baseline" };
+export function arbitrageEnvelope(
+  condition: MarketCondition = "launch",
+): ArtifactEnvelope<ArbitrageRecord> {
+  return {
+    ...envelope("arbitrage", "arbitrage_record", arbitrageRecords(condition)),
+    arbitrage_mode: "baseline",
+  };
 }
 
 export function playerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {
@@ -386,11 +461,11 @@ export function projectionEnvelope(): ArtifactEnvelope<PlayerProjectionRecord> {
 }
 
 /** Everything a page load needs, keyed by the filename the loader will ask for. */
-export function fixtureFiles(): Record<string, unknown> {
+export function fixtureFiles(condition: MarketCondition = "launch"): Record<string, unknown> {
   return {
-    "build_metadata.json": buildMetadata(),
+    "build_metadata.json": buildMetadata({}, condition),
     "tiers.json": tierEnvelope(),
-    "arbitrage.json": arbitrageEnvelope(),
+    "arbitrage.json": arbitrageEnvelope(condition),
     "player_status.json": playerStatusEnvelope(),
     "projections.json": projectionEnvelope(),
   };

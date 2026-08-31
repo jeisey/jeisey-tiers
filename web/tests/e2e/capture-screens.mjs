@@ -79,6 +79,64 @@ const SCREENS = [
     },
   },
   {
+    // The other half of the Phase-8 responsive decision: at this width the same dialog is a
+    // sheet. Captured next to 08 so a reviewer compares the two treatments directly.
+    name: "08b-mobile-player-detail-sheet",
+    path: "/",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "08c-tablet-player-detail",
+    path: "/",
+    viewport: { width: 900, height: 1100 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Kyle Pitts Sr.", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // A player with no price at all: the card has to say so rather than show an empty market
+    // block, and the Phase-8 layout has to survive a missing readout grid.
+    name: "08d-unpriced-player-detail",
+    path: "/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Zach Ertz", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "12-tiers-all-collapsed",
+    path: "/?tiers=none",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+  },
+  {
+    name: "13-tiers-all-expanded",
+    path: "/?tiers=0.1.2",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: true,
+  },
+  {
+    name: "14-tablet-arbitrage-rail",
+    path: "/?view=arbitrage&rail=all",
+    viewport: { width: 900, height: 1100 },
+    fullPage: false,
+  },
+  {
+    name: "15-arbitrage-premiums",
+    path: "/?view=arbitrage&rail=premiums",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+  },
+  {
     name: "09-schema-refusal",
     path: "/scenario/bad-schema/",
     viewport: { width: 1440, height: 700 },

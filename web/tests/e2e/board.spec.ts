@@ -60,18 +60,49 @@ test.describe("default tier experience", () => {
     await openBoard(page);
     await expect(page.getByText(/exact tier edges are statistically soft/i)).toBeVisible();
     await expect(page.locator("body")).not.toContainText(/value cliff/i);
-    // Lane separation is a filled band, never a stroked rule between tiers.
-    await expect(page.locator("svg .lane-band")).toHaveCount(3);
+    // Lane separation is a filled surface, never a stroked rule between tiers, and the tier
+    // header's band is the tier's own P25-P75 span rather than a cut position (ADR-046).
+    await expect(page.locator(".tier-lane")).toHaveCount(3);
+    await expect(page.locator(".tier-head-band")).toHaveCount(3);
+  });
+
+  test("collapses and expands a tier, and puts the open set in the URL", async ({ page }) => {
+    await openBoard(page);
+    const firstTier = page.locator(".tier-head").first();
+    await expect(firstTier).toHaveAttribute("aria-expanded", "true");
+    const openRows = await page.locator(".board-row").count();
+    expect(openRows).toBeGreaterThan(0);
+
+    await firstTier.click();
+    await expect(page).toHaveURL(/tiers=/);
+    await expect(firstTier).toHaveAttribute("aria-expanded", "false");
+    expect(await page.locator(".board-row").count()).toBeLessThan(openRows);
+
+    await page.getByRole("button", { name: /Expand all tiers/ }).click();
+    await expect(page.locator(".tier-head[aria-expanded='false']")).toHaveCount(0);
+
+    // Shareable: a reload lands on the same open set rather than the default.
+    await page.reload();
+    await expect(page.locator(".tier-head[aria-expanded='false']")).toHaveCount(0);
+  });
+
+  test("keeps the whole board reachable in the table even when every tier is collapsed", async ({
+    page,
+  }) => {
+    await page.goto("/?tiers=none");
+    await expect(page.locator(".board-row")).toHaveCount(0);
+    const table = page.getByRole("table", { name: /Intrinsic tier board/ });
+    await expect(table.getByRole("row")).toHaveCount(18 + 1);
   });
 
   test("expands from the default chart depth to the full board", async ({ page }) => {
     await openBoard(page);
     // The fixture board is shorter than the preview depth, so the control offers the full board
     // and the row count is unchanged — the point is that the chart never invents a different rank.
-    const marksBefore = await page.locator("svg g.player-mark").count();
+    const marksBefore = await page.locator(".board-row").count();
     await page.getByRole("button", { name: /Show full board/ }).click();
     await expect(page).toHaveURL(/board=full/);
-    expect(await page.locator("svg g.player-mark").count()).toBe(marksBefore);
+    expect(await page.locator(".board-row").count()).toBe(marksBefore);
   });
 });
 
@@ -211,21 +242,22 @@ test.describe("arbitrage", () => {
     );
   });
 
-  test("explains the shared low-confidence condition once, from metadata", async ({ page }) => {
+  test("states the market condition once, from metadata", async ({ page }) => {
     await page.goto("/?view=arbitrage");
-    // The condition and what the label means are stated outright; the evidence is one click
-    // away rather than three stacked panels above the board.
-    await expect(page.getByText(/Every row on this board reads low market-data confidence/i)).toBeVisible();
+    // The condition and what the label means are stated outright, with the evidence beside
+    // them as readouts rather than as three stacked panels above the board.
+    await expect(
+      page.getByText(/Every priced row on this board carries low market-data confidence/i),
+    ).toBeVisible();
     await expect(page.getByText(/not a probability that a player is a bargain/)).toBeVisible();
-    await page.getByText("Why, and what the market evidence actually is").click();
     await expect(page.getByText(/125 drafts against the 300/)).toBeVisible();
-    await expect(page.getByText(/median priced player here was selected in/)).toBeVisible();
+    await expect(page.getByText(/drafts per player/)).toBeVisible();
+    await expect(page.getByText(/below the frozen bar/)).toBeVisible();
   });
 
   test("renders a missing trend as collecting, never as zero", async ({ page }) => {
     await page.goto("/?view=arbitrage");
-    await page.getByText("Why, and what the market evidence actually is").click();
-    await expect(page.getByText(/Trend collecting/).first()).toBeVisible();
+    await expect(page.locator(".market-fact-value").filter({ hasText: "collecting" })).toBeVisible();
     const table = page.getByRole("table", { name: /market-gap board/i });
     const trendCell = table.getByRole("row").nth(1).locator("td").nth(9);
     await expect(trendCell).toContainText("—");
@@ -236,26 +268,32 @@ test.describe("arbitrage", () => {
     await page.goto("/?view=arbitrage");
     await expect(page.getByRole("heading", { name: "Draft rail" })).toBeVisible();
     const rail = page.getByRole("radiogroup", { name: "Draft rail population" });
-    const bargains = await page.locator("svg .rail-connector[data-kind='bargain']").count();
+    const bargains = await page.locator(".rail-fill[data-kind='bargain']").count();
     expect(bargains).toBeGreaterThan(0);
-    await expect(page.locator("svg .rail-connector[data-kind='premium']")).toHaveCount(0);
+    await expect(page.locator(".rail-fill[data-kind='premium']")).toHaveCount(0);
 
     await rail.getByRole("radio", { name: "Premiums" }).click();
     await expect(page).toHaveURL(/rail=premiums/);
-    await expect(page.locator("svg .rail-connector[data-kind='bargain']")).toHaveCount(0);
+    await expect(page.locator(".rail-fill[data-kind='bargain']")).toHaveCount(0);
 
     await rail.getByRole("radio", { name: "All" }).click();
     await expect(page).toHaveURL(/rail=all/);
-    expect(await page.locator("svg .rail-connector").count()).toBeGreaterThan(bargains);
+    expect(await page.locator(".rail-fill").count()).toBeGreaterThan(bargains);
   });
 
   test("states bargain direction in words as well as sign", async ({ page }) => {
     await page.goto("/?view=arbitrage");
-    await expect(page.locator("svg text.rail-gap").first()).toContainText(/picks later|picks earlier/);
+    // Direction survives without colour: a side, a word on the row, and the full sentence in
+    // the row's accessible name.
+    await expect(page.locator(".rail-gap-word").first()).toHaveText(/later|earlier|even/);
     await expect(page.getByText(/picks later than his fair rank/).first()).toBeAttached();
+    await expect(page.locator(".rail-row").first()).toHaveAttribute(
+      "aria-label",
+      /picks (later|earlier) than his fair rank/,
+    );
   });
 
-  test("draws rail anchors at the arbitrage record's own numbers", async ({ page }) => {
+  test("draws rail rows at the arbitrage record's own numbers", async ({ page }) => {
     await page.goto("/?view=arbitrage");
     const table = page.getByRole("table", { name: /market-gap board/i });
     const topRow = table.getByRole("row").nth(1);
@@ -263,7 +301,7 @@ test.describe("arbitrage", () => {
     const fair = (await topRow.locator("td").nth(4).textContent())?.trim() ?? "";
     const adp = (await topRow.locator("td").nth(5).textContent())?.trim() ?? "";
     const label = await page
-      .locator("svg g.player-mark")
+      .locator(".rail-row")
       .filter({ hasText: name.slice(0, 8) })
       .first()
       .getAttribute("aria-label");
@@ -282,15 +320,40 @@ test.describe("arbitrage", () => {
 });
 
 test.describe("player detail", () => {
-  test("opens from a table row and discloses that status is annotation only", async ({ page }) => {
+  test("opens from a table row and marks status as annotation only", async ({ page }) => {
     await openBoard(page);
     await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: "Amon-Ra Bright" })).toBeVisible();
-    await expect(dialog.getByText("Questionable")).toBeVisible();
+    await expect(dialog.getByText("Questionable", { exact: true })).toBeVisible();
     await expect(dialog.getByText("Hamstring").first()).toBeVisible();
-    await expect(dialog.getByText(/not included in the projection or the model/)).toBeVisible();
+    await expect(dialog.getByText("Annotation only — not a model input.")).toBeVisible();
     await expect(dialog).not.toContainText(/injury.adjusted|priced in|accounts for this injury/i);
+    // The paragraph that used to sit here now lives once in Data.
+    await expect(dialog).not.toContainText(/The board above was produced without any of these fields/);
+  });
+
+  test("leads with the readouts a drafter needs, not with methodology", async ({ page }) => {
+    await openBoard(page);
+    await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    for (const label of [
+      "Fair rank",
+      "Position rank",
+      "Tier",
+      "Median VORP",
+      "Uncertainty",
+      "MFL ADP",
+      "Value gap",
+      "Arbitrage score",
+      "Market trend",
+      "Market data",
+    ]) {
+      await expect(dialog.getByText(label, { exact: true })).toBeVisible();
+    }
+    // The three paragraphs the Phase-8 review named are gone from the card.
+    await expect(dialog).not.toContainText(/cannot filter drafts to this exact scoring/);
+    await expect(dialog).not.toContainText(/It is not a probability that the player is a bargain/);
   });
 
   test("closes on Escape and returns the page to the board", async ({ page }) => {
@@ -305,16 +368,27 @@ test.describe("player detail", () => {
     await openBoard(page);
     await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText(/absence of a report, not a clearance/)).toBeVisible();
+    await expect(dialog.getByText("None reported")).toBeVisible();
     await expect(dialog).not.toContainText(/\bhealthy\b/i);
+    await expect(dialog).not.toContainText(/\bcleared\b/i);
   });
 
   test("handles a player with no status record at all", async ({ page }) => {
     await openBoard(page);
     await page.getByRole("button", { name: "Deebo Gray", exact: true }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText(/No current status record was published/)).toBeVisible();
+    await expect(dialog.getByText(/No status record was published for this player/)).toBeVisible();
     await expect(dialog.getByText("Fair rank", { exact: true })).toBeVisible();
+  });
+
+  test("returns focus to the row that opened it", async ({ page }) => {
+    await openBoard(page);
+    const trigger = page.getByRole("button", { name: "Bijan Robinson", exact: true });
+    await trigger.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(trigger).toBeFocused();
   });
 
   test("says a player has no current ADP rather than hiding him", async ({ page }) => {
@@ -323,7 +397,7 @@ test.describe("player detail", () => {
     await expect(page.getByRole("dialog").getByText(/No current MyFantasyLeague ADP/)).toBeVisible();
   });
 
-  test("opens from a chart mark with the keyboard", async ({ page }) => {
+  test("opens from a board row with the keyboard", async ({ page }) => {
     await openBoard(page);
     const mark = page.getByRole("button", { name: /^Bijan Robinson,.*median simulated VORP/ });
     await mark.focus();
@@ -432,9 +506,11 @@ test.describe("accessibility", () => {
 
   test("gives both charts a text description and a table equivalent", async ({ page }) => {
     await openBoard(page);
-    await expect(page.locator("svg[role='img'] desc").first()).toContainText(/table below carries the same values/);
+    await expect(page.locator(".tier-board .visually-hidden").first()).toContainText(
+      /table below carries the same values/,
+    );
     await page.goto("/?view=arbitrage");
-    await expect(page.locator("svg[role='img'] desc").first()).toContainText(/same numbers/);
+    await expect(page.locator(".draft-rail .visually-hidden").first()).toContainText(/same numbers/);
   });
 
   test("runs no animation when the viewer asks for reduced motion", async ({ page }) => {

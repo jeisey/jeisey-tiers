@@ -32,14 +32,32 @@ export type PositionFilter = (typeof POSITION_FILTERS)[number];
 export const RAIL_MODES = ["bargains", "premiums", "all"] as const;
 export type RailMode = (typeof RAIL_MODES)[number];
 
+/**
+ * The largest tier ordinal a URL may name.
+ *
+ * A bound, not a contract: it stops a pathological query string driving an unbounded list
+ * into the board, and it is far above any segmentation this product has produced (the 2026
+ * board publishes nine tiers). It is deliberately not derived from the current build, because
+ * a link shared from one build must still parse against the next one.
+ */
+export const MAX_TIER_ORDINAL = 99;
+
 export interface AppState {
   readonly view: ViewId;
   readonly scoring: ScoringValue;
   readonly teams: TeamCount;
   readonly position: PositionFilter;
   readonly search: string;
-  /** Tier Board density switch. Local to the chart but shareable, like every other control. */
+  /** Tier Board depth switch. Local to the chart but shareable, like every other control. */
   readonly board: "top" | "full";
+  /**
+   * The tier ordinals the board has open, or `null` for "whatever the board decides".
+   *
+   * Null rather than a computed default, because the sensible default depends on the tier
+   * sizes the build published and those change with every rebuild. Writing a resolved list
+   * into the URL on first paint would freeze one build's tier structure into a shared link.
+   */
+  readonly tiers: readonly number[] | null;
   readonly rail: RailMode;
 }
 
@@ -58,11 +76,21 @@ export const DEFAULT_STATE: AppState = {
   position: "all",
   search: "",
   board: "top",
+  tiers: null,
   rail: "bargains",
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
-const PARAM_ORDER = ["view", "scoring", "teams", "position", "search", "board", "rail"] as const;
+const PARAM_ORDER = [
+  "view",
+  "scoring",
+  "teams",
+  "position",
+  "search",
+  "board",
+  "tiers",
+  "rail",
+] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
   std: "STD",
@@ -142,6 +170,34 @@ export function parseState(search: string): ParsedState {
   // pathological URL cannot drive an unbounded filter string into the table.
   const search_ = (params.get("search") ?? "").trim().slice(0, 64);
 
+  // `tiers=0.1.4` — the open tier ordinals, deduplicated and ordered so two URLs describing
+  // the same open set are the same string. An empty list is meaningful (every tier closed)
+  // and is written as `tiers=none`; an absent parameter means "let the board choose".
+  //
+  // **Ordinals are zero-based.** `schemas/tier_record.schema.json` declares
+  // `tier_ordinal` with `minimum: 0`, and the first tier really is 0. An earlier draft of
+  // this parser required a positive integer and silently dropped the first tier from every
+  // shared link — a bound taken from an assumption rather than from the contract, which is
+  // the exact mistake Phase 8 exists to find.
+  const rawTiers = params.get("tiers");
+  let tiers: readonly number[] | null = DEFAULT_STATE.tiers;
+  if (rawTiers !== null) {
+    if (rawTiers === "none") {
+      tiers = [];
+    } else {
+      const parsed = rawTiers
+        .split(".")
+        .map((part) => Number.parseInt(part, 10))
+        .filter((value) => Number.isInteger(value) && value >= 0 && value <= MAX_TIER_ORDINAL);
+      if (parsed.length === 0) {
+        normalized = false;
+      } else {
+        tiers = [...new Set(parsed)].sort((a, b) => a - b);
+        if (serializeTiers(tiers) !== rawTiers) normalized = false;
+      }
+    }
+  }
+
   // A parameter the app does not know is dropped rather than preserved: keeping it would make
   // two URLs describing the same state compare unequal.
   for (const key of params.keys()) {
@@ -156,16 +212,26 @@ export function parseState(search: string): ParsedState {
       position: position.value,
       search: search_,
       board: board.value,
+      tiers,
       rail: rail.value,
     },
     normalized,
   };
 }
 
+/** `[1, 2, 5]` -> `1.2.5`; the empty set -> `none`, which is a state and not an absence. */
+export function serializeTiers(tiers: readonly number[]): string {
+  return tiers.length === 0 ? "none" : [...new Set(tiers)].sort((a, b) => a - b).join(".");
+}
+
 /** `?scoring=half&position=rb` — defaults omitted, order fixed, empty string when default. */
 export function serializeState(state: AppState): string {
   const params = new URLSearchParams();
   for (const key of PARAM_ORDER) {
+    if (key === "tiers") {
+      if (state.tiers !== null) params.set(key, serializeTiers(state.tiers));
+      continue;
+    }
     const value = state[key];
     if (value === DEFAULT_STATE[key]) continue;
     if (key === "search" && state.search === "") continue;

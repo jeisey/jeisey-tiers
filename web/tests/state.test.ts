@@ -30,6 +30,7 @@ describe("parseState", () => {
       view: "arbitrage",
       scoring: "half",
       teams: 14,
+      tiers: null,
       position: "rb",
       search: "achane",
       board: "top",
@@ -105,5 +106,49 @@ describe("leaguePresetId", () => {
     expect(leaguePresetId(10)).toBe("redraft-10");
     expect(leaguePresetId(12)).toBe("redraft-12");
     expect(leaguePresetId(14)).toBe("redraft-14");
+  });
+});
+
+/**
+ * Open tiers in the URL.
+ *
+ * The regression here is small and was real: an earlier draft required a *positive* tier
+ * ordinal, which quietly dropped the first tier out of every shared link, because
+ * `schemas/tier_record.schema.json` declares `tier_ordinal` with `minimum: 0` and the first
+ * tier is 0. A bound taken from an assumption rather than from the contract.
+ */
+describe("open tier state", () => {
+  it("round-trips the zero-based first tier", () => {
+    const parsed = parseState("?tiers=0.1.2");
+    expect(parsed.state.tiers).toEqual([0, 1, 2]);
+    expect(parsed.normalized).toBe(true);
+    expect(serializeState({ ...DEFAULT_STATE, tiers: [0, 1, 2] })).toBe("?tiers=0.1.2");
+  });
+
+  it("distinguishes 'every tier closed' from 'the board chooses'", () => {
+    expect(parseState("?tiers=none").state.tiers).toEqual([]);
+    expect(parseState("").state.tiers).toBeNull();
+    expect(serializeState({ ...DEFAULT_STATE, tiers: [] })).toBe("?tiers=none");
+    expect(serializeState({ ...DEFAULT_STATE, tiers: null })).toBe("");
+  });
+
+  it("sorts and deduplicates so one open set is one string", () => {
+    expect(serializeState({ ...DEFAULT_STATE, tiers: [3, 0, 3, 1] })).toBe("?tiers=0.1.3");
+  });
+
+  it("normalizes an unsorted or duplicated list rather than trusting it", () => {
+    const parsed = parseState("?tiers=2.0.2");
+    expect(parsed.state.tiers).toEqual([0, 2]);
+    expect(parsed.normalized).toBe(false);
+  });
+
+  it("rejects junk and falls back to letting the board choose", () => {
+    const parsed = parseState("?tiers=abc");
+    expect(parsed.state.tiers).toBeNull();
+    expect(parsed.normalized).toBe(false);
+  });
+
+  it("bounds the list so a pathological URL cannot drive the board", () => {
+    expect(parseState("?tiers=0.1.10000").state.tiers).toEqual([0, 1]);
   });
 });

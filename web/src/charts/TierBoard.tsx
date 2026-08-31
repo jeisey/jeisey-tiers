@@ -1,104 +1,91 @@
 /**
  * The Tier Board.
  *
- * D3 owns the scale and the geometry; React owns the elements and the state. No D3 selection
- * touches a React-managed node (`docs/ARCHITECTURE.md` section 10).
+ * **What changed in Phase 8, and why.** Phase 6 drew one SVG chart row per player: a dot at
+ * the median with a P25-P75 whisker behind it, packed into a lane per tier. It was correct
+ * and it was 1,800px tall for the default top hundred, because a top back's interquartile
+ * interval is wider than the whole gap between the first and twentieth median, so nothing
+ * could share a row. The owner's Phase-8 review asked for a board that can be scanned during
+ * a live draft without faking narrower intervals.
+ *
+ * The encoding here keeps every number and changes the geometry:
+ *
+ * - one **HUD row** per player — rank, position, name, a compact interval glyph, the median
+ *   readout — instead of one chart row;
+ * - the glyph is the same P25-P75 interval on the same shared board scale. It is narrower
+ *   because it no longer has to share the plot with a name label, not because the interval
+ *   was shortened;
+ * - **tiers collapse.** The draft-relevant top of the board is open and the tail is one
+ *   header row per tier, so the shape of the whole board fits on a screen and the reader
+ *   opens the tier they are drafting from. `board=tiers` in the URL carries the open set,
+ *   so the view is shareable like every other control.
  *
  * **A tier is a group, not a line.** Phase 4 measured tier *membership* as reproducible
  * (bootstrap ARI 0.865) and tier *boundaries* as not (boundary agreement 0.239 against a
  * 0.500 bar); across 1,200 replicates only about four cut sites on a 300-deep board survived
- * in a majority, and the median promoted boundary sits on a 0.55-point cliff against an
- * 80-130-point interval (ADR-035). So the lanes here are separated by whitespace and a change
- * of surface, never by a rule, an arrow or a "value cliff" label. Drawing a hard edge would
- * be the UI asserting a quantity the measurement says is not identified.
+ * in a majority (ADR-035). So no rule, arrow or "value cliff" is drawn anywhere here. The
+ * collapsed header draws the tier's own P25-P75 span as a band on the shared scale, which
+ * makes the softness *visible*: adjacent tier bands overlap, because the values do.
  *
- * **The axis is `p50_vorp` and says so.** Fair rank is median simulated VORP (ADR-034), so
- * the horizontal coordinate is the statistic the ranking is actually made of, labelled
- * "Median simulated VORP" rather than a generic "value".
+ * **The axis is `p50_vorp` and says so.** Fair rank is median simulated VORP (ADR-034).
  */
 
-import { scaleLinear } from "d3-scale";
 import { useCallback, useMemo, useRef } from "react";
 
+import { StatusBadge } from "../components/primitives";
 import { useElementWidth } from "../components/useElementWidth";
 import { useRovingMarks } from "./useRovingMarks";
 import { formatRank, formatValue } from "../data/format";
 import type { TierGroup, TierRow } from "../data/model";
-import { statusBadge } from "../data/model";
 
 export const TIER_SOFT_EDGE_NOTE =
   "Tier groups are useful; exact tier edges are statistically soft. Membership reproduces " +
   "across resamples; the precise cut positions do not.";
 
-const MARGIN = { top: 24, right: 20, bottom: 34, left: 58 };
-const LANE_GAP = 10;
-const ROW_HEIGHT = 17;
-const DOT_RADIUS = 3.6;
+/** How many players the open tiers hold before the rest collapse, on a first visit. */
+export const DEFAULT_OPEN_DEPTH = 36;
 
-interface PlacedMark {
-  readonly row: TierRow;
-  readonly x: number;
-  readonly y: number;
-  readonly x25: number;
-  readonly x75: number;
-  readonly labelAnchor: "start" | "end";
+interface Span {
+  readonly low: number;
+  readonly high: number;
+  readonly mid: number;
 }
 
-interface PlacedLane {
-  readonly group: TierGroup;
-  readonly top: number;
-  readonly height: number;
-  readonly marks: readonly PlacedMark[];
+/** The tier's own interquartile envelope, on the shared scale. Never a cut position. */
+function tierSpan(group: TierGroup): Span {
+  let low = Number.POSITIVE_INFINITY;
+  let high = Number.NEGATIVE_INFINITY;
+  for (const row of group.rows) {
+    low = Math.min(low, row.record.p25_vorp);
+    high = Math.max(high, row.record.p75_vorp);
+  }
+  const first = group.rows[0]?.record.p50_vorp ?? 0;
+  return {
+    low: Number.isFinite(low) ? low : first,
+    high: Number.isFinite(high) ? high : first,
+    mid: first,
+  };
 }
 
 /**
- * Greedy row packing inside a lane.
+ * Which tiers open on a first visit.
  *
- * Each mark claims the horizontal extent of its interval *and* its label, and drops into the
- * first row where that extent is free. On the real board almost nothing shares a row, and
- * that is the finding rather than a layout failure: a top back's P25-P75 interval is wider
- * than the entire gap between the first and twentieth median. Two players packed side by side
- * would only be possible by drawing intervals too short to be true.
- *
- * Vertical position carries no meaning beyond avoiding collisions, and the legend says so.
+ * Whole tiers only: opening half of one would put a cut position on screen as if it were a
+ * threshold, which is exactly the quantity ADR-035 says is not identified. The first tier is
+ * always open, so the board is never a wall of closed headers.
  */
-function packLane(
-  rows: readonly TierRow[],
-  x: (value: number) => number,
-  labelWidth: (row: TierRow) => number,
-  plotWidth: number,
-): { readonly marks: PlacedMark[]; readonly rowCount: number } {
-  const occupied: number[] = [];
-  const marks: PlacedMark[] = [];
-  // Highest value first, so the players a drafter looks for land in the top row of the lane.
-  const ordered = [...rows].sort((a, b) => b.record.p50_vorp - a.record.p50_vorp);
-
-  for (const row of ordered) {
-    const cx = x(row.record.p50_vorp);
-    const x25 = x(row.record.p25_vorp);
-    const x75 = x(row.record.p75_vorp);
-    // A label sits to the left of its dot unless that would run off the plot.
-    const width = labelWidth(row);
-    const anchor: "start" | "end" = cx - width - DOT_RADIUS - 4 < 0 ? "start" : "end";
-    const left = Math.min(anchor === "end" ? cx - width - DOT_RADIUS - 4 : cx - DOT_RADIUS, x25);
-    const right = Math.max(anchor === "end" ? cx + DOT_RADIUS : cx + width + DOT_RADIUS + 4, x75);
-
-    let rowIndex = occupied.findIndex((edge) => left > edge + 8);
-    if (rowIndex === -1) {
-      rowIndex = occupied.length;
-      occupied.push(0);
-    }
-    occupied[rowIndex] = Math.min(right, plotWidth);
-    marks.push({
-      row,
-      x: cx,
-      y: rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2,
-      x25,
-      x75,
-      labelAnchor: anchor,
-    });
+export function defaultOpenTiers(
+  groups: readonly TierGroup[],
+  depth = DEFAULT_OPEN_DEPTH,
+): readonly number[] {
+  const open: number[] = [];
+  let shown = 0;
+  for (const group of groups) {
+    if (open.length > 0 && shown >= depth) break;
+    open.push(group.ordinal);
+    shown += group.rows.length;
   }
-  return { marks, rowCount: Math.max(occupied.length, 1) };
+  return open;
 }
 
 /** Generational suffixes are not surnames: "James Cook III" shortens to "Cook", never "III". */
@@ -113,8 +100,32 @@ export function shortName(name: string): string {
   return parts.length > 1 ? (parts[parts.length - 1] ?? name) : (parts[0] ?? name);
 }
 
-function markLabel(row: TierRow, compact: boolean): string {
-  return compact ? shortName(row.record.display_name) : row.record.display_name;
+/** A percentage position on the shared scale, clamped so a rounding error cannot escape it. */
+function pct(value: number, min: number, range: number): number {
+  if (range <= 0) return 0;
+  return Math.max(0, Math.min(100, ((value - min) / range) * 100));
+}
+
+function positionMix(group: TierGroup): readonly { position: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const row of group.rows) {
+    counts.set(row.record.position, (counts.get(row.record.position) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([position, count]) => ({ position, count }))
+    .sort((a, b) => b.count - a.count || a.position.localeCompare(b.position));
+}
+
+function markLabel(row: TierRow, tierLabel: string): string {
+  const record = row.record;
+  return (
+    `${record.display_name}, ${record.position}${String(record.position_rank)}` +
+    `${record.team === null ? "" : `, ${record.team}`}, tier ${tierLabel}, ` +
+    `fair rank ${formatRank(record.fair_rank)}, median simulated VORP ` +
+    `${formatValue(record.p50_vorp)}, P25 to P75 ${formatValue(record.p25_vorp)} ` +
+    `to ${formatValue(record.p75_vorp)}, P10 to P90 ${formatValue(record.p10_vorp)} ` +
+    `to ${formatValue(record.p90_vorp)}`
+  );
 }
 
 export function TierBoard({
@@ -122,210 +133,253 @@ export function TierBoard({
   onSelect,
   selectedPlayerId,
   scoringLabel,
+  openTiers,
+  onToggleTier,
 }: {
   readonly groups: readonly TierGroup[];
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
   readonly scoringLabel: string;
+  /** The tier ordinals currently expanded. */
+  readonly openTiers: ReadonlySet<number>;
+  readonly onToggleTier: (ordinal: number) => void;
 }): React.JSX.Element {
   const container = useRef<HTMLDivElement>(null);
   const width = useElementWidth(container, 1040);
-  const compact = width < 760;
-  const plotWidth = Math.max(width - MARGIN.left - MARGIN.right, 220);
+  const compact = width < 720;
 
-  const layout = useMemo(() => {
-    // The axis spans exactly the interval the chart draws — P25 to P75. Scaling to P10-P90
-    // instead would spend a third of the width on tails the chart does not render, and would
-    // push every median into the middle half of the plot.
-    const values = groups.flatMap((group) =>
-      group.rows.flatMap((row) => [row.record.p25_vorp, row.record.p75_vorp]),
-    );
-    const min = values.length === 0 ? 0 : Math.min(...values);
-    const max = values.length === 0 ? 1 : Math.max(...values);
-    const x = scaleLinear().domain([min, max]).nice().range([0, plotWidth]);
-
-    // Measured advance width of the 10px `.mark-label` face. A character estimate rather than
-    // a DOM measurement, because laying out 150 marks must not cost 150 synchronous text
-    // metrics on every resize — but it is measured rather than guessed, since underestimating
-    // it packs labels into space they do not have.
-    const charWidth = compact ? 5.8 : 6.1;
-    const labelWidth = (row: TierRow): number =>
-      markLabel(row, compact).length * charWidth + (compact ? 0 : 26);
-
-    const lanes: PlacedLane[] = [];
-    let top = MARGIN.top;
+  const scale = useMemo(() => {
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
     for (const group of groups) {
-      const packed = packLane(group.rows, (value) => x(value), labelWidth, plotWidth);
-      const height = packed.rowCount * ROW_HEIGHT + 6;
-      lanes.push({ group, top, height, marks: packed.marks });
-      top += height + LANE_GAP;
+      for (const row of group.rows) {
+        min = Math.min(min, row.record.p25_vorp);
+        max = Math.max(max, row.record.p75_vorp);
+      }
     }
-    return { x, lanes, height: top - LANE_GAP + MARGIN.bottom };
-  }, [compact, groups, plotWidth]);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: 0, max: 1, range: 1 };
+    // A whole-number step, so the ticks below read as values rather than as artefacts.
+    const step = niceStep((max - min) / (compact ? 3 : 6));
+    const low = Math.floor(min / step) * step;
+    const high = Math.ceil(max / step) * step;
+    return { min: low, max: high, range: high - low || 1, step };
+  }, [compact, groups]);
 
-  // One flat fair-rank-ordered list across all lanes, so arrow keys walk the board in the
-  // order it is ranked rather than in whatever order each lane happened to pack.
-  const order = useMemo(
+  const ticks = useMemo(() => {
+    const step = scale.step ?? scale.range;
+    const out: number[] = [];
+    for (let value = scale.min; value <= scale.max + step / 2; value += step) {
+      out.push(Math.round(value * 10) / 10);
+    }
+    return out;
+  }, [scale]);
+
+  // One flat list over the rows that are actually rendered, in fair-rank order, so arrow keys
+  // walk the open board rather than stepping into a tier the reader has closed.
+  const visible = useMemo(
     () =>
       groups
+        .filter((group) => openTiers.has(group.ordinal))
         .flatMap((group) => group.rows)
         .sort((a, b) => a.record.fair_rank - b.record.fair_rank)
         .map((row) => row.record.player_id),
-    [groups],
+    [groups, openTiers],
   );
+  const indexOf = useMemo(() => new Map(visible.map((id, index) => [id, index])), [visible]);
+
   const activate = useCallback(
     (index: number) => {
-      const playerId = order[index];
+      const playerId = visible[index];
       if (playerId !== undefined) onSelect(playerId);
     },
-    [onSelect, order],
+    [onSelect, visible],
   );
-  const roving = useRovingMarks(order.length, activate);
+  const roving = useRovingMarks(visible.length, activate);
 
   if (groups.length === 0) {
     return (
-      <div className="chart-frame" ref={container}>
+      <div className="tier-board" ref={container}>
         <p className="muted">No players match the current filters.</p>
       </div>
     );
   }
 
-  const ticks = layout.x.ticks(compact ? 4 : 8);
-  const plotBottom = layout.height - MARGIN.bottom;
-
   return (
-    <div className="chart-frame" ref={container}>
-      <svg
-        role="img"
-        viewBox={`0 0 ${String(Math.max(width, 320))} ${String(layout.height)}`}
-        aria-labelledby="tier-board-title tier-board-desc"
-      >
-        <title id="tier-board-title">Tier board</title>
-        <desc id="tier-board-desc">
-          {`${String(groups.length)} tier groups of ${scoringLabel} players positioned by median ` +
-            "simulated VORP, with the P25 to P75 interval drawn behind each mark. Tier groups are " +
-            "drawn as soft bands because exact tier edges are not statistically stable. The table " +
-            "below carries the same values."}
-        </desc>
+    <div className="tier-board" ref={container}>
+      <p className="visually-hidden">
+        {`${String(groups.length)} tier groups of ${scoringLabel} players. Each row shows the ` +
+          "player's median simulated VORP and the P25 to P75 interval around it on a shared " +
+          "scale. Tier bands overlap because exact tier edges are not statistically stable. " +
+          "The table below carries the same values."}
+      </p>
 
-        <g transform={`translate(${String(MARGIN.left)},0)`}>
+      <div className="board-scale" aria-hidden="true">
+        <span className="board-scale-track">
           {ticks.map((tick) => (
-            <line
+            <span
               key={tick}
-              className="grid-line"
-              x1={layout.x(tick)}
-              x2={layout.x(tick)}
-              y1={MARGIN.top + 2}
-              y2={plotBottom}
-            />
-          ))}
-          {/* The board is taller than a viewport, so the scale is repeated at the head as well
-              as the foot; otherwise the top of the board has no reference. */}
-          {ticks.map((tick) => (
-            <text
-              key={`head-${String(tick)}`}
-              className="axis-label"
-              x={layout.x(tick)}
-              y={MARGIN.top - 3}
-              textAnchor="middle"
+              className="board-tick"
+              style={{ left: `${String(pct(tick, scale.min, scale.range))}%` }}
             >
               {tick}
-            </text>
+            </span>
           ))}
+        </span>
+      </div>
 
-          {layout.lanes.map((lane) => (
-            <g key={lane.group.ordinal}>
-              {/* A band, not a boundary: the lane is filled and separated by whitespace, and
-                  no stroke is drawn where one tier ends and the next begins (ADR-035). */}
-              <rect
-                className="lane-band"
-                x={-MARGIN.left + 4}
-                y={lane.top - 3}
-                width={plotWidth + MARGIN.left - 8}
-                height={lane.height}
-                rx={3}
-                opacity={lane.group.ordinal % 2 === 0 ? 0.85 : 0.45}
-              />
-              <text className="lane-label" x={-MARGIN.left + 12} y={lane.top + 13}>
-                {lane.group.label}
-              </text>
-              <text className="lane-count" x={-MARGIN.left + 12} y={lane.top + 25}>
-                {lane.group.rows.length}
-              </text>
-
-              {lane.marks.map((mark) => {
-                const record = mark.row.record;
-                const badge = statusBadge(mark.row.status);
-                const label = markLabel(mark.row, compact);
-                const selected = record.player_id === selectedPlayerId;
-                const markIndex = order.indexOf(record.player_id);
-                return (
-                  <g
-                    key={record.player_id}
-                    className="player-mark"
-                    role="button"
-                    {...roving.markProps(markIndex)}
-                    aria-label={
-                      `${record.display_name}, ${record.position}${String(record.position_rank)}` +
-                      `${record.team === null ? "" : `, ${record.team}`}, tier ${lane.group.label}, ` +
-                      `fair rank ${formatRank(record.fair_rank)}, median simulated VORP ` +
-                      `${formatValue(record.p50_vorp)}, P25 to P75 ${formatValue(record.p25_vorp)} ` +
-                      `to ${formatValue(record.p75_vorp)}, P10 to P90 ${formatValue(record.p10_vorp)} ` +
-                      `to ${formatValue(record.p90_vorp)}` +
-                      (badge === null ? "" : `. Current status ${badge.full}, annotation only`)
-                    }
-                    onClick={() => {
-                      onSelect(record.player_id);
-                    }}
-                  >
-                    <line
-                      className="whisker"
-                      x1={mark.x25}
-                      x2={mark.x75}
-                      y1={lane.top + mark.y}
-                      y2={lane.top + mark.y}
-                    />
-                    <circle
-                      className="mark-dot"
-                      data-pos={record.position}
-                      cx={mark.x}
-                      cy={lane.top + mark.y}
-                      r={selected ? DOT_RADIUS + 1.5 : DOT_RADIUS}
-                      stroke={selected ? "currentColor" : "none"}
-                      strokeWidth={selected ? 2 : 0}
-                    />
-                    <text
-                      className="mark-label"
-                      x={mark.labelAnchor === "end" ? mark.x - DOT_RADIUS - 4 : mark.x + DOT_RADIUS + 4}
-                      y={lane.top + mark.y + 3.5}
-                      textAnchor={mark.labelAnchor}
-                      aria-hidden="true"
-                    >
-                      {compact ? label : `${label} ${record.position}${String(record.position_rank)}`}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-          ))}
-
-          <line className="grid-line" x1={0} x2={plotWidth} y1={plotBottom} y2={plotBottom} />
-          {ticks.map((tick) => (
-            <text
-              key={tick}
-              className="axis-label"
-              x={layout.x(tick)}
-              y={plotBottom + 13}
-              textAnchor="middle"
+      <div className="board-lanes">
+        {groups.map((group) => {
+          const open = openTiers.has(group.ordinal);
+          const span = tierSpan(group);
+          const first = group.rows[0]?.record.fair_rank;
+          const last = group.rows[group.rows.length - 1]?.record.fair_rank;
+          const headId = `tier-head-${String(group.ordinal)}`;
+          const rowsId = `tier-rows-${String(group.ordinal)}`;
+          return (
+            <section
+              className="tier-lane"
+              key={group.ordinal}
+              data-open={open}
+              data-parity={group.ordinal % 2 === 0 ? "even" : "odd"}
+              aria-labelledby={headId}
             >
-              {tick}
-            </text>
-          ))}
-          <text className="axis-title" x={plotWidth / 2} y={plotBottom + 28} textAnchor="middle">
-            Median simulated VORP
-          </text>
-        </g>
-      </svg>
+              <h3 className="tier-lane-heading">
+                <button
+                  type="button"
+                  id={headId}
+                  className="tier-head"
+                  aria-expanded={open}
+                  aria-controls={rowsId}
+                  onClick={() => {
+                    onToggleTier(group.ordinal);
+                  }}
+                >
+                  <span className="tier-head-mark" aria-hidden="true" />
+                  <span className="tier-head-name">{group.label}</span>
+                  <span className="tier-head-detail">
+                    <span className="tier-head-meta">
+                      {`${String(group.rows.length)} player${group.rows.length === 1 ? "" : "s"}`}
+                      {first !== undefined && last !== undefined && (
+                        <>
+                          <span className="dot-sep" aria-hidden="true" />
+                          {`ranks ${formatRank(first)}–${formatRank(last)}`}
+                        </>
+                      )}
+                    </span>
+                    {!compact && (
+                      <span className="tier-head-mix" aria-hidden="true">
+                        {positionMix(group).map((entry) => (
+                          <span key={entry.position} className="mix-chip" data-pos={entry.position}>
+                            {entry.position}
+                            <b>{entry.count}</b>
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
+                  {/* A band, never an edge. Its ends are the tier's own P25 and P75 extremes on
+                      the shared scale, so neighbouring bands overlap wherever the values do —
+                      which is most of the board, and is the honest picture (ADR-035, ADR-046). */}
+                  <span className="tier-head-band">
+                    <span
+                      className="tier-band-fill"
+                      style={{
+                        left: `${String(pct(span.low, scale.min, scale.range))}%`,
+                        width: `${String(
+                          Math.max(
+                            pct(span.high, scale.min, scale.range) -
+                              pct(span.low, scale.min, scale.range),
+                            0.8,
+                          ),
+                        )}%`,
+                      }}
+                    />
+                  </span>
+                  <span className="tier-head-span">
+                    {`${formatValue(span.high)} → ${formatValue(span.low)}`}
+                    <span className="visually-hidden">
+                      {` VORP; P25 to P75 across the tier. ${open ? "Collapse" : "Expand"} this tier.`}
+                    </span>
+                  </span>
+                </button>
+              </h3>
+
+              {/* A closed tier renders no rows at all rather than hidden ones: on a 300-deep
+                  board that is a real saving, and it keeps the DOM honest about what the
+                  roving-focus list contains. The container stays so `aria-controls` still
+                  resolves. */}
+              <ol className="tier-rows" id={rowsId} hidden={!open}>
+                {open &&
+                group.rows.map((row) => {
+                  const record = row.record;
+                  const index = indexOf.get(record.player_id) ?? 0;
+                  const left = pct(record.p25_vorp, scale.min, scale.range);
+                  const right = pct(record.p75_vorp, scale.min, scale.range);
+                  return (
+                    <li key={record.player_id}>
+                      <div
+                        className="board-row"
+                        role="button"
+                        data-selected={record.player_id === selectedPlayerId}
+                        data-player={record.player_id}
+                        aria-label={markLabel(row, group.label)}
+                        {...roving.markProps(index)}
+                        onClick={() => {
+                          onSelect(record.player_id);
+                        }}
+                      >
+                        <span className="row-rank">{formatRank(record.fair_rank)}</span>
+                        <span className="row-pos pos-tag" data-pos={record.position}>
+                          {record.position}
+                          <b>{record.position_rank}</b>
+                        </span>
+                        <span className="row-name">
+                          <span className="row-name-text">
+                            {compact ? shortName(record.display_name) : record.display_name}
+                          </span>
+                          <StatusBadge status={row.status} />
+                        </span>
+                        {/* The interval, unchanged: P25 to P75 on the shared scale, with the
+                            median as a tick. P10-P90 is in player detail and in the label. */}
+                        <span className="row-interval" aria-hidden="true">
+                          <span
+                            className="interval-bar"
+                            data-pos={record.position}
+                            style={{
+                              left: `${String(left)}%`,
+                              width: `${String(Math.max(right - left, 0.6))}%`,
+                            }}
+                          />
+                          <span
+                            className="interval-median"
+                            style={{
+                              left: `${String(pct(record.p50_vorp, scale.min, scale.range))}%`,
+                            }}
+                          />
+                        </span>
+                        <span className="row-value">{formatValue(record.p50_vorp)}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          );
+        })}
+      </div>
+
+      <div className="board-axis" aria-hidden="true">
+        <span className="board-axis-title">Median simulated VORP</span>
+      </div>
     </div>
   );
+}
+
+/** 1, 2, 5, 10, 20, 50 … so an axis reads as values rather than as arbitrary thirds. */
+function niceStep(raw: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) return 1;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  const normalized = raw / magnitude;
+  const step = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return step * magnitude;
 }

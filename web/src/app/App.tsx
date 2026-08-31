@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bundle";
 import { easternIsoDate } from "../data/format";
+import { cohortAssignment } from "../data/market";
 import { type ArtifactIndex } from "../data/model";
 import { SCORING_TO_PRESET, leaguePresetId, type ScoringValue, type TeamCount } from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
@@ -138,6 +139,10 @@ function Board({
     return { availableScoring: scoring, availableTeams: teams };
   }, [index]);
 
+  const openData = useCallback(() => {
+    setState({ view: "data" });
+  }, [setState]);
+
   const detail: PlayerDetailData | null = useMemo(() => {
     if (selectedPlayerId === null) return null;
     const leaguePreset = leaguePresetId(state.teams);
@@ -149,8 +154,9 @@ function Board({
       status: index.statusFor(selectedPlayerId),
       projection: index.projectionFor(scoring, selectedPlayerId),
       marketAvailable: index.hasArbitrage,
+      cohortExact: cohortAssignment(metadata, scoring, state.teams)?.exact ?? null,
     };
-  }, [index, selectedPlayerId, state.scoring, state.teams]);
+  }, [index, metadata, selectedPlayerId, state.scoring, state.teams]);
 
   return (
     <>
@@ -162,9 +168,7 @@ function Board({
           metadata={metadata}
           degradations={degradations}
           now={now}
-          onOpenData={() => {
-            setState({ view: "data" });
-          }}
+          onOpenData={openData}
         />
 
         <div className="sticky-controls">
@@ -209,6 +213,7 @@ function Board({
                 selectedPlayerId={selectedPlayerId}
                 buildDate={buildDate}
                 available={index.hasArbitrage}
+                onOpenData={openData}
               />
             )}
             {state.view === "data" && (
@@ -231,7 +236,7 @@ function Board({
         </footer>
       </div>
 
-      <PlayerDetail data={detail} onClose={onCloseDetail} />
+      <PlayerDetail data={detail} onClose={onCloseDetail} onOpenData={openData} />
     </>
   );
 }
