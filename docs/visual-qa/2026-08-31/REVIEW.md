@@ -177,8 +177,25 @@ tab stop with arrow-key movement inside it, every tier toggle carries `aria-expa
 every interactive target clears 24px, every custom control has a visible focus indicator, and
 all three views reflow at 320px without a horizontal scrollbar.
 
-**Zero automated violations is a floor, not a result**, and the spec says so in code rather than
-in a comment.
+**A tenth defect, and it was in this file.** A clean-clone reproduction reused a stale static
+server left listening on port 4173 from the screenshot capture, which served a `dist` with no
+`data/` directory. Forty-seven board and mobile tests failed on it, correctly. **All eight
+accessibility scans passed**, because axe finds nothing wrong with the refusal screen a build
+with no artifacts renders. The scan was green and proved nothing.
+
+Each surface is now paired with a selector only *that* surface renders — `.board-row`,
+`.tier-head`, `.rail-row`, `h2#definitions-heading`, `.notice[data-severity="warning"]`,
+`.notice[data-severity="error"]` — and asserted visible before axe runs. The fix was checked
+against the failure that produced it rather than assumed: a server was started from a copy of
+`web/dist` with `data/` removed, and the same page scanned twice.
+
+| | result against a build with no artifacts |
+|---|---|
+| unguarded scan (the earlier draft) | **passed** — zero violations |
+| guarded scan (current) | **failed** on the `.board-row` assertion |
+
+**Zero automated violations is a floor, not a result**, and the spec now says so in code rather
+than in a comment.
 
 ## 6. Cross-browser
 
@@ -205,6 +222,7 @@ true invariant rather than a check on one media query.
 | 7 | Data view overflowing 168px at 320px | medium (WCAG AA) |
 | 8 | `tiers=` URL parser rejecting the zero-based first tier | medium |
 | 9 | closed tiers rendering hidden rows rather than none | low (cost, not correctness) |
+| 10 | the accessibility scan passing against a build with no artifacts | high — it is the check itself |
 
 ## 8. Non-blocking observations
 

@@ -368,6 +368,12 @@ Chromium is preinstalled there and the other two cannot be fetched at all. `ci.y
 tiers view in three tier states, the arbitrage view in two rail states, the data view, both
 degraded scenarios, and the open player dialog. Zero violations required.
 
+Every scanned surface is paired with a selector only that surface renders, asserted visible
+before axe runs. This is load-bearing rather than defensive: **a page that failed to load has no
+violations either**. An earlier draft of the file passed all eight scans against a stale server
+holding a build with no `data/` directory, while forty-seven board and mobile tests failed on
+the same server. A scan with nothing to scan must fail, not pass.
+
 **Not automated, because a scanner cannot judge it:** landmark and heading structure, the
 board being one tab stop with arrow-key movement inside it, every tier toggle carrying
 `aria-expanded`/`aria-controls` and being keyboard-operable, direction and status surviving

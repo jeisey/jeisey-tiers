@@ -38,19 +38,25 @@ function describe(results: Awaited<ReturnType<AxeBuilder["analyze"]>>): string[]
 }
 
 test.describe("automated scan", () => {
-  for (const [name, path] of [
-    ["tiers", "/"],
-    ["tiers, every tier open", "/?tiers=0.1.2"],
-    ["tiers, every tier closed", "/?tiers=none"],
-    ["arbitrage", "/?view=arbitrage"],
-    ["arbitrage premiums", "/?view=arbitrage&rail=premiums"],
-    ["data", "/?view=data"],
-    ["a degraded market", "/scenario/no-market/?view=arbitrage"],
-    ["a refused contract", "/scenario/bad-schema/"],
+  // Each surface is paired with something only *that* surface renders, because a page that
+  // failed to load has no violations either. An earlier draft of this file scanned eight
+  // surfaces against a stale server holding a build with no `data/` directory and passed all
+  // eight: axe found nothing wrong with the empty document it was handed. Assert the surface
+  // under test actually rendered before scanning it.
+  for (const [name, path, landmark] of [
+    ["tiers", "/", ".board-row"],
+    ["tiers, every tier open", "/?tiers=0.1.2", ".board-row"],
+    ["tiers, every tier closed", "/?tiers=none", ".tier-head"],
+    ["arbitrage", "/?view=arbitrage", ".rail-row"],
+    ["arbitrage premiums", "/?view=arbitrage&rail=premiums", ".rail-row"],
+    ["data", "/?view=data", "h2#definitions-heading"],
+    ["a degraded market", "/scenario/no-market/?view=arbitrage", '.notice[data-severity="warning"]'],
+    ["a refused contract", "/scenario/bad-schema/", '.notice[data-severity="error"]'],
   ] as const) {
     test(`${name} has no WCAG A or AA violations`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
+      await expect(page.locator(landmark).first()).toBeVisible();
       expect(describe(await scan(page))).toEqual([]);
     });
   }
