@@ -141,11 +141,34 @@ export function explainFlags(flags: readonly string[]): readonly (FlagExplanatio
 }
 
 /**
- * `wide_market_range` fires on roughly 90% of the current board, which makes it true and
- * non-discriminating (ADR-041). It stays available in player detail and diagnostics; it does
- * not earn a badge on nearly every row of the table.
+ * `wide_market_range` is true and non-discriminating (ADR-041): the min-to-max span of a
+ * player's observed picks widens with sample size, so at any realistic draft count most of
+ * the board carries it. Phase 8's instruction was to stop giving it repetitive visual
+ * treatment rather than to retune its threshold — the flag is still published on the
+ * artifact, the actual `market_adp_low`/`market_adp_high` range is rendered directly where it
+ * is useful, and Data explains what the range is once.
  */
 export const NON_DISCRIMINATING_FLAGS: readonly string[] = ["wide_market_range"];
+
+/**
+ * Flags that describe the **build**, not the player.
+ *
+ * An approximate cohort, a cohort that has not cleared the sufficiency rule, a trend still
+ * collecting and a stale snapshot are all properties of the market snapshot this board was
+ * priced from: every row in a preset block carries them or none does. Repeating them on each
+ * of a few hundred player cards is what the Phase-8 review asked to stop. They are explained
+ * once on the Arbitrage view's condition panel and in full in Data.
+ *
+ * Everything not listed here is genuinely per-player — `low_market_sample` is about this
+ * player's own draft count, `secondary_identity_bridge_only` about this player's own join —
+ * and still appears on the card.
+ */
+export const BUILD_LEVEL_MARKET_FLAGS: readonly string[] = [
+  "cohort_approximate",
+  "cohort_insufficient",
+  "insufficient_trend_history",
+  "market_snapshot_stale",
+];
 
 /**
  * Flags every row shares are a property of the build, not of the player. They are explained
@@ -153,4 +176,12 @@ export const NON_DISCRIMINATING_FLAGS: readonly string[] = ["wide_market_range"]
  */
 export function rowLevelMarketFlags(flags: readonly string[], shared: ReadonlySet<string>): readonly string[] {
   return flags.filter((flag) => !shared.has(flag) && !NON_DISCRIMINATING_FLAGS.includes(flag));
+}
+
+/** The flags that say something about *this player*. Used by the player card. */
+export function playerLevelFlags(flags: readonly string[]): readonly string[] {
+  return flags.filter(
+    (flag) =>
+      !BUILD_LEVEL_MARKET_FLAGS.includes(flag) && !NON_DISCRIMINATING_FLAGS.includes(flag),
+  );
 }

@@ -11,7 +11,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../src/app/App";
-import { ANNOTATION_DISCLOSURE } from "../src/app/PlayerDetail";
 import {
   FIXTURE_GENERATED_AT,
   arbitrageEnvelope,
@@ -262,16 +261,18 @@ describe("arbitrage view", () => {
     go("?view=arbitrage");
   });
 
-  it("explains the shared low-confidence condition once, with numbers from metadata", async () => {
+  it("states the launch market condition once, with numbers from metadata", async () => {
     render(<App />);
     await waitFor(() => {
-      expect(screen.getByText(/Every row on this board reads low market-data confidence/i)).toBeDefined();
+      expect(
+        screen.getByText(/Every priced row on this board carries low market-data confidence/i),
+      ).toBeDefined();
     });
-    // The headline states what the label is about; the disclosure beside it carries the
-    // evidence, and both are in the document rather than behind a fetch.
+    // The headline states what the label is about; the facts beside it carry the evidence,
+    // and both are in the document rather than behind a fetch.
     expect(screen.getByText(/not a probability that a player is a bargain/)).toBeDefined();
     expect(screen.getByText(/125 drafts against the 300/)).toBeDefined();
-    expect(screen.getByText(/Why, and what the market evidence actually is/)).toBeDefined();
+    expect(screen.getByText(/below the frozen bar/)).toBeDefined();
   });
 
   it("renders a null trend as an em dash with a spoken explanation, never as zero", async () => {
@@ -325,8 +326,104 @@ describe("arbitrage view", () => {
   });
 });
 
+/**
+ * The market condition the launch fixture could not describe.
+ *
+ * Every market assertion in this file used to be written against one board: `low` on every
+ * row, a null trend everywhere, a cohort below the frozen bar. That was the real August 2026
+ * condition, and it made the suite blind — production reached a mostly-`medium` board with a
+ * measured trend and a *sufficient* cohort within a fortnight, and nothing in the repository
+ * rendered that state. It is the same defect class as the Phase-7 trend verifier that had
+ * frozen the null launch condition into an assertion.
+ *
+ * These tests do not replace the launch ones. Both conditions are real, the product has to
+ * move between them without a code change, and pinning either as "normal" is the mistake.
+ */
+describe("a matured market", () => {
+  beforeEach(() => {
+    serve({
+      "build_metadata.json": buildMetadata({}, "matured"),
+      "arbitrage.json": arbitrageEnvelope("matured"),
+    });
+    go("?view=arbitrage");
+  });
+
+  it("reports the label distribution instead of asserting one label", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Draft rail" })).toBeDefined();
+    });
+    const body = document.body.textContent ?? "";
+    expect(body).toMatch(/Market-data confidence across these \d+ priced rows/);
+    expect(body).toMatch(/\d+ medium/);
+    expect(body).toMatch(/\d+ low/);
+    // The launch sentence must not survive into a board that is no longer uniform.
+    expect(body).not.toMatch(/Every priced row on this board carries/);
+  });
+
+  it("says the cohort clears the rule, and prints no failed clause", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText(/clears the frozen rule/)).toBeDefined();
+    });
+    expect(document.body.textContent).not.toMatch(/below the frozen bar/);
+    expect(document.body.textContent).not.toMatch(/against the 300 the rule requires/);
+  });
+
+  it("renders a measured trend as a signed number and a direction word", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Arbitrage table" })).toBeDefined();
+    });
+    const table = screen.getByRole("table", { name: /market-gap board/i });
+    const cells = within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => row.querySelectorAll("td")[9]?.textContent ?? "");
+    const measured = cells.filter((text) => /[+\u2212]\d/.test(text));
+    expect(measured.length).toBeGreaterThan(0);
+    expect(measured.join(" ")).toMatch(/Moving (earlier|later)/);
+    // ...and the row the fixture deliberately leaves without an estimate is still an em dash.
+    expect(cells.some((text) => text.includes("—") && text.includes("Trend collecting"))).toBe(true);
+  });
+
+  it("still shows the trend rule in Data, worded for a window that has history", async () => {
+    go("?view=data");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Current limitations" })).toBeDefined();
+    });
+    expect(screen.getByText(/The window currently has enough history/)).toBeDefined();
+    expect(screen.getByText(/clears the frozen sufficiency rule/)).toBeDefined();
+  });
+
+  it("drops the approximate-cohort marker on a preset the build calls exact", async () => {
+    // The matured fixture marks STD at ten teams exact and every other block approximate,
+    // so a card that hardcoded either word fails one of these two assertions.
+    go("?scoring=std&teams=10");
+    render(<App />);
+    await boardReady();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Bijan Robinson" }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Bijan Robinson" })).toBeDefined();
+    });
+    expect(screen.queryByText("approximate cohort")).toBeNull();
+  });
+
+  it("keeps the approximate marker where the build says approximate", async () => {
+    go("?scoring=ppr&teams=12");
+    render(<App />);
+    await boardReady();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Bijan Robinson" }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Bijan Robinson" })).toBeDefined();
+    });
+    expect(screen.getAllByText("approximate cohort").length).toBeGreaterThan(0);
+  });
+});
+
 describe("player detail", () => {
-  it("opens from a tier table row and discloses that status is annotation only", async () => {
+  it("opens from a tier table row and marks status as annotation only, briefly", async () => {
     render(<App />);
     await boardReady();
     fireEvent.click(screen.getByRole("button", { name: "Amon-Ra Bright" }));
@@ -335,7 +432,12 @@ describe("player detail", () => {
     });
     expect(screen.getByText("Questionable")).toBeDefined();
     expect(screen.getByText("Hamstring")).toBeDefined();
-    expect(screen.getByText(ANNOTATION_DISCLOSURE)).toBeDefined();
+    // Phase 8 replaced the standing paragraph with a five-word marker; the paragraph itself
+    // now lives once in Data, and `data view` below pins it there.
+    expect(screen.getByText("Annotation only — not a model input.")).toBeDefined();
+    expect(document.body.textContent).not.toMatch(
+      /The board above was produced without any of these fields/,
+    );
   });
 
   it("never claims the model accounted for an injury", async () => {
@@ -366,8 +468,13 @@ describe("player detail", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Bijan Robinson" })).toBeDefined();
     });
-    expect(screen.getByText(/absence of a report, not a clearance/)).toBeDefined();
+    // "None reported" is the absence of a designation. The sentence explaining that an
+    // absence is not a clearance is a property of the product, not of this player, so it
+    // moved to Data — where `data view > keeps every disclosure the card stopped repeating`
+    // pins it.
+    expect(screen.getByText("None reported")).toBeDefined();
     expect(document.body.textContent).not.toMatch(/\bhealthy\b/i);
+    expect(document.body.textContent).not.toMatch(/\bcleared\b/i);
   });
 
   it("handles a player with no status record at all", async () => {
@@ -375,10 +482,48 @@ describe("player detail", () => {
     await boardReady();
     fireEvent.click(screen.getByRole("button", { name: "Deebo Gray" }));
     await waitFor(() => {
-      expect(screen.getByText(/No current status record was published/)).toBeDefined();
+      expect(screen.getByText(/No status record was published for this player/)).toBeDefined();
     });
     // His model values are still there.
     expect(screen.getByText("Fair rank")).toBeDefined();
+  });
+
+  it("does not repeat the methodology it moved to Data", async () => {
+    render(<App />);
+    await boardReady();
+    fireEvent.click(screen.getByRole("button", { name: "Amon-Ra Bright" }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Amon-Ra Bright" })).toBeDefined();
+    });
+    const body = document.body.textContent ?? "";
+    // The three paragraphs the Phase-8 review named, none of which is about this player.
+    expect(body).not.toMatch(/cannot filter drafts to this exact scoring and league size/);
+    expect(body).not.toMatch(/It is not a probability that the player is a bargain/);
+    expect(body).not.toMatch(/The board above was produced without any of these fields/);
+    // ...but the compact markers that stop a number being misread are still on the card.
+    expect(screen.getByText("Market data")).toBeDefined();
+    expect(screen.getAllByText("approximate cohort").length).toBeGreaterThan(0);
+  });
+
+  /**
+   * WCAG 2.2 "Focus Order": closing a dialog must not drop the keyboard user at the top of
+   * the document. `userEvent` rather than `fireEvent` because a real pointer press focuses
+   * the button it lands on and `fireEvent.click` does not, so the cheaper helper would be
+   * testing a situation that cannot happen.
+   */
+  it("restores focus to the row that opened it", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await boardReady();
+    const trigger = screen.getByRole("button", { name: "Amon-Ra Bright" });
+    await user.click(trigger);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Amon-Ra Bright" })).toBeDefined();
+    });
+    await user.click(screen.getByRole("button", { name: "Close player detail" }));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(trigger);
+    });
   });
 });
 
@@ -465,7 +610,7 @@ describe("data view", () => {
       /measured convergence limitation/,
       /only market source in V1/,
       /Injury and roster status is annotation only/,
-      /Market trend needs history/,
+      /Market trend is measured only over our own snapshots/,
       /Rookie projections are lower-information/,
       /simulated independently/,
     ]) {

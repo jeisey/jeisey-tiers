@@ -270,3 +270,67 @@ jobs:
             playwright-report
             web/test-results
           retention-days: 7
+
+  # -------------------------------------------------------------------------------------
+  # Cross-browser smoke.
+  #
+  # A separate job rather than three more projects in `e2e`, for two reasons. It installs
+  # three browser engines instead of one, which is most of its wall-clock cost and should not
+  # sit in front of the behavioural suite's result; and a smoke failure means something
+  # different from an end-to-end failure — "this engine renders it wrong" rather than "this
+  # product behaves wrong" — so it deserves its own red tick.
+  #
+  # This is the one gate that genuinely cannot run in the development sandbox: the egress
+  # policy blocks `cdn.playwright.dev`, so Firefox and WebKit cannot be downloaded there at
+  # all (Chromium is preinstalled). Same shape as the source probes under ADR-009 — the
+  # environment that can answer the question is the runner, so the question is asked here.
+  # -------------------------------------------------------------------------------------
+  browsers:
+    name: Cross-browser smoke (Chromium, Firefox, WebKit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Cache the Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-all-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium, Firefox and WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Smoke
+        run: npm run e2e:browsers
+
+      - name: Summarise the cross-browser run
+        if: always()
+        run: |
+          {
+            echo '## Cross-browser smoke'
+            echo
+            echo "Primary flows, layout, focus, \`<dialog>\` semantics, downloads and reduced"
+            echo "motion, on Chromium, Firefox and WebKit. Result: \`${{ job.status }}\`."
+            echo
+            echo 'The behavioural suite stays on Chromium: sorting a table and parsing a query'
+            echo 'string do not vary by engine, and tripling it would triple the slowest gate.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-browsers
+          path: |
+            playwright-report
+            web/test-results
+          retention-days: 7

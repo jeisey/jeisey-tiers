@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "captured_at_utc": "2026-08-31T16:22:21Z",
   "check_id": "nflverse_rosters_2026",
   "columns": [
     {
@@ -25,7 +25,7 @@
     {
       "dtype": "Int32",
       "name": "jersey_number",
-      "null_fraction": 0.0522
+      "null_fraction": 0.0041
     },
     {
       "dtype": "String",
@@ -50,12 +50,12 @@
     {
       "dtype": "Date",
       "name": "birth_date",
-      "null_fraction": 0.0177
+      "null_fraction": 0.0156
     },
     {
       "dtype": "Int32",
       "name": "height",
-      "null_fraction": 0.0174
+      "null_fraction": 0.0135
     },
     {
       "dtype": "Int32",
@@ -65,7 +65,7 @@
     {
       "dtype": "String",
       "name": "college",
-      "null_fraction": 0.0188
+      "null_fraction": 0.0135
     },
     {
       "dtype": "String",
@@ -75,42 +75,42 @@
     {
       "dtype": "String",
       "name": "espn_id",
-      "null_fraction": 0.3352
+      "null_fraction": 0.3322
     },
     {
       "dtype": "String",
       "name": "sportradar_id",
-      "null_fraction": 0.3788
+      "null_fraction": 0.3713
     },
     {
       "dtype": "String",
       "name": "yahoo_id",
-      "null_fraction": 0.6143
+      "null_fraction": 0.6084
     },
     {
       "dtype": "String",
       "name": "rotowire_id",
-      "null_fraction": 0.3352
+      "null_fraction": 0.3322
     },
     {
       "dtype": "String",
       "name": "pff_id",
-      "null_fraction": 0.4201
+      "null_fraction": 0.3503
     },
     {
       "dtype": "String",
       "name": "pfr_id",
-      "null_fraction": 0.3454
+      "null_fraction": 0.3441
     },
     {
       "dtype": "String",
       "name": "fantasy_data_id",
-      "null_fraction": 0.3792
+      "null_fraction": 0.3719
     },
     {
       "dtype": "String",
       "name": "sleeper_id",
-      "null_fraction": 0.3788
+      "null_fraction": 0.3713
     },
     {
       "dtype": "Int32",
@@ -120,7 +120,7 @@
     {
       "dtype": "String",
       "name": "headshot_url",
-      "null_fraction": 0.0403
+      "null_fraction": 0.0441
     },
     {
       "dtype": "String",
@@ -150,7 +150,7 @@
     {
       "dtype": "String",
       "name": "esb_id",
-      "null_fraction": 0.0184
+      "null_fraction": 0.0131
     },
     {
       "dtype": "String",
@@ -160,7 +160,7 @@
     {
       "dtype": "String",
       "name": "smart_id",
-      "null_fraction": 0.0184
+      "null_fraction": 0.0131
     },
     {
       "dtype": "Int32",
@@ -175,19 +175,19 @@
     {
       "dtype": "String",
       "name": "draft_club",
-      "null_fraction": 0.4072
+      "null_fraction": 0.4245
     },
     {
       "dtype": "Int32",
       "name": "draft_number",
-      "null_fraction": 0.4075
+      "null_fraction": 0.4245
     }
   ],
   "coverage": {
     "game_type_distinct": 1,
     "game_type_max": "REG",
     "game_type_min": "REG",
-    "position_distinct": 12,
+    "position_distinct": 11,
     "position_max": "WR",
     "position_min": "DB",
     "season_distinct": 1,
@@ -197,7 +197,7 @@
     "week_max": 1,
     "week_min": 1
   },
-  "record_count": 2930,
+  "record_count": 3197,
   "sample_rows": [
     {
       "birth_date": "1983-12-02",
@@ -253,7 +253,7 @@
       "game_type": "REG",
       "gsis_id": "00-0025565",
       "gsis_it_id": "32371",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcfiv2cc7ky37yq9iklp",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
       "height": 73,
       "jersey_number": 6,
       "last_name": "Folk",

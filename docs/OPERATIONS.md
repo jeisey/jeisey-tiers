@@ -279,13 +279,22 @@ npm run typecheck
 npm run test -- --run
 npm run build                                    # root path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages path
-npm run e2e                                      # builds five sites, then 39 Playwright tests
+npm run e2e                                      # builds five sites, then 61 Playwright tests
+npm run e2e:browsers                             # the three-engine smoke — RUNNER ONLY, see below
 
 # review aids
 npm run e2e:build                                # just the sites + fixture artifacts
-npm run e2e:screens -- docs/visual-qa/<date>     # the eleven visual-QA screens
+npm run e2e:screens -- docs/visual-qa/<date>     # the eighteen visual-QA screens
 npm run verify:board                             # rendered board vs artifact bytes, live build
+node web/tests/e2e/measure-performance.mjs       # timings on a production-scale synthetic board
 ```
+
+**`npm run e2e:browsers` cannot run in a development sandbox behind an egress policy.** It
+needs Firefox and WebKit, and Playwright downloads those from `cdn.playwright.dev`, which the
+sandbox blocks — Chromium is preinstalled there, the other two are not and cannot be fetched.
+`ci.yml`'s `browsers` job is where the three-engine smoke actually runs, the same shape as the
+source probes under ADR-009. `npm run e2e` deliberately excludes it so the local gate is
+green-or-red on things the local machine can actually decide (ADR-059).
 
 `npm run e2e` produces its own builds through `globalSetup`, so it needs no prior `npm run build`; `E2E_SKIP_BUILD=1` reuses what is on disk while iterating on a spec. The end-to-end server is `web/tests/e2e/static-server.mjs`, which maps URLs to files under `web/dist*` and serves nothing else — every spec additionally fails on a request that leaves localhost.
 

@@ -1,9 +1,15 @@
 """The canonical player registry.
 
-The registry is the only place that decides what a canonical player *is*. It is built from
-the nflverse roster - the licensed, nflverse-native spine - and then enriched with the
+The registry is the only place that decides what a canonical player *is*. It is built from a
+licensed, nflverse-native spine frame supplied by its caller, and then enriched with the
 dynastyprocess crosswalk mirror, which may fill gaps but may never introduce players or
 overwrite an nflverse id.
+
+What the spine contains is the caller's decision, and the two callers differ deliberately.
+The market path passes ``supplement_roster(roster, players)`` - the season roster widened by
+``load_players()`` - because a market row naming a player the roster file omits is a player,
+not a resolution failure (ADR-055). The status path passes the season roster alone, because
+its question is "is this player on a roster right now", and absence there is an answer.
 
 Its central behaviour is the poisoned index. If two canonical players end up sharing an
 external id, every lookup through that id fails closed as ambiguous instead of returning

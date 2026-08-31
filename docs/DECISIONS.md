@@ -1168,7 +1168,7 @@ The confirmation token stays out of the repository and out of GitHub secrets on 
 
 **Date:** 2026-08-24 (Phase 7 operations, four days after the first production capture)
 
-**Status:** **Proposed — awaiting owner review.** Nothing in the code changes on the strength of this ADR; its whole point is to argue for *not* changing something.
+**Status:** **Accepted, and resolved by the event it predicted** (Phase 8, 2026-08-31). Nothing in the code changed on the strength of this ADR; its whole point was to argue for *not* changing something, and the argument held.
 
 **Context.** Every arbitrage row this project has ever published reads `low` confidence, for one recorded reason: the keeper-free cohort the frozen rule must use (ADR-045) fails a single clause, `min_total_drafts 300`. ADR-045 left an explicit open question about it:
 
@@ -1204,6 +1204,31 @@ Mean 25.5 drafts/day over the span; 39/day most recently; and **accelerating**, 
 **Consequences if accepted:** nothing is implemented. The site keeps publishing `low` and explaining exactly why, which is honest, until the evidence changes it. The open question in ADR-045 narrows from "is this the wrong instrument?" to "did it release on time?", which a week of captures answers by itself.
 
 **Revisit at:** the first build whose selected cohort reports ≥ 300 drafts, or 2026-09-07 if that has not happened.
+
+### Resolution — 2026-08-31 (Phase 8)
+
+**It crossed, on time, with the rule untouched.** Continuing the same table from the daily-refresh summaries:
+
+| observation day | selected cohort | total drafts | confidence on the published board |
+|---|---|---:|---|
+| 2026-08-20 | `no-mock-no-keeper` | 125 | 2,124 `low` |
+| 2026-08-22 | `no-mock-no-keeper` | 143 | 2,021 `low` |
+| 2026-08-24 | `no-mock-no-keeper` | 227 | `low` |
+| 2026-08-27 | — | — | 1,966 priced rows |
+| 2026-08-30 | `no-keeper` / `ppr-no-keeper` | 514 / 386 | 1,870 `medium`, 75 `low` |
+| **2026-08-31** | `no-keeper` / `ppr-no-keeper` | **735 / 554** | **1,889 `medium`, 45 `low`** |
+
+Every preset now reports `sufficient: yes` with **no failed clause**, and the median per-player sample has gone 93 → 345 → 487 drafts. The selection rule also moved on its own, from `no-mock-no-keeper` to `no-keeper` and `ppr-no-keeper`, because a qualifying scoring-specific cohort became available to it — the rule preferring specificity once specificity cleared the bar, which is what it was written to do.
+
+**What that settles.**
+
+1. **`min_total_drafts` was measuring the evidence, not the filter.** The structural reading — that requiring `IS_KEEPER=N` caps the achievable count — is refuted: the same filter, the same clause and the same bound went from 125 to 735 in eleven days. The clause is a volume clause and it did a volume clause's job.
+2. **No bound moves, and none should have.** `min_total_drafts`, `phase5_cohort_v2` and the confidence rubric are unchanged. A re-specification in the week of 2026-08-24 would now be indistinguishable from the season arriving, and the repository would have lost the ability to tell the two apart forever.
+3. **The frozen rule behaved as designed end to end.** Nobody edited anything; the label moved because the evidence did.
+
+**What it exposed, which is the more valuable half.** The product transitioned `low` → mostly-`medium` with **no test in the repository rendering the new state**. Every market assertion — unit, end-to-end and mobile — was written against the launch board: uniform `low`, null trend, a cohort below the bar. That is the same defect class as the trend verifier ADR-052 itself describes, and it survived the ADR that described it. Phase 8's fix is a second fixture board (`MARKET_CONDITIONS` in `web/tests/fixtures/artifacts.ts`) carrying the matured condition — mixed confidence, a measured trend on most rows and a null one on at least one, a cohort that clears every clause, and one preset the build calls *exact* — with the market-sensitive tests run against both. Neither board is "the normal one". That is the point.
+
+**Consequence for the UI.** `marketHeadline` reports whatever distribution the rows carry rather than asserting a condition, the Data view counts the labels instead of stating one, and the two limitation items that described a young market are now written from `build_metadata`. The product moves `low` → `medium` → `high` with no code change, and a future null trend still renders correctly through the same component.
 
 ---
 
@@ -1727,3 +1752,131 @@ comes first.
 
 **Revisit at:** a probe run that contradicts any of §3.1-§3.2, or the next
 `top_board_priced` failure that is not an identity defect.
+
+### Phase-8 disposition — 2026-08-31: evidence accepted, integration deferred
+
+**Decision: Fantasy Football Calculator is not added to the production V1 market price, and MyFantasyLeague remains the sole V1 price source.** ADR-056's source findings are accepted as measured fact and carried forward; only the *integration* is deferred.
+
+**Why the recommendation changed without the evidence changing.** ADR-056 recommended building, and its reasoning was sound on 2026-08-26: MFL's keeper-free cohort held 227 drafts against a bar of 300, no board could clear its sufficiency rule, and a second source with three genuine scoring cohorts, higher volume and a published standard deviation was the obvious remedy. The premise has since expired. As of 2026-08-31 the keeper-free cohort holds **735 drafts**, every preset reports `sufficient: yes` with no failed clause, the median top-150 player is priced by **487** drafts, and the published board reads 1,889 `medium` against 45 `low` (ADR-052 resolution). The volume problem FFC was going to solve solved itself.
+
+**What adding it now would cost.** Not one change but five, in the final hardening phase:
+
+1. a new production source, with its own availability, rate and terms obligations;
+2. a **manually maintained identity crosswalk** — FFC's player id is FFC-internal and bridges to nothing this project already holds, so the join would be a reviewed file rather than a verified id, against ADR-019's whole design;
+3. a source-composition methodology that does not exist;
+4. new consensus or selection semantics — with two sources, "the market price" needs a rule for which one, or how to combine them;
+5. **a changed definition of the published market price**, mid-phase, on a live product.
+
+That is a market-methodology change wearing a hardening change's clothes. The exit gate for this phase is "no known launch-blocking defect"; adding a price source is not a defect fix.
+
+**Specifically not done, and not to be done by halves.** No multi-source ADP. **Do not average MFL and FFC** — a mean of two aggregates over different draft populations, different windows and different scoring mixes is a number with no referent, and it would be published as if it were one. A0 is untouched. FantasyPros stays `benchmark_only` and out of production (ADR-014).
+
+**What survives for the successor.** Everything ADR-056 measured, all of it runner-verified: FFC serves genuine `standard`, `ppr` and `half-ppr` cohorts; it carries substantially more draft volume than MFL; it publishes a per-player standard deviation, which MFL does not and which would replace the min/max range the product currently has to caveat; it publishes a source time window; and its own published terms permit use with attribution and ask clients not to poll unnecessarily. Also settled, and the most expensive thing to have discovered late: **`teams` is accepted and ignored** — per-player ADP and `times_drafted` are byte-identical across league sizes — so FFC offers three scoring cohorts, not twelve scoring × league-size cohorts, and team-size exactness must never be claimed from it.
+
+**Where the value still is: exact half-PPR.** It remains the one thing FFC can do that MFL cannot, and the one place the product still prices a board with a population that is not its own — STD and HALF are priced by an all-scoring cohort, and the Data view says so. That is the pay-off a post-V1 market-methodology change should be aimed at, with a predeclared comparison rule written before any player-level result is looked at.
+
+**Revisit at:** a dedicated post-V1 market-methodology change, not before. Two preconditions: a durable reviewed identity crosswalk with the same fail-closed discipline as the existing bridges, and a frozen source-selection rule committed before its evidence exists.
+
+---
+
+## ADR-057 — Simulation convergence is audited separately from tier-boundary stability
+
+**Date:** 2026-08-31 (Phase 8)
+
+**Status:** **Accepted and implemented.** Amends the open question ADR-034 recorded; does not amend ADR-034's own decision, and changes no production value.
+
+**Context.** ADR-034 selected 10,000 Monte Carlo draws through `phase4_convergence_v1`'s *fallback* clause, because no count in the frozen ladder satisfied every tolerance. It recorded the reason the rule was suspect rather than repairing it mid-phase, and the repair was left as an open question. Two defects in the rule:
+
+1. **It asks one question of two properties.** Monte Carlo sampling error shrinks with more draws. A tier boundary is a discrete cut on a nearly continuous value decline, so where it lands is a property of the curve, not of the sampling; more draws do not fix it and cannot. Combining them means a configuration whose sampling is fine reports "not converged" because its cut positions moved.
+2. **Its tier clause is stricter than the gate it protects.** `min_tier_adjusted_rand` is 0.90 here; `phase4_tier_stability_v1` (ADR-035) asks for 0.60, and the promoted configuration measures 0.865 against it. The convergence rule could therefore fail a configuration whose tiers had already passed their own gate. It was also evaluated across draw counts the tier rule was never going to select.
+
+**Decision.** `phase8_simulation_convergence_v1`, frozen in `ffdraft.modeling.convergence_audit` and committed at `87db5e5` **before** it was pointed at any report.
+
+It changes the question, not the answer:
+
+| | `phase4_convergence_v1` | `phase8_simulation_convergence_v1` |
+|---|---|---|
+| numeric bounds | ten simulation + two tier | the same ten simulation bounds, **inherited verbatim** |
+| tier clauses | decisive | reported as observations; ADR-035 owns the property |
+| scope | every count in the ladder | the promoted production count only |
+| may select a draw count | yes | **no** — there is no code path from the rule to one |
+
+Nothing is loosened; `tests/model/test_convergence_audit.py` asserts each bound equals its Phase-4 value, so a future edit that quietly relaxes one turns a test red. Removing the ladder search is the clause that matters most: it makes the rule structurally incapable of being read, after the fact, for a smaller and cheaper draw count.
+
+**Result, measured after the freeze** (`uv run ffdraft audit-convergence`, over the committed `docs/experiments/phase4-simulation-ranking/experiment.json`, eight comparisons at 10,000 draws):
+
+| criterion | worst observed | bound | |
+|---|---:|---:|---|
+| fair-rank Spearman | 0.9994 | ≥ 0.9990 | pass |
+| top-50 overlap | 0.9800 | ≥ 0.9600 | pass |
+| mean \|Δ rank\| top-150 | 1.3467 | ≤ 1.5000 | pass |
+| max \|Δ replacement\| | 0.2491 | ≤ 0.5000 | pass |
+| mean \|Δ outer VORP\| | 0.4507 | ≤ 0.6000 | pass |
+| p99 \|Δ outer VORP\| | 2.7212 | ≤ 5.0000 | pass |
+| p99 \|Δ P50 VORP\| | 2.8457 | ≤ 3.0000 | pass |
+| **mean \|Δ expected VORP\|** | **0.3141** | ≤ 0.2500 | **fail** |
+| **mean \|Δ P50 VORP\|** | **0.4160** | ≤ 0.3500 | **fail** |
+| **p99 \|Δ expected VORP\|** | **1.9288** | ≤ 1.5000 | **fail** |
+
+**The audit does not pass, and it says something much more specific than the composite rule did.** *Ranking is operationally converged and value is not.* Between two seeds at 10,000 draws the published order barely moves — Spearman 0.9994, 98% of the top fifty retained, an average top-150 player shifting 1.35 places — and the replacement level, which is what makes VORP league-relative at all, agrees to within half its tolerance. What still moves is a player's central value in fantasy points, by about a third of a point on average and 19–29% beyond tolerance on three of the four evaluated scenarios. Tier agreement at the promoted count is ARI 0.499 with a five-tier count difference; that is recorded here and decided by ADR-035, not by this rule.
+
+**Consequences.**
+
+- **The production draw count stays at 10,000.** This audit cannot change it and no reading of it should: sampling that has not settled is not an argument for fewer samples.
+- **ADR-034 stays open**, but the open question is now a narrow one with a number attached — closing the last 25% of expected-VORP error, not "the convergence rule disagrees with itself".
+- The residual is a published limitation, not a hidden one: the Data view already says a build is exactly reproducible for a fixed seed and is not seed-invariant.
+- A future simulation refresh has a clean target. Whether it is worth spending draws on is a real question: the quantity that still moves is the one the product does *not* rank by (fair rank is median simulated VORP, and the ranking criteria pass), so the honest framing is that the board's order is trustworthy at this draw count while a player's printed VORP carries about ±0.3 points of Monte Carlo noise.
+- ADR-035's threshold was **not** touched, and this ADR is not a route to touching it.
+
+---
+
+## ADR-058 — Methodology is stated once in Data; a board carries only what stops a number being misread
+
+**Date:** 2026-08-31 (Phase 8)
+
+**Status:** **Accepted and implemented.**
+
+**Context.** ADR-041 requires that `confidence` never be shown as a bare label, because "low" beside a player's name reads as "the model is unsure about him" and means the opposite. ADR-043 requires that current status be disclosed as annotation only. ADR-045 requires that an approximate cohort be labelled. Phase 6 satisfied all three the direct way: it put the explanation next to the value, everywhere the value appeared.
+
+On a three-hundred-player board with a card reachable from four surfaces, that produced three paragraphs repeated per player — the confidence rubric, the cohort caveat, and "Current status annotation — not included in the projection or the model. The board above was produced without any of these fields." The owner's Phase-8 review named all three. The problem is not that any of them is wrong; it is that a caveat a reader has met three hundred times is a caveat they have stopped reading, which makes the repetition self-defeating as well as noisy.
+
+**Decision.** **Context on the board; methodology in Data.**
+
+- A repeated surface carries the *minimum that stops a number being misread*: a label (`Market data · Medium`), a qualifier (`approximate cohort`), a badge (`Q · Hamstring`), a five-word marker (`Annotation only — not a model input.`).
+- The **definition** — what the label is a statement about, what the cohort could not filter, what "annotation only" means and why an absent designation is not a clearance — lives once in the Data view, and the player card links to it.
+- A flag that describes the **build** rather than the player (`cohort_approximate`, `cohort_insufficient`, `insufficient_trend_history`, `market_snapshot_stale`) is explained once at view level and suppressed per row. `web/src/data/flags.ts` names that set explicitly, so a new build-level flag is a one-line addition rather than a judgement call at each call site.
+- Nothing is deleted. Every disclosure removed from a repeated surface has a home in Data, and `web/tests/app.test.tsx` pins the ones whose loss would be a truthfulness regression rather than a tidiness win.
+
+**What this does not license.** It is not permission to move a caveat *out of sight*. The test that distinguishes the two: could a reader who never opens Data misread a number on the board? If yes, the board keeps enough to prevent it. That is why `approximate cohort` stays on the card beside the ADP and why the status badge stays on every row that has one — and why `Medium` stays a visible word rather than a colour.
+
+**Consequences.** ADR-041, ADR-043 and ADR-045 are satisfied by the Data view plus the on-board markers, not by per-row prose. A future surface that shows a confidence label, a cohort-derived price or a status field inherits the same rule; adding a paragraph beside one of them is a regression, and adding a *new* disclosure means adding it to Data.
+
+---
+
+## ADR-059 — The behavioural suite is single-engine; a smoke suite is three-engine
+
+**Date:** 2026-08-31 (Phase 8)
+
+**Status:** **Accepted and implemented.** Amends ADR-048's dependency set.
+
+**Context.** Phase 6 ran the entire end-to-end suite on Chromium and recorded browser coverage as Phase-8 work. Phase 8 then made the question urgent: the Tier Board and Draft Rail moved off SVG onto CSS grid, `color-mix()`, container-relative percentage geometry and `<dialog>` in two presentations. Those have materially different histories in Gecko and WebKit than in Blink, and WebKit shipped `<dialog>` and `::backdrop` last of the three.
+
+Running the whole suite three times is the obvious answer and the wrong one. Roughly forty of its assertions are about logic — a table sorts, a query string round-trips, two artifacts join, a degraded artifact degrades one feature — none of which varies by rendering engine. Tripling the slowest gate in the repository to re-prove them would buy nothing and would be paid on every pull request.
+
+**Decision.** Two suites, split by whether the property under test is engine-dependent.
+
+| suite | engines | what it covers |
+|---|---|---|
+| `board.spec.ts`, `mobile.spec.ts`, `a11y.spec.ts` | Chromium | behaviour, URL state, degraded modes, accessibility conformance |
+| `smoke.spec.ts` | Chromium, Firefox, WebKit | primary flows, layout and reflow, focus, `<dialog>` semantics, downloads, base path, reduced motion |
+
+Chromium is in the smoke suite as well as the other two, so a smoke failure can be told apart from an engine difference: red everywhere is the product, red in one is the browser.
+
+**Where it runs.** `.github/workflows/ci.yml` gains a `browsers` job. This is the one gate that genuinely cannot run in the development sandbox — its egress policy blocks `cdn.playwright.dev`, so Firefox and WebKit cannot be downloaded there at all, while Chromium is preinstalled. That is the same shape as ADR-009's source probes: the environment that can answer the question is the runner, so the question is asked there. First green run: [33407642729](https://github.com/jeisey/jeisey-tiers/actions/runs/33407642729).
+
+**Dependencies (amending ADR-048).**
+
+- **added** `@axe-core/playwright`, dev-only, exact-pinned. Automated WCAG scanning is not a substitute for the keyboard pass — `a11y.spec.ts` says so in code by asserting the properties a scanner cannot judge — but it found four real contrast and reflow defects on its first run against the redesign, which is a better return than any other dependency in the repository.
+- **removed** `d3-scale`, `d3-array` and their `@types` packages. The Phase-8 encodings are CSS geometry rather than SVG, so nothing imports them. They were in ADR-048's set because Phase 6's charts used `scaleLinear`; keeping an unused runtime dependency in a published bundle is exactly the "unnecessary dependency" the Phase-8 review asks about.
+
+The frontend's production dependency set is now `react`, `react-dom` and `@tanstack/react-table`. Still no router, no UI kit, no charting framework, no CSS framework.

@@ -1,0 +1,108 @@
+{
+  "audit": {
+    "criteria_version": "phase8_simulation_convergence_v1",
+    "excluded": {
+      "max_tier_count_difference": "same property; a tier count is a function of the value curve, not of the draw count",
+      "min_tier_adjusted_rand": "tier-boundary stability is governed by phase4_tier_stability_v1 (ADR-035) and is reported here rather than decided here"
+    },
+    "inherits_bounds_from": "phase4_convergence_v1",
+    "ranking_stability": {
+      "max_mean_abs_rank_change_top_150": 1.5,
+      "min_fair_rank_spearman": 0.999,
+      "min_top_50_overlap": 0.96
+    },
+    "replacement_stability": {
+      "max_abs_replacement": 0.5
+    },
+    "rules": [
+      "the audit evaluates only the promoted production draw count",
+      "it cannot select a draw count, and no result of it lowers one",
+      "every bound is inherited unchanged from phase4_convergence_v1",
+      "a comparison must satisfy every criterion for the audit to pass"
+    ],
+    "value_stability": {
+      "mean_abs_expected_vorp": 0.25,
+      "mean_abs_outer_vorp": 0.6,
+      "mean_abs_p50_vorp": 0.35,
+      "p99_abs_expected_vorp": 1.5,
+      "p99_abs_outer_vorp": 5.0,
+      "p99_abs_p50_vorp": 3.0
+    }
+  },
+  "result": {
+    "comparisons": 8,
+    "converged": false,
+    "failures": [
+      "2022/PPR/redraft-12/vs_second_seed: mean_abs_expected_vorp 0.2937 exceeds 0.2500",
+      "2022/PPR/redraft-12/vs_second_seed: p99_abs_expected_vorp 1.9288 exceeds 1.5000",
+      "2022/PPR/redraft-12/vs_second_seed: mean_abs_p50_vorp 0.4160 exceeds 0.3500",
+      "2024/PPR/redraft-12/vs_second_seed: mean_abs_expected_vorp 0.3141 exceeds 0.2500",
+      "2024/PPR/redraft-12/vs_second_seed: mean_abs_p50_vorp 0.4062 exceeds 0.3500",
+      "2023/HALF/redraft-14/vs_second_seed: mean_abs_expected_vorp 0.2735 exceeds 0.2500",
+      "2023/HALF/redraft-14/vs_second_seed: p99_abs_expected_vorp 1.6329 exceeds 1.5000",
+      "2023/HALF/redraft-14/vs_second_seed: mean_abs_p50_vorp 0.3520 exceeds 0.3500"
+    ],
+    "notes": [
+      "a comparison of the promoted count against itself is degenerate by construction and carries no information: vs_reference"
+    ],
+    "promoted_draws": 10000,
+    "residuals": {
+      "fair_rank_spearman": {
+        "bound": 0.999,
+        "direction": -1.0,
+        "worst": 0.999437049673408
+      },
+      "max_abs_replacement": {
+        "bound": 0.5,
+        "direction": 1.0,
+        "worst": 0.24910460994300365
+      },
+      "mean_abs_expected_vorp": {
+        "bound": 0.25,
+        "direction": 1.0,
+        "worst": 0.31409937930520204
+      },
+      "mean_abs_outer_vorp": {
+        "bound": 0.6,
+        "direction": 1.0,
+        "worst": 0.45065658179339174
+      },
+      "mean_abs_p50_vorp": {
+        "bound": 0.35,
+        "direction": 1.0,
+        "worst": 0.41598670098328455
+      },
+      "mean_abs_rank_change_top_150": {
+        "bound": 1.5,
+        "direction": 1.0,
+        "worst": 1.3466666666666667
+      },
+      "p99_abs_expected_vorp": {
+        "bound": 1.5,
+        "direction": 1.0,
+        "worst": 1.9287956241012856
+      },
+      "p99_abs_outer_vorp": {
+        "bound": 5.0,
+        "direction": 1.0,
+        "worst": 2.7211869136553855
+      },
+      "p99_abs_p50_vorp": {
+        "bound": 3.0,
+        "direction": 1.0,
+        "worst": 2.8457231861399443
+      },
+      "top_50_overlap": {
+        "bound": 0.96,
+        "direction": -1.0,
+        "worst": 0.98
+      }
+    },
+    "rule": "phase8_simulation_convergence_v1",
+    "tier_observations": {
+      "worst_abs_tier_count_difference": 5.0,
+      "worst_tier_adjusted_rand": 0.4992177824228333
+    }
+  },
+  "source_report": "docs/experiments/phase4-simulation-ranking/experiment.json"
+}

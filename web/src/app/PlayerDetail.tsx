@@ -6,24 +6,49 @@
  * the intrinsic, market and status detail out of reach on a phone and behind a mouse for
  * keyboard users, and the UX spec requires no core function depend on hover.
  *
- * The status section carries a standing disclosure. `player_status.json` describes *today*;
- * the projection beside it never saw it (ADR-043). Nothing in this file says the model
- * accounts for an injury, adjusts for one, prices one in, or lost confidence because of one,
- * because none of that happened.
+ * **What changed in Phase 8.** The card used to end each of its three sections with a
+ * paragraph of methodology — what `confidence` is a statement about, why the cohort is
+ * approximate, and the standing disclosure that current status is annotation only. All three
+ * are true and none of them is about *this* player, so on a three-hundred-player board they
+ * were three hundred copies of the same three paragraphs. They now live once in Data, and
+ * this card leads with what a drafter needs while the pick clock is running: rank, tier,
+ * value, uncertainty, price, gap, score, trend, and any current designation.
+ *
+ * Truthfulness is unchanged, only repetition. Two things that are easy to get wrong and are
+ * therefore still explicit *here*:
+ *
+ * - a status row reading "none reported" is the absence of a report, not a clearance — the
+ *   word "healthy" appears nowhere in this product (ADR-043);
+ * - `Market data` is a statement about how much draft evidence stands behind the price, not
+ *   a probability and not model confidence (ADR-041). The card labels it "Market data" for
+ *   that reason and Data carries the rubric.
+ *
+ * The responsive treatment is one DOM with two presentations (`web/src/styles/base.css`): a
+ * centred HUD card where there is width for it, and a full-height sheet on a phone. Native
+ * `<dialog>` + `showModal()` keeps focus trapping, Escape and an inert background in both.
  */
 
 import { useEffect, useRef } from "react";
 
-import { PositionTag, TierTag } from "../components/primitives";
+import { PositionTag, StatusBadge, TierTag } from "../components/primitives";
 import type {
   ArbitrageRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   TierRecord,
 } from "../data/contracts";
-import { EM_DASH, formatAdp, formatEastern, formatInteger, formatRank, formatScore, formatSigned, formatValue } from "../data/format";
-import { explainFlags } from "../data/flags";
-import { CONFIDENCE_MEANING, CONFIDENCE_LABELS, describeGap, describeTrend, marketSourceLabel, TREND_UNAVAILABLE_EXPLANATION } from "../data/market";
+import {
+  EM_DASH,
+  formatAdp,
+  formatEastern,
+  formatInteger,
+  formatRank,
+  formatScore,
+  formatSigned,
+  formatValue,
+} from "../data/format";
+import { explainFlags, playerLevelFlags } from "../data/flags";
+import { CONFIDENCE_SHORT, describeGap, describeTrend, marketSourceLabel } from "../data/market";
 import { hasMeaningfulStatus, isNoteworthyRosterStatus } from "../data/model";
 
 export interface PlayerDetailData {
@@ -34,28 +59,52 @@ export interface PlayerDetailData {
   readonly projection: PlayerProjectionRecord | null;
   /** True when the arbitrage artifact loaded but holds no row for this player. */
   readonly marketAvailable: boolean;
+  /**
+   * Whether the cohort pricing this preset is exact for it, from `build_metadata`.
+   *
+   * The arbitrage record carries the cohort's filters but not the exactness verdict — that is
+   * a per-preset judgement the selection rule reaches and publishes in the build's assignment
+   * table. Null when the build published no assignment for the preset.
+   */
+  readonly cohortExact: boolean | null;
 }
 
-export const ANNOTATION_DISCLOSURE =
-  "Current status annotation — not included in the projection or the model.";
-
-function Fact({
+/**
+ * A labelled numeric readout — the unit of the HUD.
+ *
+ * `strong` promotes the two values a drafter reads first. `hint` is at most three words; it
+ * is not a place for methodology.
+ */
+function Readout({
   label,
-  children,
+  value,
+  hint,
+  kind,
+  strong = false,
+  srSuffix,
 }: {
   readonly label: string;
-  readonly children: React.ReactNode;
+  readonly value: React.ReactNode;
+  readonly hint?: string | undefined;
+  readonly kind?: "bargain" | "premium" | "even" | undefined;
+  readonly strong?: boolean;
+  /** Extra words for assistive technology only, when the visible value is a glyph or sign. */
+  readonly srSuffix?: string | undefined;
 }): React.JSX.Element {
   return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{children}</dd>
+    <div className="readout" data-strong={strong} data-kind={kind}>
+      <span className="readout-label">{label}</span>
+      <span className="readout-value">
+        {value}
+        {srSuffix !== undefined && <span className="visually-hidden">{` ${srSuffix}`}</span>}
+      </span>
+      {hint !== undefined && <span className="readout-hint">{hint}</span>}
     </div>
   );
 }
 
 /** Fields Sleeper publishes as keys with null values in the preseason are simply left out. */
-function OptionalFact({
+function OptionalReadout({
   label,
   value,
 }: {
@@ -63,27 +112,44 @@ function OptionalFact({
   readonly value: string | number | null | undefined;
 }): React.JSX.Element | null {
   if (value === null || value === undefined || value === "") return null;
-  return <Fact label={label}>{value}</Fact>;
+  return <Readout label={label} value={value} />;
 }
 
 export function PlayerDetail({
   data,
   onClose,
+  onOpenData,
 }: {
   readonly data: PlayerDetailData | null;
   readonly onClose: () => void;
+  /** Where the methodology went. One link, not a paragraph on every card. */
+  readonly onOpenData?: (() => void) | undefined;
 }): React.JSX.Element | null {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const returnFocusTo = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (dialog === null) return;
     if (data !== null && !dialog.open) {
+      // Remember the trigger before the dialog takes focus. Browsers restore focus on
+      // `close()` themselves, but the trigger here is a row that a filter or a sort can
+      // unmount, so the restore is done explicitly and defensively.
+      const active = document.activeElement;
+      returnFocusTo.current =
+        active instanceof HTMLElement && active !== document.body ? active : null;
       // `showModal` gives focus trapping, Escape-to-close and inert background for free, which
       // is a great deal more correct than any hand-rolled overlay.
       dialog.showModal();
     }
     if (data === null && dialog.open) dialog.close();
+  }, [data]);
+
+  useEffect(() => {
+    if (data !== null) return;
+    const target = returnFocusTo.current;
+    returnFocusTo.current = null;
+    if (target?.isConnected === true) target.focus();
   }, [data]);
 
   if (data === null) return null;
@@ -94,8 +160,10 @@ export function PlayerDetail({
   const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? null;
   const gap = arbitrage === null ? null : describeGap(arbitrage.rank_gap);
   const trend = arbitrage === null ? null : describeTrend(arbitrage.market_trend);
-  const intrinsicFlags = explainFlags(tier?.quality_flags ?? []);
-  const marketFlags = explainFlags(arbitrage?.quality_flags ?? []);
+  // Build-level market flags — an approximate cohort, a thin cohort, a trend still
+  // collecting — describe the board, not the player, and Data explains each one once.
+  const intrinsicFlags = explainFlags(playerLevelFlags(tier?.quality_flags ?? []));
+  const marketFlags = explainFlags(playerLevelFlags(arbitrage?.quality_flags ?? []));
 
   return (
     <dialog
@@ -108,160 +176,214 @@ export function PlayerDetail({
         if (event.target === dialogRef.current) onClose();
       }}
     >
-      <div className="detail-head">
-        <div>
-          <h2 id="player-detail-title">{name}</h2>
-          <div className="detail-subtitle">
-            {position !== null && <PositionTag position={position} />}
-            {tier !== null && (
-              <span>
-                {tier.position}
-                {formatRank(tier.position_rank)}
-              </span>
-            )}
-            {team !== null && <span>{team}</span>}
-            {tier !== null && <TierTag label={tier.tier_label} />}
+      <div className="detail-card">
+        <header className="detail-head">
+          <div className="detail-identity">
+            <h2 id="player-detail-title">{name}</h2>
+            <div className="detail-subtitle">
+              {position !== null && <PositionTag position={position} />}
+              {tier !== null && (
+                <span className="detail-posrank">
+                  {tier.position}
+                  {formatRank(tier.position_rank)}
+                </span>
+              )}
+              {team !== null && <span>{team}</span>}
+              {tier !== null && <TierTag label={tier.tier_label} />}
+              <StatusBadge status={status} />
+            </div>
           </div>
-        </div>
-        <button type="button" className="detail-close" onClick={onClose} aria-label="Close player detail">
-          Close
-        </button>
-      </div>
+          <button
+            type="button"
+            className="detail-close"
+            onClick={onClose}
+            aria-label="Close player detail"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        </header>
 
-      <div className="detail-body">
-        {tier !== null && (
-          <section className="detail-group">
-            <h3>Intrinsic value</h3>
-            <dl className="facts">
-              <Fact label="Fair rank">{formatRank(tier.fair_rank)}</Fact>
-              <Fact label="Position rank">
-                {tier.position}
-                {formatRank(tier.position_rank)}
-              </Fact>
-              <Fact label="Tier group">{tier.tier_label}</Fact>
-              <Fact label="Expected VORP">{formatValue(tier.expected_vorp)}</Fact>
-              <Fact label="Median VORP (P50)">{formatValue(tier.p50_vorp)}</Fact>
-              <Fact label="P25 – P75 VORP">
-                {`${formatValue(tier.p25_vorp)} – ${formatValue(tier.p75_vorp)}`}
-              </Fact>
-              <Fact label="P10 – P90 VORP">
-                {`${formatValue(tier.p10_vorp)} – ${formatValue(tier.p90_vorp)}`}
-              </Fact>
-              <Fact label="Expected fantasy points">{formatValue(tier.expected_points)}</Fact>
-              <Fact label="Uncertainty">{formatValue(tier.uncertainty)}</Fact>
-              {projection !== null && (
-                <OptionalFact
-                  label="Expected games"
-                  value={
-                    projection.expected_games === null || projection.expected_games === undefined
-                      ? null
-                      : formatValue(projection.expected_games)
-                  }
-                />
-              )}
-              {projection !== null && (
-                <Fact label="P25 – P75 points">
-                  {`${formatValue(projection.p25_points)} – ${formatValue(projection.p75_points)}`}
-                </Fact>
-              )}
-            </dl>
-            <p className="annotation-note">
-              Fair rank is median simulated VORP. Tier groups are useful; exact tier edges are
-              statistically soft, so treat a player either side of an edge as comparable.
-            </p>
-            {intrinsicFlags.length > 0 && <FlagList flags={intrinsicFlags} />}
-          </section>
-        )}
+        <div className="detail-body">
+          {tier !== null && (
+            <div className="readout-grid readout-grid-primary">
+              <Readout label="Fair rank" value={formatRank(tier.fair_rank)} strong />
+              <Readout
+                label="Position rank"
+                value={`${tier.position}${formatRank(tier.position_rank)}`}
+              />
+              <Readout label="Tier" value={tier.tier_label} hint="group, not a cut" />
+              <Readout label="Median VORP" value={formatValue(tier.p50_vorp)} strong />
+              <Readout
+                label="P25 – P75"
+                value={`${formatValue(tier.p25_vorp)} – ${formatValue(tier.p75_vorp)}`}
+              />
+              <Readout label="Uncertainty" value={formatValue(tier.uncertainty)} hint="points" />
+            </div>
+          )}
 
-        <section className="detail-group">
-          <h3>Draft market</h3>
-          {arbitrage === null ? (
-            <p className="muted">
+          {arbitrage !== null && (
+            <div className="readout-grid readout-grid-market">
+              <Readout
+                label="MFL ADP"
+                value={formatAdp(arbitrage.market_adp)}
+                hint={data.cohortExact === false ? "approximate cohort" : undefined}
+                strong
+              />
+              <Readout
+                label="Value gap"
+                value={formatSigned(arbitrage.rank_gap)}
+                kind={gap?.kind}
+                hint={gap?.kind === "bargain" ? "picks later" : gap?.kind === "premium" ? "picks earlier" : "even"}
+                srSuffix={gap?.sentence}
+              />
+              <Readout label="Arbitrage score" value={formatScore(arbitrage.arbitrage_score)} strong />
+              <Readout
+                label="Market trend"
+                value={
+                  arbitrage.market_trend === null
+                    ? EM_DASH
+                    : formatSigned(arbitrage.market_trend, 2)
+                }
+                hint={trend?.direction === "unknown" ? "collecting" : trend?.text}
+                srSuffix={trend?.direction === "unknown" ? "trend collecting" : trend?.text}
+              />
+              <Readout
+                label="Market data"
+                value={CONFIDENCE_SHORT[arbitrage.confidence]}
+                hint={`${formatInteger(arbitrage.market_sample_size)} drafts`}
+                srSuffix="market-data quality, not a probability"
+              />
+              <Readout
+                label="Observed picks"
+                value={
+                  arbitrage.market_adp_low === null || arbitrage.market_adp_high === null
+                    ? EM_DASH
+                    : `${formatAdp(arbitrage.market_adp_low)} – ${formatAdp(arbitrage.market_adp_high)}`
+                }
+                hint="earliest – latest"
+              />
+            </div>
+          )}
+
+          {arbitrage === null && (
+            <p className="detail-empty muted">
               {data.marketAvailable
                 ? "No current MyFantasyLeague ADP. He is fully ranked on the tier board; there is simply no market price to compare against."
                 : "The market comparison is unavailable for this build."}
             </p>
-          ) : (
-            <>
-              <dl className="facts">
-                <Fact label={marketSourceLabel(arbitrage.market_source_id)}>
-                  {formatAdp(arbitrage.market_adp)}
-                </Fact>
-                <Fact label="Market rank">{formatRank(arbitrage.market_rank)}</Fact>
-                <Fact label="Rank gap">
-                  <span className="dir" data-kind={gap?.kind}>
-                    {formatSigned(arbitrage.rank_gap)}
-                  </span>
-                </Fact>
-                <Fact label="Regional value gap">{arbitrage.regional_value_gap.toFixed(3)}</Fact>
-                <Fact label="Arbitrage score">{formatScore(arbitrage.arbitrage_score)}</Fact>
-                <Fact label="Drafts priced">{formatInteger(arbitrage.market_sample_size)}</Fact>
-                <Fact label="Observed pick range">
-                  {arbitrage.market_adp_low === null || arbitrage.market_adp_high === null
-                    ? EM_DASH
-                    : `${formatAdp(arbitrage.market_adp_low)} – ${formatAdp(arbitrage.market_adp_high)}`}
-                </Fact>
-                <Fact label="Market trend">
-                  {arbitrage.market_trend === null ? EM_DASH : formatSigned(arbitrage.market_trend, 2)}
-                </Fact>
-                <Fact label="Market-data confidence">{CONFIDENCE_LABELS[arbitrage.confidence]}</Fact>
-                <Fact label="Cohort">{arbitrage.market_cohort_detail}</Fact>
-                <Fact label="Snapshot taken">{formatEastern(arbitrage.market_snapshot_at_utc)}</Fact>
-              </dl>
-              <p className="annotation-note">
-                {gap?.sentence}{" "}
-                {trend?.direction === "unknown" ? TREND_UNAVAILABLE_EXPLANATION : trend?.text}{" "}
-                {CONFIDENCE_MEANING}
-              </p>
-              {marketFlags.length > 0 && <FlagList flags={marketFlags} />}
-            </>
           )}
-        </section>
 
-        <section className="detail-group">
-          <h3>Current status</h3>
-          {status === null ? (
-            <p className="muted">
-              No current status record was published for this player, so there is no roster,
-              depth-chart or injury annotation to show.
-            </p>
+          {/* A player with *no* status record is not the same as a player with a record and
+              no designation, and neither is the same as good news. Both say so, briefly. */}
+          {status !== null ? (
+            <StatusStrip status={status} />
           ) : (
-            <>
-              <dl className="facts">
-                <OptionalFact label="Current team" value={status.current_team} />
-                <OptionalFact
-                  label="Roster status"
-                  value={isNoteworthyRosterStatus(status.roster_status) ? status.roster_status : null}
-                />
-                <OptionalFact label="Sleeper status" value={status.sleeper_status} />
-                <OptionalFact label="Injury status" value={status.injury_status} />
-                <OptionalFact label="Body part" value={status.injury_body_part} />
-                <OptionalFact label="Injury reported" value={status.injury_start_date} />
-                <OptionalFact label="Practice" value={status.practice_participation} />
-                <OptionalFact label="Practice detail" value={status.practice_description} />
-                <OptionalFact label="Depth chart" value={status.depth_chart_position} />
-                <OptionalFact
-                  label="Depth order"
-                  value={status.depth_chart_order === null ? null : `#${String(status.depth_chart_order)}`}
-                />
-                <Fact label="Observed">{formatEastern(status.observed_at_utc)}</Fact>
-              </dl>
-              {status.injury_notes !== null && <p className="muted">{status.injury_notes}</p>}
-              {!hasMeaningfulStatus(status) && (
-                <p className="muted">
-                  No injury designation is currently reported for this player. That is the absence
-                  of a report, not a clearance.
-                </p>
-              )}
-              <p className="annotation-note">
-                <strong>{ANNOTATION_DISCLOSURE}</strong> The board above was produced without any
-                of these fields. Source: {status.source_ids.join(", ")}.
-              </p>
-            </>
+            <div className="status-strip" data-meaningful="false">
+              <span className="status-strip-label">Current status</span>
+              <p className="status-note">No status record was published for this player.</p>
+            </div>
           )}
-        </section>
+
+          <details className="detail-more">
+            <summary>Full simulation and market evidence</summary>
+            <div className="readout-grid readout-grid-more">
+              {tier !== null && (
+                <>
+                  <Readout label="Expected VORP" value={formatValue(tier.expected_vorp)} />
+                  <Readout
+                    label="P10 – P90 VORP"
+                    value={`${formatValue(tier.p10_vorp)} – ${formatValue(tier.p90_vorp)}`}
+                  />
+                  <Readout label="Expected points" value={formatValue(tier.expected_points)} />
+                </>
+              )}
+              {projection !== null && (
+                <>
+                  <Readout
+                    label="P25 – P75 points"
+                    value={`${formatValue(projection.p25_points)} – ${formatValue(projection.p75_points)}`}
+                  />
+                  {projection.expected_games !== null && projection.expected_games !== undefined && (
+                    <Readout label="Expected games" value={formatValue(projection.expected_games)} />
+                  )}
+                </>
+              )}
+              {arbitrage !== null && (
+                <>
+                  <Readout label="Market rank" value={formatRank(arbitrage.market_rank)} />
+                  <Readout
+                    label="Regional value gap"
+                    value={arbitrage.regional_value_gap.toFixed(3)}
+                  />
+                  <Readout label="Cohort" value={arbitrage.market_cohort_detail} />
+                  <Readout
+                    label={marketSourceLabel(arbitrage.market_source_id)}
+                    value={formatEastern(arbitrage.market_snapshot_at_utc)}
+                    hint="snapshot taken"
+                  />
+                </>
+              )}
+              {status !== null && (
+                <Readout label="Status observed" value={formatEastern(status.observed_at_utc)} />
+              )}
+            </div>
+            {(intrinsicFlags.length > 0 || marketFlags.length > 0) && (
+              <FlagList flags={[...intrinsicFlags, ...marketFlags]} />
+            )}
+          </details>
+
+          {onOpenData !== undefined && (
+            <p className="detail-methodology">
+              <button
+                type="button"
+                className="button-link"
+                onClick={() => {
+                  onClose();
+                  onOpenData();
+                }}
+              >
+                Definitions and methodology
+              </button>
+            </p>
+          )}
+        </div>
       </div>
     </dialog>
+  );
+}
+
+/**
+ * The current-status strip.
+ *
+ * Fields, not prose. "None reported" is the absence of a designation and never the word
+ * "healthy"; Data carries the standing explanation that none of this entered the projection.
+ */
+function StatusStrip({ status }: { readonly status: PlayerStatusRecord }): React.JSX.Element {
+  const meaningful = hasMeaningfulStatus(status);
+  return (
+    <div className="status-strip" data-meaningful={meaningful}>
+      <span className="status-strip-label">Current status</span>
+      <div className="readout-grid readout-grid-status">
+        {!meaningful && <Readout label="Designation" value="None reported" />}
+        <OptionalReadout label="Injury" value={status.injury_status} />
+        <OptionalReadout label="Body part" value={status.injury_body_part} />
+        <OptionalReadout label="Reported" value={status.injury_start_date} />
+        <OptionalReadout label="Practice" value={status.practice_participation} />
+        <OptionalReadout label="Practice detail" value={status.practice_description} />
+        <OptionalReadout label="Sleeper" value={status.sleeper_status} />
+        <OptionalReadout
+          label="Roster"
+          value={isNoteworthyRosterStatus(status.roster_status) ? status.roster_status : null}
+        />
+        <OptionalReadout label="Depth chart" value={status.depth_chart_position} />
+        <OptionalReadout
+          label="Depth order"
+          value={status.depth_chart_order === null ? null : `#${String(status.depth_chart_order)}`}
+        />
+      </div>
+      {status.injury_notes !== null && <p className="status-note">{status.injury_notes}</p>}
+      <p className="status-annotation">Annotation only — not a model input.</p>
+    </div>
   );
 }
 

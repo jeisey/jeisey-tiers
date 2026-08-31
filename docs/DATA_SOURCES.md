@@ -98,6 +98,8 @@ Save only small schema fixtures on main. Do not commit a full vendor dataset unt
 
 > **Phase-0 result (2026-08-17):** all twelve items were probed by `scripts/source_probe.py`; the answers are in section 13.5. Items to note: there is no standard-deviation field (8), there is no working date-window control (6), the export exposes no `gsis_id` (7), and XML/JSON are both available with JSON selected via `JSON=1` (2). Schema fixtures are committed under `tests/fixtures/source_schemas/`.
 
+> **Phase-8 re-probe (2026-08-31):** re-run on a GitHub-hosted runner fourteen days later ([33412957744](https://github.com/jeisey/jeisey-tiers/actions/runs/33412957744)); evidence under `docs/source-probes/2026-08-31/`. Same status counts as the baseline — 78 `ok`, 1 `http_error` (`rights_mfl_terms`, 404), 1 `loader_error` (`nflverse_injuries_2026`, "Season must be between 2009 and 2025"). Twelve recorded schemas were refreshed: **no column added, no column removed, one dtype change** (`nflverse_ff_playerids.pff_id`, `String` → `Int64`, unused by this project). Everything else is sample statistics. Notable movements: Sleeper's `season_type` flipped `pre` → `regular`, Sleeper `injury_status` coverage rose 5.1% → 6.5%, and the 2026 roster file grew 2,930 → 3,197 rows while its distinct-position count fell 12 → 11. Read column by column in `docs/PHASE8_OPERATIONS_AUDIT.md` section 3.4.
+
 ### ML feasibility decision
 
 Set `arbitrage_ml_historical_feasible=true` only if the project can construct sufficiently dense, point-in-time market-cost data for multiple historical seasons with stable player identity and scoring context.

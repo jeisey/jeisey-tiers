@@ -1,18 +1,18 @@
 {
-  "captured_at_utc": "2026-08-17T17:05:21Z",
+  "captured_at_utc": "2026-08-31T16:22:21Z",
   "check_id": "sleeper_state_nfl",
   "columns": [],
   "coverage": {
-    "display_week": 2,
+    "display_week": 1,
     "league_create_season": "2026",
     "league_season": "2026",
-    "leg": 0,
+    "leg": 1,
     "previous_season": "2025",
     "season": "2026",
     "season_has_scores": true,
-    "season_start_date": "2026-08-06",
-    "season_type": "pre",
-    "week": 2
+    "season_start_date": "2026-09-09",
+    "season_type": "regular",
+    "week": 1
   },
   "record_count": null,
   "sample_rows": [],

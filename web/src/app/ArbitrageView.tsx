@@ -1,12 +1,17 @@
 /**
- * The Arbitrage board: the shared market condition, the Draft Rail, the table, the export.
+ * The Arbitrage board: the market condition, the Draft Rail, the table, the export.
  *
- * The condition notice is the reason this view exists in this shape. At launch every one of
- * the 2,122 published rows reads `low` confidence for a single recorded reason, so rendering
- * 2,122 identical unexplained pills would be worse than useless — the label would read as
- * "the model is unsure about these players", which is the opposite of what it means. The
- * shared cause is explained once, here, in numbers pulled out of build metadata (ADR-041,
- * ADR-045).
+ * The condition panel is the reason this view exists in this shape. A confidence label beside
+ * a player's name reads as "the model is unsure about him" unless something says otherwise,
+ * and that is the opposite of what the field means (ADR-041), so the meaning is stated once
+ * here rather than on every row and every card.
+ *
+ * Everything in the panel is derived. At launch every published row read `low` for one
+ * recorded reason and the panel said so; the same frozen rule later cleared its own bar and
+ * the board became mostly `medium` with a handful of `low` rows, and the panel says that
+ * instead — with no code change, because `marketHeadline` reports whatever the rows carry
+ * (ADR-045, ADR-052). The full rubric, the cohort filters and the trend rule live once in
+ * Data; what is here is the minimum needed to stop a number being misread.
  */
 
 import { useMemo, useRef } from "react";
@@ -16,12 +21,10 @@ import { Notice } from "../components/primitives";
 import { arbitrageRowsToCsv } from "../data/csv";
 import { formatEastern, formatInteger } from "../data/format";
 import {
-  CONFIDENCE_MEANING,
-  CONFIDENCE_SHORT,
   explainClause,
+  marketHeadline,
   marketSourceLabel,
   summarizeMarket,
-  TREND_UNAVAILABLE_EXPLANATION,
 } from "../data/market";
 import { selectArbitrageRows, unpricedMatches, type ArbitrageRow, type ArtifactIndex } from "../data/model";
 import { RAIL_MODES, SCORING_TO_PRESET, type AppState, type RailMode } from "../data/state";
@@ -47,6 +50,7 @@ export function ArbitrageView({
   selectedPlayerId,
   buildDate,
   available,
+  onOpenData,
 }: {
   readonly index: ArtifactIndex;
   readonly state: AppState;
@@ -55,6 +59,7 @@ export function ArbitrageView({
   readonly selectedPlayerId: string | null;
   readonly buildDate: string;
   readonly available: boolean;
+  readonly onOpenData?: (() => void) | undefined;
 }): React.JSX.Element {
   const rows = useMemo(() => selectArbitrageRows(index, state), [index, state]);
   const visibleRows = useRef<readonly ArbitrageRow[]>(rows);
@@ -98,13 +103,13 @@ export function ArbitrageView({
 
   return (
     <>
-      <MarketConditionNotice summary={summary} />
+      <MarketConditionNotice summary={summary} onOpenData={onOpenData} />
 
       <section className="section" aria-labelledby="draft-rail-heading">
         <div className="section-head">
           <h2 id="draft-rail-heading">Draft rail</h2>
           <p className="section-note">
-            {`${METHOD_LABEL}: fair rank against ${marketSourceLabel(summary.sourceId)}. No learned surplus model exists in V1, so a rail's length is picks — not points and not dollars.`}
+            {`${METHOD_LABEL}: fair rank against ${marketSourceLabel(summary.sourceId)}. The bar is the signed difference in picks — not points, not dollars and not a probability.`}
           </p>
           <div className="section-actions">
             <div className="segmented" role="radiogroup" aria-label="Draft rail population">
@@ -129,12 +134,15 @@ export function ArbitrageView({
         <DraftRail rows={railRows} onSelect={onSelect} selectedPlayerId={selectedPlayerId} />
 
         <div className="legend">
-          <span className="legend-item">◆ Fair rank (model)</span>
-          <span className="legend-item">○ MyFantasyLeague ADP (market)</span>
           <span className="legend-item">
-            → market drafts him later than fair rank (bargain); ← market drafts him earlier
-            (premium)
+            <span className="legend-bar" data-kind="bargain" /> right of centre — the market
+            drafts him <strong>later</strong> than his fair rank (a bargain)
           </span>
+          <span className="legend-item">
+            <span className="legend-bar" data-kind="premium" /> left of centre — the market
+            drafts him <strong>earlier</strong> (a premium)
+          </span>
+          <span className="legend-item">▸ beyond the scale; the exact gap is on the row</span>
           {railRows.length < rows.length && (
             <span className="legend-item muted">
               {`Showing ${String(railRows.length)} of ${String(rows.length)} priced players; the table below has every row.`}
@@ -181,76 +189,96 @@ export function ArbitrageView({
 }
 
 /**
- * The shared market condition.
+ * The market condition, in one line plus the evidence behind it.
  *
- * Everything printed here is read from the build: the cohort id, the clauses the cohort
- * failed, the snapshot time, the per-player median sample size computed over the rows in
- * scope. Nothing is a literal.
+ * Every value printed here is read from the build: the label distribution over the rows in
+ * scope, the cohort id, the clauses the cohort failed (when it failed any), the snapshot
+ * time, the per-player median sample size. Nothing is a literal, and there is no branch that
+ * assumes a particular condition — a `low` board, a `medium` board, a mixed board and a board
+ * with no trend history all render from the same code.
  */
 export function MarketConditionNotice({
   summary,
+  onOpenData,
 }: {
   readonly summary: ReturnType<typeof summarizeMarket>;
+  readonly onOpenData?: (() => void) | undefined;
 }): React.JSX.Element | null {
-  const { assignment, uniform } = summary;
-  if (summary.rows === 0) return null;
-
+  const headline = marketHeadline(summary);
+  if (headline === null) return null;
+  const { assignment } = summary;
   const clauses = assignment?.failedClauses ?? [];
-  const uniformLow = uniform !== null && uniform !== "high";
 
-  // One block, not three. The headline states the condition — which must be explained rather
-  // than hidden — and the disclosure carries the evidence. Three stacked panels pushed the
-  // board itself off a phone screen, which is a worse way of being honest.
   return (
-    <div className="notice" data-severity={uniformLow ? "warning" : "info"}>
-      {uniformLow ? (
-        <>
-          <strong>
-            {`Every row on this board reads ${CONFIDENCE_SHORT[uniform].toLowerCase()} market-data confidence.`}
-          </strong>{" "}
-          That is a statement about how much draft evidence stands behind these prices — not a
-          probability that a player is a bargain, and nothing at all about the projection beside
-          it.
-        </>
-      ) : (
-        <>
-          <strong>Market data.</strong> {CONFIDENCE_MEANING}
-        </>
+    <div className="notice market-condition" data-severity={headline.tone}>
+      <div className="market-condition-head">
+        <strong>{headline.sentence}</strong>{" "}
+        <span>
+          That is how much draft evidence stands behind these prices — not a probability that a
+          player is a bargain, and nothing about the projection beside it.
+        </span>
+      </div>
+      <ul className="market-facts">
+        <li>
+          <span className="market-fact-label">Price</span>
+          <span className="market-fact-value">
+            {marketSourceLabel(summary.sourceId)}
+            {assignment !== null && !assignment.exact && (
+              <span className="market-fact-qualifier"> · approximate cohort</span>
+            )}
+          </span>
+        </li>
+        {assignment !== null && (
+          <li>
+            <span className="market-fact-label">Cohort</span>
+            <span className="market-fact-value">
+              <code>{assignment.cohortId}</code>
+              <span className="market-fact-qualifier">
+                {assignment.sufficient ? " · clears the frozen rule" : " · below the frozen bar"}
+              </span>
+            </span>
+          </li>
+        )}
+        {summary.medianSampleSize !== null && (
+          <li>
+            <span className="market-fact-label">Median sample</span>
+            <span className="market-fact-value">
+              {`${formatInteger(summary.medianSampleSize)} drafts per player`}
+            </span>
+          </li>
+        )}
+        <li>
+          <span className="market-fact-label">Trend</span>
+          <span className="market-fact-value">
+            {summary.trendAvailable ? "measured" : "collecting"}
+            {summary.trendSnapshots !== null && (
+              <span className="market-fact-qualifier">
+                {` · ${formatInteger(summary.trendSnapshots)} snapshot${summary.trendSnapshots === 1 ? "" : "s"} in the window`}
+              </span>
+            )}
+          </span>
+        </li>
+        {summary.snapshotAtUtc !== null && (
+          <li>
+            <span className="market-fact-label">Snapshot</span>
+            <span className="market-fact-value">{formatEastern(summary.snapshotAtUtc)}</span>
+          </li>
+        )}
+      </ul>
+      {clauses.length > 0 && (
+        <p className="market-condition-clauses">
+          {`Under the frozen sufficiency rule, ${clauses.map(explainClause).join("; ")}.`}
+        </p>
       )}
-      <details className="market-details">
-        <summary>Why, and what the market evidence actually is</summary>
-        <ul>
-          {clauses.length > 0 && (
-            <li>
-              <strong>Cohort rule.</strong>{" "}
-              {`Under the frozen sufficiency rule, ${clauses.map(explainClause).join("; ")}.`}
-              {summary.medianSampleSize !== null &&
-                ` The direct per-player evidence is better than that label suggests: the median priced player here was selected in ${formatInteger(summary.medianSampleSize)} drafts.`}
-            </li>
-          )}
-          {!summary.trendAvailable && (
-            <li>
-              <strong>Trend collecting.</strong> {TREND_UNAVAILABLE_EXPLANATION}
-              {summary.trendSnapshots !== null &&
-                ` The store holds ${formatInteger(summary.trendSnapshots)} snapshot${summary.trendSnapshots === 1 ? "" : "s"} in the window.`}
-            </li>
-          )}
-          {assignment !== null && !assignment.exact && (
-            <li>
-              <strong>Approximate cohort.</strong>{" "}
-              {`${marketSourceLabel(summary.sourceId)} cannot filter drafts to this exact scoring and league size, so prices come from the ${assignment.cohortId} population (${assignment.sourceFormatDetail}).`}
-              {assignment.scoringPreset !== "PPR" &&
-                " That population is not scoring-specific, so this board is priced largely by PPR drafters."}
-            </li>
-          )}
-          {summary.snapshotAtUtc !== null && (
-            <li>
-              <strong>Snapshot.</strong>{" "}
-              {`${marketSourceLabel(summary.sourceId)} prices retained ${formatEastern(summary.snapshotAtUtc)}.`}
-            </li>
-          )}
-        </ul>
-      </details>
+      {onOpenData !== undefined && (
+        <button
+          type="button"
+          className="button-link"
+          onClick={onOpenData}
+        >
+          How these are measured
+        </button>
+      )}
     </div>
   );
 }

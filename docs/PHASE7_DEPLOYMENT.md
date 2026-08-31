@@ -216,6 +216,15 @@ visibility gate in section 7 has not been passed — so this run left production
 found it: absent. The mechanism is proven; the observation on a live site is the owner's step
 6 in section 7, and it is the same run with the same flag.
 
+> **Since observed (2026-08-31).** The paragraph above is a Phase-7 statement and was true when
+> written. The site went live on 2026-08-22 and has refreshed daily since. The half this run
+> could not show was shown by run
+> [33413279053](https://github.com/jeisey/jeisey-tiers/actions/runs/33413279053): a Phase-8
+> branch build passed every gate, its deploy was refused by the Pages environment's branch
+> policy, and the live site was left exactly as it was — a surviving site and a failed deploy
+> in the same event, against real production rather than against an absence. See
+> `docs/PHASE8_OPERATIONS_AUDIT.md` section 1.1.
+
 ### 4b. The retrain gate declined, in 23 seconds
 
 Run [32594603959](https://github.com/jeisey/jeisey-tiers/actions/runs/32594603959), exit 0:

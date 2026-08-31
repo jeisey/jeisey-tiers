@@ -11,12 +11,14 @@
 
 import { describe, expect, it } from "vitest";
 
+import type { ArbitrageRecord, Confidence } from "../src/data/contracts";
 import {
   CONFIDENCE_MEANING,
   cohortAssignment,
   describeGap,
   describeTrend,
   explainClause,
+  marketHeadline,
   marketSourceLabel,
   summarizeMarket,
 } from "../src/data/market";
@@ -109,6 +111,83 @@ describe("summarizeMarket", () => {
     const summary = summarizeMarket(buildMetadata(), records, "PPR", 12);
     expect(summary.trendAvailable).toBe(false);
     expect(summary.trendSnapshots).toBe(2);
+  });
+
+  it("names the dominant label on a mixed board", () => {
+    const matured = arbitrageRecords("matured").filter(
+      (record) => record.league_preset_id === "redraft-12" && record.scoring_preset === "PPR",
+    );
+    const summary = summarizeMarket(buildMetadata({}, "matured"), matured, "PPR", 12);
+    expect(summary.uniform).toBeNull();
+    expect(summary.dominant).toBe("medium");
+    expect(summary.confidenceCounts.medium).toBeGreaterThan(summary.confidenceCounts.low);
+    expect(summary.confidenceCounts.low).toBeGreaterThan(0);
+    expect(summary.trendAvailable).toBe(true);
+  });
+});
+
+/**
+ * The headline is the sentence that used to be a hardcoded launch condition.
+ *
+ * There is no "normal" branch here on purpose: `low`, `medium`, `high` and a mixed board are
+ * all first-class, and the tone follows the evidence rather than a label the code was written
+ * around (ADR-052).
+ */
+describe("marketHeadline", () => {
+  const records = arbitrageRecords().filter(
+    (record) => record.league_preset_id === "redraft-12" && record.scoring_preset === "PPR",
+  );
+  const template = records[0];
+  if (template === undefined) throw new Error("the fixture published no priced rows");
+  const withConfidence = (labels: readonly Confidence[]): ArbitrageRecord[] =>
+    labels.map((confidence, index) => ({
+      ...template,
+      player_id: `synthetic-${String(index)}`,
+      confidence,
+    }));
+
+  it("warns on a uniformly weak board and says which label", () => {
+    const headline = marketHeadline(
+      summarizeMarket(buildMetadata(), withConfidence(["low", "low", "low"]), "PPR", 12),
+    );
+    expect(headline?.tone).toBe("warning");
+    expect(headline?.sentence).toMatch(/Every priced row on this board carries low/);
+  });
+
+  it("does not warn once the board is uniformly medium or high", () => {
+    for (const label of ["medium", "high"] as const) {
+      const headline = marketHeadline(
+        summarizeMarket(buildMetadata(), withConfidence([label, label]), "PPR", 12),
+      );
+      expect(headline?.tone).toBe("info");
+      expect(headline?.sentence).toContain(label);
+    }
+  });
+
+  it("counts the labels on a mixed board rather than picking one", () => {
+    const headline = marketHeadline(
+      summarizeMarket(
+        buildMetadata(),
+        withConfidence(["medium", "medium", "medium", "low"]),
+        "PPR",
+        12,
+      ),
+    );
+    expect(headline?.sentence).toContain("3 medium");
+    expect(headline?.sentence).toContain("1 low");
+    // Dominated by medium, so the panel is informational rather than a warning.
+    expect(headline?.tone).toBe("info");
+  });
+
+  it("warns when the weak label dominates a mixed board", () => {
+    const headline = marketHeadline(
+      summarizeMarket(buildMetadata(), withConfidence(["low", "low", "medium"]), "PPR", 12),
+    );
+    expect(headline?.tone).toBe("warning");
+  });
+
+  it("returns nothing for a board with no priced rows", () => {
+    expect(marketHeadline(summarizeMarket(buildMetadata(), [], "PPR", 12))).toBeNull();
   });
 });
 
