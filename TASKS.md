@@ -309,11 +309,11 @@ of everything five green production days do not prove.
 - [x] `min_total_drafts` / ADR-052 resolved from current evidence, with no bound moved.
 - [x] ADR-056 FFC evidence reconciled; **not** added to production V1.
 - [x] Data-source failure/fallback drills — nineteen, offline (`tests/integration/test_failure_drills.py`).
-- [x] Source freshness / schema-drift probe re-run on a GitHub runner.
+- [x] Source freshness / schema-drift probe re-run on a GitHub runner — same status counts as the Phase-0 baseline; twelve schemas refreshed with **no column added, no column removed, one unused dtype change**.
 - [x] Private-store security audit — `docs/PHASE8_SECURITY_REVIEW.md`; every credential property is now a test.
 - [x] Dependency/security review — `pip-audit` and `npm audit` both clean; two unused dependencies removed.
 - [x] Frontend performance review on a production-scale board; no launch-blocking problem.
-- [x] Accessibility review — axe at WCAG 2.2 AA plus a manual keyboard pass; four real defects found and fixed.
+- [x] Accessibility review — axe at WCAG 2.2 AA plus a manual keyboard pass; four real defects found and fixed, plus a fifth in the scan itself (it passed against a page that failed to load).
 - [x] Browser compatibility — Chromium, Firefox and WebKit green on a runner.
 - [x] Visual QA after the redesign — eighteen screens, `docs/visual-qa/2026-08-31/`.
 - [x] Reproducibility run from a clean clone.

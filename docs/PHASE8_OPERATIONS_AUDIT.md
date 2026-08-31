@@ -31,6 +31,32 @@ five green days.
 built from `645409b`, so every difference below is a *data* difference. That is what makes this
 audit worth doing: the code is a constant, so drift is signal.
 
+### 1.1 Run 18 — the redesign against real data, and a deploy that correctly refused
+
+Run [33413279053](https://github.com/jeisey/jeisey-tiers/actions/runs/33413279053), dispatched on
+the Phase-8 branch at `73c6b28` with `skip_capture: true` so the real store was read and never
+written. It is the only evidence in this phase that the redesigned DOM survives contact with the
+production board rather than the fixture one.
+
+| job | outcome |
+|---|---|
+| capture | success — capture steps skipped, retained store validated, nothing pushed |
+| build | **success**, including `build-current` (3m47s), cohort selection, arbitrage, `validate-artifacts`, the Pages base-path build, **`verify:board` against the artifact bytes**, and the Pages artifact-boundary assertion |
+| deploy | **failure in one second, no runner assigned, no steps** |
+| summary | `BUILD: success`, `DEPLOY: failure`, `PAGE_URL:` empty |
+
+The deploy failure is the environment's branch policy rejecting a Pages deployment from a
+non-default branch, and it is the correct outcome twice over: the redesign is not merged, and
+**ADR-050's job graph confines it**. The deploy job contains only the Pages actions, so the
+refusal published nothing and cleared nothing. The summary said so in the words the workflow was
+written with — *"No Pages artifact was deployed, so the previously deployed site is still live
+and unchanged."* The live site is still run 17's.
+
+Two things worth taking from it. `verify:board` compares the rendered DOM against
+`public/data`'s bytes; it passed against 2,700 real tier rows and 1,934 real arbitrage rows on
+selectors (`.board-row`, `.rail-row`) that did not exist a week ago. And the three warnings it
+printed are the same three strings as runs 13-17 — the redesign changed no build-level claim.
+
 ---
 
 ## 2. What moved
@@ -181,6 +207,57 @@ end-to-end test written alongside it, and pinned by a regression test that cites
 
 Worth recording because it is the phase's own lesson turned on itself: the bound came from
 what looked reasonable rather than from the contract that was one file away.
+
+---
+
+## 3.4 Source freshness and schema drift, re-probed on a runner
+
+Egress from this sandbox is blocked, and an egress-blocked environment is not evidence about
+a source. The probe was therefore re-run on a GitHub-hosted runner
+([33412957744](https://github.com/jeisey/jeisey-tiers/actions/runs/33412957744)), fourteen days
+after the Phase-0 baseline of 2026-08-17, and the refreshed schema fixtures committed at
+`3ed5b37` so the drift is a reviewable diff rather than a claim.
+
+**Status counts identical to the baseline: 78 ok, 1 `http_error`, 1 `loader_error`** — the same
+two known findings (`rights_mfl_terms` returns 404; `nflverse_injuries_2026` answers "Season must
+be between 2009 and 2025"). Twelve of the recorded schemas changed.
+
+**No structural drift, with one exception.** Across all twelve: **zero columns added, zero
+columns removed, one dtype change.** Everything else is sample statistics — record counts,
+null fractions, coverage numbers, `captured_at_utc`.
+
+| what changed | 2026-08-17 → 2026-08-31 | disposition |
+|---|---|---|
+| `nflverse_ff_playerids.pff_id` dtype | `String` → `Int64` | **the only type change in any source.** `pff_id` appears nowhere in `src/`, `config/` or `schemas/` — the mirror is read for the `mfl_id` → `gsis_id` bridge only, and `required_source_columns` does not include it. No effect, and the probe seeing it is the point of having the probe. |
+| `nflverse_rosters_2026.record_count` | 2,930 → 3,197 | roster churn through the cutdown period. The file accumulates. |
+| `nflverse_rosters_2026.coverage.position_distinct` | 12 → 11 | a position present in the August file is absent from this one. `position_min`/`position_max` unchanged (`DB`…`WR`), so it is not a boundary. **Absence here is not a claim about the league** — and by ADR-055 the registry's market spine is `load_rosters ∪ load_players`, so a player the roster file omits is still priced. The status path reads the roster alone on purpose: there, "not on a roster" is the answer being asked for. |
+| `nflverse_rosters_2026` gsis null fraction | 0.0522 → 0.0041 | nflverse backfilled ids. Fewer rows dropped by `roster_rows_without_gsis_id`. |
+| `sleeper_state_nfl.season_type` | `pre` → `regular`, `week` 2 → 1, `season_start_date` 2026-08-06 → 2026-09-09 | Sleeper has flipped to regular-season framing nine days before kickoff. |
+| `sleeper_players_nfl.injury_status` coverage | 620/12,220 (5.1%) → 794/12,225 (6.5%) | designations populating as the season nears, exactly as §4 predicted they would. |
+| `mfl_adp_current_default.totalDrafts` | 410 → 1,415 | the unfiltered default cohort. The keeper-free cohort the build actually selects moved 125 → 735 over the same window (ADR-052). |
+| `mfl_players_details.record_count` | 2,600 → 2,612 | twelve players added to the directory. |
+
+**Two things this changes, and one it does not.**
+
+`season_type` moving to `regular` is the kind of source flip that silently redefines a
+season-relative rule. It does not here: the build's draft-time anchor is configuration
+(`config/league-defaults.yaml`), not a field read back from Sleeper, and `parse_sleeper_state`
+is asserted against both eras in `tests/contract/test_source_adapters.py`. The board's notion of
+"preseason" is its own.
+
+`injury_status` coverage rising is the falsifiable half of §4's answer about source silence. The
+UI omits an absent field rather than printing an em dash; those fields are now populating, and
+the rendering rule needs no change to show them.
+
+**What the refresh mechanism itself deserves.** `source-probe.yml` with `commit_results: true`
+overwrites `tests/fixtures/source_schemas/` and commits with `[skip ci]`. That is the intended
+design — `docs/OPERATIONS.md` says "a changed fixture is a changed upstream contract" and asks
+for the diff to be reviewed — but it means the contract fixtures can land unreviewed and
+untested by CI in one dispatch. The safety property survives regardless, and in the strict
+direction: a source that *removed* a column an adapter needs would produce a refreshed fixture
+missing it, and `test_required_columns_exist_in_the_phase0_recorded_schema` fails. What the
+refresh cannot catch is a silent *widening*. This diff was read column by column before the
+rebase, and the full suite was re-run against the refreshed fixtures.
 
 ---
 

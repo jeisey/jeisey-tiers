@@ -292,11 +292,13 @@ Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `dep
 - **Accessibility:** axe at WCAG 2.2 AA over eight surfaces plus the open dialog, clean, plus eight keyboard and semantic checks a scanner cannot make. **Four real defects found and fixed**, all introduced by the redesign.
 - **Browsers:** Chromium, Firefox and WebKit green on a runner ([33407642729](https://github.com/jeisey/jeisey-tiers/actions/runs/33407642729)).
 - **Failure drills:** nineteen, offline, in `tests/integration/test_failure_drills.py`.
+- **Source freshness and schema drift:** re-probed on a runner fourteen days after the Phase-0 baseline ([33412957744](https://github.com/jeisey/jeisey-tiers/actions/runs/33412957744)), evidence at `docs/source-probes/2026-08-31/`, refreshed fixtures committed at `3ed5b37`. Same status counts as the baseline (78 ok, 1 `http_error`, 1 `loader_error`). Twelve schemas moved: **no column added, no column removed, one dtype change** (`nflverse_ff_playerids.pff_id`, unused here). Read column by column in `docs/PHASE8_OPERATIONS_AUDIT.md` section 3.4.
 
 ### The two findings that mattered
 
 1. **The verification layer had frozen the launch condition.** Every market-sensitive test — vitest, Playwright, mobile — was written against a uniformly `low` board with a null trend and an insufficient cohort. Production reached the opposite state a week before this phase started and nothing in the repository rendered it. Fixed with a second fixture condition; both are exercised and neither is "the normal one".
 2. **Three pieces of UI copy asserted a condition the build computes.** All three now read from `build_metadata`.
+3. **The accessibility scan added this phase could pass against a page that failed to load.** A clean-clone reproduction reused a stale static server holding a build with no `data/`; forty-seven board and mobile tests failed on it and **all eight axe scans passed**, because axe finds nothing wrong with the refusal screen. Each surface is now paired with a selector only that surface renders. Verified against the failure that produced it: with `data/` removed the unguarded scan passes and the guarded one fails.
 
 ## Phase-8 facts a later phase should not re-derive
 
@@ -312,6 +314,10 @@ Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `dep
 - **Two fixture market conditions, and neither is normal.** `MARKET_CONDITIONS` in `web/tests/fixtures/artifacts.ts`. A market-sensitive test that runs against only one of them is the defect this phase existed to find.
 - **The performance board is synthetic and production-shaped.** `web/tests/e2e/measure-performance.mjs` builds 2,700 tier rows with the real board's tier sizes. The values are nonsense; the dimensions are not, and an 18-player fixture measures nothing.
 - **The convergence audit was committed before it was run.** `87db5e5`, then the result. A rule written after its result is not a rule.
+- **A green scan is not a scanned page.** axe reports zero violations on an empty document and on the schema-refusal screen. Every surface in `a11y.spec.ts` asserts a selector only that surface renders *before* scanning. The same applies to any check whose pass condition is an absence.
+- **`reuseExistingServer` is on locally, so a stray `static-server.mjs` on port 4173 silently serves the wrong tree.** That is what made a clean-clone reproduction fail en masse. Check the port before blaming the clone.
+- **`source-probe.yml` with `commit_results: true` rewrites `tests/fixtures/source_schemas/` and commits with `[skip ci]`.** The refresh is strict against a *removed* column — `test_required_columns_exist_in_the_phase0_recorded_schema` then fails — and blind to a silent widening. Read the diff; it is the contract.
+- **The registry's spine is whatever its caller passes.** Market: `supplement_roster(roster, players)` per ADR-055. Status: the roster alone, because there "not on a roster" is the answer. The module docstring said "the roster" for both until Phase 8.
 
 ## Confirmed decisions
 
