@@ -202,7 +202,10 @@ than in a comment.
 `smoke.spec.ts` on Chromium, Firefox and WebKit: load, reflow, tier collapse through the URL,
 filters, search, the arbitrage view, the Data view, dialog focus-trap and Escape and focus
 restoration, keyboard activation from a board row, CSV download, the `/jeisey-tiers/` base path,
-and reduced motion. Green on all three in
+and reduced motion. Green on all three at the phase's final code state, `aa3d6c3`, in
+[33426138022](https://github.com/jeisey/jeisey-tiers/actions/runs/33426138022) — alongside the
+Python gates, the frontend gates and the Chromium end-to-end suite, all four jobs green in the
+same run. First measured in
 [33407642729](https://github.com/jeisey/jeisey-tiers/actions/runs/33407642729).
 
 The stylesheet now contains **no transition and no animation at all** — the one that existed, a
