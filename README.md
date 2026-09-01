@@ -47,7 +47,32 @@ The intended production architecture is static and GitHub-native: Python data/mo
 
 ## Repository status
 
-Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). **Phase 5 (market snapshots and arbitrage) completed 2026-08-20. Phase 6 (the frontend draft sheet) completed 2026-08-21. Phase 7 (production Actions and GitHub Pages) implemented and validated 2026-08-22, with the site itself waiting on the owner to make this repository public. Phase 8 (hardening, audit and the frontend redesign) and Phase 9A (implementing the owner's Claude Design source) completed 2026-08-31; Phase 9B, the launch release, has not been started.** Every shortfall is published as a limitation rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
+**[V1.0.0 is released](https://github.com/jeisey/jeisey-tiers/releases/tag/v1.0.0)**
+(2026-09-01). The site is live at **<https://jeisey.github.io/jeisey-tiers/>** and refreshes
+itself daily at 07:17 America/New_York.
+
+What it is, in one paragraph: an **intrinsic** fantasy-value model that never sees a market
+price, a Monte Carlo simulation that turns its distribution into league-relative value above
+replacement, contiguous tiers discovered from that value rather than declared, and — kept
+strictly downstream — a deterministic arbitrage board comparing the resulting fair rank with
+MyFantasyLeague ADP captured point-in-time into a private append-only store. Injury and roster
+status from Sleeper annotates a row and can never move one. Nine scoring × league-size presets,
+a static React frontend on GitHub Pages, CSV export, and no runtime backend.
+
+The production model is `intrinsic-cb-hurdle-v1`, trained on 2014-2025 and promoted through a
+sealed single-use holdout. Arbitrage is `a0_rank_gap_v1`, a transparent fair-rank-versus-ADP
+baseline — **not** a learned model, and the repository says so everywhere rather than implying
+otherwise. MyFantasyLeague is the only V1 market price source (ADR-053, ADR-056).
+
+Two measured shortfalls ship as published limitations rather than as repaired thresholds: the
+Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034,
+ADR-057), and tier boundaries do not meet their declared stability bar (ADR-035), which is why
+the board draws a tier as a band and never as a line. The full list is on the site's Data view
+and in `SESSION_STATE.md`.
+
+### How it got here
+
+Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). **Phase 5 (market snapshots and arbitrage) completed 2026-08-20. Phase 6 (the frontend draft sheet) completed 2026-08-21. Phase 7 (production Actions and GitHub Pages) implemented and validated 2026-08-22, with the site itself waiting on the owner to make this repository public. Phase 8 (hardening, audit and the frontend redesign) and Phase 9A (implementing the owner's Claude Design source) completed 2026-08-31. Phase 9B, the launch release, completed 2026-09-01 and tagged `v1.0.0`.** Every shortfall is published as a limitation rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
 
 There is a model and an arbitrage board now. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 built the time-correct data asset — 11,604 leakage-audited player-seasons across 2014-2025 with independently computed STD/HALF/PPR labels and market-independent realized VORP; Phase 3 built the rolling-origin evaluation harness and the baselines worth beating; Phase 4 turned that into a production intrinsic model, a deterministic Monte Carlo simulation of league-relative value, and natural contiguous tiers. The model passed its single sealed-holdout evaluation on 2025; the tiers are honest about being groups rather than hard lines.
 
@@ -62,6 +87,21 @@ The one thing Phase 7 could not do for itself is flip this repository's visibili
 Phase 8 hardened the whole system and rebuilt the frontend around the owner's review of the live site: a copy audit that put every methodology explanation in Data exactly once, a Tier board that collapses so a 300-deep board fits on a screen without faking narrower uncertainty, a rail whose geometry encodes the signed gap rather than an absolute pick axis, and an audit pass across production runs, the model artifact, simulation convergence, security, accessibility and three browsers. Its most useful finding was in the tests rather than the product: every market-sensitive test had been written against a uniformly low-confidence board with no trend history, a state production had already left, so the suite was pinning a launch condition rather than checking a contract.
 
 Phase 9A finished the one Phase-8 item that could not be done. The redesign was supposed to implement the owner's Claude Design project; that project could not be reached from the session, so the HUD language was inferred from his written brief and the gap was recorded rather than papered over. He then supplied the design files directly, and the frontend now implements what they actually say — the tier board, both tables, the controls and three distinct player-card variants chosen by viewport, in the source's own typography and hairline construction. Four of the source's text tones fail WCAG AA at the sizes it uses them, so those are corrected and the deviation is written down; its per-card methodology paragraphs are the ones Phase 8 had already moved to Data, so they stayed there. No projection, tier, price or score changed, and `verify:board` compares the rendered board against the artifact bytes on every production build to keep it that way.
+
+Phase 9B released it. The visible changes are small — the owner's logo replaces the typeset
+wordmark, a favicon drawn from that same artwork, and both CSV buttons centre their label — but
+the phase found that the repository could not check most of what a release checklist asks for.
+`verify:board` compared the rendered page against the artifact bytes for one preset block out
+of nine; CSV coverage was a test asserting a download fires rather than a file being right; and
+nothing at all looked at the site *after* it deployed. Three verifiers now close that:
+`verify:presets` resolves all nine blocks in the artifact and in the browser, `verify:csv`
+downloads and parses all four exports and proves the filtered ones hold the visible subset
+rather than the artifact, and `verify:live` checks a deployment rather than a build — every
+asset under the deployed base path, the logo's decoded width, a shared link across a reload, and
+that no request leaves the site's origin. The last runs from `live-smoke.yml`, which is
+deliberately outside the production job graph: dispatch-only, gating nothing, because a schedule
+would make an observation look like a gate. Three stale ADRs whose V1 disposition had already
+been settled were closed at the same time; none is still awaiting review.
 
 | Path | Purpose |
 |---|---|
@@ -86,6 +126,10 @@ Phase 9A finished the one Phase-8 item that could not be done. The redesign was 
 | `tests/fixtures/artifacts/` | Committed golden artifacts, also read by the frontend tests |
 | `.github/workflows/ci.yml` | Python and frontend gates; fixtures only, no vendor network |
 | `.github/workflows/market-capture.yml` | The live point-in-time capture, triggered by bumping `.github/market-capture.request` |
+| `.github/workflows/daily-refresh.yml` | The production path: capture → build → deploy, where a failed gate leaves the previous site serving |
+| `.github/workflows/live-smoke.yml` | Dispatch-only smoke of the deployed site; gates nothing, deploys nothing |
+| `web/tests/e2e/verify-*.mjs` | The release verifiers: rendered board vs artifact bytes, nine presets, four CSV exports, the live deployment |
+| `scripts/make_favicon.py` | The favicon, generated from `web/src/assets/jt_logo.png`; CI runs it with `--check` |
 | `docs/market-cohorts/` | The committed cohort measurement, reproducible offline from a retained snapshot |
 | `scripts/source_probe.py` | The Phase-0 evidence generator |
 | `scripts/capture_source_schemas.py` | Records upstream schemas for the Phase-2 loaders |

@@ -4,7 +4,26 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 9A — **complete** (2026-08-31). The frontend now implements the owner's actual Claude Design source rather than a language inferred from his written brief. **Phase 9B (launch release) has not been started and is deliberately untouched.**
+**Phase 9B — complete. V1.0.0 released (2026-09-01).**
+
+| | |
+|---|---|
+| Release date | 2026-09-01 |
+| Tag | `v1.0.0` — <https://github.com/jeisey/jeisey-tiers/releases/tag/v1.0.0> |
+| Release commit | `5511370a52dc057471f9756f1da480e5756d914c` |
+| Live URL | <https://jeisey.github.io/jeisey-tiers/> |
+| Final CI | [33525398786](https://github.com/jeisey/jeisey-tiers/actions/runs/33525398786) — green on the release SHA |
+| Final daily refresh | [33526105451](https://github.com/jeisey/jeisey-tiers/actions/runs/33526105451) — success, deployed |
+| Live smoke | [33526715705](https://github.com/jeisey/jeisey-tiers/actions/runs/33526715705) — nine presets, four CSVs, all live checks green |
+| Build id | `2026-intrinsic-cb-hurdle-v1-20260901T153049Z` |
+| Generated at | `2026-09-01T15:30:49Z` |
+| Intrinsic model | `intrinsic-cb-hurdle-v1` |
+| Methodology | `phase4_intrinsic_v1` |
+| Arbitrage | `baseline (a0_rank_gap_v1)` |
+| Feature set | `intrinsic_core_v1`, hash `7203befaa5be25a2` |
+| Private store commit | `b0afbb8888a3871fd0d7ce5f8ecb96b627505656` |
+
+Phase 9A — complete (2026-08-31). The frontend implements the owner's actual Claude Design source rather than a language inferred from his written brief.
 
 Phase 8 — complete (2026-08-31). The site is live at **<https://jeisey.github.io/jeisey-tiers/>**, public, and refreshing itself daily at 07:17 America/New_York from sources it captures into a private store. The frontend was rebuilt around the owner's review, and every hardening track in the Phase-8 brief was run — apart from one item that could not be done and was recorded as blocked, which is what Phase 9A closed.
 
@@ -20,7 +39,9 @@ Three things are worth carrying forward as ideas rather than as file paths:
 
 ## Current target gate
 
-Phase 9B — launch release. Its checklist is in `TASKS.md` and **nothing in it has been started**. Phases 0-8 are not renumbered; 9A was inserted before the release because the one blocked Phase-8 item became doable and doing it before tagging V1 was cheaper than tagging twice.
+**None. V1 is released.** Phase 9B's checklist in `TASKS.md` is complete and its exit gate is met. Phases 0-8 were not renumbered; 9A was inserted before the release because the one blocked Phase-8 item became doable and doing it before tagging V1 was cheaper than tagging twice.
+
+The next work is the post-V1 backlog at the end of this file. None of it is a launch blocker and none of it should be started as though it were a phase gate.
 
 `docs/PHASE8_UI_FEEDBACK.md` is the human-to-implementation trace for the redesign: the owner's 2026-08-31 feedback and a status row per item, with item 1 now resolved. `docs/DESIGN_SOURCE_MAP.md` is the design source itself — what the five artboards contain, how each maps onto the product, and every deliberate deviation. Read both before touching the frontend again.
 
@@ -28,9 +49,9 @@ The visibility question ADR-016 deferred is closed: the repository is **public**
 
 ## Last validated commit
 
-The Phase-9A branch `claude/jeisey-tiers-phase-9a-b62447`, branched from the merged Phase-8 state on `main` (`00ac5bd`). Everything below was re-run on it: `ruff` clean, `ruff format` clean over 172 files, `mypy` clean over 111 files, `pytest` 1,055 passed, `config-check` clean, `npm lint`/`typecheck` clean, **234** vitest, **62** Playwright across `chromium`/`mobile`/`a11y`, both base-path builds, and `verify:board` with zero disagreements against the fixture build *and* against the new matured-market build. `npm run e2e:browsers` is runner-only here, as always.
+**`5511370a52dc057471f9756f1da480e5756d914c` on `main` — the released commit, tagged `v1.0.0`.** Everything below was run on it, locally and on runners: `ruff` clean, `ruff format` clean over 173 files, `mypy` clean over 111 files, `pytest` **1,058** passed (4 live-network deselected), `config-check` clean, the favicon generator's `--check` current, `npm lint`/`typecheck` clean, **234** vitest, **70** Playwright across `chromium`/`mobile`/`a11y`, both base-path builds, and `verify:board` with zero disagreements against the fixture build, the project-base-path build and the matured-market build. `npm run e2e:browsers` is runner-only here, as always, and was green in CI.
 
-The command list below is the Phase-8 record and is still the right list.
+The command list below is the Phase-8 record with the Phase-9B verifiers added, and is still the right list.
 
 ```
 uv sync --frozen
@@ -51,8 +72,15 @@ npm run typecheck       # clean, strict
 npm run test -- --run   # 234 frontend tests
 npm run build                                    # root base path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages base path
-npm run e2e             # 62 Playwright tests: chromium + mobile + a11y
-npm run e2e:browsers    # 36 smoke tests across Chromium, Firefox and WebKit — RUNNER ONLY
+npm run e2e             # 70 Playwright tests: chromium + mobile + a11y
+npm run e2e:browsers    # smoke across Chromium, Firefox and WebKit — RUNNER ONLY
+
+# The Phase-9B release verifiers. Each takes a local build or a deployed --url.
+npm run verify:board     # rendered board vs artifact bytes, cell by cell, one block deep
+npm run verify:presets   # all nine scoring x league-size blocks, artifact and browser
+npm run verify:presets -- --review "PPR/redraft-12,HALF/redraft-10,STD/redraft-14"
+npm run verify:csv       # all four CSV exports, downloaded and parsed
+npm run verify:live -- --url https://jeisey.github.io/jeisey-tiers --out live-artifacts
 ```
 
 **Three environment notes that cost time and should not cost it again.**
@@ -70,7 +98,7 @@ npm run e2e:browsers    # 36 smoke tests across Chromium, Firefox and WebKit —
 - `models/production/intrinsic-cb-hurdle-v1/` — **committed**, not gitignored (`PRD.md` section 15). 120 gzipped LightGBM boosters plus `metadata.json` carrying the spec, seed, training seasons, library versions, dataset manifest, `feature_set_hash` `7203befaa5be25a2`, `feature_schema_hash` `c495ba3177dcb989` and a SHA-256 per booster. No pickles anywhere: loading reads JSON and LightGBM's documented text format, and a tampered booster fails closed.
 - `models/cards/` — the model card and the tier-method report, generated from the committed experiment reports and the artifact, never hand-written.
 - `models/cards/arbitrage-method-a0.{json,md}` — the arbitrage method card, generated from the artifacts, the cohort report and the frozen constants.
-- `web/public/data/` — the 2026 build: `tiers`, `projections`, `arbitrage`, `player_status`, `build_metadata`. Gitignored and reproducible.
+- `web/public/data/` — the 2026 build: `tiers`, `projections`, `arbitrage`, `player_status`, `build_metadata`. Gitignored and reproducible. Everything else under `web/public/` — the three icons — **is** committed.
 - **`jeisey/jeisey-tiers-market-data`** — the append-only point-in-time capture store, a private repository since Phase 7 (ADR-038 as amended by ADR-049). Not in this working tree; clone it separately.
 
 The fixture stub `fixture-stub-0` is gone from the production path, and so is the Phase-1 stub arbitrage score: the fixture pipeline now drives the real A0 code.
@@ -81,11 +109,13 @@ What was there before and still is:
 - `data/historical/` — the modelling dataset. Gitignored and reproducible; see "Phase-2 dataset" below.
 - `docs/FEATURE_DICTIONARY.md` — every model feature with formula, sources and availability rule, generated from code and pinned by a test.
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
-- `.github/workflows/` — `ci.yml` (fixture-only gates, no vendor network, no store credential), `daily-refresh.yml` (the production path), `retrain.yml` (an evidence gate that mostly declines), `market-capture.yml` (out-of-band capture) and `source-probe.yml` (Phase-0). `.github/actions/market-data-store/` is the one way any of them reaches the private store.
-- `docs/visual-qa/` — committed screenshots and the written review, regenerated with `npm run e2e:screens`. One directory per review; `2026-08-31-design/` is Phase 9A's and does not replace Phase 8's.
-- `scripts/workflow_summary.py` and `scripts/retrain_gate.py` — the two Phase-7 gate/report scripts, both runnable locally.
-- `web/` — the draft sheet: `src/data/` (contracts, loader, indexes, market derivations, flags, formats, CSV, URL state), `src/app/` (shell, controls, two tables, player detail, data view), `src/charts/` (Tier Board, Draft Rail), `src/components/`, `src/styles/base.css`, and since Phase 9A `src/assets/fonts/` (two OFL families, vendored — `docs/SECURITY_LICENSE.md` section 8).
-- `tests/` — 1,055 network-free Python tests (4 live-network deselected); `web/tests/` adds 234 vitest plus 62 Playwright, and 13 more in the runner-only three-engine smoke.
+- `.github/workflows/` — `ci.yml` (fixture-only gates, no vendor network, no store credential), `daily-refresh.yml` (the production path), `retrain.yml` (an evidence gate that mostly declines), `market-capture.yml` (out-of-band capture), `source-probe.yml` (Phase-0) and, since Phase 9B, `live-smoke.yml` (dispatch-only, gates nothing, deploys nothing). `.github/actions/market-data-store/` is the one way any of them reaches the private store.
+- `docs/visual-qa/` — committed screenshots and the written review. One directory per review; `2026-08-31-design/` is Phase 9A's and does not replace Phase 8's, and `2026-09-01-release/` is Phase 9B's release-polish review (masthead, export controls, favicon) rather than a design review.
+- `docs/releases/` — the notes each GitHub Release is published from. `release.yml` reads the file and refuses an empty one, so a release cannot ship with a placeholder.
+- `scripts/workflow_summary.py` and `scripts/retrain_gate.py` — the two Phase-7 gate/report scripts, both runnable locally. `scripts/make_favicon.py` (Phase 9B) generates the committed icons from the owner's logo; CI runs it with `--check`.
+- `web/tests/e2e/verify-*.mjs` — the release verifiers, each usable against a local build or a deployed `--url`: `verify-board` (rendered board vs artifact bytes, one block deep), `verify-presets` (all nine blocks, plus a measured `--review` of representative ones), `verify-csv` (all four exports), `verify-live` (the deployment itself).
+- `web/` — the draft sheet: `src/data/` (contracts, loader, indexes, market derivations, flags, formats, CSV, URL state), `src/app/` (shell, controls, two tables, player detail, data view), `src/charts/` (Tier Board, Draft Rail), `src/components/`, `src/styles/base.css`, since Phase 9A `src/assets/fonts/` (two OFL families, vendored — `docs/SECURITY_LICENSE.md` section 8), and since Phase 9B `src/assets/jt_logo.png` (the owner's own artwork) plus the generated `public/favicon.{ico,png}` and `public/apple-touch-icon.png`.
+- `tests/` — 1,058 network-free Python tests (4 live-network deselected); `web/tests/` adds 234 vitest plus 70 Playwright, and 13 more in the runner-only three-engine smoke.
 - `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
 
 ## Phase-2 dataset — the validated build
@@ -328,6 +358,105 @@ Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `dep
 
 **Performance: DOM at parity, one interaction up 1.46×.** Measured as an interleaved A/B against the Phase-8 build on one machine, because this sandbox's run-to-run noise reaches 9× and a first attempt at motif attribution produced impossible results. Default view 6,969 → 7,003 nodes, 0 SVG either way; board 20% taller. Six of eight interactions at parity or better; `expand all tiers` 511 → 744ms and the arbitrage view's first render 486 → 627ms. An earlier draft of the table glyphs cost 1,200 extra nodes and was rewritten to cost none.
 
+## Phase-9B results — the release, and the checks it turned out to need
+
+**Three owner-requested changes, one record correction, and a verification gap the checklist exposed.**
+
+### What shipped
+
+| change | what it is |
+|---|---|
+| masthead | the owner's `web/src/assets/jt_logo.png`, imported through Vite so the URL carries the build's base. Sized by `height` with `width: auto` — 48px desktop, 42 tablet, 38 phone — so the ratio comes from the file. The image is the document's `<h1>`, `alt="Jeisey Tiers"`. |
+| removed | the Phase-9A wordmark, mono sub-label and command glyph, in the shell **and** in the refusal screen, which carried its own copy of the header. |
+| favicon | `favicon.ico` (16/32/48), `favicon.png`, `apple-touch-icon.png`, generated by `scripts/make_favicon.py` from the logo's football and a palette sampled from the logo itself. Linked through Vite's base token. |
+| title | `Jeisey Tiers — Fantasy Draft Intelligence`. |
+| export labels | `.button` gains `inline-flex` with both axes centred. |
+| ADRs | 053, 054 and 056 closed; no `Proposed` status remains in `docs/DECISIONS.md`. |
+
+### The CSV defect, in the units that matter
+
+`.button` dresses a `<button>` and the `Download full CSV` `<a>`, and without a `display` of its own the two laid their label out differently. A native button centres its content; a blockified anchor puts its single line box at the **top** of the 40px frame. Measured in Chromium at 1440px before the change, the anchor's label centre sat **14.5px above** its frame centre and the button's 0.78px. Both now measure 0.78px, which is the trailing letter-space every tracked control in the app carries and is deliberately not compensated for.
+
+### The release build
+
+Run [33526105451](https://github.com/jeisey/jeisey-tiers/actions/runs/33526105451), dispatched from `main` at `5511370`, **success** end to end: capture → build → deploy → report.
+
+**It ran with `skip_capture: true`, and that was a source-policy decision rather than a shortcut.** 2026-09-01 had already spent two MyFantasyLeague player-database requests — a dispatched refresh and the scheduled one — and ADR-017 asks for at most one a day. The input skips only the two vendor calls; the store checkout, its re-hash, `build-current`, cohort selection, `build-arbitrage`, `validate-artifacts`, the base-path frontend build, `verify:board` against the real artifacts, the Pages-artifact boundary assertion and the deploy all ran in full on the release code. The store commit is therefore unchanged (`store_appended: false`) and the board is priced by the snapshot retained at 11:25:40Z the same morning.
+
+| | |
+|---|---|
+| Build id | `2026-intrinsic-cb-hurdle-v1-20260901T153049Z` |
+| Generated | `2026-09-01T15:30:49Z` |
+| Season | 2026 |
+| Model / methodology | `intrinsic-cb-hurdle-v1` / `phase4_intrinsic_v1` |
+| Arbitrage | `baseline (a0_rank_gap_v1)` |
+| Presets | `redraft-10`, `redraft-12`, `redraft-14` × STD/HALF/PPR |
+| Market snapshot | `2026-09-01T11-25-40Z`, source `myfantasyleague_adp` |
+| Cohort rule | `phase5_cohort_v2` — `ppr-no-keeper` for PPR, `no-keeper` for STD and HALF |
+| Cohort sufficiency | **all nine presets `sufficient: yes`, no failed clause**, every match `approximate` |
+| Trend | available |
+| Store commit | `b0afbb8888a3871fd0d7ce5f8ecb96b627505656` (unchanged) |
+
+**Artifact counts:** 2,700 tier rows, 3,291 projections, 1,945 arbitrage rows, 319 player-status rows with 318 matched through Sleeper.
+
+**Market confidence:** 45 `low` against 1,900 `medium`, median per-player sample **522 drafts**. Retained cohort volume: `no-keeper` 792 drafts, `no-mock-no-keeper` 789, `ppr-no-keeper` 594, `unfiltered` 1,503.
+
+**Quality gate: PASS — 0 critical, 3 warnings**, and all three are the standing published limitations rather than anything new: tiers published having failed their stability gate (ADR-035), Sleeper `gsis_id` conflicts failing closed, and unpriced top-150 board players excluded rather than filled in.
+
+### The verification gap, which is the more useful half
+
+The checklist asked for things the repository could not check. `verify:board` compared the rendered page with the artifact bytes cell by cell — for **one** block out of nine. CSV coverage was a Playwright test asserting a download fires, which is a clicked button rather than a verified file. And nothing at all looked at the site *after* `actions/deploy-pages` ran, which is exactly the class of failure the favicon introduces: the icons are the one asset referenced from `index.html` rather than from the module graph, so a root-relative href works in development and 404s only once deployed.
+
+Three verifiers close it, each usable against a local build or a deployed `--url`:
+
+- **`verify:presets`** — all nine blocks, in the artifacts (rows present, fair ranks unique *and* a complete 1..N run, tiers zero-based and contiguous in fair-rank order, every arbitrage row naming a player its block ranks) and in the browser (board and both tables populate, the rank-1 name on screen is the artifact's rank-1 name *for that block*, the controls report the requested state, no console error, no request leaving the origin). `--review` adds a measured pass over representative blocks at 1440 and 390, printing the rendered top ten beside the artifact's, the masthead's boxes and both CSV labels' centring, with screenshots taken from the same navigation.
+- **`verify:csv`** — all four exports downloaded and parsed. Full exports byte-identical to the artifact; filtered exports proved to hold exactly the visible rows in visible order under four simultaneous filters, from both directions.
+- **`verify:live`** + `live-smoke.yml` — a *deployment* check rather than a build check: every script, stylesheet and icon href under the deployed base path answering 200, the vendored fonts, the logo's decoded `naturalWidth`, all five JSON artifacts and four CSVs, the three views, a player card, a shared link across a reload, a phone reflow, and no request leaving the origin. It downloads what the site serves, so the three checks above then compare the page against the bytes that page was actually served.
+
+### What the deployed site was checked against, before the tag existed
+
+`live-smoke` [33526715705](https://github.com/jeisey/jeisey-tiers/actions/runs/33526715705), against `https://jeisey.github.io/jeisey-tiers` — **all green**. Every artifact it compared with was downloaded from the site itself, so the comparison is against the bytes that page was served rather than a local rebuild.
+
+All nine blocks, from `verify:presets`:
+
+| block | tiers | rows | projections | arbitrage | rendered | rank 1 |
+|---|---:|---:|---:|---:|---:|---|
+| STD/10 | 10 | 300 | 1097 | 212 | 212 | Bijan Robinson |
+| STD/12 | 11 | 300 | 1097 | 213 | 213 | Bijan Robinson |
+| STD/14 | 10 | 300 | 1097 | 214 | 214 | Bijan Robinson |
+| HALF/10 | 8 | 300 | 1097 | 215 | 215 | Bijan Robinson |
+| HALF/12 | 9 | 300 | 1097 | 216 | 216 | Bijan Robinson |
+| HALF/14 | 9 | 300 | 1097 | 217 | 217 | Bijan Robinson |
+| PPR/10 | 11 | 300 | 1097 | 219 | 219 | Bijan Robinson |
+| PPR/12 | 10 | 300 | 1097 | 219 | 219 | Bijan Robinson |
+| PPR/14 | 10 | 300 | 1097 | 220 | 220 | Bijan Robinson |
+
+Plus **42/42** representative-review checks over PPR/12, HALF/10 and STD/14 at 1440px and 390px; **32/32** CSV checks across both boards; and `verify:board` cell-by-cell against the served bytes. On the live 300-row board both export labels measure `dx 0, dy −0.78` in a 40px frame, so the centring holds at production row counts rather than only on an 18-player fixture.
+
+**Nothing a number means changed.** No model, artifact, projection, feature, fair rank, VORP, tier membership, cohort selection, ADP, market confidence, trend or arbitrage value moved. No source was added, `config/source-registry.yaml` is untouched, MFL remains the sole V1 price source and FantasyPros stays `benchmark_only`.
+
+## Phase-9B facts a later phase should not re-derive
+
+- **A `<button>` centres its content and a blockified `<a>` does not.** `height` on an inline anchor does nothing, and once it becomes a flex item the height applies but the single line box still sits at the top. Any class dressing both elements needs its own `display` and alignment, or the two will disagree by half the control's height. This is a layout bug that no assertion on the label *string* can see.
+- **The icons are the only assets referenced from `index.html` rather than from the module graph.** Vite rewrites the module graph's URLs for `base`; it does not rewrite a hand-written `href`. Use the base token, and check it in the built output — a root-relative icon href is invisible locally and 404s only on Pages.
+- **The logo's file has transparent margins**: 434x145 with ink at 422x103. A height set here paints a mark about 71% of it, so "48px" is a ~34px wordmark. Size by `height` with `width: auto` and let the ratio come from the file; a `width`/`height` pair written by hand is a second source of truth that a re-export can falsify.
+- **`scripts/make_favicon.py` uses `p > 0.5` in `(u/A)^2 + (|v|/B)^(1/p) = 1`.** Below 0.5 the shape is *blunter* than an ellipse, not pointier — the first draft got this backwards and drew an egg. At `p = 0.5` it is exactly an ellipse.
+- **A favicon must be legible on a white tab bar and a near-black one.** The logo's own football is dark navy with chrome edges, which disappears on a dark tab, so the generated icon's sweep bottoms out at a mid blue instead. Check both grounds before believing an icon works.
+- **A screenshot is not evidence a sandbox can use.** This environment cannot reach the deployed site and cannot download a workflow artifact (403 on `actions/artifacts/.../zip`), so a runner's screenshots are for the owner. What a session can check is a **job log**, which is why the representative review prints measurements. `get_job_logs` reads a daily refresh's whole summary — build id, counts, cohorts, confidence distribution, warnings — so release metadata never needs to be guessed.
+- **A verifier's own bugs look exactly like product findings.** Four were found by running them: projections carry no `league_preset_id` (a points forecast varies by scoring, not league size), the tier record's name field is `display_name`, the search parameter is `search` rather than `q`, and `matchesSearch` matches name, team **or** an exact position. Each one reported a correct build as broken. Run a new checker against a build you already believe in before trusting the first thing it says.
+- **The name cell is not the name.** It contains the injury badge and that badge's screen-reader sentence, so `td.textContent` yields `Chris JohnsonQ · HamstringCurrent status: …`. Read `.player-name`. Phase 7 made this same correction to `verify-real-build.mjs`; it had to be made again.
+- **A tag cannot be pushed from this sandbox.** The git proxy answers **403 to any
+  `refs/tags/*` push** while accepting branch pushes — confirmed on both an annotated and a
+  lightweight tag — and `api.github.com` is unreachable, and the GitHub MCP server has no ref-
+  or release-creation tool. `.github/workflows/release.yml` is the way through: dispatch-only,
+  `contents: write` on its one job and nothing else, and it takes the commit as an **input**
+  because a release tag must point at the code that produced the deployed build, which is not
+  `HEAD` — the workflow itself lands on `main` after the commit it tags. That input is safe
+  only because of the guard beside it: the SHA must be reachable from `main`. Do not re-derive
+  this; dispatch the workflow.
+- **A post-deploy check must not be scheduled.** `live-smoke.yml` gates nothing and deploys nothing; giving it a schedule would make an observation look like a gate, and `tests/unit/test_workflows.py` fails if one is added. The gate that protects production is still `daily-refresh`'s job graph, where "a gate failed" and "the previous site is still serving" are the same event.
+- **The release refresh used `skip_capture: true`, and that was a source-policy decision rather than a shortcut.** MFL asks for at most one player-database request per day (ADR-017) and 2026-09-01 had already spent two. `skip_capture` skips only the two vendor calls: the store is still checked out and re-hashed, and the build, cohort selection, arbitrage, validation, `verify:board` and deploy all run in full on the new code SHA. That is the input's documented purpose — "re-run a deploy after a code fix".
+
 ## Phase-8 facts a later phase should not re-derive
 
 - **A tier band, a player's interval bar and the axis are one CSS grid, not three similar ones.** `--board-cols`, `--board-gap` and `--board-pad` on `.tier-board` drive all three, and every breakpoint redefines only those. This is load-bearing: "adjacent tier bands overlap" is a claim about the measurement, and it is only true of the picture if the tracks are the same pixels. The first draft had them 45px apart.
@@ -547,14 +676,15 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 ## Known risks (non-blocking)
 
-- **Two owner actions gate the live site**, and they are ordered: delete `market-data` from `jeisey/jeisey-tiers`, *then* make it public. Doing the second without the first publishes every retained vendor payload, and that is not undone by deleting the branch afterwards. `docs/PHASE7_DEPLOYMENT.md` section 7 is the checklist.
+- ~~**Two owner actions gate the live site**~~ — **done.** Both happened in the required order: the `market-data` branch was deleted from `jeisey/jeisey-tiers` and only then was the repository made public. The record of why the order mattered is `docs/PHASE7_DEPLOYMENT.md` section 7, and it stays because a future session moving anything else into this repository needs the same reasoning: a clone hands over every branch, so ask what a clone would carry before asking what the build copies.
 - **`MARKET_DATA_REPO_TOKEN` expires.** When it does the daily refresh fails at its first job with a message naming the secret, the deploy job is never reached, and the deployed site stays live and stale. Loud and non-destructive, but it needs a calendar reminder; rotation steps are `docs/OPERATIONS.md` section 5.3.
 - **Scheduled-workflow inactivity got slightly worse.** The daily capture now commits to the *private data* repository, so a run of `daily-refresh.yml` creates no activity in the application repository at all. GitHub disables scheduled workflows in public repositories after long inactivity; re-enabling steps are in `docs/OPERATIONS.md` section 12.
+- **Two MyFantasyLeague player-database requests were made on 2026-09-01**, both by ordinary refreshes (one dispatched, one scheduled). The release refresh took none: it ran with `skip_capture: true`, which is exactly what that input exists for. Watch this on any day that mixes a dispatch with the schedule.
 - **Three MyFantasyLeague player-database requests were made on 2026-08-22** — the out-of-band capture, the first production refresh, and the refresh that validated the cohort fix. MFL asks for at most one per day. This was a migration day and the third was needed to prove the fix; a routine day takes exactly one, and `skip_capture` exists so a re-deploy does not take a second.
 
 - ~~**Every arbitrage row reads `low` confidence**~~ — **no longer true, and the way it stopped being true is the point.** The 2026-08-31 board is 1,889 `medium` against 45 `low`, with the frozen rule untouched (ADR-052 resolution). What this exposed is recorded above: no test rendered the new state. `confidence` is now discriminating, and both conditions are exercised.
 - **`wide_market_range` is still non-discriminating, and is no longer rendered.** The min-to-max span widens with sample size, so it fires on most of the board at any realistic draft count and always will. Phase 8's instruction was to stop giving it repetitive visual treatment rather than to retune its threshold: the flag stays on the artifact and in the CSV, the actual `market_adp_low`/`market_adp_high` range is shown directly, and Data explains what the range is once (ADR-041, ADR-058).
-- **The 2026 board is priced by 735 keeper-free redraft drafts** as of 2026-08-31, up from 125 at launch, with a median of 487 drafts behind each top-150 player. It got there on its own.
+- **The 2026 board is priced by 792 keeper-free redraft drafts** as of the release build, up from 125 at Phase-5 launch, with a median of 520 drafts behind each top-150 player. It got there on its own, with no bound moved (ADR-052 resolution).
 - **STD and HALF are still served by an all-scoring cohort.** MyFantasyLeague exposes a PPR flag and no half-PPR filter, so a standard-scoring reader is looking at a board priced mostly by PPR drafters. Stated on the Data view. This is the one thing Fantasy Football Calculator could genuinely fix, and is the aim of the deferred post-V1 market-methodology change (ADR-056 Phase-8 disposition).
 - **Sleeper publishes `practice_participation`, `practice_description` and `injury_start_date` as keys with null values in the preseason.** They are normalized and will populate in season; a Phase-6 UI must not assume they are present.
 - **Tiers are published having failed their stability gate.** `build_metadata.json` carries a `current.tier_stability` warning and the cards say so, but nothing stops a consumer from rendering a hard line anyway. The Phase-6 frontend is where this becomes a user-visible risk rather than a documented one.
@@ -586,6 +716,8 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 - **The retained store is a separate private repository** (ADR-049). `git clone https://github.com/jeisey/jeisey-tiers-market-data ../market-data`, then pass `--store ../market-data` to the Phase-5 commands. It is not in this working tree, is never merged, and is not in this repository at all — which is what makes a public application repository safe. A contributor without access to it can still run every fixture-based gate, the whole frontend and the entire test suite; the only thing they cannot do is rebuild the production board.
 - **`docs/market-cohorts/` is committed evidence**, like `docs/source-probes/` and `docs/experiments/`. Regenerate with `ffdraft measure-market-cohorts` and read the diff.
 - **`models/cards/arbitrage-method-a0.*` is generated.** Regenerate with `ffdraft arbitrage-card` after any rebuild; a number in a card that no command produces is a number that can drift.
+- **`web/public/favicon.{ico,png}` and `apple-touch-icon.png` are generated**, not drawn. `uv run python scripts/make_favicon.py` writes them from `web/src/assets/jt_logo.png`; `--check` compares the committed bytes and `ci.yml` runs it. Change the geometry constants at the top of that script, never the PNG. `--sample` reprints the palette evidence the colours were taken from.
+- **`docs/PHASE8_UI_FEEDBACK.md` was deliberately not reopened by Phase 9B.** None of the three release-polish changes traces to an owner item in it — the logo, the favicon and the CSV centring are new requests, recorded in `TASKS.md` and here. Reopening it for ceremony would have made a trace document describe work it never traced.
 - **The Phase-3 experiment reports are committed; the row-level predictions are not.** `docs/experiments/phase3-intrinsic-baselines/{experiment.json,experiment.md}` are the evidence behind ADR-028 and ADR-029, in the same spirit as `docs/source-probes/`. `predictions.parquet` is written only with `--write-predictions` and is gitignored.
 
 ## Known blockers
@@ -594,14 +726,53 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 The Phase-8 blocker — the Claude Design MCP being unreachable, so the design language was inferred from the owner's written brief rather than read out of the project — is **closed**. It was never a code problem: the owner downloaded `Player Card HUD.dc.html` and `support.js` and handed them to the Phase-9A session directly. `/design-login` was never run and no MCP was involved. If a later phase needs the project again, that is the route that works; do not plan around `DesignSync` from a non-interactive session, and do not expect an unauthenticated fetch of `https://claude.ai/design/p/…` to return anything but 403.
 
-Nothing else is blocking. The four analytical findings are unchanged and none is a blocker: the Monte Carlo residual (ADR-034 as narrowed by ADR-057), tier boundary stability (ADR-035), the non-discriminating `wide_market_range` flag (ADR-041) and the all-scoring cohort serving STD and HALF (ADR-012).
+Nothing else is blocking. The four analytical findings are unchanged and none is a blocker: the Monte Carlo residual (ADR-034 as narrowed by ADR-057), tier boundary stability (ADR-035), the non-discriminating `wide_market_range` flag (ADR-041) and the all-scoring cohort serving STD and HALF (ADR-012). All four are published as limitations on the site's Data view rather than repaired by moving a threshold, and all four are in the post-V1 backlog below with what would have to be true before touching them.
+
+**Two things this environment cannot do, and a later session should not plan around.** It has no egress to vendor hosts or to the deployed site (ADR-009), and it cannot download a workflow artifact — `actions/artifacts/<id>/zip` answers 403. So a real board can only be built on a runner, a deployed site can only be smoked on a runner, and a runner's screenshots are evidence for a human rather than for the session. What *is* readable is a job log: `get_job_logs` returns a daily refresh's whole rendered summary, which is where release metadata should be read from rather than guessed.
+
+## Post-V1 research backlog
+
+**None of these is a defect, a blocker, or a phase gate.** They are the honest open ends of a
+released V1, kept here so a future session inherits questions rather than a search. Each names
+what would have to be true before it is worth doing.
+
+1. **Multi-source market pricing, and exact half-PPR.** ADR-053 and ADR-056 are accepted with
+   integration deferred. Fantasy Football Calculator serves genuine `standard`, `ppr` and
+   `half-ppr` cohorts with 7-30x MFL's volume and a published per-player `stdev`; its `teams`
+   parameter is accepted and **ignored**, so it offers three scoring cohorts and not twelve,
+   and team-size exactness must never be claimed from it. The pay-off is a real half-PPR price,
+   which `IS_PPR` as a boolean can never be. Two preconditions, both non-negotiable: a durable
+   reviewed identity crosswalk with the same fail-closed discipline as the existing bridges,
+   because FFC's player id bridges to nothing this project holds; and a frozen source-selection
+   rule committed **before** its evidence exists. Do not average two aggregates over different
+   populations and windows.
+2. **Tier-boundary methodology.** The measurement says a 300-deep board supports about four
+   reproducible cut sites (ADR-035). Two candidate remedies, each needing its own rule version
+   and evidence: re-specify `max_largest_tier_share` so the undifferentiated tail is one wide
+   tier, or keep the segmentation and present membership with a boundary-confidence band
+   instead of a hard edge. **Do not simply lower the threshold.**
+3. **Residual Monte Carlo value convergence.** At 10,000 draws the ranking criteria pass and
+   the value criteria miss by 19-29% (ADR-057). Closing that is a simulation-refresh question;
+   lowering the draw count is not an answer to it.
+4. **Correlated player draws.** V1 samples every player independently, so it cannot express
+   that a quarterback's collapse takes his receivers with him. The largest structural
+   simplification in the simulation, and never measured.
+5. **Historical injury features.** A 2027 intrinsic-refresh candidate (ADR-044). The 2025
+   holdout is spent, so there is nothing to promote them against until a new season completes.
+6. **Learned arbitrage.** Not before three draft seasons of this project's own point-in-time
+   snapshots (ADR-010), which is 2029 at the earliest. Until then, snapshot retention is still
+   the highest-value arbitrage work in the repository — a price not captured today can never
+   be reconstructed.
+7. **`TOP_BOARD_PRICED_MINIMUM` is an alias of `IDENTITY_COVERAGE_MINIMUM`** rather than a
+   derived bar (ADR-056 §1). Give it its own constant and a stated derivation at a moment when
+   nobody is reading a number it would move.
+8. **FTN advanced metrics.** Still open, still not needed, and still carrying a share-alike
+   obligation that would bind what this site publishes.
 
 ## Next action
 
-**Phase 9B — launch release. Nothing in it has been started.** `TASKS.md` holds the checklist: a final daily refresh, final metrics and build metadata, a visual and artifact-validation pass over every supported preset, CSV verification, the Pages URL and base path, the V1 tag, and a `SESSION_STATE.md` stamp of the production model and data versions.
+**None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**
 
-**The exact first action: merge `claude/jeisey-tiers-phase-9a-b62447` and let one scheduled `daily-refresh` run on it, then read that run's `verify:board` step.** This is the same thing Phase 8 was waiting on and it is still outstanding, because it is the one check this environment cannot perform: `verify:board` on the *real* artifacts runs inside the daily refresh, and the sandbox has no vendor egress to build them (ADR-009). It compares rendered values against artifact bytes, it was updated for the new selectors twice now, and it is what would catch a redesigned DOM disagreeing with the build. Locally it reports zero disagreements against both fixture conditions; that is necessary and not sufficient.
+The ordinary operating loop from here is `docs/OPERATIONS.md`: the daily refresh runs at 07:17 America/New_York, a failed gate leaves the previous site serving, and `live-smoke.yml` is the dispatch-only way to check the deployed site afterwards. Two standing operational chores, neither urgent: `MARKET_DATA_REPO_TOKEN` expires and needs a calendar reminder (section 5.3), and GitHub disables scheduled workflows in public repositories after long inactivity, which the daily capture no longer prevents because it commits to the *private data* repository (section 12).
 
-The runner-only browser gate (`e2e:browsers`, Firefox and WebKit) rides on the same merge — `ci.yml`'s `browsers` job. Everything else in Phase 9B is release mechanics and can follow.
-
-**Do not tag V1 before those two runs are green.**
+**The post-V1 backlog is below, under "Post-V1 research backlog". None of it is a defect and none of it should be picked up as though it were a phase gate.** The two most valuable things a future session can do are unglamorous: keep the snapshot retention running, because a point-in-time price not captured today can never be reconstructed (ADR-010, ADR-038), and re-run `scripts/source_probe.py` before trusting any adapter after a few weeks have passed, because source-schema drift is detected rather than prevented.

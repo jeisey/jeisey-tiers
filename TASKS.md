@@ -353,14 +353,87 @@ disagreements against the fixture build and against the matured-market build.
 
 ## Phase 9B — Launch release
 
-**Not started, and deliberately untouched by Phase 9A.**
+Completed 2026-09-01. **`v1.0.0` is released**; see `SESSION_STATE.md` for the released state
+and the exact run evidence.
 
-- [ ] Run final daily refresh.
-- [ ] Capture final metrics and build metadata.
-- [ ] Verify all supported presets visually and via artifact validation.
-- [ ] Verify CSV exports.
-- [ ] Verify Pages URL and base-path behavior.
-- [ ] Tag/release V1.
-- [ ] Mark `SESSION_STATE.md` with production model/data versions and known limitations.
+### Release polish
 
-**Exit gate:** all acceptance criteria in `PRD.md` Section 21 pass.
+- [x] Masthead brand is the owner's `web/src/assets/jt_logo.png`, imported through Vite so the
+      URL carries the build's base; sized by height with `width: auto` (48/42/38px) so the
+      ratio comes from the file. The image is the document's `<h1>` with `alt="Jeisey Tiers"`.
+- [x] The Phase-9A wordmark, sub-label and command glyph are **removed**, in the shell and in
+      the refusal screen. Tests assert zero `.wordmark`, `.wordmark-sub`, `.masthead-glyph`
+      elements — hidden is not removed.
+- [x] Favicon generated from that artwork by `scripts/make_favicon.py` — `favicon.ico`
+      (16/32/48), `favicon.png`, `apple-touch-icon.png`. `--check` compares committed bytes and
+      CI runs it, so an icon cannot drift from its generator.
+- [x] Icons linked through Vite's base token, so they resolve under `/` and `/jeisey-tiers/`.
+      CI's base-path build greps for a root-relative icon href and was confirmed to reject one.
+- [x] Browser title reads `Jeisey Tiers — Fantasy Draft Intelligence`.
+- [x] Both export labels centred. `.button` had no `display` of its own, so a blockified anchor
+      put its label at the top of the 40px frame: measured **−14.5px** off centre before,
+      −0.78px after, matching the `<button>` beside it.
+- [x] Export controls keep a visible focus ring — asserted separately, so centring cannot be
+      bought with a focus regression.
+
+### ADR reconciliation
+
+- [x] ADR-053 — **Accepted — V1 disposition; production integration deferred.** Both its own
+      revisit conditions fired and both said add nothing.
+- [x] ADR-056 — same status, with a header pointer to the Phase-8 disposition that supersedes
+      §3.4. Its one genuinely open item is relabelled **deferred to post-V1** rather than
+      resolved.
+- [x] ADR-054 — status corrected: the "larger question" it said was awaiting review was
+      retracted the same day and superseded by ADR-055.
+- [x] No `Proposed` status remains in `docs/DECISIONS.md`, and no open ADR blocks V1.
+
+### Release verification
+
+- [x] Run final daily refresh — [33526105451](https://github.com/jeisey/jeisey-tiers/actions/runs/33526105451),
+      **success**, on the merged `main` commit `5511370`. Dispatched with `skip_capture: true`
+      because 2026-09-01 had already spent two MyFantasyLeague player-database requests and
+      ADR-017 asks for at most one a day; that input skips only the two vendor calls, and the
+      store checkout, its re-hash, the build, cohort selection, arbitrage, artifact validation,
+      `verify:board` and the Pages deploy all ran in full on the release code.
+- [x] Capture final metrics and build metadata — build
+      `2026-intrinsic-cb-hurdle-v1-20260901T153049Z`, generated `2026-09-01T15:30:49Z`,
+      quality gate **pass, 0 critical, 3 warnings**; 2,700 tier rows, 3,291 projections,
+      1,945 arbitrage rows, 319 player-status rows (318 matched via Sleeper). Full record in
+      `SESSION_STATE.md`.
+- [x] Verify all nine supported presets — `npm run verify:presets` against the **deployed
+      site**, run [33526715705](https://github.com/jeisey/jeisey-tiers/actions/runs/33526715705).
+      All nine blocks pass both passes: 300 tier rows and 1,097 projections each, 8-11 tiers,
+      212-220 priced arbitrage rows, Bijan Robinson at rank 1 in every block, controls
+      reporting the requested state, no console error and no request leaving the origin.
+- [x] Representative review of `PPR/redraft-12`, `HALF/redraft-10`, `STD/redraft-14` at 1440px
+      and 390px — **42/42 measured checks pass** on the deployed board, with screenshots
+      captured from the same navigation. On the live 300-row board both export labels measure
+      `dx 0, dy −0.78` in a 40px frame, so the centring holds at production row counts.
+- [x] Verify CSV exports — `npm run verify:csv` against the deployed site, **32/32 checks**.
+      Both full exports byte-identical to the artifacts the build wrote; both filtered exports
+      proved to hold exactly the visible rows in visible order under four simultaneous filters,
+      with the filename's date taken from build metadata, a UTF-8 BOM, CRLF terminators and the
+      published column order. RFC 4180 quoting is honestly reported **not exercised**: no value
+      on this board contains a comma, quote or newline, and the escaping rule is pinned
+      directly in `web/tests/csv.test.ts`.
+- [x] Verify Pages URL and base-path behaviour — `npm run verify:live` via `live-smoke.yml`.
+      The document, every script, stylesheet and icon href under `/jeisey-tiers/` answering 200,
+      the four vendored fonts, the logo's decoded `naturalWidth` and aspect ratio, all five JSON
+      artifacts and four CSVs, the three views, a player card, a shared query-state link across
+      a reload, a 390px reflow, and **no request leaving the site's own origin**.
+- [x] Tag/release V1 — `v1.0.0` at `5511370a52dc057471f9756f1da480e5756d914c`, the exact merged
+      `main` commit the final refresh built and deployed. Cut by `release.yml` rather than by a
+      local `git push`: the sandbox's git proxy answers 403 to any `refs/tags/*` push. The
+      workflow refuses a commit that is not reachable from `main`, refuses to move an existing
+      tag, and refuses empty notes. Release:
+      <https://github.com/jeisey/jeisey-tiers/releases/tag/v1.0.0>; the annotated tag object
+      resolves to `5511370a52dc057471f9756f1da480e5756d914c`.
+- [x] Release visual QA — `docs/visual-qa/2026-09-01-release/`: the masthead at three
+      viewports, both export controls at two, and the generated favicon at 16/32/48px over a
+      near-black and a white tab bar, with the measurements beside them.
+- [x] Mark `SESSION_STATE.md` with production model/data versions and known limitations.
+
+**Exit gate:** met. The release polish shipped, no ADR is awaiting review, every local and
+runner gate is green, the final refresh deployed through the ordinary production path, all nine
+presets and all four CSV exports verify against the deployed site, and `v1.0.0` points at the
+exact `main` commit that produced it.
