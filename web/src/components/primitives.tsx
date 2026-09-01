@@ -5,9 +5,43 @@
  * and an injury badge look and read the same in a table cell, a chart tooltip and a dialog.
  */
 
-import type { Position } from "../data/contracts";
+import type { Confidence, Position } from "../data/contracts";
 import type { PlayerStatusRecord } from "../data/contracts";
 import { statusBadge } from "../data/model";
+
+/**
+ * A section header, in the design source's form: a two-digit mono index, the heading, a rule
+ * that fades out to the right, and the section's controls.
+ *
+ * The index is ordering for the eye and is hidden from the accessibility tree — a screen
+ * reader announcing "zero one tier board" is worse than announcing "tier board". The rule is
+ * decoration for the same reason.
+ */
+export function SectionHead({
+  index,
+  id,
+  title,
+  note,
+  children,
+}: {
+  readonly index: string;
+  readonly id: string;
+  readonly title: string;
+  readonly note?: string | undefined;
+  readonly children?: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <div className="section-head">
+      <span className="section-index" aria-hidden="true">
+        {index}
+      </span>
+      <h2 id={id}>{title}</h2>
+      <span className="section-rule" aria-hidden="true" />
+      {children !== undefined && <div className="section-actions">{children}</div>}
+      {note !== undefined && <p className="section-note">{note}</p>}
+    </div>
+  );
+}
 
 export function PositionTag({ position }: { readonly position: Position }): React.JSX.Element {
   return (
@@ -45,6 +79,36 @@ export function StatusBadge({
       <span className="visually-hidden">
         {`Current status: ${badge.full}. Annotation only; the projection does not use it.`}
       </span>
+    </span>
+  );
+}
+
+/**
+ * The market-data confidence meter, from artboard 1b.
+ *
+ * Three bars filled to the level, with the word beside them — the design's own component. The
+ * word is what carries the meaning; the bars are a second channel for the same fact, never the
+ * only one. `unknown` fills none and reads "Unrated".
+ *
+ * This is market-data *quality* — how much draft evidence stands behind the price. It is not a
+ * probability and it says nothing about the projection (ADR-041); Data carries the rubric.
+ */
+export function ConfidenceMeter({
+  confidence,
+  label,
+}: {
+  readonly confidence: Confidence;
+  readonly label: string;
+}): React.JSX.Element {
+  const filled = { unknown: 0, low: 1, medium: 2, high: 3 }[confidence];
+  return (
+    <span className="confidence-meter">
+      <span className="confidence-bars" aria-hidden="true">
+        {[0, 1, 2].map((index) => (
+          <i key={index} data-on={index < filled} />
+        ))}
+      </span>
+      {label}
     </span>
   );
 }

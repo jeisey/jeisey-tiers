@@ -28,6 +28,10 @@ test("the whole product is usable on a phone without hover", async ({ page }) =>
   // Player detail opens on tap, which is the only pointer a phone has.
   await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
   const dialog = page.getByRole("dialog");
+  // The sheet is artboard 1b: three tabs rather than one long scroll. The annotation-only
+  // disclosure is on the status tab, which is one tap — and tapping it is also the check that
+  // the tab bar works with a thumb.
+  await dialog.getByRole("tab", { name: "Current status" }).click();
   await expect(dialog.getByText("Annotation only — not a model input.")).toBeVisible();
   await page.getByRole("button", { name: "Close player detail" }).click();
   await expect(dialog).toBeHidden();
@@ -52,10 +56,22 @@ test("the player card becomes a sheet, with the draft-critical readouts above th
   expect(box?.width ?? 0).toBeGreaterThanOrEqual((viewport?.width ?? 0) - 1);
   expect((box?.y ?? 0) + (box?.height ?? 0)).toBeGreaterThanOrEqual((viewport?.height ?? 0) - 1);
 
-  // What a drafter needs while the clock runs is visible without scrolling the sheet.
-  for (const label of ["Fair rank", "Tier", "MFL ADP", "Value gap"]) {
+  /*
+   * What a drafter needs while the clock runs is on screen with no scroll and no tap.
+   *
+   * The labels changed with the sheet's shape, not the requirement. Phase 8 stacked every
+   * readout and asked that the first four be above the fold; artboard 1b splits the detail
+   * across three tabs and puts the answers in the identity rail above them, so what is
+   * unconditionally visible is now fair rank, the market verdict — the signed gap and its
+   * direction, which is `Value gap` and `MFL ADP` combined into the sentence a drafter
+   * actually wants — the arbitrage score, and the status line. That is one more draft-critical
+   * fact than Phase 8 showed without scrolling, not one fewer.
+   */
+  for (const label of ["Fair rank", "Market verdict", "Arbitrage score", "Status"]) {
     await expect(dialog.getByText(label, { exact: true })).toBeInViewport();
   }
+  // ...and the rest is one tap away, on a tab that is itself a touch target.
+  await expect(dialog.getByRole("tab", { name: "Draft market" })).toBeInViewport();
 
   // The close control is a real touch target (WCAG 2.2 AA target size is 24x24).
   const close = await page.getByRole("button", { name: "Close player detail" }).boundingBox();

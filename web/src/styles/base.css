@@ -1,69 +1,187 @@
 /*
- * The draft sheet's visual system.
+ * The draft sheet's visual system — Phase 9A.
  *
- * `docs/UX_SPEC.md` section 1 and AGENTS.md section 11 describe a utility, not a sports site:
- * no hero, no gradients, no glassmorphism, no decorative motion, no oversized metric cards.
- * Everything here is a token, a layout primitive or a component class — grouping is done with
- * spacing, type weight and a single hairline rule rather than by boxing every element.
+ * This stylesheet implements the owner's Claude Design source (`Player Card HUD.dc.html`,
+ * artboards 1a/1b/1c/2a/2b). `docs/DESIGN_SOURCE_MAP.md` is the map: what the source contains,
+ * how each part was translated, and every deliberate deviation. Read it before changing a
+ * token here.
  *
- * Colour is never the only channel. Position and tier hues exist to help the eye return to a
- * row it has already read; every one of them is accompanied by its own text.
+ * Three properties of the source drive everything below:
+ *
+ * 1. **There is no border-radius anywhere.** Corners are cut with `clip-path`, not rounded.
+ * 2. **There are no grey rules.** Every line is the accent hue at 8-30% alpha.
+ * 3. **A hairline grid is a 1px grid `gap` over a tinted container**, not a border per cell.
+ *    That one construction builds the metric tiles, the readout grids and the tables.
+ *
+ * AGENTS.md section 11 still governs: utility first, no hero, no decorative motion, colour is
+ * never the only channel. The HUD is dense and quiet, not loud — the source is too.
+ *
+ * Contrast: four of the source's seven text tones fail WCAG AA at the sizes it uses them. The
+ * ramp is corrected here and the measurements are in `docs/DESIGN_SOURCE_MAP.md` section 6.
+ * Phase 8's rule stands and is why the hover and selected surfaces are opaque tokens: axe reads
+ * the composited pixel, not the declaration.
  */
 
+/* ------------------------------------------------------------------ fonts
+ *
+ * Vendored, not linked. `docs/ARCHITECTURE.md` section 3.2 forbids a runtime call to a third
+ * party for core rendering and `web/tests/e2e/board.spec.ts` fails any request that leaves
+ * localhost. Both families are SIL OFL 1.1; see `../assets/fonts/README.md`.
+ *
+ * Variable fonts covering 400-700 in one file each, so the source's four weights cost two
+ * requests rather than seven. `font-display: swap` keeps first paint immediate; the fallback
+ * stacks below are metric-adjacent enough that the swap does not reflow the board.
+ */
+
+@font-face {
+  font-family: "Exo 2";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../assets/fonts/exo2-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Exo 2";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../assets/fonts/exo2-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../assets/fonts/jetbrains-mono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../assets/fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ----------------------------------------------------------------- tokens */
+
 :root {
-  color-scheme: light dark;
-
-  /* Ink and surface. Four steps of each is enough for a sheet. */
-  --ink: #14181d;
-  --ink-strong: #05070a;
-  --ink-muted: #5b6676;
   /*
-   * `--ink-faint` is a *text* colour and therefore has to clear 4.5:1, which the previous
-   * value (#8792a3, 3.15:1 on white) did not. It was tolerable while it only tinted a handful
-   * of em dashes; the Phase-8 HUD gave it every micro-label on the board, the rail and the
-   * player card, and the axe scan found it on the first run. 5.50:1 on the page surface,
-   * 5.12:1 on the sunken one, 4.53:1 on the selected-row surface.
+   * Dark only, deliberately. The design source is a dark HUD with no light variant, and the
+   * four position hues clear AA at their source values only against a dark ground. Inventing a
+   * light HUD would reintroduce exactly the "inferred rather than read" problem Phase 9A
+   * exists to close (`docs/DESIGN_SOURCE_MAP.md` section 6.3).
    */
-  --ink-faint: #5f6a78;
-  --surface: #ffffff;
-  --surface-sunken: #f5f7f9;
-  --surface-raised: #ffffff;
-  --surface-hover: #eef2f6;
-  --surface-active: #e3eaf2;
-  --rule: #dde3ea;
-  --rule-strong: #c3ccd8;
+  color-scheme: dark;
 
-  --accent: #1d4ed8;
-  --accent-ink: #ffffff;
-  --accent-soft: #e8eefc;
-
-  --warn: #8a5300;
-  --warn-surface: #fdf3e3;
-  --warn-rule: #e6c690;
-  --danger: #a11b1b;
-  --danger-surface: #fbeceb;
-  --danger-rule: #e8b4b0;
-  --good: #14653a;
-  --good-surface: #e7f4ec;
+  /* Surfaces, darkest to lightest. All four are source values. */
+  --canvas: #050b14;
+  --canvas-deep: #04090f;
+  --panel: #081422;
+  --panel-raised: #091523;
+  --tile: #0b1a2a;
 
   /*
-   * Position hues, low chroma so a table of 300 rows does not vibrate — and dark enough to
-   * carry text on all three light surfaces. Running blue and orange at their previous values
-   * left RB at 4.52:1 and TE at 4.14:1 against a selected row, which is under AA for the
-   * small chips the tier headers use. Every hue below clears 4.5:1 on the page, the sunken
-   * panel and a selected row.
+   * Interaction surfaces, pre-composited.
+   *
+   * The source expresses these as `rgba(46,204,255,.06-.12)` over whatever is beneath. Phase 8
+   * learned that a translucent surface makes a text colour's contrast depend on the stack, and
+   * axe reads the result rather than the declaration. These are the source's own tints
+   * resolved against `--panel` and `--tile` once, so every ratio below is deterministic.
    */
-  --pos-qb: #7c3aed;
-  --pos-rb: #03684b;
-  --pos-wr: #1d4ed8;
-  --pos-te: #9a4b06;
+  --surface-hover: #0b2131;
+  --surface-hover-strong: #0e283b;
+  --surface-selected: #0f2f44;
 
-  /* Arbitrage direction. Paired with a sign and a word everywhere they appear. */
-  --bargain: #0f766e;
-  --premium: #9a3412;
+  /* Lines. There is no neutral rule anywhere in the source; every one is the accent hue. */
+  --line-faint: rgb(46 204 255 / 8%);
+  --line: rgb(46 204 255 / 14%);
+  --line-strong: rgb(46 204 255 / 22%);
+  --line-bright: rgb(46 204 255 / 35%);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  /*
+   * Ink.
+   *
+   * The source runs seven steps: #E6F3FF #C7E6FF #9FD8FF #8FB2D2 #6E93B8 #5F86AD #4E7397.
+   * The last three are 4.32:1, 3.64:1 and 2.80:1 against the surfaces they actually sit on —
+   * under AA at 9.5-12px. The bottom four collapse into two, both AA, and the roles stay
+   * separable because the source already separates them by face and tracking rather than by an
+   * eleven-unit luminance step. Worst-case ratios over canvas/panel/tile/hover/selected:
+   *
+   *   --ink        12.33:1     --ink-accent   9.10:1      --ink-faint  4.82:1
+   *   --ink-strong 10.72:1     --ink-muted    6.27:1
+   */
+  --ink: #e6f3ff;
+  --ink-strong: #c7e6ff;
+  --ink-accent: #9fd8ff;
+  --ink-muted: #8fb2d2;
+  --ink-faint: #7e9bb9;
+
+  /* Accent. `--accent` marks and chips; `--accent-bright` is the value colour. */
+  --accent: #2eccff;
+  --accent-bright: #66f1ff;
+  --accent-ink: #050b14;
+  --accent-fill: #2563a9;
+  --accent-fill-hover: #2f76c6;
+  --accent-fill-ink: #eaf8ff;
+  --accent-wash: rgb(46 204 255 / 6%);
+  --accent-wash-strong: rgb(46 204 255 / 12%);
+  --glow: 0 0 16px rgb(46 204 255 / 40%);
+  --glow-soft: 0 0 12px rgb(46 204 255 / 25%);
+
+  /* Semantic. Both are source values and both clear AA on every surface above. */
+  --good: #22d19a;
+  --good-wash: rgb(34 209 154 / 8%);
+  /*
+   * The opaque form of `--good-wash` / `--warn-wash` over `--tile`.
+   *
+   * A tinted readout replaces the tile's own background, so a translucent tint composites
+   * against whatever is behind the *grid* — which is itself a cyan wash. That stack put the
+   * micro-label at 4.36:1 and axe found it on the open card. These are the same colour the
+   * tint was meant to produce, resolved once: 5.26:1 and 5.30:1 for `--ink-faint`.
+   */
+  --tile-good: #0d2933;
+  --good-line: rgb(34 209 154 / 40%);
+  --warn: #ffb347;
+  --warn-wash: rgb(255 179 71 / 8%);
+  --tile-warn: #1f262c;
+  --warn-line: rgb(255 179 71 / 40%);
+  --danger: #ff8a80;
+  --danger-wash: rgb(255 138 128 / 8%);
+  --danger-line: rgb(255 138 128 / 40%);
+
+  /* Positions, straight from the source's own `POSC` map. All four clear 4.5:1 here. */
+  --pos-qb: #b58cff;
+  --pos-rb: #22d19a;
+  --pos-wr: #2eccff;
+  --pos-te: #ffb347;
+
+  /* Arbitrage direction. Always paired with a sign and a word; never colour alone. */
+  --bargain: #22d19a;
+  --premium: #ffb347;
+
+  --font-sans: "Exo 2", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas,
+    monospace;
+
+  /* The source's tracking ramp: labels are wide, headers wider. */
+  --track-label: 0.14em;
+  --track-header: 0.18em;
+  --track-nav: 0.16em;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -72,53 +190,33 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
 
-  --radius: 4px;
-  --row-height: 38px;
-  --focus: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
-  --shadow-pop: 0 8px 28px rgb(9 14 22 / 18%);
+  /* Zero. The source has no rounded corner; a cut corner is `--notch` with `.chamfer`. */
+  --radius: 0;
+  --notch: 12px;
+  --hairline: 1px;
+
+  --row-height: 28px;
+  --control-height: 40px;
+
+  /*
+   * Focus. The source specifies no focus state at all, so this is ours: WCAG 2.2 focus
+   * appearance needs a 2px indicator at 3:1 against both the component and its surround, and
+   * `--accent-bright` is 8.94:1 on every surface here.
+   *
+   * A real `outline`, not a box-shadow. An outline follows the element's own shape, is not
+   * clipped by an ancestor's `overflow`, and is what a check for a visible focus ring can
+   * actually read — a shadow leaves `outline-width` at zero.
+   */
+  --focus-ring: 2px solid var(--accent-bright);
+
+  --shadow-pop: 0 24px 60px rgb(0 0 0 / 60%);
   --page-max: 96rem;
+
+  /* Every transition in the source is `all 160ms`. */
+  --t: 160ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #e6eaf0;
-    --ink-strong: #f7f9fc;
-    --ink-muted: #98a4b5;
-    /* 6.70:1 on the page surface, 4.81:1 on a selected row. The previous #6f7c8f was 3.16:1
-       against a selected row, which is where the board's micro-labels sit most often. */
-    --ink-faint: #909cae;
-    --surface: #0f1318;
-    --surface-sunken: #161b22;
-    --surface-raised: #171d25;
-    --surface-hover: #1d242e;
-    --surface-active: #26303c;
-    --rule: #262e38;
-    --rule-strong: #384352;
-
-    --accent: #7aa2ff;
-    --accent-ink: #0a0e14;
-    --accent-soft: #1a2437;
-
-    --warn: #f0c469;
-    --warn-surface: #2c2313;
-    --warn-rule: #4d3d1c;
-    --danger: #f3a29c;
-    --danger-surface: #2e1917;
-    --danger-rule: #4d2723;
-    --good: #7fd6a6;
-    --good-surface: #12271c;
-
-    --pos-qb: #c4a5ff;
-    --pos-rb: #6ed3a5;
-    --pos-wr: #93b4ff;
-    --pos-te: #edb96a;
-
-    --bargain: #5fd0c1;
-    --premium: #f0a877;
-
-    --shadow-pop: 0 8px 28px rgb(0 0 0 / 55%);
-  }
-}
+/* ------------------------------------------------------------------ reset */
 
 *,
 *::before,
@@ -130,6 +228,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  background: var(--canvas);
 }
 
 body {
@@ -137,9 +236,10 @@ body {
   font-size: 14px;
   line-height: 1.45;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--canvas);
   -webkit-font-smoothing: antialiased;
-  /* Tabular figures everywhere: a column of ranks that jitters is a column that cannot be scanned. */
+  /* Tabular figures everywhere: a column of ranks that jitters is a column that cannot be
+     scanned. JetBrains Mono is duplexed already; this covers the sans. */
   font-variant-numeric: tabular-nums;
 }
 
@@ -148,19 +248,29 @@ h2,
 h3 {
   margin: 0;
   font-weight: 600;
-  letter-spacing: -0.01em;
 }
 
+/*
+ * Section headings are the source's: uppercase, widely tracked, small. Their prominence comes
+ * from the tracking and the rule beside them, not from size.
+ */
 h2 {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
+  letter-spacing: var(--track-header);
+  text-transform: uppercase;
+  color: var(--ink);
 }
 
 h3 {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-strong);
 }
 
 p {
   margin: 0 0 var(--space-3);
+  text-wrap: pretty;
 }
 
 p:last-child {
@@ -171,18 +281,40 @@ a {
   color: var(--accent);
 }
 
+a:hover {
+  color: var(--accent-bright);
+}
+
 :focus-visible {
-  outline: none;
-  box-shadow: var(--focus);
-  border-radius: 2px;
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--ink-strong);
+}
+
+/* The one shape helper. The source cuts two opposite corners; the depth is `--notch`. */
+.chamfer {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--notch)) 0,
+    100% var(--notch),
+    100% 100%,
+    var(--notch) 100%,
+    0 calc(100% - var(--notch))
+  );
 }
 
 .visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
-  margin: -1px;
   padding: 0;
+  margin: -1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
@@ -191,298 +323,490 @@ a {
 
 .skip-link {
   position: absolute;
-  left: var(--space-3);
-  top: -3rem;
-  z-index: 40;
-  background: var(--surface-raised);
-  border: 1px solid var(--rule-strong);
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--accent-fill);
+  color: var(--accent-fill-ink);
+  border: 1px solid var(--accent);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius);
+  font: 600 0.68rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  text-decoration: none;
 }
 
 .skip-link:focus {
-  top: var(--space-3);
+  left: var(--space-3);
+  top: var(--space-2);
 }
 
-/* ---------------------------------------------------------------- app frame */
+/* ------------------------------------------------------------------ shell */
 
 .app {
   max-width: var(--page-max);
   margin: 0 auto;
-  padding: 0 var(--space-4) var(--space-6);
+  padding: 0 var(--space-5) var(--space-6);
 }
 
+/*
+ * The masthead. The source's command-board header, element for element: notched glyph,
+ * wordmark, mono sub-label, right-hand timestamp and a status chip. The gradient wash from the
+ * left is the source's own.
+ */
 .masthead {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-4);
   padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--hairline) solid var(--line-strong);
+  background: linear-gradient(90deg, rgb(46 204 255 / 7%), transparent 55%);
+  margin: 0 calc(-1 * var(--space-5));
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
+}
+
+.masthead-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.masthead-glyph {
+  --notch: 6px;
+
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: var(--hairline) solid var(--line-bright);
+  background: var(--accent-wash-strong);
 }
 
 .wordmark {
-  font-size: 0.95rem;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--ink);
   white-space: nowrap;
 }
 
-.wordmark span {
-  color: var(--ink-muted);
-  font-weight: 450;
+.wordmark-sub {
+  font: 500 0.68rem/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .masthead-meta {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
+  gap: var(--space-3);
   margin-left: auto;
-  font-size: 0.78rem;
-  color: var(--ink-muted);
 }
 
 .freshness {
-  white-space: nowrap;
+  font: 500 0.65rem/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
 }
 
 .freshness strong {
-  color: var(--ink);
-  font-weight: 550;
+  font-weight: 500;
+  color: var(--ink-muted);
 }
 
-/* ------------------------------------------------------------ control strip */
+/*
+ * The status chip. The source's build-notes chip: a glowing square, a widely tracked label,
+ * a 1px tinted frame. Tone is carried by the word as well as the hue.
+ */
+.status-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--accent-wash);
+  color: var(--ink-accent);
+  font: 600 0.62rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  padding: 6px 9px;
+  cursor: pointer;
+  transition: all var(--t);
+}
+
+.status-chip::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  flex: none;
+  background: currentcolor;
+  box-shadow: 0 0 6px currentcolor;
+}
+
+.status-chip:hover {
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
+}
+
+.status-chip[data-tone="warning"] {
+  border-color: var(--warn-line);
+  background: var(--warn-wash);
+  color: var(--warn);
+}
+
+.status-chip[data-tone="warning"]:hover {
+  border-color: var(--warn);
+}
+
+.status-chip[data-tone="ok"] {
+  border-color: var(--good-line);
+  background: var(--good-wash);
+  color: var(--good);
+}
+
+.status-chip[data-tone="ok"]:hover {
+  border-color: var(--good);
+}
+
+/* --------------------------------------------------------------- controls */
+
+.sticky-controls {
+  background: var(--canvas);
+}
 
 .controls {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: var(--space-3) var(--space-4);
-  padding: var(--space-3) 0;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-4) 0 var(--space-3);
+  border-bottom: var(--hairline) solid var(--line);
 }
 
 .control {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
-.control > .control-label {
-  font-size: 0.68rem;
+.control > .control-label,
+.control-label {
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-  font-weight: 600;
+  color: var(--ink-faint);
 }
 
+/*
+ * The segmented control, exactly as the source builds it: a 1px frame over a wash, 1px gaps
+ * between options so the frame shows through, and an inset ring rather than a fill on the
+ * selected option.
+ */
 .segmented {
-  display: inline-flex;
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--surface-raised);
+  display: flex;
+  gap: var(--hairline);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--accent-wash);
+  width: fit-content;
 }
 
 .segmented button {
   appearance: none;
-  border: 0;
-  border-right: 1px solid var(--rule);
+  border: none;
   background: transparent;
-  color: var(--ink-muted);
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 5px 11px;
+  color: var(--ink-faint);
+  font: 600 0.66rem/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-width: 40px;
+  height: 30px;
+  padding: 0 12px;
   cursor: pointer;
-  white-space: nowrap;
+  transition: all var(--t);
 }
 
-.segmented button:last-child {
-  border-right: 0;
-}
-
-.segmented button:hover {
+.segmented button:hover:not(:disabled) {
   background: var(--surface-hover);
-  color: var(--ink);
+  color: var(--ink-strong);
 }
 
 .segmented button[aria-pressed="true"],
 .segmented button[aria-checked="true"] {
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
+  background: var(--accent-wash-strong);
+  color: var(--accent-bright);
+  box-shadow: inset 0 0 0 1px rgb(102 241 255 / 50%);
+}
+
+.segmented button:disabled {
+  color: var(--ink-faint);
+  opacity: 1;
+  cursor: not-allowed;
+  text-decoration: line-through;
 }
 
 .search-field {
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 9px;
+  height: var(--control-height);
+  padding: 0 12px;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--tile);
+  width: min(20rem, 100%);
+  transition: border-color var(--t);
+}
+
+.search-field:focus-within {
+  border-color: var(--accent);
+}
+
+.search-field::before {
+  content: "⌕";
+  font: 500 0.85rem/1 var(--font-mono);
+  color: var(--ink-faint);
 }
 
 .search-field input {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 5px 26px 5px 9px;
-  width: 15rem;
-  max-width: 100%;
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font: 400 0.85rem/1 var(--font-sans);
   color: var(--ink);
+}
+
+.search-field input::placeholder {
+  color: var(--ink-faint);
 }
 
 .search-field button {
-  position: absolute;
-  right: 3px;
   appearance: none;
-  border: 0;
+  border: var(--hairline) solid var(--line-strong);
   background: transparent;
-  color: var(--ink-muted);
+  color: var(--ink-faint);
+  font: 500 0.7rem/1 var(--font-mono);
+  min-width: 22px;
+  min-height: 22px;
   cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1;
-  padding: 3px 4px;
-  border-radius: 2px;
+  transition: all var(--t);
 }
 
 .search-field button:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
+}
+
+/* The source's key hint. Decoration for the shortcut, so it is hidden from the a11y tree. */
+.search-key {
+  font: 500 0.6rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  border: var(--hairline) solid var(--line-strong);
+  padding: 3px 5px;
 }
 
 .control-spacer {
   margin-left: auto;
 }
 
-/* ------------------------------------------------------------------- tabs */
+/*
+ * View navigation. The source underlines the active tab with an inset shadow rather than a
+ * border, so the tab strip's own bottom rule stays continuous, and prints the visible row
+ * count on the right.
+ */
+.tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: var(--hairline) solid var(--line-strong);
+  background: rgb(9 21 35 / 60%);
+  margin: 0 calc(-1 * var(--space-5));
+  padding: 0 var(--space-5);
+}
 
 .tabs {
   display: flex;
-  gap: var(--space-1);
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: var(--space-4);
+  gap: var(--space-5);
 }
 
 .tabs button {
   appearance: none;
-  border: 0;
+  border: none;
   background: transparent;
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 550;
-  color: var(--ink-muted);
-  padding: var(--space-2) var(--space-3);
+  height: 44px;
+  padding: 0 2px;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  font: 600 0.75rem/1 var(--font-sans);
+  letter-spacing: var(--track-nav);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: all var(--t);
 }
 
 .tabs button:hover {
-  color: var(--ink);
+  color: var(--ink-strong);
 }
 
 .tabs button[aria-selected="true"] {
-  color: var(--ink-strong);
-  border-bottom-color: var(--accent);
+  color: var(--accent-bright);
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
-/* ---------------------------------------------------------------- sections */
+.tabs-count {
+  font: 500 0.63rem/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- sections */
 
 .section {
-  margin-bottom: var(--space-5);
+  margin-top: var(--space-5);
 }
 
 .section-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-3);
-  margin-bottom: var(--space-2);
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+/*
+ * The source's section header: a two-digit mono index, the label, and a rule that fades out to
+ * the right. The index is decorative ordering, so it is hidden from the accessibility tree —
+ * the heading text is the name.
+ */
+.section-index {
+  font: 500 0.63rem/1 var(--font-mono);
+  color: var(--accent);
+  align-self: center;
 }
 
 .section-head h2 {
-  font-size: 0.9rem;
+  flex: none;
+  align-self: center;
+}
+
+.section-head h2::after {
+  content: "";
+}
+
+.section-rule {
+  flex: 1 1 4rem;
+  height: 1px;
+  align-self: center;
+  background: linear-gradient(90deg, rgb(46 204 255 / 40%), rgb(46 204 255 / 0%));
 }
 
 .section-note {
-  font-size: 0.78rem;
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
   color: var(--ink-muted);
-  max-width: 62ch;
+  max-width: 74ch;
 }
 
 .section-actions {
-  margin-left: auto;
   display: flex;
-  gap: var(--space-2);
-  align-items: center;
   flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+  align-self: center;
 }
 
-/* A run of secondary facts under a notice. Full width and unboxed, so it reads as a footnote
-   to the panel above rather than as a third alarm. */
 .view-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
   font-size: 0.78rem;
   color: var(--ink-muted);
-  max-width: 100%;
-  margin: 0 0 var(--space-4);
-  padding-left: var(--space-3);
-  border-left: 2px solid var(--rule);
 }
 
 .view-notes strong {
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--ink-strong);
 }
 
-/* ----------------------------------------------------------------- buttons */
+/* --------------------------------------------------------------- buttons */
 
 .button {
   appearance: none;
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 5px 11px;
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--ink);
+  height: var(--control-height);
+  padding: 0 14px;
+  background: transparent;
+  border: var(--hairline) solid var(--line-bright);
+  color: var(--ink-accent);
+  font: 600 0.66rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
   cursor: pointer;
-  white-space: nowrap;
+  transition: all var(--t);
 }
 
-.button:hover {
-  background: var(--surface-hover);
+.button:hover:not(:disabled) {
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
 }
 
 .button:disabled {
-  opacity: 0.5;
+  color: var(--ink-faint);
+  border-color: var(--line);
   cursor: not-allowed;
+}
+
+.button[data-variant="primary"] {
+  --notch: 8px;
+
+  background: var(--accent-fill);
+  border-color: var(--accent);
+  color: var(--accent-fill-ink);
+}
+
+.button[data-variant="primary"]:hover:not(:disabled) {
+  background: var(--accent-fill-hover);
+  box-shadow: var(--glow);
+  color: var(--accent-fill-ink);
 }
 
 .button-link {
   appearance: none;
-  border: 0;
   background: none;
+  border: none;
   padding: 0;
-  font: inherit;
+  font: 600 0.68rem/1.4 var(--font-sans);
+  letter-spacing: 0.06em;
   color: var(--accent);
   cursor: pointer;
-  text-align: left;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-/* ---------------------------------------------------------------- notices */
+.button-link:hover {
+  color: var(--accent-bright);
+}
+
+/* --------------------------------------------------------------- notices */
 
 .notice {
-  border: 1px solid var(--rule);
-  border-left-width: 3px;
-  border-left-color: var(--rule-strong);
-  background: var(--surface-sunken);
-  padding: var(--space-2) var(--space-3);
-  border-radius: 0 var(--radius) var(--radius) 0;
+  border: var(--hairline) solid var(--line-strong);
+  border-left: 2px solid var(--accent);
+  background: var(--accent-wash);
+  padding: var(--space-3) var(--space-4);
   font-size: 0.8rem;
-  margin-bottom: var(--space-3);
+  color: var(--ink-muted);
 }
 
 .notice > :first-child {
@@ -490,246 +814,299 @@ a {
 }
 
 .notice strong {
+  color: var(--ink);
   font-weight: 600;
 }
 
 .notice[data-severity="warning"] {
-  border-left-color: var(--warn-rule);
-  background: var(--warn-surface);
+  border-color: var(--warn-line);
+  border-left-color: var(--warn);
+  background: var(--warn-wash);
+}
+
+.notice[data-severity="warning"] strong {
+  color: var(--warn);
 }
 
 .notice[data-severity="error"] {
-  border-left-color: var(--danger-rule);
-  background: var(--danger-surface);
+  border-color: var(--danger-line);
+  border-left-color: var(--danger);
+  background: var(--danger-wash);
 }
 
-/* A disclosure inside a notice: the headline stays, the evidence is one click away. */
+.notice[data-severity="error"] strong {
+  color: var(--danger);
+}
+
+.notice-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
 .market-details {
   margin-top: var(--space-2);
 }
 
 .market-details > summary {
   cursor: pointer;
-  font-weight: 600;
-  color: var(--ink);
-  list-style-position: outside;
+  font: 600 0.66rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: var(--space-1) 0;
 }
 
 .market-details > summary:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  color: var(--accent-bright);
 }
 
 .market-details ul {
   margin: var(--space-2) 0 0;
   padding-left: 1.1rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  font-size: 0.78rem;
 }
 
-.notice-inline {
+/*
+ * The annotation bar: the source's 2px vertical gradient rule beside a short paragraph. It is
+ * the one place prose is allowed on a board, and it is short by construction — ADR-058 keeps
+ * the methodology in Data.
+ */
+.annotation {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: baseline;
-}
-
-/* Header status chip: compact, never a full-width red banner (prompt: differentiate). */
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.72rem;
-  font-weight: 550;
-  padding: 2px 7px;
-  border-radius: 999px;
-  border: 1px solid var(--rule-strong);
-  background: var(--surface-sunken);
+  gap: var(--space-3);
+  font-size: 0.78rem;
+  line-height: 1.55;
   color: var(--ink-muted);
-  cursor: pointer;
-  appearance: none;
-  font-family: inherit;
 }
 
-.status-chip[data-tone="warning"] {
-  border-color: var(--warn-rule);
-  background: var(--warn-surface);
-  color: var(--warn);
-}
-
-.status-chip[data-tone="ok"] {
-  border-color: var(--rule);
-}
-
-.status-chip::before {
+.annotation::before {
   content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
+  width: 2px;
   flex: none;
+  background: linear-gradient(180deg, var(--accent), rgb(46 204 255 / 10%));
 }
 
-/* ------------------------------------------------------------------ table */
+.annotation[data-tone="warn"]::before {
+  background: var(--warn-line);
+}
+
+.annotation strong {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.annotation-note {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  border-left: 2px solid var(--line-bright);
+  padding: var(--space-1) var(--space-3);
+  margin-top: var(--space-2);
+  background: var(--accent-wash);
+}
+
+/* ----------------------------------------------------------------- tables
+ *
+ * The truth surface. The source draws its DATA view as a CSS grid; a grid is not a table, so
+ * the semantics here stay a real `<table>` and the source's treatment is applied to it:
+ * a tinted header band, hairline row separators, mono numerics, and the active sort column
+ * in the bright accent.
+ */
 
 .table-scroll {
-  /* `position: relative` is load-bearing, not decoration. An overflow container only clips
-     absolutely positioned descendants when it is itself a containing block, and the accessible
-     `.visually-hidden` text inside table cells is absolutely positioned. Without this the
-     screen-reader-only spans escape a horizontally scrolled table and drag the whole page's
-     scroll width out to the table's width — an invisible horizontal scrollbar on mobile. */
-  position: relative;
   overflow-x: auto;
-  overflow-y: visible;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
+  /*
+   * Positioned on purpose, and only for this reason: an overflow container clips absolutely
+   * positioned descendants only when it is itself a containing block. Without it the
+   * screen-reader-only spans inside cells escape a horizontally scrolled table and give the
+   * whole document an invisible horizontal scrollbar on a phone.
+   */
+  position: relative;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--panel);
 }
 
 table.sheet {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.82rem;
+  border-collapse: collapse;
+  font-size: 0.8rem;
 }
 
 table.sheet caption {
   text-align: left;
   padding: var(--space-2) var(--space-3);
+  font-size: 0.72rem;
   color: var(--ink-muted);
-  font-size: 0.76rem;
-  border-bottom: 1px solid var(--rule);
-  background: var(--surface-sunken);
+  border-bottom: var(--hairline) solid var(--line);
+  background: var(--panel-raised);
 }
 
 table.sheet thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--surface-sunken);
-  border-bottom: 1px solid var(--rule-strong);
+  background: #0d2233;
+  border-bottom: var(--hairline) solid var(--line-strong);
   text-align: left;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink-muted);
-  font-weight: 650;
   padding: 0;
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
   white-space: nowrap;
 }
 
 table.sheet thead th button {
   appearance: none;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-transform: inherit;
-  letter-spacing: inherit;
-  padding: var(--space-2) var(--space-3);
   width: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
   text-align: inherit;
+  padding: 10px var(--space-3);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  transition: color var(--t);
 }
 
 table.sheet thead th button:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
+  color: var(--accent-bright);
+}
+
+table.sheet thead th[aria-sort]:not([aria-sort="none"]) button {
+  color: var(--accent-bright);
 }
 
 table.sheet thead th.plain {
-  padding: var(--space-2) var(--space-3);
+  padding: 10px var(--space-3);
+}
+
+table.sheet thead th.num button {
+  justify-content: flex-end;
 }
 
 .sort-mark {
-  color: var(--accent);
-  font-size: 0.7rem;
-  line-height: 1;
+  font-size: 0.7em;
+  color: var(--accent-bright);
 }
 
 .sort-mark[data-state="none"] {
-  color: var(--ink-faint);
-  opacity: 0;
+  color: transparent;
 }
 
 table.sheet thead th:hover .sort-mark[data-state="none"] {
-  opacity: 1;
+  color: var(--ink-faint);
 }
 
+/*
+ * `background-color`, never the `background` shorthand: a cell may carry a micro-glyph in its
+ * `background-image`, and the shorthand resets it. Hovering a row would otherwise erase the
+ * two bars in it.
+ */
 table.sheet tbody td {
-  padding: 0 var(--space-3);
-  height: var(--row-height);
-  border-bottom: 1px solid var(--rule);
-  white-space: nowrap;
-  vertical-align: middle;
+  padding: 8px var(--space-3);
+  border-bottom: var(--hairline) solid var(--line-faint);
+  background-color: var(--panel);
+  color: var(--ink-strong);
+  transition: background-color var(--t);
 }
 
 table.sheet tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-table.sheet tbody tr:nth-child(even) td {
-  background: color-mix(in srgb, var(--surface-sunken) 45%, transparent);
+  border-bottom: none;
 }
 
 table.sheet tbody tr:hover td {
-  background: var(--surface-hover);
+  background-color: var(--surface-hover);
 }
 
 table.sheet tbody tr[data-selected="true"] td {
-  background: var(--accent-soft);
+  background-color: var(--surface-selected);
 }
 
+/* Every number is mono, right-aligned and tabular. This is the source's rule, not a preference. */
 .num {
   text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .col-player {
-  min-width: 13rem;
-  white-space: nowrap;
+  min-width: 11rem;
 }
 
 .player-cell {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .player-name {
   appearance: none;
-  border: 0;
   background: none;
+  border: none;
   padding: 0;
-  font: inherit;
-  font-weight: 550;
+  font: 500 0.82rem/1.2 var(--font-sans);
   color: var(--ink);
   cursor: pointer;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--t);
 }
 
 .player-name:hover {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  color: var(--accent-bright);
 }
 
+/*
+ * Two informational micro-glyphs the source puts in its table: the P25-P75 position on a
+ * shared scale, and the uncertainty width as a proportion of the widest on the board. Both are
+ * read from the artifact, neither is decoration, and both sit under the number they draw.
+ *
+ * They are the cell's own `background-image` — a gradient supplied per row by
+ * `web/src/app/TierTable.tsx` — rather than nested elements, because two spans per glyph is
+ * 1,200 extra nodes on a 300-row board. `background-origin: content-box` puts the bar inside
+ * the cell's padding, so it spans exactly the column's text.
+ */
+.cell-track {
+  background-repeat: no-repeat;
+  background-size: 100% 3px;
+  background-position: bottom center;
+  background-origin: content-box;
+  padding-bottom: 16px;
+}
+
+/* ------------------------------------------------------------- micro-type */
+
 .pos-tag {
-  display: inline-block;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  padding: 1px 5px;
-  border-radius: 3px;
-  border: 1px solid currentColor;
-  line-height: 1.35;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 6px;
+  border: var(--hairline) solid currentcolor;
+  background: rgb(255 255 255 / 4%);
+  white-space: nowrap;
+}
+
+.pos-tag b {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  font-size: 0.95em;
 }
 
 .pos-tag[data-pos="QB"] { color: var(--pos-qb); }
@@ -738,36 +1115,40 @@ table.sheet tbody tr[data-selected="true"] td {
 .pos-tag[data-pos="TE"] { color: var(--pos-te); }
 
 .tier-tag {
-  display: inline-block;
-  min-width: 2.1rem;
-  text-align: center;
-  font-size: 0.72rem;
-  font-weight: 650;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--surface-active);
-  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--good);
+  border: var(--hairline) solid var(--good-line);
+  background: var(--good-wash);
+  padding: 4px 7px;
+  white-space: nowrap;
 }
 
+/*
+ * The injury/status mark. The source's amber outline chip. It renders only when the artifact
+ * carries a designation — the absence of a report is never drawn as good news (ADR-043).
+ */
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 3px;
-  border: 1px solid var(--warn-rule);
-  background: var(--warn-surface);
+  flex: none;
+  font: 600 0.55rem/1 var(--font-sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--warn);
+  border: var(--hairline) solid var(--warn-line);
+  background: var(--warn-wash);
+  padding: 3px 4px;
   white-space: nowrap;
-  cursor: help;
 }
 
 .status-badge[data-severity="warn"] {
-  border-color: var(--danger-rule);
-  background: var(--danger-surface);
   color: var(--danger);
+  border-color: var(--danger-line);
+  background: var(--danger-wash);
 }
 
 .dir {
@@ -776,7 +1157,7 @@ table.sheet tbody tr[data-selected="true"] td {
 
 .dir[data-kind="bargain"] { color: var(--bargain); }
 .dir[data-kind="premium"] { color: var(--premium); }
-.dir[data-kind="even"] { color: var(--ink-muted); }
+.dir[data-kind="even"] { color: var(--ink-faint); }
 
 .muted {
   color: var(--ink-muted);
@@ -788,256 +1169,344 @@ table.sheet tbody tr[data-selected="true"] td {
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 0.95em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dot-sep::before {
+  content: " · ";
+  color: var(--ink-faint);
 }
 
 .empty-state {
-  padding: var(--space-5) var(--space-4);
-  text-align: center;
+  border: var(--hairline) dashed var(--line-bright);
+  background: repeating-linear-gradient(
+    135deg,
+    rgb(46 204 255 / 4%) 0 8px,
+    transparent 8px 16px
+  );
+  padding: var(--space-5);
+  font-size: 0.82rem;
   color: var(--ink-muted);
-  font-size: 0.85rem;
 }
 
 .empty-state h3 {
-  color: var(--ink);
   margin-bottom: var(--space-2);
+  color: var(--ink);
 }
 
 .empty-state ul {
-  display: inline-block;
-  text-align: left;
   margin: var(--space-2) 0 0;
   padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
-/* ------------------------------------------------------- board and rail HUD
+/* ------------------------------------------------------------- readouts
  *
- * Phase 8 replaced two SVG charts with HTML instrument rows. The vocabulary below is shared
- * between them and the player card, which is what makes the three surfaces read as one
- * product: a hairline panel on a recessed ground, a micro-label in small caps over a tabular
- * readout, and geometry that carries a value rather than decorating one.
- *
- * Nothing here is decorative motion, a gradient or a shadow on a data surface (AGENTS.md
- * section 11). The only shadow in the stylesheet is on the modal, where it separates two
- * planes rather than styling a number.
+ * The unit of the HUD, and the source's most repeated component: a widely tracked micro-label
+ * over a mono value on a recessed tile. The grid's 1px `gap` over a tinted container is what
+ * draws the hairlines — there is no border on a tile.
  */
-
-.hud-panel,
-.tier-board,
-.draft-rail {
-  position: relative;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  margin-bottom: var(--space-3);
-}
-
-.tier-board,
-.draft-rail {
-  padding: var(--space-2) 0 0;
-  container-type: inline-size;
-}
 
 /*
- * One grid for the scale, the tier headers and the player rows.
+ * Four tiles to a row, and the last one takes whatever is left.
  *
- * This is load-bearing rather than tidy. The scale's ticks, the header's band (the tier's own
- * P25-P75 span) and each row's bar (the player's) are all on the board's single shared scale —
- * so "these two tier bands overlap" and "this player's interval reaches that tick" are only
- * true statements if all three tracks occupy exactly the same pixels. Three definitions that
- * merely looked similar put them hundreds of pixels apart and turned measured claims into
- * approximate ones. Everything below derives its geometry from these three variables.
+ * The 1px `gap` over a tinted container is what draws the hairlines, which means an empty cell
+ * at the end of a wrapped row is not empty — it is a block of container tint, and it reads as a
+ * value that failed to load. `auto-fit` cannot avoid it because the column count is not known
+ * to the rule; an explicit count can, and the tail tile simply spans the remainder.
  */
-.tier-board {
-  --board-cols: 2.6rem 3.1rem minmax(0, 1fr) minmax(0, 2fr) 3.4rem;
-  --board-gap: var(--space-2);
-  --board-pad: var(--space-3);
+.readout-grid {
+  display: grid;
+  gap: var(--hairline);
+  background: var(--accent-wash-strong);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-/* The readout: a micro-label over a tabular value. The unit of the HUD. */
+.readout-grid > .readout:last-child:nth-child(4n + 1) { grid-column: span 4; }
+.readout-grid > .readout:last-child:nth-child(4n + 2) { grid-column: span 3; }
+.readout-grid > .readout:last-child:nth-child(4n + 3) { grid-column: span 2; }
+
 .readout {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 6px;
+  background: var(--tile);
+  padding: 11px 13px;
   min-width: 0;
 }
 
 .readout-label {
-  font-size: 0.62rem;
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
   color: var(--ink-faint);
-  white-space: nowrap;
 }
 
 .readout-value {
-  font-size: 0.92rem;
-  font-variant-numeric: tabular-nums;
+  font: 500 0.92rem/1.1 var(--font-mono);
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
 .readout[data-strong="true"] .readout-value {
-  font-size: 1.15rem;
-  font-weight: 650;
-  color: var(--ink-strong);
-  letter-spacing: -0.01em;
+  font-size: 1.25rem;
+  color: var(--accent-bright);
 }
 
 .readout-hint {
-  font-size: 0.66rem;
+  font: 400 0.68rem/1.3 var(--font-sans);
   color: var(--ink-muted);
 }
 
+/*
+ * Some artifact values are strings, not numbers — a cohort id is
+ * `IS_KEEPER=N&IS_MOCK=0`. At the readout's normal size one of those wraps to three lines and
+ * drags the whole grid row with it, so a readout can ask for the smaller step. The value is
+ * unchanged; only its type size is.
+ */
+.readout[data-size="sm"] .readout-value {
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.readout[data-kind="bargain"] {
+  background: var(--tile-good);
+}
+
 .readout[data-kind="bargain"] .readout-value { color: var(--bargain); }
+
+.readout[data-kind="premium"] {
+  background: var(--tile-warn);
+}
+
 .readout[data-kind="premium"] .readout-value { color: var(--premium); }
+.readout[data-kind="even"] .readout-value { color: var(--ink-muted); }
 
-.readout-xs .readout-label { font-size: 0.58rem; }
-.readout-xs .readout-value { font-size: 0.78rem; }
+/* The confidence meter: three bars filled to the level, with the word beside them. */
+.confidence-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 
-/* ------------------------------------------------------------- tier board */
+.confidence-bars {
+  display: flex;
+  gap: 2px;
+}
 
-.board-scale,
-.board-axis {
+.confidence-bars i {
+  width: 4px;
+  height: 11px;
+  background: rgb(255 179 71 / 25%);
+}
+
+.confidence-bars i[data-on="true"] {
+  background: var(--warn);
+}
+
+/* -------------------------------------------------------------- tier board
+ *
+ * Artboard 2a. One HUD row per player: rank, position, name, the P25-P75 interval on a shared
+ * scale with a glowing median mark, and the median readout. Tiers are a left gutter and a
+ * collapsible group.
+ *
+ * **The gutter, the strip, the axis and every row are one grid.** `--board-gutter` and
+ * `--board-cols` drive all four, and a breakpoint redefines only those two. This is
+ * load-bearing: "adjacent tier bands overlap" is a claim about the measurement, and it is only
+ * true of the picture if the tracks are the same pixels.
+ *
+ * **A tier is a group, never a line.** Phase 4 measured membership as reproducible and exact
+ * boundaries as not (ADR-035), so no rule, arrow or value cliff is drawn anywhere. The tier
+ * strip draws that tier's own P25-P75 envelope on the shared scale, which makes the softness
+ * visible: neighbouring bands overlap, because the values do.
+ */
+
+.tier-board,
+.draft-rail {
+  --board-gutter: 3.4rem;
+  --board-cols: 2.5rem 3.6rem minmax(0, 1fr) minmax(0, 2fr) 4.2rem;
+  --board-pad: var(--space-3);
+
+  border: var(--hairline) solid var(--line-strong);
+  background: linear-gradient(180deg, var(--panel), var(--canvas));
+}
+
+/*
+ * The axis is a lane: an empty gutter cell and a body carrying the row grid, with the lane's
+ * own padding and column gap. Declaring `gutter + --board-cols` on one grid instead looked
+ * equivalent and was not — the rows' `gap` is inside the lane body, so the ticks came out 22px
+ * wider than the bars they label, on every viewport.
+ */
+.board-scale {
+  display: grid;
+  grid-template-columns: var(--board-gutter) minmax(0, 1fr);
+  border-bottom: var(--hairline) solid var(--line-strong);
+}
+
+.board-scale-body {
   display: grid;
   grid-template-columns: var(--board-cols);
-  gap: var(--board-gap);
-  padding: 0 calc(var(--board-pad) + var(--space-2));
+  align-items: end;
+  gap: 0 var(--space-2);
+  padding: 9px var(--board-pad) 7px;
+  min-width: 0;
+}
+
+.board-scale-head {
+  grid-column: 1 / 4;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 .board-scale-track {
   grid-column: 4;
   position: relative;
-  height: 15px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: var(--space-1);
+  height: 14px;
 }
 
 .board-tick {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 0.62rem;
+  font: 500 0.62rem/1 var(--font-mono);
   color: var(--ink-faint);
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.board-scale-unit {
+  grid-column: 5;
+  text-align: right;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 .board-lanes {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: 0 var(--space-2) var(--space-2);
 }
 
-/* A tier is a band on a surface, never an edge. There is deliberately no border or rule
-   between adjacent lanes: boundary agreement is 0.239 and a drawn line would assert a cut
-   position the measurement does not identify (ADR-035, ADR-046). */
 .tier-lane {
-  border-radius: var(--radius);
-  background: var(--surface-sunken);
+  display: grid;
+  grid-template-columns: var(--board-gutter) minmax(0, 1fr);
+  border-bottom: var(--hairline) solid var(--line);
 }
 
-.tier-lane[data-parity="even"] {
-  background: color-mix(in srgb, var(--surface-sunken) 55%, var(--surface-raised));
+.tier-lane:last-child {
+  border-bottom: none;
 }
 
 .tier-lane-heading {
   margin: 0;
-  font-size: inherit;
-  font-weight: inherit;
+  border-right: var(--hairline) solid var(--line);
+  background: linear-gradient(90deg, rgb(46 204 255 / 7%), transparent);
 }
 
+/*
+ * The tier gutter is the collapse control. It carries the whole accessible name — the strip
+ * beside it is a redrawing of the same facts and is hidden from assistive technology.
+ */
 .tier-head {
-  display: grid;
-  grid-template-columns: var(--board-cols);
-  align-items: center;
-  gap: var(--board-gap);
-  width: 100%;
   appearance: none;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  padding: 7px var(--board-pad);
-  border-radius: var(--radius);
-  min-height: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 3px;
+  padding: 12px 0 12px var(--board-pad);
+  text-align: left;
+  transition: background var(--t);
 }
 
-.tier-head:hover { background: var(--surface-hover); }
-
-.tier-head:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-  /* The global focus style is a box-shadow ring; inside a dense row an outline reads better
-     and two rings read worse, so this one replaces it rather than stacking on it. */
-  box-shadow: none;
-}
-
-.tier-head-mark {
-  text-align: right;
-}
-
-.tier-head-mark::before {
-  content: "▸";
-  font-size: 0.7rem;
-  color: var(--ink-muted);
-  display: inline-block;
-}
-
-.tier-head[aria-expanded="true"] .tier-head-mark {
-  text-align: right;
-}
-
-.tier-head-mark::before {
-  content: "▾";
+.tier-head:hover {
+  background: var(--surface-hover);
 }
 
 .tier-head-name {
-  font-weight: 650;
-  font-size: 0.84rem;
-  color: var(--ink-strong);
-  white-space: nowrap;
+  font: 500 1.2rem/1 var(--font-mono);
+  color: var(--accent-bright);
 }
 
-.tier-head-detail {
+.tier-head-count {
+  font: 500 0.63rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.tier-head-toggle {
+  margin-top: 4px;
+  font: 500 0.8rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  transition: transform var(--t);
+}
+
+.tier-head[aria-expanded="false"] .tier-head-toggle {
+  transform: rotate(-90deg);
+}
+
+.tier-lane-body {
+  min-width: 0;
+  padding: 6px var(--board-pad) 8px;
+}
+
+/* The strip redraws the tier's envelope on the rows' own columns. Never an edge. */
+.tier-strip {
+  display: grid;
+  grid-template-columns: var(--board-cols);
+  align-items: center;
+  gap: 0 var(--space-2);
+  min-height: 26px;
+}
+
+/*
+ * Columns 1-3 — rank, position, name — so the band that follows sits on column 4, the
+ * interval column, and the span on column 5, the median column. An off-by-one here squeezes
+ * the band into the median's 4.2rem and the picture stops being on the rows' scale.
+ */
+.tier-strip-meta {
+  grid-column: 1 / 4;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   min-width: 0;
 }
 
-.tier-head-meta {
-  font-size: 0.72rem;
-  color: var(--ink-muted);
+.tier-strip-count {
+  font: 500 0.63rem/1 var(--font-mono);
+  color: var(--ink-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.dot-sep::before {
-  content: " · ";
-}
-
 .tier-head-mix {
-  display: inline-flex;
-  gap: 4px;
+  display: flex;
+  gap: var(--space-2);
+  flex: none;
 }
 
 .mix-chip {
-  font-size: 0.6rem;
-  letter-spacing: 0.04em;
-  padding: 1px 4px;
-  border-radius: 2px;
-  border: 1px solid currentcolor;
-  /* No opacity. A 0.85 multiplier on a hue already close to the AA floor is how a colour that
-     passes in the token table fails in the rendered page, and axe reads the composited pixel
-     rather than the declaration. */
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font: 600 0.55rem/1 var(--font-sans);
+  letter-spacing: 0.1em;
 }
 
 .mix-chip b {
-  font-weight: 700;
-  margin-left: 2px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 .mix-chip[data-pos="QB"] { color: var(--pos-qb); }
@@ -1045,113 +1514,121 @@ table.sheet tbody tr[data-selected="true"] td {
 .mix-chip[data-pos="WR"] { color: var(--pos-wr); }
 .mix-chip[data-pos="TE"] { color: var(--pos-te); }
 
-/* The tier's own P25-P75 envelope, on the board's shared scale. Adjacent bands overlap
-   wherever the values do, which is the point: it makes the softness visible instead of
-   asserted in a footnote. */
 .tier-head-band {
+  grid-column: 4;
   position: relative;
   height: 8px;
-  border-radius: 999px;
-  background: var(--surface-active);
-  min-width: 40px;
+  background: rgb(46 204 255 / 7%);
 }
 
 .tier-band-fill {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 999px;
-  background: var(--rule-strong);
+  inset-block: 0;
+  /*
+   * Nearly flat, not a strong gradient: this band is the tier's own P25-P75 envelope and its
+   * *left* end is as much of the claim as its right. A steep fade made the low end invisible,
+   * which is the end that shows a tier overlapping the one below it.
+   */
+  background: linear-gradient(90deg, rgb(46 204 255 / 26%), rgb(46 204 255 / 38%));
+  border-left: var(--hairline) solid var(--line-bright);
+  border-right: var(--hairline) solid var(--line-bright);
 }
 
 .tier-head-span {
-  font-size: 0.66rem;
-  color: var(--ink-muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  grid-column: 5;
   text-align: right;
+  font: 500 0.63rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  white-space: nowrap;
 }
 
 .tier-rows {
   list-style: none;
   margin: 0;
-  padding: 0 0 var(--space-1);
+  padding: 0;
 }
 
 .board-row {
   display: grid;
   grid-template-columns: var(--board-cols);
   align-items: center;
-  gap: var(--board-gap);
-  padding: 0 var(--board-pad);
-  /* 24px is the WCAG 2.2 AA minimum target size, and the row is the target. */
-  min-height: 24px;
+  gap: 0 var(--space-2);
+  min-height: var(--row-height);
   cursor: pointer;
-  border-radius: 2px;
+  transition: background var(--t);
 }
 
-.board-row:hover { background: var(--surface-hover); }
+.board-row:hover {
+  background: var(--surface-hover);
+}
 
 .board-row:focus-visible {
-  outline: 2px solid var(--accent);
+  /* Inset: a row sits flush against its neighbours, so an outset ring would be clipped by the
+     next row rather than drawn around this one. */
+  outline: var(--focus-ring);
   outline-offset: -2px;
-  /* The global focus style is a box-shadow ring; inside a dense row an outline reads better
-     and two rings read worse, so this one replaces it rather than stacking on it. */
-  box-shadow: none;
 }
 
 .board-row[data-selected="true"] {
-  background: var(--surface-active);
+  background: var(--surface-selected);
 }
 
 .row-rank {
-  font-size: 0.76rem;
-  color: var(--ink-muted);
+  font: 500 0.72rem/1 var(--font-mono);
+  color: var(--ink-faint);
   text-align: right;
-  font-variant-numeric: tabular-nums;
+  padding-right: var(--space-1);
 }
 
 .row-pos {
   justify-self: start;
 }
 
-.row-pos b {
-  font-weight: 700;
-  margin-left: 1px;
-}
-
 .row-name {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .row-name-text {
-  font-size: 0.8rem;
-  color: var(--ink);
+  font: 400 0.8rem/1 var(--font-sans);
+  color: var(--ink-strong);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* The uncertainty glyph. Same P25-P75 interval, same shared scale, one eighth of the width:
-   it is narrower because it no longer shares the plot with a name, not because the interval
-   was shortened. */
+/*
+ * The interval track. The source's vertical gridlines are a repeating gradient on the row
+ * itself — no elements, so a 300-row board costs nothing extra in the DOM.
+ *
+ * `--board-grid` is the tick spacing as a percentage of the track, set once on `.tier-board`
+ * from the axis's own step. The source hard-codes 20%, which matches its five-division axis
+ * and would not match ours: the step comes out of the data, so a fixed period would draw
+ * gridlines that miss every tick label above them.
+ */
+.tier-board {
+  --board-grid: 20%;
+}
+
 .row-interval {
   position: relative;
-  height: 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rule) 60%, transparent);
-  min-width: 60px;
+  height: 100%;
+  min-height: 18px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgb(46 204 255 / 11%) 0 1px,
+    transparent 1px var(--board-grid)
+  );
 }
 
 .interval-bar {
   position: absolute;
-  top: 2px;
-  bottom: 2px;
-  border-radius: 999px;
-  opacity: 0.55;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 3px;
+  opacity: 0.75;
 }
 
 .interval-bar[data-pos="QB"] { background: var(--pos-qb); }
@@ -1159,171 +1636,216 @@ table.sheet tbody tr[data-selected="true"] td {
 .interval-bar[data-pos="WR"] { background: var(--pos-wr); }
 .interval-bar[data-pos="TE"] { background: var(--pos-te); }
 
+/* The median: the source's 7px glowing square, not a tick. */
 .interval-median {
   position: absolute;
-  top: -1px;
-  bottom: -1px;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--ink);
-  border-radius: 1px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
 }
 
+.interval-median[data-pos="QB"] { background: var(--pos-qb); box-shadow: 0 0 9px var(--pos-qb); }
+.interval-median[data-pos="RB"] { background: var(--pos-rb); box-shadow: 0 0 9px var(--pos-rb); }
+.interval-median[data-pos="WR"] { background: var(--pos-wr); box-shadow: 0 0 9px var(--pos-wr); }
+.interval-median[data-pos="TE"] { background: var(--pos-te); box-shadow: 0 0 9px var(--pos-te); }
+
 .row-value {
-  font-size: 0.78rem;
   text-align: right;
+  font: 500 0.78rem/1 var(--font-mono);
+  color: var(--ink-accent);
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
 }
 
 .board-axis {
-  border-top: 1px solid var(--rule);
-  padding-top: 4px;
-  padding-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px var(--board-pad);
+  border-top: var(--hairline) solid var(--line);
 }
 
 .board-axis-title {
-  grid-column: 4;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--ink-muted);
-  text-align: center;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
-/* -------------------------------------------------------------- draft rail */
+/* The written scale. Redundant while the tick strip is on screen; the reference once it is not. */
+.board-axis-range {
+  display: none;
+  font: 500 0.6rem/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
 
-/*
- * The rail shares one grid between its scale header and its rows, for the same reason the
- * board does: "this bar reaches the edge of the scale" has to be a true statement about the
- * same pixels, not two layouts that happen to look similar.
+/* -------------------------------------------------------------- draft rail
+ *
+ * The design source marks its Arbitrage view "NOT PART OF THIS PASS", so this surface has no
+ * artboard. It is an extension of the same vocabulary onto the Phase-8 rail, whose semantics
+ * are unchanged: the bar is the signed gap in picks on a symmetric scale, `fair_rank` and
+ * `market_adp` are printed beside it, and no row claims points, dollars or a probability
+ * (ADR-010, ADR-040).
  */
+
 .draft-rail {
-  --rail-cols: 2.2rem minmax(0, 1.4fr) 7.4rem minmax(0, 1.6fr) 4.6rem 2.8rem;
-  --rail-gap: var(--space-2);
+  /*
+   * The bar gets the width, because the bar is the view. A 1.6fr name column left a 500px
+   * name beside a 260px bar on a 1440px screen — the geometry doing least where it is meant
+   * to do most.
+   */
+  --rail-cols: 2.8rem minmax(0, 1fr) 7.5rem minmax(0, 2.6fr) 5rem 3.4rem;
   --rail-pad: var(--space-3);
 }
 
 .rail-scale {
   display: grid;
   grid-template-columns: var(--rail-cols);
-  gap: var(--rail-gap);
-  padding: 0 var(--rail-pad) 5px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: var(--space-1);
+  gap: 0 var(--space-2);
+  padding: 9px var(--rail-pad);
+  border-bottom: var(--hairline) solid var(--line-strong);
 }
 
 .rail-scale-track {
   grid-column: 4;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: 0.62rem;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font: 500 0.6rem/1 var(--font-mono);
   color: var(--ink-faint);
+  white-space: nowrap;
 }
 
-.rail-scale-end:first-child { text-align: right; }
 .rail-scale-mid {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+/*
+ * The same scale as a full-width sentence, for the stack. The three-part strip lives in the
+ * bar's own column so its centre label sits over the bar's centre; below 768px that column is
+ * under 100px wide and the strip's own text is what pushes the document sideways.
+ */
+.rail-scale-note {
+  display: none;
+  grid-column: 1 / -1;
+  font: 500 0.6rem/1.4 var(--font-mono);
+  color: var(--ink-faint);
 }
 
 .rail-rows {
   list-style: none;
   margin: 0;
-  padding: 0 0 var(--space-2);
+  padding: 0;
 }
 
 .rail-row {
   display: grid;
   grid-template-columns: var(--rail-cols);
   align-items: center;
-  gap: var(--rail-gap);
+  gap: 0 var(--space-2);
+  min-height: 34px;
   padding: 0 var(--rail-pad);
-  min-height: 28px;
+  border-bottom: var(--hairline) solid var(--line-faint);
   cursor: pointer;
+  transition: background var(--t);
 }
 
-.rail-row:hover { background: var(--surface-hover); }
+.rail-row:last-child {
+  border-bottom: none;
+}
+
+.rail-row:hover {
+  background: var(--surface-hover);
+}
 
 .rail-row:focus-visible {
-  outline: 2px solid var(--accent);
+  /* Inset: a row sits flush against its neighbours, so an outset ring would be clipped by the
+     next row rather than drawn around this one. */
+  outline: var(--focus-ring);
   outline-offset: -2px;
-  /* The global focus style is a box-shadow ring; inside a dense row an outline reads better
-     and two rings read worse, so this one replaces it rather than stacking on it. */
-  box-shadow: none;
 }
 
-.rail-row[data-selected="true"] { background: var(--surface-active); }
+.rail-row[data-selected="true"] {
+  background: var(--surface-selected);
+}
 
-.rail-pos { justify-self: start; }
+.rail-pos {
+  justify-self: start;
+}
 
 .rail-name {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .rail-name-text {
-  font-size: 0.8rem;
+  font: 400 0.8rem/1 var(--font-sans);
+  color: var(--ink-strong);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* One line, not two. A stacked label-over-value readout is right in the player card, where
-   it has a grid cell to itself; in a 28px row it doubles the row height and floats the label
-   away from the row it belongs to. */
 .rail-anchors {
   display: flex;
   gap: var(--space-3);
-  justify-content: flex-end;
-  font-size: 0.74rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .rail-anchor {
-  display: inline-flex;
-  gap: 4px;
-  align-items: baseline;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font: 500 0.72rem/1 var(--font-mono);
+  color: var(--ink-strong);
 }
 
 .rail-anchor-label {
-  font-size: 0.6rem;
+  font: 600 0.53rem/1 var(--font-sans);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--ink-faint);
 }
 
-/* Zero is the centre and it is where fair rank sits. Direction is a side, a glyph and a
-   word — never a hue on its own. */
+/* Zero is the centre and it is where fair rank sits. The bar grows toward the market's side. */
 .rail-delta {
   position: relative;
-  height: 14px;
-  min-width: 80px;
+  height: 100%;
+  min-height: 20px;
 }
 
 .rail-axis {
   position: absolute;
   left: 50%;
-  top: 0;
-  bottom: 0;
+  inset-block: 4px;
   width: 1px;
-  background: var(--rule-strong);
+  background: var(--line-bright);
 }
 
 .rail-fill {
   position: absolute;
-  top: 3px;
-  bottom: 3px;
-  border-radius: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 8px;
+  border: var(--hairline) solid;
 }
 
-.rail-fill[data-kind="bargain"] { background: var(--bargain); }
-.rail-fill[data-kind="premium"] { background: var(--premium); }
-.rail-fill[data-kind="even"] { background: var(--ink-faint); }
+.rail-fill[data-kind="bargain"] {
+  background: rgb(34 209 154 / 30%);
+  border-color: var(--good-line);
+}
+
+.rail-fill[data-kind="premium"] {
+  background: rgb(255 179 71 / 26%);
+  border-color: var(--warn-line);
+}
+
+.rail-fill[data-kind="even"] {
+  background: var(--ink-faint);
+  border-color: var(--ink-faint);
+}
 
 .rail-overflow {
   position: absolute;
@@ -1340,20 +1862,20 @@ table.sheet tbody tr[data-selected="true"] td {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  line-height: 1.15;
+  gap: 3px;
+  text-align: right;
 }
 
 .rail-gap-value {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font: 500 0.82rem/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
 .rail-gap-word {
-  font-size: 0.6rem;
-  color: var(--ink-muted);
+  font: 600 0.53rem/1 var(--font-sans);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--ink-faint);
 }
 
 .rail-gap[data-kind="bargain"] .rail-gap-value { color: var(--bargain); }
@@ -1361,274 +1883,702 @@ table.sheet tbody tr[data-selected="true"] td {
 .rail-gap[data-kind="even"] .rail-gap-value { color: var(--ink-muted); }
 
 .rail-score {
-  font-size: 0.78rem;
   text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-muted);
+  font: 500 0.78rem/1 var(--font-mono);
+  color: var(--ink-accent);
 }
 
-/* --------------------------------------------------- market condition panel */
+/* ------------------------------------------------------- market condition */
 
 .market-condition {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  border-left-width: 2px;
 }
 
 .market-condition-head strong {
-  display: inline;
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: 0.85rem;
 }
 
 .market-facts {
   list-style: none;
-  margin: 0;
+  margin: var(--space-3) 0 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
+  display: grid;
+  gap: var(--hairline);
+  background: var(--accent-wash-strong);
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
 }
 
 .market-facts li {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 5px;
+  background: var(--tile);
+  padding: 10px 12px;
   min-width: 0;
 }
 
 .market-fact-label {
-  font-size: 0.62rem;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
   color: var(--ink-faint);
 }
 
 .market-fact-value {
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
+  font: 500 0.76rem/1.3 var(--font-mono);
+  color: var(--ink-strong);
+  overflow-wrap: anywhere;
 }
 
 .market-fact-qualifier {
-  color: var(--ink-muted);
+  color: var(--warn);
 }
 
 .market-condition-clauses {
-  font-size: 0.76rem;
+  margin: var(--space-3) 0 0;
+  font-size: 0.75rem;
   color: var(--ink-muted);
-  margin: 0;
 }
 
-/* ------------------------------------------------------------------ legend */
+/* ---------------------------------------------------------------- legend */
 
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  font-size: 0.74rem;
-  color: var(--ink-muted);
-  padding: var(--space-2) 0 0;
   align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-3);
+  padding: 9px var(--space-3);
+  border: var(--hairline) solid var(--line);
+  background: var(--accent-wash);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
 }
 
 .legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
+  font: 400 0.72rem/1.3 var(--font-sans);
+}
+
+.legend-item strong {
+  color: var(--ink-strong);
 }
 
 .legend-swatch {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
+  width: 7px;
+  height: 7px;
   flex: none;
 }
 
-.legend-swatch[data-pos="QB"] { background: var(--pos-qb); }
-.legend-swatch[data-pos="RB"] { background: var(--pos-rb); }
-.legend-swatch[data-pos="WR"] { background: var(--pos-wr); }
-.legend-swatch[data-pos="TE"] { background: var(--pos-te); }
+.legend-swatch[data-pos="QB"] { background: var(--pos-qb); box-shadow: 0 0 7px var(--pos-qb); }
+.legend-swatch[data-pos="RB"] { background: var(--pos-rb); box-shadow: 0 0 7px var(--pos-rb); }
+.legend-swatch[data-pos="WR"] { background: var(--pos-wr); box-shadow: 0 0 7px var(--pos-wr); }
+.legend-swatch[data-pos="TE"] { background: var(--pos-te); box-shadow: 0 0 7px var(--pos-te); }
 
 .legend-rule {
-  width: 18px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--rule-strong);
+  width: 22px;
+  height: 3px;
   flex: none;
+  background: rgb(46 204 255 / 45%);
 }
 
 .legend-bar {
-  width: 16px;
-  height: 6px;
-  border-radius: 2px;
+  width: 18px;
+  height: 8px;
   flex: none;
+  border: var(--hairline) solid;
 }
 
-.legend-bar[data-kind="bargain"] { background: var(--bargain); }
-.legend-bar[data-kind="premium"] { background: var(--premium); }
+.legend-bar[data-kind="bargain"] {
+  background: rgb(34 209 154 / 30%);
+  border-color: var(--good-line);
+}
 
-/* ------------------------------------------------------- player card (HUD)
+.legend-bar[data-kind="premium"] {
+  background: rgb(255 179 71 / 26%);
+  border-color: var(--warn-line);
+}
+
+/* The legend's own divider, the source's 1px vertical rule. */
+.legend-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line-strong);
+}
+
+/* ------------------------------------------------------------ player card
  *
- * One DOM, two presentations, chosen by the space available rather than by a user-agent
- * string: a centred card where there is width for it, and a full-height sheet on a phone,
- * where a centred card would put the readouts a drafter needs behind a scroll and shrink
- * every touch target. Native `<dialog>` + `showModal()` supplies focus trapping, Escape and
- * an inert background in both, so the responsive decision costs no accessibility.
+ * Three variants, each grounded in a real artboard, chosen by viewport
+ * (`docs/DESIGN_SOURCE_MAP.md` section 4):
+ *
+ *   >=1100px  1c "recon sweep" click state — a 17rem identity rail beside the detail pane
+ *   768-1099  1a "tactical dossier"        — the rail becomes a header band, sections stack
+ *   <768px    1b "segmented scope"         — a full-height sheet with three tabs, no long scroll
+ *
+ * One DOM serves all three. The rail is always present and always carries the accessible
+ * title; the layout moves it. Native `<dialog>` + `showModal()` supplies focus trapping,
+ * Escape and an inert background in every variant, so the responsive decision costs no
+ * accessibility.
  */
 
 dialog.player-detail {
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
+  border: none;
+  border-radius: 0;
+  background: transparent;
   color: var(--ink);
   padding: 0;
-  width: min(48rem, calc(100vw - 2rem));
-  max-height: min(46rem, calc(100vh - 3rem));
-  box-shadow: var(--shadow-pop);
-  overflow: hidden;
+  width: min(64rem, calc(100vw - 3rem));
+  max-height: min(48rem, calc(100vh - 3rem));
+  overflow: visible;
 }
 
 dialog.player-detail::backdrop {
-  background: rgb(10 14 20 / 55%);
+  background: rgb(2 6 12 / 78%);
+}
+
+/* The source's frame: a 1px gradient border clipped to the same cut corners as its fill. */
+.detail-frame {
+  --notch: 20px;
+
+  background: linear-gradient(
+    140deg,
+    rgb(102 241 255 / 50%),
+    rgb(37 99 169 / 20%) 55%,
+    rgb(46 204 255 / 35%)
+  );
+  padding: 1px;
+  box-shadow: var(--shadow-pop);
+  max-height: inherit;
+  /*
+   * A single-cell grid whose one row is `minmax(0, 1fr)`.
+   *
+   * That row definition is the whole height chain: an implicit `auto` row is sized by its
+   * content, so the card would grow past the frame's `max-height` and the panes inside it
+   * would never scroll — which is exactly what the first draft did, at 1,002px inside a 768px
+   * frame. `minmax(0, 1fr)` resolves against the capped container instead.
+   */
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
 }
 
 .detail-card {
+  --notch: 20px;
+
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  background: var(--panel-raised);
+  min-height: 0;
+}
+
+.detail-identity-block {
   display: flex;
   flex-direction: column;
-  max-height: inherit;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/*
+ * The verdict panel from artboard 1a: one sentence, tinted by direction, above the market
+ * grid. The sentence is `describeGap`'s, which is the same wording the rail and the table's
+ * screen-reader text use — one phrasing of one artifact value everywhere it appears.
+ */
+.market-verdict {
+  padding: 12px 14px;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--accent-wash);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.market-verdict strong {
+  font-weight: 600;
+  color: var(--ink-strong);
+}
+
+.market-verdict[data-kind="bargain"] {
+  border-color: var(--good-line);
+  background: var(--good-wash);
+}
+
+.market-verdict[data-kind="bargain"] strong {
+  color: var(--good);
+}
+
+.market-verdict[data-kind="premium"] {
+  border-color: var(--warn-line);
+  background: var(--warn-wash);
+}
+
+.market-verdict[data-kind="premium"] strong {
+  color: var(--warn);
+}
+
+/* -- the identity rail (1c) ------------------------------------------------ */
+
+.detail-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  background: linear-gradient(180deg, rgb(46 204 255 / 8%), rgb(5 11 20 / 40%));
+  border-right: var(--hairline) solid var(--line-strong);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.detail-eyebrow {
+  font: 500 0.6rem/1.3 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.detail-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.detail-identity h2 {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.detail-subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.detail-posrank {
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+  border: var(--hairline) solid var(--line-bright);
+  padding: 4px 7px;
+}
+
+/* The one number the whole card is organised around. */
+.rail-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: var(--space-4) 0;
+  border-top: var(--hairline) solid var(--line-strong);
+  border-bottom: var(--hairline) solid var(--line-strong);
+}
+
+.rail-hero-label {
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rail-hero-value {
+  font: 500 3rem/1 var(--font-mono);
+  color: var(--accent-bright);
+  text-shadow: 0 0 26px rgb(102 241 255 / 40%);
+}
+
+.rail-hero-note {
+  font: 400 0.72rem/1.45 var(--font-sans);
+  color: var(--ink-muted);
+}
+
+.rail-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.rail-verdict > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rail-verdict-label {
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rail-verdict-value {
+  font: 500 1.1rem/1 var(--font-mono);
+  color: var(--ink);
+}
+
+.rail-verdict-value[data-kind="bargain"] { color: var(--bargain); }
+.rail-verdict-value[data-kind="premium"] { color: var(--premium); }
+.rail-verdict-value[data-kind="accent"] { color: var(--accent-bright); }
+
+.rail-verdict-note {
+  font: 400 0.72rem/1.45 var(--font-sans);
+  color: var(--ink-muted);
+}
+
+/* The status line in the rail: a glowing dot plus the words, never colour alone. */
+.rail-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 0.78rem/1.3 var(--font-mono);
+  color: var(--good);
+}
+
+.rail-status[data-meaningful="true"] {
+  color: var(--warn);
+}
+
+.rail-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: currentcolor;
+  box-shadow: 0 0 7px currentcolor;
+}
+
+/* -- the detail pane ------------------------------------------------------- */
+
+.detail-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
 }
 
 .detail-head {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--rule);
-  background: var(--surface-sunken);
+  padding: var(--space-4) var(--space-4) 0;
   flex: none;
 }
 
-.detail-identity {
+.detail-head-title {
+  display: none;
   min-width: 0;
-}
-
-.detail-head h2 {
-  font-size: 1.15rem;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
-}
-
-.detail-subtitle {
-  font-size: 0.78rem;
-  color: var(--ink-muted);
-  margin-top: 4px;
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.detail-posrank {
-  font-variant-numeric: tabular-nums;
+  flex: 1;
 }
 
 .detail-close {
-  margin-left: auto;
   appearance: none;
-  border: 1px solid var(--rule-strong);
-  background: var(--surface-raised);
-  color: var(--ink-muted);
-  border-radius: var(--radius);
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  background: transparent;
+  border: var(--hairline) solid var(--line-bright);
+  color: var(--ink-accent);
+  font: 600 0.62rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
   cursor: pointer;
-  font: inherit;
-  line-height: 1;
-  /* 32px square: comfortably over the WCAG 2.2 AA minimum, and reachable with a thumb. */
-  min-width: 32px;
-  min-height: 32px;
   flex: none;
+  transition: all var(--t);
 }
 
 .detail-close:hover {
-  background: var(--surface-hover);
-  color: var(--ink);
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
+  box-shadow: var(--glow-soft);
+}
+
+.detail-close-glyph {
+  font: 500 0.8rem/1 var(--font-mono);
+}
+
+/* The tab bar: rendered only in the mobile variant (1b). */
+.detail-tabs {
+  display: flex;
+  gap: var(--hairline);
+  margin: var(--space-3) var(--space-4) 0;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--accent-wash-strong);
+  flex: none;
+}
+
+.detail-tabs button {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 4px;
+  border: none;
+  background: var(--tile);
+  color: var(--ink-faint);
+  font: 600 0.62rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--t);
+}
+
+.detail-tabs button[aria-selected="true"] {
+  background: rgb(46 204 255 / 16%);
+  color: var(--accent-bright);
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .detail-body {
-  padding: var(--space-3) var(--space-4) var(--space-4);
+  padding: var(--space-4);
   overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/*
+ * The source's section header: mono index, tracked label, a rule fading right, and a badge on
+ * the right that says what kind of thing the section is. The index is decorative and hidden.
+ */
+.detail-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.detail-section-index {
+  font: 500 0.63rem/1 var(--font-mono);
+  color: var(--accent);
+}
+
+.detail-section-head h3 {
+  font-size: 0.72rem;
+  letter-spacing: var(--track-header);
+  color: var(--ink-strong);
+  white-space: nowrap;
+}
+
+.detail-section-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(46 204 255 / 40%), rgb(46 204 255 / 0%));
+}
+
+.detail-section-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border: var(--hairline) solid var(--line-strong);
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.detail-badge-label {
+  color: var(--ink-faint);
+}
+
+.detail-section-badge[data-tone] .confidence-meter {
+  color: var(--warn);
+}
+
+.detail-section-badge[data-tone="warn"] {
+  color: var(--warn);
+  border-color: var(--warn-line);
+  background: var(--warn-wash);
+}
+
+.detail-section-badge[data-tone="good"] {
+  color: var(--good);
+  border-color: var(--good-line);
+  background: var(--good-wash);
+}
+
+/*
+ * The distribution rail. The source draws the simulated interval as a track with the P25-P75
+ * band and a glowing median, with P10 and P90 as the endpoints. Every coordinate is an
+ * artifact quantile; nothing here is computed.
+ */
+.dist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dist-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dist-title {
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+
+.dist-meta {
+  font: 500 0.6rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.dist-track {
+  position: relative;
+  height: 30px;
+  border-left: var(--hairline) solid var(--line-bright);
+  border-right: var(--hairline) solid var(--line-bright);
+  background: linear-gradient(180deg, rgb(46 204 255 / 5%), transparent);
+}
+
+.dist-track::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.dist-band {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  background: linear-gradient(90deg, rgb(46 204 255 / 20%), rgb(46 204 255 / 50%));
+  border-top: var(--hairline) solid rgb(102 241 255 / 50%);
+  border-bottom: var(--hairline) solid rgb(102 241 255 / 50%);
+}
+
+.dist-median {
+  position: absolute;
+  inset-block: 0;
+  width: 2px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 10px rgb(102 241 255 / 90%);
+}
+
+.dist-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font: 500 0.63rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.dist-scale b {
+  font-weight: 500;
+  color: var(--ink-accent);
+}
+
+.detail-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+/* The status strip: fields, not prose. */
+.status-strip {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.readout-grid {
-  display: grid;
-  gap: var(--space-3);
-  grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 100%), 1fr));
-}
-
-/* The two grids a drafter reads first sit on a recessed panel; everything else is plain, so
-   hierarchy comes from surface and weight rather than from a border around each number. */
-.readout-grid-primary,
-.readout-grid-market {
-  background: var(--surface-sunken);
-  border-radius: var(--radius);
-  padding: var(--space-3);
-}
-
-.readout-grid-more,
-.readout-grid-status {
-  grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 1fr));
-  gap: var(--space-2) var(--space-3);
-}
-
-.detail-empty {
+.status-headline {
   margin: 0;
-  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  border: var(--hairline) solid var(--good-line);
+  background: var(--good-wash);
+  font: 600 0.78rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--good);
 }
 
-.status-strip {
-  border-left: 3px solid var(--rule-strong);
-  padding: var(--space-2) var(--space-3);
-  background: var(--surface-sunken);
-  border-radius: 0 var(--radius) var(--radius) 0;
+.status-headline::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: currentcolor;
+  box-shadow: 0 0 10px currentcolor;
 }
 
-.status-strip[data-meaningful="true"] {
-  border-left-color: var(--warn);
+.status-headline[data-meaningful="true"] {
+  border-color: var(--warn-line);
+  background: var(--warn-wash);
+  color: var(--warn);
+}
+
+.status-headline[data-known="false"] {
+  border-color: var(--line-strong);
+  background: var(--accent-wash);
+  color: var(--ink-muted);
 }
 
 .status-strip-label {
-  display: block;
-  font-size: 0.62rem;
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--ink-muted);
-  margin-bottom: var(--space-2);
+  color: var(--ink-faint);
 }
 
 .status-note {
+  margin: 0;
   font-size: 0.76rem;
   color: var(--ink-muted);
-  margin: var(--space-2) 0 0;
 }
 
 .status-annotation {
-  font-size: 0.68rem;
+  margin: 0;
+  font-size: 0.7rem;
   color: var(--ink-faint);
-  margin: var(--space-2) 0 0;
 }
 
 .detail-more > summary {
   cursor: pointer;
-  font-size: 0.72rem;
+  font: 600 0.62rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-  padding: var(--space-1) 0;
-  border-bottom: 1px solid var(--rule);
+  color: var(--ink-faint);
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline) solid var(--line);
   margin-bottom: var(--space-3);
 }
 
-.detail-more > summary:hover { color: var(--ink); }
+.detail-more > summary:hover {
+  color: var(--accent-bright);
+}
 
 .detail-methodology {
   margin: 0;
@@ -1642,63 +2592,90 @@ dialog.player-detail::backdrop {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-}
-
-.flag-list li {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+  color: var(--ink-muted);
 }
 
 .flag-list .flag-name {
   font-weight: 600;
+  color: var(--warn);
 }
 
-/* Kept for the Data view's build table, which is a definition list of the same shape. */
+.detail-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: 12px var(--space-4);
+  border-top: var(--hairline) solid var(--line-strong);
+  background: rgb(5 11 20 / 60%);
+  flex: none;
+}
+
+.detail-foot-stamp {
+  font: 500 0.62rem/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------- data view */
+
 dl.facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
-  gap: var(--space-2) var(--space-4);
+  gap: var(--hairline);
+  background: var(--accent-wash-strong);
   margin: 0;
 }
 
-dl.facts > div { min-width: 0; }
+dl.facts > div {
+  min-width: 0;
+  background: var(--tile);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
 
 dl.facts dt {
-  font-size: 0.7rem;
-  color: var(--ink-muted);
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--ink-faint);
 }
 
 dl.facts dd {
   margin: 0;
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
+  font: 500 0.78rem/1.3 var(--font-mono);
+  color: var(--ink-strong);
   overflow-wrap: anywhere;
 }
 
-.annotation-note {
-  font-size: 0.75rem;
-  color: var(--ink-muted);
-  border-left: 3px solid var(--rule-strong);
-  padding: var(--space-1) var(--space-3);
-  margin-top: var(--space-2);
-  background: var(--surface-sunken);
-}
-
-/* --------------------------------------------------------------- data view */
-
+/*
+ * Data is deliberately the quietest surface in the product: it inherits the system but is a
+ * reference document, so it keeps a readable measure and drops the HUD's tracking from body
+ * copy. This is where every methodology explanation lives, once (ADR-058).
+ */
 .prose {
   max-width: 72ch;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
 }
 
-/* Reference sections side by side once there is room for two readable measures. Each column
-   keeps its own line length; the page stops being a narrow ribbon on a wide monitor. */
+.prose strong {
+  color: var(--ink-strong);
+}
+
 .data-columns {
   display: grid;
-  /* `min(30rem, 100%)` rather than a bare `30rem`: a bare minimum larger than the container
-     is a grid track wider than the page, which is how the Data view acquired 168px of
-     horizontal overflow at the 320px width WCAG Reflow names. */
+  /*
+   * `min(30rem, 100%)` rather than a bare `30rem`: a bare minimum larger than the container is
+   * a grid track wider than the page, which is how the Data view acquired 168px of horizontal
+   * overflow at the 320px width WCAG Reflow names.
+   */
   grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
   gap: var(--space-2) var(--space-6);
   align-items: start;
@@ -1711,6 +2688,7 @@ dl.facts dd {
 .prose h3 {
   margin-top: var(--space-4);
   margin-bottom: var(--space-2);
+  color: var(--ink-strong);
 }
 
 .definition-grid {
@@ -1718,22 +2696,26 @@ dl.facts dd {
   grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
   gap: var(--space-3) var(--space-5);
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .definition-grid dt {
-  font-weight: 650;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .definition-grid dd {
   margin: 0 0 var(--space-2);
   color: var(--ink-muted);
+  line-height: 1.55;
 }
 
 .limitations {
   margin: 0;
   padding-left: 1.1rem;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -1741,7 +2723,7 @@ dl.facts dd {
 }
 
 .limitations strong {
-  font-weight: 650;
+  color: var(--ink-strong);
 }
 
 .source-list {
@@ -1751,42 +2733,124 @@ dl.facts dd {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
   max-width: 74ch;
 }
 
 .source-list li strong {
-  font-weight: 650;
+  color: var(--ink-strong);
 }
 
 .footer {
-  border-top: 1px solid var(--rule);
+  border-top: var(--hairline) solid var(--line);
   margin-top: var(--space-6);
   padding-top: var(--space-3);
-  font-size: 0.75rem;
-  color: var(--ink-muted);
+  font: 400 0.7rem/1.5 var(--font-sans);
+  color: var(--ink-faint);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
 }
 
-/* ------------------------------------------------------------- responsive */
+/* ------------------------------------------------------------- responsive
+ *
+ * Two breakpoints, and each one changes a small number of variables rather than restating a
+ * layout. 1023px is the tablet boundary; 767px is where the Tier Board becomes the source's
+ * tier stack (2b) and the player card becomes its tabbed sheet (1b).
+ */
+
+@media (max-width: 1099px) {
+  /* The card's identity rail becomes a header band: artboard 1a, plus 1b's fair-rank readout. */
+  dialog.player-detail {
+    width: min(46rem, calc(100vw - 2rem));
+  }
+
+  .detail-card {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /*
+   * The close control moves into the header band's own top-right corner, which is where both
+   * 1a and 1b put it. Absolute rather than in flow because the rail is a sibling: given a row
+   * of its own it left a band of dead space under the identity block, which is what the first
+   * draft did. The rail reserves the gutter so the two never overlap.
+   */
+  .detail-head {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    padding: 0;
+    z-index: 2;
+  }
+
+
+  .detail-rail {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: var(--hairline) solid var(--line-strong);
+    padding: var(--space-4) 5.5rem var(--space-4) var(--space-4);
+    overflow: visible;
+    flex: none;
+  }
+
+  .detail-rail > .detail-identity-block {
+    flex: 1 1 16rem;
+    min-width: 0;
+  }
+
+  .rail-hero {
+    flex: none;
+    align-items: flex-end;
+    padding: 0;
+    border: none;
+    text-align: right;
+  }
+
+  .rail-hero-note {
+    display: none;
+  }
+
+  .rail-verdict {
+    flex: 1 1 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    padding-top: var(--space-3);
+    border-top: var(--hairline) solid var(--line);
+  }
+}
 
 @media (max-width: 1023px) {
   .app {
     padding: 0 var(--space-3) var(--space-6);
   }
 
-  /* Narrower shared columns. The scale, the bands and the bars move together because they
-     all read the same three variables. */
+  .masthead,
+  .tabs-row {
+    margin: 0 calc(-1 * var(--space-3));
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+
+  /* Narrower shared columns. The scale, the strips and the bars move together because they
+     all read the same two variables. */
   .tier-board {
-    --board-cols: 2.2rem 2.9rem minmax(0, 1fr) minmax(0, 1.6fr) 3.2rem;
+    --board-gutter: 2.8rem;
+    --board-cols: 2.2rem 3.2rem minmax(0, 1fr) minmax(0, 1.5fr) 3.4rem;
   }
 
   /* A tablet drops the arbitrage score, which the table below carries, and keeps the two
      anchors: without them the bar is a magnitude with nothing to attach it to. */
   .draft-rail {
-    --rail-cols: 2rem minmax(0, 1.3fr) 6.6rem minmax(0, 1.4fr) 4.4rem;
+    --rail-cols: 2.6rem minmax(0, 1fr) 7rem minmax(0, 1.7fr) 4.6rem;
   }
 
   .rail-score {
@@ -1794,25 +2858,22 @@ dl.facts dd {
   }
 
   .controls {
-    gap: var(--space-2) var(--space-3);
+    gap: var(--space-3) var(--space-4);
   }
 
   .control-spacer {
     margin-left: 0;
     flex-basis: 100%;
   }
-
-  .search-field input {
-    /* Full width would be an over-wide control; a search box does not need 900 pixels. */
-    width: min(24rem, 100%);
-  }
 }
 
+/*
+ * 767px is the sheet breakpoint. `web/src/app/PlayerDetail.tsx` reads the same query through
+ * `useMediaQuery` to decide whether to render artboard 1b's tab bar, because a tab list is a
+ * different accessibility tree rather than a different arrangement of the same one. Move one
+ * and move the other.
+ */
 @media (max-width: 767px) {
-  :root {
-    --row-height: 40px;
-  }
-
   body {
     font-size: 15px;
   }
@@ -1821,8 +2882,20 @@ dl.facts dd {
     padding: 0 var(--space-2) var(--space-6);
   }
 
+  .masthead,
+  .tabs-row {
+    margin: 0 calc(-1 * var(--space-2));
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+  }
+
   .masthead {
-    padding: var(--space-2) 0;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+
+  .wordmark-sub {
+    display: none;
   }
 
   .masthead-meta {
@@ -1835,13 +2908,21 @@ dl.facts dd {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: var(--surface);
-    border-bottom: 1px solid var(--rule);
+    border-bottom: var(--hairline) solid var(--line-strong);
     margin: 0 calc(-1 * var(--space-2));
-    padding: var(--space-2);
+    padding: 0 var(--space-2);
+  }
+
+  .controls {
+    padding: var(--space-3) 0 var(--space-2);
+  }
+
+  .tabs-row {
+    margin: 0 calc(-1 * var(--space-2));
   }
 
   .tabs {
+    gap: var(--space-4);
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -1850,8 +2931,13 @@ dl.facts dd {
     display: none;
   }
 
+  .tabs-count {
+    display: none;
+  }
+
   .segmented button {
-    padding: 6px 10px;
+    padding: 0 10px;
+    min-width: 36px;
   }
 
   .section-actions {
@@ -1859,34 +2945,176 @@ dl.facts dd {
     flex-basis: 100%;
   }
 
-  /* A phone keeps the same five columns — the band has to stay on the rows' scale — but the
-     position-mix chips and the tier's numeric span come off, because neither is the part
-     that carries a value. */
+  /*
+   * The Tier Board becomes artboard 2b — the tier stack. The source's own caption says why:
+   * it trades the shared axis for density, which is the right trade on a phone and the wrong
+   * one on a desktop. Same DOM, same values, same scale within a row; each tier becomes a
+   * chamfered block and each player a two-line cell.
+   */
   .tier-board {
-    --board-cols: 1.9rem 2.6rem minmax(0, 1fr) minmax(0, 1.3fr) 2.9rem;
-    --board-gap: var(--space-1);
+    --board-gutter: 0;
+    --board-cols: 2.2rem 3.4rem minmax(0, 1fr);
     --board-pad: var(--space-2);
+
+    border: none;
+    background: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .board-axis {
+    border: var(--hairline) solid var(--line);
+    background: var(--accent-wash);
+    flex-wrap: wrap;
+    gap: 4px var(--space-3);
+  }
+
+  /*
+   * No shared tick strip in the stack, which is artboard 2b's own trade. A full-width strip
+   * cannot align with bars that sit inside a tier block's border and padding without hard-
+   * coding that padding, and a tick near its value reads as a tick on it. The range moves to
+   * the axis note and every row keeps its printed median.
+   */
+  .board-scale {
+    display: none;
+  }
+
+  .board-axis-range {
+    display: inline;
+  }
+
+  .board-lanes {
+    gap: var(--space-3);
+  }
+
+  .tier-lane {
+    --notch: 12px;
+
+    display: block;
+    border: var(--hairline) solid var(--line-strong);
+    background: linear-gradient(180deg, rgb(46 204 255 / 7%), rgb(5 11 20 / 20%));
+    clip-path: polygon(
+      0 0,
+      calc(100% - var(--notch)) 0,
+      100% var(--notch),
+      100% 100%,
+      var(--notch) 100%,
+      0 calc(100% - var(--notch))
+    );
+  }
+
+  .tier-lane-heading {
+    border-right: none;
+    border-bottom: var(--hairline) solid var(--line);
+    background: none;
   }
 
   .tier-head {
-    /* Touch: the header is the toggle, so it gets a comfortable target rather than 24px. */
-    min-height: 40px;
-    padding: 8px var(--board-pad);
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 44px;
+    padding: 10px var(--space-3);
   }
 
-  .tier-head-span {
+  .tier-head-name {
+    font-size: 1.05rem;
+  }
+
+  .tier-head-count {
     font-size: 0.6rem;
   }
 
+  .tier-head-toggle {
+    margin: 0 0 0 auto;
+  }
+
+  .tier-lane-body {
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+
+  /*
+   * The strip takes the *cell's* columns, not its own, so the tier band and the player bars
+   * below it still occupy identical pixels. That is the whole basis of "adjacent tier bands
+   * overlap": it is a claim about the measurement, and only true of the picture if the two
+   * are on one track.
+   */
+  /*
+   * The strip takes the *cell's* columns and the cell's own horizontal padding, so the tier
+   * band and the player bars below it occupy identical pixels. Without the padding the strip
+   * is 16px wider than the rows and the band drifts left of every bar it describes.
+   */
+  .tier-strip {
+    grid-template-columns: 2.4rem minmax(0, 1fr) 3.6rem;
+    grid-template-areas:
+      "meta meta meta"
+      "band band value";
+    gap: 7px var(--space-2);
+    padding: 0 var(--space-2) var(--space-2);
+  }
+
+  .tier-strip-meta {
+    grid-area: meta;
+  }
+
+  .tier-head-band {
+    grid-area: band;
+    align-self: center;
+  }
+
+  /*
+   * The area is named `value`, not `span`: `span` is a grid *keyword*, so `grid-area: span`
+   * parses as an invalid line name, is dropped, and the base rule's `grid-column: 5` applies
+   * instead — silently adding two implicit columns and shrinking the band to two thirds of the
+   * track it is supposed to share with the rows. Nothing warns; only a measurement finds it.
+   */
+  .tier-head-span {
+    grid-area: value;
+  }
+
+  .tier-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hairline);
+    background: var(--line-faint);
+  }
+
+  /*
+   * 2b's cell: two lines. Line one is the mark, the name and the position rank; line two is
+   * the interval on the row's own width and the median. The scale is still shared, because
+   * every row is the same width.
+   */
   .board-row {
-    min-height: 30px;
+    grid-template-columns: 2.4rem minmax(0, 1fr) 3.6rem;
+    grid-template-areas:
+      "rank name pos"
+      "interval interval value";
+    gap: 7px var(--space-2);
+    padding: 8px var(--space-2);
+    min-height: 44px;
+    background: var(--panel);
+  }
+
+  .row-rank { grid-area: rank; text-align: left; }
+  .row-pos { grid-area: pos; justify-self: end; }
+  .row-name { grid-area: name; }
+  .row-interval { grid-area: interval; min-height: 10px; }
+  .row-value { grid-area: value; }
+
+  .row-name-text {
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+
+  .board-axis {
+    padding: 8px var(--space-2);
   }
 
   /* A phone keeps name, bar and signed gap. The anchors move to the table and the card:
      three columns of tabular numbers in 390px is a column of collisions. */
   .draft-rail {
-    --rail-cols: 1.9rem minmax(0, 1.5fr) minmax(0, 1.2fr) 4.2rem;
-    --rail-gap: var(--space-1);
+    --rail-cols: 2.6rem minmax(0, 1.5fr) minmax(0, 1.2fr) 4.4rem;
     --rail-pad: var(--space-2);
   }
 
@@ -1895,54 +3123,143 @@ dl.facts dd {
   }
 
   .rail-scale-track {
-    grid-column: 3;
+    display: none;
+  }
+
+  .rail-scale-note {
+    display: block;
   }
 
   .rail-row {
-    min-height: 34px;
+    min-height: 40px;
   }
 
   .rail-delta {
     min-width: 56px;
   }
 
-  /* The card becomes a sheet: full width, anchored to the bottom edge, tall enough that the
-     primary readouts are above the fold and the thumb reaches the close control. */
+  /*
+   * The card becomes artboard 1b: a full-height sheet anchored to the bottom edge, with the
+   * three sections behind a tab bar so the highest-value readouts are above the fold and no
+   * section is behind a long scroll.
+   */
   dialog.player-detail {
     width: 100vw;
     max-width: 100vw;
-    max-height: 94vh;
-    height: auto;
+    max-height: 96vh;
     margin: auto auto 0;
-    border-radius: 10px 10px 0 0;
-    border-bottom: 0;
+  }
+
+  .detail-frame {
+    --notch: 0px;
+
+    padding: 1px 0 0;
+    max-height: 96vh;
   }
 
   .detail-card {
-    max-height: 94vh;
+    max-height: calc(96vh - 1px);
+  }
+
+  .detail-identity h2 {
+    font-size: 1.15rem;
+  }
+
+  .rail-hero-value {
+    font-size: 2.1rem;
+  }
+
+  .detail-eyebrow {
+    display: none;
+  }
+
+  /*
+   * The verdict block stays on a phone.
+   *
+   * Hiding it put the market answer behind a tab, which is the one thing a drafter on the
+   * clock reads first — artboard 1c's own caption for the same block is that it answers "is he
+   * underpriced" in under a second. It costs one wrapped row and it means fair rank, the
+   * market verdict, the arbitrage score and the status line are all on screen with no tap.
+   */
+  .rail-verdict {
+    flex-basis: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    padding-top: var(--space-2);
+    border-top: var(--hairline) solid var(--line);
+  }
+
+  .rail-verdict-value {
+    font-size: 0.95rem;
+  }
+
+  /* The sentence under the verdict is the section's job once the tab is open. */
+  .rail-verdict-note {
+    display: none;
   }
 
   .detail-head {
-    position: sticky;
-    top: 0;
-    z-index: 1;
+    padding: var(--space-3) var(--space-3) 0;
   }
 
-  .detail-head h2 {
-    font-size: 1.05rem;
+  .detail-tabs {
+    margin: var(--space-3) var(--space-3) 0;
   }
 
+  /* The tab is the section's title on a phone, so the head keeps only its badge. */
+  .detail-section-index {
+    display: none;
+  }
+
+  .detail-body {
+    padding: var(--space-3);
+    gap: var(--space-4);
+  }
+
+  .detail-foot {
+    padding: 10px var(--space-3);
+  }
+
+  /* Two to a row on a phone; the tail rule below re-derives from the same principle. */
   .readout-grid {
-    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
-    gap: var(--space-2);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  dl.facts {
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  .readout-grid > .readout:last-child:nth-child(4n + 1),
+  .readout-grid > .readout:last-child:nth-child(4n + 2),
+  .readout-grid > .readout:last-child:nth-child(4n + 3) {
+    grid-column: auto;
+  }
+
+  .readout-grid > .readout:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+
+  .detail-rail {
+    padding: var(--space-3) 3.6rem var(--space-3) var(--space-3);
+    gap: var(--space-3);
+  }
+
+  /* The close control is a square on a phone: the word costs a third of the header's width. */
+  .detail-close {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .detail-close > span:not(.detail-close-glyph) {
+    display: none;
   }
 }
 
-/* ---------------------------------------------------------- reduced motion */
+/* ---------------------------------------------------------- reduced motion
+ *
+ * The stylesheet's only transitions are colour, background and one 160ms rotation on the tier
+ * chevron. There is no animation and no keyframe anywhere, which is what makes this a true
+ * invariant rather than a check on one media query. Keep it that way.
+ */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1957,7 +3274,7 @@ dl.facts dd {
 
 @media print {
   .controls,
-  .tabs,
+  .tabs-row,
   .section-actions,
   .tier-board,
   .draft-rail {
@@ -1967,17 +3284,21 @@ dl.facts dd {
 
 /* --------------------------------------------------------------- fine input
  *
- * A coarse pointer needs a bigger row than a mouse does. This is the one place the
- * stylesheet asks about the input device rather than the viewport, because the constraint
- * really is the finger and not the width.
+ * A coarse pointer needs a bigger row than a mouse does. This is the one place the stylesheet
+ * asks about the input device rather than the width, because the constraint really is the
+ * finger and not the viewport.
  */
 
 @media (pointer: coarse) {
   .board-row {
-    min-height: 30px;
+    min-height: 34px;
   }
 
   .rail-row {
-    min-height: 34px;
+    min-height: 40px;
+  }
+
+  .tier-head {
+    min-height: 48px;
   }
 }

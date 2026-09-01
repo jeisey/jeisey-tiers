@@ -24,7 +24,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, type RefObject } from "react";
 
-import { PositionTag, StatusBadge } from "../components/primitives";
+import { ConfidenceMeter, PositionTag, StatusBadge } from "../components/primitives";
 import { EM_DASH, formatAdp, formatRank, formatScore, formatSigned } from "../data/format";
 import { CONFIDENCE_SHORT, describeGap, describeTrend } from "../data/market";
 import type { ArbitrageRow } from "../data/model";
@@ -180,7 +180,10 @@ function arbitrageColumns(onSelect: (playerId: string) => void): ColumnDef<Arbit
         return (
           <>
             <span className="muted" aria-hidden="true">
-              {CONFIDENCE_SHORT[record.confidence]}
+              <ConfidenceMeter
+                confidence={record.confidence}
+                label={CONFIDENCE_SHORT[record.confidence]}
+              />
             </span>
             <span className="visually-hidden">
               {`${CONFIDENCE_SHORT[record.confidence]} market-data quality — how much draft evidence stands behind this price`}

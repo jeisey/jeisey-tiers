@@ -37,3 +37,18 @@ invisible focus, missing assets under the Pages base path.
 | `09-schema-refusal` | Unsupported artifact contract, expected versus received |
 | `10-pages-base-path` | The same product served from `/jeisey-tiers/` |
 | `11-keyboard-focus` | Focus ring on a chart mark |
+
+Later reviews add to this set rather than replacing it, and each keeps its own directory: a
+review is evidence of what the product looked like on a date, so overwriting one loses the
+comparison. Phase 8 added `12`-`15` (collapsed and expanded tiers, the tablet rail, premiums)
+and Phase 9A added `16`-`28` — the third breakpoint, both tables on a phone, the tabbed sheet's
+three panels, the awkward player records the fixture exists to carry, and the matured market
+condition, which the default fixture cannot show.
+
+The current directories:
+
+| Directory | Review |
+|---|---|
+| `2026-08-21/` | Phase 6 — the draft sheet, first capture |
+| `2026-08-31/` | Phase 8 — the inferred HUD redesign |
+| `2026-08-31-design/` | Phase 9A — the owner's Claude Design source, implemented |

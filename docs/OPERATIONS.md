@@ -279,15 +279,33 @@ npm run typecheck
 npm run test -- --run
 npm run build                                    # root path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages path
-npm run e2e                                      # builds five sites, then 61 Playwright tests
+npm run e2e                                      # builds six sites, then 62 Playwright tests
 npm run e2e:browsers                             # the three-engine smoke — RUNNER ONLY, see below
 
 # review aids
 npm run e2e:build                                # just the sites + fixture artifacts
-npm run e2e:screens -- docs/visual-qa/<date>     # the eighteen visual-QA screens
+npm run e2e:screens -- docs/visual-qa/<date>     # the visual-QA screens
 npm run verify:board                             # rendered board vs artifact bytes, live build
 node web/tests/e2e/measure-performance.mjs       # timings on a production-scale synthetic board
+node web/tests/e2e/measure-performance.mjs --css <file>   # …with one motif neutralised
 ```
+
+**The fixture builds include a second market condition.** `/scenario/matured/` serves the same
+board priced by a sufficient cohort, with medium confidence and a measured trend, because the
+default fixture is the launch condition — uniformly `low`, null trend — and Phase 8 found that a
+suite bound to only that had frozen a state production had already left. `verify:board` can be
+pointed at it, which is the only way to check the trend column against artifact bytes:
+
+```bash
+node web/tests/e2e/static-server.mjs &
+node web/tests/e2e/verify-board.mjs \
+  --url http://localhost:4173/scenario/matured/ --data web/dist-matured/data
+```
+
+**Comparing frontend performance across sessions does not work.** Three runs of identical code in
+the development sandbox varied by up to 9×. A comparison has to be an interleaved A/B on one
+machine: build the other arm in a `git worktree`, symlink `node_modules`, and alternate the runs.
+`--css` neutralises one motif so a cost can be attributed to it — on a quiet machine.
 
 **`npm run e2e:browsers` cannot run in a development sandbox behind an egress policy.** It
 needs Firefox and WebKit, and Playwright downloads those from `cdn.playwright.dev`, which the

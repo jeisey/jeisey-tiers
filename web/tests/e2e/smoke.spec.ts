@@ -141,6 +141,50 @@ test.describe("the player card", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("dialog").getByRole("heading", { name: "Bijan Robinson" })).toBeVisible();
   });
+
+  /**
+   * The three design variants, on three engines.
+   *
+   * The card is one DOM whose *shape* changes with the viewport — a two-pane rail on a desktop,
+   * a header band on a tablet, a tab bar on a phone (`docs/DESIGN_SOURCE_MAP.md` section 4).
+   * Layout is the part that varies most between engines, and the tab bar is a genuine
+   * accessibility-tree difference rather than a rearrangement, so both are worth three runs.
+   */
+  test("takes its three design variants from the viewport", async ({ page }) => {
+    await page.goto("/");
+    await ready(page);
+    await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // Desktop, artboard 1c: the identity rail is a column beside the detail pane.
+    await page.setViewportSize({ width: 1440, height: 950 });
+    const side = await dialog.evaluate((node) => {
+      const rail = node.querySelector(".detail-rail")?.getBoundingClientRect();
+      const main = node.querySelector(".detail-main")?.getBoundingClientRect();
+      return rail && main ? { beside: rail.right <= main.left + 1 } : null;
+    });
+    expect(side?.beside, "the rail should sit beside the detail pane on a desktop").toBe(true);
+    await expect(dialog.getByRole("tablist")).toHaveCount(0);
+
+    // Tablet, artboard 1a: the rail becomes a band above it, and the sections still stack.
+    await page.setViewportSize({ width: 900, height: 950 });
+    const stacked = await dialog.evaluate((node) => {
+      const rail = node.querySelector(".detail-rail")?.getBoundingClientRect();
+      const main = node.querySelector(".detail-main")?.getBoundingClientRect();
+      return rail && main ? { above: rail.bottom <= main.top + 1 } : null;
+    });
+    expect(stacked?.above, "the rail should sit above the detail pane on a tablet").toBe(true);
+    await expect(dialog.getByRole("tablist")).toHaveCount(0);
+
+    // Phone, artboard 1b: three tabs, one panel.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(dialog.getByRole("tablist")).toBeVisible();
+    await expect(dialog.getByRole("tab")).toHaveCount(3);
+    await expect(dialog.getByRole("tabpanel")).toHaveCount(1);
+    await dialog.getByRole("tab", { name: "Draft market" }).click();
+    await expect(dialog.getByText("MFL ADP", { exact: true })).toBeVisible();
+  });
 });
 
 test("exports the filtered rows as CSV", async ({ page }) => {

@@ -157,6 +157,142 @@ const SCREENS = [
       await page.getByRole("button", { name: /median simulated VORP/ }).first().focus();
     },
   },
+
+  /*
+   * Phase 9A additions.
+   *
+   * The design source has three player-card variants and two board treatments, so a review
+   * that only looks at a desktop and a phone cannot tell a designed variant from a compressed
+   * one. These screens cover the third breakpoint, both tables on a phone, the awkward player
+   * records the fixture exists to carry, and the market condition the launch fixture cannot
+   * show.
+   */
+  {
+    // Narrow tablet: the last width before the board becomes the stack and the card becomes
+    // the sheet. If anything is going to be a squeezed desktop, it is this one.
+    name: "16-narrow-tablet-tiers",
+    path: "/",
+    viewport: { width: 768, height: 1100 },
+    fullPage: true,
+  },
+  {
+    name: "17-narrow-tablet-player-detail",
+    path: "/",
+    viewport: { width: 768, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "18-mobile-player-detail-market-tab",
+    path: "/",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await dialog.getByRole("tab", { name: "Draft market" }).click();
+    },
+  },
+  {
+    name: "19-mobile-player-detail-status-tab",
+    path: "/",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await dialog.getByRole("tab", { name: "Current status" }).click();
+    },
+  },
+  {
+    // No status record published at all, which is not the same as no designation.
+    name: "20-player-detail-no-status-record",
+    path: "/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Deebo Gray", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // The largest positive rank gap on the fixture board, and an IR designation with it.
+    name: "21-player-detail-large-bargain",
+    path: "/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Jaylin Lane", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // A structural quarterback premium: the number that broke the Phase-6 rail's axis.
+    name: "22-player-detail-large-premium",
+    path: "/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Joe Burrow", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "23-mobile-tier-table",
+    path: "/",
+    viewport: { width: 390, height: 900 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("heading", { name: "Tier table" }).scrollIntoViewIfNeeded();
+    },
+  },
+  {
+    name: "24-mobile-arbitrage-table",
+    path: "/?view=arbitrage",
+    viewport: { width: 390, height: 900 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("heading", { name: "Arbitrage table" }).scrollIntoViewIfNeeded();
+    },
+  },
+  {
+    name: "25-mobile-data",
+    path: "/?view=data",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  {
+    // The matured market: medium confidence, a measured trend, a sufficient cohort. The launch
+    // fixture is uniformly low with a null trend, and a review that only sees that one is the
+    // defect Phase 8 found in the test suite.
+    name: "26-matured-market-arbitrage",
+    path: "/scenario/matured/?view=arbitrage",
+    viewport: { width: 1440, height: 1100 },
+    fullPage: false,
+  },
+  {
+    name: "27-matured-market-player-detail",
+    path: "/scenario/matured/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // The other degraded mode: model values intact, every status annotation gone.
+    name: "28-degraded-status",
+    path: "/scenario/no-status/",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+    expectMissingArtifact: true,
+  },
 ];
 
 const outDir = resolve(process.argv[2] ?? "docs/visual-qa/local");

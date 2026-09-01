@@ -129,6 +129,24 @@ MFL publicly promotes its developer API for third-party add-ons, but exact 2026 
 
 Commercial; use only under purchased agreement/license.
 
+### Vendored fonts
+
+**Exo 2** and **JetBrains Mono**, both **SIL Open Font License 1.1**, added in Phase 9A under
+`web/src/assets/fonts/` with their licence files beside them
+(`Exo2-OFL.txt`, `JetBrainsMono-OFL.txt`).
+
+The OFL permits redistribution and web embedding of the font software, including bundled inside
+a larger work, provided the licence travels with it and the fonts are not sold on their own.
+Both conditions hold here. They are the Google Fonts Latin and Latin-Ext variable subsets, 115 KB
+in total, retrieved on 2026-08-31.
+
+They are **vendored rather than linked**, and that is a privacy decision as much as an
+architectural one: a `fonts.googleapis.com` stylesheet makes every visitor's browser announce
+itself to a third party on first paint. Section 11 says prefer no third-party behavioural
+collection, `docs/ARCHITECTURE.md` section 3.2 forbids a third-party call in the critical render
+path, and `web/tests/e2e/board.spec.ts` fails any request that leaves localhost. The site makes
+no cross-origin request at all.
+
 ### Software licence
 
 **Deliberately unresolved (Phase 7, 2026-08-22).** The repository carries no `LICENSE` file, and Phase 7 did not add one. Making a repository public is a visibility decision; choosing a software licence is a separate rights decision that belongs to the project owner, and picking one on their behalf because the code became readable would be choosing for them.

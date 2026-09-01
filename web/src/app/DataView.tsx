@@ -22,6 +22,7 @@
  * finding this product chose not to hide.
  */
 
+import { SectionHead } from "../components/primitives";
 import type { Degradation } from "../data/bundle";
 import { formatEastern, formatInteger } from "../data/format";
 import {
@@ -62,7 +63,7 @@ export function DataView({
   return (
     <div className="section">
       <section className="section" aria-labelledby="what-heading">
-        <h2 id="what-heading">What this is</h2>
+        <SectionHead index="01" id="what-heading" title="What this is" />
         <div className="prose">
           <p>
             <strong>Tier board</strong> — intrinsic, league-relative football value. The model
@@ -81,7 +82,7 @@ export function DataView({
       </section>
 
       <section className="section" aria-labelledby="definitions-heading">
-        <h2 id="definitions-heading">Definitions</h2>
+        <SectionHead index="02" id="definitions-heading" title="Definitions" />
         <dl className="definition-grid">
           <div>
             <dt>Fair rank</dt>
@@ -180,7 +181,7 @@ export function DataView({
       </section>
 
       <section className="section" aria-labelledby="model-heading">
-        <h2 id="model-heading">Current build</h2>
+        <SectionHead index="03" id="model-heading" title="Current build" />
         <div className="table-scroll">
           <table className="sheet">
             <caption>Read from the build metadata this page loaded.</caption>
@@ -227,7 +228,7 @@ export function DataView({
       </section>
 
       <section className="section" aria-labelledby="freshness-heading">
-        <h2 id="freshness-heading">Freshness and source status</h2>
+        <SectionHead index="04" id="freshness-heading" title="Freshness and source status" />
         <div className="table-scroll">
           <table className="sheet">
             <caption>Every row is reported by the build, not inferred by this page.</caption>
@@ -298,7 +299,7 @@ export function DataView({
 
       <div className="data-columns">
       <section className="section" aria-labelledby="market-heading">
-        <h2 id="market-heading">Market provenance</h2>
+        <SectionHead index="05" id="market-heading" title="Market provenance" />
         <div className="prose">
           <p>
             The market price is {marketSourceLabel(market?.source_id ?? "myfantasyleague_adp")} and
@@ -342,7 +343,7 @@ export function DataView({
       </section>
 
       <section className="section" aria-labelledby="limitations-heading">
-        <h2 id="limitations-heading">Current limitations</h2>
+        <SectionHead index="06" id="limitations-heading" title="Current limitations" />
         <ul className="limitations">
           <li>
             <strong>Exact tier edges are soft.</strong> Tier membership reproduces across
@@ -421,7 +422,7 @@ export function DataView({
       </section>
 
       <section className="section" aria-labelledby="sources-heading">
-        <h2 id="sources-heading">Sources and attribution</h2>
+        <SectionHead index="07" id="sources-heading" title="Sources and attribution" />
         <ul className="source-list">
           <li>
             <strong>nflverse</strong> — play-by-play, rosters, depth charts, snap counts, draft and

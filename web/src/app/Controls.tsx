@@ -6,7 +6,7 @@
  * (`docs/UX_SPEC.md` section 3).
  */
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Segmented } from "../components/primitives";
 import type { AppState, PositionFilter, ScoringValue, TeamCount, ViewId } from "../data/state";
@@ -22,41 +22,54 @@ export function ViewTabs({
   view,
   onChange,
   arbitrageAvailable,
+  rowCount,
 }: {
   readonly view: ViewId;
   readonly onChange: (view: ViewId) => void;
   readonly arbitrageAvailable: boolean;
+  /**
+   * The design source prints `{{ shownCount }} OF 300 ROWS` beside its navigation. Both
+   * numbers are counts of rows the current filters select against the rows the build
+   * published; nothing here is a literal and nothing is computed from a value.
+   */
+  readonly rowCount?: { readonly shown: number; readonly total: number } | undefined;
 }): React.JSX.Element {
   return (
-    <div className="tabs" role="tablist" aria-label="Board">
-      {VIEW_TABS.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          role="tab"
-          id={`tab-${tab.id}`}
-          aria-selected={view === tab.id}
-          aria-controls={`panel-${tab.id}`}
-          tabIndex={view === tab.id ? 0 : -1}
-          onKeyDown={(event) => {
-            const step =
-              event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-            if (step === 0) return;
-            event.preventDefault();
-            const index = VIEW_TABS.findIndex((candidate) => candidate.id === view);
-            const next = VIEW_TABS[(index + step + VIEW_TABS.length) % VIEW_TABS.length];
-            if (next !== undefined) onChange(next.id);
-          }}
-          onClick={() => {
-            onChange(tab.id);
-          }}
-        >
-          {tab.label}
-          {tab.id === "arbitrage" && !arbitrageAvailable && (
-            <span className="visually-hidden"> (market comparison unavailable)</span>
-          )}
-        </button>
-      ))}
+    <div className="tabs-row">
+      <div className="tabs" role="tablist" aria-label="Board">
+        {VIEW_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            id={`tab-${tab.id}`}
+            aria-selected={view === tab.id}
+            aria-controls={`panel-${tab.id}`}
+            tabIndex={view === tab.id ? 0 : -1}
+            onKeyDown={(event) => {
+              const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+              if (step === 0) return;
+              event.preventDefault();
+              const index = VIEW_TABS.findIndex((candidate) => candidate.id === view);
+              const next = VIEW_TABS[(index + step + VIEW_TABS.length) % VIEW_TABS.length];
+              if (next !== undefined) onChange(next.id);
+            }}
+            onClick={() => {
+              onChange(tab.id);
+            }}
+          >
+            {tab.label}
+            {tab.id === "arbitrage" && !arbitrageAvailable && (
+              <span className="visually-hidden"> (market comparison unavailable)</span>
+            )}
+          </button>
+        ))}
+      </div>
+      {rowCount !== undefined && (
+        <span className="tabs-count" role="status">
+          {`${String(rowCount.shown)} of ${String(rowCount.total)} rows`}
+        </span>
+      )}
     </div>
   );
 }
@@ -143,6 +156,7 @@ export function PlayerSearch({
   readonly onChange: (value: string) => void;
 }): React.JSX.Element {
   const id = useId();
+  const input = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState(value);
   const [lastPropValue, setLastPropValue] = useState(value);
 
@@ -164,6 +178,35 @@ export function PlayerSearch({
     };
   }, [draft, onChange, value]);
 
+  /**
+   * `/` focuses the search box — the shortcut the design source advertises with a key hint
+   * inside the field. It is ignored whenever the keystroke could be text: any modifier, any
+   * form control, any editable element, or an open dialog, which is where a drafter typing a
+   * name into the card's own controls would otherwise lose the character.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLSelectElement ||
+        (active instanceof HTMLElement && active.isContentEditable) ||
+        active?.closest("dialog[open]") != null
+      ) {
+        return;
+      }
+      event.preventDefault();
+      input.current?.focus();
+      input.current?.select();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
   return (
     <>
       <label className="control-label" htmlFor={id}>
@@ -171,6 +214,7 @@ export function PlayerSearch({
       </label>
       <div className="search-field">
         <input
+          ref={input}
           id={id}
           type="search"
           value={draft}
@@ -192,7 +236,11 @@ export function PlayerSearch({
             }
           }}
         />
-        {draft !== "" && (
+        {draft === "" ? (
+          <span className="search-key" aria-hidden="true">
+            /
+          </span>
+        ) : (
           <button
             type="button"
             aria-label="Clear player search"
