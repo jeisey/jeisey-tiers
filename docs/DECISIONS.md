@@ -1236,7 +1236,7 @@ Every preset now reports `sufficient: yes` with **no failed clause**, and the me
 
 **Date:** 2026-08-24 (Phase 7 operations)
 
-**Status:** **Proposed — awaiting owner review.** No source is added, no policy changes, and `config/source-registry.yaml` is untouched by this ADR.
+**Status:** **Accepted — V1 disposition; production integration deferred** (2026-09-01, Phase 9B). No source is added, no policy changes, and `config/source-registry.yaml` is untouched by this ADR. What is accepted is the sweep's conclusion — *add nothing now* — not a plan to add anything; see the V1 disposition at the end of this entry.
 
 **Context.** The owner asked what else is out there: whether FantasyPros is being used, whether other free market-price sources exist, and whether sportsbook odds belong anywhere. `docs/DATA_SOURCES.md` §16 already records the *shape* of a multi-source study; this ADR records the **sweep's actual findings** so a Phase-8 session inherits candidates rather than a search.
 
@@ -1280,7 +1280,19 @@ That leaves two legitimate homes, both new decisions rather than integrations: a
 
 **Consequences if accepted:** the sweep is on the record with its evidence quality labelled, the "why aren't we using FantasyPros" question has a durable answer, and nobody re-derives the odds-are-not-ADP argument. Nothing in the pipeline moves.
 
-**Revisit at:** whichever comes first — ADR-052 resolving, or a decision to commission the multi-source study in `docs/DATA_SOURCES.md` §16.
+### V1 disposition — 2026-09-01, accepted at the launch release
+
+**Both revisit conditions fired, and both resolved the same way: add nothing.**
+
+*ADR-052 resolved*, on 2026-08-31 and without a bound moving. The keeper-free cohort went 125 → 735 drafts in eleven days, every preset now reports `sufficient: yes` with no failed clause, the median top-150 player is priced by 487 drafts, and the published board reads 1,889 `medium` against 45 `low`. Proposal 2 above sequenced this whole sweep behind exactly that event, on the reasoning that if confidence resolved on its own the case for a second source would shrink to something smaller and more precise. It did, and it has.
+
+*The study was commissioned* for the one candidate this sweep named — and the answer changed the shape of the prize rather than the decision. `.github/workflows/source-probe-ffc.yml` ran on a runner and ADR-056 §3 records what it measured: the access question is answered *yes, with attribution and restraint* by the publisher's own terms; the volume is real; a per-player `stdev` and a source window are published, both of which MFL lacks. And the headline reason to want FFC — exact `format × teams` cohorts — **does not exist**: `teams` is accepted and ignored, byte-identical per player across all four league sizes. FFC offers three scoring cohorts, not twelve.
+
+**Accepted for V1:** proposals 1 through 5 stand as written. MyFantasyLeague remains the sole production price source; nothing enters `config/source-registry.yaml`; FantasyPros stays `benchmark_only` and out of production; sportsbook odds remain a category error for both the arbitrage comparison and the intrinsic firewall; and the do-not-average rule in proposal 5 is carried forward unchanged and is now the more load-bearing half of this entry, because a real second candidate exists on paper.
+
+**What this accepts is the deferral, not an integration.** No adapter is written, no crosswalk is built, no cohort rule moves and no published number changes. The remaining value — a genuine half-PPR price, which a boolean `IS_PPR` can never represent — is a market-methodology project with its own preconditions, and it is scoped in ADR-056's Phase-8 disposition rather than here.
+
+**Revisit at:** the dedicated post-V1 market-methodology change. This entry is closed for V1.
 
 ---
 
@@ -1288,7 +1300,7 @@ That leaves two legitimate homes, both new decisions rather than integrations: a
 
 **Date:** 2026-08-26 (Phase 7 operations)
 
-**Status:** **Accepted** for the one change it makes (wiring the reviewed-alias file into the production capture). **The larger question it uncovered is Proposed — awaiting owner review.**
+**Status:** **Accepted**, and no part of it is still open (status corrected 2026-09-01, Phase 9B). It was accepted on the day for the one change it makes — wiring the reviewed-alias file into the production capture — and the "larger question" it raised alongside that, Finding 3's proposal to restrict the published board to rostered players, was **retracted the same day and superseded by ADR-055**; the correction is at the end of this entry. The status line said "awaiting owner review" for a question that no longer existed, which is what this correction fixes. Nothing here is a V1 blocker and nothing here changes.
 
 **What happened.** The scheduled refresh ([32963529477](https://github.com/jeisey/jeisey-tiers/actions/runs/32963529477)) failed a critical gate:
 
@@ -1442,7 +1454,9 @@ A player the registry does not contain is unreachable by *either*, no matter how
 
 **Date:** 2026-08-26 (Phase 7 operations)
 
-**Status:** **Proposed — awaiting owner review.** Section 1 clarifies existing behaviour and changes nothing. Section 3 was rewritten on 2026-08-26 from a **runner probe of the live endpoints** rather than from search; it changed the recommendation twice. No source is added, no adapter is written, `config/source-registry.yaml` is untouched, and the pipeline does not move.
+**Status:** **Accepted — V1 disposition; production integration deferred** (2026-09-01, Phase 9B). Section 1 clarifies existing behaviour and changes nothing. Section 3 was rewritten on 2026-08-26 from a **runner probe of the live endpoints** rather than from search; it changed the recommendation twice. No source is added, no adapter is written, `config/source-registry.yaml` is untouched, and the pipeline does not move.
+
+**Read §3.4 in the light of the Phase-8 disposition at the end of this entry, which supersedes it.** §3.4 says "Proceed", and it was right on the evidence it had; the premise it rested on — a market too thin to price the board — expired five days later. The measurements in §3.1-§3.3 are accepted as fact and carried forward in full. The *integration* is deferred to a dedicated post-V1 market-methodology change, and V1 ships with MyFantasyLeague as its sole price source. The one item §1 leaves genuinely open is a naming question, not a launch question: `TOP_BOARD_PRICED_MINIMUM` is still an alias of `IDENTITY_COVERAGE_MINIMUM`, and giving it its own constant and derivation is post-V1 work to be done "at a moment when nobody is reading a number it would move" — which a release week is not.
 
 ### 1. The gate, stated plainly
 
@@ -1454,7 +1468,7 @@ So it measures **how much of our board the market can price**. It says nothing a
 
 Two properties are worth knowing:
 
-- **`TOP_BOARD_PRICED_MINIMUM = IDENTITY_COVERAGE_MINIMUM`.** The board-coverage bar is an *alias* of the identity-resolution bar. They measure different quantities — "can we resolve the names a vendor sent" versus "does the vendor price the players we rank" — and 0.95 was chosen for the first and inherited by the second. **Proposed:** give it its own named constant and a stated derivation, changed at a moment when nobody is reading a number it would move.
+- **`TOP_BOARD_PRICED_MINIMUM = IDENTITY_COVERAGE_MINIMUM`.** The board-coverage bar is an *alias* of the identity-resolution bar. They measure different quantities — "can we resolve the names a vendor sent" versus "does the vendor price the players we rank" — and 0.95 was chosen for the first and inherited by the second. **Deferred to post-V1** (Phase 9B): give it its own named constant and a stated derivation, changed at a moment when nobody is reading a number it would move — which a release week is not. This is a naming and derivation question about a threshold that is currently passing, not an open V1 decision.
 - **The bar is hardest exactly where the board is thinnest.** In a ten-team league a top-150 *is* the entire draft, and ranks 100-150 are near-replacement players whose ordering is close to noise; in a fourteen-team league 150 picks is under eleven rounds of players who matter. The same constant is applied to all nine. Not wrong, but not derived either.
 
 ### 2. Is MFL systemically too thin? Measured: yes
