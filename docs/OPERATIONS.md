@@ -139,6 +139,38 @@ Cadence facts confirmed by the probe and worth designing to:
 - MFL asks that the player database be requested no more than once per day and throttles over-limit clients with HTTP 429; the adapter needs backoff, and the player export needs a daily cache.
 - Sleeper's player map is ~14.6 MB; fetch at most daily and stay well under the documented 1000 calls/minute.
 
+### 2.5 `live-smoke.yml` (Phase-9B)
+
+Triggers: `workflow_dispatch` only, with an optional `url` input defaulting to
+<https://jeisey.github.io/jeisey-tiers>.
+
+Permissions: `contents: read`, at workflow level and in its one job. It needs no secret at all:
+everything it reads, including the artifacts it compares the rendered page against, is
+downloaded from the public site itself.
+
+Purpose: check the site **after** `actions/deploy-pages` has run. `daily-refresh.yml` verifies
+the build it is about to publish, which is the right place for a gate — a failure there means
+no deploy and the previous site keeps serving (ADR-050). What nothing checked before this was
+the deployment: a build correct on disk can still be served from the wrong base path or miss a
+file the packager never copied, and every gate in the refresh would have been green.
+
+Four steps, each a script that also runs locally against a static server:
+
+| step | what it proves |
+|---|---|
+| `verify-live.mjs` | the document, every script/stylesheet/icon href **under the deployed base path** and answering 200, the vendored fonts, the logo's decoded `naturalWidth`, all five JSON artifacts and four CSVs, the three views, a player card, a shared query-state link across a reload, a phone reflow, and that no request leaves the site's origin |
+| `verify:board` | every rendered tier row, chart mark, arbitrage row and injury badge against the bytes the site served |
+| `verify:presets` | all nine scoring × league-size blocks resolve, in the artifact and in the browser |
+| `verify:csv` | all four exports downloaded and parsed |
+
+It is deliberately **outside** the production job graph: dispatch-only, gating nothing,
+deploying nothing. `tests/unit/test_workflows.py` pins that — no `pages:` scope, no write
+permission, no credential, no schedule, and not referenced by `daily-refresh.yml` or `ci.yml`.
+A schedule would make an observation look like a gate.
+
+Run it after a release deploy, and whenever the live site is suspected of disagreeing with the
+build that produced it.
+
 ## 3. Public repository cost
 
 The architecture assumes a public repository using standard GitHub-hosted runners and GitHub Pages. GitHub's current documentation states standard hosted runners are free for public repositories and Pages is available for public repositories on GitHub Free. Avoid larger runners or paid services unless a future benchmark proves necessary.
@@ -690,6 +722,28 @@ uv run python scripts/workflow_summary.py --artifacts web/public/data --store ..
 # of writing, which is what ci.yml runs (Phase 9B).
 uv run python scripts/make_favicon.py
 uv run python scripts/make_favicon.py --check
+```
+
+## Phase-9B verification commands
+
+Three verifiers added for the launch checklist. Each takes either a local build or a deployed
+`--url`, so the same check runs in a sandbox and on a runner.
+
+```bash
+# All nine scoring x league-size blocks, in the artifacts and in the browser.
+npm run verify:presets
+npm run verify:presets -- --dist web/dist --base-path /jeisey-tiers/
+
+# All four CSV exports, downloaded and parsed.
+npm run verify:csv
+npm run verify:csv -- --base-path /jeisey-tiers/
+
+# The deployed site. Downloads what it serves into --out, so the three checks above can then
+# be pointed at the same bytes. Not reachable from this sandbox; run it through live-smoke.yml.
+npm run verify:live -- --url https://jeisey.github.io/jeisey-tiers --out live-artifacts
+npm run verify:board   -- --url https://jeisey.github.io/jeisey-tiers --data live-artifacts
+npm run verify:presets -- --url https://jeisey.github.io/jeisey-tiers --data live-artifacts
+npm run verify:csv     -- --url https://jeisey.github.io/jeisey-tiers --data live-artifacts
 ```
 
 `build-current`, `measure-market-cohorts` and `build-arbitrage` need retained bytes and, for

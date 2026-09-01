@@ -1,0 +1,117 @@
+# Smoke the deployed site, from outside it.
+#
+# `daily-refresh.yml` verifies the build it is *about to* publish, which is the right place for
+# a gate: a failure there means no deploy, and the previous site keeps serving (ADR-050). What
+# nothing checked is the site **after** `actions/deploy-pages` has run. A build that is correct
+# on disk can still be served from the wrong base path, or miss a file the packager never
+# copied, and every gate in the refresh would have been green.
+#
+# This workflow is deliberately **not** part of that job graph. It gates nothing, deploys
+# nothing, and runs only when someone asks for it, so adding it changes no production
+# behaviour — the release checklist needed a way to check a live URL and the development
+# sandbox cannot reach one (ADR-009), which is the same reason the source probes live on a
+# runner.
+#
+# It needs no secret. Everything it reads, including the artifacts it compares the page
+# against, is downloaded from the public site itself.
+name: live-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: The deployed site to smoke, without a trailing slash
+        type: string
+        default: https://jeisey.github.io/jeisey-tiers
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  smoke:
+    name: Deployed-site smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      # `persist-credentials: false`: this job only needs the verifier scripts, and it spends
+      # the rest of its life talking to a public URL (docs/SECURITY_LICENSE.md section 3).
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Cache the Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Assets, artifacts, the logo, the icons, the fonts, the three views, a player card, a
+      # shared link across a reload, a phone, and the no-request-leaves-the-origin rule. This
+      # also downloads what the site serves into `live-artifacts/`, which every step below
+      # compares against — so the comparison is against the bytes that page was actually
+      # served rather than against a local rebuild that might differ.
+      - name: Resources, assets and primary flows
+        run: node web/tests/e2e/verify-live.mjs --url "${SITE}" --out live-artifacts
+        env:
+          SITE: ${{ inputs.url }}
+
+      - name: Rendered board against the served artifact bytes
+        run: npm run verify:board -- --url "${SITE}" --data live-artifacts
+        env:
+          SITE: ${{ inputs.url }}
+
+      - name: All nine scoring x league-size presets
+        run: npm run verify:presets -- --url "${SITE}" --data live-artifacts
+        env:
+          SITE: ${{ inputs.url }}
+
+      - name: Both CSV exports on both boards
+        run: npm run verify:csv -- --url "${SITE}" --data live-artifacts
+        env:
+          SITE: ${{ inputs.url }}
+
+      - name: Summarise the smoke
+        if: always()
+        run: |
+          {
+            echo '## Deployed-site smoke'
+            echo
+            echo "Target: <${{ inputs.url }}>"
+            echo
+            echo "| check | result |"
+            echo "|---|---|"
+            echo "| resources, assets, flows | see \`verify-live\` above |"
+            echo "| rendered board vs served bytes | \`verify:board\` |"
+            echo "| nine preset blocks | \`verify:presets\` |"
+            echo "| four CSV exports | \`verify:csv\` |"
+            echo
+            echo "Job result: \`${{ job.status }}\`. Nothing here gates a deploy; a failure means"
+            echo "the live site needs attention, not that a build was blocked."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload what the site served
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-smoke-${{ github.run_id }}
+          path: live-artifacts
+          if-no-files-found: warn
+          retention-days: 7

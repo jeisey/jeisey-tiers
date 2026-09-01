@@ -20,6 +20,7 @@
     "verify:board": "node web/tests/e2e/verify-board.mjs",
     "verify:presets": "node web/tests/e2e/verify-presets.mjs",
     "verify:csv": "node web/tests/e2e/verify-csv.mjs",
+    "verify:live": "node web/tests/e2e/verify-live.mjs",
     "e2e:browsers": "playwright test --project=smoke-chromium --project=smoke-firefox --project=smoke-webkit",
     "e2e:all": "playwright test"
   },
