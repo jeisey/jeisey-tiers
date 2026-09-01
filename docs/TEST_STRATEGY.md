@@ -453,6 +453,41 @@ each file to be non-empty in `web/dist/`. The generator itself is pinned by
 `scripts/make_favicon.py --check`, which rebuilds the three assets and compares bytes — the same
 discipline the golden artifacts and the feature dictionary already live under.
 
+### The nine-preset matrix
+
+`web/tests/e2e/verify-presets.mjs` (`npm run verify:presets`) is the other axis from
+`verify:board`. `verify-real-build.mjs` compares the rendered page with the artifact bytes cell
+by cell for **one** block, PPR/redraft-12; this one is shallower per block and covers all
+**nine**. The failure it exists to catch is a preset that is healthy in the artifact and dead in
+the product, or healthy for the default board and broken for the eight nobody looks at — which
+is the same case `coverage_summary` takes a `min` across the nine blocks to catch, and the case
+`redraft-14` joining the supported set in Phase 7 created.
+
+Two passes, cheapest first, so a failure localises:
+
+1. **Artifacts**, from disk: rows present in `tiers`, `projections` and `arbitrage`; fair ranks
+   unique **and** a complete `1..N` run, since a hole means a player is missing from the board
+   and a duplicate means two share a position; tiers present, zero-based per
+   `tier_record.schema.json`, and **contiguous in fair-rank order** (AGENTS.md section 9); every
+   arbitrage row naming a player that block actually ranks. Projections are matched on scoring
+   alone, because a points forecast does not vary by league size and the schema carries no
+   `league_preset_id` — matching them on the block key would report every projection missing,
+   which would be a bug in the checker rather than a finding about the build.
+2. **Browser**, all nine URLs: the board, the tier table and the arbitrage table populate; the
+   rank-1 name on screen is the artifact's rank-1 name **for that block**; the scoring and teams
+   controls report the requested state, because if the controls disagree with the URL then every
+   number on the page belongs to a different league; and nothing logs a console error, throws,
+   refuses a contract or reports a degraded artifact. Every block also asserts that no request
+   leaves the site's own origin — per block rather than once, because a preset-specific code
+   path is exactly where a stray fetch would hide.
+
+`--url` runs pass 2 against a deployed site while still reading the artifacts from disk, which
+is how the released build is checked against `https://jeisey.github.io/jeisey-tiers/`.
+
+The fixture build publishes only two of the nine blocks, so this script is expected to report
+seven absent blocks there; it is a check on a **production** build and the strict nine is the
+point of it.
+
 ### The export labels
 
 The defect the owner reported was invisible to any assertion on the string, so the test measures
