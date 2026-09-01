@@ -1,78 +1,165 @@
 {
- "generated_at_utc": "2026-08-31T23:38:39.971Z",
+ "measured_at_utc": "2026-09-01T00:04:08.344Z",
+ "method": "Interleaved A/B on one machine: three pairs of (Phase-8 build, Phase-9A build) run back to back so machine drift affects both arms equally. Each figure is the median of three runs, and each run is itself the harness's median of five. The  block is three repeats of identical code and is the reason the comparison is interleaved rather than read across sessions.",
+ "phase8_commit": "00ac5bd",
  "board": {
   "tier_rows": 2700,
   "arbitrage_rows": 2313,
   "projection_rows": 900,
   "status_rows": 300
  },
- "artifact_bytes": {
-  "build_metadata.json": 3027,
-  "tiers.json": 1274446,
-  "arbitrage.json": 1799702,
-  "projections.json": 304553,
-  "player_status.json": 156787
- },
- "default_view": {
-  "domNodes": 8203,
-  "boardHeightPx": 1690,
-  "tableRows": 300,
-  "boardRows": 47,
-  "svgNodes": 0
- },
- "full_board_view": {
-  "domNodes": 11239,
-  "boardRows": 300,
-  "boardHeightPx": 8827
+ "dom": {
+  "phase8": {
+   "default": {
+    "domNodes": 6969,
+    "boardHeightPx": 1405,
+    "tableRows": 300,
+    "boardRows": 47,
+    "svgNodes": 0
+   },
+   "full_board": {
+    "domNodes": 9993,
+    "boardRows": 300,
+    "boardHeightPx": 7670
+   }
+  },
+  "phase9a": {
+   "default": {
+    "domNodes": 7003,
+    "boardHeightPx": 1690,
+    "tableRows": 300,
+    "boardRows": 47,
+    "svgNodes": 0
+   },
+   "full_board": {
+    "domNodes": 10039,
+    "boardRows": 300,
+    "boardHeightPx": 8827
+   }
+  }
  },
  "timings_ms": [
   {
    "label": "cold load to first board row",
-   "ms": 629,
-   "min": 514,
-   "max": 1419
+   "phase8": 965,
+   "phase9a": 598,
+   "ratio": 0.62
   },
   {
    "label": "sort the 300-row tier table",
-   "ms": 423,
-   "min": 377,
-   "max": 627
+   "phase8": 640,
+   "phase9a": 546,
+   "ratio": 0.85
   },
   {
    "label": "expand all tiers",
-   "ms": 683,
-   "min": 416,
-   "max": 921
+   "phase8": 511,
+   "phase9a": 744,
+   "ratio": 1.46
   },
   {
    "label": "switch to the full 300-player board",
-   "ms": 570,
-   "min": 455,
-   "max": 670
+   "phase8": 2248,
+   "phase9a": 773,
+   "ratio": 0.34
   },
   {
    "label": "filter to one position",
-   "ms": 214,
-   "min": 189,
-   "max": 241
+   "phase8": 237,
+   "phase9a": 237,
+   "ratio": 1.0
   },
   {
    "label": "search, after the declared debounce",
-   "ms": 411,
-   "min": 389,
-   "max": 494
+   "phase8": 362,
+   "phase9a": 360,
+   "ratio": 0.99
   },
   {
    "label": "open the player card",
-   "ms": 379,
-   "min": 281,
-   "max": 418
+   "phase8": 256,
+   "phase9a": 247,
+   "ratio": 0.96
   },
   {
    "label": "render the arbitrage view",
-   "ms": 674,
-   "min": 438,
-   "max": 864
+   "phase8": 486,
+   "phase9a": 627,
+   "ratio": 1.29
+  }
+ ],
+ "noise_floor": [
+  {
+   "label": "cold load to first board row",
+   "runs": [
+    5595,
+    623,
+    930
+   ],
+   "spread": 9.0
+  },
+  {
+   "label": "sort the 300-row tier table",
+   "runs": [
+    581,
+    477,
+    360
+   ],
+   "spread": 1.6
+  },
+  {
+   "label": "expand all tiers",
+   "runs": [
+    924,
+    804,
+    763
+   ],
+   "spread": 1.2
+  },
+  {
+   "label": "switch to the full 300-player board",
+   "runs": [
+    540,
+    492,
+    491
+   ],
+   "spread": 1.1
+  },
+  {
+   "label": "filter to one position",
+   "runs": [
+    288,
+    271,
+    200
+   ],
+   "spread": 1.4
+  },
+  {
+   "label": "search, after the declared debounce",
+   "runs": [
+    375,
+    404,
+    361
+   ],
+   "spread": 1.1
+  },
+  {
+   "label": "open the player card",
+   "runs": [
+    284,
+    310,
+    387
+   ],
+   "spread": 1.4
+  },
+  {
+   "label": "render the arbitrage view",
+   "runs": [
+    489,
+    3195,
+    2899
+   ],
+   "spread": 6.5
   }
  ]
 }

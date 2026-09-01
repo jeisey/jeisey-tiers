@@ -324,7 +324,36 @@ of everything five green production days do not prove.
 broken primary flow. **Met**, with the design-import item above outstanding as an owner action
 rather than a defect.
 
-## Phase 9 — Launch release
+## Phase 9A — Claude Design frontend reskin
+
+Inserted between Phase 8 and the launch release, and **not** a renumbering: phases 0-8 are
+unchanged and the release checklist below is unchanged, only deferred. The reason for the split
+is recorded in `docs/PHASE8_UI_FEEDBACK.md` item 1 — Phase 8 could not reach the owner's Claude
+Design project and inferred a HUD language from the written brief instead. The owner supplied the
+project's files directly, so the one Phase-8 item that was blocked became doable, and doing it
+before tagging V1 is cheaper than tagging twice.
+
+- [x] Read `Player Card HUD.dc.html` and `support.js` in full; extract the design language.
+- [x] Record what the source contains and how it maps onto the product —
+      `docs/DESIGN_SOURCE_MAP.md`.
+- [x] Rebuild the token layer from the source; vendor its two OFL fonts.
+- [x] Shell, controls and navigation.
+- [x] Tier Board — artboard 2a on a desktop, artboard 2b on a phone.
+- [x] Player detail — artboards 1c / 1a / 1b by viewport, dialog semantics unchanged.
+- [x] Both tables, keeping semantic `<table>`, sorting, sticky headers and CSV.
+- [x] Draft Rail and Arbitrage — no artboard exists for these; the language was extended.
+- [x] Data and status presentation; methodology still stated once (ADR-058).
+- [x] Tests: 234 vitest, 62 Playwright, including the tier-band/axis alignment invariant.
+- [x] Visual QA: 28 screens plus an interleaved A/B performance record —
+      `docs/visual-qa/2026-08-31-design/`.
+- [x] Full frontend and Python gates.
+
+**Exit gate:** met. No model, artifact or market value changed; `verify:board` reports zero
+disagreements against the fixture build and against the matured-market build.
+
+## Phase 9B — Launch release
+
+**Not started, and deliberately untouched by Phase 9A.**
 
 - [ ] Run final daily refresh.
 - [ ] Capture final metrics and build metadata.

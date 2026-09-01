@@ -252,7 +252,7 @@ changes here did move a binding rule and have one each.
 
 | # | Owner item | Status | What was done, and where |
 |---|---|---|---|
-| 1 | Claude Design MCP as the design source | **blocked — owner action** | The MCP could not be reached from this session: `DesignSync` refuses without `/design-login`, which cannot run non-interactively, and an unauthenticated fetch of the project URL returns 403. Nothing was seeded into the workspace. The design language below was therefore **derived from the owner's written brief**, which is specific about HUD treatment, density, number treatment, status treatment, panels, hierarchy and responsive variants — but it is not the same as having read `Player Card HUD.dc.html`, and this row says so rather than claiming otherwise. See the note under this table. |
+| 1 | Claude Design MCP as the design source | **resolved in Phase 9A (2026-08-31)** | Blocked for the whole of Phase 8 and recorded as such: `DesignSync` refuses without `/design-login`, which cannot run non-interactively, and an unauthenticated fetch of the project URL returns 403, so the Phase-8 design language was **derived from the owner's written brief** rather than read out of the project. The owner then downloaded `Player Card HUD.dc.html` and `support.js` by hand and supplied them directly to a session — no MCP needed, and none used. Phase 9A implements them. **`docs/DESIGN_SOURCE_MAP.md`** is what the source actually contains and how each part maps onto the product; **`docs/visual-qa/2026-08-31-design/REVIEW.md`** is the implementation and its evidence. The "in more detail" note below is kept as the record of what was inferred, so the two can be diffed. |
 | 2 | Re-skin shell, card, board, rail, controls, tables | **implemented** | A HUD vocabulary shared by all three surfaces: a hairline panel on a recessed ground, a small-caps micro-label over a tabular readout, geometry that carries a value. `web/src/styles/base.css`, `charts/TierBoard.tsx`, `charts/DraftRail.tsx`, `app/PlayerDetail.tsx`, `app/ArbitrageView.tsx`. |
 | 3 | Player detail leads with what a drafter needs | **implemented** | Two readout grids on a recessed panel: fair rank, position rank, tier, median VORP, P25–P75, uncertainty; then MFL ADP, value gap, arbitrage score, market trend, market data, observed picks. Everything else moved into one `<details>`. `app/PlayerDetail.tsx`. |
 | 4 | Player-card responsive variants; modal semantics kept | **implemented** | One DOM, two presentations chosen by width: a centred card ≥768px, a bottom-anchored full-width sheet below it. Native `<dialog>` + `showModal()` in both, plus explicit focus restoration to the trigger — verified on Chromium, Firefox and WebKit. `base.css`, `PlayerDetail.tsx`, `web/tests/e2e/mobile.spec.ts`, `smoke.spec.ts`. |
@@ -281,8 +281,18 @@ down where it can be diffed later: the design tokens and component classes are i
 stylesheet with comments explaining each decision, and `docs/visual-qa/2026-08-31/REVIEW.md`
 shows eighteen screens.
 
-To unblock, one owner action: run `/design-login` once from an interactive Claude Code session,
-or use Claude Design's **Send to Claude Code Web**.
+**What the diff turned out to be.** Phase 9A read the source and the five unknowns above resolve
+as follows. Exact type: Exo 2 for text, JetBrains Mono for every number — Phase 8 used the system
+stack, so this is the largest single visual difference. Spacing and panels: a 1px grid `gap` over
+a tinted container as the hairline, which Phase 8 drew as borders. Borders: no grey rule anywhere
+and no border-radius anywhere — corners are *cut*, which Phase 8 did not do. Status vocabulary:
+an amber outline chip and a green dot-and-word headline, close to what the brief produced.
+Variants: five artboards, including three distinct player cards, where Phase 8 had inferred two.
+
+The brief was a good guide and the inference was mostly right about *language*; what it could not
+supply was the type, the hairline construction and the third card variant. That is the honest
+measure of the gap, and it is why the row above is worth having been marked blocked rather than
+quietly implemented.
 
 ### Decisions this produced
 
@@ -290,7 +300,13 @@ or use Claude Design's **Send to Claude Code Web**.
 - **ADR-058** — methodology once in Data; a board carries only what stops a number being misread.
 - **ADR-059** — single-engine behavioural suite, three-engine smoke; dependency set amended.
 
-Everything else was a presentation change and correctly has no ADR.
+Everything else was a presentation change and correctly has no ADR. **Phase 9A produced no ADR
+either**, for the same reason: implementing the design source moved presentation, not a binding
+product, data or methodology contract. Two of its choices are worth knowing about anyway and are
+recorded in `docs/DESIGN_SOURCE_MAP.md` section 6 rather than as decisions — the product is now
+dark-only, because the source is a dark HUD with no light variant; and two OFL web fonts are
+vendored, because the source's typography is part of its identity and a runtime call to a font
+CDN is forbidden by `docs/ARCHITECTURE.md` section 3.2.
 
 ---
 

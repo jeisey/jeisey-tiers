@@ -70,6 +70,13 @@ That test found a real edge on its first run: the Sleeper status capture importe
 
 The frontend may load only generated public files under `public/data/` (or Vite-equivalent asset paths). It must not directly call MFL/Sleeper/FantasyCalc/nflverse in the critical render path.
 
+> **Phase-9A note.** "No third party in the critical render path" includes assets, not only data.
+> The design source links its two typefaces from Google Fonts; they are vendored under
+> `web/src/assets/fonts/` instead, referenced by relative `url()` so Vite fingerprints them and
+> rewrites the paths under any base. `web/tests/e2e/board.spec.ts` fails any request that leaves
+> localhost, which is what turns this section into a check rather than a convention — and is
+> what made the decision for us.
+
 ### 3.3 Benchmark boundary
 
 Benchmark-only source data must never be serialized into public artifacts unless its current license/terms explicitly permit redistribution.
@@ -500,6 +507,25 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 >
 > Dependencies now: TanStack Table v8, `@playwright/test`, `@axe-core/playwright`. The
 > production bundle is React, ReactDOM and TanStack Table.
+
+> **Phase-9A revision.** The shared grid above is unchanged and is now *measured* rather than
+> asserted: `board.spec.ts › draws the tier band on exactly the track the player bars use`
+> compares the axis, the tier band and a player's bar at three viewports. It exists because the
+> reskin broke that identity twice — once by numbering the strip's grid columns off by one, and
+> once with `grid-area: span`, where `span` is a reserved grid keyword, so the declaration was
+> dropped silently and two implicit columns appeared. Neither had any other symptom.
+>
+> The axis is now built as a *lane* — an empty gutter cell plus a body carrying the row grid —
+> rather than as a grid restating `gutter + columns`. Restating it dropped the rows' column gap
+> and put the ticks 22px wider than the bars they label. If a fourth thing ever has to sit on
+> that scale, build it the same way rather than re-deriving the geometry.
+>
+> Below 768px the same DOM becomes the design source's tier *stack*, and that switch is CSS
+> only. The player card's third variant is not: a tab bar is a different accessibility tree, so
+> `useMediaQuery` reads the same breakpoint the stylesheet uses and `PlayerDetail` branches on
+> it. Those two must move together.
+>
+> No production dependency was added. Two OFL-licensed font files were vendored (section 3.2).
 
 ## 11. Pages base path
 

@@ -4,7 +4,9 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-Phase 8 — **complete** (2026-08-31). The site is live at **<https://jeisey.github.io/jeisey-tiers/>**, public, and refreshing itself daily at 07:17 America/New_York from sources it captures into a private store. The frontend has been rebuilt around the owner's review, and every hardening track in the Phase-8 brief has been run. **Phase 9 (release) has not been started and is deliberately untouched.**
+Phase 9A — **complete** (2026-08-31). The frontend now implements the owner's actual Claude Design source rather than a language inferred from his written brief. **Phase 9B (launch release) has not been started and is deliberately untouched.**
+
+Phase 8 — complete (2026-08-31). The site is live at **<https://jeisey.github.io/jeisey-tiers/>**, public, and refreshing itself daily at 07:17 America/New_York from sources it captures into a private store. The frontend was rebuilt around the owner's review, and every hardening track in the Phase-8 brief was run — apart from one item that could not be done and was recorded as blocked, which is what Phase 9A closed.
 
 Phase 7 completed on 2026-08-22; the note below is its record and stays because it explains why the store lives where it does.
 
@@ -18,15 +20,17 @@ Three things are worth carrying forward as ideas rather than as file paths:
 
 ## Current target gate
 
-Phase 9 — release. Its checklist is in `TASKS.md` and nothing in it has been started. Phase 8's exit gate is met apart from one item that needs an owner action, recorded under "Known blockers" below.
+Phase 9B — launch release. Its checklist is in `TASKS.md` and **nothing in it has been started**. Phases 0-8 are not renumbered; 9A was inserted before the release because the one blocked Phase-8 item became doable and doing it before tagging V1 was cheaper than tagging twice.
 
-`docs/PHASE8_UI_FEEDBACK.md` is now the human-to-implementation trace for the redesign: the owner's 2026-08-31 feedback, and a status row per item. Read it before touching the frontend again.
+`docs/PHASE8_UI_FEEDBACK.md` is the human-to-implementation trace for the redesign: the owner's 2026-08-31 feedback and a status row per item, with item 1 now resolved. `docs/DESIGN_SOURCE_MAP.md` is the design source itself — what the five artboards contain, how each maps onto the product, and every deliberate deviation. Read both before touching the frontend again.
 
 The visibility question ADR-016 deferred is closed: the repository is **public**, serving a public Pages project site from standard GitHub-hosted Actions, free and non-commercial — which is a licence condition rather than a preference, because `player_status.json` carries Sleeper fields to every visitor.
 
 ## Last validated commit
 
-The Phase-8 branch `claude/jeisey-tiers-phase-8-dz8ivm`, branched from the merged Phase-7 state on `main` (`645409b`).
+The Phase-9A branch `claude/jeisey-tiers-phase-9a-b62447`, branched from the merged Phase-8 state on `main` (`00ac5bd`). Everything below was re-run on it: `ruff` clean, `ruff format` clean over 172 files, `mypy` clean over 111 files, `pytest` 1,055 passed, `config-check` clean, `npm lint`/`typecheck` clean, **234** vitest, **62** Playwright across `chromium`/`mobile`/`a11y`, both base-path builds, and `verify:board` with zero disagreements against the fixture build *and* against the new matured-market build. `npm run e2e:browsers` is runner-only here, as always.
+
+The command list below is the Phase-8 record and is still the right list.
 
 ```
 uv sync --frozen
@@ -44,10 +48,10 @@ uv run ffdraft validate-market-history ../market-data --season 2026
 npm ci
 npm run lint            # clean (2 known React-Compiler/TanStack warnings, ADR-048)
 npm run typecheck       # clean, strict
-npm run test -- --run   # 226 frontend tests
+npm run test -- --run   # 234 frontend tests
 npm run build                                    # root base path
 VITE_BASE_PATH=/jeisey-tiers/ npm run build      # project Pages base path
-npm run e2e             # 61 Playwright tests: chromium + mobile + a11y
+npm run e2e             # 62 Playwright tests: chromium + mobile + a11y
 npm run e2e:browsers    # 36 smoke tests across Chromium, Firefox and WebKit — RUNNER ONLY
 ```
 
@@ -78,10 +82,10 @@ What was there before and still is:
 - `docs/FEATURE_DICTIONARY.md` — every model feature with formula, sources and availability rule, generated from code and pinned by a test.
 - `docs/experiments/phase3-intrinsic-baselines/` — the committed Phase-3 experiment reports, machine-readable and human-readable. Row-level predictions are gitignored.
 - `.github/workflows/` — `ci.yml` (fixture-only gates, no vendor network, no store credential), `daily-refresh.yml` (the production path), `retrain.yml` (an evidence gate that mostly declines), `market-capture.yml` (out-of-band capture) and `source-probe.yml` (Phase-0). `.github/actions/market-data-store/` is the one way any of them reaches the private store.
-- `docs/visual-qa/` — committed screenshots and the written review, regenerated with `npm run e2e:screens`.
+- `docs/visual-qa/` — committed screenshots and the written review, regenerated with `npm run e2e:screens`. One directory per review; `2026-08-31-design/` is Phase 9A's and does not replace Phase 8's.
 - `scripts/workflow_summary.py` and `scripts/retrain_gate.py` — the two Phase-7 gate/report scripts, both runnable locally.
-- `web/` — the Phase-6 draft sheet: `src/data/` (contracts, loader, indexes, market derivations, flags, formats, CSV, URL state), `src/app/` (shell, controls, two tables, player detail, data view), `src/charts/` (Tier Board, Draft Rail), `src/components/`, `src/styles/base.css`.
-- `tests/` — 991 network-free Python tests (4 live-network deselected); `web/tests/` adds 194 vitest plus 39 Playwright.
+- `web/` — the draft sheet: `src/data/` (contracts, loader, indexes, market derivations, flags, formats, CSV, URL state), `src/app/` (shell, controls, two tables, player detail, data view), `src/charts/` (Tier Board, Draft Rail), `src/components/`, `src/styles/base.css`, and since Phase 9A `src/assets/fonts/` (two OFL families, vendored — `docs/SECURITY_LICENSE.md` section 8).
+- `tests/` — 1,055 network-free Python tests (4 live-network deselected); `web/tests/` adds 234 vitest plus 62 Playwright, and 13 more in the runner-only three-engine smoke.
 - `docs/experiments/` — four committed experiment report pairs: the Phase-3 baselines and the three Phase-4 studies, plus the single final-holdout report. Row-level predictions are gitignored.
 
 ## Phase-2 dataset — the validated build
@@ -301,6 +305,29 @@ Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `dep
 2. **Three pieces of UI copy asserted a condition the build computes.** All three now read from `build_metadata`.
 3. **The accessibility scan added this phase could pass against a page that failed to load.** A clean-clone reproduction reused a stale static server holding a build with no `data/`; forty-seven board and mobile tests failed on it and **all eight axe scans passed**, because axe finds nothing wrong with the refusal screen. Each surface is now paired with a selector only that surface renders. Verified against the failure that produced it: with `data/` removed the unguarded scan passes and the guarded one fails.
 
+## Phase-9A results — the design source, implemented
+
+**The one Phase-8 item that was blocked is closed.** The owner downloaded `Player Card HUD.dc.html` and `support.js` from his Claude Design project by hand and supplied them to the session. No MCP was needed and none was used; `/design-login` was never run. Neither file is committed — they are a design handoff, and `docs/DESIGN_SOURCE_MAP.md` plus `docs/visual-qa/2026-08-31-design/REVIEW.md` are the durable record of what they said.
+
+**What the source turned out to be.** Five artboards: a whole-application "command board" (2a), an alternative tier stack (2b), and three player cards (1a tactical dossier, 1b segmented scope, 1c recon sweep). Its Arbitrage view is an explicit placeholder reading "NOT PART OF THIS PASS", so the Draft Rail has no design source and keeps its Phase-8 encoding in the new vocabulary.
+
+**How much the Phase-8 inference got right, and what it missed.** The *language* was mostly right — HUD panels, micro-label over readout, density, status treatment. What a written brief could not supply, and what changed most: the type (Exo 2 + JetBrains Mono against a system stack), the hairline construction (a 1px grid `gap` over a tinted container, not borders), zero border-radius with *cut* corners, and a third card variant.
+
+| surface | verdict |
+|---|---|
+| shell, controls, nav | KEEP structure, ADAPT skin — the source's header is the same five elements in the same order, including a build-notes chip that already matched `mastheadStatus` |
+| Tier Board structure | KEEP — collapse, shared scale, band-not-line, exact ordering all survive |
+| Tier Board presentation | REPLACE — tier gutter as the collapse control, axis built as a lane, per-row gridlines at the axis's own step, glowing square median |
+| Tier Board on mobile | REPLACE — artboard 2b, the tier stack, which the source's own caption prescribes for a phone |
+| both tables | ADAPT — semantic `<table>` kept; the source's two micro-glyphs added as cell backgrounds |
+| Draft Rail | ADAPT — no artboard; Phase-8 semantics kept, vocabulary applied |
+| player detail | REPLACE — three real variants by viewport, one DOM |
+| Data, methodology placement | KEEP — ADR-058 holds, and the source agrees with it |
+
+**Six defects the review found, none of which a test was failing on.** Two alignment bugs where the tier band and the axis were not on the rows' own track — one an off-by-one in grid columns, one `grid-area: span`, where `span` is a reserved grid keyword so the declaration was dropped silently. A card that overflowed its own frame because an implicit `auto` grid row is sized by its content. A tinted readout at 4.36:1 because the tint composited against the grid's wash rather than the tile. A scroll container that could not be focused. A 102px horizontal overflow at 320px from the rail's scale strip. All fixed; the alignment invariant is now measured by a test at three viewports.
+
+**Performance: DOM at parity, one interaction up 1.46×.** Measured as an interleaved A/B against the Phase-8 build on one machine, because this sandbox's run-to-run noise reaches 9× and a first attempt at motif attribution produced impossible results. Default view 6,969 → 7,003 nodes, 0 SVG either way; board 20% taller. Six of eight interactions at parity or better; `expand all tiers` 511 → 744ms and the arbitrage view's first render 486 → 627ms. An earlier draft of the table glyphs cost 1,200 extra nodes and was rewritten to cost none.
+
 ## Phase-8 facts a later phase should not re-derive
 
 - **A tier band, a player's interval bar and the axis are one CSS grid, not three similar ones.** `--board-cols`, `--board-gap` and `--board-pad` on `.tier-board` drive all three, and every breakpoint redefines only those. This is load-bearing: "adjacent tier bands overlap" is a claim about the measurement, and it is only true of the picture if the tracks are the same pixels. The first draft had them 45px apart.
@@ -319,6 +346,21 @@ Exactly one job in the repository holds a `pages:` scope: `daily-refresh`'s `dep
 - **`reuseExistingServer` is on locally, so a stray `static-server.mjs` on port 4173 silently serves the wrong tree.** That is what made a clean-clone reproduction fail en masse. Check the port before blaming the clone.
 - **`source-probe.yml` with `commit_results: true` rewrites `tests/fixtures/source_schemas/` and commits with `[skip ci]`.** The refresh is strict against a *removed* column — `test_required_columns_exist_in_the_phase0_recorded_schema` then fails — and blind to a silent widening. Read the diff; it is the contract.
 - **The registry's spine is whatever its caller passes.** Market: `supplement_roster(roster, players)` per ADR-055. Status: the roster alone, because there "not on a roster" is the answer. The module docstring said "the roster" for both until Phase 8.
+
+## Phase-9A facts a later phase should not re-derive
+
+- **`grid-area: span` is silently invalid.** `span` is a reserved grid keyword, so the declaration is dropped, the base rule's `grid-column` applies instead, and the layout is quietly wrong — two implicit columns appeared and a band shrank to two thirds of its track. Nothing warns. Name a grid area anything else.
+- **An implicit `auto` grid row is sized by its content, so `max-height` on the container does nothing.** This is why the player card rendered 1,002px inside a 768px dialog with no scrolling. `grid-template-rows: minmax(0, 1fr)` is what binds a single-child grid to a capped container.
+- **The board's axis, the tier band and every player bar are one geometry, and the only safe way to keep them so is to build them the same way.** The axis is a lane — an empty gutter cell plus a body carrying the row grid — rather than a grid that restates `gutter + columns`. Restating it silently dropped the row gap and made the ticks 22px wider than the bars. `board.spec.ts › draws the tier band on exactly the track the player bars use` measures all three at 1440/900/390.
+- **A translucent tint on a tile composites against whatever is behind the *grid*, not against the tile.** A `data-kind` background replaces the tile's own, so it landed on the readout grid's cyan wash and the micro-label came out at 4.36:1. Interaction and tint surfaces are pre-composited opaque tokens for exactly this reason; Phase 8's "axe reads the pixel" applies to backgrounds too.
+- **The focus indicator is a real `outline`, not a `box-shadow`.** An outline follows the element's shape, survives an ancestor's `overflow`, and is what a check for a visible ring can read — a shadow leaves `outline-width` at zero. Rows inside a scroller use `outline-offset: -2px` so the ring is not clipped by the next row.
+- **This sandbox cannot measure frontend performance across sessions.** Three runs of identical code varied by 9.0× on cold load and 6.5× on the arbitrage view. Any comparison has to be an interleaved A/B on one machine — build the other arm in a `git worktree`, symlink `node_modules`, alternate the runs. `measure-performance.mjs --css <file>` exists to attribute cost to one motif, and its first use found the noise rather than an answer.
+- **Two spans per micro-glyph is 1,200 nodes on a 300-row board.** A gradient on the `<td>`'s own `background-image` renders identically for none. The cost of that: every rule painting a cell must set `background-color`, because the `background` shorthand resets `background-image` and row hover would erase the glyph.
+- **The sheet breakpoint is a real branch, not a media query.** Artboard 1b's tab bar is a different accessibility tree — `role="tablist"`, one visible panel — so `useMediaQuery` reads the same 767px query the stylesheet uses. Move one and move the other. `useSyncExternalStore`, not `useState` + effect: reading during render is what stops the first paint being the wrong variant.
+- **`web/dist-*/` was gitignored *and* tracked**, so 34 generated fixture-build files were carried in every commit that ran a build. Untracked in Phase 9A. Nothing referenced them; `playwright.config.ts` builds them in `globalSetup`.
+- **The matured market condition is now a served build**, `/scenario/matured/`, not only a test fixture. `verify:board` against it checks 16 rows carrying a real `market_trend` — a path the launch fixture, with zero trends, could never exercise. This is the Phase-8 finding ("no test rendered the new state") applied to the *verification* layer.
+- **The vitest player-detail tests time out under concurrent load, and it is not the code.** They render the whole app and open the dialog; on a quiet machine each takes about 0.6s, and with a `pytest` or Playwright run alongside they cross vitest's 5,000ms default and five of them fail together. Every failure reads "Test timed out", never an assertion. Re-run the suite on its own before believing it.
+- **The design source is not always right about this product.** It captions its board axis "Vertical position inside a tier carries no meaning"; this board is in fair-rank order and prints the rank, so reproducing that caption would have been a truthfulness defect. Read design copy as a claim to check, not a string to copy.
 
 ## Confirmed decisions
 
@@ -548,19 +590,18 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 ## Known blockers
 
-**One, and it needs an owner action rather than code.**
+**None.**
 
-**The Claude Design MCP could not be reached from this session.** The Phase-8 brief made the owner's Claude Design project the design source and named the import prompt. `DesignSync` refuses with *"needs design-system authorization, and `/design-login` cannot run in this non-interactive session"*; `WebFetch` on `https://claude.ai/design/p/fc6e4919-…` returns 403 because the design app requires an authenticated session; and nothing was seeded into the workspace. So **the design language implemented here was derived from the owner's written brief rather than read out of the project files.** That brief is specific — HUD treatments, density, number treatment, status treatment, panels, hierarchy, responsive variants, and a named `Player Card HUD` — and `docs/PHASE8_UI_FEEDBACK.md` records exactly what was inferred from it. It is not the same thing as having read `Player Card HUD.dc.html`.
-
-To unblock: run `/design-login` once from an interactive Claude Code session on the owner's machine (headless and SDK runs then reuse it), or use Claude Design's **Send to Claude Code Web**, which seeds the project into the workspace. A later session can then diff the implemented system against the imported one.
+The Phase-8 blocker — the Claude Design MCP being unreachable, so the design language was inferred from the owner's written brief rather than read out of the project — is **closed**. It was never a code problem: the owner downloaded `Player Card HUD.dc.html` and `support.js` and handed them to the Phase-9A session directly. `/design-login` was never run and no MCP was involved. If a later phase needs the project again, that is the route that works; do not plan around `DesignSync` from a non-interactive session, and do not expect an unauthenticated fetch of `https://claude.ai/design/p/…` to return anything but 403.
 
 Nothing else is blocking. The four analytical findings are unchanged and none is a blocker: the Monte Carlo residual (ADR-034 as narrowed by ADR-057), tier boundary stability (ADR-035), the non-discriminating `wide_market_range` flag (ADR-041) and the all-scoring cohort serving STD and HALF (ADR-012).
 
 ## Next action
 
-**Phase 9 — release. Nothing in it has been started.** `TASKS.md` holds the checklist: a final daily refresh, final metrics and build metadata, a visual and artifact-validation pass over every supported preset, CSV verification, the Pages URL and base path, the V1 tag, and a `SESSION_STATE.md` stamp of the production model and data versions.
+**Phase 9B — launch release. Nothing in it has been started.** `TASKS.md` holds the checklist: a final daily refresh, final metrics and build metadata, a visual and artifact-validation pass over every supported preset, CSV verification, the Pages URL and base path, the V1 tag, and a `SESSION_STATE.md` stamp of the production model and data versions.
 
-Two things to do first, neither of which is Phase-9 work:
+**The exact first action: merge `claude/jeisey-tiers-phase-9a-b62447` and let one scheduled `daily-refresh` run on it, then read that run's `verify:board` step.** This is the same thing Phase 8 was waiting on and it is still outstanding, because it is the one check this environment cannot perform: `verify:board` on the *real* artifacts runs inside the daily refresh, and the sandbox has no vendor egress to build them (ADR-009). It compares rendered values against artifact bytes, it was updated for the new selectors twice now, and it is what would catch a redesigned DOM disagreeing with the build. Locally it reports zero disagreements against both fixture conditions; that is necessary and not sufficient.
 
-1. **Merge this branch and let one scheduled `daily-refresh` run on it.** The Phase-8 frontend has been proved against fixtures, a production-shaped synthetic board and three browsers, but `verify:board` on the *real* artifacts runs inside the daily refresh and has not yet run against the redesigned DOM. It is the check that would catch a rendered value disagreeing with the artifact bytes, and it was updated for the new selectors in this phase.
-2. **Resolve the Claude Design blocker above** if the design import still matters for V1.
+The runner-only browser gate (`e2e:browsers`, Firefox and WebKit) rides on the same merge — `ci.yml`'s `browsers` job. Everything else in Phase 9B is release mechanics and can follow.
+
+**Do not tag V1 before those two runs are green.**
