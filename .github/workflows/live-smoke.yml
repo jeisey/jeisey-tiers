@@ -78,8 +78,17 @@ jobs:
         env:
           SITE: ${{ inputs.url }}
 
-      - name: All nine scoring x league-size presets
-        run: npm run verify:presets -- --url "${SITE}" --data live-artifacts
+      # All nine blocks programmatically, plus a deeper measured review of three
+      # representative permutations at desktop and mobile. The review prints the rendered top
+      # ten beside the artifact's own, the masthead's boxes, both CSV labels' centring and the
+      # document's overflow — numbers a reader of this log can check — and writes screenshots
+      # for a human beside them, taken from the same navigation so the two cannot describe
+      # different pages.
+      - name: All nine presets, and a measured review of three
+        run: |
+          npm run verify:presets -- --url "${SITE}" --data live-artifacts \
+            --review "PPR/redraft-12,HALF/redraft-10,STD/redraft-14" \
+            --screens live-artifacts/screens
         env:
           SITE: ${{ inputs.url }}
 
