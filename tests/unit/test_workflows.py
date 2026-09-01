@@ -16,6 +16,9 @@ review is not good enough:
 5. **The deployed-site smoke observes and never acts.** `live-smoke.yml` was added for the
    Phase-9B release checklist and reads a public URL. It must stay outside the production job
    graph: no `pages:` scope, no store credential, no write anywhere.
+6. **The release workflow can create a tag and nothing else.** `release.yml` holds the only
+   `contents: write` outside a capture job, so it must not be able to deploy, to touch the
+   store, or to tag code that is not on `main`.
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ WORKFLOWS = (
     "retrain.yml",
     "market-capture.yml",
     "live-smoke.yml",
+    "release.yml",
 )
 
 #: Hosts a production workflow may contact. Ordinary CI may contact none of them.
@@ -243,6 +247,46 @@ def test_live_smoke_is_not_in_the_production_job_graph(workflows):
     )
     for workflow in ("daily-refresh.yml", "ci.yml"):
         assert "live-smoke" not in yaml.safe_dump(workflows[workflow])
+
+
+# --- 3c. The release workflow tags merged code, and does nothing else -----------------------
+
+
+def test_release_cannot_deploy_or_build(workflows, workflow_dir):
+    """It creates a ref and a release. It must not be able to publish a site or a model."""
+    release = workflows["release.yml"]
+    assert release["permissions"] == {"contents": "read"}
+    job = release["jobs"]["release"]
+    assert job["permissions"] == {"contents": "write"}, (
+        "release.yml's one job needs exactly contents: write — nothing more"
+    )
+    text = _code(workflow_dir / "release.yml")
+    for forbidden in (
+        "deploy-pages",
+        "upload-pages-artifact",
+        "configure-pages",
+        "MARKET_DATA_REPO_TOKEN",
+        "snapshot-market",
+        "capture-status",
+        "build-current",
+        "train-production",
+    ):
+        assert forbidden not in text, f"release.yml references {forbidden}"
+
+
+def test_release_refuses_a_commit_that_is_not_on_main(workflow_dir):
+    """The guard that makes an SHA input safe: a tag may only ever name merged code."""
+    text = _code(workflow_dir / "release.yml")
+    assert "git merge-base --is-ancestor" in text
+    assert "origin/main" in text
+    # And it must never move an existing tag.
+    assert 'git rev-parse -q --verify "refs/tags/${TAG}"' in text
+    assert "fetch-depth: 0" in text, "reachability cannot be checked on a shallow clone"
+
+
+def test_release_is_dispatch_only(workflows):
+    """A schedule or a push trigger would make a tag an accident rather than a decision."""
+    assert set(workflows["release.yml"]["on"]) == {"workflow_dispatch"}
 
 
 # --- 4. One address for the private store ---------------------------------------------------

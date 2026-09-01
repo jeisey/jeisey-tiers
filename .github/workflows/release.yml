@@ -1,0 +1,131 @@
+# Cut a release: create the tag, then the GitHub Release from committed notes.
+#
+# This exists because a tag cannot be pushed from the development sandbox — the git proxy
+# answers 403 to any `refs/tags/*` push while accepting branch pushes, and `api.github.com` is
+# unreachable from there too (ADR-009's egress policy, in a new place). Releasing from Actions
+# is the ordinary answer to that, and it is better than the alternative anyway: the notes are a
+# reviewed file in the repository rather than a paste, and the tag's provenance is a run log.
+#
+# **The commit is an input, deliberately.** A release tag has to point at the code that produced
+# the deployed build, which is not always `HEAD` — this workflow itself lands on `main` after
+# the commit it tags. So the SHA is given explicitly and checked, rather than inferred from
+# whatever `main` happens to be when someone presses the button.
+#
+# Three guards, because a tag is close to permanent:
+#
+#   * the SHA must be a real commit and must be **reachable from `main`**, so a release can
+#     never point at an unmerged branch;
+#   * the tag must not already exist — this workflow moves nothing;
+#   * the notes file must exist and be non-empty, so a release cannot ship with a placeholder.
+#
+# It publishes nothing but a tag and a release: no build, no deploy, no data. `daily-refresh`
+# remains the only thing that can change what the site serves.
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create, e.g. v1.0.0'
+        type: string
+        required: true
+      sha:
+        description: The full commit SHA to tag; must be reachable from main
+        type: string
+        required: true
+      title:
+        description: 'Release title, e.g. Jeisey Tiers v1.0.0'
+        type: string
+        required: true
+      notes_path:
+        description: Path to the committed release notes
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Tag and release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # The one scope this needs, and the only workflow outside `daily-refresh`'s deploy job
+      # that elevates at all. It creates a ref and a release; it does not push a commit.
+      contents: write
+    steps:
+      # Full history, because the reachability check below is the guard that makes the SHA
+      # input safe and it cannot be done on a shallow clone.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check the commit, the tag and the notes
+        id: check
+        env:
+          TAG: ${{ inputs.tag }}
+          SHA: ${{ inputs.sha }}
+          NOTES: ${{ inputs.notes_path }}
+        run: |
+          set -euo pipefail
+          notes="${NOTES:-docs/releases/${TAG}.md}"
+
+          if ! git cat-file -e "${SHA}^{commit}" 2>/dev/null; then
+            echo "::error::${SHA} is not a commit in this repository"
+            exit 1
+          fi
+          # The guard that matters: a release may only ever name merged code.
+          if ! git merge-base --is-ancestor "${SHA}" origin/main; then
+            echo "::error::${SHA} is not reachable from main; a release must point at merged code"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::tag ${TAG} already exists; this workflow never moves a tag"
+            exit 1
+          fi
+          if [ ! -s "${notes}" ]; then
+            echo "::error::release notes ${notes} are missing or empty"
+            exit 1
+          fi
+
+          echo "notes=${notes}" >> "$GITHUB_OUTPUT"
+          echo "Tagging $(git log -1 --format='%h %s' "${SHA}")"
+          echo "Notes: ${notes} ($(wc -c < "${notes}") bytes)"
+
+      # An annotated tag rather than a lightweight one: it carries the tagger, the date and a
+      # message, so `git show v1.0.0` explains itself without a network round trip.
+      - name: Create the annotated tag
+        env:
+          TAG: ${{ inputs.tag }}
+          SHA: ${{ inputs.sha }}
+          TITLE: ${{ inputs.title }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" "${SHA}" -m "${TITLE}"
+          git push origin "refs/tags/${TAG}"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          TITLE: ${{ inputs.title }}
+          NOTES: ${{ steps.check.outputs.notes }}
+        run: |
+          set -euo pipefail
+          gh release create "${TAG}" \
+            --title "${TITLE}" \
+            --notes-file "${NOTES}" \
+            --verify-tag
+          {
+            echo "## Released"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Tag | \`${TAG}\` |"
+            echo "| Commit | \`${{ inputs.sha }}\` |"
+            echo "| Notes | \`${NOTES}\` |"
+            echo "| Release | $(gh release view "${TAG}" --json url --jq .url) |"
+          } >> "$GITHUB_STEP_SUMMARY"
