@@ -9,6 +9,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import logoUrl from "../assets/jt_logo.png";
+
 import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bundle";
 import { easternIsoDate } from "../data/format";
 import { cohortAssignment } from "../data/market";
@@ -278,13 +280,9 @@ function CriticalError({ error }: { readonly error: CriticalArtifactError }): Re
   return (
     <main className="app">
       <header className="masthead">
-        <div className="masthead-brand">
-          <span className="masthead-glyph chamfer" aria-hidden="true" />
-          <span className="wordmark">jeisey-tiers</span>
-          <span className="wordmark-sub" aria-hidden="true">
-            / Tiers &amp; arbitrage
-          </span>
-        </div>
+        <h1 className="masthead-brand">
+          <img className="masthead-logo" src={logoUrl} alt="Jeisey Tiers" width={434} height={145} />
+        </h1>
       </header>
       <div className="notice" data-severity="error" role="alert" style={{ marginTop: "1.5rem" }}>
         <strong>

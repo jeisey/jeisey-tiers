@@ -227,6 +227,18 @@ Each of these is a place the implementation does not match the source, and why.
     the indices are assigned over the sections actually rendered rather than fixed.
 11. **`REGIONAL VALUE GAP` keeps its artifact name.** The design shortens it to `REGIONAL GAP` in
     1c; the full label is what `docs/DATA_CONTRACTS.md` and the CSV call it.
+12. **The masthead brand is the owner's logo, not the source's wordmark** (Phase 9B,
+    2026-09-01). Artboard 2a's header sets the product name as type beside a notched command
+    glyph, and Phase 9A reproduced that literally: a glyph, `jeisey-tiers`, and a mono
+    `/ Tiers & arbitrage` sub-label. The owner then supplied `web/src/assets/jt_logo.png`, which
+    is the product's actual brand mark, so the artwork replaces all three. The header's *shape*
+    is unchanged — brand left, freshness and status chip right, the source's gradient wash still
+    running from the left — and only the brand element inside it moved. Nothing repeats the name
+    beside the picture: a visible duplicate wordmark would be a second brand, and a hidden one
+    would make a screen reader say "Jeisey Tiers" twice. The image is the document's `<h1>` and
+    its `alt` is the product name, which is the heading the page never had while the brand was a
+    `<span>`. The glyph's chamfer motif survives on the card frame, the tier-stack blocks and the
+    primary buttons, so deviation 6 above is unaffected.
 
 ## 7. What did not change
 

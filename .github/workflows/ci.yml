@@ -106,6 +106,12 @@ jobs:
             exit 1
           fi
 
+      # The favicon is generated from the owner's logo, so the committed bytes and the
+      # generator must not be able to drift apart — the same rule the golden artifacts and
+      # the feature dictionary already live under (AGENTS.md section 18).
+      - name: Confirm the generated favicon is current
+        run: uv run python scripts/make_favicon.py --check
+
       - name: Summarise the Python gates
         id: report
         if: always()
@@ -200,6 +206,24 @@ jobs:
             echo "::error::an absolute root path survived the base-path build"
             exit 1
           fi
+          # The icons are the one asset class referenced from index.html rather than from
+          # the module graph, so they are the one that can carry a root-relative path that
+          # works locally and 404s only once deployed.
+          if grep -qE 'href="/(favicon|apple-touch-icon)' web/dist/index.html; then
+            echo "::error::an icon href ignored VITE_BASE_PATH and would 404 on Pages"
+            grep -E 'rel="(icon|apple-touch-icon)"' web/dist/index.html
+            exit 1
+          fi
+          for icon in favicon.ico favicon.png apple-touch-icon.png; do
+            if ! grep -q "href=\"/jeisey-tiers/${icon}\"" web/dist/index.html; then
+              echo "::error::${icon} is not linked at the project base path"
+              exit 1
+            fi
+            if [ ! -s "web/dist/${icon}" ]; then
+              echo "::error::${icon} is missing from the built output"
+              exit 1
+            fi
+          done
 
       - name: Summarise the frontend gates
         if: always()
@@ -212,7 +236,7 @@ jobs:
             echo "| eslint / tsc | \`${{ job.status }}\` |"
             echo "| vitest | see the job log |"
             echo "| build (\`/\`) | ok |"
-            echo "| build (\`/jeisey-tiers/\`) | asset URLs asserted |"
+            echo "| build (\`/jeisey-tiers/\`) | asset and icon URLs asserted |"
           } >> "$GITHUB_STEP_SUMMARY"
 
   e2e:

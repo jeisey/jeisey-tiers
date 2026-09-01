@@ -532,6 +532,152 @@ test.describe("project Pages base path", () => {
   });
 });
 
+/*
+ * The Phase-9B release treatment: the owner's logo in place of the typeset wordmark, a favicon
+ * generated from the same artwork, and both export controls centring their label.
+ *
+ * Each of the three is asserted the way it can actually fail. The logo is a *measured* aspect
+ * ratio rather than a rendered `<img>`, because a stretched logo still renders. The favicon is
+ * a *fetched status* at the project base path, because a root-relative href resolves perfectly
+ * in development and 404s only once deployed. The label is a *geometry comparison* against its
+ * own button box, because the defect the owner reported — an anchor that is `display: inline`,
+ * where `height` does nothing and `text-align` never reaches the text — is invisible to any
+ * assertion on the string.
+ */
+test.describe("release brand and export treatment", () => {
+  const VIEWPORTS = [
+    { name: "desktop", width: 1440, height: 900 },
+    { name: "tablet", width: 900, height: 1000 },
+    { name: "mobile", width: 390, height: 844 },
+  ] as const;
+
+  test("shows the logo as the only masthead brand, beside freshness and status", async ({
+    page,
+  }) => {
+    await openBoard(page);
+    const logo = page.locator("header.masthead img.masthead-logo");
+    await expect(logo).toBeVisible();
+    await expect(logo).toHaveAttribute("alt", "Jeisey Tiers");
+    // The image is the document's h1, so the page has one top-level heading and its
+    // accessible name is the product.
+    await expect(page.getByRole("heading", { level: 1, name: "Jeisey Tiers" })).toBeVisible();
+
+    // The Phase-9A wordmark is gone, not merely hidden behind the picture.
+    await expect(page.locator("header.masthead")).not.toContainText("jeisey-tiers");
+    await expect(page.locator("header.masthead")).not.toContainText("Tiers & arbitrage");
+    await expect(page.locator(".wordmark, .wordmark-sub, .masthead-glyph")).toHaveCount(0);
+
+    // Everything the masthead carried besides the brand still does.
+    await expect(page.getByText("Aug 21 · 10:38 AM ET")).toBeVisible();
+    await expect(statusChip(page)).toBeVisible();
+    await statusChip(page).click();
+    await expect(page).toHaveURL(/view=data/);
+    await expect(page.getByRole("heading", { name: "What this is" })).toBeVisible();
+  });
+
+  for (const viewport of VIEWPORTS) {
+    test(`keeps the logo, freshness and status on one masthead at ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await openBoard(page);
+
+      const logo = page.locator("img.masthead-logo");
+      const box = await logo.boundingBox();
+      expect(box, "the logo must be laid out").not.toBeNull();
+      if (box === null) return;
+
+      // The artwork is 434x145. A rendered ratio that drifts from it is a stretched logo.
+      expect(box.width / box.height).toBeCloseTo(434 / 145, 1);
+      // Big enough to read as a brand, small enough not to own the viewport.
+      expect(box.height).toBeGreaterThanOrEqual(32);
+      expect(box.width).toBeLessThanOrEqual(viewport.width * 0.6);
+
+      // Freshness and status stay on screen rather than being pushed out by the mark.
+      for (const target of [page.getByText("Aug 21 · 10:38 AM ET"), statusChip(page)]) {
+        const meta = await target.boundingBox();
+        expect(meta).not.toBeNull();
+        if (meta === null) continue;
+        expect(meta.x).toBeGreaterThanOrEqual(0);
+        expect(meta.x + meta.width).toBeLessThanOrEqual(viewport.width + 1);
+      }
+
+      // The masthead may not be what makes the document scroll sideways.
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
+
+  test("serves the favicon under the project base path, not only the root", async ({ page }) => {
+    await page.goto("/jeisey-tiers/");
+    const hrefs = await page
+      .locator('link[rel="icon"], link[rel="apple-touch-icon"]')
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") ?? ""));
+
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) {
+      // A root-relative href is the failure this test exists for: it works locally and 404s
+      // on Pages. Every icon must sit under the base the page was served from.
+      expect(href.startsWith("/jeisey-tiers/")).toBe(true);
+      const response = await page.request.get(href);
+      expect(response.status(), `${href} must be served`).toBe(200);
+      expect(Number(response.headers()["content-length"] ?? "1")).toBeGreaterThan(0);
+    }
+
+    await expect(page).toHaveTitle(/Jeisey Tiers/);
+  });
+
+  for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
+    test(`centres both export labels at ${viewport.name}`, async ({ page }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await openBoard(page);
+
+      const controls = [
+        page.getByRole("link", { name: "Download full CSV" }),
+        page.getByRole("button", { name: /Export filtered CSV/ }),
+      ];
+
+      for (const control of controls) {
+        const offsets = await control.evaluate((node) => {
+          const frame = node.getBoundingClientRect();
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const label = range.getBoundingClientRect();
+          return {
+            dx: (label.left + label.right) / 2 - (frame.left + frame.right) / 2,
+            dy: (label.top + label.bottom) / 2 - (frame.top + frame.bottom) / 2,
+            labelWidth: label.width,
+            frameHeight: frame.height,
+          };
+        });
+
+        expect(offsets.labelWidth, "the label must have been measured").toBeGreaterThan(0);
+        // Half a track of trailing letter-spacing is the only offset allowed; anything larger
+        // is a layout bug rather than typography.
+        expect(Math.abs(offsets.dx)).toBeLessThanOrEqual(1.5);
+        expect(Math.abs(offsets.dy)).toBeLessThanOrEqual(1.5);
+        // The frame is a real control box, which is what an `display: inline` anchor was not.
+        expect(offsets.frameHeight).toBeGreaterThanOrEqual(36);
+      }
+    });
+  }
+
+  test("keeps a visible focus ring on both export controls", async ({ page }) => {
+    await openBoard(page);
+    for (const control of [
+      page.getByRole("link", { name: "Download full CSV" }),
+      page.getByRole("button", { name: /Export filtered CSV/ }),
+    ]) {
+      await control.focus();
+      await expect(control).toBeFocused();
+      const width = await control.evaluate((node) => getComputedStyle(node).outlineWidth);
+      expect(Number.parseFloat(width)).toBeGreaterThan(0);
+    }
+  });
+});
+
 test.describe("accessibility", () => {
   test("keyboard reaches the controls, the tabs and the table in order", async ({ page }) => {
     await openBoard(page);

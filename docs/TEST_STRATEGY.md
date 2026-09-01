@@ -412,6 +412,126 @@ table and writes a JSON record, and a human decides whether a number in it is a 
 An eighteen-player fixture proves layout and measures nothing.
 
 
+## 8.3 Phase-9B invariants (release brand and export treatment)
+
+Three release-polish changes, each asserted the way it can actually fail rather than the way it
+is easiest to assert. The tests are in `web/tests/e2e/board.spec.ts` under
+`release brand and export treatment`, and they run in the ordinary Chromium project.
+
+### The masthead logo
+
+A rendered `<img>` proves nothing: a stretched, clipped or hairline logo still renders. So the
+checks are geometric and run at **1440, 900 and 390** CSS pixels:
+
+- the rendered **aspect ratio** is compared against the file's own 434:145, which is what a
+  future `height`/`width` pair that disagrees with the artwork would break;
+- the rendered **height** must clear 32px, so a later "make it smaller" cannot quietly turn the
+  brand into a footnote, and its width must stay under 60% of the viewport, so it cannot take
+  the header over;
+- the **freshness stamp and status chip** must both still have their boxes on screen, which is
+  the failure a wide mark actually causes;
+- `document.documentElement.scrollWidth` must not exceed `clientWidth`, because a masthead is a
+  cheap way to give the whole document a horizontal scrollbar on a phone.
+
+Two absence checks sit beside them, since removal is half the change: the header must not
+contain `jeisey-tiers` or `Tiers & arbitrage` as text, and `.wordmark`, `.wordmark-sub` and
+`.masthead-glyph` must have **zero** elements — hidden is not removed. `page.getByRole("heading",
+{ level: 1 })` asserts the accessible name the image now carries.
+
+### The favicon
+
+The failure mode is specifically a **root-relative href**, which resolves perfectly in
+development and 404s only once deployed under `/jeisey-tiers/`. Asserting the tag exists would
+miss it entirely. So the test loads the page **at the project base path**, reads every
+`rel="icon"` and `rel="apple-touch-icon"` href off the served document, requires each to start
+with `/jeisey-tiers/`, and then **fetches it and asserts a 200 with a non-zero body**. The
+document title is checked in the same test, because it is the other thing `index.html` carries.
+
+`ci.yml`'s base-path build repeats the structural half offline: it greps the built `index.html`
+for a root-relative icon href, requires each icon to be linked at the base path, and requires
+each file to be non-empty in `web/dist/`. The generator itself is pinned by
+`scripts/make_favicon.py --check`, which rebuilds the three assets and compares bytes — the same
+discipline the golden artifacts and the feature dictionary already live under.
+
+### The nine-preset matrix
+
+`web/tests/e2e/verify-presets.mjs` (`npm run verify:presets`) is the other axis from
+`verify:board`. `verify-real-build.mjs` compares the rendered page with the artifact bytes cell
+by cell for **one** block, PPR/redraft-12; this one is shallower per block and covers all
+**nine**. The failure it exists to catch is a preset that is healthy in the artifact and dead in
+the product, or healthy for the default board and broken for the eight nobody looks at — which
+is the same case `coverage_summary` takes a `min` across the nine blocks to catch, and the case
+`redraft-14` joining the supported set in Phase 7 created.
+
+Two passes, cheapest first, so a failure localises:
+
+1. **Artifacts**, from disk: rows present in `tiers`, `projections` and `arbitrage`; fair ranks
+   unique **and** a complete `1..N` run, since a hole means a player is missing from the board
+   and a duplicate means two share a position; tiers present, zero-based per
+   `tier_record.schema.json`, and **contiguous in fair-rank order** (AGENTS.md section 9); every
+   arbitrage row naming a player that block actually ranks. Projections are matched on scoring
+   alone, because a points forecast does not vary by league size and the schema carries no
+   `league_preset_id` — matching them on the block key would report every projection missing,
+   which would be a bug in the checker rather than a finding about the build.
+2. **Browser**, all nine URLs: the board, the tier table and the arbitrage table populate; the
+   rank-1 name on screen is the artifact's rank-1 name **for that block**; the scoring and teams
+   controls report the requested state, because if the controls disagree with the URL then every
+   number on the page belongs to a different league; and nothing logs a console error, throws,
+   refuses a contract or reports a degraded artifact. Every block also asserts that no request
+   leaves the site's own origin — per block rather than once, because a preset-specific code
+   path is exactly where a stray fetch would hide.
+
+`--url` runs pass 2 against a deployed site while still reading the artifacts from disk, which
+is how the released build is checked against `https://jeisey.github.io/jeisey-tiers/`.
+
+The fixture build publishes only two of the nine blocks, so this script is expected to report
+seven absent blocks there; it is a check on a **production** build and the strict nine is the
+point of it.
+
+### The four CSV exports
+
+`web/tests/e2e/verify-csv.mjs` (`npm run verify:csv`) downloads all four exports from a real
+browser and parses every one. Section 9 asks for real CSV verification before release, and a
+clicked button is not that.
+
+The two kinds fail differently, which is why both are checked. A **full** export is the
+versioned artifact the Python serializer wrote, and its failure mode is a broken href — most
+plausibly one that ignores the Pages base path; it is asserted byte-identical to `tiers.csv` /
+`arbitrage.csv` on disk. A **filtered** export is generated in the browser from the rows on
+screen, and its failure mode is exporting the artifact instead of the view — so the filtered
+pass activates **four filters at once** (scoring, league size, position and a search term) and
+then asserts, from both directions, that the file holds exactly the visible rows in the visible
+order and nothing outside them.
+
+Also checked: the filename, whose date comes from build metadata and never from the clock; the
+header, which is a published column order rather than whatever the table renders; the UTF-8 BOM
+the filtered export writes so Excel reads accented names; CRLF terminators; and RFC 4180
+quoting — proved on a real value if the board has one containing a comma, quote or newline, and
+reported as **not exercised** if it does not, rather than passing silently. NFL names rarely
+carry a comma, so the escaping rule itself is pinned directly in `web/tests/csv.test.ts`; this
+script's job is to say whether a real export happened to exercise it.
+
+The filter target is derived from the artifact rather than hard-coded, preferring
+`HALF/redraft-14` — the least-travelled block in the launch matrix — and falling back to
+whatever the build publishes. Hard-coding it was the first draft and it was wrong: a fixture
+build publishes two blocks, so the filtered pass had nothing to export and timed out on its own
+assumption. Two further checker bugs it found about itself are worth not repeating: the search
+parameter is `search`, not `q`, and `matchesSearch` matches name, team **or** an exact position,
+so asserting it against the name alone reports a correct export as wrong.
+
+### The export labels
+
+The defect the owner reported was invisible to any assertion on the string, so the test measures
+**geometry**: a `Range` over the control's own text gives the painted label box, which is
+compared with the control's `getBoundingClientRect()` on both axes, at desktop and mobile, for
+both export controls. Tolerance is 1.5px. Measured before the fix, the `Download full CSV`
+anchor's label centre sat **14.5px above** its frame centre while the `<button>` beside it sat at
+0.78px; both now measure 0.78px, which is the trailing letter-space every tracked control in the
+app carries. The control frame is also required to be at least 36px tall, because a blockified
+anchor that ignored `height` is exactly what produced the bug. A separate test asserts a non-zero
+`outlineWidth` on both controls when focused, so centring cannot be bought with a focus regression.
+
+
 ## 9. Manual review requirements
 
 Before V1 release, a human/agent visual review should inspect:

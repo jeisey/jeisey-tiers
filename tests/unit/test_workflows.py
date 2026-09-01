@@ -13,6 +13,9 @@ review is not good enough:
 4. **The private repository's address exists in exactly one place.** `config/source-registry.
    yaml` records it and `.github/actions/market-data-store` reads it, so a move is one edit
    rather than a search.
+5. **The deployed-site smoke observes and never acts.** `live-smoke.yml` was added for the
+   Phase-9B release checklist and reads a public URL. It must stay outside the production job
+   graph: no `pages:` scope, no store credential, no write anywhere.
 """
 
 from __future__ import annotations
@@ -22,7 +25,13 @@ import re
 import pytest
 import yaml
 
-WORKFLOWS = ("ci.yml", "daily-refresh.yml", "retrain.yml", "market-capture.yml")
+WORKFLOWS = (
+    "ci.yml",
+    "daily-refresh.yml",
+    "retrain.yml",
+    "market-capture.yml",
+    "live-smoke.yml",
+)
 
 #: Hosts a production workflow may contact. Ordinary CI may contact none of them.
 VENDOR_HOSTS = (
@@ -196,6 +205,44 @@ def test_retrain_is_gated_on_evidence_not_on_the_calendar(workflows):
     candidate = workflows["retrain.yml"]["jobs"]["candidate"]
     assert candidate["needs"] == "gate"
     assert "needs.gate.outputs.should_retrain == 'true'" in candidate["if"]
+
+
+# --- 3b. The deployed-site smoke observes and never acts ------------------------------------
+
+
+def test_live_smoke_cannot_deploy_or_write(workflows, workflow_dir):
+    """It reads a public URL. Nothing about that needs a scope beyond `contents: read`."""
+    smoke = workflows["live-smoke.yml"]
+    assert smoke["permissions"] == {"contents": "read"}
+    for name, job in smoke["jobs"].items():
+        permissions = job.get("permissions") or {}
+        assert "pages" not in permissions, f"live-smoke.yml job {name} asks for a pages scope"
+        assert "write" not in yaml.safe_dump(permissions), (
+            f"live-smoke.yml job {name} elevates permissions to {permissions}"
+        )
+    text = _code(workflow_dir / "live-smoke.yml")
+    for forbidden in ("deploy-pages", "upload-pages-artifact", "configure-pages", "git push"):
+        assert forbidden not in text, f"live-smoke.yml references {forbidden}"
+
+
+def test_live_smoke_needs_no_credential_and_no_vendor(workflow_dir):
+    """Everything it compares against is downloaded from the public site itself."""
+    text = _code(workflow_dir / "live-smoke.yml")
+    assert "MARKET_DATA_REPO_TOKEN" not in text
+    assert "secrets." not in text
+    for host in VENDOR_HOSTS:
+        assert host not in text, f"live-smoke.yml references {host}"
+
+
+def test_live_smoke_is_not_in_the_production_job_graph(workflows):
+    """It gates nothing, so it must not be scheduled and must not be `needs:`-ed by a deploy."""
+    smoke = workflows["live-smoke.yml"]
+    assert set(smoke["on"]) == {"workflow_dispatch"}, (
+        "live-smoke.yml must run only on dispatch; a schedule would make an observation "
+        "look like a gate"
+    )
+    for workflow in ("daily-refresh.yml", "ci.yml"):
+        assert "live-smoke" not in yaml.safe_dump(workflows[workflow])
 
 
 # --- 4. One address for the private store ---------------------------------------------------

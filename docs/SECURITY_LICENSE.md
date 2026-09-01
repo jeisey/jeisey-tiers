@@ -147,6 +147,18 @@ collection, `docs/ARCHITECTURE.md` section 3.2 forbids a third-party call in the
 path, and `web/tests/e2e/board.spec.ts` fails any request that leaves localhost. The site makes
 no cross-origin request at all.
 
+### Owner artwork
+
+**`web/src/assets/jt_logo.png`** is the project owner's own logo, supplied by them and uploaded
+directly to `main` on 2026-09-01. It is not a vendor asset, carries no third-party licence
+obligation, and nothing else in the repository depends on redistribution rights to it.
+
+`web/public/favicon.ico`, `web/public/favicon.png` and `web/public/apple-touch-icon.png` are
+**generated from that file** by `scripts/make_favicon.py` and are committed. They are original
+geometry drawn in a palette sampled from the logo — no part of the artwork is copied into them —
+so they inherit its rights position exactly and add no new one. `ci.yml` runs the generator with
+`--check`, so a committed icon cannot drift from the code that produced it.
+
 ### Software licence
 
 **Deliberately unresolved (Phase 7, 2026-08-22).** The repository carries no `LICENSE` file, and Phase 7 did not add one. Making a repository public is a visibility decision; choosing a software licence is a separate rights decision that belongs to the project owner, and picking one on their behalf because the code became readable would be choosing for them.
