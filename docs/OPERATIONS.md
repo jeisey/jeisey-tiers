@@ -685,6 +685,11 @@ uv run python scripts/retrain_gate.py
 
 # Render a refresh summary locally, from artifacts already on disk.
 uv run python scripts/workflow_summary.py --artifacts web/public/data --store ../market-data
+
+# Regenerate the favicon from the owner's logo; --check compares the committed bytes instead
+# of writing, which is what ci.yml runs (Phase 9B).
+uv run python scripts/make_favicon.py
+uv run python scripts/make_favicon.py --check
 ```
 
 `build-current`, `measure-market-cohorts` and `build-arbitrage` need retained bytes and, for

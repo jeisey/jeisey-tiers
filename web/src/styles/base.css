@@ -350,9 +350,10 @@ code {
 }
 
 /*
- * The masthead. The source's command-board header, element for element: notched glyph,
- * wordmark, mono sub-label, right-hand timestamp and a status chip. The gradient wash from the
- * left is the source's own.
+ * The masthead. The source's command-board header, with the owner's logo where Phase 9A had
+ * a notched glyph, a wordmark and a mono sub-label: the artwork carries the brand and nothing
+ * repeats it. The gradient wash from the left is the source's own; the right-hand timestamp
+ * and status chip are unchanged.
  */
 .masthead {
   display: flex;
@@ -368,37 +369,39 @@ code {
   padding-right: var(--space-5);
 }
 
+/*
+ * `.masthead-brand` is the document's `<h1>`, so the heading's own margin and type are reset:
+ * its content is a picture, and a heading's font size would only re-introduce a line box
+ * taller than the image inside it.
+ */
 .masthead-brand {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
   min-width: 0;
+  margin: 0;
+  font-size: inherit;
+  line-height: 0;
 }
 
-.masthead-glyph {
-  --notch: 6px;
+/*
+ * The logo is sized by height, with `width: auto`, so its aspect ratio comes from the file
+ * rather than from a pair of numbers here that a re-export could falsify. `--masthead-logo`
+ * is the one value each breakpoint moves.
+ *
+ * The artwork is 434x145 with transparent margins — the ink is 422x103 — so the mark reads
+ * about 71% of whatever height is set here. 48px therefore paints a ~34px wordmark, which is
+ * a header presence rather than a footnote, and still leaves the row shorter than the 40px
+ * controls below it plus their padding.
+ */
+.masthead-logo {
+  --masthead-logo: 48px;
 
-  width: 22px;
-  height: 22px;
-  flex: none;
-  border: var(--hairline) solid var(--line-bright);
-  background: var(--accent-wash-strong);
-}
-
-.wordmark {
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  white-space: nowrap;
-}
-
-.wordmark-sub {
-  font: 500 0.68rem/1 var(--font-mono);
-  letter-spacing: 0.1em;
-  color: var(--ink-faint);
-  text-transform: uppercase;
-  white-space: nowrap;
+  height: var(--masthead-logo);
+  width: auto;
+  max-width: 100%;
+  display: block;
+  flex: 0 1 auto;
+  object-fit: contain;
 }
 
 .masthead-meta {
@@ -742,8 +745,27 @@ code {
 
 /* --------------------------------------------------------------- buttons */
 
+/*
+ * `.button` dresses both a `<button>` and the `Download full CSV` `<a>`, and without a
+ * `display` of its own the two did not lay their label out the same way. A native `<button>`
+ * centres its content in the control box; a blockified anchor does not — its single line box
+ * sits at the *top* of the 40px frame. Measured in Chromium at 1440px before this rule: the
+ * anchor's label centre was 14.5px above its frame centre, the button's 0.78px. That is the
+ * "not centred" the owner reported, and it was vertical rather than horizontal.
+ *
+ * `inline-flex` with both axes centred makes the two identical by construction, which is why
+ * the fix is a layout rule and not a padded string. Both now measure 0.78px.
+ *
+ * That residual is the tracking's trailing letter-space — CSS adds the track after the last
+ * character too — and it is deliberately not compensated for: every other tracked control in
+ * the app carries the same offset, so correcting it here alone would make the export pair the
+ * odd one out. `web/tests/e2e/board.spec.ts` measures both controls against their own frames.
+ */
 .button {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: var(--control-height);
   padding: 0 14px;
   background: transparent;
@@ -751,7 +773,8 @@ code {
   color: var(--ink-accent);
   font: 600 0.66rem/1 var(--font-sans);
   letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   transition: all var(--t);
 }
@@ -2840,6 +2863,10 @@ dl.facts dd {
     padding-right: var(--space-3);
   }
 
+  .masthead-logo {
+    --masthead-logo: 42px;
+  }
+
   /* Narrower shared columns. The scale, the strips and the bars move together because they
      all read the same two variables. */
   .tier-board {
@@ -2894,8 +2921,10 @@ dl.facts dd {
     padding-bottom: var(--space-2);
   }
 
-  .wordmark-sub {
-    display: none;
+  /* The meta row already wraps to a line of its own below, so the mark keeps a usable size
+     on a phone instead of shrinking to share one line with the timestamp. */
+  .masthead-logo {
+    --masthead-logo: 38px;
   }
 
   .masthead-meta {

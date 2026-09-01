@@ -11,7 +11,14 @@
          chrome is told before first paint rather than flashing white and correcting. -->
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#050b14" />
-    <title>Fantasy Draft Intelligence</title>
+    <!-- The icon hrefs below are written against Vite's base token, which the build replaces
+         with `/` in development and `/jeisey-tiers/` on the Pages project site. A root-relative
+         `/favicon.ico` would 404 on exactly one of those two, and it would be the deployed one.
+         The artwork is generated from web/src/assets/jt_logo.png by scripts/make_favicon.py. -->
+    <link rel="icon" href="%BASE_URL%favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" href="%BASE_URL%favicon.png" sizes="48x48" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" sizes="180x180" />
+    <title>Jeisey Tiers — Fantasy Draft Intelligence</title>
   </head>
   <body>
     <div id="root"></div>

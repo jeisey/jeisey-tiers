@@ -412,6 +412,60 @@ table and writes a JSON record, and a human decides whether a number in it is a 
 An eighteen-player fixture proves layout and measures nothing.
 
 
+## 8.3 Phase-9B invariants (release brand and export treatment)
+
+Three release-polish changes, each asserted the way it can actually fail rather than the way it
+is easiest to assert. The tests are in `web/tests/e2e/board.spec.ts` under
+`release brand and export treatment`, and they run in the ordinary Chromium project.
+
+### The masthead logo
+
+A rendered `<img>` proves nothing: a stretched, clipped or hairline logo still renders. So the
+checks are geometric and run at **1440, 900 and 390** CSS pixels:
+
+- the rendered **aspect ratio** is compared against the file's own 434:145, which is what a
+  future `height`/`width` pair that disagrees with the artwork would break;
+- the rendered **height** must clear 32px, so a later "make it smaller" cannot quietly turn the
+  brand into a footnote, and its width must stay under 60% of the viewport, so it cannot take
+  the header over;
+- the **freshness stamp and status chip** must both still have their boxes on screen, which is
+  the failure a wide mark actually causes;
+- `document.documentElement.scrollWidth` must not exceed `clientWidth`, because a masthead is a
+  cheap way to give the whole document a horizontal scrollbar on a phone.
+
+Two absence checks sit beside them, since removal is half the change: the header must not
+contain `jeisey-tiers` or `Tiers & arbitrage` as text, and `.wordmark`, `.wordmark-sub` and
+`.masthead-glyph` must have **zero** elements — hidden is not removed. `page.getByRole("heading",
+{ level: 1 })` asserts the accessible name the image now carries.
+
+### The favicon
+
+The failure mode is specifically a **root-relative href**, which resolves perfectly in
+development and 404s only once deployed under `/jeisey-tiers/`. Asserting the tag exists would
+miss it entirely. So the test loads the page **at the project base path**, reads every
+`rel="icon"` and `rel="apple-touch-icon"` href off the served document, requires each to start
+with `/jeisey-tiers/`, and then **fetches it and asserts a 200 with a non-zero body**. The
+document title is checked in the same test, because it is the other thing `index.html` carries.
+
+`ci.yml`'s base-path build repeats the structural half offline: it greps the built `index.html`
+for a root-relative icon href, requires each icon to be linked at the base path, and requires
+each file to be non-empty in `web/dist/`. The generator itself is pinned by
+`scripts/make_favicon.py --check`, which rebuilds the three assets and compares bytes — the same
+discipline the golden artifacts and the feature dictionary already live under.
+
+### The export labels
+
+The defect the owner reported was invisible to any assertion on the string, so the test measures
+**geometry**: a `Range` over the control's own text gives the painted label box, which is
+compared with the control's `getBoundingClientRect()` on both axes, at desktop and mobile, for
+both export controls. Tolerance is 1.5px. Measured before the fix, the `Download full CSV`
+anchor's label centre sat **14.5px above** its frame centre while the `<button>` beside it sat at
+0.78px; both now measure 0.78px, which is the trailing letter-space every tracked control in the
+app carries. The control frame is also required to be at least 36px tall, because a blockified
+anchor that ignored `height` is exactly what produced the bug. A separate test asserts a non-zero
+`outlineWidth` on both controls when focused, so centring cannot be bought with a focus regression.
+
+
 ## 9. Manual review requirements
 
 Before V1 release, a human/agent visual review should inspect:

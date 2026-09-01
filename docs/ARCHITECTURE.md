@@ -182,6 +182,7 @@ The implementation agent may make modest naming changes, but subsystem boundarie
 > - `src/ffdraft/quality/semantic.py` — the semantic/domain drift layer.
 > - `src/ffdraft/pipeline/historical.py` — the historical build, alongside the Phase-1 fixture pipeline.
 > - `scripts/capture_source_schemas.py` — records upstream schemas for the Phase-2 loaders in the Phase-0 format.
+> - `scripts/make_favicon.py` (Phase 9B) — generates `web/public/favicon.{ico,png}` and `apple-touch-icon.png` from `web/src/assets/jt_logo.png`, with a `--check` mode CI runs so the committed bytes cannot drift from the generator.
 > - `docs/FEATURE_DICTIONARY.md` — generated from the dictionary module, with a test asserting it is current.
 >
 > **Phase-3 deltas**, also additive:

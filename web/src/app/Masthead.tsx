@@ -7,11 +7,22 @@
  *
  * Phase 9A adopted the design source's command-board header, which is the same five elements
  * in the same order — including a build-notes chip that already matched `mastheadStatus`. The
- * wordmark is the source's: it names the product `jeisey-tiers`, which is what the repository,
- * the Pages URL and the owner call it. The `ffdraft-` CSV prefix is an export contract and is
- * deliberately untouched (`web/src/data/csv.ts`).
+ * `ffdraft-` CSV prefix is an export contract and is deliberately untouched
+ * (`web/src/data/csv.ts`).
+ *
+ * Phase 9B replaced the typeset wordmark — the notched glyph, `jeisey-tiers` and the mono
+ * sub-label — with the owner's own logo artwork. It is the product's real brand mark, so it
+ * stands alone: repeating "jeisey-tiers" beside a picture that already says it would be
+ * duplicate branding, and repeating it to a screen reader would be duplicate announcements.
+ * The artwork's `alt` is the product name, and the `<h1>` around it gives the document the
+ * top-level heading it never had while the brand was a `<span>`.
+ *
+ * The import goes through Vite so the emitted URL carries the build's `base` — the site is
+ * served from `/` in development and from `/jeisey-tiers/` on Pages, and a hand-written
+ * `/src/...` path would resolve in exactly one of those.
  */
 
+import logoUrl from "../assets/jt_logo.png";
 import type { BuildMetadata } from "../data/contracts";
 import type { Degradation } from "../data/bundle";
 import { formatAge, formatEastern } from "../data/format";
@@ -68,14 +79,11 @@ export function Masthead({
   const status = mastheadStatus(metadata, degradations, ageHours);
   return (
     <header className="masthead">
-      <div className="masthead-brand">
-        {/* The design source's notched command glyph. Decoration, and marked as such. */}
-        <span className="masthead-glyph chamfer" aria-hidden="true" />
-        <span className="wordmark">jeisey-tiers</span>
-        <span className="wordmark-sub" aria-hidden="true">
-          / Tiers &amp; arbitrage
-        </span>
-      </div>
+      <h1 className="masthead-brand">
+        {/* Intrinsic dimensions are the artwork's own, so the row reserves the right box
+            before the image decodes rather than reflowing the freshness stamp into it. */}
+        <img className="masthead-logo" src={logoUrl} alt="Jeisey Tiers" width={434} height={145} />
+      </h1>
       <div className="masthead-meta">
         <span className="freshness">
           Updated <strong>{formatEastern(metadata.generated_at_utc)}</strong>
