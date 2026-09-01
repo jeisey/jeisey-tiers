@@ -488,6 +488,37 @@ The fixture build publishes only two of the nine blocks, so this script is expec
 seven absent blocks there; it is a check on a **production** build and the strict nine is the
 point of it.
 
+### The four CSV exports
+
+`web/tests/e2e/verify-csv.mjs` (`npm run verify:csv`) downloads all four exports from a real
+browser and parses every one. Section 9 asks for real CSV verification before release, and a
+clicked button is not that.
+
+The two kinds fail differently, which is why both are checked. A **full** export is the
+versioned artifact the Python serializer wrote, and its failure mode is a broken href — most
+plausibly one that ignores the Pages base path; it is asserted byte-identical to `tiers.csv` /
+`arbitrage.csv` on disk. A **filtered** export is generated in the browser from the rows on
+screen, and its failure mode is exporting the artifact instead of the view — so the filtered
+pass activates **four filters at once** (scoring, league size, position and a search term) and
+then asserts, from both directions, that the file holds exactly the visible rows in the visible
+order and nothing outside them.
+
+Also checked: the filename, whose date comes from build metadata and never from the clock; the
+header, which is a published column order rather than whatever the table renders; the UTF-8 BOM
+the filtered export writes so Excel reads accented names; CRLF terminators; and RFC 4180
+quoting — proved on a real value if the board has one containing a comma, quote or newline, and
+reported as **not exercised** if it does not, rather than passing silently. NFL names rarely
+carry a comma, so the escaping rule itself is pinned directly in `web/tests/csv.test.ts`; this
+script's job is to say whether a real export happened to exercise it.
+
+The filter target is derived from the artifact rather than hard-coded, preferring
+`HALF/redraft-14` — the least-travelled block in the launch matrix — and falling back to
+whatever the build publishes. Hard-coding it was the first draft and it was wrong: a fixture
+build publishes two blocks, so the filtered pass had nothing to export and timed out on its own
+assumption. Two further checker bugs it found about itself are worth not repeating: the search
+parameter is `search`, not `q`, and `matchesSearch` matches name, team **or** an exact position,
+so asserting it against the name alone reports a correct export as wrong.
+
 ### The export labels
 
 The defect the owner reported was invisible to any assertion on the string, so the test measures
