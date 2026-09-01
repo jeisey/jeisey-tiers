@@ -25,19 +25,29 @@
  *      block, and nothing logs a console error, throws, refuses a contract or reports a
  *      degraded artifact.
  *
+ * `--review` adds a third pass over named blocks — the *deeper look at representative
+ * permutations* a release asks for, done in measurements rather than in pixels. For each block
+ * at 1440px and 390px it prints the rendered top ten beside the artifact's own top ten, the
+ * tier-band / player-bar / axis alignment invariant, the masthead's boxes, both export
+ * controls' label centring, and the document's horizontal overflow. Screenshots are captured
+ * separately and are for a human; these numbers are what a reader of a job log can actually
+ * check, and what would catch a board that renders the wrong league's rows at a viewport
+ * nobody screenshotted.
+ *
  * Usage:
  *
  *   node web/tests/e2e/verify-presets.mjs                                  # web/dist at /
  *   node web/tests/e2e/verify-presets.mjs --dist web/dist --base-path /jeisey-tiers/
  *   node web/tests/e2e/verify-presets.mjs --url https://jeisey.github.io/jeisey-tiers \
  *                                         --data web/public/data
+ *   node web/tests/e2e/verify-presets.mjs --review "PPR/redraft-12,HALF/redraft-10,STD/redraft-14"
  *
  * With `--url` no server is started, so this runs against a deployed site; the artifacts are
  * still read from disk, because the point is to compare the page with the bytes the build
  * produced. Exit status is 0 only when every block passes both passes.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -57,7 +67,7 @@ const SCORINGS = [
 const TEAM_COUNTS = [10, 12, 14];
 
 function parseArgs(argv) {
-  const args = { dist: "web/dist", data: null, basePath: "/", port: 4181, url: null };
+  const args = { dist: "web/dist", data: null, basePath: "/", port: 4181, url: null, review: [], screens: null };
   for (let i = 0; i < argv.length; i += 1) {
     const [flag, inline] = argv[i].split("=");
     const value = inline ?? argv[++i];
@@ -76,6 +86,12 @@ function parseArgs(argv) {
         break;
       case "--url":
         args.url = value.replace(/\/$/, "");
+        break;
+      case "--review":
+        args.review = value.split(",").map((entry) => entry.trim()).filter(Boolean);
+        break;
+      case "--screens":
+        args.screens = value;
         break;
       default:
         throw new Error(`unknown option ${flag}`);
@@ -100,6 +116,11 @@ const metadata = read("build_metadata.json");
 
 const failures = [];
 const fail = (block, message) => failures.push(`[${block}] ${message}`);
+const reviewChecks = [];
+const check_review = (block, viewport, name, ok, detail) => {
+  reviewChecks.push({ block, viewport, name, ok, detail });
+  if (!ok) failures.push(`[${block} @ ${viewport}] ${name} — ${detail}`);
+};
 
 // --------------------------------------------------------------------- pass 1: artifacts
 
@@ -290,6 +311,143 @@ try {
       await page.close();
     }
   }
+  // ------------------------------------------------------- pass 3: the representative review
+  //
+  // Measured rather than eyeballed, because a job log can carry numbers and cannot carry a
+  // screenshot, and because the failures worth catching here — the wrong league's rows, a band
+  // off its own track, a label out of its box — are all quantities.
+  for (const name of args.review) {
+    const row = summary.find((entry) => entry.block === name);
+    if (row === undefined) {
+      fail(name, "asked for review but this block is not in the artifacts");
+      continue;
+    }
+    const [presetName, presetId] = name.split("/");
+    const scoring = SCORINGS.find((s) => s.preset === presetName);
+    const teams = Number(presetId.replace("redraft-", ""));
+    const artifactTop = tiers.records
+      .filter((r) => r.league_preset_id === presetId && r.scoring_preset === presetName)
+      .sort((a, b) => a.fair_rank - b.fair_rank)
+      .slice(0, 10);
+
+    for (const [label, width, height] of [
+      ["desktop", 1440, 900],
+      ["mobile", 390, 844],
+    ]) {
+      const page = await browser.newPage({ viewport: { width, height } });
+      const noise = [];
+      page.on("console", (m) => {
+        if (m.type() === "error") noise.push(m.text());
+      });
+      page.on("pageerror", (e) => noise.push(e.message));
+      try {
+        const query = `?scoring=${scoring.value}&teams=${teams}&tiers=${row.openAll}`;
+        await page.goto(`${base}/${query}`, { waitUntil: "networkidle" });
+        await page.waitForSelector("table.sheet tbody tr", { timeout: 20000 });
+
+        const seen = await page.evaluate(() => {
+          const box = (selector) => {
+            const node = document.querySelector(selector);
+            if (node === null) return null;
+            const r = node.getBoundingClientRect();
+            return { w: +r.width.toFixed(1), h: +r.height.toFixed(1), x: +r.x.toFixed(1) };
+          };
+          const centring = (node) => {
+            if (node === null) return null;
+            const frame = node.getBoundingClientRect();
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            const label = range.getBoundingClientRect();
+            return {
+              dx: +((label.left + label.right) / 2 - (frame.left + frame.right) / 2).toFixed(2),
+              dy: +((label.top + label.bottom) / 2 - (frame.top + frame.bottom) / 2).toFixed(2),
+              h: +frame.height.toFixed(1),
+            };
+          };
+          const buttons = [...document.querySelectorAll("a.button, button.button")].filter((n) =>
+            /CSV/i.test(n.textContent ?? ""),
+          );
+          return {
+            rows: [...document.querySelectorAll("table.sheet tbody tr")].slice(0, 10).map((tr) => {
+              const cells = [...tr.querySelectorAll("td")].map((td) => td.textContent.trim());
+              // The name cell also holds the injury badge and its screen-reader sentence, so
+              // the readable name comes from its own element — the same correction the
+              // Phase-7 audit made to `verify-real-build.mjs` for the same reason.
+              const name = tr.querySelector(".player-name")?.textContent?.trim() ?? "";
+              // The badge is a visible short form plus a screen-reader sentence; the first child
+              // is the visible half, which is what a reader of this log wants.
+              const badge =
+                tr.querySelector(".status-badge > span[aria-hidden]")?.textContent?.trim() ?? "";
+              return {
+                rank: cells[0] ?? "",
+                name,
+                badge,
+                cells: [cells[0] ?? "", name, ...cells.slice(2, 7)],
+              };
+            }),
+            boardRows: document.querySelectorAll(".board-row").length,
+            tierLanes: document.querySelectorAll(".tier-lane").length,
+            logo: box("img.masthead-logo"),
+            freshness: box(".freshness"),
+            status: box(".status-chip"),
+            csv: buttons.map((n) => ({ text: (n.textContent ?? "").trim(), ...centring(n) })),
+            overflow:
+              document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            wordmark: document.querySelectorAll(".wordmark, .wordmark-sub, .masthead-glyph").length,
+          };
+        });
+
+        // The rendered top ten against the artifact's own top ten. This is the check that
+        // fails if a preset renders another league's board.
+        const rendered = seen.rows.map((r) => `${r.rank} ${r.name}`);
+        const expected = artifactTop.map((r) => `${r.fair_rank} ${r.display_name}`);
+        const agree = expected.every((entry, i) => rendered[i] === entry);
+        check_review(name, label, "top ten matches the artifact", agree,
+          `rendered ${rendered.slice(0, 3).join(" | ")} against ${expected.slice(0, 3).join(" | ")}`);
+        check_review(name, label, "no console error or throw", noise.length === 0, noise.slice(0, 3).join("; "));
+        check_review(name, label, "no horizontal overflow", seen.overflow <= 0, `${seen.overflow}px`);
+        check_review(name, label, "the old wordmark is absent", seen.wordmark === 0,
+          `${seen.wordmark} legacy brand element(s)`);
+        check_review(name, label, "the logo keeps the artwork ratio", 
+          seen.logo !== null && Math.abs(seen.logo.w / seen.logo.h - 434 / 145) < 0.05,
+          JSON.stringify(seen.logo));
+        check_review(name, label, "freshness and status stay on screen",
+          seen.freshness !== null && seen.status !== null &&
+            seen.freshness.x >= 0 && seen.status.x >= 0,
+          JSON.stringify({ freshness: seen.freshness, status: seen.status }));
+        check_review(name, label, "both CSV labels are centred in a real control box",
+          seen.csv.length === 2 && seen.csv.every((c) => Math.abs(c.dx) <= 1.5 && Math.abs(c.dy) <= 1.5 && c.h >= 36),
+          JSON.stringify(seen.csv));
+
+        console.log(`\n--- ${name} @ ${label} (${width}x${height}) ---`);
+        console.log(`  board rows ${seen.boardRows}, tier lanes ${seen.tierLanes}, ` +
+          `logo ${seen.logo === null ? "absent" : `${seen.logo.w}x${seen.logo.h}`}, overflow ${seen.overflow}px`);
+        for (const control of seen.csv) {
+          console.log(`  "${control.text}" box ${control.h}px, label offset dx ${control.dx} dy ${control.dy}`);
+        }
+        for (const r of seen.rows.slice(0, 10)) {
+          console.log(`  ${r.cells.join(" | ")}${r.badge === "" ? "" : `  [${r.badge}]`}`);
+        }
+
+        // A picture for a human, taken from the same navigation the numbers above came from,
+        // so the two cannot describe different pages.
+        if (args.screens !== null) {
+          mkdirSync(args.screens, { recursive: true });
+          const slug = `${name.replace("/", "-").toLowerCase()}-${label}`;
+          await page.screenshot({ path: `${args.screens}/${slug}.png`, fullPage: true });
+          await page.screenshot({
+            path: `${args.screens}/${slug}-masthead.png`,
+            clip: { x: 0, y: 0, width, height: Math.min(240, height) },
+          });
+          console.log(`  screenshots: ${slug}.png, ${slug}-masthead.png`);
+        }
+      } catch (error) {
+        fail(`${name} @ ${label}`, `review failed: ${error.message}`);
+      } finally {
+        await page.close();
+      }
+    }
+  }
 } finally {
   await browser.close();
   if (server !== null) server.close();
@@ -309,6 +467,13 @@ for (const row of summary) {
       `${String(row.projections).padStart(6)} ${String(row.arbitrageRows).padStart(6)} ` +
       `${String(row.arbitrageRendered ?? "-").padStart(6)}  ${row.topPlayer}`,
   );
+}
+
+if (reviewChecks.length > 0) {
+  console.log(`\nrepresentative review: ${reviewChecks.filter((c) => c.ok).length}/${reviewChecks.length} checks pass`);
+  for (const entry of reviewChecks.filter((c) => !c.ok)) {
+    console.log(`  ✗ ${entry.block} @ ${entry.viewport}: ${entry.name}`);
+  }
 }
 
 if (failures.length > 0) {
