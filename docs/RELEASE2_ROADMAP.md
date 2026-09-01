@@ -89,34 +89,240 @@ A source that does not meet those requirements stays disabled.
 
 ## Goal
 
-Turn the Arbitrage Board from **Intrinsic vs MFL** into a market-aware decision surface while preserving MFL as a first-class source and keeping expert consensus distinct from observed draft behavior.
+Turn the Arbitrage Board from **Intrinsic vs MFL** into a market-aware decision surface with **Fantasy Football Calculator (FFC) as the required second production draft-price source**, while preserving MFL as a first-class source and keeping expert consensus distinct from observed draft behavior.
 
 This phase should be deployable independently of Phases 11-12.
 
-## 10.1 Source feasibility and policy gate
+Phase 10 is the dedicated post-V1 market-methodology change that ADR-053 and ADR-056 explicitly deferred. Do **not** reopen the question of whether FFC is generally usable: the repository already measured that the API is reachable from GitHub Actions, the publisher permits API use with attribution/restraint, genuine `standard` / `ppr` / `half-ppr` cohorts exist, volume is materially larger than MFL, and per-player standard deviation is available. Re-probe only the facts that can change operationally, especially the current `teams` behavior, schema, volume, freshness/window, and identity coverage.
 
-Before implementation, create a short evidence record for each candidate source.
+## Pre-Phase Human Step
 
-Prioritize:
+These actions have external lead time and should be done before or in parallel with the Phase 10 coding session. **Neither may block FFC + MFL shipping.**
 
-1. **Sleeper** — highest-priority additional production source if a permitted, stable draft-price signal can be derived or retrieved.
-2. **MFL** — retain as the existing verified production source.
-3. **FantasyPros ECR** — retain as `benchmark_only` unless the current terms explicitly permit public production use for this project.
-4. **Yahoo** — production only if an official acquisition path can operate within the static/GitHub Actions architecture and redistribution terms permit it.
-5. **ESPN** — production only if a permitted, stable source is verified. Do not rely on undocumented endpoints by default.
-6. Any additional source — must pass the same gate; source count alone is not a Release 2 success metric.
+1. **Yahoo:** submit/request official Yahoo Fantasy API access if not already approved. Record the application date/status. Phase 10 may prepare an optional adapter only after official access and redistribution semantics are verified; Release 2 must not wait for approval.
+2. **Sleeper:** ask Sleeper for explicit written permission to use the undocumented projections/ADP endpoint/fields for this free public site. The documented Sleeper API remains permitted for its existing roles, but undocumented ADP must not enter production without explicit authorization.
 
-Update `docs/DATA_SOURCES.md`, `config/source-registry.yaml`, schema fixtures, and ADRs for every accepted or rejected source.
-
-### Exit criterion
-
-Every investigated source has an explicit `production`, `benchmark_only`, or `disabled` disposition supported by evidence. No source enters production on assumption.
+No FFC API key or pre-registration is required. The one human task FFC does require happens *during* the phase: review the generated FFC identity-alias proposal before those aliases are accepted as production identity truth.
 
 ---
 
-## 10.2 Generalize the market contract
+## 10.1 Freeze the source dispositions before implementation
 
-Refactor the market pipeline so source-specific adapters normalize into one versioned quote contract without losing source-specific semantics.
+Use the following source order and disposition unless new primary-source evidence contradicts it.
+
+### 10.1.1 Fantasy Football Calculator — **required production target**
+
+FFC is the first new source to implement. The objective is not another exploratory sweep; it is to productionize the already-verified source safely.
+
+Required Phase 10 actions:
+
+1. Re-run and extend the existing GitHub-runner FFC probe (`scripts/probe_ffc.py` / `.github/workflows/source-probe-ffc.yml`) against the current 2026 API.
+2. Verify the current live schemas for `standard`, `ppr`, and `half-ppr`.
+3. Verify current source window/freshness, total draft volume, per-player sample/dispersion fields, and once-daily usage guidance.
+4. Re-test `teams=` across at least 8/10/12/14-team requests **per player**, not merely at envelope level.
+5. If `teams=` is still accepted but ignored, this is **not a blocker**. Record FFC as an exact scoring-format market with league-size unavailable. Never label it “12-team FFC ADP” when the API does not substantiate that claim.
+6. If `teams=` now materially differentiates cohorts, capture the new evidence and write a successor ADR rather than silently overturning ADR-056.
+7. Preserve FFC's actual aggregation semantics. The previous probe measured a rolling/recent window, while MFL is a season-cumulative aggregate. Store and display those as different source semantics rather than pretending they are interchangeable.
+8. Add the required FFC attribution in the appropriate public Data/Methodology surface.
+9. Respect the publisher's requested API cadence. A normal production refresh should fetch no more frequently than the documented cadence unless new publisher guidance explicitly permits it.
+
+**Required production semantics if the prior behavior still holds:**
+
+```text
+source_id: fantasyfootballcalculator_adp
+market_signal_type: adp
+scoring_preset: STD | HALF | PPR       # exact
+league_size: null                      # not observed / not claimable
+cohort_exact_scoring: true
+cohort_exact_league_size: false
+aggregation_window: rolling/recent     # exact field/version from current probe
+market_adp_sd: populated when supplied
+```
+
+FFC should be presented to users as the **recent scoring-specific market**, not as a generic replacement for MFL.
+
+### 10.1.2 MyFantasyLeague — **retain production unchanged**
+
+MFL remains the Release 1 market baseline and must not be redefined to make multi-source output easier.
+
+- Preserve the existing adapter, cohort-selection rules, fields, trend retention, and V1 semantics.
+- Preserve its season-cumulative aggregation semantics.
+- Do not force MFL and FFC into the same apparent cohort precision.
+- Existing MFL output given identical inputs must remain semantically unchanged.
+
+The useful contrast is intentional:
+
+```text
+FFC = recent / rolling, scoring-specific draft market
+MFL = broader season-cumulative draft market with its existing cohort rules
+```
+
+### 10.1.3 Yahoo — **optional production candidate; non-blocking**
+
+Yahoo is worth adding because its official Fantasy API exposes draft-analysis fields such as average pick/round and percent drafted. However, current API access requires application/OAuth and therefore has human lead time.
+
+Only enable Yahoo if all of the following are verified:
+
+- official API access is approved and stable from GitHub Actions;
+- authentication can be stored entirely in GitHub secrets/backend workflow execution;
+- the exact draft-analysis semantics are recorded;
+- redistribution/public-display terms permit this use;
+- source freshness and identity coverage meet the same quality bar as MFL/FFC.
+
+If approval is not available during Phase 10, record Yahoo as `verify_before_use` / deferred and ship without it.
+
+### 10.1.4 Sleeper — **documented API production; draft ADP disabled pending permission**
+
+Keep the currently documented Sleeper API in production for the roles already verified in Release 1, including player/status/injury context and any permitted trending/add-drop use.
+
+Do **not** infer a global Sleeper ADP from individual public drafts as a Phase 10 shortcut, and do not use `search_rank` as pseudo-ADP.
+
+The undocumented projections endpoint appears to expose scoring-specific ADP fields, but it is not a documented API surface. Treat those fields as:
+
+```text
+policy: disabled_pending_written_permission
+```
+
+If Sleeper grants explicit permission, perform a fresh schema/semantics probe and write an ADR before enabling it. Otherwise Phase 10 ships without Sleeper ADP.
+
+### 10.1.5 FantasyPros — **benchmark only**
+
+Preserve the existing `benchmark_only` decision.
+
+- A developer/free API or permitted mirror may be useful for internal validation.
+- ECR is expert consensus, not ADP, and must never masquerade as draft price.
+- Do not publish or redistribute FantasyPros fields unless current terms explicitly permit the exact public use.
+- FantasyPros remains outside intrinsic features and outside critical production dependencies.
+
+### 10.1.6 ESPN — **disabled**
+
+Do not build Phase 10 on undocumented ESPN fantasy endpoints. There is no verified sanctioned public production route that meets this project's reliability/policy standard.
+
+### 10.1.7 Other sources
+
+Do not spend the Phase 10 session hunting for logo count after FFC is working. A new source may be considered only if it clearly improves user utility and passes the same policy/schema/freshness/identity gates without delaying the required FFC + MFL deliverable.
+
+### Exit criterion
+
+- FFC and MFL have explicit `production` dispositions with independently preserved semantics.
+- Yahoo has a truthful `production` or deferred/`verify_before_use` disposition based on actual approval status.
+- Sleeper's documented roles remain separated from any undocumented ADP role.
+- FantasyPros remains `benchmark_only` and ESPN remains `disabled` unless new primary-source evidence justifies a new ADR.
+- `docs/DATA_SOURCES.md`, `config/source-registry.yaml`, source fixtures, and ADRs reflect measured Phase 10 facts rather than assumptions.
+
+---
+
+## 10.2 Build FFC identity linkage as a reviewed record-linkage workflow
+
+FFC's internal player IDs do not bridge directly to the canonical identifiers already used by the project. Solve this once as a lightweight, testable record-linkage workflow rather than maintaining an ad-hoc hand-typed map.
+
+### Design decision
+
+Use **RapidFuzz normalized Levenshtein similarity** for candidate generation. Do not add a heavyweight pandas/entity-resolution framework for ~300 football players. The desired workflow is:
+
+```text
+FFC row
+  -> normalize source fields
+  -> block candidate pool by exact fantasy position
+  -> score canonical name candidates with normalized Levenshtein similarity
+  -> retain top candidates + metadata diagnostics
+  -> write deterministic review report/proposed alias rows
+  -> HUMAN REVIEW
+  -> approved FFC id -> canonical player_id alias
+  -> production exact-id lookup
+```
+
+RapidFuzz is preferred because it provides deterministic, efficient Levenshtein/normalized-similarity primitives and score cutoffs without introducing a broad dataframe linkage dependency.
+
+### Name normalization
+
+Implement one deterministic normalization function, covered by unit tests. At minimum:
+
+- Unicode normalize consistently;
+- lowercase/casefold;
+- normalize apostrophes, periods, hyphens and repeated whitespace;
+- remove punctuation that is non-identifying after normalization;
+- normalize common generational suffixes (`Jr`, `Sr`, `II`, `III`, `IV`) consistently rather than allowing punctuation differences to create false misses;
+- preserve both original and normalized values in the review output.
+
+Do **not** build a large nickname dictionary as the first solution. If reviewed false negatives demonstrate recurring nickname aliases, add only evidence-backed aliases through the existing human-reviewed identity mechanism.
+
+### Candidate blocking and scoring
+
+1. Exclude team units/DST and non-QB/RB/WR/TE records before linkage.
+2. **Block on position exactly.** A QB may never fuzzy-match to an RB/WR/TE merely because a name is similar.
+3. Do **not** hard-block on team. Team can be stale around trades/free agency and should be a diagnostic/tie-break signal, not a condition that erases the true candidate.
+4. For each FFC player, score all canonical players in the same-position candidate pool using normalized Levenshtein similarity.
+5. Persist at least the top two candidates and:
+
+```text
+ffc_player_id
+ffc_display_name
+ffc_position
+ffc_team
+normalized_ffc_name
+candidate_1_player_id
+candidate_1_name
+candidate_1_score
+candidate_1_team
+candidate_2_player_id
+candidate_2_name
+candidate_2_score
+score_margin
+team_agrees
+review_status
+```
+
+6. The implementation may use initial review bands such as `>= 0.92` top-score and `>= 0.08` margin to classify a row as `high_confidence_candidate`, but **thresholds are review prioritization only**. Calibrate/freeze them against the reviewed FFC population before documenting them as methodology.
+7. Exact normalized-name + position matches should be marked clearly and sorted first for review, but they still do not bypass the identity contract when FFC has no authoritative bridge.
+
+### Fail-closed rule — non-negotiable
+
+**Fuzzy matching never directly resolves a production player.** It proposes a match for review.
+
+This preserves ADR-019's identity philosophy: names are evidence/diagnostics, not an authoritative bridge. Production FFC capture resolves only through an approved mapping keyed by stable FFC player ID. If an FFC ID is unknown or its alias is not approved, retain the source row and reason in evidence/history, exclude it from public arbitrage, and surface it in the review queue.
+
+### Human review workflow
+
+The coding agent should generate a deterministic initial review artifact for the full live FFC QB/RB/WR/TE population and a proposed alias patch. The human reviewer should be able to approve the obvious batch quickly and focus attention on low-score/small-margin/collision rows.
+
+After initial seeding, daily capture should produce only the small delta of new/changed FFC IDs requiring review (for example rookies, late signings, or vendor identity changes).
+
+### Required tests
+
+Build a compact gold fixture containing difficult cases, including:
+
+- punctuation/apostrophe/hyphen variants;
+- `Jr.` / `III` suffix differences;
+- exact same-position name matches;
+- similar names within the same position;
+- team changes/stale team labels;
+- rookies/new players;
+- duplicate or near-duplicate canonical names;
+- malformed/missing position;
+- intentionally ambiguous rows;
+- a player for whom the correct candidate is second under naive name-only matching.
+
+Tests must prove:
+
+- deterministic output/order;
+- no cross-position candidate can resolve;
+- ambiguous/tied candidates fail closed;
+- unknown IDs fail closed;
+- normalization does not collapse two known distinct players into an accepted alias;
+- approved aliases resolve exactly on later runs without fuzzy scoring;
+- the candidate generator has measured top-1 and top-k recall against the reviewed live/gold set;
+- no fuzzy score, however high, bypasses the approved-alias gate.
+
+### Exit criterion
+
+The live FFC population produces a reproducible review report; the approved alias file covers the declared production threshold; unresolved records are counted and fail closed; and subsequent FFC ingestion resolves through exact approved IDs rather than re-fuzzy-matching the whole market every run.
+
+---
+
+## 10.3 Generalize the market quote contract without erasing source semantics
+
+Refactor the market pipeline so source-specific adapters normalize into one versioned quote contract while preserving the facts needed to understand why MFL and FFC differ.
 
 At minimum preserve:
 
@@ -127,10 +333,15 @@ snapshot_at_utc
 source_as_of_utc
 season
 cohort_id
+scoring_preset|null
+league_size|null
+aggregation_window_type
+aggregation_window_days|null
 player_id
 market_adp|null
 market_rank|null
 sample_size|null
+market_adp_sd|null
 market_low|null
 market_high|null
 quality_flags[]
@@ -139,27 +350,40 @@ quality_flags[]
 Rules:
 
 - An ECR row must never masquerade as ADP.
-- A platform ADP must retain the platform identity.
-- Exact vs approximate scoring/league-size cohorts remain explicit.
-- Player identity failures remain retained in the private/history evidence path and excluded from public arbitrage output.
-- Historical snapshots continue append-only retention using a versioned contract.
+- A platform/source ADP must retain source identity.
+- Exact vs unavailable/approximate scoring and league-size cohort dimensions remain explicit.
+- For FFC, if `teams=` remains ignored, `league_size` is unknown/not claimable rather than silently copied from the selected intrinsic preset.
+- FFC standard deviation is a real dispersion field; MFL min/max are extreme order statistics and must not be relabeled as standard deviation.
+- Aggregation window semantics must remain explicit enough that a user can distinguish FFC recent/rolling from MFL cumulative.
+- Player identity failures remain retained in private/history evidence and excluded from public arbitrage output.
+- Historical snapshots continue append-only retention using a versioned contract, with separate source trees.
 
 ### Exit criterion
 
-At least two production market sources can travel adapter → canonical quote → identity → snapshot retention → arbitrage artifact through the same tested interface, without source-specific branching in the frontend.
+MFL and FFC can travel adapter → canonical quote → identity → snapshot retention → arbitrage artifact through the same tested interface without source-specific branching in the frontend, while the resulting records still make their different cohort/window/dispersion semantics recoverable.
 
 ---
 
-## 10.3 Add market-relative arbitrage outputs
+## 10.4 Add source-relative arbitrage and cross-market disagreement
 
-For each eligible production market source, compute the V1 transparent baseline independently:
+For each eligible production ADP source, compute the existing transparent baseline independently:
 
 ```text
 rank_gap = market_adp - fair_rank
 regional_value_gap = ln(market_adp / fair_rank)
 ```
 
-Do **not** average source ADPs before calculating these values.
+Do **not** average FFC and MFL before calculating these values.
+
+The same player should legitimately be able to read, for example:
+
+```text
+Intrinsic Fair Rank: 42
+FFC Recent Half-PPR ADP: 61
+MFL Cumulative ADP: 53
+FFC rank gap: +19
+MFL rank gap: +11
+```
 
 Add a cross-market diagnostic layer containing, where available:
 
@@ -173,51 +397,70 @@ most_expensive_market_source
 sources_available
 ```
 
-Any “consensus market ADP” is optional and must have a documented, versioned method. Median is preferred over mean if a simple summary is needed, but component prices remain primary.
+Because FFC and MFL describe different aggregation windows/populations, `market_adp_median` is a convenience summary only. It must not become the default canonical price unless a separate versioned methodology is frozen first.
+
+Cross-market disagreement is itself useful information and should remain interpretable from the component quotes.
 
 ### Exit criterion
 
-The same player can have independent MFL/Sleeper/etc. arbitrage values, and a cross-market disagreement value can be reproduced exactly from the component quotes.
+The same player has independent MFL and FFC arbitrage values, source semantics are visible, and every cross-market value can be reproduced exactly from the component quotes.
 
 ---
 
-## 10.4 Update the draft UI
+## 10.5 Update the draft UI around source choice, not source blending
 
-Add a market selector to the Arbitrage Board:
+Add a market selector to the Arbitrage Board. With the required two sources the baseline UI should be:
 
 ```text
-Market: MFL | Sleeper | ... | Cross-market
+Market: FFC Recent | MFL Cumulative | Cross-market
 ```
+
+Add Yahoo only if its official adapter actually passes the production gate. Do not render disabled/benchmark-only sources as selectable public markets.
 
 Recommended behavior:
 
-- default to the best-supported production source rather than silently averaging;
-- remember the selection in the URL/query state where practical;
-- show source freshness beside the selected market;
-- expose ECR/benchmark values separately from platform ADP;
-- add a “market disagreement” sort/filter in the cross-market view;
-- keep the existing fair-rank and tier views unchanged.
+- default to a clearly labeled production source rather than silently averaging;
+- strongly consider **FFC Recent** as the default for draft-week use because it is scoring-specific and responds to the recent market, while preserving MFL as an equally accessible broader/cumulative view;
+- remember market selection in URL/query state where practical;
+- show source freshness/window beside the selected market;
+- show whether the market is scoring-specific and whether league size is actually observed;
+- expose benchmark ECR only on internal/diagnostic surfaces unless public redistribution is permitted;
+- add a market-disagreement sort/filter in the cross-market view;
+- keep the intrinsic Tier Board unchanged.
 
-Player detail should make the distinction obvious:
+Player detail should make the distinction explicit:
 
 ```text
 Intrinsic Fair Rank
-MFL ADP
-Sleeper ADP
-Benchmark ECR (if permitted)
-Market spread
+FFC Recent ADP
+FFC ADP Std Dev
+MFL Cumulative ADP
+MFL observed min/max
+Yahoo ADP (only if enabled)
+Cross-market spread
 ```
 
-### Phase 10 quality gates
+Never display `12-team FFC ADP` unless the Phase 10 re-probe proves the team-size parameter genuinely changes the cohort.
+
+---
+
+## Phase 10 quality gates
 
 - Existing V1 intrinsic artifacts are byte-identical given identical inputs/model/build identity.
 - Existing MFL outputs remain semantically unchanged.
+- FFC current API/schema/terms/cadence behavior has fresh runner evidence.
+- FFC `teams=` behavior is re-measured and labeled truthfully; ignored team size is not treated as a release blocker.
+- FFC `standard`, `half-ppr`, and `ppr` scoring cohorts are fixture-tested.
+- FFC attribution is present where required.
+- FFC player-ID linkage uses the reviewed alias gate; fuzzy scores never auto-resolve production identity.
+- Record-linkage candidate generation has deterministic tests plus measured top-1/top-k recall on reviewed data.
+- Identity coverage and unresolved counts are reported per source.
+- FFC and MFL retain independent aggregation-window and dispersion semantics.
 - No new market feature appears in the intrinsic feature audit.
 - Every new adapter has fixture tests and schema-drift failure tests.
-- Identity coverage and unresolved counts are reported per source.
-- Frontend works when one, several, or all optional secondary sources are unavailable.
+- Frontend works if optional Yahoo/Sleeper secondary integrations are unavailable.
 - Last-known-good deployment behavior remains intact.
-- Desktop and mobile visual QA completed.
+- Desktop and mobile visual QA completed for all production market modes.
 
 ### Phase 10 scope boundaries
 
@@ -225,6 +468,9 @@ Do not build:
 
 - a learned arbitrage model without a valid historical point-in-time target;
 - an opaque blended ADP;
+- automatic fuzzy identity resolution from player names;
+- a scraped/undocumented ESPN source;
+- undocumented Sleeper ADP without written authorization;
 - roster synchronization;
 - an in-season projection model;
 - weekly start/sit rankings.
@@ -234,10 +480,14 @@ Do not build:
 Before starting Phase 11, update `SESSION_STATE.md` with:
 
 - accepted sources and their exact semantics;
+- FFC probe results, including scoring cohorts, team-size behavior, aggregation window, volume, dispersion, and cadence;
+- FFC alias/linkage coverage, unresolved count, review method, candidate recall, and alias-file path;
+- Yahoo application/approval status;
+- Sleeper ADP permission status;
 - rejected/deferred sources and why;
 - market contract version;
 - source coverage/freshness results;
-- UI behavior;
+- UI default/source-selection behavior;
 - commands/tests/run IDs proving the exit gate.
 
 ---
