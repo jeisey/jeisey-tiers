@@ -194,3 +194,179 @@ def test_market_cohort_remeasurement_is_scheduled_for_phase_5(registry):
     rule = decisions["market_cohort_remeasure_rule"].lower()
     assert "widest reliable cohort" in rule
     assert "approximate" in rule
+
+
+# --------------------------------------------------------------------------------------
+# Phase 10 (ADR-060 … ADR-066)
+# --------------------------------------------------------------------------------------
+
+
+def test_the_registry_and_the_code_agree_on_every_frozen_phase10_version(registry):
+    """Three places describe each version; a drift between them is a silent contract break.
+
+    The registry is what a human reads, the module constant is what production uses, and a
+    published artifact carries the string. Pinning the first two to each other here is the
+    cheapest way to notice the day one of them moves alone.
+    """
+    from ffdraft.identity.linkage import LINKAGE_RULE
+    from ffdraft.market.comparison import COMPARISON_METHOD_VERSION
+    from ffdraft.market.surface import (
+        MARKET_TOP_DEPTH,
+        SURFACE_RULE_VERSION,
+        TIER_DEPTH_RULE,
+        TIER_DEPTH_V1,
+    )
+
+    decisions = registry["decisions"]
+    assert decisions["market_linkage_rule_version"] == LINKAGE_RULE.version
+    assert decisions["market_linkage_min_coverage"] == LINKAGE_RULE.min_coverage
+    assert decisions["market_comparison_method_version"] == COMPARISON_METHOD_VERSION
+    assert decisions["surface_rule_version"] == SURFACE_RULE_VERSION
+    assert decisions["tier_depth_rule_version"] == TIER_DEPTH_RULE.version
+    assert decisions["tier_depth_rule_v1_version"] == TIER_DEPTH_V1.version
+    assert decisions["market_top_surface_depth"] == MARKET_TOP_DEPTH
+
+
+def test_the_surface_coverage_requirement_is_total(registry):
+    """Roadmap 10.5 asks for 100%, and anything less would let a drafted player vanish."""
+    assert registry["decisions"]["market_top_surface_coverage_required"] == 1.0
+
+
+def test_the_v1_tier_depth_is_retained_so_a_release_1_board_stays_reproducible(registry):
+    """Release 2 guardrail 2.1: version alongside V1 evidence rather than rewriting it."""
+    from ffdraft.market.surface import TIER_DEPTH_RULE, TIER_DEPTH_V1
+
+    decisions = registry["decisions"]
+    assert decisions["tier_depth_rule_v1_version"] != decisions["tier_depth_rule_version"]
+    assert TIER_DEPTH_V1.depth == 300
+    assert TIER_DEPTH_RULE.depth > TIER_DEPTH_V1.depth
+
+
+def test_ffc_is_production_and_may_never_claim_a_league_size(registry):
+    """ADR-056, re-measured 2026-09-02: `teams=` is accepted and ignored."""
+    entry = registry["sources"]["fantasyfootballcalculator_adp"]
+    assert entry["policy"] == "production_allowed"
+    assert entry["verified_at"] == "2026-09-02"
+    assert entry["attribution_required"] is True
+    assert "league_size_cohort" in entry["forbidden_roles"]
+    assert entry["aggregation"]["window_type"] == "rolling"
+    assert entry["aggregation"]["window_days_observed"] == 7
+    assert entry["identity"]["coverage"] == 1.0
+    assert entry["identity"]["quarantined"] == 0
+
+    issue = next(i for i in entry["known_issues"] if i["id"] == "teams_accepted_and_ignored")
+    assert "byte-identical" in issue["detail"]
+
+
+def test_ffcs_own_cohorts_and_the_code_agree(registry):
+    """A registry that named a cohort the adapter cannot build would be documentation only."""
+    from ffdraft.sources.ffc import FFC_COHORTS
+
+    recorded = set(registry["sources"]["fantasyfootballcalculator_adp"]["verified_cohorts_2026"])
+    built = {str(cohort.filters["format"]) for cohort in FFC_COHORTS}
+    assert recorded == built
+
+    for cohort in FFC_COHORTS:
+        assert cohort.league_size_semantics is None, (
+            f"{cohort.cohort_id} claims a league size the API does not substantiate"
+        )
+        assert cohort.scoring_semantics in {"STD", "HALF", "PPR"}
+
+
+def test_fantasypros_is_retained_but_not_published_and_says_why(registry):
+    """ADR-064: a failed exit criterion, kept visible rather than rounded up."""
+    entry = registry["sources"]["fantasypros_ecr"]
+    assert entry["published_to_public_artifacts"] is False
+    assert entry["adp_available"] is False
+    assert "public_artifact_field" in entry["forbidden_roles"]
+    assert "adp_price" in entry["forbidden_roles"]
+    assert "adp_aggregate_component" in entry["forbidden_roles"]
+
+    # The reason must be specific enough to act on, not "unavailable".
+    reason = entry["published_blocked_reason"].lower()
+    assert "free" in reason and "ten rows" in reason
+
+    # And the revisit condition must be checkable rather than aspirational.
+    assert entry["revisit_if"], "a blocked source with no revisit condition never unblocks"
+    assert "public_api_limited" in " ".join(entry["revisit_if"])
+
+
+def test_the_fantasypros_budget_matches_the_code_that_enforces_it(registry):
+    """A cap nothing checks is a comment. This asserts the two agree."""
+    from ffdraft.sources.fantasypros import (
+        FANTASYPROS_DAILY_REQUEST_CAP,
+        FANTASYPROS_MIN_REQUEST_INTERVAL_SECONDS,
+    )
+
+    budget = registry["sources"]["fantasypros_ecr"]["request_budget"]
+    assert budget["daily_cap"] == FANTASYPROS_DAILY_REQUEST_CAP
+    assert budget["min_interval_seconds"] == FANTASYPROS_MIN_REQUEST_INTERVAL_SECONDS
+    assert budget["daily_cap"] < budget["vendor_stated_daily"], (
+        "the project's cap is deliberately below the vendor's allowance (roadmap 10.1.3)"
+    )
+
+
+def test_the_fantasypros_key_is_recorded_as_a_name_and_stays_off_the_browser(registry):
+    """The ADR-017 convention, plus the rule that only the backend may hold this one."""
+    settings = registry["sources"]["fantasypros_ecr"]["client_settings"]
+    assert settings["api_key_env"] == "FANTASYPROS_API_KEY"
+    assert settings["api_key_env"].isupper()
+    assert settings["browser_access"] is False
+    assert "header" in settings["api_key_transport"].lower()
+    assert "query" in settings["api_key_transport"].lower(), (
+        "the transport note must say where the key does NOT go, not only where it does"
+    )
+
+
+def test_each_market_source_declares_how_it_resolves_identity(registry):
+    """Three sources, three strategies. The difference is the reason a spec exists."""
+    from ffdraft.market.multisource import MARKET_SOURCE_SPECS
+
+    strategies = registry["decisions"]["market_identity_strategies"]
+    assert strategies["fantasyfootballcalculator_adp"] == "generated_alias_only"
+    assert strategies["myfantasyleague_adp"] == "two_live_bridges_cross_checked"
+    assert strategies["fantasypros_ecr"] == "two_live_bridges_cross_checked"
+
+    for source_id, spec in MARKET_SOURCE_SPECS.items():
+        declared = strategies[source_id]
+        assert spec.identity.alias_only is (declared == "generated_alias_only")
+
+
+def test_generated_aliases_never_outrank_the_reviewed_file(registry):
+    """A machine's reading of a name must not overwrite a person's decision (ADR-061)."""
+    from ffdraft.identity.aliases import (
+        AliasEntry,
+        AliasMap,
+        load_alias_map,
+        load_production_aliases,
+    )
+
+    note = registry["decisions"]["market_alias_precedence"].lower()
+    assert "identity-aliases.yaml" in note
+    assert "wins" in note
+
+    # And the loader actually behaves that way, which the note alone cannot prove.
+    merged = load_production_aliases(source_ids=("fantasyfootballcalculator_adp",))
+    reviewed = load_alias_map(None)
+    assert isinstance(merged, AliasMap)
+    for key, entry in reviewed.entries.items():
+        assert isinstance(entry, AliasEntry)
+        assert merged.entries[key] == entry
+
+
+def test_the_generated_ffc_alias_file_is_loadable_and_labelled(registry):
+    """The committed alias file must parse, and must say what produced it."""
+    from ffdraft.identity.aliases import generated_alias_path, load_alias_map
+
+    path = generated_alias_path("fantasyfootballcalculator_adp")
+    if not path.is_file():  # pragma: no cover - the file is committed; this is a guard
+        return
+    header = path.read_text(encoding="utf-8").splitlines()[0]
+    assert "GENERATED" in header, "a generated file must announce itself"
+
+    aliases = load_alias_map(path)
+    assert len(aliases) > 0
+    for (source_id, _), entry in aliases.entries.items():
+        assert source_id == "fantasyfootballcalculator_adp"
+        assert entry.player_id.count(":") == 1, "a canonical id is namespaced (ADR-019)"
+        assert entry.reviewed_at
