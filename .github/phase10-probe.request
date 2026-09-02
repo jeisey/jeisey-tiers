@@ -1,0 +1,13 @@
+# Editing this file starts `source-probe-phase10.yml` on the branch it is pushed to.
+#
+# `workflow_dispatch` is unavailable until a workflow reaches the default branch, and the
+# Phase-10 measurements have to be taken before the branch is mergeable — the adapters this
+# phase ships must be written against a measured schema, not a remembered one (AGENTS.md
+# section 3). This is the same request-file mechanism `.github/market-capture.request`
+# already uses.
+#
+# Bump `run` to take a fresh set of measurements. Nothing is retained; the whole output is
+# the job summary, which a human reads and then writes into `docs/DATA_SOURCES.md`.
+run: 1
+sources: all
+requested_for: "Phase 10 — FFC / FantasyPros / Sleeper production dispositions"

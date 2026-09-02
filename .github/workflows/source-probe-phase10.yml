@@ -26,6 +26,17 @@ on:
           - fantasypros
           - sleeper
         default: all
+  # `workflow_dispatch` only becomes callable once the workflow exists on the default
+  # branch, which a phase branch has not reached yet. The request-file trigger is the
+  # pattern `market-capture.yml` already uses for the same reason: an explicit, reviewable
+  # edit is what starts a run, so a normal development push never spends a runner or
+  # touches a vendor.
+  push:
+    branches:
+      - main
+      - "claude/**"
+    paths:
+      - ".github/phase10-probe.request"
 
 permissions:
   contents: read
@@ -68,19 +79,19 @@ jobs:
         run: uv sync --frozen
 
       - name: Probe Fantasy Football Calculator
-        if: ${{ inputs.sources == 'all' || inputs.sources == 'fantasy-football-calculator' }}
+        if: ${{ github.event_name == 'push' || inputs.sources == 'all' || inputs.sources == 'fantasy-football-calculator' }}
         continue-on-error: true
         run: uv run python scripts/probe_ffc.py 2>&1 | tee ffc.log
 
       - name: Probe FantasyPros
-        if: ${{ inputs.sources == 'all' || inputs.sources == 'fantasypros' }}
+        if: ${{ github.event_name == 'push' || inputs.sources == 'all' || inputs.sources == 'fantasypros' }}
         continue-on-error: true
         env:
           FANTASYPROS_API_KEY: ${{ secrets.FANTASYPROS_API_KEY }}
         run: uv run python scripts/probe_fantasypros.py 2>&1 | tee fantasypros.log
 
       - name: Probe Sleeper player map and trending
-        if: ${{ inputs.sources == 'all' || inputs.sources == 'sleeper' }}
+        if: ${{ github.event_name == 'push' || inputs.sources == 'all' || inputs.sources == 'sleeper' }}
         continue-on-error: true
         run: uv run python scripts/probe_sleeper_trending.py 2>&1 | tee sleeper.log
 
@@ -88,7 +99,7 @@ jobs:
         if: always()
         run: |
           {
-            echo '## Phase-10 source probes — ${{ inputs.sources }}'
+            echo '## Phase-10 source probes — ${{ inputs.sources || 'all (push request)' }}'
             echo
             echo 'Findings below are **evidence**, not a decision. They belong in'
             echo '`docs/DATA_SOURCES.md`, `config/source-registry.yaml` and an ADR before'
