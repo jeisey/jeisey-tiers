@@ -12,15 +12,19 @@ __all__ = [
     "CORE_POSITIONS",
     "NFLVERSE_TEAM_CODES",
     "PFR_TEAM_ALIASES",
+    "AggregationWindow",
     "ArbitrageMode",
+    "BehaviorType",
     "CheckStatus",
     "Confidence",
     "DepthChartEra",
     "EntityKind",
+    "MarketSignalType",
     "Position",
     "ResolutionStatus",
     "Severity",
     "SourceStatus",
+    "SurfaceReason",
     "normalize_team_code",
 ]
 
@@ -219,6 +223,83 @@ class ArbitrageMode(StrEnum):
 
     BASELINE = "baseline"
     ML = "ml"
+
+
+class MarketSignalType(StrEnum):
+    """What a market quote actually measures (Phase 10, ADR-062).
+
+    The distinction is the load-bearing one in the whole multi-source layer. An **ADP** is
+    an observed draft price: people spent picks. An **ECR** is an expert consensus ranking:
+    people expressed an opinion. They answer different questions, they move for different
+    reasons, and averaging one into the other produces a number that describes neither.
+
+    `docs/RELEASE2_ROADMAP.md` 10.3 states the rule this enum exists to make enforceable:
+    *ECR must never masquerade as ADP*, and cross-market ADP aggregates exclude ECR. A
+    boolean or a free-text label would have let a caller forget; a closed vocabulary on
+    every quote row means the aggregate can filter on it and a test can assert it.
+    """
+
+    ADP = "adp"
+    ECR = "ecr"
+
+
+class AggregationWindow(StrEnum):
+    """How a source aggregates the drafts behind a price (Phase 10, ADR-062).
+
+    MyFantasyLeague publishes a season-cumulative aggregate: every draft since the export
+    year opened. Fantasy Football Calculator publishes a bounded recent window. Both are
+    called "ADP" and they are not the same measurement — a cumulative number moves slowly
+    because it is anchored by months of old drafts, a recent one reacts to this week.
+
+    Presenting them as interchangeable would be the "opaque consensus" Release 2's
+    guardrail 2.3 forbids, so the window travels on the quote and reaches the UI.
+    """
+
+    #: A bounded recent window. ``aggregation_window_days`` says how bounded, when known.
+    ROLLING = "rolling"
+    #: Every draft in the source's season to date.
+    SEASON_CUMULATIVE = "season_cumulative"
+    #: A ranking with no draft window at all (ECR). Not "unknown" — structurally absent.
+    NOT_APPLICABLE = "not_applicable"
+    #: The source publishes a price but documents no window. Never guessed at.
+    UNKNOWN = "unknown"
+
+
+class BehaviorType(StrEnum):
+    """Waiver-wire behaviour, which is not a draft price (Phase 10, ADR-062).
+
+    Sleeper's trending feeds count adds and drops. Roadmap 10.3 is explicit that these must
+    not be overloaded onto an ADP/ECR quote record: a count of adds is not a pick number and
+    a schema that let it sit in ``market_adp`` would eventually see it charted as one.
+    """
+
+    ADD = "add"
+    DROP = "drop"
+
+
+class SurfaceReason(StrEnum):
+    """Why a player is publicly visible (Phase 10, ADR-063).
+
+    Visibility and valuation are separated deliberately. A market signal may decide *whether
+    a player is surfaced*; it may never touch his intrinsic projection, VORP, fair rank or
+    tier. Every surfaced player therefore carries the reasons he qualified, and a reader (or
+    a test) can see that the reason was market relevance rather than a changed model.
+
+    Not every member is active in draft mode; the vocabulary is shared with Phase 12 so the
+    in-season surface does not need a second, subtly different contract.
+    """
+
+    #: Inside the versioned tier-segmentation depth. The ordinary case.
+    INTRINSIC_TOP_TIER_DEPTH = "intrinsic_top_tier_depth"
+    MARKET_TOP300_FFC_ADP = "market_top300_ffc_adp"
+    MARKET_TOP300_FANTASYPROS_ADP = "market_top300_fantasypros_adp"
+    MARKET_TOP300_FANTASYPROS_ECR = "market_top300_fantasypros_ecr"
+    MARKET_TOP300_MFL_ADP = "market_top300_mfl_adp"
+    #: Phase 12 members. Declared now so the contract does not change shape mid-season.
+    CURRENT_ROSTER_RELEVANT = "current_roster_relevant"
+    SLEEPER_TRENDING_ADD = "sleeper_trending_add"
+    SLEEPER_TRENDING_DROP = "sleeper_trending_drop"
+    CURRENT_DEPTH_PROMOTION = "current_depth_promotion"
 
 
 class DepthChartEra(StrEnum):

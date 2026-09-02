@@ -8,6 +8,6 @@
 #
 # Bump `run` to take a fresh set of measurements. Nothing is retained; the whole output is
 # the job summary, which a human reads and then writes into `docs/DATA_SOURCES.md`.
-run: 1
-sources: all
+run: 2
+sources: fantasypros
 requested_for: "Phase 10 — FFC / FantasyPros / Sleeper production dispositions"

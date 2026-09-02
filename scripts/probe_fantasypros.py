@@ -50,7 +50,7 @@ MIN_REQUEST_INTERVAL_SECONDS = 1.0
 
 #: Leave headroom under the cap so a probe can never be the reason a production capture
 #: is refused on the same day.
-PROBE_REQUEST_BUDGET = 30
+PROBE_REQUEST_BUDGET = 45
 
 HEADERS = {
     "User-Agent": (
@@ -505,6 +505,139 @@ def probe_identity(rows: Sequence[Mapping[str, Any]]) -> None:
         emit(f"  registry comparison unavailable: {type(exc).__name__}: {exc}")
 
 
+def probe_limit_and_pagination(path: str) -> None:
+    """Run 1 measured a hard 10-row response with ``public_api_limited: true``.
+
+    That is the single fact that decides whether FantasyPros can be a production ADP/ECR
+    source at all, so it gets its own section. Roadmap 10.1.3 item 7 is explicit: do not
+    mistake a truncated response for a complete top-300 market. Either a documented
+    parameter widens the window, or the key's tier does not serve one.
+    """
+    section("9. Is the 10-row cap a page size or a tier ceiling?")
+    url = _expand(path)
+    base = {"position": "ALL", "scoring": "HALF"}
+    for label, extra in (
+        ("limit=300", {"limit": 300}),
+        ("limit=100", {"limit": 100}),
+        ("limit=25", {"limit": 25}),
+        ("offset=10", {"limit": 10, "offset": 10}),
+        ("start=10", {"limit": 10, "start": 10}),
+        ("page=2", {"limit": 10, "page": 2}),
+        ("max_results=300", {"max_results": 300}),
+        ("ranks=1-300", {"ranks": "1-300"}),
+    ):
+        response = get(url, params={**base, **extra})
+        if response is None:
+            continue
+        if response.status_code != 200:
+            emit(f"  {label:18} -> http {response.status_code}")
+            continue
+        try:
+            payload = response.json()
+        except ValueError:
+            emit(f"  {label:18} -> http 200, body not JSON")
+            continue
+        _, rows = rows_of(payload)
+        envelope = (
+            {k: v for k, v in payload.items() if not isinstance(v, list | dict)}
+            if isinstance(payload, Mapping)
+            else {}
+        )
+        first = str(rows[0].get("player_name")) if rows else "-"
+        emit(
+            f"  {label:18} -> {len(rows):>4} row(s)  "
+            f"count={envelope.get('count')} limit={envelope.get('limit')} "
+            f"public_api_limited={envelope.get('public_api_limited')} "
+            f"tier={envelope.get('tier')}  first={first!r}",
+        )
+    emit("  >>> If every variant returns 10 and `public_api_limited` stays true, the cap is")
+    emit("  >>> the key's TIER, not a page size. A 10-row response is not a market, and")
+    emit("  >>> roadmap 10.1.3 item 7 forbids treating it as one.")
+
+
+def probe_rank_object(path: str) -> None:
+    """Run 1 found `rank` is a dict. Whatever ADP and ECR are, they are inside it."""
+    section("10. Inside the `rank` object — where do ADP and ECR actually live?")
+    url = _expand(path)
+    for label, params in (
+        ("type=draft", {"position": "ALL", "scoring": "HALF", "type": "draft"}),
+        ("type=adp", {"position": "ALL", "scoring": "HALF", "type": "adp"}),
+        ("no type", {"position": "ALL", "scoring": "HALF"}),
+    ):
+        response = get(url, params=params)
+        if response is None or response.status_code != 200:
+            continue
+        try:
+            _, rows = rows_of(response.json())
+        except ValueError:
+            continue
+        if not rows:
+            emit(f"  {label:12} -> no rows")
+            continue
+        rank = rows[0].get("rank")
+        if isinstance(rank, Mapping):
+            emit(f"  {label:12} rank keys: {sorted(rank)}")
+            for key in sorted(rank):
+                value = rank[key]
+                emit(f"      {key:24} = {value!r} ({type(value).__name__})")
+        else:
+            emit(f"  {label:12} rank is {type(rank).__name__}: {rank!r}")
+        positions = rows[0].get("positions")
+        emit(f"  {label:12} positions = {positions!r}")
+    emit("  >>> ADP and ECR must be separable fields. If one `rank` object carries both,")
+    emit("  >>> the adapter emits two quote rows with distinct market_signal_type values;")
+    emit("  >>> if the vendor serves them from different requests, it makes both requests.")
+
+
+def probe_adp_path() -> None:
+    """Run 1 stopped at the first 200 and never reached the third candidate."""
+    section("11. The dedicated ADP path, which run 1 never reached")
+    for path in (f"/json/{SPORT}/{SEASON}/adp", f"/json/{SPORT}/{SEASON}/consensus-rankings"):
+        url = _expand(path)
+        for params in (
+            {"position": "ALL", "scoring": "HALF"},
+            {"position": "ALL", "scoring": "HALF", "type": "draft", "week": 0},
+        ):
+            response = get(url, params=params)
+            if response is None:
+                continue
+            emit(f"  GET {path} params={params} -> http {response.status_code}")
+            if response.status_code != 200:
+                emit(f"      body: {response.text[:240]!r}")
+                continue
+            try:
+                payload = response.json()
+            except ValueError:
+                emit("      body is not JSON")
+                continue
+            key, rows = rows_of(payload)
+            envelope = (
+                {k: v for k, v in payload.items() if not isinstance(v, list | dict)}
+                if isinstance(payload, Mapping)
+                else {}
+            )
+            blob = json.dumps(envelope, default=str)[:400]
+            emit(f"      rows under {key!r}: {len(rows)}  envelope={blob}")
+            if rows:
+                emit(f"      row keys: {sorted(rows[0])}")
+
+
+def probe_headers(path: str) -> None:
+    section("12. Response headers — rate limit and quota, as the vendor reports them")
+    response = get(_expand(path), params={"position": "ALL", "scoring": "HALF"})
+    if response is None:
+        return
+    interesting = {
+        key: value
+        for key, value in response.headers.items()
+        if any(
+            token in key.lower()
+            for token in ("rate", "limit", "quota", "remaining", "retry", "tier", "plan")
+        )
+    }
+    emit(f"  quota-related headers: {interesting or 'NONE'}")
+
+
 def main() -> int:
     emit(f"FantasyPros public v2 probe — season {SEASON}, sport {SPORT}")
     emit(f"base: {BASE}")
@@ -537,6 +670,10 @@ def main() -> int:
             probe_scoring(path)
             probe_freshness(path, found["envelope"])
             probe_identity(rows)
+            probe_limit_and_pagination(path)
+            probe_rank_object(path)
+            probe_adp_path()
+            probe_headers(path)
     except RuntimeError as exc:
         emit(f"\nprobe halted: {exc}")
 
