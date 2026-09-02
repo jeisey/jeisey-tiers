@@ -45,6 +45,7 @@ from ffdraft.identity.registry import CanonicalRegistry
 
 __all__ = [
     "LINKAGE_RULE",
+    "linkage_key",
     "REASON_AMBIGUOUS_CANONICAL",
     "REASON_LOW_MARGIN",
     "REASON_LOW_SCORE",
@@ -60,6 +61,34 @@ __all__ = [
     "SourceRow",
     "link_source_rows",
 ]
+
+
+# --------------------------------------------------------------------------------------
+# Normalization
+# --------------------------------------------------------------------------------------
+
+#: Characters that are *elided* rather than spaced.
+#:
+#: :func:`ffdraft.identity.names.normalize_name` replaces all punctuation with a space,
+#: which is right for the resolver's diagnostics and wrong here: it turns ``De'Andre`` into
+#: ``de andre`` while a source spelling it ``DeAndre`` becomes ``deandre``, so two spellings
+#: of one man stop being equal and have to be rescued by a similarity score. An apostrophe
+#: inside a name carries no word boundary, and neither does the period in a middle initial.
+_ELIDED = str.maketrans({"'": "", "\u2019": "", ".": ""})
+
+
+def linkage_key(raw: str | None) -> str:
+    """The comparison key linkage blocks and scores on.
+
+    Built on :func:`~ffdraft.identity.names.normalize_name` rather than replacing it, so the
+    two never drift apart on casing, accents or generational suffixes — the difference is
+    exactly one rule, applied first: apostrophes and periods are removed instead of being
+    turned into word boundaries. Hyphens keep becoming spaces, because a hyphen *is* a word
+    boundary and ``Okonkwo-Bell`` and ``Okonkwo Bell`` are the same name written twice.
+
+    Deterministic and total: any input, including ``None``, yields a string.
+    """
+    return normalize_name((raw or "").translate(_ELIDED))
 
 
 # --------------------------------------------------------------------------------------
@@ -414,7 +443,7 @@ def link_source_rows(
             )
             continue
 
-        normalized = normalize_name(row.display_name)
+        normalized = linkage_key(row.display_name)
         if not normalized:
             report.quarantine.append(
                 _quarantined(row, source_id, REASON_UNUSABLE_NAME, (), hint),
@@ -466,7 +495,7 @@ def _score_block(
     "Michael Thomas" and "Thomas" as near-identical. That distinction is the whole point at
     a position where several real players share a surname.
     """
-    choices = {index: normalize_name(name) for index, (_, name, _) in enumerate(block)}
+    choices = {index: linkage_key(name) for index, (_, name, _) in enumerate(block)}
     matches = process.extract(
         normalized,
         choices,
@@ -500,7 +529,7 @@ def _decide(
     if not candidates:
         return None, REASON_NO_CANDIDATE
 
-    exact = [player_id for player_id, name, _ in block if normalize_name(name) == normalized]
+    exact = [player_id for player_id, name, _ in block if linkage_key(name) == normalized]
     if len(exact) > 1:
         # Two canonical players normalize to the same name at the same position. Choosing
         # either would be the collapse the roadmap's tests exist to forbid.
@@ -546,7 +575,7 @@ def _quarantined(
         display_name=row.display_name,
         position=row.position,
         team=row.team,
-        normalized_name=normalize_name(row.display_name),
+        normalized_name=linkage_key(row.display_name),
         candidate_1_player_id=first.player_id if first else None,
         candidate_1_name=first.display_name if first else None,
         candidate_1_score=first.score if first else None,

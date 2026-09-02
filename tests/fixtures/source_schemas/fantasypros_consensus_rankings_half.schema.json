@@ -1,0 +1,35 @@
+{
+  "source": "fantasypros_ecr",
+  "endpoint": "GET https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings?position=RB&scoring=HALF&type=draft&week=0",
+  "recorded_at": "2026-09-02",
+  "evidence": "docs/source-probes/2026-09-02/phase10-report.md section 2",
+  "note": "Schema only. No vendor rows are stored: the response is authenticated and the terms permit use, not redistribution.",
+  "envelope_fields": [
+    "sport", "type", "ranking_type_name", "year", "week", "position_id", "scoring",
+    "filters", "count", "total_experts", "last_updated", "limit", "public_api_limited", "tier"
+  ],
+  "player_fields": [
+    "cbs_player_id", "player_bye_week", "player_ecr_delta", "player_eligibility",
+    "player_filename", "player_id", "player_name", "player_owned_avg", "player_owned_espn",
+    "player_owned_yahoo", "player_page_url", "player_position_id", "player_positions",
+    "player_short_name", "player_team_id", "player_yahoo_id", "player_yahoo_positions",
+    "pos_rank", "rank_ave", "rank_ecr", "rank_max", "rank_min", "rank_std",
+    "sportsdata_id", "tier"
+  ],
+  "measured_facts": {
+    "tier": "free",
+    "public_api_limited": true,
+    "rows_per_response": 10,
+    "widening_attempts_that_failed": ["limit", "offset", "start", "page", "max_results", "ranks"],
+    "adp_available": false,
+    "adp_path_status": "403 Missing Authentication Token",
+    "position_all_requires": "type=draft&week=0",
+    "valid_positions": "QB, RB, WR, TE, K, OP, FLX, DST, IDP, DL, LB, DB, TK, TQB, TRB, TWR, TTE, TOL, HC, P",
+    "distinct_core_players_reachable": 40,
+    "documented_population_wr": 407,
+    "documented_population_te": 225,
+    "total_experts_range": [93, 109],
+    "scoring_axis_reorders": true,
+    "id_bridges": {"sportsdata_id": "40/40 resolve via sportradar", "player_yahoo_id": "36/40 resolve via yahoo"}
+  }
+}

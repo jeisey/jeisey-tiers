@@ -1,0 +1,19 @@
+{
+  "source": "sleeper",
+  "endpoint": "GET https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=25",
+  "recorded_at": "2026-09-02",
+  "evidence": "docs/source-probes/2026-09-02/phase10-report.md section 3",
+  "envelope": "bare JSON list, no object wrapper",
+  "row_fields": {
+    "player_id": {"types": ["str"], "null_fraction": 0.0},
+    "count": {"types": ["int"], "null_fraction": 0.0}
+  },
+  "measured_facts": {
+    "temporal_fields_on_row": [],
+    "limit_honoured": {"5": 5, "25": 25, "100": 100},
+    "lookback_hours_honoured": true,
+    "lookback_overlap": {"6h_vs_24h_shared_of_25": 24, "6h_vs_72h_shared_of_25": 22},
+    "add_count_range_24h": [17793, 259065],
+    "drop_count_range_24h": [13815, 63840]
+  }
+}
