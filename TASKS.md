@@ -536,3 +536,10 @@ reasons are declared in the vocabulary but never emitted.
 **Scope boundaries held:** no learned arbitrage model, no blended ADP/ECR score, no
 market-informed intrinsic values, no ESPN scrape, no synthesized Sleeper ADP, no roster
 sync, no rest-of-season model, no weekly rankings. Phase 11 was not started.
+
+**Validation at the checkpoint:** `ruff`, `ruff format` and `mypy` (118 files) clean; `pytest`
+**1,196** passed with the 4 live-network tests deselected; the fixture build 0 critical and
+`validate-artifacts` 0 critical 0 warning over it; `npm lint` 0 errors, `typecheck` clean,
+**270** vitest, a clean production build, **70** Playwright across `chromium`/`mobile`/`a11y`
+and **13** more on `smoke-chromium`. `npm run e2e:browsers` (Firefox, WebKit) is runner-only in
+this sandbox as it has been since ADR-059 and runs in CI.

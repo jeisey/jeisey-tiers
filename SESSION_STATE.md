@@ -141,12 +141,24 @@ accessible summary.
 ```bash
 uv run ruff check . && uv run ruff format --check .   # clean
 uv run mypy                                            # 118 files, clean
-uv run pytest                                          # full suite green
+uv run pytest                                          # 1,196 passed, 4 live-network deselected
 uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000
+uv run ffdraft validate-artifacts <fixture build>      # 0 critical, 0 warning
 npm ci && npm run lint && npm run typecheck            # 0 errors (2 pre-existing warnings)
 npm run test -- --run                                  # 270 passed
 npm run build                                          # clean
+npm run e2e                                            # 70 passed (chromium, mobile, a11y)
+npx playwright test --project=smoke-chromium           # 13 passed
 ```
+
+The fixture build itself reports **0 critical, 5 warning** — every warning is a fixture that
+exists to exercise a fail-closed identity path, and each is asserted by name in the pipeline
+tests. The Playwright runs used the sandbox's pre-installed Chromium
+(`PLAYWRIGHT_CHROMIUM_EXECUTABLE`), which is what `playwright.config.ts` already looks for.
+**`npm run e2e:browsers` — the Firefox and WebKit smoke gate — was not run here**, because
+those two browsers are not present in the sandbox and are not downloadable through its egress
+policy (ADR-059). That gate belongs to the `browsers` CI job and will first run on this branch
+when a pull request opens, since `ci.yml` triggers on `pull_request` and on pushes to `main`.
 
 New CLI: `ffdraft capture-market-source <source>`, `ffdraft link-market-source`.
 New workflows: `source-probe-phase10.yml` (dispatch/request, inert),
@@ -157,8 +169,9 @@ New workflows: `source-probe-phase10.yml` (dispatch/request, inert),
 - The multi-source **code path** is complete and fixture-tested; the **published** board still
   needs one production refresh that captures FFC into the private store. Nothing further is
   required in this repository for that.
-- `e2e` was not run in this session (Playwright browsers are not downloadable in the sandbox;
-  ADR-059 records that this gate belongs to CI). The `browsers` CI job is the place it runs.
+- The cross-browser smoke gate (`npm run e2e:browsers`, Firefox and WebKit) has **not** run on
+  this branch; `chromium`, `mobile`, `a11y` and `smoke-chromium` all have. ADR-059 records that
+  the cross-browser gate belongs to CI, and CI runs it when the pull request opens.
 - Sleeper add/drop retention is implemented but **has not yet run in production**, so the
   in-season history Phase 12 expects starts accumulating from the first refresh that includes
   it — not from today.
