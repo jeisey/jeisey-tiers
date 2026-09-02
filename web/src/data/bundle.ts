@@ -16,6 +16,7 @@ import type {
   ArbitrageRecord,
   ArtifactName,
   BuildMetadata,
+  MarketTrendSeriesRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   TierRecord,
@@ -103,10 +104,13 @@ export async function loadBundle(options: { readonly base?: string } = {}): Prom
   // Fetched together, but reported in a fixed order: a Data panel that listed degraded
   // sources in whatever order the network happened to settle would read differently on
   // every reload.
-  const [arbitrage, playerStatus, projections] = await Promise.all([
+  const [arbitrage, playerStatus, projections, trendSeries] = await Promise.all([
     optional<ArbitrageRecord>("arbitrage", base),
     optional<PlayerStatusRecord>("player_status", base),
     optional<PlayerProjectionRecord>("projections", base),
+    // Absent until the retained store holds enough history to draw one, and absent on any
+    // Release 1 bundle. The card degrades to the scalar trend it has always shown.
+    optional<MarketTrendSeriesRecord>("market_trend_series", base),
   ]);
   const degradations = [arbitrage, playerStatus, projections]
     .map((result) => result.degradation)
@@ -119,6 +123,7 @@ export async function loadBundle(options: { readonly base?: string } = {}): Prom
       arbitrage: arbitrage.records,
       playerStatus: playerStatus.records,
       projections: projections.records,
+      trendSeries: trendSeries.records,
     }),
     degradations,
   };

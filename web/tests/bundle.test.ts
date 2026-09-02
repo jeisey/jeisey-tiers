@@ -133,7 +133,11 @@ describe("loadBundle", () => {
     serve(everything());
     await loadBundle();
     const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
-    expect(calls).toHaveLength(5);
+    // Six: metadata, tiers, arbitrage, player status, projections and the retained trend
+    // series. Every one of them is a generated file under `/data/`. The assertion below is
+    // the load-bearing half — a vendor host must never appear in this list, because a static
+    // page that fetched a market feed would put a vendor on the critical path (ADR-066).
+    expect(calls).toHaveLength(6);
     for (const url of calls) {
       expect(url).toMatch(/\/data\/[a-z_]+\.json$/);
       expect(url).not.toMatch(/myfantasyleague|sleeper|nflverse|fantasypros|fantasycalc/i);

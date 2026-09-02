@@ -77,6 +77,24 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
         sort_fields=("scoring_preset", "player_id"),
         description="Per-player point projections with quantiles",
     ),
+    "market_trend_series": ArtifactSpec(
+        artifact="market_trend_series",
+        schema_name="market_trend_series",
+        json_filename="market_trend_series.json",
+        # No CSV. The record is a series, and a row per point would be a different artifact
+        # from the one a reader asked to export; the scalar `market_trend` is already in the
+        # arbitrage CSV, which is where a spreadsheet wants it.
+        csv_filename=None,
+        key_fields=(
+            "build_id",
+            "market_source_id",
+            "league_preset_id",
+            "scoring_preset",
+            "player_id",
+        ),
+        sort_fields=("league_preset_id", "scoring_preset", "market_source_id", "player_id"),
+        description="Retained per-player ADP history, so the trend chart needs no vendor call",
+    ),
     "player_status": ArtifactSpec(
         artifact="player_status",
         schema_name="player_status",

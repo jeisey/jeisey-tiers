@@ -17,6 +17,7 @@
 import type {
   ArbitrageRecord,
   BuildMetadata,
+  MarketTrendSeriesRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   Position,
@@ -46,6 +47,11 @@ export interface ArtifactBundle {
   readonly arbitrage: readonly ArbitrageRecord[] | null;
   readonly playerStatus: readonly PlayerStatusRecord[] | null;
   readonly projections: readonly PlayerProjectionRecord[] | null;
+  /**
+   * Retained ADP history, absent until the store holds enough of it and absent on any
+   * Release 1 bundle. The player card degrades to the scalar trend it has always shown.
+   */
+  readonly trendSeries?: readonly MarketTrendSeriesRecord[] | null;
 }
 
 /**
@@ -65,12 +71,15 @@ export class ArtifactIndex {
   readonly hasArbitrage: boolean;
   readonly hasPlayerStatus: boolean;
   readonly hasProjections: boolean;
+  readonly hasTrendSeries: boolean;
+  private readonly trendByBlockPlayer: Map<string, MarketTrendSeriesRecord>;
 
   constructor(bundle: ArtifactBundle) {
     this.metadata = bundle.metadata;
     this.hasArbitrage = bundle.arbitrage !== null;
     this.hasPlayerStatus = bundle.playerStatus !== null;
     this.hasProjections = bundle.projections !== null;
+    this.hasTrendSeries = (bundle.trendSeries ?? null) !== null;
 
     const tiersByBlock = new Map<string, TierRecord[]>();
     const tierByBlockPlayer = new Map<string, TierRecord>();
@@ -107,6 +116,29 @@ export class ArtifactIndex {
     const statusByPlayer = new Map<string, PlayerStatusRecord>();
     for (const record of bundle.playerStatus ?? []) statusByPlayer.set(record.player_id, record);
     this.statusByPlayer = statusByPlayer;
+
+    const trendByBlockPlayer = new Map<string, MarketTrendSeriesRecord>();
+    for (const record of bundle.trendSeries ?? []) {
+      const key = blockKey(record.league_preset_id, record.scoring_preset);
+      trendByBlockPlayer.set(`${key}|${record.market_source_id}|${record.player_id}`, record);
+    }
+    this.trendByBlockPlayer = trendByBlockPlayer;
+  }
+
+  /**
+   * One player's retained ADP history for one source, or null.
+   *
+   * Keyed by source as well as by player because the history *is* source-specific: switching
+   * the market selector must change the chart, not relabel it (roadmap 10.7).
+   */
+  trendSeries(
+    leaguePresetId: string,
+    scoring: ScoringPreset,
+    sourceId: string,
+    playerId: string,
+  ): MarketTrendSeriesRecord | null {
+    const key = `${blockKey(leaguePresetId, scoring)}|${sourceId}|${playerId}`;
+    return this.trendByBlockPlayer.get(key) ?? null;
   }
 
   /** Preset blocks the build actually published, so a control can offer only what exists. */

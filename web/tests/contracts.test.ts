@@ -28,6 +28,7 @@ const GOLDEN_DIR = resolve(REPO_ROOT, "tests/fixtures/artifacts");
 const SCHEMA_BY_ARTIFACT: Readonly<Record<ArtifactName, string>> = {
   tiers: "tier_record",
   arbitrage: "arbitrage_record",
+  market_trend_series: "market_trend_series",
   projections: "player_projection",
   market_snapshot: "market_snapshot",
   player_status: "player_status",

@@ -59,6 +59,16 @@ export interface AppState {
    */
   readonly tiers: readonly number[] | null;
   readonly rail: RailMode;
+  /**
+   * Which ADP market the Arbitrage board compares against, or `cross` for the spread view.
+   *
+   * A free string rather than a union, because the selectable set is derived from what the
+   * build published — a union here would have to be edited every time a source is enabled or
+   * withdrawn, and would reject a valid link from a build that had one more source than this
+   * bundle knows about. `ArbitrageView` falls back to the default when the named market is
+   * not on the current board, so a stale link degrades rather than breaking.
+   */
+  readonly market: string;
 }
 
 /**
@@ -78,6 +88,15 @@ export const DEFAULT_STATE: AppState = {
   board: "top",
   tiers: null,
   rail: "bargains",
+  /**
+   * FFC Recent is the draft-week default (roadmap 10.6): it is scoring-exact and it responds
+   * to the market of the last few days, which is the one a reader drafting today is actually
+   * bidding into. MyFantasyLeague remains one click away and unchanged.
+   *
+   * A named source, never a silent average. The cross-market view exists and has to be
+   * chosen.
+   */
+  market: "fantasyfootballcalculator_adp",
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
@@ -90,6 +109,7 @@ const PARAM_ORDER = [
   "board",
   "tiers",
   "rail",
+  "market",
 ] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
@@ -170,6 +190,21 @@ export function parseState(search: string): ParsedState {
   // pathological URL cannot drive an unbounded filter string into the table.
   const search_ = (params.get("search") ?? "").trim().slice(0, 64);
 
+  // The market selection is validated for *shape*, not membership: which sources exist is a
+  // property of the build, not of this parser, and rejecting a source this bundle has not
+  // heard of would break a link from a build with one more source than this one. The view
+  // falls back to the default when the named market is absent from the current board.
+  const rawMarket = params.get("market");
+  let market = DEFAULT_STATE.market;
+  if (rawMarket !== null) {
+    const candidate = rawMarket.trim().toLowerCase();
+    if (/^[a-z0-9_]{1,64}$/.test(candidate)) {
+      market = candidate;
+    } else {
+      normalized = false;
+    }
+  }
+
   // `tiers=0.1.4` — the open tier ordinals, deduplicated and ordered so two URLs describing
   // the same open set are the same string. An empty list is meaningful (every tier closed)
   // and is written as `tiers=none`; an absent parameter means "let the board choose".
@@ -213,6 +248,7 @@ export function parseState(search: string): ParsedState {
       search: search_,
       board: board.value,
       tiers,
+      market,
       rail: rail.value,
     },
     normalized,

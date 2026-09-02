@@ -52,6 +52,7 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         "arbitrage",
         "projections",
         "market_snapshot",
+        "market_trend_series",
         "player_status",
     }
     assert all(records for records in pipeline_result.records.values())

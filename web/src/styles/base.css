@@ -3331,3 +3331,153 @@ dl.facts dd {
     min-height: 48px;
   }
 }
+
+/* ----------------------------------------------------------------------------------------
+ * Phase 10 — the market trend chart and the cross-market comparison (ADR-065, ADR-066).
+ *
+ * Every colour below is an existing token. The trend line reuses `--bargain` and `--premium`
+ * because they already mean "the market moved in your favour" and "against it" everywhere
+ * else on this board, and a second green would be a second vocabulary for one idea.
+ *
+ * Direction is never carried by colour alone: the caption prints an arrow and a word, and
+ * the SVG has a `<title>` that reads the whole movement as a sentence.
+ * ------------------------------------------------------------------------------------- */
+
+.trend-chart {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: var(--hairline) solid var(--line);
+  background: var(--tile);
+}
+
+.trend-chart svg {
+  display: block;
+  overflow: visible;
+}
+
+.trend-line {
+  stroke: var(--bargain);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* Moving later is cheaper for the drafter, so it is not a warning - it is the other
+   direction, and it takes the other of the two colours this board already uses. */
+.trend-line[data-kind="later"] {
+  stroke: var(--premium);
+}
+
+.trend-point {
+  fill: var(--panel-raised);
+  stroke: var(--bargain);
+  stroke-width: 1.2;
+  cursor: pointer;
+  transition: r 120ms ease;
+}
+
+.trend-line[data-kind="later"] + .trend-point,
+.trend-point[data-latest="true"] {
+  stroke: var(--ink-accent);
+}
+
+.trend-point[data-latest="true"] {
+  fill: var(--ink-accent);
+}
+
+.trend-point:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.trend-caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+
+.trend-reading {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-strong);
+}
+
+.trend-direction[data-kind="earlier"] {
+  color: var(--bargain);
+}
+
+.trend-direction[data-kind="later"] {
+  color: var(--premium);
+}
+
+.trend-slope {
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.trend-empty {
+  margin: 10px 0 0;
+  padding: 10px;
+  border: var(--hairline) dashed var(--line);
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+}
+
+.market-compare {
+  margin-top: 12px;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: var(--hairline) solid var(--line);
+}
+
+.compare-table thead th {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+
+.compare-table tbody th {
+  font-weight: 500;
+  color: var(--ink-strong);
+}
+
+.compare-table td {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+/* The row the selector currently points at, marked with a rule rather than a fill: the
+   table is a comparison, and tinting one row would read as "this one is right". */
+.compare-table tr[data-selected="true"] th,
+.compare-table tr[data-selected="true"] td {
+  border-left: 2px solid var(--accent);
+  background: var(--accent-wash);
+}
+
+/* The consensus row is a different kind of measurement, and it says so in words in its
+   last cell. The dashed rule is a second, non-colour cue for the same distinction. */
+.compare-table tr[data-signal="ecr"] th,
+.compare-table tr[data-signal="ecr"] td {
+  border-top: var(--hairline) dashed var(--line-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trend-point {
+    transition: none;
+  }
+}

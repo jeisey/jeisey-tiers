@@ -48,6 +48,7 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     "arbitrage_record",
     "player_projection",
     "market_snapshot",
+    "market_trend_series",
     "player_status",
     "build_metadata",
 )
@@ -66,6 +67,7 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "arbitrage_record": "1.2",
     "player_projection": "1.0",
     "market_snapshot": "1.0",
+    "market_trend_series": "1.0",
     "player_status": "1.0",
     "build_metadata": "1.0",
 }

@@ -440,10 +440,26 @@ export function DataView({
             <a href="https://api.myfantasyleague.com/">MyFantasyLeague API</a>
           </li>
           <li>
+            <strong>Fantasy Football Calculator</strong> — average draft position from
+            FFC&apos;s public ADP API, aggregated over a recent rolling window of real drafts
+            and read once a day with a descriptive client. Used with attribution as
+            FFC&apos;s published API terms ask.{" "}
+            <a href="https://fantasyfootballcalculator.com/adp">Fantasy Football Calculator ADP</a>
+          </li>
+          <li>
             <strong>Sleeper</strong> — current player status and injury designations, used for
-            annotation only. The Sleeper API is free for non-commercial use; this site is free and
+            annotation only, plus the add/drop trending feeds retained for the in-season
+            release. The Sleeper API is free for non-commercial use; this site is free and
             non-commercial and carries no advertising, affiliate links or paid tier.{" "}
             <a href="https://docs.sleeper.com/">Sleeper API docs</a>
+          </li>
+          <li>
+            <strong>FantasyPros</strong> — expert consensus rankings, retrieved server-side
+            with an API key that never reaches this page. Their key is on the free public
+            tier, which caps every response at ten rows, so no FantasyPros number is published
+            on this board yet: a ten-row slice is not a consensus, and showing it as one would
+            be worse than showing nothing. Rankings and projections courtesy of{" "}
+            <a href="https://www.fantasypros.com/">FantasyPros</a>.
           </li>
         </ul>
         <p className="section-note" style={{ marginTop: "0.75rem" }}>

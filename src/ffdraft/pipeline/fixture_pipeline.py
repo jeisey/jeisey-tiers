@@ -30,7 +30,7 @@ import json
 import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -347,6 +347,13 @@ def run_fixture_pipeline(
         build_id=build_id,
         snapshot_at=now,
     )
+    trend_series = _trend_series_records(
+        arbitrage,
+        assignment=assignment,
+        source_id=market_batch.source_id,
+        build_id=build_id,
+        snapshot_at=now,
+    )
 
     status = _player_status_records(
         registry=registry,
@@ -362,6 +369,7 @@ def run_fixture_pipeline(
         "projections": projections,
         "tiers": tiers,
         "arbitrage": arbitrage,
+        "market_trend_series": trend_series,
         "market_snapshot": market_records,
         "player_status": status.records,
     }
@@ -675,6 +683,82 @@ def _arbitrage_records(
         gate=QualityGate(),
     )
     return result.records
+
+
+def _trend_series_records(
+    arbitrage: Sequence[Mapping[str, Any]],
+    *,
+    assignment: CohortAssignment,
+    source_id: str,
+    build_id: str,
+    snapshot_at: datetime,
+) -> list[dict[str, Any]]:
+    """A synthetic retained history for the fixture board (ADR-066).
+
+    The production series comes from real snapshots taken on real days; a fixture has one
+    capture, so the history is generated deterministically from each player's published ADP.
+    That is enough for what this artifact is *for* here — pinning the contract, and giving
+    the frontend a shape to render — and it is labelled a fixture everywhere the fixture
+    build is labelled one.
+
+    The walk is deterministic per player, so the golden artifact is byte-stable across runs:
+    a fixture that changed on every build would make the golden comparison worthless.
+    """
+    from ffdraft.artifacts import record_schema_version
+    from ffdraft.market.trend import TREND_RULE, TrendObservation, TrendResult, trend_series_records
+
+    schema_version = record_schema_version("market_trend_series")
+    days = 6
+    observations: list[TrendObservation] = []
+    trends: dict[str, TrendResult] = {}
+    for row in arbitrage:
+        player_id = str(row["player_id"])
+        latest = float(row["market_adp"])
+        # A gentle drift whose sign depends on the player id, so the fixture contains both
+        # directions and neither is the one a test happens to look at first.
+        step = 0.25 if sum(ord(char) for char in player_id) % 2 == 0 else -0.25
+        for index in range(days):
+            offset = days - 1 - index
+            observations.append(
+                TrendObservation(
+                    player_id=player_id,
+                    cohort_id=assignment.cohort.cohort_id,
+                    observed_at=snapshot_at - timedelta(days=offset),
+                    market_adp=max(0.1, latest + step * offset),
+                ),
+            )
+        trends[player_id] = TrendResult(
+            player_id=player_id,
+            cohort_id=assignment.cohort.cohort_id,
+            trend=round(step, 2),
+            observation_days=days,
+            span_days=float(days - 1),
+            observations=days,
+        )
+
+    records: list[dict[str, Any]] = []
+    blocks = {(str(r["league_preset_id"]), str(r["scoring_preset"])) for r in arbitrage}
+    for preset_id, scoring in sorted(blocks):
+        players = {
+            str(r["player_id"])
+            for r in arbitrage
+            if str(r["league_preset_id"]) == preset_id and str(r["scoring_preset"]) == scoring
+        }
+        records.extend(
+            trend_series_records(
+                observations,
+                trends=trends,
+                build_id=build_id,
+                market_source_id=source_id,
+                scoring_preset=scoring,
+                league_preset_id=preset_id,
+                cohort_id=assignment.cohort.cohort_id,
+                window_days=TREND_RULE.window_days,
+                schema_version=schema_version,
+                players=players,
+            ),
+        )
+    return records
 
 
 def _fixture_price(

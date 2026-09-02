@@ -182,8 +182,18 @@ function Board({
       projection: index.projectionFor(scoring, selectedPlayerId),
       marketAvailable: index.hasArbitrage,
       cohortExact: cohortAssignment(metadata, scoring, state.teams)?.exact ?? null,
+      // The chart's own data, keyed by the market the reader has selected: switching the
+      // selector must change the history, not relabel it (roadmap 10.7). Null until the
+      // retained store holds enough of it, which the card renders as a truthful sentence.
+      market: state.market,
+      trendSeries: index.trendSeries(
+        leaguePreset,
+        scoring,
+        state.market,
+        selectedPlayerId,
+      ),
     };
-  }, [index, metadata, selectedPlayerId, state.scoring, state.teams]);
+  }, [index, metadata, selectedPlayerId, state.scoring, state.teams, state.market]);
 
   return (
     <>

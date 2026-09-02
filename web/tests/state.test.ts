@@ -28,6 +28,7 @@ describe("parseState", () => {
     const parsed = parseState("?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all");
     expect(parsed.state).toEqual({
       view: "arbitrage",
+      market: "fantasyfootballcalculator_adp",
       scoring: "half",
       teams: 14,
       tiers: null,

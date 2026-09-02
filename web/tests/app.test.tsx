@@ -80,6 +80,25 @@ afterEach(() => {
   go();
 });
 
+/**
+ * The cell under a named column header.
+ *
+ * Positional indexing broke the day the board gained a market selector and two columns
+ * moved; a lookup by header keeps asserting what the test means — "the Trend column" —
+ * rather than where that column happened to sit when the test was written.
+ */
+function cellUnder(table: HTMLElement, header: string, rowIndex = 1): HTMLElement | undefined {
+  // The rendered header carries a sort indicator glyph, which is presentation rather than
+  // identity. Comparing on the label alone keeps the lookup working when the indicator moves.
+  const headers = within(table)
+    .getAllByRole("columnheader")
+    .map((cell) => (cell.textContent ?? "").replace(/[\u25b2\u25bc]/g, "").trim());
+  const column = headers.indexOf(header);
+  expect(column, `no column headed ${header}; saw ${headers.join(" | ")}`).toBeGreaterThan(-1);
+  const row = within(table).getAllByRole("row")[rowIndex];
+  return row?.querySelectorAll("td")[column];
+}
+
 describe("shell", () => {
   it("renders the build timestamp from metadata, in Eastern", async () => {
     render(<App />);
@@ -282,8 +301,7 @@ describe("arbitrage view", () => {
       expect(screen.getByRole("heading", { name: "Arbitrage table" })).toBeDefined();
     });
     const table = screen.getByRole("table", { name: /market-gap board/i });
-    const row = within(table).getAllByRole("row")[1];
-    const trendCell = row?.querySelectorAll("td")[9];
+    const trendCell = cellUnder(table, "Trend");
     expect(trendCell?.textContent).toContain("—");
     expect(trendCell?.textContent).toContain("Trend collecting");
     expect(trendCell?.textContent).not.toMatch(/\b0\b|flat|no movement/i);
@@ -380,7 +398,7 @@ describe("a matured market", () => {
     const cells = within(table)
       .getAllByRole("row")
       .slice(1)
-      .map((row) => row.querySelectorAll("td")[9]?.textContent ?? "");
+      .map((_row, index) => cellUnder(table, "Trend", index + 1)?.textContent ?? "");
     const measured = cells.filter((text) => /[+\u2212]\d/.test(text));
     expect(measured.length).toBeGreaterThan(0);
     expect(measured.join(" ")).toMatch(/Moving (earlier|later)/);
@@ -621,15 +639,36 @@ describe("data view", () => {
     }
   });
 
-  it("attributes the sources production actually used, and not FantasyPros", async () => {
+  it("attributes every source production reads, including the ones it publishes nothing from", async () => {
+    // The V1 version of this test asserted FantasyPros was *absent*, which was right while
+    // the only FantasyPros path was an unlicensed mirror used as a hidden benchmark. Phase 10
+    // reads the official API with the owner's key, and attribution is required by its terms
+    // whether or not a number reaches the page — so the assertion inverts, and the part that
+    // matters becomes the one below it: attributed, and still publishing no ranking data.
     render(<App />);
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Sources and attribution" })).toBeDefined();
     });
     expect(screen.getByText("nflverse")).toBeDefined();
     expect(screen.getByText("MyFantasyLeague")).toBeDefined();
+    expect(screen.getByText("Fantasy Football Calculator")).toBeDefined();
+    // Named twice — once as the source, once as the link their terms ask for — so this
+    // asserts presence rather than uniqueness.
+    expect(screen.getAllByText("FantasyPros").length).toBeGreaterThan(0);
     expect(screen.getByText(/free for non-commercial use/)).toBeDefined();
-    expect(document.body.textContent).not.toMatch(/fantasypros|fantasycalc/i);
+    expect(document.body.textContent).not.toMatch(/fantasycalc/i);
+  });
+
+  it("says why no FantasyPros number is published, rather than omitting the source", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Sources and attribution" })).toBeDefined();
+    });
+    const attribution = screen.getByRole("heading", { name: "Sources and attribution" })
+      .closest("section")?.textContent ?? "";
+    expect(attribution).toMatch(/free public\s+tier/i);
+    expect(attribution).toMatch(/ten rows/i);
+    expect(attribution).toMatch(/never reaches this page/i);
   });
 });
 

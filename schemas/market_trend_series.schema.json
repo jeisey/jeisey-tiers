@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/market_trend_series.schema.json",
+  "title": "MarketTrendSeries",
+  "description": "One player's retained ADP history for one market source, carrying only the points needed to draw the trend the player card shows (Phase 10, ADR-066). Generated from the append-only snapshot store: the browser never calls a vendor for chart history, and this artifact is what makes that possible on a static site. The scalar `market_trend` on the arbitrage record is the slope over these same points and stays authoritative for sorting, CSV and the accessible summary.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "market_source_id", "scoring_preset", "league_preset_id",
+    "player_id", "cohort_id", "window_days", "market_trend", "points"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "market_source_id": {"type": "string", "minLength": 1},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "league_preset_id": {"type": "string", "minLength": 1},
+    "player_id": {"type": "string", "minLength": 1},
+    "cohort_id": {"type": "string", "minLength": 1},
+    "window_days": {"type": "number", "exclusiveMinimum": 0},
+    "market_trend": {
+      "type": ["number", "null"],
+      "description": "The trailing slope over these points, negated so positive means moving earlier. Null when the retained history is too short for the frozen rule."
+    },
+    "points": {
+      "type": "array",
+      "description": "Ascending by observed_at. One point per retained snapshot inside the window.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["observed_at", "market_adp"],
+        "properties": {
+          "observed_at": {"type": "string", "format": "date-time"},
+          "market_adp": {"type": "number", "exclusiveMinimum": 0}
+        }
+      }
+    }
+  }
+}

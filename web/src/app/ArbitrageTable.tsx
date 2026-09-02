@@ -27,10 +27,20 @@ import { useEffect, useMemo, useState, type RefObject } from "react";
 import { ConfidenceMeter, PositionTag, StatusBadge } from "../components/primitives";
 import { EM_DASH, formatAdp, formatRank, formatScore, formatSigned } from "../data/format";
 import { CONFIDENCE_SHORT, describeGap, describeTrend } from "../data/market";
+import {
+  CROSS_MARKET,
+  adpFor,
+  comparisonFor,
+  consensusOf,
+  disagreementFor,
+  gapFor,
+  marketLabel,
+} from "../data/multimarket";
 import type { ArbitrageRow } from "../data/model";
 
 export const ARBITRAGE_TABLE_CAPTION =
-  "Deterministic market-gap board: the model's fair rank compared with MyFantasyLeague ADP. " +
+  "Deterministic market-gap board: the model's fair rank compared with the selected ADP " +
+  "market. FP ECR is an expert consensus ranking shown alongside, never mixed into a price. " +
   "Confidence describes how much draft evidence stands behind the price, not how likely the " +
   "player is to be a bargain.";
 
@@ -40,7 +50,10 @@ interface ColumnMeta {
   readonly width?: string;
 }
 
-function arbitrageColumns(onSelect: (playerId: string) => void): ColumnDef<ArbitrageRow>[] {
+function arbitrageColumns(
+  onSelect: (playerId: string) => void,
+  market: string,
+): ColumnDef<ArbitrageRow>[] {
   return [
     {
       id: "arbitrage_rank",
@@ -95,23 +108,47 @@ function arbitrageColumns(onSelect: (playerId: string) => void): ColumnDef<Arbit
     },
     {
       id: "market_adp",
-      header: "MFL ADP",
-      accessorFn: (row) => row.record.market_adp,
-      cell: (context) => formatAdp(context.row.original.record.market_adp),
-      meta: { align: "right", width: "5rem" },
+      // The header names the source, because the number changes with the selector and a
+      // column called "ADP" would leave a reader unable to say which market they are reading.
+      header: market === CROSS_MARKET ? "Median ADP" : `${marketLabel(market)} ADP`,
+      accessorFn: (row) => adpFor(row.record, market) ?? Number.POSITIVE_INFINITY,
+      cell: (context) => {
+        const value = adpFor(context.row.original.record, market);
+        return value === null ? <span className="faint">{EM_DASH}</span> : formatAdp(value);
+      },
+      meta: { align: "right", width: "6rem" },
     },
     {
       id: "adp_range",
-      header: "ADP Low–High",
+      // Dispersion, whichever kind this source publishes. FFC has a genuine standard
+      // deviation; MyFantasyLeague has two extreme order statistics. They are shown
+      // differently and labelled differently, because they are different quantities and
+      // presenting them under one heading would invite a comparison that means nothing.
+      header: "Dispersion",
       enableSorting: false,
       cell: (context) => {
         const record = context.row.original.record;
-        if (record.market_adp_low === null || record.market_adp_high === null) {
+        const comparison = comparisonFor(record, market);
+        const sd = comparison?.market_adp_sd ?? null;
+        if (sd !== null) {
+          return (
+            <span className="muted">
+              <span aria-hidden="true">{`\u00b1${sd.toFixed(1)}`}</span>
+              <span className="visually-hidden">{`standard deviation ${sd.toFixed(1)} picks`}</span>
+            </span>
+          );
+        }
+        const low = comparison?.market_adp_low ?? record.market_adp_low;
+        const high = comparison?.market_adp_high ?? record.market_adp_high;
+        if (low === null || high === null) {
           return <span className="faint">{EM_DASH}</span>;
         }
         return (
           <span className="muted">
-            {`${formatAdp(record.market_adp_low)}–${formatAdp(record.market_adp_high)}`}
+            <span aria-hidden="true">{`${formatAdp(low)}\u2013${formatAdp(high)}`}</span>
+            <span className="visually-hidden">
+              {`observed range ${formatAdp(low)} to ${formatAdp(high)}`}
+            </span>
           </span>
         );
       },
@@ -120,18 +157,63 @@ function arbitrageColumns(onSelect: (playerId: string) => void): ColumnDef<Arbit
     {
       id: "rank_gap",
       header: "Value Gap",
-      accessorFn: (row) => row.record.rank_gap,
+      accessorFn: (row) => gapFor(row.record, market) ?? Number.NEGATIVE_INFINITY,
       cell: (context) => {
-        const record = context.row.original.record;
-        const gap = describeGap(record.rank_gap);
+        const value = gapFor(context.row.original.record, market);
+        if (value === null) return <span className="faint">{EM_DASH}</span>;
+        const gap = describeGap(value);
         return (
           <span className="dir" data-kind={gap.kind}>
-            <span aria-hidden="true">{formatSigned(record.rank_gap)}</span>
+            <span aria-hidden="true">{formatSigned(value)}</span>
             <span className="visually-hidden">{gap.sentence}</span>
           </span>
         );
       },
       meta: { align: "right", width: "5.5rem" },
+    },
+    {
+      id: "expert_consensus",
+      // A ranking, beside the price and never mixed into it. The column exists on every
+      // market view because the question "where do the experts have him" does not change
+      // when the reader switches which market they are pricing against (roadmap 10.6).
+      header: "FP ECR",
+      accessorFn: (row) => consensusOf(row.record)?.ecr ?? Number.POSITIVE_INFINITY,
+      cell: (context) => {
+        const consensus = consensusOf(context.row.original.record);
+        if (consensus === null) return <span className="faint">{EM_DASH}</span>;
+        const gap = describeGap(consensus.ecr_gap);
+        return (
+          <span className="dir" data-kind={gap.kind}>
+            <span aria-hidden="true">
+              {`${String(consensus.ecr)} (${formatSigned(consensus.ecr_gap)})`}
+            </span>
+            <span className="visually-hidden">
+              {`expert consensus rank ${String(consensus.ecr)}; ${gap.sentence.replace("market", "expert consensus")}`}
+            </span>
+          </span>
+        );
+      },
+      meta: { align: "right", width: "6.5rem" },
+    },
+    {
+      id: "market_spread",
+      // The number a single-source board could not produce. Null - not zero - when only one
+      // market priced him: zero would claim the markets agree when only one of them spoke.
+      header: "Spread",
+      accessorFn: (row) => disagreementFor(row.record) ?? Number.NEGATIVE_INFINITY,
+      cell: (context) => {
+        const spread = disagreementFor(context.row.original.record);
+        if (spread === null) return <span className="faint">{EM_DASH}</span>;
+        return (
+          <span className="muted">
+            <span aria-hidden="true">{spread.toFixed(1)}</span>
+            <span className="visually-hidden">
+              {`${spread.toFixed(1)} picks between the earliest and latest market`}
+            </span>
+          </span>
+        );
+      },
+      meta: { align: "right", width: "5rem" },
     },
     {
       id: "arbitrage_score",
@@ -201,14 +283,17 @@ export function ArbitrageTable({
   onSelect,
   selectedPlayerId,
   visibleRowsRef,
+  market = CROSS_MARKET,
 }: {
   readonly rows: readonly ArbitrageRow[];
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
   readonly visibleRowsRef?: RefObject<readonly ArbitrageRow[]>;
+  /** Which ADP market the price and gap columns read. Defaults to the cross-market view. */
+  readonly market?: string;
 }): React.JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([{ id: "arbitrage_score", desc: true }]);
-  const columns = useMemo(() => arbitrageColumns(onSelect), [onSelect]);
+  const columns = useMemo(() => arbitrageColumns(onSelect, market), [onSelect, market]);
   const data = useMemo(() => [...rows], [rows]);
 
   const table = useReactTable({

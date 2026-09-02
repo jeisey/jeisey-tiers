@@ -1,0 +1,1718 @@
+{
+  "schema_version": "1.0",
+  "artifact": "market_trend_series",
+  "record_schema": "market_trend_series",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 28,
+  "records": [
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000001",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 35.05
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 35.05
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 34.8
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 34.8
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 34.55
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 34.55
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 34.3
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 34.3
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 34.05
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 34.05
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 33.8
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 33.8
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000002",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 1.15
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 1.15
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 1.4
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 1.4
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 1.65
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 1.65
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 1.9
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 1.9
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 2.15
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 2.15
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 2.4
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 2.4
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000003",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 23.15
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 23.15
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 22.9
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 22.9
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 22.65
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 22.65
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 22.4
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 22.4
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 22.15
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 22.15
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 21.9
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 21.9
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000004",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 7.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 7.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 7.7
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 7.7
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 7.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 7.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 8.2
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 8.2
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 8.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 8.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 8.7
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 8.7
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000005",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 50.85
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 50.85
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 50.6
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 50.6
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 50.35
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 50.35
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 50.1
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 50.1
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 49.85
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 49.85
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 49.6
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 49.6
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000006",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 10.85
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 10.85
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 11.1
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 11.1
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 11.35
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 11.35
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 11.6
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 11.6
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 11.85
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 11.85
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 12.1
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 12.1
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000007",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 27.65
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 27.65
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 27.4
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 27.4
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 27.15
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 27.15
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 26.9
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 26.9
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 26.65
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 26.65
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 26.4
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 26.4
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000008",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 71.25
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 71.25
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 71.5
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 71.5
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 71.75
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 71.75
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 72.0
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 72.0
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 72.25
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 72.25
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 72.5
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 72.5
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000009",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 42.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 42.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 42.2
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 42.2
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 41.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 41.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 41.7
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 41.7
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 41.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 41.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 41.2
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 41.2
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000010",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 59.55
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 59.55
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 59.3
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 59.3
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 59.05
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 59.05
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 58.8
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 58.8
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 58.55
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 58.55
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 58.3
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 58.3
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000011",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 131.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 131.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 131.7
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 131.7
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 131.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 131.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 132.2
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 132.2
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 132.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 132.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 132.7
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 132.7
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000012",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 219.65
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 219.65
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 219.4
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 219.4
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 219.15
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 219.15
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 218.9
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 218.9
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 218.65
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 218.65
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 218.4
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 218.4
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000014",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 105.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 105.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 105.2
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 105.2
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 104.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 104.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 104.7
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 104.7
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 104.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 104.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 104.2
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 104.2
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-10",
+      "player_id": "gsis:00-0000016",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 96.25
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 96.25
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 96.0
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 96.0
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 95.75
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 95.75
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 95.5
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 95.5
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 95.25
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 95.25
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 95.0
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 95.0
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000001",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 35.05
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 35.05
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 34.8
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 34.8
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 34.55
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 34.55
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 34.3
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 34.3
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 34.05
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 34.05
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 33.8
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 33.8
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000002",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 1.15
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 1.15
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 1.4
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 1.4
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 1.65
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 1.65
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 1.9
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 1.9
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 2.15
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 2.15
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 2.4
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 2.4
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000003",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 23.15
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 23.15
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 22.9
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 22.9
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 22.65
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 22.65
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 22.4
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 22.4
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 22.15
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 22.15
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 21.9
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 21.9
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000004",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 7.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 7.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 7.7
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 7.7
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 7.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 7.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 8.2
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 8.2
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 8.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 8.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 8.7
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 8.7
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000005",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 50.85
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 50.85
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 50.6
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 50.6
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 50.35
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 50.35
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 50.1
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 50.1
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 49.85
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 49.85
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 49.6
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 49.6
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000006",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 10.85
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 10.85
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 11.1
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 11.1
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 11.35
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 11.35
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 11.6
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 11.6
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 11.85
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 11.85
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 12.1
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 12.1
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000007",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 27.65
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 27.65
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 27.4
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 27.4
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 27.15
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 27.15
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 26.9
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 26.9
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 26.65
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 26.65
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 26.4
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 26.4
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000008",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 71.25
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 71.25
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 71.5
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 71.5
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 71.75
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 71.75
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 72.0
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 72.0
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 72.25
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 72.25
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 72.5
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 72.5
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000009",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 42.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 42.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 42.2
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 42.2
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 41.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 41.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 41.7
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 41.7
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 41.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 41.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 41.2
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 41.2
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000010",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 59.55
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 59.55
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 59.3
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 59.3
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 59.05
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 59.05
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 58.8
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 58.8
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 58.55
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 58.55
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 58.3
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 58.3
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000011",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": -0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 131.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 131.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 131.7
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 131.7
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 131.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 131.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 132.2
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 132.2
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 132.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 132.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 132.7
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 132.7
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000012",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 219.65
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 219.65
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 219.4
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 219.4
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 219.15
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 219.15
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 218.9
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 218.9
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 218.65
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 218.65
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 218.4
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 218.4
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000014",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 105.45
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 105.45
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 105.2
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 105.2
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 104.95
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 104.95
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 104.7
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 104.7
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 104.45
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 104.45
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 104.2
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 104.2
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "market_source_id": "myfantasyleague_adp",
+      "scoring_preset": "PPR",
+      "league_preset_id": "redraft-12",
+      "player_id": "gsis:00-0000016",
+      "cohort_id": "unfiltered",
+      "window_days": 7.0,
+      "market_trend": 0.25,
+      "points": [
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 96.25
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "market_adp": 96.25
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 96.0
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "market_adp": 96.0
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 95.75
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "market_adp": 95.75
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 95.5
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "market_adp": 95.5
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 95.25
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "market_adp": 95.25
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 95.0
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "market_adp": 95.0
+        }
+      ]
+    }
+  ]
+}

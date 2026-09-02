@@ -14,10 +14,15 @@
  */
 export const ARTIFACT_SCHEMA_VERSION = "1.0";
 
-/** Per-record contract versions. Phase 5 moved `arbitrage_record` to 1.1 (ADR-040). */
+/**
+ * Per-record contract versions. Phase 5 moved `arbitrage_record` to 1.1 (ADR-040); Phase 10
+ * moves it to 1.2 (ADR-065), which is **additive** — every 1.1 field keeps its exact meaning
+ * and its MyFantasyLeague provenance.
+ */
 export const RECORD_SCHEMA_VERSIONS = {
   tiers: "1.0",
-  arbitrage: "1.1",
+  arbitrage: "1.2",
+  market_trend_series: "1.0",
   projections: "1.0",
   market_snapshot: "1.0",
   player_status: "1.0",
@@ -31,6 +36,7 @@ export type SourceStatus = "pass" | "warning" | "failed" | "disabled";
 export type ArtifactName =
   | "tiers"
   | "arbitrage"
+  | "market_trend_series"
   | "projections"
   | "market_snapshot"
   | "player_status";
@@ -68,6 +74,98 @@ export interface TierRecord {
   readonly expected_points: number;
   readonly uncertainty: number;
   readonly quality_flags: readonly string[];
+}
+
+/** What a market quote measures. An ADP is a price; an ECR is an opinion (ADR-062). */
+export type MarketSignalType = "adp" | "ecr";
+
+/** How a source aggregates the drafts behind a price (ADR-062). */
+export type AggregationWindow =
+  | "rolling"
+  | "season_cumulative"
+  | "not_applicable"
+  | "unknown";
+
+/** Why a player is publicly visible. Market membership decides visibility only (ADR-063). */
+export type SurfaceReason =
+  | "intrinsic_top_tier_depth"
+  | "market_top300_ffc_adp"
+  | "market_top300_fantasypros_adp"
+  | "market_top300_fantasypros_ecr"
+  | "market_top300_mfl_adp"
+  | "current_roster_relevant"
+  | "sleeper_trending_add"
+  | "sleeper_trending_drop"
+  | "current_depth_promotion";
+
+/**
+ * One ADP source's independent comparison against intrinsic fair rank.
+ *
+ * The populated fields differ by source and that is the information, not an inconsistency:
+ * FFC fills `market_adp_sd` and leaves `league_size` null because its API ignores `teams`;
+ * MyFantasyLeague fills `market_adp_low`/`high`, which are extreme order statistics rather
+ * than a dispersion estimate, and leaves `market_adp_sd` null because it publishes none.
+ */
+export interface MarketComparison {
+  readonly source_id: string;
+  readonly market_signal_type: "adp";
+  readonly market_adp: number;
+  readonly market_rank: number | null;
+  readonly rank_gap: number;
+  readonly regional_value_gap: number;
+  readonly market_sample_size: number | null;
+  readonly market_adp_sd: number | null;
+  readonly market_adp_low: number | null;
+  readonly market_adp_high: number | null;
+  /** Null when the source does not observe league size, or the cohort is approximate. */
+  readonly league_size: number | null;
+  readonly aggregation_window_type: AggregationWindow;
+  readonly aggregation_window_days: number | null;
+  readonly market_cohort_id: string;
+  readonly market_cohort_detail: string;
+  readonly market_snapshot_at_utc: string;
+  readonly market_trend: number | null;
+  readonly quality_flags: readonly string[];
+}
+
+/**
+ * An expert consensus ranking. **Not a price.**
+ *
+ * Its gap is `ecr_gap`, never `rank_gap`, and it never appears in `markets` or in any
+ * cross-market ADP field. A reader comparing the model to the experts is asking a different
+ * question from one comparing the model to the market (roadmap 10.4).
+ */
+export interface ExpertConsensus {
+  readonly source_id: string;
+  readonly market_signal_type: "ecr";
+  readonly ecr: number;
+  readonly ecr_gap: number;
+  readonly consensus_rank_mean?: number | null;
+  readonly consensus_rank_min?: number | null;
+  readonly consensus_rank_max?: number | null;
+  readonly consensus_rank_sd?: number | null;
+  readonly expert_count: number | null;
+  readonly market_cohort_id: string;
+  readonly market_snapshot_at_utc: string;
+  readonly quality_flags: readonly string[];
+}
+
+/**
+ * Where the ADP sources agree and disagree.
+ *
+ * `market_adp_median` is a convenience summary and **not** a canonical price: the sources
+ * describe different populations over different windows, so the interesting number here is
+ * `market_disagreement_range` — the thing a single-source board could not tell you.
+ */
+export interface CrossMarketSummary {
+  readonly sources_available: readonly string[];
+  readonly market_adp_min: number | null;
+  readonly market_adp_max: number | null;
+  readonly market_adp_median: number | null;
+  readonly market_disagreement_range: number | null;
+  /** The market where he costs the *latest* pick, i.e. the largest ADP. */
+  readonly cheapest_market_source: string | null;
+  readonly most_expensive_market_source: string | null;
 }
 
 export interface ArbitrageRecord {
@@ -108,6 +206,19 @@ export interface ArbitrageRecord {
   /** Market-data quality, never a probability that the player is a bargain (ADR-041). */
   readonly confidence: Confidence;
   readonly quality_flags: readonly string[];
+  /**
+   * Phase 10, additive. One entry per ADP source that priced this player.
+   *
+   * Optional in the type because a Release 1 artifact has no such field and the frontend
+   * must render an older bundle rather than crash on it — the same reason the loader is
+   * tolerant of a missing optional artifact.
+   */
+  readonly markets?: readonly MarketComparison[];
+  readonly expert_consensus?: ExpertConsensus | null;
+  readonly cross_market?: CrossMarketSummary | null;
+  readonly surface_reasons?: readonly SurfaceReason[];
+  /** True when market relevance surfaced him from beyond the tier depth: no tier, real rank. */
+  readonly outside_tier_board?: boolean;
 }
 
 /**
@@ -343,7 +454,46 @@ export const ARBITRAGE_FIELDS = [
   "market_snapshot_at_utc",
   "confidence",
   "quality_flags",
+  "markets",
+  "expert_consensus",
+  "cross_market",
+  "surface_reasons",
+  "outside_tier_board",
 ] as const satisfies readonly (keyof ArbitrageRecord)[];
+
+/**
+ * One player's retained ADP history for one source (ADR-066).
+ *
+ * The points come from the append-only snapshot store by way of the build. **The browser
+ * never calls a vendor for chart history** — that is the property this artifact exists to
+ * make possible on a static site, and it is why the series is published rather than fetched.
+ */
+export interface MarketTrendSeriesRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly market_source_id: string;
+  readonly scoring_preset: ScoringPreset;
+  readonly league_preset_id: string;
+  readonly player_id: string;
+  readonly cohort_id: string;
+  readonly window_days: number;
+  /** The same slope the arbitrage row carries, over these same points. */
+  readonly market_trend: number | null;
+  readonly points: readonly { readonly observed_at: string; readonly market_adp: number }[];
+}
+
+export const MARKET_TREND_SERIES_FIELDS = [
+  "schema_version",
+  "build_id",
+  "market_source_id",
+  "scoring_preset",
+  "league_preset_id",
+  "player_id",
+  "cohort_id",
+  "window_days",
+  "market_trend",
+  "points",
+] as const satisfies readonly (keyof MarketTrendSeriesRecord)[];
 
 export const PLAYER_STATUS_FIELDS = [
   "schema_version",
@@ -442,6 +592,7 @@ export const PLAYER_STATUS_FIELDS_COMPLETE: NoMissingKeys<
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
+  market_trend_series: MARKET_TREND_SERIES_FIELDS,
   projections: PROJECTION_FIELDS,
   market_snapshot: MARKET_SNAPSHOT_FIELDS,
   player_status: PLAYER_STATUS_FIELDS,
@@ -450,6 +601,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   tiers: "tiers.json",
   arbitrage: "arbitrage.json",
+  market_trend_series: "market_trend_series.json",
   projections: "projections.json",
   market_snapshot: "market_snapshot.json",
   player_status: "player_status.json",
