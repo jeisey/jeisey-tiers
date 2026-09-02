@@ -269,8 +269,6 @@ Do not build Phase 10 on undocumented ESPN fantasy endpoints. There is no verifi
 
 Do not spend the Phase 10 session hunting for logo count after FFC/FantasyPros are working. A new source may be considered only if it clearly improves user utility and passes the same policy/schema/freshness/identity gates without delaying the required deliverables.
 
-**Yahoo is intentionally out of Release 2 scope and should not appear in Phase 10 code, source registry planning, UI placeholders, or the Release 2 roadmap.**
-
 ### Exit criterion
 
 - FFC, MFL, and FantasyPros have explicit production dispositions with their distinct semantics preserved.
@@ -278,7 +276,6 @@ Do not spend the Phase 10 session hunting for logo count after FFC/FantasyPros a
 - FantasyPros ADP and ECR are both publicly useful while remaining semantically distinct.
 - Sleeper's once-daily player-map rule and add/drop trending endpoints are implemented/recorded for Phase 12 use.
 - ESPN remains disabled.
-- Yahoo is absent from Release 2 scope.
 - `docs/DATA_SOURCES.md`, `config/source-registry.yaml`, source fixtures, attribution UI, and ADRs reflect measured Phase 10 facts rather than assumptions.
 
 ---
@@ -377,7 +374,7 @@ https://github.com/mayscopeland/ffb_ids
 player_ids.csv
 ```
 
-As of this planning update, the CSV maps player identities/names across multiple fantasy systems including Sleeper, Yahoo, ESPN, NFFC, CBS, FFToday, NFL.com, FantasyPros, and Footballguys, with a focus on fantasy-relevant 2023-2026 players. **FFC is not one of its direct ID columns.**
+As of this planning update, the CSV maps player identities/names across multiple fantasy systems including Sleeper, ESPN, NFFC, CBS, FFToday, NFL.com, FantasyPros, and Footballguys, with a focus on fantasy-relevant 2023-2026 players. **FFC is not one of its direct ID columns.**
 
 Potential use:
 
