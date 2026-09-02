@@ -2,62 +2,583 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/schemas/arbitrage_record.schema.json",
   "title": "ArbitrageRecord",
-  "description": "One player's market-versus-model comparison for one league preset. Record contract 1.1 (Phase 5) adds the A0 draft-region gap and the market provenance a reader needs to judge the row without a second fetch: dispersion, the cohort the price came from, and when it was retrieved (ADR-038, ADR-040).",
+  "description": "One player's market-versus-model comparison for one league preset. Record contract 1.2 (Phase 10) is ADDITIVE over 1.1: every 1.1 field keeps its exact meaning and its MyFantasyLeague provenance, so a Release 1 board remains reproducible and readable (Release 2 guardrail 2.1). What is new is `markets`, one independent comparison per ADP source; `expert_consensus`, which is a ranking and never a price; `cross_market`, an ADP-only summary that excludes ECR by construction; and the surface fields that record why a player is visible at all (ADR-063, ADR-065).",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "build_id", "league_preset_id", "scoring_preset", "player_id",
-    "display_name", "team", "position", "fair_rank", "market_adp", "market_rank",
-    "rank_gap", "regional_value_gap", "arbitrage_mode", "arbitrage_score",
-    "expected_surplus_vorp", "p_positive_surplus", "market_trend", "market_sample_size",
-    "market_adp_sd", "market_adp_low", "market_adp_high", "market_source_id",
-    "market_cohort_id", "market_cohort_detail", "market_snapshot_at_utc",
-    "confidence", "quality_flags"
+    "schema_version",
+    "build_id",
+    "league_preset_id",
+    "scoring_preset",
+    "player_id",
+    "display_name",
+    "team",
+    "position",
+    "fair_rank",
+    "market_adp",
+    "market_rank",
+    "rank_gap",
+    "regional_value_gap",
+    "arbitrage_mode",
+    "arbitrage_score",
+    "expected_surplus_vorp",
+    "p_positive_surplus",
+    "market_trend",
+    "market_sample_size",
+    "market_adp_sd",
+    "market_adp_low",
+    "market_adp_high",
+    "market_source_id",
+    "market_cohort_id",
+    "market_cohort_detail",
+    "market_snapshot_at_utc",
+    "confidence",
+    "quality_flags",
+    "markets",
+    "expert_consensus",
+    "cross_market",
+    "surface_reasons",
+    "outside_tier_board"
   ],
   "properties": {
-    "schema_version": {"const": "1.1"},
-    "build_id": {"type": "string", "minLength": 1},
-    "league_preset_id": {"type": "string", "minLength": 1},
-    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
-    "player_id": {"type": "string", "minLength": 1},
-    "display_name": {"type": "string", "minLength": 1},
-    "team": {"type": ["string", "null"]},
-    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
-    "fair_rank": {"type": "integer", "minimum": 1},
-    "market_adp": {"type": "number", "exclusiveMinimum": 0},
-    "market_rank": {"type": ["integer", "null"], "minimum": 1},
-    "rank_gap": {"type": "number"},
-    "regional_value_gap": {"type": "number"},
-    "arbitrage_mode": {"enum": ["baseline", "ml"]},
-    "arbitrage_score": {"type": "number", "minimum": 0, "maximum": 100},
-    "expected_surplus_vorp": {"type": ["number", "null"]},
-    "p_positive_surplus": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-    "market_trend": {"type": ["number", "null"]},
-    "market_sample_size": {"type": ["integer", "null"], "minimum": 0},
-    "market_adp_sd": {"type": ["number", "null"], "minimum": 0},
-    "market_adp_low": {"type": ["number", "null"], "exclusiveMinimum": 0},
-    "market_adp_high": {"type": ["number", "null"], "exclusiveMinimum": 0},
-    "market_source_id": {"type": "string", "minLength": 1},
-    "market_cohort_id": {"type": "string", "minLength": 1},
-    "market_cohort_detail": {"type": "string", "minLength": 1},
-    "market_snapshot_at_utc": {"type": "string", "format": "date-time"},
-    "confidence": {"enum": ["high", "medium", "low", "unknown"]},
-    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+    "schema_version": {
+      "const": "1.2"
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "league_preset_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scoring_preset": {
+      "enum": [
+        "STD",
+        "HALF",
+        "PPR"
+      ]
+    },
+    "player_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "team": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "position": {
+      "enum": [
+        "QB",
+        "RB",
+        "WR",
+        "TE",
+        "K",
+        "DST"
+      ]
+    },
+    "fair_rank": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "market_adp": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "market_rank": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "rank_gap": {
+      "type": "number"
+    },
+    "regional_value_gap": {
+      "type": "number"
+    },
+    "arbitrage_mode": {
+      "enum": [
+        "baseline",
+        "ml"
+      ]
+    },
+    "arbitrage_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "expected_surplus_vorp": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "p_positive_surplus": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "market_trend": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "market_sample_size": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "market_adp_sd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "market_adp_low": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "exclusiveMinimum": 0
+    },
+    "market_adp_high": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "exclusiveMinimum": 0
+    },
+    "market_source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "market_cohort_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "market_cohort_detail": {
+      "type": "string",
+      "minLength": 1
+    },
+    "market_snapshot_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "unknown"
+      ]
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "markets": {
+      "type": "array",
+      "description": "One entry per ADP source that priced this player. Independent comparisons: nothing here is averaged, and every published number is reconstructable from its components (roadmap 10.4).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "market_signal_type",
+          "market_adp",
+          "market_rank",
+          "rank_gap",
+          "regional_value_gap",
+          "market_sample_size",
+          "market_adp_sd",
+          "market_adp_low",
+          "market_adp_high",
+          "league_size",
+          "aggregation_window_type",
+          "aggregation_window_days",
+          "market_cohort_id",
+          "market_cohort_detail",
+          "market_snapshot_at_utc",
+          "market_trend",
+          "quality_flags"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "market_signal_type": {
+            "const": "adp"
+          },
+          "market_adp": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "market_rank": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "rank_gap": {
+            "type": "number"
+          },
+          "regional_value_gap": {
+            "type": "number"
+          },
+          "market_sample_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "market_adp_sd": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "market_adp_low": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "market_adp_high": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "league_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 2
+          },
+          "aggregation_window_type": {
+            "enum": [
+              "rolling",
+              "season_cumulative",
+              "not_applicable",
+              "unknown"
+            ]
+          },
+          "aggregation_window_days": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "market_cohort_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "market_cohort_detail": {
+            "type": "string"
+          },
+          "market_snapshot_at_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "market_trend": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "quality_flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        },
+        "allOf": [
+          {
+            "$comment": "MyFantasyLeague publishes no standard deviation and Fantasy Football Calculator publishes no min/max. Neither field may be filled from the other's - a dispersion estimate and two extreme order statistics are different quantities.",
+            "if": {
+              "properties": {
+                "source_id": {
+                  "const": "myfantasyleague_adp"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "market_adp_sd": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "$comment": "FFC accepts `teams` and ignores it (ADR-056, re-measured 2026-09-02). A league size here would be a cohort claim the API does not substantiate.",
+            "if": {
+              "properties": {
+                "source_id": {
+                  "const": "fantasyfootballcalculator_adp"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "league_size": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "expert_consensus": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "description": "An expert consensus ranking. NOT a price: it never enters `markets`, `cross_market`, or any ADP aggregate, and its gap is named `ecr_gap` rather than `rank_gap` (roadmap 10.4).",
+      "required": [
+        "source_id",
+        "market_signal_type",
+        "ecr",
+        "ecr_gap",
+        "expert_count",
+        "market_cohort_id",
+        "market_snapshot_at_utc",
+        "quality_flags"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "market_signal_type": {
+          "const": "ecr"
+        },
+        "ecr": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ecr_gap": {
+          "type": "number"
+        },
+        "consensus_rank_mean": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "consensus_rank_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "consensus_rank_max": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "consensus_rank_sd": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "expert_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "market_cohort_id": {
+          "type": "string"
+        },
+        "market_snapshot_at_utc": {
+          "type": "string"
+        },
+        "quality_flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "cross_market": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "description": "Where the ADP sources agree and disagree. `market_adp_median` is a convenience summary and NOT a canonical price: the sources describe different populations over different windows, and promoting it would require a separate frozen methodology first (roadmap 10.4).",
+      "required": [
+        "sources_available",
+        "market_adp_min",
+        "market_adp_max",
+        "market_adp_median",
+        "market_disagreement_range",
+        "cheapest_market_source",
+        "most_expensive_market_source"
+      ],
+      "properties": {
+        "sources_available": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "market_adp_min": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "market_adp_max": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "market_adp_median": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "market_disagreement_range": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cheapest_market_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "most_expensive_market_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "surface_reasons": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Why this player is publicly visible. Market membership may decide visibility; it may never change fair_rank, VORP or tier (ADR-063).",
+      "items": {
+        "enum": [
+          "intrinsic_top_tier_depth",
+          "market_top300_ffc_adp",
+          "market_top300_fantasypros_adp",
+          "market_top300_fantasypros_ecr",
+          "market_top300_mfl_adp",
+          "current_roster_relevant",
+          "sleeper_trending_add",
+          "sleeper_trending_drop",
+          "current_depth_promotion"
+        ]
+      }
+    },
+    "outside_tier_board": {
+      "type": "boolean",
+      "description": "True when the player is surfaced by market relevance from beyond the tier-segmentation depth. Such a row carries a fair rank and NO tier, rather than a fabricated one."
+    }
   },
   "allOf": [
     {
-      "if": {"properties": {"arbitrage_mode": {"const": "baseline"}}},
+      "if": {
+        "properties": {
+          "arbitrage_mode": {
+            "const": "baseline"
+          }
+        }
+      },
       "then": {
         "properties": {
-          "expected_surplus_vorp": {"type": "null"},
-          "p_positive_surplus": {"type": "null"}
+          "expected_surplus_vorp": {
+            "type": "null"
+          },
+          "p_positive_surplus": {
+            "type": "null"
+          }
         }
       }
     },
     {
       "$comment": "MyFantasyLeague publishes no ADP standard deviation (docs/DATA_SOURCES.md 13.5). A populated market_adp_sd from that source would be fabricated.",
-      "if": {"properties": {"market_source_id": {"const": "myfantasyleague_adp"}}},
-      "then": {"properties": {"market_adp_sd": {"type": "null"}}}
+      "if": {
+        "properties": {
+          "market_source_id": {
+            "const": "myfantasyleague_adp"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "market_adp_sd": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "Roadmap 10.4: an expert consensus rank must never be counted as an observed draft price. Enforced structurally - `markets` entries are const 'adp' and `expert_consensus` is const 'ecr' - so no producer can put one where the other belongs.",
+      "properties": {
+        "markets": {
+          "items": {
+            "properties": {
+              "market_signal_type": {
+                "const": "adp"
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

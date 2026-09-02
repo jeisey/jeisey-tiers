@@ -27,9 +27,16 @@ from ffdraft.arbitrage.baseline import signals_for_block
 from ffdraft.arbitrage.confidence import CONFIDENCE_RUBRIC, ConfidenceVerdict
 from ffdraft.arbitrage.frozen import ARBITRAGE_METHOD_VERSION, ARBITRAGE_MODE
 from ffdraft.artifacts import record_schema_version
-from ffdraft.contracts import QualityCheck
-from ffdraft.contracts.enums import Severity
+from ffdraft.contracts import QualityCheck, SurfaceReason
+from ffdraft.contracts.enums import MarketSignalType, Severity
+from ffdraft.market.comparison import (
+    SourceQuote,
+    cross_market_summary,
+    ecr_comparison,
+    source_comparisons,
+)
 from ffdraft.market.current import CurrentMarket
+from ffdraft.market.surface import SurfaceUniverse
 from ffdraft.quality import QualityGate
 from ffdraft.quality.thresholds import (
     IDENTITY_COVERAGE_MINIMUM,
@@ -44,6 +51,15 @@ __all__ = [
 ]
 
 _ARBITRAGE_SCHEMA = "arbitrage_record"
+
+#: Per-player quotes from the Phase-10 sources, keyed
+#: ``source_id -> (scoring_preset, player_id) -> SourceQuote``.
+ExtraQuotes = Mapping[str, Mapping[tuple[str, str], "SourceQuote"]]
+
+#: One surfaced player who is outside the tier board but publicly relevant. Supplied by the
+#: market pipeline from the surface universe, because the tier artifact by definition does
+#: not contain him - which is the whole reason the blind spot existed (ADR-063).
+SurfacedRow = Mapping[str, Any]
 
 #: How much of the published top-150 board a critical build expects to be priced. Set to the
 #: launch identity threshold: this is the same question - what share of the players a reader
@@ -86,12 +102,26 @@ def build_arbitrage_records(
     season: int,
     generated_at: datetime,
     gate: QualityGate | None = None,
+    extra_quotes: ExtraQuotes | None = None,
+    surfaces: Mapping[tuple[str, str], SurfaceUniverse] | None = None,
+    surfaced_rows: Sequence[SurfacedRow] = (),
 ) -> ArbitrageBuildResult:
     """Compute A0 for every launch preset and assemble the public records.
 
     ``league_size_by_preset`` maps a league preset id to its team count, which is how a tier
     row finds the market cohort assigned to it. Passing it in rather than reading the league
     config here keeps this function pure and drivable from a fixture.
+
+    The three Phase-10 arguments are all optional, and with none of them supplied this
+    function produces exactly the Release 1 board plus the additive fields describing a
+    single-source market. That is deliberate: an arbitrage build must keep working when the
+    new sources are absent, stale or disabled, which is roadmap 10.1.3's noncritical-failure
+    rule and the reason FantasyPros being unpublishable does not take the board down.
+
+    ``surfaced_rows`` carries the players the surface universe admitted from *beyond* the
+    tier depth. They cannot come from ``tier_records`` — the tier artifact does not contain
+    them, which is precisely how the 300-row blind spot worked — so the market pipeline
+    reads them from the intrinsic universe and passes them here (ADR-063).
     """
     checks = gate or QualityGate()
     result = ArbitrageBuildResult(
@@ -119,7 +149,17 @@ def build_arbitrage_records(
             )
             continue
 
-        ordered = sorted(rows, key=lambda record: int(record["fair_rank"]))
+        surface = (surfaces or {}).get((preset_id, scoring))
+        exceptions = [
+            row
+            for row in surfaced_rows
+            if str(row.get("league_preset_id")) == preset_id
+            and str(row.get("scoring_preset")) == scoring
+        ]
+        ordered = sorted(
+            [*rows, *exceptions],
+            key=lambda record: int(record["fair_rank"]),
+        )
         priced: list[tuple[str, int, float]] = []
         prices = {}
         for record in ordered:
@@ -141,6 +181,22 @@ def build_arbitrage_records(
             confidence_counts[str(verdict.confidence)] = (
                 confidence_counts.get(str(verdict.confidence), 0) + 1
             )
+            fair_rank = int(record["fair_rank"])
+            quotes = _quotes_for(extra_quotes, scoring=scoring, player_id=player_id)
+            # The MFL price is a quote like any other in the multi-source view. It is
+            # reconstructed from the same `MarketPrice` the flat fields use, so the two can
+            # never disagree about what MyFantasyLeague said.
+            quotes.append(_quote_from_price(price, scoring=scoring))
+            comparisons = source_comparisons(quotes, fair_rank=fair_rank)
+            consensus = next(
+                (
+                    ecr_comparison(quote, fair_rank=fair_rank)
+                    for quote in quotes
+                    if quote.signal_type is MarketSignalType.ECR
+                ),
+                None,
+            )
+            entry = surface.entries.get(player_id) if surface else None
             result.records.append(
                 {
                     "schema_version": schema_version,
@@ -174,6 +230,23 @@ def build_arbitrage_records(
                     "market_snapshot_at_utc": isoformat_utc(price.snapshot_at_utc),
                     "confidence": str(verdict.confidence),
                     "quality_flags": list(price.quality_flags),
+                    # Additive, Phase 10. Every entry is an independent comparison against
+                    # the same fair rank; nothing here is blended (roadmap 10.4).
+                    "markets": [
+                        comparisons[source_id].to_dict() for source_id in sorted(comparisons)
+                    ],
+                    # A ranking, never a price. Null when no consensus source is enabled.
+                    "expert_consensus": consensus.to_dict() if consensus else None,
+                    "cross_market": cross_market_summary(
+                        quotes,
+                        player_id=player_id,
+                    ).to_dict(),
+                    "surface_reasons": (
+                        [str(reason) for reason in entry.reasons]
+                        if entry
+                        else [str(SurfaceReason.INTRINSIC_TOP_TIER_DEPTH)]
+                    ),
+                    "outside_tier_board": bool(entry.outside_tier_board) if entry else False,
                 },
             )
 
@@ -199,6 +272,57 @@ def build_arbitrage_records(
     checks.extend(_coverage_checks(result, per_block))
     checks.extend(_baseline_mode_checks(result.records))
     return result
+
+
+def _quotes_for(
+    extra: ExtraQuotes | None,
+    *,
+    scoring: str,
+    player_id: str,
+) -> list[SourceQuote]:
+    if not extra:
+        return []
+    return [
+        quote
+        for source_id in sorted(extra)
+        if (quote := extra[source_id].get((scoring, player_id))) is not None
+    ]
+
+
+def _quote_from_price(price: Any, *, scoring: str) -> SourceQuote:
+    """The MyFantasyLeague price as a multi-source quote.
+
+    Derived from the same object the flat 1.1 fields are written from, so the V1 surface and
+    the V2 `markets` array are two views of one number rather than two numbers that have to
+    be kept in step.
+    """
+    return SourceQuote(
+        source_id=price.source_id,
+        signal_type=MarketSignalType.ADP,
+        player_id=price.player_id,
+        scoring_preset=scoring,
+        market_adp=price.market_adp,
+        market_rank=price.market_rank,
+        sample_size=price.sample_size,
+        adp_sd=price.adp_sd,
+        adp_low=price.adp_low,
+        adp_high=price.adp_high,
+        # The league size this quote was actually *observed* for, which is not the same as
+        # the preset it is being shown under. `MarketPrice.league_size` is the preset's team
+        # count; it is only an observation when the selection rule found an exact cohort
+        # (ADR-039). An approximate cohort priced "any league size", so the column stays
+        # null rather than borrowing the preset's number - the same refusal-to-claim that
+        # makes FFC's league_size null, reached for a different reason.
+        league_size=price.league_size if price.cohort_exact else None,
+        # Phase 0 measured MFL's aggregate as season-cumulative; `DAYS` is ignored (ADR-010).
+        aggregation_window_type="season_cumulative",
+        aggregation_window_days=None,
+        cohort_id=price.cohort_id,
+        cohort_detail=price.cohort_detail,
+        snapshot_at_utc=isoformat_utc(price.snapshot_at_utc),
+        market_trend=price.market_trend,
+        quality_flags=tuple(price.quality_flags),
+    )
 
 
 def _block_coverage(

@@ -7,7 +7,7 @@
   "record_count": 28,
   "records": [
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -39,10 +39,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 2.4,
+          "market_rank": 1,
+          "rank_gap": 1.4,
+          "regional_value_gap": 0.875469,
+          "market_sample_size": 140,
+          "market_adp_sd": null,
+          "market_adp_low": 1.0,
+          "market_adp_high": 6.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 2.4,
+        "market_adp_max": 2.4,
+        "market_adp_median": 2.4,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -74,10 +117,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 26.4,
+          "market_rank": 6,
+          "rank_gap": 24.4,
+          "regional_value_gap": 2.580217,
+          "market_sample_size": 118,
+          "market_adp_sd": null,
+          "market_adp_low": 15.0,
+          "market_adp_high": 44.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 26.4,
+        "market_adp_max": 26.4,
+        "market_adp_median": 26.4,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -109,10 +195,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 8.7,
+          "market_rank": 2,
+          "rank_gap": 5.7,
+          "regional_value_gap": 1.064711,
+          "market_sample_size": 138,
+          "market_adp_sd": null,
+          "market_adp_low": 3.0,
+          "market_adp_high": 18.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 8.7,
+        "market_adp_max": 8.7,
+        "market_adp_median": 8.7,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -144,10 +273,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 12.1,
+          "market_rank": 3,
+          "rank_gap": 8.1,
+          "regional_value_gap": 1.106911,
+          "market_sample_size": 131,
+          "market_adp_sd": null,
+          "market_adp_low": 6.0,
+          "market_adp_high": 25.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 12.1,
+        "market_adp_max": 12.1,
+        "market_adp_median": 12.1,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -179,10 +351,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 21.9,
+          "market_rank": 5,
+          "rank_gap": 16.9,
+          "regional_value_gap": 1.477049,
+          "market_sample_size": 120,
+          "market_adp_sd": null,
+          "market_adp_low": 12.0,
+          "market_adp_high": 38.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 21.9,
+        "market_adp_max": 21.9,
+        "market_adp_median": 21.9,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -214,10 +429,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 33.8,
+          "market_rank": 7,
+          "rank_gap": 27.8,
+          "regional_value_gap": 1.728701,
+          "market_sample_size": 115,
+          "market_adp_sd": null,
+          "market_adp_low": 20.0,
+          "market_adp_high": 55.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 33.8,
+        "market_adp_max": 33.8,
+        "market_adp_median": 33.8,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -249,10 +507,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 49.6,
+          "market_rank": 9,
+          "rank_gap": 42.6,
+          "regional_value_gap": 1.958081,
+          "market_sample_size": 88,
+          "market_adp_sd": null,
+          "market_adp_low": 31.0,
+          "market_adp_high": 80.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 49.6,
+        "market_adp_max": 49.6,
+        "market_adp_median": 49.6,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -284,10 +585,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 58.3,
+          "market_rank": 10,
+          "rank_gap": 50.3,
+          "regional_value_gap": 1.986161,
+          "market_sample_size": 71,
+          "market_adp_sd": null,
+          "market_adp_low": 38.0,
+          "market_adp_high": 92.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 58.3,
+        "market_adp_max": 58.3,
+        "market_adp_median": 58.3,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -320,10 +664,54 @@
         "insufficient_trend_history",
         "secondary_identity_bridge_only",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 41.2,
+          "market_rank": 8,
+          "rank_gap": 32.2,
+          "regional_value_gap": 1.521214,
+          "market_sample_size": 96,
+          "market_adp_sd": null,
+          "market_adp_low": 26.0,
+          "market_adp_high": 67.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "secondary_identity_bridge_only",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 41.2,
+        "market_adp_max": 41.2,
+        "market_adp_median": 41.2,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -357,10 +745,55 @@
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 132.7,
+          "market_rank": 14,
+          "rank_gap": 122.7,
+          "regional_value_gap": 2.585506,
+          "market_sample_size": 18,
+          "market_adp_sd": null,
+          "market_adp_low": 90.0,
+          "market_adp_high": 180.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "low_market_sample",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 132.7,
+        "market_adp_max": 132.7,
+        "market_adp_median": 132.7,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -393,10 +826,54 @@
         "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 72.5,
+          "market_rank": 11,
+          "rank_gap": 61.5,
+          "regional_value_gap": 1.885691,
+          "market_sample_size": 52,
+          "market_adp_sd": null,
+          "market_adp_low": 47.0,
+          "market_adp_high": 110.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 72.5,
+        "market_adp_max": 72.5,
+        "market_adp_median": 72.5,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -430,10 +907,55 @@
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 104.2,
+          "market_rank": 13,
+          "rank_gap": 91.2,
+          "regional_value_gap": 2.081363,
+          "market_sample_size": 27,
+          "market_adp_sd": null,
+          "market_adp_low": 70.0,
+          "market_adp_high": 150.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "low_market_sample",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 104.2,
+        "market_adp_max": 104.2,
+        "market_adp_median": 104.2,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -467,10 +989,55 @@
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 218.4,
+          "market_rank": 18,
+          "rank_gap": 204.4,
+          "regional_value_gap": 2.747271,
+          "market_sample_size": 6,
+          "market_adp_sd": null,
+          "market_adp_low": 170.0,
+          "market_adp_high": 250.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "low_market_sample",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 218.4,
+        "market_adp_max": 218.4,
+        "market_adp_median": 218.4,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-10",
       "scoring_preset": "PPR",
@@ -503,10 +1070,54 @@
         "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 95.0,
+          "market_rank": 12,
+          "rank_gap": 79.0,
+          "regional_value_gap": 1.781288,
+          "market_sample_size": 33,
+          "market_adp_sd": null,
+          "market_adp_low": 60.0,
+          "market_adp_high": 140.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 95.0,
+        "market_adp_max": 95.0,
+        "market_adp_median": 95.0,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -538,10 +1149,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 2.4,
+          "market_rank": 1,
+          "rank_gap": 1.4,
+          "regional_value_gap": 0.875469,
+          "market_sample_size": 140,
+          "market_adp_sd": null,
+          "market_adp_low": 1.0,
+          "market_adp_high": 6.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 2.4,
+        "market_adp_max": 2.4,
+        "market_adp_median": 2.4,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -573,10 +1227,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 26.4,
+          "market_rank": 6,
+          "rank_gap": 24.4,
+          "regional_value_gap": 2.580217,
+          "market_sample_size": 118,
+          "market_adp_sd": null,
+          "market_adp_low": 15.0,
+          "market_adp_high": 44.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 26.4,
+        "market_adp_max": 26.4,
+        "market_adp_median": 26.4,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -608,10 +1305,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 8.7,
+          "market_rank": 2,
+          "rank_gap": 5.7,
+          "regional_value_gap": 1.064711,
+          "market_sample_size": 138,
+          "market_adp_sd": null,
+          "market_adp_low": 3.0,
+          "market_adp_high": 18.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 8.7,
+        "market_adp_max": 8.7,
+        "market_adp_median": 8.7,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -643,10 +1383,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 12.1,
+          "market_rank": 3,
+          "rank_gap": 8.1,
+          "regional_value_gap": 1.106911,
+          "market_sample_size": 131,
+          "market_adp_sd": null,
+          "market_adp_low": 6.0,
+          "market_adp_high": 25.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 12.1,
+        "market_adp_max": 12.1,
+        "market_adp_median": 12.1,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -678,10 +1461,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 21.9,
+          "market_rank": 5,
+          "rank_gap": 16.9,
+          "regional_value_gap": 1.477049,
+          "market_sample_size": 120,
+          "market_adp_sd": null,
+          "market_adp_low": 12.0,
+          "market_adp_high": 38.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 21.9,
+        "market_adp_max": 21.9,
+        "market_adp_median": 21.9,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -713,10 +1539,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 33.8,
+          "market_rank": 7,
+          "rank_gap": 27.8,
+          "regional_value_gap": 1.728701,
+          "market_sample_size": 115,
+          "market_adp_sd": null,
+          "market_adp_low": 20.0,
+          "market_adp_high": 55.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 33.8,
+        "market_adp_max": 33.8,
+        "market_adp_median": 33.8,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -748,10 +1617,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 49.6,
+          "market_rank": 9,
+          "rank_gap": 42.6,
+          "regional_value_gap": 1.958081,
+          "market_sample_size": 88,
+          "market_adp_sd": null,
+          "market_adp_low": 31.0,
+          "market_adp_high": 80.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 49.6,
+        "market_adp_max": 49.6,
+        "market_adp_median": 49.6,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -783,10 +1695,53 @@
         "cohort_approximate",
         "insufficient_trend_history",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 58.3,
+          "market_rank": 10,
+          "rank_gap": 50.3,
+          "regional_value_gap": 1.986161,
+          "market_sample_size": 71,
+          "market_adp_sd": null,
+          "market_adp_low": 38.0,
+          "market_adp_high": 92.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 58.3,
+        "market_adp_max": 58.3,
+        "market_adp_median": 58.3,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -819,10 +1774,54 @@
         "insufficient_trend_history",
         "secondary_identity_bridge_only",
         "source_as_of_unavailable"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 41.2,
+          "market_rank": 8,
+          "rank_gap": 32.2,
+          "regional_value_gap": 1.521214,
+          "market_sample_size": 96,
+          "market_adp_sd": null,
+          "market_adp_low": 26.0,
+          "market_adp_high": 67.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "secondary_identity_bridge_only",
+            "source_as_of_unavailable"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 41.2,
+        "market_adp_max": 41.2,
+        "market_adp_median": 41.2,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -856,10 +1855,55 @@
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 132.7,
+          "market_rank": 14,
+          "rank_gap": 122.7,
+          "regional_value_gap": 2.585506,
+          "market_sample_size": 18,
+          "market_adp_sd": null,
+          "market_adp_low": 90.0,
+          "market_adp_high": 180.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "low_market_sample",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 132.7,
+        "market_adp_max": 132.7,
+        "market_adp_median": 132.7,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -892,10 +1936,54 @@
         "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 72.5,
+          "market_rank": 11,
+          "rank_gap": 61.5,
+          "regional_value_gap": 1.885691,
+          "market_sample_size": 52,
+          "market_adp_sd": null,
+          "market_adp_low": 47.0,
+          "market_adp_high": 110.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 72.5,
+        "market_adp_max": 72.5,
+        "market_adp_median": 72.5,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -929,10 +2017,55 @@
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 104.2,
+          "market_rank": 13,
+          "rank_gap": 91.2,
+          "regional_value_gap": 2.081363,
+          "market_sample_size": 27,
+          "market_adp_sd": null,
+          "market_adp_low": 70.0,
+          "market_adp_high": 150.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "low_market_sample",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 104.2,
+        "market_adp_max": 104.2,
+        "market_adp_median": 104.2,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -966,10 +2099,55 @@
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 218.4,
+          "market_rank": 18,
+          "rank_gap": 204.4,
+          "regional_value_gap": 2.747271,
+          "market_sample_size": 6,
+          "market_adp_sd": null,
+          "market_adp_low": 170.0,
+          "market_adp_high": 250.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "low_market_sample",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 218.4,
+        "market_adp_max": 218.4,
+        "market_adp_median": 218.4,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "league_preset_id": "redraft-12",
       "scoring_preset": "PPR",
@@ -1002,7 +2180,51 @@
         "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
-      ]
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 95.0,
+          "market_rank": 12,
+          "rank_gap": 79.0,
+          "regional_value_gap": 1.781288,
+          "market_sample_size": 33,
+          "market_adp_sd": null,
+          "market_adp_low": 60.0,
+          "market_adp_high": 140.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "adp_sd_unavailable",
+            "cohort_approximate",
+            "insufficient_trend_history",
+            "source_as_of_unavailable",
+            "wide_market_range"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 95.0,
+        "market_adp_max": 95.0,
+        "market_adp_median": 95.0,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "intrinsic_top_tier_depth"
+      ],
+      "outside_tier_board": false
     }
   ],
   "arbitrage_mode": "baseline"

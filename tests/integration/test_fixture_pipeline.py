@@ -302,7 +302,17 @@ def test_two_builds_are_byte_identical(tmp_path, app_config, pipeline_fixture_di
 
 
 def test_csv_export_matches_the_json_artifact(built_artifacts):
+    """Every CSV describes the same rows as its JSON, in the same order.
+
+    The *columns* need not be the same list. A flat record's CSV is its JSON with commas, so
+    the header is the record's field order; an artifact whose record nests declares a CSV
+    projection instead, because a cell holds a scalar and an array of per-source comparisons
+    is not one (ADR-065). What must hold either way is that the CSV is a faithful view: same
+    row count, same order, and every column it claims actually filled from that record.
+    """
     import csv
+
+    from ffdraft.artifacts.csv_flatten import flattener_for
 
     for artifact in ("tiers", "arbitrage", "projections"):
         records = _load(built_artifacts, f"{artifact}.json")["records"]
@@ -310,4 +320,15 @@ def test_csv_export_matches_the_json_artifact(built_artifacts):
             rows = list(csv.DictReader(handle))
         assert len(rows) == len(records)
         assert rows[0]["player_id"] == records[0]["player_id"]
-        assert list(rows[0]) == list(records[0])
+
+        flattener = flattener_for(artifact)
+        if flattener is None:
+            assert list(rows[0]) == list(records[0])
+            continue
+        columns, project = flattener
+        assert list(rows[0]) == list(columns)
+        # The projection of the first record must reproduce the first CSV row exactly, so a
+        # column that silently stopped being filled would fail here rather than ship empty.
+        projected = project(records[0])
+        assert set(projected) == set(columns)
+        assert projected["player_id"] == rows[0]["player_id"]
