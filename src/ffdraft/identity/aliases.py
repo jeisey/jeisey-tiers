@@ -23,7 +23,7 @@ live data, which is the failure mode the manual review exists to avoid.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -32,11 +32,29 @@ import yaml
 
 from ffdraft.paths import config_dir
 
-__all__ = ["ALIAS_FILENAME", "AliasEntry", "AliasMap", "default_alias_path", "load_alias_map"]
+__all__ = [
+    "ALIAS_FILENAME",
+    "GENERATED_ALIAS_DIRNAME",
+    "AliasEntry",
+    "AliasMap",
+    "default_alias_path",
+    "generated_alias_path",
+    "load_alias_map",
+    "load_production_aliases",
+]
 
 #: The reviewed alias file, relative to ``config/``. One agreed location, so a capture and
 #: the fixture pipeline cannot disagree about which reviews are in force.
 ALIAS_FILENAME = "identity-aliases.yaml"
+
+#: Where *generated* alias files live, one per source (Phase 10, ADR-061).
+#:
+#: They are kept out of ``identity-aliases.yaml`` deliberately. That file's whole meaning is
+#: "a person looked at this and wrote it down"; a few hundred machine proposals mixed in
+#: would destroy the distinction between a reviewed exception and a bulk linkage run. A
+#: generated file carries its rule version and its run date in a header, so a reader can see
+#: which rule produced it and re-run that rule to reproduce it.
+GENERATED_ALIAS_DIRNAME = "market-aliases"
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,3 +111,28 @@ def load_alias_map(path: Path | None) -> AliasMap:
 def default_alias_path(*, root: Path | None = None) -> Path:
     """The repository's reviewed alias file."""
     return config_dir(root=root) / ALIAS_FILENAME
+
+
+def generated_alias_path(source_id: str, *, root: Path | None = None) -> Path:
+    """The generated alias file for one source."""
+    return config_dir(root=root) / GENERATED_ALIAS_DIRNAME / f"{source_id}.yaml"
+
+
+def load_production_aliases(
+    *,
+    source_ids: Sequence[str] = (),
+    root: Path | None = None,
+) -> AliasMap:
+    """The reviewed file plus each named source's generated file, merged.
+
+    **The reviewed file wins.** A generated proposal is a machine's reading of a name; a
+    reviewed entry is a person's decision about a specific player, usually written precisely
+    because the automatic path got it wrong or could not see him. Letting a nightly
+    regeneration overwrite that would make the review pointless, so the merge order is not
+    negotiable and a test pins it.
+    """
+    merged: dict[tuple[str, str], AliasEntry] = {}
+    for source_id in source_ids:
+        merged.update(load_alias_map(generated_alias_path(source_id, root=root)).entries)
+    merged.update(load_alias_map(default_alias_path(root=root)).entries)
+    return AliasMap(entries=merged)

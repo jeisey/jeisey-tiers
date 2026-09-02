@@ -212,7 +212,21 @@ MARKET_QUOTE_CONTRACT = FrameContract(
         ColumnSpec("min_pick", pl.Float64, description="Extreme order statistic, not an SD"),
         ColumnSpec("max_pick", pl.Float64, description="Extreme order statistic, not an SD"),
         ColumnSpec("adp_sd", pl.Float64, description="Genuine per-player SD where published"),
-        ColumnSpec("sample_size", pl.Int32),
+        # An expert consensus has a dispersion too, and it is measured in RANKS, not picks.
+        # FantasyPros publishes `rank_ave`, `rank_min`, `rank_max` and `rank_std` across
+        # ninety-odd experts. Writing those into `min_pick`/`max_pick`/`adp_sd` would put an
+        # expert-rank spread under a column named after a draft pick — the exact relabelling
+        # roadmap 10.3 forbids when it says a source ADP must retain its source identity.
+        # ADP rows leave these null; ECR rows leave the pick columns null.
+        ColumnSpec("consensus_rank_mean", pl.Float64, description="ECR only: mean expert rank"),
+        ColumnSpec("consensus_rank_min", pl.Int32, description="ECR only: best expert rank"),
+        ColumnSpec("consensus_rank_max", pl.Int32, description="ECR only: worst expert rank"),
+        ColumnSpec("consensus_rank_sd", pl.Float64, description="ECR only: SD of expert ranks"),
+        ColumnSpec(
+            "sample_size",
+            pl.Int32,
+            description="Observations behind the quote: drafts for ADP, experts for ECR",
+        ),
         ColumnSpec("selection_pct", pl.Float64),
         ColumnSpec("scoring_preset", pl.String, description="Observed, or null if unconstrained"),
         ColumnSpec("league_size", pl.Int32, description="Observed, or null if not claimable"),
