@@ -1992,6 +1992,12 @@ That is what makes this acceptable rather than a loophole. The fuzzy step is aud
 
 **A regression test reproduces the original bug.** `test_a_market_relevant_player_below_the_tier_depth_cannot_disappear` surfaces a synthetic player at fair rank 640, and `test_the_old_truncated_board_would_fail_the_gate` feeds the rule a pre-truncated board and asserts it fails — proof the gate is load-bearing rather than decorative.
 
+**The depth itself is a reasoned choice, not a measured optimum, and that distinction is recorded rather than smoothed over.** Roadmap 10.5 asks for a depth chosen from the measured market-coverage distribution. `scripts/phase10_depth_analysis.py` was written to produce it and found the question unanswerable from published artifacts: an arbitrage row exists only for a player already on the tier board, so measured against a board published at depth 300, every "priced players beyond 300" count is **zero by construction** — including the deepest-priced figure the choice depends on. Run [33655647823](https://github.com/jeisey/jeisey-tiers/actions/runs/33655647823) returned exactly that, nine blocks of zeros, and reading it as "300 is sufficient" would have been the wrong-denominator mistake ADR-054 recorded in a different place. The script now detects the circularity and refuses to conclude from it.
+
+What remains measured, and does bound the choice: 300 is definitively too shallow, because the roadmap's own motivating case is one market-priced player beyond it and one is enough; FFC's whole published population is 221–264 rows with a deepest ADP of 201.1; and the deepest launch preset drafts 182 players. **500 is the smallest simple value with real headroom over the one bound that is measured.**
+
+What makes an unmeasured depth acceptable here is the thing that was missing before: the surface coverage gate is **critical**. If 500 is ever too shallow, a resolved top-market player fails the build rather than disappearing quietly. The unguarded 300 had no such backstop, which is why it failed silently for a whole preseason. Answering the question properly needs the full intrinsic board joined against a market snapshot — a production build with the retained store attached — and the first live multi-source refresh is where that happens.
+
 ---
 
 ## ADR-064 — FantasyPros is implemented, retained, and not published: the key's tier serves ten rows and no ADP

@@ -7,23 +7,33 @@ Football Calculator's deepest ADP is 201.1, which bounds *its* contribution, but
 is where market-priced players sit in **fair-rank** order — and that is a property of the
 join, not of either side.
 
-The joined distribution is already published. `arbitrage.json` carries `fair_rank` and
-`market_adp` for every priced player on the live board, which is exactly the pair needed. So
-this script reads the project's **own deployed site** rather than reconstructing anything:
-no vendor is involved, no store credential is needed, and the numbers are the ones a reader
-is actually looking at.
+**Read the circularity warning before trusting a number out of this.** `arbitrage.json`
+carries `fair_rank` and `market_adp` for every priced player, which looks like exactly the
+pair needed — and is not, while the board it is built from is itself truncated. An arbitrage
+row exists only for a player already on the tier board, so a player *outside* the depth has
+no row, contributes to no count here, and is invisible to this measurement. Run against a
+board published at depth D, every "players beyond depth D" figure is zero **by construction**.
+
+That is the same defect ADR-054 recorded in a different place: a coverage number measured
+over the wrong denominator. So this script checks for it and refuses to conclude when it
+holds, rather than reporting a confident zero.
+
+It still runs against the project's **own deployed site** — no vendor, no store credential,
+and the numbers are the ones a reader is looking at — because the parts it *can* answer
+(where priced players actually sit, what the extra rows cost) are worth having, and because
+the check for circularity needs the real board to detect it.
 
 It runs on a runner because the development sandbox's egress policy denies the Pages host as
 it denies every other (ADR-009). It writes a report and changes nothing.
 
 What it measures, per (league preset, scoring preset) block:
 
-* the fair rank of the deepest market-priced player — the depth below which no ADP exists;
-* how many priced players sit beyond each candidate depth, which is the number a too-shallow
-  board would lose;
+* the fair rank of the deepest market-priced player;
+* how many priced players sit beyond each candidate depth;
 * the same for the top 300 *by ADP*, which is the population the surface gate protects;
-* the board size at each candidate depth, so the cost of the extra rows is visible beside
-  the benefit.
+* the board size, so the cost of extra rows is visible beside the benefit;
+* **whether the answer is circular**, which on a board published at the depth under test it
+  always is.
 """
 
 from __future__ import annotations
@@ -137,7 +147,28 @@ def main() -> int:
     print("\n  A deeper board is more tier rows, more JSON and more table rows to render.")
     print("  The Phase-4 board published 300 per block across nine blocks.")
 
-    section("5. The smallest simple depth with headroom")
+    section("5. Is this measurement circular?")
+    board_depth = max(deepest_published.values(), default=0)
+    circular = worst_deepest <= board_depth
+    print(f"  deepest PUBLISHED fair rank: {board_depth}")
+    print(f"  deepest PRICED   fair rank: {worst_deepest}")
+    if circular:
+        print()
+        print("  >>> CIRCULAR. Every priced player sits inside the published depth because an")
+        print("  >>> arbitrage row only exists for a player already on the tier board. A")
+        print("  >>> player outside the depth has no row, so he cannot appear in any count")
+        print("  >>> above. The zeros in sections 2 and 3 are an artefact of the input, not a")
+        print("  >>> finding about the market.")
+        print()
+        print("  >>> This measurement CANNOT choose the depth. Answering it needs the FULL")
+        print("  >>> intrinsic board - every eligible player's fair rank, not the published")
+        print("  >>> prefix - joined against a market snapshot, which means a production")
+        print("  >>> build with the retained store attached. Until then the depth is a")
+        print("  >>> reasoned choice with the surface coverage gate as its safety net, and")
+        print("  >>> the gate is the thing that will fail loudly if the choice is wrong.")
+        return 0
+
+    section("6. The smallest simple depth with headroom")
     clean = [depth for depth in CANDIDATES if gate_loss[depth] == 0]
     covering = [depth for depth in CANDIDATES if worst_loss[depth] == 0]
     print(f"  loses no top-{MARKET_TOP_DEPTH}-by-ADP player: {clean or 'none of the candidates'}")

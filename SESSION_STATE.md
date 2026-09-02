@@ -93,17 +93,27 @@ timestamp, so the snapshot records the request: `limit` honoured exactly (5/25/1
 ### Tier depth and surface coverage
 
 `phase10_tier_depth_v2` = **500**, superseding `phase4_tier_depth_v1` = 300, which is retained
-so a Release 1 board stays reproducible. The rationale is recorded on the rule object: no
-enabled ADP source publishes past fair rank 500 (FFC's deepest ADP is 201.1 and its whole
-population is under 300 rows), so 500 contains every market-priced player while leaving the
-model-only tail outside segmentation.
+so a Release 1 board stays reproducible.
 
-**Caveat, stated plainly:** that depth was chosen from the *source population* measurements
-above rather than from a joined board-versus-market distribution, because producing one needs
-a production refresh with FFC captured into the private store — which this session could not
-run. `scripts/` has no depth-analysis script yet. The first live multi-source refresh should
-re-check it, and the coverage gate will fail loudly if 500 is ever too shallow, which is the
-property the gate exists for.
+**It is a reasoned choice, not a measured optimum.** `scripts/phase10_depth_analysis.py` was
+written to measure it from the joined board and found the question **unanswerable from
+published artifacts**: an arbitrage row exists only for a player already on the tier board,
+so against a board published at depth 300 every "priced players beyond 300" count is zero
+*by construction*. Run [33655647823](https://github.com/jeisey/jeisey-tiers/actions/runs/33655647823)
+returned nine blocks of zeros; reading that as "300 is fine" would have been the
+wrong-denominator mistake ADR-054 recorded elsewhere. The script now detects the circularity
+and refuses to conclude from it.
+
+Bounds that *are* measured: 300 is definitively too shallow (the roadmap's own motivating
+case is one priced player beyond it); FFC's whole population is 221–264 rows with a deepest
+ADP of 201.1; the deepest launch preset drafts 182 players. 500 is the smallest simple value
+with headroom over the one measured bound.
+
+**The safety net is the thing that was missing before.** The surface coverage gate is
+*critical*: if 500 is ever too shallow a resolved top-market player fails the build rather
+than disappearing quietly. Answering the question properly needs the full intrinsic board
+joined against a market snapshot — a production build with the retained store attached — and
+the first live multi-source refresh is where to re-check it.
 
 Surface coverage required: **100%** of resolved top-market rows, enforced as a **critical**
 check. Unresolved source rows are counted separately and never enter the denominator.

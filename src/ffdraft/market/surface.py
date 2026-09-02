@@ -97,17 +97,39 @@ TIER_DEPTH_V1 = TierDepthRule(
     ),
 )
 
-#: V2, the Phase-10 depth. The value is chosen from the measured market-coverage
-#: distribution by `scripts/phase10_depth_analysis.py`, whose report is committed under
-#: `docs/experiments/phase10-surface-depth/`. The rationale here states what the evidence
-#: said, so a reader does not have to take the number on faith.
+#: V2, the Phase-10 depth. **A reasoned choice, not a measured optimum, and the difference
+#: is recorded rather than papered over.**
+#:
+#: `scripts/phase10_depth_analysis.py` was written to measure this from the joined board and
+#: found that it cannot: an arbitrage row exists only for a player already on the tier board,
+#: so against a board published at depth 300 every "players beyond 300" count is zero **by
+#: construction**. That is the wrong-denominator defect ADR-054 recorded elsewhere, and the
+#: script now detects and refuses to conclude from it rather than reporting a confident zero.
+#: Answering it properly needs the full intrinsic board joined against a market snapshot,
+#: which means a production build with the retained store attached.
+#:
+#: What *is* measured and does bound the choice:
+#:
+#: * 300 is definitively too shallow. The roadmap's own motivating case - a back drafted
+#:   around RB20-30 and absent from the 300-row board - is one market-priced player beyond
+#:   it, and one is enough to prove the bound.
+#: * FFC's entire published population is 221-264 rows with a deepest ADP of 201.1, so its
+#:   contribution is bounded well inside any candidate here.
+#: * The deepest launch preset drafts 14 x 13 = 182 players, so 500 is roughly 2.7x the
+#:   deepest board anyone actually drafts.
+#:
+#: 500 is therefore the smallest simple value with real headroom over the only bound that is
+#: measured. **The surface coverage gate is the safety net**, and it is a critical check: if
+#: 500 is ever too shallow, a resolved top-market player fails the build rather than
+#: disappearing quietly. That is the property that makes an unmeasured depth acceptable here
+#: and would not have made the unguarded 300 acceptable.
 TIER_DEPTH_V2 = TierDepthRule(
     version="phase10_tier_depth_v2",
     depth=500,
     rationale=(
-        "measured: no enabled ADP source publishes past fair rank 500 in the 2026 board, "
-        "so 500 contains every market-priced player while leaving the tail that only the "
-        "model ranks outside segmentation, where it belongs"
+        "the smallest simple depth with headroom over the one measured bound (300 is too "
+        "shallow by the roadmap's own case); the joined distribution is unmeasurable from a "
+        "truncated artifact, so the critical surface-coverage gate is the safety net"
     ),
 )
 
