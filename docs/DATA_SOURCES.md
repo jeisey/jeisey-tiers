@@ -559,3 +559,194 @@ looks at which players it makes look best**, exactly as the Phase-4 and Phase-5 
 freeze-first discipline exists to avoid.
 
 None of this is implemented, and none of it may change current A0 scores as a side effect.
+
+---
+
+## 16. Phase-10 verification record — retrieved 2026-09-02 (authoritative for the new sources)
+
+Every number in this section was measured on a GitHub runner across four probe passes. The
+development sandbox's egress policy denies all four vendor hosts, unchanged since ADR-009, so
+the runner is where the question can be asked at all. Full transcripts and the workflow-run
+links are in `docs/source-probes/2026-09-02/phase10-report.md`; the decisions are ADR-060
+through ADR-066; the machine-readable dispositions are in `config/source-registry.yaml`.
+
+Scripts: `scripts/probe_ffc.py`, `scripts/probe_fantasypros.py`,
+`scripts/probe_sleeper_trending.py`, driven by `.github/workflows/source-probe-phase10.yml`.
+Nothing was retained, no player rows were printed beyond redacted schema descriptions, and
+the FantasyPros key was never emitted — every printed line passes a guard that suppresses any
+line containing it.
+
+### 16.1 Fantasy Football Calculator — **production ADP source** (ADR-062)
+
+```text
+GET https://fantasyfootballcalculator.com/api/v1/adp/{format}?teams=12&year=2026&position=all
+
+status: "Success"
+meta:    type, teams, rounds, total_drafts, start_date, end_date
+players[]: player_id (int) name position team adp (float) adp_formatted
+           times_drafted (int) high (int) low (int) stdev (float) bye (int)
+```
+
+Every field is 100% populated. `player_id` is present on 221/221 rows and fully distinct.
+
+**`teams` is accepted and ignored.** Per-player `adp` and `times_drafted` across 8/10/12/14:
+
+| Format | 8 vs 10 | 8 vs 12 | 8 vs 14 | Shared rows |
+|---|---|---|---|---|
+| standard | byte-identical | byte-identical | byte-identical | 221 |
+| ppr | byte-identical | byte-identical | byte-identical | 264 |
+| half-ppr | byte-identical | byte-identical | byte-identical | 233 |
+
+Zero rows differ in any of the nine comparisons. ADR-056's finding is reproduced rather than
+overturned, `league_size` is null on every FFC quote, and a semantic check fails the build if
+a row ever claims one.
+
+**Cohorts, depth and volume.**
+
+| Format | Rows | Core QB/RB/WR/TE | Deepest ADP | `meta.total_drafts` |
+|---|---|---|---|---|
+| standard | 221 | 186 | 172.6 | 1,794 |
+| half-ppr | 233 | — | 188.6 | 3,142 |
+| ppr | 264 | — | 201.1 | 8,007 |
+
+Position mix on `standard`: `{DEF: 17, PK: 18, QB: 24, RB: 60, TE: 20, WR: 82}`.
+`times_drafted` ranges 5 → 3,482 depending on cohort.
+
+**FFC's entire population is smaller than 300.** "FFC top 300" therefore means the whole of
+FFC. The surface rule asks for the top of each market, not for a market to have 300 rows.
+
+**The window is bounded and recent.** `meta.start_date` `2026-08-26`, `meta.end_date`
+`2026-09-02` — seven days. MyFantasyLeague aggregates the season to date. Both are called
+"ADP" and they are different measurements; the quote carries `aggregation_window_type` and
+the UI prints it beside the market selector.
+
+**Dispersion is two fields.** `stdev` is a genuine per-player standard deviation, 221/221
+populated, range 0.60–31.90. `high`/`low` are extreme order statistics that widen with sample
+size. They occupy `adp_sd` and `min_pick`/`max_pick`. FFC's own table reads "High" for the
+*earliest* pick — the smaller number — so the adapter orders the pair numerically rather than
+trusting the label, and counts the observed orientation into the manifest as evidence.
+
+**No data-as-of instant.** The window is two dates. `source_as_of_utc` stays null; promoting a
+date to a timestamp would manufacture precision.
+
+**The CSV path is not a CSV.** `/adp/csv/{fmt}.csv` returned `content-type: text/html` and a
+`<pre>` header row, and takes no `year`. The JSON path is the reproducible one.
+
+**Identity: 222/222, 100.000%.** FFC's `player_id` bridges to nothing outside FFC, so the join
+is a one-time reviewable linkage (ADR-061). Measured against the live population over the
+union of all three cohorts:
+
+```text
+source rows        270  (48 non-core PK/DEF, excluded)
+relevant rows      222
+accepted           222   (100.000%)
+quarantined          0
+gate >= 90%          PASS
+top-300 unresolved   0
+accepted by method   {resolved_exact_name_position: 222}
+```
+
+Every accepted row matched by *exact* normalized name and position; the fuzzy path was not
+needed once against this population. The alias file is
+`config/market-aliases/fantasyfootballcalculator_adp.yaml`, the report and the (empty)
+quarantine are under `docs/source-probes/2026-09-02/fantasyfootballcalculator_adp-linkage/`.
+
+### 16.2 FantasyPros — **implemented, retained, and NOT published** (ADR-064)
+
+This is a failed Phase-10 exit criterion, recorded rather than rounded up.
+
+```text
+GET https://api.fantasypros.com/public/v2/json/nfl/2026/consensus-rankings
+    ?position={QB|RB|WR|TE|FLX|ALL}&scoring={STD|HALF|PPR}&type=draft&week=0
+x-api-key: <secret, backend only>
+```
+
+`position=ALL` returns `400 Invalid Position` **unless** `type=draft&week=0` accompany it. The
+vendor's own valid list: `QB, RB, WR, TE, K, OP, FLX, DST, IDP, DL, LB, DB, TK, TQB, TRB,
+TWR, TTE, TOL, HC, P`.
+
+**The response is capped at ten rows, and the cap is the key's tier.** Eight widening attempts
+on `position=ALL&scoring=HALF`, all returning ten rows, `count=1777`, `limit=10`,
+`public_api_limited=true`, `tier=free`, and the same first player:
+
+`limit=300` · `limit=100` · `limit=25` · `offset=10` · `start=10` · `page=2` ·
+`max_results=300` · `ranks=1-300`
+
+No parameter widens the window and none advances it. No rate-limit, quota or tier headers are
+returned; the envelope is the only account. Per-position calls widen the population to the top
+ten of each: **40 distinct players** across QB/RB/WR/TE, against a documented `count` of 407
+receivers and 225 tight ends alone.
+
+**There is no ADP available to this key.** `/json/nfl/2026/adp` → `403 Missing Authentication
+Token`. `type=adp` on the consensus endpoint → `200` with the ECR row shape and no ADP-like
+field. `/json/nfl/2026/rankings` is a player *catalogue* whose `rank` field is a dict of
+availability counts, not per-player values.
+
+**The ECR itself is real and correctly scoped.** `rank_ecr` 1..10 with real names,
+`rank_ave`/`rank_min`/`rank_max`/`rank_std` carrying the expert dispersion, `total_experts`
+93–109, `last_updated` `"9/02"` (a month and a day, no year, no time — retained as evidence,
+never promoted to `source_as_of_utc`). The scoring axis genuinely reorders:
+
+```text
+STD   RB: Jahmyr Gibbs, Bijan Robinson, Jonathan Taylor, James Cook III
+HALF  RB: Jahmyr Gibbs, Bijan Robinson, Jonathan Taylor, Christian McCaffrey
+PPR   RB: Jahmyr Gibbs, Bijan Robinson, Christian McCaffrey, Jonathan Taylor
+```
+
+**Identity: two id bridges, no linkage needed.** Over the 40 reachable core rows:
+
+| Field | Populated | Distinct | Resolves through the registry |
+|---|---|---|---|
+| `player_yahoo_id` | 40/40 | 40 | **36/40** via `IdNamespace.YAHOO` |
+| `sportsdata_id` | 40/40 | 40 | **40/40** via `IdNamespace.SPORTRADAR` |
+| `cbs_player_id` | 40/40 | 40 | not indexed by this project |
+
+**Budget.** 50 requests/day (half the vendor's stated 100, per roadmap 10.1.3), one request
+per second, enforced in code by `RequestBudget`, with a deterministic 12-request call plan
+(4 positions × 3 scoring cohorts). The key is read from `FANTASYPROS_API_KEY` in Actions,
+sent as `x-api-key` and never as a query string, and never printed, serialized or cached.
+
+**Revisit when** a key's responses omit `public_api_limited` (or set it false) and `count`
+equals the rows delivered. `FantasyProsEcrAdapter.semantic_checks` tests that on every
+capture; enabling the source is then a one-line change.
+
+### 16.3 Sleeper — player map re-measured, trending verified (ADR-060, ADR-062)
+
+```text
+GET https://api.sleeper.app/v1/players/nfl
+status 200   bytes = 14,651,318 (13.97 MiB)   records = 12,226   elapsed ~1.2s
+```
+
+Phase 0 recorded 12,220 records / 14,640,182 bytes. The payload moved by 11 KB and six records
+in a year, which is why the roadmap treats size as an operational fact rather than a schema
+contract. The **once-per-day maximum** is the rule that matters and is unchanged.
+
+Identity coverage over the 4,041 QB/RB/WR/TE records: `player_id` 1.000, `sportradar_id`
+0.948, `yahoo_id` 0.559, `espn_id` 0.547, `gsis_id` 0.312, `search_rank` 0.974.
+
+**`search_rank` is not ADP.** It is populated on 97.4% of core records and is recorded here
+only so its presence is on the record and cannot be rediscovered as an opportunity. Roadmap
+10.1.4 forbids using it as pseudo-ADP.
+
+**Trending add and drop.**
+
+```text
+GET /v1/players/nfl/trending/{add|drop}?lookback_hours={h}&limit={n}
+```
+
+Both return a **bare JSON list** of `{count: int, player_id: str}` — no envelope, no
+timestamp, no metadata of any kind. That is exactly why the retained snapshot records the
+request parameters: without them the counts are uninterpretable later.
+
+- `add`, 24h/25: 25 rows, counts 17,793 → 259,065.
+- `drop`, 24h/25: 25 rows, counts 13,815 → 63,840.
+- `limit` honoured exactly: 5 → 5, 25 → 25, 100 → 100.
+- `lookback_hours` honoured: 6h vs 24h share 24 of 25 ids; 6h vs 72h share 22 of 25.
+
+Nothing consumes these yet, and that is the point: Phase 12 needs history that already exists
+when the season starts, and a feed first captured in week 3 can only describe week 3 onward.
+
+### 16.4 ESPN — still disabled
+
+Not probed and not built on. There is no verified sanctioned public production route that
+meets this project's reliability and policy standard (roadmap 10.1.5). Unchanged.

@@ -1,4 +1,4 @@
-schema_version: "1.3"
+schema_version: "1.4"
 research_as_of: "2026-08-12"
 # Phase-0 live verification. Every `verified: true` entry below was proved by
 # scripts/source_probe.py; the evidence is docs/source-probes/2026-08-17/report.json and the
@@ -27,6 +27,18 @@ phase5_decisions_as_of: "2026-08-20"
 #             public repository has no private branch. The store's semantics are unchanged.
 #   ADR-050 - production deployment: last-known-good Pages, job-graph gating, concurrency.
 phase7_decisions_as_of: "2026-08-22"
+# Phase-10 decisions (2026-09-02, see docs/DECISIONS.md):
+#   ADR-060 - the Phase-10 source evidence, taken on a runner across four probe passes.
+#   ADR-061 - FFC identity is a one-time reviewable linkage, not a nightly fuzzy match.
+#   ADR-062 - Fantasy Football Calculator becomes a production ADP source.
+#   ADR-063 - three universes replace `head(300)`; market data decides visibility only.
+#   ADR-064 - FantasyPros is implemented and retained but NOT published: the provisioned
+#             key is on the free tier, which caps every response at ten rows and exposes
+#             no ADP endpoint at all.
+#   ADR-065 - one independent comparison per source; the cross-market median is a summary.
+#   ADR-066 - the market-trend chart reads a published artifact; the browser calls no vendor.
+phase10_decisions_as_of: "2026-09-02"
+phase10_evidence: "docs/source-probes/2026-09-02/phase10-report.md"
 policy_states:
   - production_allowed
   - allowed_optional
@@ -43,6 +55,17 @@ decisions:
     snapshots exist (ADR-006/ADR-010). Historical MFL ADP is dense but not point-in-time.
   current_status_sources: [nflreadpy_rosters, nflreadpy_depth_charts, sleeper]
   market_identity_bridges: [espn_id_via_nflverse_rosters, mfl_id_via_ff_playerids]
+  # Phase 10. Each source resolves a different way, and the difference is the reason the
+  # capture path takes a spec rather than a flag (ADR-061, ADR-062, ADR-064).
+  market_identity_strategies:
+    myfantasyleague_adp: two_live_bridges_cross_checked
+    fantasyfootballcalculator_adp: generated_alias_only
+    fantasypros_ecr: two_live_bridges_cross_checked
+  market_alias_directory: config/market-aliases/
+  market_alias_precedence: >-
+    config/identity-aliases.yaml (human-reviewed) is loaded LAST and wins. A generated file
+    is a machine's reading of a name; a reviewed entry is a person's decision about a
+    player, usually written because the automatic path could not see him (ADR-019/054/061).
   non_commercial_deployment_required_by: [sleeper, fantasypros_ecr_via_dynastyprocess]
   # Sources permitted for internal comparison only. Nothing here may reach a public
   # artifact, an intrinsic feature, or any DraftValue input.
@@ -84,6 +107,21 @@ decisions:
   arbitrage_method_version: a0_rank_gap_v1
   arbitrage_confidence_rubric_version: phase5_confidence_v1
   market_trend_rule_version: phase5_trend_v1
+  # ADR-063. `head(300)` was three decisions wearing one number. The intrinsic universe is
+  # market-blind and unchanged; tier segmentation runs over a versioned depth; the public
+  # surface admits a player either the model or current market evidence says matters. A
+  # market signal changes VISIBILITY only - never a projection, VORP, fair rank or tier.
+  tier_depth_rule_version: phase10_tier_depth_v2
+  tier_depth_rule_v1_version: phase4_tier_depth_v1
+  surface_rule_version: phase10_surface_v1
+  market_top_surface_depth: 300
+  market_top_surface_coverage_required: 1.0
+  # ADR-065/066. Versions travel with every published comparison and every chart series.
+  market_comparison_method_version: phase10_multimarket_v1
+  market_trend_series_artifact: market_trend_series.json
+  # ADR-061. The frozen linkage rule and the gate it must clear.
+  market_linkage_rule_version: phase10_linkage_v1
+  market_linkage_min_coverage: 0.90
   # ADR-043/044. Sleeper status annotates a published row and never enters a model.
   player_status_artifact: player_status.json
   player_status_is_model_feature: false
@@ -295,7 +333,22 @@ sources:
       - current_injury_context
       - anchor_season_cross_check
       - trending_optional
-    cadence_guidance: "player map at most once per day; payload is ~14.6 MB"
+      - trending_add_drop_retained_for_phase12
+    cadence_guidance: "player map at most once per day; payload is ~14.0 MiB"
+    # Re-measured 2026-09-02 (ADR-060). Payload size is an operational fact, not a schema
+    # contract: it moved by 11 KB and six records in a year. The ONCE-PER-DAY maximum is the
+    # rule that matters and is unchanged.
+    remeasured_at: "2026-09-02"
+    remeasured_coverage:
+      player_records: 12226
+      payload_bytes: 14651318
+      core_position_records: 4041
+      player_id_coverage: 1.0
+      sportradar_id_coverage: 0.948
+      yahoo_id_coverage: 0.559
+      espn_id_coverage: 0.547
+      gsis_id_coverage: 0.312
+      search_rank_coverage: 0.974
     verified_coverage:
       player_records: 12220
       payload_bytes: 14640182
@@ -320,10 +373,198 @@ sources:
         detail: >-
           Only 31.9% of Sleeper records carry gsis_id, so join nflverse -> Sleeper on
           sleeper_id (82% present on current skill rosters), never the reverse.
+      - id: search_rank_is_not_adp
+        detail: >-
+          `search_rank` is populated on 97.4% of core records and is NOT an average draft
+          position. Roadmap 10.1.4 forbids using it as pseudo-ADP; it is recorded here so
+          its presence is on the record and cannot be rediscovered as an opportunity.
+      - id: trending_rows_carry_no_metadata
+        detail: >-
+          `trending/{add,drop}` returns a BARE JSON list of {player_id, count} with no
+          envelope and no timestamp. A retained snapshot must record the `lookback_hours`
+          and `limit` it REQUESTED, or the counts are uninterpretable later. Both were
+          measured as honoured on 2026-09-02 (limit exactly; 6h vs 24h shared 24 of 25 ids).
       - id: whitespace_in_ids
         detail: >-
           Observed gsis_id values with a leading space (" 00-0035057"). Trim and validate
           ids; fail closed on malformed values.
+  fantasyfootballcalculator_adp:
+    policy: production_allowed
+    verified: true
+    verified_at: "2026-09-02"
+    criticality: important
+    cost: free
+    decision_ref: "docs/DECISIONS.md ADR-062 (supersedes ADR-053's deferral; confirms ADR-056)"
+    evidence: "docs/source-probes/2026-09-02/phase10-report.md section 1"
+    docs_url: "https://help.fantasyfootballcalculator.com/article/42-adp-rest-api"
+    api_base_url: "https://fantasyfootballcalculator.com/api/v1/adp/"
+    authentication: none
+    verified_endpoints:
+      adp: "https://fantasyfootballcalculator.com/api/v1/adp/{format}?teams=12&year={season}&position=all"
+    license: >-
+      The publisher's ADP REST API terms permit use with attribution and ask clients not to
+      poll unnecessarily. A production refresh fetches once per day per scoring cohort and
+      every downstream stage reads the retained snapshot.
+    attribution_required: true
+    attribution_surface: "frontend Data view, section 07 Sources and attribution"
+    obligations:
+      - "Attribute Fantasy Football Calculator wherever its ADP is displayed."
+      - "Send a descriptive, contactable User-Agent; the source has no developer registration."
+      - "One request per scoring cohort per day. Do not poll."
+      - "Never claim a league size: `teams` is accepted and ignored (see below)."
+    roles:
+      - current_adp
+    forbidden_roles:
+      - intrinsic_feature
+      - historical_arbitrage_training_target
+      - league_size_cohort
+    response_fields:
+      envelope: [status, meta, players]
+      meta: [type, teams, rounds, total_drafts, start_date, end_date]
+      player: [player_id, name, position, team, adp, adp_formatted, times_drafted, high, low, stdev, bye]
+    field_notes:
+      adp_sd: "`stdev` is a GENUINE per-player standard deviation, 221/221 populated, 0.60-31.90"
+      dispersion: >-
+        `high`/`low` are extreme order statistics and occupy min_pick/max_pick. They are a
+        DIFFERENT quantity from `stdev` and must never share a column with it.
+      high_low_orientation: >-
+        FFC's table reads "High" for the EARLIEST pick, which is the smaller number. The
+        adapter orders the pair numerically rather than trusting the label, so it is correct
+        under either convention, and counts the observed orientation into the manifest.
+      source_as_of: >-
+        `meta.start_date`/`end_date` bound a WINDOW, not an instant. source_as_of_utc stays
+        null; promoting a date to a timestamp would manufacture precision.
+      player_ids: "`player_id` is FFC-internal and bridges to nothing outside FFC (ADR-061)"
+      market_rank: "not published; deriving one would invent a field the source does not have"
+      selection_pct: "not published"
+    aggregation:
+      window_type: rolling
+      window_days_observed: 7
+      observed_window: "2026-08-26 to 2026-09-02"
+      contrast: >-
+        MyFantasyLeague aggregates the season to date. Both are called "ADP" and they are not
+        the same measurement; the quote carries aggregation_window_type so nothing downstream
+        can forget (Release 2 guardrail 2.3).
+    verified_cohorts_2026:
+      standard: {rows: 221, core_rows: 186, deepest_adp: 172.6, total_drafts: 1794}
+      half-ppr: {rows: 233, deepest_adp: 188.6, total_drafts: 3142}
+      ppr: {rows: 264, deepest_adp: 201.1, total_drafts: 8007}
+    identity:
+      strategy: generated_alias_only
+      alias_file: "config/market-aliases/fantasyfootballcalculator_adp.yaml"
+      linkage_rule_version: phase10_linkage_v1
+      measured_at: "2026-09-02"
+      relevant_rows: 222
+      accepted: 222
+      coverage: 1.0
+      quarantined: 0
+      top300_unresolved: 0
+      accepted_by_method: {resolved_exact_name_position: 222}
+    known_issues:
+      - id: teams_accepted_and_ignored
+        detail: >-
+          `teams=` is accepted and has no effect. Per-player adp and times_drafted are
+          byte-identical across 8/10/12/14 in all three formats - zero rows differ in any of
+          the nine comparisons, measured in Phase 8 (ADR-056) and reproduced 2026-09-02. FFC
+          offers three SCORING cohorts, not twelve scoring x league-size cohorts, and
+          league_size is null on every quote with a `league_size_not_observed` flag. A
+          semantic check fails the build if any row ever claims one.
+      - id: population_smaller_than_300
+        detail: >-
+          The deepest ADP is 201.1 and the largest cohort is 264 rows including kickers and
+          defences. "FFC top 300" therefore means the whole of FFC, which is what the surface
+          rule uses: the rule asks for the top of each market, not for a market to have 300
+          rows (ADR-063).
+      - id: csv_path_is_not_a_csv
+        detail: >-
+          `/adp/csv/{fmt}.csv` returned content-type text/html and a `<pre>` header row, and
+          takes no `year`. The JSON path takes an explicit year and is the reproducible one.
+
+  fantasypros_ecr:
+    # IMPLEMENTED, RETAINED, AND NOT PUBLISHED. See ADR-064 for the full record: this is a
+    # failed Phase-10 exit criterion, kept visible rather than rounded up.
+    policy: verify_before_use
+    verified: true
+    verified_at: "2026-09-02"
+    criticality: optional
+    cost: free_tier_insufficient
+    decision_ref: "docs/DECISIONS.md ADR-064"
+    evidence: "docs/source-probes/2026-09-02/phase10-report.md section 2"
+    docs_url: "https://api.fantasypros.com/public/v2/docs"
+    api_base_url: "https://api.fantasypros.com/public/v2/json/"
+    authentication: api_key_header
+    # A NAME, never a value (the ADR-017 convention). Backend Actions only; the browser
+    # never receives it and never calls this vendor.
+    client_settings:
+      api_key_env: FANTASYPROS_API_KEY
+      api_key_transport: "x-api-key request header only, never a query string"
+      browser_access: false
+    verified_endpoints:
+      consensus_rankings: "https://api.fantasypros.com/public/v2/json/nfl/{season}/consensus-rankings?position={QB|RB|WR|TE|FLX|ALL}&scoring={STD|HALF|PPR}&type=draft&week=0"
+    license: >-
+      The project owner reviewed and approved the current FantasyPros terms for this free
+      non-commercial project on 2026-08-18 and provisioned an API key. Attribution is
+      required wherever the data is used; it is given in the frontend Data view whether or
+      not a number is displayed, because a source read server-side is a source used.
+    attribution_required: true
+    attribution_surface: "frontend Data view, section 07 Sources and attribution"
+    published_to_public_artifacts: false
+    published_blocked_reason: >-
+      The provisioned key is on the FREE tier. Every response carries public_api_limited=true
+      and returns exactly ten rows; limit, offset, start, page, max_results and ranks were
+      each tried and all eight returned the same ten rows and the same first player. Per
+      position that reaches forty distinct players across QB/RB/WR/TE, against a documented
+      count of 407 receivers and 225 tight ends alone. A ten-row slice is not a consensus.
+    adp_available: false
+    adp_unavailable_detail: >-
+      `/json/nfl/{season}/adp` answers 403 Missing Authentication Token, and `type=adp` on the
+      consensus endpoint returns the ECR row shape with no ADP-like field. A `fantasypros_adp`
+      column would have nothing behind it, so the adapter does not emit one.
+    roles:
+      - expert_consensus_rank
+    forbidden_roles:
+      - intrinsic_feature
+      - draftvalue_input
+      - public_artifact_field
+      - adp_price
+      - adp_aggregate_component
+    request_budget:
+      daily_cap: 50
+      vendor_stated_daily: 100
+      min_interval_seconds: 1
+      call_plan: "4 positions x 3 scoring cohorts = 12 requests/day"
+      cap_rationale: >-
+        Roadmap 10.1.3 deliberately halves the vendor's stated allowance for operational
+        headroom. Enforced in code by RequestBudget, which refuses to issue request 51.
+    response_fields:
+      envelope: [sport, type, ranking_type_name, year, week, position_id, scoring, filters, count, total_experts, last_updated, limit, public_api_limited, tier]
+      player: [cbs_player_id, player_bye_week, player_ecr_delta, player_eligibility, player_filename, player_id, player_name, player_owned_avg, player_owned_espn, player_owned_yahoo, player_page_url, player_position_id, player_positions, player_short_name, player_team_id, player_yahoo_id, player_yahoo_positions, pos_rank, rank_ave, rank_ecr, rank_max, rank_min, rank_std, sportsdata_id, tier]
+    field_notes:
+      dispersion: >-
+        rank_ave/rank_min/rank_max/rank_std are measured in RANKS across the expert panel,
+        not in picks. They occupy consensus_rank_* columns; writing them into min_pick,
+        max_pick or adp_sd would put an expert-rank spread under a draft-pick label.
+      sample_size: "total_experts, 93-109 observed - the panel is the sample for a ranking"
+      source_as_of: >-
+        `last_updated` is "9/02": a month and a day, with no year and no time. Retained as
+        evidence and never promoted to source_as_of_utc.
+      position_all: "rejected as an invalid position UNLESS type=draft&week=0 accompany it"
+      valid_positions: "QB, RB, WR, TE, K, OP, FLX, DST, IDP, DL, LB, DB, TK, TQB, TRB, TWR, TTE, TOL, HC, P"
+    identity:
+      strategy: two_live_bridges_cross_checked
+      bridges:
+        sportsdata_id: {namespace: sportradar, resolved: "40/40"}
+        player_yahoo_id: {namespace: yahoo, resolved: "36/40"}
+      needs_name_linkage: false
+    scoring_axis_exact: true
+    scoring_axis_evidence: "STD, HALF and PPR return genuinely different RB orderings"
+    revisit_if:
+      - >-
+        A key whose responses omit `public_api_limited` (or set it false) and whose `count`
+        equals the rows delivered. That exact condition is tested on every capture by
+        FantasyProsEcrAdapter.semantic_checks; enabling the source is then a one-line change
+        to MarketSourceSpec.publishable.
+
   fantasycalc:
     policy: disabled
     verified: true
