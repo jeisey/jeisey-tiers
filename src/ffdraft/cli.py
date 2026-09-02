@@ -68,6 +68,17 @@ reproducible offline and diffable against the commit that captured it:
     Retrieve every requested MFL cohort plus the player directory and append one immutable
     point-in-time snapshot to the append-only store (ADR-006, ADR-038).
 
+``capture-market-source`` (network)
+    Retrieve one Phase-10 market source (Fantasy Football Calculator or FantasyPros) and
+    append its own point-in-time snapshot under the same append-only discipline. Separate
+    from ``snapshot-market`` because MyFantasyLeague's capture is unchanged by Phase 10 and
+    the safest way to keep behaviour identical is not to edit its code path.
+
+``link-market-source`` (network)
+    Propose ``FFC id -> canonical player_id`` aliases for a source with no id bridge, write
+    the generated alias file and the quarantine review artifact, and report coverage against
+    the frozen 90% continuation gate (ADR-061).
+
 ``capture-status`` (network)
     Retrieve and normalize Sleeper's current player map and retain it under the same
     append-only discipline (ADR-043).
@@ -116,6 +127,7 @@ from ffdraft.features.dictionary import (
 )
 from ffdraft.leakage import validate_historical_directory
 from ffdraft.market.capture import capture_market, cohort_set
+from ffdraft.market.multisource import MARKET_SOURCE_SPECS
 from ffdraft.market.snapshot import MarketSnapshotStore, verify_store
 from ffdraft.modeling import (
     ExperimentConfig,
@@ -151,6 +163,8 @@ from ffdraft.simulation.study import (
     run_simulation_study,
     write_simulation_report,
 )
+from ffdraft.sources.fantasypros import FANTASYPROS_SOURCE_ID
+from ffdraft.sources.ffc import FFC_SOURCE_ID
 from ffdraft.tiers.study import TierStudyConfig, run_tier_study, write_tier_report
 from ffdraft.timeutil import parse_utc
 
@@ -528,6 +542,62 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     snapshot.add_argument("--no-write", action="store_true", help="fetch without retaining")
     snapshot.set_defaults(handler=_snapshot_market)
+
+    source_capture = subparsers.add_parser(
+        "capture-market-source",
+        help="retrieve one Phase-10 market source and append its snapshot (network)",
+    )
+    source_capture.add_argument(
+        "source",
+        choices=sorted(MARKET_SOURCE_SPECS),
+        help="which market source to capture",
+    )
+    source_capture.add_argument("--season", type=int, default=None, help="market season")
+    source_capture.add_argument(
+        "--store",
+        type=Path,
+        default=None,
+        help="checkout of the market-data store (ADR-038, ADR-049)",
+    )
+    source_capture.add_argument("--as-of", default=None, help="override the retrieval instant")
+    source_capture.add_argument("--git-sha", default=None, help="build commit for the manifest")
+    source_capture.add_argument("--pause", type=float, default=1.5, help="seconds between calls")
+    source_capture.add_argument(
+        "--no-write",
+        action="store_true",
+        help="retrieve and report without appending to the store",
+    )
+    source_capture.set_defaults(handler=_capture_market_source)
+
+    linkage = subparsers.add_parser(
+        "link-market-source",
+        help="propose canonical aliases for a source with no id bridge (network)",
+    )
+    linkage.add_argument(
+        "source",
+        choices=[FFC_SOURCE_ID],
+        default=FFC_SOURCE_ID,
+        nargs="?",
+        help="which market source to link",
+    )
+    linkage.add_argument("--season", type=int, default=None, help="market season")
+    linkage.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="where to write the linkage report and quarantine (default docs/source-probes/)",
+    )
+    linkage.add_argument(
+        "--reviewed-by",
+        default="phase10-linkage",
+        help="who or what produced the alias file",
+    )
+    linkage.add_argument(
+        "--no-write",
+        action="store_true",
+        help="measure coverage without writing the alias file",
+    )
+    linkage.set_defaults(handler=_link_market_source)
 
     status_capture = subparsers.add_parser(
         "capture-status",
@@ -1236,6 +1306,196 @@ def _snapshot_market(args: argparse.Namespace) -> int:
         verb = "already retained (idempotent)" if result.write.idempotent else "retained"
         print(f"{verb}: {result.write.directory}")
     return _report_gate(result.gate)
+
+
+def _capture_market_source(args: argparse.Namespace) -> int:
+    """Retrieve one Phase-10 market source and append its snapshot. **Network I/O.**"""
+    import os
+
+    from ffdraft.market.multisource import capture_source, spec_for
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.secret import secret_from_env
+
+    spec = spec_for(args.source)
+    season = args.season or PRODUCTION_SEASON
+    store = _market_store(args.store)
+
+    api_key = None
+    if spec.source_id == FANTASYPROS_SOURCE_ID:
+        # Read here and pass down rather than reaching for the environment inside the
+        # adapter: the one place a secret enters the process is easier to audit than three.
+        secret = secret_from_env("FANTASYPROS_API_KEY", os.environ)
+        if secret is None:
+            print("FANTASYPROS_API_KEY is not set; this source can only be captured in Actions")
+            return 1
+        api_key = secret.reveal()
+
+    result = capture_source(
+        source_id=spec.source_id,
+        season=season,
+        store=store,
+        as_of=parse_utc(args.as_of) if args.as_of else None,
+        git_sha=args.git_sha,
+        api_key=api_key,
+        write=not args.no_write,
+        pause_seconds=args.pause,
+    )
+    print(f"source         : {spec.source_id} ({spec.label})")
+    print(f"snapshot       : {result.snapshot_key}")
+    print(f"season         : {result.season}")
+    for cohort in result.manifest.cohorts:
+        print(
+            f"  {cohort.cohort_id:>22}  rows={cohort.row_count:>4}  resolved="
+            f"{cohort.resolved_players}/{cohort.resolvable_players}",
+        )
+    print(f"normalized rows: {len(result.rows)}")
+    print(f"identity       : {result.resolved}/{result.resolvable} ({result.coverage:.1%})")
+    if not spec.publishable:
+        print(f"NOT PUBLISHED  : {spec.unpublishable_reason}")
+    return _report_gate(result.gate)
+
+
+def _link_market_source(args: argparse.Namespace) -> int:
+    """Propose canonical aliases for a source with no id bridge. **Network I/O.**"""
+    import json as _json
+
+    from ffdraft.identity.aliases import generated_alias_path
+    from ffdraft.identity.linkage import LINKAGE_RULE, SourceRow, link_source_rows
+    from ffdraft.market.identity import load_market_identity
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.sources.base import SourceConfig
+    from ffdraft.sources.ffc import FFC_COHORTS, FfcAdpAdapter, _ffc_get
+    from ffdraft.timeutil import utc_now
+
+    season = args.season or PRODUCTION_SEASON
+    identity = load_market_identity(season)
+
+    # Linkage runs over the union of the scoring cohorts. A player priced only in PPR is
+    # still a player, and linking one cohort would leave him unresolved for no reason.
+    rows: dict[str, SourceRow] = {}
+    adapter = FfcAdpAdapter()
+    for cohort in FFC_COHORTS:
+        payload = _ffc_get(
+            fmt=str(cohort.filters["format"]),
+            season=season,
+            cohort=cohort,
+            config=SourceConfig(season=season),
+        )
+        batch = adapter.normalize(payload, season=season, cohort=cohort, retrieved_at=utc_now())
+        for row in batch.frame.iter_rows(named=True):
+            external = str(row["external_player_id"])
+            existing = rows.get(external)
+            candidate = SourceRow(
+                external_player_id=external,
+                display_name=str(row["source_display_name"] or ""),
+                position=str(row["raw_position"] or ""),
+                team=row["source_team"],
+                order_key=row["average_pick"],
+            )
+            # Keep the earliest ADP across cohorts as the rank hint, so the top-300 review
+            # list reflects the market that prices him soonest rather than the last one read.
+            if existing is None or (candidate.order_key or 1e9) < (existing.order_key or 1e9):
+                rows[external] = candidate
+
+    report = link_source_rows(
+        list(rows.values()),
+        registry=identity.registry,
+        source_id=args.source,
+        rule=LINKAGE_RULE,
+    )
+    summary = report.summary()
+    print(f"source            : {args.source}")
+    print(f"rule              : {LINKAGE_RULE.version}")
+    print(f"source rows       : {report.total_rows} ({len(report.excluded)} non-core, excluded)")
+    print(f"relevant rows     : {report.relevant}")
+    print(f"accepted          : {report.accepted} ({report.coverage:.3%})")
+    print(f"quarantined       : {report.quarantined}")
+    verdict = "PASS" if report.passes_gate else "FAIL"
+    print(f"gate >= {LINKAGE_RULE.min_coverage:.0%}       : {verdict}")
+    print(f"top-{LINKAGE_RULE.top_depth} unresolved: {len(report.top_unresolved)}")
+    for reason, count in sorted(summary["quarantined_by_reason"].items()):
+        print(f"  {reason:>44}  {count}")
+    for item in report.top_unresolved[:40]:
+        print(
+            f"  #{item.rank_hint or '?':>4}  {item.display_name} ({item.position}/{item.team})"
+            f"  {item.reason}",
+        )
+
+    if args.no_write:
+        return 0 if report.passes_gate else 1
+
+    today = utc_now().date().isoformat()
+    alias_path = generated_alias_path(args.source)
+    alias_path.parent.mkdir(parents=True, exist_ok=True)
+    alias_path.write_text(
+        _alias_document(report, source_id=args.source, reviewed_by=args.reviewed_by, today=today),
+        encoding="utf-8",
+    )
+    print(f"aliases written   : {alias_path}")
+
+    out_dir = args.out or (Path("docs/source-probes") / today / f"{args.source}-linkage")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "report.json").write_text(
+        _json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    quarantine = out_dir / "quarantine.csv"
+    quarantine.write_text(_quarantine_csv(report), encoding="utf-8")
+    print(f"report written    : {out_dir / 'report.json'}")
+    print(f"quarantine written: {quarantine}")
+    return 0 if report.passes_gate else 1
+
+
+def _alias_document(report: Any, *, source_id: str, reviewed_by: str, today: str) -> str:
+    """The generated alias file, written by hand rather than by a YAML dumper.
+
+    A dumper would produce a valid file with none of the header a reader needs: which rule
+    generated it, when, against what coverage, and the standing instruction that a human
+    correction belongs in the reviewed file rather than here, where the next run overwrites
+    it (ADR-061).
+    """
+    import yaml as _yaml
+
+    header = (
+        f"# GENERATED - do not hand-edit.\n"
+        f"#\n"
+        f"# Produced by `ffdraft link-market-source {source_id}` under rule "
+        f"{report.rule.version} on {today}.\n"
+        f"# Coverage: {report.accepted}/{report.relevant} ({report.coverage:.3%}) against a "
+        f"{report.rule.min_coverage:.0%} gate.\n"
+        f"# Quarantined: {report.quarantined}. Regenerate to refresh; a correction a person\n"
+        f"# decides belongs in config/identity-aliases.yaml, which outranks this file and\n"
+        f"# which a regeneration cannot overwrite.\n"
+    )
+    body = _yaml.safe_dump(
+        {
+            "schema_version": "1.0",
+            "aliases": report.alias_entries(reviewed_by=reviewed_by, reviewed_at=today),
+        },
+        sort_keys=False,
+        default_flow_style=False,
+        allow_unicode=True,
+    )
+    return header + body
+
+
+def _quarantine_csv(report: Any) -> str:
+    """The review artifact, with the roadmap's column list verbatim."""
+    import csv as _csv
+    import io as _io
+
+    rows = [row.to_dict() for row in report.quarantine]
+    buffer = _io.StringIO(newline="")
+    columns = list(rows[0]) if rows else ["ffc_player_id", "ffc_display_name", "reason"]
+    writer = _csv.DictWriter(buffer, fieldnames=columns, lineterminator="\n")
+    writer.writeheader()
+
+    def review_order(item: dict[str, Any]) -> tuple[int, str]:
+        return (int(item.get("rank_hint") or 10**9), str(item["ffc_player_id"]))
+
+    for row in sorted(rows, key=review_order):
+        writer.writerow(row)
+    return buffer.getvalue()
 
 
 def _capture_status(args: argparse.Namespace) -> int:
