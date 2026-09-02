@@ -638,6 +638,162 @@ def probe_headers(path: str) -> None:
     emit(f"  quota-related headers: {interesting or 'NONE'}")
 
 
+#: Run 2 established that this is the endpoint with real ECR rows: `rank_ecr`, `rank_ave`,
+#: `rank_min`, `rank_max`, `rank_std`, `pos_rank`, `tier`, and — decisively for identity —
+#: `player_yahoo_id`, which the canonical registry already indexes. `position=ALL` is
+#: rejected as invalid UNLESS `type=draft&week=0` is also sent.
+CONSENSUS_PATH = f"/json/{SPORT}/{SEASON}/consensus-rankings"
+
+#: The vendor's own valid-position vocabulary, quoted from its 400 response in run 2.
+VALID_POSITIONS = ("QB", "RB", "WR", "TE", "K", "OP", "FLX", "DST")
+
+
+def probe_consensus_depth() -> None:
+    """How many players can this key actually see, and can per-position calls widen it?
+
+    Run 2 proved the 10-row cap is the key's tier rather than a page size. The remaining
+    question is whether a per-position call plan reaches a useful population anyway: ten
+    quarterbacks plus ten running backs plus ten receivers plus ten tight ends is forty
+    named players, which is not a top-300 market but is not nothing either. The answer
+    decides whether FantasyPros ships as a partial reference or does not ship at all, and
+    roadmap 10.1.3 item 7 requires it be measured rather than assumed.
+    """
+    section("13. consensus-rankings — per-position depth under the free-tier cap")
+    url = _expand(CONSENSUS_PATH)
+    seen: dict[str, list[dict[str, Any]]] = {}
+    for position in ("ALL", "FLX", "QB", "RB", "WR", "TE"):
+        response = get(
+            url,
+            params={"position": position, "scoring": "HALF", "type": "draft", "week": 0},
+        )
+        if response is None:
+            continue
+        if response.status_code != 200:
+            emit(f"  position={position:4} -> http {response.status_code} {response.text[:160]!r}")
+            continue
+        try:
+            payload = response.json()
+        except ValueError:
+            continue
+        _, rows = rows_of(payload)
+        envelope = (
+            {k: v for k, v in payload.items() if not isinstance(v, list | dict)}
+            if isinstance(payload, Mapping)
+            else {}
+        )
+        seen[position] = rows
+        names = [str(row.get("player_name")) for row in rows]
+        emit(
+            f"  position={position:4} -> {len(rows):>3} row(s)  "
+            f"count={envelope.get('count')} limit={envelope.get('limit')} "
+            f"public_api_limited={envelope.get('public_api_limited')} "
+            f"total_experts={envelope.get('total_experts')} "
+            f"last_updated={envelope.get('last_updated')!r}",
+        )
+        emit(f"      names: {names}")
+        if rows:
+            ecr = [row.get("rank_ecr") for row in rows]
+            emit(f"      rank_ecr: {ecr}")
+
+    union = {
+        str(row.get("player_id"))
+        for position, rows in seen.items()
+        if position not in {"ALL", "FLX"}
+        for row in rows
+    }
+    emit(f"  distinct players across the four core positions: {len(union)}")
+    emit("  >>> A market this project can publish needs the top 300. Whatever number the")
+    emit("  >>> line above shows is what this key serves, and the disposition follows it.")
+
+
+def probe_consensus_signals() -> None:
+    """Does scoring change the order, and is there any ADP anywhere in this response?"""
+    section("14. consensus-rankings — scoring axis and the search for an ADP field")
+    url = _expand(CONSENSUS_PATH)
+    orders: dict[str, list[str]] = {}
+    for scoring in SCORING_CANDIDATES:
+        response = get(
+            url,
+            params={"position": "RB", "scoring": scoring, "type": "draft", "week": 0},
+        )
+        if response is None or response.status_code != 200:
+            continue
+        try:
+            _, rows = rows_of(response.json())
+        except ValueError:
+            continue
+        orders[scoring] = [str(row.get("player_name")) for row in rows]
+        emit(f"  scoring={scoring:5} -> {len(rows)} row(s)  {orders[scoring][:4]}")
+    keys = sorted(orders)
+    for index in range(1, len(keys)):
+        verdict = "IDENTICAL ORDER" if orders[keys[0]] == orders[keys[index]] else "different order"
+        emit(f"  {keys[0]} vs {keys[index]}: {verdict}")
+
+    response = get(
+        url,
+        params={"position": "RB", "scoring": "HALF", "type": "adp", "week": 0},
+    )
+    if response is not None:
+        emit(f"  type=adp -> http {response.status_code}")
+        if response.status_code == 200:
+            try:
+                _, rows = rows_of(response.json())
+            except ValueError:
+                rows = []
+            if rows:
+                adp_like = [k for k in sorted(rows[0]) if "adp" in k.lower()]
+                emit(f"      adp-like row fields: {adp_like or 'NONE'}")
+                emit(f"      all row fields: {sorted(rows[0])}")
+    emit("  >>> Roadmap 10.1.3 wants FantasyPros ADP *and* ECR as separate signals. If no")
+    emit("  >>> response carries an ADP field, this key serves ECR only and the product may")
+    emit("  >>> not publish a `fantasypros_adp` column — there is nothing behind it.")
+
+
+def probe_consensus_identity() -> None:
+    """`player_yahoo_id` looked like a real bridge in run 2. Does it actually resolve?"""
+    section("15. consensus-rankings identity — is `player_yahoo_id` a usable bridge?")
+    url = _expand(CONSENSUS_PATH)
+    rows: list[dict[str, Any]] = []
+    for position in ("QB", "RB", "WR", "TE"):
+        response = get(
+            url,
+            params={"position": position, "scoring": "HALF", "type": "draft", "week": 0},
+        )
+        if response is None or response.status_code != 200:
+            continue
+        try:
+            _, page = rows_of(response.json())
+        except ValueError:
+            continue
+        rows.extend(page)
+    if not rows:
+        emit("  no rows to measure")
+        return
+    for field in ("player_id", "player_yahoo_id", "sportsdata_id", "cbs_player_id"):
+        values = [row.get(field) for row in rows if row.get(field) not in (None, "")]
+        distinct = len({str(v) for v in values})
+        emit(f"  {field:18} populated={len(values)}/{len(rows)} distinct={distinct}")
+    try:
+        from ffdraft.identity.ids import IdNamespace
+        from ffdraft.market.identity import load_market_identity
+
+        registry = load_market_identity(SEASON).registry
+        for field, namespace in (
+            ("player_yahoo_id", IdNamespace.YAHOO),
+            ("sportsdata_id", IdNamespace.SPORTRADAR),
+        ):
+            hits = sum(
+                1
+                for row in rows
+                if row.get(field) and registry.lookup(namespace, str(row[field])).status == "found"
+            )
+            emit(f"  {field} -> registry: {hits}/{len(rows)} resolve")
+        emit("  >>> A populated, resolving id bridge means FantasyPros does NOT need the")
+        emit("  >>> fuzzy name linkage FFC needs; it joins by id like MyFantasyLeague does.")
+    except Exception as exc:  # noqa: BLE001
+        emit(f"  registry comparison unavailable: {type(exc).__name__}: {exc}")
+
+
 def main() -> int:
     emit(f"FantasyPros public v2 probe — season {SEASON}, sport {SPORT}")
     emit(f"base: {BASE}")
@@ -674,6 +830,9 @@ def main() -> int:
             probe_rank_object(path)
             probe_adp_path()
             probe_headers(path)
+        probe_consensus_depth()
+        probe_consensus_signals()
+        probe_consensus_identity()
     except RuntimeError as exc:
         emit(f"\nprobe halted: {exc}")
 
