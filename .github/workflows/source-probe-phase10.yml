@@ -78,8 +78,15 @@ jobs:
       - name: Install locked dependencies
         run: uv sync --frozen
 
+      - name: Read the probe request
+        id: request
+        run: |
+          set -euo pipefail
+          args="$(awk -F': ' '/^fantasypros_args:/ {print $2}' .github/phase10-probe.request || true)"
+          echo "fp_args=${args}" >> "$GITHUB_OUTPUT"
+
       - name: Probe Fantasy Football Calculator
-        if: ${{ github.event_name == 'push' || inputs.sources == 'all' || inputs.sources == 'fantasy-football-calculator' }}
+        if: ${{ (github.event_name == 'push' && !contains(steps.request.outputs.fp_args, 'identity-only')) || inputs.sources == 'all' || inputs.sources == 'fantasy-football-calculator' }}
         continue-on-error: true
         run: uv run python scripts/probe_ffc.py 2>&1 | tee ffc.log
 
@@ -88,10 +95,16 @@ jobs:
         continue-on-error: true
         env:
           FANTASYPROS_API_KEY: ${{ secrets.FANTASYPROS_API_KEY }}
-        run: uv run python scripts/probe_fantasypros.py 2>&1 | tee fantasypros.log
+          # Set in the request file. `--identity-only` spends four requests on the one
+          # question run 3 ran out of budget for, instead of re-asking thirty settled ones.
+          FP_PROBE_ARGS: ${{ steps.request.outputs.fp_args }}
+        run: |
+          uv run python scripts/probe_fantasypros.py \
+            ${{ contains(inputs.sources, 'identity') && '--identity-only' || '' }} \
+            $FP_PROBE_ARGS 2>&1 | tee fantasypros.log
 
       - name: Probe Sleeper player map and trending
-        if: ${{ github.event_name == 'push' || inputs.sources == 'all' || inputs.sources == 'sleeper' }}
+        if: ${{ (github.event_name == 'push' && !contains(steps.request.outputs.fp_args, 'identity-only')) || inputs.sources == 'all' || inputs.sources == 'sleeper' }}
         continue-on-error: true
         run: uv run python scripts/probe_sleeper_trending.py 2>&1 | tee sleeper.log
 

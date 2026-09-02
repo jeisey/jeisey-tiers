@@ -8,6 +8,11 @@
 #
 # Bump `run` to take a fresh set of measurements. Nothing is retained; the whole output is
 # the job summary, which a human reads and then writes into `docs/DATA_SOURCES.md`.
-run: 3
+#
+# `fantasypros_args` is passed to the FantasyPros probe. `--identity-only` runs the single
+# unmeasured section and skips the other probes entirely, which is how a follow-up question
+# gets answered without spending the vendor's daily quota on facts already recorded.
+run: 4
 sources: fantasypros
-requested_for: "Phase 10 — FFC / FantasyPros / Sleeper production dispositions"
+fantasypros_args: --identity-only
+requested_for: "Phase 10 — does FantasyPros `player_yahoo_id` resolve through the registry?"

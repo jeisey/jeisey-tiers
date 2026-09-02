@@ -802,6 +802,7 @@ def main() -> int:
         f"internal daily cap {DAILY_REQUEST_CAP}, minimum interval "
         f"{MIN_REQUEST_INTERVAL_SECONDS}s",
     )
+    identity_only = "--identity-only" in sys.argv
     if not _KEY:
         emit("")
         emit("FANTASYPROS_API_KEY is not set in this environment.")
@@ -809,6 +810,19 @@ def main() -> int:
         emit("unauthenticated 200 would describe a different product surface.")
         return 1
     emit(f"key: present, {len(_KEY)} characters (value never printed)")
+
+    if identity_only:
+        # Run 3 exhausted its budget one section short. This mode spends four requests on
+        # the single unmeasured question rather than re-running thirty that already have
+        # answers — re-probing a settled fact costs the vendor's quota for nothing.
+        try:
+            probe_consensus_identity()
+        except RuntimeError as exc:
+            emit(f"\nprobe halted: {exc}")
+        section("8. Request accounting")
+        emit(f"  requests issued: {BUDGET.used}")
+        emit(f"  internal daily cap: {DAILY_REQUEST_CAP} (vendor states 100)")
+        return 0
 
     try:
         spec = probe_docs()

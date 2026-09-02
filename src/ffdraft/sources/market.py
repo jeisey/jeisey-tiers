@@ -36,8 +36,10 @@ from ffdraft.config import MflClientConfig
 from ffdraft.contracts import (
     MARKET_QUOTE_CONTRACT,
     MFL_PLAYER_CONTRACT,
+    AggregationWindow,
     EntityKind,
     MarketCohort,
+    MarketSignalType,
     QualityCheck,
     SourceBatch,
 )
@@ -200,8 +202,13 @@ class MflAdpAdapter(BaseSourceAdapter):
 
     source_id = MFL_SOURCE_ID
     resource = "export?TYPE=adp"
-    #: 2.0 with `market_quote` contract 2.0: a quote records its cohort, not a preset.
-    adapter_version = "2.0"
+    #: 3.0 with `market_quote` contract 3.0. The MFL semantics are unchanged and Phase 10
+    #: requires that they stay unchanged (roadmap 10.1.2): the same request, the same
+    #: cohort rules, the same fields, the same permanently-null `adp_sd`. What is new is
+    #: that the row now *states* what it always meant — an observed draft price aggregated
+    #: over the season to date — so it can sit beside FFC's rolling window without the two
+    #: being mistaken for the same measurement.
+    adapter_version = "3.0"
     contract = MARKET_QUOTE_CONTRACT
     recorded_schema_fixture = "mfl_adp_current_default"
     license_policy_version = _MFL_LICENSE
@@ -244,18 +251,33 @@ class MflAdpAdapter(BaseSourceAdapter):
                     "source_id": self.source_id,
                     "season": season,
                     "cohort_id": cohort.cohort_id,
+                    "market_signal_type": str(MarketSignalType.ADP),
                     "external_player_id": mfl.value,
                     "average_pick": average,
                     "market_rank": _int(record.get("rank")),
                     "min_pick": _float(record.get("minPick")),
                     "max_pick": _float(record.get("maxPick")),
+                    # Permanently null, and the semantic check below enforces it. MFL
+                    # publishes min/max, which are extreme order statistics; FFC publishes
+                    # a standard deviation. Putting them in one column would make an
+                    # arbitrage card show two different quantities under one label.
+                    "adp_sd": None,
                     "sample_size": _int(record.get("draftsSelectedIn")),
                     "selection_pct": _float(record.get("draftSelPct")),
+                    "scoring_preset": cohort.scoring_semantics,
+                    "league_size": cohort.league_size_semantics,
+                    # Phase 0 measured this directly: `DAYS` is ignored and a historical
+                    # request returns the season aggregate recomputed at request time
+                    # (ADR-010). There is no window to record, because there is no window.
+                    "aggregation_window_type": str(AggregationWindow.SEASON_CUMULATIVE),
+                    "aggregation_window_days": None,
                     "retrieved_at_utc": retrieved,
                     # Never populated for MFL: the envelope timestamp is generation time.
                     "source_as_of_utc": None,
                     "entity_kind": str(kind),
                     "raw_position": raw_position,
+                    "source_display_name": directory.name(mfl.value) if directory else None,
+                    "source_team": None,
                     "source_format_detail": cohort.filter_query,
                     "quality_flags": ",".join(base_flags),
                 }
@@ -313,6 +335,20 @@ class MflAdpAdapter(BaseSourceAdapter):
                     message=(
                         "MFL supplies no data-as-of time; a populated source_as_of_utc "
                         "would be a manufactured freshness claim"
+                    ),
+                    observed="populated",
+                    expected="null for every row",
+                ),
+            )
+        if batch.frame.get_column("adp_sd").null_count() != batch.frame.height:
+            checks.append(
+                QualityCheck.fail(
+                    "market.fabricated_adp_sd",
+                    stage=self.source_id,
+                    message=(
+                        "MFL publishes no ADP standard deviation; a populated adp_sd would "
+                        "be a dispersion estimate derived from min/max, which are extreme "
+                        "order statistics and not the same quantity"
                     ),
                     observed="populated",
                     expected="null for every row",
