@@ -19,9 +19,25 @@ It answers, in order of how much they matter:
    carries a retrieval time and a source timestamp separately).
 5. What `robots.txt` says, recorded verbatim for the terms review.
 
+**Phase 10 re-probe (roadmap 10.1.1).** ADR-056 measured this source in Phase 8 and
+ADR-053 deferred the integration. Phase 10 productionises it, so the probe was extended to
+re-measure only the facts that can change operationally, and to answer the questions a
+production adapter needs:
+
+11. per-player dispersion — which field, how populated, and whether it is a genuine standard
+    deviation rather than an extreme order statistic like MFL's min/max;
+12. the aggregation window, spelled out field by field, because FFC is a rolling/recent
+    market and MFL is season-cumulative and the two must never be presented as one thing;
+13. total draft volume, per scoring cohort;
+14. the position mix, which sizes the QB/RB/WR/TE population the identity linkage must
+    resolve;
+15. name-linkage feasibility, measured with the same normalized-Levenshtein rule the
+    production linkage uses, so the >=90% continuation gate is predicted before it is run.
+
 **What it deliberately does not do:** retain any payload, print player rows, or write to
-the store. The log is world-readable on a public repository, and the terms of this source
-have not been reviewed yet. Schema, counts and derived statistics only.
+the store. The log is world-readable on a public repository. Schema, counts and derived
+statistics only — section 15 prints counts and a handful of *unresolved* names, which is the
+review list the roadmap asks for, never the priced population.
 """
 
 from __future__ import annotations
@@ -334,8 +350,155 @@ def main() -> int:
     print("  >>> a cohort built on it would be the unfiltered aggregate wearing a label")
     print("  >>> (the rule config/source-registry.yaml already applies to MFL's CUTOFF).")
 
+    probe_dispersion(results)
+    probe_window(envelope if isinstance(envelope, dict) else {}, results)
+    probe_positions(results)
+    probe_linkage(results)
+
     print("\nProbe complete. Nothing was retained.")
     return 0
+
+
+# --------------------------------------------------------------------------------------
+# Phase 10 additions (roadmap 10.1.1)
+# --------------------------------------------------------------------------------------
+
+#: Field names that would carry per-player dispersion. FFC published `stdev` in the Phase-8
+#: probe; the name is re-measured rather than assumed because an adapter that reads a field
+#: the source stopped publishing produces silent nulls.
+DISPERSION_FIELDS = ("stdev", "std_dev", "sd", "adp_stdev", "adp_sd", "std")
+
+#: Fields that would describe the aggregation window. FFC nests these under `meta`.
+WINDOW_FIELDS = ("start_date", "end_date", "total_drafts", "status", "date", "updated")
+
+
+def probe_dispersion(results: list[dict[str, Any]]) -> None:
+    section("11. Per-player dispersion — a real standard deviation, or an order statistic?")
+    if not results:
+        return
+    for got in results:
+        rows = got["players"]
+        if not rows:
+            continue
+        present = [f for f in DISPERSION_FIELDS if any(f in row for row in rows)]
+        if not present:
+            print(f"  {got['format']:9} teams={got['teams']:<3} NO dispersion field present")
+            continue
+        for field in present:
+            values = [row.get(field) for row in rows if isinstance(row.get(field), int | float)]
+            populated = len(values)
+            print(
+                f"  {got['format']:9} teams={got['teams']:<3} {field:8} "
+                f"populated={populated}/{len(rows)} "
+                f"min={min(values) if values else 0:.2f} "
+                f"max={max(values) if values else 0:.2f}"
+            )
+        # Order statistics widen with sample size; a standard deviation does not have to.
+        # Reporting both alongside `times_drafted` lets a reader see which this behaves like.
+        extremes = [f for f in ("high", "low", "min_pick", "max_pick") if any(f in r for r in rows)]
+        print(f"    extreme-order-statistic fields also present: {extremes or 'NONE'}")
+        break
+    print("  >>> A standard deviation and MFL's min/max are different quantities.")
+    print("  >>> docs/DATA_CONTRACTS.md must keep `market_adp_sd` and `market_low/high`")
+    print("  >>> as separate fields; relabelling one as the other is a data error.")
+
+
+def probe_window(envelope: dict[str, Any], results: list[dict[str, Any]]) -> None:
+    section("12. Aggregation window — rolling/recent, and over what exactly?")
+    meta = envelope.get("meta") if isinstance(envelope.get("meta"), dict) else {}
+    flat: dict[str, Any] = {k: v for k, v in envelope.items() if not isinstance(v, list | dict)}
+    flat.update({f"meta.{k}": v for k, v in (meta or {}).items()})
+    for field in WINDOW_FIELDS:
+        for key in (field, f"meta.{field}"):
+            if key in flat:
+                print(f"  {key} = {flat[key]!r}")
+    unmatched = [k for k in flat if not any(k.endswith(f) for f in WINDOW_FIELDS)]
+    print(f"  other envelope scalars: {unmatched}")
+    print("  >>> MFL aggregates a whole season; if the fields above describe a bounded")
+    print("  >>> recent window, the two sources measure different populations and the")
+    print("  >>> product must label them as such (roadmap 10.1.2).")
+
+    print()
+    print("  total_drafts per cohort:")
+    for got in results:
+        payload = got["payload"]
+        meta_i = payload.get("meta") if isinstance(payload, dict) else {}
+        total = (meta_i or {}).get("total_drafts") if isinstance(meta_i, dict) else None
+        if total is None and isinstance(payload, dict):
+            total = payload.get("total_drafts")
+        print(f"    {got['format']:9} teams={got['teams']:<3} total_drafts={total!r}")
+
+
+def probe_positions(results: list[dict[str, Any]]) -> None:
+    section("14. Position mix — how large is the population linkage must resolve?")
+    core = {"QB", "RB", "WR", "TE"}
+    for got in results:
+        rows = got["players"]
+        if not rows:
+            continue
+        counts = Counter(str(row.get("position") or "?").upper() for row in rows)
+        core_rows = sum(counts[p] for p in core if p in counts)
+        print(
+            f"  {got['format']:9} teams={got['teams']:<3} rows={len(rows):<5} "
+            f"core QB/RB/WR/TE={core_rows:<5} mix={dict(sorted(counts.items()))}"
+        )
+        break
+    print("  >>> Only the core rows enter linkage; PK/DEF are excluded before scoring")
+    print("  >>> (roadmap 10.2), so the coverage denominator is the core count above.")
+
+
+def probe_linkage(results: list[dict[str, Any]]) -> None:
+    """Predict the >=90% continuation gate using the production linkage rule itself."""
+    section("15. Identity linkage feasibility — the production rule, run against live rows")
+    if not results:
+        return
+    rows = results[0]["players"]
+    fmt = results[0]["format"]
+    try:
+        from ffdraft.identity.linkage import LINKAGE_RULE, link_source_rows
+        from ffdraft.market.identity import load_market_identity
+    except Exception as exc:  # noqa: BLE001
+        print(f"  linkage module unavailable: {type(exc).__name__}: {exc}")
+        return
+    try:
+        identity = load_market_identity(SEASON)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  canonical registry unavailable: {type(exc).__name__}: {exc}")
+        return
+
+    candidates = [
+        {
+            "external_player_id": str(row.get("player_id")),
+            "display_name": str(row.get("name") or ""),
+            "position": str(row.get("position") or ""),
+            "team": str(row.get("team") or ""),
+            "order_key": row.get("adp"),
+        }
+        for row in rows
+        if row.get("player_id") is not None
+    ]
+    report = link_source_rows(
+        candidates,
+        registry=identity.registry,
+        source_id="fantasyfootballcalculator_adp",
+        rule=LINKAGE_RULE,
+    )
+    print(f"  rule: {LINKAGE_RULE.version}  cohort: {fmt}")
+    print(f"  relevant core rows: {report.relevant}")
+    print(f"  accepted:           {report.accepted} ({report.coverage:.3%})")
+    print(f"  quarantined:        {report.quarantined}")
+    print(
+        f"  gate:               >= {LINKAGE_RULE.min_coverage:.0%} -> "
+        f"{'PASS' if report.coverage >= LINKAGE_RULE.min_coverage else 'FAIL'}"
+    )
+    print(f"  top-300 unresolved: {len(report.top_unresolved)}")
+    for item in report.top_unresolved[:25]:
+        print(
+            f"    #{item.rank_hint or '?':>4}  {item.display_name} "
+            f"({item.position}/{item.team})  reason={item.reason}"
+        )
+    by_reason = Counter(row.reason for row in report.quarantine)
+    print(f"  quarantine reasons: {dict(sorted(by_reason.items()))}")
 
 
 if __name__ == "__main__":
