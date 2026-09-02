@@ -3,16 +3,13 @@
 # `workflow_dispatch` is unavailable until a workflow reaches the default branch, and the
 # Phase-10 measurements have to be taken before the branch is mergeable — the adapters this
 # phase ships must be written against a measured schema, not a remembered one (AGENTS.md
-# section 3). This is the same request-file mechanism `.github/market-capture.request`
-# already uses.
+# section 3). This is the same request-file mechanism `.github/market-capture.request` uses.
 #
-# Bump `run` to take a fresh set of measurements. Nothing is retained; the whole output is
-# the job summary, which a human reads and then writes into `docs/DATA_SOURCES.md`.
-#
-# `fantasypros_args` is passed to the FantasyPros probe. `--identity-only` runs the single
-# unmeasured section and skips the other probes entirely, which is how a follow-up question
-# gets answered without spending the vendor's daily quota on facts already recorded.
-run: 4
-sources: fantasypros
-fantasypros_args: --identity-only
-requested_for: "Phase 10 — does FantasyPros `player_yahoo_id` resolve through the registry?"
+# `fantasypros_args` selects what runs. Empty runs every probe. `--identity-only` runs the
+# single FantasyPros identity section. `depth` runs the tier-depth analysis instead of the
+# vendor probes — it reads this project's OWN published artifacts, so it touches no vendor
+# and spends none of the FantasyPros quota.
+run: 5
+sources: depth-analysis
+fantasypros_args: depth
+requested_for: "Phase 10 — measure the V2 tier depth against the joined board, per roadmap 10.5"
