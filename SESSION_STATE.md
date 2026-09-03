@@ -4,9 +4,32 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-**Phase 10 — implemented 2026-09-02; exit gate partially met.** One criterion failed on
-measured evidence (FantasyPros publication) and is recorded rather than rounded up. Phase 11
-has **not** been started.
+**Phase 10 — implemented 2026-09-02, merged 2026-09-03 as jeisey/jeisey-tiers#27; exit gate
+partially met.** One criterion failed on measured evidence (FantasyPros publication) and is
+recorded rather than rounded up. Phase 11 has **not** been started.
+
+### Post-merge fix: the daily refresh failed `verify:board` (2026-09-03)
+
+The first production refresh after the merge
+([33709328259](https://github.com/jeisey/jeisey-tiers/actions/runs/33709328259)) failed at
+*Verify the rendered board against the artifact bytes*, on all 30 arbitrage rows, against a
+site that was **correct**. `web/tests/e2e/verify-real-build.mjs` indexed table cells by
+position; Phase 10 inserted Dispersion, FP ECR and Spread, so `Score` and `Trend` moved two
+columns right. Fair Rank and ADP still matched because they sit left of the insertions.
+
+Two things made it worse than a stale index:
+
+- The Trend check had been comparing the **Spread** column's em dash against the em dash it
+  expected in Trend, and *passing*. A positional check does not only break loudly; it can
+  agree for the wrong reason.
+- `verify:board` ran only in `daily-refresh.yml` and `live-smoke.yml`, so no pull request
+  could catch it. The `matured` e2e fixture — the only build with a non-null `market_trend` —
+  reproduces the failure exactly and had been sitting unused in CI the whole time.
+
+Fixed by resolving columns from the header row, and by running `verify:board` in `ci.yml`'s
+e2e job against both the root and the matured builds.
+`tests/unit/test_workflows.py` pins that both are named, since dropping the matured one would
+leave the Trend column unchecked while the step still looked present.
 
 | | |
 |---|---|

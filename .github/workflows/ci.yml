@@ -272,6 +272,22 @@ jobs:
       - name: End-to-end
         run: npm run e2e
 
+      # `verify:board` compares what the page renders against the artifact bytes it served.
+      # It ran only in `daily-refresh.yml` and `live-smoke.yml`, so a frontend column change
+      # could not be caught until a production build — which is exactly how the 2026-09-03
+      # refresh broke, on a site that was itself correct. The builds `globalSetup` has already
+      # produced are sitting right here; checking them costs seconds and moves the gate to
+      # where the change is made.
+      - name: Verify the rendered board against the artifact bytes
+        run: |
+          set -euo pipefail
+          npm run verify:board -- --dist web/dist --port 4180
+          # The matured-market build is the only fixture with a real `market_trend` on most
+          # rows, so it is the only one that exercises the Trend column at all. The root build
+          # publishes the launch condition, where every trend is null.
+          npm run verify:board -- \
+            --dist web/dist-matured --base-path /scenario/matured/ --port 4181
+
       - name: Summarise the end-to-end run
         if: always()
         run: |
