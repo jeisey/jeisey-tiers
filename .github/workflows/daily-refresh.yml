@@ -168,6 +168,22 @@ jobs:
             --git-sha "${GITHUB_SHA::7}" \
             --pause 1.5 | tee snapshot.log
 
+      # The second ADP market. Separate from `snapshot-market` because MyFantasyLeague's
+      # capture is unchanged by Phase 10 and the safest way to keep its behaviour identical
+      # is not to touch its code path (ADR-060). `continue-on-error` because a second market
+      # is an enrichment: FFC being down must degrade the board to one market, never fail the
+      # refresh that publishes the intrinsic tiers.
+      - name: Capture the Fantasy Football Calculator market
+        if: ${{ inputs.skip_capture != true }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-market-source fantasyfootballcalculator_adp \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" \
+            --pause 1.5 | tee ffc.log
+
       - name: Capture current player status
         if: ${{ inputs.skip_capture != true }}
         run: |
@@ -318,9 +334,14 @@ jobs:
           # No retraining here. `build-current` loads the committed production model, checks
           # its feature-set and feature-schema hashes against the build's, and refuses to run
           # on a contract it was not validated against (ADR-037).
+          # `--full-board` is written outside the published directory and handed to the
+          # arbitrage stage below. It is the whole eligible universe, not the published
+          # prefix: the surface rule cannot rescue a player from a board he was already cut
+          # from (ADR-063). Nothing uploads it.
           uv run ffdraft build-current \
             --season "${{ needs.capture.outputs.season }}" \
             --store market-data \
+            --full-board "${RUNNER_TEMP}/full-board.json" \
             --git-sha "${GITHUB_SHA::7}" | tee build-current.log
 
       # ADR-039's consequence in operational form: the frozen rule is re-run against the
@@ -343,6 +364,7 @@ jobs:
             --season "${{ needs.capture.outputs.season }}" \
             --store market-data \
             --selection "${RUNNER_TEMP}/market-cohorts/cohorts.json" \
+            --full-board "${RUNNER_TEMP}/full-board.json" \
             --git-sha "${GITHUB_SHA::7}" | tee build-arbitrage.log
 
       # ---- The pre-deploy gate ------------------------------------------------------------

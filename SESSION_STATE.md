@@ -8,39 +8,24 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 partially met.** One criterion failed on measured evidence (FantasyPros publication) and is
 recorded rather than rounded up. Phase 11 has **not** been started.
 
-### Post-merge fix: the daily refresh failed `verify:board` (2026-09-03)
+### Post-merge corrections (2026-09-03)
 
-The first production refresh after the merge
-([33709328259](https://github.com/jeisey/jeisey-tiers/actions/runs/33709328259)) failed at
-*Verify the rendered board against the artifact bytes*, on all 30 arbitrage rows, against a
-site that was **correct**. `web/tests/e2e/verify-real-build.mjs` indexed table cells by
-position; Phase 10 inserted Dispersion, FP ECR and Spread, so `Score` and `Trend` moved two
-columns right. Fair Rank and ADP still matched because they sit left of the insertions.
+Two defects, found by looking at the deployed site rather than at the test suite.
 
-Two things made it worse than a stale index:
+**1. `verify:board` failed the refresh** ([33709328259](https://github.com/jeisey/jeisey-tiers/actions/runs/33709328259)), on all 30 arbitrage rows, against a site that was correct. `verify-real-build.mjs` indexed cells by position; Phase 10 inserted three columns and `Score`/`Trend` moved. Fixed by reading columns from the header row, and by running `verify:board` in `ci.yml` so a frontend column change is caught on the pull request rather than in production (jeisey/jeisey-tiers#28).
 
-- The Trend check had been comparing the **Spread** column's em dash against the em dash it
-  expected in Trend, and *passing*. A positional check does not only break loudly; it can
-  agree for the wrong reason.
-- `verify:board` ran only in `daily-refresh.yml` and `live-smoke.yml`, so no pull request
-  could catch it. The `matured` e2e fixture — the only build with a non-null `market_trend` —
-  reproduces the failure exactly and had been sitting unused in CI the whole time.
+**2. Phase 10 was never wired into production** (ADR-067). The refresh then ran green and published a board that was Release 1 with three extra column headings: no FFC, still 300 rows, `FP ECR` and `Spread` empty on every row. Every gate passed because each measured a part in isolation.
 
-Fixed by resolving columns from the header row, and by running `verify:board` in `ci.yml`'s
-e2e job against both the root and the matured builds.
-`tests/unit/test_workflows.py` pins that both are named, since dropping the matured one would
-leave the Trend column unchecked while the step still looked present.
-
-| | |
+| symptom | cause |
 |---|---|
-| Branch | `claude/phase-10-implementation-kqjelv` |
-| Source evidence | `docs/source-probes/2026-09-02/phase10-report.md` |
-| Decisions | ADR-060 … ADR-066 |
-| Probe runs | [33642792347](https://github.com/jeisey/jeisey-tiers/actions/runs/33642792347), [33643152957](https://github.com/jeisey/jeisey-tiers/actions/runs/33643152957), [33643545952](https://github.com/jeisey/jeisey-tiers/actions/runs/33643545952), [33643980189](https://github.com/jeisey/jeisey-tiers/actions/runs/33643980189) |
-| Linkage run | [33650112635](https://github.com/jeisey/jeisey-tiers/actions/runs/33650112635) |
-| Contracts | `market_quote` 3.0, `arbitrage_record` 1.2, `sleeper_behavior_snapshot` 1.0, `market_trend_series` 1.0 |
-| Method versions | `phase10_linkage_v1`, `phase10_multimarket_v1`, `phase10_surface_v1`, `phase10_tier_depth_v2` |
-| New dependency | `rapidfuzz>=3.9` (MIT), lockfile committed |
+| no FFC anywhere | `daily-refresh.yml` never called `capture-market-source` |
+| one market, empty Spread | `pipeline/market.py` passed no `extra_quotes` |
+| 300 rows | production published `TIER_BOARD_DEPTH`; `TIER_DEPTH_V2` and `build_surface_universe` were imported by no pipeline |
+| `FP ECR` all null | the column shipped for a source that publishes nothing (ADR-064) |
+
+Now: `ffdraft.market.extra` joins retained snapshots to the arbitrage build; `build-current --full-board` hands the untruncated universe to `build-arbitrage --full-board` so the surface rule can rescue beyond the depth; publication depth is `TIER_DEPTH_RULE.depth` (500) while Phase 4's frozen `TIER_BOARD_DEPTH` (300) is untouched; the coverage gate's severity depends on whether the caller certified a complete board; and the arbitrage table renders a market-dependent column only when some row has a value.
+
+**What the next production build will show, and what to check.** The tier board becomes 500 rows per block, so tier boundaries in the top 300 may move — the segmentation now sees 500 players. Confirm FFC appears in the market selector and that `build_metadata.json` lists it as `priced`. If FFC's capture failed, the board degrades to one market with a warning naming it, which is the intended behaviour and not a silent absence.
 
 ### Accepted source dispositions
 

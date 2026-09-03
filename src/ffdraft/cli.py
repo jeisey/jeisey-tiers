@@ -129,6 +129,7 @@ from ffdraft.leakage import validate_historical_directory
 from ffdraft.market.capture import capture_market, cohort_set
 from ffdraft.market.multisource import MARKET_SOURCE_SPECS
 from ffdraft.market.snapshot import MarketSnapshotStore, verify_store
+from ffdraft.market.surface import TIER_DEPTH_RULE
 from ffdraft.modeling import (
     ExperimentConfig,
     FinalEvalAuthorization,
@@ -480,6 +481,21 @@ def _build_parser() -> argparse.ArgumentParser:
     current.add_argument("--draws", type=int, default=None, help="override the draw count")
     current.add_argument("--statistic", default=None, help="override the ranking statistic")
     current.add_argument("--penalty", type=float, default=None, help="override the tier penalty")
+    current.add_argument(
+        "--board-depth",
+        type=int,
+        default=None,
+        help="override the published board depth (default: the versioned publication rule)",
+    )
+    current.add_argument(
+        "--full-board",
+        type=Path,
+        default=None,
+        help=(
+            "write the untruncated fair-ranked board here for the arbitrage stage's surface "
+            "rule; never published"
+        ),
+    )
     current.add_argument("--no-write", action="store_true", help="build without writing files")
     current.add_argument(
         "--store",
@@ -654,6 +670,15 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="cohort report JSON; default is the newest under docs/market-cohorts",
+    )
+    arbitrage.add_argument(
+        "--full-board",
+        type=Path,
+        default=None,
+        help=(
+            "the untruncated board written by `build-current --full-board`; without it no "
+            "player is surfaced from beyond the published depth"
+        ),
     )
     arbitrage.add_argument("--as-of", default=None, help="RFC 3339 build timestamp")
     arbitrage.add_argument("--git-sha", default=None)
@@ -1145,7 +1170,12 @@ def _build_current(args: argparse.Namespace) -> int:
         tier_penalty=(
             args.penalty if args.penalty is not None else PRODUCTION_BUILD_CONFIG.tier_penalty
         ),
-        board_depth=PRODUCTION_BUILD_CONFIG.board_depth,
+        # The **published** depth, which is not the modelling constant. `TIER_BOARD_DEPTH`
+        # is Phase 4's frozen study depth and every stability figure in the tier method
+        # report was measured against it; changing it there would silently restate that
+        # evidence. `TIER_DEPTH_RULE` is the publication rule, versioned separately for
+        # exactly this reason (ADR-062), and this is the one place the two meet.
+        board_depth=args.board_depth if args.board_depth is not None else TIER_DEPTH_RULE.depth,
         seed=PRODUCTION_BUILD_CONFIG.seed,
         league_preset_ids=PRODUCTION_BUILD_CONFIG.league_preset_ids,
         scoring_presets=PRODUCTION_BUILD_CONFIG.scoring_presets,
@@ -1159,6 +1189,7 @@ def _build_current(args: argparse.Namespace) -> int:
         build_id=args.build_id,
         git_sha=args.git_sha,
         status_store=_market_store(args.store) if args.store is not None else None,
+        board_out=args.full_board,
         write=not args.no_write,
     )
     print(f"build id       : {result.build_id}")
@@ -1647,6 +1678,7 @@ def _build_arbitrage(args: argparse.Namespace) -> int:
             as_of=parse_utc(args.as_of) if args.as_of else None,
             git_sha=args.git_sha,
             write=not args.no_write,
+            full_board_path=args.full_board,
         ),
     )
     print(f"build id       : {result.build_id}")

@@ -269,7 +269,7 @@ def _records(production_model, app_config, build_id: str = "test-build"):
     model, _ = production_model
     projections, context = _pool(model)
     gate = QualityGate()
-    records, diagnostics = build_board_records(
+    records, diagnostics, _full_board = build_board_records(
         projections,
         context,
         settings=app_config,

@@ -14,7 +14,7 @@
  */
 
 import type { ArbitrageRecord } from "./contracts";
-import { consensusOf, crossMarketOf, marketsOf } from "./multimarket";
+import { crossMarketOf, marketsOf } from "./multimarket";
 import type { ArbitrageRow, TierRow } from "./model";
 import type { ScoringValue, TeamCount } from "./state";
 
@@ -120,8 +120,6 @@ export const ARBITRAGE_EXPORT_COLUMNS = [
   "ffc_adp_sd",
   "mfl_adp",
   "mfl_rank_gap",
-  "fantasypros_ecr",
-  "fantasypros_ecr_gap",
   "market_adp_median",
   "market_disagreement_range",
   "sources_available",
@@ -171,7 +169,6 @@ function multiMarketCells(record: ArbitrageRecord): (string | number | null)[] {
   const markets = marketsOf(record);
   const ffc = markets.fantasyfootballcalculator_adp ?? null;
   const mfl = markets.myfantasyleague_adp ?? null;
-  const consensus = consensusOf(record);
   const cross = crossMarketOf(record);
   return [
     ffc?.market_adp ?? null,
@@ -179,8 +176,6 @@ function multiMarketCells(record: ArbitrageRecord): (string | number | null)[] {
     ffc?.market_adp_sd ?? null,
     mfl?.market_adp ?? null,
     mfl?.rank_gap ?? null,
-    consensus?.ecr ?? null,
-    consensus?.ecr_gap ?? null,
     cross?.market_adp_median ?? null,
     cross?.market_disagreement_range ?? null,
     (cross?.sources_available ?? []).join("|"),

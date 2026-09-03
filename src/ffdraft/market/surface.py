@@ -209,8 +209,11 @@ class SurfaceUniverse:
     tier_depth: int
     entries: dict[str, SurfaceEntry] = field(default_factory=dict)
     memberships: tuple[MarketMembership, ...] = ()
-    #: Resolved top-N players the surface could not include, with the reason. Non-empty is
-    #: a build failure, not a warning: it is the 300-row blind spot recurring.
+    #: Whether the board this was built from was the complete intrinsic universe rather than
+    #: an already-published prefix. Only the caller can know, and it decides whether a missing
+    #: market player is a truncation bug or an unvalued one (`coverage_checks`).
+    board_is_complete: bool = False
+    #: Resolved top-N players the surface could not include, with the reason.
     missing: list[dict[str, Any]] = field(default_factory=list)
 
     @property
@@ -270,6 +273,7 @@ def build_surface_universe(
     memberships: Iterable[MarketMembership] = (),
     tier_depth: int | None = None,
     rule_version: str = SURFACE_RULE_VERSION,
+    board_is_complete: bool = False,
 ) -> SurfaceUniverse:
     """Decide the public surface from the fair-ranked board and the market's top rows.
 
@@ -284,6 +288,7 @@ def build_surface_universe(
         league_preset_id=league_preset_id,
         rule_version=rule_version,
         tier_depth=depth,
+        board_is_complete=board_is_complete,
         memberships=tuple(sorted(relevant, key=lambda m: (m.source_id, str(m.signal_type)))),
     )
 
@@ -329,10 +334,24 @@ def build_surface_universe(
 def coverage_checks(universes: Sequence[SurfaceUniverse]) -> list[QualityCheck]:
     """The market-relevance coverage gate (roadmap 10.5).
 
-    The required figure is **100%** of resolved top-N market rows, and the failure is
-    critical rather than a warning. A warning is what the previous design effectively had:
-    nothing looked, so nothing complained, and a drafted player was silently absent for the
-    whole of the 2026 preseason.
+    The required figure is **100%** of resolved top-N market rows, and a miss is **critical**
+    unless the caller has certified that the board it passed is the complete intrinsic
+    universe.
+
+    That distinction is the whole subtlety, and it only became visible when this was first
+    wired into production. From inside :func:`build_surface_universe`, "this player is not in
+    the board I was given" has two causes that look identical:
+
+    * the caller passed a **truncated** board, so a deep player was cut before the rule could
+      see him. That is the Release 1 bug exactly, it is silent, and it is critical;
+    * the caller passed the **whole** universe and the market simply prices someone the model
+      never valued — an unprojected rookie, say. There is no fair rank to show beside the
+      price, nothing was dropped, and failing a production build over it would take a live
+      site down for a player the model was never going to rank.
+
+    Only the caller knows which it is, so the caller says
+    (:attr:`SurfaceUniverse.board_is_complete`). It defaults to ``False``, because a caller
+    who has not thought about it is exactly the caller who might be passing a prefix.
     """
     checks: list[QualityCheck] = []
     for universe in universes:
@@ -350,9 +369,18 @@ def coverage_checks(universes: Sequence[SurfaceUniverse]) -> list[QualityCheck]:
                     message=(
                         f"{block}: a resolved top-{MARKET_TOP_DEPTH} market player is not on "
                         "the public surface; this is the head(300) blind spot recurring"
+                        if not universe.board_is_complete
+                        else (
+                            f"{block}: a resolved top-{MARKET_TOP_DEPTH} market player has no "
+                            "intrinsic valuation, so the market prices someone this board "
+                            "cannot rank"
+                        )
                     ),
                     observed=f"{coverage:.1%} coverage, {len(universe.missing)} missing: {sample}",
                     expected="100% of resolved top-market rows surfaced",
+                    severity=(
+                        Severity.WARNING if universe.board_is_complete else Severity.CRITICAL
+                    ),
                 ),
             )
         else:

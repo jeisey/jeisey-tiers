@@ -68,20 +68,21 @@ capture ──▶ build ──▶ deploy          report (needs all three, if: a
 
 1. check out the application source and the **private** retained store (`.github/actions/market-data-store`, with `persist-credentials: true` because this job pushes);
 2. `ffdraft snapshot-market` — MFL cohorts plus the player directory, normalized and identity-resolved into the store;
-3. `ffdraft capture-status` — the Sleeper current-status capture;
-4. `ffdraft validate-market-history` — re-hash the whole store **before** anything is pushed, so a corrupt write is caught in the workspace rather than committed;
-5. commit and push to the private store.
+3. `ffdraft capture-market-source fantasyfootballcalculator_adp` — the second ADP market, retained under the same append-only discipline. `continue-on-error`: a second market is an enrichment, so an FFC outage degrades the board to one market rather than failing the refresh that publishes the intrinsic tiers (ADR-067);
+4. `ffdraft capture-status` — the Sleeper current-status capture;
+5. `ffdraft validate-market-history` — re-hash the whole store **before** anything is pushed, so a corrupt write is caught in the workspace rather than committed;
+6. commit and push to the private store.
 
 `build` — entirely offline; it reads retained bytes and the committed production model:
 
-6. check out the store **at the exact commit `capture` pushed**, read-only (`persist-credentials: false`);
-7. `ffdraft build-current` — loads the production model, does **not** retrain, and refuses to run if the feature-set or feature-schema hash disagrees (ADR-037);
-8. `ffdraft measure-market-cohorts` — re-runs the frozen selection rule against the newest snapshot (ADR-039), writing outside the checkout;
-9. `ffdraft build-arbitrage` — the deterministic A0 board against that selection;
-10. `validate-artifacts` — the pre-deploy gate;
-11. `npm ci`, then `npm run build` at `VITE_BASE_PATH=/jeisey-tiers/`, asserting the asset URLs and that every artifact reached `web/dist/data/`;
-12. `npm run verify:board` — the rendered board cross-checked against the artifact bytes, on the real board rather than fixtures;
-13. assert the Pages artifact boundary, then `actions/upload-pages-artifact` as the **last** step.
+7. check out the store **at the exact commit `capture` pushed**, read-only (`persist-credentials: false`);
+8. `ffdraft build-current --full-board` — loads the production model, does **not** retrain, and refuses to run if the feature-set or feature-schema hash disagrees (ADR-037). It publishes at `TIER_DEPTH_RULE.depth`, which is the *publication* rule and not Phase 4's frozen `TIER_BOARD_DEPTH`, and writes the untruncated fair-ranked board to `${RUNNER_TEMP}` for the next stage. Nothing uploads that file;
+9. `ffdraft measure-market-cohorts` — re-runs the frozen selection rule against the newest snapshot (ADR-039), writing outside the checkout;
+10. `ffdraft build-arbitrage --full-board` — the deterministic A0 board against that selection, priced by every retained market rather than only MFL, and surfacing market-relevant players from beyond the published depth using the untruncated board from step 7 (ADR-063, ADR-067);
+11. `validate-artifacts` — the pre-deploy gate;
+12. `npm ci`, then `npm run build` at `VITE_BASE_PATH=/jeisey-tiers/`, asserting the asset URLs and that every artifact reached `web/dist/data/`;
+13. `npm run verify:board` — the rendered board cross-checked against the artifact bytes, on the real board rather than fixtures;
+14. assert the Pages artifact boundary, then `actions/upload-pages-artifact` as the **last** step.
 
 `deploy` — `actions/configure-pages` and `actions/deploy-pages`, nothing else.
 

@@ -2069,3 +2069,37 @@ The adapter, the 50/day budget (half the vendor's stated 100, per the roadmap), 
 **The scalar stays.** `market_trend` still sorts the table, still exports to CSV, and is still what the accessible summary reads. The chart draws the history that produced it; it does not replace it.
 
 **Scoped to the published surface.** A series for a player no card can open is weight every visitor downloads for nothing. The restriction is by *published row* rather than by tier depth, so a market-surfaced exception (ADR-063) keeps its chart.
+
+---
+
+## ADR-067 — Phase 10 is wired into production, and a column exists only if data fills it
+
+**Date:** 2026-09-03 (post-Phase-10 correction)
+
+**Status:** **Accepted and implemented.** No contract version changes; four always-empty CSV columns removed.
+
+**Context.** Phase 10 shipped and merged. The first refreshes after it ran green, deployed, and produced a board that was — in every respect a reader could see — Release 1 with three extra column headings. FFC did not appear. The board was still 300 rows. `FP ECR` and `Spread` rendered an em dash on every row of every preset.
+
+Nothing had failed. Every gate passed, because every gate was measuring the parts in isolation:
+
+* `daily-refresh.yml` captured MyFantasyLeague and Sleeper. It never called `capture-market-source`, so no FFC snapshot was ever retained;
+* `pipeline/market.py` called `build_arbitrage_records` with no `extra_quotes`, no `surfaces` and no `surfaced_rows`, so every published row carried one market;
+* production published `board.head(TIER_BOARD_DEPTH)` — Phase 4's frozen study depth of 300. `TIER_DEPTH_V2` (500) and `build_surface_universe` were imported by no pipeline at all.
+
+The adapters, contracts, linkage, comparison maths, surface rule and frontend were all built, tested and documented. None of them were connected to the thing that runs every morning. The unit tests passed because they drove the libraries directly; the artifact validator passed because a single-market artifact is a *valid* artifact.
+
+**Decision.**
+
+**The pipeline is wired, and the join is its own module.** `ffdraft.market.extra` reads retained non-MFL snapshots back into `SourceQuote`s and per-source top-N memberships. It is read-only over the store, and a source that is absent, stale (>48h) or wholly unresolved contributes nothing *and says so* in the quality gate and in `build_metadata.json`. A missing market must never again be indistinguishable from a market nobody asked for.
+
+**Published depth is not modelling depth.** `TIER_BOARD_DEPTH = 300` stays exactly where it is: Phase 4's stability evidence was measured against it and changing it there would silently restate that evidence. The CLI now publishes at `TIER_DEPTH_RULE.depth`, and those two constants meet in exactly one line. Raising the published depth also widens the tier segmentation input from 300 to 500 players, which is what `TIER_DEPTH_V2` being a *tier* depth means.
+
+**The surface rule gets the board it needs.** It cannot rescue a player from a board he was already cut from, and the arbitrage stage reads a published artifact that is truncated by definition. `build-current --full-board` writes the untruncated universe outside the published directory; `build-arbitrage --full-board` reads it. Absent, the build behaves exactly as it did before — publish the prefix, rescue nobody — and records that it did.
+
+**A missing market player has two causes and one symptom.** From inside `build_surface_universe`, "not in the board I was given" is either a truncated board (the Release 1 bug, silent, critical) or a player the model never valued (a projection gap, real, not worth taking a live site down for). Only the caller knows which board it passed, so the caller certifies it: `board_is_complete` defaults to `False`, because a caller who has not thought about it is exactly the one who might be passing a prefix. Membership is also restricted to `CORE_POSITIONS` — a kicker was never eligible for a V1 board, and counting one as missing would fail a production build over a player the model is not supposed to rank.
+
+**A column is a promise that there is something in it.** `FP ECR` is removed from the arbitrage table and its four `fantasypros_ecr*` columns from the CSV projection: FantasyPros publishes nothing at the provisioned API tier (ADR-064) and an always-empty column is a claim the artifact cannot keep. The remaining market-dependent columns — Dispersion, Spread — are rendered only when some row in the current view has a value, so a market that is absent, stale or newly added is handled without anyone editing a component. `Trend` is deliberately exempt: its empty state is *specified* (an em dash means "no evidence yet", never `0`; ADR-042), which is not the same thing as a column for a market that was never captured.
+
+**Consequences.** FFC capture is `continue-on-error`: a second market is an enrichment, and its outage must degrade the board to one market rather than fail the refresh that publishes the intrinsic tiers. The tier board is 500 rows per block rather than 300, so artifact bytes and table rows grow by roughly two thirds. Tier boundaries in the top 300 may move, because the segmentation now sees 500 players — that is a consequence of the decision, not a side effect of it, and the first production build is where it becomes measurable.
+
+**What this was really about.** Every individual piece of Phase 10 was correct. What was missing was the question "what will a reader see tomorrow morning?", asked against the pipeline that actually runs rather than against the tests. A test suite that drives libraries directly cannot answer it, and neither can a validator whose job is to accept any well-formed artifact.

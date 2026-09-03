@@ -36,6 +36,7 @@ Three other rules hold here:
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -213,6 +214,7 @@ def run_current_build(
     current_roster: pl.DataFrame | None = None,
     status_capture: StatusCapture | None = None,
     status_store: Any | None = None,
+    board_out: Path | None = None,
     write: bool = True,
 ) -> CurrentBuildResult:
     """Build the current season's intrinsic tier board and write its artifacts.
@@ -354,7 +356,7 @@ def run_current_build(
         "has_prior_season_stats",
         "depth_context_state",
     )
-    records, diagnostics = build_board_records(
+    records, diagnostics, full_board = build_board_records(
         projections,
         context,
         settings=settings,
@@ -365,6 +367,9 @@ def run_current_build(
         as_of=stamped,
         gate=gate,
     )
+    if board_out is not None and write:
+        board_out.parent.mkdir(parents=True, exist_ok=True)
+        board_out.write_text(json.dumps(full_board), encoding="utf-8")
 
     # The status artifact is assembled *after* the board and from a different registry
     # instance, so it cannot participate in producing a single published number. It is
@@ -556,13 +561,20 @@ def build_board_records(
     build_id: str,
     as_of: datetime,
     gate: QualityGate,
-) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any], list[dict[str, Any]]]:
     """Simulate, rank, tier and serialize every scoring x league preset.
+
+    The third return value is the **whole** fair-ranked board for every block, not the
+    published prefix. The surface rule (ADR-063) needs it: a player outside the published
+    depth cannot be rescued from a board he was already cut from, and the arbitrage stage
+    reads a published artifact that is by definition truncated. Nothing publishes it — it is
+    handed to the next stage on disk and never to a reader.
 
     Separated from the fetch-and-feature half so the whole value chain - sampling,
     allocation, ranking, segmentation and record shape - can be driven from a synthetic pool
     in a test without a source, a model file or a network.
     """
+    full_board: list[dict[str, Any]] = []
     joined = projections.join(context, on="player_id", how="inner")
     point_columns = quantile_column_names("points", config.levels)
     bounds_by_preset = model.point_bounds()
@@ -629,6 +641,19 @@ def build_board_records(
                 statistic=config.ranking_statistic,
             )
             published = board.head(config.board_depth)
+            # Captured before the cut, so the surface rule sees every eligible player.
+            full_board.extend(
+                {
+                    "player_id": str(row["player_id"]),
+                    "fair_rank": int(row["fair_rank"]),
+                    "display_name": row.get("display_name"),
+                    "position": str(row.get("position") or ""),
+                    "team": row.get("team"),
+                    "scoring_preset": scoring,
+                    "league_preset_id": preset_id,
+                }
+                for row in board.iter_rows(named=True)
+            )
             segmentation = segment_with(
                 config.tier_algorithm,
                 published,
@@ -676,6 +701,7 @@ def build_board_records(
     return (
         {"projections": projection_records, "tiers": tier_records},
         diagnostics,
+        full_board,
     )
 
 

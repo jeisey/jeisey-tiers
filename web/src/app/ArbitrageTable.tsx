@@ -31,7 +31,6 @@ import {
   CROSS_MARKET,
   adpFor,
   comparisonFor,
-  consensusOf,
   disagreementFor,
   gapFor,
   marketLabel,
@@ -40,7 +39,7 @@ import type { ArbitrageRow } from "../data/model";
 
 export const ARBITRAGE_TABLE_CAPTION =
   "Deterministic market-gap board: the model's fair rank compared with the selected ADP " +
-  "market. FP ECR is an expert consensus ranking shown alongside, never mixed into a price. " +
+  "market. Columns appear only for the markets this build actually published. " +
   "Confidence describes how much draft evidence stands behind the price, not how likely the " +
   "player is to be a bargain.";
 
@@ -50,11 +49,47 @@ interface ColumnMeta {
   readonly width?: string;
 }
 
+/**
+ * Which optional market columns this build has any data for.
+ *
+ * A column of nothing but em dashes is a promise the artifact cannot keep. It shipped once —
+ * FP ECR and Spread rendered `\u2014` on every row of the live board for a source the pipeline
+ * never captured — and the lesson is not "remember to check": it is that presence should be
+ * read from the data rather than remembered. A column whose every row is empty is not
+ * rendered at all, so a market that is absent, stale or newly added is handled the same way
+ * without anyone editing this file.
+ */
+/**
+ * Columns that may legitimately be absent, because the *source* behind them may be.
+ *
+ * Trend is deliberately not here. Its empty state is specified rather than accidental — a
+ * null trend must read as an em dash and never as `0`, because an absence of evidence is not
+ * evidence of no change (ADR-042) — and `verify-real-build.mjs` checks that cell on every
+ * build. A column with a defined meaning when empty is not the same thing as a column for a
+ * market the build never captured.
+ */
+const OPTIONAL_COLUMNS: ReadonlySet<string> = new Set(["adp_range", "market_spread"]);
+
+function populatedColumns(rows: readonly ArbitrageRow[], market: string): ReadonlySet<string> {
+  const present = new Set<string>();
+  for (const { record } of rows) {
+    const comparison = comparisonFor(record, market);
+    const sd = comparison?.market_adp_sd ?? null;
+    const low = comparison?.market_adp_low ?? record.market_adp_low;
+    const high = comparison?.market_adp_high ?? record.market_adp_high;
+    if (sd !== null || (low !== null && high !== null)) present.add("adp_range");
+    if (disagreementFor(record) !== null) present.add("market_spread");
+    if (present.size === OPTIONAL_COLUMNS.size) break;
+  }
+  return present;
+}
+
 function arbitrageColumns(
   onSelect: (playerId: string) => void,
   market: string,
+  populated: ReadonlySet<string>,
 ): ColumnDef<ArbitrageRow>[] {
-  return [
+  const defined: ColumnDef<ArbitrageRow>[] = [
     {
       id: "arbitrage_rank",
       header: "#",
@@ -172,30 +207,6 @@ function arbitrageColumns(
       meta: { align: "right", width: "5.5rem" },
     },
     {
-      id: "expert_consensus",
-      // A ranking, beside the price and never mixed into it. The column exists on every
-      // market view because the question "where do the experts have him" does not change
-      // when the reader switches which market they are pricing against (roadmap 10.6).
-      header: "FP ECR",
-      accessorFn: (row) => consensusOf(row.record)?.ecr ?? Number.POSITIVE_INFINITY,
-      cell: (context) => {
-        const consensus = consensusOf(context.row.original.record);
-        if (consensus === null) return <span className="faint">{EM_DASH}</span>;
-        const gap = describeGap(consensus.ecr_gap);
-        return (
-          <span className="dir" data-kind={gap.kind}>
-            <span aria-hidden="true">
-              {`${String(consensus.ecr)} (${formatSigned(consensus.ecr_gap)})`}
-            </span>
-            <span className="visually-hidden">
-              {`expert consensus rank ${String(consensus.ecr)}; ${gap.sentence.replace("market", "expert consensus")}`}
-            </span>
-          </span>
-        );
-      },
-      meta: { align: "right", width: "6.5rem" },
-    },
-    {
       id: "market_spread",
       // The number a single-source board could not produce. Null - not zero - when only one
       // market priced him: zero would claim the markets agree when only one of them spoke.
@@ -276,6 +287,10 @@ function arbitrageColumns(
       meta: { width: "6rem" },
     },
   ];
+  return defined.filter(
+    (column) =>
+      !OPTIONAL_COLUMNS.has(String(column.id)) || populated.has(String(column.id)),
+  );
 }
 
 export function ArbitrageTable({
@@ -293,7 +308,11 @@ export function ArbitrageTable({
   readonly market?: string;
 }): React.JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([{ id: "arbitrage_score", desc: true }]);
-  const columns = useMemo(() => arbitrageColumns(onSelect, market), [onSelect, market]);
+  const populated = useMemo(() => populatedColumns(rows, market), [rows, market]);
+  const columns = useMemo(
+    () => arbitrageColumns(onSelect, market, populated),
+    [onSelect, market, populated],
+  );
   const data = useMemo(() => [...rows], [rows]);
 
   const table = useReactTable({

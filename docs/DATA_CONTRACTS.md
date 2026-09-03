@@ -569,9 +569,16 @@ market priced the player: zero would claim the markets agree when only one of th
 **CSV.** An artifact whose record nests declares a *projection* rather than inheriting the
 schema's field order: a cell holds a scalar, and `str()` on an array of comparisons produces a
 Python repr. The arbitrage projection names the source and the signal in every column —
-`ffc_adp`, `mfl_adp`, `fantasypros_ecr` — and reads the consensus columns only from the
-declared consensus source. Columns are declared, not derived from whichever sources happen to
-be enabled today, so the header stays stable and a golden CSV stays worth diffing.
+`ffc_adp` beside `mfl_adp` — so no reader has to infer which market a number came from.
+Columns are declared rather than derived from whichever sources happen to be enabled today,
+so the header stays stable and a golden CSV stays worth diffing.
+
+Declared is not the same as *unconditional*. The four `fantasypros_ecr*` columns were declared
+and never filled, because FantasyPros publishes nothing at the provisioned API tier (ADR-064);
+they shipped empty and are removed (ADR-067). A column is a promise that something fills it,
+and the rule the frontend now enforces structurally — render a market-dependent column only
+when some row has a value — applies here by judgement: add the columns back with the data, not
+before it.
 
 ### 15.4 The surface universe — three concepts that used to be one number
 
