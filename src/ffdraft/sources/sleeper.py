@@ -21,7 +21,13 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
-from ffdraft.contracts import PLAYER_STATUS_CONTRACT, QualityCheck, SourceBatch
+from ffdraft.contracts import (
+    PLAYER_STATUS_CONTRACT,
+    SLEEPER_BEHAVIOR_CONTRACT,
+    BehaviorType,
+    QualityCheck,
+    SourceBatch,
+)
 from ffdraft.contracts.enums import Severity
 from ffdraft.identity.ids import IdNamespace, normalize_id
 from ffdraft.sources.base import (
@@ -37,7 +43,10 @@ from ffdraft.timeutil import utc_now
 __all__ = [
     "SLEEPER_BASE_URL",
     "SLEEPER_SOURCE_ID",
+    "TRENDING_LIMIT",
+    "TRENDING_LOOKBACK_HOURS",
     "SleeperPlayerAdapter",
+    "SleeperTrendingAdapter",
     "SleeperState",
     "parse_sleeper_state",
     "player_map_to_records",
@@ -204,6 +213,145 @@ class SleeperPlayerAdapter(BaseSourceAdapter):
                 observed=f"{coverage:.1%} of {total} rows",
                 expected="informational",
                 severity=Severity.INFO,
+            ),
+        )
+
+
+#: The trending request this project makes. Both parameters were measured to be honoured
+#: on 2026-09-02 (`docs/source-probes/2026-09-02/phase10-report.md` 3): `limit` returns
+#: exactly what is asked for, and a 6-hour window shares 24 of 25 ids with a 24-hour one
+#: while a 72-hour window shares 22. A window that is requested but silently clamped would
+#: make a retained count mean something other than what its manifest says, which is why the
+#: snapshot records the request rather than assuming it.
+TRENDING_LOOKBACK_HOURS = 24
+TRENDING_LIMIT = 100
+
+
+class SleeperTrendingAdapter(BaseSourceAdapter):
+    """``/v1/players/nfl/trending/{add,drop}`` -> waiver behaviour snapshots.
+
+    **Nothing consumes this yet, and that is the point.** Phase 12 is the in-season phase
+    and it needs history that already exists when the season starts; a feed first captured
+    in week 3 can only describe week 3 onward. Roadmap 10.1.4 asks Phase 10 to start
+    retaining these now so Phase 12 inherits a real series rather than beginning from zero
+    after kickoff.
+
+    The response is a **bare JSON list** of ``{count, player_id}`` — no envelope, no
+    timestamp, no metadata of any kind. Everything that makes a retained row interpretable
+    later therefore has to come from the request: which window was asked for, what limit was
+    sent, and when. That is what :class:`~ffdraft.contracts.SLEEPER_BEHAVIOR_CONTRACT`
+    records, and it is why these rows are not squeezed into a market quote — an add count is
+    not a pick number, and a schema that allowed it there would eventually see it charted on
+    an ADP axis (roadmap 10.3).
+    """
+
+    source_id = SLEEPER_SOURCE_ID
+    resource = "GET /v1/players/nfl/trending/{kind}"
+    adapter_version = "1.0"
+    contract = SLEEPER_BEHAVIOR_CONTRACT
+    recorded_schema_fixture = "sleeper_trending_add"
+    license_policy_version = _SLEEPER_LICENSE
+    min_expected_records = 1
+    required_source_columns = frozenset({"player_id", "count"})
+
+    def normalize(
+        self,
+        records: RawRecords,
+        *,
+        behavior_type: BehaviorType,
+        lookback_hours: int = TRENDING_LOOKBACK_HOURS,
+        limit: int = TRENDING_LIMIT,
+        retrieved_at: datetime | None = None,
+    ) -> SourceBatch:
+        observed_at = retrieved_at or utc_now()
+        flags = FlagCounter()
+        rows: list[dict[str, Any]] = []
+        dropped = 0
+
+        for record in as_rows(records):
+            player_id = normalize_id(IdNamespace.SLEEPER, record.get("player_id"))
+            count = _int(record.get("count"))
+            if player_id.value is None or count is None:
+                dropped += 1
+                continue
+            flags.take(player_id)
+            rows.append(
+                {
+                    "source_id": self.source_id,
+                    "behavior_type": str(behavior_type),
+                    "external_player_id": player_id.value,
+                    "count": count,
+                    # The REQUEST, not a claim about the data. Sleeper publishes nothing
+                    # about the window it actually used.
+                    "lookback_hours": lookback_hours,
+                    "request_limit": limit,
+                    "snapshot_at_utc": observed_at,
+                    "quality_flags": ",".join(dict.fromkeys(player_id.quality_flags)),
+                }
+            )
+
+        flags.note("sleeper_trending_rows_without_id_or_count", dropped)
+        return self.build_batch(
+            self.contract.build(rows),
+            retrieved_at=observed_at,
+            warning_codes=flags.codes,
+            detail={
+                "behavior_type": str(behavior_type),
+                "lookback_hours": str(lookback_hours),
+                "request_limit": str(limit),
+                **flags.detail,
+            },
+        )
+
+    def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
+        behavior = config.options.get("behavior_type", BehaviorType.ADD)
+        if not isinstance(behavior, BehaviorType):
+            behavior = BehaviorType(str(behavior))
+        lookback = int(config.options.get("lookback_hours", TRENDING_LOOKBACK_HOURS))
+        limit = int(config.options.get("limit", TRENDING_LIMIT))
+        payload = _get_json(
+            f"{SLEEPER_BASE_URL}players/nfl/trending/{behavior}"
+            f"?lookback_hours={lookback}&limit={limit}",
+            timeout=config.timeout_seconds,
+            source_id=self.source_id,
+        )
+        if not isinstance(payload, list):
+            raise SourceFetchError(
+                f"Sleeper trending/{behavior} returned {type(payload).__name__}, not a list",
+            )
+        return self.normalize(
+            payload,
+            behavior_type=behavior,
+            lookback_hours=lookback,
+            limit=limit,
+            retrieved_at=as_of or utc_now(),
+        )
+
+    def semantic_checks(self, batch: SourceBatch) -> Sequence[QualityCheck]:
+        """Waiver behaviour is never a model feature and never a price."""
+        if batch.frame.is_empty():
+            return ()
+        kinds = set(batch.frame.get_column("behavior_type").unique().to_list())
+        unknown = kinds - {str(BehaviorType.ADD), str(BehaviorType.DROP)}
+        if unknown:
+            return (
+                QualityCheck.fail(
+                    "sleeper.unknown_behavior_type",
+                    stage=self.source_id,
+                    message="a behaviour snapshot must be an add or a drop",
+                    observed=", ".join(sorted(unknown)),
+                    expected="add | drop",
+                ),
+            )
+        return (
+            QualityCheck.ok(
+                "sleeper.behavior_is_not_a_price",
+                stage=self.source_id,
+                message=(
+                    "add/drop counts are retained for Phase 12 and are excluded from "
+                    "intrinsic features and from every ADP aggregate (roadmap 10.1.4)"
+                ),
+                observed=f"{batch.frame.height} row(s)",
             ),
         )
 

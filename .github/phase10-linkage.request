@@ -1,0 +1,12 @@
+# Editing this file starts `phase10-linkage.yml` on the branch it is pushed to.
+#
+# The linkage proposes `FFC player_id -> canonical player_id` for a source that publishes no
+# id bridge, and it has to run where FFC is reachable — a runner, not the development
+# sandbox (ADR-009, ADR-053). Unlike the probes, this workflow writes: it commits the
+# generated alias file and the human review list back to this branch.
+#
+# Bump `run` to regenerate. Regeneration is a reviewable decision, which is why this is an
+# explicit edit rather than a schedule.
+run: 1
+season: 2026
+requested_for: "Phase 10 — generate the FFC alias file and measure the 90% continuation gate"

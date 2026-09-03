@@ -27,6 +27,15 @@ import {
   marketSourceLabel,
   summarizeMarket,
 } from "../data/market";
+import {
+  CROSS_MARKET,
+  comparisonFor,
+  crossMarketAvailable,
+  marketLabel,
+  selectableMarkets,
+  windowLabel,
+  MARKET_SOURCES,
+} from "../data/multimarket";
 import { selectArbitrageRows, unpricedMatches, type ArbitrageRow, type ArtifactIndex } from "../data/model";
 import { RAIL_MODES, SCORING_TO_PRESET, type AppState, type RailMode } from "../data/state";
 import { ExportControls } from "./ExportControls";
@@ -77,6 +86,34 @@ export function ArbitrageView({
     [index.metadata, rows, state.scoring, state.teams],
   );
 
+  // Which markets this build actually published, and which one is in force. A selection
+  // naming a source the board does not carry falls back rather than rendering empty columns:
+  // a shared link from a build with one more source must still open (roadmap 10.6).
+  const records = useMemo(() => rows.map((row) => row.record), [rows]);
+  const markets = useMemo(() => selectableMarkets(records), [records]);
+  const showCross = useMemo(() => crossMarketAvailable(records), [records]);
+  const options = useMemo(
+    () => (showCross ? [...markets, CROSS_MARKET] : markets),
+    [markets, showCross],
+  );
+  const market = options.includes(state.market)
+    ? state.market
+    : (options[0] ?? state.market);
+  // The selected market's semantics, taken from the first row that carries them. Every row
+  // in a block shares one cohort, so any row answers "what window is this, and does the
+  // cohort actually observe a league size" - and the first one avoids a second pass.
+  const marketMeta = useMemo(() => {
+    const sample = records
+      .map((record) => comparisonFor(record, market))
+      .find((comparison) => comparison !== null);
+    return sample == null
+      ? null
+      : {
+          window: windowLabel(sample.aggregation_window_type, sample.aggregation_window_days),
+          leagueSize: sample.league_size !== null,
+        };
+  }, [records, market]);
+
   const railRows = useMemo(() => {
     const filtered =
       state.rail === "bargains"
@@ -106,12 +143,24 @@ export function ArbitrageView({
     <>
       <MarketConditionNotice summary={summary} onOpenData={onOpenData} />
 
+      {options.length > 1 && (
+        <MarketSelector
+          options={options}
+          selected={market}
+          onSelect={(next) => {
+            onChange({ market: next });
+          }}
+          windowText={marketMeta?.window ?? ""}
+          observed={marketMeta === null ? null : { leagueSize: marketMeta.leagueSize }}
+        />
+      )}
+
       <section className="section" aria-labelledby="draft-rail-heading">
         <SectionHead
           index="01"
           id="draft-rail-heading"
           title="Draft rail"
-          note={`${METHOD_LABEL}: fair rank against ${marketSourceLabel(summary.sourceId)}. The bar is the signed difference in picks — not points, not dollars and not a probability.`}
+          note={`${METHOD_LABEL}: fair rank against ${options.length > 1 ? marketLabel(market) : marketSourceLabel(summary.sourceId)}. The bar is the signed difference in picks — not points, not dollars and not a probability.`}
         >
           <div className="segmented" role="radiogroup" aria-label="Draft rail population">
             {RAIL_MODES.map((mode) => (
@@ -177,6 +226,7 @@ export function ArbitrageView({
           <>
             <ArbitrageTable
               rows={rows}
+              market={market}
               onSelect={onSelect}
               selectedPlayerId={selectedPlayerId}
               visibleRowsRef={visibleRows}
@@ -190,6 +240,77 @@ export function ArbitrageView({
         )}
       </section>
     </>
+  );
+}
+
+/**
+ * The ADP market this board compares against.
+ *
+ * Deliberately a *choice* rather than a default blend. The sources measure different
+ * populations over different windows — FFC's rolling week against MyFantasyLeague's whole
+ * season — and silently averaging them would produce a number no capture contains
+ * (Release 2 guardrail 2.3). The window and what the cohort actually observes are printed
+ * beside the control, because "ADP" alone does not say which of these a reader is looking at.
+ *
+ * FantasyPros ECR is **not** here. It is a ranking, not a price, and it appears beside the
+ * selected market on the row and the card instead of pretending to be another market.
+ */
+function MarketSelector({
+  options,
+  selected,
+  onSelect,
+  windowText,
+  observed,
+}: {
+  readonly options: readonly string[];
+  readonly selected: string;
+  readonly onSelect: (next: string) => void;
+  readonly windowText: string;
+  readonly observed: { readonly leagueSize: boolean } | null;
+}): React.JSX.Element {
+  const meta = MARKET_SOURCES[selected];
+  const description =
+    selected === CROSS_MARKET
+      ? "Every published ADP source side by side, with the spread between them"
+      : (meta?.description ?? "");
+  return (
+    <section className="section" aria-labelledby="market-selector-heading">
+      <SectionHead
+        index="00"
+        id="market-selector-heading"
+        title="Market"
+        note={description}
+      >
+        <div className="segmented" role="radiogroup" aria-label="ADP market">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={selected === option}
+              tabIndex={selected === option ? 0 : -1}
+              onClick={() => {
+                onSelect(option);
+              }}
+            >
+              {marketLabel(option)}
+            </button>
+          ))}
+        </div>
+      </SectionHead>
+      <p className="section-note">
+        {windowText !== "" && <>Aggregated over the {windowText}. </>}
+        {observed !== null && (
+          <>
+            Scoring is observed for this cohort; league size is{" "}
+            <strong>{observed.leagueSize ? "observed" : "not observed"}</strong>
+            {observed.leagueSize
+              ? "."
+              : " — this source does not publish a league-size breakdown, so the board does not claim one."}
+          </>
+        )}
+      </p>
+    </section>
   );
 }
 

@@ -486,3 +486,166 @@ Fixtures must be synthetic or permitted excerpts small enough to comply with sou
 > **Phase-2 fixture set.** `tests/fixtures/historical/` carries synthetic nflverse-shaped source rows for two target seasons — 2024 in the lagged-only era and 2025 in the snapshot era — read through the real adapters so the integration test exercises the production code path without a network. Its README names which invented player carries which case, including the identity collision, the undrafted rookie visible only on a pre-anchor depth chart, the player with no birth date anywhere, and the eligible player who records nothing all season.
 
 > **Phase-1 fixture set.** `tests/fixtures/pipeline/` carries every case above, entirely synthetic, with a table in its README naming which player or record carries which case. `tests/fixtures/pipeline/collisions/` holds deliberately broken identity inputs used only by the fail-closed tests. `tests/fixtures/artifacts/` holds the committed golden output of the fixture pipeline; the frontend tests read it, so the TypeScript types and the Python serializers are checked against the same bytes. Regenerate it with `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`.
+
+---
+
+## 15. Phase-10 contracts — multi-source market, surface universe, trend series
+
+Added 2026-09-02. Decisions: ADR-062 through ADR-066. Every field below is populated from a
+measured source contract recorded in `docs/DATA_SOURCES.md` section 16.
+
+### 15.1 `market_quote` 3.0 — one row shape, three sources, no lost semantics
+
+Contract 2.0 could describe one source. 3.0 describes three without pretending they measure
+the same thing. Nine columns are new, and each exists because two sources disagree about
+something 2.0 could not express.
+
+| Column | Why it exists |
+|---|---|
+| `market_signal_type` | `adp` \| `ecr`. An observed price and an expert opinion are different measurements. This is the column that makes "ECR never masquerades as ADP" checkable rather than aspirational: aggregates filter on it and tests assert it. |
+| `scoring_preset` | The cohort's **observed** scoring, or null when the request does not constrain it. |
+| `league_size` | The cohort's **observed** league size, or null. FFC accepts `teams=` and ignores it, so its value is always null; MyFantasyLeague's is null unless the selection rule found an *exact* cohort. Both nulls are refusals to claim, not gaps. |
+| `aggregation_window_type` | `rolling` \| `season_cumulative` \| `not_applicable` \| `unknown`. FFC aggregates seven days; MyFantasyLeague aggregates the season. Showing them side by side without this would invite the reader to average them (Release 2 guardrail 2.3). |
+| `aggregation_window_days` | The bound, when the source publishes one. Never guessed. |
+| `adp_sd` | A **genuine** per-player standard deviation, which FFC publishes and MyFantasyLeague does not. Never filled from `min_pick`/`max_pick`. |
+| `consensus_rank_mean` / `_min` / `_max` / `_sd` | An expert panel's dispersion, measured in **ranks**. Writing it into the pick-denominated columns would put a rank spread under a draft-pick label. |
+| `source_display_name` / `source_team` | As published. Linkage input and a review diagnostic. |
+
+Two decisions worth stating explicitly:
+
+- **`average_pick` keeps its name.** The roadmap's field list calls it `market_adp`, and it
+  is that quantity, but a season of retained snapshots in the private store use
+  `average_pick` and the trend window reads them. Renaming would have made every historical
+  capture unreadable to buy a tidier column name. The public artifact's field *is* called
+  `market_adp`; the mapping is one hop and is stated here.
+- **`market_signal_type` joins the primary key**, which is now
+  `(source_id, season, cohort_id, market_signal_type, external_player_id)`. FantasyPros
+  serves ADP and ECR for the same season and cohort; without it the two would collide.
+
+`average_pick` is nullable in 3.0 because an ECR row has no average pick. `market_rank`
+carries the ECR value on those rows.
+
+### 15.2 `sleeper_behavior_snapshot` 1.0 — waiver behaviour is not a price
+
+An add count has no pick number, no cohort, no scoring preset and no dispersion. Overloading
+it onto `market_quote` would leave two thirds of the row null and would eventually see it
+charted on an ADP axis, so it has its own contract.
+
+```text
+source_id  behavior_type(add|drop)  external_player_id  count
+lookback_hours  request_limit  snapshot_at_utc  quality_flags
+```
+
+`lookback_hours` and `request_limit` record **the request**. Sleeper's response carries no
+envelope and no timestamp at all, so without them a retained count is uninterpretable later.
+Both were measured as honoured on 2026-09-02.
+
+Nothing consumes these in Phase 10. They are retained so Phase 12 inherits real history.
+
+### 15.3 `arbitrage_record` 1.2 — additive over 1.1
+
+Every 1.1 field keeps its exact meaning and its MyFantasyLeague provenance, so a Release 1
+consumer reading by name finds what it read before (Release 2 guardrail 2.1). Five fields are
+new:
+
+| Field | Contract |
+|---|---|
+| `markets[]` | One independent comparison per **ADP** source. `market_signal_type` is `const: "adp"`. Each entry carries its own price, gap, dispersion, window, cohort and snapshot time, so every published number is reconstructable from its components. |
+| `expert_consensus` | The ranking. `market_signal_type` is `const: "ecr"`, and its gap field is named **`ecr_gap`**, never `rank_gap` — a caller reaching for the wrong one gets an error rather than a plausible number. |
+| `cross_market` | ADP-only. `market_adp_min/max/median`, `market_disagreement_range`, `cheapest_market_source`, `most_expensive_market_source`, `sources_available`. |
+| `surface_reasons[]` | Why the row is visible. Minimum one entry; a closed vocabulary. |
+| `outside_tier_board` | True when market relevance surfaced him from beyond the tier depth. Such a row carries a real fair rank and **no tier**. |
+
+**`market_adp_median` is a summary, not a canonical price.** The sources describe different
+populations over different windows, so a median across them carries a caveat. Promoting it
+would require its own frozen methodology version first (roadmap 10.4). The number worth
+reading beside it is `market_disagreement_range`, which is null — not zero — when only one
+market priced the player: zero would claim the markets agree when only one of them spoke.
+
+**Per-source schema conditionals** enforce what the sources actually publish: a
+`myfantasyleague_adp` entry must have a null `market_adp_sd`, and a
+`fantasyfootballcalculator_adp` entry must have a null `league_size`.
+
+**CSV.** An artifact whose record nests declares a *projection* rather than inheriting the
+schema's field order: a cell holds a scalar, and `str()` on an array of comparisons produces a
+Python repr. The arbitrage projection names the source and the signal in every column —
+`ffc_adp`, `mfl_adp`, `fantasypros_ecr` — and reads the consensus columns only from the
+declared consensus source. Columns are declared, not derived from whichever sources happen to
+be enabled today, so the header stays stable and a golden CSV stays worth diffing.
+
+### 15.4 The surface universe — three concepts that used to be one number
+
+Release 1 published `board.head(300)`. Phase 10 separates:
+
+1. **Intrinsic/model universe** — every eligible QB/RB/WR/TE the model can value. Market-blind.
+2. **Tier segmentation universe** — the contiguous fair-ranked prefix tiers run over.
+   Versioned: `phase4_tier_depth_v1` (300) is retained so a Release 1 board stays
+   reproducible; `phase10_tier_depth_v2` supersedes it.
+3. **Public surface universe** — who is searchable and displayable.
+
+**The invariant:** a market signal may change *whether a player is surfaced*; it may never
+change his projection, VORP, fair rank or tier.
+
+`surface_reasons[]` vocabulary — deliberately larger than draft mode needs, because Phase 12
+must surface a mid-season role change and a contract that changes shape mid-season is a
+contract nobody trusts:
+
+```text
+intrinsic_top_tier_depth        market_top300_mfl_adp        sleeper_trending_add
+market_top300_ffc_adp           current_roster_relevant      sleeper_trending_drop
+market_top300_fantasypros_adp   current_depth_promotion
+market_top300_fantasypros_ecr
+```
+
+A source with no declared reason **raises**: a surfaced player nobody can explain later is
+worse than an error.
+
+**The coverage gate is `100%` of resolved top-market rows, and it is critical.** A warning is
+effectively what the old design had — nothing looked, so nothing complained. Identity-
+unresolved source rows are counted **separately** and never enter the denominator, because
+folding them in is precisely how a coverage number stays at 100% while players go missing.
+
+"Top 300" is a ceiling, not an expectation. FFC's entire published population is 221–264 rows
+with a deepest ADP of 201.1, so for that source it means the whole source. The rule asks for
+the top of each market, not for a market to have 300 rows.
+
+### 15.5 `market_trend_series` 1.0 — the chart's data, published
+
+```text
+schema_version  build_id  market_source_id  scoring_preset  league_preset_id
+player_id  cohort_id  window_days  market_trend  points[{observed_at, market_adp}]
+```
+
+**The browser never calls a vendor for chart history.** The series is generated at build time
+from the append-only snapshot store the trend was already computed over, and fetched like
+every other `/data/*.json`. A frontend test asserts the bundle's fetch list contains no vendor
+host. That property is what makes a static architecture viable here at all.
+
+`market_trend` repeats the scalar the arbitrage row carries, from the same points, so a
+consumer of this artifact alone can render the summary without a join. The scalar remains
+authoritative for sorting, CSV and the accessible summary; the chart draws the history that
+produced it.
+
+The series is scoped to **published rows** rather than to the tier depth, so a
+market-surfaced exception keeps its chart. No CSV: a row per point would be a different
+artifact from the one a reader asked to export, and the scalar is already in the arbitrage
+CSV where a spreadsheet wants it.
+
+### 15.6 Identity for a source with no bridge
+
+`AGENTS.md` section 6 forbids a production join that depends solely on normalized names. FFC
+publishes an internal `player_id` that maps to nothing outside FFC, so the join is split:
+
+- the **proposal** is name-derived, runs once, and writes a file a person can read;
+- the **production join** is an exact id lookup against that file.
+
+`config/market-aliases/<source_id>.yaml` holds generated aliases with a header recording the
+rule version, the date and the coverage. `config/identity-aliases.yaml` — the human-reviewed
+file — is loaded **last and wins**: a machine's reading of a name must not overwrite a
+person's decision about a player.
+
+The frozen rule is `phase10_linkage_v1`: block on position exactly, never block on team,
+accept an exact normalized match when collision-free, accept a fuzzy match only above score
+92 **and** margin 6, quarantine everything else with a reason, and surface the top-300 tail
+separately from the aggregate. The continuation gate is 90%; the measured 2026-09-02 result
+was 222/222.

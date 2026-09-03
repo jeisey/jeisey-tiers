@@ -17,6 +17,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from ffdraft.artifacts.csv_flatten import flattener_for
 from ffdraft.artifacts.schemas import (
     record_field_order,
     validate_envelope,
@@ -297,14 +298,24 @@ def _csv_agreement(
                 expected="header + one row per record",
             ),
         ]
-    expected_header = list(record_field_order(spec.schema_name))
+    # An artifact whose JSON record nests declares a CSV projection instead of inheriting
+    # the schema's field order (ADR-065). The header is still fixed and still checked -
+    # what changes is which declaration it is checked against.
+    flattener = flattener_for(spec.artifact)
+    expected_header = (
+        list(flattener[0]) if flattener else list(record_field_order(spec.schema_name))
+    )
     checks: list[QualityCheck] = []
     if rows[0] != expected_header:
         checks.append(
             QualityCheck.fail(
                 "artifact.csv_header_mismatch",
                 stage=stage,
-                message=f"{path.name} columns must match the record schema order",
+                message=(
+                    f"{path.name} columns must match its declared CSV projection"
+                    if flattener
+                    else f"{path.name} columns must match the record schema order"
+                ),
                 observed=", ".join(rows[0]),
                 expected=", ".join(expected_header),
             ),

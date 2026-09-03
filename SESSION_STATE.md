@@ -4,6 +4,187 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Phase 10 — implemented 2026-09-02; exit gate partially met.** One criterion failed on
+measured evidence (FantasyPros publication) and is recorded rather than rounded up. Phase 11
+has **not** been started.
+
+| | |
+|---|---|
+| Branch | `claude/phase-10-implementation-kqjelv` |
+| Source evidence | `docs/source-probes/2026-09-02/phase10-report.md` |
+| Decisions | ADR-060 … ADR-066 |
+| Probe runs | [33642792347](https://github.com/jeisey/jeisey-tiers/actions/runs/33642792347), [33643152957](https://github.com/jeisey/jeisey-tiers/actions/runs/33643152957), [33643545952](https://github.com/jeisey/jeisey-tiers/actions/runs/33643545952), [33643980189](https://github.com/jeisey/jeisey-tiers/actions/runs/33643980189) |
+| Linkage run | [33650112635](https://github.com/jeisey/jeisey-tiers/actions/runs/33650112635) |
+| Contracts | `market_quote` 3.0, `arbitrage_record` 1.2, `sleeper_behavior_snapshot` 1.0, `market_trend_series` 1.0 |
+| Method versions | `phase10_linkage_v1`, `phase10_multimarket_v1`, `phase10_surface_v1`, `phase10_tier_depth_v2` |
+| New dependency | `rapidfuzz>=3.9` (MIT), lockfile committed |
+
+### Accepted source dispositions
+
+| Source | Disposition | Semantics that must not be flattened |
+|---|---|---|
+| `fantasyfootballcalculator_adp` | **production_allowed** | ADP; **rolling 7-day** window; scoring exact (STD/HALF/PPR); **league size null and not claimable**; genuine per-player `stdev`; `high`/`low` are order statistics, not an SD |
+| `myfantasyleague_adp` | production_allowed, **unchanged** | ADP; **season-cumulative**; `adp_sd` permanently null; cohort exactness is a per-preset verdict |
+| `fantasypros_ecr` | **verify_before_use — retained, NOT published** | ECR only; dispersion measured in ranks; no ADP exists at this tier |
+| `sleeper` | production_allowed | Player map once/day; add/drop are **behaviour**, never a price; `search_rank` is not ADP |
+| ESPN | **disabled**, unchanged | — |
+
+### FFC probe results (2026-09-02)
+
+- Schema: `player_id, name, position, team, adp, adp_formatted, times_drafted, high, low, stdev, bye`; envelope `status, meta, players`; `meta.{type,teams,rounds,total_drafts,start_date,end_date}`. All fields 100% populated.
+- **`teams=` accepted and ignored** — byte-identical per player across 8/10/12/14 in all three formats, **zero rows differing in nine comparisons**. ADR-056 reproduced, not overturned.
+- Cohorts: standard 221 rows / 186 core / 1,794 drafts / deepest ADP 172.6; half-ppr 233 / 3,142 / 188.6; ppr 264 / 8,007 / 201.1.
+- **Window: 7 days** (2026-08-26 → 2026-09-02). MFL is cumulative.
+- `stdev` 221/221 populated, range 0.60–31.90.
+- **FFC's whole population is under 300 rows**, so "FFC top 300" is the whole source.
+- CSV path returns HTML; the JSON path with an explicit `year` is the reproducible one.
+
+### FFC linkage
+
+```text
+rule phase10_linkage_v1   source rows 270 (48 non-core excluded)
+relevant 222   accepted 222 (100.000%)   quarantined 0   top-300 unresolved 0
+gate >= 90% -> PASS      accepted_by_method {resolved_exact_name_position: 222}
+```
+
+- Alias file: `config/market-aliases/fantasyfootballcalculator_adp.yaml` (222 entries).
+- Report/quarantine: `docs/source-probes/2026-09-02/fantasyfootballcalculator_adp-linkage/`.
+- **Every row matched exactly**; the fuzzy path was not needed once. It stays for the rookie spellings and mid-season signings that will arrive.
+- `ffb_ids` enrichment: **not used and not vendored.** Coverage was 100% without it, and the roadmap makes it conditional on needing help. The licensing question it raises was therefore never reached.
+- Generated aliases never outrank `config/identity-aliases.yaml`, which loads last.
+
+### FantasyPros — the failed criterion
+
+**The provisioned key is on the free tier.** Every response: `public_api_limited: true`,
+`tier: "free"`, exactly ten rows. `limit`, `offset`, `start`, `page`, `max_results` and
+`ranks` all returned the same ten rows and the same first player. Per-position calls reach
+**40 distinct players** across QB/RB/WR/TE, against a documented `count` of 407 receivers and
+225 tight ends.
+
+**There is no ADP at all**: `/json/nfl/{season}/adp` → `403 Missing Authentication Token`;
+`type=adp` returns the ECR row shape with no ADP field.
+
+Endpoint that works: `GET /public/v2/json/nfl/{season}/consensus-rankings?position={QB|RB|WR|TE|FLX|ALL}&scoring={STD|HALF|PPR}&type=draft&week=0`.
+`position=ALL` 400s without `type=draft&week=0`.
+
+Captured fields: `rank_ecr, rank_ave, rank_min, rank_max, rank_std, pos_rank, tier,
+player_ecr_delta, total_experts (93–109), last_updated ("9/02" — no year, no time, never
+promoted to `source_as_of_utc`)`. Scoring axis genuinely reorders.
+
+**Identity: joins by id, no linkage needed** — `sportsdata_id` 40/40 via Sportradar,
+`player_yahoo_id` 36/40 via Yahoo.
+
+**Budget:** 50/day (half the vendor's 100), 1 req/sec, both enforced in `RequestBudget`;
+deterministic 12-request plan (4 positions × 3 scoring). Key read from `FANTASYPROS_API_KEY`
+in Actions only, sent as `x-api-key`, never a query string, never printed or cached.
+
+**Revisit condition (exact, and tested on every capture):** a key whose responses omit
+`public_api_limited` (or set it false) and whose `count` equals the rows delivered. Then flip
+`MarketSourceSpec.publishable` — one line.
+
+### Sleeper measurements
+
+Player map 14,651,318 bytes (13.97 MiB) / 12,226 records / 4,041 core; `player_id` 1.000,
+`sportradar_id` 0.948, `yahoo_id` 0.559, `espn_id` 0.547, `gsis_id` 0.312, `search_rank` 0.974.
+Once-per-day rule unchanged. Trending returns a **bare list** of `{player_id, count}` with no
+timestamp, so the snapshot records the request: `limit` honoured exactly (5/25/100),
+`lookback_hours` honoured (6h vs 24h share 24 of 25 ids; 6h vs 72h, 22).
+
+### Tier depth and surface coverage
+
+`phase10_tier_depth_v2` = **500**, superseding `phase4_tier_depth_v1` = 300, which is retained
+so a Release 1 board stays reproducible.
+
+**It is a reasoned choice, not a measured optimum.** `scripts/phase10_depth_analysis.py` was
+written to measure it from the joined board and found the question **unanswerable from
+published artifacts**: an arbitrage row exists only for a player already on the tier board,
+so against a board published at depth 300 every "priced players beyond 300" count is zero
+*by construction*. Run [33655647823](https://github.com/jeisey/jeisey-tiers/actions/runs/33655647823)
+returned nine blocks of zeros; reading that as "300 is fine" would have been the
+wrong-denominator mistake ADR-054 recorded elsewhere. The script now detects the circularity
+and refuses to conclude from it.
+
+Bounds that *are* measured: 300 is definitively too shallow (the roadmap's own motivating
+case is one priced player beyond it); FFC's whole population is 221–264 rows with a deepest
+ADP of 201.1; the deepest launch preset drafts 182 players. 500 is the smallest simple value
+with headroom over the one measured bound.
+
+**The safety net is the thing that was missing before.** The surface coverage gate is
+*critical*: if 500 is ever too shallow a resolved top-market player fails the build rather
+than disappearing quietly. Answering the question properly needs the full intrinsic board
+joined against a market snapshot — a production build with the retained store attached — and
+the first live multi-source refresh is where to re-check it.
+
+Surface coverage required: **100%** of resolved top-market rows, enforced as a **critical**
+check. Unresolved source rows are counted separately and never enter the denominator.
+
+### UI
+
+Market selector on Arbitrage: derived from what the build published, defaulting to **FFC
+Recent** for draft week, with `Cross-market` offered only when two markets actually priced
+someone. Window and observed-dimension text beside it. Per-source column headers; ECR in its
+own column with `ecr_gap`; a `Spread` column that is null — not zero — when one market spoke.
+Player card gains the full comparison table and the mini trend chart. Selection is in the URL
+as `?market=`, validated for shape rather than membership so a link from a build with one
+more source still opens. CSV gains twelve columns naming source and signal.
+
+### Market-trend chart
+
+`market_trend_series.json`, contract 1.0, generated from the retained snapshots. **Inverted y
+axis** — up is earlier, up is more expensive — with the direction in text as well as colour.
+Below three points it says so in words. The browser calls no vendor; a bundle test asserts the
+fetch list contains no vendor host. The scalar `market_trend` remains for sorting, CSV and the
+accessible summary.
+
+### Commands and gates run
+
+```bash
+uv run ruff check . && uv run ruff format --check .   # clean
+uv run mypy                                            # 118 files, clean
+uv run pytest                                          # 1,196 passed, 4 live-network deselected
+uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000
+uv run ffdraft validate-artifacts <fixture build>      # 0 critical, 0 warning
+npm ci && npm run lint && npm run typecheck            # 0 errors (2 pre-existing warnings)
+npm run test -- --run                                  # 270 passed
+npm run build                                          # clean
+npm run e2e                                            # 70 passed (chromium, mobile, a11y)
+npx playwright test --project=smoke-chromium           # 13 passed
+```
+
+The fixture build itself reports **0 critical, 5 warning** — every warning is a fixture that
+exists to exercise a fail-closed identity path, and each is asserted by name in the pipeline
+tests. The Playwright runs used the sandbox's pre-installed Chromium
+(`PLAYWRIGHT_CHROMIUM_EXECUTABLE`), which is what `playwright.config.ts` already looks for.
+**`npm run e2e:browsers` — the Firefox and WebKit smoke gate — cannot run here**, because
+those two browsers are not present in the sandbox and are not downloadable through its egress
+policy (ADR-059). It ran on a runner instead: `ci.yml` triggers on `pull_request`, so the
+`browsers` job first ran when jeisey/jeisey-tiers#27 opened, and it **passed** — Firefox and
+WebKit against the Phase-10 market selector, per-source headers and hand-drawn trend SVG.
+
+New CLI: `ffdraft capture-market-source <source>`, `ffdraft link-market-source`.
+New workflows: `source-probe-phase10.yml` (dispatch/request, inert),
+`phase10-linkage.yml` (dispatch/request, commits the alias file).
+
+### What Phase 11 inherits, and what it must not assume
+
+- The multi-source **code path** is complete and fixture-tested; the **published** board still
+  needs one production refresh that captures FFC into the private store. Nothing further is
+  required in this repository for that.
+- Every gate has now run somewhere: `chromium`, `mobile`, `a11y` and `smoke-chromium` in this
+  sandbox, and the Firefox/WebKit cross-browser smoke on a runner, green on the PR. ADR-059
+  still holds — that gate is runner-only here and must not be assumed reproducible locally.
+- Sleeper add/drop retention is implemented but **has not yet run in production**, so the
+  in-season history Phase 12 expects starts accumulating from the first refresh that includes
+  it — not from today.
+- The V1 intrinsic model, its methodology, its feature set and its fair ranks are untouched.
+  Nothing in Phase 10 reads market data into an intrinsic feature, and the forbidden-feature
+  guard still covers it.
+
+---
+
+## Previous phases
+
+
 **Phase 9B — complete. V1.0.0 released (2026-09-01).**
 
 | | |

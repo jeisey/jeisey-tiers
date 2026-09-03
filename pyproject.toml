@@ -22,6 +22,11 @@ dependencies = [
     "polars>=1.0",
     "pydantic>=2.9",
     "pyyaml>=6.0",
+    # Phase 10 (ADR-061). The FFC linkage needs a normalized Levenshtein similarity over a
+    # few hundred football names, and RapidFuzz is a small, MIT-licensed, C++-backed library
+    # that does exactly that. `AGENTS.md` section 13 asks for a small mature dependency
+    # rather than an entity-resolution framework, which is what this is.
+    "rapidfuzz>=3.9",
     "requests>=2.32",
     "rfc3339-validator>=0.1.4",
     "ruptures>=1.1.9",

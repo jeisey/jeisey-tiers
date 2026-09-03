@@ -1894,3 +1894,178 @@ Chromium is in the smoke suite as well as the other two, so a smoke failure can 
 - **removed** `d3-scale`, `d3-array` and their `@types` packages. The Phase-8 encodings are CSS geometry rather than SVG, so nothing imports them. They were in ADR-048's set because Phase 6's charts used `scaleLinear`; keeping an unused runtime dependency in a published bundle is exactly the "unnecessary dependency" the Phase-8 review asks about.
 
 The frontend's production dependency set is now `react`, `react-dom` and `@tanstack/react-table`. Still no router, no UI kit, no charting framework, no CSS framework.
+
+---
+
+## ADR-060 — The Phase-10 source evidence is taken on a runner, four passes deep, and the FantasyPros answer is not the one the roadmap expected
+
+**Date:** 2026-09-02 (Phase 10)
+
+**Status:** **Accepted.** Evidence: `docs/source-probes/2026-09-02/phase10-report.md`, runs [33642792347](https://github.com/jeisey/jeisey-tiers/actions/runs/33642792347), [33643152957](https://github.com/jeisey/jeisey-tiers/actions/runs/33643152957), [33643545952](https://github.com/jeisey/jeisey-tiers/actions/runs/33643545952) and [33643980189](https://github.com/jeisey/jeisey-tiers/actions/runs/33643980189).
+
+**Context.** `AGENTS.md` section 3 forbids writing an adapter against a remembered schema, and the development sandbox's egress policy denies all four Phase-10 vendor hosts — the same constraint ADR-009 and ADR-053 recorded, unchanged. `docs/RELEASE2_ROADMAP.md` 10.1 also asks the phase *not* to rediscover settled facts, and to re-probe only what can change operationally.
+
+**Decision.** Three probe scripts and one dispatch-only workflow, and a rule about how far to keep asking: a probe stops when the answer decides something, and asks again when the answer raises a question that decides something else. That took four passes, and only the first was planned.
+
+Run 1 answered FFC and Sleeper completely and gave FantasyPros an answer that looked like a schema and was actually a symptom: ten rows, `count: 1777`, `public_api_limited: true`. Run 2 asked whether that was a page size, trying `limit`, `offset`, `start`, `page`, `max_results` and `ranks`; all eight variants returned the same ten rows and the same first player. Run 3 asked what the key could reach anyway — forty players across the four core positions, no ADP field in any response, `/adp` a 403 — and ran out of its own budget one section short. Run 4 spent four requests on that section rather than re-asking the thirty questions that already had answers.
+
+**The probes are budget-aware because the budget is the constraint.** `scripts/probe_fantasypros.py` counts its own requests, refuses to exceed its allowance, paces at one per second, and routes every printed line through a guard that suppresses any line containing the API key. The job log of a public repository is world-readable; that guard is not decoration, and it is the reason the key can be used in a public-repo workflow at all.
+
+**Discovery before assumption.** The FantasyPros probe fetches the published documentation and probes the paths the vendor names. When the documentation yielded no machine-readable path list, the probe said so and labelled its fallback list *candidates* — so a 404 is recorded as a measurement rather than mistaken for a schema.
+
+**What this changes.** ADR-062 productionises FFC. ADR-064 records why FantasyPros ships as an implemented, retained, unpublished source. Nothing about MyFantasyLeague moves.
+
+---
+
+## ADR-061 — FFC identity is a one-time linkage with a reviewable artifact, not a nightly fuzzy match
+
+**Date:** 2026-09-02 (Phase 10)
+
+**Status:** **Accepted and implemented.** Measured: 222 of 222 relevant rows, **100.000%** coverage, zero quarantined, against a 90% gate. Evidence: `docs/source-probes/2026-09-02/fantasyfootballcalculator_adp-linkage/report.json`, run [33650112635](https://github.com/jeisey/jeisey-tiers/actions/runs/33650112635).
+
+**Context.** `AGENTS.md` section 6 forbids a production join that depends solely on normalized names. MyFantasyLeague obeys that by construction: its export carries an `espn_id`, the registry indexes it, and a second bridge cross-checks the first. Fantasy Football Calculator publishes an internal `player_id` that maps to nothing outside FFC, and no bridge exists to build.
+
+**Decision.** Split the join in two. The *proposal* is name-derived, runs once, and produces a file a person can read; the *production join* is an exact id lookup against that file. `ffdraft link-market-source` writes `config/market-aliases/fantasyfootballcalculator_adp.yaml` plus a machine-readable coverage report and a quarantine CSV; `ffdraft capture-market-source` never scores a name.
+
+That is what makes this acceptable rather than a loophole. The fuzzy step is auditable, dated, versioned, and never repeated for a player already in the file.
+
+**The rules, and why each exists.**
+
+- **Block on position, exactly.** A QB may never reach an RB however similar the names. The blocking key is the same exact `Position.parse` table the rest of the project uses, so a team-unit token like `TMWR` cannot become WR.
+- **Never block on team.** Teams go stale around trades and free agency. Team agreement is a tie-break and a diagnostic; the gold set contains a row whose team is wrong and which must still resolve.
+- **Refuse on ambiguity.** A tie, a thin margin, or two canonical players who normalize to one name each quarantine with a reason. The failure being avoided is a confident wrong answer, not a missing one.
+- **Surface the top-300 tail separately.** A 92% aggregate that hides three second-round picks is worse than an 88% one that does not.
+
+**The gold set changed the code, not the other way round.** It exposed that `ffdraft.identity.names.normalize_name` — correct for the resolver's diagnostics — replaces all punctuation with a space, leaving `de andre` against `deandre` for one man's name. Linkage therefore has its own key, `linkage_key`, differing by exactly one rule: an apostrophe or a period is elided because it carries no word boundary, while a hyphen still becomes one. Two gold expectations were also wrong and were corrected to what the rule *should* do — Jonah is not Jonas, and a 91.7 near-miss at the same position is a refusal.
+
+**RapidFuzz, not an entity-resolution framework** (`AGENTS.md` section 13). A few hundred football names need a normalized indel similarity, which is one small MIT-licensed dependency. `fuzz.ratio` rather than a token-set ratio, deliberately: a partial ratio treats "Michael Thomas" and "Thomas" as near-identical, which is exactly wrong at a position where several real players share a surname.
+
+**The measured result is stronger than the gate.** Every one of the 222 accepted rows resolved by *exact* normalized name and position; the fuzzy path was not needed once against this population. That is not an argument for removing it — it is the machinery that keeps a future rookie spelling or a mid-season signing from silently going unpriced — but it does mean today's alias file rests entirely on exact matches, which is worth knowing when reading it.
+
+**Generated aliases never outrank reviewed ones.** `config/identity-aliases.yaml` is loaded last and wins. A machine's reading of a name must not overwrite a person's decision about a player, usually written down precisely because the automatic path could not see him (ADR-019, ADR-054).
+
+---
+
+## ADR-062 — Fantasy Football Calculator ships; `teams` is still ignored, and the window is not MyFantasyLeague's
+
+**Date:** 2026-09-02 (Phase 10)
+
+**Status:** **Accepted and implemented.** Supersedes ADR-053's deferral. Confirms ADR-056's `teams` finding rather than overturning it.
+
+**Context.** ADR-056 measured FFC in Phase 8 and ADR-053 deferred the integration because the volume problem it would have solved had solved itself. `docs/RELEASE2_ROADMAP.md` 10.1.1 reopens the integration and forbids reopening the general question.
+
+**Decision.** FFC becomes a production ADP source with three exact scoring cohorts and an explicitly unknowable league size.
+
+**`teams` is accepted and ignored — reproduced exactly.** Per-player `adp` and `times_drafted` compared across 8/10/12/14-team requests in all three formats: **zero rows differ in any of the nine comparisons**. ADR-056 stands, no successor is written, and `league_size` is null on every FFC quote with a `league_size_not_observed` flag saying the null is a refusal to claim rather than a gap. A semantic check fails the build if any FFC row ever carries one.
+
+**The window is the finding this ADR adds.** `meta.start_date`/`end_date` came back as `2026-08-26`/`2026-09-02`: a **seven-day rolling window**. MyFantasyLeague aggregates the season to date. Both are called "ADP" and they are not the same measurement, so `market_quote` 3.0 carries an `aggregation_window_type`, the UI prints it beside the selector, and a semantic check refuses to let an FFC row claim to be cumulative. Presenting the two as interchangeable would be the opaque consensus Release 2's guardrail 2.3 forbids.
+
+**Dispersion is two fields, not one.** FFC publishes `stdev` (221/221 populated, 0.60–31.90) *and* `high`/`low`. A standard deviation and two extreme order statistics are different quantities: the first estimates spread, the second widen with sample size. They occupy `adp_sd` and `min_pick`/`max_pick` respectively, and MyFantasyLeague's permanent `adp_sd` null is enforced by its own check.
+
+**`high`/`low` are ordered numerically rather than by their labels.** FFC's table reads "High" for the *earliest* pick, which is the smaller number — the opposite of how "high" reads in English. The adapter sorts the pair, so it is correct under either convention and a vendor that swapped them could not silently invert a published range. The observed orientation is counted into the batch detail as evidence instead of being trusted.
+
+**Cadence.** One request per cohort per day, three cohorts, with a descriptive contactable User-Agent. FFC's published terms permit API use with attribution and ask clients not to poll unnecessarily; every downstream stage reads the retained snapshot.
+
+**Volume, for the record:** standard 1,794 drafts / 221 rows, half-PPR 3,142 / 233, PPR 8,007 / 264. The deepest ADP is 201.1. **FFC's entire population is smaller than 300**, so "FFC top 300" means the whole of FFC — which is what the surface rule uses, because the rule asks for the top of each market, not for a market to have 300 rows.
+
+---
+
+## ADR-063 — Three universes, not one `head(300)`
+
+**Date:** 2026-09-02 (Phase 10)
+
+**Status:** **Accepted and implemented.**
+
+**Context.** Release 1 published `board.head(config.board_depth)` with a frozen depth of 300. That single line was three decisions wearing one number, and it produced a real defect: a player the market was drafting around RB20–30 could be absent from the public Tier Board, the status artifact and every market comparison, because his intrinsic fair rank fell below 300 — with nothing anywhere that would notice.
+
+**Decision.** Separate the three decisions, and version the one that was frozen.
+
+1. **Intrinsic/model universe** — every eligible QB/RB/WR/TE the football-only model can value. Market-blind and unchanged.
+2. **Tier segmentation universe** — the contiguous fair-ranked prefix tiers are computed over. Versioned: `phase4_tier_depth_v1` (300) is kept so a Release 1 board stays reproducible, and `phase10_tier_depth_v2` supersedes it.
+3. **Public surface universe** — who is searchable and displayable, because either the model or current external evidence says he matters.
+
+**The invariant that makes this safe:** a market signal may change *whether a player is surfaced*; it may never change his projection, VORP, fair rank or tier. A surfaced player from beyond the tier depth therefore carries `outside_tier_board=true` and **no tier**, rather than a fabricated one. He has a fair rank — the model computed it — and that is exactly the number a reader needs beside a market price that disagrees with it.
+
+**Every surfaced player carries machine-readable reasons.** `SurfaceReason` is a closed vocabulary, and a source with no declared reason raises rather than producing an unlabelled row: a surfaced player nobody can explain later is worse than an error. The vocabulary is deliberately larger than draft mode needs, because Phase 12 must surface a third-string back who became the starter in week 6, and a contract that changes shape mid-season is a contract nobody trusts.
+
+**The coverage gate is critical, not a warning.** A warning is effectively what the old design had — nothing looked, so nothing complained. Resolved top-market players absent from the surface fail the build. Identity-unresolved source rows are counted **separately**, because folding them into the denominator is precisely how a coverage number stays at 100% while players go missing.
+
+**A regression test reproduces the original bug.** `test_a_market_relevant_player_below_the_tier_depth_cannot_disappear` surfaces a synthetic player at fair rank 640, and `test_the_old_truncated_board_would_fail_the_gate` feeds the rule a pre-truncated board and asserts it fails — proof the gate is load-bearing rather than decorative.
+
+**The depth itself is a reasoned choice, not a measured optimum, and that distinction is recorded rather than smoothed over.** Roadmap 10.5 asks for a depth chosen from the measured market-coverage distribution. `scripts/phase10_depth_analysis.py` was written to produce it and found the question unanswerable from published artifacts: an arbitrage row exists only for a player already on the tier board, so measured against a board published at depth 300, every "priced players beyond 300" count is **zero by construction** — including the deepest-priced figure the choice depends on. Run [33655647823](https://github.com/jeisey/jeisey-tiers/actions/runs/33655647823) returned exactly that, nine blocks of zeros, and reading it as "300 is sufficient" would have been the wrong-denominator mistake ADR-054 recorded in a different place. The script now detects the circularity and refuses to conclude from it.
+
+What remains measured, and does bound the choice: 300 is definitively too shallow, because the roadmap's own motivating case is one market-priced player beyond it and one is enough; FFC's whole published population is 221–264 rows with a deepest ADP of 201.1; and the deepest launch preset drafts 182 players. **500 is the smallest simple value with real headroom over the one bound that is measured.**
+
+What makes an unmeasured depth acceptable here is the thing that was missing before: the surface coverage gate is **critical**. If 500 is ever too shallow, a resolved top-market player fails the build rather than disappearing quietly. The unguarded 300 had no such backstop, which is why it failed silently for a whole preseason. Answering the question properly needs the full intrinsic board joined against a market snapshot — a production build with the retained store attached — and the first live multi-source refresh is where that happens.
+
+---
+
+## ADR-064 — FantasyPros is implemented, retained, and not published: the key's tier serves ten rows and no ADP
+
+**Date:** 2026-09-02 (Phase 10)
+
+**Status:** **Accepted.** This is a **failed exit criterion**, recorded rather than rounded up. Evidence: `docs/source-probes/2026-09-02/phase10-report.md` section 2.
+
+**Context.** `docs/RELEASE2_ROADMAP.md` 10.1.3 promotes FantasyPros from `benchmark_only` to an approved production source for **both ADP and ECR**, publicly visible in the Tier and Arbitrage surfaces, with the owner's key already provisioned as `FANTASYPROS_API_KEY`. The roadmap notes responses are truncated and instructs the probe to find the official strategy for complete coverage — and warns, in item 7, not to mistake a truncated response for a complete top-300 market.
+
+**What was measured.** The key is on the **free** tier. Every response carries `public_api_limited: true` and returns exactly **ten rows**; `limit`, `offset`, `start`, `page`, `max_results` and `ranks` were each tried and all eight variants returned the same ten rows and the same first player. There is no pagination to find. Per-position calls widen the *population* to the top ten of each, giving **forty distinct players** across QB/RB/WR/TE — against a documented `count` of 407 receivers and 225 tight ends alone.
+
+**And there is no ADP at all.** `/json/nfl/{season}/adp` answers `403 Missing Authentication Token`; `type=adp` on the consensus endpoint returns the ECR row shape with no ADP-like field. A `fantasypros_adp` column would have nothing behind it.
+
+**Decision.** Build it completely and publish nothing from it.
+
+The adapter, the 50/day budget (half the vendor's stated 100, per the roadmap), the one-request-per-second pacing, the header-only key handling, the deterministic 12-request call plan and the append-only retention all ship and are tested. `MarketSourceSpec.publishable` is `False` with the reason attached, `semantic_checks` raises a **critical** check whenever a response declares itself limited, and the capture records the source as retained-not-published. Enabling it is a one-line registry change the day a key without the cap is provisioned.
+
+**Why not ship the forty rows.** Because they would be read as "FantasyPros ECR" — a consensus — and they are 13% of one position. The roadmap's own surface gate compounds this: it requires 100% of each enabled source's top 300 to be publicly reachable, which is unevaluable for a source whose top 300 cannot be retrieved. Enabling FantasyPros would therefore make an honest gate dishonest. Publishing nothing keeps every other gate meaningful and makes the enablement trivial later.
+
+**What did come out of it.** FantasyPros joins **by id**, not by name: `sportsdata_id` resolved 40/40 through the Sportradar index and `player_yahoo_id` 36/40 through Yahoo. It needs none of FFC's linkage. And the ECR itself is real and correctly scoped — `rank_ecr`, `rank_ave`, `rank_min/max/std`, `pos_rank`, 93–109 experts, and STD/HALF/PPR genuinely reorder — so the moment the tier allows a complete response, the work is done.
+
+**Attribution ships regardless.** `Data` → `07 Sources and attribution` names FantasyPros, says the key never reaches the page, and says why no number is published. A source read server-side is a source used, and their terms ask for attribution whether or not a number is displayed.
+
+**Revisit when:** a key whose responses omit `public_api_limited` (or set it false) and whose `count` equals the rows delivered. That is the exact, checkable condition, and the adapter already tests for it on every capture.
+
+---
+
+## ADR-065 — One comparison per source, and a median that is never promoted to a price
+
+**Date:** 2026-09-02 (Phase 10)
+
+**Status:** **Accepted and implemented.** `arbitrage_record` 1.1 → **1.2**, additive.
+
+**Context.** Release 1 had one price and one gap, so "the market" needed no qualification. Release 2 has several. Release 2's guardrail 2.3 forbids averaging unlike market signals into an opaque consensus, and roadmap 10.4 requires every published comparison to be reconstructable from its components.
+
+**Decision.** Compute one independent comparison per source using A0's frozen arithmetic (ADR-040) unchanged — `rank_gap = market_adp − fair_rank`, `regional_value_gap = ln(market_adp / fair_rank)` — and add a cross-market summary that is labelled a summary everywhere it appears.
+
+**Additive, not a rewrite.** Every 1.1 field keeps its exact meaning and its MyFantasyLeague provenance, so a Release 1 consumer reading by name still finds what it read before (guardrail 2.1). The MFL entry inside `markets` is derived from the same `MarketPrice` the flat fields are written from, so the two views cannot drift.
+
+**ECR is separated structurally, not by convention.** `markets[].market_signal_type` is `const: "adp"` and `expert_consensus.market_signal_type` is `const: "ecr"` in the schema; the cross-market summary filters on signal type; and the consensus gap is named `ecr_gap` rather than `rank_gap`, so a caller reaching for the wrong field gets an `AttributeError` instead of a plausible number. There is no code path that can put an expert rank into `market_adp_median`.
+
+**Expert dispersion gets its own columns.** FantasyPros publishes `rank_ave`, `rank_min`, `rank_max` and `rank_std` across ninety-odd experts. Those are measured in *ranks*; writing them into `min_pick`/`max_pick`/`adp_sd` would put an expert-rank spread under a column named after a draft pick. `consensus_rank_*` exists for exactly that reason.
+
+**`market_adp_median` is a convenience.** The sources describe different populations over different windows — FFC's rolling week against MyFantasyLeague's whole season — so a median across them is a summary with a caveat, and promoting it to canonical would require its own frozen methodology first. The interesting number beside it is `market_disagreement_range`, which is the thing a single-source board could not tell you.
+
+**`league_size` is null unless it was observed.** `MarketPrice.league_size` is the *preset's* team count; it becomes an observation only when the selection rule found an exact cohort (ADR-039). An approximate cohort priced "any league size", so the column stays null — the same refusal FFC's null expresses, reached for a different reason.
+
+**CSV needed a real answer.** A cell holds a scalar, and `str()` on an array of comparisons produces a Python repr. An artifact may now declare a *projection*: an explicit ordered column set and the function that fills it. The arbitrage projection names the source and the signal in every column, because roadmap 10.6 asks for explicit names and because a flattened CSV is exactly where the JSON's structural separation could quietly be undone.
+
+---
+
+## ADR-066 — The market trend is drawn from a published artifact, and up means earlier
+
+**Date:** 2026-09-02 (Phase 10)
+
+**Status:** **Accepted and implemented.** New artifact `market_trend_series.json`, record contract 1.0.
+
+**Context.** Release 1 published the trend as a bare number — `-3.11`, "moving later (less expensive)". Accurate, and hard to feel: a steady drift and a two-day collapse produce the same slope, and only one of them is news. Roadmap 10.7 asks for the same quantity as a shape.
+
+**Decision.** Publish the points, and draw them small.
+
+**The browser must never call a vendor.** A chart that fetched history client-side would put a vendor on the critical path of a static page and would leak the reader's interest to a third party. So the series is generated at build time from the append-only snapshot store the trend was already computed over, published as its own artifact, and fetched like every other `/data/*.json`. The frontend bundle test asserts the fetch list contains no vendor host.
+
+**The orientation is the design problem.** Lower ADP means *earlier* — more expensive, more wanted. Plotted naively, "the market likes him more" is a line that falls, which is the opposite of what a reader's eye reports. The y axis is inverted, the axis is labelled to say so, and the caption prints an arrow *and* a word so the direction survives greyscale and a screen reader. A test asserts the path's last y coordinate is above its first when the ADP fell.
+
+**Sparse history is a state, not an empty chart.** Below three points the component says so in words. Two points make a line that implies a trend the store cannot support, and the store is genuinely young for any newly captured source.
+
+**The scalar stays.** `market_trend` still sorts the table, still exports to CSV, and is still what the accessible summary reads. The chart draws the history that produced it; it does not replace it.
+
+**Scoped to the published surface.** A series for a player no card can open is weight every visitor downloads for nothing. The restriction is by *published row* rather than by tier depth, so a market-surfaced exception (ADR-063) keeps its chart.

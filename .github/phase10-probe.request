@@ -1,0 +1,15 @@
+# Editing this file starts `source-probe-phase10.yml` on the branch it is pushed to.
+#
+# `workflow_dispatch` is unavailable until a workflow reaches the default branch, and the
+# Phase-10 measurements have to be taken before the branch is mergeable — the adapters this
+# phase ships must be written against a measured schema, not a remembered one (AGENTS.md
+# section 3). This is the same request-file mechanism `.github/market-capture.request` uses.
+#
+# `fantasypros_args` selects what runs. Empty runs every probe. `--identity-only` runs the
+# single FantasyPros identity section. `depth` runs the tier-depth analysis instead of the
+# vendor probes — it reads this project's OWN published artifacts, so it touches no vendor
+# and spends none of the FantasyPros quota.
+run: 5
+sources: depth-analysis
+fantasypros_args: depth
+requested_for: "Phase 10 — measure the V2 tier depth against the joined board, per roadmap 10.5"

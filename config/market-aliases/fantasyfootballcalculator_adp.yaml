@@ -1,0 +1,1563 @@
+# GENERATED - do not hand-edit.
+#
+# Produced by `ffdraft link-market-source fantasyfootballcalculator_adp` under rule phase10_linkage_v1 on 2026-09-02.
+# Coverage: 222/222 (100.000%) against a 90% gate.
+# Quarantined: 0. Regenerate to refresh; a correction a person
+# decides belongs in config/identity-aliases.yaml, which outranks this file and
+# which a regeneration cannot overwrite.
+schema_version: '1.0'
+aliases:
+- source_id: fantasyfootballcalculator_adp
+  external_id: '1004'
+  player_id: gsis:00-0023459
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Aaron Rodgers (QB)
+    -> Aaron Rodgers, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '1664'
+  player_id: gsis:00-0026498
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Matthew Stafford (QB)
+    -> Matthew Stafford, score 100.0, margin 37.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '1980'
+  player_id: gsis:00-0030565
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Geno Smith (QB) ->
+    Geno Smith, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '1989'
+  player_id: gsis:00-0030506
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Travis Kelce (TE)
+    -> Travis Kelce, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '1992'
+  player_id: gsis:00-0030279
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Keenan Allen (WR)
+    -> Keenan Allen, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2111'
+  player_id: gsis:00-0031408
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Mike Evans (WR) ->
+    Mike Evans, score 100.0, margin 23.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2125'
+  player_id: gsis:00-0031381
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Davante Adams (WR)
+    -> Davante Adams, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2316'
+  player_id: gsis:00-0031588
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Stefon Diggs (WR)
+    -> Stefon Diggs, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2322'
+  player_id: gsis:00-0031610
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Darren Waller (TE)
+    -> Darren Waller, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2350'
+  player_id: gsis:00-0032764
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Derrick Henry (RB)
+    -> Derrick Henry, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2351'
+  player_id: gsis:00-0033106
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jared Goff (QB) ->
+    Jared Goff, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2354'
+  player_id: gsis:00-0033090
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Hunter Henry (TE)
+    -> Hunter Henry, score 100.0, margin 30.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2365'
+  player_id: gsis:00-0033119
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jacoby Brissett (QB)
+    -> Jacoby Brissett, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2377'
+  player_id: gsis:00-0033077
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Dak Prescott (QB)
+    -> Dak Prescott, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2434'
+  player_id: gsis:00-0033280
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Christian McCaffrey
+    (RB) -> Christian McCaffrey, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2439'
+  player_id: gsis:00-0033906
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Alvin Kamara (RB)
+    -> Alvin Kamara, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2441'
+  player_id: gsis:00-0033526
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Samaje Perine (RB)
+    -> Samaje Perine, score 100.0, margin 38.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2444'
+  player_id: gsis:00-0033537
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Deshaun Watson (QB)
+    -> Deshaun Watson, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2449'
+  player_id: gsis:00-0033908
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Cooper Kupp (WR) ->
+    Cooper Kupp, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2462'
+  player_id: gsis:00-0033873
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Patrick Mahomes (QB)
+    -> Patrick Mahomes, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2465'
+  player_id: gsis:00-0033921
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chris Godwin Jr. (WR)
+    -> Chris Godwin Jr., score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2470'
+  player_id: gsis:00-0033553
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: James Conner (RB)
+    -> James Conner, score 100.0, margin 27.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2499'
+  player_id: gsis:00-0033288
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: George Kittle (TE)
+    -> George Kittle, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2507'
+  player_id: gsis:00-0033293
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Aaron Jones Sr. (RB)
+    -> Aaron Jones, score 100.0, margin 30.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2860'
+  player_id: gsis:00-0034844
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Saquon Barkley (RB)
+    -> Saquon Barkley, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2862'
+  player_id: gsis:00-0034348
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Courtland Sutton (WR)
+    -> Courtland Sutton, score 100.0, margin 37.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2866'
+  player_id: gsis:00-0034837
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Calvin Ridley (WR)
+    -> Calvin Ridley, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2872'
+  player_id: gsis:00-0034753
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Mark Andrews (TE)
+    -> Mark Andrews, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2876'
+  player_id: gsis:00-0034827
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: DJ Moore (WR) -> DJ
+    Moore, score 100.0, margin 26.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2884'
+  player_id: gsis:00-0034869
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Sam Darnold (QB) ->
+    Sam Darnold, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2885'
+  player_id: gsis:00-0034857
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Josh Allen (QB) ->
+    Josh Allen, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2886'
+  player_id: gsis:00-0034855
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Baker Mayfield (QB)
+    -> Baker Mayfield, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2888'
+  player_id: gsis:00-0034796
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Lamar Jackson (QB)
+    -> Lamar Jackson, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2896'
+  player_id: gsis:00-0034351
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Dallas Goedert (TE)
+    -> Dallas Goedert, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '2977'
+  player_id: gsis:00-0034383
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Dalton Schultz (TE)
+    -> Dalton Schultz, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3238'
+  player_id: gsis:00-0035685
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: David Montgomery (RB)
+    -> David Montgomery, score 100.0, margin 31.2'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3239'
+  player_id: gsis:00-0035640
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: DK Metcalf (WR) ->
+    DK Metcalf, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3246'
+  player_id: gsis:00-0035719
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Deebo Samuel Sr. (WR)
+    -> Deebo Samuel Sr., score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3247'
+  player_id: gsis:00-0035676
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: A.J. Brown (WR) ->
+    A.J. Brown, score 100.0, margin 22.2'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3255'
+  player_id: gsis:00-0035700
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Josh Jacobs (RB) ->
+    Josh Jacobs, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3264'
+  player_id: gsis:00-0035710
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Daniel Jones (QB)
+    -> Daniel Jones, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3266'
+  player_id: gsis:00-0034975
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Justice Hill (RB)
+    -> Justice Hill, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3299'
+  player_id: gsis:00-0035228
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kyler Murray (QB)
+    -> Kyler Murray, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3307'
+  player_id: gsis:00-0035229
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: T.J. Hockenson (TE)
+    -> T.J. Hockenson, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3435'
+  player_id: gsis:00-0035261
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tony Pollard (RB)
+    -> Tony Pollard, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3437'
+  player_id: gsis:00-0035535
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Darius Slayton (WR)
+    -> Darius Slayton, score 100.0, margin 38.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3449'
+  player_id: gsis:00-0035659
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Terry McLaurin (WR)
+    -> Terry McLaurin, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3453'
+  player_id: gsis:00-0035537
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ty Johnson (RB) ->
+    Ty Johnson, score 100.0, margin 25.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '3496'
+  player_id: gsis:00-0034960
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jakobi Meyers (WR)
+    -> Jakobi Meyers, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4861'
+  player_id: gsis:00-0036407
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jerry Jeudy (WR) ->
+    Jerry Jeudy, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4862'
+  player_id: gsis:00-0036275
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: D''Andre Swift (RB)
+    -> D''Andre Swift, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4863'
+  player_id: gsis:00-0036973
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Travis Etienne Jr.
+    (RB) -> Travis Etienne, score 100.0, margin 21.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4864'
+  player_id: gsis:00-0036223
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jonathan Taylor (RB)
+    -> Jonathan Taylor, score 100.0, margin 21.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4869'
+  player_id: gsis:00-0036358
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: CeeDee Lamb (WR) ->
+    CeeDee Lamb, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4870'
+  player_id: gsis:00-0036410
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tee Higgins (WR) ->
+    Tee Higgins, score 100.0, margin 28.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4872'
+  player_id: gsis:00-0036893
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Najee Harris (RB)
+    -> Najee Harris, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4873'
+  player_id: gsis:00-0036555
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chuba Hubbard (RB)
+    -> Chuba Hubbard, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4876'
+  player_id: gsis:00-0036322
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Justin Jefferson (WR)
+    -> Justin Jefferson, score 100.0, margin 24.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4880'
+  player_id: gsis:00-0036252
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Michael Pittman Jr.
+    (WR) -> Michael Pittman, score 100.0, margin 28.6'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4882'
+  player_id: gsis:00-0036442
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Joe Burrow (QB) ->
+    Joe Burrow, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4883'
+  player_id: gsis:00-0036912
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: DeVonta Smith (WR)
+    -> DeVonta Smith, score 100.0, margin 25.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4887'
+  player_id: gsis:00-0036355
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Justin Herbert (QB)
+    -> Justin Herbert, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4888'
+  player_id: gsis:00-0036158
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: J.K. Dobbins (RB)
+    -> J.K. Dobbins, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '4892'
+  player_id: gsis:00-0036264
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jordan Love (QB) ->
+    Jordan Love, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5020'
+  player_id: gsis:00-0036259
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jauan Jennings (WR)
+    -> Jauan Jennings, score 100.0, margin 25.9'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5025'
+  player_id: gsis:00-0036389
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jalen Hurts (QB) ->
+    Jalen Hurts, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5026'
+  player_id: gsis:00-0036244
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Colby Parkinson (TE)
+    -> Colby Parkinson, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5095'
+  player_id: gsis:00-0036139
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Rico Dowdle (RB) ->
+    Rico Dowdle, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5151'
+  player_id: gsis:00-0036040
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Juwan Johnson (TE)
+    -> Juwan Johnson, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5177'
+  player_id: gsis:00-0036900
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ja''Marr Chase (WR)
+    -> Ja''Marr Chase, score 100.0, margin 28.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5178'
+  player_id: gsis:00-0036613
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jaylen Waddle (WR)
+    -> Jaylen Waddle, score 100.0, margin 30.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5180'
+  player_id: gsis:00-0036550
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Rashod Bateman (WR)
+    -> Rashod Bateman, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5181'
+  player_id: gsis:00-0036970
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kyle Pitts Sr. (TE)
+    -> Kyle Pitts, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5182'
+  player_id: gsis:00-0036963
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Amon-Ra St. Brown
+    (WR) -> Amon-Ra St. Brown, score 100.0, margin 35.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5185'
+  player_id: gsis:00-0036997
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Javonte Williams (RB)
+    -> Javonte Williams, score 100.0, margin 21.2'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5186'
+  player_id: gsis:00-0036971
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Trevor Lawrence (QB)
+    -> Trevor Lawrence, score 100.0, margin 28.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5193'
+  player_id: gsis:00-0036894
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Pat Freiermuth (TE)
+    -> Pat Freiermuth, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5196'
+  player_id: gsis:00-0036919
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kenny Gainwell (RB)
+    -> Kenny Gainwell, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5207'
+  player_id: gsis:00-0036554
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Nico Collins (WR)
+    -> Nico Collins, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5210'
+  player_id: gsis:00-0036875
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Rhamondre Stevenson
+    (RB) -> Rhamondre Stevenson, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5277'
+  player_id: gsis:00-0037252
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Greg Dulcich (TE)
+    -> Greg Dulcich, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5330'
+  player_id: gsis:00-0037525
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jordan Mason (RB)
+    -> Jordan Mason, score 100.0, margin 21.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5334'
+  player_id: gsis:00-0037291
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jalen Nailor (WR)
+    -> Jalen Nailor, score 100.0, margin 25.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5337'
+  player_id: gsis:00-0037197
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Isiah Pacheco (RB)
+    -> Isiah Pacheco, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5360'
+  player_id: gsis:00-0038124
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Christian Watson (WR)
+    -> Christian Watson, score 100.0, margin 24.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5443'
+  player_id: gsis:00-0037228
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jaylen Warren (RB)
+    -> Jaylen Warren, score 100.0, margin 30.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5453'
+  player_id: gsis:00-0037809
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chig Okonkwo (TE)
+    -> Chig Okonkwo, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5503'
+  player_id: gsis:00-0038120
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Breece Hall (RB) ->
+    Breece Hall, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5544'
+  player_id: gsis:00-0037239
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chris Olave (WR) ->
+    Chris Olave, score 100.0, margin 27.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5545'
+  player_id: gsis:00-0038128
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Malik Willis (QB)
+    -> Malik Willis, score 100.0, margin 30.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5548'
+  player_id: gsis:00-0037740
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Garrett Wilson (WR)
+    -> Garrett Wilson, score 100.0, margin 35.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5561'
+  player_id: gsis:00-0038041
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jake Ferguson (TE)
+    -> Jake Ferguson, score 100.0, margin 26.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5564'
+  player_id: gsis:00-0039065
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Sam LaPorta (TE) ->
+    Sam LaPorta, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5574'
+  player_id: gsis:00-0037238
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Drake London (WR)
+    -> Drake London, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5576'
+  player_id: gsis:00-0037247
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: George Pickens (WR)
+    -> George Pickens, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5586'
+  player_id: gsis:00-0037816
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Romeo Doubs (WR) ->
+    Romeo Doubs, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5588'
+  player_id: gsis:00-0038117
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Wan''Dale Robinson
+    (WR) -> Wan''Dale Robinson, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5602'
+  player_id: gsis:00-0040743
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tyler Shough (QB)
+    -> Tyler Shough, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5605'
+  player_id: gsis:00-0037746
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Brian Robinson (RB)
+    -> Brian Robinson, score 100.0, margin 7.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5622'
+  player_id: gsis:00-0039811
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: MarShawn Lloyd (RB)
+    -> MarShawn Lloyd, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5623'
+  player_id: gsis:00-0037840
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kyren Williams (RB)
+    -> Kyren Williams, score 100.0, margin 22.6'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5625'
+  player_id: gsis:00-0038134
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kenneth Walker (RB)
+    -> Kenneth Walker III, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5626'
+  player_id: gsis:00-0037256
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Rachaad White (RB)
+    -> Rachaad White, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5636'
+  player_id: gsis:00-0037261
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Khalil Shakir (WR)
+    -> Khalil Shakir, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5641'
+  player_id: gsis:00-0037664
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Alec Pierce (WR) ->
+    Alec Pierce, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5643'
+  player_id: gsis:00-0037240
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jameson Williams (WR)
+    -> Jameson Williams, score 100.0, margin 22.6'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5648'
+  player_id: gsis:00-0037834
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Brock Purdy (QB) ->
+    Brock Purdy, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5652'
+  player_id: gsis:00-0037248
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: James Cook III (RB)
+    -> James Cook, score 100.0, margin 27.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5655'
+  player_id: gsis:00-0037263
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tyler Allgeier (RB)
+    -> Tyler Allgeier, score 100.0, margin 28.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5656'
+  player_id: gsis:00-0037744
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Trey McBride (TE)
+    -> Trey McBride, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5661'
+  player_id: gsis:00-0037838
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Isaiah Likely (TE)
+    -> Isaiah Likely, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5670'
+  player_id: gsis:00-0038542
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Bijan Robinson (RB)
+    -> Bijan Robinson, score 100.0, margin 7.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5671'
+  player_id: gsis:00-0038543
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jaxon Smith-Njigba
+    (WR) -> Jaxon Smith-Njigba, score 100.0, margin 37.9'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5672'
+  player_id: gsis:00-0039139
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jahmyr Gibbs (RB)
+    -> Jahmyr Gibbs, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5673'
+  player_id: gsis:00-0038994
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jordan Addison (WR)
+    -> Jordan Addison, score 100.0, margin 18.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5674'
+  player_id: gsis:00-0038544
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Quentin Johnston (WR)
+    -> Quentin Johnston, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5675'
+  player_id: gsis:00-0039064
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Zay Flowers (WR) ->
+    Zay Flowers, score 100.0, margin 30.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5676'
+  player_id: gsis:00-0039163
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: C.J. Stroud (QB) ->
+    C.J. Stroud, score 100.0, margin 40.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5677'
+  player_id: gsis:00-0039165
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Zach Charbonnet (RB)
+    -> Zach Charbonnet, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5678'
+  player_id: gsis:00-0039150
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Bryce Young (QB) ->
+    Bryce Young, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5680'
+  player_id: gsis:00-0038997
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Josh Downs (WR) ->
+    Josh Downs, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5683'
+  player_id: gsis:00-0039040
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: De''Von Achane (RB)
+    -> De''Von Achane, score 100.0, margin 35.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5688'
+  player_id: gsis:00-0038933
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Dalton Kincaid (TE)
+    -> Dalton Kincaid, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5691'
+  player_id: gsis:00-0038555
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tank Bigsby (RB) ->
+    Tank Bigsby, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5692'
+  player_id: gsis:00-0039032
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tyjae Spears (RB)
+    -> Tyjae Spears, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5694'
+  player_id: gsis:00-0038608
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kayshon Boutte (WR)
+    -> Kayshon Boutte, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5696'
+  player_id: gsis:00-0039067
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Rashee Rice (WR) ->
+    Rashee Rice, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5705'
+  player_id: gsis:00-0038606
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Parker Washington
+    (WR) -> Parker Washington, score 100.0, margin 21.2'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5706'
+  player_id: gsis:00-0038597
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chase Brown (RB) ->
+    Chase Brown, score 100.0, margin 28.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5707'
+  player_id: gsis:00-0039146
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jayden Reed (WR) ->
+    Jayden Reed, score 100.0, margin 27.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5708'
+  player_id: gsis:00-0038618
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Xavier Hutchinson
+    (WR) -> Xavier Hutchinson, score 100.0, margin 22.6'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5711'
+  player_id: gsis:00-0038977
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tank Dell (WR) ->
+    Tank Dell, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5714'
+  player_id: gsis:00-0039075
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Puka Nacua (WR) ->
+    Puka Nacua, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5717'
+  player_id: gsis:00-0038611
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chris Rodriguez Jr.
+    (RB) -> Chris Rodriguez Jr., score 100.0, margin 35.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5718'
+  player_id: gsis:00-0038996
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tucker Kraft (TE)
+    -> Tucker Kraft, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5721'
+  player_id: gsis:00-0038559
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Michael Wilson (WR)
+    -> Michael Wilson, score 100.0, margin 24.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5725'
+  player_id: gsis:00-0038393
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Dontayvion Wicks (WR)
+    -> Dontayvion Wicks, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5854'
+  player_id: gsis:00-0039910
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jayden Daniels (QB)
+    -> Jayden Daniels, score 100.0, margin 18.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5896'
+  player_id: gsis:00-0037545
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Rashid Shaheed (WR)
+    -> Rashid Shaheed, score 100.0, margin 37.9'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5928'
+  player_id: gsis:00-0037563
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Malik Davis (RB) ->
+    Malik Davis, score 100.0, margin 27.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5965'
+  player_id: gsis:00-0039738
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Blake Corum (RB) ->
+    Blake Corum, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5977'
+  player_id: gsis:00-0038563
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tre Tucker (WR) ->
+    Tre Tucker, score 100.0, margin 27.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5982'
+  player_id: gsis:00-0038454
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Keaton Mitchell (RB)
+    -> Keaton Mitchell, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '5985'
+  player_id: gsis:00-0038935
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Brenton Strange (TE)
+    -> Brenton Strange, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6172'
+  player_id: gsis:00-0039894
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Xavier Worthy (WR)
+    -> Xavier Worthy, score 100.0, margin 25.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6173'
+  player_id: gsis:00-0039918
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Caleb Williams (QB)
+    -> Caleb Williams, score 100.0, margin 30.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6175'
+  player_id: gsis:00-0039893
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Brian Thomas Jr. (WR)
+    -> Brian Thomas Jr., score 100.0, margin 28.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6176'
+  player_id: gsis:00-0039794
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Braelon Allen (RB)
+    -> Braelon Allen, score 100.0, margin 30.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6178'
+  player_id: gsis:00-0039338
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Brock Bowers (TE)
+    -> Brock Bowers, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6179'
+  player_id: gsis:00-0039344
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jonathon Brooks (RB)
+    -> Jonathon Brooks, score 100.0, margin 30.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6183'
+  player_id: gsis:00-0039337
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Malik Nabers (WR)
+    -> Malik Nabers, score 100.0, margin 25.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6184'
+  player_id: gsis:00-0039890
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Adonai Mitchell (WR)
+    -> Adonai Mitchell, score 100.0, margin 35.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6187'
+  player_id: gsis:00-0039851
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Drake Maye (QB) ->
+    Drake Maye, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6189'
+  player_id: gsis:00-0039901
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Keon Coleman (WR)
+    -> Keon Coleman, score 100.0, margin 12.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6190'
+  player_id: gsis:00-0039361
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Bucky Irving (RB)
+    -> Bucky Irving, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6192'
+  player_id: gsis:00-0039868
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Troy Franklin (WR)
+    -> Troy Franklin, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6193'
+  player_id: gsis:00-0039849
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Marvin Harrison Jr.
+    (WR) -> Marvin Harrison Jr., score 100.0, margin 30.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6194'
+  player_id: gsis:00-0039919
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Rome Odunze (WR) ->
+    Rome Odunze, score 100.0, margin 36.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6197'
+  player_id: gsis:00-0039875
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ray Davis (RB) ->
+    Ray Davis, score 100.0, margin 30.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6213'
+  player_id: gsis:00-0039342
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Xavier Legette (WR)
+    -> Xavier Legette, score 100.0, margin 31.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6253'
+  player_id: gsis:00-0039732
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Bo Nix (QB) -> Bo
+    Nix, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6263'
+  player_id: gsis:00-0039391
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kimani Vidal (RB)
+    -> Kimani Vidal, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6276'
+  player_id: gsis:00-0039384
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tyrone Tracy Jr. (RB)
+    -> Tyrone Tracy Jr., score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6281'
+  player_id: gsis:00-0039915
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ladd McConkey (WR)
+    -> Ladd McConkey, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6282'
+  player_id: gsis:00-0039855
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jalen McMillan (WR)
+    -> Jalen McMillan, score 100.0, margin 35.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6287'
+  player_id: gsis:00-0039880
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Malik Washington (WR)
+    -> Malik Washington, score 100.0, margin 21.2'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6290'
+  player_id: gsis:00-0039793
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: AJ Barner (TE) ->
+    AJ Barner, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6302'
+  player_id: gsis:00-0039491
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jalen Coker (WR) ->
+    Jalen Coker, score 100.0, margin 25.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6304'
+  player_id: gsis:00-0039410
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ryan Flournoy (WR)
+    -> Ryan Flournoy, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6308'
+  player_id: gsis:00-0039386
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Bub Means (WR) ->
+    Bub Means, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6315'
+  player_id: gsis:00-0039424
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Devaughn Vele (WR)
+    -> Devaughn Vele, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6457'
+  player_id: gsis:00-0040676
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Cam Ward (QB) -> Cam
+    Ward, score 100.0, margin 36.8'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6490'
+  player_id: gsis:00-0040734
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: TreVeyon Henderson
+    (RB) -> TreVeyon Henderson, score 100.0, margin 31.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6500'
+  player_id: gsis:00-0040122
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ashton Jeanty (RB)
+    -> Ashton Jeanty, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6501'
+  player_id: gsis:00-0040126
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Colston Loveland (TE)
+    -> Colston Loveland, score 100.0, margin 40.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6502'
+  player_id: gsis:00-0040663
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Harold Fannin Jr.
+    (TE) -> Harold Fannin Jr., score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6504'
+  player_id: gsis:00-0040128
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tyler Warren (TE)
+    -> Tyler Warren, score 100.0, margin 30.4'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6506'
+  player_id: gsis:00-0040189
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Oronde Gadsden (TE)
+    -> Oronde Gadsden II, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6509'
+  player_id: gsis:00-0040715
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Cam Skattebo (RB)
+    -> Cam Skattebo, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6511'
+  player_id: gsis:00-0040162
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Dylan Sampson (RB)
+    -> Dylan Sampson, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6513'
+  player_id: gsis:00-0040719
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Bhayshul Tuten (RB)
+    -> Bhayshul Tuten, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6517'
+  player_id: gsis:00-0040177
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jordan James (RB)
+    -> Jordan James, score 100.0, margin 20.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6522'
+  player_id: gsis:00-0040138
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jaylin Noel (WR) ->
+    Jaylin Noel, score 100.0, margin 18.2'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6523'
+  player_id: gsis:00-0040667
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Matthew Golden (WR)
+    -> Matthew Golden, score 100.0, margin 25.9'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6525'
+  player_id: gsis:00-0040727
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tre'' Harris (WR)
+    -> Tre Harris, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6529'
+  player_id: gsis:00-0040583
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Woody Marks (RB) ->
+    Woody Marks, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6530'
+  player_id: gsis:00-0040730
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: RJ Harvey (RB) ->
+    RJ Harvey, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6531'
+  player_id: gsis:00-0040784
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Quinshon Judkins (RB)
+    -> Quinshon Judkins, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6534'
+  player_id: gsis:00-0040236
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kyle Monangai (RB)
+    -> Kyle Monangai, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6535'
+  player_id: gsis:00-0040198
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ollie Gordon II (RB)
+    -> Ollie Gordon II, score 100.0, margin 36.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6538'
+  player_id: gsis:00-0040666
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Omarion Hampton (RB)
+    -> Omarion Hampton, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6545'
+  player_id: gsis:00-0040737
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Terrance Ferguson
+    (TE) -> Terrance Ferguson, score 100.0, margin 26.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6553'
+  player_id: gsis:00-0040705
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chimere Dike (WR)
+    -> Chimere Dike, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6557'
+  player_id: gsis:00-0040586
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jaydon Blue (RB) ->
+    Jaydon Blue, score 100.0, margin 40.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6559'
+  player_id: gsis:00-0040735
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Luther Burden III
+    (WR) -> Luther Burden III, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6561'
+  player_id: gsis:00-0040124
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Tetairoa McMillan
+    (WR) -> Tetairoa McMillan, score 100.0, margin 35.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6563'
+  player_id: gsis:00-0040718
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Travis Hunter (WR)
+    -> Travis Hunter, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6568'
+  player_id: gsis:00-0040691
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jaxson Dart (QB) ->
+    Jaxson Dart, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6576'
+  player_id: gsis:00-0040129
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Emeka Egbuka (WR)
+    -> Emeka Egbuka, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6580'
+  player_id: gsis:00-0040669
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Isaac TeSlaa (WR)
+    -> Isaac TeSlaa, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6595'
+  player_id: gsis:00-0040242
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jacory Croskey-Merritt
+    (RB) -> Jacory Croskey-Merritt, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6767'
+  player_id: gsis:00-0041562
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Fernando Mendoza (QB)
+    -> Fernando Mendoza, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6768'
+  player_id: gsis:00-0041438
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Carnell Tate (WR)
+    -> Carnell Tate, score 100.0, margin 38.5'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6769'
+  player_id: gsis:00-0041027
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jeremiyah Love (RB)
+    -> Jeremiyah Love, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6771'
+  player_id: gsis:00-0041029
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jordyn Tyson (WR)
+    -> Jordyn Tyson, score 100.0, margin 28.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6772'
+  player_id: gsis:00-0040867
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Makai Lemon (WR) ->
+    Makai Lemon, score 100.0, margin 39.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6773'
+  player_id: gsis:00-0041032
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kenyon Sadiq (TE)
+    -> Kenyon Sadiq, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6774'
+  player_id: gsis:00-0041547
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: KC Concepcion (WR)
+    -> KC Concepcion, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6775'
+  player_id: gsis:00-0041511
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Omar Cooper Jr. (WR)
+    -> Omar Cooper Jr., score 100.0, margin 25.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6776'
+  player_id: gsis:00-0041512
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jadarian Price (RB)
+    -> Jadarian Price, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6777'
+  player_id: gsis:00-0041035
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: De''Zhaun Stribling
+    (WR) -> De''Zhaun Stribling, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6778'
+  player_id: gsis:00-0041037
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Denzel Boston (WR)
+    -> Denzel Boston, score 100.0, margin 33.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6784'
+  player_id: gsis:00-0041042
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Malachi Fields (WR)
+    -> Malachi Fields, score 100.0, margin 35.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6787'
+  player_id: gsis:00-0040870
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Ja''Kobi Lane (WR)
+    -> Ja''Kobi Lane, score 100.0, margin 27.3'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6790'
+  player_id: gsis:00-0041523
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Caleb Douglas (WR)
+    -> Caleb Douglas, score 100.0, margin 35.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6794'
+  player_id: gsis:00-0041525
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Chris Bell (WR) ->
+    Chris Bell, score 100.0, margin 16.7'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6798'
+  player_id: gsis:00-0041052
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Kaelon Black (RB)
+    -> Kaelon Black, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6799'
+  player_id: gsis:00-0041496
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Jonah Coleman (RB)
+    -> Jonah Coleman, score 100.0, margin 100.0'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6803'
+  player_id: gsis:00-0040878
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Mike Washington Jr.
+    (RB) -> Mike Washington Jr., score 100.0, margin 31.2'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6811'
+  player_id: gsis:00-0041013
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Emmett Johnson (RB)
+    -> Emmett Johnson, score 100.0, margin 24.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6815'
+  player_id: gsis:00-0040886
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Nicholas Singleton
+    (RB) -> Nicholas Singleton, score 100.0, margin 37.1'
+- source_id: fantasyfootballcalculator_adp
+  external_id: '6828'
+  player_id: gsis:00-0040890
+  reviewed_by: phase10-linkage (github-actions)
+  reviewed_at: '2026-09-02'
+  note: 'resolved_exact_name_position under phase10_linkage_v1: Cyrus Allen (WR) ->
+    Cyrus Allen, score 100.0, margin 100.0'

@@ -13,6 +13,8 @@
  * quantity that was measured and lost rather than one that was never claimed (ADR-010).
  */
 
+import type { ArbitrageRecord } from "./contracts";
+import { consensusOf, crossMarketOf, marketsOf } from "./multimarket";
 import type { ArbitrageRow, TierRow } from "./model";
 import type { ScoringValue, TeamCount } from "./state";
 
@@ -111,6 +113,20 @@ export const ARBITRAGE_EXPORT_COLUMNS = [
   "market_snapshot_at_utc",
   "confidence",
   "quality_flags",
+  // Phase 10. Every column names its source and its signal, because a spreadsheet has no
+  // selector to explain which market a bare "adp" column came from (roadmap 10.6).
+  "ffc_adp",
+  "ffc_rank_gap",
+  "ffc_adp_sd",
+  "mfl_adp",
+  "mfl_rank_gap",
+  "fantasypros_ecr",
+  "fantasypros_ecr_gap",
+  "market_adp_median",
+  "market_disagreement_range",
+  "sources_available",
+  "surface_reasons",
+  "outside_tier_board",
 ] as const;
 
 export function arbitrageRowsToCsv(rows: readonly ArbitrageRow[]): string {
@@ -139,9 +155,38 @@ export function arbitrageRowsToCsv(rows: readonly ArbitrageRow[]): string {
         record.market_snapshot_at_utc,
         record.confidence,
         record.quality_flags.join("|"),
+        ...multiMarketCells(record),
       ];
     }),
   );
+}
+
+/**
+ * The Phase-10 columns for one row.
+ *
+ * Kept in one function beside the header list so the two cannot drift: a CSV whose header
+ * and cells disagree is worse than one that omits the columns entirely.
+ */
+function multiMarketCells(record: ArbitrageRecord): (string | number | null)[] {
+  const markets = marketsOf(record);
+  const ffc = markets.fantasyfootballcalculator_adp ?? null;
+  const mfl = markets.myfantasyleague_adp ?? null;
+  const consensus = consensusOf(record);
+  const cross = crossMarketOf(record);
+  return [
+    ffc?.market_adp ?? null,
+    ffc?.rank_gap ?? null,
+    ffc?.market_adp_sd ?? null,
+    mfl?.market_adp ?? null,
+    mfl?.rank_gap ?? null,
+    consensus?.ecr ?? null,
+    consensus?.ecr_gap ?? null,
+    cross?.market_adp_median ?? null,
+    cross?.market_disagreement_range ?? null,
+    (cross?.sources_available ?? []).join("|"),
+    (record.surface_reasons ?? []).join("|"),
+    record.outside_tier_board === undefined ? null : String(record.outside_tier_board),
+  ];
 }
 
 /** `ffdraft-tiers-ppr-12-2026-08-21.csv`. The date comes from build metadata, never the clock. */

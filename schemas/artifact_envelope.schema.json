@@ -6,16 +6,54 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "artifact", "build_id", "generated_at_utc", "record_count", "records"
+    "schema_version",
+    "artifact",
+    "build_id",
+    "generated_at_utc",
+    "record_count",
+    "records"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
-    "artifact": {"enum": ["tiers", "arbitrage", "projections", "market_snapshot", "player_status"]},
-    "record_schema": {"type": "string", "minLength": 1},
-    "build_id": {"type": "string", "minLength": 1},
-    "generated_at_utc": {"type": "string", "format": "date-time"},
-    "record_count": {"type": "integer", "minimum": 0},
-    "arbitrage_mode": {"enum": ["baseline", "ml"]},
-    "records": {"type": "array", "items": {"type": "object"}}
+    "schema_version": {
+      "const": "1.0"
+    },
+    "artifact": {
+      "enum": [
+        "tiers",
+        "arbitrage",
+        "market_trend_series",
+        "projections",
+        "market_snapshot",
+        "player_status"
+      ]
+    },
+    "record_schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "record_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "arbitrage_mode": {
+      "enum": [
+        "baseline",
+        "ml"
+      ]
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
   }
 }

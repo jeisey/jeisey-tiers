@@ -26,11 +26,13 @@ resulting jump would look exactly like movement.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 from ffdraft.market.snapshot import MarketSnapshot
+from ffdraft.timeutil import isoformat_utc
 
 __all__ = [
     "INSUFFICIENT_TREND_HISTORY",
@@ -41,6 +43,7 @@ __all__ = [
     "TrendRule",
     "compute_trends",
     "observations_from_snapshots",
+    "trend_series_records",
 ]
 
 TREND_RULE_VERSION = "phase5_trend_v1"
@@ -138,6 +141,67 @@ def observations_from_snapshots(
                 ),
             )
     return observations
+
+
+def trend_series_records(
+    observations: Sequence[TrendObservation],
+    *,
+    trends: Mapping[str, TrendResult],
+    build_id: str,
+    market_source_id: str,
+    scoring_preset: str,
+    league_preset_id: str,
+    cohort_id: str,
+    window_days: float,
+    schema_version: str,
+    players: Iterable[str] | None = None,
+) -> list[dict[str, Any]]:
+    """The retained history, shaped for the player card's mini chart (ADR-066).
+
+    Only the points needed to draw the line: an instant and a price. Everything else a reader
+    might want — the cohort, the source, the slope — is on the record once rather than
+    repeated per point, because this artifact is fetched by a browser and a series of fat
+    rows would be a page-weight decision made by accident.
+
+    ``players`` restricts the output to the published surface. Emitting a series for a player
+    the board does not show would be bytes shipped to every visitor for a card nobody can
+    open.
+    """
+    wanted = set(players) if players is not None else None
+    by_player: dict[str, list[TrendObservation]] = {}
+    for observation in observations:
+        if wanted is not None and observation.player_id not in wanted:
+            continue
+        by_player.setdefault(observation.player_id, []).append(observation)
+
+    records: list[dict[str, Any]] = []
+    for player_id in sorted(by_player):
+        points = sorted(by_player[player_id], key=lambda item: item.observed_at)
+        result = trends.get(player_id)
+        records.append(
+            {
+                "schema_version": schema_version,
+                "build_id": build_id,
+                "market_source_id": market_source_id,
+                "scoring_preset": scoring_preset,
+                "league_preset_id": league_preset_id,
+                "player_id": player_id,
+                "cohort_id": cohort_id,
+                "window_days": window_days,
+                # The same scalar the arbitrage row carries, from the same points. Repeated
+                # here so a consumer of this artifact alone can render the summary without
+                # joining, and asserted equal by the cross-artifact validator.
+                "market_trend": result.trend if result else None,
+                "points": [
+                    {
+                        "observed_at": isoformat_utc(point.observed_at),
+                        "market_adp": round(point.market_adp, 2),
+                    }
+                    for point in points
+                ],
+            },
+        )
+    return records
 
 
 def _ols_slope(xs: Sequence[float], ys: Sequence[float]) -> float | None:

@@ -27,14 +27,14 @@ from ffdraft.arbitrage.frozen import (
     ARBITRAGE_METHOD_VERSION,
     ARBITRAGE_MODE,
 )
-from ffdraft.artifacts import write_artifact, write_build_metadata
+from ffdraft.artifacts import record_schema_version, write_artifact, write_build_metadata
 from ffdraft.config import AppConfig, load_app_config
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import SourceStatus
 from ffdraft.market.cohorts import assignments_from_report
 from ffdraft.market.current import build_current_market, load_trend_window
 from ffdraft.market.snapshot import MarketSnapshotStore
-from ffdraft.market.trend import TREND_RULE
+from ffdraft.market.trend import TREND_RULE, observations_from_snapshots, trend_series_records
 from ffdraft.quality import QualityGate
 from ffdraft.sources.market import MFL_SOURCE_ID
 from ffdraft.timeutil import isoformat_utc, utc_now
@@ -72,6 +72,7 @@ class ArbitrageBuildResponse:
     unpriced_top_players: list[dict[str, Any]] = field(default_factory=list)
     trend_available: bool = False
     trend_history_keys: tuple[str, ...] = ()
+    trend_series: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     written: list[Path] = field(default_factory=list)
     gate: QualityGate = field(default_factory=QualityGate)
@@ -176,6 +177,14 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         gate=gate,
     )
 
+    response.trend_series = _trend_series(
+        history,
+        market=market,
+        tier_records=tier_records,
+        build_id=build_id,
+        league_sizes=league_sizes,
+    )
+
     if request.write and gate.passed:
         paths, checks = write_artifact(
             "arbitrage",
@@ -187,6 +196,21 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         )
         gate.extend(checks)
         response.written.extend(paths)
+        if response.trend_series:
+            # The chart's data, written from the retained snapshots the trend was computed
+            # over. This is what lets a static page draw a history without the browser
+            # calling a vendor (ADR-066). An empty series simply is not written: a young
+            # store has nothing to draw, and an artifact of empty arrays would be bytes
+            # shipped to say so.
+            series_paths, series_checks = write_artifact(
+                "market_trend_series",
+                response.trend_series,
+                out_dir=request.artifacts_dir,
+                build_id=build_id,
+                generated_at=_generated_at(tiers, stamped),
+            )
+            gate.extend(series_checks)
+            response.written.extend(series_paths)
         metadata_paths, metadata_checks = write_build_metadata(
             response.metadata,
             out_dir=request.artifacts_dir,
@@ -194,6 +218,54 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         gate.extend(metadata_checks)
         response.written.extend(metadata_paths)
     return response
+
+
+def _trend_series(
+    history: list[Any],
+    *,
+    market: Any,
+    tier_records: list[dict[str, Any]],
+    build_id: str,
+    league_sizes: dict[str, int],
+) -> list[dict[str, Any]]:
+    """One history series per published player, per preset block.
+
+    Restricted to players the board actually shows. A series for a player no card can open is
+    weight every visitor downloads for nothing, and the restriction is by published row
+    rather than by tier depth so a market-surfaced exception keeps its chart.
+    """
+    if not history:
+        return []
+    schema_version = record_schema_version("market_trend_series")
+    published: dict[tuple[str, str], set[str]] = {}
+    for record in tier_records:
+        key = (str(record["league_preset_id"]), str(record["scoring_preset"]))
+        published.setdefault(key, set()).add(str(record["player_id"]))
+
+    records: list[dict[str, Any]] = []
+    for (preset_id, scoring), players in sorted(published.items()):
+        league_size = league_sizes.get(preset_id)
+        if league_size is None:
+            continue
+        assignment = market.assignments.get((scoring, league_size))
+        if assignment is None:
+            continue
+        cohort_id = assignment.cohort.cohort_id
+        records.extend(
+            trend_series_records(
+                observations_from_snapshots(history, cohort_id=cohort_id),
+                trends=market.trend_by_cohort.get(cohort_id, {}),
+                build_id=build_id,
+                market_source_id=market.source_id,
+                scoring_preset=scoring,
+                league_preset_id=preset_id,
+                cohort_id=cohort_id,
+                window_days=TREND_RULE.window_days,
+                schema_version=schema_version,
+                players=players,
+            ),
+        )
+    return records
 
 
 def _generated_at(tiers: dict[str, Any], fallback: datetime) -> datetime:

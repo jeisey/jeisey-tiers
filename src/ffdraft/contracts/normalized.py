@@ -28,6 +28,7 @@ __all__ = [
     "RESOLUTION_CONTRACT",
     "ROSTER_CONTRACT",
     "SCHEDULE_CONTRACT",
+    "SLEEPER_BEHAVIOR_CONTRACT",
     "SNAP_COUNTS_CONTRACT",
     "WEEKLY_STATS_CONTRACT",
 ]
@@ -163,26 +164,121 @@ DEPTH_CHART_CONTRACT = FrameContract(
 # aggregate to claim a preset it did not describe. Contract 2.0 records `cohort_id`
 # instead; mapping cohorts onto presets is `ffdraft.market.cohorts`' job and its verdict
 # (exact or approximate) is per assignment, not per row (ADR-039).
+#
+# Contract 3.0 generalises the same row across three sources without erasing what each
+# number means (Phase 10, roadmap 10.3, ADR-062). Five columns are new and every one of them
+# exists because two sources disagree about something the old contract could not express:
+#
+# * `market_signal_type` — MyFantasyLeague and FFC publish a *price*; FantasyPros publishes
+#   a price and an *expert ranking*. They are different measurements, so the row says which
+#   it is and the cross-market aggregate filters on it. This is the column that makes "ECR
+#   never masquerades as ADP" checkable rather than aspirational.
+# * `scoring_preset` / `league_size` — the cohort's *observed* dimensions, copied from
+#   `MarketCohort` semantics and null when the source does not constrain that axis. FFC
+#   accepts `teams=` and ignores it (ADR-056), so its `league_size` is null: a board may not
+#   claim a league size the API does not substantiate, and the null is the claim's absence.
+# * `aggregation_window_type` / `aggregation_window_days` — MFL aggregates the season to
+#   date, FFC a bounded recent window. Both are "ADP". A product that showed them side by
+#   side without saying which was which would be inviting the reader to average them.
+# * `adp_sd` — a genuine per-player standard deviation, which FFC publishes and MFL does
+#   not. It is deliberately NOT the same column as `min_pick`/`max_pick`: those are extreme
+#   order statistics that widen with sample size, and relabelling one as the other is a data
+#   error rather than a presentation choice.
+#
+# `average_pick` becomes nullable because an ECR row has no average pick. The name is kept
+# rather than renamed to `market_adp`: the retained private store holds a season of
+# snapshots whose normalized rows use it, and the trend window reads them. A rename would
+# have made every historical capture unreadable to buy a tidier column name.
+#
+# `market_signal_type` joins the primary key. FantasyPros serves ADP and ECR for the same
+# season and cohort, and without it the two would collide on one row.
 MARKET_QUOTE_CONTRACT = FrameContract(
     contract_id="market_quote",
-    version="2.0",
-    primary_key=("source_id", "season", "cohort_id", "external_player_id"),
+    version="3.0",
+    primary_key=("source_id", "season", "cohort_id", "market_signal_type", "external_player_id"),
     columns=(
         ColumnSpec("source_id", pl.String, nullable=False),
         ColumnSpec("season", pl.Int32, nullable=False),
         ColumnSpec("cohort_id", pl.String, nullable=False),
+        ColumnSpec(
+            "market_signal_type",
+            pl.String,
+            nullable=False,
+            description="adp | ecr - see contracts.enums.MarketSignalType",
+        ),
         ColumnSpec("external_player_id", pl.String, nullable=False),
-        ColumnSpec("average_pick", pl.Float64, nullable=False),
+        ColumnSpec("average_pick", pl.Float64, description="The ADP. Null on an ECR row."),
         ColumnSpec("market_rank", pl.Int32),
-        ColumnSpec("min_pick", pl.Float64),
-        ColumnSpec("max_pick", pl.Float64),
-        ColumnSpec("sample_size", pl.Int32),
+        ColumnSpec("min_pick", pl.Float64, description="Extreme order statistic, not an SD"),
+        ColumnSpec("max_pick", pl.Float64, description="Extreme order statistic, not an SD"),
+        ColumnSpec("adp_sd", pl.Float64, description="Genuine per-player SD where published"),
+        # An expert consensus has a dispersion too, and it is measured in RANKS, not picks.
+        # FantasyPros publishes `rank_ave`, `rank_min`, `rank_max` and `rank_std` across
+        # ninety-odd experts. Writing those into `min_pick`/`max_pick`/`adp_sd` would put an
+        # expert-rank spread under a column named after a draft pick — the exact relabelling
+        # roadmap 10.3 forbids when it says a source ADP must retain its source identity.
+        # ADP rows leave these null; ECR rows leave the pick columns null.
+        ColumnSpec("consensus_rank_mean", pl.Float64, description="ECR only: mean expert rank"),
+        ColumnSpec("consensus_rank_min", pl.Int32, description="ECR only: best expert rank"),
+        ColumnSpec("consensus_rank_max", pl.Int32, description="ECR only: worst expert rank"),
+        ColumnSpec("consensus_rank_sd", pl.Float64, description="ECR only: SD of expert ranks"),
+        ColumnSpec(
+            "sample_size",
+            pl.Int32,
+            description="Observations behind the quote: drafts for ADP, experts for ECR",
+        ),
         ColumnSpec("selection_pct", pl.Float64),
+        ColumnSpec("scoring_preset", pl.String, description="Observed, or null if unconstrained"),
+        ColumnSpec("league_size", pl.Int32, description="Observed, or null if not claimable"),
+        ColumnSpec(
+            "aggregation_window_type",
+            pl.String,
+            nullable=False,
+            description="rolling | season_cumulative | not_applicable | unknown",
+        ),
+        ColumnSpec("aggregation_window_days", pl.Int32, description="Null unless documented"),
         ColumnSpec("retrieved_at_utc", _UTC, nullable=False),
         ColumnSpec("source_as_of_utc", _UTC, description="Null for MFL: no data-as-of time"),
         ColumnSpec("entity_kind", pl.String, nullable=False),
         ColumnSpec("raw_position", pl.String),
+        ColumnSpec("source_display_name", pl.String, description="As published; linkage input"),
+        ColumnSpec("source_team", pl.String, description="As published; a linkage diagnostic"),
         ColumnSpec("source_format_detail", pl.String, nullable=False),
+        ColumnSpec("quality_flags", pl.String),
+    ),
+)
+
+
+# Waiver behaviour is not a draft price, and roadmap 10.3 refuses to let it become one by
+# sharing a schema. An add count has no pick number, no dispersion, no cohort and no scoring
+# preset; forcing it into `market_quote` would have left two thirds of that row null and
+# invited a chart that plotted adds on an ADP axis.
+#
+# Phase 10 starts retaining these so Phase 12 inherits real in-season history rather than
+# beginning from zero after kickoff. Nothing consumes them yet, which is the point: the
+# append-only store has to be *started* before the season it describes.
+SLEEPER_BEHAVIOR_CONTRACT = FrameContract(
+    contract_id="sleeper_behavior_snapshot",
+    version="1.0",
+    primary_key=("source_id", "behavior_type", "external_player_id"),
+    columns=(
+        ColumnSpec("source_id", pl.String, nullable=False),
+        ColumnSpec(
+            "behavior_type",
+            pl.String,
+            nullable=False,
+            description="add | drop - see contracts.enums.BehaviorType",
+        ),
+        ColumnSpec("external_player_id", pl.String, nullable=False),
+        ColumnSpec("count", pl.Int32, nullable=False, description="Adds or drops in the window"),
+        ColumnSpec(
+            "lookback_hours",
+            pl.Int32,
+            nullable=False,
+            description="The window REQUESTED. Whether it is honoured is measured, not assumed.",
+        ),
+        ColumnSpec("request_limit", pl.Int32, nullable=False, description="The `limit` sent"),
+        ColumnSpec("snapshot_at_utc", _UTC, nullable=False),
         ColumnSpec("quality_flags", pl.String),
     ),
 )

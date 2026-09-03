@@ -437,3 +437,110 @@ and the exact run evidence.
 runner gate is green, the final refresh deployed through the ordinary production path, all nine
 presets and all four CSV exports verify against the deployed site, and `v1.0.0` points at the
 exact `main` commit that produced it.
+
+## Phase 10 — Multi-market draft intelligence
+
+**Implemented 2026-09-02; the exit gate is partially met.** One criterion failed on measured
+evidence and is named below rather than rounded up, in the same shape Phase 4 used. Evidence:
+`docs/source-probes/2026-09-02/phase10-report.md`; decisions ADR-060 through ADR-066;
+commands, runs and measurements recorded in `SESSION_STATE.md`.
+
+- [x] Re-probe FFC on a runner: current schema, `teams=` behaviour per player, window,
+      volume, dispersion, cadence. — Four probe passes, all recorded. `teams=` is **still
+      accepted and ignored**: per-player `adp`/`times_drafted` byte-identical across
+      8/10/12/14 in all three formats, zero rows differing in any of the nine comparisons, so
+      ADR-056 stands and no successor ADR was written. The window is **seven days**
+      (`meta.start_date` 2026-08-26 → `end_date` 2026-09-02) against MyFantasyLeague's season
+      aggregate. Volume 1,794 / 3,142 / 8,007 drafts; `stdev` a genuine standard deviation on
+      221/221 rows.
+- [x] Productionise FFC as an exact-scoring, league-size-unknown ADP source. — `FfcAdpAdapter`
+      on `market_quote` 3.0, three cohorts, semantic checks that fail the build if a row ever
+      claims a league size or calls its window cumulative. `high`/`low` ordered numerically
+      rather than by their labels, with the observed orientation counted into the manifest.
+- [x] Preserve MyFantasyLeague unchanged. — Its capture path was not edited. The adapter
+      states what it always meant (`season_cumulative`, permanently null `adp_sd`, now
+      enforced by its own check) and changes no value.
+- [x] FFC identity linkage with a 90% continuation gate. — **222/222, 100.000%**, zero
+      quarantined, zero top-300 unresolved, every row by exact normalized name and position.
+      `phase10_linkage_v1`; alias file `config/market-aliases/fantasyfootballcalculator_adp.yaml`;
+      report and quarantine under `docs/source-probes/2026-09-02/`.
+- [x] Compact gold fixture and the required linkage tests. — 15 hand-checked synthetic cases
+      plus 40 tests: determinism under permutation, no cross-position resolution, ties and
+      thin margins quarantined, normalization proved not to collapse two distinct players,
+      accepted aliases proved to resolve by id without rescoring, candidate recall measured,
+      and a test that loosening the thresholds accepts rows the gold set marks ambiguous.
+- [x] Generalise the market contracts without erasing semantics. — `market_quote` 3.0 adds
+      signal type, observed cohort dimensions, aggregation window, a real standard deviation
+      and rank-denominated consensus dispersion. Waiver behaviour gets its own contract
+      rather than being forced into a price schema.
+- [x] Sleeper: once-daily player map recorded, add/drop adapters implemented and retained. —
+      Payload re-measured at 13.97 MiB / 12,226 records; `limit` and `lookback_hours` both
+      measured as honoured; `search_rank` recorded as **not** ADP.
+- [x] Source-relative arbitrage plus a separate FantasyPros consensus comparison. — One
+      independent A0 comparison per ADP source, `ecr_gap` structurally separated from
+      `rank_gap`, cross-market ADP-only diagnostics. The roadmap's own worked example
+      reproduces exactly.
+- [x] Fix the 300-row publication blind spot. — Three universes replace `head(300)`; tier
+      depth versioned (`phase4_tier_depth_v1` retained, `phase10_tier_depth_v2` in force);
+      surface reasons machine-readable; the coverage gate is critical; the original bug is a
+      regression test, and a second test proves the gate is load-bearing by feeding it a
+      pre-truncated board.
+- [x] Market selector, FantasyPros columns and the expanded-board UX. — Selector derived from
+      what the build published, window and observed dimensions printed beside it, per-source
+      headers, ECR in its own column with its own gap, spread column, CSV columns naming
+      source and signal.
+- [x] Replace the Market Trend scalar with a themed mini chart. — Inverted y axis so up means
+      earlier, sparse history stated in words below three points, direction in text as well as
+      colour, points from a published artifact and never a vendor call. The scalar remains for
+      sorting, CSV and the accessible summary.
+- [x] Attribution in `Data` → `07 Sources and attribution`. — FFC and FantasyPros added,
+      Sleeper's entry extended to name the trending feeds. The FantasyPros entry says the key
+      never reaches the page and why no number is published.
+- [!] **FantasyPros ADP and ECR publicly visible in Tier and Arbitrage.** — **Blocked on the
+      API tier, not on this repository.** The provisioned key is on the free tier: every
+      response carries `public_api_limited: true` and returns ten rows, no parameter widens
+      it, and no endpoint the key can reach carries an ADP field at all. Forty players are
+      reachable across the four core positions against a documented 407 receivers alone. The
+      adapter, budget, cache, retention, identity bridges and fail-closed checks all ship and
+      are tested; publication is withheld. ADR-064 records the exact, checkable condition
+      under which it becomes a one-line change.
+- [ ] Live multi-source board. — The code path is complete and fixture-tested; the *published*
+      multi-source board needs one production refresh to capture FFC into the private store.
+      Nothing further is required in this repository for it.
+
+**Exit gate: partially met.**
+
+**Met.** FFC, MFL and FantasyPros have explicit dispositions with distinct semantics
+preserved and fresh runner evidence behind each. FFC identity coverage is 100% against a 90%
+gate with an empty quarantine. FantasyPros stays inside 50 requests/day and one per second,
+never exposes its key, and handles truncation explicitly by refusing to publish. Sleeper's
+cadence rule and both trending feeds are implemented and retained. ESPN remains disabled.
+Cross-market summaries exclude ECR by construction. Contracts preserve source semantics.
+Every new adapter has fixture and schema-drift tests. The frontend renders a Release 1 bundle,
+a missing source and an absent trend series without breaking. The trend chart is
+source-specific, sparse-history safe, accessible and theme-consistent.
+
+**Not met — one criterion, on measured evidence.**
+
+*FantasyPros is not publicly visible*, because the key's tier cannot serve a market. The
+roadmap asked for ADP **and** ECR; there is no ADP available at any depth, and the ECR is
+capped at ten rows per response. Publishing forty players as "FantasyPros ECR" would describe
+a consensus the reader cannot get, and would make the surface gate — which requires 100% of
+each enabled source's top 300 — unevaluable and therefore dishonest. The source is built,
+retained and one config line from live.
+
+Two consequences follow and are recorded rather than worked around: the required
+`fantasypros_adp` comparison does not exist, and `market_top300_fantasypros_*` surface
+reasons are declared in the vocabulary but never emitted.
+
+**Scope boundaries held:** no learned arbitrage model, no blended ADP/ECR score, no
+market-informed intrinsic values, no ESPN scrape, no synthesized Sleeper ADP, no roster
+sync, no rest-of-season model, no weekly rankings. Phase 11 was not started.
+
+**Validation at the checkpoint:** `ruff`, `ruff format` and `mypy` (118 files) clean; `pytest`
+**1,196** passed with the 4 live-network tests deselected; the fixture build 0 critical and
+`validate-artifacts` 0 critical 0 warning over it; `npm lint` 0 errors, `typecheck` clean,
+**270** vitest, a clean production build, **70** Playwright across `chromium`/`mobile`/`a11y`
+and **13** more on `smoke-chromium`. `npm run e2e:browsers` (Firefox, WebKit) is runner-only in
+this sandbox as it has been since ADR-059; it ran on the PR and passed, so every gate in the
+steady-state command set has now been exercised against Phase 10.

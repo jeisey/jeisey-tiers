@@ -1,0 +1,139 @@
+# Phase-10 source evidence. Dispatch-only, and deliberately separate from `source-probe.yml`
+# (the Phase-0 evidence generator) and `source-probe-ffc.yml` (the Phase-8 candidate probe).
+#
+# `AGENTS.md` section 3 forbids inventing an endpoint or a schema, and section 5 forbids a
+# source becoming a production dependency before its check is completed and documented. The
+# development sandbox's egress policy denies every vendor host (ADR-009, ADR-053), so this is
+# where the Phase-10 measurements are taken.
+#
+# It must never gain a schedule. A probe on a timer is an undeclared production dependency.
+#
+# The FantasyPros job is the only one in this repository that reads `FANTASYPROS_API_KEY`
+# outside the production capture. `scripts/probe_fantasypros.py` sends it as `x-api-key` and
+# refuses to print any line containing it; the job log of a public repository is
+# world-readable and that guard is not decoration.
+name: source-probe-phase10
+
+on:
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: Which probes to run
+        type: choice
+        options:
+          - all
+          - fantasy-football-calculator
+          - fantasypros
+          - sleeper
+          - depth-analysis
+        default: all
+  # `workflow_dispatch` only becomes callable once the workflow exists on the default
+  # branch, which a phase branch has not reached yet. The request-file trigger is the
+  # pattern `market-capture.yml` already uses for the same reason: an explicit, reviewable
+  # edit is what starts a run, so a normal development push never spends a runner or
+  # touches a vendor.
+  push:
+    branches:
+      - main
+      - "claude/**"
+    paths:
+      - ".github/phase10-probe.request"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-probe-phase10
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.8.17"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  probe:
+    name: Phase-10 source measurements
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Nothing here pushes, and the probes run third-party requests in this workspace.
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Read the probe request
+        id: request
+        run: |
+          set -euo pipefail
+          args="$(awk -F': ' '/^fantasypros_args:/ {print $2}' .github/phase10-probe.request || true)"
+          echo "fp_args=${args}" >> "$GITHUB_OUTPUT"
+
+      - name: Probe Fantasy Football Calculator
+        if: ${{ (github.event_name == 'push' && steps.request.outputs.fp_args == '') || inputs.sources == 'all' || inputs.sources == 'fantasy-football-calculator' }}
+        continue-on-error: true
+        run: uv run python scripts/probe_ffc.py 2>&1 | tee ffc.log
+
+      - name: Probe FantasyPros
+        if: ${{ (github.event_name == 'push' && !contains(steps.request.outputs.fp_args, 'depth')) || inputs.sources == 'all' || inputs.sources == 'fantasypros' }}
+        continue-on-error: true
+        env:
+          FANTASYPROS_API_KEY: ${{ secrets.FANTASYPROS_API_KEY }}
+          # Set in the request file. `--identity-only` spends four requests on the one
+          # question run 3 ran out of budget for, instead of re-asking thirty settled ones.
+          FP_PROBE_ARGS: ${{ steps.request.outputs.fp_args }}
+        run: |
+          uv run python scripts/probe_fantasypros.py \
+            ${{ contains(inputs.sources, 'identity') && '--identity-only' || '' }} \
+            $FP_PROBE_ARGS 2>&1 | tee fantasypros.log
+
+      - name: Probe Sleeper player map and trending
+        if: ${{ (github.event_name == 'push' && steps.request.outputs.fp_args == '') || inputs.sources == 'all' || inputs.sources == 'sleeper' }}
+        continue-on-error: true
+        run: uv run python scripts/probe_sleeper_trending.py 2>&1 | tee sleeper.log
+
+      - name: Measure the tier depth against the published board
+        if: ${{ contains(steps.request.outputs.fp_args, 'depth') || inputs.sources == 'depth-analysis' }}
+        continue-on-error: true
+        run: uv run python scripts/phase10_depth_analysis.py 2>&1 | tee depth.log
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo '## Phase-10 source probes — ${{ inputs.sources || 'all (push request)' }}'
+            echo
+            echo 'Findings below are **evidence**, not a decision. They belong in'
+            echo '`docs/DATA_SOURCES.md`, `config/source-registry.yaml` and an ADR before'
+            echo 'any of these sources may be used in production.'
+            echo
+            for log in ffc.log fantasypros.log sleeper.log depth.log; do
+              if [ -f "${log}" ]; then
+                echo "<details open><summary><code>${log}</code></summary>"
+                echo
+                echo '```'
+                cat "${log}"
+                echo '```'
+                echo
+                echo '</details>'
+                echo
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"

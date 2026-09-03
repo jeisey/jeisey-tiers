@@ -1,0 +1,320 @@
+{
+  "description": "Hand-checked linkage gold set for `ffdraft.identity.linkage` (Phase 10, ADR-061). Every canonical player and every source row below is SYNTHETIC. Real names would make the fixture a small redistribution of a vendor's population and would rot as rosters change; invented names exercise the same rules and never go stale. Each case names the rule it exists to pin, and `expect` is what a human decided the correct outcome is - the thresholds are calibrated to these answers, not the other way round.",
+  "rule_version": "phase10_linkage_v1",
+  "canonical": [
+    {
+      "player_id": "gsis:00-0000001",
+      "display_name": "De'Andre Halloway",
+      "position": "WR",
+      "team": "CIN"
+    },
+    {
+      "player_id": "gsis:00-0000002",
+      "display_name": "Marcus Delacroix Jr.",
+      "position": "WR",
+      "team": "ARI"
+    },
+    {
+      "player_id": "gsis:00-0000003",
+      "display_name": "Marcus Delacroix",
+      "position": "RB",
+      "team": "ARI"
+    },
+    {
+      "player_id": "gsis:00-0000004",
+      "display_name": "Tobias Vandermeer",
+      "position": "QB",
+      "team": "BUF"
+    },
+    {
+      "player_id": "gsis:00-0000005",
+      "display_name": "Callum Fitzwarren III",
+      "position": "RB",
+      "team": "WAS"
+    },
+    {
+      "player_id": "gsis:00-0000006",
+      "display_name": "Callum Fitzwarren",
+      "position": "RB",
+      "team": "SF"
+    },
+    {
+      "player_id": "gsis:00-0000007",
+      "display_name": "Rashad Okonkwo-Bell",
+      "position": "TE",
+      "team": "DET"
+    },
+    {
+      "player_id": "gsis:00-0000008",
+      "display_name": "Rashard Okonkwo-Bell",
+      "position": "TE",
+      "team": "NYJ"
+    },
+    {
+      "player_id": "gsis:00-0000009",
+      "display_name": "Émile Beaufort",
+      "position": "WR",
+      "team": "NO"
+    },
+    {
+      "player_id": "gsis:00-0000010",
+      "display_name": "Jonas Wexley",
+      "position": "QB",
+      "team": "LAC"
+    },
+    {
+      "player_id": "gsis:00-0000011",
+      "display_name": "Jonah Wexley",
+      "position": "WR",
+      "team": "LAC"
+    },
+    {
+      "player_id": "gsis:00-0000012",
+      "display_name": "Bartholomew Quintanilla",
+      "position": "RB",
+      "team": "TEN"
+    },
+    {
+      "player_id": "gsis:00-0000013",
+      "display_name": "Silas T. Ravensworth",
+      "position": "TE",
+      "team": "GB"
+    }
+  ],
+  "cases": [
+    {
+      "id": "exact_after_apostrophe_normalization",
+      "pins": "An apostrophe carries no word boundary, so `De'Andre` and `DeAndre` are one name and this is an EXACT match. Under the resolver's diagnostic normalization it is not - that spaces punctuation and leaves 'de andre' against 'deandre' - which is why linkage has its own key rather than borrowing that one.",
+      "row": {
+        "external_player_id": "101",
+        "display_name": "DeAndre Halloway",
+        "position": "WR",
+        "team": "CIN",
+        "order_key": 4.1
+      },
+      "expect": {
+        "outcome": "accepted",
+        "player_id": "gsis:00-0000001",
+        "method": "resolved_exact_name_position"
+      }
+    },
+    {
+      "id": "generational_suffix_dropped_both_sides",
+      "pins": "`Jr.` normalizes away on the canonical side, so a source row without it matches exactly - and it must not therefore collide with the RB of the same base name, because position blocks first.",
+      "row": {
+        "external_player_id": "102",
+        "display_name": "Marcus Delacroix",
+        "position": "WR",
+        "team": "ARI",
+        "order_key": 18.0
+      },
+      "expect": {
+        "outcome": "accepted",
+        "player_id": "gsis:00-0000002",
+        "method": "resolved_exact_name_position"
+      }
+    },
+    {
+      "id": "cross_position_must_never_resolve",
+      "pins": "The RB Marcus Delacroix and the WR Marcus Delacroix Jr. normalize identically. Blocking on position is the only thing keeping them apart, and this row must reach the RB.",
+      "row": {
+        "external_player_id": "103",
+        "display_name": "Marcus Delacroix",
+        "position": "RB",
+        "team": "ARI",
+        "order_key": 55.0
+      },
+      "expect": {
+        "outcome": "accepted",
+        "player_id": "gsis:00-0000003",
+        "method": "resolved_exact_name_position"
+      }
+    },
+    {
+      "id": "suffix_collision_within_one_position_quarantines",
+      "pins": "Two RBs whose names differ ONLY by a suffix normalize to one string. Choosing either would be the collapse the roadmap forbids; both must be refused.",
+      "row": {
+        "external_player_id": "104",
+        "display_name": "Callum Fitzwarren Jr",
+        "position": "RB",
+        "team": "WAS",
+        "order_key": 71.0
+      },
+      "expect": {
+        "outcome": "quarantined",
+        "reason": "quarantined_ambiguous_canonical_name"
+      }
+    },
+    {
+      "id": "one_edit_apart_at_the_same_position_quarantines",
+      "pins": "Rashad and Rashard are one character apart at the same position. The absolute score is high; the MARGIN is not, and the margin rule is what refuses.",
+      "row": {
+        "external_player_id": "105",
+        "display_name": "Rashaad Okonkwo-Bell",
+        "position": "TE",
+        "team": "DET",
+        "order_key": 96.0
+      },
+      "expect": {
+        "outcome": "quarantined",
+        "reason": "quarantined_below_min_margin"
+      }
+    },
+    {
+      "id": "accent_stripped",
+      "pins": "Unicode normalization is applied consistently, so an unaccented source spelling is an exact match.",
+      "row": {
+        "external_player_id": "106",
+        "display_name": "Emile Beaufort",
+        "position": "WR",
+        "team": "NO",
+        "order_key": 120.0
+      },
+      "expect": {
+        "outcome": "accepted",
+        "player_id": "gsis:00-0000009",
+        "method": "resolved_exact_name_position"
+      }
+    },
+    {
+      "id": "correct_candidate_is_second_under_naive_name_only_matching",
+      "pins": "Name-only matching would hand this row the WR 'Jonah Wexley' at a perfect 100. Blocking on QB removes him entirely, and what is left is a 91.7 near-miss against a DIFFERENT first name - Jonah is not Jonas - which the score rule then refuses. Blocking prevented a confident wrong answer and the threshold prevented a hopeful one.",
+      "row": {
+        "external_player_id": "107",
+        "display_name": "Jonah Wexley",
+        "position": "QB",
+        "team": "LAC",
+        "order_key": 140.0
+      },
+      "expect": {
+        "outcome": "quarantined",
+        "reason": "quarantined_below_min_score",
+        "candidate_1_player_id": "gsis:00-0000010"
+      }
+    },
+    {
+      "id": "stale_team_does_not_block",
+      "pins": "Team is a diagnostic, never a gate. This row's team is wrong (a trade the source has not caught up with) and it must still resolve.",
+      "row": {
+        "external_player_id": "108",
+        "display_name": "Bartholomew Quintanilla",
+        "position": "RB",
+        "team": "NYG",
+        "order_key": 155.0
+      },
+      "expect": {
+        "outcome": "accepted",
+        "player_id": "gsis:00-0000012",
+        "method": "resolved_exact_name_position",
+        "team_agrees": false
+      }
+    },
+    {
+      "id": "middle_initial_and_period",
+      "pins": "A middle initial is retained after normalization, so this is a fuzzy match that must clear both score and margin on its own merits.",
+      "row": {
+        "external_player_id": "109",
+        "display_name": "Silas Ravensworth",
+        "position": "TE",
+        "team": "GB",
+        "order_key": 190.0
+      },
+      "expect": {
+        "outcome": "accepted",
+        "player_id": "gsis:00-0000013",
+        "method": "resolved_high_confidence_fuzzy"
+      }
+    },
+    {
+      "id": "rookie_absent_from_the_registry",
+      "pins": "A player the canonical registry has never heard of scores below the candidate floor against every name at his position, so there is nothing to propose and the row quarantines with a reason rather than attaching to the nearest spelling.",
+      "row": {
+        "external_player_id": "110",
+        "display_name": "Ezekiel Marchetti",
+        "position": "WR",
+        "team": "CHI",
+        "order_key": 210.0
+      },
+      "expect": {
+        "outcome": "quarantined",
+        "reason": "quarantined_no_candidate_at_position"
+      }
+    },
+    {
+      "id": "team_defence_is_excluded_not_quarantined",
+      "pins": "A DEF row is not a linkage failure; it is out of scope. It must not enter the coverage denominator.",
+      "row": {
+        "external_player_id": "111",
+        "display_name": "Chicago Bears",
+        "position": "DEF",
+        "team": "CHI",
+        "order_key": 230.0
+      },
+      "expect": {
+        "outcome": "excluded",
+        "reason": "excluded_non_core_position"
+      }
+    },
+    {
+      "id": "kicker_is_excluded_not_quarantined",
+      "pins": "Kickers are outside this project's modelled positions. Same treatment as DEF.",
+      "row": {
+        "external_player_id": "112",
+        "display_name": "Aleksandr Petrov",
+        "position": "PK",
+        "team": "DEN",
+        "order_key": 240.0
+      },
+      "expect": {
+        "outcome": "excluded",
+        "reason": "excluded_non_core_position"
+      }
+    },
+    {
+      "id": "malformed_position_quarantines",
+      "pins": "An unreadable position token could be a team unit or a typo, and the two need different handling. Blocking is impossible, so the row refuses.",
+      "row": {
+        "external_player_id": "113",
+        "display_name": "Tobias Vandermeer",
+        "position": "TMQB",
+        "team": "BUF",
+        "order_key": 250.0
+      },
+      "expect": {
+        "outcome": "quarantined",
+        "reason": "quarantined_unparseable_position"
+      }
+    },
+    {
+      "id": "empty_name_quarantines",
+      "pins": "A row with no usable name has nothing to score. It refuses rather than matching whatever sorts first.",
+      "row": {
+        "external_player_id": "114",
+        "display_name": "   ",
+        "position": "WR",
+        "team": "MIA",
+        "order_key": 260.0
+      },
+      "expect": {
+        "outcome": "quarantined",
+        "reason": "quarantined_unusable_name"
+      }
+    },
+    {
+      "id": "hyphen_and_double_space",
+      "pins": "A hyphen IS a word boundary, so 'Okonkwo-Bell' and 'Okonkwo Bell' are the same name and repeated whitespace collapses. That makes this an exact match, which is accepted even though the runner-up (Rashard) sits 2.6 points behind: the exact path requires collision-freedom, not a margin, and there is exactly one Rashad at this position.",
+      "row": {
+        "external_player_id": "115",
+        "display_name": "Rashad  Okonkwo Bell",
+        "position": "TE",
+        "team": "DET",
+        "order_key": 98.0
+      },
+      "expect": {
+        "outcome": "accepted",
+        "player_id": "gsis:00-0000007",
+        "method": "resolved_exact_name_position"
+      }
+    }
+  ]
+}

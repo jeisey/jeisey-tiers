@@ -467,7 +467,13 @@ test.describe("data and methodology", () => {
     await expect(page.getByText(/Exact tier edges are soft/)).toBeVisible();
     await expect(page.getByText(/Injury and roster status is annotation only/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Sources and attribution" })).toBeVisible();
-    await expect(page.locator("body")).not.toContainText(/fantasypros|fantasycalc/i);
+    // Phase 10 attributes FantasyPros: the build reads their API server-side with the
+    // owner's key, and their terms ask for attribution whether or not a number is shown.
+    // What must still hold is that no FantasyPros *number* reaches the page, and the
+    // attribution says so in as many words.
+    await expect(page.getByText("Fantasy Football Calculator").first()).toBeVisible();
+    await expect(page.getByText(/never reaches this page/)).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/fantasycalc/i);
   });
 
   test("is reachable from the header status chip", async ({ page }) => {

@@ -1,0 +1,27 @@
+{
+  "accepted": 222,
+  "accepted_by_method": {
+    "resolved_exact_name_position": 222
+  },
+  "coverage": 1.0,
+  "excluded_non_core": 48,
+  "min_coverage": 0.9,
+  "passes_gate": true,
+  "quarantined": 0,
+  "quarantined_by_reason": {},
+  "relevant_rows": 222,
+  "rule": {
+    "accept_exact": true,
+    "candidate_floor": 60.0,
+    "keep_candidates": 2,
+    "min_coverage": 0.9,
+    "min_margin": 6.0,
+    "min_score": 92.0,
+    "top_depth": 300,
+    "version": "phase10_linkage_v1"
+  },
+  "source_id": "fantasyfootballcalculator_adp",
+  "top_unresolved": [],
+  "top_unresolved_depth": 300,
+  "total_source_rows": 270
+}

@@ -43,12 +43,24 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
 import { useMediaQuery } from "../components/useMediaQuery";
+import { MarketTrend } from "../charts/MarketTrend";
 import type {
   ArbitrageRecord,
+  MarketTrendSeriesRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   TierRecord,
 } from "../data/contracts";
+import {
+  CROSS_MARKET,
+  comparisonFor,
+  consensusOf,
+  crossMarketOf,
+  crossMarketSummaryText,
+  marketLabel,
+  marketsOf,
+  windowLabel,
+} from "../data/multimarket";
 import {
   EM_DASH,
   formatAdp,
@@ -82,6 +94,10 @@ export interface PlayerDetailData {
    * table. Null when the build published no assignment for the preset.
    */
   readonly cohortExact: boolean | null;
+  /** The ADP market the reader has selected. Decides which comparison leads the card. */
+  readonly market?: string;
+  /** Retained ADP history for that market, or null when there is not enough of it. */
+  readonly trendSeries?: MarketTrendSeriesRecord | null;
 }
 
 /**
@@ -297,6 +313,11 @@ export function PlayerDetail({
   if (data === null) return null;
 
   const { tier, arbitrage, status, projection } = data;
+  const market = data.market ?? CROSS_MARKET;
+  const selected = arbitrage === null ? null : comparisonFor(arbitrage, market);
+  const consensus = arbitrage === null ? null : consensusOf(arbitrage);
+  const cross = arbitrage === null ? null : crossMarketOf(arbitrage);
+  const everyMarket = arbitrage === null ? {} : marketsOf(arbitrage);
   const name = tier?.display_name ?? arbitrage?.display_name ?? status?.display_name ?? "Player";
   const position = tier?.position ?? arbitrage?.position ?? status?.position ?? null;
   const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? null;
@@ -444,6 +465,77 @@ export function PlayerDetail({
                   srSuffix={trend?.direction === "unknown" ? "trend collecting" : trend?.text}
                 />
               </div>
+
+              {/* The same history the slope above was computed from, as a shape. Up is
+                  earlier — the axis is inverted, because a falling line for "the market
+                  likes him more" reads backwards (roadmap 10.7). No vendor is called: the
+                  points come from the artifact, which came from a retained snapshot. */}
+              <MarketTrend
+                points={data.trendSeries?.points ?? []}
+                label={marketLabel(selected?.source_id ?? arbitrage.market_source_id)}
+                trend={arbitrage.market_trend}
+              />
+
+              {/* Every market side by side. The expert consensus sits with them and is
+                  labelled a ranking, because a reader comparing the model to the experts is
+                  asking a different question from one comparing it to a price. */}
+              {(Object.keys(everyMarket).length > 1 || consensus !== null) && (
+                <div className="market-compare">
+                  <table className="compare-table">
+                    <caption className="visually-hidden">
+                      {`Every published market and expert reference for ${name}, each compared with the model's fair rank of ${formatRank(arbitrage.fair_rank)}.`}
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Source</th>
+                        <th scope="col">Reading</th>
+                        <th scope="col">vs fair rank</th>
+                        <th scope="col">Window</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.values(everyMarket)
+                        .sort((a, b) => a.source_id.localeCompare(b.source_id))
+                        .map((entry) => {
+                          const entryGap = describeGap(entry.rank_gap);
+                          return (
+                            <tr
+                              key={entry.source_id}
+                              data-selected={entry.source_id === market ? "true" : undefined}
+                            >
+                              <th scope="row">{marketLabel(entry.source_id)}</th>
+                              <td>{`ADP ${formatAdp(entry.market_adp)}`}</td>
+                              <td className="dir" data-kind={entryGap.kind}>
+                                <span aria-hidden="true">{formatSigned(entry.rank_gap)}</span>
+                                <span className="visually-hidden">{entryGap.sentence}</span>
+                              </td>
+                              <td className="muted">
+                                {windowLabel(
+                                  entry.aggregation_window_type,
+                                  entry.aggregation_window_days,
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      {consensus !== null && (
+                        <tr data-signal="ecr">
+                          <th scope="row">{marketLabel(consensus.source_id)}</th>
+                          <td>{`Rank ${String(consensus.ecr)}`}</td>
+                          <td className="dir" data-kind={describeGap(consensus.ecr_gap).kind}>
+                            <span aria-hidden="true">{formatSigned(consensus.ecr_gap)}</span>
+                            <span className="visually-hidden">
+                              {`the expert consensus ranks him ${Math.abs(consensus.ecr_gap).toFixed(0)} places ${consensus.ecr_gap > 0 ? "lower" : "higher"} than the model`}
+                            </span>
+                          </td>
+                          <td className="muted">expert consensus, not a price</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  <p className="section-note">{crossMarketSummaryText(cross)}</p>
+                </div>
+              )}
               <div className="readout-grid">
                 <Readout
                   label="Observed picks"

@@ -1,0 +1,34 @@
+{
+  "source": "fantasyfootballcalculator_adp",
+  "endpoint": "GET https://fantasyfootballcalculator.com/api/v1/adp/half-ppr?teams=12&year=2026&position=all",
+  "recorded_at": "2026-09-02",
+  "evidence": "docs/source-probes/2026-09-02/phase10-report.md section 1",
+  "note": "Field names, types and null fractions as measured on a GitHub runner. Player values below are SYNTHETIC: the schema is the contract, the rows are not vendor data.",
+  "envelope_fields": ["status", "meta", "players"],
+  "meta_fields": ["type", "teams", "rounds", "total_drafts", "start_date", "end_date"],
+  "player_fields": {
+    "player_id": {"types": ["int"], "null_fraction": 0.0},
+    "name": {"types": ["str"], "null_fraction": 0.0},
+    "position": {"types": ["str"], "null_fraction": 0.0},
+    "team": {"types": ["str"], "null_fraction": 0.0},
+    "adp": {"types": ["float"], "null_fraction": 0.0},
+    "adp_formatted": {"types": ["str"], "null_fraction": 0.0},
+    "times_drafted": {"types": ["int"], "null_fraction": 0.0},
+    "high": {"types": ["int"], "null_fraction": 0.0},
+    "low": {"types": ["int"], "null_fraction": 0.0},
+    "stdev": {"types": ["float"], "null_fraction": 0.0},
+    "bye": {"types": ["int"], "null_fraction": 0.0}
+  },
+  "measured_cohorts": {
+    "standard": {"rows": 221, "core_rows": 186, "deepest_adp": 172.6, "total_drafts": 1794},
+    "half-ppr": {"rows": 233, "deepest_adp": 188.6, "total_drafts": 3142},
+    "ppr": {"rows": 264, "deepest_adp": 201.1, "total_drafts": 8007}
+  },
+  "measured_facts": {
+    "teams_parameter_honoured": false,
+    "teams_comparison": "byte-identical per player across 8/10/12/14 in all three formats",
+    "window": {"start_date": "2026-08-26", "end_date": "2026-09-02", "days": 7},
+    "stdev_range_standard": [0.6, 31.9],
+    "id_bridge": "none; player_id is FFC-internal"
+  }
+}

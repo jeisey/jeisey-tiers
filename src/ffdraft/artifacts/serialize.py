@@ -19,11 +19,12 @@ from __future__ import annotations
 import csv
 import io
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from ffdraft.artifacts.csv_flatten import flattener_for
 from ffdraft.artifacts.schemas import (
     ARTIFACT_SCHEMA_VERSION,
     record_field_order,
@@ -90,14 +91,31 @@ def _ordered_record(schema_name: str, record: Mapping[str, Any]) -> dict[str, An
 
 
 def records_to_csv(artifact: str, records: Sequence[Mapping[str, Any]]) -> str:
-    """Render records as CSV with schema-declared columns and stable row order."""
+    """Render records as CSV with declared columns and stable row order.
+
+    An artifact whose JSON record nests declares a flattener (Phase 10, ADR-065): a CSV cell
+    holds a scalar, and rendering an array of per-source comparisons with ``str()`` would
+    produce a cell containing a Python repr. Everything else keeps the previous behaviour -
+    columns from the record schema, values copied through.
+    """
+
+    def identity(record: Mapping[str, Any]) -> Mapping[str, Any]:
+        return record
+
     spec = spec_for(artifact)
-    columns = record_field_order(spec.schema_name)
+    flattener = flattener_for(artifact)
+    columns: Sequence[str]
+    project: Callable[[Mapping[str, Any]], Mapping[str, Any]]
+    if flattener is None:
+        columns, project = record_field_order(spec.schema_name), identity
+    else:
+        columns, project = flattener
     buffer = io.StringIO(newline="")
     writer = csv.writer(buffer, lineterminator="\n")
-    writer.writerow(columns)
+    writer.writerow(list(columns))
     for record in spec.sorted_records(records):
-        writer.writerow([_csv_cell(record.get(column)) for column in columns])
+        row = project(record)
+        writer.writerow([_csv_cell(row.get(column)) for column in columns])
     return buffer.getvalue()
 
 
