@@ -3481,3 +3481,43 @@ dl.facts dd {
     transition: none;
   }
 }
+
+/*
+ * The market selector reads as a control, not as a numbered section (ADR-067). It sits
+ * between the condition notice and the board, so its height is the difference between a
+ * phone showing the board on arrival and a phone showing only explanation.
+ */
+.market-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 var(--space-3);
+}
+
+/*
+ * The note rides beside the control rather than under it wherever the line has room, so the
+ * whole thing costs one row on a laptop and two on a phone. Nine pixels of overflow is what
+ * pushed the board off a Pixel 7 when this was a numbered section with a paragraph, and the
+ * fix is for the control to be control-sized rather than for the margins to be shaved.
+ */
+.market-control-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/*
+ * On a phone the note is dropped, and almost nothing goes with it: the choices are already
+ * labelled `FFC Recent` and `MFL Cumulative`, so the window — the thing that makes the two
+ * numbers different quantities — is in the control itself. What is left is the league-size
+ * caveat, which `Data` states in full. The board is worth more than the restatement.
+ */
+@media (max-width: 30rem) {
+  .market-control-note {
+    display: none;
+  }
+}

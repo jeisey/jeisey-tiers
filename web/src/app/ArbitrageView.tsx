@@ -180,7 +180,12 @@ export function ArbitrageView({
           </div>
         </SectionHead>
 
-        <DraftRail rows={railRows} onSelect={onSelect} selectedPlayerId={selectedPlayerId} />
+        <DraftRail
+          rows={railRows}
+          onSelect={onSelect}
+          selectedPlayerId={selectedPlayerId}
+          market={market}
+        />
 
         <div className="legend">
           <span className="legend-item">
@@ -268,19 +273,28 @@ function MarketSelector({
   readonly windowText: string;
   readonly observed: { readonly leagueSize: boolean } | null;
 }): React.JSX.Element {
-  const meta = MARKET_SOURCES[selected];
-  const description =
-    selected === CROSS_MARKET
+  // The per-source description reaches the reader through the radio's accessible name rather
+  // than through a paragraph. On a phone this control sits directly between the reader and
+  // the board, and a sentence here costs more than it explains — `Data` carries the full
+  // description of every source.
+  const describe = (option: string): string =>
+    option === CROSS_MARKET
       ? "Every published ADP source side by side, with the spread between them"
-      : (meta?.description ?? "");
+      : (MARKET_SOURCES[option]?.description ?? "");
   return (
-    <section className="section" aria-labelledby="market-selector-heading">
-      <SectionHead
-        index="00"
-        id="market-selector-heading"
-        title="Market"
-        note={description}
-      >
+    /*
+     * A control, not a section. It was a numbered `SectionHead` with its own explanatory
+     * paragraph, which on a phone pushed the board itself below the fold — a regression that
+     * only appears once a build publishes more than one market, because the selector does not
+     * render at all below two. No fixture had two until ADR-067, so nothing caught it.
+     *
+     * Now it reads like Scoring and Teams do: a label, the choices, and one line of context.
+     */
+    <section className="market-control" aria-labelledby="market-selector-heading">
+      <div className="control">
+        <span className="control-label" id="market-selector-heading">
+          Market
+        </span>
         <div className="segmented" role="radiogroup" aria-label="ADP market">
           {options.map((option) => (
             <button
@@ -293,20 +307,24 @@ function MarketSelector({
                 onSelect(option);
               }}
             >
-              {marketLabel(option)}
+              <span className="visually-hidden">{describe(option)}</span>
+              <span aria-hidden="true">{marketLabel(option)}</span>
             </button>
           ))}
         </div>
-      </SectionHead>
-      <p className="section-note">
-        {windowText !== "" && <>Aggregated over the {windowText}. </>}
+      </div>
+      {/*
+        One line, because it sits between the reader and the board on a phone. What survives
+        is the part that changes what the number *means*: the window a seven-day ADP and a
+        season-cumulative one are not the same quantity, and whether league size was observed
+        at all. The fuller methodology is in Data, which is where a reader goes for it.
+      */}
+      <p className="market-control-note">
+        {windowText !== "" && <>{windowText}</>}
         {observed !== null && (
           <>
-            Scoring is observed for this cohort; league size is{" "}
-            <strong>{observed.leagueSize ? "observed" : "not observed"}</strong>
-            {observed.leagueSize
-              ? "."
-              : " — this source does not publish a league-size breakdown, so the board does not claim one."}
+            {windowText !== "" && " · "}
+            {observed.leagueSize ? "league size observed" : "league size not observed"}
           </>
         )}
       </p>

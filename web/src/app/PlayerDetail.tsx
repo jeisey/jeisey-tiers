@@ -321,8 +321,18 @@ export function PlayerDetail({
   const name = tier?.display_name ?? arbitrage?.display_name ?? status?.display_name ?? "Player";
   const position = tier?.position ?? arbitrage?.position ?? status?.position ?? null;
   const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? null;
-  const gap = arbitrage === null ? null : describeGap(arbitrage.rank_gap);
-  const trend = arbitrage === null ? null : describeTrend(arbitrage.market_trend);
+  // The card follows the selector like the table and the rail do. `selected` is the chosen
+  // market's own comparison; the flat V1 fields are the fallback for a Release 1 bundle that
+  // has no `markets` array at all. Reading the flat pair unconditionally is what made the
+  // card show MyFantasyLeague while the table showed FFC (ADR-067).
+  const gap =
+    arbitrage === null ? null : describeGap(selected?.rank_gap ?? arbitrage.rank_gap);
+  const trend =
+    arbitrage === null ? null : describeTrend(selected?.market_trend ?? arbitrage.market_trend);
+  // Labelled by the source the number actually came from. Under the cross-market view
+  // `comparisonFor` resolves to one real source, and calling that "Cross-market ADP" would
+  // name a market the figure did not come from.
+  const shownMarket = selected?.source_id ?? market;
   const badge = statusBadge(status);
   const meaningful = hasMeaningfulStatus(status);
   // Build-level market flags — an approximate cohort, a thin cohort, a trend still collecting —
@@ -420,7 +430,7 @@ export function PlayerDetail({
           {arbitrage === null ? (
             <p className="detail-empty">
               {data.marketAvailable
-                ? "No current MyFantasyLeague ADP. He is fully ranked on the tier board; there is simply no market price to compare against."
+                ? `No current ${marketLabel(market)} ADP. He is fully ranked on the tier board; there is simply no market price to compare against.`
                 : "The market comparison is unavailable for this build."}
             </p>
           ) : (
@@ -433,15 +443,18 @@ export function PlayerDetail({
               )}
               <div className="readout-grid">
                 <Readout
-                  label="MFL ADP"
-                  value={formatAdp(arbitrage.market_adp)}
+                  label={`${marketLabel(shownMarket)} ADP`}
+                  value={formatAdp(selected?.market_adp ?? arbitrage.market_adp)}
                   hint={data.cohortExact === false ? "approximate cohort" : undefined}
                   strong
                 />
-                <Readout label="Market rank" value={formatRank(arbitrage.market_rank)} />
+                <Readout
+                  label="Market rank"
+                  value={formatRank(selected?.market_rank ?? arbitrage.market_rank)}
+                />
                 <Readout
                   label="Value gap"
-                  value={formatSigned(arbitrage.rank_gap)}
+                  value={formatSigned(selected?.rank_gap ?? arbitrage.rank_gap)}
                   kind={gap?.kind}
                   hint={
                     gap?.kind === "bargain"
@@ -539,16 +552,18 @@ export function PlayerDetail({
               <div className="readout-grid">
                 <Readout
                   label="Observed picks"
-                  value={
-                    arbitrage.market_adp_low === null || arbitrage.market_adp_high === null
+                  value={(() => {
+                    const low = selected?.market_adp_low ?? arbitrage.market_adp_low;
+                    const high = selected?.market_adp_high ?? arbitrage.market_adp_high;
+                    return low === null || high === null
                       ? EM_DASH
-                      : `${formatAdp(arbitrage.market_adp_low)} – ${formatAdp(arbitrage.market_adp_high)}`
-                  }
+                      : `${formatAdp(low)} – ${formatAdp(high)}`;
+                  })()}
                   hint="earliest – latest"
                 />
                 <Readout
                   label="Regional value gap"
-                  value={arbitrage.regional_value_gap.toFixed(3)}
+                  value={(selected?.regional_value_gap ?? arbitrage.regional_value_gap).toFixed(3)}
                 />
                 <Readout label="Cohort" value={arbitrage.market_cohort_detail} size="sm" />
                 <Readout

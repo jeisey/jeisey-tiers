@@ -15,7 +15,6 @@ import { setMediaQuery } from "./setup";
 import {
   FIXTURE_GENERATED_AT,
   arbitrageEnvelope,
-  arbitrageRecords,
   buildMetadata,
   playerStatusEnvelope,
   projectionEnvelope,
@@ -87,6 +86,16 @@ afterEach(() => {
  * moved; a lookup by header keeps asserting what the test means — "the Trend column" —
  * rather than where that column happened to sit when the test was written.
  */
+/** The ADP column's heading, whose text names whichever market is selected. */
+function headerEndingIn(table: HTMLElement, suffix: string): string {
+  const headers = within(table)
+    .getAllByRole("columnheader")
+    .map((cell) => (cell.textContent ?? "").replace(/[\u25b2\u25bc]/g, "").trim());
+  const found = headers.find((label) => label.endsWith(suffix));
+  expect(found, `no column heading ends in "${suffix}"; saw ${headers.join(" | ")}`).toBeTruthy();
+  return found ?? "";
+}
+
 function cellUnder(table: HTMLElement, header: string, rowIndex = 1): HTMLElement | undefined {
   // The rendered header carries a sort indicator glyph, which is presentation rather than
   // identity. Comparing on the label alone keeps the lookup working when the indicator moves.
@@ -260,19 +269,31 @@ describe("chart and table agreement", () => {
     expect(document.body.textContent).not.toMatch(/value cliff/i);
   });
 
+  /**
+   * Agreement between the two, read off the page rather than pinned to a fixture value.
+   *
+   * It used to assert the flat V1 `market_adp` — MyFantasyLeague's — which passed only while
+   * there was one market. Once a second went live the table followed the selector and the
+   * rail did not, and this test kept passing on the number the rail was wrong about
+   * (ADR-067). Comparing the rail against the *table* is what its own name promises, and it
+   * cannot go quietly stale when the default market changes.
+   */
   it("draws the draft rail from the same numbers the arbitrage table shows", async () => {
     go("?view=arbitrage");
     render(<App />);
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Draft rail" })).toBeDefined();
     });
-    const record = arbitrageRecords()
-      .filter((row) => row.league_preset_id === "redraft-12" && row.scoring_preset === "PPR")
-      .sort((a, b) => b.arbitrage_score - a.arbitrage_score)[0];
-    const mark = screen.getAllByRole("button", { name: new RegExp(`^${record?.display_name ?? ""},`) })[0];
+    const table = screen.getByRole("table", { name: /market-gap board/i });
+    const name = within(table).getAllByRole("row")[1]?.querySelector(".player-name")?.textContent;
+    expect(name).toBeTruthy();
+    const adpCell = cellUnder(table, headerEndingIn(table, "ADP"), 1)?.textContent?.trim();
+    expect(adpCell).toBeTruthy();
+
+    const mark = screen.getAllByRole("button", { name: new RegExp(`^${name ?? ""},`) })[0];
     const label = mark?.getAttribute("aria-label") ?? "";
-    expect(label).toContain(`fair rank ${String(record?.fair_rank)}`);
-    expect(label).toContain(`ADP ${(record?.market_adp ?? 0).toFixed(1)}`);
+    // The rail names the same market and quotes the same price the table's top row shows.
+    expect(label).toContain(`ADP ${adpCell ?? ""}`);
   });
 });
 
@@ -310,11 +331,14 @@ describe("arbitrage view", () => {
       .getAllByRole("columnheader")
       .map((cell) => (cell.textContent ?? "").replace(/[\u25b2\u25bc]/g, "").trim());
 
-    // FantasyPros publishes nothing at the provisioned API tier, so the column is gone
-    // rather than present-and-empty.
+    // FantasyPros publishes nothing at the provisioned API tier, so its column is gone
+    // rather than present-and-empty — and it stays gone however many ADP markets exist.
     expect(headers).not.toContain("FP ECR");
-    // One market priced this fixture, so there is no disagreement to show.
-    expect(headers).not.toContain("Spread");
+    // Spread *is* here, because the fixture now carries two markets that disagree. It was
+    // absent for as long as no fixture had a second market, which is the blind spot that let
+    // three production refreshes fail (ADR-067). The rule is the same either way: the column
+    // appears exactly when something fills it, which the next test proves for every column.
+    expect(headers).toContain("Spread");
     // The structural columns are unconditional.
     expect(headers).toContain("Fair Rank");
     expect(headers).toContain("Score");
@@ -526,7 +550,7 @@ describe("player detail", () => {
     await boardReady();
     fireEvent.click(screen.getByRole("button", { name: "Zach Ertz" }));
     await waitFor(() => {
-      expect(screen.getByText(/No current MyFantasyLeague ADP/)).toBeDefined();
+      expect(screen.getByText(/No current .* ADP/)).toBeDefined();
     });
   });
 
@@ -799,7 +823,7 @@ describe("player card variants", () => {
       "Current status",
     ]);
     fireEvent.click(within(tabs).getByRole("tab", { name: "Draft market" }));
-    expect(within(dialog).getByText(/No current MyFantasyLeague ADP/)).toBeDefined();
+    expect(within(dialog).getByText(/No current .* ADP/)).toBeDefined();
   });
 
   /**

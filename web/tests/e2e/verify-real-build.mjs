@@ -90,6 +90,43 @@ function columnLookup(headerTexts) {
 const headerTexts = (page) =>
   page.$$eval("table.sheet thead th", (ths) => ths.map((th) => th.textContent.trim()));
 
+
+/**
+ * The market the page is showing, and that source's quote for one record.
+ *
+ * The verifier used to compare the rendered ADP cell against the flat V1 `market_adp`, which
+ * is MyFantasyLeague's. That was correct for exactly as long as there was one market. The
+ * first refresh after a second one went live failed all thirty rows against a page that was
+ * right: the board defaults to FFC, whose seven-day window prices a riser earlier than MFL's
+ * season aggregate (ADR-067).
+ *
+ * So the source is read from the column heading the page rendered — the same header lookup
+ * the column indices come from — and the expected value from that source's own entry in
+ * `markets`. A record the selected market did not price has no cell to check; the page shows
+ * an em dash, which is a real state rather than a missing number.
+ */
+function shownSource(header) {
+  const label = header.replace(/\u25b2|\u25bc/g, "").trim();
+  if (label === "Median ADP") return null; // cross-market: no single source to check against
+  for (const [sourceId, name] of Object.entries(MARKET_LABELS)) {
+    if (label === `${name} ADP`) return sourceId;
+  }
+  return null;
+}
+
+/** That source's quote, or `null` when it did not price him. */
+function quoteFor(record, sourceId) {
+  if (sourceId === null) return null;
+  const markets = Array.isArray(record.markets) ? record.markets : [];
+  return markets.find((entry) => entry.source_id === sourceId) ?? null;
+}
+
+/** Kept in step with `web/src/data/multimarket.ts`; a rename there must land here too. */
+const MARKET_LABELS = {
+  myfantasyleague_adp: "MFL Cumulative",
+  fantasyfootballcalculator_adp: "FFC Recent",
+};
+
 const exe = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
 const browser = await chromium.launch(exe ? { executablePath: exe } : {});
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
@@ -171,6 +208,10 @@ const arbAt = {
   score: arbColumn.at("Score"),
   trend: arbColumn.at("Trend"),
 };
+const arbHeaders = await headerTexts(page);
+const arbSource = shownSource(
+  arbHeaders.find((text) => text.replace(/\u25b2|\u25bc/g, "").trim().endsWith("ADP")) ?? "",
+);
 const arbProblem = arbColumn.problem("arbitrage");
 if (arbProblem !== null) failures.push(arbProblem);
 else {
@@ -182,8 +223,17 @@ else {
     if (rank !== String(record.fair_rank)) {
       failures.push(`arb row ${i + 1} fair_rank: rendered ${rank}, artifact ${record.fair_rank}`);
     }
-    if (adp !== record.market_adp.toFixed(1)) {
-      failures.push(`arb row ${i + 1} adp: rendered ${adp}, artifact ${record.market_adp.toFixed(1)}`);
+    // Compared against the market the heading names, falling back to the flat V1 field only
+    // when the record carries no `markets` array at all.
+    const quote = quoteFor(record, arbSource);
+    const wantAdp =
+      arbSource === null
+        ? record.market_adp.toFixed(1)
+        : quote === null
+          ? "\u2014"
+          : quote.market_adp.toFixed(1);
+    if (adp !== wantAdp) {
+      failures.push(`arb row ${i + 1} adp: rendered ${adp}, artifact ${wantAdp}`);
     }
     if (score !== record.arbitrage_score.toFixed(1)) {
       const want = record.arbitrage_score.toFixed(1);
@@ -200,7 +250,11 @@ for (const record of arbBlock.filter((r) => r.rank_gap > 0).slice(0, 20)) {
   const label = railLabels.find((l) => l.startsWith(`${record.display_name},`));
   if (!label) { failures.push(`rail: no mark for ${record.display_name}`); continue; }
   if (!label.includes(`fair rank ${record.fair_rank}`)) failures.push(`rail ${record.display_name}: fair anchor`);
-  if (!label.includes(`ADP ${record.market_adp.toFixed(1)}`)) failures.push(`rail ${record.display_name}: market anchor`);
+  const railQuote = quoteFor(record, arbSource);
+  const railAdp = arbSource === null ? record.market_adp : (railQuote?.market_adp ?? null);
+  if (railAdp !== null && !label.includes(`ADP ${railAdp.toFixed(1)}`)) {
+    failures.push(`rail ${record.display_name}: market anchor`);
+  }
 }
 
 // --- Injury badges against the status artifact ----------------------------------------------

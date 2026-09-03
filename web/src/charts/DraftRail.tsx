@@ -44,6 +44,7 @@ import { shortName } from "./TierBoard";
 import { useRovingMarks } from "./useRovingMarks";
 import { formatAdp, formatRank, formatScore, formatSigned } from "../data/format";
 import { describeGap } from "../data/market";
+import { adpFor, gapFor, marketLabel } from "../data/multimarket";
 import { statusBadge } from "../data/model";
 import type { ArbitrageRow } from "../data/model";
 
@@ -67,16 +68,34 @@ export function DraftRail({
   rows,
   onSelect,
   selectedPlayerId,
+  market,
 }: {
   readonly rows: readonly ArbitrageRow[];
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
+  /**
+   * The market the page is showing. The rail used to read the flat V1 `market_adp` while the
+   * table followed the selector, so picking FFC produced a page whose table and rail were
+   * about different markets — and whose rail claimed, in its own words, that the table below
+   * carried the same numbers (ADR-067).
+   */
+  readonly market: string;
 }): React.JSX.Element {
   const container = useRef<HTMLDivElement>(null);
   const width = useElementWidth(container, 1040);
   const compact = width < 720;
 
-  const bound = useMemo(() => railBound(rows.map((row) => row.record.rank_gap)), [rows]);
+  // Only the rows this market priced set the scale. A row it has no opinion about would
+  // otherwise contribute a zero and drag the bound toward the middle.
+  const bound = useMemo(
+    () =>
+      railBound(
+        rows
+          .map((row) => gapFor(row.record, market))
+          .filter((gap): gap is number => gap !== null),
+      ),
+    [rows, market],
+  );
 
   const activate = useCallback(
     (index: number) => {
@@ -99,9 +118,10 @@ export function DraftRail({
     <div className="draft-rail" ref={container}>
       <p className="visually-hidden">
         {`${String(rows.length)} players. Each row pairs the model's fair rank with the ` +
-          "MyFantasyLeague average draft position and shows the signed difference in picks. " +
-          "A positive difference means the market drafts him later than his fair rank, which " +
-          "is the bargain direction. The arbitrage table below carries the same numbers."}
+          `${marketLabel(market)} average draft position and shows the signed difference in ` +
+          "picks. A positive difference means the market drafts him later than his fair rank, " +
+          "which is the bargain direction. The arbitrage table below carries the same numbers, " +
+          "for the same market."}
       </p>
 
       {/*
@@ -123,10 +143,16 @@ export function DraftRail({
       <ol className="rail-rows">
         {rows.map((row, index) => {
           const record = row.record;
-          const gap = describeGap(record.rank_gap);
+          // This market's numbers, not the flat V1 pair. `null` means the selected source has
+          // no opinion about him — a real state, since a source may cover only part of the
+          // board — so he keeps his row and shows an em dash rather than a fabricated zero.
+          const marketAdp = adpFor(record, market);
+          const marketGap = gapFor(record, market);
+          const priced = marketAdp !== null && marketGap !== null;
+          const gap = describeGap(marketGap ?? 0);
           const badge = statusBadge(row.status);
-          const magnitude = Math.min(Math.abs(record.rank_gap), bound) / bound;
-          const overflow = Math.abs(record.rank_gap) > bound;
+          const magnitude = priced ? Math.min(Math.abs(marketGap), bound) / bound : 0;
+          const overflow = priced && Math.abs(marketGap) > bound;
           return (
             <li key={record.player_id}>
               <div
@@ -134,11 +160,14 @@ export function DraftRail({
                 role="button"
                 data-selected={record.player_id === selectedPlayerId}
                 data-player={record.player_id}
-                data-kind={gap.kind}
+                data-kind={priced ? gap.kind : "none"}
+                data-priced={priced}
                 aria-label={
                   `${record.display_name}, ${record.position}, fair rank ` +
-                  `${formatRank(record.fair_rank)}, MyFantasyLeague ADP ` +
-                  `${formatAdp(record.market_adp)}. ${gap.sentence} ` +
+                  `${formatRank(record.fair_rank)}, ` +
+                  (priced
+                    ? `${marketLabel(market)} ADP ${formatAdp(marketAdp)}. ${gap.sentence} `
+                    : `no ${marketLabel(market)} price. `) +
                   `Arbitrage score ${formatScore(record.arbitrage_score)}.` +
                   (badge === null ? "" : ` Current status ${badge.full}, annotation only.`)
                 }
@@ -164,7 +193,7 @@ export function DraftRail({
                   </span>
                   <span className="rail-anchor">
                     <span className="rail-anchor-label">ADP</span>
-                    {formatAdp(record.market_adp)}
+                    {priced ? formatAdp(marketAdp) : "\u2014"}
                   </span>
                 </span>
 

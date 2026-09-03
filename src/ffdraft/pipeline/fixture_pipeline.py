@@ -54,7 +54,9 @@ from ffdraft.contracts import (
     ResolutionOutcome,
     Severity,
     SourceBatch,
+    SurfaceReason,
 )
+from ffdraft.contracts.enums import MarketSignalType
 from ffdraft.identity import (
     CanonicalRegistry,
     build_registry,
@@ -67,6 +69,7 @@ from ffdraft.identity import (
 from ffdraft.identity.aliases import AliasMap
 from ffdraft.identity.resolver import FLAG_SECONDARY_ONLY
 from ffdraft.market.cohorts import COHORT_RULE_VERSION, CohortAssignment, widest_cohort
+from ffdraft.market.comparison import SourceQuote
 from ffdraft.market.current import (
     LOW_MARKET_SAMPLE,
     LOW_SAMPLE_THRESHOLD,
@@ -74,6 +77,11 @@ from ffdraft.market.current import (
     WIDE_MARKET_RANGE,
     CurrentMarket,
     MarketPrice,
+)
+from ffdraft.market.surface import (
+    SURFACE_RULE_VERSION,
+    SurfaceEntry,
+    SurfaceUniverse,
 )
 from ffdraft.market.trend import INSUFFICIENT_TREND_HISTORY, TREND_RULE
 from ffdraft.quality import QualityGate, check_source_freshness
@@ -89,7 +97,13 @@ from ffdraft.sources import (
     NflverseRosterAdapter,
     SleeperPlayerAdapter,
 )
-from ffdraft.sources.market import MflAdpAdapter, MflPlayerDirectory, MflPlayerDirectoryAdapter
+from ffdraft.sources.ffc import FFC_SOURCE_ID
+from ffdraft.sources.market import (
+    MFL_SOURCE_ID,
+    MflAdpAdapter,
+    MflPlayerDirectory,
+    MflPlayerDirectoryAdapter,
+)
 from ffdraft.status.build import PlayerStatusResult, build_player_status_records
 from ffdraft.status.capture import StatusCapture
 from ffdraft.timeutil import isoformat_utc, parse_utc
@@ -665,6 +679,16 @@ def _arbitrage_records(
             snapshot_at=snapshot_at,
         )
 
+    # The rescued player needs a price of his own. A surfaced row only becomes an arbitrage
+    # record when the priced market has an opinion about him — which is exactly why the ten
+    # players that broke the first refresh were on the board at all — so the fixture prices
+    # him before the market is sealed rather than surfacing someone nobody quoted.
+    surfaces, surfaced_rows = _fixture_surface(tiers, assignment, snapshot_at)
+    for row in surfaced_rows:
+        prices[(str(row["scoring_preset"]), assignment.league_size, str(row["player_id"]))] = (
+            _surfaced_price(row, assignment=assignment, snapshot_at=snapshot_at)
+        )
+
     market = CurrentMarket(
         season=FIXTURE_SEASON,
         source_id=market_batch.source_id,
@@ -673,6 +697,14 @@ def _arbitrage_records(
         prices=prices,
         assignments={(assignment.scoring_preset, assignment.league_size): assignment},
     )
+    # A second market, and a player the market rescued from beyond the tier depth.
+    #
+    # Until this existed, *no* fixture in the repository carried either — every local gate
+    # ran against a single-market bundle with no surfaced rows, so every consumer that only
+    # misbehaves on the real shape was invisible until a production refresh hit it. Three
+    # consecutive refreshes failed that way (ADR-067). The fixture is the check now: the
+    # golden artifact has the shape production actually produces.
+    extra_quotes = _fixture_ffc_quotes(tiers, prices)
     result = build_arbitrage_records(
         tiers,
         market=market,
@@ -681,6 +713,9 @@ def _arbitrage_records(
         season=FIXTURE_SEASON,
         generated_at=snapshot_at,
         gate=QualityGate(),
+        extra_quotes={FFC_SOURCE_ID: extra_quotes} if extra_quotes else None,
+        surfaces=surfaces or None,
+        surfaced_rows=surfaced_rows,
     )
     return result.records
 
@@ -759,6 +794,145 @@ def _trend_series_records(
             ),
         )
     return records
+
+
+def _fixture_ffc_quotes(
+    tiers: Sequence[Mapping[str, Any]],
+    prices: Mapping[tuple[str, int, str], MarketPrice],
+) -> dict[tuple[str, str], SourceQuote]:
+    """A second ADP market for the fixture, derived from the first but never equal to it.
+
+    The two markets must genuinely *disagree*, because agreement is what hid the bug: a
+    fixture whose second market repeated the first would render the same number whichever
+    source the page selected, and a consumer reading the wrong one would still look right.
+    FFC's seven-day window prices a riser earlier than MyFantasyLeague's season aggregate,
+    so the offset leans that way — and it is deterministic, because a golden artifact that
+    moved between runs would be worthless to diff.
+
+    Every third player is left unpriced on purpose: a source that covers only part of the
+    board is the normal case, and the cross-market summary has to say "one market" for him
+    rather than inventing a spread.
+    """
+    quotes: dict[tuple[str, str], SourceQuote] = {}
+    for index, (key, price) in enumerate(sorted(prices.items())):
+        if index % 3 == 2:
+            continue
+        scoring, _league_size, player_id = key
+        # Deterministic, signed, and never zero: a fixed fraction of the price plus a small
+        # alternating term, so some rows are cheaper on FFC and some dearer.
+        offset = round(price.market_adp * 0.08 + (1.5 if index % 2 else -2.5), 1)
+        adp = max(1.0, round(price.market_adp - offset, 1))
+        quotes[(scoring, player_id)] = SourceQuote(
+            source_id=FFC_SOURCE_ID,
+            signal_type=MarketSignalType.ADP,
+            player_id=player_id,
+            scoring_preset=scoring,
+            market_adp=adp,
+            sample_size=1794,
+            # FFC publishes a genuine standard deviation and no order statistics; MFL is the
+            # other way round. Keeping that asymmetric in the fixture is what stops the
+            # Dispersion column being written against one source's shape.
+            adp_sd=round(2.0 + (index % 5), 1),
+            league_size=None,
+            aggregation_window_type="rolling",
+            aggregation_window_days=7,
+            cohort_id=f"ffc-{scoring.lower()}",
+            cohort_detail=f"format={scoring.lower()}",
+            snapshot_at_utc=isoformat_utc(price.snapshot_at_utc),
+        )
+    return quotes
+
+
+def _fixture_surface(
+    tiers: Sequence[Mapping[str, Any]],
+    assignment: CohortAssignment,
+    snapshot_at: datetime,
+) -> tuple[dict[tuple[str, str], SurfaceUniverse], list[dict[str, Any]]]:
+    """One player rescued from beyond the published tier depth, per block.
+
+    Synthetic on purpose. The fixture board is far shallower than production's, so there is
+    no genuine player past the depth to rescue; what matters is that the *shape* reaches the
+    artifact, because it is the shape that broke three refreshes — an arbitrage row with no
+    tier row, carrying `outside_tier_board` and a reason.
+    """
+    surfaces: dict[tuple[str, str], SurfaceUniverse] = {}
+    surfaced: list[dict[str, Any]] = []
+    blocks = sorted(
+        {(str(row["league_preset_id"]), str(row["scoring_preset"])) for row in tiers},
+    )
+    for preset_id, scoring in blocks:
+        block = [row for row in tiers if str(row["scoring_preset"]) == scoring]
+        if not block:
+            continue
+        deepest = max(int(row["fair_rank"]) for row in block)
+        anchor = min(block, key=lambda row: int(row["fair_rank"]))
+        player_id = f"{anchor['player_id']}-surfaced"
+        fair_rank = deepest + 40
+        universe = SurfaceUniverse(
+            scoring_preset=scoring,
+            league_preset_id=preset_id,
+            rule_version=SURFACE_RULE_VERSION,
+            tier_depth=deepest,
+            board_is_complete=True,
+        )
+        universe.entries[player_id] = SurfaceEntry(
+            player_id=player_id,
+            fair_rank=fair_rank,
+            reasons=(SurfaceReason.MARKET_TOP300_FFC_ADP,),
+            outside_tier_board=True,
+        )
+        surfaces[(preset_id, scoring)] = universe
+        surfaced.append(
+            {
+                "player_id": player_id,
+                "fair_rank": fair_rank,
+                "display_name": f"{anchor.get('display_name', 'Player')} (surfaced)",
+                "position": anchor.get("position"),
+                "team": anchor.get("team"),
+                "league_preset_id": preset_id,
+                "scoring_preset": scoring,
+            },
+        )
+    return surfaces, surfaced
+
+
+def _surfaced_price(
+    row: Mapping[str, Any],
+    *,
+    assignment: CohortAssignment,
+    snapshot_at: datetime,
+) -> MarketPrice:
+    """The market's price for a player the model ranks past the published tier depth.
+
+    Drafted far earlier than his fair rank, which is the whole reason the surface rule
+    rescues him: a large positive `rank_gap` is what makes him worth showing.
+    """
+    return MarketPrice(
+        player_id=str(row["player_id"]),
+        scoring_preset=str(row["scoring_preset"]),
+        league_size=assignment.league_size,
+        market_adp=float(int(row["fair_rank"]) - 30),
+        market_rank=int(row["fair_rank"]) - 30,
+        sample_size=420,
+        adp_low=float(int(row["fair_rank"]) - 45),
+        adp_high=float(int(row["fair_rank"]) - 12),
+        adp_sd=None,
+        source_id=MFL_SOURCE_ID,
+        cohort_id=assignment.cohort.cohort_id,
+        cohort_detail=assignment.source_format_detail,
+        cohort_exact=assignment.exact,
+        cohort_sufficient=assignment.sufficient,
+        snapshot_at_utc=snapshot_at,
+        snapshot_stale=False,
+        secondary_bridge_only=False,
+        market_trend=None,
+        trend_flags=(INSUFFICIENT_TREND_HISTORY,),
+        # The same cohort flags every other price carries. A surfaced player is priced from
+        # the same snapshot and the same cohort as everyone else — only his *visibility* is
+        # decided differently — so a row of his that dropped `cohort_approximate` would be
+        # claiming a cohort exactness the build never had.
+        quality_flags=tuple(sorted({INSUFFICIENT_TREND_HISTORY, *assignment.quality_flags})),
+    )
 
 
 def _fixture_price(

@@ -183,7 +183,10 @@ test.describe("the player card", () => {
     await expect(dialog.getByRole("tab")).toHaveCount(3);
     await expect(dialog.getByRole("tabpanel")).toHaveCount(1);
     await dialog.getByRole("tab", { name: "Draft market" }).click();
-    await expect(dialog.getByText("MFL ADP", { exact: true })).toBeVisible();
+    // Labelled with whichever market the page is showing, so it is matched by shape.
+    // Pinning one source's name here is what let the card sit on MyFantasyLeague while
+    // the table showed FFC, with every test still green (ADR-067).
+    await expect(dialog.locator(".readout-label").filter({ hasText: / ADP$/ })).toBeVisible();
   });
 });
 
