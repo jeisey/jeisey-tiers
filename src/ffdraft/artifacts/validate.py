@@ -433,6 +433,7 @@ def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
         for record in tiers.get("records", ())
     }
     missing: list[str] = []
+    contradictory: list[str] = []
     rank_mismatch: list[str] = []
     for record in arbitrage.get("records", ()):
         key = (
@@ -441,8 +442,19 @@ def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
             record.get("player_id"),
         )
         tier_record = tier_keys.get(key)
+        # A surface exception is *supposed* to be absent from tiers: the market says he is
+        # relevant, the model ranks him past the published tier depth, and ADR-063 publishes
+        # him on the arbitrage board flagged as outside it. He is not a tier row and never
+        # was, so requiring a subset relation here would forbid the rescue the whole surface
+        # rule exists to perform. The exemption is narrow on purpose — the row has to *say*
+        # it is an exception, in both fields — because the failure this check was written for
+        # is an arbitrage row describing a player the board has no valuation for at all.
+        surfaced = bool(record.get("outside_tier_board")) and bool(record.get("surface_reasons"))
         if tier_record is None:
-            missing.append(str(key))
+            if not surfaced:
+                missing.append(str(key))
+        elif surfaced:
+            contradictory.append(str(key))
         elif int(tier_record["fair_rank"]) != int(record["fair_rank"]):
             rank_mismatch.append(
                 f"{key}: tiers={tier_record['fair_rank']} arbitrage={record['fair_rank']}",
@@ -457,6 +469,19 @@ def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
                 message="every arbitrage row must describe a player present in tiers",
                 observed="; ".join(missing[:10]),
                 expected="arbitrage players are a subset of tier players",
+            ),
+        )
+    if contradictory:
+        checks.append(
+            QualityCheck.fail(
+                "cross_artifact.surface_exception_is_on_the_board",
+                stage="artifacts",
+                message=(
+                    "an arbitrage row claims to be surfaced from beyond the tier depth while "
+                    "the tier artifact publishes him; one of the two is wrong"
+                ),
+                observed="; ".join(contradictory[:10]),
+                expected="outside_tier_board is true only for players absent from tiers",
             ),
         )
     if rank_mismatch:
