@@ -50,13 +50,20 @@ def membership(
     )
 
 
-def build(memberships=(), *, depth: int | None = None, rows: list[dict] | None = None):
+def build(
+    memberships=(),
+    *,
+    depth: int | None = None,
+    rows: list[dict] | None = None,
+    complete: bool = False,
+):
     return build_surface_universe(
         rows if rows is not None else board(),
         scoring_preset="HALF",
         league_preset_id="redraft-12",
         memberships=memberships,
         tier_depth=depth,
+        board_is_complete=complete,
     )
 
 
@@ -105,6 +112,38 @@ def test_the_old_truncated_board_would_fail_the_gate() -> None:
     )
     assert failure.status == "fail"
     assert failure.severity == "critical", "a silently missing drafted player is not a warning"
+
+
+def test_an_unvalued_market_player_is_a_warning_on_a_complete_board() -> None:
+    """The other cause of the same symptom, told apart by who certified the input.
+
+    A truncated board and a complete one both "lose" a player the market prices, and from
+    inside the rule they look identical. The difference is what it means: a cut player is the
+    Release 1 bug and must stop the build, while a player the model never valued is a
+    projection gap the market noticed — real, worth reporting, and not worth taking a live
+    site down for. Only the caller knows which board it passed, so only the caller can say.
+
+    Production says `board_is_complete=True` because `build-current --full-board` writes the
+    untruncated universe. Anything that has not thought about it gets the critical reading.
+    """
+    complete = board()
+    universe = build([membership(players={"gsis:99999"})], rows=complete, complete=True)
+
+    assert universe.missing and universe.missing[0]["reason"] == "absent_from_intrinsic_universe"
+    check = next(
+        c for c in coverage_checks([universe]) if c.check_id == "surface.market_top300_coverage"
+    )
+    assert check.status == "fail"
+    assert check.severity == "warning"
+    assert "no intrinsic valuation" in check.message
+
+    # The identical universe, uncertified, is the truncation reading and stops the build.
+    uncertified = build([membership(players={"gsis:99999"})], rows=complete)
+    critical = next(
+        c for c in coverage_checks([uncertified]) if c.check_id == "surface.market_top300_coverage"
+    )
+    assert critical.severity == "critical"
+    assert "blind spot recurring" in critical.message
 
 
 # --------------------------------------------------------------------------------------

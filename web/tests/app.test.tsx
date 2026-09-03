@@ -295,6 +295,56 @@ describe("arbitrage view", () => {
     expect(screen.getByText(/below the frozen bar/)).toBeDefined();
   });
 
+  /**
+   * The regression that put this rule here: the live board rendered `FP ECR` and `Spread`
+   * columns full of em dashes for weeks, because the frontend was built for an artifact the
+   * pipeline never produced. A column is a promise that there is something in it.
+   */
+  it("renders no column for a market this build did not publish", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole("table", { name: /market-gap board/i })).toBeDefined();
+    });
+    const table = screen.getByRole("table", { name: /market-gap board/i });
+    const headers = within(table)
+      .getAllByRole("columnheader")
+      .map((cell) => (cell.textContent ?? "").replace(/[\u25b2\u25bc]/g, "").trim());
+
+    // FantasyPros publishes nothing at the provisioned API tier, so the column is gone
+    // rather than present-and-empty.
+    expect(headers).not.toContain("FP ECR");
+    // One market priced this fixture, so there is no disagreement to show.
+    expect(headers).not.toContain("Spread");
+    // The structural columns are unconditional.
+    expect(headers).toContain("Fair Rank");
+    expect(headers).toContain("Score");
+  });
+
+  it("never renders a column whose every cell is empty", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole("table", { name: /market-gap board/i })).toBeDefined();
+    });
+    const table = screen.getByRole("table", { name: /market-gap board/i });
+    const headers = within(table).getAllByRole("columnheader");
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows.length).toBeGreaterThan(0);
+
+    // Trend is the one documented exception: an em dash there means "no evidence yet", a
+    // meaning the column carries whether or not any row has a value (ADR-042).
+    const exempt = new Set(["Trend"]);
+    headers.forEach((header, column) => {
+      const label = (header.textContent ?? "").replace(/[\u25b2\u25bc]/g, "").trim();
+      if (exempt.has(label)) return;
+      const filled = rows.filter((row) => {
+        const cell = row.querySelectorAll("td")[column];
+        const text = (cell?.textContent ?? "").trim();
+        return text !== "" && text !== "\u2014";
+      });
+      expect(filled.length, `every cell under "${label}" is empty`).toBeGreaterThan(0);
+    });
+  });
+
   it("renders a null trend as an em dash with a spoken explanation, never as zero", async () => {
     render(<App />);
     await waitFor(() => {

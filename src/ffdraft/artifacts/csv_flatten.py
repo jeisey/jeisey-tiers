@@ -12,11 +12,12 @@ CSV, useless to a spreadsheet, and impossible to diff. So an artifact may declar
 Two rules shape the arbitrage projection:
 
 * **Source and signal are named in the column, not implied by position.** Roadmap 10.6 asks
-  for "explicit source/signal names" in the export, and `ffc_adp` next to `mfl_adp` next to
-  `fantasypros_ecr` is what stops a reader assuming three columns of one thing.
-* **ECR keeps its own column names and never appears in an ADP column.** The same rule the
-  JSON enforces structurally, restated in the one place where the structure is flattened
-  away and a careless mapping could quietly undo it.
+  for "explicit source/signal names" in the export, and `ffc_adp` beside `mfl_adp` is what
+  stops a reader assuming two columns of one thing.
+* **A column exists only if something fills it.** FantasyPros has none: it publishes nothing
+  at the provisioned API tier, and four always-empty columns are a promise the artifact
+  cannot keep. They shipped once and are gone (ADR-067). If that tier ever changes, the
+  columns come back with the data — not before it.
 
 Columns are declared, not derived from the data. A projection whose shape depended on which
 sources happened to be enabled today would change the header between builds, and a stable
@@ -46,7 +47,6 @@ _ADP_SOURCES: tuple[tuple[str, str], ...] = (
 
 #: The consensus source. Separate from the tuple above so no loop can accidentally treat it
 #: as a price.
-_ECR_SOURCE = "fantasypros_ecr"
 
 
 def _adp_columns() -> tuple[str, ...]:
@@ -102,10 +102,6 @@ ARBITRAGE_CSV_COLUMNS: tuple[str, ...] = (
     *_adp_columns(),
     # The consensus columns. Named for what they are, and deliberately not adjacent to a
     # column called `_adp` (roadmap 10.4).
-    "fantasypros_ecr",
-    "fantasypros_ecr_gap",
-    "fantasypros_ecr_expert_count",
-    "fantasypros_ecr_rank_sd",
     # The ADP-only cross-market summary.
     "market_adp_min",
     "market_adp_max",
@@ -147,17 +143,6 @@ def flatten_arbitrage_record(record: Mapping[str, Any]) -> dict[str, Any]:
     # something else is not projected into these columns: the CSV is where the JSON's
     # structural separation of price and ranking is flattened away, so the rule is
     # re-checked here rather than assumed to have survived.
-    consensus = record.get("expert_consensus")
-    consensus = (
-        consensus
-        if isinstance(consensus, Mapping) and str(consensus.get("source_id")) == _ECR_SOURCE
-        else {}
-    )
-    flat["fantasypros_ecr"] = consensus.get("ecr")
-    flat["fantasypros_ecr_gap"] = consensus.get("ecr_gap")
-    flat["fantasypros_ecr_expert_count"] = consensus.get("expert_count")
-    flat["fantasypros_ecr_rank_sd"] = consensus.get("consensus_rank_sd")
-
     cross = record.get("cross_market")
     cross = cross if isinstance(cross, Mapping) else {}
     for column in (

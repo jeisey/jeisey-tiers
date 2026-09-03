@@ -504,9 +504,13 @@ commands, runs and measurements recorded in `SESSION_STATE.md`.
       adapter, budget, cache, retention, identity bridges and fail-closed checks all ship and
       are tested; publication is withheld. ADR-064 records the exact, checkable condition
       under which it becomes a one-line change.
-- [ ] Live multi-source board. — The code path is complete and fixture-tested; the *published*
-      multi-source board needs one production refresh to capture FFC into the private store.
-      Nothing further is required in this repository for it.
+- [x] Live multi-source board. — **This was wrong when it was written.** It claimed nothing
+      further was required in this repository; in fact the capture step, the `extra_quotes`
+      argument, the published depth and the surface rule were all missing from the production
+      path, so the first refreshes after the merge published a single-market 300-row board
+      with three empty columns. Wired in ADR-067: FFC capture in `daily-refresh.yml`,
+      `ffdraft.market.extra` into `build-arbitrage`, publication depth 500, and the
+      full-board handoff that lets the surface rule reach beyond it.
 
 **Exit gate: partially met.**
 

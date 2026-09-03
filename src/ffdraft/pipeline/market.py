@@ -30,12 +30,15 @@ from ffdraft.arbitrage.frozen import (
 from ffdraft.artifacts import record_schema_version, write_artifact, write_build_metadata
 from ffdraft.config import AppConfig, load_app_config
 from ffdraft.contracts import QualityCheck
-from ffdraft.contracts.enums import SourceStatus
+from ffdraft.contracts.enums import Severity, SourceStatus
 from ffdraft.market.cohorts import assignments_from_report
 from ffdraft.market.current import build_current_market, load_trend_window
+from ffdraft.market.extra import load_extra_quotes
 from ffdraft.market.snapshot import MarketSnapshotStore
+from ffdraft.market.surface import build_surface_universe, coverage_checks
 from ffdraft.market.trend import TREND_RULE, observations_from_snapshots, trend_series_records
 from ffdraft.quality import QualityGate
+from ffdraft.sources.ffc import FFC_SOURCE_ID
 from ffdraft.sources.market import MFL_SOURCE_ID
 from ffdraft.timeutil import isoformat_utc, utc_now
 
@@ -55,6 +58,12 @@ class ArbitrageBuildRequest:
     git_sha: str | None = None
     write: bool = True
     app: AppConfig | None = None
+    #: The untruncated fair-ranked board `build-current` wrote. Without it the surface rule
+    #: cannot run, because a player outside the published depth is absent from the tier
+    #: artifact this stage reads — which is the whole reason the blind spot existed.
+    full_board_path: Path | None = None
+    #: Retained market sources beyond MyFantasyLeague to price this board with.
+    extra_source_ids: tuple[str, ...] = (FFC_SOURCE_ID,)
 
 
 @dataclass
@@ -143,6 +152,56 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
     league_sizes.update(
         {preset_id: preset.teams for preset_id, preset in settings.league.optional_presets.items()},
     )
+    # The second market. Phase 10 built every part of this and connected none of it; a
+    # published board that renders a market selector must actually carry more than one
+    # market (ADR-067).
+    extra = load_extra_quotes(
+        request.store,
+        season=request.season,
+        source_ids=request.extra_source_ids,
+        now=stamped,
+        gate=gate,
+    )
+
+    # The surface rule needs the whole board, so it runs only when `build-current` handed one
+    # over. Absent, the build behaves exactly as it did before: the published prefix is the
+    # surface, and nothing is rescued.
+    full_board = _load_full_board(request.full_board_path, gate=gate)
+    surfaces = {}
+    surfaced_rows: list[dict[str, Any]] = []
+    if full_board:
+        published = {
+            (str(row["league_preset_id"]), str(row["scoring_preset"]), str(row["player_id"]))
+            for row in tier_records
+        }
+        blocks = sorted(
+            {(str(row["league_preset_id"]), str(row["scoring_preset"])) for row in tier_records},
+        )
+        for preset_id, scoring in blocks:
+            block_board = [
+                row
+                for row in full_board
+                if str(row["league_preset_id"]) == preset_id
+                and str(row["scoring_preset"]) == scoring
+            ]
+            universe = build_surface_universe(
+                block_board,
+                scoring_preset=scoring,
+                league_preset_id=preset_id,
+                memberships=extra.memberships,
+                # `build-current --full-board` writes the untruncated universe, so an
+                # absent market player here is genuinely unvalued rather than cut.
+                board_is_complete=True,
+            )
+            surfaces[(preset_id, scoring)] = universe
+            by_id = {str(row["player_id"]): row for row in block_board}
+            surfaced_rows.extend(
+                {**by_id[player_id], "league_preset_id": preset_id, "scoring_preset": scoring}
+                for player_id in universe.exceptions
+                if (preset_id, scoring, player_id) not in published and player_id in by_id
+            )
+        gate.extend(coverage_checks(list(surfaces.values())))
+
     result = build_arbitrage_records(
         tier_records,
         market=market,
@@ -151,6 +210,9 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         season=request.season,
         generated_at=stamped,
         gate=gate,
+        extra_quotes=extra.quotes or None,
+        surfaces=surfaces or None,
+        surfaced_rows=surfaced_rows,
     )
 
     response = ArbitrageBuildResponse(
@@ -279,6 +341,36 @@ def _generated_at(tiers: dict[str, Any], fallback: datetime) -> datetime:
 
     raw = tiers.get("generated_at_utc")
     return parse_utc(str(raw)) if raw else fallback
+
+
+def _load_full_board(path: Path | None, *, gate: QualityGate) -> list[dict[str, Any]]:
+    """The untruncated board `build-current` wrote, or an empty list with the reason.
+
+    Missing is not an error. The fixture pipeline and every offline rebuild run without it,
+    and the correct behaviour there is the pre-surface one — publish the prefix, rescue
+    nobody — rather than a crash. What must never happen is a *silent* skip, so an absent or
+    unreadable file is recorded either way.
+    """
+    if path is None:
+        return []
+    try:
+        rows = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        gate.add(
+            QualityCheck.fail(
+                "arbitrage.full_board_unreadable",
+                stage="arbitrage.pipeline",
+                message=(
+                    f"the untruncated board at {path} could not be read, so no player is "
+                    f"surfaced from beyond the published depth: {error}"
+                ),
+                observed=type(error).__name__,
+                expected="the board written by build-current --full-board",
+                severity=Severity.WARNING,
+            ),
+        )
+        return []
+    return [dict(row) for row in rows]
 
 
 def _merge_metadata(
