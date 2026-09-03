@@ -155,10 +155,11 @@ The fixture build itself reports **0 critical, 5 warning** — every warning is 
 exists to exercise a fail-closed identity path, and each is asserted by name in the pipeline
 tests. The Playwright runs used the sandbox's pre-installed Chromium
 (`PLAYWRIGHT_CHROMIUM_EXECUTABLE`), which is what `playwright.config.ts` already looks for.
-**`npm run e2e:browsers` — the Firefox and WebKit smoke gate — was not run here**, because
+**`npm run e2e:browsers` — the Firefox and WebKit smoke gate — cannot run here**, because
 those two browsers are not present in the sandbox and are not downloadable through its egress
-policy (ADR-059). That gate belongs to the `browsers` CI job and will first run on this branch
-when a pull request opens, since `ci.yml` triggers on `pull_request` and on pushes to `main`.
+policy (ADR-059). It ran on a runner instead: `ci.yml` triggers on `pull_request`, so the
+`browsers` job first ran when jeisey/jeisey-tiers#27 opened, and it **passed** — Firefox and
+WebKit against the Phase-10 market selector, per-source headers and hand-drawn trend SVG.
 
 New CLI: `ffdraft capture-market-source <source>`, `ffdraft link-market-source`.
 New workflows: `source-probe-phase10.yml` (dispatch/request, inert),
@@ -169,9 +170,9 @@ New workflows: `source-probe-phase10.yml` (dispatch/request, inert),
 - The multi-source **code path** is complete and fixture-tested; the **published** board still
   needs one production refresh that captures FFC into the private store. Nothing further is
   required in this repository for that.
-- The cross-browser smoke gate (`npm run e2e:browsers`, Firefox and WebKit) has **not** run on
-  this branch; `chromium`, `mobile`, `a11y` and `smoke-chromium` all have. ADR-059 records that
-  the cross-browser gate belongs to CI, and CI runs it when the pull request opens.
+- Every gate has now run somewhere: `chromium`, `mobile`, `a11y` and `smoke-chromium` in this
+  sandbox, and the Firefox/WebKit cross-browser smoke on a runner, green on the PR. ADR-059
+  still holds — that gate is runner-only here and must not be assumed reproducible locally.
 - Sleeper add/drop retention is implemented but **has not yet run in production**, so the
   in-season history Phase 12 expects starts accumulating from the first refresh that includes
   it — not from today.

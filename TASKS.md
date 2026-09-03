@@ -542,4 +542,5 @@ sync, no rest-of-season model, no weekly rankings. Phase 11 was not started.
 `validate-artifacts` 0 critical 0 warning over it; `npm lint` 0 errors, `typecheck` clean,
 **270** vitest, a clean production build, **70** Playwright across `chromium`/`mobile`/`a11y`
 and **13** more on `smoke-chromium`. `npm run e2e:browsers` (Firefox, WebKit) is runner-only in
-this sandbox as it has been since ADR-059 and runs in CI.
+this sandbox as it has been since ADR-059; it ran on the PR and passed, so every gate in the
+steady-state command set has now been exercised against Phase 10.
