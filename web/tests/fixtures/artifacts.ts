@@ -45,6 +45,7 @@ import type {
   Position,
   ScoringPreset,
   TierRecord,
+  MarketComparison,
 } from "../../src/data/contracts";
 
 /**
@@ -226,7 +227,7 @@ export function arbitrageRecords(condition: MarketCondition = "launch"): Arbitra
             ? null
             : round(Math.sin(entry.tier.fair_rank * 1.7) * 0.42, 2);
         records.push({
-          schema_version: "1.1",
+          schema_version: "1.2",
           build_id: FIXTURE_BUILD_ID,
           league_preset_id: league.id,
           scoring_preset: scoring,
@@ -259,11 +260,91 @@ export function arbitrageRecords(condition: MarketCondition = "launch"): Arbitra
             condition === "launch" ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT,
           confidence,
           quality_flags: flags.sort(),
+          ...secondMarket(adp, entry.tier.fair_rank, condition, rank),
         });
       }
     }
   }
   return records;
+}
+
+/**
+ * The second market, and the reason this fixture has one.
+ *
+ * Until it did, no fixture in the repository carried more than one market — so the page
+ * always rendered MyFantasyLeague whichever source was selected, every consumer that read
+ * the flat V1 `market_adp` looked correct, and three consecutive production refreshes were
+ * needed to find that the draft rail, the player card and `verify-real-build.mjs` were all
+ * reading a different market from the table (ADR-067).
+ *
+ * The two markets must **disagree** for that to be catchable: if FFC repeated MFL's number,
+ * a consumer reading the wrong one would still render the right value. FFC's seven-day
+ * window prices a riser earlier than MFL's season aggregate, so the offset leans that way.
+ *
+ * Every third row is left single-market on purpose. A source covering part of the board is
+ * the normal case, and those rows are what prove the cross-market summary says "one market"
+ * rather than inventing a spread of zero.
+ */
+function secondMarket(
+  adp: number,
+  fairRank: number,
+  condition: MarketCondition,
+  rank: number,
+): Pick<ArbitrageRecord, "markets" | "cross_market"> | Record<string, never> {
+  if (rank % 3 === 2) return {};
+  const snapshot = condition === "launch" ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT;
+  const ffcAdp = round(Math.max(1, adp - (adp * 0.08 + (rank % 2 ? 1.5 : -2.5))));
+  const mfl: MarketComparison = {
+    source_id: "myfantasyleague_adp",
+    market_signal_type: "adp",
+    market_adp: adp,
+    market_rank: Math.max(1, Math.round(adp / 2)),
+    rank_gap: round(adp - fairRank),
+    regional_value_gap: round(Math.log(adp / fairRank), 6),
+    market_sample_size: null,
+    // MFL publishes order statistics and no standard deviation; FFC is the other way round.
+    // Keeping that asymmetry is what stops the Dispersion column being written for one shape.
+    market_adp_sd: null,
+    market_adp_low: round(Math.max(1, adp - 18)),
+    market_adp_high: round(adp + 44),
+    league_size: null,
+    aggregation_window_type: "season_cumulative",
+    aggregation_window_days: null,
+    market_cohort_id: condition === "launch" ? "no-mock-no-keeper" : "no-keeper",
+    market_cohort_detail: "IS_KEEPER=N (approximate cohort)",
+    market_snapshot_at_utc: snapshot,
+    market_trend: null,
+    quality_flags: [],
+  };
+  const ffc: MarketComparison = {
+    ...mfl,
+    source_id: "fantasyfootballcalculator_adp",
+    market_adp: ffcAdp,
+    market_rank: Math.max(1, Math.round(ffcAdp / 2)),
+    // Each source is compared against the same fair rank, so the gaps genuinely differ.
+    rank_gap: round(ffcAdp - fairRank),
+    regional_value_gap: round(Math.log(ffcAdp / fairRank), 6),
+    market_adp_sd: round(2 + (rank % 5)),
+    market_adp_low: null,
+    market_adp_high: null,
+    aggregation_window_type: "rolling",
+    aggregation_window_days: 7,
+    market_cohort_id: "ffc-half-ppr",
+    market_cohort_detail: "format=half-ppr",
+  };
+  const cheapest = ffcAdp <= adp ? ffc.source_id : mfl.source_id;
+  return {
+    markets: [ffc, mfl],
+    cross_market: {
+      sources_available: [ffc.source_id, mfl.source_id],
+      market_adp_min: Math.min(ffcAdp, adp),
+      market_adp_max: Math.max(ffcAdp, adp),
+      market_adp_median: round((ffcAdp + adp) / 2),
+      market_disagreement_range: round(Math.abs(adp - ffcAdp)),
+      cheapest_market_source: cheapest,
+      most_expensive_market_source: cheapest === ffc.source_id ? mfl.source_id : ffc.source_id,
+    },
+  };
 }
 
 export function playerStatusRecords(): PlayerStatusRecord[] {

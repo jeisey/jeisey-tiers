@@ -7,7 +7,24 @@
  * section 3.2 stops being a convention and starts being a check.
  */
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+/**
+ * A column's index, read from its heading.
+ *
+ * Three separate checks in this repository have broken by counting table cells — the golden
+ * board verifier, a component test, and this spec — every time because a column was inserted
+ * left of the one being asserted. The heading is the identity; the position is an accident of
+ * layout (ADR-067).
+ */
+async function columnIndex(table: Locator, heading: string): Promise<number> {
+  const labels = (await table.getByRole("columnheader").allTextContents()).map((text) =>
+    text.replace(/[\u25b2\u25bc]/g, "").trim(),
+  );
+  const index = labels.indexOf(heading);
+  expect(index, `no column headed ${heading}; saw ${labels.join(" | ")}`).toBeGreaterThan(-1);
+  return index;
+}
 
 /** Fail the test on any request that leaves the static server. No vendor call may exist. */
 function forbidExternalRequests(page: Page): void {
@@ -275,13 +292,14 @@ test.describe("export", () => {
 });
 
 test.describe("arbitrage", () => {
-  test("sorts by arbitrage score and names MyFantasyLeague as the source", async ({ page }) => {
+  test("sorts by arbitrage score and names the market it is pricing against", async ({ page }) => {
     await page.goto("/?view=arbitrage");
     await expect(page.getByRole("heading", { name: "Arbitrage table" })).toBeVisible();
     await expect(page.getByText(/Deterministic market-gap baseline/)).toBeVisible();
-    await expect(
-      page.getByText(/fair rank against MyFantasyLeague ADP/),
-    ).toBeVisible();
+    // Named, but not named *MyFantasyLeague*: the page prices against whichever market is
+    // selected, and pinning one source's name here is what let the rail drift onto a
+    // different market from the table without a test noticing (ADR-067).
+    await expect(page.getByText(/fair rank against .+ ADP/)).toBeVisible();
     await expect(page.locator("body")).not.toContainText(/consensus adp/i);
     const table = page.getByRole("table", { name: /market-gap board/i });
     await expect(table.getByRole("columnheader", { name: "Score" })).toHaveAttribute(
@@ -307,7 +325,10 @@ test.describe("arbitrage", () => {
     await page.goto("/?view=arbitrage");
     await expect(page.locator(".market-fact-value").filter({ hasText: "collecting" })).toBeVisible();
     const table = page.getByRole("table", { name: /market-gap board/i });
-    const trendCell = table.getByRole("row").nth(1).locator("td").nth(9);
+    // By header, never by index. This read `td` nine, and column nine stopped being Trend the
+    // day the board gained a Spread column — the third time positional indexing has broken a
+    // check in this repository (ADR-067).
+    const trendCell = table.getByRole("row").nth(1).locator("td").nth(await columnIndex(table, "Trend"));
     await expect(trendCell).toContainText("—");
     await expect(trendCell).not.toContainText(/flat|no movement/i);
   });
@@ -391,7 +412,6 @@ test.describe("player detail", () => {
       "Tier",
       "Median VORP",
       "Uncertainty",
-      "MFL ADP",
       "Value gap",
       "Arbitrage score",
       "Market trend",
@@ -399,6 +419,9 @@ test.describe("player detail", () => {
     ]) {
       await expect(dialog.getByText(label, { exact: true })).toBeVisible();
     }
+    // The ADP readout is labelled with whichever market the page is showing, so it is matched
+    // by shape rather than by one source's name — the card follows the selector now.
+    await expect(dialog.locator(".readout-label").filter({ hasText: / ADP$/ })).toBeVisible();
     // The three paragraphs the Phase-8 review named are gone from the card.
     await expect(dialog).not.toContainText(/cannot filter drafts to this exact scoring/);
     await expect(dialog).not.toContainText(/It is not a probability that the player is a bargain/);
@@ -444,7 +467,7 @@ test.describe("player detail", () => {
   test("says a player has no current ADP rather than hiding him", async ({ page }) => {
     await openBoard(page);
     await page.getByRole("button", { name: "Zach Ertz", exact: true }).click();
-    await expect(page.getByRole("dialog").getByText(/No current MyFantasyLeague ADP/)).toBeVisible();
+    await expect(page.getByRole("dialog").getByText(/No current .+ ADP/)).toBeVisible();
   });
 
   test("opens from a board row with the keyboard", async ({ page }) => {

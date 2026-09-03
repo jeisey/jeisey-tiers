@@ -4,7 +4,7 @@
   "record_schema": "arbitrage_record",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 28,
+  "record_count": 30,
   "records": [
     {
       "schema_version": "1.2",
@@ -21,7 +21,7 @@
       "rank_gap": 1.4,
       "regional_value_gap": 0.875469,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 3.57,
+      "arbitrage_score": 10.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -41,6 +41,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 1.0,
+          "market_rank": null,
+          "rank_gap": 0.0,
+          "regional_value_gap": 0.0,
+          "market_sample_size": 1794,
+          "market_adp_sd": 3.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -70,14 +90,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 2.4,
+        "market_adp_min": 1.0,
         "market_adp_max": 2.4,
-        "market_adp_median": 2.4,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 1.7,
+        "market_disagreement_range": 1.4,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -99,7 +120,7 @@
       "rank_gap": 24.4,
       "regional_value_gap": 2.580217,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 82.14,
+      "arbitrage_score": 83.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -119,6 +140,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 22.8,
+          "market_rank": null,
+          "rank_gap": 20.8,
+          "regional_value_gap": 2.433613,
+          "market_sample_size": 1794,
+          "market_adp_sd": 4.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -148,14 +189,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 26.4,
+        "market_adp_min": 22.8,
         "market_adp_max": 26.4,
-        "market_adp_median": 26.4,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 24.6,
+        "market_disagreement_range": 3.6,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -177,7 +219,7 @@
       "rank_gap": 5.7,
       "regional_value_gap": 1.064711,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 10.71,
+      "arbitrage_score": 16.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -197,6 +239,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 10.5,
+          "market_rank": null,
+          "rank_gap": 7.5,
+          "regional_value_gap": 1.252763,
+          "market_sample_size": 1794,
+          "market_adp_sd": 6.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -226,13 +288,14 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
         "market_adp_min": 8.7,
-        "market_adp_max": 8.7,
-        "market_adp_median": 8.7,
-        "market_disagreement_range": 0.0,
-        "cheapest_market_source": "myfantasyleague_adp",
+        "market_adp_max": 10.5,
+        "market_adp_median": 9.6,
+        "market_disagreement_range": 1.8,
+        "cheapest_market_source": "fantasyfootballcalculator_adp",
         "most_expensive_market_source": "myfantasyleague_adp"
       },
       "surface_reasons": [
@@ -255,7 +318,7 @@
       "rank_gap": 8.1,
       "regional_value_gap": 1.106911,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 17.86,
+      "arbitrage_score": 23.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -275,6 +338,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 13.6,
+          "market_rank": null,
+          "rank_gap": 9.6,
+          "regional_value_gap": 1.223775,
+          "market_sample_size": 1794,
+          "market_adp_sd": 3.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -304,13 +387,14 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
         "market_adp_min": 12.1,
-        "market_adp_max": 12.1,
-        "market_adp_median": 12.1,
-        "market_disagreement_range": 0.0,
-        "cheapest_market_source": "myfantasyleague_adp",
+        "market_adp_max": 13.6,
+        "market_adp_median": 12.85,
+        "market_disagreement_range": 1.5,
+        "cheapest_market_source": "fantasyfootballcalculator_adp",
         "most_expensive_market_source": "myfantasyleague_adp"
       },
       "surface_reasons": [
@@ -333,7 +417,7 @@
       "rank_gap": 16.9,
       "regional_value_gap": 1.477049,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 25.0,
+      "arbitrage_score": 30.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -353,6 +437,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 18.6,
+          "market_rank": null,
+          "rank_gap": 13.6,
+          "regional_value_gap": 1.313724,
+          "market_sample_size": 1794,
+          "market_adp_sd": 5.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -382,14 +486,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 21.9,
+        "market_adp_min": 18.6,
         "market_adp_max": 21.9,
-        "market_adp_median": 21.9,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 20.25,
+        "market_disagreement_range": 3.3,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -411,7 +516,7 @@
       "rank_gap": 27.8,
       "regional_value_gap": 1.728701,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 39.29,
+      "arbitrage_score": 43.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -431,6 +536,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 33.6,
+          "market_rank": null,
+          "rank_gap": 27.6,
+          "regional_value_gap": 1.722767,
+          "market_sample_size": 1794,
+          "market_adp_sd": 2.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -460,14 +585,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 33.8,
+        "market_adp_min": 33.6,
         "market_adp_max": 33.8,
-        "market_adp_median": 33.8,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 33.7,
+        "market_disagreement_range": 0.2,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -489,7 +615,7 @@
       "rank_gap": 42.6,
       "regional_value_gap": 1.958081,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 60.71,
+      "arbitrage_score": 63.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -567,7 +693,7 @@
       "rank_gap": 50.3,
       "regional_value_gap": 1.986161,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 67.86,
+      "arbitrage_score": 70.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -587,6 +713,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 56.1,
+          "market_rank": null,
+          "rank_gap": 48.1,
+          "regional_value_gap": 1.947694,
+          "market_sample_size": 1794,
+          "market_adp_sd": 2.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -616,14 +762,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 58.3,
+        "market_adp_min": 56.1,
         "market_adp_max": 58.3,
-        "market_adp_median": 58.3,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 57.2,
+        "market_disagreement_range": 2.2,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -645,7 +792,7 @@
       "rank_gap": 32.2,
       "regional_value_gap": 1.521214,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 32.14,
+      "arbitrage_score": 36.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -666,6 +813,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 36.4,
+          "market_rank": null,
+          "rank_gap": 27.4,
+          "regional_value_gap": 1.397344,
+          "market_sample_size": 1794,
+          "market_adp_sd": 6.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -696,14 +863,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 41.2,
+        "market_adp_min": 36.4,
         "market_adp_max": 41.2,
-        "market_adp_median": 41.2,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 38.8,
+        "market_disagreement_range": 4.8,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -725,7 +893,7 @@
       "rank_gap": 122.7,
       "regional_value_gap": 2.585506,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 89.29,
+      "arbitrage_score": 90.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -807,7 +975,7 @@
       "rank_gap": 61.5,
       "regional_value_gap": 1.885691,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 53.57,
+      "arbitrage_score": 56.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -887,7 +1055,7 @@
       "rank_gap": 91.2,
       "regional_value_gap": 2.081363,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 75.0,
+      "arbitrage_score": 76.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -909,6 +1077,26 @@
         "wide_market_range"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 94.4,
+          "market_rank": null,
+          "rank_gap": 81.4,
+          "regional_value_gap": 1.982592,
+          "market_sample_size": 1794,
+          "market_adp_sd": 5.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -940,14 +1128,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 104.2,
+        "market_adp_min": 94.4,
         "market_adp_max": 104.2,
-        "market_adp_median": 104.2,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 99.3,
+        "market_disagreement_range": 9.8,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -969,7 +1158,7 @@
       "rank_gap": 204.4,
       "regional_value_gap": 2.747271,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 96.43,
+      "arbitrage_score": 96.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -991,6 +1180,26 @@
         "wide_market_range"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 203.4,
+          "market_rank": null,
+          "rank_gap": 189.4,
+          "regional_value_gap": 2.676117,
+          "market_sample_size": 1794,
+          "market_adp_sd": 4.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1022,14 +1231,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 218.4,
+        "market_adp_min": 203.4,
         "market_adp_max": 218.4,
-        "market_adp_median": 218.4,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 210.9,
+        "market_disagreement_range": 15.0,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -1051,7 +1261,7 @@
       "rank_gap": 79.0,
       "regional_value_gap": 1.781288,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 46.43,
+      "arbitrage_score": 50.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1115,6 +1325,80 @@
         "intrinsic_top_tier_depth"
       ],
       "outside_tier_board": false
+    },
+    {
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "league_preset_id": "redraft-10",
+      "scoring_preset": "PPR",
+      "player_id": "gsis:00-0000002-surfaced",
+      "display_name": "Dez Okonkwo (surfaced)",
+      "team": "BUF",
+      "position": "RB",
+      "fair_rank": 56,
+      "market_adp": 26.0,
+      "market_rank": 26,
+      "rank_gap": -30.0,
+      "regional_value_gap": -0.767255,
+      "arbitrage_mode": "baseline",
+      "arbitrage_score": 3.33,
+      "expected_surplus_vorp": null,
+      "p_positive_surplus": null,
+      "market_trend": null,
+      "market_sample_size": 420,
+      "market_adp_sd": null,
+      "market_adp_low": 11.0,
+      "market_adp_high": 44.0,
+      "market_source_id": "myfantasyleague_adp",
+      "market_cohort_id": "unfiltered",
+      "market_cohort_detail": "no filters (approximate cohort)",
+      "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+      "confidence": "medium",
+      "quality_flags": [
+        "cohort_approximate",
+        "insufficient_trend_history"
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 26.0,
+          "market_rank": 26,
+          "rank_gap": -30.0,
+          "regional_value_gap": -0.767255,
+          "market_sample_size": 420,
+          "market_adp_sd": null,
+          "market_adp_low": 11.0,
+          "market_adp_high": 44.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "cohort_approximate",
+            "insufficient_trend_history"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 26.0,
+        "market_adp_max": 26.0,
+        "market_adp_median": 26.0,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "market_top300_ffc_adp"
+      ],
+      "outside_tier_board": true
     },
     {
       "schema_version": "1.2",
@@ -1131,7 +1415,7 @@
       "rank_gap": 1.4,
       "regional_value_gap": 0.875469,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 3.57,
+      "arbitrage_score": 10.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1151,6 +1435,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 1.0,
+          "market_rank": null,
+          "rank_gap": 0.0,
+          "regional_value_gap": 0.0,
+          "market_sample_size": 1794,
+          "market_adp_sd": 3.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1180,14 +1484,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 2.4,
+        "market_adp_min": 1.0,
         "market_adp_max": 2.4,
-        "market_adp_median": 2.4,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 1.7,
+        "market_disagreement_range": 1.4,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -1209,7 +1514,7 @@
       "rank_gap": 24.4,
       "regional_value_gap": 2.580217,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 82.14,
+      "arbitrage_score": 83.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1229,6 +1534,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 22.8,
+          "market_rank": null,
+          "rank_gap": 20.8,
+          "regional_value_gap": 2.433613,
+          "market_sample_size": 1794,
+          "market_adp_sd": 4.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1258,14 +1583,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 26.4,
+        "market_adp_min": 22.8,
         "market_adp_max": 26.4,
-        "market_adp_median": 26.4,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 24.6,
+        "market_disagreement_range": 3.6,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -1287,7 +1613,7 @@
       "rank_gap": 5.7,
       "regional_value_gap": 1.064711,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 10.71,
+      "arbitrage_score": 16.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1307,6 +1633,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 10.5,
+          "market_rank": null,
+          "rank_gap": 7.5,
+          "regional_value_gap": 1.252763,
+          "market_sample_size": 1794,
+          "market_adp_sd": 6.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1336,13 +1682,14 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
         "market_adp_min": 8.7,
-        "market_adp_max": 8.7,
-        "market_adp_median": 8.7,
-        "market_disagreement_range": 0.0,
-        "cheapest_market_source": "myfantasyleague_adp",
+        "market_adp_max": 10.5,
+        "market_adp_median": 9.6,
+        "market_disagreement_range": 1.8,
+        "cheapest_market_source": "fantasyfootballcalculator_adp",
         "most_expensive_market_source": "myfantasyleague_adp"
       },
       "surface_reasons": [
@@ -1365,7 +1712,7 @@
       "rank_gap": 8.1,
       "regional_value_gap": 1.106911,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 17.86,
+      "arbitrage_score": 23.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1385,6 +1732,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 13.6,
+          "market_rank": null,
+          "rank_gap": 9.6,
+          "regional_value_gap": 1.223775,
+          "market_sample_size": 1794,
+          "market_adp_sd": 3.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1414,13 +1781,14 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
         "market_adp_min": 12.1,
-        "market_adp_max": 12.1,
-        "market_adp_median": 12.1,
-        "market_disagreement_range": 0.0,
-        "cheapest_market_source": "myfantasyleague_adp",
+        "market_adp_max": 13.6,
+        "market_adp_median": 12.85,
+        "market_disagreement_range": 1.5,
+        "cheapest_market_source": "fantasyfootballcalculator_adp",
         "most_expensive_market_source": "myfantasyleague_adp"
       },
       "surface_reasons": [
@@ -1443,7 +1811,7 @@
       "rank_gap": 16.9,
       "regional_value_gap": 1.477049,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 25.0,
+      "arbitrage_score": 30.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1463,6 +1831,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 18.6,
+          "market_rank": null,
+          "rank_gap": 13.6,
+          "regional_value_gap": 1.313724,
+          "market_sample_size": 1794,
+          "market_adp_sd": 5.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1492,14 +1880,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 21.9,
+        "market_adp_min": 18.6,
         "market_adp_max": 21.9,
-        "market_adp_median": 21.9,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 20.25,
+        "market_disagreement_range": 3.3,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -1521,7 +1910,7 @@
       "rank_gap": 27.8,
       "regional_value_gap": 1.728701,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 39.29,
+      "arbitrage_score": 43.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1541,6 +1930,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 33.6,
+          "market_rank": null,
+          "rank_gap": 27.6,
+          "regional_value_gap": 1.722767,
+          "market_sample_size": 1794,
+          "market_adp_sd": 2.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1570,14 +1979,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 33.8,
+        "market_adp_min": 33.6,
         "market_adp_max": 33.8,
-        "market_adp_median": 33.8,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 33.7,
+        "market_disagreement_range": 0.2,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -1599,7 +2009,7 @@
       "rank_gap": 42.6,
       "regional_value_gap": 1.958081,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 60.71,
+      "arbitrage_score": 63.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1677,7 +2087,7 @@
       "rank_gap": 50.3,
       "regional_value_gap": 1.986161,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 67.86,
+      "arbitrage_score": 70.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1697,6 +2107,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 56.1,
+          "market_rank": null,
+          "rank_gap": 48.1,
+          "regional_value_gap": 1.947694,
+          "market_sample_size": 1794,
+          "market_adp_sd": 2.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1726,14 +2156,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 58.3,
+        "market_adp_min": 56.1,
         "market_adp_max": 58.3,
-        "market_adp_median": 58.3,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 57.2,
+        "market_disagreement_range": 2.2,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -1755,7 +2186,7 @@
       "rank_gap": 32.2,
       "regional_value_gap": 1.521214,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 32.14,
+      "arbitrage_score": 36.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1776,6 +2207,26 @@
         "source_as_of_unavailable"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 36.4,
+          "market_rank": null,
+          "rank_gap": 27.4,
+          "regional_value_gap": 1.397344,
+          "market_sample_size": 1794,
+          "market_adp_sd": 6.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -1806,14 +2257,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 41.2,
+        "market_adp_min": 36.4,
         "market_adp_max": 41.2,
-        "market_adp_median": 41.2,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 38.8,
+        "market_disagreement_range": 4.8,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -1835,7 +2287,7 @@
       "rank_gap": 122.7,
       "regional_value_gap": 2.585506,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 89.29,
+      "arbitrage_score": 90.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1917,7 +2369,7 @@
       "rank_gap": 61.5,
       "regional_value_gap": 1.885691,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 53.57,
+      "arbitrage_score": 56.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -1997,7 +2449,7 @@
       "rank_gap": 91.2,
       "regional_value_gap": 2.081363,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 75.0,
+      "arbitrage_score": 76.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -2019,6 +2471,26 @@
         "wide_market_range"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 94.4,
+          "market_rank": null,
+          "rank_gap": 81.4,
+          "regional_value_gap": 1.982592,
+          "market_sample_size": 1794,
+          "market_adp_sd": 5.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -2050,14 +2522,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 104.2,
+        "market_adp_min": 94.4,
         "market_adp_max": 104.2,
-        "market_adp_median": 104.2,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 99.3,
+        "market_disagreement_range": 9.8,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -2079,7 +2552,7 @@
       "rank_gap": 204.4,
       "regional_value_gap": 2.747271,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 96.43,
+      "arbitrage_score": 96.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -2101,6 +2574,26 @@
         "wide_market_range"
       ],
       "markets": [
+        {
+          "source_id": "fantasyfootballcalculator_adp",
+          "market_signal_type": "adp",
+          "market_adp": 203.4,
+          "market_rank": null,
+          "rank_gap": 189.4,
+          "regional_value_gap": 2.676117,
+          "market_sample_size": 1794,
+          "market_adp_sd": 4.0,
+          "market_adp_low": null,
+          "market_adp_high": null,
+          "league_size": null,
+          "aggregation_window_type": "rolling",
+          "aggregation_window_days": 7,
+          "market_cohort_id": "ffc-ppr",
+          "market_cohort_detail": "format=ppr",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": []
+        },
         {
           "source_id": "myfantasyleague_adp",
           "market_signal_type": "adp",
@@ -2132,14 +2625,15 @@
       "expert_consensus": null,
       "cross_market": {
         "sources_available": [
+          "fantasyfootballcalculator_adp",
           "myfantasyleague_adp"
         ],
-        "market_adp_min": 218.4,
+        "market_adp_min": 203.4,
         "market_adp_max": 218.4,
-        "market_adp_median": 218.4,
-        "market_disagreement_range": 0.0,
+        "market_adp_median": 210.9,
+        "market_disagreement_range": 15.0,
         "cheapest_market_source": "myfantasyleague_adp",
-        "most_expensive_market_source": "myfantasyleague_adp"
+        "most_expensive_market_source": "fantasyfootballcalculator_adp"
       },
       "surface_reasons": [
         "intrinsic_top_tier_depth"
@@ -2161,7 +2655,7 @@
       "rank_gap": 79.0,
       "regional_value_gap": 1.781288,
       "arbitrage_mode": "baseline",
-      "arbitrage_score": 46.43,
+      "arbitrage_score": 50.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
       "market_trend": null,
@@ -2225,6 +2719,80 @@
         "intrinsic_top_tier_depth"
       ],
       "outside_tier_board": false
+    },
+    {
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "league_preset_id": "redraft-12",
+      "scoring_preset": "PPR",
+      "player_id": "gsis:00-0000002-surfaced",
+      "display_name": "Dez Okonkwo (surfaced)",
+      "team": "BUF",
+      "position": "RB",
+      "fair_rank": 56,
+      "market_adp": 26.0,
+      "market_rank": 26,
+      "rank_gap": -30.0,
+      "regional_value_gap": -0.767255,
+      "arbitrage_mode": "baseline",
+      "arbitrage_score": 3.33,
+      "expected_surplus_vorp": null,
+      "p_positive_surplus": null,
+      "market_trend": null,
+      "market_sample_size": 420,
+      "market_adp_sd": null,
+      "market_adp_low": 11.0,
+      "market_adp_high": 44.0,
+      "market_source_id": "myfantasyleague_adp",
+      "market_cohort_id": "unfiltered",
+      "market_cohort_detail": "no filters (approximate cohort)",
+      "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+      "confidence": "medium",
+      "quality_flags": [
+        "cohort_approximate",
+        "insufficient_trend_history"
+      ],
+      "markets": [
+        {
+          "source_id": "myfantasyleague_adp",
+          "market_signal_type": "adp",
+          "market_adp": 26.0,
+          "market_rank": 26,
+          "rank_gap": -30.0,
+          "regional_value_gap": -0.767255,
+          "market_sample_size": 420,
+          "market_adp_sd": null,
+          "market_adp_low": 11.0,
+          "market_adp_high": 44.0,
+          "league_size": null,
+          "aggregation_window_type": "season_cumulative",
+          "aggregation_window_days": null,
+          "market_cohort_id": "unfiltered",
+          "market_cohort_detail": "no filters (approximate cohort)",
+          "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
+          "market_trend": null,
+          "quality_flags": [
+            "cohort_approximate",
+            "insufficient_trend_history"
+          ]
+        }
+      ],
+      "expert_consensus": null,
+      "cross_market": {
+        "sources_available": [
+          "myfantasyleague_adp"
+        ],
+        "market_adp_min": 26.0,
+        "market_adp_max": 26.0,
+        "market_adp_median": 26.0,
+        "market_disagreement_range": 0.0,
+        "cheapest_market_source": "myfantasyleague_adp",
+        "most_expensive_market_source": "myfantasyleague_adp"
+      },
+      "surface_reasons": [
+        "market_top300_ffc_adp"
+      ],
+      "outside_tier_board": true
     }
   ],
   "arbitrage_mode": "baseline"
