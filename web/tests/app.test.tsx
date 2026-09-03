@@ -808,10 +808,26 @@ describe("the shell", () => {
   it("focuses the search box on / but never while text is being typed", async () => {
     render(<App now={FIXTURE_NOW} />);
     await boardReady();
-    const search = screen.getByLabelText("Player search");
 
-    fireEvent.keyDown(document.body, { key: "/" });
-    expect(document.activeElement).toBe(search);
+    /*
+     * The shortcut is a `document` listener registered from an effect, so it goes live one
+     * flush after the board paints — and `boardReady` resolves on the DOM mutation that puts
+     * the heading there, which can be that flush too early. Pressing until the shell answers
+     * waits for the listener without weakening the guarantee: a `/` that never focuses the
+     * field still fails, on the timeout. Re-querying the field each attempt also survives a
+     * re-render replacing the node, which the URL normalization in `useAppState` can schedule
+     * right after the first paint.
+     *
+     * Written this way because the single instantaneous assertion it replaces failed once on
+     * a loaded CI runner and never in eleven local runs — isolated, whole-file, whole-suite
+     * oversubscribed, and shuffled. A test that only holds while the machine is fast is
+     * measuring the machine.
+     */
+    await waitFor(() => {
+      fireEvent.keyDown(document.body, { key: "/" });
+      expect(document.activeElement).toBe(screen.getByLabelText("Player search"));
+    });
+    const search = screen.getByLabelText("Player search");
 
     // Already in the field: the keystroke is a character, not a command.
     const before = document.activeElement;
