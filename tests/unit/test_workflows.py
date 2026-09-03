@@ -19,6 +19,9 @@ review is not good enough:
 6. **The release workflow can create a tag and nothing else.** `release.yml` holds the only
    `contents: write` outside a capture job, so it must not be able to deploy, to touch the
    store, or to tag code that is not on `main`.
+7. **Ordinary CI cross-checks the rendered board against the artifact bytes.** That gate used
+   to run only against a production build, which is a gate discovering a frontend mistake one
+   deploy too late.
 """
 
 from __future__ import annotations
@@ -107,6 +110,24 @@ def test_ci_cannot_deploy(workflows):
     assert "pages" not in yaml.safe_dump(ci.get("permissions", {}))
     for job in ci["jobs"].values():
         assert "pages" not in yaml.safe_dump(job.get("permissions") or {})
+
+
+def test_ci_verifies_the_rendered_board_against_the_artifact_bytes(workflow_dir):
+    """The board-versus-bytes check has to run where the change is made, not in production.
+
+    `verify:board` lived only in `daily-refresh.yml` and `live-smoke.yml` until the
+    2026-09-03 refresh failed on it: Phase 10 inserted three arbitrage columns, the verifier
+    was still counting cells, and nothing between the pull request and the production build
+    could have caught it. Both builds are named here because only the matured-market fixture
+    carries a non-null `market_trend` - dropping it would leave the Trend column unexercised
+    while the step still looked present.
+    """
+    text = _code(workflow_dir / "ci.yml")
+    assert "verify:board" in text, "ci.yml no longer cross-checks the rendered board"
+    assert "web/dist-matured" in text, (
+        "ci.yml runs verify:board only against the launch-condition build, where every "
+        "market_trend is null, so the Trend column would go unchecked"
+    )
 
 
 def test_no_workflow_uses_pull_request_target(workflow_dir):

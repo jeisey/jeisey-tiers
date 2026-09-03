@@ -32,7 +32,7 @@ No live data vendor access in normal PR CI.
 >
 > - `python` — uv sync --frozen, `ruff check`, `ruff format --check`, `mypy`, `pytest` (with a JUnit report so the summary can count), `ffdraft config-check`, the fixture mini-pipeline, `validate-artifacts`, and a staleness check on the committed golden artifacts.
 > - `web` — npm ci, lint, typecheck, vitest, a root build, and a project-Pages base-path build that asserts both that assets resolve under `/jeisey-tiers/` **and** that no absolute `/assets/` or `/data/` path survived.
-> - `e2e` — Playwright over five built sites (root, `/jeisey-tiers/`, three degraded-artifact scenarios).
+> - `e2e` — Playwright over five built sites (root, `/jeisey-tiers/`, three degraded-artifact scenarios), then `verify:board` against the root build and the matured-market build. The second is the only fixture with a non-null `market_trend`, so it is the only one that exercises the Trend column.
 >
 > Caching: `~/.cache/uv` keyed on the lockfile, npm through `setup-node`, and the Playwright browser keyed on `package-lock.json` so a client upgrade can never pair with an old browser build. Each job writes a step summary.
 >

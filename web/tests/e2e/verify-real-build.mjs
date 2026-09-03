@@ -55,6 +55,41 @@ function expectedTrendCell(trend) {
   return `${arrow}${value}`;
 }
 
+/**
+ * Column indices read from the header row, never counted by hand.
+ *
+ * Counting is how the 2026-09-03 daily refresh broke. Phase 10 inserted Dispersion, FP ECR
+ * and Spread into the arbitrage table, `Score` and `Trend` slid two columns right, and this
+ * file went on reading positions 8 and 9 — so every arbitrage row failed against a build that
+ * was correct. Worse, the Trend check had by then been comparing an em dash in the Spread
+ * column against the em dash it expected in Trend, and *passed* while measuring nothing: a
+ * positional check does not only break loudly, it can agree for the wrong reason.
+ *
+ * A header lookup says what the check means — "the Score column" — and a renamed or dropped
+ * column fails once, by name, listing the headers actually found, instead of silently reading
+ * whatever is now next door.
+ */
+function columnLookup(headerTexts) {
+  // The sort indicator lives inside the `th`. It is presentation, not identity.
+  const labels = headerTexts.map((text) => text.replace(/[\u25b2\u25bc]/g, "").trim());
+  const missing = [];
+  return {
+    /** `match` exists for a header whose text is data — the ADP column names its source. */
+    at(label, match = (text) => text === label) {
+      const index = labels.findIndex(match);
+      if (index < 0) missing.push(label);
+      return index;
+    },
+    problem(table) {
+      if (missing.length === 0) return null;
+      return `${table} table: no column headed ${missing.join(", ")} — saw ${labels.join(" | ")}`;
+    },
+  };
+}
+
+const headerTexts = (page) =>
+  page.$$eval("table.sheet thead th", (ths) => ths.map((th) => th.textContent.trim()));
+
 const exe = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
 const browser = await chromium.launch(exe ? { executablePath: exe } : {});
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
@@ -74,18 +109,33 @@ const rows = await page.$$eval("table.sheet tbody tr", (trs) =>
     name: tr.querySelector(".player-name")?.textContent?.trim() ?? null,
   })),
 );
-rows.forEach(({ cells, name }, i) => {
-  const record = block[i];
-  const expect = (label, got, want) => {
-    if (got !== want) failures.push(`tier row ${i + 1} ${label}: rendered ${got}, artifact ${want}`);
-  };
-  expect("fair_rank", cells[0], String(record.fair_rank));
-  expect("name", name, record.display_name);
-  expect("expected_vorp", cells[6], record.expected_vorp.toFixed(1));
-  expect("p50_vorp", cells[7], record.p50_vorp.toFixed(1));
-  expect("iqr", cells[8], `${record.p25_vorp.toFixed(1)} – ${record.p75_vorp.toFixed(1)}`);
-  expect("expected_points", cells[9], record.expected_points.toFixed(1));
-});
+const tierColumn = columnLookup(await headerTexts(page));
+const tierAt = {
+  rank: tierColumn.at("Rank"),
+  expectedVorp: tierColumn.at("Exp VORP"),
+  medianVorp: tierColumn.at("Median VORP"),
+  interquartile: tierColumn.at("P25\u2013P75 VORP"),
+  expectedPoints: tierColumn.at("Exp FP"),
+};
+const tierProblem = tierColumn.problem("tier");
+if (tierProblem !== null) failures.push(tierProblem);
+else {
+  rows.forEach(({ cells, name }, i) => {
+    const record = block[i];
+    const expect = (label, got, want) => {
+      if (got !== want) {
+        failures.push(`tier row ${i + 1} ${label}: rendered ${got}, artifact ${want}`);
+      }
+    };
+    expect("fair_rank", cells[tierAt.rank], String(record.fair_rank));
+    expect("name", name, record.display_name);
+    expect("expected_vorp", cells[tierAt.expectedVorp], record.expected_vorp.toFixed(1));
+    expect("p50_vorp", cells[tierAt.medianVorp], record.p50_vorp.toFixed(1));
+    const iqr = `${record.p25_vorp.toFixed(1)} \u2013 ${record.p75_vorp.toFixed(1)}`;
+    expect("iqr", cells[tierAt.interquartile], iqr);
+    expect("expected_points", cells[tierAt.expectedPoints], record.expected_points.toFixed(1));
+  });
+}
 
 // --- Tier board rows against the artifact ---------------------------------------------------
 const marks = await page.$$eval(".board-row", (gs) => gs.map((g) => g.getAttribute("aria-label")));
@@ -112,16 +162,39 @@ await page.waitForSelector("table.sheet tbody tr");
 const arbRows = await page.$$eval("table.sheet tbody tr", (trs) =>
   trs.slice(0, 30).map((tr) => [...tr.querySelectorAll("td")].map((td) => td.textContent.trim())),
 );
-arbRows.forEach((cells, i) => {
-  const record = arbBlock[i];
-  if (cells[4] !== String(record.fair_rank)) failures.push(`arb row ${i + 1} fair_rank`);
-  if (cells[5] !== record.market_adp.toFixed(1)) failures.push(`arb row ${i + 1} adp`);
-  if (cells[8] !== record.arbitrage_score.toFixed(1)) failures.push(`arb row ${i + 1} score`);
-  const trend = expectedTrendCell(record.market_trend);
-  if (!cells[9].startsWith(trend)) {
-    failures.push(`arb row ${i + 1} trend: rendered ${cells[9]}, artifact wants ${trend}`);
-  }
-});
+const arbColumn = columnLookup(await headerTexts(page));
+const arbAt = {
+  fairRank: arbColumn.at("Fair Rank"),
+  // The selected market names its own column — "FFC Recent ADP", "MFL Cumulative ADP", or
+  // "Median ADP" for the cross-market view — so this is the one header matched by shape.
+  adp: arbColumn.at("… ADP", (text) => text.endsWith("ADP")),
+  score: arbColumn.at("Score"),
+  trend: arbColumn.at("Trend"),
+};
+const arbProblem = arbColumn.problem("arbitrage");
+if (arbProblem !== null) failures.push(arbProblem);
+else {
+  arbRows.forEach((cells, i) => {
+    const record = arbBlock[i];
+    const rank = cells[arbAt.fairRank];
+    const adp = cells[arbAt.adp];
+    const score = cells[arbAt.score];
+    if (rank !== String(record.fair_rank)) {
+      failures.push(`arb row ${i + 1} fair_rank: rendered ${rank}, artifact ${record.fair_rank}`);
+    }
+    if (adp !== record.market_adp.toFixed(1)) {
+      failures.push(`arb row ${i + 1} adp: rendered ${adp}, artifact ${record.market_adp.toFixed(1)}`);
+    }
+    if (score !== record.arbitrage_score.toFixed(1)) {
+      const want = record.arbitrage_score.toFixed(1);
+      failures.push(`arb row ${i + 1} score: rendered ${score}, artifact ${want}`);
+    }
+    const trend = expectedTrendCell(record.market_trend);
+    if (!cells[arbAt.trend].startsWith(trend)) {
+      failures.push(`arb row ${i + 1} trend: rendered ${cells[arbAt.trend]}, artifact wants ${trend}`);
+    }
+  });
+}
 const railLabels = await page.$$eval(".rail-row", (gs) => gs.map((g) => g.getAttribute("aria-label")));
 for (const record of arbBlock.filter((r) => r.rank_gap > 0).slice(0, 20)) {
   const label = railLabels.find((l) => l.startsWith(`${record.display_name},`));
