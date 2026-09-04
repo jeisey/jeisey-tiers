@@ -548,3 +548,97 @@ sync, no rest-of-season model, no weekly rankings. Phase 11 was not started.
 and **13** more on `smoke-chromium`. `npm run e2e:browsers` (Firefox, WebKit) is runner-only in
 this sandbox as it has been since ADR-059; it ran on the PR and passed, so every gate in the
 steady-state command set has now been exercised against Phase 10.
+
+## Phase 11 — Rest-of-season intrinsic model
+
+**Implemented 2026-09-04; the exit gate is partially met.** The candidate beats every declared
+baseline on every primary metric, in development and on the sealed season, and is **not
+promoted** because one frozen clause fires. That is recorded rather than repaired, in the same
+shape Phase 4 used. Evidence: `docs/experiments/phase11-ros/experiment.md`,
+`docs/experiments/phase11-ros/final_holdout.md`,
+`docs/experiments/phase11-ros-value/value_study.md`, `models/cards/intrinsic-ros-v1.md`;
+decisions ADR-068 through ADR-074.
+
+- [x] Define the point-in-time training grain and freeze the cutoff rule. — `ros_cutoff_v1`:
+      a snapshot through week N reads weeks 1..N of season Y and any earlier season, and
+      predicts weeks N+1..`horizon.last_week`. Week 0 refused (that is the preseason model's
+      grain); the last modelled snapshot is `last_week − 1`. **455,157 rows** across 2017-2025,
+      15 snapshots per pre-2021 season and 16 from 2021.
+- [x] Define ROS targets and horizons, reconciled against the scoring engine. — Remaining
+      games, remaining points per appearance and their product, plus `remaining_horizon_weeks`.
+      `points_to_date + actual_remaining_points` reproduces the existing season total with a
+      worst absolute error of **1.14e-13** over 340,419 rows per preset, as a *critical* build
+      check.
+- [x] Engineer in-season feature families with availability rules. — **43** declared in-season
+      columns in six families on top of Phase 3's frozen 78-column preseason block, inherited
+      unchanged. Every one declares an availability rule; `docs/ROS_FEATURE_DICTIONARY.md` is
+      generated from the code and a test asserts it is not stale. Injury and practice-report
+      status stay out (ADR-070).
+- [x] Prove the cutoff constructively. — Rebuild each sampled snapshot from a panel with its
+      own future deleted and assert every in-season feature is identical; then assert the label
+      built from that same panel is exactly zero. **27 cutoffs × 40 columns, clean.** It found
+      a real defect on the way: universe membership was a season property, so a week-3 row
+      existed for a player who signed in week 9 (ADR-068).
+- [x] Build the chronological evaluation protocol. — Season-blocked expanding folds from 2017,
+      development validation 2020-2024, 2025 sealed behind its own token. The evaluation cell
+      is one week's board, so the paired bootstrap never resamples the same player sixteen
+      times (ADR-072). **948 development cells, 253,197 scored rows.**
+- [x] Declare four baselines and freeze the promotion rule before the candidate existed. — R0
+      preseason-prorated, R1 current-rate, R2 shrinkage blend, R3 availability prior; the
+      comparator is picked by the frozen rule (lowest development macro pinball) and is **R2**.
+      The gate was committed in `c7815f9`, the candidate in `af30b38`.
+- [x] Build and evaluate the candidate. — `RC1`, the availability × conditional-performance
+      hurdle, reusing Q1's predeclared configuration with no tuning of any kind. Against R2:
+      MAE **−2.4632** [−2.5305, −2.3958], pinball **−0.8084** [−0.8328, −0.7857], Spearman
+      **+0.1203** [+0.1184, +0.1229]. All three intervals exclude zero.
+- [x] Report the edge-case cohorts 11.3 names. — Twelve required cohorts, all reported, eleven
+      clean. Rookies 16.69 → 14.87 MAE, weeks 1-3 19.48 → 15.18, returning-from-absence
+      Spearman 0.294 → 0.311, high-capital rookies 29.83 → 26.66.
+- [x] Touch the sealed season once, after the freeze. — 2025, 53,307 rows: MAE **−2.2497**,
+      pinball **−0.7136**, Spearman **+0.1163**, all resolved. Every development conclusion
+      reproduces out of time, the failure included. The holdout is spent.
+- [x] Produce ROS value above replacement with a documented replacement interpretation. —
+      Both interpretations measured over identical draws across twelve scenarios;
+      `ros_replacement_v1` selects **`rostered_depth`** because the two disagree materially
+      (worst fair-rank Spearman 0.9981, largest mean |Δrank| in the top 150 2.15, smallest
+      top-50 overlap 0.940, largest single move 41 places). ADR-071.
+- [x] Measure ROS simulation convergence and tier-boundary stability. — Both frozen Release 1
+      rules reused unchanged, and **both fail**, exactly as they did preseason: no draw count
+      in the ladder meets every tolerance (10,000 used as the declared fallback), and boundary
+      agreement is **0.167** against a 0.500 bar. Membership is highly reproducible (bootstrap
+      ARI 0.857) and tiers order realized value across **100%** of adjacent pairs. ADR-074.
+- [x] Add offline per-player attribution diagnostics. — Exact TreeSHAP per component, with the
+      summation identity asserted by a test. For Saquon Barkley at 2024 week 8, availability is
+      led by `weeks_since_last_game` and performance by `touches_per_game_to_date`,
+      `points_per_week_to_date` and `carry_share_to_date` —
+      `docs/experiments/phase11-ros/attribution/2024-w08-RB-PPR.json`.
+- [!] **`RC1` promoted to production.** — **Not promoted, on measured evidence.**
+      `ros_promotion_v1` clause 4 fires on `games_played_band / no_games`: candidate P10-P90
+      coverage **0.964** against a [0.60, 0.95] band, on 131,844 rows. The evidence says this
+      is a rule artifact rather than a model defect — the candidate's interval there is
+      **narrower** than the baseline's (14.5 against 17.1) and its MAE is a third of it (2.05
+      against 5.82) — because rather more than half of those rows have a true value of exactly
+      zero and a band straddling zero contains it. The threshold is not moved. ADR-073.
+
+**Exit gate: partially met.**
+
+**Met.** The weekly point-in-time leakage audit passes constructively. The snapshot builder is
+deterministic and its content hash is recorded. Four simple baselines were declared and the
+comparator chosen by rule. The promotion criteria were frozen and committed before the
+candidate existed. The sealed season was touched exactly once, after the freeze. No
+current-only data entered training: injury, practice-report and depth-chart sources are all
+excluded with recorded reasons. Rookie/veteran, games-played-band and early-season slices are
+all reported. Uncertainty calibration is reported *by cohort* rather than hidden by the pooled
+zero-game rows — which is precisely how the gate failure was found. ROS simulation convergence
+is measured. Tier-boundary stability is measured and represented honestly. Per-player
+attribution is available offline.
+
+**Not met — one criterion, on measured evidence.** *The candidate is not promoted.* The gate
+that refuses it is the gate this phase froze, and the clause it fails is one whose bound was
+written for a different failure mode. Moving it now would be fitting a threshold to a result.
+
+**Scope boundaries held:** no opponent-specific start/sit advice, no lineup optimization, no
+betting or props, no news-sentiment modelling, no user rosters, no market data inside
+`intrinsic-ros-v1`, no published artifact, no frontend change. Release 1 and Phase 10 are
+byte-identical: the only shared-code change is one optional parameter on the simulation draw
+loop whose default preserves every preseason number.

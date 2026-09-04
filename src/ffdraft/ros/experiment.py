@@ -406,6 +406,7 @@ def _cohort_evidence(
         actual = subset.get_column(ROS_TARGET_COLUMN).to_numpy().astype(np.float64)
         base_point = subset.get_column(baseline_point).to_numpy().astype(np.float64)
         cand_point = subset.get_column(candidate_point).to_numpy().astype(np.float64)
+        base_matrix = subset.select(baseline_quantiles).to_numpy().astype(np.float64)
         cand_matrix = subset.select(candidate_quantiles).to_numpy().astype(np.float64)
         evidence.append(
             RosCohortEvidence(
@@ -416,10 +417,21 @@ def _cohort_evidence(
                 candidate_mae=mae(actual, cand_point),
                 baseline_spearman=_macro_spearman(subset, baseline_point),
                 candidate_spearman=_macro_spearman(subset, candidate_point),
+                baseline_coverage=coverage(
+                    actual,
+                    base_matrix[:, low_index],
+                    base_matrix[:, high_index],
+                ),
                 candidate_coverage=coverage(
                     actual,
                     cand_matrix[:, low_index],
                     cand_matrix[:, high_index],
+                ),
+                baseline_width=float(
+                    np.mean(base_matrix[:, high_index] - base_matrix[:, low_index]),
+                ),
+                candidate_width=float(
+                    np.mean(cand_matrix[:, high_index] - cand_matrix[:, low_index]),
                 ),
             ),
         )

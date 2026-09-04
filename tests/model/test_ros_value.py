@@ -19,7 +19,7 @@ from ffdraft.simulation.allocation import PlayerPoints, allocate_starters
 
 @pytest.fixture()
 def tiny_preset() -> LeaguePreset:
-    """Four teams, one starter per position, one bench place each: sixteen starters, four benches."""
+    """Four teams, one starter per position, one bench place: sixteen starters, four benches."""
     return LeaguePreset(
         preset_id="test-4",
         teams=4,

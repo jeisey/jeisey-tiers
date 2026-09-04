@@ -91,7 +91,12 @@ def build_ros_card(
             "criteria": ROS_PROMOTION_CRITERIA.to_dict(),
             "decision": gate,
         },
-        "holdout": final.get("holdout_policy", ros_holdout_policy()),
+        # The policy is taken from the live declaration rather than from the report's frozen
+        # copy, so the card's wording stays current; the report keeps its own copy as the
+        # record of what the run declared at the time.
+        "holdout": ros_holdout_policy(
+            status="CONSUMED" if final.get("macro_by_model") else "UNTOUCHED / NOT EVALUATED",
+        ),
         "sealed_result": {
             "macro_by_model": final.get("macro_by_model", {}),
             "paired_deltas": final.get("paired_deltas", {}),
@@ -112,9 +117,9 @@ def _limitations() -> list[str]:
         "There is no injury or practice-report feature. The model learns absence from the "
         "box score, so it sees a player who has stopped playing but not one who is about to "
         "(ADR-070).",
-        "The sealed season is 2025, which Phase 4 already opened as the preseason model's "
-        "final holdout. No rest-of-season snapshot or label from it was ever examined, but "
-        "season totals correlate with rest-of-season totals, so the result is strong rather "
+        "The sealed season is 2025, which Phase 4 had already opened as the preseason model's "
+        "final holdout. Nothing from it informed this model's design, but season totals "
+        "correlate with rest-of-season totals, so its out-of-time result is strong rather "
         "than fully naive evidence (ADR-069).",
         "Roughly half of all modelled rows have zero remaining games. Pooled interval coverage "
         "therefore overstates interval width, and coverage is reported split by appearances.",
@@ -142,6 +147,65 @@ def _number(value: Any, digits: int = 3) -> str:
         return f"{float(value):.{digits}f}"
     except (TypeError, ValueError):
         return "—"
+
+
+def _sealed_section(card: dict[str, Any]) -> list[str]:
+    """The one out-of-time result, rendered only once the holdout has actually been opened."""
+    sealed = card.get("sealed_result", {})
+    macro = sealed.get("macro_by_model") or {}
+    if not macro:
+        return []
+    lines = [
+        _table(
+            [
+                {
+                    "model": model_id,
+                    "mae": _number(values.get("mae"), 2),
+                    "pinball": _number(values.get("mean_pinball")),
+                    "spearman": _number(values.get("spearman")),
+                    "coverage": _number(values.get("coverage_p10_p90")),
+                }
+                for model_id, values in macro.items()
+            ],
+            [
+                ("model", "model"),
+                ("mae", "MAE"),
+                ("pinball", "pinball"),
+                ("spearman", "Spearman"),
+                ("coverage", "P10-P90 coverage"),
+            ],
+        ),
+        "",
+    ]
+    deltas = sealed.get("paired_deltas", {})
+    if deltas:
+        lines.extend(
+            [
+                _table(
+                    [
+                        {
+                            "metric": metric,
+                            "delta": _number(payload.get("delta"), 4),
+                            "ci": f"[{payload.get('ci_low', float('nan')):+.4f}, "
+                            f"{payload.get('ci_high', float('nan')):+.4f}]",
+                            "resolved": "yes" if payload.get("ci_excludes_zero") else "no",
+                        }
+                        for metric, payload in deltas.items()
+                    ],
+                    [
+                        ("metric", "metric"),
+                        ("delta", "delta"),
+                        ("ci", "95% CI"),
+                        ("resolved", "interval excludes 0"),
+                    ],
+                ),
+                "",
+            ],
+        )
+    for reason in sealed.get("gate", {}).get("failed_clauses", []):
+        lines.append(f"- **failed on the sealed season**: {reason}")
+    lines.append("")
+    return lines
 
 
 def card_markdown(card: dict[str, Any]) -> str:
@@ -253,10 +317,10 @@ def card_markdown(card: dict[str, Any]) -> str:
             "",
             card["holdout"].get("prior_exposure", ""),
             "",
-            "## Value, replacement and tiers",
-            "",
         ],
     )
+    lines.extend(_sealed_section(card))
+    lines.extend(["## Value, replacement and tiers", ""])
     for key, payload in card["value"].items():
         selected = payload.get("selected", "—") if isinstance(payload, dict) else "—"
         rule = payload.get("rule", "—") if isinstance(payload, dict) else "—"

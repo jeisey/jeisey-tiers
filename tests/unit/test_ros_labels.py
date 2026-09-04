@@ -14,7 +14,6 @@ import pytest
 from ffdraft.ros.labels import ROS_LABEL_VERSION, build_ros_labels, reconcile_ros_labels
 from ffdraft.ros.panel import horizon_weekly_rows
 from ffdraft.scoring.engine import season_totals
-from ffdraft.scoring.horizon import fantasy_horizon
 
 
 @pytest.fixture(scope="module")

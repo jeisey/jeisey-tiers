@@ -4,9 +4,144 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-**Phase 10 — implemented 2026-09-02, merged 2026-09-03 as jeisey/jeisey-tiers#27; exit gate
-partially met.** One criterion failed on measured evidence (FantasyPros publication) and is
-recorded rather than rounded up. Phase 11 has **not** been started.
+**Phase 11 — implemented 2026-09-04; exit gate partially met.** The rest-of-season model
+`intrinsic-ros-v1` is built, validated in development and on the sealed season, and **not
+promoted**: one frozen clause fires and the threshold is not moved. Phase 11 is entirely
+offline — no artifact, no schema, no frontend change, nothing published. Phase 12 has **not**
+been started.
+
+### What Phase 11 built
+
+| | |
+|---|---|
+| Grain | `season × through_week × player_id × scoring_preset` |
+| Cutoff rule | `ros_cutoff_v1` — week N reads weeks 1..N of season Y and any earlier season |
+| Label | `ros_label_v1` — remaining games, remaining points per appearance, remaining points |
+| Dataset | **455,157 rows**, 2017-2025, content hash `c976f5f8…`, `data/ros/` (gitignored) |
+| Feature set | `ros_core_v1` (`f5ad9df207795351`) — **121** inputs: 78 inherited preseason + 43 in-season |
+| Schema hash | `ros_features_v1` = `f0384c75cac8218a` |
+| Candidate | `rc1_ros_hurdle_v1` — availability × conditional performance, Monte Carlo composed |
+| Comparator | `R2` (shrinkage blend), picked by the frozen rule, not by preference |
+| Sealed season | 2025, **CONSUMED** once on 2026-09-04 |
+| Promotion | **not promoted** (`ros_promotion_v1` clause 4) |
+| Replacement | `rostered_depth` (`ros_replacement_v1`) |
+| Model card | `models/cards/intrinsic-ros-v1.{md,json}` |
+
+### The result, and the clause that refused it
+
+`RC1` against `R2`, paired within cell:
+
+| | development (948 cells, 253,197 rows) | sealed 2025 (192 cells, 53,307 rows) |
+|---|---|---|
+| MAE | **−2.4632** [−2.5305, −2.3958] | **−2.2497** [−2.3774, −2.1285] |
+| mean pinball | **−0.8084** [−0.8328, −0.7857] | **−0.7136** [−0.7513, −0.6755] |
+| Spearman | **+0.1203** [+0.1184, +0.1229] | **+0.1163** [+0.1120, +0.1216] |
+| top-K recall | −0.0034 [−0.0044, +0.0079] — unresolved | −0.0078 [−0.0141, +0.0156] — unresolved |
+
+Clauses 1, 2 and 3 pass in both. **Clause 4 fails on `games_played_band / no_games`**:
+candidate P10-P90 coverage 0.964 in development, 0.957 on 2025, against a [0.60, 0.95] band.
+
+**Do not read that as an over-wide interval.** On the same cohort the candidate's mean interval
+is *narrower* than the baseline's (14.5 against 17.1 in development) and its MAE is a third of
+it (2.05 against 5.82). Rather more than half of those 131,844 rows have a true remaining-points
+value of exactly zero — a player who has not played by week N frequently never plays — and a
+band straddling zero contains the outcome. The clause is firing on the target's atom at zero,
+not on a defect. **The threshold was not moved** (ADR-073); a successor rule has to be declared
+before it is measured, and that is a later phase's decision.
+
+One extra cohort fails on 2025 only: `in_season_arrival`, MAE 1.08 → 1.69 on 315 rows, where
+the baseline confidently predicts ~0 with a 1.7-point interval and is mostly right. The
+candidate is better *ordered* on the same rows (Spearman −0.060 → +0.160).
+
+### The leakage audit found a real defect
+
+Universe membership was a *season* property: anyone who appeared anywhere in season Y got a row
+at every cutoff of Y, so a week-3 snapshot contained a row for a player who signed in week 9.
+The row was all zeros; its **existence** was the leak. The constructive audit caught it —
+rebuild week 3 from a panel truncated at week 3 and the row count fell from 120 to 96.
+
+Nothing shipped wrong: a downstream `position` filter had been dropping those rows because
+position for an unobserved arrival is null. That was luck. The rule now lives in
+`build_in_season_features` where the audit can see it (ADR-068).
+
+### The value study
+
+- **Replacement.** Both interpretations run over identical draws, twelve scenarios. They
+  disagree materially — worst fair-rank Spearman 0.9981, largest mean |Δrank| in the top 150
+  2.15, smallest top-50 overlap 0.940, largest single move 41 places — so `rostered_depth` is
+  used. `bench` in `config/league-defaults.yaml`, carried for user context in V1, is now
+  load-bearing for the in-season board (ADR-071).
+- **Convergence: fails, as preseason did.** No count in [1000, 2500, 5000, 10000] meets every
+  tolerance; at 10,000 the seed-to-seed tier ARI is 0.451 at week 4 against a 0.900 bound. The
+  *value* quantities are inside tolerance; what does not converge is the tier partition.
+- **Tier stability: fails on boundary agreement, 0.167 against 0.500.** Everything else passes
+  and by a distance — bootstrap ARI 0.857, no singletons, tier-count CV 0.074, cross-preset ARI
+  0.524, and realized remaining VORP falls across **100%** of adjacent tier pairs. Membership is
+  reproducible; the boundary's *location* is not. Penalty 3.0, 6.8 mean tiers (ADR-074).
+
+### What Phase 12 inherits, and what it must not assume
+
+- **`intrinsic-ros-v1` is not a production model.** It is a measured, reproducible,
+  non-promoted candidate. Shipping it requires either a successor promotion rule (declared
+  first, with an ADR) or accepting the failure explicitly in the product.
+- **The sealed season is spent.** 2025 was opened once. A successor candidate needs a different
+  evaluation strategy and a future season; there is no second opening.
+- **Tier boundaries may not be drawn as lines.** Same finding as Release 1, same response: a
+  band, and text that says so.
+- **Nothing is published and nothing runs on a schedule.** `build-ros-dataset` performs network
+  I/O and is not in `daily-refresh.yml`. The weekly availability rule — a week-N snapshot may
+  only be built once the upstream release covering week N exists — is documented in
+  `docs/OPERATIONS.md` and is Phase 12's to enforce.
+- **There is still no injury feature, and the cohort that needs one is measurably the worst.**
+  `returning_from_absence` Spearman 0.294 → 0.311 in development: both near-random. ADR-070
+  records the exact four things a source would have to produce.
+- **Release 1 and Phase 10 are byte-identical.** The only shared-code change is one optional
+  parameter on `simulate_vorp` whose default is Release 1's rule, plus two additive members on
+  the `Availability` enum. The preseason feature-schema hash is unchanged.
+
+### Commands and gates run (Phase 11)
+
+```bash
+uv sync --frozen
+uv run ruff check . && uv run ruff format --check .   # clean, 222 files
+uv run mypy                                            # 140 source files, clean
+uv run pytest                                          # 1,329 passed, 4 live-network deselected
+uv run ffdraft build-fixture-artifacts                 # 0 critical, 5 warning (documented fixtures)
+uv run ffdraft validate-artifacts <fixture build>      # 0 critical, 0 warning
+npm ci && npm run lint && npm run typecheck            # 0 errors (2 pre-existing warnings)
+npm run test -- --run                                  # 272 passed
+npm run build                                          # clean
+npm run e2e                                            # 70 passed (chromium, mobile, a11y)
+```
+
+Phase-11 specific, all run on this branch:
+
+```bash
+uv run ffdraft build-historical --last-season 2025      # 11,605 feature rows, gate pass
+uv run ffdraft build-ros-dataset --last-season 2025     # 455,157 snapshot rows, gate pass
+uv run ffdraft evaluate-ros                             # 5 folds, 948 cells, ~26 min
+uv run ffdraft evaluate-ros-value                       # ~28 min
+uv run ffdraft evaluate-ros --final-eval \
+  --confirm-final-eval RELEASE-ROS-FINAL-HOLDOUT-2025 \
+  --final-eval-reason "..."                             # the one sealed run, ~12 min
+uv run ffdraft ros-attribution --season 2024 --through-week 8 --position RB
+uv run ffdraft ros-model-card
+uv run ffdraft feature-dictionary --ros
+```
+
+`npm run e2e:browsers` (Firefox and WebKit) remains runner-only in this sandbox, as it has been
+since ADR-059. Phase 11 changed **no** frontend file, so the browser matrix has nothing new to
+cover; the chromium/mobile/a11y suite was run anyway to prove the shared-code change to
+`simulate_vorp` did not move a published number, and it did not. Playwright needs
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` here — the
+unversioned `/opt/pw-browsers/chromium` directory is not the binary.
+
+---
+
+## Phase 10 — implemented 2026-09-02, merged 2026-09-03 as jeisey/jeisey-tiers#27
+
+Exit gate partially met. One criterion failed on measured evidence (FantasyPros publication)
+and is recorded rather than rounded up.
 
 ### Post-merge corrections (2026-09-03)
 
@@ -179,7 +314,7 @@ New CLI: `ffdraft capture-market-source <source>`, `ffdraft link-market-source`.
 New workflows: `source-probe-phase10.yml` (dispatch/request, inert),
 `phase10-linkage.yml` (dispatch/request, commits the alias file).
 
-### What Phase 11 inherits, and what it must not assume
+### What Phase 11 inherited from Phase 10, and what it confirmed
 
 - The multi-source **code path** is complete and fixture-tested; the **published** board still
   needs one production refresh that captures FFC into the private store. Nothing further is
@@ -192,7 +327,8 @@ New workflows: `source-probe-phase10.yml` (dispatch/request, inert),
   it — not from today.
 - The V1 intrinsic model, its methodology, its feature set and its fair ranks are untouched.
   Nothing in Phase 10 reads market data into an intrinsic feature, and the forbidden-feature
-  guard still covers it.
+  guard still covers it. Phase 11 confirmed it from the other side: the same guard runs over
+  the rest-of-season input list, and the two models share no target.
 
 ---
 
@@ -234,7 +370,14 @@ Three things are worth carrying forward as ideas rather than as file paths:
 
 ## Current target gate
 
-**None. V1 is released.** Phase 9B's checklist in `TASKS.md` is complete and its exit gate is met. Phases 0-8 were not renumbered; 9A was inserted before the release because the one blocked Phase-8 item became doable and doing it before tagging V1 was cheaper than tagging twice.
+**Phase 12 — in-season product mode, opportunity board, operations and the Release 2 launch**
+(`docs/RELEASE2_ROADMAP.md`). It opens with an unresolved question rather than a task list:
+Phase 11 produced a rest-of-season model that is measurably better than every declared baseline
+and that its own frozen gate refuses to promote (ADR-073). Phase 12 has to decide, explicitly
+and with an ADR, whether to declare a successor promotion rule *before* measuring it again, or
+to ship the model with the failure stated. It may not simply raise the coverage ceiling.
+
+**Release 1 has no open gate. V1 is released.** Phase 9B's checklist in `TASKS.md` is complete and its exit gate is met. Phases 0-8 were not renumbered; 9A was inserted before the release because the one blocked Phase-8 item became doable and doing it before tagging V1 was cheaper than tagging twice.
 
 The next work is the post-V1 backlog at the end of this file. None of it is a launch blocker and none of it should be started as though it were a phase gate.
 

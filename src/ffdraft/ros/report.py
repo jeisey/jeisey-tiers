@@ -157,7 +157,10 @@ def _cohort_table(result: RosExperimentResult) -> str:
             "cand_mae": _number(item.candidate_mae, 2),
             "base_rho": _number(item.baseline_spearman),
             "cand_rho": _number(item.candidate_spearman),
+            "base_cov": _number(item.baseline_coverage),
             "coverage": _number(item.candidate_coverage),
+            "base_width": _number(item.baseline_width, 1),
+            "cand_width": _number(item.candidate_width, 1),
         }
         for item in result.cohorts
     ]
@@ -169,9 +172,12 @@ def _cohort_table(result: RosExperimentResult) -> str:
             ("decisive", "decisive"),
             ("base_mae", "baseline MAE"),
             ("cand_mae", "candidate MAE"),
-            ("base_rho", "baseline Spearman"),
-            ("cand_rho", "candidate Spearman"),
+            ("base_rho", "baseline ρ"),
+            ("cand_rho", "candidate ρ"),
+            ("base_cov", "baseline P10-P90 coverage"),
             ("coverage", "candidate P10-P90 coverage"),
+            ("base_width", "baseline width"),
+            ("cand_width", "candidate width"),
         ),
     )
 
@@ -218,8 +224,13 @@ def write_ros_report(
     out_dir: Path,
     *,
     cells_dir: Path | None = None,
+    predictions_dir: Path | None = None,
 ) -> list[Path]:
     """Write both artifacts and return the paths.
+
+    ``predictions_dir`` receives the row-level evaluation frame - every model's point and
+    quantiles on identical keys - so a question nobody thought to ask in the report can be
+    answered later without refitting sixty LightGBM ensembles.
 
     ``cells_dir`` receives the full per-cell metric table. It is deliberately not the report
     directory: there are several thousand cells, and a committed report has to stay
@@ -237,5 +248,10 @@ def write_ros_report(
         cells_dir.mkdir(parents=True, exist_ok=True)
         path = cells_dir / f"ros_cells_{stem}.parquet"
         result.cell_frame().write_parquet(path, compression="zstd")
+        written.append(path)
+    if predictions_dir is not None:
+        predictions_dir.mkdir(parents=True, exist_ok=True)
+        path = predictions_dir / f"ros_predictions_{stem}.parquet"
+        result.predictions.write_parquet(path, compression="zstd")
         written.append(path)
     return written

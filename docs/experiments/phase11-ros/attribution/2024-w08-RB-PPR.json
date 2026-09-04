@@ -1,0 +1,1210 @@
+{
+  "components": {
+    "features_used": [
+      "age_at_anchor",
+      "age_at_anchor_known",
+      "position_age_z",
+      "experience_years",
+      "experience_years_known",
+      "rookie_flag",
+      "has_prior_season_stats",
+      "height_in",
+      "weight_lb",
+      "draft_round",
+      "draft_overall",
+      "drafted_flag",
+      "seasons_since_draft",
+      "combine_forty",
+      "combine_bench",
+      "combine_vertical",
+      "combine_broad_jump",
+      "combine_cone",
+      "combine_shuttle",
+      "combine_speed_score",
+      "combine_observed_flag",
+      "prior_season_role_rank",
+      "prior_season_role_known",
+      "prev1_snap_share",
+      "prev1_offense_snaps_pg",
+      "prev1_games",
+      "prev1_games_missed",
+      "prev1_fantasy_points_std",
+      "prev1_fantasy_points_ppr",
+      "prev1_fantasy_ppg_std",
+      "prev1_fantasy_ppg_ppr",
+      "prev1_carries_pg",
+      "prev1_targets_pg",
+      "prev1_receptions_pg",
+      "prev1_pass_attempts_pg",
+      "prev1_rushing_yards_pg",
+      "prev1_receiving_yards_pg",
+      "prev1_passing_yards_pg",
+      "prev1_total_tds_pg",
+      "prev1_target_share",
+      "prev1_rush_share",
+      "prev1_xfp_pg",
+      "prev1_fp_over_expected_pg",
+      "prev1_yards_per_carry",
+      "prev1_rush_denominator_met",
+      "prev1_yards_per_target",
+      "prev1_catch_rate",
+      "prev1_rec_td_rate",
+      "prev1_target_denominator_met",
+      "prev1_rush_td_rate",
+      "prev1_pass_denominator_met",
+      "prev2_games",
+      "prev2_fantasy_ppg_ppr",
+      "prev2_carries_pg",
+      "prev2_targets_pg",
+      "prev2_xfp_pg",
+      "prev3_games",
+      "prev3_fantasy_ppg_ppr",
+      "prev3_carries_pg",
+      "prev3_targets_pg",
+      "prev3_xfp_pg",
+      "prior5_seasons",
+      "prior5_games",
+      "prior5_fantasy_ppg_ppr",
+      "prior5_carries_pg",
+      "prior5_targets_pg",
+      "recent3_fantasy_ppg_ppr_w",
+      "recent3_targets_pg_w",
+      "recent3_carries_pg_w",
+      "prev1_team_pass_attempts_pg",
+      "prev1_team_carries_pg",
+      "prev1_team_pass_yards_pg",
+      "prev1_team_rush_yards_pg",
+      "prev1_team_offense_tds_pg",
+      "through_week",
+      "remaining_horizon_weeks",
+      "season_share_remaining",
+      "games_to_date",
+      "games_share_to_date",
+      "weeks_missed_to_date",
+      "weeks_since_last_game",
+      "consecutive_weeks_missed",
+      "active_last_week",
+      "games_last3",
+      "has_played_this_season",
+      "in_preseason_universe",
+      "team_remaining_scheduled_games",
+      "points_to_date",
+      "ppg_to_date",
+      "points_per_week_to_date",
+      "ppg_last3",
+      "ppg_trend",
+      "best_week_points_to_date",
+      "points_sd_to_date",
+      "targets_per_game_to_date",
+      "carries_per_game_to_date",
+      "pass_attempts_per_game_to_date",
+      "touches_per_game_to_date",
+      "target_share_to_date",
+      "carry_share_to_date",
+      "air_yards_per_game_to_date",
+      "snap_pct_mean_to_date",
+      "snap_pct_last3",
+      "snap_pct_trend",
+      "target_share_last3",
+      "target_share_trend",
+      "expected_points_per_game_to_date",
+      "points_over_expected_per_game_to_date",
+      "yards_per_target_to_date",
+      "yards_per_carry_to_date",
+      "catch_rate_to_date",
+      "td_per_opportunity_to_date",
+      "points_per_opportunity_to_date",
+      "team_points_per_game_to_date",
+      "team_pass_rate_to_date",
+      "team_plays_per_game_to_date",
+      "team_changed_in_season"
+    ],
+    "levels": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "performance_bounds": {
+      "lower": -5.015000000000001,
+      "upper": 64.94500000000001
+    },
+    "train_rows": 29764
+  },
+  "fold": {
+    "fold_id": "ros:2017-2023->2024",
+    "kind": "development",
+    "n_train_seasons": 7,
+    "train_end_season": 2023,
+    "train_seasons": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "train_start_season": 2017,
+    "validation_season": 2024
+  },
+  "players": [
+    {
+      "actual_remaining_points": 211.10000000000005,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.007992,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.006521,
+          "feature": "prior_season_role_known",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.00434,
+          "feature": "prior5_carries_pg",
+          "value": 16.254545454545454
+        },
+        {
+          "contribution": -0.002548,
+          "feature": "prior_season_role_rank",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.002139,
+          "feature": "prev1_snap_share",
+          "value": 0.7953846153846154
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.244265,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.049622,
+          "feature": "games_last3",
+          "value": 3.0
+        },
+        {
+          "contribution": 0.047953,
+          "feature": "games_share_to_date",
+          "value": 0.875
+        },
+        {
+          "contribution": 0.038325,
+          "feature": "best_week_points_to_date",
+          "value": 33.6
+        },
+        {
+          "contribution": 0.038078,
+          "feature": "ppg_last3",
+          "value": 15.4
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.582874,
+          "estimate": 0.908565
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 8.707635,
+          "estimate": 14.818289
+        }
+      },
+      "display_name": "Saquon Barkley",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.262852,
+          "feature": "prev1_yards_per_target",
+          "value": 3.9482758620689653
+        },
+        {
+          "contribution": -0.179813,
+          "feature": "prior5_games",
+          "value": 55.0
+        },
+        {
+          "contribution": -0.142467,
+          "feature": "td_per_opportunity_to_date",
+          "value": 0.039735099337748346
+        },
+        {
+          "contribution": -0.112841,
+          "feature": "prev1_receiving_yards_pg",
+          "value": 17.615384615384617
+        },
+        {
+          "contribution": -0.112611,
+          "feature": "prev1_team_pass_yards_pg",
+          "value": 190.0
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.883614,
+          "feature": "touches_per_game_to_date",
+          "value": 21.0
+        },
+        {
+          "contribution": 1.759694,
+          "feature": "points_per_week_to_date",
+          "value": 18.025000000000002
+        },
+        {
+          "contribution": 0.999941,
+          "feature": "ppg_to_date",
+          "value": 20.6
+        },
+        {
+          "contribution": 0.955683,
+          "feature": "carry_share_to_date",
+          "value": 0.5416666666666666
+        },
+        {
+          "contribution": 0.770717,
+          "feature": "snap_pct_mean_to_date",
+          "value": 0.7428571428571429
+        }
+      ],
+      "player_id": "gsis:00-0034844",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    },
+    {
+      "actual_remaining_points": 181.4,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.008172,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.004889,
+          "feature": "ppg_to_date",
+          "value": 19.357142857142858
+        },
+        {
+          "contribution": -0.003923,
+          "feature": "prior5_carries_pg",
+          "value": 12.071428571428571
+        },
+        {
+          "contribution": -0.001443,
+          "feature": "prior_season_role_rank",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.001345,
+          "feature": "yards_per_target_to_date",
+          "value": 6.695652173913044
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.239219,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.049894,
+          "feature": "games_last3",
+          "value": 3.0
+        },
+        {
+          "contribution": 0.045531,
+          "feature": "games_share_to_date",
+          "value": 0.875
+        },
+        {
+          "contribution": 0.035779,
+          "feature": "ppg_last3",
+          "value": 21.46666666666667
+        },
+        {
+          "contribution": 0.031747,
+          "feature": "best_week_points_to_date",
+          "value": 32.0
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.567015,
+          "estimate": 0.892706
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 10.00332,
+          "estimate": 16.113974
+        }
+      },
+      "display_name": "Jahmyr Gibbs",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.198374,
+          "feature": "td_per_opportunity_to_date",
+          "value": 0.06086956521739131
+        },
+        {
+          "contribution": -0.137076,
+          "feature": "prev1_yards_per_target",
+          "value": 4.514285714285714
+        },
+        {
+          "contribution": -0.110431,
+          "feature": "prev1_team_carries_pg",
+          "value": 29.8125
+        },
+        {
+          "contribution": -0.109017,
+          "feature": "prev1_rush_td_rate",
+          "value": 0.05325443786982249
+        },
+        {
+          "contribution": -0.052865,
+          "feature": "prev1_team_pass_attempts_pg",
+          "value": 35.875
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.650147,
+          "feature": "touches_per_game_to_date",
+          "value": 15.857142857142858
+        },
+        {
+          "contribution": 1.451326,
+          "feature": "points_per_week_to_date",
+          "value": 16.9375
+        },
+        {
+          "contribution": 0.946083,
+          "feature": "ppg_to_date",
+          "value": 19.357142857142858
+        },
+        {
+          "contribution": 0.920939,
+          "feature": "carry_share_to_date",
+          "value": 0.42592592592592593
+        },
+        {
+          "contribution": 0.841083,
+          "feature": "draft_overall",
+          "value": 12.0
+        }
+      ],
+      "player_id": "gsis:00-0039139",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    },
+    {
+      "actual_remaining_points": 174.7,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.009279,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.00455,
+          "feature": "prev1_rush_td_rate",
+          "value": 0.07526881720430108
+        },
+        {
+          "contribution": -0.001818,
+          "feature": "prior_season_role_known",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.001469,
+          "feature": "prev1_team_carries_pg",
+          "value": 27.25
+        },
+        {
+          "contribution": -0.001223,
+          "feature": "yards_per_target_to_date",
+          "value": 7.176470588235294
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.23962,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.050227,
+          "feature": "games_last3",
+          "value": 2.0
+        },
+        {
+          "contribution": 0.04441,
+          "feature": "games_share_to_date",
+          "value": 0.875
+        },
+        {
+          "contribution": 0.035779,
+          "feature": "ppg_last3",
+          "value": 18.6
+        },
+        {
+          "contribution": 0.030893,
+          "feature": "best_week_points_to_date",
+          "value": 29.5
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.557089,
+          "estimate": 0.88278
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 8.358235,
+          "estimate": 14.468888
+        }
+      },
+      "display_name": "De'Von Achane",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.105306,
+          "feature": "height_in",
+          "value": 69.0
+        },
+        {
+          "contribution": -0.094812,
+          "feature": "prev1_xfp_pg",
+          "value": 12.345
+        },
+        {
+          "contribution": -0.058354,
+          "feature": "points_sd_to_date",
+          "value": 10.826664614121315
+        },
+        {
+          "contribution": -0.055851,
+          "feature": "prev1_rush_td_rate",
+          "value": 0.07526881720430108
+        },
+        {
+          "contribution": -0.046213,
+          "feature": "weight_lb",
+          "value": 191.0
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.448105,
+          "feature": "touches_per_game_to_date",
+          "value": 15.714285714285714
+        },
+        {
+          "contribution": 1.049718,
+          "feature": "points_per_week_to_date",
+          "value": 13.387500000000001
+        },
+        {
+          "contribution": 0.820002,
+          "feature": "prev1_fantasy_ppg_ppr",
+          "value": 17.759999999999998
+        },
+        {
+          "contribution": 0.510105,
+          "feature": "ppg_to_date",
+          "value": 15.3
+        },
+        {
+          "contribution": 0.507423,
+          "feature": "recent3_fantasy_ppg_ppr_w",
+          "value": 17.759999999999998
+        }
+      ],
+      "player_id": "gsis:00-0039040",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    },
+    {
+      "actual_remaining_points": 170.39999999999998,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.008491,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.006661,
+          "feature": "prior_season_role_known",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.005866,
+          "feature": "prev1_snap_share",
+          "value": 0.67625
+        },
+        {
+          "contribution": -0.003919,
+          "feature": "prior5_carries_pg",
+          "value": 12.6875
+        },
+        {
+          "contribution": -0.003122,
+          "feature": "ppg_to_date",
+          "value": 17.5
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.240742,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.050268,
+          "feature": "games_last3",
+          "value": 3.0
+        },
+        {
+          "contribution": 0.038132,
+          "feature": "ppg_last3",
+          "value": 24.133333333333336
+        },
+        {
+          "contribution": 0.030044,
+          "feature": "best_week_points_to_date",
+          "value": 25.5
+        },
+        {
+          "contribution": 0.028132,
+          "feature": "games_share_to_date",
+          "value": 1.0
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.543524,
+          "estimate": 0.869215
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 9.459221,
+          "estimate": 15.569874
+        }
+      },
+      "display_name": "Bijan Robinson",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.12248,
+          "feature": "prev1_fantasy_ppg_ppr",
+          "value": 13.7625
+        },
+        {
+          "contribution": -0.101248,
+          "feature": "recent3_fantasy_ppg_ppr_w",
+          "value": 13.762499999999998
+        },
+        {
+          "contribution": -0.067728,
+          "feature": "best_week_points_to_date",
+          "value": 25.5
+        },
+        {
+          "contribution": -0.053533,
+          "feature": "prev1_team_pass_attempts_pg",
+          "value": 31.0
+        },
+        {
+          "contribution": -0.04857,
+          "feature": "prev1_rec_td_rate",
+          "value": 0.038461538461538464
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.71461,
+          "feature": "touches_per_game_to_date",
+          "value": 18.375
+        },
+        {
+          "contribution": 1.578519,
+          "feature": "points_per_week_to_date",
+          "value": 17.5
+        },
+        {
+          "contribution": 0.768955,
+          "feature": "carry_share_to_date",
+          "value": 0.5603864734299517
+        },
+        {
+          "contribution": 0.746086,
+          "feature": "draft_overall",
+          "value": 8.0
+        },
+        {
+          "contribution": 0.687989,
+          "feature": "ppg_to_date",
+          "value": 17.5
+        }
+      ],
+      "player_id": "gsis:00-0038542",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    },
+    {
+      "actual_remaining_points": 165.0,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.009185,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.002063,
+          "feature": "prior_season_role_known",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.001988,
+          "feature": "prev1_fp_over_expected_pg",
+          "value": 1.3111111111111111
+        },
+        {
+          "contribution": -0.00195,
+          "feature": "prev1_snap_share",
+          "value": 0.10363636363636362
+        },
+        {
+          "contribution": -0.001218,
+          "feature": "td_per_opportunity_to_date",
+          "value": 0.050505050505050504
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.24142,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.050298,
+          "feature": "games_last3",
+          "value": 3.0
+        },
+        {
+          "contribution": 0.037692,
+          "feature": "best_week_points_to_date",
+          "value": 23.2
+        },
+        {
+          "contribution": 0.032852,
+          "feature": "ppg_last3",
+          "value": 11.033333333333333
+        },
+        {
+          "contribution": 0.031307,
+          "feature": "games_share_to_date",
+          "value": 1.0
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.539933,
+          "estimate": 0.865623
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 3.408886,
+          "estimate": 9.519539
+        }
+      },
+      "display_name": "Chase Brown",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.559447,
+          "feature": "snap_pct_mean_to_date",
+          "value": 0.3975
+        },
+        {
+          "contribution": -0.392,
+          "feature": "draft_overall",
+          "value": 163.0
+        },
+        {
+          "contribution": -0.225274,
+          "feature": "prev1_team_carries_pg",
+          "value": 22.0625
+        },
+        {
+          "contribution": -0.218332,
+          "feature": "prev1_team_rush_yards_pg",
+          "value": 84.0
+        },
+        {
+          "contribution": -0.144273,
+          "feature": "prev1_receiving_yards_pg",
+          "value": 13.272727272727273
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.318151,
+          "feature": "points_per_week_to_date",
+          "value": 11.25
+        },
+        {
+          "contribution": 0.85506,
+          "feature": "touches_per_game_to_date",
+          "value": 11.75
+        },
+        {
+          "contribution": 0.690064,
+          "feature": "carry_share_to_date",
+          "value": 0.4406779661016949
+        },
+        {
+          "contribution": 0.57588,
+          "feature": "snap_pct_last3",
+          "value": 0.5599999999999999
+        },
+        {
+          "contribution": 0.310166,
+          "feature": "combine_speed_score",
+          "value": 109.57148461547366
+        }
+      ],
+      "player_id": "gsis:00-0038597",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    },
+    {
+      "actual_remaining_points": 164.30000000000004,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.008359,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.006842,
+          "feature": "prior_season_role_known",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.004753,
+          "feature": "prior5_carries_pg",
+          "value": 17.814285714285713
+        },
+        {
+          "contribution": -0.002426,
+          "feature": "prior_season_role_rank",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.002011,
+          "feature": "prev1_snap_share",
+          "value": 0.7607692307692309
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.244374,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.050155,
+          "feature": "games_last3",
+          "value": 3.0
+        },
+        {
+          "contribution": 0.038452,
+          "feature": "ppg_last3",
+          "value": 19.233333333333334
+        },
+        {
+          "contribution": 0.038428,
+          "feature": "best_week_points_to_date",
+          "value": 25.500000000000004
+        },
+        {
+          "contribution": 0.031159,
+          "feature": "games_share_to_date",
+          "value": 1.0
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.565198,
+          "estimate": 0.890889
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 7.641632,
+          "estimate": 13.752286
+        }
+      },
+      "display_name": "Josh Jacobs",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.273893,
+          "feature": "prior5_games",
+          "value": 70.0
+        },
+        {
+          "contribution": -0.096312,
+          "feature": "prev1_team_rush_yards_pg",
+          "value": 88.3125
+        },
+        {
+          "contribution": -0.089596,
+          "feature": "prev1_fantasy_ppg_ppr",
+          "value": 13.930769230769231
+        },
+        {
+          "contribution": -0.07132,
+          "feature": "prev1_team_offense_tds_pg",
+          "value": 1.75
+        },
+        {
+          "contribution": -0.062878,
+          "feature": "best_week_points_to_date",
+          "value": 25.500000000000004
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.719428,
+          "feature": "touches_per_game_to_date",
+          "value": 20.25
+        },
+        {
+          "contribution": 1.281545,
+          "feature": "points_per_week_to_date",
+          "value": 14.65
+        },
+        {
+          "contribution": 0.755145,
+          "feature": "carry_share_to_date",
+          "value": 0.5642023346303502
+        },
+        {
+          "contribution": 0.678769,
+          "feature": "snap_pct_mean_to_date",
+          "value": 0.6525
+        },
+        {
+          "contribution": 0.587085,
+          "feature": "draft_overall",
+          "value": 24.0
+        }
+      ],
+      "player_id": "gsis:00-0035700",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    },
+    {
+      "actual_remaining_points": 140.6,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.009351,
+          "feature": "combine_vertical",
+          "value": 29.0
+        },
+        {
+          "contribution": -0.008697,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.006275,
+          "feature": "prior_season_role_known",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.005357,
+          "feature": "prior5_carries_pg",
+          "value": 13.557377049180328
+        },
+        {
+          "contribution": -0.004168,
+          "feature": "prev1_snap_share",
+          "value": 0.6058333333333333
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.244116,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.049996,
+          "feature": "games_last3",
+          "value": 3.0
+        },
+        {
+          "contribution": 0.037799,
+          "feature": "ppg_last3",
+          "value": 12.9
+        },
+        {
+          "contribution": 0.03327,
+          "feature": "best_week_points_to_date",
+          "value": 19.400000000000002
+        },
+        {
+          "contribution": 0.027995,
+          "feature": "games_share_to_date",
+          "value": 1.0
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.509141,
+          "estimate": 0.834832
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 7.614455,
+          "estimate": 13.725108
+        }
+      },
+      "display_name": "James Conner",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.280144,
+          "feature": "prev1_yards_per_target",
+          "value": 3.8275862068965516
+        },
+        {
+          "contribution": -0.152844,
+          "feature": "position_age_z",
+          "value": 1.0702177542159061
+        },
+        {
+          "contribution": -0.125048,
+          "feature": "prev1_team_pass_yards_pg",
+          "value": 198.0
+        },
+        {
+          "contribution": -0.123633,
+          "feature": "prev1_receiving_yards_pg",
+          "value": 9.25
+        },
+        {
+          "contribution": -0.117126,
+          "feature": "draft_overall",
+          "value": 105.0
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.950566,
+          "feature": "touches_per_game_to_date",
+          "value": 18.125
+        },
+        {
+          "contribution": 1.340436,
+          "feature": "points_per_week_to_date",
+          "value": 14.15
+        },
+        {
+          "contribution": 0.761215,
+          "feature": "carry_share_to_date",
+          "value": 0.589041095890411
+        },
+        {
+          "contribution": 0.680624,
+          "feature": "snap_pct_mean_to_date",
+          "value": 0.66625
+        },
+        {
+          "contribution": 0.623068,
+          "feature": "recent3_fantasy_ppg_ppr_w",
+          "value": 14.820714285714287
+        }
+      ],
+      "player_id": "gsis:00-0033553",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    },
+    {
+      "actual_remaining_points": 136.20000000000002,
+      "attribution_version": "ros_attribution_v1",
+      "availability_top_negative_contributors": [
+        {
+          "contribution": -0.008279,
+          "feature": "remaining_horizon_weeks",
+          "value": 9.0
+        },
+        {
+          "contribution": -0.006703,
+          "feature": "prior_season_role_known",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.006027,
+          "feature": "prev1_snap_share",
+          "value": 0.54375
+        },
+        {
+          "contribution": -0.002607,
+          "feature": "prior_season_role_rank",
+          "value": 1.0
+        },
+        {
+          "contribution": -0.001452,
+          "feature": "target_share_to_date",
+          "value": 0.08376963350785341
+        }
+      ],
+      "availability_top_positive_contributors": [
+        {
+          "contribution": 0.242813,
+          "feature": "weeks_since_last_game",
+          "value": 0.0
+        },
+        {
+          "contribution": 0.050396,
+          "feature": "games_last3",
+          "value": 2.0
+        },
+        {
+          "contribution": 0.044666,
+          "feature": "games_share_to_date",
+          "value": 0.875
+        },
+        {
+          "contribution": 0.035788,
+          "feature": "ppg_last3",
+          "value": 18.75
+        },
+        {
+          "contribution": 0.035649,
+          "feature": "best_week_points_to_date",
+          "value": 28.5
+        }
+      ],
+      "component_estimates": {
+        "availability": {
+          "base_value": 0.325691,
+          "contribution_sum": 0.5642,
+          "estimate": 0.889891
+        },
+        "performance": {
+          "base_value": 6.110654,
+          "contribution_sum": 6.499032,
+          "estimate": 12.609686
+        }
+      },
+      "display_name": "James Cook",
+      "explained_level": 0.5,
+      "model_version": "rc1_ros_hurdle_v1",
+      "performance_top_negative_contributors": [
+        {
+          "contribution": -0.308412,
+          "feature": "weight_lb",
+          "value": 190.0
+        },
+        {
+          "contribution": -0.136379,
+          "feature": "td_per_opportunity_to_date",
+          "value": 0.06956521739130435
+        },
+        {
+          "contribution": -0.129829,
+          "feature": "prev1_fantasy_ppg_ppr",
+          "value": 14.031250000000002
+        },
+        {
+          "contribution": -0.108302,
+          "feature": "recent3_fantasy_ppg_ppr_w",
+          "value": 11.54527777777778
+        },
+        {
+          "contribution": -0.05511,
+          "feature": "prev1_xfp_pg",
+          "value": 13.19125
+        }
+      ],
+      "performance_top_positive_contributors": [
+        {
+          "contribution": 1.56582,
+          "feature": "touches_per_game_to_date",
+          "value": 16.142857142857142
+        },
+        {
+          "contribution": 1.148384,
+          "feature": "points_per_week_to_date",
+          "value": 15.2125
+        },
+        {
+          "contribution": 0.707149,
+          "feature": "carry_share_to_date",
+          "value": 0.5129533678756477
+        },
+        {
+          "contribution": 0.491417,
+          "feature": "snap_pct_last3",
+          "value": 0.54
+        },
+        {
+          "contribution": 0.475409,
+          "feature": "ppg_to_date",
+          "value": 17.385714285714286
+        }
+      ],
+      "player_id": "gsis:00-0037248",
+      "position": "RB",
+      "scoring_preset": "PPR",
+      "season": 2024,
+      "through_week": 8
+    }
+  ]
+}

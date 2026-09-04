@@ -1068,7 +1068,12 @@ def _evaluate_ros(args: argparse.Namespace) -> int:
         f"{dataset.withheld_rows} sealed row(s) from {list(dataset.withheld_seasons)}",
     )
     result = run_ros_experiment(dataset, preseason, config=config)
-    for path in write_ros_report(result, out_dir, cells_dir=data_dir):
+    for path in write_ros_report(
+        result,
+        out_dir,
+        cells_dir=data_dir,
+        predictions_dir=data_dir,
+    ):
         print(f"wrote {path}")
     if authorization is not None:
         print("ROS FINAL HOLDOUT CONSUMED - it is no longer an untouched holdout")

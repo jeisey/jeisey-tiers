@@ -133,6 +133,13 @@ class RosCohortEvidence:
     baseline_spearman: float
     candidate_spearman: float
     candidate_coverage: float
+    #: The baseline's coverage and both models' mean interval widths are reported but never
+    #: read by a clause. Clause 4 judges the candidate's interval on its own terms - an
+    #: interval that says nothing is a defect whether or not the baseline shares it - and a
+    #: reader still needs to know whether a cohort is simply hard to cover.
+    baseline_coverage: float = float("nan")
+    baseline_width: float = float("nan")
+    candidate_width: float = float("nan")
 
     @property
     def decisive(self) -> bool:
@@ -148,7 +155,10 @@ class RosCohortEvidence:
             "candidate_mae": self.candidate_mae,
             "baseline_spearman": self.baseline_spearman,
             "candidate_spearman": self.candidate_spearman,
+            "baseline_coverage": self.baseline_coverage,
             "candidate_coverage": self.candidate_coverage,
+            "baseline_width": self.baseline_width,
+            "candidate_width": self.candidate_width,
         }
 
 

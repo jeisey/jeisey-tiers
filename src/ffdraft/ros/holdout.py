@@ -425,10 +425,12 @@ def ros_holdout_policy(*, status: str = "UNTOUCHED / NOT EVALUATED") -> dict[str
         ],
         "primary_result": "full_universe",
         "prior_exposure": (
-            "2025 was opened once, in Phase 4, as the preseason model's final holdout. No "
-            "rest-of-season snapshot, label or metric from it has been examined. Season "
-            "totals correlate with rest-of-season totals, so the result is strong but not "
-            "fully naive evidence (ADR-069)."
+            "2025 was opened once before, in Phase 4, as the preseason model's final "
+            "holdout. Nothing from it informed the rest-of-season design: the cutoff rule, "
+            "the feature set, the baselines, the promotion rule and the replacement decision "
+            "were all frozen and committed before it was opened here. Season totals do "
+            "correlate with rest-of-season totals, so this is strong but not fully naive "
+            "out-of-time evidence (ADR-069)."
         ),
         "slices": [item.to_dict() for item in PREDECLARED_ROS_SLICES],
         "declared_before_candidate_comparison": True,

@@ -1,0 +1,2866 @@
+{
+  "architecture": {
+    "family": "availability x conditional performance hurdle, Monte Carlo composed",
+    "num_boost_round": 250,
+    "parameters": {
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "deterministic": true,
+      "feature_fraction": 0.7,
+      "force_row_wise": true,
+      "lambda_l2": 1.0,
+      "learning_rate": 0.05,
+      "min_data_in_leaf": 30,
+      "num_leaves": 15,
+      "num_threads": 4,
+      "objective": "quantile",
+      "verbosity": -1
+    },
+    "tuning": "none; Q1's predeclared configuration is reused unchanged"
+  },
+  "card_version": "ros_model_card_v1",
+  "cutoff_rule": {
+    "rule": "A snapshot through week N of season Y may read completed regular-season weeks 1..N of season Y and any season strictly before Y. It predicts weeks N+1..horizon.last_week of season Y. Snapshots run from week 1 to horizon.last_week - 1 inclusive.",
+    "version": "ros_cutoff_v1"
+  },
+  "evaluation": {
+    "cell": "season x through_week x position x scoring_preset",
+    "cohorts": [
+      {
+        "baseline_coverage": 0.7948316923186294,
+        "baseline_mae": 11.264649218081212,
+        "baseline_spearman": 0.6766219392855977,
+        "baseline_width": 32.69114909555665,
+        "candidate_coverage": 0.8777552656627053,
+        "candidate_mae": 8.961839595290046,
+        "candidate_spearman": 0.7969636933153569,
+        "candidate_width": 30.467022738006218,
+        "decisive": true,
+        "label": "all",
+        "rows": 253197,
+        "slice_id": "full_universe"
+      },
+      {
+        "baseline_coverage": 0.7717604511462548,
+        "baseline_mae": 19.14356902095006,
+        "baseline_spearman": 0.6426553726154469,
+        "baseline_width": 56.93956771267783,
+        "candidate_coverage": 0.8320460953782027,
+        "candidate_mae": 15.638271540990562,
+        "candidate_spearman": 0.7177177290300328,
+        "candidate_width": 50.439401413246095,
+        "decisive": true,
+        "label": "QB",
+        "rows": 32628,
+        "slice_id": "position"
+      },
+      {
+        "baseline_coverage": 0.790499001996008,
+        "baseline_mae": 12.666070783516084,
+        "baseline_spearman": 0.6759919661868892,
+        "baseline_width": 36.501624179411806,
+        "candidate_coverage": 0.8826027944111776,
+        "candidate_mae": 9.937970472320174,
+        "candidate_spearman": 0.8165154070783844,
+        "candidate_width": 34.339663879381355,
+        "decisive": true,
+        "label": "RB",
+        "rows": 62625,
+        "slice_id": "position"
+      },
+      {
+        "baseline_coverage": 0.7984762750101705,
+        "baseline_mae": 7.281973319621325,
+        "baseline_spearman": 0.6884315805693684,
+        "baseline_width": 21.91829931251524,
+        "candidate_coverage": 0.8703909168238471,
+        "candidate_mae": 5.7447130154389425,
+        "candidate_spearman": 0.8280922465981284,
+        "candidate_width": 15.718322897295797,
+        "decisive": true,
+        "label": "TE",
+        "rows": 54078,
+        "slice_id": "position"
+      },
+      {
+        "baseline_coverage": 0.8027939845570254,
+        "baseline_mae": 10.018213679729394,
+        "baseline_spearman": 0.6994088377706864,
+        "baseline_width": 28.38527196349665,
+        "candidate_coverage": 0.8930256291760538,
+        "candidate_mae": 7.95098862853345,
+        "candidate_spearman": 0.8255293905548817,
+        "candidate_width": 29.53695194575075,
+        "decisive": true,
+        "label": "WR",
+        "rows": 103866,
+        "slice_id": "position"
+      },
+      {
+        "baseline_coverage": 0.7972369340868968,
+        "baseline_mae": 11.257986978460016,
+        "baseline_spearman": 0.6782223913260118,
+        "baseline_width": 32.65531632290792,
+        "candidate_coverage": 0.8775933364139386,
+        "candidate_mae": 8.939290733536472,
+        "candidate_spearman": 0.7972817116350225,
+        "candidate_width": 30.427166172747917,
+        "decisive": true,
+        "label": "HALF",
+        "rows": 84399,
+        "slice_id": "scoring_preset"
+      },
+      {
+        "baseline_coverage": 0.7964667827817865,
+        "baseline_mae": 12.72117079781257,
+        "baseline_spearman": 0.6808609189282959,
+        "baseline_width": 36.84175899753222,
+        "candidate_coverage": 0.879121790542542,
+        "candidate_mae": 10.110208515152243,
+        "candidate_spearman": 0.7990190967894144,
+        "candidate_width": 34.762854889916376,
+        "decisive": true,
+        "label": "PPR",
+        "rows": 84399,
+        "slice_id": "scoring_preset"
+      },
+      {
+        "baseline_coverage": 0.7907913600872049,
+        "baseline_mae": 9.814789877971048,
+        "baseline_spearman": 0.6707825076024856,
+        "baseline_width": 28.576371966229836,
+        "candidate_coverage": 0.8765506700316354,
+        "candidate_mae": 7.8360195371814205,
+        "candidate_spearman": 0.7945902715216338,
+        "candidate_width": 26.211047151354364,
+        "decisive": true,
+        "label": "STD",
+        "rows": 84399,
+        "slice_id": "scoring_preset"
+      },
+      {
+        "baseline_coverage": 0.6237330815234498,
+        "baseline_mae": 19.47607000191109,
+        "baseline_spearman": 0.6959380337893764,
+        "baseline_width": 41.93249626136193,
+        "candidate_coverage": 0.8474241947329766,
+        "candidate_mae": 15.184554377599174,
+        "candidate_spearman": 0.801204540309298,
+        "candidate_width": 50.367570171095444,
+        "decisive": true,
+        "label": "weeks_1_3",
+        "rows": 47655,
+        "slice_id": "season_phase"
+      },
+      {
+        "baseline_coverage": 0.7850914205344585,
+        "baseline_mae": 13.382155674015076,
+        "baseline_spearman": 0.6985033138894993,
+        "baseline_width": 37.245699003617304,
+        "candidate_coverage": 0.8661561702349325,
+        "candidate_mae": 10.777856494581215,
+        "candidate_spearman": 0.8158800416715656,
+        "candidate_width": 37.06944270153907,
+        "decisive": true,
+        "label": "weeks_4_9",
+        "rows": 95985,
+        "slice_id": "season_phase"
+      },
+      {
+        "baseline_coverage": 0.8777896437470906,
+        "baseline_mae": 5.83766495759375,
+        "baseline_spearman": 0.6487930376481351,
+        "baseline_width": 24.68102767828846,
+        "candidate_coverage": 0.90111083728105,
+        "candidate_mae": 4.664041599457698,
+        "candidate_spearman": 0.7784018357978456,
+        "candidate_width": 16.0261940540922,
+        "decisive": true,
+        "label": "weeks_10_plus",
+        "rows": 109557,
+        "slice_id": "season_phase"
+      },
+      {
+        "baseline_coverage": 0.7329962485728266,
+        "baseline_mae": 16.687880324155607,
+        "baseline_spearman": 0.609646462650909,
+        "baseline_width": 42.57211575509807,
+        "candidate_coverage": 0.8228130266949383,
+        "candidate_mae": 14.874421796299153,
+        "candidate_spearman": 0.7163472322776641,
+        "candidate_width": 43.90230249733952,
+        "decisive": true,
+        "label": "rookie",
+        "rows": 18393,
+        "slice_id": "rookie"
+      },
+      {
+        "baseline_coverage": 0.7996754740123677,
+        "baseline_mae": 10.839828986168524,
+        "baseline_spearman": 0.6715884801763856,
+        "baseline_width": 31.917139198923948,
+        "candidate_coverage": 0.8820590790616855,
+        "candidate_mae": 8.498686819259142,
+        "candidate_spearman": 0.7960835890832606,
+        "candidate_width": 29.414591345809246,
+        "decisive": true,
+        "label": "veteran",
+        "rows": 234804,
+        "slice_id": "veteran"
+      },
+      {
+        "baseline_coverage": 0.8250432329116228,
+        "baseline_mae": 5.823559565895342,
+        "baseline_spearman": 0.18234877423480775,
+        "baseline_width": 17.141811330201833,
+        "candidate_coverage": 0.9643518097145111,
+        "candidate_mae": 2.053063613790043,
+        "candidate_spearman": 0.21373774429733688,
+        "candidate_width": 14.534580080305116,
+        "decisive": true,
+        "label": "no_games",
+        "rows": 131844,
+        "slice_id": "games_played_band"
+      },
+      {
+        "baseline_coverage": 0.6927721235121614,
+        "baseline_mae": 19.006042437750438,
+        "baseline_spearman": 0.31896026998844645,
+        "baseline_width": 40.22196737040718,
+        "candidate_coverage": 0.8033178080616411,
+        "candidate_mae": 17.413865313659482,
+        "candidate_spearman": 0.4362823396397489,
+        "candidate_width": 51.10017395768678,
+        "decisive": true,
+        "label": "one_or_two_games",
+        "rows": 34782,
+        "slice_id": "games_played_band"
+      },
+      {
+        "baseline_coverage": 0.7898256922063971,
+        "baseline_mae": 16.440907839747346,
+        "baseline_spearman": 0.6707773316939083,
+        "baseline_width": 53.346448989280766,
+        "candidate_coverage": 0.7757794180499243,
+        "candidate_mae": 16.08780905352156,
+        "candidate_spearman": 0.6947814007029667,
+        "candidate_width": 46.441595101026344,
+        "decisive": true,
+        "label": "three_plus_games",
+        "rows": 86571,
+        "slice_id": "games_played_band"
+      },
+      {
+        "baseline_coverage": 0.8137829138304047,
+        "baseline_mae": 8.392598086535003,
+        "baseline_spearman": 0.2938842724764823,
+        "baseline_width": 27.122658699278993,
+        "candidate_coverage": 0.9115613951770355,
+        "candidate_mae": 6.439763833748907,
+        "candidate_spearman": 0.3113831229494115,
+        "candidate_width": 20.86640924109481,
+        "decisive": true,
+        "label": "returning",
+        "rows": 18951,
+        "slice_id": "returning_from_absence"
+      },
+      {
+        "baseline_coverage": 0.8129496402877698,
+        "baseline_mae": 11.66072636042024,
+        "baseline_spearman": 0.5123304185964942,
+        "baseline_width": 37.5808325382319,
+        "candidate_coverage": 0.7817745803357314,
+        "candidate_mae": 10.360339334512002,
+        "candidate_spearman": 0.5974537187572249,
+        "candidate_width": 28.96571056177289,
+        "decisive": true,
+        "label": "changed_team",
+        "rows": 1668,
+        "slice_id": "changed_team_in_season"
+      },
+      {
+        "baseline_coverage": 0.6587523277467412,
+        "baseline_mae": 6.817065815685512,
+        "baseline_spearman": 0.4917308990037854,
+        "baseline_width": 12.010286560968119,
+        "candidate_coverage": 0.8670856610800745,
+        "candidate_mae": 6.730003931774035,
+        "candidate_spearman": 0.5517469538551252,
+        "candidate_width": 25.3218375139061,
+        "decisive": true,
+        "label": "arrival",
+        "rows": 4296,
+        "slice_id": "in_season_arrival"
+      },
+      {
+        "baseline_coverage": 0.7802197802197802,
+        "baseline_mae": 17.439351007565335,
+        "baseline_spearman": 0.3629222938106286,
+        "baseline_width": 54.4734176083677,
+        "candidate_coverage": 0.7832286760858189,
+        "candidate_mae": 16.17289440646886,
+        "candidate_spearman": 0.4969996583222945,
+        "candidate_width": 47.49677486811476,
+        "decisive": true,
+        "label": "high_capital_underperforming",
+        "rows": 15288,
+        "slice_id": "high_capital_underperforming"
+      },
+      {
+        "baseline_coverage": 0.6938569989929506,
+        "baseline_mae": 29.830544949367425,
+        "baseline_spearman": 0.5896107128991166,
+        "baseline_width": 70.7170887554877,
+        "candidate_coverage": 0.7631419939577039,
+        "candidate_mae": 26.658240112051562,
+        "candidate_spearman": 0.6177829423895992,
+        "candidate_width": 73.60253281110325,
+        "decisive": true,
+        "label": "high_capital_rookie",
+        "rows": 4965,
+        "slice_id": "high_capital_rookie"
+      },
+      {
+        "baseline_coverage": 0.8152892386519653,
+        "baseline_mae": 23.108851525771424,
+        "baseline_spearman": 0.59358957591167,
+        "baseline_width": 73.52803526891591,
+        "candidate_coverage": 0.7813052893801927,
+        "candidate_mae": 19.388991846136424,
+        "candidate_spearman": 0.6979481639710422,
+        "candidate_width": 56.83945136445275,
+        "decisive": true,
+        "label": "widest_decile",
+        "rows": 70651,
+        "slice_id": "extreme_uncertainty"
+      }
+    ],
+    "folds": [
+      {
+        "fold_id": "ros:2017-2019->2020",
+        "kind": "development",
+        "n_train_seasons": 3,
+        "train_end_season": 2019,
+        "train_seasons": [
+          2017,
+          2018,
+          2019
+        ],
+        "train_start_season": 2017,
+        "validation_season": 2020
+      },
+      {
+        "fold_id": "ros:2017-2020->2021",
+        "kind": "development",
+        "n_train_seasons": 4,
+        "train_end_season": 2020,
+        "train_seasons": [
+          2017,
+          2018,
+          2019,
+          2020
+        ],
+        "train_start_season": 2017,
+        "validation_season": 2021
+      },
+      {
+        "fold_id": "ros:2017-2021->2022",
+        "kind": "development",
+        "n_train_seasons": 5,
+        "train_end_season": 2021,
+        "train_seasons": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021
+        ],
+        "train_start_season": 2017,
+        "validation_season": 2022
+      },
+      {
+        "fold_id": "ros:2017-2022->2023",
+        "kind": "development",
+        "n_train_seasons": 6,
+        "train_end_season": 2022,
+        "train_seasons": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022
+        ],
+        "train_start_season": 2017,
+        "validation_season": 2023
+      },
+      {
+        "fold_id": "ros:2017-2023->2024",
+        "kind": "development",
+        "n_train_seasons": 7,
+        "train_end_season": 2023,
+        "train_seasons": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ],
+        "train_start_season": 2017,
+        "validation_season": 2024
+      }
+    ],
+    "macro_by_model": {
+      "R0": {
+        "cells": 948.0,
+        "coverage_p10_p90": 0.7846695342388045,
+        "coverage_p25_p75": 0.4951329689590558,
+        "mae": 14.050771822684005,
+        "mean_pinball": 5.312830535622531,
+        "mean_width_p10_p90": 43.87206587162033,
+        "rmse": 24.583326076177098,
+        "rows": 253197.0,
+        "spearman": 0.5775024261892555,
+        "top_k_recall": 0.4722661744022503
+      },
+      "R1": {
+        "cells": 948.0,
+        "coverage_p10_p90": 0.8050597524016668,
+        "coverage_p25_p75": 0.6516160792305101,
+        "mae": 11.046103670009963,
+        "mean_pinball": 4.500122572616243,
+        "mean_width_p10_p90": 32.246660589020216,
+        "rmse": 22.442975096113905,
+        "rows": 253197.0,
+        "spearman": 0.7788290247501612,
+        "top_k_recall": 0.5462816455696202
+      },
+      "R2": {
+        "cells": 948.0,
+        "coverage_p10_p90": 0.7904413255261798,
+        "coverage_p25_p75": 0.48406370151907535,
+        "mae": 12.319460668569882,
+        "mean_pinball": 4.443672434374151,
+        "mean_width_p10_p90": 36.00441094695097,
+        "rmse": 21.005046615476576,
+        "rows": 253197.0,
+        "spearman": 0.6766219392855977,
+        "top_k_recall": 0.5607858649789029
+      },
+      "R3": {
+        "cells": 948.0,
+        "coverage_p10_p90": 0.692762113347747,
+        "coverage_p25_p75": 0.3882413276142932,
+        "mae": 15.82551414727572,
+        "mean_pinball": 5.520464379537211,
+        "mean_width_p10_p90": 46.511098582064115,
+        "rmse": 26.747054694460694,
+        "rows": 253197.0,
+        "spearman": 0.7514324723148877,
+        "top_k_recall": 0.24547292545710267
+      },
+      "RC1": {
+        "cells": 948.0,
+        "coverage_p10_p90": 0.8691706149053731,
+        "coverage_p25_p75": 0.7151907826515594,
+        "mae": 9.856232944351493,
+        "mean_pinball": 3.635269011002834,
+        "mean_width_p10_p90": 32.55064978110042,
+        "rmse": 19.26808167053824,
+        "rows": 253197.0,
+        "spearman": 0.7969636933153569,
+        "top_k_recall": 0.5573575949367089
+      }
+    },
+    "paired_deltas": {
+      "mae": {
+        "baseline": 12.319460668569882,
+        "candidate": 9.856232944351493,
+        "ci_excludes_zero": true,
+        "ci_high": -2.3957548230839354,
+        "ci_low": -2.5305464954136823,
+        "delta": -2.463227724218388,
+        "favours_candidate": true,
+        "lower_is_better": true,
+        "metric": "mae",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 1.0
+      },
+      "mean_pinball": {
+        "baseline": 4.443672434374151,
+        "candidate": 3.635269011002834,
+        "ci_excludes_zero": true,
+        "ci_high": -0.7857139910841973,
+        "ci_low": -0.8327862081729334,
+        "delta": -0.8084034233713173,
+        "favours_candidate": true,
+        "lower_is_better": true,
+        "metric": "mean_pinball",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 1.0
+      },
+      "spearman": {
+        "baseline": 0.6766219392855977,
+        "candidate": 0.7969636933153569,
+        "ci_excludes_zero": true,
+        "ci_high": 0.1228556200963333,
+        "ci_low": 0.11839489641879719,
+        "delta": 0.12034175402975922,
+        "favours_candidate": true,
+        "lower_is_better": false,
+        "metric": "spearman",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 1.0
+      },
+      "top_k_recall": {
+        "baseline": 0.5607858649789029,
+        "candidate": 0.5573575949367089,
+        "ci_excludes_zero": false,
+        "ci_high": 0.007869637834036639,
+        "ci_low": -0.004397415611812275,
+        "delta": -0.003428270042194037,
+        "favours_candidate": false,
+        "lower_is_better": false,
+        "metric": "top_k_recall",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 0.723
+      }
+    },
+    "primary_baseline": "R2"
+  },
+  "features": {
+    "feature_set_hash": "f5ad9df207795351",
+    "feature_set_version": "ros_core_v1",
+    "in_season_count": 43,
+    "included": [
+      {
+        "availability": "anchor_derived",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "age_at_anchor"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "career",
+        "name": "age_at_anchor_known"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "position_age_z"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "career",
+        "name": "experience_years"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "career",
+        "name": "experience_years_known"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "career",
+        "name": "rookie_flag"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "career",
+        "name": "has_prior_season_stats"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "height_in"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "weight_lb"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Int32",
+        "family": "draft",
+        "name": "draft_round"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Int32",
+        "family": "draft",
+        "name": "draft_overall"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "draft",
+        "name": "drafted_flag"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Int32",
+        "family": "draft",
+        "name": "seasons_since_draft"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "combine_forty"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "combine_bench"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "combine_vertical"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "combine_broad_jump"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "combine_cone"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "combine_shuttle"
+      },
+      {
+        "availability": "static_biographical",
+        "dtype": "Float64",
+        "family": "athletic",
+        "name": "combine_speed_score"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "athletic",
+        "name": "combine_observed_flag"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "depth",
+        "name": "prior_season_role_rank"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "depth",
+        "name": "prior_season_role_known"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_snap_share"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_offense_snaps_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "durability",
+        "name": "prev1_games"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "durability",
+        "name": "prev1_games_missed"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_fantasy_points_std"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_fantasy_points_ppr"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_fantasy_ppg_std"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_fantasy_ppg_ppr"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_carries_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_targets_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_receptions_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_pass_attempts_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_rushing_yards_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_receiving_yards_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_passing_yards_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev1_total_tds_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_target_share"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_rush_share"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev1_xfp_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_fp_over_expected_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_yards_per_carry"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "efficiency",
+        "name": "prev1_rush_denominator_met"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_yards_per_target"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_catch_rate"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_rec_td_rate"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "efficiency",
+        "name": "prev1_target_denominator_met"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_rush_td_rate"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_yards_per_attempt"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_completion_pct"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_pass_td_rate"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "efficiency",
+        "name": "prev1_interception_rate"
+      },
+      {
+        "availability": "anchor_derived",
+        "dtype": "Boolean",
+        "family": "efficiency",
+        "name": "prev1_pass_denominator_met"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "durability",
+        "name": "prev2_games"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev2_fantasy_ppg_ppr"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev2_carries_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev2_targets_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev2_xfp_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "durability",
+        "name": "prev3_games"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "production",
+        "name": "prev3_fantasy_ppg_ppr"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev3_carries_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev3_targets_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "opportunity",
+        "name": "prev3_xfp_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "career",
+        "name": "prior5_seasons"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Int32",
+        "family": "career",
+        "name": "prior5_games"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "prior5_fantasy_ppg_ppr"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "prior5_carries_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "prior5_targets_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "recent3_fantasy_ppg_ppr_w"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "recent3_targets_pg_w"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "career",
+        "name": "recent3_carries_pg_w"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "team_context",
+        "name": "prev1_team_pass_attempts_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "team_context",
+        "name": "prev1_team_carries_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "team_context",
+        "name": "prev1_team_pass_yards_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "team_context",
+        "name": "prev1_team_rush_yards_pg"
+      },
+      {
+        "availability": "season_lagged",
+        "dtype": "Float64",
+        "family": "team_context",
+        "name": "prev1_team_offense_tds_pg"
+      },
+      {
+        "availability": "cutoff_derived",
+        "dtype": "Int32",
+        "family": "cutoff",
+        "name": "through_week"
+      },
+      {
+        "availability": "cutoff_derived",
+        "dtype": "Int32",
+        "family": "cutoff",
+        "name": "remaining_horizon_weeks"
+      },
+      {
+        "availability": "cutoff_derived",
+        "dtype": "Float64",
+        "family": "cutoff",
+        "name": "season_share_remaining"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Int32",
+        "family": "in_season_availability",
+        "name": "games_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_availability",
+        "name": "games_share_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Int32",
+        "family": "in_season_availability",
+        "name": "weeks_missed_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Int32",
+        "family": "in_season_availability",
+        "name": "weeks_since_last_game"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Int32",
+        "family": "in_season_availability",
+        "name": "consecutive_weeks_missed"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Boolean",
+        "family": "in_season_availability",
+        "name": "active_last_week"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Int32",
+        "family": "in_season_availability",
+        "name": "games_last3"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Boolean",
+        "family": "in_season_availability",
+        "name": "has_played_this_season"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Boolean",
+        "family": "in_season_availability",
+        "name": "in_preseason_universe"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Int32",
+        "family": "in_season_availability",
+        "name": "team_remaining_scheduled_games"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_production",
+        "name": "points_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_production",
+        "name": "ppg_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_production",
+        "name": "points_per_week_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_production",
+        "name": "ppg_last3"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_production",
+        "name": "ppg_trend"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_production",
+        "name": "best_week_points_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_production",
+        "name": "points_sd_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "targets_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "carries_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "pass_attempts_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "touches_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "target_share_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "carry_share_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "air_yards_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "snap_pct_mean_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "snap_pct_last3"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "snap_pct_trend"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "target_share_last3"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "target_share_trend"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "expected_points_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_opportunity",
+        "name": "points_over_expected_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_efficiency",
+        "name": "yards_per_target_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_efficiency",
+        "name": "yards_per_carry_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_efficiency",
+        "name": "catch_rate_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_efficiency",
+        "name": "td_per_opportunity_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_efficiency",
+        "name": "points_per_opportunity_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_team_context",
+        "name": "team_points_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_team_context",
+        "name": "team_pass_rate_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Float64",
+        "family": "in_season_team_context",
+        "name": "team_plays_per_game_to_date"
+      },
+      {
+        "availability": "in_season_to_date",
+        "dtype": "Boolean",
+        "family": "in_season_team_context",
+        "name": "team_changed_in_season"
+      }
+    ],
+    "included_count": 121,
+    "preseason_count": 78,
+    "preseason_set_version": "intrinsic_core_v1",
+    "schema_hash": "f0384c75cac8218a",
+    "schema_version": "ros_features_v1"
+  },
+  "forbidden": {
+    "depth_and_roster_snapshots": "excluded; no historical point-in-time parity",
+    "injury_and_practice_reports": "excluded; see ADR-070",
+    "market_signals": "audited by ffdraft.quality.audit_intrinsic_feature_names"
+  },
+  "generated_at_utc": "2026-09-04T03:06:43Z",
+  "git_sha": "af30b38",
+  "grain": "season x through_week x player_id x scoring_preset",
+  "holdout": {
+    "declared_before_candidate_comparison": true,
+    "primary_result": "full_universe",
+    "prior_exposure": "2025 was opened once before, in Phase 4, as the preseason model's final holdout. Nothing from it informed the rest-of-season design: the cutoff rule, the feature set, the baselines, the promotion rule and the replacement decision were all frozen and committed before it was opened here. Season totals do correlate with rest-of-season totals, so this is strong but not fully naive out-of-time evidence (ADR-069).",
+    "sealed_rule": "season >= 2025",
+    "sealed_season": 2025,
+    "slices": [
+      {
+        "description": "Every modelled snapshot row, all seasons, weeks, positions and presets",
+        "kind": "primary",
+        "predicate": "true",
+        "rationale": "The production-realistic result: an in-season board has to rank everyone, including the players who will not play again. Nothing may substitute for it.",
+        "slice_id": "full_universe"
+      },
+      {
+        "description": "Grouped by QB/RB/WR/TE",
+        "kind": "diagnostic",
+        "predicate": "group_by(position)",
+        "rationale": "A positional collapse is invisible in a pooled number.",
+        "slice_id": "position"
+      },
+      {
+        "description": "Grouped by STD/HALF/PPR",
+        "kind": "diagnostic",
+        "predicate": "group_by(scoring_preset)",
+        "rationale": "Each preset is a separate model; each gets a separate result.",
+        "slice_id": "scoring_preset"
+      },
+      {
+        "description": "Weeks 1-3, 4-9 and 10 onward",
+        "kind": "diagnostic",
+        "predicate": "through_week <= 3 | <= 9 | later",
+        "rationale": "Early snapshots have almost no current-season evidence and a long horizon; late snapshots have plenty of evidence and almost no horizon. Pooling them hides both.",
+        "slice_id": "season_phase"
+      },
+      {
+        "description": "Rows flagged as rookies by prior-existence evidence",
+        "kind": "diagnostic",
+        "predicate": "rookie_flag",
+        "rationale": "The lowest-information population; error is expected to be larger and must not be averaged away.",
+        "slice_id": "rookie"
+      },
+      {
+        "description": "Rows not flagged as rookies",
+        "kind": "diagnostic",
+        "predicate": "not rookie_flag",
+        "rationale": "Reported with its complement so the split is exhaustive.",
+        "slice_id": "veteran"
+      },
+      {
+        "description": "Current-season appearances at the cutoff: 0, 1-2, or 3 or more",
+        "kind": "diagnostic",
+        "predicate": "games_to_date == 0 | 1..2 | >= 3",
+        "rationale": "11.3 asks for it by name. A zero-game row is a pure preseason-prior prediction wearing an in-season model's clothes, and pooling it flatters the model.",
+        "slice_id": "games_played_band"
+      },
+      {
+        "description": "Has played this season but has missed at least 3 consecutive weeks ending at the cutoff",
+        "kind": "diagnostic",
+        "predicate": "has_played_this_season and consecutive_weeks_missed >= 3",
+        "rationale": "The cohort a model with no injury feed should be worst at, and the one whose error most needs to be visible rather than pooled away.",
+        "slice_id": "returning_from_absence"
+      },
+      {
+        "description": "More than one team observed at or before the cutoff",
+        "kind": "diagnostic",
+        "predicate": "team_changed_in_season",
+        "rationale": "A role change mid-season breaks the continuity every to-date rate assumes.",
+        "slice_id": "changed_team_in_season"
+      },
+      {
+        "description": "Players absent from the season's preseason eligible universe",
+        "kind": "diagnostic",
+        "predicate": "not in_preseason_universe",
+        "rationale": "Their whole preseason feature block is null, so this slice measures what the in-season block can do on its own.",
+        "slice_id": "in_season_arrival"
+      },
+      {
+        "description": "Top-64 draft picks with at least three appearances and under 8.0 fantasy points per elapsed week",
+        "kind": "diagnostic",
+        "predicate": "draft_overall <= 64 and games_to_date >= 3 and points_per_week_to_date < 8.0",
+        "rationale": "11.3's 'high draft capital, poor recent production'. The threshold is position-blind and fixed here before any result; it sits below every position's starter-quality weekly rate, and the slice is diagnostic, never decisive.",
+        "slice_id": "high_capital_underperforming"
+      },
+      {
+        "description": "Rookies drafted inside the top 64 picks",
+        "kind": "diagnostic",
+        "predicate": "rookie_flag and draft_overall <= 64",
+        "rationale": "11.3's 'low-history rookies with strong draft capital': the cohort where the preseason prior is strong and the in-season evidence is thin.",
+        "slice_id": "high_capital_rookie"
+      },
+      {
+        "description": "Rows in the widest decile of the frozen primary baseline's P10-P90 interval, measured within each evaluation cell",
+        "kind": "diagnostic",
+        "predicate": "baseline_p90 - baseline_p10 >= cell quantile 0.9",
+        "rationale": "11.3's 'players with extreme uncertainty'. The mask is taken from the frozen baseline rather than from whichever model is being judged, so every model is measured on identical rows.",
+        "slice_id": "extreme_uncertainty"
+      }
+    ],
+    "status": "CONSUMED",
+    "unseal_requires": [
+      "--final-eval",
+      "--confirm-final-eval RELEASE-ROS-FINAL-HOLDOUT-2025"
+    ]
+  },
+  "label": {
+    "components": [
+      "actual_remaining_games",
+      "actual_remaining_ppg"
+    ],
+    "target": "actual_remaining_points",
+    "version": "ros_label_v1"
+  },
+  "limitations": [
+    "There is no injury or practice-report feature. The model learns absence from the box score, so it sees a player who has stopped playing but not one who is about to (ADR-070).",
+    "The sealed season is 2025, which Phase 4 had already opened as the preseason model's final holdout. Nothing from it informed this model's design, but season totals correlate with rest-of-season totals, so its out-of-time result is strong rather than fully naive evidence (ADR-069).",
+    "Roughly half of all modelled rows have zero remaining games. Pooled interval coverage therefore overstates interval width, and coverage is reported split by appearances.",
+    "The availability/performance dependence is estimated on players with at least one remaining game, because points per game is undefined for the rest, and extrapolated to everyone.",
+    "The preseason feature block is null for in-season arrivals, who are 8.7% of players in the 2017-2025 build and are reported as their own cohort.",
+    "Player outcomes are simulated independently; teammate and team-level correlations are not modelled, exactly as in Release 1.",
+    "Nothing here is published. Phase 11 is an offline subsystem; exposing it safely is Phase 12's job."
+  ],
+  "model_name": "intrinsic-ros-v1",
+  "model_version": "rc1_ros_hurdle_v1",
+  "promotion": {
+    "criteria": {
+      "cohort_mae_tolerance": 0.05,
+      "cohort_rank_tolerance": 0.03,
+      "coverage_band": [
+        0.6,
+        0.95
+      ],
+      "criteria_version": "ros_promotion_v1",
+      "max_point_regression": 0.01,
+      "max_rank_regression": 0.01,
+      "minimum_cohort_rows": 200,
+      "primary_baseline_rule": "the declared baseline with the lowest development macro mean pinball loss; ties resolved by macro MAE, then by declaration order",
+      "primary_point_metric": "mae",
+      "primary_probabilistic_metric": "mean_pinball",
+      "rank_metric": "spearman",
+      "require_interval_excludes_zero": true,
+      "required_cohorts": [
+        "position",
+        "scoring_preset",
+        "season_phase",
+        "rookie",
+        "veteran",
+        "games_played_band",
+        "returning_from_absence",
+        "changed_team_in_season",
+        "in_season_arrival",
+        "high_capital_underperforming",
+        "high_capital_rookie",
+        "extreme_uncertainty"
+      ]
+    },
+    "decision": {
+      "candidate": "RC1",
+      "cohorts": [
+        {
+          "baseline_coverage": 0.7948316923186294,
+          "baseline_mae": 11.264649218081212,
+          "baseline_spearman": 0.6766219392855977,
+          "baseline_width": 32.69114909555665,
+          "candidate_coverage": 0.8777552656627053,
+          "candidate_mae": 8.961839595290046,
+          "candidate_spearman": 0.7969636933153569,
+          "candidate_width": 30.467022738006218,
+          "decisive": true,
+          "label": "all",
+          "rows": 253197,
+          "slice_id": "full_universe"
+        },
+        {
+          "baseline_coverage": 0.7717604511462548,
+          "baseline_mae": 19.14356902095006,
+          "baseline_spearman": 0.6426553726154469,
+          "baseline_width": 56.93956771267783,
+          "candidate_coverage": 0.8320460953782027,
+          "candidate_mae": 15.638271540990562,
+          "candidate_spearman": 0.7177177290300328,
+          "candidate_width": 50.439401413246095,
+          "decisive": true,
+          "label": "QB",
+          "rows": 32628,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.790499001996008,
+          "baseline_mae": 12.666070783516084,
+          "baseline_spearman": 0.6759919661868892,
+          "baseline_width": 36.501624179411806,
+          "candidate_coverage": 0.8826027944111776,
+          "candidate_mae": 9.937970472320174,
+          "candidate_spearman": 0.8165154070783844,
+          "candidate_width": 34.339663879381355,
+          "decisive": true,
+          "label": "RB",
+          "rows": 62625,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.7984762750101705,
+          "baseline_mae": 7.281973319621325,
+          "baseline_spearman": 0.6884315805693684,
+          "baseline_width": 21.91829931251524,
+          "candidate_coverage": 0.8703909168238471,
+          "candidate_mae": 5.7447130154389425,
+          "candidate_spearman": 0.8280922465981284,
+          "candidate_width": 15.718322897295797,
+          "decisive": true,
+          "label": "TE",
+          "rows": 54078,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.8027939845570254,
+          "baseline_mae": 10.018213679729394,
+          "baseline_spearman": 0.6994088377706864,
+          "baseline_width": 28.38527196349665,
+          "candidate_coverage": 0.8930256291760538,
+          "candidate_mae": 7.95098862853345,
+          "candidate_spearman": 0.8255293905548817,
+          "candidate_width": 29.53695194575075,
+          "decisive": true,
+          "label": "WR",
+          "rows": 103866,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.7972369340868968,
+          "baseline_mae": 11.257986978460016,
+          "baseline_spearman": 0.6782223913260118,
+          "baseline_width": 32.65531632290792,
+          "candidate_coverage": 0.8775933364139386,
+          "candidate_mae": 8.939290733536472,
+          "candidate_spearman": 0.7972817116350225,
+          "candidate_width": 30.427166172747917,
+          "decisive": true,
+          "label": "HALF",
+          "rows": 84399,
+          "slice_id": "scoring_preset"
+        },
+        {
+          "baseline_coverage": 0.7964667827817865,
+          "baseline_mae": 12.72117079781257,
+          "baseline_spearman": 0.6808609189282959,
+          "baseline_width": 36.84175899753222,
+          "candidate_coverage": 0.879121790542542,
+          "candidate_mae": 10.110208515152243,
+          "candidate_spearman": 0.7990190967894144,
+          "candidate_width": 34.762854889916376,
+          "decisive": true,
+          "label": "PPR",
+          "rows": 84399,
+          "slice_id": "scoring_preset"
+        },
+        {
+          "baseline_coverage": 0.7907913600872049,
+          "baseline_mae": 9.814789877971048,
+          "baseline_spearman": 0.6707825076024856,
+          "baseline_width": 28.576371966229836,
+          "candidate_coverage": 0.8765506700316354,
+          "candidate_mae": 7.8360195371814205,
+          "candidate_spearman": 0.7945902715216338,
+          "candidate_width": 26.211047151354364,
+          "decisive": true,
+          "label": "STD",
+          "rows": 84399,
+          "slice_id": "scoring_preset"
+        },
+        {
+          "baseline_coverage": 0.6237330815234498,
+          "baseline_mae": 19.47607000191109,
+          "baseline_spearman": 0.6959380337893764,
+          "baseline_width": 41.93249626136193,
+          "candidate_coverage": 0.8474241947329766,
+          "candidate_mae": 15.184554377599174,
+          "candidate_spearman": 0.801204540309298,
+          "candidate_width": 50.367570171095444,
+          "decisive": true,
+          "label": "weeks_1_3",
+          "rows": 47655,
+          "slice_id": "season_phase"
+        },
+        {
+          "baseline_coverage": 0.7850914205344585,
+          "baseline_mae": 13.382155674015076,
+          "baseline_spearman": 0.6985033138894993,
+          "baseline_width": 37.245699003617304,
+          "candidate_coverage": 0.8661561702349325,
+          "candidate_mae": 10.777856494581215,
+          "candidate_spearman": 0.8158800416715656,
+          "candidate_width": 37.06944270153907,
+          "decisive": true,
+          "label": "weeks_4_9",
+          "rows": 95985,
+          "slice_id": "season_phase"
+        },
+        {
+          "baseline_coverage": 0.8777896437470906,
+          "baseline_mae": 5.83766495759375,
+          "baseline_spearman": 0.6487930376481351,
+          "baseline_width": 24.68102767828846,
+          "candidate_coverage": 0.90111083728105,
+          "candidate_mae": 4.664041599457698,
+          "candidate_spearman": 0.7784018357978456,
+          "candidate_width": 16.0261940540922,
+          "decisive": true,
+          "label": "weeks_10_plus",
+          "rows": 109557,
+          "slice_id": "season_phase"
+        },
+        {
+          "baseline_coverage": 0.7329962485728266,
+          "baseline_mae": 16.687880324155607,
+          "baseline_spearman": 0.609646462650909,
+          "baseline_width": 42.57211575509807,
+          "candidate_coverage": 0.8228130266949383,
+          "candidate_mae": 14.874421796299153,
+          "candidate_spearman": 0.7163472322776641,
+          "candidate_width": 43.90230249733952,
+          "decisive": true,
+          "label": "rookie",
+          "rows": 18393,
+          "slice_id": "rookie"
+        },
+        {
+          "baseline_coverage": 0.7996754740123677,
+          "baseline_mae": 10.839828986168524,
+          "baseline_spearman": 0.6715884801763856,
+          "baseline_width": 31.917139198923948,
+          "candidate_coverage": 0.8820590790616855,
+          "candidate_mae": 8.498686819259142,
+          "candidate_spearman": 0.7960835890832606,
+          "candidate_width": 29.414591345809246,
+          "decisive": true,
+          "label": "veteran",
+          "rows": 234804,
+          "slice_id": "veteran"
+        },
+        {
+          "baseline_coverage": 0.8250432329116228,
+          "baseline_mae": 5.823559565895342,
+          "baseline_spearman": 0.18234877423480775,
+          "baseline_width": 17.141811330201833,
+          "candidate_coverage": 0.9643518097145111,
+          "candidate_mae": 2.053063613790043,
+          "candidate_spearman": 0.21373774429733688,
+          "candidate_width": 14.534580080305116,
+          "decisive": true,
+          "label": "no_games",
+          "rows": 131844,
+          "slice_id": "games_played_band"
+        },
+        {
+          "baseline_coverage": 0.6927721235121614,
+          "baseline_mae": 19.006042437750438,
+          "baseline_spearman": 0.31896026998844645,
+          "baseline_width": 40.22196737040718,
+          "candidate_coverage": 0.8033178080616411,
+          "candidate_mae": 17.413865313659482,
+          "candidate_spearman": 0.4362823396397489,
+          "candidate_width": 51.10017395768678,
+          "decisive": true,
+          "label": "one_or_two_games",
+          "rows": 34782,
+          "slice_id": "games_played_band"
+        },
+        {
+          "baseline_coverage": 0.7898256922063971,
+          "baseline_mae": 16.440907839747346,
+          "baseline_spearman": 0.6707773316939083,
+          "baseline_width": 53.346448989280766,
+          "candidate_coverage": 0.7757794180499243,
+          "candidate_mae": 16.08780905352156,
+          "candidate_spearman": 0.6947814007029667,
+          "candidate_width": 46.441595101026344,
+          "decisive": true,
+          "label": "three_plus_games",
+          "rows": 86571,
+          "slice_id": "games_played_band"
+        },
+        {
+          "baseline_coverage": 0.8137829138304047,
+          "baseline_mae": 8.392598086535003,
+          "baseline_spearman": 0.2938842724764823,
+          "baseline_width": 27.122658699278993,
+          "candidate_coverage": 0.9115613951770355,
+          "candidate_mae": 6.439763833748907,
+          "candidate_spearman": 0.3113831229494115,
+          "candidate_width": 20.86640924109481,
+          "decisive": true,
+          "label": "returning",
+          "rows": 18951,
+          "slice_id": "returning_from_absence"
+        },
+        {
+          "baseline_coverage": 0.8129496402877698,
+          "baseline_mae": 11.66072636042024,
+          "baseline_spearman": 0.5123304185964942,
+          "baseline_width": 37.5808325382319,
+          "candidate_coverage": 0.7817745803357314,
+          "candidate_mae": 10.360339334512002,
+          "candidate_spearman": 0.5974537187572249,
+          "candidate_width": 28.96571056177289,
+          "decisive": true,
+          "label": "changed_team",
+          "rows": 1668,
+          "slice_id": "changed_team_in_season"
+        },
+        {
+          "baseline_coverage": 0.6587523277467412,
+          "baseline_mae": 6.817065815685512,
+          "baseline_spearman": 0.4917308990037854,
+          "baseline_width": 12.010286560968119,
+          "candidate_coverage": 0.8670856610800745,
+          "candidate_mae": 6.730003931774035,
+          "candidate_spearman": 0.5517469538551252,
+          "candidate_width": 25.3218375139061,
+          "decisive": true,
+          "label": "arrival",
+          "rows": 4296,
+          "slice_id": "in_season_arrival"
+        },
+        {
+          "baseline_coverage": 0.7802197802197802,
+          "baseline_mae": 17.439351007565335,
+          "baseline_spearman": 0.3629222938106286,
+          "baseline_width": 54.4734176083677,
+          "candidate_coverage": 0.7832286760858189,
+          "candidate_mae": 16.17289440646886,
+          "candidate_spearman": 0.4969996583222945,
+          "candidate_width": 47.49677486811476,
+          "decisive": true,
+          "label": "high_capital_underperforming",
+          "rows": 15288,
+          "slice_id": "high_capital_underperforming"
+        },
+        {
+          "baseline_coverage": 0.6938569989929506,
+          "baseline_mae": 29.830544949367425,
+          "baseline_spearman": 0.5896107128991166,
+          "baseline_width": 70.7170887554877,
+          "candidate_coverage": 0.7631419939577039,
+          "candidate_mae": 26.658240112051562,
+          "candidate_spearman": 0.6177829423895992,
+          "candidate_width": 73.60253281110325,
+          "decisive": true,
+          "label": "high_capital_rookie",
+          "rows": 4965,
+          "slice_id": "high_capital_rookie"
+        },
+        {
+          "baseline_coverage": 0.8152892386519653,
+          "baseline_mae": 23.108851525771424,
+          "baseline_spearman": 0.59358957591167,
+          "baseline_width": 73.52803526891591,
+          "candidate_coverage": 0.7813052893801927,
+          "candidate_mae": 19.388991846136424,
+          "candidate_spearman": 0.6979481639710422,
+          "candidate_width": 56.83945136445275,
+          "decisive": true,
+          "label": "widest_decile",
+          "rows": 70651,
+          "slice_id": "extreme_uncertainty"
+        }
+      ],
+      "criteria": {
+        "cohort_mae_tolerance": 0.05,
+        "cohort_rank_tolerance": 0.03,
+        "coverage_band": [
+          0.6,
+          0.95
+        ],
+        "criteria_version": "ros_promotion_v1",
+        "max_point_regression": 0.01,
+        "max_rank_regression": 0.01,
+        "minimum_cohort_rows": 200,
+        "primary_baseline_rule": "the declared baseline with the lowest development macro mean pinball loss; ties resolved by macro MAE, then by declaration order",
+        "primary_point_metric": "mae",
+        "primary_probabilistic_metric": "mean_pinball",
+        "rank_metric": "spearman",
+        "require_interval_excludes_zero": true,
+        "required_cohorts": [
+          "position",
+          "scoring_preset",
+          "season_phase",
+          "rookie",
+          "veteran",
+          "games_played_band",
+          "returning_from_absence",
+          "changed_team_in_season",
+          "in_season_arrival",
+          "high_capital_underperforming",
+          "high_capital_rookie",
+          "extreme_uncertainty"
+        ]
+      },
+      "failed_clauses": [
+        "clause 4: cohort deterioration: games_played_band/no_games P10-P90 coverage 0.964 outside [0.60, 0.95]"
+      ],
+      "primary_baseline": "R2",
+      "promoted": false,
+      "satisfied_clauses": [
+        "clause 1: macro mean_pinball -0.8084 [-0.8328, -0.7857]",
+        "clause 2: macro mae -2.4632 within the 1% tolerance (+0.1232)",
+        "clause 3: macro spearman +0.1203"
+      ]
+    }
+  },
+  "purpose": "Estimate the distribution of a player's fantasy points over the remainder of the current season from football evidence alone, and translate it into league-relative value. Decision support for in-season roster decisions, not a certainty.",
+  "sealed_result": {
+    "gate": {
+      "candidate": "RC1",
+      "cohorts": [
+        {
+          "baseline_coverage": 0.8033466524096272,
+          "baseline_mae": 10.546867532804379,
+          "baseline_spearman": 0.6786026622198892,
+          "baseline_width": 30.765787318672174,
+          "candidate_coverage": 0.8799407207308608,
+          "candidate_mae": 8.51838039835195,
+          "candidate_spearman": 0.7949243357749274,
+          "candidate_width": 28.161303968322958,
+          "decisive": true,
+          "label": "all",
+          "rows": 53307,
+          "slice_id": "full_universe"
+        },
+        {
+          "baseline_coverage": 0.83759203118233,
+          "baseline_mae": 18.18979044269811,
+          "baseline_spearman": 0.6444030286837238,
+          "baseline_width": 57.04412168829114,
+          "candidate_coverage": 0.8397574707665656,
+          "candidate_mae": 14.080245868337544,
+          "candidate_spearman": 0.7249382699359092,
+          "candidate_width": 42.57159820698277,
+          "decisive": true,
+          "label": "QB",
+          "rows": 6927,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.8150416077877217,
+          "baseline_mae": 11.912652593416153,
+          "baseline_spearman": 0.655320766487374,
+          "baseline_width": 32.64755302888774,
+          "candidate_coverage": 0.8597896059035955,
+          "candidate_mae": 10.140074200347698,
+          "candidate_spearman": 0.8073098545445406,
+          "candidate_width": 32.52601578796468,
+          "decisive": true,
+          "label": "RB",
+          "rows": 12738,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.7925750809911566,
+          "baseline_mae": 6.921030578602242,
+          "baseline_spearman": 0.7375923521410465,
+          "baseline_width": 19.760638665426782,
+          "candidate_coverage": 0.8732160056037125,
+          "candidate_mae": 5.823400399795853,
+          "candidate_spearman": 0.8189074529443411,
+          "candidate_width": 15.916412599643019,
+          "decisive": true,
+          "label": "TE",
+          "rows": 11421,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.7915035326942982,
+          "baseline_mae": 9.244981333040007,
+          "baseline_spearman": 0.6770945015674125,
+          "baseline_width": 27.151631743929325,
+          "candidate_coverage": 0.9074749111201116,
+          "candidate_mae": 7.2400935887167925,
+          "candidate_spearman": 0.8285417656749189,
+          "candidate_width": 27.46066479690407,
+          "decisive": true,
+          "label": "WR",
+          "rows": 22221,
+          "slice_id": "position"
+        },
+        {
+          "baseline_coverage": 0.8022398559288649,
+          "baseline_mae": 10.501908359731694,
+          "baseline_spearman": 0.6800184231604507,
+          "baseline_width": 30.720088167354263,
+          "candidate_coverage": 0.8799032022060893,
+          "candidate_mae": 8.526898242011562,
+          "candidate_spearman": 0.794300323799665,
+          "candidate_width": 27.938665488537623,
+          "decisive": true,
+          "label": "HALF",
+          "rows": 17769,
+          "slice_id": "scoring_preset"
+        },
+        {
+          "baseline_coverage": 0.8015082446958186,
+          "baseline_mae": 11.879320243652616,
+          "baseline_spearman": 0.6822576364055367,
+          "baseline_width": 34.44312808017772,
+          "candidate_coverage": 0.8830547582869042,
+          "candidate_mae": 9.546741864183693,
+          "candidate_spearman": 0.796934448020691,
+          "candidate_width": 32.28782466546204,
+          "decisive": true,
+          "label": "PPR",
+          "rows": 17769,
+          "slice_id": "scoring_preset"
+        },
+        {
+          "baseline_coverage": 0.8062918566041983,
+          "baseline_mae": 9.259373995028826,
+          "baseline_spearman": 0.6735319270936801,
+          "baseline_width": 27.134145708484535,
+          "candidate_coverage": 0.8768642016995891,
+          "candidate_mae": 7.481501088860599,
+          "candidate_spearman": 0.7935382355044263,
+          "candidate_width": 24.25742175096922,
+          "decisive": true,
+          "label": "STD",
+          "rows": 17769,
+          "slice_id": "scoring_preset"
+        },
+        {
+          "baseline_coverage": 0.6453686960016074,
+          "baseline_mae": 18.13956199977894,
+          "baseline_spearman": 0.7099385063602198,
+          "baseline_width": 40.09994411786909,
+          "candidate_coverage": 0.8515169780992565,
+          "candidate_mae": 14.63234166574964,
+          "candidate_spearman": 0.7996331977893004,
+          "candidate_width": 46.16364593626443,
+          "decisive": true,
+          "label": "weeks_1_3",
+          "rows": 9954,
+          "slice_id": "season_phase"
+        },
+        {
+          "baseline_coverage": 0.7889406928360154,
+          "baseline_mae": 12.598910132051252,
+          "baseline_spearman": 0.700200253932102,
+          "baseline_width": 34.7440690862457,
+          "candidate_coverage": 0.8675991377149446,
+          "candidate_mae": 10.274922539613208,
+          "candidate_spearman": 0.8096119505898636,
+          "candidate_width": 34.52812857739436,
+          "decisive": true,
+          "label": "weeks_4_9",
+          "rows": 19947,
+          "slice_id": "season_phase"
+        },
+        {
+          "baseline_coverage": 0.8828078270528924,
+          "baseline_mae": 5.569093694837952,
+          "baseline_spearman": 0.646660793263565,
+          "baseline_width": 23.40583759650712,
+          "candidate_coverage": 0.9025463556353072,
+          "candidate_mae": 4.421306291395832,
+          "candidate_spearman": 0.7803168679273936,
+          "candidate_width": 15.079429131698307,
+          "decisive": true,
+          "label": "weeks_10_plus",
+          "rows": 23406,
+          "slice_id": "season_phase"
+        },
+        {
+          "baseline_coverage": 0.7363707165109035,
+          "baseline_mae": 14.821838595791355,
+          "baseline_spearman": 0.6484238981798528,
+          "baseline_width": 36.82546582866462,
+          "candidate_coverage": 0.8374221183800623,
+          "candidate_mae": 13.139354332818133,
+          "candidate_spearman": 0.7503066338763497,
+          "candidate_width": 39.143011862117326,
+          "decisive": true,
+          "label": "rookie",
+          "rows": 5136,
+          "slice_id": "rookie"
+        },
+        {
+          "baseline_coverage": 0.8104876377903718,
+          "baseline_mae": 10.091069409877699,
+          "baseline_spearman": 0.6798923406416075,
+          "baseline_width": 30.11970339209143,
+          "candidate_coverage": 0.8844740611571277,
+          "candidate_mae": 8.025691391949378,
+          "candidate_spearman": 0.7979594406076682,
+          "candidate_width": 26.99043245345867,
+          "decisive": true,
+          "label": "veteran",
+          "rows": 48171,
+          "slice_id": "veteran"
+        },
+        {
+          "baseline_coverage": 0.8418067152873199,
+          "baseline_mae": 4.8392870829498476,
+          "baseline_spearman": 0.19524131352452964,
+          "baseline_width": 14.602153523576678,
+          "candidate_coverage": 0.9573688475495895,
+          "candidate_mae": 1.8344298922136117,
+          "candidate_spearman": 0.20994929749093588,
+          "candidate_width": 11.316849397275398,
+          "decisive": true,
+          "label": "no_games",
+          "rows": 28383,
+          "slice_id": "games_played_band"
+        },
+        {
+          "baseline_coverage": 0.6974248927038627,
+          "baseline_mae": 18.439851998061318,
+          "baseline_spearman": 0.4070945726088566,
+          "baseline_width": 39.04260729883274,
+          "candidate_coverage": 0.7982832618025751,
+          "candidate_mae": 17.498534845322528,
+          "candidate_spearman": 0.42441067084972905,
+          "candidate_width": 50.280172998890244,
+          "decisive": true,
+          "label": "one_or_two_games",
+          "rows": 6990,
+          "slice_id": "games_played_band"
+        },
+        {
+          "baseline_coverage": 0.7837626854020296,
+          "baseline_mae": 16.503502666967147,
+          "baseline_spearman": 0.6691857781283921,
+          "baseline_width": 53.12094770368797,
+          "candidate_coverage": 0.7892271662763466,
+          "candidate_mae": 15.596516209180553,
+          "candidate_spearman": 0.7224198812299493,
+          "candidate_width": 46.198844927750734,
+          "decisive": true,
+          "label": "three_plus_games",
+          "rows": 17934,
+          "slice_id": "games_played_band"
+        },
+        {
+          "baseline_coverage": 0.8182053271269718,
+          "baseline_mae": 8.22038569815191,
+          "baseline_spearman": 0.28079633043667007,
+          "baseline_width": 26.21405051871707,
+          "candidate_coverage": 0.8996638220843031,
+          "candidate_mae": 6.514148309751343,
+          "candidate_spearman": 0.26948962912101004,
+          "candidate_width": 20.928030940124906,
+          "decisive": true,
+          "label": "returning",
+          "rows": 3867,
+          "slice_id": "returning_from_absence"
+        },
+        {
+          "baseline_coverage": 0.8292011019283747,
+          "baseline_mae": 9.468055152015237,
+          "baseline_spearman": 0.4796250057196802,
+          "baseline_width": 39.35377939488944,
+          "candidate_coverage": 0.8760330578512396,
+          "candidate_mae": 7.971937589069932,
+          "candidate_spearman": 0.7059744975022898,
+          "candidate_width": 26.052833145810585,
+          "decisive": true,
+          "label": "changed_team",
+          "rows": 363,
+          "slice_id": "changed_team_in_season"
+        },
+        {
+          "baseline_coverage": 0.7555555555555555,
+          "baseline_mae": 1.081780219613468,
+          "baseline_spearman": -0.06044348564651661,
+          "baseline_width": 1.6521767553168811,
+          "candidate_coverage": 0.946031746031746,
+          "candidate_mae": 1.6946086479063611,
+          "candidate_spearman": 0.15983866769659336,
+          "candidate_width": 13.927110008761854,
+          "decisive": true,
+          "label": "arrival",
+          "rows": 315,
+          "slice_id": "in_season_arrival"
+        },
+        {
+          "baseline_coverage": 0.7635003253090435,
+          "baseline_mae": 18.000778873469617,
+          "baseline_spearman": 0.383347180612239,
+          "baseline_width": 54.04447394059764,
+          "candidate_coverage": 0.7953806115810019,
+          "candidate_mae": 15.685040479887142,
+          "candidate_spearman": 0.5989053376703031,
+          "candidate_width": 45.53239994537165,
+          "decisive": true,
+          "label": "high_capital_underperforming",
+          "rows": 3074,
+          "slice_id": "high_capital_underperforming"
+        },
+        {
+          "baseline_coverage": 0.6408730158730159,
+          "baseline_mae": 34.03889805783495,
+          "baseline_spearman": 0.114989626382169,
+          "baseline_width": 68.04612823003265,
+          "candidate_coverage": 0.7202380952380952,
+          "candidate_mae": 28.76260292594335,
+          "candidate_spearman": 0.16378993154937105,
+          "candidate_width": 72.40043592631896,
+          "decisive": true,
+          "label": "high_capital_rookie",
+          "rows": 1008,
+          "slice_id": "high_capital_rookie"
+        },
+        {
+          "baseline_coverage": 0.8081655878796501,
+          "baseline_mae": 24.01139225954393,
+          "baseline_spearman": 0.5865620005077791,
+          "baseline_width": 75.73058344196836,
+          "candidate_coverage": 0.7853332384949143,
+          "candidate_mae": 20.5327910245578,
+          "candidate_spearman": 0.6757560104151481,
+          "candidate_width": 59.1600211714084,
+          "decisive": true,
+          "label": "widest_decile",
+          "rows": 14059,
+          "slice_id": "extreme_uncertainty"
+        }
+      ],
+      "criteria": {
+        "cohort_mae_tolerance": 0.05,
+        "cohort_rank_tolerance": 0.03,
+        "coverage_band": [
+          0.6,
+          0.95
+        ],
+        "criteria_version": "ros_promotion_v1",
+        "max_point_regression": 0.01,
+        "max_rank_regression": 0.01,
+        "minimum_cohort_rows": 200,
+        "primary_baseline_rule": "the declared baseline with the lowest development macro mean pinball loss; ties resolved by macro MAE, then by declaration order",
+        "primary_point_metric": "mae",
+        "primary_probabilistic_metric": "mean_pinball",
+        "rank_metric": "spearman",
+        "require_interval_excludes_zero": true,
+        "required_cohorts": [
+          "position",
+          "scoring_preset",
+          "season_phase",
+          "rookie",
+          "veteran",
+          "games_played_band",
+          "returning_from_absence",
+          "changed_team_in_season",
+          "in_season_arrival",
+          "high_capital_underperforming",
+          "high_capital_rookie",
+          "extreme_uncertainty"
+        ]
+      },
+      "failed_clauses": [
+        "clause 4: cohort deterioration: games_played_band/no_games P10-P90 coverage 0.957 outside [0.60, 0.95]; in_season_arrival/arrival MAE 1.08->1.69"
+      ],
+      "primary_baseline": "R2",
+      "promoted": false,
+      "satisfied_clauses": [
+        "clause 1: macro mean_pinball -0.7136 [-0.7513, -0.6755]",
+        "clause 2: macro mae -2.2497 within the 1% tolerance (+0.1159)",
+        "clause 3: macro spearman +0.1163"
+      ]
+    },
+    "macro_by_model": {
+      "R0": {
+        "cells": 192.0,
+        "coverage_p10_p90": 0.7938398693572953,
+        "coverage_p25_p75": 0.5127281737830465,
+        "mae": 13.063087947709064,
+        "mean_pinball": 4.8863038010135105,
+        "mean_width_p10_p90": 40.459914188338196,
+        "rmse": 23.899414902249603,
+        "rows": 53307.0,
+        "spearman": 0.6024465147248529,
+        "top_k_recall": 0.41796875
+      },
+      "R1": {
+        "cells": 192.0,
+        "coverage_p10_p90": 0.80469946041711,
+        "coverage_p25_p75": 0.6558303113075182,
+        "mae": 10.795414691429249,
+        "mean_pinball": 4.388240892320044,
+        "mean_width_p10_p90": 30.894535421699885,
+        "rmse": 22.47873927631693,
+        "rows": 53307.0,
+        "spearman": 0.7592407050241529,
+        "top_k_recall": 0.5362413194444445
+      },
+      "R2": {
+        "cells": 192.0,
+        "coverage_p10_p90": 0.808913263548069,
+        "coverage_p25_p75": 0.4966464161584909,
+        "mae": 11.58639068283764,
+        "mean_pinball": 4.140281027246598,
+        "mean_width_p10_p90": 34.185719538277546,
+        "rmse": 20.699980105778632,
+        "rows": 53307.0,
+        "spearman": 0.6786026622198892,
+        "top_k_recall": 0.5377604166666666
+      },
+      "R3": {
+        "cells": 192.0,
+        "coverage_p10_p90": 0.5571789600029513,
+        "coverage_p25_p75": 0.3600686149052828,
+        "mae": 15.930162361805662,
+        "mean_pinball": 5.653220256461005,
+        "mean_width_p10_p90": 46.781337768877314,
+        "rmse": 27.35171344253214,
+        "rows": 53307.0,
+        "spearman": 0.7393019907473084,
+        "top_k_recall": 0.2502170138888889
+      },
+      "RC1": {
+        "cells": 192.0,
+        "coverage_p10_p90": 0.8699614518277583,
+        "coverage_p25_p75": 0.7319028756889042,
+        "mae": 9.336685065227977,
+        "mean_pinball": 3.4267211111785802,
+        "mean_width_p10_p90": 29.666916445170546,
+        "rmse": 19.467877403819784,
+        "rows": 53307.0,
+        "spearman": 0.7949243357749274,
+        "top_k_recall": 0.5299479166666666
+      }
+    },
+    "paired_deltas": {
+      "mae": {
+        "baseline": 11.58639068283764,
+        "candidate": 9.336685065227977,
+        "ci_excludes_zero": true,
+        "ci_high": -2.1284576062078737,
+        "ci_low": -2.3773725000873407,
+        "delta": -2.2497056176096635,
+        "favours_candidate": true,
+        "lower_is_better": true,
+        "metric": "mae",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 1.0
+      },
+      "mean_pinball": {
+        "baseline": 4.140281027246598,
+        "candidate": 3.4267211111785802,
+        "ci_excludes_zero": true,
+        "ci_high": -0.6755374457439152,
+        "ci_low": -0.7513432283838514,
+        "delta": -0.7135599160680175,
+        "favours_candidate": true,
+        "lower_is_better": true,
+        "metric": "mean_pinball",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 1.0
+      },
+      "spearman": {
+        "baseline": 0.6786026622198892,
+        "candidate": 0.7949243357749274,
+        "ci_excludes_zero": true,
+        "ci_high": 0.12156314020206652,
+        "ci_low": 0.112024451250521,
+        "delta": 0.1163216735550382,
+        "favours_candidate": true,
+        "lower_is_better": false,
+        "metric": "spearman",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 1.0
+      },
+      "top_k_recall": {
+        "baseline": 0.5377604166666666,
+        "candidate": 0.5299479166666666,
+        "ci_excludes_zero": false,
+        "ci_high": 0.015624999999999677,
+        "ci_low": -0.014105902777777462,
+        "delta": -0.0078125,
+        "favours_candidate": false,
+        "lower_is_better": false,
+        "metric": "top_k_recall",
+        "replicates": 1000,
+        "seed": 20260903,
+        "share_favouring_candidate": 0.508
+      }
+    }
+  },
+  "value": {
+    "convergence": {
+      "decisive": false,
+      "evidence": {
+        "comparisons_by_draws": {
+          "1000": 4,
+          "10000": 4,
+          "2500": 4,
+          "5000": 4
+        },
+        "criteria": {
+          "criteria_version": "phase4_convergence_v1",
+          "draw_ladder": [
+            1000,
+            2500,
+            5000,
+            10000
+          ],
+          "max_abs_replacement": 0.5,
+          "max_mean_abs_rank_change_top_150": 1.5,
+          "max_tier_count_difference": 1,
+          "mean_abs_expected_vorp": 0.25,
+          "mean_abs_outer_vorp": 0.6,
+          "mean_abs_p50_vorp": 0.35,
+          "min_fair_rank_spearman": 0.999,
+          "min_tier_adjusted_rand": 0.9,
+          "min_top_50_overlap": 0.96,
+          "p99_abs_expected_vorp": 1.5,
+          "p99_abs_outer_vorp": 5.0,
+          "p99_abs_p50_vorp": 3.0,
+          "reference_draws": 10000,
+          "rules": [
+            "a draw count qualifies only if every tolerance holds in every evaluated scenario, both against the reference draw count and between two seeds",
+            "the smallest qualifying draw count in the ladder is selected"
+          ]
+        },
+        "measurements": [
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 1000,
+            "fair_rank_spearman": 0.9989488836877223,
+            "max_abs_replacement": 0.129672475348535,
+            "mean_abs_expected_vorp": 0.46110193097284236,
+            "mean_abs_outer_vorp": 0.7890779836242867,
+            "mean_abs_p50_vorp": 0.5556367824569712,
+            "mean_abs_rank_change_top_150": 2.6933333333333334,
+            "p99_abs_expected_vorp": 2.790064955101361,
+            "p99_abs_outer_vorp": 4.094026201880837,
+            "p99_abs_p50_vorp": 3.7535964349091273,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 0.8487047266344864,
+            "tier_count_difference": 0,
+            "top_50_overlap": 0.96
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 1000,
+            "fair_rank_spearman": 0.997870506259768,
+            "max_abs_replacement": 0.5452704682056435,
+            "mean_abs_expected_vorp": 0.760494644959828,
+            "mean_abs_outer_vorp": 1.180965223143007,
+            "mean_abs_p50_vorp": 0.926767742339294,
+            "mean_abs_rank_change_top_150": 3.6333333333333333,
+            "p99_abs_expected_vorp": 3.9497265387367557,
+            "p99_abs_outer_vorp": 5.220065230430945,
+            "p99_abs_p50_vorp": 5.598824349756168,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 0.606421792254888,
+            "tier_count_difference": 1,
+            "top_50_overlap": 0.94
+          },
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 2500,
+            "fair_rank_spearman": 0.9995744203272654,
+            "max_abs_replacement": 0.10458424334882466,
+            "mean_abs_expected_vorp": 0.26527012035395103,
+            "mean_abs_outer_vorp": 0.45368494276154586,
+            "mean_abs_p50_vorp": 0.34290152288148423,
+            "mean_abs_rank_change_top_150": 1.62,
+            "p99_abs_expected_vorp": 1.5363158363217746,
+            "p99_abs_outer_vorp": 1.965979698600026,
+            "p99_abs_p50_vorp": 2.253098707662745,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 0.8934694055183426,
+            "tier_count_difference": 0,
+            "top_50_overlap": 1.0
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 2500,
+            "fair_rank_spearman": 0.9990608516082692,
+            "max_abs_replacement": 0.22282941978654947,
+            "mean_abs_expected_vorp": 0.4363092055296431,
+            "mean_abs_outer_vorp": 0.7477108026817662,
+            "mean_abs_p50_vorp": 0.5340775397837838,
+            "mean_abs_rank_change_top_150": 2.7733333333333334,
+            "p99_abs_expected_vorp": 2.963788699704393,
+            "p99_abs_outer_vorp": 3.131146928991207,
+            "p99_abs_p50_vorp": 3.8240494225578217,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 0.4753590775818885,
+            "tier_count_difference": 0,
+            "top_50_overlap": 0.96
+          },
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 5000,
+            "fair_rank_spearman": 0.9998038203407331,
+            "max_abs_replacement": 0.09212424582578649,
+            "mean_abs_expected_vorp": 0.15207351484513437,
+            "mean_abs_outer_vorp": 0.26084680303168883,
+            "mean_abs_p50_vorp": 0.19582602818823172,
+            "mean_abs_rank_change_top_150": 0.8733333333333333,
+            "p99_abs_expected_vorp": 0.8818609573518076,
+            "p99_abs_outer_vorp": 1.2439247366846395,
+            "p99_abs_p50_vorp": 1.2864593205504185,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 0.9371234782532248,
+            "tier_count_difference": 0,
+            "top_50_overlap": 1.0
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 5000,
+            "fair_rank_spearman": 0.9994084378715319,
+            "max_abs_replacement": 0.126491953661521,
+            "mean_abs_expected_vorp": 0.309263582504109,
+            "mean_abs_outer_vorp": 0.531957670554463,
+            "mean_abs_p50_vorp": 0.3602925903301261,
+            "mean_abs_rank_change_top_150": 1.9533333333333334,
+            "p99_abs_expected_vorp": 1.9720427209963654,
+            "p99_abs_outer_vorp": 2.558113211608859,
+            "p99_abs_p50_vorp": 2.886346492240265,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 0.4468644138931606,
+            "tier_count_difference": 0,
+            "top_50_overlap": 0.98
+          },
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 10000,
+            "fair_rank_spearman": 1.0,
+            "max_abs_replacement": 0.0,
+            "mean_abs_expected_vorp": 0.0,
+            "mean_abs_outer_vorp": 0.0,
+            "mean_abs_p50_vorp": 0.0,
+            "mean_abs_rank_change_top_150": 0.0,
+            "p99_abs_expected_vorp": 0.0,
+            "p99_abs_outer_vorp": 0.0,
+            "p99_abs_p50_vorp": 0.0,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 1.0,
+            "tier_count_difference": 0,
+            "top_50_overlap": 1.0
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 10000,
+            "fair_rank_spearman": 0.999687552083912,
+            "max_abs_replacement": 0.1342813500281892,
+            "mean_abs_expected_vorp": 0.24383984106445222,
+            "mean_abs_outer_vorp": 0.39007000904125355,
+            "mean_abs_p50_vorp": 0.2775253702334159,
+            "mean_abs_rank_change_top_150": 1.6266666666666667,
+            "p99_abs_expected_vorp": 1.462891467523578,
+            "p99_abs_outer_vorp": 1.8623653963712972,
+            "p99_abs_p50_vorp": 2.074996070461949,
+            "scenario": "redraft-12|PPR|w04",
+            "tier_adjusted_rand": 0.4505397837958295,
+            "tier_count_difference": 0,
+            "top_50_overlap": 1.0
+          },
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 1000,
+            "fair_rank_spearman": 0.9980427346199159,
+            "max_abs_replacement": 0.21468015658066264,
+            "mean_abs_expected_vorp": 0.22055327157599405,
+            "mean_abs_outer_vorp": 0.34489222677438736,
+            "mean_abs_p50_vorp": 0.2811472734066993,
+            "mean_abs_rank_change_top_150": 2.7066666666666666,
+            "p99_abs_expected_vorp": 1.4886464194018563,
+            "p99_abs_outer_vorp": 1.4628146762463317,
+            "p99_abs_p50_vorp": 1.9282370668315272,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 0.6856555310495757,
+            "tier_count_difference": -1,
+            "top_50_overlap": 0.94
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 1000,
+            "fair_rank_spearman": 0.9961968453360341,
+            "max_abs_replacement": 0.3648094975553562,
+            "mean_abs_expected_vorp": 0.3221215776568308,
+            "mean_abs_outer_vorp": 0.5167787399851449,
+            "mean_abs_p50_vorp": 0.4058207224475284,
+            "mean_abs_rank_change_top_150": 3.9266666666666667,
+            "p99_abs_expected_vorp": 2.2149690011768164,
+            "p99_abs_outer_vorp": 2.6486431867415727,
+            "p99_abs_p50_vorp": 2.761196725784382,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 0.7163419035310779,
+            "tier_count_difference": 0,
+            "top_50_overlap": 0.94
+          },
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 2500,
+            "fair_rank_spearman": 0.9993288814320159,
+            "max_abs_replacement": 0.05448021683849902,
+            "mean_abs_expected_vorp": 0.11340829239159561,
+            "mean_abs_outer_vorp": 0.19627680099174033,
+            "mean_abs_p50_vorp": 0.14882774459671688,
+            "mean_abs_rank_change_top_150": 1.6933333333333334,
+            "p99_abs_expected_vorp": 0.7218198944002355,
+            "p99_abs_outer_vorp": 0.831715095249367,
+            "p99_abs_p50_vorp": 1.0241763935069792,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 0.6180167254982425,
+            "tier_count_difference": -1,
+            "top_50_overlap": 0.98
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 2500,
+            "fair_rank_spearman": 0.9983946488294314,
+            "max_abs_replacement": 0.08822416381008225,
+            "mean_abs_expected_vorp": 0.1847270514120353,
+            "mean_abs_outer_vorp": 0.31149549036139884,
+            "mean_abs_p50_vorp": 0.23709014520656094,
+            "mean_abs_rank_change_top_150": 2.533333333333333,
+            "p99_abs_expected_vorp": 1.1443778931291557,
+            "p99_abs_outer_vorp": 1.2811414507149486,
+            "p99_abs_p50_vorp": 1.6435695168574715,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 0.6404394891449053,
+            "tier_count_difference": 0,
+            "top_50_overlap": 0.94
+          },
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 5000,
+            "fair_rank_spearman": 0.9996715519061323,
+            "max_abs_replacement": 0.022206584623852166,
+            "mean_abs_expected_vorp": 0.06669543374640101,
+            "mean_abs_outer_vorp": 0.11000321315838786,
+            "mean_abs_p50_vorp": 0.09122498158856787,
+            "mean_abs_rank_change_top_150": 1.1466666666666667,
+            "p99_abs_expected_vorp": 0.39786892873868757,
+            "p99_abs_outer_vorp": 0.4967915260307932,
+            "p99_abs_p50_vorp": 0.6296637899424166,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 0.8134971167542395,
+            "tier_count_difference": -1,
+            "top_50_overlap": 1.0
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 5000,
+            "fair_rank_spearman": 0.99915871697605,
+            "max_abs_replacement": 0.046778421255453395,
+            "mean_abs_expected_vorp": 0.13277606227928265,
+            "mean_abs_outer_vorp": 0.22619352056177494,
+            "mean_abs_p50_vorp": 0.16276225995550347,
+            "mean_abs_rank_change_top_150": 2.1933333333333334,
+            "p99_abs_expected_vorp": 0.8013277816471923,
+            "p99_abs_outer_vorp": 0.969293700756917,
+            "p99_abs_p50_vorp": 1.3259131468912846,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 0.878404778792174,
+            "tier_count_difference": 0,
+            "top_50_overlap": 0.96
+          },
+          {
+            "comparison": "vs 10000 draws",
+            "draws": 10000,
+            "fair_rank_spearman": 1.0,
+            "max_abs_replacement": 0.0,
+            "mean_abs_expected_vorp": 0.0,
+            "mean_abs_outer_vorp": 0.0,
+            "mean_abs_p50_vorp": 0.0,
+            "mean_abs_rank_change_top_150": 0.0,
+            "p99_abs_expected_vorp": 0.0,
+            "p99_abs_outer_vorp": 0.0,
+            "p99_abs_p50_vorp": 0.0,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 1.0,
+            "tier_count_difference": 0,
+            "top_50_overlap": 1.0
+          },
+          {
+            "comparison": "seed to seed",
+            "draws": 10000,
+            "fair_rank_spearman": 0.999600906825885,
+            "max_abs_replacement": 0.1511884487030457,
+            "mean_abs_expected_vorp": 0.09741104560205709,
+            "mean_abs_outer_vorp": 0.15654153044266317,
+            "mean_abs_p50_vorp": 0.12203322410348617,
+            "mean_abs_rank_change_top_150": 1.44,
+            "p99_abs_expected_vorp": 0.5671789288773699,
+            "p99_abs_outer_vorp": 0.6919313171483313,
+            "p99_abs_p50_vorp": 0.8776406767916795,
+            "scenario": "redraft-12|PPR|w12",
+            "tier_adjusted_rand": 0.8107070070906873,
+            "tier_count_difference": 1,
+            "top_50_overlap": 0.96
+          }
+        ],
+        "violations_by_draws": {
+          "1000": [
+            "redraft-12|PPR|w04/vs 10000 draws: mean |\u0394 expected VORP| 0.4611 exceeds 0.2500",
+            "redraft-12|PPR|w04/vs 10000 draws: p99 |\u0394 expected VORP| 2.7901 exceeds 1.5000",
+            "redraft-12|PPR|w04/vs 10000 draws: mean |\u0394 P50 VORP| 0.5556 exceeds 0.3500",
+            "redraft-12|PPR|w04/vs 10000 draws: p99 |\u0394 P50 VORP| 3.7536 exceeds 3.0000",
+            "redraft-12|PPR|w04/vs 10000 draws: mean |\u0394 outer VORP| 0.7891 exceeds 0.6000",
+            "redraft-12|PPR|w04/vs 10000 draws: mean |\u0394 rank| top 150 2.6933 exceeds 1.5000",
+            "redraft-12|PPR|w04/vs 10000 draws: fair-rank Spearman 0.9989 below 0.9990",
+            "redraft-12|PPR|w04/vs 10000 draws: tier ARI 0.8487 below 0.9000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 expected VORP| 0.7605 exceeds 0.2500",
+            "redraft-12|PPR|w04/seed to seed: p99 |\u0394 expected VORP| 3.9497 exceeds 1.5000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 P50 VORP| 0.9268 exceeds 0.3500",
+            "redraft-12|PPR|w04/seed to seed: p99 |\u0394 P50 VORP| 5.5988 exceeds 3.0000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 outer VORP| 1.1810 exceeds 0.6000",
+            "redraft-12|PPR|w04/seed to seed: p99 |\u0394 outer VORP| 5.2201 exceeds 5.0000",
+            "redraft-12|PPR|w04/seed to seed: max |\u0394 replacement| 0.5453 exceeds 0.5000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 rank| top 150 3.6333 exceeds 1.5000",
+            "redraft-12|PPR|w04/seed to seed: fair-rank Spearman 0.9979 below 0.9990",
+            "redraft-12|PPR|w04/seed to seed: top-50 overlap 0.9400 below 0.9600",
+            "redraft-12|PPR|w04/seed to seed: tier ARI 0.6064 below 0.9000",
+            "redraft-12|PPR|w12/vs 10000 draws: mean |\u0394 rank| top 150 2.7067 exceeds 1.5000",
+            "redraft-12|PPR|w12/vs 10000 draws: fair-rank Spearman 0.9980 below 0.9990",
+            "redraft-12|PPR|w12/vs 10000 draws: top-50 overlap 0.9400 below 0.9600",
+            "redraft-12|PPR|w12/vs 10000 draws: tier ARI 0.6857 below 0.9000",
+            "redraft-12|PPR|w12/seed to seed: mean |\u0394 expected VORP| 0.3221 exceeds 0.2500",
+            "redraft-12|PPR|w12/seed to seed: p99 |\u0394 expected VORP| 2.2150 exceeds 1.5000",
+            "redraft-12|PPR|w12/seed to seed: mean |\u0394 P50 VORP| 0.4058 exceeds 0.3500",
+            "redraft-12|PPR|w12/seed to seed: mean |\u0394 rank| top 150 3.9267 exceeds 1.5000",
+            "redraft-12|PPR|w12/seed to seed: fair-rank Spearman 0.9962 below 0.9990",
+            "redraft-12|PPR|w12/seed to seed: top-50 overlap 0.9400 below 0.9600",
+            "redraft-12|PPR|w12/seed to seed: tier ARI 0.7163 below 0.9000"
+          ],
+          "10000": [
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 rank| top 150 1.6267 exceeds 1.5000",
+            "redraft-12|PPR|w04/seed to seed: tier ARI 0.4505 below 0.9000",
+            "redraft-12|PPR|w12/seed to seed: tier ARI 0.8107 below 0.9000"
+          ],
+          "2500": [
+            "redraft-12|PPR|w04/vs 10000 draws: mean |\u0394 expected VORP| 0.2653 exceeds 0.2500",
+            "redraft-12|PPR|w04/vs 10000 draws: p99 |\u0394 expected VORP| 1.5363 exceeds 1.5000",
+            "redraft-12|PPR|w04/vs 10000 draws: mean |\u0394 rank| top 150 1.6200 exceeds 1.5000",
+            "redraft-12|PPR|w04/vs 10000 draws: tier ARI 0.8935 below 0.9000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 expected VORP| 0.4363 exceeds 0.2500",
+            "redraft-12|PPR|w04/seed to seed: p99 |\u0394 expected VORP| 2.9638 exceeds 1.5000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 P50 VORP| 0.5341 exceeds 0.3500",
+            "redraft-12|PPR|w04/seed to seed: p99 |\u0394 P50 VORP| 3.8240 exceeds 3.0000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 outer VORP| 0.7477 exceeds 0.6000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 rank| top 150 2.7733 exceeds 1.5000",
+            "redraft-12|PPR|w04/seed to seed: tier ARI 0.4754 below 0.9000",
+            "redraft-12|PPR|w12/vs 10000 draws: mean |\u0394 rank| top 150 1.6933 exceeds 1.5000",
+            "redraft-12|PPR|w12/vs 10000 draws: tier ARI 0.6180 below 0.9000",
+            "redraft-12|PPR|w12/seed to seed: mean |\u0394 rank| top 150 2.5333 exceeds 1.5000",
+            "redraft-12|PPR|w12/seed to seed: fair-rank Spearman 0.9984 below 0.9990",
+            "redraft-12|PPR|w12/seed to seed: top-50 overlap 0.9400 below 0.9600",
+            "redraft-12|PPR|w12/seed to seed: tier ARI 0.6404 below 0.9000"
+          ],
+          "5000": [
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 expected VORP| 0.3093 exceeds 0.2500",
+            "redraft-12|PPR|w04/seed to seed: p99 |\u0394 expected VORP| 1.9720 exceeds 1.5000",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 P50 VORP| 0.3603 exceeds 0.3500",
+            "redraft-12|PPR|w04/seed to seed: mean |\u0394 rank| top 150 1.9533 exceeds 1.5000",
+            "redraft-12|PPR|w04/seed to seed: tier ARI 0.4469 below 0.9000",
+            "redraft-12|PPR|w12/vs 10000 draws: tier ARI 0.8135 below 0.9000",
+            "redraft-12|PPR|w12/seed to seed: mean |\u0394 rank| top 150 2.1933 exceeds 1.5000",
+            "redraft-12|PPR|w12/seed to seed: tier ARI 0.8784 below 0.9000"
+          ]
+        }
+      },
+      "failures": [
+        "redraft-12|PPR|w04/seed to seed: mean |\u0394 rank| top 150 1.6267 exceeds 1.5000",
+        "redraft-12|PPR|w04/seed to seed: tier ARI 0.4505 below 0.9000",
+        "redraft-12|PPR|w12/seed to seed: tier ARI 0.8107 below 0.9000"
+      ],
+      "reasons": [
+        "no draw count satisfied every tolerance; the largest declared count (10000) is used and the breaches are recorded"
+      ],
+      "rule": "phase4_convergence_v1",
+      "rules_version": "phase4_rules_v1",
+      "selected": "10000"
+    },
+    "replacement": {
+      "decisive": true,
+      "evidence": {
+        "criteria": {
+          "criteria_version": "ros_replacement_v1",
+          "default_rule": "rostered_depth",
+          "fallback_rule": "fresh_allocation",
+          "max_indistinguishable_rank_change": 1.0,
+          "min_indistinguishable_spearman": 0.999,
+          "min_indistinguishable_top_50_overlap": 0.98,
+          "rules": [
+            "the in-season rostered-depth interpretation is selected by default: an in-season decision's alternative is the best freely available player",
+            "Release 1's fresh-allocation rule is retained only if every measured scenario is indistinguishable on fair-rank correlation, mean rank change inside the top 150 and top-50 overlap"
+          ]
+        }
+      },
+      "failures": [],
+      "reasons": [
+        "the two interpretations disagree materially, so the in-season meaning is used",
+        "across 12 scenario(s): worst fair-rank Spearman 0.9981, largest mean |rank change| in the top 150 2.15, smallest top-50 overlap 0.940"
+      ],
+      "rule": "ros_replacement_v1",
+      "rules_version": "phase4_rules_v1",
+      "selected": "rostered_depth"
+    },
+    "tier_penalty": {
+      "decisive": true,
+      "evidence": {
+        "admissible": [
+          2.0,
+          3.0
+        ],
+        "candidates": [
+          {
+            "bootstrap_adjusted_rand": 0.7133501867442655,
+            "boundary_agreement": 0.3076923076923077,
+            "largest_tier_share": 0.16749999999999998,
+            "mean_boundary_effect_size": 0.006751947647662275,
+            "mean_tier_count": 16.5,
+            "median_within_tier_effect_size": 0.005371683677076276,
+            "penalty": 1.0,
+            "singleton_rate": 0.21904444526348552
+          },
+          {
+            "bootstrap_adjusted_rand": 0.8252216905304044,
+            "boundary_agreement": 0.3333333333333333,
+            "largest_tier_share": 0.22111111111111112,
+            "mean_boundary_effect_size": 0.014645376855135795,
+            "mean_tier_count": 7.583333333333333,
+            "median_within_tier_effect_size": 0.0052608829718945385,
+            "penalty": 2.0,
+            "singleton_rate": 0.0
+          },
+          {
+            "bootstrap_adjusted_rand": 0.8570306292751723,
+            "boundary_agreement": 0.16666666666666666,
+            "largest_tier_share": 0.2463888888888889,
+            "mean_boundary_effect_size": 0.012685210441537408,
+            "mean_tier_count": 6.75,
+            "median_within_tier_effect_size": 0.005261444320660197,
+            "penalty": 3.0,
+            "singleton_rate": 0.0
+          },
+          {
+            "bootstrap_adjusted_rand": 0.7899163614916105,
+            "boundary_agreement": 0.0,
+            "largest_tier_share": 0.3055555555555556,
+            "mean_boundary_effect_size": 0.012284728864489641,
+            "mean_tier_count": 5.166666666666667,
+            "median_within_tier_effect_size": 0.005229413358832999,
+            "penalty": 5.0,
+            "singleton_rate": 0.0
+          },
+          {
+            "bootstrap_adjusted_rand": 0.9230979403519416,
+            "boundary_agreement": 0.0,
+            "largest_tier_share": 0.3663888888888889,
+            "mean_boundary_effect_size": 0.013884348870543546,
+            "mean_tier_count": 4.333333333333333,
+            "median_within_tier_effect_size": 0.005238409294712906,
+            "penalty": 8.0,
+            "singleton_rate": 0.0
+          },
+          {
+            "bootstrap_adjusted_rand": 0.9644016185506888,
+            "boundary_agreement": 0.0,
+            "largest_tier_share": 0.38305555555555554,
+            "mean_boundary_effect_size": 0.01234414894693779,
+            "mean_tier_count": 3.75,
+            "median_within_tier_effect_size": 0.0052657945291902835,
+            "penalty": 12.0,
+            "singleton_rate": 0.0
+          }
+        ],
+        "criteria": {
+          "algorithm": "ruptures.Pelt(model='rbf')",
+          "board_depth": 300,
+          "criteria_version": "phase4_tier_v1",
+          "max_largest_tier_share": 0.25,
+          "max_mean_tier_count": 24.0,
+          "max_singleton_rate": 0.2,
+          "min_boundary_effect_ratio": 1.0,
+          "min_mean_tier_count": 6.0,
+          "penalties": [
+            1.0,
+            2.0,
+            3.0,
+            5.0,
+            8.0,
+            12.0
+          ],
+          "rules": [
+            "admissible: mean tier count inside the declared band",
+            "admissible: singleton rate at or below max_singleton_rate",
+            "admissible: no tier holds more than max_largest_tier_share of the board",
+            "admissible: mean boundary effect size exceeds the median within-tier adjacent-pair effect size by at least min_boundary_effect_ratio",
+            "among admissible penalties, the highest bootstrap adjusted Rand index wins",
+            "ties inside stability_tie_band resolve on boundary separation, then on the larger penalty"
+          ],
+          "stability_tie_band": 0.01
+        },
+        "inadmissible": {
+          "1.0": [
+            "singleton rate 0.219 above 0.2"
+          ],
+          "12.0": [
+            "mean tier count 3.75 below 6.0",
+            "largest tier holds 0.383 of the board, above 0.25"
+          ],
+          "5.0": [
+            "mean tier count 5.17 below 6.0",
+            "largest tier holds 0.306 of the board, above 0.25"
+          ],
+          "8.0": [
+            "mean tier count 4.33 below 6.0",
+            "largest tier holds 0.366 of the board, above 0.25"
+          ]
+        },
+        "selected": {
+          "bootstrap_adjusted_rand": 0.8570306292751723,
+          "boundary_agreement": 0.16666666666666666,
+          "largest_tier_share": 0.2463888888888889,
+          "mean_boundary_effect_size": 0.012685210441537408,
+          "mean_tier_count": 6.75,
+          "median_within_tier_effect_size": 0.005261444320660197,
+          "penalty": 3.0,
+          "singleton_rate": 0.0
+        },
+        "tied_within_band": [
+          3.0
+        ]
+      },
+      "failures": [],
+      "reasons": [
+        "penalty 3.0 is admissible with bootstrap ARI 0.857, mean tier count 6.75, singleton rate 0.000 and boundary effect size 0.013"
+      ],
+      "rule": "phase4_tier_v1",
+      "rules_version": "phase4_rules_v1",
+      "selected": "3.0"
+    },
+    "tier_stability": {
+      "decisive": false,
+      "evidence": {
+        "criteria": {
+          "criteria_version": "phase4_tier_stability_v1",
+          "max_singleton_rate": 0.2,
+          "max_tier_count_cv": 0.25,
+          "min_bootstrap_adjusted_rand": 0.6,
+          "min_boundary_agreement": 0.5,
+          "min_cross_preset_adjusted_rand": 0.5,
+          "min_monotonic_pair_share": 0.8,
+          "rules": [
+            "bootstrap membership similarity at or above min_bootstrap_adjusted_rand",
+            "at least min_boundary_agreement of promoted boundaries recovered by a majority of bootstrap replicates",
+            "singleton rate at or below max_singleton_rate",
+            "tier-count coefficient of variation at or below max_tier_count_cv",
+            "realized mean VORP non-increasing across at least min_monotonic_pair_share of adjacent tier pairs",
+            "membership similarity between scoring/league presets at or above min_cross_preset_adjusted_rand"
+          ]
+        },
+        "measured": {
+          "bootstrap_adjusted_rand": 0.8570306292751723,
+          "boundary_agreement": 0.16666666666666666,
+          "cross_preset_adjusted_rand": 0.5238469254544202,
+          "monotonic_pair_share": 1.0,
+          "singleton_rate": 0.0,
+          "tier_count_cv": 0.07355754188694547
+        }
+      },
+      "failures": [
+        "boundary agreement 0.1667 below 0.5000"
+      ],
+      "reasons": [
+        "bootstrap ARI 0.8570",
+        "singleton rate 0.0000",
+        "tier-count CV 0.0736",
+        "monotonic tier pairs 1.0000",
+        "cross-preset ARI 0.5238"
+      ],
+      "rule": "phase4_tier_stability_v1",
+      "rules_version": "phase4_rules_v1",
+      "selected": "fail"
+    }
+  }
+}
