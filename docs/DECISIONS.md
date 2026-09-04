@@ -2730,3 +2730,121 @@ that every development conclusion reproduced.
 **Evidence.** `docs/experiments/phase11-ros/experiment.md` (both verdicts, side by side),
 `docs/experiments/phase11-ros/final_holdout.md` (the spent season, v1 verdict, unchanged),
 `docs/experiments/phase11-ros-value/value_study.md`, `models/cards/intrinsic-ros-v1.md`.
+
+---
+
+## ADR-078 — A post-promotion production refit is not a model change: `ros_production_fit_v1`
+
+**Status:** Accepted, Phase 12. Amends ADR-077's fourth inherited constraint by naming the one
+operation it was never meant to prohibit. It **loosens nothing**: every rule about changing
+`RC1` stands exactly as written.
+
+### The problem this exists to settle
+
+Phase 11 validated `intrinsic-ros-v1` chronologically and accepted it (ADR-077), and then
+stopped. It persisted **no** `models/production/intrinsic-ros-v1`. Every prediction Phase 11
+ever made came out of a fold: `RosHurdleCandidate.fit_predict` deliberately exposes no fitted
+object, because fold isolation in this repository is structural rather than remembered
+(`ffdraft/ros/estimators.py`). There is therefore nothing on disk for a 2026 build to load,
+and no amount of care in Phase 12 conjures one.
+
+Serving 2026 needs a fit. ADR-077 says:
+
+> **Any future change to `RC1`'s outputs invalidates that and needs a fresh sealed season.**
+
+Read literally and without a distinction, that sentence forbids fitting the accepted
+architecture on data at all — which would mean the model accepted for Phase 12 can never be
+served in Phase 12. That is not what ADR-077 decided; it is what its wording fails to
+separate. ADR-077's target is unambiguous in its own text: the four things it enumerates are
+*"no fallback, no retrain, no tuning, no feature"* — **design** changes, made in response to a
+result, that would invalidate the claim the spent sealed season supports.
+
+### Decision
+
+Two operations exist and they are not the same operation.
+
+| | **production refit** (routine) | **methodology change** (gated) |
+|---|---|---|
+| architecture | `rc1_ros_hurdle_v1`, byte-identical code path | changed |
+| features | `ros_core_v1` (`f5ad9df207795351`) | changed |
+| hyperparameters | `RC1_PARAMETERS`, `RC1_NUM_BOOST_ROUND` | changed |
+| composition, copula, calibration | unchanged | changed |
+| fallback behaviour | none, as ADR-076 decided | added |
+| what may differ | **the labelled rows fitted on, and nothing else** | anything |
+| evidence required | the frozen configuration hash matches | a fresh sealed season |
+| sealed season | unaffected — the accepted claim is about the architecture | invalidated |
+
+A **production refit** is `ros_production_fit_v1`. It is permitted, it is routine, it is the
+only way a validated architecture reaches a reader, and it is exactly what
+`train_production_model` already does for the preseason model — a path this repository has
+run since Phase 4 without anyone calling it a model change.
+
+A **methodology change** is everything else, and ADR-077 governs it unchanged. The rule
+against actual model changes is **not weakened**: it is given the boundary it always implied.
+
+### Why a refit does not spend the sealed season
+
+The claim the 2025 holdout supports is a claim about an *architecture* — that
+`rc1_ros_hurdle_v1`, fitted on seasons strictly before the season it scores, beats every
+declared baseline out of time. That claim is evaluated by fitting the architecture on a
+training window and scoring an unseen season, which is what all five development folds and
+the one sealed fold did. A production fit is the *same operation with the same code* on the
+widest permitted window; it produces a member of the family the holdout measured, not a new
+family. Refusing it would make the holdout evidence for nothing, because no fit at all would
+be permitted.
+
+The converse is what ADR-077 forbids and what stays forbidden: choosing a different family
+(a sparse-history fallback, a new feature, a tuned parameter) *after* looking at a result
+means the sealed season selected the design, and no honest out-of-time claim survives that.
+
+### The protocol — `ros_production_fit_v1`
+
+1. **Freeze first, in code.** `ffdraft/ros/frozen.py` holds the accepted architecture as
+   constants: model version, candidate version, parameters, boost rounds, composition draws,
+   quantile levels, seed, feature set. `RosProductionSpec.configuration_hash()` is a digest
+   over all of it, is written into the artifact, and is asserted by a test against the
+   candidate class the evaluation actually ran. A refit whose hash differs is not a refit.
+2. **Fit on the maximum historically permitted labelled data.** Seasons 2017-2025 inclusive:
+   `ROS_TRAIN_START_SEASON` (Phase 3's inherited W2 window) through
+   `ROS_PRODUCTION_LAST_TRAINING_SEASON = 2025`.
+3. **2025 is included only because its holdout is spent.** It is sealed by
+   `ROS_SEALED_SEASONS = "season >= 2025"`, so including it requires the same explicit
+   `RosFinalEvalAuthorization` token the final evaluation required, and the artifact records
+   that it was given and why. A model that could quietly widen its own window would make the
+   seal decorative.
+4. **2026 can never be trained on, by construction and by check.** The seal rule already
+   covers it (2026 ≥ 2025), and `train_ros_production_model` additionally refuses any
+   training season `>= serving_season`. Two independent barriers, because this is the one
+   error that cannot be detected from the output.
+5. **Persist and version everything.** One gzipped LightGBM text booster per component and
+   quantile — never a pickle (`AGENTS.md` section 5) — a SHA-256 per booster, the feature-set
+   and feature-schema hashes, the training seasons, the row counts, the dataset content hash
+   and manifest, the library versions, the code SHA and the fit timestamp. Inference refuses
+   a frame whose feature contract disagrees.
+6. **Serving is not fitting.** `ffdraft build-ros` loads this artifact and never trains.
+   A refresh that retrained would be a different model every day, which is the failure mode
+   the whole freeze exists to prevent.
+
+### When a refit may be run
+
+Only these, and each is recorded in the artifact's `refit_reason`:
+
+- **`initial_production_fit`** — the first fit after promotion. This one.
+- **`new_completed_season`** — a season has completed and its labels exist, so the window
+  extends by one. Routine, and still not a methodology change.
+- **`reproduction`** — a byte-for-byte rebuild to verify the committed artifact.
+
+Anything else is a methodology change and goes through ADR-077, a fresh sealed season and a
+new model version.
+
+### Consequences
+
+- `models/production/intrinsic-ros-v1/` exists and is committed, as the preseason model is.
+- The model card gains a production-fit section that is explicitly **not** an evaluation
+  section: the fit reports rows, seasons and lineage, and points at Phase 11 for every
+  performance number. A production fit produces no new performance claim, because it was
+  scored on nothing.
+- `final_holdout.md` is untouched and stays untouched. The spent season is not re-scored,
+  not re-interpreted, and not cited as evidence about the production fit.
+- The six inherited limitations in ADR-077 apply unchanged to the fitted artifact: it is the
+  same architecture, so it has the same weaknesses, and Phase 12 publishes them.

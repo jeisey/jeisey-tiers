@@ -40,9 +40,12 @@ import type {
   ArbitrageRecord,
   ArtifactEnvelope,
   BuildMetadata,
+  OpportunityRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   Position,
+  RosBuildMetadata,
+  RosTierRecord,
   ScoringPreset,
   TierRecord,
   MarketComparison,
@@ -533,6 +536,241 @@ export function arbitrageEnvelope(
   };
 }
 
+/**
+ * The in-season fixture bundle.
+ *
+ * Derived from the draft fixture's own tier rows so the two boards describe the same
+ * players, which is what makes the firewall assertion meaningful: an opportunity row copies
+ * its intrinsic columns from the rest-of-season row, and a test can compare them.
+ *
+ * Three shapes are deliberately present, each of which only misbehaves in production: a
+ * long-absence row carrying the ADR-076 fields, a player surfaced from beyond the tier depth
+ * with a declared reason and no tier, and behaviour counts with their requested window.
+ */
+export const FIXTURE_THROUGH_WEEK = 8;
+export const FIXTURE_BEHAVIOR_LOOKBACK_HOURS = 24;
+
+export function rosTierRecords(): RosTierRecord[] {
+  return tierRecords().map((record, index) => {
+    const absent = index % 3 === 2;
+    const scale = 0.5;
+    return {
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      season: 2026,
+      through_week: FIXTURE_THROUGH_WEEK,
+      league_preset_id: record.league_preset_id,
+      scoring_preset: record.scoring_preset,
+      player_id: record.player_id,
+      display_name: record.display_name,
+      team: record.team,
+      position: record.position,
+      ros_fair_rank: record.fair_rank,
+      ros_position_rank: record.position_rank,
+      ros_tier: record.tier_ordinal,
+      ros_tier_label: record.tier_label,
+      ros_expected_vorp: round(record.expected_vorp * scale),
+      ros_vorp_p10: round(record.p10_vorp * scale),
+      ros_vorp_p25: round(record.p25_vorp * scale),
+      ros_vorp_p50: round(record.p50_vorp * scale),
+      ros_vorp_p75: round(record.p75_vorp * scale),
+      ros_vorp_p90: round(record.p90_vorp * scale),
+      ros_expected_points: round(record.expected_points * scale),
+      ros_points_p10: round(record.expected_points * scale * 0.7),
+      ros_points_p50: round(record.expected_points * scale),
+      ros_points_p90: round(record.expected_points * scale * 1.3),
+      ros_expected_games: absent ? 5.4 : 8.1,
+      ros_uncertainty: round(record.uncertainty * scale),
+      remaining_horizon_weeks: 9,
+      team_remaining_scheduled_games: 8,
+      preseason_fair_rank: record.fair_rank,
+      fair_rank_change: absent ? -12 : 3,
+      games_played_to_date: absent ? 5 : 8,
+      points_to_date: round(record.expected_points * (1 - scale)),
+      points_per_game_to_date: round((record.expected_points * (1 - scale)) / 8),
+      weeks_since_last_game: absent ? 3 : 0,
+      consecutive_weeks_missed: absent ? 3 : 0,
+      has_played_this_season: true,
+      long_absence: absent,
+      in_preseason_universe: true,
+      current_status: absent ? "RES" : null,
+      outside_tier_board: false,
+      surface_reasons: ["intrinsic_top_tier_depth"],
+      quality_flags: absent ? ["long_absence"] : [],
+    };
+  });
+}
+
+export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[] {
+  const base: OpportunityRecord[] = rosTierRecords().map((record, index) => {
+    const adds = Math.max(0, 900 - index * 37);
+    const drops = Math.max(0, 120 - index * 5);
+    return {
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      season: record.season,
+      through_week: record.through_week,
+      league_preset_id: record.league_preset_id,
+      scoring_preset: record.scoring_preset,
+      player_id: record.player_id,
+      display_name: record.display_name,
+      team: record.team,
+      position: record.position,
+      // Copied, never recomputed — the property the firewall test asserts.
+      ros_fair_rank: record.ros_fair_rank,
+      ros_position_rank: record.ros_position_rank,
+      ros_expected_vorp: record.ros_expected_vorp,
+      ros_expected_points: record.ros_expected_points,
+      ros_expected_games: record.ros_expected_games,
+      ros_uncertainty: record.ros_uncertainty,
+      ros_tier: record.ros_tier,
+      behavior_source_id: behaviorAvailable ? "sleeper" : null,
+      behavior_available: behaviorAvailable,
+      behavior_snapshot_at_utc: behaviorAvailable ? FIXTURE_GENERATED_AT : null,
+      behavior_lookback_hours: behaviorAvailable ? FIXTURE_BEHAVIOR_LOOKBACK_HOURS : null,
+      behavior_request_limit: behaviorAvailable ? 100 : null,
+      add_count: behaviorAvailable ? adds : null,
+      drop_count: behaviorAvailable ? drops : null,
+      net_add_count: behaviorAvailable ? adds - drops : null,
+      add_rank: behaviorAvailable ? index + 1 : null,
+      drop_rank: behaviorAvailable ? index + 1 : null,
+      long_absence: record.long_absence,
+      weeks_since_last_game: record.weeks_since_last_game,
+      games_played_to_date: record.games_played_to_date,
+      snap_share_last3: 0.72,
+      target_share_last3: 0.19,
+      current_status: record.current_status,
+      outside_tier_board: false,
+      surface_reasons: ["intrinsic_top_tier_depth"],
+      quality_flags: record.quality_flags,
+    };
+  });
+
+  const anchor = base[0];
+  if (anchor !== undefined) {
+    base.push({
+      ...anchor,
+      player_id: `${anchor.player_id}-surfaced`,
+      display_name: `${anchor.display_name} (surfaced)`,
+      ros_fair_rank: 900,
+      ros_position_rank: 90,
+      ros_expected_vorp: 0,
+      ros_expected_points: null,
+      ros_expected_games: null,
+      ros_uncertainty: 0,
+      // No tier. The segmentation never saw him, and inventing one is what ADR-063 forbids.
+      ros_tier: null,
+      add_count: behaviorAvailable ? 1450 : null,
+      drop_count: behaviorAvailable ? 20 : null,
+      net_add_count: behaviorAvailable ? 1430 : null,
+      add_rank: behaviorAvailable ? 1 : null,
+      drop_rank: behaviorAvailable ? 90 : null,
+      long_absence: false,
+      weeks_since_last_game: 0,
+      outside_tier_board: true,
+      surface_reasons: ["sleeper_trending_add"],
+      quality_flags: [],
+    });
+  }
+  return base;
+}
+
+export function rosBuildMetadata(
+  overrides: Partial<RosBuildMetadata> = {},
+  behaviorAvailable = true,
+): RosBuildMetadata {
+  return {
+    schema_version: "1.0",
+    build_id: FIXTURE_BUILD_ID,
+    generated_at_utc: FIXTURE_GENERATED_AT,
+    git_sha: "0000000",
+    season: 2026,
+    through_week: FIXTURE_THROUGH_WEEK,
+    season_state: {
+      rule_version: "season_state_v1",
+      season_state: "regular_season",
+      product_mode: "in_season",
+      completed_week: FIXTURE_THROUGH_WEEK,
+      latest_snapshot_week: FIXTURE_THROUGH_WEEK,
+      next_transition_utc: null,
+    },
+    ros_model_version: "intrinsic-ros-v1",
+    ros_model_configuration_hash: "d79133847436f04f",
+    production_fit_rule_version: "ros_production_fit_v1",
+    model_fitted_at_utc: FIXTURE_GENERATED_AT,
+    model_training_seasons: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+    model_refit_reason: "initial_production_fit",
+    cutoff_rule_version: "ros_cutoff_v1",
+    feature_set_version: "ros_core_v1",
+    feature_set_hash: "f5ad9df207795351",
+    methodology_version: "phase12_ros_v1",
+    simulation: {
+      draws: 10000,
+      draws_status: "declared fallback",
+      seed: 20260903,
+      ranking_statistic: "median_vorp",
+      replacement_rule: "rostered_depth",
+      replacement_rule_description: "the best player nobody rosters",
+      tier_algorithm: "pelt_rbf",
+      tier_penalty: 3,
+      tier_depth: 500,
+      convergence_gate: "fail",
+      tier_stability_gate: "fail",
+    },
+    source_freshness: {
+      rule_version: "ros_source_freshness_v1",
+      available_through_week: FIXTURE_THROUGH_WEEK,
+      schedule_completed_week: FIXTURE_THROUGH_WEEK,
+      blocking_week: null,
+      buildable: true,
+    },
+    behavior: {
+      source_id: behaviorAvailable ? "sleeper" : null,
+      available: behaviorAvailable,
+      snapshot_at_utc: behaviorAvailable ? FIXTURE_GENERATED_AT : null,
+      lookback_hours: behaviorAvailable ? FIXTURE_BEHAVIOR_LOOKBACK_HOURS : null,
+      request_limit: behaviorAvailable ? 100 : null,
+      matched_players: behaviorAvailable ? 18 : 0,
+      degraded_reason: behaviorAvailable ? null : "no retained behaviour capture",
+    },
+    disclosures: {
+      uses_injury_information: false,
+      long_absence_definition:
+        "has played at least once this season and has not appeared for 3 or more consecutive weeks ending at the cutoff",
+      long_absence_statement:
+        "This estimate uses no injury or practice-report information of any kind. The model infers absence from appearances alone.",
+      long_absence_ordering_weakness:
+        "Ranking quality inside this group is weak: Spearman 0.311 against 0.797 on the full universe.",
+      status_is_annotation_only: true,
+      long_absence_players: rosTierRecords().filter((record) => record.long_absence).length,
+      tier_boundary_statement: "Rest-of-season tiers are bands, not lines.",
+    },
+    limitations: [
+      "Overconfident on high-draft-capital rookies.",
+      "Close to unable to order players returning from a long absence.",
+    ],
+    supported_presets: ["redraft-10", "redraft-12", "redraft-14"],
+    sources: [],
+    quality_gate: { status: "pass", critical_failures: 0, warnings: 0 },
+    warnings: [],
+    ...overrides,
+  };
+}
+
+export function rosTierEnvelope(schemaVersion?: string): ArtifactEnvelope<RosTierRecord> {
+  return envelope("ros_tiers", "ros_tier_record", rosTierRecords(), schemaVersion);
+}
+
+export function opportunityEnvelope(
+  behaviorAvailable = true,
+): ArtifactEnvelope<OpportunityRecord> {
+  return envelope(
+    "inseason_opportunity",
+    "inseason_opportunity_record",
+    opportunityRecords(behaviorAvailable),
+  );
+}
+
 export function playerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {
   return envelope("player_status", "player_status", playerStatusRecords());
 }
@@ -549,5 +787,14 @@ export function fixtureFiles(condition: MarketCondition = "launch"): Record<stri
     "arbitrage.json": arbitrageEnvelope(condition),
     "player_status.json": playerStatusEnvelope(),
     "projections.json": projectionEnvelope(),
+  };
+}
+
+/** Everything a page load needs **in season**, on top of the draft bundle. */
+export function inSeasonFixtureFiles(behaviorAvailable = true): Record<string, unknown> {
+  return {
+    "ros_build_metadata.json": rosBuildMetadata({}, behaviorAvailable),
+    "ros_tiers.json": rosTierEnvelope(),
+    "inseason_opportunity.json": opportunityEnvelope(behaviorAvailable),
   };
 }

@@ -9,24 +9,63 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Segmented } from "../components/primitives";
-import type { AppState, PositionFilter, ScoringValue, TeamCount, ViewId } from "../data/state";
-import { POSITION_FILTERS, POSITION_LABELS, SCORING_LABELS, SCORING_VALUES, TEAM_COUNTS } from "../data/state";
+import type {
+  AppState,
+  ModeId,
+  PositionFilter,
+  ResolvedViewId,
+  ScoringValue,
+  TeamCount,
+} from "../data/state";
+import {
+  POSITION_FILTERS,
+  POSITION_LABELS,
+  SCORING_LABELS,
+  SCORING_VALUES,
+  TEAM_COUNTS,
+} from "../data/state";
 
-const VIEW_TABS: readonly { id: ViewId; label: string }[] = [
+/**
+ * The tab set each mode owns.
+ *
+ * Roadmap 12.4: Draft mode is Tier Board plus Arbitrage Board; In-Season mode is ROS Tier
+ * Board plus Opportunity Board. `Data` is shared, because the methodology and provenance a
+ * reader needs do not change with the season.
+ *
+ * The other mode's boards are still *reachable* — a URL naming them opens them, and the
+ * mode switch is one click — they are simply not what this mode leads with.
+ */
+const DRAFT_TABS: readonly { id: ResolvedViewId; label: string }[] = [
   { id: "tiers", label: "Tiers" },
   { id: "arbitrage", label: "Arbitrage" },
   { id: "data", label: "Data" },
 ];
+
+const IN_SEASON_TABS: readonly { id: ResolvedViewId; label: string }[] = [
+  { id: "ros", label: "ROS tiers" },
+  { id: "opportunity", label: "Opportunity" },
+  { id: "data", label: "Data" },
+];
+
+export function tabsForMode(mode: "draft" | "in_season"): readonly {
+  id: ResolvedViewId;
+  label: string;
+}[] {
+  return mode === "in_season" ? IN_SEASON_TABS : DRAFT_TABS;
+}
 
 export function ViewTabs({
   view,
   onChange,
   arbitrageAvailable,
   rowCount,
+  mode,
 }: {
-  readonly view: ViewId;
-  readonly onChange: (view: ViewId) => void;
+  readonly view: ResolvedViewId;
+  readonly onChange: (view: ResolvedViewId) => void;
   readonly arbitrageAvailable: boolean;
+  /** Which tab set to show. The reader's resolved mode, never the raw URL value. */
+  readonly mode: "draft" | "in_season";
   /**
    * The design source prints `{{ shownCount }} OF 300 ROWS` beside its navigation. Both
    * numbers are counts of rows the current filters select against the rows the build
@@ -34,10 +73,11 @@ export function ViewTabs({
    */
   readonly rowCount?: { readonly shown: number; readonly total: number } | undefined;
 }): React.JSX.Element {
+  const tabs = tabsForMode(mode);
   return (
     <div className="tabs-row">
       <div className="tabs" role="tablist" aria-label="Board">
-        {VIEW_TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -50,8 +90,8 @@ export function ViewTabs({
               const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
               if (step === 0) return;
               event.preventDefault();
-              const index = VIEW_TABS.findIndex((candidate) => candidate.id === view);
-              const next = VIEW_TABS[(index + step + VIEW_TABS.length) % VIEW_TABS.length];
+              const index = tabs.findIndex((candidate) => candidate.id === view);
+              const next = tabs[(index + step + tabs.length) % tabs.length];
               if (next !== undefined) onChange(next.id);
             }}
             onClick={() => {
@@ -69,6 +109,61 @@ export function ViewTabs({
         <span className="tabs-count" role="status">
           {`${String(rowCount.shown)} of ${String(rowCount.total)} rows`}
         </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The season-mode indicator and switch.
+ *
+ * One obvious indicator (roadmap 12.4), and it says *why* it is what it is: the mode is
+ * derived from the NFL schedule, so a reader who wonders why the site changed in September
+ * gets the answer in the same sentence as the control that overrides it.
+ *
+ * The switch appears only when there is something to switch to. Before kickoff there is no
+ * in-season bundle, so a two-state control would offer an empty board.
+ */
+export function SeasonMode({
+  mode,
+  resolved,
+  onChange,
+  seasonState,
+  throughWeek,
+  available,
+}: {
+  readonly mode: ModeId;
+  readonly resolved: "draft" | "in_season";
+  readonly onChange: (mode: ModeId) => void;
+  readonly seasonState: string;
+  readonly throughWeek: number | null;
+  /** False before kickoff: no in-season bundle exists, so there is nothing to switch to. */
+  readonly available: boolean;
+}): React.JSX.Element {
+  const label = resolved === "in_season" ? "In-Season" : "Draft";
+  const detail =
+    resolved === "in_season" && throughWeek !== null
+      ? `through week ${String(throughWeek)}`
+      : seasonState.replace(/_/g, " ");
+  return (
+    <div className="season-mode" data-mode={resolved}>
+      <span className="season-mode-label">
+        <span className="season-mode-dot" aria-hidden="true" />
+        {label} mode
+      </span>
+      <span className="season-mode-detail muted">{detail}</span>
+      {available && (
+        <Segmented<ModeId>
+          name="mode"
+          label="Season mode"
+          value={mode}
+          options={[
+            { value: "auto", label: "Auto", description: "Follow the NFL schedule" },
+            { value: "draft", label: "Draft", description: "Preseason board" },
+            { value: "in_season", label: "In-season", description: "Rest-of-season board" },
+          ]}
+          onChange={onChange}
+        />
       )}
     </div>
   );

@@ -108,6 +108,30 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "projection, a fair rank, a tier or an arbitrage score (ADR-043)."
         ),
     ),
+    "ros_tiers": ArtifactSpec(
+        artifact="ros_tiers",
+        schema_name="ros_tier_record",
+        json_filename="ros_tiers.json",
+        csv_filename="ros_tiers.csv",
+        key_fields=("build_id", "league_preset_id", "scoring_preset", "player_id"),
+        sort_fields=("league_preset_id", "scoring_preset", "ros_fair_rank", "player_id"),
+        description=(
+            "Rest-of-season tier board at an explicit through-week cutoff: ros_fair_rank, "
+            "ros_tier and the remaining-value distribution per preset"
+        ),
+    ),
+    "inseason_opportunity": ArtifactSpec(
+        artifact="inseason_opportunity",
+        schema_name="inseason_opportunity_record",
+        json_filename="inseason_opportunity.json",
+        csv_filename="inseason_opportunity.csv",
+        key_fields=("build_id", "league_preset_id", "scoring_preset", "player_id"),
+        sort_fields=("league_preset_id", "scoring_preset", "ros_fair_rank", "player_id"),
+        description=(
+            "In-season opportunity board: intrinsic rest-of-season value beside documented "
+            "add/drop behaviour, which is never a price and never a rank"
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

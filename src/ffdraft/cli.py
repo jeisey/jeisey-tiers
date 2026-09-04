@@ -168,6 +168,7 @@ from ffdraft.ros.folds import (
     ros_development_folds,
     ros_final_fold,
 )
+from ffdraft.ros.frozen import RosRefitReason
 from ffdraft.ros.holdout import RosFinalEvalAuthorization
 from ffdraft.ros.report import write_ros_report
 from ffdraft.simulation.study import (
@@ -179,7 +180,7 @@ from ffdraft.simulation.study import (
 from ffdraft.sources.fantasypros import FANTASYPROS_SOURCE_ID
 from ffdraft.sources.ffc import FFC_SOURCE_ID
 from ffdraft.tiers.study import TierStudyConfig, run_tier_study, write_tier_report
-from ffdraft.timeutil import parse_utc
+from ffdraft.timeutil import isoformat_utc, parse_utc, utc_now
 
 __all__ = ["main"]
 
@@ -624,6 +625,44 @@ def _build_parser() -> argparse.ArgumentParser:
     train.add_argument("--final-eval-reason", default=None, help="why the seal is open")
     train.set_defaults(handler=_train_production)
 
+    ros_train = subparsers.add_parser(
+        "train-ros-production",
+        help="fit the accepted rest-of-season architecture and write its model artifact",
+    )
+    ros_train.add_argument("--data", type=Path, default=None, help="ROS snapshot directory")
+    ros_train.add_argument("--out", type=Path, default=None, help="model artifact root")
+    ros_train.add_argument(
+        "--last-season",
+        type=int,
+        default=None,
+        help="last training season (default: the frozen production window)",
+    )
+    ros_train.add_argument(
+        "--serving-season",
+        type=int,
+        default=None,
+        help="the season this fit will serve; never a training season",
+    )
+    ros_train.add_argument(
+        "--refit-reason",
+        choices=[str(reason) for reason in RosRefitReason],
+        default=str(RosRefitReason.INITIAL_PRODUCTION_FIT),
+        help="why this fit is being run (ADR-078 permits exactly these)",
+    )
+    ros_train.add_argument("--git-sha", default=None, help="code SHA to record in the artifact")
+    ros_train.add_argument("--generated-at", default=None, help="RFC 3339 fit timestamp")
+    ros_train.add_argument(
+        "--allow-sealed",
+        action="store_true",
+        help=(
+            "include the sealed season in the training window. Permitted only because its "
+            "holdout has been consumed; requires the same confirmation token."
+        ),
+    )
+    ros_train.add_argument("--confirm-final-eval", default=None, help="the confirmation token")
+    ros_train.add_argument("--final-eval-reason", default=None, help="why the seal is open")
+    ros_train.set_defaults(handler=_train_ros_production)
+
     current = subparsers.add_parser(
         "build-current",
         help="build the current season's tier board and write the public artifacts",
@@ -663,6 +702,69 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     current.set_defaults(handler=_build_current)
+
+    ros_build = subparsers.add_parser(
+        "build-ros",
+        help="build the current rest-of-season board and write the in-season artifacts",
+    )
+    ros_build.add_argument("--season", type=int, default=None, help="target season")
+    ros_build.add_argument("--model", type=Path, default=None, help="ROS model directory")
+    ros_build.add_argument("--out", type=Path, default=None, help="artifact output directory")
+    ros_build.add_argument("--as-of", default=None, help="RFC 3339 build timestamp")
+    ros_build.add_argument(
+        "--through-week",
+        type=int,
+        default=None,
+        help=(
+            "override the derived cutoff week. Still bounded by what the sources actually "
+            "contain: a week deeper than the upstream data supports is refused, not built."
+        ),
+    )
+    ros_build.add_argument("--build-id", default=None, help="override the deterministic build id")
+    ros_build.add_argument("--git-sha", default=None, help="code SHA to record")
+    ros_build.add_argument("--draws", type=int, default=None, help="override the draw count")
+    ros_build.add_argument(
+        "--preseason-board",
+        type=Path,
+        default=None,
+        help=(
+            "published tiers.json supplying preseason fair ranks for the change column; "
+            "absent removes one column and no rest-of-season value"
+        ),
+    )
+    ros_build.add_argument(
+        "--full-board",
+        type=Path,
+        default=None,
+        help="write the untruncated fair-ranked board here for the opportunity stage",
+    )
+    ros_build.add_argument(
+        "--snapshot",
+        type=Path,
+        default=None,
+        help="write the inference frame here for offline inspection; never published",
+    )
+    ros_build.add_argument(
+        "--store",
+        type=Path,
+        default=None,
+        help=(
+            "market-data checkout supplying the retained Sleeper behaviour capture; without "
+            "it the Opportunity Board ships with empty behaviour columns and every "
+            "rest-of-season value is unaffected"
+        ),
+    )
+    ros_build.add_argument("--no-write", action="store_true", help="build without writing files")
+    ros_build.set_defaults(handler=_build_ros)
+
+    season_state = subparsers.add_parser(
+        "season-state",
+        help="report the deterministic season state and product mode (performs network I/O)",
+    )
+    season_state.add_argument("--season", type=int, default=None, help="target season")
+    season_state.add_argument("--as-of", default=None, help="RFC 3339 timestamp")
+    season_state.add_argument("--json", action="store_true", help="emit machine-readable output")
+    season_state.set_defaults(handler=_season_state)
 
     card = subparsers.add_parser(
         "model-card",
@@ -781,6 +883,24 @@ def _build_parser() -> argparse.ArgumentParser:
     status_capture.add_argument("--git-sha", default=None)
     status_capture.add_argument("--no-write", action="store_true")
     status_capture.set_defaults(handler=_capture_status)
+
+    behavior_capture = subparsers.add_parser(
+        "capture-behavior",
+        help="retrieve Sleeper trending add/drop counts and retain them (network)",
+    )
+    behavior_capture.add_argument("--season", type=int, default=None)
+    behavior_capture.add_argument("--store", type=Path, default=None)
+    behavior_capture.add_argument("--as-of", default=None, help="RFC 3339 retrieval timestamp")
+    behavior_capture.add_argument(
+        "--lookback-hours",
+        type=int,
+        default=None,
+        help="the window to REQUEST; Sleeper confirms no window, so this is recorded as a request",
+    )
+    behavior_capture.add_argument("--limit", type=int, default=None, help="rows to request")
+    behavior_capture.add_argument("--git-sha", default=None)
+    behavior_capture.add_argument("--no-write", action="store_true")
+    behavior_capture.set_defaults(handler=_capture_behavior)
 
     history = subparsers.add_parser(
         "validate-market-history",
@@ -1558,6 +1678,66 @@ def _train_production(args: argparse.Namespace) -> int:
     return 0
 
 
+def _train_ros_production(args: argparse.Namespace) -> int:
+    """Fit the accepted rest-of-season architecture (ADR-078). Not a model change."""
+    from ffdraft.ros.cutoff import ROS_CUTOFF_RULE_VERSION
+    from ffdraft.ros.frozen import (
+        ROS_PRODUCTION_LAST_TRAINING_SEASON,
+        ROS_PRODUCTION_SPEC,
+        ROS_SERVING_SEASON,
+    )
+    from ffdraft.ros.labels import ROS_LABEL_VERSION
+    from ffdraft.ros.production import train_ros_production_model
+
+    data_dir = args.data or (repo_root() / DEFAULT_ROS_DATA_DIR)
+    root = args.out or (repo_root() / DEFAULT_MODEL_DIR)
+    last_season = args.last_season or ROS_PRODUCTION_LAST_TRAINING_SEASON
+    serving_season = args.serving_season or ROS_SERVING_SEASON
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+
+    authorization = None
+    if args.allow_sealed:
+        if not args.confirm_final_eval or not args.final_eval_reason:
+            print(
+                "--allow-sealed requires both --confirm-final-eval <token> and "
+                "--final-eval-reason <why>",
+                file=sys.stderr,
+            )
+            return 2
+        authorization = RosFinalEvalAuthorization(
+            confirmation=args.confirm_final_eval,
+            reason=args.final_eval_reason,
+        )
+
+    dataset = load_ros_dataset(data_dir, authorization=authorization)
+    frame = dataset.frame.filter(pl.col("season") <= last_season)
+    seasons = sorted({int(value) for value in frame.get_column("season").to_list()})
+    if not seasons:
+        print("no training rows after applying the season window", file=sys.stderr)
+        return 2
+    print(
+        f"fitting {ROS_PRODUCTION_SPEC.model_version} "
+        f"({ROS_PRODUCTION_SPEC.configuration_hash()}) on {frame.height} row(s), seasons "
+        f"{seasons[0]}-{seasons[-1]}, to serve {serving_season}",
+    )
+    model = train_ros_production_model(
+        frame,
+        serving_season=serving_season,
+        refit_reason=RosRefitReason(args.refit_reason),
+        authorization=authorization,
+        dataset_manifest=dataset.manifest,
+        cutoff_rule_version=ROS_CUTOFF_RULE_VERSION,
+        label_version=ROS_LABEL_VERSION,
+        git_sha=args.git_sha or "unknown",
+        generated_at=generated_at,
+    )
+    out_dir = root / ROS_PRODUCTION_SPEC.model_version
+    written = model.save(out_dir)
+    print(f"wrote {len(written)} file(s) to {out_dir}")
+    print(f"groups: {len(model.groups)}; features: {len(model.features)}")
+    return 0
+
+
 def _build_current(args: argparse.Namespace) -> int:
     """Build the current season's board. The cutoff is the build time, not a future anchor."""
     from ffdraft.modeling.frozen import (
@@ -1609,6 +1789,79 @@ def _build_current(args: argparse.Namespace) -> int:
     for path in result.written:
         print(f"wrote {path}")
     return _report_gate(result.gate)
+
+
+def _build_ros(args: argparse.Namespace) -> int:
+    """Build the in-season board. Loads the fitted model; never trains (ADR-078)."""
+    from dataclasses import replace as _replace
+
+    from ffdraft.pipeline.ros import run_ros_build
+    from ffdraft.ros.frozen import ROS_BUILD_CONFIG, ROS_MODEL_VERSION, ROS_SERVING_SEASON
+
+    season = args.season or ROS_SERVING_SEASON
+    model_dir = args.model or (repo_root() / DEFAULT_MODEL_DIR / ROS_MODEL_VERSION)
+    out_dir = args.out or (repo_root() / DEFAULT_ARTIFACT_DIR)
+    config = ROS_BUILD_CONFIG
+    if args.draws:
+        config = _replace(config, draws=int(args.draws))
+
+    result = run_ros_build(
+        season=season,
+        model_dir=model_dir,
+        out_dir=out_dir,
+        config=config,
+        as_of=parse_utc(args.as_of) if args.as_of else None,
+        through_week=args.through_week,
+        build_id=args.build_id,
+        git_sha=args.git_sha,
+        store=args.store,
+        preseason_board=args.preseason_board,
+        full_board_out=args.full_board,
+        snapshot_out=args.snapshot,
+        write=not args.no_write,
+    )
+    print(f"season state  : {result.state.state} ({result.state.mode})")
+    print(f"completed week: {result.state.completed_week}")
+    if not result.records:
+        print("no rest-of-season board was built")
+        return _report_gate(result.gate)
+    print(f"build id      : {result.build_id}")
+    print(f"through week  : {result.through_week}")
+    print(f"model         : {result.model_version}")
+    print(f"ros_tiers     : {len(result.records.get('ros_tiers', ()))} record(s)")
+    disclosures = result.metadata.get("disclosures", {})
+    print(f"long absence  : {disclosures.get('long_absence_players', 0)} player(s) flagged")
+    for path in result.written:
+        print(f"wrote {path}")
+    return _report_gate(result.gate)
+
+
+def _season_state(args: argparse.Namespace) -> int:
+    """Report the season state. The rule is a pure function of the schedule and a timestamp."""
+    import nflreadpy
+
+    from ffdraft.ros.frozen import ROS_SERVING_SEASON
+    from ffdraft.season.state import season_state_from_schedule
+
+    season = args.season or ROS_SERVING_SEASON
+    as_of = parse_utc(args.as_of) if args.as_of else utc_now()
+    state = season_state_from_schedule(
+        nflreadpy.load_schedules(),
+        season=season,
+        as_of=as_of,
+    )
+    if args.json:
+        print(json.dumps(state.to_dict(), indent=2, sort_keys=True))
+        return 0
+    print(f"season        : {state.season}")
+    print(f"as of         : {isoformat_utc(state.as_of_utc)}")
+    print(f"state         : {state.state} — {state.state.description}")
+    print(f"product mode  : {state.mode} ({state.mode.label})")
+    print(f"completed week: {state.completed_week}")
+    print(f"snapshot week : {state.latest_snapshot_week}")
+    transition = state.next_transition_utc
+    print(f"next change   : {isoformat_utc(transition) if transition else 'none'}")
+    return 0
 
 
 def _model_card(args: argparse.Namespace) -> int:
@@ -1805,7 +2058,6 @@ def _link_market_source(args: argparse.Namespace) -> int:
     from ffdraft.modeling.frozen import PRODUCTION_SEASON
     from ffdraft.sources.base import SourceConfig
     from ffdraft.sources.ffc import FFC_COHORTS, FfcAdpAdapter, _ffc_get
-    from ffdraft.timeutil import utc_now
 
     season = args.season or PRODUCTION_SEASON
     identity = load_market_identity(season)
@@ -1960,12 +2212,44 @@ def _capture_status(args: argparse.Namespace) -> int:
     return _report_gate(gate)
 
 
+def _capture_behavior(args: argparse.Namespace) -> int:
+    """Retrieve Sleeper add/drop behaviour and retain it. **Network I/O.**"""
+    from ffdraft.behavior import capture_behavior, write_behavior_capture
+    from ffdraft.contracts.enums import BehaviorType
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.sources.sleeper import TRENDING_LIMIT, TRENDING_LOOKBACK_HOURS
+
+    season = args.season or PRODUCTION_SEASON
+    store = _market_store(args.store)
+    gate = QualityGate()
+    capture = capture_behavior(
+        season=season,
+        as_of=parse_utc(args.as_of) if args.as_of else None,
+        lookback_hours=args.lookback_hours or TRENDING_LOOKBACK_HOURS,
+        limit=args.limit or TRENDING_LIMIT,
+        git_sha=args.git_sha,
+        gate=gate,
+    )
+    print(f"capture        : {capture.snapshot_key}")
+    print(f"window         : {capture.lookback_hours}h requested, limit {capture.request_limit}")
+    print(f"adds           : {capture.rows_for(BehaviorType.ADD)} row(s)")
+    print(f"drops          : {capture.rows_for(BehaviorType.DROP)} row(s)")
+    if not capture.is_complete:
+        print("incomplete capture: one feed returned nothing; refusing to retain", file=sys.stderr)
+        return 1
+    if not args.no_write:
+        for path in write_behavior_capture(capture, store=store):
+            print(f"wrote {path}")
+    return _report_gate(gate)
+
+
 def _validate_market_history(args: argparse.Namespace) -> int:
     """Re-hash every retained capture and check the store's append-only invariants.
 
     Both prefixes are checked, not just the one a ``--source`` happens to name. A
     validator that reports "pass" for a prefix it never opened is worse than no validator.
     """
+    from ffdraft.behavior.capture import verify_behavior_store
     from ffdraft.modeling.frozen import PRODUCTION_SEASON
     from ffdraft.sources.market import MFL_SOURCE_ID
     from ffdraft.status.capture import verify_status_store
@@ -1974,14 +2258,16 @@ def _validate_market_history(args: argparse.Namespace) -> int:
     season = args.season or PRODUCTION_SEASON
     market = verify_store(store, source_id=args.source or MFL_SOURCE_ID, season=season)
     captures, status_files, status_problems = verify_status_store(store, season=season)
+    behaviors, behavior_files, behavior_problems = verify_behavior_store(store, season=season)
 
     print(f"store          : {store.root}")
     print(f"market         : {market.snapshots} snapshot(s), {market.files_checked} file(s)")
     print(f"status         : {captures} capture(s), {status_files} file(s)")
-    for problem in (*market.problems, *status_problems):
+    print(f"behaviour      : {behaviors} capture(s), {behavior_files} file(s)")
+    for problem in (*market.problems, *status_problems, *behavior_problems):
         print(f"  [critical] {problem}")
-    ok = market.ok and not status_problems
-    if not (market.snapshots or captures):
+    ok = market.ok and not status_problems and not behavior_problems
+    if not (market.snapshots or captures or behaviors):
         print("  [warning] the store holds nothing for this source and season")
     print(f"retained history: {'pass' if ok else 'fail'}")
     return 0 if ok else 1

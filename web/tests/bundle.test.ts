@@ -12,8 +12,12 @@ import { CriticalArtifactError, loadBundle } from "../src/data/bundle";
 import {
   arbitrageEnvelope,
   buildMetadata,
+  inSeasonFixtureFiles,
+  opportunityEnvelope,
   playerStatusEnvelope,
   projectionEnvelope,
+  rosBuildMetadata,
+  rosTierEnvelope,
   tierEnvelope,
 } from "./fixtures/artifacts";
 
@@ -133,15 +137,100 @@ describe("loadBundle", () => {
     serve(everything());
     await loadBundle();
     const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
-    // Six: metadata, tiers, arbitrage, player status, projections and the retained trend
-    // series. Every one of them is a generated file under `/data/`. The assertion below is
+    // Seven: metadata, tiers, arbitrage, player status, projections, the retained trend
+    // series and the in-season bundle's own metadata — which 404s on a draft-only build and
+    // is *supposed* to, because before kickoff there is no in-season bundle to load.
+    // Every one of them is a generated file under `/data/`. The assertion below is
     // the load-bearing half — a vendor host must never appear in this list, because a static
     // page that fetched a market feed would put a vendor on the critical path (ADR-066).
-    expect(calls).toHaveLength(6);
+    expect(calls).toHaveLength(7);
     for (const url of calls) {
       expect(url).toMatch(/\/data\/[a-z_]+\.json$/);
       expect(url).not.toMatch(/myfantasyleague|sleeper|nflverse|fantasypros|fantasycalc/i);
     }
+  });
+
+  it("loads the in-season bundle when the build published one", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles() });
+    const bundle = await loadBundle();
+    expect(bundle.inSeason).not.toBeNull();
+    expect(bundle.inSeason?.throughWeek).toBe(8);
+    expect(bundle.inSeason?.derivedMode).toBe("in_season");
+    expect(bundle.inSeason?.hasOpportunity).toBe(true);
+    expect(bundle.inSeason?.rosFor("redraft-12", "PPR").length).toBeGreaterThan(0);
+    // The draft bundle is untouched: the two are independent, and a page can hold both.
+    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(18);
+  });
+
+  it("returns no in-season bundle before kickoff rather than failing the page", async () => {
+    serve(everything());
+    const bundle = await loadBundle();
+    expect(bundle.inSeason).toBeNull();
+    // The whole draft product still loads. Absence of an in-season board is the ordinary
+    // state in August, not a degradation of anything.
+    expect(bundle.degradations).toEqual([]);
+    expect(bundle.index.tiersFor("redraft-12", "PPR")).toHaveLength(18);
+  });
+
+  it("refuses a rest-of-season board whose disclosures are missing", async () => {
+    // ADR-076: the flag may not be shown without the sentences that qualify it, so a bundle
+    // that dropped them must not render at all rather than rendering the flag bare.
+    const metadata = rosBuildMetadata();
+    const stripped = { ...metadata } as Record<string, unknown>;
+    delete stripped.disclosures;
+    serve({
+      ...everything(),
+      "ros_build_metadata.json": stripped,
+      "ros_tiers.json": rosTierEnvelope(),
+      "inseason_opportunity.json": opportunityEnvelope(),
+    });
+    const bundle = await loadBundle();
+    expect(bundle.inSeason).toBeNull();
+  });
+
+  it("keeps the rest-of-season board when only the opportunity artifact is missing", async () => {
+    const files = inSeasonFixtureFiles();
+    serve({ ...everything(), ...files, "inseason_opportunity.json": MISSING });
+    const bundle = await loadBundle();
+    expect(bundle.inSeason).not.toBeNull();
+    expect(bundle.inSeason?.hasOpportunity).toBe(false);
+    // Every rest-of-season value survives the loss of the optional board beside it.
+    expect(bundle.inSeason?.rosFor("redraft-12", "PPR").length).toBeGreaterThan(0);
+  });
+
+  it("carries behaviour columns as null, not zero, when the feed was unavailable", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles(false) });
+    const bundle = await loadBundle();
+    const row = bundle.inSeason?.opportunityFor("redraft-12", "PPR")[0];
+    expect(row?.behavior_available).toBe(false);
+    // A zero would claim "nobody added him". Null says "we do not know", which is true.
+    expect(row?.add_count).toBeNull();
+    expect(row?.ros_expected_vorp).toBeTypeOf("number");
+  });
+
+  it("never modifies an intrinsic value on the Opportunity Board", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles() });
+    const bundle = await loadBundle();
+    const inSeason = bundle.inSeason;
+    expect(inSeason).not.toBeNull();
+    if (inSeason === null) return;
+    let compared = 0;
+    for (const row of inSeason.opportunityFor("redraft-12", "PPR")) {
+      const source = inSeason.rosRecordFor("redraft-12", "PPR", row.player_id);
+      if (source === null) {
+        // Absent from the board is exactly what a surfaced row is, and it must say so.
+        expect(row.outside_tier_board).toBe(true);
+        expect(row.surface_reasons.length).toBeGreaterThan(0);
+        expect(row.ros_tier).toBeNull();
+        continue;
+      }
+      compared += 1;
+      expect(row.ros_fair_rank).toBe(source.ros_fair_rank);
+      expect(row.ros_expected_vorp).toBe(source.ros_expected_vorp);
+      expect(row.ros_uncertainty).toBe(source.ros_uncertainty);
+      expect(row.ros_tier).toBe(source.ros_tier);
+    }
+    expect(compared).toBeGreaterThan(0);
   });
 
   it("resolves artifacts under a project Pages base path", async () => {

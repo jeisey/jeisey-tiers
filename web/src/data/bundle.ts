@@ -17,12 +17,21 @@ import type {
   ArtifactName,
   BuildMetadata,
   MarketTrendSeriesRecord,
+  OpportunityRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
+  RosBuildMetadata,
+  RosTierRecord,
   TierRecord,
 } from "./contracts";
-import { ArtifactVersionError, loadArtifact, loadBuildMetadata } from "./load";
+import {
+  ArtifactVersionError,
+  loadArtifact,
+  loadBuildMetadata,
+  loadRosBuildMetadata,
+} from "./load";
 import { ArtifactIndex } from "./model";
+import { InSeasonBundle } from "./ros";
 
 /** Why an optional artifact is missing, in the words the Data panel will use. */
 export interface Degradation {
@@ -34,6 +43,15 @@ export interface Degradation {
 export interface LoadedBundle {
   readonly index: ArtifactIndex;
   readonly degradations: readonly Degradation[];
+  /**
+   * The in-season bundle, or null when this build published none.
+   *
+   * Null is the normal state before kickoff and is not a failure: the draft product is the
+   * whole product until the season starts. It is also what a site shows when an in-season
+   * refresh failed its gate — the last good draft board stays, and the in-season tabs say
+   * why they are absent rather than rendering an empty table.
+   */
+  readonly inSeason: InSeasonBundle | null;
 }
 
 export class CriticalArtifactError extends Error {
@@ -126,5 +144,39 @@ export async function loadBundle(options: { readonly base?: string } = {}): Prom
       trendSeries: trendSeries.records,
     }),
     degradations,
+    inSeason: await loadInSeason(base),
   };
+}
+
+/**
+ * Load the in-season bundle, or explain its absence.
+ *
+ * Deliberately all-or-nothing about its *metadata*: the rest-of-season board may not be
+ * rendered without `ros_build_metadata.json`, because that file carries the cutoff week and
+ * ADR-076's disclosure sentences, and a board showing a long-absence flag without them is
+ * exactly the misleading product the ADR exists to prevent. The Opportunity Board is one
+ * level softer — it is additive on top of a valid ROS board, so its absence removes a tab
+ * rather than the mode.
+ */
+async function loadInSeason(base: string | undefined): Promise<InSeasonBundle | null> {
+  const where: { base?: string } = base === undefined ? {} : { base };
+  let metadata: RosBuildMetadata;
+  try {
+    metadata = await loadRosBuildMetadata(where);
+  } catch {
+    return null;
+  }
+  let rosTiers: readonly RosTierRecord[];
+  try {
+    rosTiers = (await loadArtifact<RosTierRecord>("ros_tiers", where)).records;
+  } catch {
+    return null;
+  }
+  const opportunity = await optional<OpportunityRecord>("inseason_opportunity", base);
+  return new InSeasonBundle({
+    metadata,
+    rosTiers,
+    opportunity: opportunity.records,
+    opportunityDegradation: opportunity.degradation,
+  });
 }

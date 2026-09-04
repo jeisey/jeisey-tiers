@@ -8,7 +8,15 @@
 
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_STATE, leaguePresetId, parseState, serializeState, stateHref } from "../src/data/state";
+import {
+  DEFAULT_STATE,
+  leaguePresetId,
+  parseState,
+  resolveMode,
+  resolveView,
+  serializeState,
+  stateHref,
+} from "../src/data/state";
 
 describe("parseState", () => {
   it("returns the defaults for an empty query", () => {
@@ -17,11 +25,30 @@ describe("parseState", () => {
     expect(parsed.normalized).toBe(true);
   });
 
-  it("defaults to the PPR twelve-team tier board", () => {
-    expect(DEFAULT_STATE.view).toBe("tiers");
+  it("defaults to the PPR twelve-team board, following the season for which board", () => {
+    // `auto` rather than `tiers`: one URL has to be correct in both modes, so the default
+    // view follows the schedule-derived season state and any explicit view still wins.
+    expect(DEFAULT_STATE.view).toBe("auto");
+    expect(DEFAULT_STATE.mode).toBe("auto");
     expect(DEFAULT_STATE.scoring).toBe("ppr");
     expect(DEFAULT_STATE.teams).toBe(12);
     expect(DEFAULT_STATE.position).toBe("all");
+    expect(DEFAULT_STATE.opportunity).toBe("value");
+  });
+
+  it("resolves auto to each mode's own first board, and honours an explicit view", () => {
+    expect(resolveView("auto", "draft")).toBe("tiers");
+    expect(resolveView("auto", "in_season")).toBe("ros");
+    // A named view is reachable from either mode: the other mode's boards are not forbidden.
+    expect(resolveView("arbitrage", "in_season")).toBe("arbitrage");
+    expect(resolveView("ros", "draft")).toBe("ros");
+  });
+
+  it("resolves the mode from the build's season state unless the reader overrode it", () => {
+    expect(resolveMode("auto", null)).toBe("draft");
+    expect(resolveMode("auto", "in_season")).toBe("in_season");
+    expect(resolveMode("draft", "in_season")).toBe("draft");
+    expect(resolveMode("in_season", "draft")).toBe("in_season");
   });
 
   it("reads every supported parameter", () => {
@@ -36,7 +63,17 @@ describe("parseState", () => {
       search: "achane",
       board: "top",
       rail: "all",
+      mode: "auto",
+      opportunity: "value",
     });
+    expect(parsed.normalized).toBe(true);
+  });
+
+  it("reads the season-mode override and the opportunity ordering", () => {
+    const parsed = parseState("?mode=in_season&opportunity=net&view=opportunity");
+    expect(parsed.state.mode).toBe("in_season");
+    expect(parsed.state.opportunity).toBe("net");
+    expect(parsed.state.view).toBe("opportunity");
     expect(parsed.normalized).toBe(true);
   });
 
@@ -55,6 +92,8 @@ describe("parseState", () => {
     ["?position=k", "position"],
     ["?rail=sideways", "rail"],
     ["?board=everything", "board"],
+    ["?mode=whenever", "mode"],
+    ["?opportunity=vibes", "opportunity"],
   ])("normalizes %s rather than crashing", (query) => {
     const parsed = parseState(query);
     expect(parsed.normalized).toBe(false);

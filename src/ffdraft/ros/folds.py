@@ -67,6 +67,10 @@ ROS_SEED = 20260903
 class RosFoldKind(StrEnum):
     DEVELOPMENT = "development"
     FINAL_HOLDOUT = "final_holdout"
+    #: The production fit's window (ADR-078). It validates on nothing: the "validation
+    #: season" is the season being *served*, which is what makes the fold id and the
+    #: per-group seed reproducible without implying an evaluation ever happened.
+    PRODUCTION = "production"
 
 
 @dataclass(frozen=True, slots=True)

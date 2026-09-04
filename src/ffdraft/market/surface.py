@@ -48,6 +48,7 @@ __all__ = [
     "SURFACE_RULE_VERSION",
     "TIER_DEPTH_RULE",
     "MarketMembership",
+    "SurfaceMembership",
     "SurfaceEntry",
     "SurfaceUniverse",
     "TierDepthRule",
@@ -175,10 +176,39 @@ class MarketMembership:
     resolved: frozenset[str]
     unresolved: int = 0
     depth: int = MARKET_TOP_DEPTH
+    #: Whether every resolved member MUST reach the public surface. True for a draft market:
+    #: the whole point of the rule is that a priced player never disappears. Phase 12's
+    #: behaviour populations set it False, because a feed that trends a kicker or a
+    #: practice-squad player is describing a universe wider than the model's, and failing a
+    #: production build over that would be the wrong denominator again (ADR-054).
+    coverage_required: bool = True
 
     @property
     def reason(self) -> SurfaceReason:
         return reason_for_source(self.source_id, self.signal_type)
+
+
+@dataclass(frozen=True, slots=True)
+class SurfaceMembership:
+    """A non-market population that also justifies visibility (Phase 12).
+
+    Draft-mode relevance comes from a market's top-N, and the reason is derivable from the
+    source. In season it comes from things a market has no name for — a surge of adds, a
+    depth-chart promotion, a player the current roster says is relevant — so the reason is
+    stated explicitly rather than looked up. Everything else about it is a
+    :class:`MarketMembership`: a scoring preset, a set of resolved canonical ids, and a
+    separately counted tail of source rows that never reached one.
+    """
+
+    reason: SurfaceReason
+    scoring_preset: str
+    resolved: frozenset[str]
+    unresolved: int = 0
+    depth: int = MARKET_TOP_DEPTH
+    source_id: str = ""
+    signal_type: str = "behavior"
+    #: Never required. See :attr:`MarketMembership.coverage_required`.
+    coverage_required: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -208,7 +238,7 @@ class SurfaceUniverse:
     rule_version: str
     tier_depth: int
     entries: dict[str, SurfaceEntry] = field(default_factory=dict)
-    memberships: tuple[MarketMembership, ...] = ()
+    memberships: tuple[MarketMembership | SurfaceMembership, ...] = ()
     #: Whether the board this was built from was the complete intrinsic universe rather than
     #: an already-published prefix. Only the caller can know, and it decides whether a missing
     #: market player is a truncation bug or an unvalued one (`coverage_checks`).
@@ -232,7 +262,12 @@ class SurfaceUniverse:
     @property
     def coverage(self) -> float:
         """Share of resolved top-N market players present on the surface."""
-        wanted = {pid for membership in self.memberships for pid in membership.resolved}
+        wanted = {
+            pid
+            for membership in self.memberships
+            if membership.coverage_required
+            for pid in membership.resolved
+        }
         if not wanted:
             return 1.0
         return sum(1 for pid in wanted if pid in self.entries) / len(wanted)
@@ -258,6 +293,7 @@ class SurfaceUniverse:
                     # identity problem; hiding it in the coverage denominator would turn it
                     # into an invisible one.
                     "unresolved_source_rows": membership.unresolved,
+                    "coverage_required": membership.coverage_required,
                 }
                 for membership in self.memberships
             ],
@@ -270,7 +306,7 @@ def build_surface_universe(
     *,
     scoring_preset: str,
     league_preset_id: str,
-    memberships: Iterable[MarketMembership] = (),
+    memberships: Iterable[MarketMembership | SurfaceMembership] = (),
     tier_depth: int | None = None,
     rule_version: str = SURFACE_RULE_VERSION,
     board_is_complete: bool = False,
@@ -289,7 +325,9 @@ def build_surface_universe(
         rule_version=rule_version,
         tier_depth=depth,
         board_is_complete=board_is_complete,
-        memberships=tuple(sorted(relevant, key=lambda m: (m.source_id, str(m.signal_type)))),
+        memberships=tuple(
+            sorted(relevant, key=lambda m: (m.source_id, str(m.signal_type), str(m.reason))),
+        ),
     )
 
     ranked = sorted(board, key=lambda row: int(row["fair_rank"]))
@@ -309,14 +347,15 @@ def build_surface_universe(
                 # The market prices a player the intrinsic model never valued. He cannot be
                 # surfaced — there is no fair rank to show beside the price — and pretending
                 # otherwise would put a row on the board with half its columns invented.
-                universe.missing.append(
-                    {
-                        "player_id": player_id,
-                        "source_id": membership.source_id,
-                        "market_signal_type": str(membership.signal_type),
-                        "reason": "absent_from_intrinsic_universe",
-                    },
-                )
+                if membership.coverage_required:
+                    universe.missing.append(
+                        {
+                            "player_id": player_id,
+                            "source_id": membership.source_id,
+                            "market_signal_type": str(membership.signal_type),
+                            "reason": "absent_from_intrinsic_universe",
+                        },
+                    )
                 continue
             reasons_by_player.setdefault(player_id, []).append(membership.reason)
 

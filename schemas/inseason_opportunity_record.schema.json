@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/inseason_opportunity_record.schema.json",
+  "title": "InSeasonOpportunityRecord",
+  "description": "One player on the in-season Opportunity Board: the intrinsic rest-of-season estimate beside documented fantasy-market BEHAVIOUR. The behaviour signals are add and drop counts over a declared lookback window from a declared snapshot - they are not a price, not an ADP, not a rank, and no field here is subtracted from a rank (roadmap 10.3, 12.3). Behaviour may decide whether a player is surfaced; it may never change a single intrinsic number, and the artifact carries the intrinsic values unmodified from ros_tiers.json so that is checkable rather than promised.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "league_preset_id",
+    "scoring_preset", "player_id", "display_name", "team", "position",
+    "ros_fair_rank", "ros_position_rank", "ros_expected_vorp", "ros_uncertainty",
+    "ros_tier", "long_absence", "weeks_since_last_game", "current_status",
+    "behavior_available", "surface_reasons", "outside_tier_board", "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 2000},
+    "through_week": {"type": "integer", "minimum": 1},
+    "league_preset_id": {"type": "string", "minLength": 1},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "team": {"type": ["string", "null"]},
+    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
+
+    "ros_fair_rank": {"type": "integer", "minimum": 1},
+    "ros_position_rank": {"type": "integer", "minimum": 1},
+    "ros_expected_vorp": {"type": "number"},
+    "ros_expected_points": {"type": ["number", "null"]},
+    "ros_expected_games": {"type": ["number", "null"]},
+    "ros_uncertainty": {"type": "number", "minimum": 0},
+    "ros_tier": {"type": ["integer", "null"], "minimum": 0},
+
+    "behavior_source_id": {
+      "type": ["string", "null"],
+      "description": "Which behaviour feed supplied the counts. `sleeper` in Release 2."
+    },
+    "behavior_available": {
+      "type": "boolean",
+      "description": "False when the optional behaviour capture was unavailable or stale. The board still publishes every intrinsic number: a failed behaviour source degrades this column, never the rest-of-season estimate (roadmap 12.5)."
+    },
+    "behavior_snapshot_at_utc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the snapshot was taken. Sleeper publishes no observation time of its own, so this is the retrieval time and is recorded as such rather than presented as a data-as-of claim."
+    },
+    "behavior_lookback_hours": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "The lookback window REQUESTED. Sleeper publishes nothing about the window it actually used, so the record describes the request (ADR-062's discipline, applied to behaviour)."
+    },
+    "behavior_request_limit": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "The row limit requested. A player absent from a top-N feed has count 0 for that feed and is not missing data."
+    },
+    "add_count": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Rosters that added this player inside the lookback window. A count of transactions, in transactions. Never a pick number and never converted into one."
+    },
+    "drop_count": {"type": ["integer", "null"], "minimum": 0},
+    "net_add_count": {
+      "type": ["integer", "null"],
+      "description": "add_count minus drop_count. Both sides are the same unit measured over the same window by the same feed, which is the only reason this subtraction is legitimate."
+    },
+    "add_rank": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "This player's position in the add feed, 1 being the most added. An ordering of the behaviour feed itself; it is not a draft rank and is never differenced against `ros_fair_rank`."
+    },
+    "drop_rank": {"type": ["integer", "null"], "minimum": 1},
+
+    "long_absence": {"type": "boolean"},
+    "weeks_since_last_game": {"type": "number", "minimum": 0},
+    "games_played_to_date": {"type": ["number", "null"], "minimum": 0},
+    "snap_share_last3": {
+      "type": ["number", "null"],
+      "description": "Recent share of team offensive snaps: the role context that makes a promotion visible. A model input as well as context, and shown as such."
+    },
+    "target_share_last3": {"type": ["number", "null"]},
+    "current_status": {
+      "type": ["string", "null"],
+      "description": "Current roster status. Annotation only, visually separate from every model input, and never a model feature."
+    },
+
+    "outside_tier_board": {"type": "boolean"},
+    "surface_reasons": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true,
+      "description": "Why this player is visible: inside the intrinsic depth, or surfaced by current role/behaviour evidence. A surfaced player carries a fair rank the model computed and no tier."
+    },
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

@@ -60,6 +60,8 @@ from ffdraft.scoring.engine import SCORING_ENGINE_VERSION, season_totals
 from ffdraft.timeutil import isoformat_utc, utc_now
 
 __all__ = [
+    "bridged_snap_counts",
+    "universe_from_preseason",
     "ROS_DATASET_VERSION",
     "ROS_KEY_COLUMNS",
     "ROS_TARGET_COLUMNS",
@@ -148,7 +150,7 @@ class RosDataset:
         }
 
 
-def _universe_from_preseason(preseason: pl.DataFrame, seasons: Sequence[int]) -> pl.DataFrame:
+def universe_from_preseason(preseason: pl.DataFrame, seasons: Sequence[int]) -> pl.DataFrame:
     if preseason.is_empty():
         return pl.DataFrame(schema={"season": pl.Int32, "gsis_id": pl.String})
     return (
@@ -158,7 +160,7 @@ def _universe_from_preseason(preseason: pl.DataFrame, seasons: Sequence[int]) ->
     )
 
 
-def _bridged_snap_counts(sources: HistoricalSources) -> pl.DataFrame:
+def bridged_snap_counts(sources: HistoricalSources) -> pl.DataFrame:
     """Snap counts keyed by ``gsis_id`` through the same bridge Phase 2 uses."""
     if sources.snap_counts.is_empty():
         return sources.snap_counts
@@ -196,13 +198,13 @@ def build_ros_dataset(
     wanted = sorted({int(season) for season in seasons})
     scoring: Mapping[ScoringPreset, ScoringRules] = config.league.scoring
 
-    universe = _universe_from_preseason(preseason_features, wanted)
+    universe = universe_from_preseason(preseason_features, wanted)
     panel = build_weekly_panel(
         sources.weekly_stats,
         scoring,
         seasons=wanted,
         universe=universe,
-        snap_counts=_bridged_snap_counts(sources),
+        snap_counts=bridged_snap_counts(sources),
         expected_points=sources.expected_points,
     )
     labels = build_ros_labels(panel, scoring)
@@ -227,7 +229,7 @@ def build_ros_dataset(
                 scoring,
                 universe=universe,
                 cutoffs=sample_cutoffs(wanted, audit_weeks),
-                snap_counts=_bridged_snap_counts(sources),
+                snap_counts=bridged_snap_counts(sources),
                 expected_points=sources.expected_points,
                 schedule=sources.schedule,
             ),
