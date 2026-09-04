@@ -48,6 +48,13 @@ from ffdraft.ros.dictionary import (
 from ffdraft.ros.features import build_in_season_features
 from ffdraft.ros.holdout import ROS_SEALED_SEASONS, RosFinalEvalAuthorization, is_ros_sealed
 from ffdraft.ros.labels import ROS_LABEL_VERSION, build_ros_labels, reconcile_ros_labels
+from ffdraft.ros.leakage import (
+    DEFAULT_AUDIT_WEEKS,
+    audit_cutoff_independence,
+    audit_ros_feature_names,
+    audit_to_date_monotonicity,
+    sample_cutoffs,
+)
 from ffdraft.ros.panel import PANEL_VERSION, build_weekly_panel, horizon_weekly_rows
 from ffdraft.scoring.engine import SCORING_ENGINE_VERSION, season_totals
 from ffdraft.timeutil import isoformat_utc, utc_now
@@ -174,8 +181,17 @@ def build_ros_dataset(
     generated_at: datetime | None = None,
     git_sha: str | None = None,
     positions: Sequence[str] = ALL_CORE_POSITIONS,
+    verify_cutoff_independence: bool = True,
+    audit_weeks: Sequence[int] = DEFAULT_AUDIT_WEEKS,
 ) -> RosDataset:
-    """Build every modelled snapshot for ``seasons`` from already-normalized frames."""
+    """Build every modelled snapshot for ``seasons`` from already-normalized frames.
+
+    ``verify_cutoff_independence`` rebuilds a sample of snapshots with their own future
+    deleted and asserts the in-season block is unchanged - the constructive proof of the
+    cutoff rule, and the rest-of-season counterpart of Phase 2's target-season independence
+    audit. It defaults to on, because a dataset that has not been proved leakage-free is not
+    a dataset this project ships.
+    """
     built_at = generated_at or utc_now()
     wanted = sorted({int(season) for season in seasons})
     scoring: Mapping[ScoringPreset, ScoringRules] = config.league.scoring
@@ -190,7 +206,12 @@ def build_ros_dataset(
         expected_points=sources.expected_points,
     )
     labels = build_ros_labels(panel, scoring)
-    features = build_in_season_features(panel, scoring, schedule=sources.schedule)
+    features = build_in_season_features(
+        panel,
+        scoring,
+        schedule=sources.schedule,
+        universe=universe,
+    )
 
     checks: list[QualityCheck] = list(
         reconcile_ros_labels(
@@ -198,6 +219,19 @@ def build_ros_dataset(
             season_totals(horizon_weekly_rows(sources.weekly_stats, wanted), scoring),
         ),
     )
+    checks.extend(audit_ros_feature_names())
+    if verify_cutoff_independence:
+        checks.extend(
+            audit_cutoff_independence(
+                sources.weekly_stats,
+                scoring,
+                universe=universe,
+                cutoffs=sample_cutoffs(wanted, audit_weeks),
+                snap_counts=_bridged_snap_counts(sources),
+                expected_points=sources.expected_points,
+                schedule=sources.schedule,
+            ),
+        )
 
     joined = features.join(
         labels,
@@ -206,6 +240,7 @@ def build_ros_dataset(
     )
     frame = _attach_preseason_block(joined, preseason_features, positions=positions)
     checks.extend(_universe_checks(frame, panel, wanted))
+    checks.extend(audit_to_date_monotonicity(frame))
 
     # The *dataset* carries every requested season, sealed ones included: the sealed
     # evaluation has to have something to read when it is eventually authorized. The seal is
@@ -274,7 +309,6 @@ def _attach_preseason_block(
         )
         .alias("player_id"),
         pl.coalesce(pl.col("position"), pl.col("position_to_date")).alias("position"),
-        pl.col("player_id").is_not_null().alias("in_preseason_universe"),
     )
     return frame.filter(pl.col("position").is_in(list(positions))).sort(
         "season",

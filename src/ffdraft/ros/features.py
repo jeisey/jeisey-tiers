@@ -214,8 +214,18 @@ def build_in_season_features(
     scoring: Mapping[ScoringPreset, ScoringRules],
     *,
     schedule: pl.DataFrame | None = None,
+    universe: pl.DataFrame | None = None,
 ) -> pl.DataFrame:
-    """Build the ``(season, through_week, gsis_id, scoring_preset)`` in-season feature block."""
+    """Build the ``(season, through_week, gsis_id, scoring_preset)`` in-season feature block.
+
+    ``universe`` is the season's leakage-safe preseason eligible universe. It decides **who
+    has a row at all**, and the rule is a cutoff rule rather than a season rule: a player
+    outside the preseason universe exists in the dataset only from the snapshot that first
+    observes him. Emitting a week-3 row for a player who signs in week 9 would put the fact
+    of his arrival into a snapshot taken six weeks before it - an ordinary-looking row whose
+    mere existence is a leak. The rest-of-season leakage audit is what found this, by
+    rebuilding week 3 from a panel that stops at week 3 and getting a different row count.
+    """
     if panel.is_empty():
         return pl.DataFrame(
             schema={
@@ -269,11 +279,34 @@ def build_in_season_features(
         & (pl.col("week") <= pl.col("season").replace_strict(last_modelled, return_dtype=pl.Int32)),
     )
     scoped = _attach_remaining_schedule(scoped, schedule, seasons, horizon_last)
+    scoped = _attach_universe_membership(scoped, universe)
 
     shared = _shared_columns(scoped, horizon_last, horizon_length)
     frames = [_preset_columns(shared, preset) for preset in presets]
-    stacked = pl.concat(frames)
+    stacked = pl.concat(frames).filter(
+        pl.col("in_preseason_universe") | pl.col("has_played_this_season"),
+    )
     return stacked.sort("season", "through_week", "scoring_preset", "gsis_id")
+
+
+def _attach_universe_membership(
+    scoped: pl.DataFrame,
+    universe: pl.DataFrame | None,
+) -> pl.DataFrame:
+    """Mark which rows belong to the season's preseason eligible universe."""
+    if universe is None or universe.is_empty():
+        return scoped.with_columns(pl.lit(False).alias("in_preseason_universe"))
+    members = (
+        universe.select(
+            pl.col("season").cast(pl.Int32),
+            pl.col("gsis_id").cast(pl.String),
+        )
+        .unique()
+        .with_columns(pl.lit(True).alias("in_preseason_universe"))
+    )
+    return scoped.join(members, on=["season", "gsis_id"], how="left").with_columns(
+        pl.col("in_preseason_universe").fill_null(False),
+    )
 
 
 def _attach_remaining_schedule(
@@ -442,6 +475,7 @@ def _shared_columns(
             minimum=1,
         ).alias("team_plays_per_game_to_date"),
         (pl.col("team_changes_to_date") > 0).alias("team_changed_in_season"),
+        pl.col("in_preseason_universe"),
         opportunities.alias("_opportunities"),
         pl.col("to_date_played").alias("_games"),
         pl.col("recent_played").alias("_recent_games"),

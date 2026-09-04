@@ -756,3 +756,268 @@ Every promoted intrinsic/arbitrage model needs a Markdown + JSON card with:
 > - **Current roster status is metadata, never signal.** It can annotate a published row or
 >   remove a retired player from the board, but it cannot move a prediction: it has no
 >   development-era support and could not be validated.
+
+---
+
+# Part II — The rest-of-season model (`intrinsic-ros-v1`, Phase 11)
+
+Sections 1-23 describe the **preseason** intrinsic model. Everything below describes a
+second, separately trained and separately validated model that answers a different question:
+
+> From the end of the current NFL week, what is this player's distribution of fantasy value
+> over the remaining fantasy season?
+
+The two models share the scoring engine, the simulation machinery, the metric definitions
+and the Phase-2 feature table. They share no target, no fold definition and no promotion
+rule, because "how many points will this player score this season" and "how many points are
+left in this season" have different information environments and different failure modes.
+`intrinsic-cb-hurdle-v1` is untouched by everything below.
+
+## 24. Rest-of-season grain and cutoff
+
+One row per `season × through_week × player_id × scoring_preset`.
+
+The cutoff rule is `ros_cutoff_v1` (`ffdraft.ros.cutoff`):
+
+> A snapshot **through week N** of season Y may use every completed regular-season week
+> `1..N` of season Y and every season strictly before Y, and nothing else. It predicts weeks
+> `N+1` through the fantasy horizon's last week of season Y.
+
+Three consequences, each a decision rather than an inevitability:
+
+- **The horizon is the project's existing one, unchanged** (section 3). A rest-of-season
+  label that included the excluded final NFL week would be a different quantity from the
+  preseason label it has to be comparable with.
+- **`through_week = 0` is deliberately absent.** That snapshot is the preseason board, and
+  the preseason board is `intrinsic-cb-hurdle-v1`'s job.
+- **The last modelled snapshot is `last_week - 1`.** A snapshot through the final scored week
+  has an empty remaining horizon and no label to learn from.
+
+Fifteen snapshots per pre-2021 season, sixteen from 2021 on.
+
+**Operational counterpart.** A production week-N snapshot may only be built once the upstream
+weekly release covering week N exists. The rule says week N is *available*, not that week N
+has been played.
+
+## 25. Rest-of-season universe
+
+The universe at a cutoff is the union of two populations that are both observable at that
+cutoff:
+
+1. the season's leakage-safe **preseason eligible universe** (section 4);
+2. everyone with at least one scored appearance in weeks `1..N`.
+
+The second half is what stops a mid-season arrival from being invisible until the following
+August. The first is what stops the dataset from containing only players who worked out: a
+preseason-universe player who never appears keeps a row with a zero label, for exactly the
+survivorship reason section 4 gives.
+
+The rule is a **cutoff** rule, not a season rule. A player outside the preseason universe
+exists in the dataset only from the snapshot that first observes him; emitting a week-3 row
+for a player who signs in week 9 would put the fact of his arrival into a snapshot taken six
+weeks before it (ADR-068).
+
+## 26. Rest-of-season targets
+
+Three quantities per snapshot, all summed over weeks strictly after the cutoff:
+
+| column | meaning |
+|---|---|
+| `actual_remaining_games` | appearances after the cutoff — the availability half |
+| `actual_remaining_ppg` | fantasy points per remaining appearance, null when there are none |
+| `actual_remaining_points` | their product, and what a rest-of-season board is ranked on |
+| `remaining_horizon_weeks` | scored calendar weeks after the cutoff, byes included |
+
+A player who never plays again scores **zero, not null** — the same rule, and the same
+reason, as the preseason label.
+
+**The split reconciles.** `points_to_date + actual_remaining_points` equals the season total
+`ffdraft.scoring.engine` produces for the same player, checked as a *critical* build check
+rather than asserted. The two paths share the panel but not the arithmetic, so a
+cumulative-window bug shows up as a failed check rather than as a plausible-looking number.
+
+## 27. Rest-of-season features
+
+`ros_features_v1` (`ffdraft.ros.dictionary`), built in two blocks.
+
+**The preseason block is inherited, not re-derived.** Every column of Phase 3's frozen
+`intrinsic_core_v1` selection is a Phase-11 input under exactly its Phase-2 declaration.
+Those columns are built from evidence dated before the season's draft anchor, so they are
+available at every in-season cutoff by construction. Their leakage argument, their
+forbidden-feature audit and their source lineage carry over unchanged.
+
+**The in-season block is new**, and every column of it is a cumulative or windowed read of
+weeks at or before the cutoff, in six families:
+
+| family | examples |
+|---|---|
+| `cutoff` | `through_week`, `remaining_horizon_weeks`, `season_share_remaining` |
+| `in_season_availability` | `games_share_to_date`, `weeks_since_last_game`, `consecutive_weeks_missed`, `team_remaining_scheduled_games` |
+| `in_season_production` | `ppg_to_date`, `points_per_week_to_date`, `ppg_last3`, `ppg_trend`, `points_sd_to_date` |
+| `in_season_opportunity` | `target_share_to_date`, `snap_pct_mean_to_date`, `snap_pct_trend`, `expected_points_per_game_to_date` |
+| `in_season_efficiency` | `yards_per_target_to_date`, `catch_rate_to_date`, `td_per_opportunity_to_date` |
+| `in_season_team_context` | `team_points_per_game_to_date`, `team_pass_rate_to_date`, `team_changed_in_season` |
+
+Three implementation decisions worth stating:
+
+- **Team context accumulates over the weeks the player actually played.** A share is his
+  volume over his team's volume *in the same games*, so a player who missed six weeks is
+  compared against the six games he was there for.
+- **Rate features have declared minimum denominators.** Below the floor the column is null,
+  and null reaches LightGBM as "unknown" rather than as a made-up mean.
+- **`points_per_week_to_date` deliberately collapses availability and rate**, because the
+  two are not independent and a model given only the conditional rate would systematically
+  overrate a player who has missed half the season.
+
+### 27.1 Forbidden in-season features
+
+The intrinsic firewall (section 6) is unchanged and is audited by the same
+`audit_intrinsic_feature_names` over the Phase-11 input list. In addition:
+
+- **No injury or practice-report status.** nflverse publishes weekly injury reports, but this
+  repository has never ingested them, has no measured historical coverage for them and has no
+  production capture path for them. Admitting them on the strength of "the current data
+  exists" is exactly what roadmap 11.3 forbids. `weeks_since_last_game`,
+  `consecutive_weeks_missed` and `games_share_to_date` are the football-only proxies, and the
+  gap is recorded rather than papered over (ADR-070).
+- **No depth-chart or roster snapshot**, for the same reason: no historical point-in-time
+  parity below 2025.
+
+## 28. Rest-of-season evaluation protocol
+
+`ros_folds_v1`. Chronological and season-blocked: every fold trains on seasons strictly
+before the season it is scored on, and the split is by season alone. Weekly snapshots are
+never split across years — a player contributes sixteen highly correlated rows to a season,
+so a random split would measure interpolation rather than forecasting.
+
+- **Training window:** from 2017, inherited from Phase 3's measured W2 decision (section 7)
+  rather than re-litigated.
+- **Development validation seasons:** 2020-2024, expanding window, minimum three training
+  seasons.
+- **Sealed season:** 2025, behind its own confirmation token (ADR-069).
+
+**The evaluation cell is one week's board** — `season × through_week × position ×
+scoring_preset`. Within one week's board every row is a different player, which is the unit a
+fantasy decision is actually made over and which keeps the paired bootstrap from resampling
+the same player sixteen times as if the repeats were independent (ADR-072). Macro means
+across cells then weight a week in September the same as a week in December.
+
+## 29. Rest-of-season baselines
+
+Four, all implemented and all reported (roadmap 11.4):
+
+| id | definition |
+|---|---|
+| `R0` | Release 1's preseason expectation for the same player-season, prorated by the share of the scored horizon still ahead. The expectation is Phase 3's B0, refitted inside each ROS fold. |
+| `R1` | Points per appearance so far × an expected remaining-games count built from the player's own appearance rate and his team's remaining schedule. |
+| `R2` | `w·R0 + (1-w)·R1` with `w = k/(k + games_to_date)`; `k` chosen inside the fold from a predeclared grid on an inner chronological split. |
+| `R3` | The training-fold mean of remaining points within `(position, games-played band, remaining-weeks band)`. Knows nothing about the individual player. |
+
+All four emit the same five quantiles, from out-of-sample training residuals on an inner
+chronological split. Giving a baseline a fabricated fixed-width interval would make the
+probabilistic comparison meaningless.
+
+**The comparator is chosen by rule, not by taste.** The declared baseline with the lowest
+development macro pinball loss becomes the one the candidate must beat; ties resolve on macro
+MAE, then on declaration order. That removes the only incentive a gate author has to pick a
+weak comparator, and it was decided before any of the four had been measured.
+
+## 30. The rest-of-season candidate
+
+`RC1` (`rc1_ros_hurdle_v1`) — remaining availability × conditional remaining performance,
+composed by Monte Carlo through a Gaussian copula. It is the **only** candidate: building a
+second architecture before the first has cleared the declared baselines would be optimizing
+for interest rather than for evidence.
+
+The separation is even more clearly right here than it was preseason: **53.7% of modelled
+snapshot rows have zero remaining games**, because a rest-of-season universe is full of
+players who will not appear again.
+
+| component | target | fitted on |
+|---|---|---|
+| availability | `actual_remaining_games / remaining_horizon_weeks` | every training row |
+| performance | fantasy points per remaining appearance | training rows with ≥ 1 remaining game |
+
+Modelling the availability *rate* rather than the count is what keeps a sixteen-week horizon
+and a one-week horizon comparable inside one training window; at prediction time it is
+multiplied back by the row's own remaining horizon and rounded to whole games.
+
+**Nothing is tuned.** Q1's predeclared LightGBM configuration is reused unchanged — no grid,
+no early stopping, no feature-selection loop. The one parameter that differs is the thread
+count, and it is a speed setting rather than a modelling choice: LightGBM's `deterministic`
+and `force_row_wise` modes make a multi-threaded fit bit-identical to a single-threaded one,
+which a test asserts rather than assumes.
+
+**Monte Carlo stream keys include the cutoff.** A player appears at every snapshot of his
+season; keying the draws on `player_id` alone would give week 4 and week 5 the same uniforms
+and make their Monte Carlo error perfectly correlated.
+
+## 31. Rest-of-season promotion gate
+
+`ros_promotion_v1`, frozen and committed before the comparison ran.
+
+1. **Probabilistic improvement is mandatory.** Lower macro mean pinball loss than the primary
+   baseline, with the paired bootstrap 95% interval entirely below zero.
+2. **Point accuracy may not deteriorate materially.** Macro MAE at most 1% worse. Not
+   required to improve.
+3. **Ranking stays competitive.** Macro Spearman may fall by at most 0.010.
+4. **No hidden cohort collapse.** For every position and every predeclared cohort with at
+   least 200 rows: MAE at most 5% worse, Spearman at most 0.030 worse, P10-P90 coverage
+   inside [0.60, 0.95].
+
+The twelve required cohorts are roadmap 11.3's own edge-case list — rookies, veterans, 0/1-2/3+
+current-season games, players returning from a long absence, mid-season team changes,
+in-season arrivals, high-draft-capital underperformers, high-capital rookies, early/mid/late
+season phase, and the widest decile of the frozen baseline's own interval — so "we did not
+check the returning-from-injury cohort" cannot happen by omission.
+
+## 32. Rest-of-season value above replacement
+
+Public naming is deliberately distinct from the preseason board's: `ros_fair_rank`,
+`ros_expected_vorp`, `ros_vorp_p25/p50/p75`, `ros_tier`. A reader who sees `fair_rank` is
+entitled to assume it is the draft one.
+
+The draw loop, the sampler, the per-player seeding and the fair-ranking tie-break are
+Release 1's (sections 11-13), called with a different **replacement interpretation**:
+
+| rule | meaning |
+|---|---|
+| `fresh_allocation` | the best player nobody *starts*, after allocating the whole board into the league's starting slots — Release 1's preseason rule, i.e. draft opportunity cost |
+| `rostered_depth` | the best player nobody *rosters*, after the starting slots and `teams × bench` bench places are filled — i.e. waiver opportunity cost |
+
+The bench is filled by **surplus over the starting-slot baseline**, not by raw points.
+Filling it by points would hoard quarterbacks, whose raw totals dwarf every other position
+and whose marginal value over a freely available quarterback is almost nothing.
+
+`ros_replacement_v1` decides between them: the in-season interpretation is used unless the
+two are indistinguishable on the published board, in which case Release 1's rule is retained
+for continuity. The measured outcome is in ADR-071 and in
+`docs/experiments/phase11-ros-value/`.
+
+Convergence (`phase4_convergence_v1`), tier-penalty selection (`phase4_tier_v1`) and tier
+stability (`phase4_tier_stability_v1`) are the frozen Release 1 rules, reused unchanged: they
+are pure functions of measured evidence stated on quantities a reader of the board sees, so
+reusing them holds the rest-of-season board to the same bar as the draft board rather than to
+a bar invented for it.
+
+## 33. Rest-of-season explainability
+
+`ros_attribution_v1` (`ffdraft.ros.attribution`) produces exact TreeSHAP contributions for
+each component separately:
+
+```text
+availability_top_positive_contributors[]
+availability_top_negative_contributors[]
+performance_top_positive_contributors[]
+performance_top_negative_contributors[]
+```
+
+This is **engineering observability, not a product surface**. Nothing here is published to
+the frontend; it exists so an engineer looking at a ranking that seems wrong can see which
+features moved availability and which moved performance, instead of guessing from raw feature
+values. A ranking pathology is nearly always one component or the other, and pooling them
+would hide which.
+
+The contributions of one row sum, with the base value, to exactly the booster's own
+prediction — asserted by a test, because a summation identity that silently stops holding is
+how an attribution becomes decorative.

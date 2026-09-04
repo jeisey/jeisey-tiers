@@ -319,3 +319,277 @@ def synthetic_modeling_dataset(synthetic_feature_frame, synthetic_label_frame):
     from ffdraft.modeling.dataset import build_modeling_frame
 
     return build_modeling_frame(synthetic_feature_frame, synthetic_label_frame)
+
+
+# --------------------------------------------------------------------------------------
+# Synthetic rest-of-season fixtures (Phase 11)
+#
+# The ROS tests need weekly rows, not season rows, and they need the awkward cases a real
+# season contains: a bye, a mid-season injury, a player who never appears at all, a
+# mid-season arrival absent from the preseason universe, and a team change. Generating them
+# here keeps the assertions sharp - every quantity below is known by construction - and
+# keeps the Phase-2 fixture files untouched.
+# --------------------------------------------------------------------------------------
+
+ROS_SEASONS: tuple[int, ...] = (2017, 2018, 2019, 2020, 2021)
+ROS_PLAYERS_PER_POSITION = 10
+_ROS_TEAMS: tuple[str, ...] = ("AAA", "BBB", "CCC", "DDD")
+
+
+def _weekly_row(
+    *,
+    season: int,
+    week: int,
+    gsis_id: str,
+    name: str,
+    position: str,
+    team: str,
+    opponent: str,
+    generator: np.random.Generator,
+    quality: float,
+) -> dict[str, Any]:
+    """One scored appearance, shaped like the normalized weekly-stats contract."""
+    targets = max(0.0, generator.normal(4.0 + 4.0 * quality, 2.0)) if position != "QB" else 0.0
+    receptions = min(targets, max(0.0, targets * 0.65))
+    carries = max(0.0, generator.normal(6.0 * quality, 3.0)) if position in {"RB", "QB"} else 0.0
+    attempts = max(0.0, generator.normal(30.0, 5.0)) if position == "QB" else 0.0
+    return {
+        "season": season,
+        "week": week,
+        "season_type": "REG",
+        "gsis_id": gsis_id,
+        "display_name": name,
+        "position": position,
+        "team": team,
+        "opponent_team": opponent,
+        "pass_attempts": attempts,
+        "completions": attempts * 0.63,
+        "passing_yards": attempts * 7.2,
+        "passing_tds": float(generator.integers(0, 3)) if position == "QB" else 0.0,
+        "interceptions": float(generator.integers(0, 2)) if position == "QB" else 0.0,
+        "passing_air_yards": attempts * 8.0,
+        "carries": carries,
+        "rushing_yards": carries * 4.3,
+        "rushing_tds": float(generator.integers(0, 2)) if position in {"RB", "QB"} else 0.0,
+        "targets": targets,
+        "receptions": receptions,
+        "receiving_yards": receptions * 11.0,
+        "receiving_tds": float(generator.integers(0, 2)) if position != "QB" else 0.0,
+        "receiving_air_yards": targets * 9.0,
+        "fumbles_lost": 0.0,
+        "two_point_conversions": 0.0,
+        "upstream_fantasy_points_std": None,
+        "upstream_fantasy_points_ppr": None,
+        "upstream_fumbles_lost_total": None,
+        "upstream_special_teams_tds": 0.0,
+    }
+
+
+def synthetic_weekly_stats(
+    seasons: Sequence[int] = ROS_SEASONS,
+    players_per_position: int = ROS_PLAYERS_PER_POSITION,
+    *,
+    seed: int = 23,
+) -> pl.DataFrame:
+    """Weekly rows for the ROS fixtures, with the awkward cases built in.
+
+    Deliberate structure, per position index:
+
+    * ``index % 10 == 0`` never appears at all - the survivorship row;
+    * ``index % 7 == 3`` misses everything from week 9 - the season-ending injury;
+    * ``index % 5 == 1`` changes team at week 8;
+    * ``index % 6 == 2`` does not appear before week 5 - the mid-season arrival;
+    * everyone else takes a bye in a position-dependent week.
+    """
+    from ffdraft.contracts.normalized import WEEKLY_STATS_CONTRACT
+    from ffdraft.scoring.horizon import fantasy_horizon
+
+    generator = np.random.default_rng(seed)
+    rows: list[dict[str, Any]] = []
+    for season in seasons:
+        horizon = fantasy_horizon(season)
+        for position_index, position in enumerate(POSITIONS):
+            for index in range(players_per_position):
+                gsis_id = f"00-{position}{index:04d}"
+                name = f"{position} Player {index}"
+                quality = 0.3 + 0.7 * (players_per_position - index) / players_per_position
+                team = _ROS_TEAMS[index % len(_ROS_TEAMS)]
+                bye = 4 + (position_index + index) % 8
+                for week in horizon.weeks:
+                    if index % 10 == 0:
+                        continue
+                    if index % 7 == 3 and week >= 9:
+                        continue
+                    if index % 6 == 2 and week < 5:
+                        continue
+                    if week == bye:
+                        continue
+                    current = (
+                        _ROS_TEAMS[(index + 1) % len(_ROS_TEAMS)]
+                        if index % 5 == 1 and week >= 8
+                        else team
+                    )
+                    opponent = _ROS_TEAMS[(index + week) % len(_ROS_TEAMS)]
+                    rows.append(
+                        _weekly_row(
+                            season=season,
+                            week=week,
+                            gsis_id=gsis_id,
+                            name=name,
+                            position=position,
+                            team=current,
+                            opponent=opponent if opponent != current else _ROS_TEAMS[0],
+                            generator=generator,
+                            quality=quality,
+                        ),
+                    )
+                # One playoff row per player-season, which the horizon must exclude.
+                if index % 10 != 0:
+                    playoff = _weekly_row(
+                        season=season,
+                        week=horizon.excluded_week,
+                        gsis_id=gsis_id,
+                        name=name,
+                        position=position,
+                        team=team,
+                        opponent=_ROS_TEAMS[1],
+                        generator=generator,
+                        quality=quality,
+                    )
+                    playoff["season_type"] = "POST"
+                    rows.append(playoff)
+    return WEEKLY_STATS_CONTRACT.build(rows)
+
+
+def synthetic_schedule(seasons: Sequence[int] = ROS_SEASONS) -> pl.DataFrame:
+    """A round-robin schedule with one bye per team per season."""
+    from ffdraft.contracts.normalized import SCHEDULE_CONTRACT
+    from ffdraft.scoring.horizon import fantasy_horizon
+
+    rows: list[dict[str, Any]] = []
+    for season in seasons:
+        for week in fantasy_horizon(season).weeks:
+            pairs = [(0, 1), (2, 3)] if week % 2 else [(0, 2), (1, 3)]
+            for home, away in pairs:
+                if week == 5 and home == 0:
+                    continue  # a real bye week, so remaining scheduled games can differ
+                rows.append(
+                    {
+                        "game_id": f"{season}_{week:02d}_{home}_{away}",
+                        "season": season,
+                        "game_type": "REG",
+                        "week": week,
+                        "gameday": None,
+                        "gametime": None,
+                        "home_team": _ROS_TEAMS[home],
+                        "away_team": _ROS_TEAMS[away],
+                    },
+                )
+    return SCHEDULE_CONTRACT.build(rows)
+
+
+def synthetic_ros_universe(
+    seasons: Sequence[int] = ROS_SEASONS,
+    players_per_position: int = ROS_PLAYERS_PER_POSITION,
+) -> pl.DataFrame:
+    """The preseason eligible universe: everyone except the mid-season arrivals."""
+    rows = [
+        {"season": season, "gsis_id": f"00-{position}{index:04d}"}
+        for season in seasons
+        for position in POSITIONS
+        for index in range(players_per_position)
+        if index % 6 != 2
+    ]
+    return pl.DataFrame(rows, schema={"season": pl.Int32, "gsis_id": pl.String})
+
+
+@pytest.fixture(scope="session")
+def ros_weekly_stats() -> pl.DataFrame:
+    return synthetic_weekly_stats()
+
+
+@pytest.fixture(scope="session")
+def ros_schedule() -> pl.DataFrame:
+    return synthetic_schedule()
+
+
+@pytest.fixture(scope="session")
+def ros_universe() -> pl.DataFrame:
+    return synthetic_ros_universe()
+
+
+@pytest.fixture(scope="session")
+def ros_panel(ros_weekly_stats, ros_universe, app_config) -> pl.DataFrame:
+    from ffdraft.ros.panel import build_weekly_panel
+
+    return build_weekly_panel(
+        ros_weekly_stats,
+        app_config.league.scoring,
+        seasons=ROS_SEASONS,
+        universe=ros_universe,
+    )
+
+
+@pytest.fixture(scope="session")
+def ros_dataset(ros_weekly_stats, ros_schedule, ros_universe, app_config):
+    """A full ROS snapshot dataset built through the real pipeline, without a network."""
+    from ffdraft.features.build import HistoricalSources
+    from ffdraft.ros.dataset import build_ros_dataset
+
+    preseason = synthetic_features(
+        seasons=ROS_SEASONS, players_per_position=ROS_PLAYERS_PER_POSITION
+    )
+    sources = HistoricalSources(
+        weekly_stats=ros_weekly_stats,
+        schedule=ros_schedule,
+        rosters={},
+        depth_charts={},
+        snap_counts=pl.DataFrame(),
+        expected_points=pl.DataFrame(),
+        draft_picks=pl.DataFrame(),
+        combine=pl.DataFrame(),
+        player_master=pl.DataFrame(),
+    )
+    return build_ros_dataset(
+        sources,
+        preseason,
+        config=app_config,
+        seasons=ROS_SEASONS,
+        git_sha="0000000",
+        verify_cutoff_independence=False,
+    )
+
+
+@pytest.fixture(scope="session")
+def ros_preseason_frame():
+    """The Phase-3 modelling frame the rest-of-season baselines fit their prior on."""
+    from ffdraft.ros.baselines import preseason_modelling_frame
+
+    features = synthetic_features(
+        seasons=ROS_SEASONS,
+        players_per_position=ROS_PLAYERS_PER_POSITION,
+    )
+    return preseason_modelling_frame(
+        features,
+        synthetic_labels(features),
+        seasons=ROS_SEASONS,
+    )
+
+
+@pytest.fixture(scope="session")
+def ros_fit_context(ros_dataset):
+    """One concrete (fold, position, preset) job the estimator tests all share."""
+    from ffdraft.ros.dictionary import ros_feature_selection
+    from ffdraft.ros.estimators import RosFitContext
+    from ffdraft.ros.folds import ROS_SEED, RosFold
+
+    features = tuple(
+        name for name in ros_feature_selection().included if name in ros_dataset.frame.columns
+    )
+    return RosFitContext(
+        fold=RosFold(train_start_season=2017, train_end_season=2019, validation_season=2020),
+        position="WR",
+        scoring_preset="PPR",
+        features=features,
+        seed=ROS_SEED,
+    )

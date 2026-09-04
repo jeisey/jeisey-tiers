@@ -2121,3 +2121,131 @@ So the fixture now carries what production produces: two markets that **disagree
 Two decisions the owner took on the back of it. **The selector governs the whole page** — rail, card and table read the chosen market, and the card's readout is labelled by the source the number actually came from rather than by the selection, because the cross-market view resolves to one real source. **An unpriced row keeps its place** and shows an em dash: a source covering part of the board is normal, and hiding him would make the board's population depend on which market you were reading.
 
 One regression this uncovered had nothing to do with markets. The selector renders only when a build publishes two or more, so on a phone it had never been laid out at all; as a numbered section with an explanatory paragraph it pushed the board itself below the fold. It is a control now, sized like one, and its note is dropped under 30rem — the labels already read `FFC Recent` and `MFL Cumulative`, so the window is in the control rather than in a sentence beneath it.
+
+## ADR-068 — The rest-of-season grain, and why a snapshot's membership is a cutoff rule rather than a season rule
+
+**Status.** Accepted, Phase 11.
+
+**Context.** Phase 11 needs a training grain for a model that answers "given the season so far".
+The roadmap fixes it as `season × through_week × player × scoring_preset` and asks for the
+cutoff rule to be "explicit and testable".
+
+**Decision.** `ros_cutoff_v1`: a snapshot **through week N** of season Y may read completed
+regular-season weeks `1..N` of season Y and any season strictly before Y, and predicts weeks
+`N+1..horizon.last_week` of season Y. Week 0 is refused, because that snapshot is the
+preseason board and the preseason board is `intrinsic-cb-hurdle-v1`'s job. The last modelled
+snapshot is `last_week − 1`, because a snapshot with an empty remaining horizon has no label
+to learn from and would only teach the model that seasons end — which
+`remaining_horizon_weeks` already says.
+
+The universe is the union of the season's leakage-safe preseason eligible universe and
+everyone with a scored appearance at or before the cutoff.
+
+**The part that was nearly wrong.** The first implementation made universe membership a
+*season* property: anyone who appeared anywhere in season Y got a row at every cutoff of
+season Y. That puts the fact of a week-9 signing into a week-3 snapshot. The row looks
+innocuous — zero games, zero points, every rate null — but its *existence* is information
+from six weeks in the future, and a production week-3 build could not have produced it.
+
+It was found by the constructive leakage audit rather than by review: rebuilding week 3 from a
+panel truncated at week 3 produced 96 rows where the full build produced 120. The published
+dataset had in fact never contained those rows — a downstream `position` filter dropped them,
+because position for an unobserved arrival is null — so nothing shipped wrong. That is luck,
+not design, and the rule is now enforced where it belongs, in
+`ffdraft.ros.features.build_in_season_features`, where the audit can see it.
+
+**Consequences.** A mid-season arrival exists in the dataset only from the snapshot that first
+observes him; a preseason-universe player who never appears keeps a zero-labelled row at every
+cutoff, because dropping him is survivorship bias. 8.7% of players in the 2017-2025 build are
+in-season arrivals, and they are reported as their own predeclared cohort.
+
+---
+
+## ADR-069 — 2025 is the rest-of-season sealed season, and it is not a fully naive one
+
+**Status.** Accepted, Phase 11.
+
+**Context.** The roadmap requires "one final sealed season evaluated only after architecture and
+promotion rules freeze". Two seasons were available: 2025, the most recent fully labelled one,
+and 2024, which no part of this project has ever evaluated anything on.
+
+2025 is not neutral. Phase 4 opened it once, as the **preseason** model's final holdout
+(ADR-025), so this project has seen 2025 season-total outcomes.
+
+**Decision.** Seal 2025, and state the qualification rather than glossing it.
+
+2025 is the closest available analogue of the 2026 in-season environment the model will run in
+— the same 18-week schedule, the same upstream coverage, the same depth-chart era. Sealing 2024
+instead would buy a fully naive result at the cost of a season further from production and one
+fewer development fold, and would leave the most production-like season permanently unusable
+for evaluation.
+
+What has never been examined is any 2025 *rest-of-season* snapshot, through-week label or
+metric on them. The seal is structural, not conventional: `load_ros_dataset` drops the rows
+unless a `RosFinalEvalAuthorization` carrying `RELEASE-ROS-FINAL-HOLDOUT-2025` is supplied, and
+Release 1's token does not work here (nor this one there) — opening one holdout must never open
+the other.
+
+**Consequences.** A 2025 rest-of-season result is strong but not fully naive evidence, because
+season totals correlate with rest-of-season totals. Every report and the model card say so.
+The residual exposure is bounded and stated; it is not zero, and pretending otherwise would be
+the more misleading choice.
+
+---
+
+## ADR-070 — `intrinsic-ros-v1` has no injury or practice-report feature
+
+**Status.** Accepted, Phase 11.
+
+**Context.** The single largest driver of rest-of-season availability is injury, and nflverse
+publishes weekly injury reports back to 2009. Roadmap 11.3 nonetheless says: *"Current
+injury/status data should remain annotation-only unless Phase 11 proves a historical,
+point-in-time injury source with adequate coverage."*
+
+**Decision.** No injury or practice-report feature enters the model. The reasons are
+operational rather than aesthetic:
+
+- this repository has never ingested the feed, so there is no adapter, no recorded schema, no
+  measured coverage and no fail-closed behaviour for it;
+- there is no production capture path, so a feature trained on it could not be served;
+- the *point-in-time* question is unanswered. A weekly injury table can be rebuilt after the
+  fact; whether the week-6 row reflects what was known in week 6 is exactly what
+  `verify_before_use` exists to establish, and establishing it is a source-probe task, not a
+  modelling one.
+
+Admitting it on the strength of "the current data exists" is the move 11.3 forbids, and it is
+the same move ADR-011 refused for preseason injuries.
+
+**What carries the signal instead.** `weeks_since_last_game`, `consecutive_weeks_missed`,
+`games_share_to_date` and `active_last_week`. They are football-only, reproducible at every
+historical cutoff, and they say what an injury feed would say a week later: this player has not
+been on the field.
+
+**Consequences.** The model is worst on players returning from a long absence, which is
+reported as its own predeclared cohort rather than pooled away. The revisit condition is
+explicit: a recorded schema, a measured historical point-in-time coverage rate, a capture path
+in the daily refresh, and a fail-closed check — the same four things every other source in
+`config/source-registry.yaml` had to produce.
+
+---
+
+## ADR-072 — The rest-of-season evaluation cell is one week's board
+
+**Status.** Accepted, Phase 11.
+
+**Context.** Phase 3's evaluation cell is `validation season × position × scoring preset`, and
+the paired bootstrap resamples rows within it. At the rest-of-season grain that would be wrong:
+a player contributes sixteen rows to a season, so a season-level cell contains the same player
+sixteen times and a row bootstrap would treat those repeats as independent observations. The
+interval would be too narrow, and the gate reads intervals.
+
+**Decision.** The cell is `season × through_week × position × scoring_preset` — one week's
+board. Within it every row is a different player, which is both the unit a fantasy decision is
+made over and the unit a row bootstrap is valid on. Macro means across cells then weight a week
+in September the same as a week in December, and a top-K retrieval metric means "the right
+twenty-four receivers for the rest of *this* season", which is the question a reader is asking.
+
+**Consequences.** There are roughly 960 development cells rather than 60, so the bootstrap is
+the slowest stage of the experiment. Cohort rank correlations are macro-averaged over the cells
+a cohort touches rather than pooled, because pooling would rank a week-2 quarterback against a
+week-14 tight end — a comparison no board makes.

@@ -163,7 +163,11 @@ class PreseasonProratedBaseline:
         validate = scope.filter(pl.col("season") == validation_season)
         if train.is_empty() or validate.is_empty():
             return pl.DataFrame(
-                schema={"player_id": pl.String, "preseason_expected_points": pl.Float64},
+                schema={
+                    "season": pl.Int32,
+                    "player_id": pl.String,
+                    "preseason_expected_points": pl.Float64,
+                },
             )
         inner_context = FitContext(
             fold=Fold(
@@ -179,7 +183,9 @@ class PreseasonProratedBaseline:
             levels=context.levels,
         )
         block = self._inner.fit_predict(train, validate, inner_context)
-        return block.keys.select("player_id").with_columns(
+        # Keyed by season as well as player: a residual window spans two seasons, and the
+        # same player has a different preseason expectation in each of them.
+        return block.keys.select(pl.col("season").cast(pl.Int32), "player_id").with_columns(
             pl.Series("preseason_expected_points", block.point, dtype=pl.Float64),
         )
 
@@ -190,7 +196,11 @@ class PreseasonProratedBaseline:
     ) -> Floats:
         if expectation.is_empty():
             return np.zeros(frame.height, dtype=np.float64)
-        joined = frame.select("player_id").join(expectation, on="player_id", how="left")
+        joined = frame.select(pl.col("season").cast(pl.Int32), "player_id").join(
+            expectation,
+            on=["season", "player_id"],
+            how="left",
+        )
         expected = joined.get_column("preseason_expected_points").fill_null(0.0)
         return expected.to_numpy().astype(np.float64) * _horizon_share(frame)
 

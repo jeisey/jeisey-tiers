@@ -532,6 +532,51 @@ anchor that ignored `height` is exactly what produced the bug. A separate test a
 `outlineWidth` on both controls when focused, so centring cannot be bought with a focus regression.
 
 
+## 8.4 Phase-11 invariants (the rest-of-season cutoff)
+
+The rest-of-season model's whole safety argument is a **window**, so the tests are about
+windows rather than about numbers.
+
+**The cutoff proof is constructive, not declarative.** `ffdraft.ros.leakage` rebuilds a
+snapshot from a panel whose post-cutoff weeks have been deleted and asserts every in-season
+feature is identical. A feature that reached forward - a mis-signed shift, a rolling window
+that included its own endpoint plus one, a forward fill running the wrong way - produces a
+different number and fails. It runs over a sample of weeks in a production build
+(`--skip-independence-check` disables it, for iteration only) and exhaustively over every
+cutoff of a fixture season in the test suite.
+
+**Its complement is checked too.** The same truncated panel must produce a label of exactly
+zero remaining games and zero remaining points, because the label is defined over precisely
+the weeks that were deleted. One test proves features do not read the future; the other proves
+the label reads nothing else.
+
+**The comparison is proved discriminating.** A test compares week 8 against a panel truncated
+at week 9 and asserts the two *differ*. An audit that passes on everything is an audit that
+checks nothing, and this is the test that would catch a comparison accidentally reduced to a
+tautology.
+
+**The label is checked against an independent recomputation.** The builder sums the weeks after
+the cutoff with a reverse cumulative sum over a dense panel; the test filters to those weeks and
+adds them up. Same answer by two routes, plus a reconciliation against the existing scoring
+engine's season total as a *critical* build check.
+
+**The fixture contains the awkward cases by construction**: a bye, a season-ending absence, a
+mid-season team change, a mid-season arrival outside the preseason universe, a player who never
+appears at all, and a postseason row in the excluded final week. Every assertion about those
+players is exact arithmetic rather than a plausibility check.
+
+**Both holdout tokens are tested against each other.** Release 1's confirmation token must not
+open the rest-of-season holdout, and the rest-of-season token must not open Release 1's.
+
+**The multi-thread claim is asserted, not assumed.** `RC1` differs from `Q1` in exactly one
+parameter - the thread count - and the justification is that LightGBM's `deterministic` and
+`force_row_wise` make the fit thread-count independent. A test fits the same group at one thread
+and at four and requires bit-identical quantiles.
+
+**The attribution's summation identity is a test.** Exact TreeSHAP contributions plus the base
+value must equal the booster's own prediction. An attribution that stops describing the model is
+worse than none, and this is the assertion that notices.
+
 ## 9. Manual review requirements
 
 Before V1 release, a human/agent visual review should inspect:
