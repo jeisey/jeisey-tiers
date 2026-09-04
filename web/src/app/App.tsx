@@ -26,7 +26,7 @@ import {
 } from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
-import { Controls, SeasonMode, ViewTabs } from "./Controls";
+import { Controls, SeasonMode, SeasonModeChip, ViewTabs } from "./Controls";
 import { DataView } from "./DataView";
 import { Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
@@ -250,12 +250,18 @@ function Board({
           degradations={degradations}
           now={now}
           onOpenData={openData}
+          seasonMode={
+            <SeasonModeChip
+              resolved={mode}
+              seasonState={inSeason?.seasonState ?? "preseason_draft"}
+              throughWeek={inSeason?.throughWeek ?? null}
+            />
+          }
         />
 
         <SeasonMode
           mode={state.mode}
           resolved={mode}
-          seasonState={inSeason?.seasonState ?? "preseason_draft"}
           throughWeek={inSeason?.throughWeek ?? null}
           available={inSeason !== null}
           onChange={(next) => {
@@ -346,7 +352,12 @@ function Board({
 
         <footer className="footer">
           <span>
-            {metadata.intrinsic_model_version} · {metadata.arbitrage_method_version ?? "no arbitrage"}{" "}
+            {/* The models actually behind what is on screen. In-season the board is served by
+                a different model with a different horizon, and naming only the draft one here
+                would attribute a rest-of-season number to a model that never produced it. */}
+            {mode === "in_season" && inSeason !== null
+              ? `${inSeason.metadata.ros_model_version} · ${inSeason.metadata.methodology_version}`
+              : `${metadata.intrinsic_model_version} · ${metadata.arbitrage_method_version ?? "no arbitrage"}`}{" "}
             · build {metadata.build_id}
           </span>
           <span>

@@ -94,6 +94,22 @@ export async function prepare(): Promise<void> {
     "no-market": omit("arbitrage.json"),
     "no-status": omit("player_status.json"),
     /*
+     * In-season, with everything. The mode, the tabs, the ROS board, the Opportunity board
+     * and the ADR-076 disclosures are only reachable from a build that published an
+     * in-season bundle, and the ordinary fixture build deliberately does not — because
+     * before kickoff, not publishing one is the correct behaviour.
+     */
+    "in-season": { ...fixtures.fixtureFiles(), ...fixtures.inSeasonFixtureFiles() },
+    /*
+     * In season, with the optional behaviour feed down. The Opportunity Board must publish
+     * every intrinsic value and empty behaviour columns, which is the degradation roadmap
+     * 12.5 requires and the one a user is most likely to actually meet.
+     */
+    "in-season-no-behavior": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(false),
+    },
+    /*
      * The *other* market condition, as its own site.
      *
      * `MARKET_CONDITIONS` exists because Phase 8 found every market-sensitive test written
@@ -116,6 +132,8 @@ export async function prepare(): Promise<void> {
     writeArtifacts(dataDir, files);
     writeCsv(dataDir, "tiers.csv", "fair_rank,display_name");
     writeCsv(dataDir, "arbitrage.csv", "fair_rank,display_name");
+    writeCsv(dataDir, "ros_tiers.csv", "ros_fair_rank,player");
+    writeCsv(dataDir, "inseason_opportunity.csv", "ros_fair_rank,player");
   }
 }
 

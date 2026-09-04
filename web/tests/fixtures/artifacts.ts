@@ -583,8 +583,11 @@ export function rosTierRecords(): RosTierRecord[] {
       ros_uncertainty: round(record.uncertainty * scale),
       remaining_horizon_weeks: 9,
       team_remaining_scheduled_games: 8,
-      preseason_fair_rank: record.fair_rank,
-      fair_rank_change: absent ? -12 : 3,
+      // Derived, not asserted independently: `fair_rank_change` is `preseason - ros`, so a
+      // fixture that states both must state them consistently or the player card shows two
+      // equal ranks beside a non-zero move.
+      preseason_fair_rank: Math.max(1, record.fair_rank + (absent ? -12 : 3)),
+      fair_rank_change: Math.max(1, record.fair_rank + (absent ? -12 : 3)) - record.fair_rank,
       games_played_to_date: absent ? 5 : 8,
       points_to_date: round(record.expected_points * (1 - scale)),
       points_per_game_to_date: round((record.expected_points * (1 - scale)) / 8),
@@ -646,8 +649,15 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
     };
   });
 
-  const anchor = base[0];
-  if (anchor !== undefined) {
+  // One surfaced player **per block**, exactly as the production build produces one per
+  // block: a single row anchored on the first record would land in whichever league and
+  // scoring preset happened to sort first, and the default board would show none.
+  const blocks = new Map<string, OpportunityRecord>();
+  for (const record of base) {
+    const key = `${record.league_preset_id}|${record.scoring_preset}`;
+    if (!blocks.has(key)) blocks.set(key, record);
+  }
+  for (const anchor of blocks.values()) {
     base.push({
       ...anchor,
       player_id: `${anchor.player_id}-surfaced`,

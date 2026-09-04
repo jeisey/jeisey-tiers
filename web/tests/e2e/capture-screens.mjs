@@ -293,7 +293,92 @@ const SCREENS = [
     fullPage: false,
     expectMissingArtifact: true,
   },
+
+  /*
+   * Phase 12 — In-Season mode.
+   *
+   * The default fixture build publishes no in-season bundle, because before kickoff that is
+   * the correct product. These screens come from the two in-season scenario builds instead,
+   * and they are the ones a review has to look at hardest: every heading here names a
+   * rest-of-season quantity, and the two disclosure contracts — ADR-074's tier bands and
+   * ADR-076's long absence — are only real if they are legible on the screen.
+   */
+  {
+    name: "29-desktop-ros-tiers",
+    path: "/scenario/in-season/",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    // The ADR-076 cohort: the flag, the week count, and the sentences that bound what it means.
+    name: "30-desktop-ros-long-absence",
+    path: "/scenario/in-season/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.locator(".absence-badge").first().scrollIntoViewIfNeeded();
+    },
+  },
+  {
+    name: "31-desktop-opportunity",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    name: "32-tablet-ros-tiers",
+    path: "/scenario/in-season/?position=rb",
+    viewport: { width: 900, height: 1100 },
+    fullPage: true,
+  },
+  {
+    name: "33-mobile-ros-tiers",
+    path: "/scenario/in-season/",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  {
+    name: "34-mobile-opportunity",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  {
+    // The behaviour feed is down. Counts go blank rather than to zero, and every intrinsic
+    // value is still there — the failure a reader must be able to tell from "nobody added him".
+    name: "35-opportunity-behaviour-absent",
+    path: "/scenario/in-season-no-behavior/?view=opportunity",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+  },
+  {
+    // Two models, two orderings, side by side and not reconciled into one number.
+    name: "36-inseason-player-detail",
+    path: "/scenario/in-season/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "37-inseason-data-methodology",
+    path: "/scenario/in-season/?view=data",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    // The draft board stays reachable all season, and says so in the mode indicator.
+    name: "38-inseason-draft-mode",
+    path: "/scenario/in-season/?mode=draft",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+  },
 ];
+
+/** Artifacts a build is allowed not to publish; see the console filter below. */
+const OPTIONAL_ARTIFACTS = /market_trend_series\.json|ros_build_metadata\.json/;
 
 const outDir = resolve(process.argv[2] ?? "docs/visual-qa/local");
 mkdirSync(outDir, { recursive: true });
@@ -309,6 +394,13 @@ for (const screen of SCREENS) {
     if (message.type() !== "error") return;
     // A scenario that withholds an artifact necessarily logs the browser's own 404 line.
     if (screen.expectMissingArtifact && /404/.test(message.text())) return;
+    // So does an artifact the contract declares optional. The market trend series exists only
+    // once the snapshot window holds enough of them, and the in-season bundle only after the
+    // season's first kickoff — before which the draft build is the whole product. The loader
+    // treats both absences as normal; the browser still prints a 404, and a 404 for an
+    // artifact that is allowed to be missing is not evidence of anything.
+    // The console line names no URL, so the resource comes from the message's own location.
+    if (/404/.test(message.text()) && OPTIONAL_ARTIFACTS.test(message.location().url)) return;
     problems.push(`${screen.name}: ${message.text()}`);
   });
   await page.goto(`${BASE}${screen.path}`, { waitUntil: "networkidle" });

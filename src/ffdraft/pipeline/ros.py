@@ -850,7 +850,14 @@ def build_ros_board_records(
                 points=points,
                 allocate=allocate_with_bench,
             )
-            valued = result.players.filter(pl.col("expected_vorp").is_not_null())
+            # Null **and** NaN. A position whose pool is entirely consumed by starting and
+            # bench slots has no replacement baseline in any draw, and the draw loop records
+            # that as NaN rather than null — `np.nanmean` over an all-NaN row returns NaN.
+            # Filtering only nulls would publish `NaN`, which is not valid JSON and would
+            # break the browser rather than withholding a row nobody can value.
+            valued = result.players.filter(
+                pl.col("expected_vorp").is_not_null() & pl.col("expected_vorp").is_finite(),
+            )
             withheld = result.players.height - valued.height
             if withheld:
                 gate.add(

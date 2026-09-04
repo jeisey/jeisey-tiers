@@ -45,6 +45,11 @@ and Phase 9A added `16`-`28` — the third breakpoint, both tables on a phone, t
 three panels, the awkward player records the fixture exists to carry, and the matured market
 condition, which the default fixture cannot show.
 
+Phase 12 added `29`-`38`, the In-Season screens. They come from the two in-season scenario mounts
+rather than the default build, because the default build publishes no in-season bundle: before the
+season's first kickoff the draft board is the whole product, and a fixture that pretended otherwise
+would be evidence of a state the pipeline never produces.
+
 The current directories:
 
 | Directory | Review |
@@ -52,3 +57,5 @@ The current directories:
 | `2026-08-21/` | Phase 6 — the draft sheet, first capture |
 | `2026-08-31/` | Phase 8 — the inferred HUD redesign |
 | `2026-08-31-design/` | Phase 9A — the owner's Claude Design source, implemented |
+| `2026-09-01-release/` | Phase 9B — the logo masthead, export controls and favicon |
+| `2026-09-04-phase12/` | Phase 12 — In-Season mode: the ROS board, the opportunity board, the two disclosure contracts |

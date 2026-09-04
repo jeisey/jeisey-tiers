@@ -114,57 +114,89 @@ export function ViewTabs({
   );
 }
 
+function seasonModeLabel(resolved: "draft" | "in_season"): string {
+  return resolved === "in_season" ? "In-Season" : "Draft";
+}
+
 /**
- * The season-mode indicator and switch.
+ * The season-mode indicator: which product a reader is looking at (roadmap 12.4).
  *
- * One obvious indicator (roadmap 12.4), and it says *why* it is what it is: the mode is
- * derived from the NFL schedule, so a reader who wonders why the site changed in September
- * gets the answer in the same sentence as the control that overrides it.
+ * It lives in the masthead beside the build stamp because that is what it is — status, not a
+ * control — and because a phone has no vertical space to spare for a band that says one word.
+ * The board itself has to stay above the fold on a 412px screen, which it does not if every
+ * page grows a strip. The switch is a separate thing and is rendered separately, by
+ * :func:`SeasonMode`, where the other controls are.
  *
- * The switch appears only when there is something to switch to. Before kickoff there is no
- * in-season bundle, so a two-state control would offer an empty board.
+ * It says *why* it is what it is, so a reader who wonders why the site changed in September
+ * gets the answer without opening the Data panel. That sentence is visually hidden only
+ * because there is no room for it here; it is on the page, in text, for anyone reading with
+ * assistive technology, and the same fact is in the Data panel in full.
+ */
+export function SeasonModeChip({
+  resolved,
+  seasonState,
+  throughWeek,
+}: {
+  readonly resolved: "draft" | "in_season";
+  readonly seasonState: string;
+  readonly throughWeek: number | null;
+}): React.JSX.Element {
+  const detail =
+    resolved === "in_season" && throughWeek !== null
+      ? `through week ${String(throughWeek)}`
+      : seasonState.replace(/_/g, " ");
+  return (
+    <span className="season-mode-chip" data-mode={resolved}>
+      <span className="season-mode-label">
+        <span className="season-mode-dot" aria-hidden="true" />
+        {seasonModeLabel(resolved)} mode
+      </span>
+      <span className="visually-hidden">
+        {`, ${detail}, set from the NFL schedule.`}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The season-mode switch, and the cutoff it is switching between.
+ *
+ * Rendered only when there is something to switch to. Before kickoff there is no in-season
+ * bundle, so a two-state control would offer an empty board — and a band whose only content
+ * would be a word the masthead chip already carries is worse than no band, because it costs
+ * the top of every phone screen for a repetition.
  */
 export function SeasonMode({
   mode,
   resolved,
   onChange,
-  seasonState,
   throughWeek,
   available,
 }: {
   readonly mode: ModeId;
   readonly resolved: "draft" | "in_season";
   readonly onChange: (mode: ModeId) => void;
-  readonly seasonState: string;
   readonly throughWeek: number | null;
   /** False before kickoff: no in-season bundle exists, so there is nothing to switch to. */
   readonly available: boolean;
-}): React.JSX.Element {
-  const label = resolved === "in_season" ? "In-Season" : "Draft";
+}): React.JSX.Element | null {
+  if (!available) return null;
   const detail =
-    resolved === "in_season" && throughWeek !== null
-      ? `through week ${String(throughWeek)}`
-      : seasonState.replace(/_/g, " ");
+    throughWeek === null ? "no rest-of-season cutoff" : `through week ${String(throughWeek)}`;
   return (
     <div className="season-mode" data-mode={resolved}>
-      <span className="season-mode-label">
-        <span className="season-mode-dot" aria-hidden="true" />
-        {label} mode
-      </span>
       <span className="season-mode-detail muted">{detail}</span>
-      {available && (
-        <Segmented<ModeId>
-          name="mode"
-          label="Season mode"
-          value={mode}
-          options={[
-            { value: "auto", label: "Auto", description: "Follow the NFL schedule" },
-            { value: "draft", label: "Draft", description: "Preseason board" },
-            { value: "in_season", label: "In-season", description: "Rest-of-season board" },
-          ]}
-          onChange={onChange}
-        />
-      )}
+      <Segmented<ModeId>
+        name="mode"
+        label="Season mode"
+        value={mode}
+        options={[
+          { value: "auto", label: "Auto", description: "Follow the NFL schedule" },
+          { value: "draft", label: "Draft", description: "Preseason board" },
+          { value: "in_season", label: "In-season", description: "Rest-of-season board" },
+        ]}
+        onChange={onChange}
+      />
     </div>
   );
 }

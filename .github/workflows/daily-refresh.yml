@@ -61,6 +61,18 @@ on:
     # GitHub workflow syntax (shipped March 2026); see docs/OPERATIONS.md section 2.2.
     - cron: "17 7 * * *"
       timezone: America/New_York
+    # The post-week refresh (roadmap 12.5). Monday night football finishes late and nflverse
+    # publishes the completed week afterwards, so the ordinary 07:17 run on a Tuesday is
+    # usually the first one that *can* see the week. This second Tuesday slot exists because
+    # "usually" is not a schedule: it gives the week a second chance the same day, and the
+    # freshness gate decides whether anything actually changes. A run that finds the week
+    # still incomplete rebuilds at the previous cutoff and says so, which is a no-op rather
+    # than a wrong board.
+    #
+    # It is the same job graph deliberately. A separate post-week pipeline would be a second
+    # description of the same build, and the two would drift.
+    - cron: "40 12 * * 2"
+      timezone: America/New_York
 
 # Least privilege at the top; exactly two jobs elevate, and only in the direction they need
 # (docs/SECURITY_LICENSE.md section 3). Note what `capture` does NOT need: it writes to the
@@ -104,6 +116,9 @@ jobs:
       appended: ${{ steps.persist.outputs.appended }}
       repository: ${{ steps.store.outputs.repository }}
       season: ${{ steps.plan.outputs.season }}
+      mode: ${{ steps.season.outputs.mode }}
+      season_state: ${{ steps.season.outputs.state }}
+      snapshot_week: ${{ steps.season.outputs.snapshot_week }}
     steps:
       - uses: actions/checkout@v4
 
@@ -149,6 +164,43 @@ jobs:
           cohorts="${{ inputs.cohorts }}"
           echo "season=${season}" >> "$GITHUB_OUTPUT"
           echo "cohorts=${cohorts:-production}" >> "$GITHUB_OUTPUT"
+
+      # Which product the site is, decided by the schedule rather than by this file. The
+      # capture job asks because the two modes want different sources: add/drop behaviour is
+      # meaningless before anyone has drafted, and the draft market stops being the
+      # comparison once drafts are done.
+      - name: Resolve the season state
+        id: season
+        run: |
+          set -euo pipefail
+          uv run ffdraft season-state \
+            --season "${{ steps.plan.outputs.season }}" --json > season-state.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, pathlib
+          state = json.loads(pathlib.Path("season-state.json").read_text())
+          print(f"mode={state['product_mode']}")
+          print(f"state={state['season_state']}")
+          print(f"completed_week={state['completed_week']}")
+          print(f"snapshot_week={state['latest_snapshot_week'] or ''}")
+          PY
+          cat season-state.json
+
+      # Sleeper's documented in-season signal. `continue-on-error` because it is an
+      # enrichment: the Opportunity Board degrades to intrinsic value alone if it fails, and
+      # the rest-of-season board is not affected at all (roadmap 12.5).
+      #
+      # The full `/players/nfl` map is captured at most once per day by `capture-status`
+      # above; this step calls only the two trending endpoints, which is two requests against
+      # a documented ceiling of 1000 per minute.
+      - name: Capture Sleeper add/drop behaviour
+        if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-behavior \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee behavior.log
 
       - name: Capture the market snapshot
         if: ${{ inputs.skip_capture != true }}
@@ -240,7 +292,7 @@ jobs:
             echo "| Store head after | \`${{ steps.persist.outputs.commit || 'unchanged' }}\` |"
             echo "| Appended | \`${{ steps.persist.outputs.appended || 'no' }}\` |"
             echo
-            for log in snapshot.log status.log; do
+            for log in snapshot.log ffc.log status.log behavior.log; do
               if [ -f "${log}" ]; then
                 echo "<details><summary>${log}</summary>"
                 echo
@@ -270,6 +322,8 @@ jobs:
       model_version: ${{ steps.facts.outputs.model_version }}
       tier_rows: ${{ steps.facts.outputs.tier_rows }}
       arbitrage_rows: ${{ steps.facts.outputs.arbitrage_rows }}
+      ros_rows: ${{ steps.facts.outputs.ros_rows }}
+      ros_through_week: ${{ steps.facts.outputs.ros_through_week }}
     steps:
       - uses: actions/checkout@v4
 
@@ -367,6 +421,39 @@ jobs:
             --full-board "${RUNNER_TEMP}/full-board.json" \
             --git-sha "${GITHUB_SHA::7}" | tee build-arbitrage.log
 
+      # ---- The in-season board ------------------------------------------------------------
+      #
+      # Runs only when the schedule says the season has started, and it is a *separate*
+      # bundle: its own artifacts, its own metadata, its own build id. The two boards come
+      # from different models at different cutoffs, so forcing one build id across both would
+      # be the first place the site could say something untrue about freshness.
+      #
+      # It never trains. `build-ros` loads the committed `intrinsic-ros-v1` artifact and
+      # refuses a feature contract it was not fitted against; a refresh that retrained would
+      # serve a different model every day (ADR-078).
+      #
+      # `--preseason-board` hands it the draft board written above, which is what makes the
+      # "change in intrinsic view" column possible. Absent, that column is omitted and every
+      # rest-of-season value is unaffected.
+      #
+      # This step is NOT `continue-on-error`. A rest-of-season board built from an incomplete
+      # week is worse than no rest-of-season board, and the whole in-season publish is
+      # all-or-nothing inside the command itself: it stages every artifact, validates them
+      # together, and moves them into place only if all of them pass.
+      - name: Build the rest-of-season board
+        if: ${{ needs.capture.outputs.mode == 'in_season' }}
+        env:
+          NFLREADPY_CACHE: filesystem
+          NFLREADPY_CACHE_DIR: ${{ runner.temp }}/nflreadpy-cache
+        run: |
+          set -euo pipefail
+          uv run ffdraft build-ros \
+            --season "${{ needs.capture.outputs.season }}" \
+            --store market-data \
+            --preseason-board web/public/data/tiers.json \
+            --full-board "${RUNNER_TEMP}/ros-full-board.json" \
+            --git-sha "${GITHUB_SHA::7}" | tee build-ros.log
+
       # ---- The pre-deploy gate ------------------------------------------------------------
       #
       # `force_validation_failure` does not fake a failure. It breaks a real invariant —
@@ -418,6 +505,14 @@ jobs:
           print(f"model_version={meta['intrinsic_model_version']}")
           print(f"tier_rows={count('tiers.json')}")
           print(f"arbitrage_rows={count('arbitrage.json')}")
+          ros_meta = data / "ros_build_metadata.json"
+          if ros_meta.is_file():
+              ros = json.loads(ros_meta.read_text(encoding="utf-8"))
+              print(f"ros_rows={count('ros_tiers.json')}")
+              print(f"ros_through_week={ros['through_week']}")
+          else:
+              print("ros_rows=0")
+              print("ros_through_week=")
           PY
 
       # ---- Frontend -----------------------------------------------------------------------
@@ -436,6 +531,14 @@ jobs:
             test -f "web/dist/data/${artifact}.json" \
               || { echo "::error::web/dist/data/${artifact}.json missing from the build"; exit 1; }
           done
+          # In season the in-season bundle is part of the product, so its absence from the
+          # packaged site is an error rather than a silently missing tab.
+          if [ "${{ needs.capture.outputs.mode }}" = "in_season" ]; then
+            for artifact in ros_tiers inseason_opportunity ros_build_metadata; do
+              test -f "web/dist/data/${artifact}.json" \
+                || { echo "::error::web/dist/data/${artifact}.json missing from the build"; exit 1; }
+            done
+          fi
 
       - name: Cache the Playwright browser
         uses: actions/cache@v4
@@ -488,7 +591,7 @@ jobs:
           mkdir -p build-record/store
           cp -r web/public/data build-record/data 2>/dev/null || true
           cp -r "${RUNNER_TEMP}/market-cohorts" build-record/market-cohorts 2>/dev/null || true
-          for log in build-current build-arbitrage cohorts validate; do
+          for log in build-current build-arbitrage build-ros cohorts validate; do
             cp "${log}.log" build-record/ 2>/dev/null || true
           done
           # The store's manifests only — provenance, content hashes, per-cohort draft and
@@ -603,6 +706,10 @@ jobs:
             --fact "store_commit_before=${{ needs.capture.outputs.store_before }}" \
             --fact "store_commit=${{ needs.capture.outputs.store_commit }}" \
             --fact "store_appended=${{ needs.capture.outputs.appended }}" \
+            --fact "season_state=${{ needs.capture.outputs.season_state }}" \
+            --fact "product_mode=${{ needs.capture.outputs.mode }}" \
+            --fact "ros_through_week=${{ needs.build.outputs.ros_through_week || 'not built' }}" \
+            --fact "ros_rows=${{ needs.build.outputs.ros_rows || '0' }}" \
             --fact "deploy_result=${DEPLOY}" \
             --fact "forced_failure=${{ inputs.force_validation_failure == true && 'yes — deploy must be skipped' || '' }}" \
             --fact "pages_url=${{ needs.deploy.outputs.page_url || 'not deployed — previous production remains live' }}"

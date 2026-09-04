@@ -1387,8 +1387,8 @@
     "injury_and_practice_reports": "excluded; see ADR-070",
     "market_signals": "audited by ffdraft.quality.audit_intrinsic_feature_names"
   },
-  "generated_at_utc": "2026-09-04T13:42:19Z",
-  "git_sha": "5e532c7",
+  "generated_at_utc": "2026-09-04T18:59:08Z",
+  "git_sha": "phase12",
   "grain": "season x through_week x player_id x scoring_preset",
   "holdout": {
     "declared_before_candidate_comparison": true,
@@ -1514,10 +1514,47 @@
     "It cannot order the long-absence cohort: Spearman 0.311 on 18,951 development rows against 0.797 on the full universe. ADR-076 specifies what a product built on it must disclose.",
     "Its intervals on the zero-current-games cohort are conservative \u2014 14.5 wide against a climatological 4.5 \u2014 though narrower than the baseline's and better scored.",
     "The sealed season is spent. This model's published out-of-time result describes these exact outputs; any change to them requires a fresh sealed season (ADR-077).",
-    "Phase 11 published nothing. Exposing this model safely, with the ADR-076 disclosures, is Phase 12's job."
+    "The served artifact is a production refit of this architecture on the widest permitted window (ADR-078). It carries no performance claim of its own: it was scored on nothing, and every number above belongs to the Phase-11 evaluation."
   ],
   "model_name": "intrinsic-ros-v1",
   "model_version": "rc1_ros_hurdle_v1",
+  "production_fit": {
+    "artifact_schema": "ros_model_artifact_v1",
+    "carries_performance_claim": false,
+    "configuration_hash": "d79133847436f04f",
+    "dataset_content_hash": "1590cde59e245b15ca0fa29907c3f1394555ff845df45978c019f323a5d74050",
+    "dataset_rows": 455157,
+    "feature_schema_hash": "f0384c75cac8218a",
+    "feature_set_hash": "f5ad9df207795351",
+    "fitted": true,
+    "fold_id": "ros:2017-2025->2026",
+    "generated_at_utc": "2026-09-04T15:14:57Z",
+    "git_sha": "phase12",
+    "groups": 12,
+    "library": {
+      "lightgbm": "4.7.0",
+      "numpy": "2.5.2"
+    },
+    "protocol": "ros_production_fit_v1",
+    "refit_reason": "initial_production_fit",
+    "sealed_authorization_reason": "ADR-078 initial production fit: the 2025 holdout was consumed on 2026-09-04, so the maximum permitted labelled window is 2017-2025",
+    "sealed_seasons_included": [
+      2025
+    ],
+    "serving_season": 2026,
+    "training_rows": 455157,
+    "training_seasons": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ]
+  },
   "production_status": "ACCEPTED FOR PHASE 12 \u2014 promoted under ros_promotion_v2 (ADR-077). It failed ros_promotion_v1, whose clause 4 was found to be mis-specified for a zero-inflated target (ADR-073, ADR-075); that failure is preserved, not repealed.",
   "promotion": {
     "criteria": {

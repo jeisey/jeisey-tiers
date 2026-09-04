@@ -151,8 +151,9 @@ export function OpportunityView({
           </dl>
         ) : (
           <Notice title="No current add/drop behaviour.">
-            {behavior?.degraded_reason ??
-              "No retained behaviour snapshot was available for this build."}{" "}
+            {/* The reason is the build's own machine phrase, so it is quoted rather than
+                spliced into the sentence, where it would read as a fragment. */}
+            {`The build recorded “${behavior?.degraded_reason ?? "no retained behaviour snapshot"}”.`}{" "}
             Every rest-of-season value on this board is unchanged: the behaviour feed decides
             which players are visible and never what they are worth.
           </Notice>
@@ -205,37 +206,37 @@ export function OpportunityView({
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" style={{ width: "4.5rem", textAlign: "right" }}>
+                  <th scope="col" className="plain" style={{ width: "4.5rem", textAlign: "right" }}>
                     ROS Rank
                   </th>
-                  <th scope="col" className="col-player">
+                  <th scope="col" className="col-player plain">
                     Player
                   </th>
-                  <th scope="col" style={{ width: "3rem" }}>
+                  <th scope="col" className="plain" style={{ width: "3rem" }}>
                     Pos
                   </th>
-                  <th scope="col" style={{ width: "3.5rem" }}>
+                  <th scope="col" className="plain" style={{ width: "3.5rem" }}>
                     Team
                   </th>
-                  <th scope="col" style={{ width: "7rem", textAlign: "right" }}>
+                  <th scope="col" className="plain" style={{ width: "7rem", textAlign: "right" }}>
                     ROS Exp VORP
                   </th>
-                  <th scope="col" style={{ width: "6rem", textAlign: "right" }}>
+                  <th scope="col" className="plain" style={{ width: "6rem", textAlign: "right" }}>
                     {`Adds${windowSuffix}`}
                   </th>
-                  <th scope="col" style={{ width: "6rem", textAlign: "right" }}>
+                  <th scope="col" className="plain" style={{ width: "6rem", textAlign: "right" }}>
                     {`Drops${windowSuffix}`}
                   </th>
-                  <th scope="col" style={{ width: "6rem", textAlign: "right" }}>
+                  <th scope="col" className="plain" style={{ width: "6rem", textAlign: "right" }}>
                     Net adds
                   </th>
-                  <th scope="col" style={{ width: "6rem", textAlign: "right" }}>
+                  <th scope="col" className="plain" style={{ width: "6rem", textAlign: "right" }}>
                     Snap share
                   </th>
-                  <th scope="col" style={{ width: "9rem", textAlign: "right" }}>
+                  <th scope="col" className="plain" style={{ width: "9rem", textAlign: "right" }}>
                     Weeks since last game
                   </th>
-                  <th scope="col" className="col-annotation" style={{ width: "7rem" }}>
+                  <th scope="col" className="col-annotation plain" style={{ width: "7rem" }}>
                     Current status
                   </th>
                 </tr>

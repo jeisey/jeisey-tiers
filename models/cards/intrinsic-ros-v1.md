@@ -1,6 +1,6 @@
 # Rest-of-season model card — `rc1_ros_hurdle_v1`
 
-Card `ros_model_card_v1`, generated 2026-09-04T13:42:19Z from code `5e532c7`. Every number below is read from a committed report or from the code's own frozen declarations; none is written by hand.
+Card `ros_model_card_v1`, generated 2026-09-04T18:59:08Z from code `phase12`. Every number below is read from a committed report or from the code's own frozen declarations; none is written by hand.
 
 ## Production status
 
@@ -98,6 +98,22 @@ Clauses 1-3 and 4a-4b are the original's, unchanged. 4c adds a proper local scor
 - **tier_penalty**: `3.0` (rule `phase4_tier_v1`)
 - **tier_stability**: `fail` (rule `phase4_tier_stability_v1`)
 
+## Production fit
+
+**This section carries no performance claim.** A production fit is a refit of the architecture evaluated above on the widest permitted labelled window (ADR-078); it was scored on nothing, and every measured number in this card belongs to the Phase-11 evidence. The spent 2025 holdout is not re-scored by it and is not reinterpreted as evidence about it.
+
+- protocol: `ros_production_fit_v1`
+- configuration hash: `d79133847436f04f` — the digest of the frozen architecture. Two fits on different windows agree here; a tuned parameter does not.
+- refit reason: `initial_production_fit`
+- training window: **2017-2025**, 455157 row(s), 12 fitted group(s)
+- serving season: **2026** (fold `ros:2017-2025->2026`)
+- feature set / schema: `f5ad9df207795351` / `f0384c75cac8218a`
+- training data: `1590cde59e245b15ca0fa29907c3f1394555ff845df45978c019f323a5d74050` (455157 dataset row(s))
+- libraries: {'lightgbm': '4.7.0', 'numpy': '2.5.2'}
+- fitted 2026-09-04T15:14:57Z from code `phase12`
+- sealed season(s) inside the window: **[2025]**, admitted only under the explicit final-evaluation authorization — 'ADR-078 initial production fit: the 2025 holdout was consumed on 2026-09-04, so the maximum permitted labelled window is 2017-2025'
+
+
 ## Known limitations
 
 - There is no injury or practice-report feature. The model learns absence from the box score, so it sees a player who has stopped playing but not one who is about to (ADR-070).
@@ -110,4 +126,4 @@ Clauses 1-3 and 4a-4b are the original's, unchanged. 4c adds a proper local scor
 - It cannot order the long-absence cohort: Spearman 0.311 on 18,951 development rows against 0.797 on the full universe. ADR-076 specifies what a product built on it must disclose.
 - Its intervals on the zero-current-games cohort are conservative — 14.5 wide against a climatological 4.5 — though narrower than the baseline's and better scored.
 - The sealed season is spent. This model's published out-of-time result describes these exact outputs; any change to them requires a fresh sealed season (ADR-077).
-- Phase 11 published nothing. Exposing this model safely, with the ADR-076 disclosures, is Phase 12's job.
+- The served artifact is a production refit of this architecture on the widest permitted window (ADR-078). It carries no performance claim of its own: it was scored on nothing, and every number above belongs to the Phase-11 evaluation.

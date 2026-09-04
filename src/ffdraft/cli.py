@@ -433,6 +433,15 @@ def _build_parser() -> argparse.ArgumentParser:
     ros_card.add_argument("--value", type=Path, default=None, help="value-study directory")
     ros_card.add_argument("--out", type=Path, default=None, help="card output directory")
     ros_card.add_argument("--git-sha", default=None, help="code SHA to record on the card")
+    ros_card.add_argument(
+        "--model",
+        type=Path,
+        default=None,
+        help=(
+            "the fitted production model directory. Its metadata becomes the card's "
+            "production-fit section, which carries lineage and no performance claim (ADR-078)"
+        ),
+    )
     ros_card.set_defaults(handler=_ros_model_card)
 
     check_historical = subparsers.add_parser(
@@ -1336,16 +1345,19 @@ def _ros_attribution(args: argparse.Namespace) -> int:
 
 def _ros_model_card(args: argparse.Namespace) -> int:
     from ffdraft.ros.card import write_ros_card
+    from ffdraft.ros.frozen import ROS_MODEL_VERSION
 
     experiments = args.experiments or (repo_root() / DEFAULT_ROS_EXPERIMENT_DIR)
     value = args.value or (repo_root() / DEFAULT_ROS_VALUE_DIR)
     out_dir = args.out or (repo_root() / DEFAULT_CARD_DIR)
+    model_dir = args.model or (repo_root() / DEFAULT_MODEL_DIR / ROS_MODEL_VERSION)
     written = write_ros_card(
         development_path=experiments / "experiment.json",
         final_path=experiments / "final_holdout.json",
         value_path=value / "value_study.json",
         out_dir=out_dir,
         git_sha=args.git_sha or "unknown",
+        production_path=model_dir / "metadata.json",
     )
     for path in written:
         print(f"wrote {path}")

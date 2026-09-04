@@ -54,8 +54,61 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         "market_snapshot",
         "market_trend_series",
         "player_status",
+        # Phase 12's in-season bundle. Present in the fixture build because a bundle nothing
+        # exercises offline is a bundle whose contract drifts.
+        "ros_tiers",
+        "inseason_opportunity",
     }
     assert all(records for records in pipeline_result.records.values())
+
+
+def test_the_in_season_fixture_carries_the_shapes_only_production_breaks(pipeline_result):
+    """Three cases that never misbehave on a happy-path fixture, and do in production."""
+    ros = pipeline_result.records["ros_tiers"]
+    opportunity = pipeline_result.records["inseason_opportunity"]
+
+    # 1. The ADR-076 disclosure row: flagged, with the observable number beside it.
+    flagged = [row for row in ros if row["long_absence"]]
+    assert flagged, "the fixture must carry a long-absence row"
+    for row in flagged:
+        assert row["has_played_this_season"] is True
+        assert row["consecutive_weeks_missed"] >= 3
+        assert row["weeks_since_last_game"] >= 3
+
+    # 2. A player surfaced from beyond the tier depth: a fair rank, a reason, and no tier.
+    surfaced = [row for row in opportunity if row["outside_tier_board"]]
+    assert surfaced, "the fixture must carry a surfaced row"
+    for row in surfaced:
+        assert row["ros_tier"] is None
+        assert row["surface_reasons"]
+
+    # 3. The firewall: every intrinsic column is copied, never recomputed.
+    published = {
+        (row["league_preset_id"], row["scoring_preset"], row["player_id"]): row for row in ros
+    }
+    compared = 0
+    for row in opportunity:
+        key = (row["league_preset_id"], row["scoring_preset"], row["player_id"])
+        source = published.get(key)
+        if source is None:
+            assert row["outside_tier_board"] is True
+            continue
+        compared += 1
+        for field in ("ros_fair_rank", "ros_expected_vorp", "ros_uncertainty", "ros_tier"):
+            assert row[field] == source[field]
+    assert compared > 0
+
+
+def test_the_in_season_metadata_carries_the_sentences_the_ui_renders(pipeline_result):
+    disclosures = pipeline_result.ros_build_metadata["disclosures"]
+    assert disclosures["uses_injury_information"] is False
+    assert disclosures["status_is_annotation_only"] is True
+    assert "no injury or practice-report information" in disclosures["long_absence_statement"]
+    assert "0.311" in disclosures["long_absence_ordering_weakness"]
+    assert disclosures["long_absence_players"] == sum(
+        1 for row in pipeline_result.records["ros_tiers"] if row["long_absence"]
+    )
+    assert pipeline_result.ros_build_metadata["limitations"]
 
 
 def test_every_expected_artifact_is_written(built_artifacts):

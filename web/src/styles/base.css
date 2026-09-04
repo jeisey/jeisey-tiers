@@ -214,6 +214,17 @@
 
   /* Every transition in the source is `all 160ms`. */
   --t: 160ms;
+
+  /*
+   * What an interactive control animates: its surface, never its outline.
+   *
+   * `transition: all` includes `outline-width`, so the shared focus ring grew from 0 over
+   * `--t` instead of appearing — a keyboard user's own position, animated. Every control
+   * below names this list instead, so the ring is instant and the hover surface still moves.
+   */
+  --t-control:
+    background var(--t), background-color var(--t), border-color var(--t), color var(--t),
+    box-shadow var(--t);
 }
 
 /* ------------------------------------------------------------------ reset */
@@ -440,7 +451,7 @@ code {
   text-transform: uppercase;
   padding: 6px 9px;
   cursor: pointer;
-  transition: all var(--t);
+  transition: var(--t-control);
 }
 
 .status-chip::before {
@@ -532,7 +543,7 @@ code {
   height: 30px;
   padding: 0 12px;
   cursor: pointer;
-  transition: all var(--t);
+  transition: var(--t-control);
 }
 
 .segmented button:hover:not(:disabled) {
@@ -599,7 +610,7 @@ code {
   min-width: 22px;
   min-height: 22px;
   cursor: pointer;
-  transition: all var(--t);
+  transition: var(--t-control);
 }
 
 .search-field button:hover {
@@ -651,7 +662,7 @@ code {
   letter-spacing: var(--track-nav);
   text-transform: uppercase;
   color: var(--ink-faint);
-  transition: all var(--t);
+  transition: var(--t-control);
 }
 
 .tabs button:hover {
@@ -776,7 +787,7 @@ code {
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: all var(--t);
+  transition: var(--t-control);
 }
 
 .button:hover:not(:disabled) {
@@ -957,7 +968,17 @@ table.sheet {
   font-size: 0.8rem;
 }
 
+/*
+ * A caption takes its table's width, so on a table wider than the screen the end of the
+ * sentence sits off to the right where nobody scrolls to read prose. Pinned to the scroll
+ * container's left edge and wrapped inside the visible width instead, it stays a caption.
+ * `min()` against the page's own maximum keeps it from stretching on a wide monitor.
+ */
 table.sheet caption {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  max-width: min(var(--page-max), calc(100vw - 2 * var(--space-5)));
   text-align: left;
   padding: var(--space-2) var(--space-3);
   font-size: 0.72rem;
@@ -2320,7 +2341,7 @@ dialog.player-detail::backdrop {
   text-transform: uppercase;
   cursor: pointer;
   flex: none;
-  transition: all var(--t);
+  transition: var(--t-control);
 }
 
 .detail-close:hover {
@@ -2356,7 +2377,7 @@ dialog.player-detail::backdrop {
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   cursor: pointer;
-  transition: all var(--t);
+  transition: var(--t-control);
 }
 
 .detail-tabs button[aria-selected="true"] {
@@ -3531,6 +3552,20 @@ dl.facts dd {
  * is a property of the whole page rather than of a board. The dot is decorative and the
  * word beside it carries the meaning, so the strip reads correctly with no colour at all.
  */
+/*
+ * The season-mode indicator, in the masthead beside the build stamp.
+ *
+ * It is status, so it sits with the other status. The switch is a control and lives in
+ * `.season-mode` below, which exists only when there is a second board to switch to — a band
+ * whose only content is a word the chip already carries would cost the top of a phone screen
+ * for a repetition, and `web/tests/e2e/mobile.spec.ts` measures exactly that.
+ */
+.season-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
 .season-mode {
   display: flex;
   align-items: center;
@@ -3558,7 +3593,7 @@ dl.facts dd {
   background: var(--ink-faint);
 }
 
-.season-mode[data-mode="in_season"] .season-mode-dot {
+.season-mode-chip[data-mode="in_season"] .season-mode-dot {
   background: var(--good);
 }
 

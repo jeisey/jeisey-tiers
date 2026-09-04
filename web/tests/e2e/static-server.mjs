@@ -82,6 +82,8 @@ const MOUNTS = [
   { base: "/scenario/no-status/", dir: "web/dist-no-status" },
   { base: "/scenario/bad-schema/", dir: "web/dist-bad-schema" },
   { base: "/scenario/matured/", dir: "web/dist-matured" },
+  { base: "/scenario/in-season/", dir: "web/dist-in-season" },
+  { base: "/scenario/in-season-no-behavior/", dir: "web/dist-in-season-no-behavior" },
   { base: "/", dir: "web/dist" },
 ];
 
