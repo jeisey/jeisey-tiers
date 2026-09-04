@@ -4,11 +4,14 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-**Phase 11 — implemented 2026-09-04; exit gate partially met.** The rest-of-season model
-`intrinsic-ros-v1` is built, validated in development and on the sealed season, and **not
-promoted**: one frozen clause fires and the threshold is not moved. Phase 11 is entirely
-offline — no artifact, no schema, no frontend change, nothing published. Phase 12 has **not**
-been started.
+**Phase 11 — implemented 2026-09-04; exit gate met after the production-readiness pass.** The
+rest-of-season model `intrinsic-ros-v1` is built, validated in development and on the sealed
+season, and **accepted for Phase 12**. It failed `ros_promotion_v1`; that failure is preserved
+in full, and the readiness pass established the failing clause was mis-specified for a
+zero-inflated target rather than describing a defect. Under the successor `ros_promotion_v2` —
+frozen and committed before it touched any evidence — `RC1` is **promoted** (ADR-075, ADR-077).
+Phase 11 remains entirely offline: no artifact, no schema, no frontend change, nothing
+published. Phase 12 has **not** been started.
 
 ### What Phase 11 built
 
@@ -23,7 +26,8 @@ been started.
 | Candidate | `rc1_ros_hurdle_v1` — availability × conditional performance, Monte Carlo composed |
 | Comparator | `R2` (shrinkage blend), picked by the frozen rule, not by preference |
 | Sealed season | 2025, **CONSUMED** once on 2026-09-04 |
-| Promotion | **not promoted** (`ros_promotion_v1` clause 4) |
+| Promotion | **not promoted** under `ros_promotion_v1` (preserved); **promoted** under `ros_promotion_v2` |
+| Production status | **`RC1 ACCEPTED FOR PHASE 12`** (ADR-077) |
 | Replacement | `rostered_depth` (`ros_replacement_v1`) |
 | Model card | `models/cards/intrinsic-ros-v1.{md,json}` |
 
@@ -41,17 +45,44 @@ been started.
 Clauses 1, 2 and 3 pass in both. **Clause 4 fails on `games_played_band / no_games`**:
 candidate P10-P90 coverage 0.964 in development, 0.957 on 2025, against a [0.60, 0.95] band.
 
-**Do not read that as an over-wide interval.** On the same cohort the candidate's mean interval
-is *narrower* than the baseline's (14.5 against 17.1 in development) and its MAE is a third of
-it (2.05 against 5.82). Rather more than half of those 131,844 rows have a true remaining-points
-value of exactly zero — a player who has not played by week N frequently never plays — and a
-band straddling zero contains the outcome. The clause is firing on the target's atom at zero,
-not on a defect. **The threshold was not moved** (ADR-073); a successor rule has to be declared
-before it is measured, and that is a later phase's decision.
+**That clause was mis-specified, and the readiness pass proved it rather than asserting it.** A
+P10-P90 interval covers 0.80 only for a *continuous* target. Where a predictive distribution has
+an atom of mass `p >= 0.10` at its own tenth percentile, a **perfectly calibrated** interval
+covers exactly **0.90**; where `p >= 0.90` both quantiles are zero, the interval collapses to a
+point, and coverage is `p`. So a perfectly calibrated forecaster with an interval of **width
+zero** breaches v1's ceiling — a clause written to catch "an interval so wide it says nothing"
+refuses the narrowest possible correct interval. A test asserts all three cases.
+
+The measurement agrees. The **climatological reference** (`ffdraft.ros.reference`) — the
+coverage a calibrated, player-blind forecaster attains, computed from outcomes alone — is
+**0.843-0.926** across all twenty-two development cohorts and **0.926** on the zero-game cohort,
+where P(Y=0) = 0.885. Not one cohort is near 0.80. v1's band was centred on a value the target
+makes unreachable everywhere.
+
+**The threshold was never moved** (ADR-073 stands). `ros_promotion_v2` was frozen in `5e532c7`
+containing the rule and no result, then applied to the prediction frame the original run wrote —
+same 253,197 rows, no refit, macro metrics reproducing to the digit. It keeps every v1 threshold
+that remained meaningful, adds a clause v1 lacked (4c, cohort pinball loss), states width against
+climatology (4d), states coverage against the attainable reference (4e), and **tightens** the
+under-coverage allowance from 0.20 to 0.15. **PROMOTED** (ADR-075).
+
+**The margins are the evidence that v2 was not reverse-engineered.** The three tightest clauses
+in the whole gate are all *under*-coverage, all comfortable passes under v1 and near-failures
+under v2: `high_capital_rookie` 0.763 against an attainable 0.898 (**0.015** headroom),
+`changed_team_in_season` 0.782 against 0.900 (0.032), `extreme_uncertainty` 0.781 against 0.880
+(0.052). The cohort v1 refused `RC1` for is now only the tenth-tightest of twenty-two.
 
 One extra cohort fails on 2025 only: `in_season_arrival`, MAE 1.08 → 1.69 on 315 rows, where
 the baseline confidently predicts ~0 with a 1.7-point interval and is mostly right. The
 candidate is better *ordered* on the same rows (Spearman −0.060 → +0.160).
+
+**That cohort was investigated on development evidence only, and needs no model change**
+(ADR-076). On 4,296 development rows `RC1` wins the proper score by 20.7%, wins ordering, edges
+MAE, and is far better calibrated: the baseline under-covers by **0.237** against attainable,
+carrying a 12.0-wide interval where climatology is 28.3 — it is overconfident, not precise. A
+sparse-history fallback would swap a calibrated forecast for that one, and would change
+production outputs with no sealed season left to evaluate them honestly. **No change was made,
+so the spent 2025 result still describes the model being accepted.**
 
 ### The leakage audit found a real defect
 
@@ -81,11 +112,30 @@ position for an unobserved arrival is null. That was luck. The rule now lives in
 
 ### What Phase 12 inherits, and what it must not assume
 
-- **`intrinsic-ros-v1` is not a production model.** It is a measured, reproducible,
-  non-promoted candidate. Shipping it requires either a successor promotion rule (declared
-  first, with an ADR) or accepting the failure explicitly in the product.
-- **The sealed season is spent.** 2025 was opened once. A successor candidate needs a different
-  evaluation strategy and a future season; there is no second opening.
+- **`intrinsic-ros-v1` is an accepted production model** under `ros_promotion_v2` (ADR-077).
+  What that licenses: building the in-season product on it. What it does not: publishing a
+  number without the ADR-076 disclosures, drawing a tier boundary as a line, presenting
+  `ros_fair_rank` as comparable with the preseason `fair_rank`, or changing the model's outputs.
+- **Six inherited limitations, all measured, none repaired.** Overconfident on high-capital
+  rookies (coverage 0.763 against an attainable 0.898 — the tightest clause in the gate, 0.015
+  from failing); close to unable to order the long-absence cohort (Spearman 0.311 against 0.797);
+  conservative intervals on the zero-game cohort (14.5 against a climatological 4.5); the spent
+  sealed season; tiers as bands not lines; no injury feature.
+- **`returning_from_absence` carries a disclosure contract** (ADR-076): a machine-readable flag
+  on the published artifact, `weeks_since_last_game` beside it, an explicit statement that no
+  injury or practice-report information is used, no presentation as medical status, no
+  colour-only encoding, and the measured ordering weakness in the published limitations. Phase 12
+  implements it; Phase 11 built no UI.
+- **`ros_promotion_v2` was never applied to 2025.** The saved sealed prediction frame is on
+  disk; re-scoring it would have been one command. It was deliberately not done — running a
+  newly written rule against the sealed season is using it to evaluate the rule, which is a
+  second bite at a one-shot resource. `final_holdout.md` carries the v1 verdict alone and is
+  unchanged by this pass.
+- **The sealed season is spent, and the readiness pass changed no model output.** 2025 was
+  opened once, before the pass began; no fallback, no retrain, no tuning, no feature was added,
+  so the published out-of-time result still describes the model being accepted. **Any future
+  change to `RC1`'s outputs invalidates that and needs a fresh sealed season** — which is why
+  ADR-076 declines a sparse-history fallback rather than designing one.
 - **Tier boundaries may not be drawn as lines.** Same finding as Release 1, same response: a
   band, and text that says so.
 - **Nothing is published and nothing runs on a schedule.** `build-ros-dataset` performs network
@@ -127,6 +177,10 @@ uv run ffdraft evaluate-ros --final-eval \
 uv run ffdraft ros-attribution --season 2024 --through-week 8 --position RB
 uv run ffdraft ros-model-card
 uv run ffdraft feature-dictionary --ros
+
+# The production-readiness pass. Re-scores the prediction frame the development run wrote:
+# the same 253,197 rows, no model refitted, macro metrics reproducing to the digit.
+uv run ffdraft evaluate-ros --predictions data/ros/ros_predictions_experiment.parquet
 ```
 
 `npm run e2e:browsers` (Firefox and WebKit) remains runner-only in this sandbox, as it has been
@@ -372,10 +426,10 @@ Three things are worth carrying forward as ideas rather than as file paths:
 
 **Phase 12 — in-season product mode, opportunity board, operations and the Release 2 launch**
 (`docs/RELEASE2_ROADMAP.md`). It opens with an unresolved question rather than a task list:
-Phase 11 produced a rest-of-season model that is measurably better than every declared baseline
-and that its own frozen gate refuses to promote (ADR-073). Phase 12 has to decide, explicitly
-and with an ADR, whether to declare a successor promotion rule *before* measuring it again, or
-to ship the model with the failure stated. It may not simply raise the coverage ceiling.
+Phase 11 handed over a **promoted, production-ready** rest-of-season model (ADR-077) together
+with a six-item limitation list and one contract it must honour: the `returning_from_absence`
+disclosures in ADR-076. The promotion question Phase 11 originally left open is closed; what
+Phase 12 owns is exposing the model safely, not deciding whether it may be exposed.
 
 **Release 1 has no open gate. V1 is released.** Phase 9B's checklist in `TASKS.md` is complete and its exit gate is met. Phases 0-8 were not renumbered; 9A was inserted before the release because the one blocked Phase-8 item became doable and doing it before tagging V1 was cheaper than tagging twice.
 

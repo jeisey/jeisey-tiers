@@ -68,9 +68,12 @@ otherwise. MyFantasyLeague is the only V1 market price source (ADR-053, ADR-056)
 Phase 11 (the rest-of-season model, `intrinsic-ros-v1`) is an **offline** subsystem: it builds
 point-in-time weekly snapshots, trains and validates a separate rest-of-season model against
 four declared baselines and a frozen promotion rule, and produces rest-of-season value above
-replacement with its own documented replacement interpretation. Nothing from it is published
-yet — exposing it safely is Phase 12's job — and the preseason model, its artifacts and the
-live site are untouched by it.
+replacement with its own documented replacement interpretation. The model is **promoted and
+accepted for Phase 12** (ADR-077) — after a readiness pass established that the clause it
+originally failed was measuring the target's atom at zero rather than the model, and replaced it
+with a rule stated on quantities that survive an atom (ADR-075). The original failure is
+preserved, not repealed. Nothing from it is published yet — exposing it safely is Phase 12's
+job — and the preseason model, its artifacts and the live site are untouched by it.
 
 Two measured shortfalls ship as published limitations rather than as repaired thresholds: the
 Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034,

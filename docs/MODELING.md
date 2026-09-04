@@ -965,6 +965,55 @@ and make their Monte Carlo error perfectly correlated.
    least 200 rows: MAE at most 5% worse, Spearman at most 0.030 worse, P10-P90 coverage
    inside [0.60, 0.95].
 
+### 31.1 `ros_promotion_v2` — the successor, and why v1's clause 4 was mis-specified
+
+`ros_promotion_v1` above is retained verbatim, still evaluated and still reported. `RC1` failed
+it. What follows does not repeal that.
+
+**A P10-P90 interval covers 80% of outcomes only for a continuous target.** With `F` the true
+predictive CDF and `F⁻¹(u) = inf{y : F(y) ≥ u}` the generalized inverse a quantile model
+reports, a perfectly calibrated closed interval covers `F(F⁻¹(0.90)) − F(F⁻¹(0.10)−)`:
+
+- continuous `F` → exactly 0.80;
+- an atom of mass `p ≥ 0.10` at zero, `Y` bounded below by it → exactly **0.90**, however large
+  the atom;
+- an atom of mass `p ≥ 0.90` → both quantiles are zero, the interval is a **point**, coverage is
+  `p`, which can exceed 0.95.
+
+The rest-of-season target is 56.8% zeros overall and 88.5% on the zero-current-games cohort, so
+the third case is not hypothetical. **A perfectly calibrated forecaster with an interval of
+width zero fails v1's ceiling** — the clause refuses the narrowest possible correct interval.
+
+The climatological reference (`ffdraft.ros.reference`) measures the same thing empirically: the
+coverage a calibrated forecaster that knows the evaluation cell and the cohort but nothing about
+the player attains, computed from outcomes alone. Across the twenty-two development cohorts it
+is **0.843-0.926** — never near 0.80, and 0.926 on the cohort v1 refused `RC1` for.
+
+**v2 keeps the intent and moves it onto quantities that survive an atom.** Clauses 1-3 are
+unchanged. Clause 4 becomes five sub-clauses:
+
+| | clause | change |
+|---|---|---|
+| 4a | cohort MAE at most 5% worse | unchanged from v1 |
+| 4b | cohort Spearman at most 0.030 worse | unchanged from v1 |
+| 4c | cohort mean **pinball loss** at most 5% worse | **new** — proper, atom-safe, the local analogue of clause 1 |
+| 4d | interval fails only if wider than **both** the baseline's **and** climatology's | **replaces** the coverage ceiling |
+| 4e | coverage within **±0.15 of the cohort's attainable coverage** | **replaces** the absolute band |
+
+Pinball loss is proper and is defined for a mixed discrete–continuous target, so 4c is the
+clause that actually detects a distributionally worse forecast — and, because pinball punishes
+both over- and under-wide intervals, it is also the real safeguard against a lazily wide model.
+4d is a backstop for the pathological case: "so wide it says nothing" means *wider than knowing
+nothing*, and climatology is what knowing nothing looks like. An atom makes a calibrated
+interval **narrower**, so 4d cannot be tripped by what tripped v1.
+
+**4e is not a loosening.** Its tolerance is v1's own upper allowance (0.95 − 0.80) applied to
+both sides, which tightens the under-coverage allowance from 0.20 to 0.15. On a continuous
+cohort the reference is 0.80 and 4e reduces to `[0.65, 0.95]`. A test asserts that a cohort
+covering 0.62 passes v1 and **fails** v2.
+
+ADR-075 has the full argument; ADR-077 records the production decision it led to.
+
 The twelve required cohorts are roadmap 11.3's own edge-case list — rookies, veterans, 0/1-2/3+
 current-season games, players returning from a long absence, mid-season team changes,
 in-season arrivals, high-draft-capital underperformers, high-capital rookies, early/mid/late

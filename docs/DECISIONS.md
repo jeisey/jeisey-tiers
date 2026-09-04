@@ -2549,3 +2549,184 @@ candidate against `RC1` must use v2, because v1 cannot rank two models on a zero
 cohort. The preseason model's gates are untouched: `phase3_promotion_v1` judges a season-total
 target whose zero share is 44%, and whether its own coverage clause is mis-specified for the
 same reason is a real question this ADR does not answer and does not touch.
+
+---
+
+## ADR-076 — The sparse-history and long-absence cohorts: no model change, and what each one costs
+
+**Status.** Accepted, Phase 11. Decided on **development evidence only** (2020-2024, 253,197
+rows). The sealed season is spent and is not an input to anything below.
+
+### `in_season_arrival` — no special handling
+
+4,296 development rows: players outside the season's preseason eligible universe, whose entire
+preseason feature block is null. The question is whether the production model needs a
+deterministic fallback to one of the declared simple baselines on sparse-history rows.
+
+| | baseline `R2` | candidate `RC1` |
+|---|---|---|
+| mean pinball | 3.122 | **2.477** (−20.7%) |
+| Spearman | 0.492 | **0.552** |
+| MAE | 6.82 | **6.73** |
+| P10-P90 coverage | 0.659 | **0.867** |
+| attainable coverage | 0.896 | 0.896 |
+| coverage gap | **−0.237** | **−0.029** |
+| mean P10-P90 width | 12.0 | 25.3 |
+| climatological width | 28.3 | 28.3 |
+
+**Decision: no fallback, and no model change of any kind.**
+
+The candidate wins the proper score by 21%, wins ordering, and edges MAE. What looks at first
+like the baseline's advantage — a 12.0-wide interval against the candidate's 25.3 — is the
+defect, not the merit: climatology on this cohort is 28.3 wide, so `R2` is claiming to know
+these players more than twice as precisely as knowing nothing, and it pays for that with a
+coverage of 0.659 against an attainable 0.896. It under-covers by 0.237. Were `R2` the
+candidate it would fail `ros_promotion_v2` clause 4e outright.
+
+Swapping a well-calibrated forecast for an overconfident one, on precisely the cohort with the
+least information, would be the wrong trade in the direction that matters least visibly.
+
+**Two constraints reinforce it.** First, `RC1` already carries the honest signal: the
+`in_preseason_universe` indicator is a declared model input, so the model *knows* these rows are
+sparse and widens accordingly — a fallback would be hand-coding what the model already does.
+Second, and decisively: **a fallback would change production outputs, and there is no sealed
+season left to make an honest promotion claim about the changed model.** 2025 is spent
+(ADR-069). Inventing a fallback now would either be evaluated on the data that selected it or
+not evaluated at all. Neither is acceptable, and the correct response to that is to not make
+the change.
+
+**On the already-published 2025 figure.** `final_holdout.md` records `in_season_arrival` MAE
+1.08 → 1.69 on 315 rows, a cohort a twelfth the size of the development one. It is not an input
+to this decision and was not used to reach it. Read against the development evidence it is the
+same phenomenon rather than a contradiction: a baseline that predicts approximately zero with a
+1.7-point interval wins MAE on a cohort that mostly scored approximately zero, and the same
+baseline under-covers by 0.237 in development. Nothing here is a reason to change the model,
+and if a future phase disagrees it needs a future season, not this one.
+
+### `returning_from_absence` — a real limitation, no model change, a disclosure requirement
+
+18,951 development rows (7.5% of the frame): players who have appeared this season but have
+missed at least three consecutive weeks ending at the cutoff.
+
+| | baseline `R2` | candidate `RC1` |
+|---|---|---|
+| mean pinball | 2.820 | **2.352** |
+| MAE | 8.39 | **6.44** |
+| Spearman | **0.294** | **0.311** |
+| coverage / attainable | 0.814 / 0.864 | 0.912 / 0.864 |
+
+`RC1` is better on every axis. **Both are close to unable to order this cohort at all.** A
+Spearman of 0.311 means a rest-of-season ranking *within* the returning-from-absence group is
+barely better than arbitrary — against 0.797 on the full universe. That is the measured price
+of having no injury feed, and it is exactly the cohort ADR-070 predicted would be worst.
+
+**No injury feature is added.** ADR-070's four conditions — a recorded schema, a measured
+historical point-in-time coverage rate, a capture path in the daily refresh, and a fail-closed
+check — are unchanged and unmet, and "the current data exists" is still not one of them.
+
+**What Phase 12 must therefore communicate.** The model infers absence from the box score
+alone: a player cleared to return this week and a player out for the season are, to it,
+identical rows that have not appeared for N weeks. A rest-of-season number for such a player
+is a statement about football history, not about medical status, and a reader who mistakes the
+two is being misled by the product rather than by the model. Phase 12 must therefore:
+
+1. carry a **machine-readable per-row flag** in the published artifact, set by the same
+   condition this cohort is defined by — `has_played_this_season` and
+   `consecutive_weeks_missed >= 3` — versioned in the artifact schema like every other public
+   field;
+2. publish `weeks_since_last_game` alongside it, so the claim is checkable rather than asserted;
+3. state, wherever such a row is shown, that the estimate uses **no injury or practice-report
+   information** and infers absence from appearances only;
+4. never present the flag as a status, a designation, or medical knowledge — the honest phrasing
+   is "has not appeared for N weeks", which is what the model actually knows;
+5. not encode it by colour alone (`AGENTS.md` section 11), and
+6. surface the measured ordering weakness rather than only the flag: within this cohort the
+   board's order is close to uninformative, and the published limitation list must say so.
+
+This ADR specifies the contract. Phase 12 implements it; Phase 11 builds no UI.
+
+---
+
+## ADR-077 — `RC1` is accepted for Phase 12, and what Phase 12 inherits with it
+
+**Status.** Accepted, Phase 11.
+
+## `RC1 ACCEPTED FOR PHASE 12`
+
+`intrinsic-ros-v1` (`rc1_ros_hurdle_v1`) is a **production-ready rest-of-season model** under
+`ros_promotion_v2`. It remains, permanently and on the record, a model that **failed**
+`ros_promotion_v1` (ADR-073). Both statements are true, both are published, and neither
+replaces the other.
+
+**Why the v1 failure is a gate-specification issue and not a model defect.** ADR-075 has the
+argument and the proof; in one line: v1 bounded cohort coverage against a nominal 0.80 that
+only a continuous target attains, and this target is 56.8% zeros. A perfectly calibrated
+forecaster with an interval of **width zero** breaches v1's ceiling — a clause written to catch
+"an interval so wide it says nothing" refuses the narrowest possible correct interval. The
+climatological reference confirms it across all twenty-two cohorts: calibration attains
+0.843-0.926, never 0.80. On the cohort that failed v1, `RC1`'s interval is **narrower** than
+the baseline's (14.5 against 17.1), its MAE is **a third** of it (2.05 against 5.82), its
+pinball loss is **43% better** (0.994 against 1.754), and it sits **closer to attainable
+calibration than the baseline does** (+0.039 against −0.101).
+
+**Why this is not a threshold moved to fit a result.** The successor was committed in `5e532c7`
+containing the rule and no result, and applied afterwards to the frozen prediction frame the
+original run wrote — the same rows, no refit, macro metrics reproducing to the digit. It keeps
+every v1 threshold that remained meaningful, adds a clause v1 did not have (4c, a proper local
+score), and **tightens** the under-coverage allowance from 0.20 to 0.15.
+
+The measured consequence of that tightening is the strongest evidence available, because it
+cuts against the outcome:
+
+| cohort | candidate coverage | attainable | gap | v2 headroom |
+|---|---|---|---|---|
+| `high_capital_rookie` | 0.763 | 0.898 | **−0.135** | **0.015** |
+| `changed_team_in_season` | 0.782 | 0.900 | −0.118 | 0.032 |
+| `extreme_uncertainty` | 0.781 | 0.880 | −0.098 | 0.052 |
+| `games_played_band / no_games` | 0.964 | 0.926 | +0.039 | 0.111 |
+
+Every one of those three near-misses is a **comfortable pass under v1** and a near-failure
+under v2, and all three are on the *under*-coverage side. `RC1` passes its successor gate with
+**0.015** of headroom on its tightest clause — a rule written to let it through would not have
+left it hanging by a hundredth on a clause it made stricter. The cohort v1 refused it for is
+now only the tenth-tightest of twenty-two.
+
+**What Phase 12 inherits.** All of it is measured, none of it is repaired:
+
+1. **The model is overconfident on high-draft-capital rookies.** Coverage 0.763 against an
+   attainable 0.898 — the tightest clause in the gate, 0.015 from failing. A re-measurement on
+   new data could push it over. This is the first thing to check on any future evidence.
+2. **It cannot order the long-absence cohort.** Spearman 0.311 on 18,951 rows against 0.797 on
+   the full universe. ADR-076 specifies the six-part disclosure contract this obliges.
+3. **Its intervals on the zero-game cohort are conservative.** 14.5 wide against a
+   climatological 4.5 — narrower than the baseline and better scored, but wider than the near
+   point mass the cohort actually is. Not a gate failure; a real observation.
+4. **The sealed season is spent.** 2025 was opened once, before this readiness pass began, and
+   this pass changed no model output — no fallback, no retrain, no tuning, no feature — so the
+   published out-of-time result still describes the model being accepted. **Any future change to
+   `RC1`'s outputs invalidates that and needs a fresh sealed season.** That constraint is why
+   ADR-076 declines a sparse-history fallback rather than designing one.
+5. **The tiers are bands, not lines**, and the draw count is a fallback rather than a converged
+   value (ADR-074). Unchanged.
+6. **There is still no injury feature** (ADR-070), and the cohort that needs one is measurably
+   the worst.
+
+**What "accepted" does and does not license.** It licenses Phase 12 to build the in-season
+product on `intrinsic-ros-v1` as a promoted model. It does not license publishing a number
+without the ADR-076 disclosures, drawing a tier boundary as a line, changing the model's
+outputs without a new sealed season, or presenting `ros_fair_rank` as comparable with the
+preseason `fair_rank`.
+
+**`ros_promotion_v2` was deliberately not applied to the sealed season.** The saved 2025
+prediction frame is on disk and re-scoring it would have cost one command, so the omission is a
+choice rather than an oversight. 2025 is spent: it was opened once to measure the frozen
+architecture, and running a *newly written rule* against it would be using the sealed season to
+evaluate the rule — a second bite at the one thing that only works once. `final_holdout.md`
+therefore still carries the v1 verdict alone and is byte-identical to the version committed
+before this pass. The acceptance rests on development evidence, which is where a promotion
+decision belongs; the sealed season's contribution is what it always was, an out-of-time check
+that every development conclusion reproduced.
+
+**Evidence.** `docs/experiments/phase11-ros/experiment.md` (both verdicts, side by side),
+`docs/experiments/phase11-ros/final_holdout.md` (the spent season, v1 verdict, unchanged),
+`docs/experiments/phase11-ros-value/value_study.md`, `models/cards/intrinsic-ros-v1.md`.

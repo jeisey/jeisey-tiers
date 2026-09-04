@@ -1,6 +1,6 @@
 # Rest-of-season experiment — `development`
 
-Generated 2026-09-04T02:29:36Z · experiment `phase11_ros_v1` · seed `20260903`.
+Generated 2026-09-04T13:39:03Z · experiment `phase11_ros_v1` · seed `20260903`.
 
 ## What was measured
 
@@ -37,30 +37,30 @@ Macro means across evaluation cells, so one week's quarterback board weighs the 
 
 ## Predeclared cohorts
 
-| cohort | rows | decisive | baseline MAE | candidate MAE | baseline ρ | candidate ρ | baseline P10-P90 coverage | candidate P10-P90 coverage | baseline width | candidate width |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `full_universe` / all | 253,197 | yes | 11.26 | 8.96 | 0.677 | 0.797 | 0.795 | 0.878 | 32.7 | 30.5 |
-| `position` / QB | 32,628 | yes | 19.14 | 15.64 | 0.643 | 0.718 | 0.772 | 0.832 | 56.9 | 50.4 |
-| `position` / RB | 62,625 | yes | 12.67 | 9.94 | 0.676 | 0.817 | 0.790 | 0.883 | 36.5 | 34.3 |
-| `position` / TE | 54,078 | yes | 7.28 | 5.74 | 0.688 | 0.828 | 0.798 | 0.870 | 21.9 | 15.7 |
-| `position` / WR | 103,866 | yes | 10.02 | 7.95 | 0.699 | 0.826 | 0.803 | 0.893 | 28.4 | 29.5 |
-| `scoring_preset` / HALF | 84,399 | yes | 11.26 | 8.94 | 0.678 | 0.797 | 0.797 | 0.878 | 32.7 | 30.4 |
-| `scoring_preset` / PPR | 84,399 | yes | 12.72 | 10.11 | 0.681 | 0.799 | 0.796 | 0.879 | 36.8 | 34.8 |
-| `scoring_preset` / STD | 84,399 | yes | 9.81 | 7.84 | 0.671 | 0.795 | 0.791 | 0.877 | 28.6 | 26.2 |
-| `season_phase` / weeks_1_3 | 47,655 | yes | 19.48 | 15.18 | 0.696 | 0.801 | 0.624 | 0.847 | 41.9 | 50.4 |
-| `season_phase` / weeks_4_9 | 95,985 | yes | 13.38 | 10.78 | 0.699 | 0.816 | 0.785 | 0.866 | 37.2 | 37.1 |
-| `season_phase` / weeks_10_plus | 109,557 | yes | 5.84 | 4.66 | 0.649 | 0.778 | 0.878 | 0.901 | 24.7 | 16.0 |
-| `rookie` / rookie | 18,393 | yes | 16.69 | 14.87 | 0.610 | 0.716 | 0.733 | 0.823 | 42.6 | 43.9 |
-| `veteran` / veteran | 234,804 | yes | 10.84 | 8.50 | 0.672 | 0.796 | 0.800 | 0.882 | 31.9 | 29.4 |
-| `games_played_band` / no_games | 131,844 | yes | 5.82 | 2.05 | 0.182 | 0.214 | 0.825 | 0.964 | 17.1 | 14.5 |
-| `games_played_band` / one_or_two_games | 34,782 | yes | 19.01 | 17.41 | 0.319 | 0.436 | 0.693 | 0.803 | 40.2 | 51.1 |
-| `games_played_band` / three_plus_games | 86,571 | yes | 16.44 | 16.09 | 0.671 | 0.695 | 0.790 | 0.776 | 53.3 | 46.4 |
-| `returning_from_absence` / returning | 18,951 | yes | 8.39 | 6.44 | 0.294 | 0.311 | 0.814 | 0.912 | 27.1 | 20.9 |
-| `changed_team_in_season` / changed_team | 1,668 | yes | 11.66 | 10.36 | 0.512 | 0.597 | 0.813 | 0.782 | 37.6 | 29.0 |
-| `in_season_arrival` / arrival | 4,296 | yes | 6.82 | 6.73 | 0.492 | 0.552 | 0.659 | 0.867 | 12.0 | 25.3 |
-| `high_capital_underperforming` / high_capital_underperforming | 15,288 | yes | 17.44 | 16.17 | 0.363 | 0.497 | 0.780 | 0.783 | 54.5 | 47.5 |
-| `high_capital_rookie` / high_capital_rookie | 4,965 | yes | 29.83 | 26.66 | 0.590 | 0.618 | 0.694 | 0.763 | 70.7 | 73.6 |
-| `extreme_uncertainty` / widest_decile | 70,651 | yes | 23.11 | 19.39 | 0.594 | 0.698 | 0.815 | 0.781 | 73.5 | 56.8 |
+| cohort | rows | decisive | baseline MAE | candidate MAE | baseline ρ | candidate ρ | baseline pinball | candidate pinball | P(Y=0) | attainable coverage | baseline coverage | candidate coverage | climatological width | baseline width | candidate width |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `full_universe` / all | 253,197 | yes | 11.26 | 8.96 | 0.677 | 0.797 | 4.046 | 3.305 | 0.568 | 0.893 | 0.795 | 0.878 | 65.6 | 32.7 | 30.5 |
+| `position` / QB | 32,628 | yes | 19.14 | 15.64 | 0.643 | 0.718 | 6.977 | 5.811 | 0.525 | 0.865 | 0.772 | 0.832 | 118.3 | 56.9 | 50.4 |
+| `position` / RB | 62,625 | yes | 12.67 | 9.94 | 0.676 | 0.817 | 4.546 | 3.636 | 0.525 | 0.896 | 0.790 | 0.883 | 72.1 | 36.5 | 34.3 |
+| `position` / TE | 54,078 | yes | 7.28 | 5.74 | 0.688 | 0.828 | 2.632 | 2.088 | 0.589 | 0.898 | 0.798 | 0.870 | 39.0 | 21.9 | 15.7 |
+| `position` / WR | 103,866 | yes | 10.02 | 7.95 | 0.699 | 0.826 | 3.561 | 2.953 | 0.596 | 0.897 | 0.803 | 0.893 | 58.9 | 28.4 | 29.5 |
+| `scoring_preset` / HALF | 84,399 | yes | 11.26 | 8.94 | 0.678 | 0.797 | 4.043 | 3.297 | 0.568 | 0.893 | 0.797 | 0.878 | 65.6 | 32.7 | 30.4 |
+| `scoring_preset` / PPR | 84,399 | yes | 12.72 | 10.11 | 0.681 | 0.799 | 4.557 | 3.732 | 0.568 | 0.893 | 0.796 | 0.879 | 75.0 | 36.8 | 34.8 |
+| `scoring_preset` / STD | 84,399 | yes | 9.81 | 7.84 | 0.671 | 0.795 | 3.539 | 2.887 | 0.569 | 0.892 | 0.791 | 0.877 | 56.2 | 28.6 | 26.2 |
+| `season_phase` / weeks_1_3 | 47,655 | yes | 19.48 | 15.18 | 0.696 | 0.801 | 7.124 | 5.626 | 0.501 | 0.892 | 0.624 | 0.847 | 115.7 | 41.9 | 50.4 |
+| `season_phase` / weeks_4_9 | 95,985 | yes | 13.38 | 10.78 | 0.699 | 0.816 | 4.665 | 3.950 | 0.533 | 0.892 | 0.785 | 0.866 | 79.5 | 37.2 | 37.1 |
+| `season_phase` / weeks_10_plus | 109,557 | yes | 5.84 | 4.66 | 0.649 | 0.778 | 2.166 | 1.731 | 0.628 | 0.894 | 0.878 | 0.901 | 31.5 | 24.7 | 16.0 |
+| `rookie` / rookie | 18,393 | yes | 16.69 | 14.87 | 0.610 | 0.716 | 6.508 | 5.288 | 0.279 | 0.872 | 0.733 | 0.823 | 81.7 | 42.6 | 43.9 |
+| `veteran` / veteran | 234,804 | yes | 10.84 | 8.50 | 0.672 | 0.796 | 3.854 | 3.150 | 0.591 | 0.893 | 0.800 | 0.882 | 63.9 | 31.9 | 29.4 |
+| `games_played_band` / no_games | 131,844 | yes | 5.82 | 2.05 | 0.182 | 0.214 | 1.754 | 0.994 | 0.885 | 0.926 | 0.825 | 0.964 | 4.5 | 17.1 | 14.5 |
+| `games_played_band` / one_or_two_games | 34,782 | yes | 19.01 | 17.41 | 0.319 | 0.436 | 7.360 | 6.190 | 0.334 | 0.856 | 0.693 | 0.803 | 85.3 | 40.2 | 51.1 |
+| `games_played_band` / three_plus_games | 86,571 | yes | 16.44 | 16.09 | 0.671 | 0.695 | 6.206 | 5.666 | 0.179 | 0.855 | 0.790 | 0.776 | 77.1 | 53.3 | 46.4 |
+| `returning_from_absence` / returning | 18,951 | yes | 8.39 | 6.44 | 0.294 | 0.311 | 2.820 | 2.352 | 0.635 | 0.864 | 0.814 | 0.912 | 16.0 | 27.1 | 20.9 |
+| `changed_team_in_season` / changed_team | 1,668 | yes | 11.66 | 10.36 | 0.512 | 0.597 | 4.283 | 3.587 | 0.342 | 0.900 | 0.813 | 0.782 | 45.1 | 37.6 | 29.0 |
+| `in_season_arrival` / arrival | 4,296 | yes | 6.82 | 6.73 | 0.492 | 0.552 | 3.122 | 2.477 | 0.475 | 0.896 | 0.659 | 0.867 | 28.3 | 12.0 | 25.3 |
+| `high_capital_underperforming` / high_capital_underperforming | 15,288 | yes | 17.44 | 16.17 | 0.363 | 0.497 | 6.531 | 5.651 | 0.180 | 0.843 | 0.780 | 0.783 | 63.4 | 54.5 | 47.5 |
+| `high_capital_rookie` / high_capital_rookie | 4,965 | yes | 29.83 | 26.66 | 0.590 | 0.618 | 11.809 | 9.332 | 0.099 | 0.898 | 0.694 | 0.763 | 136.0 | 70.7 | 73.6 |
+| `extreme_uncertainty` / widest_decile | 70,651 | yes | 23.11 | 19.39 | 0.594 | 0.698 | 8.318 | 6.868 | 0.207 | 0.880 | 0.815 | 0.781 | 97.1 | 73.5 | 56.8 |
 
 ## By snapshot week
 
@@ -87,7 +87,9 @@ MAE, macro-averaged across the cells of that week.
 
 ## Promotion gate
 
-Rule `ros_promotion_v1`, frozen before the comparison ran.
+### `ros_promotion_v1`
+
+The original rule, frozen before the candidate existed and reported unchanged. Its verdict is the historical record (ADR-073) and is preserved whatever the successor says.
 
 **NOT PROMOTED** — `RC1` against `R2`.
 
@@ -98,6 +100,18 @@ Satisfied:
 
 Failed:
 - clause 4: cohort deterioration: games_played_band/no_games P10-P90 coverage 0.964 outside [0.60, 0.95]
+
+### `ros_promotion_v2`
+
+The successor rule (ADR-075), frozen and committed before it was applied to any evidence. Clauses 1-3 and 4a-4b are v1's, unchanged; 4c adds a proper local score; 4d states width against climatology; 4e states coverage against the coverage a calibrated forecaster can actually attain on the cohort.
+
+**PROMOTED** — `RC1` against `R2`.
+
+Satisfied:
+- clause 1: macro mean_pinball -0.8084 [-0.8328, -0.7857]
+- clause 2: macro mae -2.4632 within the 1% tolerance (+0.1232)
+- clause 3: macro spearman +0.1203
+- clause 4: no cohort deterioration across 22 decisive cohort(s) of 22 reported, on all five sub-clauses
 
 
 ## Checks

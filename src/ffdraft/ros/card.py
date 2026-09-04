@@ -19,7 +19,7 @@ from typing import Any
 from ffdraft.ros.candidates import RC1_NUM_BOOST_ROUND, RC1_PARAMETERS, RC1_VERSION
 from ffdraft.ros.cutoff import ROS_CUTOFF_RULE, ROS_CUTOFF_RULE_VERSION
 from ffdraft.ros.dictionary import ros_feature_selection
-from ffdraft.ros.gate import ROS_PROMOTION_CRITERIA
+from ffdraft.ros.gate import ROS_PROMOTION_CRITERIA, ROS_PROMOTION_CRITERIA_V2
 from ffdraft.ros.holdout import ros_holdout_policy
 from ffdraft.ros.labels import ROS_LABEL_VERSION
 from ffdraft.timeutil import isoformat_utc, utc_now
@@ -48,8 +48,17 @@ def build_ros_card(
     """Assemble the machine-readable card from the committed reports."""
     selection = ros_feature_selection()
     gate = development.get("gate", {})
+    gate_v2 = development.get("gate_v2", {})
     macro = development.get("macro_by_model", {})
+    accepted = bool(gate_v2.get("promoted"))
     return {
+        "production_status": (
+            "ACCEPTED FOR PHASE 12 — promoted under ros_promotion_v2 (ADR-077). It failed "
+            "ros_promotion_v1, whose clause 4 was found to be mis-specified for a "
+            "zero-inflated target (ADR-073, ADR-075); that failure is preserved, not repealed."
+            if accepted
+            else "NOT READY FOR PHASE 12 — not promoted under ros_promotion_v2."
+        ),
         "card_version": ROS_CARD_VERSION,
         "model_version": RC1_VERSION,
         "model_name": _CARD_NAME,
@@ -90,6 +99,8 @@ def build_ros_card(
         "promotion": {
             "criteria": ROS_PROMOTION_CRITERIA.to_dict(),
             "decision": gate,
+            "criteria_v2": ROS_PROMOTION_CRITERIA_V2.to_dict(),
+            "decision_v2": gate_v2,
         },
         # The policy is taken from the live declaration rather than from the report's frozen
         # copy, so the card's wording stays current; the report keeps its own copy as the
@@ -130,8 +141,18 @@ def _limitations() -> list[str]:
         "in the 2017-2025 build and are reported as their own cohort.",
         "Player outcomes are simulated independently; teammate and team-level correlations are "
         "not modelled, exactly as in Release 1.",
-        "Nothing here is published. Phase 11 is an offline subsystem; exposing it safely is "
-        "Phase 12's job.",
+        "The model is overconfident on high-draft-capital rookies: P10-P90 coverage 0.763 "
+        "against an attainable 0.898. That is the tightest clause in the promotion gate, "
+        "0.015 from failing it, and the first thing to re-check on any new evidence.",
+        "It cannot order the long-absence cohort: Spearman 0.311 on 18,951 development rows "
+        "against 0.797 on the full universe. ADR-076 specifies what a product built on it must "
+        "disclose.",
+        "Its intervals on the zero-current-games cohort are conservative — 14.5 wide against a "
+        "climatological 4.5 — though narrower than the baseline's and better scored.",
+        "The sealed season is spent. This model's published out-of-time result describes these "
+        "exact outputs; any change to them requires a fresh sealed season (ADR-077).",
+        "Phase 11 published nothing. Exposing this model safely, with the ADR-076 disclosures, "
+        "is Phase 12's job.",
     ]
 
 
@@ -232,12 +253,15 @@ def card_markdown(card: dict[str, Any]) -> str:
         for metric, payload in evaluation.get("paired_deltas", {}).items()
     ]
     decision = card["promotion"]["decision"]
+    decision_v2 = card["promotion"].get("decision_v2", {})
     lines = [
         f"# Rest-of-season model card — `{card['model_version']}`",
         "",
         f"Card `{card['card_version']}`, generated {card['generated_at_utc']} from code "
         f"`{card['git_sha']}`. Every number below is read from a committed report or from the "
         "code's own frozen declarations; none is written by hand.",
+        "",
+        f"## Production status\n\n**{card.get('production_status', 'unknown')}**",
         "",
         "## Purpose and intended use",
         "",
@@ -297,16 +321,34 @@ def card_markdown(card: dict[str, Any]) -> str:
                 ],
             ),
             "",
-            "## Promotion decision",
+            "## Promotion decisions",
             "",
-            f"Rule `{card['promotion']['criteria']['criteria_version']}` — "
-            f"**{'PROMOTED' if decision.get('promoted') else 'NOT PROMOTED'}**.",
+            "Two rules, both reported. The original is the historical record and is never "
+            "overwritten by its successor.",
+            "",
+            f"### `{card['promotion']['criteria']['criteria_version']}` — "
+            f"**{'PROMOTED' if decision.get('promoted') else 'NOT PROMOTED'}**",
             "",
         ],
     )
-    for reason in decision.get("satisfied_clauses", []):
-        lines.append(f"- satisfied: {reason}")
     for reason in decision.get("failed_clauses", []):
+        lines.append(f"- **failed**: {reason}")
+    lines.extend(
+        [
+            "",
+            f"### `{card['promotion']['criteria_v2']['criteria_version']}` — "
+            f"**{'PROMOTED' if decision_v2.get('promoted') else 'NOT PROMOTED'}**",
+            "",
+            "Clauses 1-3 and 4a-4b are the original's, unchanged. 4c adds a proper local "
+            "score, 4d states interval width against climatology, and 4e states coverage "
+            "against what calibration can attain on the cohort rather than against a fixed "
+            "0.80 the target's atom at zero makes unreachable (ADR-075).",
+            "",
+        ],
+    )
+    for reason in decision_v2.get("satisfied_clauses", []):
+        lines.append(f"- satisfied: {reason}")
+    for reason in decision_v2.get("failed_clauses", []):
         lines.append(f"- **failed**: {reason}")
     lines.extend(
         [

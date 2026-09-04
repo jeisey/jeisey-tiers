@@ -1,6 +1,10 @@
 # Rest-of-season model card — `rc1_ros_hurdle_v1`
 
-Card `ros_model_card_v1`, generated 2026-09-04T03:06:43Z from code `af30b38`. Every number below is read from a committed report or from the code's own frozen declarations; none is written by hand.
+Card `ros_model_card_v1`, generated 2026-09-04T13:42:19Z from code `5e532c7`. Every number below is read from a committed report or from the code's own frozen declarations; none is written by hand.
+
+## Production status
+
+**ACCEPTED FOR PHASE 12 — promoted under ros_promotion_v2 (ADR-077). It failed ros_promotion_v1, whose clause 4 was found to be mis-specified for a zero-inflated target (ADR-073, ADR-075); that failure is preserved, not repealed.**
 
 ## Purpose and intended use
 
@@ -47,14 +51,22 @@ Paired deltas, candidate minus primary baseline:
 | spearman | 0.1203 | [+0.1184, +0.1229] | yes |
 | top_k_recall | -0.0034 | [-0.0044, +0.0079] | no |
 
-## Promotion decision
+## Promotion decisions
 
-Rule `ros_promotion_v1` — **NOT PROMOTED**.
+Two rules, both reported. The original is the historical record and is never overwritten by its successor.
+
+### `ros_promotion_v1` — **NOT PROMOTED**
+
+- **failed**: clause 4: cohort deterioration: games_played_band/no_games P10-P90 coverage 0.964 outside [0.60, 0.95]
+
+### `ros_promotion_v2` — **PROMOTED**
+
+Clauses 1-3 and 4a-4b are the original's, unchanged. 4c adds a proper local score, 4d states interval width against climatology, and 4e states coverage against what calibration can attain on the cohort rather than against a fixed 0.80 the target's atom at zero makes unreachable (ADR-075).
 
 - satisfied: clause 1: macro mean_pinball -0.8084 [-0.8328, -0.7857]
 - satisfied: clause 2: macro mae -2.4632 within the 1% tolerance (+0.1232)
 - satisfied: clause 3: macro spearman +0.1203
-- **failed**: clause 4: cohort deterioration: games_played_band/no_games P10-P90 coverage 0.964 outside [0.60, 0.95]
+- satisfied: clause 4: no cohort deterioration across 22 decisive cohort(s) of 22 reported, on all five sub-clauses
 
 ## Sealed season
 
@@ -94,4 +106,8 @@ Rule `ros_promotion_v1` — **NOT PROMOTED**.
 - The availability/performance dependence is estimated on players with at least one remaining game, because points per game is undefined for the rest, and extrapolated to everyone.
 - The preseason feature block is null for in-season arrivals, who are 8.7% of players in the 2017-2025 build and are reported as their own cohort.
 - Player outcomes are simulated independently; teammate and team-level correlations are not modelled, exactly as in Release 1.
-- Nothing here is published. Phase 11 is an offline subsystem; exposing it safely is Phase 12's job.
+- The model is overconfident on high-draft-capital rookies: P10-P90 coverage 0.763 against an attainable 0.898. That is the tightest clause in the promotion gate, 0.015 from failing it, and the first thing to re-check on any new evidence.
+- It cannot order the long-absence cohort: Spearman 0.311 on 18,951 development rows against 0.797 on the full universe. ADR-076 specifies what a product built on it must disclose.
+- Its intervals on the zero-current-games cohort are conservative — 14.5 wide against a climatological 4.5 — though narrower than the baseline's and better scored.
+- The sealed season is spent. This model's published out-of-time result describes these exact outputs; any change to them requires a fresh sealed season (ADR-077).
+- Phase 11 published nothing. Exposing this model safely, with the ADR-076 disclosures, is Phase 12's job.

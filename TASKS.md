@@ -512,7 +512,7 @@ commands, runs and measurements recorded in `SESSION_STATE.md`.
       `ffdraft.market.extra` into `build-arbitrage`, publication depth 500, and the
       full-board handoff that lets the surface rule reach beyond it.
 
-**Exit gate: partially met.**
+**Exit gate: met.**
 
 **Met.** FFC, MFL and FantasyPros have explicit dispositions with distinct semantics
 preserved and fresh runner evidence behind each. FFC identity coverage is 100% against a 90%
@@ -551,10 +551,13 @@ steady-state command set has now been exercised against Phase 10.
 
 ## Phase 11 — Rest-of-season intrinsic model
 
-**Implemented 2026-09-04; the exit gate is partially met.** The candidate beats every declared
-baseline on every primary metric, in development and on the sealed season, and is **not
-promoted** because one frozen clause fires. That is recorded rather than repaired, in the same
-shape Phase 4 used. Evidence: `docs/experiments/phase11-ros/experiment.md`,
+**Implemented 2026-09-04; exit gate met after the production-readiness pass.** The candidate
+beats every declared baseline on every primary metric, in development and on the sealed season.
+It **failed `ros_promotion_v1`**, that failure is preserved in full (ADR-073), and the readiness
+pass established that the failing clause was mis-specified for a zero-inflated target rather
+than describing a model defect (ADR-075). Under the successor rule `ros_promotion_v2` — frozen
+and committed before it touched any evidence — `RC1` is **promoted and accepted for Phase 12**
+(ADR-077). Evidence: `docs/experiments/phase11-ros/experiment.md`,
 `docs/experiments/phase11-ros/final_holdout.md`,
 `docs/experiments/phase11-ros-value/value_study.md`, `models/cards/intrinsic-ros-v1.md`;
 decisions ADR-068 through ADR-074.
@@ -612,13 +615,54 @@ decisions ADR-068 through ADR-074.
       led by `weeks_since_last_game` and performance by `touches_per_game_to_date`,
       `points_per_week_to_date` and `carry_share_to_date` —
       `docs/experiments/phase11-ros/attribution/2024-w08-RB-PPR.json`.
-- [!] **`RC1` promoted to production.** — **Not promoted, on measured evidence.**
-      `ros_promotion_v1` clause 4 fires on `games_played_band / no_games`: candidate P10-P90
-      coverage **0.964** against a [0.60, 0.95] band, on 131,844 rows. The evidence says this
-      is a rule artifact rather than a model defect — the candidate's interval there is
-      **narrower** than the baseline's (14.5 against 17.1) and its MAE is a third of it (2.05
-      against 5.82) — because rather more than half of those rows have a true value of exactly
-      zero and a band straddling zero contains it. The threshold is not moved. ADR-073.
+- [x] **Record the `ros_promotion_v1` verdict without repairing it.** — **Not promoted under
+      v1**, and that stands. Clause 4 fires on `games_played_band / no_games`: candidate P10-P90
+      coverage **0.964** against a [0.60, 0.95] band, on 131,844 rows. The threshold was not
+      moved, the rule was not edited, and both remain in the codebase and in every report.
+      ADR-073.
+
+### Production-readiness pass (2026-09-04)
+
+- [x] Revisit clause 4 from first principles. — An absolute symmetric coverage band is
+      **statistically inappropriate** for this target. A P10-P90 interval covers 0.80 only for
+      a *continuous* target; where a predictive distribution has an atom of mass `p >= 0.10` at
+      its own tenth percentile a perfectly calibrated interval covers exactly **0.90**, and
+      where `p >= 0.90` it collapses to a point and covers `p`. A test asserts all three cases,
+      including the decisive one: **a perfectly calibrated forecaster with an interval of width
+      zero breaches v1's ceiling.** The measured climatological reference agrees — calibration
+      attains **0.843-0.926** across all twenty-two development cohorts and **0.926** on the
+      zero-game cohort. Not one is near 0.80. ADR-075.
+- [x] Define and freeze `ros_promotion_v2` before applying it. — Committed in `5e532c7`
+      containing the rule and **no result**. Clauses 1-3 and 4a-4b are v1's unchanged; **4c**
+      adds cohort mean pinball loss (proper and atom-safe); **4d** fails an interval only when
+      it is wider than *both* the baseline's and climatology's; **4e** states coverage against
+      the cohort's attainable coverage instead of a fixed 0.80. The tolerance is v1's own upper
+      allowance applied symmetrically, which **tightens** the under-coverage side from 0.20 to
+      0.15. A test asserts a cohort passing v1 at 0.62 coverage **fails** v2.
+- [x] Apply v2 to the frozen development evidence. — Re-scored the prediction frame the original
+      run wrote (`ffdraft evaluate-ros --predictions`): same 253,197 rows, **no refit**, macro
+      metrics reproducing to the digit. **PROMOTED.** The three tightest clauses in the whole
+      gate are `high_capital_rookie` (**0.015** headroom), `changed_team_in_season` (0.032) and
+      `extreme_uncertainty` (0.052) — all *under*-coverage, all comfortable passes under v1 and
+      near-failures under v2, which is the side v2 made stricter.
+- [x] Investigate `in_season_arrival` on development evidence. — **No special handling, and no
+      model change.** On 4,296 development rows `RC1` wins the proper score by **20.7%** (2.477
+      against 3.122), wins ordering (0.552 against 0.492), edges MAE, and is far better
+      calibrated: the baseline under-covers by **0.237** against attainable, carrying a 12.0-wide
+      interval where climatology is 28.3. A fallback would swap a calibrated forecast for an
+      overconfident one — and would change production outputs, which there is no sealed season
+      left to evaluate honestly. ADR-076.
+- [x] Review `returning_from_absence` as a production limitation. — No injury feature is added;
+      ADR-070's four conditions are unchanged and unmet. `RC1` is better than the baseline on
+      every axis, and **both are close to unable to order the cohort** (Spearman 0.311 against
+      0.797 on the full universe). ADR-076 specifies a six-part disclosure contract Phase 12
+      must implement: a machine-readable flag on the published artifact, `weeks_since_last_game`
+      beside it, an explicit "no injury or practice-report information" statement, no
+      presentation as medical status, no colour-only encoding, and the measured ordering
+      weakness in the published limitations.
+- [x] Force an explicit production-readiness outcome. — **`RC1 ACCEPTED FOR PHASE 12`**
+      (ADR-077), with the six inherited limitations enumerated and the constraint that any
+      change to the model's outputs invalidates the spent sealed season.
 
 **Exit gate: partially met.**
 
@@ -633,9 +677,13 @@ zero-game rows — which is precisely how the gate failure was found. ROS simula
 is measured. Tier-boundary stability is measured and represented honestly. Per-player
 attribution is available offline.
 
-**Not met — one criterion, on measured evidence.** *The candidate is not promoted.* The gate
-that refuses it is the gate this phase froze, and the clause it fails is one whose bound was
-written for a different failure mode. Moving it now would be fitting a threshold to a result.
+**The promotion criterion, resolved rather than left ambiguous.** `RC1` failed
+`ros_promotion_v1` and that record is permanent. The readiness pass then showed the failing
+clause was measuring the target's atom at zero rather than the model, froze a successor stated
+on quantities that survive an atom, and applied it to the same frozen predictions: `RC1` is
+promoted under `ros_promotion_v2` and accepted for Phase 12. The successor loosens no bound v1
+stated, adds one v1 lacked, and tightens the under-coverage allowance — and `RC1` passes it with
+0.015 of headroom on its tightest clause. ADR-075, ADR-077.
 
 **Scope boundaries held:** no opponent-specific start/sit advice, no lineup optimization, no
 betting or props, no news-sentiment modelling, no user rosters, no market data inside
