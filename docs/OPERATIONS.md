@@ -749,3 +749,46 @@ npm run verify:csv     -- --url https://jeisey.github.io/jeisey-tiers --data liv
 
 `build-current`, `measure-market-cohorts` and `build-arbitrage` need retained bytes and, for
 the first, live nflverse access. Everything else in the list is offline.
+
+## Phase-11 commands
+
+The rest-of-season model is an **offline** subsystem in Phase 11: nothing below runs in the
+daily refresh, and no artifact it produces is published. Phase 12 is what exposes it.
+
+```bash
+# Build the rest-of-season snapshot dataset. Performs network I/O, and needs the Phase-2
+# historical dataset for its preseason feature block.
+uv run ffdraft build-historical --last-season 2025
+uv run ffdraft build-ros-dataset --last-season 2025
+
+# The frozen development comparison: four declared baselines, one candidate, five
+# chronological folds. 2025 is sealed and the command cannot reach it.
+uv run ffdraft evaluate-ros
+
+# The value study: the replacement decision, Monte Carlo convergence and tier stability.
+uv run ffdraft evaluate-ros-value
+
+# Offline per-player attribution, by model component. Diagnostics only; nothing is published.
+uv run ffdraft ros-attribution --season 2024 --through-week 8 --position WR
+
+# The sealed evaluation. Run once, after the architecture and the promotion rule are frozen.
+uv run ffdraft evaluate-ros \
+  --final-eval \
+  --confirm-final-eval RELEASE-ROS-FINAL-HOLDOUT-2025 \
+  --final-eval-reason "the frozen rest-of-season architecture is being evaluated once"
+
+# The published in-season feature dictionary, regenerated from the code.
+uv run ffdraft feature-dictionary --ros
+```
+
+### The weekly availability rule
+
+`ros_cutoff_v1` says a week-N snapshot may read weeks `1..N`. That is an **availability**
+statement, not a calendar one: a production week-N snapshot may only be built once the upstream
+weekly release covering week N exists. Building on Monday morning against a Sunday-night release
+that has not landed yet would produce a snapshot whose "through week N" is missing most of week
+N — a silently different quantity from every historical row the model was trained on.
+
+nflverse's own publication cadence is the constraint (`docs/DATA_SOURCES.md`); Phase 12 owns
+turning it into a scheduled job, and owns the freshness check that refuses to build a snapshot
+for a week the source has not finished publishing.

@@ -158,6 +158,18 @@ from ffdraft.pipeline import (
 )
 from ffdraft.pipeline.current import CurrentBuildConfig, run_current_build
 from ffdraft.quality import QualityGate
+from ffdraft.ros.baselines import preseason_modelling_frame
+from ffdraft.ros.dataset import build_ros_dataset, load_ros_dataset, write_ros_dataset
+from ffdraft.ros.experiment import RosExperimentConfig, run_ros_experiment
+from ffdraft.ros.folds import (
+    ROS_SEED,
+    ROS_TRAIN_START_SEASON,
+    RosFold,
+    ros_development_folds,
+    ros_final_fold,
+)
+from ffdraft.ros.holdout import RosFinalEvalAuthorization
+from ffdraft.ros.report import write_ros_report
 from ffdraft.simulation.study import (
     SimulationStudyConfig,
     load_oof_predictions,
@@ -179,6 +191,9 @@ DEFAULT_PHASE4_DATA_DIR = Path("data/phase4")
 DEFAULT_SIMULATION_DIR = Path("docs/experiments/phase4-simulation-ranking")
 DEFAULT_TIER_DIR = Path("docs/experiments/phase4-tier-segmentation")
 DEFAULT_HOLDOUT_DIR = Path("docs/experiments/phase4-final-holdout")
+DEFAULT_ROS_DATA_DIR = Path("data/ros")
+DEFAULT_ROS_EXPERIMENT_DIR = Path("docs/experiments/phase11-ros")
+DEFAULT_ROS_VALUE_DIR = Path("docs/experiments/phase11-ros-value")
 DEFAULT_MODEL_DIR = Path("models/production")
 DEFAULT_CARD_DIR = Path("models/cards")
 #: A checkout of the long-lived `market-data` branch (ADR-038). Defaulted beside the
@@ -277,6 +292,147 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     historical.set_defaults(handler=_build_historical)
+
+    ros_dataset = subparsers.add_parser(
+        "build-ros-dataset",
+        help="build the rest-of-season snapshot dataset (performs network I/O)",
+    )
+    ros_dataset.add_argument("--out", type=Path, default=None, help="output directory")
+    ros_dataset.add_argument(
+        "--historical",
+        type=Path,
+        default=None,
+        help="directory holding the Phase-2 historical dataset (the preseason feature block)",
+    )
+    ros_dataset.add_argument(
+        "--first-season",
+        type=int,
+        default=ROS_TRAIN_START_SEASON,
+        help=f"first modelled season (default {ROS_TRAIN_START_SEASON})",
+    )
+    ros_dataset.add_argument(
+        "--last-season",
+        type=int,
+        required=True,
+        help="last modelled season; must be a completed season with full weekly stats",
+    )
+    ros_dataset.add_argument("--git-sha", default=None, help="code SHA to record in the manifest")
+    ros_dataset.add_argument("--generated-at", default=None, help="RFC 3339 build timestamp")
+    ros_dataset.add_argument(
+        "--no-write",
+        action="store_true",
+        help="build and validate without writing any file",
+    )
+    ros_dataset.add_argument(
+        "--skip-independence-check",
+        action="store_true",
+        help=(
+            "skip the rebuild-with-the-future-deleted cutoff proof; for iteration only, "
+            "never for a dataset anything downstream will use"
+        ),
+    )
+    ros_dataset.set_defaults(handler=_build_ros_dataset)
+
+    ros_eval = subparsers.add_parser(
+        "evaluate-ros",
+        help="run the frozen rest-of-season comparison and write its report",
+    )
+    ros_eval.add_argument("--data", type=Path, default=None, help="ROS snapshot directory")
+    ros_eval.add_argument(
+        "--historical",
+        type=Path,
+        default=None,
+        help="Phase-2 historical dataset, read for the preseason baselines",
+    )
+    ros_eval.add_argument("--out", type=Path, default=None, help="report output directory")
+    ros_eval.add_argument("--seed", type=int, default=None, help="override the experiment seed")
+    ros_eval.add_argument(
+        "--bootstrap-replicates",
+        type=int,
+        default=None,
+        help="override the paired-bootstrap replicate count",
+    )
+    ros_eval.add_argument(
+        "--validation-season",
+        type=int,
+        action="append",
+        default=None,
+        help="restrict development validation seasons; repeatable",
+    )
+    ros_eval.add_argument(
+        "--final-eval",
+        action="store_true",
+        help="evaluate the sealed rest-of-season season; requires the confirmation token",
+    )
+    ros_eval.add_argument("--confirm-final-eval", default=None, help="the exact seal token")
+    ros_eval.add_argument("--final-eval-reason", default=None, help="why the seal was opened")
+    ros_eval.add_argument(
+        "--predictions",
+        type=Path,
+        default=None,
+        help=(
+            "re-score a previously written evaluation frame instead of refitting; applies the "
+            "gates to frozen evidence rather than to a fresh fit"
+        ),
+    )
+    ros_eval.add_argument("--json", action="store_true", help="emit machine-readable output")
+    ros_eval.set_defaults(handler=_evaluate_ros)
+
+    ros_value = subparsers.add_parser(
+        "evaluate-ros-value",
+        help="rest-of-season VORP: the replacement decision, convergence and tier stability",
+    )
+    ros_value.add_argument("--data", type=Path, default=None, help="ROS snapshot directory")
+    ros_value.add_argument("--out", type=Path, default=None, help="report output directory")
+    ros_value.add_argument("--seed", type=int, default=None, help="override the study seed")
+    ros_value.add_argument(
+        "--draws",
+        type=int,
+        default=None,
+        help="override the reference Monte Carlo draw count",
+    )
+    ros_value.add_argument(
+        "--stability-replicates",
+        type=int,
+        default=None,
+        help="override the tier bootstrap replicate count",
+    )
+    ros_value.add_argument("--json", action="store_true", help="emit machine-readable output")
+    ros_value.set_defaults(handler=_evaluate_ros_value)
+
+    ros_attribution = subparsers.add_parser(
+        "ros-attribution",
+        help="offline per-player feature attribution for the rest-of-season model",
+    )
+    ros_attribution.add_argument("--data", type=Path, default=None, help="ROS snapshot directory")
+    ros_attribution.add_argument("--out", type=Path, default=None, help="output directory")
+    ros_attribution.add_argument(
+        "--season",
+        type=int,
+        required=True,
+        help="validation season to explain; must not be sealed",
+    )
+    ros_attribution.add_argument("--through-week", type=int, required=True, help="snapshot week")
+    ros_attribution.add_argument("--position", default="WR", help="position to explain")
+    ros_attribution.add_argument("--scoring-preset", default="PPR", help="STD, HALF or PPR")
+    ros_attribution.add_argument(
+        "--top-players",
+        type=int,
+        default=10,
+        help="how many players, taken in remaining-points order",
+    )
+    ros_attribution.add_argument("--top-k", type=int, default=None, help="contributors per side")
+    ros_attribution.set_defaults(handler=_ros_attribution)
+
+    ros_card = subparsers.add_parser(
+        "ros-model-card",
+        help="generate the rest-of-season model card from the committed reports",
+    )
+    ros_card.add_argument("--experiments", type=Path, default=None, help="report directory")
+    ros_card.add_argument("--value", type=Path, default=None, help="value-study directory")
+    ros_card.add_argument("--out", type=Path, default=None, help="card output directory")
+    ros_card.add_argument("--git-sha", default=None, help="code SHA to record on the card")
+    ros_card.set_defaults(handler=_ros_model_card)
 
     check_historical = subparsers.add_parser(
         "validate-historical",
@@ -700,6 +856,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="print the historical feature dictionary",
     )
     dictionary.add_argument(
+        "--ros",
+        action="store_true",
+        help="print the Phase-11 in-season dictionary instead of the preseason one",
+    )
+    dictionary.add_argument(
         "--format",
         choices=("markdown", "json"),
         default="markdown",
@@ -821,6 +982,254 @@ def _validate_historical(args: argparse.Namespace) -> int:
         return 0 if gate.passed else 1
     print(f"validating {directory}")
     return _report_gate(gate)
+
+
+def _ros_sources(seasons: Sequence[int], generated_at: Any) -> Any:
+    from ffdraft.features.sources import load_historical_sources
+
+    return load_historical_sources(target_seasons=seasons, as_of=generated_at)
+
+
+def _build_ros_dataset(args: argparse.Namespace) -> int:
+    out_dir = args.out or (repo_root() / DEFAULT_ROS_DATA_DIR)
+    historical = args.historical or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    seasons = tuple(range(args.first_season, args.last_season + 1))
+    if not seasons:
+        print(f"empty season range {args.first_season}-{args.last_season}", file=sys.stderr)
+        return 2
+    features_path = historical / "features.parquet"
+    if not features_path.is_file():
+        print(
+            f"{features_path} not found; run `ffdraft build-historical --last-season "
+            f"{args.last_season}` first",
+            file=sys.stderr,
+        )
+        return 2
+    generated_at = parse_utc(args.generated_at) if args.generated_at else None
+    loaded = _ros_sources(seasons, generated_at)
+    dataset = build_ros_dataset(
+        loaded.sources,
+        pl.read_parquet(features_path),
+        config=load_app_config(),
+        seasons=seasons,
+        generated_at=generated_at,
+        git_sha=args.git_sha,
+        verify_cutoff_independence=not args.skip_independence_check,
+    )
+    print(
+        f"seasons {seasons[0]}-{seasons[-1]}: {dataset.frame.height} snapshot row(s) across "
+        f"{len(dataset.seasons)} season(s)",
+    )
+    if not args.no_write:
+        for path in write_ros_dataset(dataset, out_dir):
+            print(f"wrote {path}")
+    return _report_gate(QualityGate().extend(dataset.checks))
+
+
+def _evaluate_ros(args: argparse.Namespace) -> int:
+    """The frozen Phase-11 comparison. Development folds unless the seal is opened."""
+    data_dir = args.data or (repo_root() / DEFAULT_ROS_DATA_DIR)
+    historical = args.historical or (repo_root() / DEFAULT_HISTORICAL_DIR)
+    out_dir = args.out or (repo_root() / DEFAULT_ROS_EXPERIMENT_DIR)
+
+    authorization: RosFinalEvalAuthorization | None = None
+    if args.final_eval:
+        if not args.confirm_final_eval or not args.final_eval_reason:
+            print(
+                "--final-eval requires both --confirm-final-eval <token> and "
+                "--final-eval-reason <why>; refusing to unseal the rest-of-season holdout",
+                file=sys.stderr,
+            )
+            return 2
+        authorization = RosFinalEvalAuthorization(
+            confirmation=args.confirm_final_eval,
+            reason=args.final_eval_reason,
+        )
+
+    dataset = load_ros_dataset(data_dir, authorization=authorization)
+    preseason = preseason_modelling_frame(
+        pl.read_parquet(historical / "features.parquet"),
+        pl.read_parquet(historical / "labels_fantasy.parquet"),
+        seasons=dataset.seasons,
+        authorization=authorization,
+    )
+    defaults = RosExperimentConfig()
+    folds: tuple[RosFold, ...]
+    if authorization is not None:
+        folds = (ros_final_fold(authorization=authorization),)
+    elif args.validation_season:
+        folds = ros_development_folds(sorted(args.validation_season))
+    else:
+        folds = ros_development_folds()
+    config = RosExperimentConfig(
+        seed=args.seed if args.seed is not None else defaults.seed,
+        replicates=(
+            args.bootstrap_replicates
+            if args.bootstrap_replicates is not None
+            else defaults.replicates
+        ),
+        folds=folds,
+        label="final_holdout" if authorization is not None else "development",
+    )
+    print(
+        f"ROS snapshots: {dataset.frame.height} row(s), seasons "
+        f"{dataset.seasons[0]}-{dataset.seasons[-1]}; withheld "
+        f"{dataset.withheld_rows} sealed row(s) from {list(dataset.withheld_seasons)}",
+    )
+    predictions_frame = pl.read_parquet(args.predictions) if args.predictions else None
+    if predictions_frame is not None:
+        print(
+            f"re-scoring {predictions_frame.height} frozen prediction row(s) from "
+            f"{args.predictions}; no model is refitted",
+        )
+    result = run_ros_experiment(
+        dataset,
+        preseason,
+        config=config,
+        predictions_frame=predictions_frame,
+    )
+    for path in write_ros_report(
+        result,
+        out_dir,
+        cells_dir=data_dir,
+        predictions_dir=data_dir,
+    ):
+        print(f"wrote {path}")
+    if authorization is not None:
+        print("ROS FINAL HOLDOUT CONSUMED - it is no longer an untouched holdout")
+    if args.json:
+        print(json.dumps(result.gate.to_dict(), indent=2, sort_keys=True))
+    else:
+        print(f"primary baseline: {result.primary_baseline}")
+        print(f"promoted (v1)   : {result.gate.promoted}")
+        for reason in result.gate.reasons:
+            print(f"  v1 failed: {reason}")
+        print(f"promoted (v2)   : {result.gate_v2.promoted}")
+        for reason in result.gate_v2.reasons:
+            print(f"  v2 failed: {reason}")
+    return _report_gate(QualityGate().extend(result.checks))
+
+
+def _evaluate_ros_value(args: argparse.Namespace) -> int:
+    """The Phase-11 value study. Development folds only; the sealed season is never loaded."""
+    from dataclasses import replace as dataclass_replace
+
+    from ffdraft.ros.study import RosValueStudyConfig, run_ros_value_study
+    from ffdraft.ros.value_report import write_ros_value_report
+
+    data_dir = args.data or (repo_root() / DEFAULT_ROS_DATA_DIR)
+    out_dir = args.out or (repo_root() / DEFAULT_ROS_VALUE_DIR)
+    dataset = load_ros_dataset(data_dir)
+    config = RosValueStudyConfig()
+    if args.seed is not None:
+        config = dataclass_replace(config, seed=args.seed, alternate_seed=args.seed + 1)
+    if args.draws is not None:
+        config = dataclass_replace(config, draws=args.draws)
+    if args.stability_replicates is not None:
+        config = dataclass_replace(config, stability_replicates=args.stability_replicates)
+    print(
+        f"ROS snapshots: {dataset.frame.height} row(s); study fold {config.fold.fold_id}",
+    )
+    result = run_ros_value_study(dataset, load_app_config().league, config=config)
+    for path in write_ros_value_report(result, out_dir):
+        print(f"wrote {path}")
+    if args.json:
+        print(json.dumps(result.to_dict()["replacement"]["decision"], indent=2, sort_keys=True))
+    else:
+        print(f"replacement rule: {result.replacement_decision.selected}")
+        print(f"draws           : {result.convergence_decision.selected}")
+        print(f"tier penalty    : {result.tier_decision.selected}")
+        print(f"tier stability  : {result.stability_decision.selected}")
+    return _report_gate(QualityGate().extend(result.checks))
+
+
+def _ros_attribution(args: argparse.Namespace) -> int:
+    """Fit the candidate on one fold and explain a handful of players. Offline only."""
+    from ffdraft.ros.attribution import DEFAULT_TOP_K, attribute_players
+    from ffdraft.ros.candidates import RosHurdleCandidate
+    from ffdraft.ros.dictionary import ros_feature_selection
+    from ffdraft.ros.estimators import ROS_TARGET_COLUMN, RosFitContext
+
+    data_dir = args.data or (repo_root() / DEFAULT_ROS_DATA_DIR)
+    out_dir = args.out or (repo_root() / DEFAULT_ROS_EXPERIMENT_DIR / "attribution")
+    dataset = load_ros_dataset(data_dir)
+    folds = {fold.validation_season: fold for fold in ros_development_folds()}
+    fold = folds.get(args.season)
+    if fold is None:
+        print(
+            f"season {args.season} is not a development validation season; choose one of "
+            f"{sorted(folds)}",
+            file=sys.stderr,
+        )
+        return 2
+
+    group = (pl.col("position") == args.position) & (
+        pl.col("scoring_preset") == args.scoring_preset
+    )
+    train = dataset.frame.filter(pl.col("season").is_in(list(fold.train_seasons)) & group)
+    rows = (
+        dataset.frame.filter(
+            (pl.col("season") == args.season)
+            & (pl.col("through_week") == args.through_week)
+            & group,
+        )
+        .sort(ROS_TARGET_COLUMN, descending=True)
+        .head(args.top_players)
+    )
+    if train.is_empty() or rows.is_empty():
+        print("no rows to explain for that season, week, position and preset", file=sys.stderr)
+        return 2
+
+    selection = ros_feature_selection()
+    context = RosFitContext(
+        fold=fold,
+        position=args.position,
+        scoring_preset=args.scoring_preset,
+        features=tuple(name for name in selection.included if name in dataset.frame.columns),
+        seed=ROS_SEED,
+    )
+    candidate = RosHurdleCandidate()
+    fitted = candidate.fit_components(train, context)
+    attributions = attribute_players(
+        fitted,
+        rows,
+        top_k=args.top_k if args.top_k is not None else DEFAULT_TOP_K,
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = (
+        out_dir
+        / f"{args.season}-w{args.through_week:02d}-{args.position}-{args.scoring_preset}.json"
+    )
+    payload = {
+        "fold": fold.to_dict(),
+        "components": fitted.describe(),
+        "players": [item.to_dict() for item in attributions],
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"wrote {path}")
+    for item in attributions[:3]:
+        top = item.components["availability"]["top_positive"]
+        leading = top[0].feature if top else "none"
+        print(f"  {item.display_name or item.player_id}: availability led by {leading}")
+    return 0
+
+
+def _ros_model_card(args: argparse.Namespace) -> int:
+    from ffdraft.ros.card import write_ros_card
+
+    experiments = args.experiments or (repo_root() / DEFAULT_ROS_EXPERIMENT_DIR)
+    value = args.value or (repo_root() / DEFAULT_ROS_VALUE_DIR)
+    out_dir = args.out or (repo_root() / DEFAULT_CARD_DIR)
+    written = write_ros_card(
+        development_path=experiments / "experiment.json",
+        final_path=experiments / "final_holdout.json",
+        value_path=value / "value_study.json",
+        out_dir=out_dir,
+        git_sha=args.git_sha or "unknown",
+    )
+    for path in written:
+        print(f"wrote {path}")
+    return 0
 
 
 def _evaluate_intrinsic(args: argparse.Namespace) -> int:
@@ -1711,6 +2120,30 @@ def _arbitrage_card(args: argparse.Namespace) -> int:
 
 
 def _feature_dictionary(args: argparse.Namespace) -> int:
+    if args.ros:
+        from ffdraft.ros.dictionary import (
+            ROS_FEATURE_SCHEMA_VERSION,
+            ros_dictionary_markdown,
+            ros_feature_schema_hash,
+            ros_in_season_features,
+        )
+
+        if args.format == "json":
+            print(
+                json.dumps(
+                    [spec.to_record() for spec in ros_in_season_features()],
+                    indent=2,
+                    sort_keys=True,
+                ),
+            )
+            return 0
+        print(
+            "# Rest-of-season feature dictionary "
+            f"({ROS_FEATURE_SCHEMA_VERSION}, {ros_feature_schema_hash()})",
+        )
+        print()
+        print(ros_dictionary_markdown())
+        return 0
     if args.format == "json":
         print(json.dumps(to_records(), indent=2, sort_keys=True))
     else:

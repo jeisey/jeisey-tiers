@@ -98,6 +98,13 @@ class Availability(StrEnum):
     PRE_ANCHOR_OBSERVATION = "pre_anchor_observation"
     PRESEASON_UNIVERSE = "preseason_universe"
     LABEL_LINEAGE = "label_lineage"
+    #: Phase 11 only. Derived from the rest-of-season cutoff itself - the snapshot week and
+    #: what it implies about how much season is left - and from nothing observed.
+    CUTOFF_DERIVED = "cutoff_derived"
+    #: Phase 11 only. Computed from completed weeks at or before the snapshot cutoff of the
+    #: season being predicted. Never available to a preseason model, and never permitted to
+    #: read a week after its own cutoff (:mod:`ffdraft.ros.cutoff`).
+    IN_SEASON_TO_DATE = "in_season_to_date"
 
 
 class FeatureRole(StrEnum):

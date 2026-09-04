@@ -21,6 +21,11 @@ data/historical/
 # `ffdraft evaluate-*` commands; the committed record is the experiment reports under
 # docs/experiments/.
 data/phase4/
+# The Phase-11 rest-of-season snapshot dataset and its development intermediates.
+# Reproducible from code plus source releases with `ffdraft build-ros-dataset`; the
+# committed record is docs/experiments/phase11-ros/ plus the ROS feature dictionary in
+# docs/MODELING.md.
+data/ros/
 
 # Node
 node_modules/

@@ -64,6 +64,17 @@ sealed single-use holdout. Arbitrage is `a0_rank_gap_v1`, a transparent fair-ran
 baseline — **not** a learned model, and the repository says so everywhere rather than implying
 otherwise. MyFantasyLeague is the only V1 market price source (ADR-053, ADR-056).
 
+**Release 2 is in progress.** Phase 10 (multi-market draft intelligence) shipped 2026-09-03.
+Phase 11 (the rest-of-season model, `intrinsic-ros-v1`) is an **offline** subsystem: it builds
+point-in-time weekly snapshots, trains and validates a separate rest-of-season model against
+four declared baselines and a frozen promotion rule, and produces rest-of-season value above
+replacement with its own documented replacement interpretation. The model is **promoted and
+accepted for Phase 12** (ADR-077) — after a readiness pass established that the clause it
+originally failed was measuring the target's atom at zero rather than the model, and replaced it
+with a rule stated on quantities that survive an atom (ADR-075). The original failure is
+preserved, not repealed. Nothing from it is published yet — exposing it safely is Phase 12's
+job — and the preseason model, its artifacts and the live site are untouched by it.
+
 Two measured shortfalls ship as published limitations rather than as repaired thresholds: the
 Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034,
 ADR-057), and tier boundaries do not meet their declared stability bar (ADR-035), which is why
@@ -72,7 +83,7 @@ and in `SESSION_STATE.md`.
 
 ### How it got here
 
-Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). **Phase 5 (market snapshots and arbitrage) completed 2026-08-20. Phase 6 (the frontend draft sheet) completed 2026-08-21. Phase 7 (production Actions and GitHub Pages) implemented and validated 2026-08-22, with the site itself waiting on the owner to make this repository public. Phase 8 (hardening, audit and the frontend redesign) and Phase 9A (implementing the owner's Claude Design source) completed 2026-08-31. Phase 9B, the launch release, completed 2026-09-01 and tagged `v1.0.0`.** Every shortfall is published as a limitation rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
+Phase 0 (source, legal, and feasibility proof) completed 2026-08-17. Phase 1 (scaffold, contracts, identity, adapters) completed 2026-08-18. Phase 2 (historical feature dataset) and Phase 3 (intrinsic baselines and evaluation harness) completed 2026-08-19. **Phase 4 (production DraftValue, simulation and tiers) implemented 2026-08-19, with two frozen gates measured as failing** — the Monte Carlo draw count is a predeclared fallback rather than a converged count (ADR-034), and tier boundaries are not stable enough to meet the declared threshold (ADR-035). **Phase 5 (market snapshots and arbitrage) completed 2026-08-20. Phase 6 (the frontend draft sheet) completed 2026-08-21. Phase 7 (production Actions and GitHub Pages) implemented and validated 2026-08-22, with the site itself waiting on the owner to make this repository public. Phase 8 (hardening, audit and the frontend redesign) and Phase 9A (implementing the owner's Claude Design source) completed 2026-08-31. Phase 9B, the launch release, completed 2026-09-01 and tagged `v1.0.0`. Release 2 opened with Phase 10 (multi-market draft intelligence) on 2026-09-03, one criterion short on measured evidence (FantasyPros' free API tier serves ten rows and no ADP at all, ADR-064), and Phase 11 (the rest-of-season model) on 2026-09-04, offline.** Every shortfall is published as a limitation rather than repaired by moving a threshold; see `TASKS.md` for the exit-gate detail.
 
 There is a model and an arbitrage board now. Phase 1 built the skeleton that makes bad joins and schema drift hard; Phase 2 built the time-correct data asset — 11,604 leakage-audited player-seasons across 2014-2025 with independently computed STD/HALF/PPR labels and market-independent realized VORP; Phase 3 built the rolling-origin evaluation harness and the baselines worth beating; Phase 4 turned that into a production intrinsic model, a deterministic Monte Carlo simulation of league-relative value, and natural contiguous tiers. The model passed its single sealed-holdout evaluation on 2025; the tiers are honest about being groups rather than hard lines.
 

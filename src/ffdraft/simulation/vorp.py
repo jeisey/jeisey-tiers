@@ -30,7 +30,7 @@ between presets is a difference in roster shape rather than in Monte Carlo noise
 from __future__ import annotations
 
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -40,7 +40,7 @@ from numpy.typing import NDArray
 
 from ffdraft.config import LeaguePreset
 from ffdraft.modeling.metrics import QUANTILE_LEVELS
-from ffdraft.simulation.allocation import PlayerPoints, allocate_starters
+from ffdraft.simulation.allocation import AllocationResult, PlayerPoints, allocate_starters
 from ffdraft.simulation.sampler import (
     SIMULATION_VERSION,
     DomainBounds,
@@ -49,6 +49,7 @@ from ffdraft.simulation.sampler import (
 
 __all__ = [
     "REPLACEMENT_UNAVAILABLE_FLAG",
+    "AllocationRule",
     "SimulationConfig",
     "SimulationResult",
     "fair_ranking",
@@ -58,6 +59,10 @@ __all__ = [
 ]
 
 Floats = NDArray[np.float64]
+
+#: How one draw decides who starts and what replacement costs. Release 1 has exactly one
+#: implementation; Phase 11 adds a second for the in-season interpretation.
+AllocationRule = Callable[[Sequence[PlayerPoints], LeaguePreset], AllocationResult]
 
 #: Recorded on a player whose position had no replacement baseline in at least one draw.
 REPLACEMENT_UNAVAILABLE_FLAG = "replacement_unavailable"
@@ -177,12 +182,20 @@ def simulate_vorp(
     bounds: Mapping[str, DomainBounds],
     points: Floats | None = None,
     keep_draws: bool = False,
+    allocate: AllocationRule = allocate_starters,
 ) -> SimulationResult:
     """Run the draw loop for one league preset and summarise it.
 
     ``points`` may be supplied when several presets share one set of draws, which is the
     normal production path: the same simulated seasons are allocated under every roster
     shape.
+
+    ``allocate`` is the replacement interpretation. It defaults to
+    :func:`~ffdraft.simulation.allocation.allocate_starters`, which is Release 1's
+    definition - the best player nobody *starts* - and every preseason artifact is produced
+    with that default unchanged. Phase 11 passes a different rule because an in-season
+    decision's opportunity cost is the best player nobody *rosters* (ADR-071); the draw loop
+    is identical either way, which is why there is one of it rather than two.
     """
     sampled = sample_points(projections, config=config, bounds=bounds) if points is None else points
     player_ids = projections.get_column("player_id").to_list()
@@ -202,7 +215,7 @@ def simulate_vorp(
 
     for draw in range(draws):
         column = sampled[:, draw]
-        allocation = allocate_starters(
+        allocation = allocate(
             [
                 PlayerPoints(player_id=player_ids[index], position=positions[index], points=value)
                 for index, value in enumerate(column)
