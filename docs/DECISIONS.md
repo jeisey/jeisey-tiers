@@ -2446,3 +2446,106 @@ of the board.
 **Consequences.** Phase 12 inherits a tier boundary it may not draw as a hard edge, and a draw
 count that is a fallback rather than a converged value. Both are published limitations rather
 than repaired thresholds, for the third and fourth time in this repository.
+
+---
+
+## ADR-075 — `ros_promotion_v1` clause 4 measured the target, not the model; `ros_promotion_v2` states the same intent on quantities that survive an atom
+
+**Status.** Accepted, Phase 11. Frozen and committed **before** being applied to any evidence.
+`ros_promotion_v1` is unchanged, still in the codebase, still evaluated and still reported;
+ADR-073's record that `RC1` failed it stands.
+
+**Context.** v1 clause 4 required every decisive cohort's empirical P10-P90 coverage to lie
+inside `[0.60, 0.95]`. `RC1` failed on one cohort, `games_played_band / no_games`, at 0.964.
+ADR-073 recorded the failure, refused to move the threshold, and named the open question: is a
+coverage clause stated as an absolute band the right instrument for this target at all?
+
+**The arithmetic says no, and it is not a close call.**
+
+A P10-P90 interval covers 80% of outcomes *for a continuous target*. That is a theorem about
+continuity, not a property of good forecasting. Write `F` for a row's true predictive CDF and
+`F⁻¹(u) = inf{y : F(y) ≥ u}` for the generalized inverse any quantile model reports. A
+**perfectly calibrated** forecaster's closed interval covers
+
+```text
+P(F⁻¹(0.10) ≤ Y ≤ F⁻¹(0.90)) = F(F⁻¹(0.90)) − F(F⁻¹(0.10)−)
+```
+
+* continuous `F` — both terms are exact, coverage is 0.80;
+* an atom of mass `p ≥ 0.10` at zero, with `Y` effectively bounded below by it — then
+  `F⁻¹(0.10) = 0`, `F(0−) = 0`, and coverage is `F(F⁻¹(0.90)) = 0.90`, **exactly**, however
+  large the atom;
+* an atom of mass `p ≥ 0.90` — both reported quantiles are zero, the interval collapses to the
+  single point zero, and coverage is `p` itself.
+
+The third case is decisive: a **perfectly calibrated forecaster with an interval of width zero
+breaches v1's 0.95 ceiling.** A clause written to catch "an interval so wide it says nothing"
+refuses the narrowest possible correct interval. That is not a strict threshold; it is the
+wrong measurement. A test asserts each of the three cases on synthetic data.
+
+**And the measurement agrees.** The climatological reference (`ffdraft.ros.reference`) — the
+coverage a forecaster that knows the evaluation cell and the cohort but nothing about the
+player attains, computed from outcomes alone — across the twenty-two development cohorts:
+
+| cohort | P(Y=0) | attainable coverage | climatological width |
+|---|---|---|---|
+| `full_universe / all` | 0.568 | 0.893 | 65.6 |
+| `games_played_band / no_games` | **0.885** | **0.926** | **4.5** |
+| `high_capital_rookie` | 0.099 | 0.898 | 136.0 |
+| `high_capital_underperforming` | 0.180 | 0.843 | 63.4 |
+| every cohort measured | 0.099-0.885 | **0.843-0.926** | 4.5-136.0 |
+
+**Not one cohort has an attainable coverage near 0.80.** The band was centred on a value the
+target distribution makes unreachable everywhere, and on the zero-game cohort the 0.95 ceiling
+sits 0.024 above what calibration itself achieves. v1 clause 4 was measuring how much
+probability mass the target puts on a single point.
+
+**Decision. `ros_promotion_v2`.** Clauses 1-3 are v1's, unchanged — they were already stated on
+a proper scoring rule, a point metric and a rank metric, none affected by the target's shape.
+Clause 4 keeps v1's intent and states it on quantities that survive an atom:
+
+| | clause | change |
+|---|---|---|
+| 4a | cohort MAE at most 5% worse | **unchanged from v1** |
+| 4b | cohort Spearman at most 0.030 worse | **unchanged from v1** |
+| 4c | cohort mean **pinball loss** at most 5% worse | **new** — proper, atom-safe, the local analogue of clause 1 |
+| 4d | interval fails only if wider than **both** the baseline's **and** climatology's | **replaces** the coverage ceiling |
+| 4e | coverage within **±0.15 of the cohort's attainable coverage** | **replaces** the absolute band |
+
+*Why 4c.* Pinball loss is a proper scoring rule for quantile forecasts and is well defined for
+a mixed discrete-continuous target. It is the clause that actually detects a distributionally
+worse forecast — the job v1 was asking a coverage band to do, which a coverage band cannot do.
+
+*Why 4d.* "An interval so wide it says nothing" means *wider than knowing nothing*, and
+climatology is what knowing nothing looks like. An atom makes a calibrated interval **narrower**,
+so 4d cannot be tripped by the phenomenon that tripped v1. A test asserts that the exact
+configuration an atom produces — narrower than the baseline, better covered — can never fail it.
+
+*Why 4e, and why it is not a loosening.* The band moves with what calibration can attain
+instead of sitting at a fixed 0.80. On a continuous cohort the reference **is** 0.80 and 4e
+reduces to `[0.65, 0.95]`. The tolerance, 0.15, is **v1's own upper allowance** (0.95 − 0.80)
+applied to both sides, which **tightens** the under-coverage allowance from v1's 0.20 to 0.15.
+A test asserts the consequence: a cohort covering 0.62 against a continuous reference passes v1
+and **fails v2**. A rule reverse-engineered to admit a particular candidate would have loosened
+a bound; this one loosens none, and adds a clause v1 did not have.
+
+**The reference is a diagnostic of the target, never a competitor.** It is computed from
+outcomes only — no model input, no prediction, no fitted parameter — is identical for every
+model compared against it, and cannot win or lose a comparison. A test asserts it is invariant
+to adding a prediction column.
+
+**What v2 does not do.** It does not raise a ceiling. It does not exempt a cohort. It does not
+weaken clauses 1-3. It does not alter, replace or repeal `ros_promotion_v1`, whose thresholds,
+code and verdict on `RC1` are preserved verbatim, reported alongside v2's in every report, and
+recorded in ADR-073.
+
+**Freeze discipline.** This ADR and `ros_promotion_v2` were committed before the rule was
+applied to any evidence, in the same shape the original gate was frozen before the candidate
+existed. Clauses 4c, 4d and 4e are all live and all capable of refusing `RC1`; whatever they
+say is what gets reported.
+
+**Consequences.** Every rest-of-season report carries two verdicts. Comparing a future
+candidate against `RC1` must use v2, because v1 cannot rank two models on a zero-inflated
+cohort. The preseason model's gates are untouched: `phase3_promotion_v1` judges a season-total
+target whose zero share is 44%, and whether its own coverage clause is mis-specified for the
+same reason is a real question this ADR does not answer and does not touch.

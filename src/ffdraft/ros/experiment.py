@@ -39,6 +39,7 @@ from ffdraft.modeling.metrics import (
     TOP_K_BY_POSITION,
     coverage,
     mae,
+    mean_pinball,
     slice_metrics,
     spearman,
 )
@@ -62,12 +63,15 @@ from ffdraft.ros.estimators import (
 from ffdraft.ros.folds import ROS_SEED, RosFold, ros_development_folds, ros_fold_table
 from ffdraft.ros.gate import (
     ROS_PROMOTION_CRITERIA,
+    ROS_PROMOTION_CRITERIA_V2,
     RosCohortEvidence,
     RosGateResult,
     evaluate_ros_promotion_gate,
+    evaluate_ros_promotion_gate_v2,
     select_primary_baseline,
 )
 from ffdraft.ros.holdout import ros_holdout_policy, ros_slice_masks
+from ffdraft.ros.reference import cohort_reference
 from ffdraft.timeutil import isoformat_utc, utc_now
 
 __all__ = [
@@ -141,6 +145,7 @@ class RosExperimentResult:
     deltas: dict[str, Any]
     cohorts: tuple[RosCohortEvidence, ...]
     gate: RosGateResult
+    gate_v2: RosGateResult
     models: dict[str, dict[str, Any]]
     dataset: dict[str, Any]
     runtime_seconds: dict[str, float] = field(default_factory=dict)
@@ -207,9 +212,11 @@ class RosExperimentResult:
             "macro_by_model": self.macro,
             "primary_baseline": self.primary_baseline,
             "promotion_criteria": ROS_PROMOTION_CRITERIA.to_dict(),
+            "promotion_criteria_v2": ROS_PROMOTION_CRITERIA_V2.to_dict(),
             "paired_deltas": {metric: delta.to_dict() for metric, delta in self.deltas.items()},
             "cohorts": [item.to_dict() for item in self.cohorts],
             "gate": self.gate.to_dict(),
+            "gate_v2": self.gate_v2.to_dict(),
             "cell_count": len(self.cells),
             "cells_by_week": self.cells_by_week(),
             "cells_by_season_position": self.cells_by_season_position(),
@@ -408,6 +415,7 @@ def _cohort_evidence(
         cand_point = subset.get_column(candidate_point).to_numpy().astype(np.float64)
         base_matrix = subset.select(baseline_quantiles).to_numpy().astype(np.float64)
         cand_matrix = subset.select(candidate_quantiles).to_numpy().astype(np.float64)
+        reference = cohort_reference(subset, target_column=ROS_TARGET_COLUMN)
         evidence.append(
             RosCohortEvidence(
                 slice_id=mask.slice_id,
@@ -433,6 +441,11 @@ def _cohort_evidence(
                 candidate_width=float(
                     np.mean(cand_matrix[:, high_index] - cand_matrix[:, low_index]),
                 ),
+                baseline_pinball=mean_pinball(actual, base_matrix, levels),
+                candidate_pinball=mean_pinball(actual, cand_matrix, levels),
+                reference_coverage=reference.coverage,
+                reference_width=reference.width,
+                reference_zero_share=reference.zero_share,
             ),
         )
     return evidence
@@ -462,8 +475,15 @@ def run_ros_experiment(
     preseason_frame: pl.DataFrame,
     *,
     config: RosExperimentConfig | None = None,
+    predictions_frame: pl.DataFrame | None = None,
 ) -> RosExperimentResult:
-    """Run every declared model over every fold, then apply the frozen gate."""
+    """Run every declared model over every fold, then apply the frozen gates.
+
+    ``predictions_frame`` re-scores a **previously written** evaluation frame instead of
+    fitting. Everything from the metric computation onwards is a pure function of that frame,
+    so a successor rule can be applied to frozen evidence and provably to the *same*
+    predictions rather than to a fresh fit that happens to look similar.
+    """
     settings = config or RosExperimentConfig()
     selection = ros_feature_selection()
     features = [name for name in selection.included if name in dataset.frame.columns]
@@ -472,11 +492,14 @@ def run_ros_experiment(
 
     timings: dict[str, float] = {}
     started = time.perf_counter()
-    predictions = _fit_all(dataset, models, settings, features)
-    timings["fit"] = round(time.perf_counter() - started, 1)
+    if predictions_frame is None:
+        frame = _evaluation_frame(dataset, _fit_all(dataset, models, settings, features))
+        timings["fit"] = round(time.perf_counter() - started, 1)
+    else:
+        frame = predictions_frame
+        timings["fit"] = 0.0
 
     started = time.perf_counter()
-    frame = _evaluation_frame(dataset, predictions)
     model_ids = list(models)
     cells = _cell_metrics(frame, model_ids, settings.levels)
     macro = _macro(cells, model_ids)
@@ -502,6 +525,12 @@ def run_ros_experiment(
         primary_baseline=primary,
         candidate=CANDIDATE_ID,
     )
+    gate_v2 = evaluate_ros_promotion_gate_v2(
+        deltas,
+        cohorts,
+        primary_baseline=primary,
+        candidate=CANDIDATE_ID,
+    )
 
     checks = ros_experiment_checks(
         dataset,
@@ -519,6 +548,7 @@ def run_ros_experiment(
         deltas=deltas,
         cohorts=tuple(cohorts),
         gate=gate,
+        gate_v2=gate_v2,
         models={model_id: model.describe() for model_id, model in models.items()},
         dataset=dataset.describe(),
         runtime_seconds=timings,

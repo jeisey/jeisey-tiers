@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 from ffdraft.ros.experiment import CANDIDATE_ID, RosExperimentResult
-from ffdraft.ros.gate import ROS_PROMOTION_CRITERIA
 from ffdraft.timeutil import isoformat_utc
 
 __all__ = ["to_json", "to_markdown", "write_ros_report"]
@@ -159,8 +158,13 @@ def _cohort_table(result: RosExperimentResult) -> str:
             "cand_rho": _number(item.candidate_spearman),
             "base_cov": _number(item.baseline_coverage),
             "coverage": _number(item.candidate_coverage),
+            "ref_cov": _number(item.reference_coverage),
             "base_width": _number(item.baseline_width, 1),
             "cand_width": _number(item.candidate_width, 1),
+            "ref_width": _number(item.reference_width, 1),
+            "base_pin": _number(item.baseline_pinball),
+            "cand_pin": _number(item.candidate_pinball),
+            "zero": _number(item.reference_zero_share),
         }
         for item in result.cohorts
     ]
@@ -174,8 +178,13 @@ def _cohort_table(result: RosExperimentResult) -> str:
             ("cand_mae", "candidate MAE"),
             ("base_rho", "baseline ρ"),
             ("cand_rho", "candidate ρ"),
-            ("base_cov", "baseline P10-P90 coverage"),
-            ("coverage", "candidate P10-P90 coverage"),
+            ("base_pin", "baseline pinball"),
+            ("cand_pin", "candidate pinball"),
+            ("zero", "P(Y=0)"),
+            ("ref_cov", "attainable coverage"),
+            ("base_cov", "baseline coverage"),
+            ("coverage", "candidate coverage"),
+            ("ref_width", "climatological width"),
             ("base_width", "baseline width"),
             ("cand_width", "candidate width"),
         ),
@@ -200,23 +209,44 @@ def _week_table(result: RosExperimentResult) -> str:
     return _table(rows, columns) + "\n\nMAE, macro-averaged across the cells of that week."
 
 
-def _gate_lines(result: RosExperimentResult) -> list[str]:
-    verdict = "**PROMOTED**" if result.gate.promoted else "**NOT PROMOTED**"
+def _one_gate(gate: Any, note: str) -> list[str]:
+    verdict = "**PROMOTED**" if gate.promoted else "**NOT PROMOTED**"
     lines = [
-        f"Rule `{ROS_PROMOTION_CRITERIA.version}`, frozen before the comparison ran.",
+        f"### `{gate.criteria.version}`",
         "",
-        f"{verdict} — `{result.gate.candidate}` against `{result.gate.primary_baseline}`.",
+        note,
+        "",
+        f"{verdict} — `{gate.candidate}` against `{gate.primary_baseline}`.",
         "",
     ]
-    if result.gate.satisfied:
+    if gate.satisfied:
         lines.append("Satisfied:")
-        lines.extend(f"- {reason}" for reason in result.gate.satisfied)
+        lines.extend(f"- {reason}" for reason in gate.satisfied)
         lines.append("")
-    if result.gate.reasons:
+    if gate.reasons:
         lines.append("Failed:")
-        lines.extend(f"- {reason}" for reason in result.gate.reasons)
+        lines.extend(f"- {reason}" for reason in gate.reasons)
         lines.append("")
     return lines
+
+
+def _gate_lines(result: RosExperimentResult) -> list[str]:
+    """Both rules, both verdicts. The v1 verdict is history and is never overwritten."""
+    return [
+        *_one_gate(
+            result.gate,
+            "The original rule, frozen before the candidate existed and reported unchanged. "
+            "Its verdict is the historical record (ADR-073) and is preserved whatever the "
+            "successor says.",
+        ),
+        *_one_gate(
+            result.gate_v2,
+            "The successor rule (ADR-075), frozen and committed before it was applied to any "
+            "evidence. Clauses 1-3 and 4a-4b are v1's, unchanged; 4c adds a proper local "
+            "score; 4d states width against climatology; 4e states coverage against the "
+            "coverage a calibrated forecaster can actually attain on the cohort.",
+        ),
+    ]
 
 
 def write_ros_report(

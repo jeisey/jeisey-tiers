@@ -366,6 +366,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ros_eval.add_argument("--confirm-final-eval", default=None, help="the exact seal token")
     ros_eval.add_argument("--final-eval-reason", default=None, help="why the seal was opened")
+    ros_eval.add_argument(
+        "--predictions",
+        type=Path,
+        default=None,
+        help=(
+            "re-score a previously written evaluation frame instead of refitting; applies the "
+            "gates to frozen evidence rather than to a fresh fit"
+        ),
+    )
     ros_eval.add_argument("--json", action="store_true", help="emit machine-readable output")
     ros_eval.set_defaults(handler=_evaluate_ros)
 
@@ -1067,7 +1076,18 @@ def _evaluate_ros(args: argparse.Namespace) -> int:
         f"{dataset.seasons[0]}-{dataset.seasons[-1]}; withheld "
         f"{dataset.withheld_rows} sealed row(s) from {list(dataset.withheld_seasons)}",
     )
-    result = run_ros_experiment(dataset, preseason, config=config)
+    predictions_frame = pl.read_parquet(args.predictions) if args.predictions else None
+    if predictions_frame is not None:
+        print(
+            f"re-scoring {predictions_frame.height} frozen prediction row(s) from "
+            f"{args.predictions}; no model is refitted",
+        )
+    result = run_ros_experiment(
+        dataset,
+        preseason,
+        config=config,
+        predictions_frame=predictions_frame,
+    )
     for path in write_ros_report(
         result,
         out_dir,
@@ -1081,9 +1101,12 @@ def _evaluate_ros(args: argparse.Namespace) -> int:
         print(json.dumps(result.gate.to_dict(), indent=2, sort_keys=True))
     else:
         print(f"primary baseline: {result.primary_baseline}")
-        print(f"promoted        : {result.gate.promoted}")
+        print(f"promoted (v1)   : {result.gate.promoted}")
         for reason in result.gate.reasons:
-            print(f"  failed: {reason}")
+            print(f"  v1 failed: {reason}")
+        print(f"promoted (v2)   : {result.gate_v2.promoted}")
+        for reason in result.gate_v2.reasons:
+            print(f"  v2 failed: {reason}")
     return _report_gate(QualityGate().extend(result.checks))
 
 
