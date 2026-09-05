@@ -88,5 +88,14 @@
     "identity.ambiguous_records [identity.sleeper]: ambiguous identities must never reach model or public layers",
     "status.sleeper_gsis_conflict [status.build]: Sleeper's reported gsis_id disagreed with the canonical id; those records fail closed and carry no Sleeper annotation"
   ],
-  "methodology_version": "phase1-fixture-0"
+  "methodology_version": "phase1-fixture-0",
+  "season_state": {
+    "rule_version": "season_state_v1",
+    "state": "regular_season",
+    "product_mode": "in_season",
+    "completed_week": 8,
+    "latest_snapshot_week": 8,
+    "ros_board_expected": true,
+    "note": "the rest-of-season board is current through week 8"
+  }
 }

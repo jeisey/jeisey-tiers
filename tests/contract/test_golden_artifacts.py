@@ -59,6 +59,22 @@ def test_csv_headers_are_stable(artifact, golden, built_artifacts):
     assert header(golden) == header(built_artifacts), f"{filename} header drifted"
 
 
+def test_build_metadata_keys_match_a_fresh_build(golden, built_artifacts):
+    """The one artifact that is not an envelope, and so is invisible to the test above.
+
+    `build_metadata.json` carries no records, so the record-order comparison cannot see it —
+    which is how a new top-level block (`season_state`, ADR-079) reached CI as a stale golden
+    rather than as a failing test. The drift gate in `ci.yml` caught it, one push too late.
+
+    Keys and their order, not values: a value comparison would fail on every ordinary change
+    and teach people to regenerate without reading the diff, which is the failure mode the
+    module docstring above already names.
+    """
+    committed = json.loads((golden / "build_metadata.json").read_text())
+    fresh = json.loads((built_artifacts / "build_metadata.json").read_text())
+    assert list(committed) == list(fresh), "build_metadata.json field order or key set drifted"
+
+
 def test_goldens_are_labelled_as_stub_output(golden):
     """A committed artifact must never be mistakable for production output."""
     metadata = json.loads((golden / "build_metadata.json").read_text())
