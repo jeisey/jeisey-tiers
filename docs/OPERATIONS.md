@@ -825,12 +825,72 @@ uv run ffdraft season-state
 uv run ffdraft season-state --as-of 2026-11-03T12:00:00Z --json
 ```
 
+### 16.1.1 The mode is not a promise that a board exists (ADR-079)
+
+`product_mode` answers *which product the site is*. **`latest_snapshot_week`** answers
+*whether a rest-of-season board can exist at all*, and they disagree in two windows every
+season contains:
+
+| window | mode | `latest_snapshot_week` | what runs |
+|---|---|---|---|
+| before the first kickoff | Draft | `null` | draft build only |
+| kickoff → first completed week | In-Season | `null` | draft build only |
+| a completed week, published | In-Season | the week | draft build **and** ROS build |
+| after the last scored week | In-Season | `null` | draft build only |
+
+**The refresh gates the ROS build on `snapshot_week`, not on `mode`.** Gating on the mode ran
+`build-ros` in both empty windows, where it failed deterministically — and because the deploy
+job is downstream of the build job, a failure there stopped the **draft** board refreshing
+too. The site would have frozen for the first week of every season with something that looked
+like an outage.
+
+Four states, and the deliberate outcome of each:
+
+| # | state | `mode` | `snapshot_week` | ROS build | job |
+|---|---|---|---|---|---|
+| A | one minute before the first kickoff | `draft` | — | skipped | green |
+| B | after kickoff, `completed_week=0` | `in_season` | — | skipped | green |
+| C | week 1 played, upstream silent | `in_season` | `1` | runs, publishes nothing | green |
+| D | week 1 available | `in_season` | `1` | runs, publishes | green |
+
+State C is the one the schedule cannot decide: only a read of the weekly statistics can tell
+whether the week landed. The build runs, the freshness gate returns `ros.awaiting_first_week`
+as a **warning**, and nothing is written. Two or more weeks played with nothing available is
+`ros.no_complete_week` and stays **critical** — that is not a publication cadence.
+
+`tests/unit/test_ros_lifecycle.py` walks all four, plus the two at the far end.
+
+### 16.1.2 The end of the season
+
+At `season_complete` the deepest available week is the last **scored** week, and `ros_cutoff_v1`
+refuses it — correctly, since no remaining horizon exists to estimate. That refusal used to
+arrive as an uncaught `ValueError` from the `RosCutoff` constructor, which would have crashed
+every refresh from January onwards.
+
+The cutoff is now bounded by the remaining horizon before the constructor sees it, and the
+refusal is `ros.season_complete`, a **warning**. The scheduled refresh is green and
+intentionally does nothing in-season; the last published board is the final one. A
+structurally zero "week 17" board published to keep a tab populated would be a fiction and is
+not produced.
+
+An explicitly requested week is exempt from both lifecycle refusals — every historical season
+is `season_complete`, so `--through-week 8 --season 2024` has to keep working, and it does.
+
 ### 16.2 "Played" and "available" are different questions
 
 The clock says the games are over. `ros_source_freshness_v1`
 (`ffdraft.ros.freshness`) says whether the rows arrived, by comparing the clubs the schedule
-says played a week against the clubs present in that week's weekly player statistics. A week
-is available only when **both** are true, and the build takes the deeper-of-nothing answer:
+says played a week against the clubs present in that week's weekly player statistics.
+
+That comparison is a **set** comparison, not a count. Both sides go through
+`normalize_team_code`, so a relocated franchise's older abbreviation is the same club rather
+than a missing one; the diagnostic names the missing and unexpected clubs rather than
+reporting how many. A week that lost one club and gained a stray row for another has the right
+total and the wrong membership, and every cumulative feature over it would be quietly short by
+one club's games.
+
+A week is available only when **both** are true, and the build takes the deeper-of-nothing
+answer:
 
 - the deepest buildable cutoff is the last week with **no gap behind it** — if week 5 is
   complete and week 4 is not, the answer is 3, because a rest-of-season feature is a

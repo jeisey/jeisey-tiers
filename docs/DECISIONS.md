@@ -2848,3 +2848,140 @@ new model version.
   not re-interpreted, and not cited as evidence about the production fit.
 - The six inherited limitations in ADR-077 apply unchanged to the fitted artifact: it is the
   same architecture, so it has the same weaknesses, and Phase 12 publishes them.
+
+---
+
+## ADR-079 — The season starting and a rest-of-season board existing are two different facts
+
+**Status:** Accepted (Phase 12, 2026-09-04)
+
+### Context
+
+Three rules, each correct on its own, disagreed about a window every season contains.
+
+`season_state_v1` flips the product mode to In-Season at the season's **first kickoff**, which
+is what `docs/RELEASE2_ROADMAP.md` 12.1 asks for in those words. `ros_cutoff_v1` refuses
+**week 0**, because a rest-of-season snapshot needs at least one completed week — week 0 is the
+preseason model's grain. `ros_source_freshness_v1` refuses a week upstream has not published.
+
+Between the first kickoff and the first *published* week — Thursday night to the following
+Tuesday or Wednesday, every year — the mode says In-Season and no board can be built. The
+refresh workflow ran `build-ros` on the mode, the freshness gate returned a **critical**, the
+build job failed, and a failed build job does not merely skip the in-season board: the deploy
+job is downstream of it, so the **draft** board stopped refreshing too. The site would have
+frozen for the first week of every season, and the cause would have looked like an outage.
+
+The same disagreement recurs at the far end. Once the last scored week is played,
+`available_through_week` is that week and `RosCutoff` refuses it — correctly, no remaining
+horizon exists — by raising `ValueError`. Nothing caught it, so every refresh from the end of
+the fantasy season onwards would have crashed rather than done nothing.
+
+Neither window is a source failure. Both are lifecycle states, and both are deterministic from
+a schedule published in May.
+
+### Decision
+
+**Separate "has the season started" from "can a rest-of-season board exist".**
+
+1. **`season_state_v1` is unchanged.** The state still becomes `regular_season` at the first
+   kickoff, and `SEASON_COMPLETE` still maps to `ProductMode.IN_SEASON`. The roadmap's literal
+   semantics are preserved; what changes is that nothing downstream treats the mode as a claim
+   that a board exists.
+2. **`latest_snapshot_week` is the gate.** It is already `None` in both windows — before the
+   first completed week, and once the horizon is spent — and it is now what the refresh
+   workflow's `if:` reads, so `build-ros` is not attempted where it cannot succeed. The
+   schedule alone decides this; no upstream read is needed.
+3. **The freshness gate distinguishes a cadence from an outage.** Nothing buildable with at
+   most one week played is `ros.awaiting_first_week`, a **warning**: the refresh stays green,
+   the draft build deploys, and no board is published. Nothing buildable with **two or more**
+   weeks played is still `ros.no_complete_week`, **critical** — that is not a publication lag.
+4. **Season completion is a warning, not an exception.** `_resolve_week` bounds the cutoff by
+   the remaining horizon and emits `ros.season_complete` rather than reaching a constructor
+   that raises. The last published board is the final one. A structurally zero "week 17" board
+   published to keep a tab populated would be a fiction, and is not produced.
+5. **An explicitly requested week is exempt from both lifecycle refusals.** Every historical
+   season is `season_complete`, so a refusal that also applied to `--through-week` would make
+   replaying a finished season impossible — and replay is the only way to exercise this path
+   before a season of one's own has started.
+6. **The season state travels on `build_metadata.json`.** The draft build is the one thing
+   that runs in every state, so its metadata is the only place the frontend can learn the
+   season has started while no in-season bundle exists. The block carries the state, the
+   product mode, the completed week, the latest snapshot week, a boolean
+   `ros_board_expected`, and the build's own sentence about why.
+
+### Why a block and not a season-state artifact
+
+A separate `season_state.json` was considered and rejected. It would say the same thing in a
+new file with a new schema, a new fetch, a new 404 path and a new way for two published files
+to disagree about one season. `build_metadata.json` is already written by every build, already
+fetched on every page load, already versioned, and already the place a reader looks for "what
+is this build". The block is optional in the schema, so a build older than this ADR simply has
+none and the page says only what it can prove.
+
+### Consequences
+
+- The product has **three** situations, not two: Draft, In-Season, and *season under way with
+  no board yet*. The indicator names the third rather than calling it Draft mode, and a notice
+  above the draft board states the reason in the build's own words.
+- A refresh in either lifecycle window is **green** and publishes the draft bundle alone. The
+  packaging gate keys on what the build actually produced rather than on the season, because
+  in those windows the draft bundle alone is the correct package.
+- Four states — before kickoff, after kickoff with no completed week, week 1 played but not
+  published, week 1 available — plus the two at the far end have a test each, asserting the
+  resolved cutoff, the gate verdict, and the value the workflow reads.
+- `ros_cutoff_v1` is untouched. It still refuses week 0; this ADR routes around it rather than
+  weakening it, and a test asserts the refusal directly.
+
+---
+
+## ADR-080 — FantasyPros stays `benchmark_only`, and that no longer blocks Release 2
+
+**Status:** Accepted (Phase 12, 2026-09-04). Supersedes the FantasyPros half of Release 2's
+definition-of-done clause 1; does not supersede ADR-064, which records the measurement.
+
+### Context
+
+Release 2's definition of done, clause 1, requires "independent FFC, MFL, and FantasyPros ADP
+comparisons plus FantasyPros ECR without conflating the signal types". Phase 10 built the
+adapter, the budget, the identity linkage and the capture, then measured what the provisioned
+key actually returns (ADR-064):
+
+- every response carries `public_api_limited: true` and `tier: "free"`;
+- ten rows per call, and **40 distinct players** across QB/RB/WR/TE, against a documented
+  `count` of 407 receivers and 225 tight ends;
+- `limit`, `offset`, `start`, `page`, `max_results` and `ranks` all return the same ten rows;
+- there is **no ADP at all**: `/json/nfl/{season}/adp` returns `403 Missing Authentication
+  Token`, and `type=adp` returns the ECR row shape with no ADP field.
+
+A 40-player consensus published as though it were a market comparison would be worse than
+publishing none: it would look like a source and behave like a sample.
+
+The owner has accepted this as an upstream entitlement limitation and does not want Release 2
+held open waiting for a different vendor contract.
+
+### Decision
+
+1. **The original criterion is recorded as historically unmet.** It is not restated, softened,
+   or marked passed. Clause 1 of the Release 2 definition of done was not met for FantasyPros.
+2. **FantasyPros remains `benchmark_only`** under the current entitlement. It feeds no public
+   comparison, no model, and no surface decision.
+3. **Release 2's production source scope is stated positively**: FFC and MyFantasyLeague for
+   draft ADP, published as independent comparisons and never conflated; Sleeper add/drop for
+   in-season opportunity. That is the scope the release ships and the scope its documentation
+   describes.
+4. **The revisit condition is unchanged and stays tested on every capture**: a key whose
+   responses omit `public_api_limited` (or set it false) and whose `count` equals the rows
+   delivered. Meeting it flips `MarketSourceSpec.publishable` — one line.
+5. **This entitlement no longer blocks `v2.0.0`.** A blocker is something the project can act
+   on; a vendor tier is not, and holding a finished release against one converts a documented
+   limitation into an indefinite hold.
+
+### Consequences
+
+- `docs/releases/v2.0.0.md` records clause 1 as **unmet, superseded by this ADR**, with the
+  measurement and the revisit condition, and no longer lists it under release blockers.
+- The one operational item that *is* still open — no live in-season week has been built,
+  because the season starts on the 10th — stays open, because it is an observation the project
+  will make rather than an entitlement it cannot obtain.
+- If the entitlement changes, publishing FantasyPros is a Phase-13 source change under the
+  ordinary rules, not a re-opening of Release 2.

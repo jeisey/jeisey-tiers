@@ -45,7 +45,8 @@ and Phase 9A added `16`-`28` — the third breakpoint, both tables on a phone, t
 three panels, the awkward player records the fixture exists to carry, and the matured market
 condition, which the default fixture cannot show.
 
-Phase 12 added `29`-`38`, the In-Season screens. They come from the two in-season scenario mounts
+Phase 12 added `29`-`40`: the In-Season screens, and the two lifecycle windows in which the
+season has started and no rest-of-season board exists (ADR-079). They come from the two in-season scenario mounts
 rather than the default build, because the default build publishes no in-season bundle: before the
 season's first kickoff the draft board is the whole product, and a fixture that pretended otherwise
 would be evidence of a state the pipeline never produces.

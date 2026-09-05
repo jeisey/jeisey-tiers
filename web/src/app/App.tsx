@@ -155,6 +155,17 @@ function Board({
   const mode = resolveMode(state.mode, inSeason?.derivedMode ?? null);
   const view = resolveView(state.view, mode);
 
+  // The season, as distinct from the boards this build holds. The draft build records it
+  // because the draft build always runs, which is the only way the page can know the season
+  // has started while no rest-of-season bundle exists (ADR-079).
+  const buildSeason = metadata.season_state ?? null;
+  const awaitingFirstRos =
+    inSeason === null &&
+    buildSeason !== null &&
+    buildSeason.state !== null &&
+    buildSeason.state !== "preseason_draft" &&
+    !buildSeason.ros_board_expected;
+
   // Only offer a control value the build actually published; a preset with no rows would
   // otherwise present as an empty board rather than as an option that does not exist.
   const { availableScoring, availableTeams } = useMemo(() => {
@@ -253,8 +264,10 @@ function Board({
           seasonMode={
             <SeasonModeChip
               resolved={mode}
-              seasonState={inSeason?.seasonState ?? "preseason_draft"}
+              seasonState={inSeason?.seasonState ?? buildSeason?.state ?? null}
               throughWeek={inSeason?.throughWeek ?? null}
+              note={buildSeason?.note}
+              awaiting={awaitingFirstRos}
             />
           }
         />
@@ -288,6 +301,12 @@ function Board({
         </div>
 
         <main id="board">
+          {awaitingFirstRos && (
+            <AwaitingFirstRosBoard
+              note={buildSeason?.note ?? ""}
+              complete={buildSeason?.state === "season_complete"}
+            />
+          )}
           <div
             role="tabpanel"
             id={`panel-${view}`}
@@ -381,6 +400,35 @@ function Board({
  * before kickoff, and an in-season refresh that failed its gate so the previous deploy stayed.
  * Either way the draft board beside it is correct and current, which is what the message says.
  */
+/**
+ * The season has started and there is no rest-of-season board yet.
+ *
+ * Two ordinary windows produce it: the days between the first kickoff and the first published
+ * week, and the weeks after the last scored one. In both the draft board on screen is the
+ * only board that exists, and it is correct — what would not be correct is letting the page
+ * imply the season has not begun. The build's own sentence is rendered rather than a sentence
+ * written here, so the page cannot describe a state the build did not report (ADR-079).
+ */
+function AwaitingFirstRosBoard({
+  note,
+  complete,
+}: {
+  readonly note: string;
+  readonly complete: boolean;
+}): React.JSX.Element {
+  return (
+    <div className="notice season-notice" data-severity="info" role="note">
+      <strong>
+        {complete ? "The fantasy season is over." : "The regular season has started."}
+      </strong>{" "}
+      {note === ""
+        ? "The first rest-of-season board is published once a completed week's upstream data is available."
+        : `${note.charAt(0).toUpperCase()}${note.slice(1)}.`}{" "}
+      The draft board below is unaffected and current.
+    </div>
+  );
+}
+
 function NoInSeasonBundle(): React.JSX.Element {
   return (
     <section className="section">

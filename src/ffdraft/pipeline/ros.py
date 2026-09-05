@@ -54,7 +54,7 @@ from ffdraft.features.sources import load_historical_sources
 from ffdraft.market.surface import SURFACE_RULE_VERSION, TIER_DEPTH_RULE
 from ffdraft.pipeline.current import current_cutoff
 from ffdraft.quality import QualityGate
-from ffdraft.ros.cutoff import ROS_CUTOFF_RULE_VERSION, RosCutoff
+from ffdraft.ros.cutoff import FIRST_THROUGH_WEEK, ROS_CUTOFF_RULE_VERSION, RosCutoff
 from ffdraft.ros.freshness import assess_ros_freshness
 from ffdraft.ros.frozen import (
     ROS_BUILD_CONFIG,
@@ -485,6 +485,10 @@ def _resolve_week(
     A requested week is honoured only up to what the sources support. Asking for week 9 when
     week 6 is the deepest complete one is a request for a board built from six weeks of data
     and labelled nine, which is the exact failure the freshness gate exists to prevent.
+
+    Two of the three refusals here are lifecycle states rather than faults — before the first
+    kickoff, and after the last scored week — and both are warnings, so a scheduled refresh
+    in either window is green and the draft build deploys as usual.
     """
     if state.state is SeasonState.PRESEASON_DRAFT and requested is None:
         gate.add(
@@ -501,22 +505,57 @@ def _resolve_week(
             ),
         )
         return None
-    if freshness_week < 1:
+    # The other end of the season. Once the horizon is spent, `available_through_week` is the
+    # *last scored week*, and `RosCutoff` refuses it — correctly, because no remaining horizon
+    # is left to estimate. Reaching the constructor with it raises an uncaught `ValueError`,
+    # so every scheduled refresh from the end of the season onwards would crash rather than
+    # do nothing. The last valid board is the final one; a week-of-zeros board published to
+    # keep a tab populated would be a fiction.
+    #
+    # A *requested* week is exempt from both lifecycle refusals, and that exemption is what
+    # makes a finished season replayable: `--through-week 8` on 2024 is the only way to
+    # exercise this path before a season of one's own has started.
+    last_modelled = state.calendar.horizon.last_week - 1
+    if requested is None and state.state is SeasonState.SEASON_COMPLETE:
+        gate.add(
+            QualityCheck.fail(
+                "ros.season_complete",
+                stage="ros_build",
+                message=(
+                    "every scored week has been played, so no rest-of-season quantity "
+                    "remains to estimate; the last published board is the final one and "
+                    "nothing is rebuilt"
+                ),
+                observed=(
+                    f"completed week {state.completed_week}; last scored week "
+                    f"{state.calendar.horizon.last_week}"
+                ),
+                expected=f"<= week {last_modelled}",
+                severity=Severity.WARNING,
+            ),
+        )
+        return None
+
+    ceiling = min(freshness_week, last_modelled)
+    if ceiling < FIRST_THROUGH_WEEK:
         return None
     if requested is None:
-        return freshness_week
-    if requested > freshness_week:
+        return ceiling
+    if requested > ceiling:
         gate.add(
             QualityCheck.fail(
                 "ros.requested_week_unavailable",
                 stage="ros_build",
                 message=(
-                    f"week {requested} was requested but upstream data is complete only "
-                    f"through week {freshness_week}; refusing to label a shallower board "
-                    "with a deeper cutoff"
+                    f"week {requested} was requested but the deepest snapshot this season "
+                    f"supports is week {ceiling}; refusing to label a shallower board with a "
+                    "deeper cutoff"
                 ),
-                observed=f"requested {requested}, available {freshness_week}",
-                expected=f"<= {freshness_week}",
+                observed=(
+                    f"requested {requested}; available through {freshness_week}; "
+                    f"last modelled week {last_modelled}"
+                ),
+                expected=f"<= {ceiling}",
             ),
         )
         return None

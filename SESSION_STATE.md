@@ -95,27 +95,59 @@ hashes. That is an upstream data revision inside nflverse, not a code change: th
 contract and the cutoff rule all reproduce. The production artifact records the hash it was
 actually trained on via its dataset manifest, which is the point of recording it.
 
+### The season's two edges, found by review and fixed before merge (ADR-079)
+
+Three lifecycle defects that neither the fixtures nor the 2024 rehearsal could reach, because
+both sit in the **middle** of a season:
+
+| defect | what would have happened | fix |
+|---|---|---|
+| ROS build gated on `mode` | every refresh from the first kickoff to the first published week fails; the deploy job is downstream, so the **draft** board freezes for a week | gate on `latest_snapshot_week`, which the schedule alone decides |
+| `ros.no_complete_week` always critical | the opening-week cadence reads as an outage and fails the job | `ros.awaiting_first_week` (warning) at ≤1 played week; critical from two |
+| `season_complete` reaches `RosCutoff` | uncaught `ValueError` on every refresh from January onwards | bound by the remaining horizon first; `ros.season_complete` warning, no board |
+
+And one correctness defect in the freshness gate itself: it documented club **membership** and
+implemented `games * 2` against a distinct count, so a week that lost one club and gained a stray
+row for another passed. `WeekWindow` now carries the scheduled club set, both sides go through
+`normalize_team_code`, and the diagnostic names the missing and unexpected clubs.
+
+The product gained a third situation as a result — **season under way, no board yet** — carried
+on the draft build's `build_metadata.season_state` block, which is the only artifact published in
+every state. A `season_state.json` of its own was considered and rejected as a second schema, a
+second fetch and a second way for two published files to disagree about one season.
+
+`tests/unit/test_ros_lifecycle.py` walks the four states the review asked for plus the two at the
+far end; `test_workflows.py` pins which key the workflow's `if:` reads; both new product states
+have an end-to-end test and a screenshot (`39-`, `40-`).
+
 ### What Release 2 does not have
 
-**One blocker, recorded rather than worked around: no live in-season week has ever been built.**
-Everything in-season is proven on fixtures and on the 2024 rehearsal. The first real exercise is
-the Tuesday after Week 1 (`"40 12 * * 2"`), and until it runs the in-season path is
-*validated but not observed*. `docs/releases/v2.0.0.md` carries this clause by clause.
+**No live in-season week has ever been built.** Everything in-season is proven on fixtures and on
+the 2024 rehearsal. The first real exercise is the Tuesday after Week 1 (`"40 12 * * 2"`), and
+until it runs the in-season path is *validated but not observed*. This is an **operational item
+for after merge** rather than a release blocker: it is an observation the project will make, not
+something it can act on now.
+
+**FantasyPros is unmet and reconciled (ADR-080).** The provisioned key is free-tier — 40 distinct
+players, no ADP endpoint at all. The original clause-1 criterion stays recorded as historically
+unmet; FantasyPros stays `benchmark_only` with its revisit condition unchanged; Release 2's
+production source scope is FFC + MFL for draft ADP with Sleeper behaviour in season. A vendor
+entitlement is not something the project can act on, so it no longer holds `v2.0.0`.
 
 ### Commands and gates run (Phase 12)
 
 ```bash
-uv run ruff check . && uv run ruff format --check .   # clean, 240 files
+uv run ruff check . && uv run ruff format --check .   # clean, 241 files
 uv run mypy                                            # 152 source files, clean
-uv run pytest                                          # 1,414 passed, 4 live-network deselected
+uv run pytest                                          # 1,429 passed, 4 live-network deselected
 uv run ffdraft build-fixture-artifacts                 # 0 critical, 5 warning (documented fixtures)
 uv run ffdraft validate-artifacts <fixture build>      # 0 critical, 0 warning
 npm run lint && npm run typecheck                      # 0 errors (3 pre-existing compiler warnings)
 npm run test -- --run                                  # 291 passed
 npm run build                                          # clean
-npm run e2e                                            # 88 passed (chromium, mobile, a11y)
+npm run e2e                                            # 92 passed (chromium, mobile, a11y)
 npx playwright test --project=smoke-chromium           # 13 passed
-npm run e2e:screens -- docs/visual-qa/2026-09-04-phase12   # 41 screens, exit 0
+npm run e2e:screens -- docs/visual-qa/2026-09-04-phase12   # 43 screens, exit 0
 ```
 
 Phase-12 specific:
@@ -161,6 +193,12 @@ combined runs green.
   fresh sealed season (ADR-077, ADR-078).
 - **The in-season path has never seen a live week.** Treat the first post-Week-1 refresh as an
   observation, not a formality.
+- **The mode is not a promise that a board exists.** `product_mode` and `latest_snapshot_week`
+  answer different questions and disagree in two windows every season has (ADR-079). Anything
+  new that keys off "is it in season" should key off the snapshot week instead, and anything
+  that reaches `RosCutoff` must be bounded by the remaining horizon first.
+- **The freshness gate compares club sets.** If a future source needs a different vocabulary,
+  extend `normalize_team_code`; do not weaken the comparison back to a count.
 - **The behaviour feed is optional by construction and must stay that way.** Its failure is a
   warning that empties three columns; a critical ROS input failure withholds the whole bundle.
 - **Do not add a learned opportunity score.** The board is deliberately three orderings over
@@ -594,11 +632,12 @@ Three things are worth carrying forward as ideas rather than as file paths:
 
 ## Current target gate
 
-**Phase 12 is implemented; Release 2's remaining gate is an observation, not a task.** The
-in-season product exists and every offline gate passes. What is left is the first live in-season
-refresh — the Tuesday after Week 1, `"40 12 * * 2"` — which cannot be run before the season
-starts (first 2026 kickoff `2026-09-10T00:20:00Z`). `docs/releases/v2.0.0.md` records the
-definition of done clause by clause with that one clause open.
+**Phase 12 is implemented and merge-ready; Release 2's remaining item is an observation, not a
+task.** The in-season product exists and every offline gate passes. What is left is the first
+live in-season refresh — the Tuesday after Week 1, `"40 12 * * 2"` — which cannot be run before
+the season starts (first 2026 kickoff `2026-09-10T00:20:00Z`). `docs/releases/v2.0.0.md` records
+the definition of done clause by clause; clause 1 (FantasyPros) is recorded as historically
+unmet and superseded by ADR-080 rather than left as a blocker the project cannot act on.
 
 The question Phase 12 opened with is closed. Phase 11 handed over a promoted rest-of-season model
 (ADR-077) with no production artifact; ADR-078 defined the smallest legitimate fit that serves

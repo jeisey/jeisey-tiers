@@ -53,6 +53,7 @@ from zoneinfo import ZoneInfo
 import polars as pl
 
 from ffdraft.anchors import ANCHOR_TIMEZONE, AnchorError
+from ffdraft.contracts.enums import normalize_team_code
 from ffdraft.scoring.horizon import FantasyHorizon, fantasy_horizon
 
 __all__ = [
@@ -124,12 +125,19 @@ class ProductMode(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class WeekWindow:
-    """One regular-season week's schedule window, in UTC."""
+    """One regular-season week's schedule window, in UTC, and who is in it.
+
+    ``teams`` is the set of clubs the schedule says played, normalized onto the nflverse
+    vocabulary. It is carried rather than derived from ``games`` because the freshness gate
+    compares *membership*: two clubs per game makes the count exact and says nothing about
+    which clubs, so a week missing Buffalo and gaining a duplicate Miami would pass a count.
+    """
 
     week: int
     first_kickoff_utc: datetime
     last_kickoff_utc: datetime
     games: int
+    teams: frozenset[str] = frozenset()
 
     @property
     def complete_at_utc(self) -> datetime:
@@ -139,6 +147,7 @@ class WeekWindow:
         return {
             "week": self.week,
             "games": self.games,
+            "teams": len(self.teams),
             "first_kickoff_utc": _iso(self.first_kickoff_utc),
             "last_kickoff_utc": _iso(self.last_kickoff_utc),
             "complete_at_utc": _iso(self.complete_at_utc),
@@ -272,7 +281,15 @@ def build_season_calendar(schedule: pl.DataFrame, season: int) -> SeasonCalendar
     if rows.is_empty():
         raise AnchorError(f"{season}: schedule has no regular-season games")
 
+    missing = {"home_team", "away_team"} - set(rows.columns)
+    if missing:
+        # The freshness gate compares club membership, so a schedule without the clubs in it
+        # cannot produce a calendar that gate can use. Refused here rather than degraded to a
+        # count downstream, where the weakening would be invisible.
+        raise AnchorError(f"{season}: schedule is missing {', '.join(sorted(missing))}")
+
     by_week: dict[int, list[datetime]] = {}
+    teams_by_week: dict[int, set[str]] = {}
     for record in rows.iter_rows(named=True):
         week = record.get("week")
         gameday = record.get("gameday")
@@ -290,6 +307,11 @@ def build_season_calendar(schedule: pl.DataFrame, season: int) -> SeasonCalendar
             tzinfo=_EASTERN,
         ).astimezone(UTC)
         by_week.setdefault(int(week), []).append(moment)
+        sides = teams_by_week.setdefault(int(week), set())
+        for column in ("home_team", "away_team"):
+            club = normalize_team_code(record.get(column))
+            if club is not None:
+                sides.add(club)
 
     weeks = tuple(
         WeekWindow(
@@ -297,6 +319,7 @@ def build_season_calendar(schedule: pl.DataFrame, season: int) -> SeasonCalendar
             first_kickoff_utc=min(moments),
             last_kickoff_utc=max(moments),
             games=len(moments),
+            teams=frozenset(teams_by_week.get(week, ())),
         )
         for week, moments in sorted(by_week.items())
         if moments

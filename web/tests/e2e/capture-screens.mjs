@@ -375,6 +375,24 @@ const SCREENS = [
     viewport: { width: 1440, height: 1000 },
     fullPage: false,
   },
+
+  /*
+   * The two lifecycle windows (ADR-079): the season has started and the draft board is the
+   * only board that exists. Worth a picture precisely because the wrong version of these
+   * looks fine — a draft board labelled "Draft mode" in November is not visibly broken.
+   */
+  {
+    name: "39-awaiting-first-ros-board",
+    path: "/scenario/awaiting-first-week/",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+  },
+  {
+    name: "40-season-complete",
+    path: "/scenario/season-complete/",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+  },
 ];
 
 /** Artifacts a build is allowed not to publish; see the console filter below. */

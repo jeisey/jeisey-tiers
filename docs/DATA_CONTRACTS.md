@@ -766,3 +766,32 @@ imply a common unit the product does not have.
 `simulation` carries the frozen parameters **with their verdicts**: 10,000 draws marked as a
 declared fallback rather than a converged count, and a tier stability gate marked `fail`
 (ADR-074). A board that reported the parameters without the verdicts would overstate them.
+
+### 16.6 `build_metadata.season_state` — the season, on the artifact that always exists
+
+`ros_build_metadata` only exists when a rest-of-season board does. That is the right shape for
+the board's own provenance and the wrong shape for the *season*, because a season has two
+windows in which it has started and no board exists: between the first kickoff and the first
+published week, and after the last scored week (ADR-079).
+
+The **draft** build runs in every state, so its metadata carries the block:
+
+| field | meaning |
+|---|---|
+| `rule_version` | `season_state_v1` |
+| `state` | `preseason_draft` / `regular_season` / `fantasy_postseason` / `season_complete` |
+| `product_mode` | `draft` / `in_season` |
+| `completed_week` | the deepest week whose games are over; 0 before any |
+| `latest_snapshot_week` | the deepest cutoff the rule permits, or `null` |
+| `ros_board_expected` | whether a rest-of-season board should exist **right now** |
+| `note` | the build's own sentence about why this is the state |
+
+`ros_board_expected` is the field a reader should use, and it is **not** "has the season
+started". The frontend renders `note` verbatim rather than composing a sentence of its own, so
+the page cannot describe a state the build did not report.
+
+The block is optional: a build older than ADR-079 carries none, and a page that finds none
+says only which boards it holds. It is deliberately a block on an existing artifact rather
+than a `season_state.json` of its own — a second file would be a second schema, a second
+fetch, a second 404 path and a second way for two published files to disagree about one
+season.

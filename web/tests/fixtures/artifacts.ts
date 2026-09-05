@@ -429,6 +429,18 @@ export function buildMetadata(
     generated_at_utc: FIXTURE_GENERATED_AT,
     git_sha: "0000000",
     season: 2026,
+    // The default fixture is a preseason build, which is what makes it the *draft* fixture:
+    // the season has not started, so no rest-of-season board is expected and none is
+    // published. The in-season and lifecycle scenarios override this block.
+    season_state: {
+      rule_version: "season_state_v1",
+      state: "preseason_draft",
+      product_mode: "draft",
+      completed_week: 0,
+      latest_snapshot_week: null,
+      ros_board_expected: false,
+      note: "the season has not kicked off; the draft board is the current product",
+    },
     intrinsic_model_version: "intrinsic-cb-hurdle-v1",
     arbitrage_mode: "baseline",
     arbitrage_model_version: null,
@@ -803,8 +815,49 @@ export function fixtureFiles(condition: MarketCondition = "launch"): Record<stri
 /** Everything a page load needs **in season**, on top of the draft bundle. */
 export function inSeasonFixtureFiles(behaviorAvailable = true): Record<string, unknown> {
   return {
+    // The draft build's own record of the season, replaced because in season it says
+    // something different — and the page reads it whether or not a ROS bundle is beside it.
+    "build_metadata.json": buildMetadata({
+      season_state: {
+        rule_version: "season_state_v1",
+        state: "regular_season",
+        product_mode: "in_season",
+        completed_week: FIXTURE_THROUGH_WEEK,
+        latest_snapshot_week: FIXTURE_THROUGH_WEEK,
+        ros_board_expected: true,
+        note: `the rest-of-season board is current through week ${String(FIXTURE_THROUGH_WEEK)}`,
+      },
+    }),
     "ros_build_metadata.json": rosBuildMetadata({}, behaviorAvailable),
     "ros_tiers.json": rosTierEnvelope(),
     "inseason_opportunity.json": opportunityEnvelope(behaviorAvailable),
+  };
+}
+
+/**
+ * The two lifecycle windows in which the season has started and **no** rest-of-season board
+ * exists: opening week, before the first completed week is published, and after the last
+ * scored week. Both publish the draft bundle alone, and both must say so rather than letting
+ * the page imply the season has not begun (ADR-079).
+ */
+export function lifecycleFixtureFiles(
+  phase: "awaiting_first_week" | "season_complete",
+): Record<string, unknown> {
+  const awaiting = phase === "awaiting_first_week";
+  return {
+    ...fixtureFiles(),
+    "build_metadata.json": buildMetadata({
+      season_state: {
+        rule_version: "season_state_v1",
+        state: awaiting ? "regular_season" : "season_complete",
+        product_mode: "in_season",
+        completed_week: awaiting ? 0 : 17,
+        latest_snapshot_week: null,
+        ros_board_expected: false,
+        note: awaiting
+          ? "the season is under way; the first rest-of-season board is published once week 1 is complete and its upstream data has been released"
+          : "every scored week has been played; no rest-of-season horizon remains, so no new rest-of-season board is produced",
+      },
+    }),
   };
 }

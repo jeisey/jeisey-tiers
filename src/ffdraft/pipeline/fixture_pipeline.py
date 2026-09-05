@@ -94,6 +94,7 @@ from ffdraft.quality.forbidden import (
 from ffdraft.quality.thresholds import MARKET_SOURCE_MAX_AGE
 from ffdraft.retention import snapshot_key
 from ffdraft.scoring.horizon import fantasy_horizon
+from ffdraft.season.state import SEASON_STATE_RULE_VERSION
 from ffdraft.sources import (
     SLEEPER_SOURCE_ID,
     NflverseDepthChartAdapter,
@@ -1487,6 +1488,18 @@ def _build_metadata(
         "generated_at_utc": isoformat_utc(generated_at),
         "git_sha": git_sha,
         "season": FIXTURE_SEASON,
+        # The fixture publishes an in-season bundle, so its season block has to agree with
+        # it: a build claiming the season had not started beside a week-8 board would be the
+        # exact inconsistency ADR-079's block exists to prevent.
+        "season_state": {
+            "rule_version": SEASON_STATE_RULE_VERSION,
+            "state": "regular_season",
+            "product_mode": "in_season",
+            "completed_week": FIXTURE_THROUGH_WEEK,
+            "latest_snapshot_week": FIXTURE_THROUGH_WEEK,
+            "ros_board_expected": True,
+            "note": (f"the rest-of-season board is current through week {FIXTURE_THROUGH_WEEK}"),
+        },
         "intrinsic_model_version": FIXTURE_MODEL_VERSION,
         "arbitrage_mode": app.arbitrage_mode,
         "arbitrage_model_version": None,

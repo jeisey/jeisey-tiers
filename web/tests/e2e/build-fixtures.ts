@@ -117,6 +117,14 @@ export async function prepare(): Promise<void> {
      * The component tests exercise both; without a build there was no way to *look* at the
      * matured one, so a visual review could only ever see the launch condition.
      */
+    /*
+     * The two lifecycle windows in which the season has started and no rest-of-season board
+     * exists yet — opening week, and after the last scored week. Both are the *draft* bundle
+     * with a season-state block that says the season has begun, which is exactly the state
+     * ADR-079 exists to make sayable.
+     */
+    "awaiting-first-week": fixtures.lifecycleFixtureFiles("awaiting_first_week"),
+    "season-complete": fixtures.lifecycleFixtureFiles("season_complete"),
     matured: fixtures.fixtureFiles("matured"),
     "bad-schema": {
       ...fixtures.fixtureFiles(),

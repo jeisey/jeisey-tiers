@@ -1,15 +1,16 @@
 # Phase-12 visual QA — 2026-09-04
 
-Forty-one images from `npm run e2e:screens`, captured from the **fixture** builds so two runs of
+Forty-three images from `npm run e2e:screens`, captured from the **fixture** builds so two runs of
 the same code produce the same pictures (`docs/visual-qa/README.md`). Screens `01`–`28` are the
 existing set, recaptured so this directory is a complete picture of the product on this date
-rather than a patch on an older one. Screens `29`–`38` are new and are the Phase-12 subject:
-**In-Season mode**.
+rather than a patch on an older one. Screens `29`–`40` are new and are the Phase-12 subject:
+**In-Season mode**, and the two windows in which it does not exist yet.
 
 The default fixture build publishes no in-season bundle, because before the season's first
-kickoff that is the correct product. The new screens therefore come from two scenario builds,
-`/scenario/in-season/` and `/scenario/in-season-no-behavior/`, which the static server mounts
-alongside the existing degraded scenarios.
+kickoff that is the correct product. The new screens therefore come from four scenario builds —
+`/scenario/in-season/`, `/scenario/in-season-no-behavior/`, `/scenario/awaiting-first-week/` and
+`/scenario/season-complete/` — which the static server mounts alongside the existing degraded
+scenarios.
 
 | file | what it is |
 |---|---|
@@ -23,6 +24,8 @@ alongside the existing degraded scenarios.
 | `36-inseason-player-detail` | the player card's rest-of-season section |
 | `37-inseason-data-methodology` | the Data panel, including `05b Rest-of-season build` |
 | `38-inseason-draft-mode` | the draft board, still reachable in season |
+| `39-awaiting-first-ros-board` | the season has started and no board exists yet (ADR-079) |
+| `40-season-complete` | the far end: no remaining horizon, and no board of zeros |
 
 ## What the review confirms
 
@@ -96,6 +99,15 @@ a layout fact: a **season-mode band on every page pushed the arbitrage board bel
 phone** (the rail heading landed at 857px in an 839px viewport). The indicator moved to the
 masthead beside the build stamp, where it costs no vertical band, and the band itself now renders
 only when there is something to switch to. `e2e/mobile.spec.ts` measures this.
+
+**The two lifecycle windows say something true rather than something convenient.** `39` and `40`
+are the states in which the season has started and the draft board is the only board that exists
+— opening week, and after the last scored week. Both are ordinary and both last days or weeks,
+and the wrong version of either would not look broken: a draft board labelled "Draft mode" in
+November is a perfectly tidy screen. The indicator instead reads `SEASON UNDER WAY` and `SEASON
+COMPLETE`, a banner states the reason **in the build's own sentence** rather than in one the
+frontend composed, and both say the draft board below is unaffected and current. No mode switch
+is offered in either, because there is nothing to switch to.
 
 ## Known and accepted
 

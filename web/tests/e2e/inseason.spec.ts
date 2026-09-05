@@ -20,6 +20,10 @@ import { expect, test, type Page } from "@playwright/test";
 
 const IN_SEASON = "/scenario/in-season/";
 const NO_BEHAVIOR = "/scenario/in-season-no-behavior/";
+/** The season has started and no rest-of-season board can exist yet (ADR-079). */
+const AWAITING = "/scenario/awaiting-first-week/";
+/** The far end: every scored week played, no remaining horizon. */
+const SEASON_COMPLETE = "/scenario/season-complete/";
 
 /** Fail the test on any request that leaves the static server. */
 function forbidExternalRequests(page: Page): void {
@@ -79,6 +83,53 @@ test.describe("season mode", () => {
   test("an explicit view wins over the season's default", async ({ page }) => {
     await page.goto(`${IN_SEASON}?view=arbitrage`);
     await expect(page.getByRole("heading", { name: /Arbitrage/ })).toBeVisible();
+  });
+});
+
+test.describe("the lifecycle windows with no rest-of-season board", () => {
+  /*
+   * The two windows in which the season has started and the draft board is the only board
+   * that exists. Both are ordinary, both last days or weeks, and in both the page has to say
+   * something true: the season has begun, and the first (or last) rest-of-season board is not
+   * this build's to show. Calling either "Draft mode" would be accurate about the board and
+   * wrong about the season, which is exactly the confusion ADR-079 exists to prevent.
+   */
+  test("says the season has started while it waits for the first board", async ({ page }) => {
+    await page.goto(AWAITING);
+    // The draft board, because it is the only board this build published.
+    await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
+    // But not "Draft mode": the season is under way and the indicator says so.
+    await expect(page.locator(".season-mode-label")).toHaveText("Season under way");
+    await expect(page.getByText("Draft mode")).toHaveCount(0);
+    // Scoped to the banner: the chip carries the same sentence for assistive technology,
+    // which is deliberate and would otherwise make every one of these a strict-mode violation.
+    const banner = page.locator(".season-notice");
+    await expect(banner).toContainText("The regular season has started.");
+    await expect(banner).toContainText(/first rest-of-season board is published once week 1/i);
+    // And it says the draft board is not the casualty of the wait.
+    await expect(banner).toContainText(/draft board below is unaffected and current/i);
+  });
+
+  test("offers no mode switch while there is nothing to switch to", async ({ page }) => {
+    await page.goto(AWAITING);
+    await expect(page.locator(".season-mode").getByRole("radio")).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "ROS tiers" })).toHaveCount(0);
+  });
+
+  test("explains the absent board to anyone who links straight to it", async ({ page }) => {
+    await page.goto(`${AWAITING}?view=ros`);
+    await expect(page.getByText("No rest-of-season board has been published yet.")).toBeVisible();
+  });
+
+  test("says the season is over rather than showing a board of zeros", async ({ page }) => {
+    await page.goto(SEASON_COMPLETE);
+    await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
+    await expect(page.locator(".season-mode-label")).toHaveText("Season complete");
+    const banner = page.locator(".season-notice");
+    // Not "the regular season has started": at this end of the season that is the wrong
+    // sentence beside the right note.
+    await expect(banner).toContainText("The fantasy season is over.");
+    await expect(banner).toContainText(/no rest-of-season horizon remains/i);
   });
 });
 

@@ -852,6 +852,11 @@ code {
   font-weight: 600;
 }
 
+/* The lifecycle banner: the season has started and the first ROS board does not exist yet. */
+.season-notice {
+  margin-bottom: var(--space-4);
+}
+
 .notice[data-severity="warning"] {
   border-color: var(--warn-line);
   border-left-color: var(--warn);

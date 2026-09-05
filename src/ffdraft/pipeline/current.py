@@ -62,6 +62,11 @@ from ffdraft.modeling.build_config import CurrentBuildConfig
 from ffdraft.modeling.features import core_feature_selection
 from ffdraft.modeling.production import ProductionModel
 from ffdraft.quality import QualityGate, audit_intrinsic_feature_names
+from ffdraft.season.state import (
+    SEASON_STATE_RULE_VERSION,
+    SeasonState,
+    season_state_from_schedule,
+)
 from ffdraft.simulation.vorp import (
     SimulationConfig,
     fair_ranking,
@@ -396,6 +401,7 @@ def run_current_build(
         git_sha=git_sha,
         model=model,
         status=status,
+        season_state=_season_state_block(loaded.sources.schedule, season, stamped),
     )
     written: list[Path] = []
     if write and gate.passed:
@@ -794,9 +800,11 @@ def _build_metadata(
     git_sha: str | None,
     model: ProductionModel,
     status: Any | None = None,
+    season_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     summary = gate.summary()
     return {
+        "season_state": season_state,
         "schema_version": ARTIFACT_SCHEMA_VERSION,
         "build_id": build_id,
         "generated_at_utc": isoformat_utc(as_of),
@@ -832,6 +840,66 @@ def _build_metadata(
         "warnings": [check.message for check in gate.warnings],
         "methodology_version": CURRENT_METHODOLOGY_VERSION,
     }
+
+
+def _season_state_block(schedule: pl.DataFrame, season: int, as_of: datetime) -> dict[str, Any]:
+    """Where the season is, on the artifact that is always published.
+
+    The draft build is the one thing that runs in every state, so it is the only place the
+    frontend can learn the season has started **without** a rest-of-season bundle existing —
+    which is precisely the opening-week window, and again once the horizon is spent. Without
+    it the site would show the draft board and call itself "Draft mode" in November, which is
+    not false about the board and is false about the season.
+
+    A separate season-state artifact would say the same thing in a new file with a new schema
+    and a new failure mode; a block on a file that is already written and already read costs
+    none of that (ADR-079).
+
+    Failure here is not worth failing a draft build over: the block is advisory, and a build
+    that could not read its own schedule has louder problems than a missing banner.
+    """
+    try:
+        state = season_state_from_schedule(schedule, season=season, as_of=as_of)
+    except Exception:  # noqa: BLE001 - advisory metadata, never a build failure
+        return {
+            "rule_version": SEASON_STATE_RULE_VERSION,
+            "state": None,
+            "product_mode": None,
+            "completed_week": None,
+            "latest_snapshot_week": None,
+            "ros_board_expected": False,
+            "note": "the season state could not be derived from this build's schedule",
+        }
+    snapshot = state.latest_snapshot_week
+    return {
+        "rule_version": state.rule_version,
+        "state": str(state.state),
+        "product_mode": str(state.mode),
+        "completed_week": state.completed_week,
+        "latest_snapshot_week": snapshot,
+        # What the frontend actually needs: not "has the season started" but "should a
+        # rest-of-season board exist right now". They differ for the days between the first
+        # kickoff and the first published week, and again after the last scored week.
+        "ros_board_expected": snapshot is not None,
+        "note": _season_state_note(state, snapshot),
+    }
+
+
+def _season_state_note(state: Any, snapshot: int | None) -> str:
+    """One sentence a reader can act on, for each of the three product situations."""
+    if state.state is SeasonState.PRESEASON_DRAFT:
+        return "the season has not kicked off; the draft board is the current product"
+    if state.state is SeasonState.SEASON_COMPLETE:
+        return (
+            "every scored week has been played; no rest-of-season horizon remains, so no "
+            "new rest-of-season board is produced"
+        )
+    if snapshot is None:
+        return (
+            "the season is under way; the first rest-of-season board is published once "
+            "week 1 is complete and its upstream data has been released"
+        )
+    return f"the rest-of-season board is current through week {snapshot}"
 
 
 def _source_metadata(loaded: Any) -> list[Any]:

@@ -885,8 +885,53 @@ decisions ADR-078.
       `preseason_draft` and no in-season bundle can be produced from real data before the
       release. The base-path scenario is verified on the fixture build (`10-pages-base-path`)
       and the whole in-season path on the 2024 rehearsal; the first post-Week-1 refresh
-      (`"40 12 * * 2"`) is the observation that closes this. Recorded as a release blocker in
-      `docs/releases/v2.0.0.md`.
+      (`"40 12 * * 2"`) is the observation that closes this. It is an **operational item for
+      after merge**, not a release blocker: it is an observation the project will make rather
+      than something it can act on now.
+
+### 12.9 The season's two edges (ADR-079, ADR-080)
+
+A pre-merge review found three lifecycle defects that neither the fixtures nor the mid-season
+rehearsal could reach, because both sit in the middle of a season rather than at its edges.
+
+- [x] **Opening week no longer freezes the site.** `season_state_v1` flips the mode at the
+      first kickoff and `ros_cutoff_v1` refuses week 0; between them is a window of several
+      days in which no board can be built. The refresh ran `build-ros` on the *mode*, hit a
+      critical, failed the build job — and the deploy job is downstream of it, so the **draft**
+      board stopped refreshing too. The ROS build is now gated on `latest_snapshot_week`, which
+      the schedule alone decides, so the window is skipped rather than attempted and failed.
+- [x] **A cadence is told apart from an outage.** Nothing buildable with at most one week
+      played is `ros.awaiting_first_week`, a warning: the refresh is green, the draft bundle
+      deploys, no board is published. Two or more weeks played with nothing available is still
+      `ros.no_complete_week`, critical.
+- [x] **The end of the season no longer crash-loops.** At `season_complete` the deepest
+      available week is the last *scored* week, which `RosCutoff` refuses by raising — uncaught,
+      on every refresh from January onwards. The cutoff is bounded by the remaining horizon
+      before the constructor sees it and the refusal is `ros.season_complete`, a warning. The
+      last published board is the final one; no board of structural zeros is produced. An
+      explicitly requested week is exempt, so replaying a finished season still works.
+- [x] **The freshness gate compares clubs, not counts.** It documented "every team the schedule
+      says played appears in the weekly statistics" and implemented `games * 2` against a
+      distinct count — which a week that lost one club and gained a stray row for another would
+      pass. `WeekWindow` now carries the scheduled club set, both sides go through
+      `normalize_team_code`, and the diagnostic names the missing and unexpected clubs.
+- [x] **The product has a third situation, and says so.** *Season under way, no board yet* is
+      carried by a `season_state` block on the draft build's `build_metadata.json` — the one
+      artifact published in every state — and the page renders the build's own sentence rather
+      than composing one. A `season_state.json` of its own was considered and rejected: a second
+      file is a second schema, a second fetch and a second way for two files to disagree.
+- [x] **Four lifecycle states have a test each**, plus the two at the far end
+      (`tests/unit/test_ros_lifecycle.py`): one minute before the first kickoff; after kickoff
+      with `completed_week=0`; week 1 played but unpublished; week 1 available. Each asserts the
+      resolved cutoff, the gate verdict and the value the workflow reads. The workflow's own
+      gate is pinned in `tests/unit/test_workflows.py`, and both new product states have an
+      end-to-end test and a screenshot.
+- [x] **FantasyPros is reconciled rather than left as an impossible blocker (ADR-080).** The
+      original clause-1 criterion stays recorded as historically unmet; FantasyPros stays
+      `benchmark_only` under the current entitlement with its revisit condition unchanged; and
+      Release 2's production source scope is stated positively as FFC + MFL for draft ADP with
+      Sleeper behaviour in season. A vendor tier is not something the project can act on, so it
+      no longer holds `v2.0.0`.
 
 See `docs/releases/v2.0.0.md` for the measured results and the definition-of-done verdict
 clause by clause.

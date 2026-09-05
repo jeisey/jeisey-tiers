@@ -114,8 +114,26 @@ export function ViewTabs({
   );
 }
 
-function seasonModeLabel(resolved: "draft" | "in_season"): string {
-  return resolved === "in_season" ? "In-Season" : "Draft";
+/**
+ * What the indicator says, which is a question about the **season** and not only the board.
+ *
+ * Three of the four answers are the ordinary two modes. The fourth is the window ADR-079
+ * exists for: the season has kicked off and no rest-of-season board can exist yet, because
+ * week 1 is not finished or not published. Calling that "Draft mode" would be true about the
+ * board on screen and false about the season, and the season is what this control names.
+ */
+function seasonModeLabel(
+  resolved: "draft" | "in_season",
+  seasonState: string | null,
+  awaiting: boolean,
+): string {
+  if (resolved === "in_season") return "In-Season mode";
+  // "Draft mode" is the right name for a *choice*: a reader who switched back to the draft
+  // board mid-season is in draft mode, and the switch beside this says so. It is the wrong
+  // name when there is nothing to switch to, because then it describes the season rather than
+  // a choice — and the season has started.
+  if (!awaiting) return "Draft mode";
+  return seasonState === "season_complete" ? "Season complete" : "Season under way";
 }
 
 /**
@@ -136,23 +154,31 @@ export function SeasonModeChip({
   resolved,
   seasonState,
   throughWeek,
+  note,
+  awaiting = false,
 }: {
   readonly resolved: "draft" | "in_season";
-  readonly seasonState: string;
+  readonly seasonState: string | null;
   readonly throughWeek: number | null;
+  /** The build's own sentence about why this is the state. Rendered for assistive tech. */
+  readonly note?: string | undefined;
+  /** The season has started and this build published no rest-of-season board (ADR-079). */
+  readonly awaiting?: boolean;
 }): React.JSX.Element {
   const detail =
     resolved === "in_season" && throughWeek !== null
       ? `through week ${String(throughWeek)}`
-      : seasonState.replace(/_/g, " ");
+      : (seasonState ?? "preseason draft").replace(/_/g, " ");
   return (
-    <span className="season-mode-chip" data-mode={resolved}>
+    <span className="season-mode-chip" data-mode={resolved} data-season={seasonState ?? undefined}>
       <span className="season-mode-label">
         <span className="season-mode-dot" aria-hidden="true" />
-        {seasonModeLabel(resolved)} mode
+        {seasonModeLabel(resolved, seasonState, awaiting)}
       </span>
       <span className="visually-hidden">
-        {`, ${detail}, set from the NFL schedule.`}
+        {note !== undefined && note !== ""
+          ? `, ${detail}. ${note}.`
+          : `, ${detail}, set from the NFL schedule.`}
       </span>
     </span>
   );

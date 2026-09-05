@@ -169,6 +169,12 @@ jobs:
       # capture job asks because the two modes want different sources: add/drop behaviour is
       # meaningless before anyone has drafted, and the draft market stops being the
       # comparison once drafts are done.
+      #
+      # `snapshot_week` is the second, narrower question, and the one that gates the ROS
+      # build: `mode` says the season has started, `snapshot_week` says a rest-of-season
+      # cutoff exists. They differ in two windows a season always has — between the first
+      # kickoff and the first completed week, and after the last scored week — and running
+      # the ROS build in either would fail deterministically every day (ADR-079).
       - name: Resolve the season state
         id: season
         run: |
@@ -440,8 +446,14 @@ jobs:
       # week is worse than no rest-of-season board, and the whole in-season publish is
       # all-or-nothing inside the command itself: it stages every artifact, validates them
       # together, and moves them into place only if all of them pass.
+      #
+      # It runs on `snapshot_week`, not on `mode`. The schedule alone tells us whether a
+      # rest-of-season cutoff can exist at all, so the two windows where one cannot — opening
+      # week, and after the last scored week — are skipped here rather than attempted and
+      # failed. The command refuses them a second time on its own (a warning, not a critical),
+      # so a manual run in either window is also green and publishes nothing.
       - name: Build the rest-of-season board
-        if: ${{ needs.capture.outputs.mode == 'in_season' }}
+        if: ${{ needs.capture.outputs.snapshot_week != '' }}
         env:
           NFLREADPY_CACHE: filesystem
           NFLREADPY_CACHE_DIR: ${{ runner.temp }}/nflreadpy-cache
@@ -531,9 +543,13 @@ jobs:
             test -f "web/dist/data/${artifact}.json" \
               || { echo "::error::web/dist/data/${artifact}.json missing from the build"; exit 1; }
           done
-          # In season the in-season bundle is part of the product, so its absence from the
-          # packaged site is an error rather than a silently missing tab.
-          if [ "${{ needs.capture.outputs.mode }}" = "in_season" ]; then
+          # Whatever the build produced has to reach the package. Keyed on what is on disk
+          # rather than on the season, because "should there be an in-season bundle" has
+          # three answers, not two: the season may have started while no rest-of-season
+          # cutoff exists yet (opening week) or exists any more (after the last scored week),
+          # and in both the correct package is the draft bundle alone (ADR-079). What is
+          # never correct is the build writing a bundle the packaging step drops.
+          if [ -f "web/public/data/ros_tiers.json" ]; then
             for artifact in ros_tiers inseason_opportunity ros_build_metadata; do
               test -f "web/dist/data/${artifact}.json" \
                 || { echo "::error::web/dist/data/${artifact}.json missing from the build"; exit 1; }

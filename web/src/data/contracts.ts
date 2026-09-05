@@ -385,7 +385,30 @@ export interface BuildPlayerStatusMetadata {
   readonly source_ids?: readonly string[];
 }
 
+/**
+ * Where the season is, carried on the draft build because that build always runs.
+ *
+ * The in-season bundle answers "is there a rest-of-season board"; this answers "should there
+ * be one". They differ for the days between the season's first kickoff and its first
+ * published week, and again once the horizon is spent — and in both windows the site shows
+ * the draft board, so without this it would call itself Draft mode in November (ADR-079).
+ *
+ * Optional because a build older than ADR-079 has none, and a missing block means only that
+ * the page cannot say more than which boards it holds.
+ */
+export interface BuildSeasonState {
+  readonly rule_version: string;
+  readonly state: SeasonState | null;
+  readonly product_mode: ProductMode | null;
+  readonly completed_week: number | null;
+  readonly latest_snapshot_week: number | null;
+  /** Whether a rest-of-season board should exist right now. Not "has the season started". */
+  readonly ros_board_expected: boolean;
+  readonly note: string;
+}
+
 export interface BuildMetadata {
+  readonly season_state?: BuildSeasonState | null;
   readonly schema_version: string;
   readonly build_id: string;
   readonly generated_at_utc: string;

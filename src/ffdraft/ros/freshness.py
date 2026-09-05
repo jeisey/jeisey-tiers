@@ -39,7 +39,7 @@ from typing import Any
 import polars as pl
 
 from ffdraft.contracts import QualityCheck
-from ffdraft.contracts.enums import Severity
+from ffdraft.contracts.enums import Severity, normalize_team_code
 from ffdraft.ros.cutoff import FIRST_THROUGH_WEEK
 from ffdraft.season.state import SeasonCalendar, SeasonStateResolution
 
@@ -58,21 +58,51 @@ _REGULAR_SEASON = "REG"
 
 @dataclass(frozen=True, slots=True)
 class WeekAvailability:
-    """One week's verdict, with the evidence that produced it."""
+    """One week's verdict, with the evidence that produced it.
+
+    The two team fields are **sets**, not counts. A count proves the totals match, which is
+    a weaker statement than the rule this module documents: a week that lost Buffalo and
+    gained a stray postseason row for Miami has the right total and the wrong membership,
+    and a cumulative rest-of-season feature built over it would be quietly short by one
+    club's games. The missing names are kept so the diagnostic says which club, not how many.
+    """
 
     week: int
-    scheduled_teams: int
-    observed_teams: int
+    scheduled: frozenset[str]
+    observed: frozenset[str]
     player_rows: int
     games_complete: bool
 
     @property
+    def scheduled_teams(self) -> int:
+        return len(self.scheduled)
+
+    @property
+    def observed_teams(self) -> int:
+        return len(self.observed)
+
+    @property
+    def missing_teams(self) -> tuple[str, ...]:
+        """Clubs the schedule says played that the weekly statistics do not carry."""
+        return tuple(sorted(self.scheduled - self.observed))
+
+    @property
+    def unexpected_teams(self) -> tuple[str, ...]:
+        """Clubs in the statistics that the schedule does not place in this week.
+
+        Not a failure on its own — it is the evidence that would distinguish a vocabulary
+        drift from a genuinely absent club, and reporting it is what makes the missing list
+        actionable rather than mysterious.
+        """
+        return tuple(sorted(self.observed - self.scheduled))
+
+    @property
     def teams_missing(self) -> int:
-        return max(0, self.scheduled_teams - self.observed_teams)
+        return len(self.missing_teams)
 
     @property
     def data_complete(self) -> bool:
-        return self.scheduled_teams > 0 and self.observed_teams >= self.scheduled_teams
+        return bool(self.scheduled) and not (self.scheduled - self.observed)
 
     @property
     def available(self) -> bool:
@@ -84,6 +114,8 @@ class WeekAvailability:
             "scheduled_teams": self.scheduled_teams,
             "observed_teams": self.observed_teams,
             "teams_missing": self.teams_missing,
+            "missing_teams": list(self.missing_teams),
+            "unexpected_teams": list(self.unexpected_teams),
             "player_rows": self.player_rows,
             "games_complete": self.games_complete,
             "data_complete": self.data_complete,
@@ -125,6 +157,18 @@ class RosSourceFreshness:
                 return week
         return None
 
+    @property
+    def awaiting_first_week(self) -> bool:
+        """Nothing is buildable yet, and that is the ordinary opening-week wait.
+
+        The season has kicked off but at most one week has been played and its statistics
+        have not landed. That is a **lifecycle state**, not a source failure: nflverse
+        publishes on its own cadence and the first board of a season simply does not exist
+        until the first week does. It is told apart from a real outage by how many weeks have
+        been played — two completed weeks with nothing available is not a publication lag.
+        """
+        return not self.buildable and self.completed_week <= FIRST_THROUGH_WEEK
+
     def week(self, week: int) -> WeekAvailability | None:
         for entry in self.weeks:
             if entry.week == week:
@@ -149,23 +193,50 @@ class RosSourceFreshness:
         }
 
     def checks(self, *, stage: str = "ros_build") -> list[QualityCheck]:
-        """The gate itself. A missing week is critical; a merely shallow one is not."""
+        """The gate itself.
+
+        Three outcomes rather than two, because "no board" has two very different causes:
+
+        * **The opening-week wait.** The season has started and week 1 is not published yet.
+          Expected, deterministic, and over within days — a *warning*, so the refresh stays
+          green and the draft board keeps deploying while the first ROS board is waited for.
+        * **A real outage.** Two or more weeks have been played and not one of them is
+          available upstream. That is not a cadence, and it stays **critical**.
+        * **A shallow board.** The current week is not published, so the board is built at the
+          last complete week. A warning, and the board is real.
+        """
         results: list[QualityCheck] = []
         if not self.buildable:
+            waiting = self.awaiting_first_week
             results.append(
                 QualityCheck.fail(
-                    "ros.no_complete_week",
+                    "ros.awaiting_first_week" if waiting else "ros.no_complete_week",
                     stage=stage,
                     message=(
-                        "no rest-of-season snapshot can be built: week 1's upstream data is "
-                        "not complete, and the cutoff rule refuses week 0"
+                        (
+                            "the season has started and week 1's upstream data has not been "
+                            "published yet, so there is no rest-of-season board to build; the "
+                            "draft board remains the current product until there is"
+                        )
+                        if waiting
+                        else (
+                            "no rest-of-season snapshot can be built: weeks have been played "
+                            "and none of them is complete upstream, and the cutoff rule "
+                            "refuses week 0"
+                        )
                     ),
                     observed=(
                         f"schedule completed week {self.completed_week}; "
                         f"available through week {self.available_through_week}"
+                        + (
+                            f"; week {self.blocking_week} missing {', '.join(entry.missing_teams)}"
+                            if (entry := self.week(self.blocking_week or 0)) is not None
+                            and entry.missing_teams
+                            else ""
+                        )
                     ),
                     expected=f"at least week {FIRST_THROUGH_WEEK} available",
-                    severity=Severity.CRITICAL,
+                    severity=Severity.WARNING if waiting else Severity.CRITICAL,
                 ),
             )
             return results
@@ -199,6 +270,16 @@ class RosSourceFreshness:
                     observed=(
                         f"week {blocking}: {entry.observed_teams if entry else 0} of "
                         f"{entry.scheduled_teams if entry else 0} team(s) present"
+                        + (
+                            f"; missing {', '.join(entry.missing_teams)}"
+                            if entry and entry.missing_teams
+                            else ""
+                        )
+                        + (
+                            f"; unexpected {', '.join(entry.unexpected_teams)}"
+                            if entry and entry.unexpected_teams
+                            else ""
+                        )
                     ),
                     expected="every scheduled team present in the weekly statistics",
                     severity=Severity.WARNING,
@@ -222,30 +303,35 @@ def assess_ros_freshness(
     season = state.season
     scheduled = _scheduled_teams_by_week(calendar)
 
-    observed: dict[int, tuple[int, int]] = {}
+    observed: dict[int, tuple[frozenset[str], int]] = {}
     if not weekly_stats.is_empty():
         scoped = weekly_stats.filter(
             (pl.col("season") == season) & (pl.col("season_type") == _REGULAR_SEASON),
         )
         if not scoped.is_empty():
             grouped = scoped.group_by("week").agg(
-                pl.col("team").n_unique().alias("teams"),
+                pl.col("team").unique().alias("teams"),
                 pl.len().alias("rows"),
             )
             for row in grouped.iter_rows(named=True):
-                observed[int(row["week"])] = (int(row["teams"]), int(row["rows"]))
+                clubs = {
+                    code
+                    for code in (normalize_team_code(value) for value in row["teams"])
+                    if code is not None
+                }
+                observed[int(row["week"])] = (frozenset(clubs), int(row["rows"]))
 
     entries: list[WeekAvailability] = []
     for week in sorted(scheduled):
         if week > calendar.horizon.last_week:
             continue
         window = calendar.window(week)
-        teams, rows = observed.get(week, (0, 0))
+        teams, rows = observed.get(week, (frozenset(), 0))
         entries.append(
             WeekAvailability(
                 week=week,
-                scheduled_teams=scheduled[week],
-                observed_teams=teams,
+                scheduled=scheduled[week],
+                observed=teams,
                 player_rows=rows,
                 games_complete=(window is not None and window.complete_at_utc <= state.as_of_utc),
             ),
@@ -259,11 +345,12 @@ def assess_ros_freshness(
     )
 
 
-def _scheduled_teams_by_week(calendar: SeasonCalendar) -> dict[int, int]:
-    """How many distinct clubs the schedule says played each week.
+def _scheduled_teams_by_week(calendar: SeasonCalendar) -> dict[int, frozenset[str]]:
+    """Which clubs the schedule says played each week, by name.
 
-    Derived from the game count rather than from a team list, because a schedule frame is
-    two clubs per game by construction and bye weeks make the number vary. Counting games
-    and doubling is exact and needs no column that might be renamed upstream.
+    Names rather than a count: ``games * 2`` is an exact *total* and proves nothing about
+    membership, and membership is what this gate claims to check. Both sides go through
+    :func:`normalize_team_code`, so a relocated franchise's historical abbreviation matches
+    its current one instead of reading as a missing club.
     """
-    return {window.week: window.games * 2 for window in calendar.weeks}
+    return {window.week: window.teams for window in calendar.weeks}

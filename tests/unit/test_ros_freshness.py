@@ -18,6 +18,42 @@ import polars as pl
 from ffdraft.ros.freshness import assess_ros_freshness
 from ffdraft.season.state import build_season_calendar, resolve_season_state
 
+#: The 32 clubs. Named rather than counted, because membership is what the gate compares.
+TEAMS = [
+    "ARI",
+    "ATL",
+    "BAL",
+    "BUF",
+    "CAR",
+    "CHI",
+    "CIN",
+    "CLE",
+    "DAL",
+    "DEN",
+    "DET",
+    "GB",
+    "HOU",
+    "IND",
+    "JAX",
+    "KC",
+    "LA",
+    "LAC",
+    "LV",
+    "MIA",
+    "MIN",
+    "NE",
+    "NO",
+    "NYG",
+    "NYJ",
+    "PHI",
+    "PIT",
+    "SEA",
+    "SF",
+    "TB",
+    "TEN",
+    "WAS",
+]
+
 
 def _schedule(weeks: int = 18) -> pl.DataFrame:
     rows: list[dict[str, object]] = []
@@ -34,23 +70,37 @@ def _schedule(weeks: int = 18) -> pl.DataFrame:
                     "week": week,
                     "gameday": day.isoformat(),
                     "gametime": "13:00",
+                    "home_team": TEAMS[index * 2],
+                    "away_team": TEAMS[index * 2 + 1],
                 },
             )
     return pl.DataFrame(rows)
 
 
-def _weekly(weeks: dict[int, int], *, season: int = 2026) -> pl.DataFrame:
-    """Weekly player rows, ``weeks`` mapping a week to how many clubs appear in it."""
+def _weekly(
+    weeks: dict[int, int],
+    *,
+    season: int = 2026,
+    teams: dict[int, list[str]] | None = None,
+) -> pl.DataFrame:
+    """Weekly player rows.
+
+    ``weeks`` maps a week to how many clubs appear in it, taken from the front of the real
+    club list so the observed set is a genuine subset of the scheduled one. ``teams`` names
+    the clubs outright, which is how a week with the right *count* and the wrong membership
+    is expressed.
+    """
     rows: list[dict[str, object]] = []
-    for week, teams in weeks.items():
-        for team in range(teams):
+    for week, count in weeks.items():
+        present = (teams or {}).get(week, TEAMS[:count])
+        for index, club in enumerate(present):
             rows.append(
                 {
                     "season": season,
                     "week": week,
                     "season_type": "REG",
-                    "gsis_id": f"00-{week:02d}{team:03d}",
-                    "team": f"T{team:02d}",
+                    "gsis_id": f"00-{week:02d}{index:03d}",
+                    "team": club,
                 },
             )
     return pl.DataFrame(rows) if rows else pl.DataFrame()
@@ -107,13 +157,69 @@ def test_a_hole_in_the_middle_stops_the_cutoff_behind_it() -> None:
     assert freshness.blocking_week == 4
 
 
-def test_no_complete_week_is_critical_because_week_zero_is_refused() -> None:
+def test_the_opening_week_wait_is_a_product_state_rather_than_a_failure() -> None:
+    """The window ADR-079 exists for, from the gate's side.
+
+    The season has kicked off, at most one week has been played, and nflverse has not
+    published it. No board can be built and none should be — but a *critical* here would fail
+    the refresh, and a failed refresh stops the ordinary draft build deploying for as long as
+    the wait lasts. It is a warning, so the pipeline stays green and publishes what it has.
+    """
     state = _state("2026-09-13T12:00:00Z")
     freshness = assess_ros_freshness(state=state, weekly_stats=_weekly({}))
     assert not freshness.buildable
+    assert freshness.awaiting_first_week
+    checks = freshness.checks()
+    assert [check.check_id for check in checks] == ["ros.awaiting_first_week"]
+    assert not checks[0].blocking
+
+
+def test_two_played_weeks_with_nothing_available_is_still_critical() -> None:
+    """The other side of the same line: a cadence lasts days, an outage does not."""
+    state = _state("2026-09-22T12:00:00Z")  # weeks 1 and 2 played
+    freshness = assess_ros_freshness(state=state, weekly_stats=_weekly({}))
+    assert state.completed_week == 2
+    assert not freshness.buildable
+    assert not freshness.awaiting_first_week
     checks = freshness.checks()
     assert [check.check_id for check in checks] == ["ros.no_complete_week"]
     assert checks[0].blocking
+
+
+def test_the_right_team_count_with_the_wrong_teams_fails() -> None:
+    """A count proves the totals match. This gate claims something stronger than that.
+
+    Thirty-two clubs are present and one of them was not scheduled this week, which means one
+    that *was* scheduled is missing. Every cumulative feature over this week would be short by
+    that club's games, and nothing about the row count would look wrong.
+    """
+    state = _state("2026-09-15T12:00:00Z")
+    swapped = [*TEAMS[:31], "SEA2"]
+    freshness = assess_ros_freshness(
+        state=state,
+        weekly_stats=_weekly({1: 32}, teams={1: swapped}),
+    )
+    entry = freshness.week(1)
+    assert entry is not None
+    assert entry.observed_teams == entry.scheduled_teams == 32
+    assert entry.missing_teams == ("WAS",)
+    assert entry.unexpected_teams == ("SEA2",)
+    assert not entry.data_complete
+    assert not freshness.buildable
+
+
+def test_a_relocated_club_s_alias_is_the_same_club() -> None:
+    """Normalized on both sides, so a vocabulary difference is not read as an absence."""
+    state = _state("2026-09-15T12:00:00Z")
+    aliased = [*TEAMS[:16], "STL", *TEAMS[17:]]  # "LA" under its pre-2016 abbreviation
+    freshness = assess_ros_freshness(
+        state=state,
+        weekly_stats=_weekly({1: 32}, teams={1: aliased}),
+    )
+    entry = freshness.week(1)
+    assert entry is not None
+    assert entry.missing_teams == ()
+    assert freshness.buildable
 
 
 def test_postseason_rows_never_satisfy_a_regular_season_week() -> None:

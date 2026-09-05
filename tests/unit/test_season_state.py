@@ -23,6 +23,42 @@ from ffdraft.season.state import (
     season_state_from_schedule,
 )
 
+#: The 32 clubs, so a synthetic week names the same set the real schedule would.
+TEAMS = [
+    "ARI",
+    "ATL",
+    "BAL",
+    "BUF",
+    "CAR",
+    "CHI",
+    "CIN",
+    "CLE",
+    "DAL",
+    "DEN",
+    "DET",
+    "GB",
+    "HOU",
+    "IND",
+    "JAX",
+    "KC",
+    "LA",
+    "LAC",
+    "LV",
+    "MIA",
+    "MIN",
+    "NE",
+    "NO",
+    "NYG",
+    "NYJ",
+    "PHI",
+    "PIT",
+    "SEA",
+    "SF",
+    "TB",
+    "TEN",
+    "WAS",
+]
+
 
 def _schedule(season: int = 2026, weeks: int = 18) -> pl.DataFrame:
     """A synthetic schedule: sixteen games a week, Thursday through Monday."""
@@ -45,6 +81,8 @@ def _schedule(season: int = 2026, weeks: int = 18) -> pl.DataFrame:
                     "week": week,
                     "gameday": day.isoformat(),
                     "gametime": time,
+                    "home_team": TEAMS[index * 2],
+                    "away_team": TEAMS[index * 2 + 1],
                 },
             )
     # A postseason row, which must never be counted as a regular-season week.
@@ -56,6 +94,8 @@ def _schedule(season: int = 2026, weeks: int = 18) -> pl.DataFrame:
             "week": 19,
             "gameday": "2027-01-10",
             "gametime": "13:00",
+            "home_team": TEAMS[0],
+            "away_team": TEAMS[1],
         },
     )
     return pl.DataFrame(rows)
