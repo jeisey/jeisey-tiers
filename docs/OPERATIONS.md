@@ -789,6 +789,207 @@ weekly release covering week N exists. Building on Monday morning against a Sund
 that has not landed yet would produce a snapshot whose "through week N" is missing most of week
 N — a silently different quantity from every historical row the model was trained on.
 
-nflverse's own publication cadence is the constraint (`docs/DATA_SOURCES.md`); Phase 12 owns
-turning it into a scheduled job, and owns the freshness check that refuses to build a snapshot
-for a week the source has not finished publishing.
+nflverse's own publication cadence is the constraint (`docs/DATA_SOURCES.md`). **Phase 12
+implements the check** — see section 16 below.
+
+---
+
+## 16. In-season operations (Phase 12)
+
+### 16.1 The season decides the product, and the schedule decides the season
+
+`season_state_v1` (`ffdraft.season.state`) is a pure function of the published NFL schedule
+and a timestamp. There is no date anywhere in the code, because a constant would be correct
+for exactly one season and silently wrong afterwards.
+
+| state | when | product mode |
+|---|---|---|
+| `preseason_draft` | before the season's first regular-season kickoff | Draft |
+| `regular_season` | from that kickoff | In-Season |
+| `fantasy_postseason` | the horizon's last three scored weeks | In-Season |
+| `season_complete` | every scored week played; no remaining horizon | In-Season |
+
+Two properties are worth knowing when reading a run:
+
+- **The mode flips at kickoff, not at the first completed week.** For the several days in
+  week 1 when the draft is over and no game has finished, the mode is In-Season and
+  `completed_week` is 0 — which is the correct shape, and why the in-season board legitimately
+  does not exist yet.
+- **A week is played six hours after its last scheduled kickoff.** Derived from kickoff times
+  rather than from a schedule row's `result`, because a result lands whenever nflverse
+  publishes it and a state machine reading one would change its mind about the past.
+
+```bash
+# The rule, applied. Network I/O: it reads the published schedule.
+uv run ffdraft season-state
+uv run ffdraft season-state --as-of 2026-11-03T12:00:00Z --json
+```
+
+### 16.1.1 The mode is not a promise that a board exists (ADR-079)
+
+`product_mode` answers *which product the site is*. **`latest_snapshot_week`** answers
+*whether a rest-of-season board can exist at all*, and they disagree in two windows every
+season contains:
+
+| window | mode | `latest_snapshot_week` | what runs |
+|---|---|---|---|
+| before the first kickoff | Draft | `null` | draft build only |
+| kickoff → first completed week | In-Season | `null` | draft build only |
+| a completed week, published | In-Season | the week | draft build **and** ROS build |
+| after the last scored week | In-Season | `null` | draft build only |
+
+**The refresh gates the ROS build on `snapshot_week`, not on `mode`.** Gating on the mode ran
+`build-ros` in both empty windows, where it failed deterministically — and because the deploy
+job is downstream of the build job, a failure there stopped the **draft** board refreshing
+too. The site would have frozen for the first week of every season with something that looked
+like an outage.
+
+Four states, and the deliberate outcome of each:
+
+| # | state | `mode` | `snapshot_week` | ROS build | job |
+|---|---|---|---|---|---|
+| A | one minute before the first kickoff | `draft` | — | skipped | green |
+| B | after kickoff, `completed_week=0` | `in_season` | — | skipped | green |
+| C | week 1 played, upstream silent | `in_season` | `1` | runs, publishes nothing | green |
+| D | week 1 available | `in_season` | `1` | runs, publishes | green |
+
+State C is the one the schedule cannot decide: only a read of the weekly statistics can tell
+whether the week landed. The build runs, the freshness gate returns `ros.awaiting_first_week`
+as a **warning**, and nothing is written. Two or more weeks played with nothing available is
+`ros.no_complete_week` and stays **critical** — that is not a publication cadence.
+
+`tests/unit/test_ros_lifecycle.py` walks all four, plus the two at the far end.
+
+### 16.1.2 The end of the season
+
+At `season_complete` the deepest available week is the last **scored** week, and `ros_cutoff_v1`
+refuses it — correctly, since no remaining horizon exists to estimate. That refusal used to
+arrive as an uncaught `ValueError` from the `RosCutoff` constructor, which would have crashed
+every refresh from January onwards.
+
+The cutoff is now bounded by the remaining horizon before the constructor sees it, and the
+refusal is `ros.season_complete`, a **warning**. The scheduled refresh is green and
+intentionally does nothing in-season; the last published board is the final one. A
+structurally zero "week 17" board published to keep a tab populated would be a fiction and is
+not produced.
+
+An explicitly requested week is exempt from both lifecycle refusals — every historical season
+is `season_complete`, so `--through-week 8 --season 2024` has to keep working, and it does.
+
+### 16.2 "Played" and "available" are different questions
+
+The clock says the games are over. `ros_source_freshness_v1`
+(`ffdraft.ros.freshness`) says whether the rows arrived, by comparing the clubs the schedule
+says played a week against the clubs present in that week's weekly player statistics.
+
+That comparison is a **set** comparison, not a count. Both sides go through
+`normalize_team_code`, so a relocated franchise's older abbreviation is the same club rather
+than a missing one; the diagnostic names the missing and unexpected clubs rather than
+reporting how many. A week that lost one club and gained a stray row for another has the right
+total and the wrong membership, and every cumulative feature over it would be quietly short by
+one club's games.
+
+A week is available only when **both** are true, and the build takes the deeper-of-nothing
+answer:
+
+- the deepest buildable cutoff is the last week with **no gap behind it** — if week 5 is
+  complete and week 4 is not, the answer is 3, because a rest-of-season feature is a
+  cumulative quantity and a missing interior week is a silently smaller total, not a gap;
+- a requested week deeper than the sources support is **refused**, not built, because a board
+  from six weeks of data labelled week 9 is wrong in a way nothing downstream can detect;
+- games over but data incomplete is a **warning**: building at the previous cutoff is correct,
+  merely shallower. Nothing published is wrong.
+
+### 16.3 The in-season refresh
+
+Two schedule slots, one job graph:
+
+```text
+07:17 America/New_York, daily     the ordinary refresh
+12:40 America/New_York, Tuesdays  the post-week refresh
+```
+
+The Tuesday slot exists because Monday night football finishes late and the completed week
+lands afterwards; it gives the week a second chance the same day. It is deliberately the
+**same** workflow — a separate post-week pipeline would be a second description of the same
+build, and the two would drift. A run that finds the week still incomplete rebuilds at the
+previous cutoff and says so, which is a no-op rather than a wrong board.
+
+The in-season half of the job graph:
+
+```text
+capture ──▶ build ──▶ deploy
+   │          │
+   │          ├─ build-current      the draft board (always)
+   │          ├─ build-arbitrage    the draft market comparison (always)
+   │          └─ build-ros          the in-season bundle (in_season only)
+   │
+   ├─ capture-status     the full Sleeper player map, at most once a day
+   └─ capture-behavior   the two trending endpoints (in_season only)
+```
+
+`build-ros` **never trains**. It loads the committed `models/production/intrinsic-ros-v1`
+artifact, checks its feature-set and feature-schema hashes against the build's, and refuses a
+contract it was not fitted against. Retraining is a separate, gated act (ADR-078):
+
+```bash
+# The production fit. Run after a promotion, or when a completed season extends the window.
+uv run ffdraft train-ros-production   --allow-sealed   --confirm-final-eval RELEASE-ROS-FINAL-HOLDOUT-2025   --final-eval-reason "why the sealed season is inside the window"
+
+# The in-season build. Offline apart from the nflverse weekly release it reads.
+uv run ffdraft build-ros --store market-data --preseason-board web/public/data/tiers.json
+```
+
+### 16.4 Sleeper cadence
+
+Unchanged from ADR-038's discipline, extended to the behaviour feed:
+
+- the full `/players/nfl` map is fetched **at most once per day**, by `capture-status`, and the
+  normalized rows are retained; nothing else re-fetches it;
+- the two trending endpoints are two requests per refresh, against a documented ceiling of
+  1000 calls per minute;
+- every behaviour snapshot records the **requested** lookback window and limit, because
+  Sleeper publishes neither a window nor an observation time of its own;
+- both feeds are captured under one snapshot key. A capture missing one of them is refused
+  rather than retained: a drop count is only interpretable against the add count from the same
+  moment.
+
+### 16.5 What degrades, and what fails closed
+
+| failure | effect |
+|---|---|
+| behaviour capture fails or is > 48h old | Opportunity Board's behaviour columns are empty and say why; **every intrinsic value is unchanged** |
+| the opportunity artifact is absent | the ROS tab is unaffected; the Opportunity tab says the build published none |
+| the preseason board is absent | the "change in intrinsic view" column is omitted; no rest-of-season value changes |
+| week N's upstream data is incomplete | the board is built at the last complete week, with a warning naming the blocking week |
+| no complete week at all | **critical**; nothing in-season is published |
+| any critical in-season check | **nothing in the in-season bundle is written** — it is staged to a sibling directory and moved into place only once every artifact *and* the metadata validate |
+| the whole build job fails | no Pages deployment; the previously deployed site stays exactly as it is |
+
+The all-or-nothing publish is the part worth stating twice. Writing artifacts straight into the
+output directory would satisfy "no partial board" for the artifacts — the serializer validates
+before it writes — and would miss it for the metadata, which would otherwise be written *after*
+a failed artifact and describe a bundle that is not there.
+
+### 16.6 Independent validation
+
+The two bundles carry different build ids and are validated separately, because they are
+produced by different models at different cutoffs on different cadences:
+
+```bash
+# Validates whichever bundles are present. A draft-only directory, an in-season-only
+# directory, and a directory holding both are all legitimate shapes.
+uv run ffdraft validate-artifacts web/public/data
+```
+
+The in-season checks that only exist here:
+
+- `ros.long_absence_definition` — the flag is set on exactly the rows ADR-076 defines, and
+  `weeks_since_last_game` is published beside it;
+- `ros_build_metadata.injury_claim` — the artifact states that no injury or practice-report
+  information is used;
+- `ros_build_metadata.long_absence_count` — the disclosed count matches the published rows;
+- `ros_build_metadata.cutoff_mismatch` — every row shares the bundle's declared cutoff week;
+- `cross_artifact.intrinsic_firewall` — every intrinsic column on the Opportunity Board is
+  identical to the rest-of-season board's. This is the market-firewall audit in its in-season
+  form: behaviour changed visibility and nothing else, verified over the published bytes.

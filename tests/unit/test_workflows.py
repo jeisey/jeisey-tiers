@@ -182,13 +182,17 @@ def test_a_production_refresh_is_never_cancelled(workflows):
 
 
 def test_the_daily_schedule_is_off_the_hour_in_new_york(workflows):
+    """Two slots: the daily refresh, and Phase 12's post-week one. Neither on the hour."""
     schedule = workflows["daily-refresh.yml"]["on"]["schedule"]
-    assert len(schedule) == 1
-    entry = schedule[0]
-    minute, hour = entry["cron"].split()[:2]
-    assert (minute, hour) == ("17", "7"), entry["cron"]
-    assert minute != "0", "an on-the-hour schedule is the one GitHub documents as delayed"
-    assert entry["timezone"] == "America/New_York"
+    assert len(schedule) == 2
+    daily, post_week = schedule
+    for entry in schedule:
+        minute = entry["cron"].split()[0]
+        assert minute != "0", "an on-the-hour schedule is the one GitHub documents as delayed"
+        assert entry["timezone"] == "America/New_York"
+    assert daily["cron"].split()[:2] == ["17", "7"], daily["cron"]
+    # Tuesday, after Monday night football and the release that follows it (roadmap 12.5).
+    assert post_week["cron"].split()[4] == "2", post_week["cron"]
 
 
 def test_the_forced_failure_flag_is_unreachable_from_the_schedule(workflow_dir):
@@ -196,6 +200,33 @@ def test_the_forced_failure_flag_is_unreachable_from_the_schedule(workflow_dir):
     assert "force_validation_failure" in text
     guard = "github.event_name == 'workflow_dispatch' && inputs.force_validation_failure == true"
     assert guard in text, "the proof step must assert the dispatch event, not only the input"
+
+
+def test_the_ros_build_is_gated_on_a_snapshot_week_not_on_the_mode(workflows):
+    """The lifecycle windows, from the workflow's side (ADR-079).
+
+    ``mode`` says the season has started; ``snapshot_week`` says a rest-of-season cutoff
+    exists. They disagree in two windows every season has — between the first kickoff and the
+    first completed week, and after the last scored week — and a build gated on ``mode`` would
+    run in both, fail deterministically, and take the ordinary draft deploy down with it for
+    as long as the window lasted. Which key the ``if:`` reads is the whole fix, so it is
+    asserted rather than reviewed.
+    """
+    refresh = workflows["daily-refresh.yml"]
+    build = refresh["jobs"]["build"]["steps"]
+    step = next(s for s in build if s.get("name") == "Build the rest-of-season board")
+    assert "snapshot_week" in step["if"]
+    assert "mode" not in step["if"]
+
+    # And the packaging assertion keys on what the build produced, because in those windows
+    # the correct package is the draft bundle alone.
+    package = next(
+        s for s in build if s.get("name") == "Build the site at the project Pages base path"
+    )
+    assert "web/public/data/ros_tiers.json" in package["run"]
+
+    # The capture job has to publish it for the build job to read it.
+    assert "snapshot_week" in refresh["jobs"]["capture"]["outputs"]
 
 
 def test_the_refresh_does_not_retrain(workflow_dir):

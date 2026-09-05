@@ -13,9 +13,11 @@ import {
   ARTIFACT_FILENAMES,
   ARTIFACT_SCHEMA_VERSION,
   BUILD_METADATA_FILENAME,
+  ROS_BUILD_METADATA_FILENAME,
   type ArtifactEnvelope,
   type ArtifactName,
   type BuildMetadata,
+  type RosBuildMetadata,
 } from "./contracts";
 
 export class ArtifactVersionError extends Error {
@@ -121,6 +123,52 @@ export function parseBuildMetadata(payload: unknown): BuildMetadata {
 }
 
 /**
+ * Narrow the in-season bundle's metadata.
+ *
+ * Structurally checked in exactly the way the draft bundle's is, and separately: a site may
+ * legitimately hold one bundle and not the other, so a missing or unreadable
+ * `ros_build_metadata.json` has to be an answer about in-season mode alone rather than an
+ * error about the page.
+ *
+ * `through_week` and the disclosure block are required rather than optional because a
+ * rest-of-season board without its cutoff, or without ADR-076's sentences, is not a board
+ * this product is allowed to render.
+ */
+export function parseRosBuildMetadata(payload: unknown): RosBuildMetadata {
+  if (!isRecord(payload)) {
+    throw new ArtifactShapeError(ROS_BUILD_METADATA_FILENAME, "payload is not an object");
+  }
+  const version = payload.schema_version;
+  if (typeof version !== "string") {
+    throw new ArtifactShapeError(ROS_BUILD_METADATA_FILENAME, "missing schema_version");
+  }
+  if (!isSupportedVersion(version)) {
+    throw new ArtifactVersionError(
+      ROS_BUILD_METADATA_FILENAME,
+      version,
+      ARTIFACT_SCHEMA_VERSION,
+    );
+  }
+  for (const field of ["build_id", "generated_at_utc", "ros_model_version"] as const) {
+    if (typeof payload[field] !== "string") {
+      throw new ArtifactShapeError(ROS_BUILD_METADATA_FILENAME, `missing ${field}`);
+    }
+  }
+  if (typeof payload.through_week !== "number") {
+    throw new ArtifactShapeError(ROS_BUILD_METADATA_FILENAME, "missing through_week");
+  }
+  const disclosures = payload.disclosures;
+  if (!isRecord(disclosures) || typeof disclosures.long_absence_statement !== "string") {
+    throw new ArtifactShapeError(
+      ROS_BUILD_METADATA_FILENAME,
+      "missing the ADR-076 disclosure block; a rest-of-season board may not be rendered " +
+        "without the statements that make its flags honest",
+    );
+  }
+  return payload as unknown as RosBuildMetadata;
+}
+
+/**
  * Join the artifact base path and a filename.
  *
  * The base path is a Vite build-time value so a project Pages deployment under `/<repo>/`
@@ -154,8 +202,18 @@ export async function loadBuildMetadata(
   return parseBuildMetadata(await fetchJson(url, BUILD_METADATA_FILENAME));
 }
 
+export async function loadRosBuildMetadata(
+  options: { readonly base?: string } = {},
+): Promise<RosBuildMetadata> {
+  const url = artifactUrl(ROS_BUILD_METADATA_FILENAME, options.base);
+  return parseRosBuildMetadata(await fetchJson(url, ROS_BUILD_METADATA_FILENAME));
+}
+
 /** Freshness for the methodology panel. The UI never hardcodes an update timestamp. */
-export function buildAgeHours(metadata: BuildMetadata, now: Date = new Date()): number {
+export function buildAgeHours(
+  metadata: { readonly generated_at_utc: string },
+  now: Date = new Date(),
+): number {
   const generated = Date.parse(metadata.generated_at_utc);
   if (Number.isNaN(generated)) {
     return Number.POSITIVE_INFINITY;

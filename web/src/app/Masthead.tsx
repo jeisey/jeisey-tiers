@@ -69,11 +69,18 @@ export function Masthead({
   degradations,
   onOpenData,
   now,
+  seasonMode,
 }: {
   readonly metadata: BuildMetadata;
   readonly degradations: readonly Degradation[];
   readonly onOpenData: () => void;
   readonly now?: Date | undefined;
+  /**
+   * The season-mode indicator (roadmap 12.4), rendered here because it is status of the same
+   * kind as the build stamp beside it — and because a phone cannot afford a band of its own
+   * for it without pushing the board below the fold.
+   */
+  readonly seasonMode?: React.ReactNode;
 }): React.JSX.Element {
   const ageHours = buildAgeHours(metadata, now);
   const status = mastheadStatus(metadata, degradations, ageHours);
@@ -85,6 +92,7 @@ export function Masthead({
         <img className="masthead-logo" src={logoUrl} alt="Jeisey Tiers" width={434} height={145} />
       </h1>
       <div className="masthead-meta">
+        {seasonMode}
         <span className="freshness">
           Updated <strong>{formatEastern(metadata.generated_at_utc)}</strong>
           <span className="visually-hidden">{`, ${formatAge(ageHours)}`}</span>

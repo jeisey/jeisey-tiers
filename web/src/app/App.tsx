@@ -15,19 +15,34 @@ import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bun
 import { easternIsoDate } from "../data/format";
 import { cohortAssignment } from "../data/market";
 import { selectArbitrageRows, selectTierRows, type ArtifactIndex } from "../data/model";
-import { SCORING_TO_PRESET, leaguePresetId, type ScoringValue, type TeamCount } from "../data/state";
+import { selectOpportunityRows, selectRosRows, type InSeasonBundle } from "../data/ros";
+import {
+  SCORING_TO_PRESET,
+  leaguePresetId,
+  resolveMode,
+  resolveView,
+  type ScoringValue,
+  type TeamCount,
+} from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
-import { Controls, ViewTabs } from "./Controls";
+import { Controls, SeasonMode, SeasonModeChip, ViewTabs } from "./Controls";
 import { DataView } from "./DataView";
 import { Masthead } from "./Masthead";
+import { OpportunityView } from "./OpportunityView";
 import { PlayerDetail, type PlayerDetailData } from "./PlayerDetail";
+import { RosView } from "./RosView";
 import { TiersView } from "./TiersView";
 import { useAppState } from "./useAppState";
 
 type LoadState =
   | { readonly status: "loading" }
-  | { readonly status: "ready"; readonly index: ArtifactIndex; readonly degradations: readonly Degradation[] }
+  | {
+      readonly status: "ready";
+      readonly index: ArtifactIndex;
+      readonly degradations: readonly Degradation[];
+      readonly inSeason: InSeasonBundle | null;
+    }
   | { readonly status: "error"; readonly error: CriticalArtifactError };
 
 /**
@@ -45,7 +60,12 @@ export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
     loadBundle()
       .then((bundle) => {
         if (!cancelled) {
-          setLoad({ status: "ready", index: bundle.index, degradations: bundle.degradations });
+          setLoad({
+            status: "ready",
+            index: bundle.index,
+            degradations: bundle.degradations,
+            inSeason: bundle.inSeason,
+          });
         }
       })
       .catch((error: unknown) => {
@@ -87,6 +107,7 @@ export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
   return (
     <Board
       index={load.index}
+      inSeason={load.inSeason}
       degradations={load.degradations}
       state={state}
       setState={setState}
@@ -100,6 +121,7 @@ export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
 
 function Board({
   index,
+  inSeason,
   degradations,
   state,
   setState,
@@ -109,6 +131,8 @@ function Board({
   now,
 }: {
   readonly index: ArtifactIndex;
+  /** The in-season bundle, or null before kickoff. See `LoadedBundle.inSeason`. */
+  readonly inSeason: InSeasonBundle | null;
   readonly degradations: readonly Degradation[];
   readonly state: ReturnType<typeof useAppState>["state"];
   readonly setState: ReturnType<typeof useAppState>["setState"];
@@ -124,6 +148,23 @@ function Board({
 }): React.JSX.Element {
   const metadata = index.metadata;
   const buildDate = easternIsoDate(metadata.generated_at_utc);
+
+  // The mode in force, and the panel it resolves to. Derived from the season state the build
+  // recorded — which is derived from the NFL schedule, never from a date in this file —
+  // unless the reader has overridden it, in which case the override wins and is in the URL.
+  const mode = resolveMode(state.mode, inSeason?.derivedMode ?? null);
+  const view = resolveView(state.view, mode);
+
+  // The season, as distinct from the boards this build holds. The draft build records it
+  // because the draft build always runs, which is the only way the page can know the season
+  // has started while no rest-of-season bundle exists (ADR-079).
+  const buildSeason = metadata.season_state ?? null;
+  const awaitingFirstRos =
+    inSeason === null &&
+    buildSeason !== null &&
+    buildSeason.state !== null &&
+    buildSeason.state !== "preseason_draft" &&
+    !buildSeason.ros_board_expected;
 
   // Only offer a control value the build actually published; a preset with no rows would
   // otherwise present as an empty board rather than as an option that does not exist.
@@ -155,20 +196,32 @@ function Board({
   const rowCount = useMemo(() => {
     const leaguePreset = leaguePresetId(state.teams);
     const scoring = SCORING_TO_PRESET[state.scoring];
-    if (state.view === "tiers") {
+    if (view === "tiers") {
       return {
         shown: selectTierRows(index, state).length,
         total: index.tiersFor(leaguePreset, scoring).length,
       };
     }
-    if (state.view === "arbitrage" && index.hasArbitrage) {
+    if (view === "arbitrage" && index.hasArbitrage) {
       return {
         shown: selectArbitrageRows(index, state).length,
         total: index.arbitrageFor(leaguePreset, scoring).length,
       };
     }
+    if (view === "ros" && inSeason !== null) {
+      return {
+        shown: selectRosRows(inSeason, state).length,
+        total: inSeason.rosFor(leaguePreset, scoring).length,
+      };
+    }
+    if (view === "opportunity" && inSeason !== null) {
+      return {
+        shown: selectOpportunityRows(inSeason, state).length,
+        total: inSeason.opportunityFor(leaguePreset, scoring).length,
+      };
+    }
     return undefined;
-  }, [index, state]);
+  }, [index, inSeason, state, view]);
 
   const detail: PlayerDetailData | null = useMemo(() => {
     if (selectedPlayerId === null) return null;
@@ -180,6 +233,8 @@ function Board({
       arbitrage: index.arbitrageRecordFor(leaguePreset, scoring, selectedPlayerId),
       status: index.statusFor(selectedPlayerId),
       projection: index.projectionFor(scoring, selectedPlayerId),
+      ros: inSeason?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null,
+      rosDisclosures: inSeason?.metadata.disclosures ?? null,
       marketAvailable: index.hasArbitrage,
       cohortExact: cohortAssignment(metadata, scoring, state.teams)?.exact ?? null,
       // The chart's own data, keyed by the market the reader has selected: switching the
@@ -193,7 +248,7 @@ function Board({
         selectedPlayerId,
       ),
     };
-  }, [index, metadata, selectedPlayerId, state.scoring, state.teams, state.market]);
+  }, [index, inSeason, metadata, selectedPlayerId, state.scoring, state.teams, state.market]);
 
   return (
     <>
@@ -206,6 +261,25 @@ function Board({
           degradations={degradations}
           now={now}
           onOpenData={openData}
+          seasonMode={
+            <SeasonModeChip
+              resolved={mode}
+              seasonState={inSeason?.seasonState ?? buildSeason?.state ?? null}
+              throughWeek={inSeason?.throughWeek ?? null}
+              note={buildSeason?.note}
+              awaiting={awaitingFirstRos}
+            />
+          }
+        />
+
+        <SeasonMode
+          mode={state.mode}
+          resolved={mode}
+          throughWeek={inSeason?.throughWeek ?? null}
+          available={inSeason !== null}
+          onChange={(next) => {
+            setState({ mode: next });
+          }}
         />
 
         <div className="sticky-controls">
@@ -216,23 +290,30 @@ function Board({
             availableTeams={availableTeams}
           />
           <ViewTabs
-            view={state.view}
+            view={view}
+            mode={mode}
             arbitrageAvailable={index.hasArbitrage}
             rowCount={rowCount}
-            onChange={(view) => {
-              setState({ view });
+            onChange={(next) => {
+              setState({ view: next });
             }}
           />
         </div>
 
         <main id="board">
+          {awaitingFirstRos && (
+            <AwaitingFirstRosBoard
+              note={buildSeason?.note ?? ""}
+              complete={buildSeason?.state === "season_complete"}
+            />
+          )}
           <div
             role="tabpanel"
-            id={`panel-${state.view}`}
-            aria-labelledby={`tab-${state.view}`}
+            id={`panel-${view}`}
+            aria-labelledby={`tab-${view}`}
             tabIndex={-1}
           >
-            {state.view === "tiers" && (
+            {view === "tiers" && (
               <TiersView
                 index={index}
                 state={state}
@@ -242,7 +323,7 @@ function Board({
                 buildDate={buildDate}
               />
             )}
-            {state.view === "arbitrage" && (
+            {view === "arbitrage" && (
               <ArbitrageView
                 index={index}
                 state={state}
@@ -254,15 +335,48 @@ function Board({
                 onOpenData={openData}
               />
             )}
-            {state.view === "data" && (
-              <DataView index={index} state={state} degradations={degradations} />
+            {view === "ros" &&
+              (inSeason === null ? (
+                <NoInSeasonBundle />
+              ) : (
+                <RosView
+                  bundle={inSeason}
+                  state={state}
+                  onSelect={onSelect}
+                  selectedPlayerId={selectedPlayerId}
+                />
+              ))}
+            {view === "opportunity" &&
+              (inSeason === null ? (
+                <NoInSeasonBundle />
+              ) : (
+                <OpportunityView
+                  bundle={inSeason}
+                  state={state}
+                  onChange={setState}
+                  onSelect={onSelect}
+                  selectedPlayerId={selectedPlayerId}
+                />
+              ))}
+            {view === "data" && (
+              <DataView
+                index={index}
+                inSeason={inSeason}
+                state={state}
+                degradations={degradations}
+              />
             )}
           </div>
         </main>
 
         <footer className="footer">
           <span>
-            {metadata.intrinsic_model_version} · {metadata.arbitrage_method_version ?? "no arbitrage"}{" "}
+            {/* The models actually behind what is on screen. In-season the board is served by
+                a different model with a different horizon, and naming only the draft one here
+                would attribute a rest-of-season number to a model that never produced it. */}
+            {mode === "in_season" && inSeason !== null
+              ? `${inSeason.metadata.ros_model_version} · ${inSeason.metadata.methodology_version}`
+              : `${metadata.intrinsic_model_version} · ${metadata.arbitrage_method_version ?? "no arbitrage"}`}{" "}
             · build {metadata.build_id}
           </span>
           <span>
@@ -276,6 +390,57 @@ function Board({
 
       <PlayerDetail data={detail} onClose={onCloseDetail} onOpenData={openData} />
     </>
+  );
+}
+
+/**
+ * What an in-season tab shows when there is no in-season bundle.
+ *
+ * Reachable two ways, and both are ordinary rather than broken: a link to `?view=ros` opened
+ * before kickoff, and an in-season refresh that failed its gate so the previous deploy stayed.
+ * Either way the draft board beside it is correct and current, which is what the message says.
+ */
+/**
+ * The season has started and there is no rest-of-season board yet.
+ *
+ * Two ordinary windows produce it: the days between the first kickoff and the first published
+ * week, and the weeks after the last scored one. In both the draft board on screen is the
+ * only board that exists, and it is correct — what would not be correct is letting the page
+ * imply the season has not begun. The build's own sentence is rendered rather than a sentence
+ * written here, so the page cannot describe a state the build did not report (ADR-079).
+ */
+function AwaitingFirstRosBoard({
+  note,
+  complete,
+}: {
+  readonly note: string;
+  readonly complete: boolean;
+}): React.JSX.Element {
+  return (
+    <div className="notice season-notice" data-severity="info" role="note">
+      <strong>
+        {complete ? "The fantasy season is over." : "The regular season has started."}
+      </strong>{" "}
+      {note === ""
+        ? "The first rest-of-season board is published once a completed week's upstream data is available."
+        : `${note.charAt(0).toUpperCase()}${note.slice(1)}.`}{" "}
+      The draft board below is unaffected and current.
+    </div>
+  );
+}
+
+function NoInSeasonBundle(): React.JSX.Element {
+  return (
+    <section className="section">
+      <div className="notice" data-severity="info" role="note">
+        <strong>No rest-of-season board has been published yet.</strong>
+        <p style={{ marginTop: "0.5rem" }}>
+          The rest-of-season model needs at least one completed week of the current season, and
+          the week&rsquo;s upstream data has to be complete before a board is built at that
+          cutoff. Until then the draft board is the current product, and it is unaffected.
+        </p>
+      </div>
+    </section>
   );
 }
 

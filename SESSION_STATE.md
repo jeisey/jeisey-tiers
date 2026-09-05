@@ -4,7 +4,215 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-**Phase 11 — implemented 2026-09-04; exit gate met after the production-readiness pass.** The
+**Phase 12 — implemented 2026-09-04. In-Season mode exists, end to end.** The accepted model
+reaches disk as a versioned production artifact, a deterministic season-state rule decides which
+product the site shows, a rest-of-season build publishes two new artifacts behind their own
+freshness gate, and the frontend has an In-Season mode beside the Draft mode it does not replace.
+Release 2's definition of done is met with **one release blocker recorded**: nothing in this phase
+has run against a live 2026 in-season week, because the season has not started.
+
+### The productionization question, answered first
+
+Phase 11 validated `RC1` chronologically and persisted **no** `models/production/intrinsic-ros-v1`.
+Serving 2026 needs a fit, and ADR-077's literal wording — no change to the accepted model — would
+have forbidden the very fit that serves it. **ADR-078 (`ros_production_fit_v1`)** names the
+boundary instead of blurring it:
+
+| a refit is | a methodology change is |
+|---|---|
+| the same architecture, parameters, calibration, composition and seed rule | any edit to any of those |
+| a wider *training window* of already-permitted seasons | a wider *feature set*, a new target, a new fallback |
+| checkable: the configuration hash is unchanged | the configuration hash moves |
+| carries **no** performance claim — it was scored on nothing | needs a fresh sealed season |
+
+Three refit reasons are permitted and recorded on the artifact: `initial_production_fit`,
+`new_completed_season`, `reproduction`. ADR-077's rule against real model changes is untouched.
+
+### What Phase 12 built
+
+| | |
+|---|---|
+| Production artifact | `models/production/intrinsic-ros-v1/` — 121 files, 12 group boosters, committed |
+| Configuration hash | `d79133847436f04f` (digest of architecture; excludes window, timestamp, SHA) |
+| Training window | **2017-2025**, 455,157 rows, refit reason `initial_production_fit` |
+| Sealed-season use | 2025 included under an explicit authorization token: the holdout was already spent |
+| Serving season | 2026 — a fit at or after the served season is refused at the door |
+| Feature contract | `f5ad9df207795351` / `f0384c75cac8218a`, both asserted at load and at inference |
+| Season-state rule | `season_state_v1` — derived from the NFL schedule, never a date literal |
+| Freshness rule | `ros_source_freshness_v1` — a `through_week=N` build needs weeks 1..N complete |
+| Methodology | `phase12_ros_v1`; draws 10,000, the ADR-074 declared fallback |
+| New artifacts | `ros_tiers`, `inseason_opportunity`, `ros_build_metadata` (3 new schemas) |
+| Behaviour source | Sleeper add/drop, `behavior/` prefix on the append-only snapshot store |
+| Opportunity method | `phase12_opportunity_v1` — counts over a named window, never a price |
+
+### Two rules, two gates, deliberately not one
+
+**Played** and **available** are different facts and are decided separately. `season_state_v1`
+answers *which product* (has the season's first regular-season kickoff happened, plus a 6-hour
+completion buffer); `ros_source_freshness_v1` answers *which week may be built* (does upstream
+carry every scheduled team for weeks 1..N, with no gap behind N). A season that has started with
+no complete upstream week yields a **critical** `ros.no_complete_week`, not a week-0 board.
+
+### The firewall is checked, not asserted
+
+The Opportunity Board copies seven intrinsic fields from the ROS board verbatim, and
+`cross_artifact.intrinsic_firewall` compares them **over the published bytes** of both artifacts.
+Behaviour decides *visibility* only: a Sleeper signal can surface a player from beyond the tier
+depth, and can never move a rest-of-season number. `tests/unit/test_opportunity_board.py` asserts
+both directions.
+
+### Publication is all-or-nothing
+
+`run_ros_build` stages the whole bundle into a sibling directory and `os.replace`s it only after
+every artifact validates. An earlier version wrote metadata after a failed artifact — a partially
+refreshed board, which is the failure mode the roadmap names. A pool too small to have a
+replacement now **withholds** rather than publishing NaN (the draw loop records "no baseline" as
+NaN, and `is_not_null()` does not catch it; the filter is `is_not_null() & is_finite()`).
+
+### The rehearsal, and why it is 2024 and not 2025
+
+Today is 2026-09-04. The first 2026 regular-season kickoff is **2026-09-10T00:20:00Z**, so
+`season-state` resolves to `preseason_draft` / `draft` and the live in-season path **cannot** be
+exercised on 2026 data. It was rehearsed instead: a second, **non-production** fit on 2017-2023
+serving 2024, then a real `build-ros --season 2024 --through-week 8`:
+
+```
+season state  : regular_season (in_season)     ros_tiers   : 4,500 records
+build id      : 2024w08-intrinsic-ros-v1-...   long absence: 241 players flagged
+quality gate  : pass (0 critical, 3 warning)   validate-artifacts: 0 critical, 0 warning
+```
+
+The three warnings are the declared ones: tier stability, the 10,000-draw fallback, and the absent
+behaviour feed. **2024 was chosen over 2025 deliberately** — the sealed season is spent, and
+scoring anything on it again would be a second bite. No accuracy metric was computed on the
+rehearsal at all; it proves the pipeline runs, not that the model is good.
+
+### The dataset content hash moved, and the row count did not
+
+The Phase-12 dataset rebuild produced content hash **`1590cde5…`** where Phase 11 recorded
+**`c976f5f8…`** — with **identical** row count (455,157) and **identical** feature-set and schema
+hashes. That is an upstream data revision inside nflverse, not a code change: the columns, the
+contract and the cutoff rule all reproduce. The production artifact records the hash it was
+actually trained on via its dataset manifest, which is the point of recording it.
+
+### The season's two edges, found by review and fixed before merge (ADR-079)
+
+Three lifecycle defects that neither the fixtures nor the 2024 rehearsal could reach, because
+both sit in the **middle** of a season:
+
+| defect | what would have happened | fix |
+|---|---|---|
+| ROS build gated on `mode` | every refresh from the first kickoff to the first published week fails; the deploy job is downstream, so the **draft** board freezes for a week | gate on `latest_snapshot_week`, which the schedule alone decides |
+| `ros.no_complete_week` always critical | the opening-week cadence reads as an outage and fails the job | `ros.awaiting_first_week` (warning) at ≤1 played week; critical from two |
+| `season_complete` reaches `RosCutoff` | uncaught `ValueError` on every refresh from January onwards | bound by the remaining horizon first; `ros.season_complete` warning, no board |
+
+And one correctness defect in the freshness gate itself: it documented club **membership** and
+implemented `games * 2` against a distinct count, so a week that lost one club and gained a stray
+row for another passed. `WeekWindow` now carries the scheduled club set, both sides go through
+`normalize_team_code`, and the diagnostic names the missing and unexpected clubs.
+
+The product gained a third situation as a result — **season under way, no board yet** — carried
+on the draft build's `build_metadata.season_state` block, which is the only artifact published in
+every state. A `season_state.json` of its own was considered and rejected as a second schema, a
+second fetch and a second way for two published files to disagree about one season.
+
+`tests/unit/test_ros_lifecycle.py` walks the four states the review asked for plus the two at the
+far end; `test_workflows.py` pins which key the workflow's `if:` reads; both new product states
+have an end-to-end test and a screenshot (`39-`, `40-`).
+
+### What Release 2 does not have
+
+**No live in-season week has ever been built.** Everything in-season is proven on fixtures and on
+the 2024 rehearsal. The first real exercise is the Tuesday after Week 1 (`"40 12 * * 2"`), and
+until it runs the in-season path is *validated but not observed*. This is an **operational item
+for after merge** rather than a release blocker: it is an observation the project will make, not
+something it can act on now.
+
+**FantasyPros is unmet and reconciled (ADR-080).** The provisioned key is free-tier — 40 distinct
+players, no ADP endpoint at all. The original clause-1 criterion stays recorded as historically
+unmet; FantasyPros stays `benchmark_only` with its revisit condition unchanged; Release 2's
+production source scope is FFC + MFL for draft ADP with Sleeper behaviour in season. A vendor
+entitlement is not something the project can act on, so it no longer holds `v2.0.0`.
+
+### Commands and gates run (Phase 12)
+
+```bash
+uv run ruff check . && uv run ruff format --check .   # clean, 241 files
+uv run mypy                                            # 152 source files, clean
+uv run pytest                                          # 1,429 passed, 4 live-network deselected
+uv run ffdraft build-fixture-artifacts                 # 0 critical, 5 warning (documented fixtures)
+uv run ffdraft validate-artifacts <fixture build>      # 0 critical, 0 warning
+npm run lint && npm run typecheck                      # 0 errors (3 pre-existing compiler warnings)
+npm run test -- --run                                  # 291 passed
+npm run build                                          # clean
+npm run e2e                                            # 92 passed (chromium, mobile, a11y)
+npx playwright test --project=smoke-chromium           # 13 passed
+npm run e2e:screens -- docs/visual-qa/2026-09-04-phase12   # 43 screens, exit 0
+```
+
+Phase-12 specific:
+
+```bash
+uv run ffdraft season-state                             # preseason_draft / draft, next change 2026-09-10
+uv run ffdraft train-ros-production                     # the committed artifact, 2017-2025
+uv run ffdraft build-ros --season 2024 --through-week 8 # the rehearsal, gate pass
+uv run ffdraft capture-behavior                         # Sleeper add/drop into behavior/
+uv run ffdraft ros-model-card --model models/production/intrinsic-ros-v1
+```
+
+Playwright needs `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` in this sandbox
+(the pinned headless-shell build is absent; `/opt/pw-browsers/chromium` is the working binary
+here, unlike the versioned path Phase 11 recorded). `npm run e2e:browsers` (Firefox and WebKit)
+remains runner-only, as since ADR-059.
+
+### Four UI defects the screenshots caught that the tests did not
+
+Recorded because each was invisible to a passing suite and visible in a picture:
+colliding table headings on the opportunity board; a wide table's caption running off the right
+edge; the footer naming the **draft** model under a rest-of-season board; and a machine phrase
+spliced mid-sentence in the behaviour-outage notice. All four are fixed and all four now have a
+screenshot. A fifth was found by measurement: a season-mode band on every page pushed the
+arbitrage board below the fold on a phone, so the indicator moved into the masthead and the band
+now renders only when there is something to switch to.
+
+### One pre-existing flake, root-caused
+
+`a11y.spec.ts` "a visible focus indicator exists on every custom control" failed about half the
+time when the mobile project ran first — **on the pre-existing base as well**, verified in a
+worktree at the merge commit. Cause: `.status-chip` and six sibling controls declared
+`transition: all`, which includes `outline-width`, so the shared focus ring **animated in over
+160ms** and the assertion sampled it mid-transition at 0px. A keyboard user's own position was
+being animated. Fixed with a `--t-control` token naming the surface properties; five consecutive
+combined runs green.
+
+### What Phase 13 inherits, and what it must not assume
+
+- **`intrinsic-ros-v1` is frozen, and now has an artifact to be frozen *as*.** A refit for a newly
+  completed season is routine and needs only `RosRefitReason.NEW_COMPLETED_SEASON` plus an
+  unchanged configuration hash. Anything that moves that hash is a methodology change and needs a
+  fresh sealed season (ADR-077, ADR-078).
+- **The in-season path has never seen a live week.** Treat the first post-Week-1 refresh as an
+  observation, not a formality.
+- **The mode is not a promise that a board exists.** `product_mode` and `latest_snapshot_week`
+  answer different questions and disagree in two windows every season has (ADR-079). Anything
+  new that keys off "is it in season" should key off the snapshot week instead, and anything
+  that reaches `RosCutoff` must be bounded by the remaining horizon first.
+- **The freshness gate compares club sets.** If a future source needs a different vocabulary,
+  extend `normalize_team_code`; do not weaken the comparison back to a count.
+- **The behaviour feed is optional by construction and must stay that way.** Its failure is a
+  warning that empties three columns; a critical ROS input failure withholds the whole bundle.
+- **Do not add a learned opportunity score.** The board is deliberately three orderings over
+  unlike units and no blend. Blending an add count with a VORP would manufacture a rank gap out
+  of quantities that do not share a scale.
+- **The two ranks are two models.** `fair_rank` and `ros_fair_rank` may sit side by side and may
+  never be averaged, differenced into a single "true" rank, or presented as versions of one
+  number.
+
+---
+
+## Phase 11 — implemented 2026-09-04, merged 2026-09-04 as jeisey/jeisey-tiers#32
+
+**Exit gate met after the production-readiness pass.** The
 rest-of-season model `intrinsic-ros-v1` is built, validated in development and on the sealed
 season, and **accepted for Phase 12**. It failed `ros_promotion_v1`; that failure is preserved
 in full, and the readiness pass established the failing clause was mis-specified for a
@@ -424,12 +632,16 @@ Three things are worth carrying forward as ideas rather than as file paths:
 
 ## Current target gate
 
-**Phase 12 — in-season product mode, opportunity board, operations and the Release 2 launch**
-(`docs/RELEASE2_ROADMAP.md`). It opens with an unresolved question rather than a task list:
-Phase 11 handed over a **promoted, production-ready** rest-of-season model (ADR-077) together
-with a six-item limitation list and one contract it must honour: the `returning_from_absence`
-disclosures in ADR-076. The promotion question Phase 11 originally left open is closed; what
-Phase 12 owns is exposing the model safely, not deciding whether it may be exposed.
+**Phase 12 is implemented and merge-ready; Release 2's remaining item is an observation, not a
+task.** The in-season product exists and every offline gate passes. What is left is the first
+live in-season refresh — the Tuesday after Week 1, `"40 12 * * 2"` — which cannot be run before
+the season starts (first 2026 kickoff `2026-09-10T00:20:00Z`). `docs/releases/v2.0.0.md` records
+the definition of done clause by clause; clause 1 (FantasyPros) is recorded as historically
+unmet and superseded by ADR-080 rather than left as a blocker the project cannot act on.
+
+The question Phase 12 opened with is closed. Phase 11 handed over a promoted rest-of-season model
+(ADR-077) with no production artifact; ADR-078 defined the smallest legitimate fit that serves
+2026 without reinterpreting the spent holdout, and that artifact is committed.
 
 **Release 1 has no open gate. V1 is released.** Phase 9B's checklist in `TASKS.md` is complete and its exit gate is met. Phases 0-8 were not renumbered; 9A was inserted before the release because the one blocked Phase-8 item became doable and doing it before tagging V1 was cheaper than tagging twice.
 

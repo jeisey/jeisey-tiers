@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "git_sha": "0000000",
+  "season": 2026,
+  "through_week": 8,
+  "season_state": {
+    "rule_version": "season_state_v1",
+    "season_state": "regular_season",
+    "product_mode": "in_season",
+    "completed_week": 8,
+    "latest_snapshot_week": 8,
+    "next_transition_utc": null
+  },
+  "ros_model_version": "intrinsic-ros-v1",
+  "ros_model_configuration_hash": null,
+  "production_fit_rule_version": null,
+  "model_fitted_at_utc": null,
+  "model_training_seasons": [],
+  "model_refit_reason": null,
+  "cutoff_rule_version": "ros_cutoff_v1",
+  "feature_set_version": null,
+  "feature_set_hash": null,
+  "methodology_version": "phase12_ros_v1",
+  "simulation": {
+    "draws": 10000,
+    "draws_status": "declared fallback; no count in the frozen ladder met every convergence tolerance (ADR-074)",
+    "seed": 20260819,
+    "ranking_statistic": "median_vorp",
+    "tier_algorithm": "pelt_rbf",
+    "tier_penalty": 3.0,
+    "replacement_rule": "rostered_depth",
+    "replacement_rule_description": "the best player nobody rosters, after the starting slots and teams x bench bench places are filled, the bench by surplus over the starting-slot baseline",
+    "value_version": "ros_value_v1",
+    "convergence_gate": "fail",
+    "tier_stability_gate": "fail",
+    "tier_depth": 500
+  },
+  "source_freshness": {
+    "rule_version": "ros_source_freshness_v1",
+    "available_through_week": 8,
+    "schedule_completed_week": 8,
+    "blocking_week": null,
+    "buildable": true
+  },
+  "behavior": {
+    "source_id": "sleeper",
+    "available": true,
+    "snapshot_at_utc": "2026-08-18T12:00:00Z",
+    "lookback_hours": 24,
+    "request_limit": 100,
+    "add_rows": 34,
+    "drop_rows": 34,
+    "matched_players": 34,
+    "age_hours": 0.0,
+    "degraded_reason": null,
+    "signal_semantics": "add and drop COUNTS over the requested lookback window; never an ADP, never a rank, never differenced against one"
+  },
+  "surface": null,
+  "disclosures": {
+    "uses_injury_information": false,
+    "long_absence_definition": "has played at least once this season and has not appeared for 3 or more consecutive weeks ending at the cutoff",
+    "long_absence_statement": "This estimate uses no injury or practice-report information of any kind. The model infers absence from appearances alone, so a player cleared to return this week and a player out for the season are identical rows that have not appeared for N weeks. \"Has not appeared for N weeks\" is what is known; it is not a status or a designation.",
+    "long_absence_ordering_weakness": "Ranking quality inside this group is weak. Measured on 18,951 development rows, the rest-of-season ordering within the long-absence cohort reaches a Spearman correlation of 0.311 against 0.797 on the full universe, so the order of these players relative to each other carries little information.",
+    "status_is_annotation_only": true,
+    "long_absence_players": 10,
+    "tier_boundary_statement": "Rest-of-season tiers are bands, not lines. Membership is highly reproducible (bootstrap ARI 0.857) and tiers order realised remaining value across every adjacent pair, but the exact boundary position is not reproducible (agreement 0.167 against a 0.500 bar), so a player near an edge should be read as belonging to both neighbouring bands."
+  },
+  "limitations": [
+    "Overconfident on high-draft-capital rookies: interval coverage 0.763 against an attainable 0.898, the tightest clause in the promotion gate.",
+    "Close to unable to order players returning from a long absence: Spearman 0.311 against 0.797 on the full universe.",
+    "Conservative intervals on players with no remaining games: 14.5 wide against a climatological 4.5.",
+    "The sealed 2025 evaluation season is spent; any change to the model's outputs would need a fresh one.",
+    "Tier boundaries failed the frozen stability gate: a tier is a band, not a line.",
+    "There is no injury feature, and the cohort that needs one is measurably the worst.",
+    "The simulation draw count is a declared fallback: no count in the frozen ladder met every convergence tolerance."
+  ],
+  "supported_presets": [
+    "redraft-10",
+    "redraft-12",
+    "redraft-14"
+  ],
+  "sources": [],
+  "quality_gate": {
+    "status": "pass",
+    "critical_failures": 0,
+    "warnings": 5
+  },
+  "warnings": [
+    "identity.crosswalk_id_conflict [identity.registry]: the secondary crosswalk disagrees with an nflverse-native id; the whole mirror row is rejected and the disagreement recorded",
+    "identity.ambiguous_records [identity.market]: ambiguous identities must never reach model or public layers",
+    "identity.unresolved_records [identity.market]: records that could not be resolved are excluded from production",
+    "identity.ambiguous_records [identity.sleeper]: ambiguous identities must never reach model or public layers",
+    "status.sleeper_gsis_conflict [status.build]: Sleeper's reported gsis_id disagreed with the canonical id; those records fail closed and carry no Sleeper annotation"
+  ]
+}

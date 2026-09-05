@@ -51,6 +51,10 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     "market_trend_series",
     "player_status",
     "build_metadata",
+    # Phase 12. Additive: no Release 1 or Phase 10 record changes, and a bundle without
+    # these two is still a complete draft-mode bundle (Release 2 guardrail 2.1).
+    "ros_tier_record",
+    "inseason_opportunity_record",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -70,6 +74,8 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "market_trend_series": "1.0",
     "player_status": "1.0",
     "build_metadata": "1.0",
+    "ros_tier_record": "1.0",
+    "inseason_opportunity_record": "1.0",
 }
 
 

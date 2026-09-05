@@ -9,24 +9,63 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Segmented } from "../components/primitives";
-import type { AppState, PositionFilter, ScoringValue, TeamCount, ViewId } from "../data/state";
-import { POSITION_FILTERS, POSITION_LABELS, SCORING_LABELS, SCORING_VALUES, TEAM_COUNTS } from "../data/state";
+import type {
+  AppState,
+  ModeId,
+  PositionFilter,
+  ResolvedViewId,
+  ScoringValue,
+  TeamCount,
+} from "../data/state";
+import {
+  POSITION_FILTERS,
+  POSITION_LABELS,
+  SCORING_LABELS,
+  SCORING_VALUES,
+  TEAM_COUNTS,
+} from "../data/state";
 
-const VIEW_TABS: readonly { id: ViewId; label: string }[] = [
+/**
+ * The tab set each mode owns.
+ *
+ * Roadmap 12.4: Draft mode is Tier Board plus Arbitrage Board; In-Season mode is ROS Tier
+ * Board plus Opportunity Board. `Data` is shared, because the methodology and provenance a
+ * reader needs do not change with the season.
+ *
+ * The other mode's boards are still *reachable* — a URL naming them opens them, and the
+ * mode switch is one click — they are simply not what this mode leads with.
+ */
+const DRAFT_TABS: readonly { id: ResolvedViewId; label: string }[] = [
   { id: "tiers", label: "Tiers" },
   { id: "arbitrage", label: "Arbitrage" },
   { id: "data", label: "Data" },
 ];
+
+const IN_SEASON_TABS: readonly { id: ResolvedViewId; label: string }[] = [
+  { id: "ros", label: "ROS tiers" },
+  { id: "opportunity", label: "Opportunity" },
+  { id: "data", label: "Data" },
+];
+
+export function tabsForMode(mode: "draft" | "in_season"): readonly {
+  id: ResolvedViewId;
+  label: string;
+}[] {
+  return mode === "in_season" ? IN_SEASON_TABS : DRAFT_TABS;
+}
 
 export function ViewTabs({
   view,
   onChange,
   arbitrageAvailable,
   rowCount,
+  mode,
 }: {
-  readonly view: ViewId;
-  readonly onChange: (view: ViewId) => void;
+  readonly view: ResolvedViewId;
+  readonly onChange: (view: ResolvedViewId) => void;
   readonly arbitrageAvailable: boolean;
+  /** Which tab set to show. The reader's resolved mode, never the raw URL value. */
+  readonly mode: "draft" | "in_season";
   /**
    * The design source prints `{{ shownCount }} OF 300 ROWS` beside its navigation. Both
    * numbers are counts of rows the current filters select against the rows the build
@@ -34,10 +73,11 @@ export function ViewTabs({
    */
   readonly rowCount?: { readonly shown: number; readonly total: number } | undefined;
 }): React.JSX.Element {
+  const tabs = tabsForMode(mode);
   return (
     <div className="tabs-row">
       <div className="tabs" role="tablist" aria-label="Board">
-        {VIEW_TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -50,8 +90,8 @@ export function ViewTabs({
               const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
               if (step === 0) return;
               event.preventDefault();
-              const index = VIEW_TABS.findIndex((candidate) => candidate.id === view);
-              const next = VIEW_TABS[(index + step + VIEW_TABS.length) % VIEW_TABS.length];
+              const index = tabs.findIndex((candidate) => candidate.id === view);
+              const next = tabs[(index + step + tabs.length) % tabs.length];
               if (next !== undefined) onChange(next.id);
             }}
             onClick={() => {
@@ -70,6 +110,119 @@ export function ViewTabs({
           {`${String(rowCount.shown)} of ${String(rowCount.total)} rows`}
         </span>
       )}
+    </div>
+  );
+}
+
+/**
+ * What the indicator says, which is a question about the **season** and not only the board.
+ *
+ * Three of the four answers are the ordinary two modes. The fourth is the window ADR-079
+ * exists for: the season has kicked off and no rest-of-season board can exist yet, because
+ * week 1 is not finished or not published. Calling that "Draft mode" would be true about the
+ * board on screen and false about the season, and the season is what this control names.
+ */
+function seasonModeLabel(
+  resolved: "draft" | "in_season",
+  seasonState: string | null,
+  awaiting: boolean,
+): string {
+  if (resolved === "in_season") return "In-Season mode";
+  // "Draft mode" is the right name for a *choice*: a reader who switched back to the draft
+  // board mid-season is in draft mode, and the switch beside this says so. It is the wrong
+  // name when there is nothing to switch to, because then it describes the season rather than
+  // a choice — and the season has started.
+  if (!awaiting) return "Draft mode";
+  return seasonState === "season_complete" ? "Season complete" : "Season under way";
+}
+
+/**
+ * The season-mode indicator: which product a reader is looking at (roadmap 12.4).
+ *
+ * It lives in the masthead beside the build stamp because that is what it is — status, not a
+ * control — and because a phone has no vertical space to spare for a band that says one word.
+ * The board itself has to stay above the fold on a 412px screen, which it does not if every
+ * page grows a strip. The switch is a separate thing and is rendered separately, by
+ * :func:`SeasonMode`, where the other controls are.
+ *
+ * It says *why* it is what it is, so a reader who wonders why the site changed in September
+ * gets the answer without opening the Data panel. That sentence is visually hidden only
+ * because there is no room for it here; it is on the page, in text, for anyone reading with
+ * assistive technology, and the same fact is in the Data panel in full.
+ */
+export function SeasonModeChip({
+  resolved,
+  seasonState,
+  throughWeek,
+  note,
+  awaiting = false,
+}: {
+  readonly resolved: "draft" | "in_season";
+  readonly seasonState: string | null;
+  readonly throughWeek: number | null;
+  /** The build's own sentence about why this is the state. Rendered for assistive tech. */
+  readonly note?: string | undefined;
+  /** The season has started and this build published no rest-of-season board (ADR-079). */
+  readonly awaiting?: boolean;
+}): React.JSX.Element {
+  const detail =
+    resolved === "in_season" && throughWeek !== null
+      ? `through week ${String(throughWeek)}`
+      : (seasonState ?? "preseason draft").replace(/_/g, " ");
+  return (
+    <span className="season-mode-chip" data-mode={resolved} data-season={seasonState ?? undefined}>
+      <span className="season-mode-label">
+        <span className="season-mode-dot" aria-hidden="true" />
+        {seasonModeLabel(resolved, seasonState, awaiting)}
+      </span>
+      <span className="visually-hidden">
+        {note !== undefined && note !== ""
+          ? `, ${detail}. ${note}.`
+          : `, ${detail}, set from the NFL schedule.`}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The season-mode switch, and the cutoff it is switching between.
+ *
+ * Rendered only when there is something to switch to. Before kickoff there is no in-season
+ * bundle, so a two-state control would offer an empty board — and a band whose only content
+ * would be a word the masthead chip already carries is worse than no band, because it costs
+ * the top of every phone screen for a repetition.
+ */
+export function SeasonMode({
+  mode,
+  resolved,
+  onChange,
+  throughWeek,
+  available,
+}: {
+  readonly mode: ModeId;
+  readonly resolved: "draft" | "in_season";
+  readonly onChange: (mode: ModeId) => void;
+  readonly throughWeek: number | null;
+  /** False before kickoff: no in-season bundle exists, so there is nothing to switch to. */
+  readonly available: boolean;
+}): React.JSX.Element | null {
+  if (!available) return null;
+  const detail =
+    throughWeek === null ? "no rest-of-season cutoff" : `through week ${String(throughWeek)}`;
+  return (
+    <div className="season-mode" data-mode={resolved}>
+      <span className="season-mode-detail muted">{detail}</span>
+      <Segmented<ModeId>
+        name="mode"
+        label="Season mode"
+        value={mode}
+        options={[
+          { value: "auto", label: "Auto", description: "Follow the NFL schedule" },
+          { value: "draft", label: "Draft", description: "Preseason board" },
+          { value: "in_season", label: "In-season", description: "Rest-of-season board" },
+        ]}
+        onChange={onChange}
+      />
     </div>
   );
 }

@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/ros_build_metadata.schema.json",
+  "title": "RosBuildMetadata",
+  "description": "Build-level provenance for the in-season bundle. Separate from build_metadata.json on purpose: the draft board and the rest-of-season board are produced by different models on different cadences from different cutoffs, so they carry different build ids and are validated independently (roadmap 12.5). A directory may hold either bundle, both, or one refreshed while the other is not.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "generated_at_utc", "git_sha", "season",
+    "through_week", "season_state", "ros_model_version", "cutoff_rule_version",
+    "methodology_version", "simulation", "source_freshness", "disclosures",
+    "limitations", "supported_presets", "sources", "quality_gate", "warnings"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "generated_at_utc": {"type": "string", "format": "date-time"},
+    "git_sha": {"type": "string", "minLength": 7},
+    "season": {"type": "integer", "minimum": 2000},
+    "through_week": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The point-in-time cutoff every number in this bundle was computed at."
+    },
+    "season_state": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["rule_version", "season_state", "product_mode", "completed_week"],
+      "properties": {
+        "rule_version": {"type": "string", "minLength": 1},
+        "season_state": {
+          "enum": ["preseason_draft", "regular_season", "fantasy_postseason", "season_complete"]
+        },
+        "product_mode": {"enum": ["draft", "in_season"]},
+        "completed_week": {"type": "integer", "minimum": 0},
+        "latest_snapshot_week": {"type": ["integer", "null"], "minimum": 1},
+        "next_transition_utc": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "ros_model_version": {"type": "string", "minLength": 1},
+    "ros_model_configuration_hash": {
+      "type": ["string", "null"],
+      "description": "Digest of the frozen architecture the fit used (ADR-078). Two fits of the accepted model on different training windows agree here; a tuned parameter does not."
+    },
+    "production_fit_rule_version": {"type": ["string", "null"]},
+    "model_fitted_at_utc": {"type": ["string", "null"], "format": "date-time"},
+    "model_training_seasons": {"type": "array", "items": {"type": "integer"}},
+    "model_refit_reason": {"type": ["string", "null"]},
+    "cutoff_rule_version": {"type": "string", "minLength": 1},
+    "feature_set_version": {"type": ["string", "null"]},
+    "feature_set_hash": {"type": ["string", "null"]},
+    "methodology_version": {"type": "string", "minLength": 1},
+    "simulation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["draws", "seed", "replacement_rule", "convergence_gate", "tier_stability_gate"],
+      "properties": {
+        "draws": {"type": "integer", "minimum": 1},
+        "draws_status": {"type": "string"},
+        "seed": {"type": "integer"},
+        "ranking_statistic": {"type": "string"},
+        "replacement_rule": {"enum": ["fresh_allocation", "rostered_depth"]},
+        "replacement_rule_description": {"type": "string"},
+        "tier_algorithm": {"type": "string"},
+        "tier_penalty": {"type": "number"},
+        "tier_depth": {"type": "integer", "minimum": 1},
+        "value_version": {"type": "string"},
+        "convergence_gate": {"enum": ["pass", "fail"]},
+        "tier_stability_gate": {"enum": ["pass", "fail"]}
+      }
+    },
+    "source_freshness": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["rule_version", "available_through_week", "schedule_completed_week"],
+      "properties": {
+        "rule_version": {"type": "string"},
+        "available_through_week": {"type": "integer", "minimum": 0},
+        "schedule_completed_week": {"type": "integer", "minimum": 0},
+        "blocking_week": {"type": ["integer", "null"]},
+        "buildable": {"type": "boolean"}
+      }
+    },
+    "behavior": {
+      "type": ["object", "null"],
+      "description": "The optional in-season behaviour feed powering the Opportunity Board. Null or unavailable degrades that board's behaviour columns and nothing else.",
+      "additionalProperties": true,
+      "properties": {
+        "source_id": {"type": ["string", "null"]},
+        "available": {"type": "boolean"},
+        "snapshot_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "lookback_hours": {"type": ["integer", "null"]},
+        "request_limit": {"type": ["integer", "null"]},
+        "add_rows": {"type": ["integer", "null"], "minimum": 0},
+        "drop_rows": {"type": ["integer", "null"], "minimum": 0},
+        "matched_players": {"type": ["integer", "null"], "minimum": 0},
+        "age_hours": {"type": ["number", "null"], "minimum": 0},
+        "degraded_reason": {"type": ["string", "null"]},
+        "signal_semantics": {"type": "string"}
+      }
+    },
+    "surface": {
+      "type": ["object", "null"],
+      "description": "The public surface universe for the in-season board (ADR-063): who is visible and why.",
+      "additionalProperties": true
+    },
+    "disclosures": {
+      "type": "object",
+      "description": "ADR-076's disclosure contract, carried on the artifact so the frontend cannot publish the flag without the sentences that make it honest.",
+      "additionalProperties": true,
+      "required": [
+        "uses_injury_information", "long_absence_definition", "long_absence_statement",
+        "long_absence_ordering_weakness", "status_is_annotation_only", "long_absence_players"
+      ],
+      "properties": {
+        "uses_injury_information": {
+          "const": false,
+          "description": "The rest-of-season model has no injury or practice-report feature of any kind (ADR-070). This is a constant because it is a property of the model, not a build-time observation."
+        },
+        "long_absence_definition": {"type": "string", "minLength": 1},
+        "long_absence_statement": {"type": "string", "minLength": 1},
+        "long_absence_ordering_weakness": {"type": "string", "minLength": 1},
+        "status_is_annotation_only": {"const": true},
+        "long_absence_players": {"type": "integer", "minimum": 0},
+        "tier_boundary_statement": {"type": "string"}
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "description": "The measured limitations the accepted model carries into production (ADR-077). Published, not repaired."
+    },
+    "supported_presets": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "status", "retrieved_at_utc", "record_count"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "status": {"enum": ["pass", "warning", "failed", "disabled"]},
+          "retrieved_at_utc": {"type": "string", "format": "date-time"},
+          "source_as_of_utc": {"type": ["string", "null"], "format": "date-time"},
+          "record_count": {"type": "integer", "minimum": 0},
+          "warnings": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "quality_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "critical_failures", "warnings"],
+      "properties": {
+        "status": {"enum": ["pass", "fail"]},
+        "critical_failures": {"type": "integer", "minimum": 0},
+        "warnings": {"type": "integer", "minimum": 0}
+      }
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}

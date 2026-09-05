@@ -26,6 +26,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   projections: "1.0",
   market_snapshot: "1.0",
   player_status: "1.0",
+  ros_tiers: "1.0",
+  inseason_opportunity: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -39,7 +41,19 @@ export type ArtifactName =
   | "market_trend_series"
   | "projections"
   | "market_snapshot"
-  | "player_status";
+  | "player_status"
+  | "ros_tiers"
+  | "inseason_opportunity";
+
+/** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
+export type SeasonState =
+  | "preseason_draft"
+  | "regular_season"
+  | "fantasy_postseason"
+  | "season_complete";
+
+/** The two product modes Release 2 ships. */
+export type ProductMode = "draft" | "in_season";
 
 export interface ArtifactEnvelope<TRecord> {
   readonly schema_version: string;
@@ -371,7 +385,30 @@ export interface BuildPlayerStatusMetadata {
   readonly source_ids?: readonly string[];
 }
 
+/**
+ * Where the season is, carried on the draft build because that build always runs.
+ *
+ * The in-season bundle answers "is there a rest-of-season board"; this answers "should there
+ * be one". They differ for the days between the season's first kickoff and its first
+ * published week, and again once the horizon is spent — and in both windows the site shows
+ * the draft board, so without this it would call itself Draft mode in November (ADR-079).
+ *
+ * Optional because a build older than ADR-079 has none, and a missing block means only that
+ * the page cannot say more than which boards it holds.
+ */
+export interface BuildSeasonState {
+  readonly rule_version: string;
+  readonly state: SeasonState | null;
+  readonly product_mode: ProductMode | null;
+  readonly completed_week: number | null;
+  readonly latest_snapshot_week: number | null;
+  /** Whether a rest-of-season board should exist right now. Not "has the season started". */
+  readonly ros_board_expected: boolean;
+  readonly note: string;
+}
+
 export interface BuildMetadata {
+  readonly season_state?: BuildSeasonState | null;
   readonly schema_version: string;
   readonly build_id: string;
   readonly generated_at_utc: string;
@@ -589,6 +626,298 @@ export const PLAYER_STATUS_FIELDS_COMPLETE: NoMissingKeys<
   typeof PLAYER_STATUS_FIELDS
 > = true;
 
+
+/**
+ * One player's rest-of-season value at an explicit point-in-time cutoff.
+ *
+ * Every value-bearing field is named `ros_*` and **none of them is the preseason quantity of
+ * the same shape**. A rest-of-season fair rank comes from a different model, over a
+ * different horizon, against a different replacement baseline (the best player nobody
+ * *rosters*, not the best nobody starts). The naming is the guard: a reader who sees
+ * `fair_rank` is entitled to assume it is the draft one, so this record never uses the name.
+ */
+export interface RosTierRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  /** Weeks 1..through_week of this season are the only in-season evidence behind the row. */
+  readonly through_week: number;
+  readonly league_preset_id: string;
+  readonly scoring_preset: ScoringPreset;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly team: string | null;
+  readonly position: Position;
+  readonly ros_fair_rank: number;
+  readonly ros_position_rank: number;
+  /** Null for a surfaced player from beyond the tier depth: no tier, rather than a made-up one. */
+  readonly ros_tier: number | null;
+  readonly ros_tier_label: string | null;
+  readonly ros_expected_vorp: number;
+  readonly ros_vorp_p10: number;
+  readonly ros_vorp_p25: number;
+  readonly ros_vorp_p50: number;
+  readonly ros_vorp_p75: number;
+  readonly ros_vorp_p90: number;
+  readonly ros_expected_points: number;
+  readonly ros_points_p10: number;
+  readonly ros_points_p50: number;
+  readonly ros_points_p90: number;
+  readonly ros_expected_games: number;
+  readonly ros_uncertainty: number;
+  readonly remaining_horizon_weeks?: number;
+  readonly team_remaining_scheduled_games?: number | null;
+  readonly preseason_fair_rank?: number | null;
+  readonly fair_rank_change?: number | null;
+  readonly games_played_to_date: number;
+  readonly points_to_date: number;
+  readonly points_per_game_to_date?: number | null;
+  readonly weeks_since_last_game: number;
+  readonly consecutive_weeks_missed: number;
+  readonly has_played_this_season: boolean;
+  /**
+   * ADR-076. True when the player HAS played this season and has missed three or more
+   * consecutive weeks ending at the cutoff. An observable fact about appearances: the model
+   * uses no injury or practice-report information, so this is never a status, a designation
+   * or medical knowledge, and it is never encoded by colour alone.
+   */
+  readonly long_absence: boolean;
+  readonly in_preseason_universe: boolean;
+  /** Annotation only. Never a model input, and always displayed apart from one. */
+  readonly current_status: string | null;
+  readonly outside_tier_board?: boolean;
+  readonly surface_reasons?: readonly SurfaceReason[];
+  readonly quality_flags: readonly string[];
+}
+
+/**
+ * One row of the in-season Opportunity Board.
+ *
+ * The intrinsic columns are copied from `ros_tiers` verbatim; behaviour columns sit beside
+ * them and never touch them. `add_count` is a number of transactions inside a declared
+ * window — not an ADP, not a rank, and never differenced against `ros_fair_rank`.
+ */
+export interface OpportunityRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly league_preset_id: string;
+  readonly scoring_preset: ScoringPreset;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly team: string | null;
+  readonly position: Position;
+  readonly ros_fair_rank: number;
+  readonly ros_position_rank: number;
+  readonly ros_expected_vorp: number;
+  readonly ros_expected_points: number | null;
+  readonly ros_expected_games: number | null;
+  readonly ros_uncertainty: number;
+  readonly ros_tier: number | null;
+  readonly behavior_source_id?: string | null;
+  /** False when the optional feed was missing or stale. Intrinsic columns are unaffected. */
+  readonly behavior_available: boolean;
+  readonly behavior_snapshot_at_utc?: string | null;
+  /** The window REQUESTED. Sleeper confirms no window of its own. */
+  readonly behavior_lookback_hours?: number | null;
+  readonly behavior_request_limit?: number | null;
+  readonly add_count?: number | null;
+  readonly drop_count?: number | null;
+  readonly net_add_count?: number | null;
+  readonly add_rank?: number | null;
+  readonly drop_rank?: number | null;
+  readonly long_absence: boolean;
+  readonly weeks_since_last_game: number;
+  readonly games_played_to_date?: number | null;
+  readonly snap_share_last3?: number | null;
+  readonly target_share_last3?: number | null;
+  readonly current_status: string | null;
+  readonly outside_tier_board: boolean;
+  readonly surface_reasons: readonly SurfaceReason[];
+  readonly quality_flags: readonly string[];
+}
+
+/** ADR-076's disclosure contract, carried on the artifact rather than written in the UI. */
+export interface RosDisclosures {
+  /** A constant `false`: a property of the model, not an observation about a build. */
+  readonly uses_injury_information: false;
+  readonly long_absence_definition: string;
+  readonly long_absence_statement: string;
+  readonly long_absence_ordering_weakness: string;
+  readonly status_is_annotation_only: true;
+  readonly long_absence_players: number;
+  readonly tier_boundary_statement?: string;
+}
+
+export interface RosSeasonState {
+  readonly rule_version: string;
+  readonly season_state: SeasonState;
+  readonly product_mode: ProductMode;
+  readonly completed_week: number;
+  readonly latest_snapshot_week?: number | null;
+  readonly next_transition_utc?: string | null;
+}
+
+export interface RosBehaviorMetadata {
+  readonly source_id: string | null;
+  readonly available: boolean;
+  readonly snapshot_at_utc: string | null;
+  readonly lookback_hours: number | null;
+  readonly request_limit: number | null;
+  readonly add_rows?: number | null;
+  readonly drop_rows?: number | null;
+  readonly matched_players?: number | null;
+  readonly age_hours?: number | null;
+  readonly degraded_reason?: string | null;
+  readonly signal_semantics?: string;
+}
+
+export interface RosBuildMetadata {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly generated_at_utc: string;
+  readonly git_sha: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly season_state: RosSeasonState;
+  readonly ros_model_version: string;
+  readonly ros_model_configuration_hash?: string | null;
+  readonly production_fit_rule_version?: string | null;
+  readonly model_fitted_at_utc?: string | null;
+  readonly model_training_seasons?: readonly number[];
+  readonly model_refit_reason?: string | null;
+  readonly cutoff_rule_version: string;
+  readonly feature_set_version?: string | null;
+  readonly feature_set_hash?: string | null;
+  readonly methodology_version: string;
+  readonly simulation: {
+    readonly draws: number;
+    readonly draws_status?: string;
+    readonly seed: number;
+    readonly ranking_statistic?: string;
+    readonly replacement_rule: "fresh_allocation" | "rostered_depth";
+    readonly replacement_rule_description?: string;
+    readonly tier_algorithm?: string;
+    readonly tier_penalty?: number;
+    readonly tier_depth?: number;
+    readonly convergence_gate: "pass" | "fail";
+    readonly tier_stability_gate: "pass" | "fail";
+  };
+  readonly source_freshness: {
+    readonly rule_version: string;
+    readonly available_through_week: number;
+    readonly schedule_completed_week: number;
+    readonly blocking_week?: number | null;
+    readonly buildable?: boolean;
+  };
+  readonly behavior?: RosBehaviorMetadata | null;
+  readonly surface?: Record<string, unknown> | null;
+  readonly disclosures: RosDisclosures;
+  readonly limitations: readonly string[];
+  readonly supported_presets: readonly string[];
+  readonly sources: readonly BuildSourceStatus[];
+  readonly quality_gate: {
+    readonly status: "pass" | "fail";
+    readonly critical_failures: number;
+    readonly warnings: number;
+  };
+  readonly warnings: readonly string[];
+}
+
+export const ROS_TIER_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "league_preset_id",
+  "scoring_preset",
+  "player_id",
+  "display_name",
+  "team",
+  "position",
+  "ros_fair_rank",
+  "ros_position_rank",
+  "ros_tier",
+  "ros_tier_label",
+  "ros_expected_vorp",
+  "ros_vorp_p10",
+  "ros_vorp_p25",
+  "ros_vorp_p50",
+  "ros_vorp_p75",
+  "ros_vorp_p90",
+  "ros_expected_points",
+  "ros_points_p10",
+  "ros_points_p50",
+  "ros_points_p90",
+  "ros_expected_games",
+  "ros_uncertainty",
+  "remaining_horizon_weeks",
+  "team_remaining_scheduled_games",
+  "preseason_fair_rank",
+  "fair_rank_change",
+  "games_played_to_date",
+  "points_to_date",
+  "points_per_game_to_date",
+  "weeks_since_last_game",
+  "consecutive_weeks_missed",
+  "has_played_this_season",
+  "long_absence",
+  "in_preseason_universe",
+  "current_status",
+  "outside_tier_board",
+  "surface_reasons",
+  "quality_flags",
+] as const satisfies readonly (keyof RosTierRecord)[];
+
+export const OPPORTUNITY_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "league_preset_id",
+  "scoring_preset",
+  "player_id",
+  "display_name",
+  "team",
+  "position",
+  "ros_fair_rank",
+  "ros_position_rank",
+  "ros_expected_vorp",
+  "ros_expected_points",
+  "ros_expected_games",
+  "ros_uncertainty",
+  "ros_tier",
+  "behavior_source_id",
+  "behavior_available",
+  "behavior_snapshot_at_utc",
+  "behavior_lookback_hours",
+  "behavior_request_limit",
+  "add_count",
+  "drop_count",
+  "net_add_count",
+  "add_rank",
+  "drop_rank",
+  "long_absence",
+  "weeks_since_last_game",
+  "games_played_to_date",
+  "snap_share_last3",
+  "target_share_last3",
+  "current_status",
+  "outside_tier_board",
+  "surface_reasons",
+  "quality_flags",
+] as const satisfies readonly (keyof OpportunityRecord)[];
+
+export const ROS_TIER_FIELDS_COMPLETE: NoMissingKeys<
+  RosTierRecord,
+  typeof ROS_TIER_FIELDS
+> = true;
+export const OPPORTUNITY_FIELDS_COMPLETE: NoMissingKeys<
+  OpportunityRecord,
+  typeof OPPORTUNITY_FIELDS
+> = true;
+
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
@@ -596,6 +925,8 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   projections: PROJECTION_FIELDS,
   market_snapshot: MARKET_SNAPSHOT_FIELDS,
   player_status: PLAYER_STATUS_FIELDS,
+  ros_tiers: ROS_TIER_FIELDS,
+  inseason_opportunity: OPPORTUNITY_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -605,6 +936,18 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   projections: "projections.json",
   market_snapshot: "market_snapshot.json",
   player_status: "player_status.json",
+  ros_tiers: "ros_tiers.json",
+  inseason_opportunity: "inseason_opportunity.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";
+
+/**
+ * The in-season bundle's own metadata file.
+ *
+ * Separate from `build_metadata.json` because the two bundles are produced by different
+ * models at different cutoffs on different cadences, carry different build ids, and are
+ * validated independently. A site can hold a fresh draft board and a stale in-season one,
+ * or either alone, and each says so for itself.
+ */
+export const ROS_BUILD_METADATA_FILENAME = "ros_build_metadata.json";

@@ -44,6 +44,8 @@ from ffdraft.artifacts import (
     write_artifact,
     write_build_metadata,
 )
+from ffdraft.artifacts.serialize import write_json_artifact
+from ffdraft.artifacts.validate import ROS_BUILD_METADATA_FILENAME
 from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_config
 from ffdraft.contracts import (
     CORE_POSITIONS,
@@ -91,7 +93,10 @@ from ffdraft.quality.forbidden import (
 )
 from ffdraft.quality.thresholds import MARKET_SOURCE_MAX_AGE
 from ffdraft.retention import snapshot_key
+from ffdraft.scoring.horizon import fantasy_horizon
+from ffdraft.season.state import SEASON_STATE_RULE_VERSION
 from ffdraft.sources import (
+    SLEEPER_SOURCE_ID,
     NflverseDepthChartAdapter,
     NflversePlayerIdsAdapter,
     NflverseRosterAdapter,
@@ -166,6 +171,8 @@ class FixturePipelineResult:
     sleeper_outcomes: list[ResolutionOutcome] = field(default_factory=list)
     records: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     build_metadata: dict[str, Any] = field(default_factory=dict)
+    #: The in-season bundle's own metadata, written to its own file (roadmap 12.5).
+    ros_build_metadata: dict[str, Any] = field(default_factory=dict)
     gate: QualityGate = field(default_factory=QualityGate)
     written: list[Path] = field(default_factory=list)
 
@@ -379,6 +386,9 @@ def run_fixture_pipeline(
         gate=gate,
     )
 
+    ros_tiers = _ros_tier_records(tiers, build_id=build_id)
+    opportunity = _opportunity_records(ros_tiers, build_id=build_id)
+
     records = {
         "projections": projections,
         "tiers": tiers,
@@ -386,6 +396,8 @@ def run_fixture_pipeline(
         "market_trend_series": trend_series,
         "market_snapshot": market_records,
         "player_status": status.records,
+        "ros_tiers": ros_tiers,
+        "inseason_opportunity": opportunity,
     }
     gate.extend(_published_identity_checks(records, market_outcomes))
 
@@ -427,6 +439,14 @@ def run_fixture_pipeline(
         sleeper_outcomes=sleeper_outcomes,
         records=records,
         build_metadata=metadata,
+        ros_build_metadata=_ros_build_metadata(
+            app,
+            ros_tiers=ros_tiers,
+            opportunity=opportunity,
+            build_id=build_id,
+            generated_at=now,
+            git_sha=git_sha or _git_sha(),
+        ),
         gate=gate,
     )
 
@@ -470,6 +490,16 @@ def build_fixture_artifacts(
     result.build_metadata["quality_gate"] = result.gate.summary()
     result.build_metadata["warnings"] = result.gate.warning_messages()
     paths, checks = write_build_metadata(result.build_metadata, out_dir=out_dir)
+    result.gate.extend(checks)
+    written.extend(paths)
+
+    result.ros_build_metadata["quality_gate"] = result.gate.summary()
+    result.ros_build_metadata["warnings"] = result.gate.warning_messages()
+    paths, checks = write_json_artifact(
+        result.ros_build_metadata,
+        path=out_dir / ROS_BUILD_METADATA_FILENAME,
+        schema_name="ros_build_metadata",
+    )
     result.gate.extend(checks)
     written.extend(paths)
 
@@ -603,6 +633,305 @@ def _tier_records(
             },
         )
     return records
+
+
+# --------------------------------------------------------------------------------------
+# The in-season fixture bundle.
+#
+# A stub in exactly the sense the rest of this module is: it derives a rest-of-season shape
+# from the fixture's own tier rows rather than running `intrinsic-ros-v1`, because what these
+# fixtures exist to exercise is the *contract* - the schemas, the CSV projection, the
+# validators, the cross-artifact firewall check and every frontend consumer - without a
+# network, a model artifact or a season.
+#
+# Three shapes are deliberately present, because each one is a case that only misbehaves in
+# production: a long-absence row carrying the full ADR-076 disclosure fields, a player
+# surfaced from beyond the tier depth with no tier and a declared reason, and an opportunity
+# row whose intrinsic columns are copied byte-for-byte from the rest-of-season row so the
+# firewall check has something true to verify.
+# --------------------------------------------------------------------------------------
+
+#: The fixture's cutoff week. Late enough that a three-week absence is expressible.
+FIXTURE_THROUGH_WEEK = 8
+
+#: The fixture's behaviour window, mirroring the production request.
+FIXTURE_BEHAVIOR_LOOKBACK_HOURS = 24
+
+
+def _ros_tier_records(
+    tiers: Sequence[Mapping[str, Any]],
+    *,
+    build_id: str,
+) -> list[dict[str, Any]]:
+    """A rest-of-season shape derived from the fixture tier rows.
+
+    The remaining-season quantities are the season ones scaled by the share of the horizon
+    that is left, which is arithmetic rather than a model — and that is the point: this
+    exercises the contract, and `intrinsic-ros-v1` is exercised by the real build.
+
+    Every third player is given a three-week absence so the ADR-076 disclosure path is on the
+    committed fixture rather than only in a unit test.
+    """
+    horizon = fantasy_horizon(FIXTURE_SEASON)
+    remaining_weeks = horizon.last_week - FIXTURE_THROUGH_WEEK
+    share = remaining_weeks / horizon.week_count
+
+    records: list[dict[str, Any]] = []
+    for index, row in enumerate(tiers):
+        absent = index % 3 == 2
+        weeks_since = 3.0 if absent else 0.0
+        played = float(FIXTURE_THROUGH_WEEK - (3 if absent else 0))
+        scale = round(share, 4)
+        records.append(
+            {
+                "schema_version": ARTIFACT_SCHEMA_VERSION,
+                "build_id": build_id,
+                "season": FIXTURE_SEASON,
+                "through_week": FIXTURE_THROUGH_WEEK,
+                "league_preset_id": row["league_preset_id"],
+                "scoring_preset": row["scoring_preset"],
+                "player_id": row["player_id"],
+                "display_name": row["display_name"],
+                "team": row["team"],
+                "position": row["position"],
+                "ros_fair_rank": row["fair_rank"],
+                "ros_position_rank": row["position_rank"],
+                "ros_tier": row["tier_ordinal"],
+                "ros_tier_label": row["tier_label"],
+                "ros_expected_vorp": round(float(row["expected_vorp"]) * scale, 4),
+                "ros_vorp_p10": round(float(row["p10_vorp"]) * scale, 4),
+                "ros_vorp_p25": round(float(row["p25_vorp"]) * scale, 4),
+                "ros_vorp_p50": round(float(row["p50_vorp"]) * scale, 4),
+                "ros_vorp_p75": round(float(row["p75_vorp"]) * scale, 4),
+                "ros_vorp_p90": round(float(row["p90_vorp"]) * scale, 4),
+                "ros_expected_points": round(float(row["expected_points"]) * scale, 4),
+                "ros_points_p10": round(float(row["expected_points"]) * scale * 0.7, 4),
+                "ros_points_p50": round(float(row["expected_points"]) * scale, 4),
+                "ros_points_p90": round(float(row["expected_points"]) * scale * 1.3, 4),
+                "ros_expected_games": round(remaining_weeks * (0.6 if absent else 0.9), 4),
+                "ros_uncertainty": round(float(row["uncertainty"]) * scale, 4),
+                "remaining_horizon_weeks": remaining_weeks,
+                "team_remaining_scheduled_games": float(remaining_weeks - 1),
+                "preseason_fair_rank": int(row["fair_rank"]),
+                "fair_rank_change": 0,
+                "games_played_to_date": played,
+                "points_to_date": round(float(row["expected_points"]) * (1.0 - scale), 4),
+                "points_per_game_to_date": (
+                    round(float(row["expected_points"]) * (1.0 - scale) / played, 4)
+                    if played > 0
+                    else None
+                ),
+                "weeks_since_last_game": weeks_since,
+                "consecutive_weeks_missed": weeks_since,
+                "has_played_this_season": True,
+                "long_absence": absent,
+                "in_preseason_universe": True,
+                "current_status": None,
+                "outside_tier_board": False,
+                "surface_reasons": [str(SurfaceReason.INTRINSIC_TOP_TIER_DEPTH)],
+                "quality_flags": (["long_absence"] if absent else []),
+            },
+        )
+    return records
+
+
+def _opportunity_records(
+    ros_tiers: Sequence[Mapping[str, Any]],
+    *,
+    build_id: str,
+) -> list[dict[str, Any]]:
+    """The opportunity rows, with every intrinsic column copied rather than recomputed.
+
+    One synthetic surfaced player per block, exactly as the draft fixture rescues one: a row
+    the tier board does not publish, carrying a fair rank, a declared in-season surface
+    reason and **no tier**. That is the shape the cross-artifact firewall check has to
+    tolerate, and the shape a fabricated tier would break.
+    """
+    records: list[dict[str, Any]] = []
+    blocks = sorted({(str(r["league_preset_id"]), str(r["scoring_preset"])) for r in ros_tiers})
+    for index, row in enumerate(ros_tiers):
+        adds = max(0, 900 - index * 37)
+        drops = max(0, 120 - index * 5)
+        records.append(
+            {
+                "schema_version": ARTIFACT_SCHEMA_VERSION,
+                "build_id": build_id,
+                "season": FIXTURE_SEASON,
+                "through_week": FIXTURE_THROUGH_WEEK,
+                "league_preset_id": row["league_preset_id"],
+                "scoring_preset": row["scoring_preset"],
+                "player_id": row["player_id"],
+                "display_name": row["display_name"],
+                "team": row["team"],
+                "position": row["position"],
+                # Copied, never recomputed. The firewall check compares these to the board.
+                "ros_fair_rank": row["ros_fair_rank"],
+                "ros_position_rank": row["ros_position_rank"],
+                "ros_expected_vorp": row["ros_expected_vorp"],
+                "ros_expected_points": row["ros_expected_points"],
+                "ros_expected_games": row["ros_expected_games"],
+                "ros_uncertainty": row["ros_uncertainty"],
+                "ros_tier": row["ros_tier"],
+                "behavior_source_id": SLEEPER_SOURCE_ID,
+                "behavior_available": True,
+                "behavior_snapshot_at_utc": FIXTURE_GENERATED_AT,
+                "behavior_lookback_hours": FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
+                "behavior_request_limit": 100,
+                "add_count": adds,
+                "drop_count": drops,
+                "net_add_count": adds - drops,
+                "add_rank": index + 1,
+                "drop_rank": index + 1,
+                "long_absence": row["long_absence"],
+                "weeks_since_last_game": row["weeks_since_last_game"],
+                "games_played_to_date": row["games_played_to_date"],
+                "snap_share_last3": 0.72,
+                "target_share_last3": 0.19,
+                "current_status": row["current_status"],
+                "outside_tier_board": False,
+                "surface_reasons": [str(SurfaceReason.INTRINSIC_TOP_TIER_DEPTH)],
+                "quality_flags": list(row["quality_flags"]),
+            },
+        )
+
+    for preset_id, scoring in blocks:
+        block = [r for r in ros_tiers if str(r["league_preset_id"]) == preset_id]
+        if not block:
+            continue
+        anchor = min(block, key=lambda r: int(r["ros_fair_rank"]))
+        deepest = max(int(r["ros_fair_rank"]) for r in block)
+        records.append(
+            {
+                "schema_version": ARTIFACT_SCHEMA_VERSION,
+                "build_id": build_id,
+                "season": FIXTURE_SEASON,
+                "through_week": FIXTURE_THROUGH_WEEK,
+                "league_preset_id": preset_id,
+                "scoring_preset": scoring,
+                "player_id": f"{anchor['player_id']}-surfaced",
+                "display_name": f"{anchor['display_name']} (surfaced)",
+                "team": anchor["team"],
+                "position": anchor["position"],
+                "ros_fair_rank": deepest + 40,
+                "ros_position_rank": int(anchor["ros_position_rank"]) + 40,
+                "ros_expected_vorp": 0.0,
+                "ros_expected_points": None,
+                "ros_expected_games": None,
+                "ros_uncertainty": 0.0,
+                # No tier: the segmentation never saw him, and inventing one is the exact
+                # thing the surface rule refuses to do (ADR-063).
+                "ros_tier": None,
+                "behavior_source_id": SLEEPER_SOURCE_ID,
+                "behavior_available": True,
+                "behavior_snapshot_at_utc": FIXTURE_GENERATED_AT,
+                "behavior_lookback_hours": FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
+                "behavior_request_limit": 100,
+                "add_count": 1450,
+                "drop_count": 20,
+                "net_add_count": 1430,
+                "add_rank": 1,
+                "drop_rank": 90,
+                "long_absence": False,
+                "weeks_since_last_game": 0.0,
+                "games_played_to_date": 2.0,
+                "snap_share_last3": 0.81,
+                "target_share_last3": 0.24,
+                "current_status": None,
+                "outside_tier_board": True,
+                "surface_reasons": [str(SurfaceReason.SLEEPER_TRENDING_ADD)],
+                "quality_flags": [],
+            },
+        )
+    return records
+
+
+def _ros_build_metadata(
+    app: AppConfig,
+    *,
+    ros_tiers: Sequence[Mapping[str, Any]],
+    opportunity: Sequence[Mapping[str, Any]],
+    build_id: str,
+    generated_at: datetime,
+    git_sha: str,
+) -> dict[str, Any]:
+    """The in-season bundle's metadata, carrying the disclosures the UI renders from."""
+    from ffdraft.pipeline.ros import (
+        LONG_ABSENCE_DEFINITION,
+        LONG_ABSENCE_ORDERING_WEAKNESS,
+        LONG_ABSENCE_STATEMENT,
+        ROS_LIMITATIONS,
+        ROS_METHODOLOGY_VERSION,
+        TIER_BOUNDARY_STATEMENT,
+    )
+    from ffdraft.ros.cutoff import ROS_CUTOFF_RULE_VERSION
+    from ffdraft.ros.frozen import ROS_BUILD_CONFIG, ROS_MODEL_VERSION
+    from ffdraft.season.state import SEASON_STATE_RULE_VERSION
+
+    return {
+        "schema_version": ARTIFACT_SCHEMA_VERSION,
+        "build_id": build_id,
+        "generated_at_utc": isoformat_utc(generated_at),
+        "git_sha": git_sha,
+        "season": FIXTURE_SEASON,
+        "through_week": FIXTURE_THROUGH_WEEK,
+        "season_state": {
+            "rule_version": SEASON_STATE_RULE_VERSION,
+            "season_state": "regular_season",
+            "product_mode": "in_season",
+            "completed_week": FIXTURE_THROUGH_WEEK,
+            "latest_snapshot_week": FIXTURE_THROUGH_WEEK,
+            "next_transition_utc": None,
+        },
+        "ros_model_version": ROS_MODEL_VERSION,
+        "ros_model_configuration_hash": None,
+        "production_fit_rule_version": None,
+        "model_fitted_at_utc": None,
+        "model_training_seasons": [],
+        "model_refit_reason": None,
+        "cutoff_rule_version": ROS_CUTOFF_RULE_VERSION,
+        "feature_set_version": None,
+        "feature_set_hash": None,
+        "methodology_version": ROS_METHODOLOGY_VERSION,
+        "simulation": {**ROS_BUILD_CONFIG.to_dict(), "tier_depth": 500},
+        "source_freshness": {
+            "rule_version": "ros_source_freshness_v1",
+            "available_through_week": FIXTURE_THROUGH_WEEK,
+            "schedule_completed_week": FIXTURE_THROUGH_WEEK,
+            "blocking_week": None,
+            "buildable": True,
+        },
+        "behavior": {
+            "source_id": SLEEPER_SOURCE_ID,
+            "available": True,
+            "snapshot_at_utc": FIXTURE_GENERATED_AT,
+            "lookback_hours": FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
+            "request_limit": 100,
+            "add_rows": len(opportunity),
+            "drop_rows": len(opportunity),
+            "matched_players": len(opportunity),
+            "age_hours": 0.0,
+            "degraded_reason": None,
+            "signal_semantics": (
+                "add and drop COUNTS over the requested lookback window; never an ADP, "
+                "never a rank, never differenced against one"
+            ),
+        },
+        "surface": None,
+        "disclosures": {
+            "uses_injury_information": False,
+            "long_absence_definition": LONG_ABSENCE_DEFINITION,
+            "long_absence_statement": LONG_ABSENCE_STATEMENT,
+            "long_absence_ordering_weakness": LONG_ABSENCE_ORDERING_WEAKNESS,
+            "status_is_annotation_only": True,
+            "long_absence_players": sum(1 for row in ros_tiers if row["long_absence"]),
+            "tier_boundary_statement": TIER_BOUNDARY_STATEMENT,
+        },
+        "limitations": list(ROS_LIMITATIONS),
+        "supported_presets": sorted(app.league.presets),
+        "sources": [],
+        "quality_gate": {"status": "pass", "critical_failures": 0, "warnings": 0},
+        "warnings": [],
+    }
 
 
 def _replacement_points(
@@ -1159,6 +1488,18 @@ def _build_metadata(
         "generated_at_utc": isoformat_utc(generated_at),
         "git_sha": git_sha,
         "season": FIXTURE_SEASON,
+        # The fixture publishes an in-season bundle, so its season block has to agree with
+        # it: a build claiming the season had not started beside a week-8 board would be the
+        # exact inconsistency ADR-079's block exists to prevent.
+        "season_state": {
+            "rule_version": SEASON_STATE_RULE_VERSION,
+            "state": "regular_season",
+            "product_mode": "in_season",
+            "completed_week": FIXTURE_THROUGH_WEEK,
+            "latest_snapshot_week": FIXTURE_THROUGH_WEEK,
+            "ros_board_expected": True,
+            "note": (f"the rest-of-season board is current through week {FIXTURE_THROUGH_WEEK}"),
+        },
         "intrinsic_model_version": FIXTURE_MODEL_VERSION,
         "arbitrage_mode": app.arbitrage_mode,
         "arbitrage_model_version": None,

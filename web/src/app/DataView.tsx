@@ -36,6 +36,7 @@ import {
 } from "../data/market";
 import type { ArtifactIndex } from "../data/model";
 import { selectArbitrageRows } from "../data/model";
+import type { InSeasonBundle } from "../data/ros";
 import { SCORING_TO_PRESET, type AppState } from "../data/state";
 
 const REPO = "https://github.com/jeisey/jeisey-tiers";
@@ -49,10 +50,13 @@ const SOURCE_LABELS: Readonly<Record<string, string>> = {
 
 export function DataView({
   index,
+  inSeason,
   state,
   degradations,
 }: {
   readonly index: ArtifactIndex;
+  /** The in-season bundle, or null before kickoff. Its provenance is reported separately. */
+  readonly inSeason?: InSeasonBundle | null;
   readonly state: AppState;
   readonly degradations: readonly Degradation[];
 }): React.JSX.Element {
@@ -341,6 +345,100 @@ export function DataView({
           </p>
         </div>
       </section>
+
+      {/*
+        The in-season bundle's own provenance, reported apart from the draft bundle's rather
+        than merged into it. They are different models at different cutoffs on different
+        cadences with different build ids, and one panel implying a single build would be the
+        first place a reader could be told something untrue about freshness.
+      */}
+      {inSeason != null && (
+        <section className="section" aria-labelledby="ros-build-heading">
+          <SectionHead
+            index="05b"
+            id="ros-build-heading"
+            title="Rest-of-season build"
+          />
+          <dl className="facts">
+            <div>
+              <dt>Build id</dt>
+              <dd>{inSeason.metadata.build_id}</dd>
+            </div>
+            <div>
+              <dt>Cutoff</dt>
+              <dd>{`Through week ${String(inSeason.metadata.through_week)}`}</dd>
+            </div>
+            <div>
+              <dt>Season state</dt>
+              <dd>{inSeason.metadata.season_state.season_state.replace(/_/g, " ")}</dd>
+            </div>
+            <div>
+              <dt>Model</dt>
+              <dd>{inSeason.metadata.ros_model_version}</dd>
+            </div>
+            <div>
+              <dt>Model fitted on</dt>
+              <dd>
+                {(inSeason.metadata.model_training_seasons ?? []).length === 0
+                  ? "—"
+                  : `${String(inSeason.metadata.model_training_seasons?.[0])}–${String(
+                      inSeason.metadata.model_training_seasons?.at(-1),
+                    )}`}
+              </dd>
+            </div>
+            <div>
+              <dt>Production fit rule</dt>
+              <dd>{inSeason.metadata.production_fit_rule_version ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>Cutoff rule</dt>
+              <dd>{inSeason.metadata.cutoff_rule_version}</dd>
+            </div>
+            <div>
+              <dt>Methodology</dt>
+              <dd>{inSeason.metadata.methodology_version}</dd>
+            </div>
+            <div>
+              <dt>Replacement</dt>
+              <dd>{inSeason.metadata.simulation.replacement_rule.replace(/_/g, " ")}</dd>
+            </div>
+            <div>
+              <dt>Draws</dt>
+              <dd>
+                {String(inSeason.metadata.simulation.draws)}
+                {inSeason.metadata.simulation.convergence_gate === "fail" &&
+                  " (declared fallback)"}
+              </dd>
+            </div>
+            <div>
+              <dt>Weekly data complete through</dt>
+              <dd>{`week ${String(inSeason.metadata.source_freshness.available_through_week)}`}</dd>
+            </div>
+            <div>
+              <dt>Behaviour feed</dt>
+              <dd>
+                {inSeason.metadata.behavior?.available === true
+                  ? `${inSeason.metadata.behavior.source_id ?? "—"} · ${String(
+                      inSeason.metadata.behavior.lookback_hours,
+                    )}h window requested`
+                  : "unavailable"}
+              </dd>
+            </div>
+          </dl>
+          <p className="prose">
+            The rest-of-season model uses <strong>no injury or practice-report information</strong>.
+            It infers absence from appearances alone, which is why a long absence is reported as
+            &ldquo;has not appeared for N weeks&rdquo; and never as a status. Add and drop counts
+            on the Opportunity Board are counts of transactions over the window above; they are
+            not a draft price, not a rank, and are never subtracted from one.
+          </p>
+          <ul className="limitations">
+            {inSeason.metadata.limitations.map((limitation) => (
+              <li key={limitation}>{limitation}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="section" aria-labelledby="limitations-heading">
         <SectionHead index="06" id="limitations-heading" title="Current limitations" />

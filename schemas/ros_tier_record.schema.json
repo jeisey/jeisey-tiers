@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/ros_tier_record.schema.json",
+  "title": "RosTierRecord",
+  "description": "One player's rest-of-season value for one league and scoring preset, from `intrinsic-ros-v1` at an explicit point-in-time cutoff. Every value-bearing field is named `ros_*` because it is NOT the preseason quantity of the same shape: a rest-of-season fair rank is computed from a different model over a different horizon against a different replacement baseline (ADR-071), and a reader who saw `fair_rank` would be entitled to assume it was the draft one. The long-absence disclosure fields implement ADR-076 and are part of the contract rather than a presentation choice.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "league_preset_id",
+    "scoring_preset", "player_id", "display_name", "team", "position",
+    "ros_fair_rank", "ros_position_rank", "ros_tier", "ros_tier_label",
+    "ros_expected_vorp", "ros_vorp_p10", "ros_vorp_p25", "ros_vorp_p50",
+    "ros_vorp_p75", "ros_vorp_p90", "ros_expected_points", "ros_points_p10",
+    "ros_points_p50", "ros_points_p90", "ros_expected_games", "ros_uncertainty",
+    "games_played_to_date", "points_to_date", "weeks_since_last_game",
+    "consecutive_weeks_missed", "has_played_this_season", "long_absence",
+    "in_preseason_universe", "current_status", "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 2000},
+    "through_week": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The cutoff. Weeks 1..through_week of this season are the only in-season evidence behind every number in this record (`ros_cutoff_v1`)."
+    },
+    "league_preset_id": {"type": "string", "minLength": 1},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "team": {"type": ["string", "null"]},
+    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
+    "ros_fair_rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Rest-of-season fair rank. Not comparable with the preseason `fair_rank` in tiers.json."
+    },
+    "ros_position_rank": {"type": "integer", "minimum": 1},
+    "ros_tier": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Rest-of-season tier ordinal, or null for a player surfaced from outside the tier-segmentation depth. Tier boundaries failed the frozen stability gate (ADR-074): membership is reproducible, the exact edge is not, so a tier is a band and any surface showing one must say so."
+    },
+    "ros_tier_label": {"type": ["string", "null"]},
+    "ros_expected_vorp": {"type": "number"},
+    "ros_vorp_p10": {"type": "number"},
+    "ros_vorp_p25": {"type": "number"},
+    "ros_vorp_p50": {"type": "number"},
+    "ros_vorp_p75": {"type": "number"},
+    "ros_vorp_p90": {"type": "number"},
+    "ros_expected_points": {
+      "type": "number",
+      "description": "Expected fantasy points over the remaining scored weeks, in this row's scoring preset."
+    },
+    "ros_points_p10": {"type": "number"},
+    "ros_points_p50": {"type": "number"},
+    "ros_points_p90": {"type": "number"},
+    "ros_expected_games": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Expected remaining appearances, from the availability half of the hurdle over the same draws the points came from."
+    },
+    "ros_uncertainty": {
+      "type": "number",
+      "minimum": 0,
+      "description": "p75 minus p25 of remaining VORP."
+    },
+    "remaining_horizon_weeks": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Scored horizon weeks after the cutoff, byes included. Calendar weeks, not games."
+    },
+    "team_remaining_scheduled_games": {"type": ["number", "null"]},
+    "preseason_fair_rank": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "This player's preseason fair rank in the same league and scoring preset, carried so the board can show what football evidence rather than market opinion changed. Null when the preseason board did not publish him."
+    },
+    "fair_rank_change": {
+      "type": ["integer", "null"],
+      "description": "preseason_fair_rank minus ros_fair_rank: positive means the player has moved up. A difference between two ranks computed by two different models, and labelled as such wherever it is shown."
+    },
+    "games_played_to_date": {"type": "number", "minimum": 0},
+    "points_to_date": {"type": "number"},
+    "points_per_game_to_date": {"type": ["number", "null"]},
+    "weeks_since_last_game": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Weeks between the cutoff and the last appearance; 0 means he played in the cutoff week. Published beside `long_absence` so the flag is checkable rather than asserted (ADR-076 clause 2)."
+    },
+    "consecutive_weeks_missed": {"type": "number", "minimum": 0},
+    "has_played_this_season": {"type": "boolean"},
+    "long_absence": {
+      "type": "boolean",
+      "description": "ADR-076 clause 1. True when the player HAS played this season and has missed at least three consecutive weeks ending at the cutoff. It is an observable fact about appearances - the model uses no injury or practice-report information of any kind - and it must never be presented as a status, a designation or medical knowledge, nor encoded by colour alone. Within this cohort the board's ordering is measurably weak (Spearman 0.311 against 0.797 on the full universe), which the published limitations state."
+    },
+    "in_preseason_universe": {
+      "type": "boolean",
+      "description": "False marks an in-season arrival, whose preseason feature block is null. The model knows this: `in_preseason_universe` is a declared model input, so a sparse-history row is estimated with a wider interval rather than by a fallback (ADR-076)."
+    },
+    "current_status": {
+      "type": ["string", "null"],
+      "description": "Current roster status. Annotation only: no field here reached the model, and it is displayed separately from every model input."
+    },
+    "outside_tier_board": {
+      "type": "boolean",
+      "description": "True for a player published beyond the tier-segmentation depth because current evidence surfaced him. He has a fair rank the model computed and no tier, rather than a fabricated one."
+    },
+    "surface_reasons": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true,
+      "description": "Why this player is publicly visible (ADR-063). A surface reason may decide visibility and may never touch a projection, a VORP, a fair rank or a tier."
+    },
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

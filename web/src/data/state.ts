@@ -17,8 +17,30 @@
 
 import type { ScoringPreset } from "./contracts";
 
-export const VIEWS = ["tiers", "arbitrage", "data"] as const;
+/**
+ * Every panel the product can show, plus `auto`.
+ *
+ * `auto` is the default and it is what makes one URL correct in both modes: a link with no
+ * `view` parameter opens the Tier Board before kickoff and the ROS Tier Board after it,
+ * because the season decides, not the link. Naming a view explicitly always wins — a link to
+ * the Arbitrage Board in November still opens the Arbitrage Board.
+ */
+export const VIEWS = ["auto", "tiers", "arbitrage", "ros", "opportunity", "data"] as const;
 export type ViewId = (typeof VIEWS)[number];
+
+/** A concrete panel, after `auto` has been resolved against the season. */
+export type ResolvedViewId = Exclude<ViewId, "auto">;
+
+/** The product modes, plus the `auto` that follows the schedule-derived season state. */
+export const MODES = ["auto", "draft", "in_season"] as const;
+export type ModeId = (typeof MODES)[number];
+
+/** How the Opportunity Board is ordered. Three orderings, never one blended score. */
+export const OPPORTUNITY_SORTS = ["value", "adds", "net"] as const;
+export type OpportunitySort = (typeof OPPORTUNITY_SORTS)[number];
+
+export const DRAFT_VIEWS: readonly ResolvedViewId[] = ["tiers", "arbitrage"];
+export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = ["ros", "opportunity"];
 
 export const SCORING_VALUES = ["std", "half", "ppr"] as const;
 export type ScoringValue = (typeof SCORING_VALUES)[number];
@@ -69,6 +91,16 @@ export interface AppState {
    * not on the current board, so a stale link degrades rather than breaking.
    */
   readonly market: string;
+  /**
+   * Which product mode to show, or `auto` to follow the season state the build derived.
+   *
+   * A manual override rather than a preference: the draft board stays reproducible and
+   * reachable all season (roadmap 12.1), and a reader who wants it in November should not
+   * have to know that the site decided otherwise.
+   */
+  readonly mode: ModeId;
+  /** The Opportunity Board's ordering. */
+  readonly opportunity: OpportunitySort;
 }
 
 /**
@@ -80,7 +112,7 @@ export interface AppState {
  * the model, per the Phase-3 report).
  */
 export const DEFAULT_STATE: AppState = {
-  view: "tiers",
+  view: "auto",
   scoring: "ppr",
   teams: 12,
   position: "all",
@@ -97,6 +129,8 @@ export const DEFAULT_STATE: AppState = {
    * chosen.
    */
   market: "fantasyfootballcalculator_adp",
+  mode: "auto",
+  opportunity: "value",
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
@@ -110,6 +144,8 @@ const PARAM_ORDER = [
   "tiers",
   "rail",
   "market",
+  "mode",
+  "opportunity",
 ] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
@@ -173,6 +209,14 @@ export function parseState(search: string): ParsedState {
   note(board.valid);
   const rail = oneOf(params.get("rail"), RAIL_MODES, DEFAULT_STATE.rail);
   note(rail.valid);
+  const mode = oneOf(params.get("mode"), MODES, DEFAULT_STATE.mode);
+  note(mode.valid);
+  const opportunity = oneOf(
+    params.get("opportunity"),
+    OPPORTUNITY_SORTS,
+    DEFAULT_STATE.opportunity,
+  );
+  note(opportunity.valid);
 
   const rawTeams = params.get("teams");
   let teams: TeamCount = DEFAULT_STATE.teams;
@@ -250,6 +294,8 @@ export function parseState(search: string): ParsedState {
       tiers,
       market,
       rail: rail.value,
+      mode: mode.value,
+      opportunity: opportunity.value,
     },
     normalized,
   };
@@ -275,6 +321,32 @@ export function serializeState(state: AppState): string {
   }
   const rendered = params.toString();
   return rendered === "" ? "" : `?${rendered}`;
+}
+
+/**
+ * The panel to render, given the state and the mode actually in force.
+ *
+ * `auto` resolves to each mode's own first board. A view the current mode does not own is
+ * still honoured — the two boards a mode does not list are reachable, not forbidden — with
+ * one exception: `data` is shared by both modes and always resolves to itself.
+ */
+export function resolveView(view: ViewId, mode: Exclude<ModeId, "auto">): ResolvedViewId {
+  if (view !== "auto") return view;
+  return mode === "in_season" ? "ros" : "tiers";
+}
+
+/**
+ * The mode actually in force: the reader's override, or the season state the build derived.
+ *
+ * `derived` is null when no in-season bundle was published, which is the ordinary state
+ * before kickoff — there is nothing to switch to, so draft mode is the only answer.
+ */
+export function resolveMode(
+  mode: ModeId,
+  derived: "draft" | "in_season" | null,
+): "draft" | "in_season" {
+  if (mode !== "auto") return mode;
+  return derived ?? "draft";
 }
 
 /** The full address to push, keeping whatever path the site is served from. */

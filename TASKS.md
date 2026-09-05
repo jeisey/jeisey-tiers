@@ -690,3 +690,248 @@ betting or props, no news-sentiment modelling, no user rosters, no market data i
 `intrinsic-ros-v1`, no published artifact, no frontend change. Release 1 and Phase 10 are
 byte-identical: the only shared-code change is one optional parameter on the simulation draw
 loop whose default preserves every preseason number.
+
+## Phase 12 — In-season product mode, Opportunity Board, operations, Release 2 launch
+
+**Implemented 2026-09-04.** The accepted rest-of-season model reaches disk and is served; the
+product has two modes and the season decides which; the in-season bundle publishes
+all-or-nothing beside the draft one. Evidence: `docs/releases/v2.0.0.md`,
+`docs/visual-qa/2026-09-04-phase12/`, `models/cards/intrinsic-ros-v1.md` (production-fit section);
+decisions ADR-078.
+
+### The question that had to be answered before any UI
+
+- [x] **Define and ADR the smallest legitimate production-fit protocol.** Phase 11 accepted
+      `intrinsic-ros-v1` and persisted nothing: `RosHurdleCandidate` deliberately exposes no
+      fitted object, so every prediction it ever made came out of a fold. Read literally,
+      ADR-077's "any change to RC1's outputs needs a fresh sealed season" forbids fitting the
+      accepted architecture at all — which would mean the model accepted for Phase 12 can
+      never be served in Phase 12. **ADR-078** names the distinction that sentence always
+      implied: a *production refit* varies the labelled rows and nothing else; a *methodology
+      change* is everything else and stays governed by ADR-077 unchanged. The rule against
+      actual model changes is not weakened; it is given the boundary it implied.
+- [x] **Freeze the architecture as a hash rather than a promise.** `ffdraft.ros.frozen`
+      restates the accepted configuration as constants and digests them
+      (`d79133847436f04f`); a test compares every modelling field against
+      `RosHurdleCandidate` itself, so an edited constant fails the suite rather than shipping
+      under an accepted model's name. The fitter calls the evaluated candidate's own
+      `fit_components` and `compose_draws`, so "the same code path" is a property of the call
+      graph rather than a claim in a comment.
+- [x] **Fit on the maximum permitted window, and record the lineage.**
+      `models/production/intrinsic-ros-v1`: seasons **2017-2025**, **455,157** rows, 12 fitted
+      groups, feature set `f5ad9df207795351`, schema `f0384c75cac8218a`, dataset content hash
+      `1590cde5…`. Not a pickle: gzipped LightGBM text with a SHA-256 per booster and
+      `mtime=0`, so two fits of the same model are byte-identical and a committed artifact is
+      checkable against a rebuild.
+- [x] **Make the window unable to widen by accident.** Two independent barriers: the sealed
+      season still needs its token (given here, with the reason recorded on the artifact), and
+      a training season at or after the serving season is refused outright — the one error
+      that cannot be detected from the output.
+- [x] **Keep the spent holdout spent.** `final_holdout.md` is untouched and was not re-scored.
+      The card's production-fit section states in its first line that it carries no
+      performance claim: the fit was scored on nothing, and every measured number belongs to
+      the Phase-11 evidence.
+
+### 12.1 Deterministic season-state orchestration
+
+- [x] Rule `season_state_v1`, a pure function of the published schedule and a timestamp; no
+      date anywhere in the code. Four states, and the product mode is the first Week-1
+      kickoff and nothing else. Against the real 2026 schedule the transition lands at
+      **2026-09-10T00:20Z** — the published opener, derived rather than typed.
+- [x] A week counts as played six hours after its **last scheduled kickoff**, from kickoff
+      times rather than a schedule row's `result`: a result lands whenever nflverse publishes
+      it, and a state machine reading one would change its mind about the past.
+- [x] Week-1 transition fixtures, written against a **synthetic** schedule so they prove
+      something about 2027 as well as 2026. Nine cases including the several days in week 1
+      when the mode is In-Season and `completed_week` is still 0.
+- [x] Draft mode stays reproducible and reachable all season: `?mode=draft` is a user-visible
+      override, in the URL like every other control, and the daily draft build never stops.
+
+### 12.2 Production ROS pipeline
+
+- [x] **Source freshness is a second, independent question.** `ros_source_freshness_v1`
+      compares the clubs the schedule says played a week against the clubs present in that
+      week's weekly statistics. The clock says the games are over; this says whether the rows
+      arrived, and a build takes the smaller answer.
+- [x] The deepest buildable cutoff is the last week with **no gap behind it**; a requested
+      week deeper than the sources support is refused rather than built.
+- [x] Current features under the frozen cutoff, with the panel truncated **before** it is
+      built — a dense week grid over an unplayed week is indistinguishable, to every
+      cumulative feature, from a week the player missed.
+- [x] The preseason block is anchored and built from sources with the target season's own
+      statistics deleted, so no in-season outcome can reach a draft-time feature.
+- [x] Frozen inference, never training. `build-ros` loads the committed artifact and refuses a
+      feature contract it was not fitted against.
+- [x] ROS VORP under `rostered_depth` at the documented **10,000-draw fallback**, published
+      with its verdict rather than as a converged value.
+- [x] Versioned artifacts: `ros_tiers`, `inseason_opportunity`, `ros_build_metadata`.
+
+### 12.3 ROS Tier Board
+
+- [x] Every field the roadmap names, all `ros_*`: `ros_fair_rank`, `ros_position_rank`,
+      `ros_expected_vorp`, the P10-P90 interval, `ros_expected_points`, `ros_expected_games`,
+      `ros_tier`, `ros_uncertainty`, `current_status`, and the cutoff/model/freshness stamps.
+- [x] **`fair_rank` and `ros_fair_rank` are never the same quantity anywhere.** The record has
+      no field called `fair_rank`, the table has no column called `Rank`, and the player card
+      shows the preseason rank, the current ROS rank and the change as three separate
+      readouts labelled "two models, two orderings".
+- [x] ADR-074 respected: a tier is a band. The board says so in the legend, the caption and
+      the artifact's own `tier_boundary_statement`, and no edge is drawn as a fact.
+
+### 12.4 ADR-076's disclosure contract, implemented exactly
+
+- [x] Machine-readable `long_absence`, set by exactly `has_played_this_season` **and**
+      `consecutive_weeks_missed >= 3`. A validator asserts **both** directions.
+- [x] `weeks_since_last_game` published beside it, so the claim is checkable.
+- [x] "No injury or practice-report information" stated on the artifact
+      (`uses_injury_information` is a schema `const: false`) and rendered from it, so the
+      interface cannot drift from what the model did.
+- [x] The phrasing is the observable fact: **"Has not appeared for N weeks"**. Never a status,
+      a designation, or medical knowledge — asserted in an e2e test that fails on the words
+      "out", "questionable", "doubtful" and "injured".
+- [x] Never colour alone: a glyph, the week count as text, and a full sentence for assistive
+      technology, before any colour.
+- [x] The measured ordering weakness (Spearman **0.311** against **0.797**) is published beside
+      the rows it applies to, and the disclosed flag count is checked against the published
+      rows.
+- [x] Current injury/status appears as annotation in its own column, separated by a rule, and
+      reaches no model input.
+
+### 12.5 The in-season Opportunity Board
+
+- [x] Sleeper add/drop retention built (`capture-behavior`) — Phase 10 wrote the adapter and
+      consumed nothing; this is the retention half. Both feeds under one snapshot key, because
+      a drop count is only interpretable against the add count from the same moment; a
+      half-missing capture is refused rather than retained.
+- [x] Add count, drop count, requested lookback and snapshot time preserved with their exact
+      semantics: the window is the one **requested** (Sleeper confirms none), and the
+      timestamp is a retrieval time rather than a data-as-of claim.
+- [x] **Never called ADP, never a rank gap.** `net_add_count` is the only difference the board
+      takes, and only because both sides are the same unit over the same window from the same
+      feed. Three orderings, no blended score.
+- [x] Phase 10's mode-aware surface universe reused, extended with `SurfaceMembership` so an
+      in-season reason can be stated explicitly. A trending player or a snap-share promotion
+      surfaces a player from beyond the tier depth, carrying a fair rank, a declared reason and
+      **no tier**.
+- [x] **Behaviour never alters an intrinsic value**, and that is checkable rather than
+      promised: every intrinsic column is copied from the ROS board, and
+      `cross_artifact.intrinsic_firewall` compares all seven of them over the published bytes.
+
+### 12.6 Product UX
+
+- [x] Draft mode: Tier Board, Arbitrage Board. In-Season mode: ROS Tier Board, Opportunity
+      Board. `Data` shared.
+- [x] One visual system, not a second application: the same section rhythm, numbered heads,
+      legend strip, table and player card.
+- [x] One obvious season-mode indicator that says *why* it is what it is, with an override.
+- [x] Scoring/team controls, search, URL state, exports, freshness and methodology all shared.
+      `view=auto` is the default, so one link is correct in both modes and an explicit view
+      still wins.
+- [x] Exports name the board **and the cutoff week**, and every in-season column is `ros_`-named
+      so a spreadsheet holding both files has no two columns called `fair_rank`.
+
+### 12.7 Operations and failure handling
+
+- [x] Full Sleeper player map at most once a day (unchanged); the two trending endpoints are
+      two requests per refresh; both feeds record their requested window.
+- [x] Post-week refresh: a second Tuesday slot on the **same** job graph, because a separate
+      pipeline would be a second description of the same build.
+- [x] A failed behaviour source degrades the Opportunity Board's columns and nothing else.
+- [x] A critical ROS input publishes **nothing**: the bundle is staged to a sibling directory
+      and moved into place only once every artifact *and* the metadata validate. Writing
+      straight into the output would have satisfied this for the artifacts and missed it for
+      the metadata.
+- [x] Last-known-good preserved: the deploy job is still the last job and nothing clears the
+      live site.
+- [x] Draft and ROS artifacts validate independently, with separate build ids, because they are
+      produced by different models at different cutoffs on different cadences.
+
+### 12.8 Release 2 hardening
+
+- [x] Full Python and frontend suites green: `pytest` **1,414 passed** (4 live-network
+      deselected), `ruff`/`mypy` clean over 240/152 files, `vitest` **291 passed**, `eslint`
+      0 errors, `tsc` clean, `vite build` clean.
+- [x] Deterministic ROS rebuild and inference checks: saving the same model twice produces
+      **identical bytes** (`mtime=0`), a re-loaded artifact serves the same numbers as the
+      in-memory one, and an altered booster is refused on load by its SHA-256.
+- [x] Week-1 transition fixtures: `season_state_v1` is tested across the kickoff boundary in
+      both directions, with the completion buffer, an unknown kickoff time resolving towards
+      "not yet played", and the postseason weeks excluded.
+- [x] Stale and missing-source tests: no complete upstream week is **critical**; a gap behind
+      week N caps `available_through_week`; a behaviour snapshot older than the freshness
+      window degrades rather than publishes.
+- [x] Market-firewall audit extended to the in-season path: the ROS feature audit rejects any
+      market-named input, and `cross_artifact.intrinsic_firewall` compares the copied intrinsic
+      fields across the two published files.
+- [x] Artifact schema and semantic validation for all three new contracts, including monotonic
+      ROS quantiles under their published names and `disclosures.uses_injury_information` as a
+      schema `const: false`.
+- [x] CSV and export verification: in-season exports name the board and the cutoff week, carry
+      `ros_fair_rank`, `long_absence` and `weeks_since_last_game`, and contain **no** bare
+      `fair_rank` column. Asserted end to end from a real download.
+- [x] Desktop, tablet and mobile visual QA: **41 screens** at 1440/900/390px in
+      `docs/visual-qa/2026-09-04-phase12/`, capture script exit 0 (no console error, no
+      horizontal page overflow at any width). `REVIEW.md` records the four defects the pictures
+      caught that the tests did not.
+- [x] Accessibility QA: the a11y project passes, and a **pre-existing** flake in it was
+      root-caused rather than retried — seven controls declared `transition: all`, which
+      animated the shared focus ring in over 160ms. A `--t-control` token names the surface
+      properties instead, so a keyboard user's position appears at once.
+- [x] Failure-path QA: behaviour absent (columns blank, values intact, notice shown), ROS
+      artifact absent (the site stays in Draft mode and says so), and a partially-written
+      bundle refused. All three have tests; the first two also have screenshots.
+- [ ] **Deployed Pages verification against a live in-season build.** *Blocked until the season
+      starts.* The 2026 opener is `2026-09-10T00:20:00Z`, so `season-state` resolves to
+      `preseason_draft` and no in-season bundle can be produced from real data before the
+      release. The base-path scenario is verified on the fixture build (`10-pages-base-path`)
+      and the whole in-season path on the 2024 rehearsal; the first post-Week-1 refresh
+      (`"40 12 * * 2"`) is the observation that closes this. It is an **operational item for
+      after merge**, not a release blocker: it is an observation the project will make rather
+      than something it can act on now.
+
+### 12.9 The season's two edges (ADR-079, ADR-080)
+
+A pre-merge review found three lifecycle defects that neither the fixtures nor the mid-season
+rehearsal could reach, because both sit in the middle of a season rather than at its edges.
+
+- [x] **Opening week no longer freezes the site.** `season_state_v1` flips the mode at the
+      first kickoff and `ros_cutoff_v1` refuses week 0; between them is a window of several
+      days in which no board can be built. The refresh ran `build-ros` on the *mode*, hit a
+      critical, failed the build job — and the deploy job is downstream of it, so the **draft**
+      board stopped refreshing too. The ROS build is now gated on `latest_snapshot_week`, which
+      the schedule alone decides, so the window is skipped rather than attempted and failed.
+- [x] **A cadence is told apart from an outage.** Nothing buildable with at most one week
+      played is `ros.awaiting_first_week`, a warning: the refresh is green, the draft bundle
+      deploys, no board is published. Two or more weeks played with nothing available is still
+      `ros.no_complete_week`, critical.
+- [x] **The end of the season no longer crash-loops.** At `season_complete` the deepest
+      available week is the last *scored* week, which `RosCutoff` refuses by raising — uncaught,
+      on every refresh from January onwards. The cutoff is bounded by the remaining horizon
+      before the constructor sees it and the refusal is `ros.season_complete`, a warning. The
+      last published board is the final one; no board of structural zeros is produced. An
+      explicitly requested week is exempt, so replaying a finished season still works.
+- [x] **The freshness gate compares clubs, not counts.** It documented "every team the schedule
+      says played appears in the weekly statistics" and implemented `games * 2` against a
+      distinct count — which a week that lost one club and gained a stray row for another would
+      pass. `WeekWindow` now carries the scheduled club set, both sides go through
+      `normalize_team_code`, and the diagnostic names the missing and unexpected clubs.
+- [x] **The product has a third situation, and says so.** *Season under way, no board yet* is
+      carried by a `season_state` block on the draft build's `build_metadata.json` — the one
+      artifact published in every state — and the page renders the build's own sentence rather
+      than composing one. A `season_state.json` of its own was considered and rejected: a second
+      file is a second schema, a second fetch and a second way for two files to disagree.
+- [x] **Four lifecycle states have a test each**, plus the two at the far end
+      (`tests/unit/test_ros_lifecycle.py`): one minute before the first kickoff; after kickoff
+      with `completed_week=0`; week 1 played but unpublished; week 1 available. Each asserts the
+      resolved cutoff, the gate verdict and the value the workflow reads. The workflow's own
+      gate is pinned in `tests/unit/test_workflows.py`, and both new product states have an
+      end-to-end test and a screenshot.
+- [x] **FantasyPros is reconciled rather than left as an impossible blocker (ADR-080).** The
+      original clause-1 criterion stays recorded as historically unmet; FantasyPros stays
+      `benchmark_only` under the current entitlement with its revisit condition unchanged; and
+      Release 2's production source scope is stated positively as FFC + MFL for draft ADP with
+      Sleeper behaviour in season. A vendor tier is not something the project can act on, so it
+      no longer holds `v2.0.0`.
+
+See `docs/releases/v2.0.0.md` for the measured results and the definition-of-done verdict
+clause by clause.

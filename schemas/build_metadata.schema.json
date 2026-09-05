@@ -6,55 +6,160 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "build_id", "generated_at_utc", "git_sha", "season",
-    "intrinsic_model_version", "arbitrage_mode", "supported_presets", "sources",
-    "quality_gate", "warnings", "methodology_version"
+    "schema_version",
+    "build_id",
+    "generated_at_utc",
+    "git_sha",
+    "season",
+    "intrinsic_model_version",
+    "arbitrage_mode",
+    "supported_presets",
+    "sources",
+    "quality_gate",
+    "warnings",
+    "methodology_version"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
-    "build_id": {"type": "string", "minLength": 1},
-    "generated_at_utc": {"type": "string", "format": "date-time"},
-    "git_sha": {"type": "string", "minLength": 7},
-    "season": {"type": "integer", "minimum": 2000},
-    "intrinsic_model_version": {"type": "string", "minLength": 1},
-    "arbitrage_mode": {"enum": ["baseline", "ml"]},
-    "arbitrage_model_version": {"type": ["string", "null"]},
+    "schema_version": {
+      "const": "1.0"
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "git_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "season": {
+      "type": "integer",
+      "minimum": 2000
+    },
+    "intrinsic_model_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "arbitrage_mode": {
+      "enum": [
+        "baseline",
+        "ml"
+      ]
+    },
+    "arbitrage_model_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "arbitrage_method_version": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Deterministic arbitrage method version (ADR-040). Null until the market layer has run."
     },
     "market": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Market provenance for the arbitrage board: which retained snapshot supplied the prices, which cohort served each preset and whether that was exact, whether trend history was sufficient, and the coverage and confidence counts (ADR-038, ADR-039, ADR-041, ADR-042).",
       "additionalProperties": true,
       "properties": {
-        "source_id": {"type": "string"},
-        "snapshot_key": {"type": "string"},
-        "snapshot_at_utc": {"type": "string", "format": "date-time"},
-        "source_as_of_utc": {"type": ["string", "null"], "format": "date-time"},
-        "cohort_rule_version": {"type": "string"},
-        "confidence_rubric_version": {"type": "string"},
-        "trend_rule_version": {"type": "string"},
-        "trend_available": {"type": "boolean"},
-        "assignments": {"type": "array", "items": {"type": "object", "properties": {"failed_clauses": {"type": "array", "items": {"type": "string"}, "description": "Sufficiency clauses this cohort failed, verbatim (\"total_drafts 125 < 300\"). Present so a consumer can explain a low-confidence board from metadata rather than embedding a measurement in its own source (ADR-041, ADR-045)."}}}}
+        "source_id": {
+          "type": "string"
+        },
+        "snapshot_key": {
+          "type": "string"
+        },
+        "snapshot_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_as_of_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "cohort_rule_version": {
+          "type": "string"
+        },
+        "confidence_rubric_version": {
+          "type": "string"
+        },
+        "trend_rule_version": {
+          "type": "string"
+        },
+        "trend_available": {
+          "type": "boolean"
+        },
+        "assignments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "failed_clauses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Sufficiency clauses this cohort failed, verbatim (\"total_drafts 125 < 300\"). Present so a consumer can explain a low-confidence board from metadata rather than embedding a measurement in its own source (ADR-041, ADR-045)."
+              }
+            }
+          }
+        }
       }
     },
     "player_status": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Current player-status artifact provenance (ADR-043). Annotation only: nothing described here can move a projection, a fair rank, a tier or an arbitrage score.",
       "additionalProperties": true,
       "properties": {
-        "players": {"type": "integer", "minimum": 0},
-        "sleeper_available": {"type": "boolean"},
-        "sleeper_matched": {"type": "integer", "minimum": 0},
-        "sleeper_identity_conflicts": {"type": "integer", "minimum": 0},
-        "observed_at_utc": {"type": ["string", "null"], "format": "date-time"},
-        "source_ids": {"type": "array", "items": {"type": "string"}}
+        "players": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sleeper_available": {
+          "type": "boolean"
+        },
+        "sleeper_matched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sleeper_identity_conflicts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observed_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "supported_presets": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1},
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "minItems": 1,
       "uniqueItems": true
     },
@@ -63,28 +168,145 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["source_id", "status", "retrieved_at_utc", "record_count"],
+        "required": [
+          "source_id",
+          "status",
+          "retrieved_at_utc",
+          "record_count"
+        ],
         "properties": {
-          "source_id": {"type": "string"},
-          "status": {"enum": ["pass", "warning", "failed", "disabled"]},
-          "retrieved_at_utc": {"type": "string", "format": "date-time"},
-          "source_as_of_utc": {"type": ["string", "null"], "format": "date-time"},
-          "record_count": {"type": "integer", "minimum": 0},
-          "warnings": {"type": "array", "items": {"type": "string"}}
+          "source_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "warning",
+              "failed",
+              "disabled"
+            ]
+          },
+          "retrieved_at_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_as_of_utc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       }
     },
     "quality_gate": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "critical_failures", "warnings"],
+      "required": [
+        "status",
+        "critical_failures",
+        "warnings"
+      ],
       "properties": {
-        "status": {"enum": ["pass", "fail"]},
-        "critical_failures": {"type": "integer", "minimum": 0},
-        "warnings": {"type": "integer", "minimum": 0}
+        "status": {
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        },
+        "critical_failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
-    "warnings": {"type": "array", "items": {"type": "string"}},
-    "methodology_version": {"type": "string", "minLength": 1}
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "methodology_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "season_state": {
+      "description": "Where the season is, from `season_state_v1`, on the one artifact that is published in every state. It is how the frontend learns the season has started while no rest-of-season bundle exists yet \u2014 the opening-week window, and again once the horizon is spent (ADR-079). Null when a build could not derive it.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "rule_version",
+        "ros_board_expected",
+        "note"
+      ],
+      "properties": {
+        "rule_version": {
+          "type": "string"
+        },
+        "state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "preseason_draft",
+            "regular_season",
+            "fantasy_postseason",
+            "season_complete",
+            null
+          ]
+        },
+        "product_mode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "draft",
+            "in_season",
+            null
+          ]
+        },
+        "completed_week": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "latest_snapshot_week": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "ros_board_expected": {
+          "description": "Whether a rest-of-season board should exist for this refresh. Not the same question as whether the season has started: between the first kickoff and the first published week there is no snapshot the cutoff rule permits.",
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
   }
 }

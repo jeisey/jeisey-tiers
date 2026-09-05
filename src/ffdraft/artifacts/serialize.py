@@ -46,6 +46,7 @@ __all__ = [
     "records_to_csv",
     "write_artifact",
     "write_build_metadata",
+    "write_json_artifact",
 ]
 
 #: Arrays (``quality_flags``) are joined with ``|`` in CSV. Commas would need quoting and
@@ -180,6 +181,27 @@ def write_build_metadata(
         return [], checks
     out_dir.mkdir(parents=True, exist_ok=True)
     return [_write_json(out_dir / BUILD_METADATA_FILENAME, ordered)], checks
+
+
+def write_json_artifact(
+    payload: Mapping[str, Any],
+    *,
+    path: Path,
+    schema_name: str,
+) -> tuple[list[Path], list[QualityCheck]]:
+    """Validate and write one standalone JSON object against its own schema.
+
+    ``build_metadata.json`` is not the only build-level object any more: Phase 12 adds
+    ``ros_build_metadata.json``, which is deliberately a *separate* file with a separate
+    build id because the draft and in-season bundles are produced by different models on
+    different cadences and have to be independently validatable (roadmap 12.5).
+    """
+    ordered = _ordered_record(schema_name, payload)
+    checks = validate_records(schema_name, [ordered], stage=f"artifacts.{schema_name}")
+    if any(check.blocking for check in checks):
+        return [], checks
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return [_write_json(path, ordered)], checks
 
 
 def _write_json(path: Path, payload: Mapping[str, Any]) -> Path:

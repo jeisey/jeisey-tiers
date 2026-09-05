@@ -39,6 +39,7 @@ bit-identical to a single-threaded one, which a test asserts rather than assumes
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -109,6 +110,16 @@ def _row_keys(frame: pl.DataFrame) -> list[str]:
             strict=True,
         )
     ]
+
+
+def _inner_seed(fitted: FittedComponents) -> int:
+    """The seed the inner dependence fit uses.
+
+    Derived from the outer fit's feature list and row count rather than passed in, so a
+    production fit cannot vary it and two fits of the same window agree exactly.
+    """
+    material = f"{len(fitted.features)}|{fitted.train_rows}|{len(fitted.levels)}"
+    return int(hashlib.sha256(material.encode("utf-8")).hexdigest()[:8], 16) % 2_147_483_647
 
 
 @dataclass(frozen=True)
@@ -277,16 +288,22 @@ class RosHurdleCandidate:
             int(np.count_nonzero(played)),
         )
 
-    def _compose(
+    def compose_draws(
         self,
         frame: pl.DataFrame,
         rate_function: QuantileFunction,
         performance_function: QuantileFunction,
         *,
         correlation: float,
-        levels: Sequence[float],
         context_key: str,
-    ) -> Floats:
+    ) -> tuple[Floats, Floats]:
+        """The composed Monte Carlo draws themselves: ``(games, totals)``.
+
+        Split out of :meth:`_compose` so a production build can publish the *games* half of
+        the hurdle - "how many appearances are left" is a quantity a reader of the board
+        asks for directly - without a second draw loop that could disagree with the first.
+        The arithmetic is unchanged; :meth:`_compose` is now this function plus a quantile.
+        """
         weeks = remaining_weeks_of(frame)[:, None]
         streams = normal_draws(
             _row_keys(frame),
@@ -299,7 +316,72 @@ class RosHurdleCandidate:
         games = np.clip(np.rint(rate_function.evaluate(norm_cdf(z_rate)) * weeks), 0.0, weeks)
         per_game = performance_function.evaluate(norm_cdf(z_performance))
         totals = np.where(games > 0.0, games * per_game, 0.0)
+        return games, totals
+
+    def _compose(
+        self,
+        frame: pl.DataFrame,
+        rate_function: QuantileFunction,
+        performance_function: QuantileFunction,
+        *,
+        correlation: float,
+        levels: Sequence[float],
+        context_key: str,
+    ) -> Floats:
+        _, totals = self.compose_draws(
+            frame,
+            rate_function,
+            performance_function,
+            correlation=correlation,
+            context_key=context_key,
+        )
         return np.quantile(totals, list(levels), axis=1).T.astype(np.float64)
+
+    # -- reuse hooks for the production fit ---------------------------------------------
+    #
+    # ADR-078's claim that a production refit runs "the same code path" is only true if the
+    # production fitter calls these rather than reimplementing them. They are thin public
+    # names for the three steps :meth:`fit_predict` already performs, and they add no
+    # behaviour of their own.
+
+    quantile_functions = _quantile_functions
+
+    def fit_production_dependence(
+        self,
+        train: pl.DataFrame,
+        fitted: FittedComponents,
+    ) -> tuple[float, int]:
+        """The copula correlation for a production fit, estimated exactly as a fold's is.
+
+        The same inner chronological split :meth:`fit_predict` uses: components are refitted
+        on the earlier seasons of the training window and the correlation is measured on the
+        later ones, so the dependence is never estimated on the rows that fitted it.
+        """
+        seasons = sorted({int(value) for value in train.get_column("season").to_list()})
+        split = inner_chronological_split(seasons)
+        fit_mask = pl.col("season").is_in(list(split.fit_seasons))
+        inner_fit = train.filter(fit_mask)
+        inner_dependence = train.filter(~fit_mask)
+        if inner_fit.is_empty() or inner_dependence.is_empty():
+            return 0.0, 0
+        features = list(fitted.features)
+        inner_x = design_matrix(inner_fit, features)
+        dependence_x = design_matrix(inner_dependence, features)
+        availability, performance, bounds = self._fit_components(
+            inner_fit,
+            inner_x,
+            levels=fitted.levels,
+            seed=_inner_seed(fitted),
+            feature_names=features,
+        )
+        rate_function, performance_function = self._quantile_functions(
+            availability,
+            performance,
+            dependence_x,
+            levels=fitted.levels,
+            performance_bounds=bounds,
+        )
+        return self._fit_dependence(inner_dependence, rate_function, performance_function)
 
     def fit_components(
         self,

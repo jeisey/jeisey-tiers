@@ -6,7 +6,7 @@
  * filtered CSV` serializes exactly the rows on screen, in the order they are on screen.
  */
 
-import { downloadCsv, exportFilename } from "../data/csv";
+import { downloadCsv, exportFilename, type ExportBoard } from "../data/csv";
 import { artifactUrl } from "../data/load";
 import type { ScoringValue, TeamCount } from "../data/state";
 
@@ -17,13 +17,16 @@ export function ExportControls({
   buildDate,
   filteredCount,
   buildFilteredCsv,
+  throughWeek,
 }: {
-  readonly board: "tiers" | "arbitrage";
+  readonly board: ExportBoard;
   readonly scoring: ScoringValue;
   readonly teams: TeamCount;
   readonly buildDate: string;
   readonly filteredCount: number;
   readonly buildFilteredCsv: () => string;
+  /** Present on an in-season export, so two cutoffs never share a filename. */
+  readonly throughWeek?: number;
 }): React.JSX.Element {
   const fullHref = artifactUrl(`${board}.csv`);
   return (
@@ -36,7 +39,10 @@ export function ExportControls({
         className="button"
         disabled={filteredCount === 0}
         onClick={() => {
-          downloadCsv(exportFilename(board, scoring, teams, buildDate), buildFilteredCsv());
+          downloadCsv(
+            exportFilename(board, scoring, teams, buildDate, throughWeek),
+            buildFilteredCsv(),
+          );
         }}
       >
         {`Export filtered CSV (${String(filteredCount)})`}

@@ -24,7 +24,9 @@
         "market_trend_series",
         "projections",
         "market_snapshot",
-        "player_status"
+        "player_status",
+        "ros_tiers",
+        "inseason_opportunity"
       ]
     },
     "record_schema": {

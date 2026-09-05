@@ -44,6 +44,7 @@ def build_ros_card(
     final: dict[str, Any],
     value: dict[str, Any],
     git_sha: str,
+    production: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assemble the machine-readable card from the committed reports."""
     selection = ros_feature_selection()
@@ -119,7 +120,46 @@ def build_ros_card(
             "tier_penalty": value.get("tiers", {}).get("decision", {}),
             "tier_stability": value.get("tiers", {}).get("stability_decision", {}),
         },
+        # Deliberately **not** an evaluation section (ADR-078). A production fit is scored
+        # on nothing: it reports what it was fitted on and how it can be checked, and every
+        # performance number in this card belongs to the Phase-11 evidence above.
+        "production_fit": _production_fit(production),
         "limitations": _limitations(),
+    }
+
+
+def _production_fit(metadata: dict[str, Any] | None) -> dict[str, Any]:
+    """What the served artifact is, from its own metadata. No performance claim."""
+    if not metadata:
+        return {
+            "fitted": False,
+            "note": (
+                "No production artifact is committed. The architecture is accepted; nothing "
+                "is served until `ffdraft train-ros-production` writes one (ADR-078)."
+            ),
+        }
+    authorization = metadata.get("sealed_season_authorization") or {}
+    return {
+        "fitted": True,
+        "protocol": metadata.get("production_fit_rule_version"),
+        "configuration_hash": metadata.get("configuration_hash"),
+        "artifact_schema": metadata.get("artifact_schema"),
+        "refit_reason": metadata.get("refit_reason"),
+        "training_seasons": metadata.get("training_seasons", []),
+        "training_rows": metadata.get("training_rows"),
+        "serving_season": metadata.get("serving_season"),
+        "fold_id": metadata.get("fold", {}).get("fold_id"),
+        "feature_set_hash": metadata.get("feature_set_hash"),
+        "feature_schema_hash": metadata.get("feature_schema_hash"),
+        "dataset_content_hash": metadata.get("dataset_manifest", {}).get("content_hash"),
+        "dataset_rows": metadata.get("dataset_manifest", {}).get("rows"),
+        "groups": len(metadata.get("groups", [])),
+        "library": metadata.get("library", {}),
+        "generated_at_utc": metadata.get("generated_at_utc"),
+        "git_sha": metadata.get("git_sha"),
+        "sealed_seasons_included": authorization.get("sealed_training_seasons", []),
+        "sealed_authorization_reason": authorization.get("reason"),
+        "carries_performance_claim": False,
     }
 
 
@@ -151,8 +191,9 @@ def _limitations() -> list[str]:
         "climatological 4.5 — though narrower than the baseline's and better scored.",
         "The sealed season is spent. This model's published out-of-time result describes these "
         "exact outputs; any change to them requires a fresh sealed season (ADR-077).",
-        "Phase 11 published nothing. Exposing this model safely, with the ADR-076 disclosures, "
-        "is Phase 12's job.",
+        "The served artifact is a production refit of this architecture on the widest "
+        "permitted window (ADR-078). It carries no performance claim of its own: it was "
+        "scored on nothing, and every number above belongs to the Phase-11 evaluation.",
     ]
 
 
@@ -367,9 +408,53 @@ def card_markdown(card: dict[str, Any]) -> str:
         selected = payload.get("selected", "—") if isinstance(payload, dict) else "—"
         rule = payload.get("rule", "—") if isinstance(payload, dict) else "—"
         lines.append(f"- **{key}**: `{selected}` (rule `{rule}`)")
+    lines.extend(_production_section(card))
     lines.extend(["", "## Known limitations", ""])
     lines.extend(f"- {item}" for item in card["limitations"])
     return "\n".join(lines) + "\n"
+
+
+def _production_section(card: dict[str, Any]) -> list[str]:
+    """What is actually served, and an explicit statement that it was scored on nothing."""
+    fit = card.get("production_fit", {})
+    lines = ["", "## Production fit", ""]
+    if not fit.get("fitted"):
+        lines.extend([str(fit.get("note", "No production artifact is committed.")), ""])
+        return lines
+    seasons = fit.get("training_seasons") or []
+    window = f"{seasons[0]}-{seasons[-1]}" if seasons else "—"
+    lines.extend(
+        [
+            "**This section carries no performance claim.** A production fit is a refit of the "
+            "architecture evaluated above on the widest permitted labelled window (ADR-078); it "
+            "was scored on nothing, and every measured number in this card belongs to the "
+            "Phase-11 evidence. The spent 2025 holdout is not re-scored by it and is not "
+            "reinterpreted as evidence about it.",
+            "",
+            f"- protocol: `{fit.get('protocol')}`",
+            f"- configuration hash: `{fit.get('configuration_hash')}` — the digest of the frozen "
+            "architecture. Two fits on different windows agree here; a tuned parameter does not.",
+            f"- refit reason: `{fit.get('refit_reason')}`",
+            f"- training window: **{window}**, {fit.get('training_rows')} row(s), "
+            f"{fit.get('groups')} fitted group(s)",
+            f"- serving season: **{fit.get('serving_season')}** (fold `{fit.get('fold_id')}`)",
+            f"- feature set / schema: `{fit.get('feature_set_hash')}` / "
+            f"`{fit.get('feature_schema_hash')}`",
+            f"- training data: `{fit.get('dataset_content_hash')}` "
+            f"({fit.get('dataset_rows')} dataset row(s))",
+            f"- libraries: {fit.get('library', {})}",
+            f"- fitted {fit.get('generated_at_utc')} from code `{fit.get('git_sha')}`",
+        ],
+    )
+    sealed = fit.get("sealed_seasons_included") or []
+    if sealed:
+        reason = fit.get("sealed_authorization_reason")
+        lines.append(
+            f"- sealed season(s) inside the window: **{sealed}**, admitted only under the "
+            f"explicit final-evaluation authorization — {reason!r}",
+        )
+    lines.append("")
+    return lines
 
 
 def write_ros_card(
@@ -379,13 +464,20 @@ def write_ros_card(
     value_path: Path,
     out_dir: Path,
     git_sha: str,
+    production_path: Path | None = None,
 ) -> list[Path]:
     """Write `models/cards/intrinsic-ros-v1.{json,md}` from the committed reports."""
+    production = (
+        _read(production_path)
+        if production_path is not None and production_path.is_file()
+        else None
+    )
     card = build_ros_card(
         development=_read(development_path),
         final=_read(final_path),
         value=_read(value_path),
         git_sha=git_sha,
+        production=production,
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []

@@ -49,6 +49,8 @@ import type {
   MarketTrendSeriesRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
+  RosDisclosures,
+  RosTierRecord,
   TierRecord,
 } from "../data/contracts";
 import {
@@ -74,6 +76,7 @@ import {
 import { explainFlags, playerLevelFlags } from "../data/flags";
 import { CONFIDENCE_SHORT, describeGap, describeTrend, marketSourceLabel } from "../data/market";
 import { hasMeaningfulStatus, isNoteworthyRosterStatus, statusBadge } from "../data/model";
+import { longAbsenceLabel, rankChangeLabel } from "../data/ros";
 
 /** The stylesheet's sheet breakpoint. Keep in step with `base.css`. */
 const SHEET_QUERY = "(max-width: 767px)";
@@ -98,6 +101,17 @@ export interface PlayerDetailData {
   readonly market?: string;
   /** Retained ADP history for that market, or null when there is not enough of it. */
   readonly trendSeries?: MarketTrendSeriesRecord | null;
+  /**
+   * This player's rest-of-season row, when an in-season bundle is loaded.
+   *
+   * Shown as its own block, never merged into the preseason numbers above it: the roadmap's
+   * detail panel asks for "Preseason Fair Rank / Current ROS Fair Rank / Change in intrinsic
+   * value" as three separate readouts, because the useful thing is precisely that they are
+   * different quantities that moved.
+   */
+  readonly ros?: RosTierRecord | null;
+  /** ADR-076's sentences, from the in-season artifact. Required wherever the flag is shown. */
+  readonly rosDisclosures?: RosDisclosures | null;
 }
 
 /**
@@ -312,7 +326,7 @@ export function PlayerDetail({
 
   if (data === null) return null;
 
-  const { tier, arbitrage, status, projection } = data;
+  const { tier, arbitrage, status, projection, ros, rosDisclosures } = data;
   const market = data.market ?? CROSS_MARKET;
   const selected = arbitrage === null ? null : comparisonFor(arbitrage, market);
   const consensus = arbitrage === null ? null : consensusOf(arbitrage);
@@ -343,8 +357,9 @@ export function PlayerDetail({
   ]);
 
   /** Sections actually rendered, in order. The index and the tab list both follow this. */
-  const sections: readonly ("intrinsic" | "market" | "status")[] = [
+  const sections: readonly ("intrinsic" | "ros" | "market" | "status")[] = [
     ...(tier !== null ? (["intrinsic"] as const) : []),
+    ...(ros != null ? (["ros"] as const) : []),
     "market",
     "status",
   ];
@@ -353,6 +368,7 @@ export function PlayerDetail({
   // rail's verdict label, and one string should mean one control.
   const tabLabels: Readonly<Record<string, string>> = {
     intrinsic: "Intrinsic value",
+    ros: "Rest of season",
     market: "Draft market",
     status: "Current status",
   };
@@ -397,6 +413,95 @@ export function PlayerDetail({
             p75={tier.p75_vorp}
             p90={tier.p90_vorp}
           />
+        </DetailSection>
+      );
+    }
+    if (kind === "ros" && ros != null) {
+      /*
+        The roadmap's own recommended panel, in its own section: preseason fair rank, current
+        rest-of-season fair rank, and the change between them — three readouts rather than one,
+        because the useful fact is that two *different* quantities disagree, and a single
+        "rank" would erase that. The change is labelled as a difference between two models'
+        orderings wherever it appears.
+      */
+      return (
+        <DetailSection
+          key={kind}
+          index={index}
+          id={id}
+          title="Rest of season"
+          badge={`Week ${String(ros.through_week)}`}
+          tabbed={sheet}
+        >
+          <div className="readout-grid">
+            <Readout
+              label="Preseason fair rank"
+              value={ros.preseason_fair_rank == null ? EM_DASH : formatRank(ros.preseason_fair_rank)}
+              hint="draft model"
+            />
+            <Readout
+              label="Current ROS fair rank"
+              value={formatRank(ros.ros_fair_rank)}
+              hint="rest-of-season model"
+              strong
+            />
+            <Readout
+              label="Change in intrinsic view"
+              value={rankChangeLabel(ros.fair_rank_change)}
+              hint="two models, two orderings"
+            />
+            <Readout
+              label="ROS position rank"
+              value={`${ros.position}${formatRank(ros.ros_position_rank)}`}
+            />
+            <Readout
+              label="ROS tier"
+              value={ros.ros_tier_label ?? EM_DASH}
+              hint="band, not a cut"
+            />
+            <Readout label="ROS median VORP" value={formatValue(ros.ros_vorp_p50)} hint="P50" />
+            <Readout
+              label="ROS P25 – P75 VORP"
+              value={`${formatValue(ros.ros_vorp_p25)} – ${formatValue(ros.ros_vorp_p75)}`}
+            />
+            <Readout label="Remaining points" value={formatValue(ros.ros_expected_points)} />
+            <Readout label="Remaining games" value={ros.ros_expected_games.toFixed(1)} />
+            <Readout label="ROS uncertainty" value={formatValue(ros.ros_uncertainty)} />
+            <Readout
+              label="Games played to date"
+              value={formatValue(ros.games_played_to_date)}
+            />
+            <Readout
+              label="Weeks since last game"
+              value={
+                ros.has_played_this_season
+                  ? String(Math.round(ros.weeks_since_last_game))
+                  : "No appearances"
+              }
+            />
+          </div>
+          <Distribution
+            title="Simulated remaining VORP · P10 → P90"
+            meta={`Through week ${String(ros.through_week)}`}
+            p10={ros.ros_vorp_p10}
+            p25={ros.ros_vorp_p25}
+            p50={ros.ros_vorp_p50}
+            p75={ros.ros_vorp_p75}
+            p90={ros.ros_vorp_p90}
+          />
+          {ros.long_absence && (
+            <div className="notice" data-severity="info" role="note" style={{ marginTop: "0.75rem" }}>
+              <strong>{longAbsenceLabel(ros)}</strong>
+              <p style={{ marginTop: "0.5rem" }}>
+                {rosDisclosures?.long_absence_statement ??
+                  "This estimate uses no injury or practice-report information."}
+              </p>
+              <p style={{ marginTop: "0.5rem" }}>
+                {rosDisclosures?.long_absence_ordering_weakness ??
+                  "Ranking quality inside this group is weak."}
+              </p>
+            </div>
+          )}
         </DetailSection>
       );
     }

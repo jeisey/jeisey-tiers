@@ -656,3 +656,142 @@ accept an exact normalized match when collision-free, accept a fuzzy match only 
 92 **and** margin 6, quarantine everything else with a reason, and surface the top-300 tail
 separately from the aggregate. The continuation gate is 90%; the measured 2026-09-02 result
 was 222/222.
+
+---
+
+## 16. Phase-12 contracts — the in-season bundle
+
+### 16.1 Two bundles, not one build
+
+The draft bundle and the in-season bundle are produced by **different models at different
+cutoffs on different cadences**. They therefore carry different build ids, are validated
+independently, and are described by two metadata files:
+
+```text
+build_metadata.json        the draft bundle: tiers, arbitrage, projections, status, trend
+ros_build_metadata.json    the in-season bundle: ros_tiers, inseason_opportunity
+```
+
+A directory holding either bundle alone is a legitimate shape, and so is one holding both.
+`validate-artifacts` validates whichever are present and compares a build id only *within* a
+bundle: a site legitimately serves a Tuesday draft board beside a Monday rest-of-season one,
+and a validator that insisted otherwise would be enforcing a fiction.
+
+### 16.2 `ros_tier_record` — rest of season, and never the preseason quantity
+
+Every value-bearing field is named `ros_*`, and none of them is the preseason field of the
+same shape. A rest-of-season fair rank comes from a different model (`intrinsic-ros-v1`), over
+a different horizon (the weeks that are left), against a different replacement baseline — the
+best player nobody **rosters**, not the best nobody starts (ADR-071).
+
+The naming *is* the guard. A reader who sees `fair_rank` is entitled to assume it is the draft
+one, so this record never uses that name, and the frontend column headers do not either.
+
+| field | meaning |
+|---|---|
+| `through_week` | the cutoff. Weeks 1..N of this season are the only in-season evidence behind every number in the row (`ros_cutoff_v1`). |
+| `ros_fair_rank`, `ros_position_rank` | the published rest-of-season order. |
+| `ros_tier`, `ros_tier_label` | a **band**, not a line (ADR-074). Null for a surfaced player, who has a fair rank and no tier rather than a fabricated one. |
+| `ros_expected_vorp`, `ros_vorp_p10..p90` | remaining value above the in-season replacement baseline. |
+| `ros_expected_points`, `ros_points_p10/p50/p90` | remaining fantasy points in the row's own scoring preset. |
+| `ros_expected_games` | expected remaining appearances, from the availability half of the hurdle over the same draws the points came from. |
+| `preseason_fair_rank`, `fair_rank_change` | the draft board's rank and the difference. A difference between **two models' orderings**, labelled as such wherever it is shown. Null when no draft board was supplied. |
+| `current_status` | annotation. Joined after every value exists, from a registry the model path never touches (ADR-043). |
+
+### 16.3 The long-absence disclosure contract (ADR-076)
+
+Six clauses, and they are properties of the **data** rather than of a renderer, so a surface
+cannot publish the flag without the sentences that qualify it:
+
+1. `long_absence` is a machine-readable per-row flag, set by exactly the condition the
+   Phase-11 cohort is defined by: `has_played_this_season` **and**
+   `consecutive_weeks_missed >= 3`. `ros.long_absence_definition` asserts both directions —
+   a flag set without the condition and a condition without the flag are both critical.
+2. `weeks_since_last_game` is published beside it, so the claim is checkable rather than
+   asserted.
+3. `ros_build_metadata.disclosures.long_absence_statement` says, in the artifact, that the
+   estimate uses **no injury or practice-report information** and infers absence from
+   appearances alone. `uses_injury_information` is a schema `const: false`, because it is a
+   property of the model rather than an observation about a build.
+4. The honest phrasing is "has not appeared for N weeks". Nothing in the artifact or the
+   interface presents the flag as a status, a designation or medical knowledge.
+5. It is never encoded by colour alone: the badge carries a glyph, the week count as text and
+   a full sentence for assistive technology before it carries a colour.
+6. `long_absence_ordering_weakness` publishes the measured weakness — Spearman **0.311**
+   within this cohort against **0.797** on the full universe — beside the rows it applies to,
+   not in a document a reader has to go and find.
+
+`ros_build_metadata.long_absence_count` checks the disclosed count against the published rows,
+so the two cannot drift.
+
+### 16.4 `inseason_opportunity_record` — behaviour beside value, never mixed into it
+
+The rule this record exists to make checkable:
+
+> Behaviour may decide whether a player is **surfaced**. It may never change his projection,
+> his remaining VORP, his fair rank, or his tier.
+
+Every intrinsic column is **copied** from the `ros_tiers` row for the same player. Nothing in
+the opportunity build computes an intrinsic value, so nothing in it can modify one — and
+`cross_artifact.intrinsic_firewall` compares all seven copied fields over the published bytes.
+This is the market-firewall audit in its in-season form.
+
+What the behaviour columns are, exactly:
+
+- `add_count` / `drop_count` are **counts of transactions** inside `behavior_lookback_hours`,
+  which is the window **requested**: Sleeper publishes no window and no observation time of
+  its own, so `behavior_snapshot_at_utc` is a retrieval time and is recorded as one.
+- `net_add_count` is the one difference the board takes, and it is legitimate for a narrow
+  reason: both sides are the same unit, over the same window, from the same feed, at the same
+  moment.
+- `add_rank` / `drop_rank` order **the feed itself**. They are not draft ranks and are never
+  differenced against `ros_fair_rank`: two orderings of different populations by different
+  criteria have no meaningful difference, and one would look like an edge.
+- `behavior_available: false` means the columns are **null, not zero**. A zero claims nobody
+  added him; null says we do not know, which is the true statement.
+
+There is no combined score on this board. A single number mixing a rank and a count would
+imply a common unit the product does not have.
+
+### 16.5 Season state and freshness, on the artifact
+
+`ros_build_metadata` carries the two derived rules so a board can be read against them:
+
+- `season_state` — `season_state_v1`'s verdict: the state, the product mode, the completed
+  week and when the answer next changes. Derived from the NFL schedule, never from a date.
+- `source_freshness` — `ros_source_freshness_v1`'s verdict: the deepest week whose upstream
+  data is complete, the schedule's completed week, and the first week that blocked a deeper
+  cutoff. The two are different questions and the artifact reports both.
+
+`simulation` carries the frozen parameters **with their verdicts**: 10,000 draws marked as a
+declared fallback rather than a converged count, and a tier stability gate marked `fail`
+(ADR-074). A board that reported the parameters without the verdicts would overstate them.
+
+### 16.6 `build_metadata.season_state` — the season, on the artifact that always exists
+
+`ros_build_metadata` only exists when a rest-of-season board does. That is the right shape for
+the board's own provenance and the wrong shape for the *season*, because a season has two
+windows in which it has started and no board exists: between the first kickoff and the first
+published week, and after the last scored week (ADR-079).
+
+The **draft** build runs in every state, so its metadata carries the block:
+
+| field | meaning |
+|---|---|
+| `rule_version` | `season_state_v1` |
+| `state` | `preseason_draft` / `regular_season` / `fantasy_postseason` / `season_complete` |
+| `product_mode` | `draft` / `in_season` |
+| `completed_week` | the deepest week whose games are over; 0 before any |
+| `latest_snapshot_week` | the deepest cutoff the rule permits, or `null` |
+| `ros_board_expected` | whether a rest-of-season board should exist **right now** |
+| `note` | the build's own sentence about why this is the state |
+
+`ros_board_expected` is the field a reader should use, and it is **not** "has the season
+started". The frontend renders `note` verbatim rather than composing a sentence of its own, so
+the page cannot describe a state the build did not report.
+
+The block is optional: a build older than ADR-079 carries none, and a page that finds none
+says only which boards it holds. It is deliberately a block on an existing artifact rather
+than a `season_state.json` of its own — a second file would be a second schema, a second
+fetch, a second 404 path and a second way for two published files to disagree about one
+season.
