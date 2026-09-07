@@ -276,6 +276,13 @@ Contiguous segmentation only. It consumes ranked intrinsic distribution summarie
 
 Cohort catalogue and the frozen sufficiency rule, point-in-time capture, the snapshot manifest, cohort measurement, market trend, and the current price layer. **Market data only**; the boundary in 3.1 is enforced against this package by name.
 
+`history.py` is the retained-history path, and it is deliberately **one** path for every ADP
+source: store → trailing window → observations per cohort → `phase5_trend_v1`. `current.py`
+(MyFantasyLeague) and `extra.py` (every other enabled source) both build a `RetainedHistory`
+through it, so a second market cannot end up with a price and no past — which is exactly what
+happened while `extra.py` read only the newest snapshot (ADR-081). Adding a third ADP source
+needs a capture adapter and nothing here.
+
 ### `retention/`
 
 The append-only, content-addressed capture store: immutable timestamped directories, fail-closed rewrites, deterministic gzip and JSON. Source-neutral on purpose, so market snapshots and status captures share one mechanism without importing each other.

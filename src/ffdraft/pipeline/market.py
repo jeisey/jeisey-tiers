@@ -16,6 +16,7 @@ is one-directional by construction:
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -30,13 +31,14 @@ from ffdraft.arbitrage.frozen import (
 from ffdraft.artifacts import record_schema_version, write_artifact, write_build_metadata
 from ffdraft.config import AppConfig, load_app_config
 from ffdraft.contracts import QualityCheck
-from ffdraft.contracts.enums import Severity, SourceStatus
+from ffdraft.contracts.enums import MarketSignalType, Severity, SourceStatus
 from ffdraft.market.cohorts import assignments_from_report
-from ffdraft.market.current import build_current_market, load_trend_window
+from ffdraft.market.current import build_current_market
 from ffdraft.market.extra import load_extra_quotes
+from ffdraft.market.history import RetainedHistory, load_trend_window
 from ffdraft.market.snapshot import MarketSnapshotStore
 from ffdraft.market.surface import build_surface_universe, coverage_checks
-from ffdraft.market.trend import TREND_RULE, observations_from_snapshots, trend_series_records
+from ffdraft.market.trend import TREND_RULE, trend_series_records
 from ffdraft.quality import QualityGate
 from ffdraft.sources.ffc import FFC_SOURCE_ID
 from ffdraft.sources.market import MFL_SOURCE_ID
@@ -82,6 +84,9 @@ class ArbitrageBuildResponse:
     trend_available: bool = False
     trend_history_keys: tuple[str, ...] = ()
     trend_series: list[dict[str, Any]] = field(default_factory=list)
+    #: Which markets the published history actually covers. A source that priced the board
+    #: but has no retained window is absent here, which is the fact the card needs.
+    trend_series_sources: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
     written: list[Path] = field(default_factory=list)
     gate: QualityGate = field(default_factory=QualityGate)
@@ -161,6 +166,7 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         source_ids=request.extra_source_ids,
         now=stamped,
         gate=gate,
+        league_sizes=sorted(set(league_sizes.values())),
     )
 
     # The surface rule needs the whole board, so it runs only when `build-current` handed one
@@ -229,6 +235,19 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         trend_history_keys=market.trend_history_keys,
         gate=gate,
     )
+    # Every retained ADP source contributes its own history, MyFantasyLeague included. Until
+    # this was a list, it was one source's window passed by hand, and the second market's
+    # chart could not exist however many snapshots the store held (ADR-081).
+    response.trend_series = _trend_series(
+        [market.retained, *(extra.histories[source] for source in sorted(extra.histories))],
+        arbitrage_records=result.records,
+        build_id=build_id,
+        league_sizes=league_sizes,
+    )
+    response.trend_series_sources = tuple(
+        sorted({str(record["market_source_id"]) for record in response.trend_series}),
+    )
+
     response.metadata = _merge_metadata(
         metadata,
         response=response,
@@ -237,14 +256,7 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         selection=selection,
         git_sha=request.git_sha,
         gate=gate,
-    )
-
-    response.trend_series = _trend_series(
-        history,
-        market=market,
-        tier_records=tier_records,
-        build_id=build_id,
-        league_sizes=league_sizes,
+        extra_sources=extra.sources,
     )
 
     if request.write and gate.passed:
@@ -283,50 +295,70 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
 
 
 def _trend_series(
-    history: list[Any],
+    histories: Sequence[RetainedHistory | None],
     *,
-    market: Any,
-    tier_records: list[dict[str, Any]],
+    arbitrage_records: Sequence[Mapping[str, Any]],
     build_id: str,
     league_sizes: dict[str, int],
 ) -> list[dict[str, Any]]:
-    """One history series per published player, per preset block.
+    """One history series per source, per player **that source priced**, per preset block.
 
-    Restricted to players the board actually shows. A series for a player no card can open is
-    weight every visitor downloads for nothing, and the restriction is by published row
-    rather than by tier depth so a market-surfaced exception keeps its chart.
+    Scoped by the published arbitrage rows rather than by the tier board, and per source
+    rather than per player. That is narrower than it first looks, and both halves matter:
+
+    * *per player* keeps ADR-066's rule that a series for a card nobody can open is weight
+      every visitor downloads for nothing — and, because the scope is the arbitrage row, a
+      market-surfaced exception (ADR-063) keeps his chart;
+    * *per source* is the half a single-market build could not have needed. The trailing
+      window is seven days wide, so it holds players a source priced on Tuesday and dropped
+      by Friday. Charting those would put a history under a market that has no current price
+      for him — which the card would render as "no FFC ADP" beside an FFC line. Found by the
+      cross-artifact check on a real 2026 build, on 20 players (ADR-081).
+
+    **The artifact stays source-specific.** A player both markets price gets two records —
+    one FFC, one MyFantasyLeague — carrying their own cohorts, their own points and their own
+    slopes. There is deliberately no ``cross`` record: a synthetic cross-market ADP history
+    would be a line no capture produced, and the cross view's job is to show the two real
+    series beside each other rather than to average them away.
     """
-    if not history:
-        return []
     schema_version = record_schema_version("market_trend_series")
-    published: dict[tuple[str, str], set[str]] = {}
-    for record in tier_records:
-        key = (str(record["league_preset_id"]), str(record["scoring_preset"]))
-        published.setdefault(key, set()).add(str(record["player_id"]))
+    priced: dict[tuple[str, str, str], set[str]] = {}
+    for record in arbitrage_records:
+        block = (str(record["league_preset_id"]), str(record["scoring_preset"]))
+        for entry in record.get("markets") or ():
+            if str(entry.get("market_signal_type")) != str(MarketSignalType.ADP):
+                continue
+            priced.setdefault((*block, str(entry["source_id"])), set()).add(
+                str(record["player_id"]),
+            )
 
     records: list[dict[str, Any]] = []
-    for (preset_id, scoring), players in sorted(published.items()):
-        league_size = league_sizes.get(preset_id)
-        if league_size is None:
+    for history in histories:
+        if history is None or history.is_empty:
             continue
-        assignment = market.assignments.get((scoring, league_size))
-        if assignment is None:
-            continue
-        cohort_id = assignment.cohort.cohort_id
-        records.extend(
-            trend_series_records(
-                observations_from_snapshots(history, cohort_id=cohort_id),
-                trends=market.trend_by_cohort.get(cohort_id, {}),
-                build_id=build_id,
-                market_source_id=market.source_id,
-                scoring_preset=scoring,
-                league_preset_id=preset_id,
-                cohort_id=cohort_id,
-                window_days=TREND_RULE.window_days,
-                schema_version=schema_version,
-                players=players,
-            ),
-        )
+        for (preset_id, scoring, source_id), players in sorted(priced.items()):
+            if source_id != history.source_id:
+                continue
+            league_size = league_sizes.get(preset_id)
+            if league_size is None:
+                continue
+            cohort_id = history.cohort_for(scoring, league_size)
+            if cohort_id is None:
+                continue
+            records.extend(
+                trend_series_records(
+                    history.observations_for(cohort_id),
+                    trends=history.trends_for(cohort_id),
+                    build_id=build_id,
+                    market_source_id=history.source_id,
+                    scoring_preset=scoring,
+                    league_preset_id=preset_id,
+                    cohort_id=cohort_id,
+                    window_days=history.rule.window_days,
+                    schema_version=schema_version,
+                    players=players,
+                ),
+            )
     return records
 
 
@@ -382,6 +414,7 @@ def _merge_metadata(
     selection: dict[str, Any],
     git_sha: str | None,
     gate: QualityGate,
+    extra_sources: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     """Add the arbitrage block to the intrinsic build's metadata, keeping everything else.
 
@@ -428,6 +461,29 @@ def _merge_metadata(
         "trend_rule_version": TREND_RULE.version,
         "trend_available": response.trend_available,
         "trend_history_snapshots": len(response.trend_history_keys),
+        # Per source, because "is there a chart?" is a per-source question and answering it
+        # with MyFantasyLeague's number is exactly how a real FFC history went unnoticed
+        # (ADR-081). A source listed here with `series: false` priced the board and has no
+        # retained window; one with `trend_available: false` has a window whose span has not
+        # yet reached the frozen rule, which is a different and temporary state.
+        "trend_sources": [
+            {
+                "source_id": market.source_id,
+                "snapshots": len(response.trend_history_keys),
+                "trend_available": response.trend_available,
+                "series": market.source_id in response.trend_series_sources,
+            },
+            *(
+                {
+                    "source_id": str(entry["source_id"]),
+                    "snapshots": int(entry.get("trend_history_snapshots", 0)),
+                    "trend_available": bool(entry.get("trend_available", False)),
+                    "series": str(entry["source_id"]) in response.trend_series_sources,
+                }
+                for entry in extra_sources
+                if entry.get("status") == "priced"
+            ),
+        ],
         "assignments": [
             {
                 "scoring_preset": assignment.scoring_preset,

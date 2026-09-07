@@ -85,7 +85,14 @@ from ffdraft.market.surface import (
     SurfaceEntry,
     SurfaceUniverse,
 )
-from ffdraft.market.trend import INSUFFICIENT_TREND_HISTORY, TREND_RULE
+from ffdraft.market.trend import (
+    INSUFFICIENT_TREND_HISTORY,
+    TREND_RULE,
+    TrendObservation,
+    TrendResult,
+    compute_trends,
+    trend_series_records,
+)
 from ffdraft.quality import QualityGate, check_source_freshness
 from ffdraft.quality.forbidden import (
     audit_intrinsic_feature_names,
@@ -145,6 +152,78 @@ FIXTURE_SLEEPER_COVERAGE_MINIMUM = 0.80
 
 _LAUNCH_PRESETS = ("redraft-10", "redraft-12")
 _SCORING_PRESET = ScoringPreset.PPR
+
+
+@dataclass(frozen=True, slots=True)
+class _HistoryPlan:
+    """A deterministic synthetic capture cadence for one fixture market.
+
+    The fixture has one capture, so its retained history is generated. What it must *not* be
+    is generated the same way for both markets: a fixture whose two sources had the same
+    history could not tell a consumer reading the wrong one from a consumer reading the right
+    one, which is how the second market shipped with no chart at all (ADR-081).
+    """
+
+    #: Hours before the fixture snapshot at which this source was "captured", newest last.
+    hours: tuple[float, ...]
+    #: Picks per day the walk drifts. Different per source, so the two lines differ in shape
+    #: as well as in length.
+    drift_per_day: float
+
+
+#: MyFantasyLeague: six daily captures spanning five days. Clears `phase5_trend_v1` — three
+#: observation days spanning three days — so the fixture carries a market **with** a slope.
+_MFL_HISTORY = _HistoryPlan(hours=(120.0, 96.0, 72.0, 48.0, 24.0, 0.0), drift_per_day=0.25)
+
+#: Fantasy Football Calculator: five captures, two of them on one calendar day, spanning
+#: 62 hours. Four observation days — enough — over 2.58 days of span, which is **not**.
+#:
+#: This is the production state on the day the bug was found: a real retained history whose
+#: elapsed span had not yet reached three days. The chart must draw those five observations
+#: and the scalar must stay null, and a fixture in which both markets qualified could not
+#: express the difference between "no evidence" and "not yet enough elapsed time".
+_FFC_HISTORY = _HistoryPlan(hours=(62.0, 55.0, 38.0, 19.0, 0.0), drift_per_day=0.4)
+
+_FIXTURE_HISTORY_PLANS: Mapping[str, _HistoryPlan] = {
+    MFL_SOURCE_ID: _MFL_HISTORY,
+    FFC_SOURCE_ID: _FFC_HISTORY,
+}
+
+
+def _fixture_history(
+    *,
+    source_id: str,
+    player_id: str,
+    cohort_id: str,
+    latest_adp: float,
+    snapshot_at: datetime,
+) -> tuple[list[TrendObservation], TrendResult | None]:
+    """One player's synthetic retained walk for one source, and its frozen trend.
+
+    The walk ends **on** the fixture snapshot at the published ADP, so the chart's latest
+    reading and the card's ADP readout are the same number by construction — which is what
+    the artifact verifier compares. The slope is not fabricated: it comes from the real
+    :func:`~ffdraft.market.trend.compute_trends` over these points, so the fixture cannot
+    claim a trend the frozen rule would refuse.
+    """
+    plan = _FIXTURE_HISTORY_PLANS.get(source_id)
+    if plan is None:
+        return [], None
+    # Signed from the player id, so the fixture contains both directions and neither is the
+    # one a test happens to look at first.
+    rising = sum(ord(char) for char in player_id) % 2 == 0
+    step = plan.drift_per_day if rising else -plan.drift_per_day
+    observations = [
+        TrendObservation(
+            player_id=player_id,
+            cohort_id=cohort_id,
+            observed_at=snapshot_at - timedelta(hours=offset),
+            market_adp=max(0.1, round(latest_adp + step * (offset / 24.0), 2)),
+        )
+        for offset in sorted(plan.hours, reverse=True)
+    ]
+    trends = compute_trends(observations, now=snapshot_at, cohort_id=cohort_id, rule=TREND_RULE)
+    return observations, trends.get(player_id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -368,13 +447,7 @@ def run_fixture_pipeline(
         build_id=build_id,
         snapshot_at=now,
     )
-    trend_series = _trend_series_records(
-        arbitrage,
-        assignment=assignment,
-        source_id=market_batch.source_id,
-        build_id=build_id,
-        snapshot_at=now,
-    )
+    trend_series = _trend_series_records(arbitrage, build_id=build_id, snapshot_at=now)
 
     status = _player_status_records(
         registry=registry,
@@ -1052,76 +1125,66 @@ def _arbitrage_records(
 def _trend_series_records(
     arbitrage: Sequence[Mapping[str, Any]],
     *,
-    assignment: CohortAssignment,
-    source_id: str,
     build_id: str,
     snapshot_at: datetime,
 ) -> list[dict[str, Any]]:
-    """A synthetic retained history for the fixture board (ADR-066).
+    """A synthetic retained history **per market**, for the fixture board (ADR-066/081).
 
-    The production series comes from real snapshots taken on real days; a fixture has one
-    capture, so the history is generated deterministically from each player's published ADP.
-    That is enough for what this artifact is *for* here — pinning the contract, and giving
-    the frontend a shape to render — and it is labelled a fixture everywhere the fixture
-    build is labelled one.
+    Derived from the published arbitrage records rather than from the market objects that
+    produced them, so what this artifact says about a source is exactly what that source's
+    entry in ``markets`` says: same ADP, same cohort, same slope. The earlier version of this
+    function generated a series for the primary source only, which is why a whole second
+    market could ship with no chart and every test still pass.
 
-    The walk is deterministic per player, so the golden artifact is byte-stable across runs:
-    a fixture that changed on every build would make the golden comparison worthless.
+    The walk is deterministic per player and per source, so the golden artifact is
+    byte-stable: a fixture that changed on every build would make the golden comparison
+    worthless.
     """
     from ffdraft.artifacts import record_schema_version
-    from ffdraft.market.trend import TREND_RULE, TrendObservation, TrendResult, trend_series_records
 
     schema_version = record_schema_version("market_trend_series")
-    days = 6
-    observations: list[TrendObservation] = []
-    trends: dict[str, TrendResult] = {}
+    records: list[dict[str, Any]] = []
     for row in arbitrage:
-        player_id = str(row["player_id"])
-        latest = float(row["market_adp"])
-        # A gentle drift whose sign depends on the player id, so the fixture contains both
-        # directions and neither is the one a test happens to look at first.
-        step = 0.25 if sum(ord(char) for char in player_id) % 2 == 0 else -0.25
-        for index in range(days):
-            offset = days - 1 - index
-            observations.append(
-                TrendObservation(
-                    player_id=player_id,
-                    cohort_id=assignment.cohort.cohort_id,
-                    observed_at=snapshot_at - timedelta(days=offset),
-                    market_adp=max(0.1, latest + step * offset),
+        # A Release 1 row carries no `markets` array; its one source is the flat pair.
+        quotes: list[tuple[str, str, float]] = [
+            (
+                str(entry["source_id"]),
+                str(entry["market_cohort_id"]),
+                float(entry["market_adp"]),
+            )
+            for entry in row.get("markets") or ()
+            if entry.get("market_signal_type") == str(MarketSignalType.ADP)
+            and entry.get("market_adp") is not None
+        ] or [
+            (
+                str(row["market_source_id"]),
+                str(row["market_cohort_id"]),
+                float(row["market_adp"]),
+            ),
+        ]
+        for source_id, cohort_id, latest_adp in quotes:
+            observations, trend = _fixture_history(
+                source_id=source_id,
+                player_id=str(row["player_id"]),
+                cohort_id=cohort_id,
+                latest_adp=latest_adp,
+                snapshot_at=snapshot_at,
+            )
+            if not observations:
+                continue
+            records.extend(
+                trend_series_records(
+                    observations,
+                    trends={str(row["player_id"]): trend} if trend is not None else {},
+                    build_id=build_id,
+                    market_source_id=source_id,
+                    scoring_preset=str(row["scoring_preset"]),
+                    league_preset_id=str(row["league_preset_id"]),
+                    cohort_id=cohort_id,
+                    window_days=TREND_RULE.window_days,
+                    schema_version=schema_version,
                 ),
             )
-        trends[player_id] = TrendResult(
-            player_id=player_id,
-            cohort_id=assignment.cohort.cohort_id,
-            trend=round(step, 2),
-            observation_days=days,
-            span_days=float(days - 1),
-            observations=days,
-        )
-
-    records: list[dict[str, Any]] = []
-    blocks = {(str(r["league_preset_id"]), str(r["scoring_preset"])) for r in arbitrage}
-    for preset_id, scoring in sorted(blocks):
-        players = {
-            str(r["player_id"])
-            for r in arbitrage
-            if str(r["league_preset_id"]) == preset_id and str(r["scoring_preset"]) == scoring
-        }
-        records.extend(
-            trend_series_records(
-                observations,
-                trends=trends,
-                build_id=build_id,
-                market_source_id=source_id,
-                scoring_preset=scoring,
-                league_preset_id=preset_id,
-                cohort_id=assignment.cohort.cohort_id,
-                window_days=TREND_RULE.window_days,
-                schema_version=schema_version,
-                players=players,
-            ),
-        )
     return records
 
 
@@ -1151,6 +1214,18 @@ def _fixture_ffc_quotes(
         # alternating term, so some rows are cheaper on FFC and some dearer.
         offset = round(price.market_adp * 0.08 + (1.5 if index % 2 else -2.5), 1)
         adp = max(1.0, round(price.market_adp - offset, 1))
+        cohort_id = f"ffc-{scoring.lower()}"
+        # FFC's own retained walk, under the same frozen rule. It has five real observations
+        # over four calendar days and 2.58 days of span, so the slope is `None` while the
+        # chart has something to draw — the state production was in, and the state no
+        # fixture in this repository could previously express (ADR-081).
+        _observations, trend = _fixture_history(
+            source_id=FFC_SOURCE_ID,
+            player_id=player_id,
+            cohort_id=cohort_id,
+            latest_adp=adp,
+            snapshot_at=price.snapshot_at_utc,
+        )
         quotes[(scoring, player_id)] = SourceQuote(
             source_id=FFC_SOURCE_ID,
             signal_type=MarketSignalType.ADP,
@@ -1165,9 +1240,13 @@ def _fixture_ffc_quotes(
             league_size=None,
             aggregation_window_type="rolling",
             aggregation_window_days=7,
-            cohort_id=f"ffc-{scoring.lower()}",
+            cohort_id=cohort_id,
             cohort_detail=f"format={scoring.lower()}",
             snapshot_at_utc=isoformat_utc(price.snapshot_at_utc),
+            market_trend=trend.trend if trend is not None else None,
+            quality_flags=(
+                trend.quality_flags if trend is not None else (INSUFFICIENT_TREND_HISTORY,)
+            ),
         )
     return quotes
 
@@ -1236,11 +1315,23 @@ def _surfaced_price(
     Drafted far earlier than his fair rank, which is the whole reason the surface rule
     rescues him: a large positive `rank_gap` is what makes him worth showing.
     """
+    adp = float(int(row["fair_rank"]) - 30)
+    # A surfaced player keeps his chart: ADR-066 scopes the series by *published row* rather
+    # than by tier depth precisely so a market-surfaced exception is not the one card with
+    # no history.
+    _observations, trend = _fixture_history(
+        source_id=MFL_SOURCE_ID,
+        player_id=str(row["player_id"]),
+        cohort_id=assignment.cohort.cohort_id,
+        latest_adp=adp,
+        snapshot_at=snapshot_at,
+    )
+    trend_flags = trend.quality_flags if trend is not None else (INSUFFICIENT_TREND_HISTORY,)
     return MarketPrice(
         player_id=str(row["player_id"]),
         scoring_preset=str(row["scoring_preset"]),
         league_size=assignment.league_size,
-        market_adp=float(int(row["fair_rank"]) - 30),
+        market_adp=adp,
         market_rank=int(row["fair_rank"]) - 30,
         sample_size=420,
         adp_low=float(int(row["fair_rank"]) - 45),
@@ -1254,13 +1345,13 @@ def _surfaced_price(
         snapshot_at_utc=snapshot_at,
         snapshot_stale=False,
         secondary_bridge_only=False,
-        market_trend=None,
-        trend_flags=(INSUFFICIENT_TREND_HISTORY,),
+        market_trend=trend.trend if trend is not None else None,
+        trend_flags=tuple(trend_flags),
         # The same cohort flags every other price carries. A surfaced player is priced from
         # the same snapshot and the same cohort as everyone else — only his *visibility* is
         # decided differently — so a row of his that dropped `cohort_approximate` would be
         # claiming a cohort exactness the build never had.
-        quality_flags=tuple(sorted({INSUFFICIENT_TREND_HISTORY, *assignment.quality_flags})),
+        quality_flags=tuple(sorted({*trend_flags, *assignment.quality_flags})),
     )
 
 
@@ -1285,8 +1376,19 @@ def _fixture_price(
         flags.add(WIDE_MARKET_RANGE)
     if secondary:
         flags.add(SECONDARY_IDENTITY_BRIDGE_ONLY)
-    # The fixture has one snapshot, so trend history can never be sufficient (ADR-042).
-    flags.add(INSUFFICIENT_TREND_HISTORY)
+    # The trend the fixture's own synthetic retained window produces, under the real frozen
+    # rule. Earlier this was hardcoded null while `market_trend_series.json` published a
+    # fabricated slope for the same player — two fixture artifacts disagreeing about one
+    # number, which is precisely what the cross-artifact check now refuses (ADR-081).
+    _observations, trend = _fixture_history(
+        source_id=str(row["source_id"]),
+        player_id=player_id,
+        cohort_id=assignment.cohort.cohort_id,
+        latest_adp=float(row["average_pick"]),
+        snapshot_at=snapshot_at,
+    )
+    trend_flags = trend.quality_flags if trend is not None else (INSUFFICIENT_TREND_HISTORY,)
+    flags.update(trend_flags)
     return MarketPrice(
         player_id=player_id,
         scoring_preset=scoring,
@@ -1305,8 +1407,8 @@ def _fixture_price(
         snapshot_at_utc=snapshot_at,
         snapshot_stale=False,
         secondary_bridge_only=secondary,
-        market_trend=None,
-        trend_flags=(INSUFFICIENT_TREND_HISTORY,),
+        market_trend=trend.trend if trend is not None else None,
+        trend_flags=tuple(trend_flags),
         quality_flags=tuple(sorted(flags)),
     )
 

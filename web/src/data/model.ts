@@ -72,7 +72,8 @@ export class ArtifactIndex {
   readonly hasPlayerStatus: boolean;
   readonly hasProjections: boolean;
   readonly hasTrendSeries: boolean;
-  private readonly trendByBlockPlayer: Map<string, MarketTrendSeriesRecord>;
+  /** Every source's series for one block and player. Source-keyed inside, never selection-keyed. */
+  private readonly trendsByBlockPlayer: Map<string, MarketTrendSeriesRecord[]>;
 
   constructor(bundle: ArtifactBundle) {
     this.metadata = bundle.metadata;
@@ -117,28 +118,29 @@ export class ArtifactIndex {
     for (const record of bundle.playerStatus ?? []) statusByPlayer.set(record.player_id, record);
     this.statusByPlayer = statusByPlayer;
 
-    const trendByBlockPlayer = new Map<string, MarketTrendSeriesRecord>();
+    const trendsByBlockPlayer = new Map<string, MarketTrendSeriesRecord[]>();
     for (const record of bundle.trendSeries ?? []) {
       const key = blockKey(record.league_preset_id, record.scoring_preset);
-      trendByBlockPlayer.set(`${key}|${record.market_source_id}|${record.player_id}`, record);
+      pushInto(trendsByBlockPlayer, `${key}|${record.player_id}`, record);
     }
-    this.trendByBlockPlayer = trendByBlockPlayer;
+    this.trendsByBlockPlayer = trendsByBlockPlayer;
   }
 
   /**
-   * One player's retained ADP history for one source, or null.
+   * Every market's retained history for one player, in one lookup.
    *
-   * Keyed by source as well as by player because the history *is* source-specific: switching
-   * the market selector must change the chart, not relabel it (roadmap 10.7).
+   * This used to take a `sourceId` and return one record, and the App passed it the market
+   * *selection* — so `"cross"` was looked up in an index keyed by real source ids and could
+   * only ever miss, which is why the cross-market view had no chart at all. There is no
+   * `cross` source and there never will be: the caller filters what it wants from these, and
+   * the cross view overlays the real series rather than synthesizing one (ADR-081).
    */
-  trendSeries(
+  trendSeriesFor(
     leaguePresetId: string,
     scoring: ScoringPreset,
-    sourceId: string,
     playerId: string,
-  ): MarketTrendSeriesRecord | null {
-    const key = `${blockKey(leaguePresetId, scoring)}|${sourceId}|${playerId}`;
-    return this.trendByBlockPlayer.get(key) ?? null;
+  ): readonly MarketTrendSeriesRecord[] {
+    return this.trendsByBlockPlayer.get(`${blockKey(leaguePresetId, scoring)}|${playerId}`) ?? [];
   }
 
   /** Preset blocks the build actually published, so a control can offer only what exists. */

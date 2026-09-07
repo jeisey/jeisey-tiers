@@ -67,9 +67,13 @@ test("the player card becomes a sheet, with the draft-critical readouts above th
    * actually wants — the arbitrage score, and the status line. That is one more draft-critical
    * fact than Phase 8 showed without scrolling, not one fewer.
    */
-  for (const label of ["Fair rank", "Market verdict", "Arbitrage score", "Status"]) {
+  for (const label of ["Fair rank", "Arbitrage score", "Status"]) {
     await expect(dialog.getByText(label, { exact: true })).toBeInViewport();
   }
+  // The verdict names the market whose gap it prints, so it is matched by shape: the rail
+  // used to show the flat V1 gap — MyFantasyLeague's — beneath a sentence computed from the
+  // selected market, and the two disagreed whenever the selector was not on MFL (ADR-081).
+  await expect(dialog.locator(".rail-verdict-label").filter({ hasText: / verdict$/ })).toBeInViewport();
   // ...and the rest is one tap away, on a tab that is itself a touch target.
   await expect(dialog.getByRole("tab", { name: "Draft market" })).toBeInViewport();
 

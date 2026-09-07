@@ -126,6 +126,24 @@ export async function prepare(): Promise<void> {
     "awaiting-first-week": fixtures.lifecycleFixtureFiles("awaiting_first_week"),
     "season-complete": fixtures.lifecycleFixtureFiles("season_complete"),
     matured: fixtures.fixtureFiles("matured"),
+    /*
+     * A matured board whose second market has **no retained history at all**.
+     *
+     * The state a newly enabled source is in on its first morning, and the one production
+     * was mistaken for: a current FFC price with nothing behind it. The card must name the
+     * market it has nothing for rather than showing another market's line, and the rest of
+     * the market section must be unaffected — a missing chart is not a missing price
+     * (ADR-081).
+     */
+    "no-ffc-history": {
+      ...fixtures.fixtureFiles("matured"),
+      "market_trend_series.json": {
+        ...fixtures.marketTrendSeriesEnvelope("matured"),
+        records: fixtures
+          .marketTrendSeriesRecords("matured")
+          .filter((record) => record.market_source_id !== "fantasyfootballcalculator_adp"),
+      },
+    },
     "bad-schema": {
       ...fixtures.fixtureFiles(),
       "tiers.json": { ...fixtures.tierEnvelope(), schema_version: "2.0" },

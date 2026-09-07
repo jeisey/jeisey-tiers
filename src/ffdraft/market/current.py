@@ -22,13 +22,12 @@ from ffdraft.contracts import CORE_POSITIONS, EntityKind, Position, QualityCheck
 from ffdraft.contracts.enums import Severity
 from ffdraft.identity.resolver import FLAG_SECONDARY_ONLY, REASON_RESOLVED_SECONDARY
 from ffdraft.market.cohorts import CohortAssignment
-from ffdraft.market.snapshot import MarketSnapshot, MarketSnapshotStore
+from ffdraft.market.history import RetainedHistory, build_retained_history
+from ffdraft.market.snapshot import MarketSnapshot
 from ffdraft.market.trend import (
     INSUFFICIENT_TREND_HISTORY,
     TREND_RULE,
     TrendResult,
-    compute_trends,
-    observations_from_snapshots,
 )
 from ffdraft.quality.thresholds import IDENTITY_COVERAGE_MINIMUM, MARKET_SOURCE_MAX_AGE
 from ffdraft.timeutil import isoformat_utc
@@ -106,6 +105,12 @@ class CurrentMarket:
     checks: list[QualityCheck] = field(default_factory=list)
     #: Snapshot keys the trend window consumed, oldest first. Evidence for the method card.
     trend_history_keys: tuple[str, ...] = ()
+    #: The window and the trends together, in the shape every other ADP source uses. Carried
+    #: so the series writer can treat MyFantasyLeague as one source among several rather than
+    #: as the only one that has a past (ADR-081). ``trend_by_cohort`` and
+    #: ``trend_history_keys`` above are views of this same object, kept because Phase 5's
+    #: callers read them.
+    retained: RetainedHistory | None = None
 
     def price(self, scoring_preset: str, league_size: int, player_id: str) -> MarketPrice | None:
         return self.prices.get((scoring_preset, league_size, player_id))
@@ -169,15 +174,19 @@ def build_current_market(
 
     window = list(history) or [snapshot]
     cohorts_used = sorted({assignment.cohort.cohort_id for assignment in assignments.values()})
-    trend_by_cohort: dict[str, dict[str, TrendResult]] = {}
-    for cohort_id in cohorts_used:
-        observations = observations_from_snapshots(window, cohort_id=cohort_id)
-        trend_by_cohort[cohort_id] = compute_trends(
-            observations,
-            now=snapshot_at,
-            cohort_id=cohort_id,
-            rule=TREND_RULE,
-        )
+    # The same machinery every other ADP source uses, anchored the way Phase 5 anchored it:
+    # on the snapshot the current price came from, not on the build clock, so a rebuild from
+    # the same bytes reproduces the same slopes (ADR-081).
+    retained = build_retained_history(
+        window,
+        source_id=manifest.source_id,
+        cohorts={key: item.cohort.cohort_id for key, item in assignments.items()},
+        now=snapshot_at,
+        rule=TREND_RULE,
+    )
+    trend_by_cohort: dict[str, dict[str, TrendResult]] = {
+        cohort_id: dict(retained.trends_for(cohort_id)) for cohort_id in cohorts_used
+    }
 
     rows_by_cohort: dict[str, dict[str, Mapping[str, object]]] = {}
     for row in snapshot.rows:
@@ -194,6 +203,7 @@ def build_current_market(
         assignments=dict(assignments),
         trend_by_cohort=trend_by_cohort,
         trend_history_keys=tuple(item.manifest.snapshot_key for item in window),
+        retained=retained,
     )
 
     for (scoring_preset, league_size), assignment in sorted(assignments.items()):
@@ -338,28 +348,6 @@ def _is_core(raw_position: object) -> bool:
         return False
     position = Position.parse(str(raw_position))
     return position is not None and position in CORE_POSITIONS
-
-
-def load_trend_window(
-    store: MarketSnapshotStore,
-    *,
-    source_id: str,
-    season: int,
-    now: datetime,
-    rule_window_days: float = TREND_RULE.window_days,
-) -> list[MarketSnapshot]:
-    """Retained snapshots inside the trend window, oldest first.
-
-    Reading only the window keeps a build's cost flat as the store grows: a season of daily
-    captures is 365 directories, and a trend needs at most eight of them.
-    """
-    from ffdraft.retention import parse_snapshot_key
-
-    horizon = now - timedelta(days=rule_window_days)
-    keys = [
-        key for key in store.keys(source_id, season) if horizon <= parse_snapshot_key(key) <= now
-    ]
-    return store.read_window(source_id, season, keys=keys)
 
 
 def _as_flags(value: object) -> tuple[str, ...]:

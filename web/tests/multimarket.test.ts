@@ -13,7 +13,11 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { ArbitrageRecord, MarketComparison } from "../src/data/contracts";
+import type {
+  ArbitrageRecord,
+  MarketComparison,
+  MarketTrendSeriesRecord,
+} from "../src/data/contracts";
 import {
   CROSS_MARKET,
   adpFor,
@@ -23,10 +27,14 @@ import {
   crossMarketSummaryText,
   disagreementFor,
   gapFor,
+  historiesFor,
   isSurfaceException,
   marketLabel,
+  marketView,
   marketsOf,
   selectableMarkets,
+  sourceFor,
+  trendFor,
   windowLabel,
 } from "../src/data/multimarket";
 
@@ -277,5 +285,120 @@ describe("the surface exception", () => {
     expect(isSurfaceException(surfaced)).toBe(true);
     // His fair rank is the model's, unchanged. Market relevance decided visibility only.
     expect(surfaced.fair_rank).toBe(640);
+  });
+});
+
+
+// --------------------------------------------------------------------------------------
+// One resolution for the whole card (ADR-081)
+// --------------------------------------------------------------------------------------
+//
+// `marketView` exists because `??` was doing the resolving, and `??` cannot tell "this
+// bundle has no markets array" from "this market's answer is null". The first is a Release 1
+// artifact and deserves the flat fields; the second is a measurement and deserves to survive.
+
+describe("the selected market view", () => {
+  const dual = record({
+    market_trend: 0.4,
+    markets: [
+      comparison({ source_id: FFC, market_adp: 40, rank_gap: -2, market_trend: null }),
+      comparison({ source_id: MFL, market_adp: 53, rank_gap: 11, market_trend: 0.4 }),
+    ],
+  });
+
+  it("takes every number from the selected source", () => {
+    const view = marketView(dual, FFC);
+    expect(view?.sourceId).toBe(FFC);
+    expect(view?.comparison?.market_adp).toBe(40);
+    expect(view?.comparison?.rank_gap).toBe(-2);
+  });
+
+  it("keeps a selected source's null trend null, whatever the other source says", () => {
+    // The flat field and the other market both carry 0.4. Neither may reach this view.
+    expect(dual.market_trend).toBe(0.4);
+    expect(marketView(dual, FFC)?.trend).toBeNull();
+    expect(marketView(dual, MFL)?.trend).toBe(0.4);
+  });
+
+  it("has no scalar trend at all under the cross-market view", () => {
+    const view = marketView(dual, CROSS_MARKET);
+    expect(view?.cross).toBe(true);
+    expect(view?.trendIsScalar).toBe(false);
+    // ...and it does not quietly become the resolved source's slope either.
+    expect(view?.trend).toBeNull();
+  });
+
+  it("reports nothing when the selected market did not price him", () => {
+    const single = record({
+      markets: [comparison({ source_id: MFL, market_adp: 53, market_trend: 0.4 })],
+    });
+    const view = marketView(single, FFC);
+    expect(view?.comparison).toBeNull();
+    expect(view?.sourceId).toBeNull();
+    expect(view?.trend).toBeNull();
+  });
+
+  it("lifts a Release 1 row's flat fields into the same shape, once", () => {
+    const legacy = record();
+    const view = marketView(legacy, MFL);
+    expect(view?.sourceId).toBe(MFL);
+    expect(view?.comparison?.market_adp).toBe(53);
+    expect(view?.comparison?.rank_gap).toBe(11);
+    // A source that bundle never carried is still absent, not filled in.
+    expect(marketView(legacy, FFC)?.comparison).toBeNull();
+  });
+
+  it("gives the table the same source's trend as its price and gap", () => {
+    expect(trendFor(dual, FFC)).toBeNull();
+    expect(trendFor(dual, MFL)).toBe(0.4);
+    // Under cross, the trend comes from whichever source the ADP and gap came from.
+    expect(sourceFor(dual, CROSS_MARKET)).toBe(adpFor(dual, CROSS_MARKET) === 40 ? FFC : MFL);
+    expect(trendFor(dual, CROSS_MARKET)).toBe(
+      sourceFor(dual, CROSS_MARKET) === FFC ? null : 0.4,
+    );
+  });
+});
+
+describe("which histories a selection draws", () => {
+  function history(sourceId: string): MarketTrendSeriesRecord {
+    return {
+      schema_version: "1.0",
+      build_id: "b",
+      market_source_id: sourceId,
+      scoring_preset: "HALF",
+      league_preset_id: "redraft-12",
+      player_id: "gsis:1",
+      cohort_id: "c",
+      window_days: 7,
+      market_trend: null,
+      points: [{ observed_at: "2026-09-05T12:00:00Z", market_adp: 40 }],
+    };
+  }
+
+  const all = [history(MFL), history(FFC)];
+
+  it("draws only the selected source's history", () => {
+    expect(historiesFor(all, FFC).map((entry) => entry.market_source_id)).toEqual([FFC]);
+    expect(historiesFor(all, MFL).map((entry) => entry.market_source_id)).toEqual([MFL]);
+  });
+
+  it("draws every source under cross, in selector order", () => {
+    expect(historiesFor(all, CROSS_MARKET).map((entry) => entry.market_source_id)).toEqual([
+      FFC,
+      MFL,
+    ]);
+  });
+
+  it("draws nothing rather than another market's line when the selected one has none", () => {
+    expect(historiesFor([history(MFL)], FFC)).toEqual([]);
+  });
+
+  it("never draws a `cross` record, because no capture produces one", () => {
+    const planted = [...all, history(CROSS_MARKET)];
+    expect(historiesFor(planted, CROSS_MARKET).map((entry) => entry.market_source_id)).toEqual([
+      FFC,
+      MFL,
+    ]);
+    expect(historiesFor(planted, CROSS_MARKET)).toHaveLength(2);
   });
 });

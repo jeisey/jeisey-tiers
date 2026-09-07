@@ -23,7 +23,7 @@ from ffdraft.market.extra import (
     load_extra_quotes,
     quotes_from_snapshot,
 )
-from ffdraft.market.snapshot import MarketSnapshot, SnapshotManifest
+from ffdraft.market.snapshot import MarketSnapshot, SnapshotManifest, snapshot_key
 from ffdraft.quality import QualityGate
 
 NOW = datetime(2026, 9, 3, 12, 0, tzinfo=UTC)
@@ -35,7 +35,10 @@ def manifest(*, retrieved_at: datetime, source_id: str = FFC) -> SnapshotManifes
         manifest_version="1.0",
         source_id=source_id,
         season=2026,
-        snapshot_key=retrieved_at.strftime("%Y%m%dT%H%M%SZ"),
+        # The store's own key format, because `load_trend_window` parses these back into
+        # instants to bound the window. A key this project could not have written would make
+        # the window unreadable and quietly reduce the history to one snapshot.
+        snapshot_key=snapshot_key(retrieved_at),
         retrieved_at_utc=retrieved_at.isoformat().replace("+00:00", "Z"),
         adapter_version="1.0",
         source_policy_version="1.0",
@@ -92,10 +95,20 @@ def snapshot(rows: list[dict[str, Any]], *, age_hours: float = 1.0) -> MarketSna
 
 
 class _Store:
-    """The two calls `load_extra_quotes` makes, and nothing else."""
+    """The calls `load_extra_quotes` makes, and nothing else.
 
-    def __init__(self, snapshots: dict[str, MarketSnapshot | None | Exception]) -> None:
+    It reads a *window* as well as a latest snapshot now: a second market's trend is computed
+    over its own retained history, and a stub that only served the newest capture would let
+    the very defect this module was fixed for pass unnoticed (ADR-081).
+    """
+
+    def __init__(
+        self,
+        snapshots: dict[str, MarketSnapshot | None | Exception],
+        windows: dict[str, list[MarketSnapshot]] | None = None,
+    ) -> None:
         self._snapshots = snapshots
+        self._windows = windows or {}
         self.root = "fake"
 
     def read_latest(self, source_id: str, season: int) -> MarketSnapshot | None:
@@ -103,6 +116,37 @@ class _Store:
         if isinstance(found, Exception):
             raise found
         return found
+
+    def keys(self, source_id: str, season: int) -> list[str]:
+        return [item.manifest.snapshot_key for item in self._window_for(source_id)]
+
+    def read_window(
+        self,
+        source_id: str,
+        season: int,
+        *,
+        keys: list[str] | None = None,
+    ) -> list[MarketSnapshot]:
+        wanted = set(keys) if keys is not None else None
+        return [
+            item
+            for item in self._window_for(source_id)
+            if wanted is None or item.manifest.snapshot_key in wanted
+        ]
+
+    def _window_for(self, source_id: str) -> list[MarketSnapshot]:
+        if source_id in self._windows:
+            return self._windows[source_id]
+        found = self._snapshots.get(source_id)
+        return [found] if isinstance(found, MarketSnapshot) else []
+
+
+def _window(offsets_hours: tuple[float, ...], *, base_adp: float = 24.5) -> list[MarketSnapshot]:
+    """A retained cadence for one player, measured back from ``NOW``, drifting earlier."""
+    return [
+        snapshot([row("gsis:001", adp=round(base_adp + offset * 0.05, 2))], age_hours=offset)
+        for offset in sorted(offsets_hours, reverse=True)
+    ]
 
 
 # --------------------------------------------------------------------------------------
@@ -244,3 +288,128 @@ def test_a_corrupt_store_read_is_a_check_rather_than_a_crash() -> None:
     assert load.quotes == {}
     check = next(c for c in gate.checks if c.check_id == "market.extra_source_unreadable")
     assert "content hash" in check.message
+
+
+# --------------------------------------------------------------------------------------
+# A second market's own history, and its own slope (ADR-081)
+# --------------------------------------------------------------------------------------
+#
+# The version of this module that shipped read only `read_latest`. Every quote it produced
+# therefore carried `market_trend=None` — never computed, not merely unqualified — and the
+# player card filled that null in from MyFantasyLeague. These are the cases that decide
+# whether the null is a *measurement* or a plumbing gap.
+
+
+def test_a_qualifying_window_gives_the_source_its_own_slope() -> None:
+    gate = QualityGate()
+    window = _window((96.0, 72.0, 48.0, 24.0, 1.0))
+    load = load_extra_quotes(
+        _Store({FFC: window[-1]}, {FFC: window}),
+        season=2026,
+        source_ids=(FFC,),
+        now=NOW,
+        gate=gate,
+        league_sizes=(10, 12, 14),
+    )
+
+    quote = load.quotes[FFC][("HALF", "gsis:001")]
+    assert quote.market_trend is not None
+    # Every ADP fell across the window, so he is being taken earlier.
+    assert quote.market_trend > 0
+    assert "insufficient_trend_history" not in quote.quality_flags
+    assert load.histories[FFC].snapshot_keys == tuple(item.manifest.snapshot_key for item in window)
+    assert load.sources[0]["trend_history_snapshots"] == 5
+    assert load.sources[0]["trend_available"] is True
+
+
+def test_a_real_history_too_short_to_fit_keeps_a_null_slope_and_says_why() -> None:
+    """Observations exist; the elapsed span does not reach three days. Both are true at once.
+
+    This is the state the frozen rule is *supposed* to produce, and the state the card must
+    render as "collecting" rather than filling in from another market.
+    """
+    gate = QualityGate()
+    window = _window((62.0, 55.0, 38.0, 19.0, 1.0))
+    load = load_extra_quotes(
+        _Store({FFC: window[-1]}, {FFC: window}),
+        season=2026,
+        source_ids=(FFC,),
+        now=NOW,
+        gate=gate,
+        league_sizes=(12,),
+    )
+
+    quote = load.quotes[FFC][("HALF", "gsis:001")]
+    assert quote.market_trend is None
+    assert "insufficient_trend_history" in quote.quality_flags
+    # And the evidence is still there to draw: five retained observations, four of them days.
+    history = load.histories[FFC]
+    assert len(history.observations_for("ffc-half-ppr")) == 5
+    assert load.sources[0]["trend_available"] is False
+
+
+def test_a_scoring_preset_maps_to_one_cohort_across_every_league_size() -> None:
+    gate = QualityGate()
+    window = _window((48.0, 24.0, 1.0))
+    load = load_extra_quotes(
+        _Store({FFC: window[-1]}, {FFC: window}),
+        season=2026,
+        source_ids=(FFC,),
+        now=NOW,
+        gate=gate,
+        league_sizes=(10, 12, 14),
+    )
+
+    cohorts = load.histories[FFC].cohorts
+    assert cohorts == {
+        ("HALF", 10): "ffc-half-ppr",
+        ("HALF", 12): "ffc-half-ppr",
+        ("HALF", 14): "ffc-half-ppr",
+    }
+    # ...and nothing anywhere claims FFC observed a league size.
+    assert load.quotes[FFC][("HALF", "gsis:001")].league_size is None
+
+
+def test_a_source_whose_rows_name_no_cohort_loses_its_chart_loudly() -> None:
+    """MyFantasyLeague's rows are like this: filter-defined cohorts, no scoring tag.
+
+    Such a source needs the ADR-039 selection rule rather than this derivation. The board
+    still publishes its price; what must not happen is the history disappearing in silence,
+    which is how this whole defect stayed invisible for two phases.
+    """
+    gate = QualityGate()
+    untagged = snapshot([row("gsis:001", scoring="HALF", cohort_id="")])
+    load = load_extra_quotes(
+        _Store({FFC: untagged}, {FFC: [untagged]}),
+        season=2026,
+        source_ids=(FFC,),
+        now=NOW,
+        gate=gate,
+        league_sizes=(12,),
+    )
+
+    assert load.quotes[FFC][("HALF", "gsis:001")].market_trend is None
+    check = next(c for c in gate.checks if c.check_id == "market.extra_source_cohort_underivable")
+    assert check.severity == "warning"
+
+
+def test_two_cohorts_for_one_scoring_preset_are_refused_rather_than_guessed_at() -> None:
+    gate = QualityGate()
+    mixed = snapshot(
+        [
+            row("gsis:001", scoring="HALF", cohort_id="ffc-half-ppr"),
+            row("gsis:002", scoring="HALF", cohort_id="ffc-half-ppr-mock"),
+        ],
+    )
+    load_extra_quotes(
+        _Store({FFC: mixed}, {FFC: [mixed]}),
+        season=2026,
+        source_ids=(FFC,),
+        now=NOW,
+        gate=gate,
+        league_sizes=(12,),
+    )
+
+    check = next(c for c in gate.checks if c.check_id == "market.extra_source_cohort_ambiguous")
+    assert "ffc-half-ppr" in check.observed
+    assert check.severity == "warning"

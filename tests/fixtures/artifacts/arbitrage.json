@@ -24,7 +24,7 @@
       "arbitrage_score": 10.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 140,
       "market_adp_sd": null,
       "market_adp_low": 1.0,
@@ -37,7 +37,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -59,7 +58,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -78,11 +79,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -123,7 +123,7 @@
       "arbitrage_score": 83.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 118,
       "market_adp_sd": null,
       "market_adp_low": 15.0,
@@ -136,7 +136,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -158,7 +157,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -177,11 +178,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -222,7 +222,7 @@
       "arbitrage_score": 16.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 138,
       "market_adp_sd": null,
       "market_adp_low": 3.0,
@@ -235,7 +235,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -257,7 +256,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -276,11 +277,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -321,7 +321,7 @@
       "arbitrage_score": 23.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 131,
       "market_adp_sd": null,
       "market_adp_low": 6.0,
@@ -334,7 +334,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -356,7 +355,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -375,11 +376,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -420,7 +420,7 @@
       "arbitrage_score": 30.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 120,
       "market_adp_sd": null,
       "market_adp_low": 12.0,
@@ -433,7 +433,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -455,7 +454,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -474,11 +475,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -519,7 +519,7 @@
       "arbitrage_score": 43.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 115,
       "market_adp_sd": null,
       "market_adp_low": 20.0,
@@ -532,7 +532,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -554,7 +553,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -573,11 +574,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -618,7 +618,7 @@
       "arbitrage_score": 63.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 88,
       "market_adp_sd": null,
       "market_adp_low": 31.0,
@@ -631,7 +631,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -652,11 +651,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -696,7 +694,7 @@
       "arbitrage_score": 70.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 71,
       "market_adp_sd": null,
       "market_adp_low": 38.0,
@@ -709,7 +707,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -731,7 +728,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -750,11 +749,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -795,7 +793,7 @@
       "arbitrage_score": 36.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 96,
       "market_adp_sd": null,
       "market_adp_low": 26.0,
@@ -808,7 +806,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "secondary_identity_bridge_only",
         "source_as_of_unavailable"
       ],
@@ -831,7 +828,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -850,11 +849,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "secondary_identity_bridge_only",
             "source_as_of_unavailable"
           ]
@@ -896,7 +894,7 @@
       "arbitrage_score": 90.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 18,
       "market_adp_sd": null,
       "market_adp_low": 90.0,
@@ -909,7 +907,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
@@ -932,11 +929,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "low_market_sample",
             "source_as_of_unavailable",
             "wide_market_range"
@@ -978,7 +974,7 @@
       "arbitrage_score": 56.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 52,
       "market_adp_sd": null,
       "market_adp_low": 47.0,
@@ -991,7 +987,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
       ],
@@ -1013,11 +1008,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable",
             "wide_market_range"
           ]
@@ -1058,7 +1052,7 @@
       "arbitrage_score": 76.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 27,
       "market_adp_sd": null,
       "market_adp_low": 70.0,
@@ -1071,7 +1065,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
@@ -1095,7 +1088,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1114,11 +1109,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "low_market_sample",
             "source_as_of_unavailable",
             "wide_market_range"
@@ -1161,7 +1155,7 @@
       "arbitrage_score": 96.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 6,
       "market_adp_sd": null,
       "market_adp_low": 170.0,
@@ -1174,7 +1168,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
@@ -1198,7 +1191,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1217,11 +1212,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "low_market_sample",
             "source_as_of_unavailable",
             "wide_market_range"
@@ -1264,7 +1258,7 @@
       "arbitrage_score": 50.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 33,
       "market_adp_sd": null,
       "market_adp_low": 60.0,
@@ -1277,7 +1271,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
       ],
@@ -1299,11 +1292,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable",
             "wide_market_range"
           ]
@@ -1344,7 +1336,7 @@
       "arbitrage_score": 3.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 420,
       "market_adp_sd": null,
       "market_adp_low": 11.0,
@@ -1355,8 +1347,7 @@
       "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
       "confidence": "medium",
       "quality_flags": [
-        "cohort_approximate",
-        "insufficient_trend_history"
+        "cohort_approximate"
       ],
       "markets": [
         {
@@ -1376,10 +1367,9 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
-            "cohort_approximate",
-            "insufficient_trend_history"
+            "cohort_approximate"
           ]
         }
       ],
@@ -1418,7 +1408,7 @@
       "arbitrage_score": 10.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 140,
       "market_adp_sd": null,
       "market_adp_low": 1.0,
@@ -1431,7 +1421,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -1453,7 +1442,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1472,11 +1463,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -1517,7 +1507,7 @@
       "arbitrage_score": 83.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 118,
       "market_adp_sd": null,
       "market_adp_low": 15.0,
@@ -1530,7 +1520,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -1552,7 +1541,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1571,11 +1562,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -1616,7 +1606,7 @@
       "arbitrage_score": 16.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 138,
       "market_adp_sd": null,
       "market_adp_low": 3.0,
@@ -1629,7 +1619,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -1651,7 +1640,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1670,11 +1661,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -1715,7 +1705,7 @@
       "arbitrage_score": 23.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 131,
       "market_adp_sd": null,
       "market_adp_low": 6.0,
@@ -1728,7 +1718,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -1750,7 +1739,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1769,11 +1760,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -1814,7 +1804,7 @@
       "arbitrage_score": 30.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 120,
       "market_adp_sd": null,
       "market_adp_low": 12.0,
@@ -1827,7 +1817,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -1849,7 +1838,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1868,11 +1859,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -1913,7 +1903,7 @@
       "arbitrage_score": 43.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 115,
       "market_adp_sd": null,
       "market_adp_low": 20.0,
@@ -1926,7 +1916,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -1948,7 +1937,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -1967,11 +1958,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -2012,7 +2002,7 @@
       "arbitrage_score": 63.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 88,
       "market_adp_sd": null,
       "market_adp_low": 31.0,
@@ -2025,7 +2015,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -2046,11 +2035,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -2090,7 +2078,7 @@
       "arbitrage_score": 70.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 71,
       "market_adp_sd": null,
       "market_adp_low": 38.0,
@@ -2103,7 +2091,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable"
       ],
       "markets": [
@@ -2125,7 +2112,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -2144,11 +2133,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable"
           ]
         }
@@ -2189,7 +2177,7 @@
       "arbitrage_score": 36.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 96,
       "market_adp_sd": null,
       "market_adp_low": 26.0,
@@ -2202,7 +2190,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "secondary_identity_bridge_only",
         "source_as_of_unavailable"
       ],
@@ -2225,7 +2212,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -2244,11 +2233,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "secondary_identity_bridge_only",
             "source_as_of_unavailable"
           ]
@@ -2290,7 +2278,7 @@
       "arbitrage_score": 90.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 18,
       "market_adp_sd": null,
       "market_adp_low": 90.0,
@@ -2303,7 +2291,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
@@ -2326,11 +2313,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "low_market_sample",
             "source_as_of_unavailable",
             "wide_market_range"
@@ -2372,7 +2358,7 @@
       "arbitrage_score": 56.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 52,
       "market_adp_sd": null,
       "market_adp_low": 47.0,
@@ -2385,7 +2371,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
       ],
@@ -2407,11 +2392,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable",
             "wide_market_range"
           ]
@@ -2452,7 +2436,7 @@
       "arbitrage_score": 76.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 27,
       "market_adp_sd": null,
       "market_adp_low": 70.0,
@@ -2465,7 +2449,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
@@ -2489,7 +2472,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -2508,11 +2493,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "low_market_sample",
             "source_as_of_unavailable",
             "wide_market_range"
@@ -2555,7 +2539,7 @@
       "arbitrage_score": 96.67,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 6,
       "market_adp_sd": null,
       "market_adp_low": 170.0,
@@ -2568,7 +2552,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "low_market_sample",
         "source_as_of_unavailable",
         "wide_market_range"
@@ -2592,7 +2575,9 @@
           "market_cohort_detail": "format=ppr",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
           "market_trend": null,
-          "quality_flags": []
+          "quality_flags": [
+            "insufficient_trend_history"
+          ]
         },
         {
           "source_id": "myfantasyleague_adp",
@@ -2611,11 +2596,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "low_market_sample",
             "source_as_of_unavailable",
             "wide_market_range"
@@ -2658,7 +2642,7 @@
       "arbitrage_score": 50.0,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": 0.25,
       "market_sample_size": 33,
       "market_adp_sd": null,
       "market_adp_low": 60.0,
@@ -2671,7 +2655,6 @@
       "quality_flags": [
         "adp_sd_unavailable",
         "cohort_approximate",
-        "insufficient_trend_history",
         "source_as_of_unavailable",
         "wide_market_range"
       ],
@@ -2693,11 +2676,10 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": 0.25,
           "quality_flags": [
             "adp_sd_unavailable",
             "cohort_approximate",
-            "insufficient_trend_history",
             "source_as_of_unavailable",
             "wide_market_range"
           ]
@@ -2738,7 +2720,7 @@
       "arbitrage_score": 3.33,
       "expected_surplus_vorp": null,
       "p_positive_surplus": null,
-      "market_trend": null,
+      "market_trend": -0.25,
       "market_sample_size": 420,
       "market_adp_sd": null,
       "market_adp_low": 11.0,
@@ -2749,8 +2731,7 @@
       "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
       "confidence": "medium",
       "quality_flags": [
-        "cohort_approximate",
-        "insufficient_trend_history"
+        "cohort_approximate"
       ],
       "markets": [
         {
@@ -2770,10 +2751,9 @@
           "market_cohort_id": "unfiltered",
           "market_cohort_detail": "no filters (approximate cohort)",
           "market_snapshot_at_utc": "2026-08-18T12:00:00Z",
-          "market_trend": null,
+          "market_trend": -0.25,
           "quality_flags": [
-            "cohort_approximate",
-            "insufficient_trend_history"
+            "cohort_approximate"
           ]
         }
       ],

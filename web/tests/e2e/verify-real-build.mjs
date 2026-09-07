@@ -12,6 +12,21 @@ const dataDir = process.argv[3] ?? "web/dist-real/data";
 const tiers = JSON.parse(readFileSync(`${dataDir}/tiers.json`, "utf-8"));
 const arb = JSON.parse(readFileSync(`${dataDir}/arbitrage.json`, "utf-8"));
 const status = JSON.parse(readFileSync(`${dataDir}/player_status.json`, "utf-8"));
+/**
+ * The retained per-market histories, if this build published any.
+ *
+ * Optional on purpose: a young store has no history to publish and the board is correct
+ * without one. What is *not* optional is that a published history agrees with the card that
+ * draws it — the check below opens a card per market and compares the chart's marks with
+ * these bytes, because "the chart is right" was the one claim the 2026-09 refreshes could
+ * not make (ADR-081).
+ */
+let seriesRecords = [];
+try {
+  seriesRecords = JSON.parse(readFileSync(`${dataDir}/market_trend_series.json`, "utf-8")).records;
+} catch {
+  seriesRecords = [];
+}
 
 const block = tiers.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
@@ -239,7 +254,12 @@ else {
       const want = record.arbitrage_score.toFixed(1);
       failures.push(`arb row ${i + 1} score: rendered ${score}, artifact ${want}`);
     }
-    const trend = expectedTrendCell(record.market_trend);
+    // The Trend column reads the market the heading names, exactly as the ADP column does.
+    // It used to read the flat V1 field — MyFantasyLeague's — so a default FFC board printed
+    // one market's price beside another market's movement on every row (ADR-081).
+    const trend = expectedTrendCell(
+      arbSource === null ? record.market_trend : (quote?.market_trend ?? null),
+    );
     if (!cells[arbAt.trend].startsWith(trend)) {
       failures.push(`arb row ${i + 1} trend: rendered ${cells[arbAt.trend]}, artifact wants ${trend}`);
     }
@@ -254,6 +274,104 @@ for (const record of arbBlock.filter((r) => r.rank_gap > 0).slice(0, 20)) {
   const railAdp = arbSource === null ? record.market_adp : (railQuote?.market_adp ?? null);
   if (railAdp !== null && !label.includes(`ADP ${railAdp.toFixed(1)}`)) {
     failures.push(`rail ${record.display_name}: market anchor`);
+  }
+}
+
+// --- The player card's market history against `market_trend_series.json` ---------------------
+//
+// Opened once per published market plus the cross view. The comparison is against the *bytes*
+// this build wrote, not against a recomputation: a chart that agreed with a fresh calculation
+// but not with the artifact would look right in every test and be wrong on the site.
+const chartedMarkets = [];
+if (seriesRecords.length > 0) {
+  const inBlock = seriesRecords.filter(
+    (r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR",
+  );
+  const bySource = new Map();
+  for (const record of inBlock) {
+    if (!bySource.has(record.market_source_id)) bySource.set(record.market_source_id, new Map());
+    bySource.get(record.market_source_id).set(record.player_id, record);
+  }
+  if (bySource.has("cross")) {
+    failures.push("market_trend_series carries a `cross` source; no capture produces one");
+  }
+
+  // A player every published market priced, so the selector is the only thing that varies.
+  const subject = arbBlock.find((row) =>
+    [...bySource.keys()].every((source) => bySource.get(source).has(row.player_id)),
+  );
+  if (subject === undefined) {
+    failures.push("no published player has a retained history in every market");
+  } else {
+    for (const source of bySource.keys()) {
+      const record = bySource.get(source).get(subject.player_id);
+      await page.goto(`${BASE}/?market=${source}&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+      await page.waitForSelector("table.sheet tbody tr");
+      await page.getByRole("button", { name: subject.display_name, exact: true }).first().click();
+      await page.waitForSelector("dialog[open]");
+      const chart = await page.$('[data-testid="market-trend"]');
+      if (chart === null) {
+        failures.push(`${source}: a published history for ${subject.display_name} draws no chart`);
+        continue;
+      }
+      const drawn = await chart.$$eval("g[data-source]", (gs) =>
+        gs.map((g) => g.getAttribute("data-source")),
+      );
+      if (drawn.join(",") !== source) {
+        failures.push(`${source}: the card drew ${drawn.join(",") || "nothing"} instead`);
+      }
+      // One mark per retained calendar day, latest-of-day, at the artifact's own prices.
+      const byDay = new Map();
+      for (const point of record.points) byDay.set(point.observed_at.slice(0, 10), point.market_adp);
+      const labels = await chart.$$eval("circle[role='button']", (nodes) =>
+        nodes.map((node) => node.getAttribute("aria-label") ?? ""),
+      );
+      if (labels.length !== byDay.size) {
+        failures.push(
+          `${source}: ${String(labels.length)} marks drawn for ${String(byDay.size)} retained days`,
+        );
+      }
+      for (const [day, adp] of byDay) {
+        const readable = new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          timeZone: "UTC",
+        });
+        if (!labels.some((l) => l.includes(readable) && l.includes(`ADP ${adp.toFixed(1)}`))) {
+          failures.push(`${source}: no mark for ${readable} at ADP ${adp.toFixed(1)}`);
+        }
+      }
+      // The latest reading, which is also the ADP the card prints beside the chart.
+      const latest = record.points.at(-1)?.market_adp;
+      const reading = await chart.$eval(".trend-reading", (node) => node.textContent?.trim() ?? "");
+      if (latest !== undefined && !reading.endsWith(latest.toFixed(1))) {
+        failures.push(`${source}: chart reads "${reading}", artifact's latest is ${latest.toFixed(1)}`);
+      }
+      // The slope the legend prints is this market's own, or the reason there is not one.
+      const legend = await chart.$eval(".trend-legend", (node) => node.textContent ?? "");
+      const wanted =
+        record.market_trend === null
+          ? "trend collecting"
+          : `${record.market_trend > 0 ? "+" : ""}${record.market_trend.toFixed(2)}/day`;
+      if (!legend.includes(wanted)) {
+        failures.push(`${source}: legend "${legend.trim()}" does not carry ${wanted}`);
+      }
+      chartedMarkets.push(source);
+    }
+
+    // The cross view overlays every real series and invents none.
+    await page.goto(`${BASE}/?market=cross&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+    await page.waitForSelector("table.sheet tbody tr");
+    await page.getByRole("button", { name: subject.display_name, exact: true }).first().click();
+    await page.waitForSelector("dialog[open]");
+    const crossDrawn = await page.$$eval('[data-testid="market-trend"] g[data-source]', (gs) =>
+      gs.map((g) => g.getAttribute("data-source")).sort(),
+    );
+    if (crossDrawn.join(",") !== [...bySource.keys()].sort().join(",")) {
+      failures.push(
+        `cross view drew ${crossDrawn.join(",") || "nothing"}, expected ${[...bySource.keys()].sort().join(",")}`,
+      );
+    }
   }
 }
 
@@ -286,6 +404,9 @@ console.log(JSON.stringify({
   tierMarksChecked: 25,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
+  trendSeriesRecords: seriesRecords.length,
+  trendSeriesSources: [...new Set(seriesRecords.map((r) => r.market_source_id))].sort(),
+  chartedMarkets,
   badgesRendered: withBadge,
   failures,
 }, null, 1));
