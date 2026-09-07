@@ -46,6 +46,14 @@ __all__ = ["validate_artifact_directory"]
 #: the model would take the player earlier than the market does.
 _RANK_GAP_TOLERANCE = 1e-6
 
+#: Selections the frontend offers that no capture produces. A series record naming one would
+#: be a synthesized cross-market history — the thing ADR-081 declines to invent.
+_SYNTHETIC_SOURCE_IDS = frozenset({"cross"})
+
+#: The series rounds each point to two decimals for page weight; the arbitrage record does
+#: not. Half a hundredth is the whole disagreement that rounding can produce.
+_TREND_POINT_TOLERANCE = 0.0051
+
 #: The in-season bundle's own metadata file and schema. Separate from the draft bundle's
 #: because the two are produced by different models at different cutoffs, carry different
 #: build ids, and must be independently validatable (roadmap 12.5).
@@ -212,7 +220,76 @@ def _semantic_checks(
                 *check_range(records, field="league_size", minimum=4, maximum=32, stage=stage),
                 *_market_dispersion_checks(records, stage),
             ]
+        case "market_trend_series":
+            return _trend_series_checks(records, stage)
     return []
+
+
+def _trend_series_checks(
+    records: Sequence[Mapping[str, Any]],
+    stage: str,
+) -> list[QualityCheck]:
+    """The chart's own data, checked as a series rather than as a bag of numbers.
+
+    Two things a schema cannot say. **Points ascend**: the artifact promises ascending
+    ``observed_at`` and a consumer that trusted it would draw a line that doubles back.
+    **No source is invented**: `cross` is a *view* the reader selects, never a market anyone
+    captured, so a series claiming it would be a history no snapshot produced (ADR-081).
+    """
+    unordered: list[str] = []
+    empty: list[str] = []
+    synthetic: list[str] = []
+    for record in records:
+        key = (
+            f"{record.get('market_source_id')}/{record.get('league_preset_id')}/"
+            f"{record.get('scoring_preset')}/{record.get('player_id')}"
+        )
+        points = list(record.get("points", ()))
+        if not points:
+            empty.append(key)
+        stamps = [str(point.get("observed_at")) for point in points]
+        if stamps != sorted(stamps):
+            unordered.append(key)
+        if str(record.get("market_source_id")) in _SYNTHETIC_SOURCE_IDS:
+            synthetic.append(key)
+
+    checks: list[QualityCheck] = []
+    if empty:
+        checks.append(
+            QualityCheck.fail(
+                "market_trend_series.empty_series",
+                stage=stage,
+                message="a series with no points is bytes shipped to say nothing",
+                observed="; ".join(empty[:10]),
+                expected="at least one retained observation per record",
+            ),
+        )
+    if unordered:
+        checks.append(
+            QualityCheck.fail(
+                "market_trend_series.points_out_of_order",
+                stage=stage,
+                message=(
+                    "points must ascend by observed_at; the contract says so and a chart trusts it"
+                ),
+                observed="; ".join(unordered[:10]),
+                expected="ascending observed_at",
+            ),
+        )
+    if synthetic:
+        checks.append(
+            QualityCheck.fail(
+                "market_trend_series.synthetic_source",
+                stage=stage,
+                message=(
+                    "a history must name a market that was actually captured; the "
+                    "cross-market view is a selection, not a source"
+                ),
+                observed="; ".join(sorted(set(synthetic))[:10]),
+                expected="a retained source id",
+            ),
+        )
+    return checks
 
 
 def _arbitrage_checks(
@@ -912,6 +989,135 @@ def _in_season_cross_checks(
     return checks
 
 
+def _trend_series_agreement(
+    envelopes: Mapping[str, Mapping[str, Any]],
+) -> list[QualityCheck]:
+    """The chart and the board must be two views of one number, per source.
+
+    ADR-066 says the series carries "the same scalar the arbitrage row carries, from the same
+    points ... asserted equal by the cross-artifact validator". It was not. Nothing compared
+    them, so a fixture whose board published `market_trend: null` while its series published
+    a fabricated slope for the same player validated cleanly for two phases, and a whole
+    second market could ship with a price and no history without any gate noticing (ADR-081).
+
+    Three agreements, each source-specific:
+
+    * every series names a market that priced that player on that board;
+    * its ``market_trend`` is that market's own slope, not another market's;
+    * its newest point is that market's published ADP, so "Latest 33.6" on the chart and the
+      ADP readout beside it can never be different numbers.
+    """
+    arbitrage = envelopes.get("arbitrage")
+    series = envelopes.get("market_trend_series")
+    if arbitrage is None or series is None:
+        return []
+
+    quotes: dict[tuple[str, str, str, str], Mapping[str, Any]] = {}
+    for record in arbitrage.get("records", ()):
+        block = (str(record.get("league_preset_id")), str(record.get("scoring_preset")))
+        entries = [
+            entry
+            for entry in record.get("markets") or ()
+            if str(entry.get("market_signal_type")) == "adp"
+        ] or [record]
+        for entry in entries:
+            # A `markets` entry names its source in `source_id`; a Release 1 row has no
+            # array at all and names it in the flat `market_source_id`.
+            key = (
+                *block,
+                str(entry.get("source_id") or record.get("market_source_id")),
+                str(record.get("player_id")),
+            )
+            quotes[key] = entry
+
+    orphaned: list[str] = []
+    trend_mismatch: list[str] = []
+    price_mismatch: list[str] = []
+    for record in series.get("records", ()):
+        key = (
+            str(record.get("league_preset_id")),
+            str(record.get("scoring_preset")),
+            str(record.get("market_source_id")),
+            str(record.get("player_id")),
+        )
+        quote = quotes.get(key)
+        if quote is None:
+            orphaned.append("/".join(key))
+            continue
+        published = quote.get("market_trend")
+        drawn = record.get("market_trend")
+        if (published is None) != (drawn is None) or (
+            published is not None
+            and drawn is not None
+            and abs(float(published) - float(drawn)) > _RANK_GAP_TOLERANCE
+        ):
+            trend_mismatch.append(f"{'/'.join(key)}: board={published} series={drawn}")
+        points = list(record.get("points", ()))
+        price = quote.get("market_adp")
+        if points and price is not None:
+            latest = points[-1].get("market_adp")
+            if latest is not None and abs(float(latest) - float(price)) > _TREND_POINT_TOLERANCE:
+                price_mismatch.append(f"{'/'.join(key)}: board={price} series={latest}")
+
+    checks: list[QualityCheck] = []
+    if orphaned:
+        checks.append(
+            QualityCheck.fail(
+                "cross_artifact.trend_series_without_a_market",
+                stage="artifacts",
+                message=(
+                    "every retained history must belong to a market that priced that player "
+                    "on that board"
+                ),
+                observed="; ".join(orphaned[:10]),
+                expected="a matching entry in the arbitrage row's markets array",
+            ),
+        )
+    if trend_mismatch:
+        checks.append(
+            QualityCheck.fail(
+                "cross_artifact.trend_scalar_disagreement",
+                stage="artifacts",
+                message=("the published slope and the charted history's slope must be one number"),
+                observed="; ".join(trend_mismatch[:10]),
+                expected="identical market_trend per source",
+            ),
+        )
+    if price_mismatch:
+        checks.append(
+            QualityCheck.fail(
+                "cross_artifact.trend_series_latest_price",
+                stage="artifacts",
+                message=(
+                    "the newest retained point must be the ADP the board publishes for that "
+                    "market; a chart whose last reading differs from the number beside it is "
+                    "two answers to one question"
+                ),
+                observed="; ".join(price_mismatch[:10]),
+                expected="the market's published market_adp",
+            ),
+        )
+    if not checks:
+        by_source: dict[str, int] = {}
+        for record in series.get("records", ()):
+            source = str(record.get("market_source_id"))
+            by_source[source] = by_source.get(source, 0) + 1
+        checks.append(
+            QualityCheck.ok(
+                "cross_artifact.trend_series_agreement",
+                stage="artifacts",
+                message=(
+                    "every retained history agrees with its own market's published price and slope"
+                ),
+                observed=", ".join(
+                    f"{source}: {count}" for source, count in sorted(by_source.items())
+                )
+                or "no series published",
+            ),
+        )
+    return checks
+
+
 def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:
     """Agreement no single artifact schema can express."""
     tiers = envelopes.get("tiers")
@@ -998,6 +1204,8 @@ def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
                 observed=f"{len(arbitrage.get('records', ()))} arbitrage record(s)",
             ),
         )
+
+    checks.extend(_trend_series_agreement(envelopes))
 
     metadata_presets = {str(record.get("league_preset_id")) for record in tiers.get("records", ())}
     if len(metadata_presets) == 0:

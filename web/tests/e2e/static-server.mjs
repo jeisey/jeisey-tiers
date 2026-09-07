@@ -82,6 +82,7 @@ const MOUNTS = [
   { base: "/scenario/no-status/", dir: "web/dist-no-status" },
   { base: "/scenario/bad-schema/", dir: "web/dist-bad-schema" },
   { base: "/scenario/matured/", dir: "web/dist-matured" },
+  { base: "/scenario/no-ffc-history/", dir: "web/dist-no-ffc-history" },
   { base: "/scenario/in-season/", dir: "web/dist-in-season" },
   { base: "/scenario/in-season-no-behavior/", dir: "web/dist-in-season-no-behavior" },
   { base: "/scenario/awaiting-first-week/", dir: "web/dist-awaiting-first-week" },

@@ -169,6 +169,11 @@ Hover/focus/click:
 - expected surplus VORP if ML mode
 - P(positive surplus) if calibrated
 - market trend since prior day/week
+- the selected market's retained ADP history, drawn by day; under the cross-market view, every
+  market's real history on one dated axis, each named and each with its own trend or its own
+  reason for not having one. Nothing is averaged into a synthetic cross-market line, and a
+  history that is too short for the frozen trend rule is still drawn — showing an observation
+  and estimating a slope are different claims (ADR-081)
 - intrinsic P10/P50/P90
 - arbitrage mode (`Model` or `Market-gap baseline`)
 
@@ -208,6 +213,12 @@ Default:
 - Confidence
 
 Columns that are unavailable in baseline mode should be omitted or rendered `—` with an explanation, not fabricated.
+
+**Every market-derived cell follows the market selector, including Market Trend.** ADP, Value
+Gap, Dispersion and Trend on one row must be one market's account of the player. A cell whose
+selected market has no value for it renders `—` and says why to a screen reader; it never
+borrows another market's number, because a borrowed number is indistinguishable from a real
+one on the page (ADR-081).
 
 ### 7.3 Table behavior
 

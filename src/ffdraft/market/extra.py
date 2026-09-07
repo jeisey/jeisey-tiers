@@ -25,6 +25,18 @@ Two outputs, from one read:
     each source's top-:data:`~ffdraft.market.surface.MARKET_TOP_DEPTH` population per scoring
     preset, which the surface universe uses to decide who is publicly relevant regardless of
     where the intrinsic model ranked them (ADR-063).
+
+``histories``
+    each source's trailing retained window and its `phase5_trend_v1` slopes, from
+    :mod:`ffdraft.market.history` — the same machinery MyFantasyLeague uses, not a second
+    implementation of it.
+
+**The version of this module that shipped read only the latest snapshot.** A second source
+therefore arrived with a price and no past: its ``market_trend`` was ``None`` because nothing
+had ever computed one, and `market_trend_series.json` carried no record for it at all. On a
+player card that reads as "current FFC ADP 24.5" beside "0 snapshots so far" — a sentence
+about our own plumbing, phrased as a fact about the market (ADR-081). The window is loaded
+here now, and the trend it produces is attached to the source's own quotes.
 """
 
 from __future__ import annotations
@@ -37,8 +49,16 @@ from typing import Any
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import CORE_POSITIONS, MarketSignalType, Position, Severity
 from ffdraft.market.comparison import SourceQuote
+from ffdraft.market.history import (
+    RetainedHistory,
+    build_retained_history,
+    cohorts_by_scoring_preset,
+    expand_cohorts_over_league_sizes,
+    load_trend_window,
+)
 from ffdraft.market.snapshot import MarketSnapshot, MarketSnapshotStore
 from ffdraft.market.surface import MARKET_TOP_DEPTH, MarketMembership
+from ffdraft.market.trend import INSUFFICIENT_TREND_HISTORY, TREND_RULE, TrendResult
 from ffdraft.quality import QualityGate
 
 __all__ = [
@@ -67,6 +87,9 @@ class ExtraMarketLoad:
     #: Per-source provenance, merged into `build_metadata.json` so a reader can see which
     #: markets priced the board and when each was observed.
     sources: list[dict[str, Any]] = field(default_factory=list)
+    #: Each priced source's trailing retained window and its trends, so the series writer can
+    #: publish a chart history for it (ADR-081). Keyed by source id.
+    histories: dict[str, RetainedHistory] = field(default_factory=dict)
 
     @property
     def source_ids(self) -> tuple[str, ...]:
@@ -85,6 +108,7 @@ def quotes_from_snapshot(
     snapshot: MarketSnapshot,
     *,
     top_depth: int = MARKET_TOP_DEPTH,
+    trends: Mapping[str, Mapping[str, TrendResult]] | None = None,
 ) -> tuple[dict[tuple[str, str], SourceQuote], list[MarketMembership]]:
     """One retained snapshot's rows as quotes, plus its top-N membership per preset.
 
@@ -92,7 +116,13 @@ def quotes_from_snapshot(
     player cannot be joined to a fair rank — but they are *counted* into
     :attr:`~ffdraft.market.surface.MarketMembership.unresolved`, because roadmap 10.5 is
     explicit that identity failures must not vanish inside a coverage denominator.
+
+    ``trends`` is this source's own ``cohort_id -> player_id -> TrendResult`` map, computed
+    over its own retained window. Absent — or present with no result for a player — the quote
+    carries ``market_trend = None`` **and** the ``insufficient_trend_history`` flag, so the
+    null says why it is null instead of reading as "this market has not moved".
     """
+    by_cohort = trends or {}
     quotes: dict[tuple[str, str], SourceQuote] = {}
     by_preset: dict[tuple[str, str, MarketSignalType], list[tuple[float, str]]] = {}
     unresolved: dict[tuple[str, str, MarketSignalType], int] = {}
@@ -110,6 +140,8 @@ def quotes_from_snapshot(
 
         adp = row.get("average_pick")
         rank = row.get("market_rank")
+        cohort_id = str(row["cohort_id"])
+        trend = by_cohort.get(cohort_id, {}).get(str(player_id))
         quotes[(scoring, str(player_id))] = SourceQuote(
             source_id=source_id,
             signal_type=signal,
@@ -130,10 +162,25 @@ def quotes_from_snapshot(
             league_size=row.get("league_size"),
             aggregation_window_type=str(row["aggregation_window_type"]),
             aggregation_window_days=row.get("aggregation_window_days"),
-            cohort_id=str(row["cohort_id"]),
+            cohort_id=cohort_id,
             cohort_detail=str(row.get("source_format_detail") or ""),
             snapshot_at_utc=observed_at,
-            quality_flags=tuple(row.get("quality_flags") or ()),
+            # This source's own slope over this source's own retained window. Never borrowed:
+            # a null here means *this* market has not yet supplied three observation days
+            # spanning three days, which is a different fact from another market's number.
+            market_trend=trend.trend if trend is not None else None,
+            quality_flags=tuple(
+                dict.fromkeys(
+                    [
+                        *(row.get("quality_flags") or ()),
+                        *(
+                            trend.quality_flags
+                            if trend is not None
+                            else (INSUFFICIENT_TREND_HISTORY,)
+                        ),
+                    ],
+                ),
+            ),
         )
         # The ordering key is the source's own: an ADP source is ranked by pick, a ranking
         # source by rank. Sorting an ECR by a null ADP would make its top-N arbitrary.
@@ -171,10 +218,11 @@ def load_extra_quotes(
     source_ids: Sequence[str],
     now: datetime,
     gate: QualityGate,
+    league_sizes: Sequence[int] = (),
     max_age_hours: int = EXTRA_SOURCE_MAX_AGE_HOURS,
     top_depth: int = MARKET_TOP_DEPTH,
 ) -> ExtraMarketLoad:
-    """Read every requested source's latest retained snapshot into quotes.
+    """Read every requested source's retained window into quotes, trends and a history.
 
     A source with no snapshot, or with one older than ``max_age_hours``, is a **warning and
     a recorded absence**, not a silent one. The build still publishes — one market missing
@@ -182,6 +230,11 @@ def load_extra_quotes(
     `build_metadata.json`, and the frontend renders only the markets the artifact actually
     carries, so a missing source disappears from the page rather than becoming a column of
     dashes.
+
+    ``league_sizes`` are the team counts the board publishes. They are needed only to key the
+    cohort map the way the series writer asks for it; a source that does not observe league
+    size maps every one of them onto the same cohort, which is the honest encoding rather
+    than a shortcut (:func:`~ffdraft.market.history.expand_cohorts_over_league_sizes`).
     """
     load = ExtraMarketLoad()
     for source_id in source_ids:
@@ -216,7 +269,19 @@ def load_extra_quotes(
             )
             continue
 
-        quotes, memberships = quotes_from_snapshot(snapshot, top_depth=top_depth)
+        history = _source_history(
+            store,
+            snapshot,
+            source_id=source_id,
+            season=season,
+            league_sizes=league_sizes,
+            gate=gate,
+        )
+        quotes, memberships = quotes_from_snapshot(
+            snapshot,
+            top_depth=top_depth,
+            trends=history.trend_by_cohort,
+        )
         if not quotes:
             gate.add(
                 QualityCheck.fail(
@@ -238,6 +303,7 @@ def load_extra_quotes(
 
         load.quotes[source_id] = quotes
         load.memberships.extend(memberships)
+        load.histories[source_id] = history
         load.sources.append(
             {
                 "source_id": source_id,
@@ -247,9 +313,107 @@ def load_extra_quotes(
                 "rows": len(snapshot.rows),
                 "quoted_players": len(quotes),
                 "presets": sorted({scoring for scoring, _ in quotes}),
+                # The evidence behind this source's chart, and behind the null when its slope
+                # is not yet computable. Published so "0 snapshots so far" can never again be
+                # the only thing a reader is told (ADR-081).
+                "trend_history_snapshots": len(history.snapshots),
+                "trend_available": history.trend_available,
+                "trend_rule_version": TREND_RULE.version,
             },
         )
     return load
+
+
+def _source_history(
+    store: MarketSnapshotStore,
+    snapshot: MarketSnapshot,
+    *,
+    source_id: str,
+    season: int,
+    league_sizes: Sequence[int],
+    gate: QualityGate,
+) -> RetainedHistory:
+    """This source's trailing retained window and its `phase5_trend_v1` slopes.
+
+    The window is anchored on the source's **own** newest snapshot rather than on the build
+    clock or on MyFantasyLeague's: sources are captured by different jobs and can be hours
+    apart, and asking the frozen rule about days a source has no evidence for would not make
+    its history longer.
+
+    A read failure degrades to "this source has a price and no history yet", with the reason
+    recorded. A market that cannot be charted must never take the board down.
+    """
+    by_scoring, ambiguous = cohorts_by_scoring_preset(snapshot)
+    if ambiguous:
+        # More than one cohort per scoring preset means this source needs a selection rule of
+        # its own, as MyFantasyLeague has (ADR-039). Picking one here would mix populations,
+        # which is the one thing `phase5_trend_v1` forbids outright.
+        gate.add(
+            QualityCheck.fail(
+                "market.extra_source_cohort_ambiguous",
+                stage="market.extra",
+                message=(
+                    f"{source_id}: a scoring preset is served by more than one retained "
+                    "cohort, so no trend is computed for it; a cohort selection rule is "
+                    "needed before this source can carry a history"
+                ),
+                observed="; ".join(
+                    f"{scoring}: {', '.join(cohorts)}"
+                    for scoring, cohorts in sorted(ambiguous.items())
+                ),
+                expected="one cohort per scoring preset",
+                severity=Severity.WARNING,
+            ),
+        )
+    if not by_scoring:
+        # Every source whose rows tag their own scoring preset resolves here. One whose rows
+        # do not — MyFantasyLeague, whose cohorts are filter-defined and mapped to presets by
+        # the ADR-039 selection rule — needs that rule rather than this derivation, and must
+        # not simply lose its chart in silence.
+        gate.add(
+            QualityCheck.fail(
+                "market.extra_source_cohort_underivable",
+                stage="market.extra",
+                message=(
+                    f"{source_id}: no scoring preset could be resolved to a single retained "
+                    "cohort, so this market is priced without a history"
+                ),
+                observed=f"{len(snapshot.rows)} retained row(s)",
+                expected="rows carrying scoring_preset and cohort_id",
+                severity=Severity.WARNING,
+            ),
+        )
+    cohorts = expand_cohorts_over_league_sizes(by_scoring, league_sizes or (0,))
+    try:
+        window = load_trend_window(
+            store,
+            source_id=source_id,
+            season=season,
+            now=snapshot.retrieved_at,
+            rule_window_days=TREND_RULE.window_days,
+        )
+    except Exception as error:  # noqa: BLE001 - a bad read must not take the board down
+        gate.add(
+            QualityCheck.fail(
+                "market.extra_source_history_unreadable",
+                stage="market.extra",
+                message=(
+                    f"{source_id}: the retained trend window could not be read, so this "
+                    f"market is priced without a history: {error}"
+                ),
+                observed=type(error).__name__,
+                expected="a readable retained window",
+                severity=Severity.WARNING,
+            ),
+        )
+        window = [snapshot]
+    return build_retained_history(
+        window or [snapshot],
+        source_id=source_id,
+        cohorts=cohorts,
+        now=snapshot.retrieved_at,
+        rule=TREND_RULE,
+    )
 
 
 def _read_latest(

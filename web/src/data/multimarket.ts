@@ -27,6 +27,7 @@ import type {
   CrossMarketSummary,
   ExpertConsensus,
   MarketComparison,
+  MarketTrendSeriesRecord,
 } from "./contracts";
 
 /** The market selection a reader can make. `cross` is a view, not a source. */
@@ -188,6 +189,36 @@ export function adpFor(record: ArbitrageRecord, selection: MarketSelection): num
 }
 
 /**
+ * The trend the selected market shows for one row, or null.
+ *
+ * Under `cross` this is the trend of **the same source** `adpFor` and `gapFor` resolve to, so
+ * a row's price, gap and movement are one market's account of the player rather than three
+ * markets' accounts spliced together. Before this existed the Trend column read the flat V1
+ * field unconditionally — MyFantasyLeague's — beside an FFC price and an FFC gap (ADR-081).
+ *
+ * Null is a real answer and is never filled in from another source: it means this market has
+ * not yet supplied three observation days spanning three days.
+ */
+export function trendFor(record: ArbitrageRecord, selection: MarketSelection): number | null {
+  const comparison = comparisonFor(record, selection);
+  if (comparison !== null) return comparison.market_trend;
+  return (record.markets ?? []).length === 0 &&
+    (selection === record.market_source_id || selection === CROSS_MARKET)
+    ? record.market_trend
+    : null;
+}
+
+/** Which source a row's displayed numbers came from under a given selection. */
+export function sourceFor(record: ArbitrageRecord, selection: MarketSelection): string | null {
+  const comparison = comparisonFor(record, selection);
+  if (comparison !== null) return comparison.source_id;
+  return (record.markets ?? []).length === 0 &&
+    (selection === record.market_source_id || selection === CROSS_MARKET)
+    ? record.market_source_id
+    : null;
+}
+
+/**
  * The disagreement between markets, for sorting and filtering the cross-market view.
  *
  * Null when fewer than two sources priced the player: zero would be wrong — it would claim
@@ -222,4 +253,116 @@ export function crossMarketSummaryText(cross: CrossMarketSummary | null): string
 /** Whether a row was surfaced by market relevance from beyond the tier board (ADR-063). */
 export function isSurfaceException(record: ArbitrageRecord): boolean {
   return record.outside_tier_board === true;
+}
+
+/**
+ * The one market the player card is reading, resolved once.
+ *
+ * **This exists because `??` was doing the resolving.** The card read
+ * `selected?.rank_gap ?? arbitrage.rank_gap`, `selected?.market_adp ?? arbitrage.market_adp`
+ * and, in four other places, the flat `arbitrage.market_trend` outright. The flat fields are
+ * MyFantasyLeague's, so with FFC selected a legitimately null FFC trend silently became
+ * MFL's number, and a reader saw one market's slope under another market's label. The null
+ * was the *message* — "FFC has observations but not yet three days of span" — and the
+ * fallback deleted it (ADR-081).
+ *
+ * The fallback that remains is the only one that was ever meant: a **Release 1** record has
+ * no `markets` array at all, and its flat fields are that single source's own numbers. That
+ * is a different bundle, not a different field on this one, so it is resolved here once and
+ * the card never sees the choice.
+ */
+export interface MarketView {
+  readonly selection: MarketSelection;
+  readonly cross: boolean;
+  /**
+   * The source these numbers came from, which under `cross` is a real market rather than the
+   * selection. Null when nothing priced this player.
+   */
+  readonly sourceId: string | null;
+  readonly comparison: MarketComparison | null;
+  /**
+   * The scalar slope, or null. Under `cross` it is **always** null: no market published a
+   * cross-market trend, and showing one source's slope beside the word "Cross-market" would
+   * name a market the number did not come from.
+   */
+  readonly trend: number | null;
+  /** Whether a scalar trend is a coherent thing to ask for at all in this view. */
+  readonly trendIsScalar: boolean;
+}
+
+function comparisonFromFlatFields(record: ArbitrageRecord): MarketComparison {
+  return {
+    source_id: record.market_source_id,
+    market_signal_type: "adp",
+    market_adp: record.market_adp,
+    market_rank: record.market_rank,
+    rank_gap: record.rank_gap,
+    regional_value_gap: record.regional_value_gap,
+    market_sample_size: record.market_sample_size,
+    market_adp_sd: record.market_adp_sd,
+    market_adp_low: record.market_adp_low,
+    market_adp_high: record.market_adp_high,
+    league_size: null,
+    aggregation_window_type: "unknown",
+    aggregation_window_days: null,
+    market_cohort_id: record.market_cohort_id,
+    market_cohort_detail: record.market_cohort_detail,
+    market_snapshot_at_utc: record.market_snapshot_at_utc,
+    market_trend: record.market_trend,
+    quality_flags: record.quality_flags,
+  };
+}
+
+export function marketView(
+  record: ArbitrageRecord | null,
+  selection: MarketSelection,
+): MarketView | null {
+  if (record === null) return null;
+  const cross = selection === CROSS_MARKET;
+  const hasArray = (record.markets ?? []).length > 0;
+  // Release 1 bundles carry no `markets` array; their flat fields *are* the one market's
+  // comparison, so they are lifted into the same shape rather than read through a fallback
+  // at every call site.
+  const comparison = hasArray
+    ? comparisonFor(record, selection)
+    : selection === record.market_source_id || cross
+      ? comparisonFromFlatFields(record)
+      : null;
+  return {
+    selection,
+    cross,
+    sourceId: comparison?.source_id ?? null,
+    comparison,
+    trend: cross ? null : (comparison?.market_trend ?? null),
+    trendIsScalar: !cross,
+  };
+}
+
+/**
+ * The histories the chart should draw for one selection.
+ *
+ * Single source: that source's series, and nothing if it has none — never another market's.
+ * Cross: every source that has one, so the reader can see by date how far apart the markets
+ * were. There is deliberately no synthetic `cross` series to look up; the store contains no
+ * such market and averaging two real ones into a line would draw a price nobody paid.
+ */
+export function historiesFor(
+  histories: readonly MarketTrendSeriesRecord[],
+  selection: MarketSelection,
+): readonly MarketTrendSeriesRecord[] {
+  const ordered = [...histories]
+    // `cross` is a selection, not a market. A record naming it would be a synthesized
+    // history no capture produced, and the cross view — the one place it could slip through
+    // unnoticed — is exactly where it must not be drawn.
+    .filter((record) => record.market_source_id !== CROSS_MARKET)
+    .sort((left, right) => marketOrder(left.market_source_id) - marketOrder(right.market_source_id));
+  return selection === CROSS_MARKET
+    ? ordered
+    : ordered.filter((record) => record.market_source_id === selection);
+}
+
+/** Selector order, so a chart's series and the market control agree about which comes first. */
+function marketOrder(sourceId: string): number {
+  const index = Object.keys(MARKET_SOURCES).indexOf(sourceId);
+  return index === -1 ? Object.keys(MARKET_SOURCES).length : index;
 }

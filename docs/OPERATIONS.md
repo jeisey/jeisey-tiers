@@ -32,7 +32,7 @@ No live data vendor access in normal PR CI.
 >
 > - `python` — uv sync --frozen, `ruff check`, `ruff format --check`, `mypy`, `pytest` (with a JUnit report so the summary can count), `ffdraft config-check`, the fixture mini-pipeline, `validate-artifacts`, and a staleness check on the committed golden artifacts.
 > - `web` — npm ci, lint, typecheck, vitest, a root build, and a project-Pages base-path build that asserts both that assets resolve under `/jeisey-tiers/` **and** that no absolute `/assets/` or `/data/` path survived.
-> - `e2e` — Playwright over five built sites (root, `/jeisey-tiers/`, three degraded-artifact scenarios), then `verify:board` against the root build and the matured-market build. The second is the only fixture with a non-null `market_trend`, so it is the only one that exercises the Trend column.
+> - `e2e` — Playwright over the built sites (root, `/jeisey-tiers/`, and the degraded-artifact and lifecycle scenarios), then `verify:board` against the root build and the matured-market build. The second is the only fixture with a non-null `market_trend`, so it is the only one that exercises the Trend column and the chart's slope readout.
 >
 > Caching: `~/.cache/uv` keyed on the lockfile, npm through `setup-node`, and the Playwright browser keyed on `package-lock.json` so a client upgrade can never pair with an old browser build. Each job writes a step summary.
 >
@@ -160,7 +160,7 @@ Four steps, each a script that also runs locally against a static server:
 | step | what it proves |
 |---|---|
 | `verify-live.mjs` | the document, every script/stylesheet/icon href **under the deployed base path** and answering 200, the vendored fonts, the logo's decoded `naturalWidth`, all five JSON artifacts and four CSVs, the three views, a player card, a shared query-state link across a reload, a phone reflow, and that no request leaves the site's origin |
-| `verify:board` | every rendered tier row, chart mark, arbitrage row and injury badge against the bytes the site served |
+| `verify:board` | every rendered tier row, chart mark, arbitrage row, injury badge **and the player card's retained market history — per published market, plus the cross-market overlay** — against the bytes the site served |
 | `verify:presets` | all nine scoring × league-size blocks resolve, in the artifact and in the browser |
 | `verify:csv` | all four exports downloaded and parsed |
 
@@ -323,11 +323,18 @@ node web/tests/e2e/measure-performance.mjs       # timings on a production-scale
 node web/tests/e2e/measure-performance.mjs --css <file>   # …with one motif neutralised
 ```
 
-**The fixture builds include a second market condition.** `/scenario/matured/` serves the same
-board priced by a sufficient cohort, with medium confidence and a measured trend, because the
-default fixture is the launch condition — uniformly `low`, null trend — and Phase 8 found that a
-suite bound to only that had frozen a state production had already left. `verify:board` can be
-pointed at it, which is the only way to check the trend column against artifact bytes:
+**The fixture builds include a second market condition, and two markets with different
+retained histories.** `/scenario/matured/` serves the same board priced by a sufficient cohort,
+with medium confidence and a measured trend, because the default fixture is the launch
+condition — uniformly `low`, null trend — and Phase 8 found that a suite bound to only that had
+frozen a state production had already left.
+
+The same build now also carries what ADR-081 found missing: **MyFantasyLeague's window
+qualifies for `phase5_trend_v1` and FFC's does not**, so one card shows a slope and the other
+shows a chart beside `trend collecting`. `/scenario/no-ffc-history/` removes FFC's series
+entirely, which is the state a newly enabled source is in on its first morning.
+`verify:board` can be pointed at the matured build, which is the only way to check the Trend
+column and the chart against artifact bytes:
 
 ```bash
 node web/tests/e2e/static-server.mjs &
@@ -349,7 +356,7 @@ green-or-red on things the local machine can actually decide (ADR-059).
 
 `npm run e2e` produces its own builds through `globalSetup`, so it needs no prior `npm run build`; `E2E_SKIP_BUILD=1` reuses what is on disk while iterating on a spec. The end-to-end server is `web/tests/e2e/static-server.mjs`, which maps URLs to files under `web/dist*` and serves nothing else — every spec additionally fails on a request that leaves localhost.
 
-`npm run verify:board` is the one command that needs the **real** generated artifacts rather than fixtures: build the site with `web/public/data/` populated and it serves the build itself, then cross-checks rendered tier rows, chart-mark labels, arbitrage rows and injury badges against the artifact bytes. That is the check behind the Phase-6 exit gate's "chart values agree with the table" clause, and `daily-refresh.yml` runs it on every production build before uploading the Pages artifact.
+`npm run verify:board` is the one command that needs the **real** generated artifacts rather than fixtures: build the site with `web/public/data/` populated and it serves the build itself, then cross-checks rendered tier rows, chart-mark labels, arbitrage rows and injury badges against the artifact bytes. It also opens a player card once per market in `market_trend_series.json` and compares the drawn marks, the latest reading and the legend's slope with that market's own record — the check that would have caught a second market shipping with a price and no history (ADR-081). That is the check behind the Phase-6 exit gate's "chart values agree with the table" clause, and `daily-refresh.yml` runs it on every production build before uploading the Pages artifact.
 
 Phase 7 made it self-contained — Phase 6 needed a server started by hand — and gave it three options:
 

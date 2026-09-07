@@ -4,6 +4,13 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Post-Release-2 bugfix, 2026-09-07 — the player card's market history (ADR-081).** A card with
+the default market selected showed a current FFC ADP beside "0 snapshots so far", while seven
+FFC snapshots sat in the retained store, and printed MyFantasyLeague's slope under the heading
+`Market trend`. Four defects and one structural impossibility, none of which was a crash and
+all of which passed every gate. See **What the market-history bugfix changed** below; the
+Phase-12 record that follows it is unchanged.
+
 **Phase 12 — implemented 2026-09-04. In-Season mode exists, end to end.** The accepted model
 reaches disk as a versioned production artifact, a deterministic season-state rule decides which
 product the site shows, a rest-of-season build publishes two new artifacts behind their own
@@ -1372,6 +1379,46 @@ what would have to be true before it is worth doing.
    nobody is reading a number it would move.
 8. **FTN advanced metrics.** Still open, still not needed, and still carrying a share-alike
    obligation that would bind what this site publishes.
+
+## What the market-history bugfix changed (2026-09-07, ADR-081)
+
+**Root cause, in one line: only the first market ever had a past.** `pipeline/market.py`
+loaded a trailing retained window for MyFantasyLeague; every other source went through
+`load_extra_quotes`, which read `read_latest` and nothing else. So FFC's `market_trend` was
+`None` because nothing had computed one, `market_trend_series.json` carried no FFC record at
+all, and the frontend filled the resulting nulls in from MyFantasyLeague's flat V1 fields. The
+cross-market view had no chart at any point, because the App passed the *selection* — the
+string `cross` — into an index keyed by source ids.
+
+| | before | after |
+|---|---|---|
+| retained window | MFL only | every enabled ADP source, each anchored on its own newest capture |
+| `market_trend_series` (2026-09-06 store) | 2,232, all MFL | 3,957 — 2,232 MFL, 1,725 FFC |
+| FFC's slope | `null`, never computed | `null`, **measured**: 4 observation days over 2.71 of span |
+| a selected source's null | silently became MFL's number | stays null, and says `collecting` |
+| cross-market chart | none | both real series on one dated axis |
+| chart threshold | 3 points or nothing | 1 point draws a point; the *slope* keeps its gate |
+
+**What is deliberately unchanged.** `phase5_trend_v1` — trailing 7 days, ≥3 observation days,
+≥3 days of span — is the same frozen rule computed by the same functions; `ffdraft.market.history`
+is an extraction, not a re-implementation. MyFantasyLeague's published output is
+semantically identical. No schema version moved.
+
+**Two things a future session should not re-derive.**
+
+1. **A null slope beside a non-empty history is the normal, correct state** for a young source,
+   and the artifact publishes both separately on purpose. Do not "fix" it by softening the rule.
+2. **There is no `cross` market and there will not be one.** It is a view the reader selects.
+   `cross_artifact` refuses a series record naming it, and `historiesFor` ignores one.
+
+**Found by the new check, not by review:** `cross_artifact.trend_series_agreement` failed on its
+first real build for 20 players a market had priced inside the seven-day window and dropped from
+its latest snapshot — a chart under a card that says it has no price. The series scope is now
+per source, not per board.
+
+**Verified on the real retained store** (`jeisey/jeisey-tiers-market-data@1bd7f20`):
+`validate-artifacts` 0 critical / 0 warning, `verify:board` 0 failures with both markets charted,
+and screenshots of all three modes in `docs/visual-qa/2026-09-07-market-history/`.
 
 ## Next action
 

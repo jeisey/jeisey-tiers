@@ -43,9 +43,12 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
 import { useMediaQuery } from "../components/useMediaQuery";
-import { MarketTrend } from "../charts/MarketTrend";
+import { MarketTrend, type TrendSeries } from "../charts/MarketTrend";
 import type {
   ArbitrageRecord,
+  CrossMarketSummary,
+  ExpertConsensus,
+  MarketComparison,
   MarketTrendSeriesRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
@@ -55,11 +58,12 @@ import type {
 } from "../data/contracts";
 import {
   CROSS_MARKET,
-  comparisonFor,
   consensusOf,
   crossMarketOf,
   crossMarketSummaryText,
+  historiesFor,
   marketLabel,
+  marketView,
   marketsOf,
   windowLabel,
 } from "../data/multimarket";
@@ -99,8 +103,15 @@ export interface PlayerDetailData {
   readonly cohortExact: boolean | null;
   /** The ADP market the reader has selected. Decides which comparison leads the card. */
   readonly market?: string;
-  /** Retained ADP history for that market, or null when there is not enough of it. */
-  readonly trendSeries?: MarketTrendSeriesRecord | null;
+  /**
+   * Every market's retained ADP history for this player, unfiltered.
+   *
+   * The card selects from these rather than being handed one series, because the
+   * cross-market view needs all of them and the selection is not a source: an index keyed by
+   * source id can never hold a `cross` record, and asking it for one is how the cross view
+   * came to have no chart at all (ADR-081).
+   */
+  readonly trendSeries?: readonly MarketTrendSeriesRecord[];
   /**
    * This player's rest-of-season row, when an in-season bundle is loaded.
    *
@@ -148,6 +159,111 @@ function Readout({
         {srSuffix !== undefined && <span className="visually-hidden">{` ${srSuffix}`}</span>}
       </span>
       {hint !== undefined && <span className="readout-hint">{hint}</span>}
+    </div>
+  );
+}
+
+/**
+ * Every market and expert reference for one player, side by side.
+ *
+ * Its own component because it is shown in two situations that are otherwise opposites: when
+ * the selected market priced him, beneath that market's own numbers, and when it did not, in
+ * place of them. The second is the case that matters — a reader told "FFC does not price him"
+ * still needs to see that MyFantasyLeague does, and the alternative to showing it is the
+ * borrowed number this card used to print (ADR-081).
+ */
+function MarketComparisonTable({
+  name,
+  fairRank,
+  markets,
+  consensus,
+  cross,
+  selection,
+}: {
+  readonly name: string;
+  readonly fairRank: number;
+  readonly markets: Readonly<Record<string, MarketComparison>>;
+  readonly consensus: ExpertConsensus | null;
+  readonly cross: CrossMarketSummary | null;
+  readonly selection: string;
+}): React.JSX.Element | null {
+  const entries = Object.values(markets);
+  if (entries.length === 0 && consensus === null) return null;
+  return (
+    <div className="market-compare">
+      <table className="compare-table">
+        <caption className="visually-hidden">
+          {`Every published market and expert reference for ${name}, each compared with the model's fair rank of ${formatRank(fairRank)}.`}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Source</th>
+            <th scope="col">Reading</th>
+            <th scope="col">vs fair rank</th>
+            <th scope="col">Trend</th>
+            <th scope="col">Window</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...entries]
+            .sort((a, b) => a.source_id.localeCompare(b.source_id))
+            .map((entry) => {
+              const entryGap = describeGap(entry.rank_gap);
+              return (
+                <tr
+                  key={entry.source_id}
+                  data-selected={entry.source_id === selection ? "true" : undefined}
+                >
+                  <th scope="row">{marketLabel(entry.source_id)}</th>
+                  <td>{`ADP ${formatAdp(entry.market_adp)}`}</td>
+                  <td className="dir" data-kind={entryGap.kind}>
+                    <span aria-hidden="true">{formatSigned(entry.rank_gap)}</span>
+                    <span className="visually-hidden">{entryGap.sentence}</span>
+                  </td>
+                  {/* Each market's own slope, in the one place a comparison belongs. The
+                      cross-market view has no scalar of its own precisely because this column
+                      does the comparing (ADR-081). */}
+                  <td className="muted">
+                    {entry.market_trend === null ? (
+                      <>
+                        <span className="faint" aria-hidden="true">{EM_DASH}</span>
+                        <span className="visually-hidden">
+                          {`${marketLabel(entry.source_id)}: trend collecting`}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span aria-hidden="true">{formatSigned(entry.market_trend, 2)}</span>
+                        <span className="visually-hidden">
+                          {describeTrend(entry.market_trend).text}
+                        </span>
+                      </>
+                    )}
+                  </td>
+                  <td className="muted">
+                    {windowLabel(entry.aggregation_window_type, entry.aggregation_window_days)}
+                  </td>
+                </tr>
+              );
+            })}
+          {consensus !== null && (
+            <tr data-signal="ecr">
+              <th scope="row">{marketLabel(consensus.source_id)}</th>
+              <td>{`Rank ${String(consensus.ecr)}`}</td>
+              <td className="dir" data-kind={describeGap(consensus.ecr_gap).kind}>
+                <span aria-hidden="true">{formatSigned(consensus.ecr_gap)}</span>
+                <span className="visually-hidden">
+                  {`the expert consensus ranks him ${Math.abs(consensus.ecr_gap).toFixed(0)} places ${consensus.ecr_gap > 0 ? "lower" : "higher"} than the model`}
+                </span>
+              </td>
+              {/* A ranking has no ADP to have a slope over. */}
+              <td className="faint" aria-hidden="true">{EM_DASH}</td>
+              <td className="muted">expert consensus, not a price</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      <p className="section-note">{crossMarketSummaryText(cross)}</p>
     </div>
   );
 }
@@ -328,24 +444,34 @@ export function PlayerDetail({
 
   const { tier, arbitrage, status, projection, ros, rosDisclosures } = data;
   const market = data.market ?? CROSS_MARKET;
-  const selected = arbitrage === null ? null : comparisonFor(arbitrage, market);
+  // One resolution, once. Every number in this card and its rail comes from `view`; nothing
+  // below reaches past it to a flat field, because the flat fields are MyFantasyLeague's and
+  // reading them under an FFC heading is the defect this card had (ADR-067, ADR-081).
+  const view = marketView(arbitrage, market);
+  const selected = view?.comparison ?? null;
   const consensus = arbitrage === null ? null : consensusOf(arbitrage);
   const cross = arbitrage === null ? null : crossMarketOf(arbitrage);
   const everyMarket = arbitrage === null ? {} : marketsOf(arbitrage);
+  // The chart's series, named by the market each came from. There is no `cross` series to
+  // look up: the cross-market view overlays the real ones.
+  const chartSeries: readonly TrendSeries[] = historiesFor(data.trendSeries ?? [], market).map(
+    (record) => ({
+      sourceId: record.market_source_id,
+      label: marketLabel(record.market_source_id),
+      points: record.points,
+      trend: record.market_trend,
+    }),
+  );
   const name = tier?.display_name ?? arbitrage?.display_name ?? status?.display_name ?? "Player";
   const position = tier?.position ?? arbitrage?.position ?? status?.position ?? null;
   const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? null;
-  // The card follows the selector like the table and the rail do. `selected` is the chosen
-  // market's own comparison; the flat V1 fields are the fallback for a Release 1 bundle that
-  // has no `markets` array at all. Reading the flat pair unconditionally is what made the
-  // card show MyFantasyLeague while the table showed FFC (ADR-067).
-  const gap =
-    arbitrage === null ? null : describeGap(selected?.rank_gap ?? arbitrage.rank_gap);
-  const trend =
-    arbitrage === null ? null : describeTrend(selected?.market_trend ?? arbitrage.market_trend);
-  // Labelled by the source the number actually came from. Under the cross-market view
-  // `comparisonFor` resolves to one real source, and calling that "Cross-market ADP" would
-  // name a market the figure did not come from.
+  const gap = selected === null ? null : describeGap(selected.rank_gap);
+  // Null under `cross` by construction, and null when the selected market genuinely has no
+  // slope yet. Both read as "collecting"; neither borrows another market's number.
+  const trend = view === null ? null : describeTrend(view.trend);
+  // Labelled by the source the number actually came from. Under the cross-market view the
+  // comparison resolves to one real source, and calling that "Cross-market ADP" would name a
+  // market the figure did not come from.
   const shownMarket = selected?.source_id ?? market;
   const badge = statusBadge(status);
   const meaningful = hasMeaningfulStatus(status);
@@ -523,9 +649,17 @@ export function PlayerDetail({
             arbitrage === null ? undefined : (
               <>
                 <span className="detail-badge-label">Market data</span>
+                {/* The count is source-specific — FFC's rolling window and MyFantasyLeague's
+                    season aggregate are backed by different numbers of drafts — so it comes
+                    from the selected market rather than from the flat V1 field. A market
+                    that publishes no count says so instead of borrowing one. */}
                 <ConfidenceMeter
                   confidence={arbitrage.confidence}
-                  label={`${CONFIDENCE_SHORT[arbitrage.confidence]} · ${formatInteger(arbitrage.market_sample_size)} drafts`}
+                  label={`${CONFIDENCE_SHORT[arbitrage.confidence]} · ${
+                    selected?.market_sample_size == null
+                      ? "sample not published"
+                      : `${formatInteger(selected.market_sample_size)} drafts`
+                  }`}
                 />
               </>
             )
@@ -538,6 +672,27 @@ export function PlayerDetail({
                 ? `No current ${marketLabel(market)} ADP. He is fully ranked on the tier board; there is simply no market price to compare against.`
                 : "The market comparison is unavailable for this build."}
             </p>
+          ) : selected === null ? (
+            /*
+             * The selected market did not price him — and another one may well have. Saying
+             * so, and then still listing every market that did, is the whole difference
+             * between an honest absence and the em dash that used to be a borrowed number:
+             * the readouts are this market's, so they are withheld; the table is every
+             * market's, so it stays, however short it is (ADR-081).
+             */
+            <>
+              <p className="detail-empty">
+                {`No current ${marketLabel(market)} ADP for him. He is fully ranked on the tier board, and the markets that do price him are below.`}
+              </p>
+              <MarketComparisonTable
+                name={name}
+                fairRank={arbitrage.fair_rank}
+                markets={everyMarket}
+                consensus={consensus}
+                cross={cross}
+                selection={market}
+              />
+            </>
           ) : (
             <>
               {gap !== null && (
@@ -549,17 +704,14 @@ export function PlayerDetail({
               <div className="readout-grid">
                 <Readout
                   label={`${marketLabel(shownMarket)} ADP`}
-                  value={formatAdp(selected?.market_adp ?? arbitrage.market_adp)}
+                  value={formatAdp(selected.market_adp)}
                   hint={data.cohortExact === false ? "approximate cohort" : undefined}
                   strong
                 />
-                <Readout
-                  label="Market rank"
-                  value={formatRank(selected?.market_rank ?? arbitrage.market_rank)}
-                />
+                <Readout label="Market rank" value={formatRank(selected.market_rank)} />
                 <Readout
                   label="Value gap"
-                  value={formatSigned(selected?.rank_gap ?? arbitrage.rank_gap)}
+                  value={formatSigned(selected.rank_gap)}
                   kind={gap?.kind}
                   hint={
                     gap?.kind === "bargain"
@@ -572,109 +724,86 @@ export function PlayerDetail({
                 />
                 {/* `Arbitrage score` is in the identity rail, which every variant renders. One
                     label, one place. */}
+                {view?.trendIsScalar === true ? (
+                  <Readout
+                    label={`${marketLabel(shownMarket)} trend`}
+                    value={view.trend === null ? EM_DASH : formatSigned(view.trend, 2)}
+                    hint={view.trend === null ? "collecting" : trend?.text}
+                    srSuffix={view.trend === null ? "trend collecting" : trend?.text}
+                  />
+                ) : (
+                  /* No market published a cross-market trend, and one source's slope under the
+                     word "Cross-market" would name a market the number did not come from. The
+                     per-source slopes are in the chart's legend and in the comparison table
+                     below, which is where a comparison belongs (ADR-081). */
+                  <Readout
+                    label="Market trend"
+                    value={EM_DASH}
+                    hint="per market, below"
+                    srSuffix="each market's own trend is listed with its history below"
+                  />
+                )}
                 <Readout
-                  label="Market trend"
+                  label="Aggregation window"
                   value={
-                    arbitrage.market_trend === null
-                      ? EM_DASH
-                      : formatSigned(arbitrage.market_trend, 2)
+                    windowLabel(
+                      selected.aggregation_window_type,
+                      selected.aggregation_window_days,
+                    ) || EM_DASH
                   }
-                  hint={trend?.direction === "unknown" ? "collecting" : trend?.text}
-                  srSuffix={trend?.direction === "unknown" ? "trend collecting" : trend?.text}
+                  size="sm"
                 />
               </div>
 
-              {/* The same history the slope above was computed from, as a shape. Up is
-                  earlier — the axis is inverted, because a falling line for "the market
+              {/* The retained observations the slope above was estimated from, as a shape. Up
+                  is earlier — the axis is inverted, because a falling line for "the market
                   likes him more" reads backwards (roadmap 10.7). No vendor is called: the
-                  points come from the artifact, which came from a retained snapshot. */}
+                  points come from the artifact, which came from a retained snapshot. Under the
+                  cross-market view every market's real series is drawn on one dated axis;
+                  nothing is averaged into a line no capture produced. */}
               <MarketTrend
-                points={data.trendSeries?.points ?? []}
-                label={marketLabel(selected?.source_id ?? arbitrage.market_source_id)}
-                trend={arbitrage.market_trend}
+                series={chartSeries}
+                label={market === CROSS_MARKET ? "market" : marketLabel(market)}
               />
 
               {/* Every market side by side. The expert consensus sits with them and is
                   labelled a ranking, because a reader comparing the model to the experts is
-                  asking a different question from one comparing it to a price. */}
+                  asking a different question from one comparing it to a price.
+
+                  Only when there is something to compare: a one-row table directly beneath
+                  that market's own readouts is the same numbers twice. */}
               {(Object.keys(everyMarket).length > 1 || consensus !== null) && (
-                <div className="market-compare">
-                  <table className="compare-table">
-                    <caption className="visually-hidden">
-                      {`Every published market and expert reference for ${name}, each compared with the model's fair rank of ${formatRank(arbitrage.fair_rank)}.`}
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Source</th>
-                        <th scope="col">Reading</th>
-                        <th scope="col">vs fair rank</th>
-                        <th scope="col">Window</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.values(everyMarket)
-                        .sort((a, b) => a.source_id.localeCompare(b.source_id))
-                        .map((entry) => {
-                          const entryGap = describeGap(entry.rank_gap);
-                          return (
-                            <tr
-                              key={entry.source_id}
-                              data-selected={entry.source_id === market ? "true" : undefined}
-                            >
-                              <th scope="row">{marketLabel(entry.source_id)}</th>
-                              <td>{`ADP ${formatAdp(entry.market_adp)}`}</td>
-                              <td className="dir" data-kind={entryGap.kind}>
-                                <span aria-hidden="true">{formatSigned(entry.rank_gap)}</span>
-                                <span className="visually-hidden">{entryGap.sentence}</span>
-                              </td>
-                              <td className="muted">
-                                {windowLabel(
-                                  entry.aggregation_window_type,
-                                  entry.aggregation_window_days,
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      {consensus !== null && (
-                        <tr data-signal="ecr">
-                          <th scope="row">{marketLabel(consensus.source_id)}</th>
-                          <td>{`Rank ${String(consensus.ecr)}`}</td>
-                          <td className="dir" data-kind={describeGap(consensus.ecr_gap).kind}>
-                            <span aria-hidden="true">{formatSigned(consensus.ecr_gap)}</span>
-                            <span className="visually-hidden">
-                              {`the expert consensus ranks him ${Math.abs(consensus.ecr_gap).toFixed(0)} places ${consensus.ecr_gap > 0 ? "lower" : "higher"} than the model`}
-                            </span>
-                          </td>
-                          <td className="muted">expert consensus, not a price</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                  <p className="section-note">{crossMarketSummaryText(cross)}</p>
-                </div>
+                <MarketComparisonTable
+                  name={name}
+                  fairRank={arbitrage.fair_rank}
+                  markets={everyMarket}
+                  consensus={consensus}
+                  cross={cross}
+                  selection={market}
+                />
               )}
               <div className="readout-grid">
                 <Readout
                   label="Observed picks"
-                  value={(() => {
-                    const low = selected?.market_adp_low ?? arbitrage.market_adp_low;
-                    const high = selected?.market_adp_high ?? arbitrage.market_adp_high;
-                    return low === null || high === null
+                  value={
+                    selected.market_adp_low === null || selected.market_adp_high === null
                       ? EM_DASH
-                      : `${formatAdp(low)} – ${formatAdp(high)}`;
-                  })()}
+                      : `${formatAdp(selected.market_adp_low)} – ${formatAdp(selected.market_adp_high)}`
+                  }
                   hint="earliest – latest"
                 />
                 <Readout
                   label="Regional value gap"
-                  value={(selected?.regional_value_gap ?? arbitrage.regional_value_gap).toFixed(3)}
+                  value={selected.regional_value_gap.toFixed(3)}
                 />
-                <Readout label="Cohort" value={arbitrage.market_cohort_detail} size="sm" />
+                {/* The selected market's own cohort and its own capture time. The flat pair
+                    here named MyFantasyLeague's cohort and MyFantasyLeague's snapshot under an
+                    FFC heading, which is two sources' provenance in one grid. */}
+                <Readout label="Cohort" value={selected.market_cohort_detail} size="sm" />
                 <Readout
                   label="Snapshot"
-                  value={formatEastern(arbitrage.market_snapshot_at_utc)}
-                  hint={marketSourceLabel(arbitrage.market_source_id)}
+                  value={formatEastern(selected.market_snapshot_at_utc)}
+                  hint={marketSourceLabel(selected.source_id)}
                   size="sm"
                 />
               </div>
@@ -761,11 +890,16 @@ export function PlayerDetail({
 
             {/* The three things a drafter reads first, before any grid. */}
             <div className="rail-verdict">
-              {arbitrage !== null && gap !== null && (
+              {selected !== null && gap !== null && (
                 <div>
-                  <span className="rail-verdict-label">Market verdict</span>
+                  {/* The number and the sentence must be the same market's. The rail printed
+                      the flat V1 gap — MyFantasyLeague's — beneath a sentence computed from
+                      the selected market, so with FFC selected the two disagreed (ADR-081). */}
+                  <span className="rail-verdict-label">
+                    {`${marketLabel(selected.source_id)} verdict`}
+                  </span>
                   <span className="rail-verdict-value" data-kind={gap.kind}>
-                    {`${formatSigned(arbitrage.rank_gap)} ${
+                    {`${formatSigned(selected.rank_gap)} ${
                       gap.kind === "bargain" ? "later" : gap.kind === "premium" ? "earlier" : "even"
                     }`}
                   </span>
@@ -860,9 +994,9 @@ export function PlayerDetail({
 
             <div className="detail-foot">
               <span className="detail-foot-stamp">
-                {arbitrage === null
+                {selected === null
                   ? "Intrinsic values from this build"
-                  : `Snapshot ${formatEastern(arbitrage.market_snapshot_at_utc)}`}
+                  : `${marketLabel(selected.source_id)} snapshot ${formatEastern(selected.market_snapshot_at_utc)}`}
               </span>
               {onOpenData !== undefined && (
                 <p className="detail-methodology">

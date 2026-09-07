@@ -49,6 +49,7 @@ import type {
   ScoringPreset,
   TierRecord,
   MarketComparison,
+  MarketTrendSeriesRecord,
 } from "../../src/data/contracts";
 
 /**
@@ -67,6 +68,18 @@ export const FIXTURE_GENERATED_AT = "2026-08-21T14:38:00Z";
 export const FIXTURE_SNAPSHOT_AT = "2026-08-20T14:38:44Z";
 /** The same board a fortnight later: a fuller cohort, a trend window, mixed confidence. */
 export const FIXTURE_MATURED_SNAPSHOT_AT = "2026-09-03T11:25:57Z";
+
+/**
+ * FFC's own capture times, which are **not** MyFantasyLeague's.
+ *
+ * Two markets captured by two jobs are observed minutes apart at best, and a card that
+ * printed one source's snapshot time under the other's name would be wrong in a way nothing
+ * could see while both fixtures carried the same instant.
+ */
+export const FFC_SNAPSHOT_AT: Readonly<Record<MarketCondition, string>> = {
+  launch: "2026-08-20T14:41:07Z",
+  matured: "2026-09-03T11:27:12Z",
+};
 
 interface Seed {
   readonly id: string;
@@ -263,7 +276,15 @@ export function arbitrageRecords(condition: MarketCondition = "launch"): Arbitra
             condition === "launch" ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT,
           confidence,
           quality_flags: flags.sort(),
-          ...secondMarket(adp, entry.tier.fair_rank, condition, rank),
+          ...secondMarket(
+            entry.tier.player_id,
+            adp,
+            entry.tier.fair_rank,
+            condition,
+            rank,
+            trend,
+            condition === "launch" ? entry.seed.sample : maturedSample(entry.seed.sample),
+          ),
         });
       }
     }
@@ -284,27 +305,34 @@ export function arbitrageRecords(condition: MarketCondition = "launch"): Arbitra
  * a consumer reading the wrong one would still render the right value. FFC's seven-day
  * window prices a riser earlier than MFL's season aggregate, so the offset leans that way.
  *
- * Every third row is left single-market on purpose. A source covering part of the board is
- * the normal case, and those rows are what prove the cross-market summary says "one market"
- * rather than inventing a spread of zero.
+ * Three named players are left single-market on purpose. A source covering part of the board
+ * is the normal case, and those rows are what prove the cross-market summary says "one
+ * market" rather than inventing a spread of zero — and, since the selector defaults to FFC,
+ * what proves the card says "this market does not price him" instead of quietly showing
+ * MyFantasyLeague's number under an FFC heading (ADR-081).
+ *
+ * Named rather than derived from a gap rank, so which player is single-market is a fact this
+ * file states and a test can rely on, rather than a consequence of the arithmetic above.
  */
-function secondMarket(
+/** MyFantasyLeague's own comparison, which is also the whole of a single-market row. */
+function onlyMflMarket(
   adp: number,
   fairRank: number,
   condition: MarketCondition,
-  rank: number,
-): Pick<ArbitrageRecord, "markets" | "cross_market"> | Record<string, never> {
-  if (rank % 3 === 2) return {};
-  const snapshot = condition === "launch" ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT;
-  const ffcAdp = round(Math.max(1, adp - (adp * 0.08 + (rank % 2 ? 1.5 : -2.5))));
-  const mfl: MarketComparison = {
+  trend: number | null,
+  sample: number | null,
+): MarketComparison {
+  return {
     source_id: "myfantasyleague_adp",
     market_signal_type: "adp",
     market_adp: adp,
     market_rank: Math.max(1, Math.round(adp / 2)),
     rank_gap: round(adp - fairRank),
     regional_value_gap: round(Math.log(adp / fairRank), 6),
-    market_sample_size: null,
+    // Source-specific: an FFC rolling week and an MFL season aggregate are backed by
+    // different numbers of drafts, and a card showing one under the other's name is the
+    // same class of mistake as showing one's trend under the other's label.
+    market_sample_size: sample,
     // MFL publishes order statistics and no standard deviation; FFC is the other way round.
     // Keeping that asymmetry is what stops the Dispersion column being written for one shape.
     market_adp_sd: null,
@@ -315,10 +343,51 @@ function secondMarket(
     aggregation_window_days: null,
     market_cohort_id: condition === "launch" ? "no-mock-no-keeper" : "no-keeper",
     market_cohort_detail: "IS_KEEPER=N (approximate cohort)",
-    market_snapshot_at_utc: snapshot,
-    market_trend: null,
+    market_snapshot_at_utc:
+      condition === "launch" ? FIXTURE_SNAPSHOT_AT : FIXTURE_MATURED_SNAPSHOT_AT,
+    // The flat V1 field is MyFantasyLeague's, so this entry carries the same number. They
+    // are two views of one measurement and a fixture in which they differed would be
+    // describing an artifact the build cannot produce.
+    market_trend: trend,
     quality_flags: [],
   };
+}
+
+const FFC_UNPRICED: ReadonlySet<string> = new Set([
+  "gsis:00-0000009", // Joe Burrow, a premium row
+  "gsis:00-0000008", // Josh Allen, the other premium row
+  "gsis:00-0000015", // Zay Meadows, a bargain row in the middle of the board
+]);
+
+function secondMarket(
+  playerId: string,
+  adp: number,
+  fairRank: number,
+  condition: MarketCondition,
+  rank: number,
+  trend: number | null,
+  sample: number | null,
+): Pick<ArbitrageRecord, "markets" | "cross_market"> | Record<string, never> {
+  if (FFC_UNPRICED.has(playerId)) {
+    // Still a `markets` array: MyFantasyLeague priced him and says so. An absent array would
+    // mean "Release 1 bundle", which is a different shape entirely.
+    const only = onlyMflMarket(adp, fairRank, condition, trend, sample);
+    return {
+      markets: [only],
+      cross_market: {
+        sources_available: [only.source_id],
+        market_adp_min: adp,
+        market_adp_max: adp,
+        market_adp_median: adp,
+        // Null, never zero: one market speaking is not two markets agreeing.
+        market_disagreement_range: null,
+        cheapest_market_source: only.source_id,
+        most_expensive_market_source: only.source_id,
+      },
+    };
+  }
+  const ffcAdp = round(Math.max(1, adp - (adp * 0.08 + (rank % 2 ? 1.5 : -2.5))));
+  const mfl = onlyMflMarket(adp, fairRank, condition, trend, sample);
   const ffc: MarketComparison = {
     ...mfl,
     source_id: "fantasyfootballcalculator_adp",
@@ -327,6 +396,7 @@ function secondMarket(
     // Each source is compared against the same fair rank, so the gaps genuinely differ.
     rank_gap: round(ffcAdp - fairRank),
     regional_value_gap: round(Math.log(ffcAdp / fairRank), 6),
+    market_sample_size: condition === "launch" ? 1794 : 3142,
     market_adp_sd: round(2 + (rank % 5)),
     market_adp_low: null,
     market_adp_high: null,
@@ -334,6 +404,19 @@ function secondMarket(
     aggregation_window_days: 7,
     market_cohort_id: "ffc-half-ppr",
     market_cohort_detail: "format=half-ppr",
+    market_snapshot_at_utc: FFC_SNAPSHOT_AT[condition],
+    /*
+     * **Null on purpose, and never inherited.** FFC is captured on its own cadence and its
+     * retained window is younger than MyFantasyLeague's: it has real observations over four
+     * calendar days but only 2.6 days of elapsed span, so `phase5_trend_v1` declines to
+     * estimate a slope while the chart has five points to draw.
+     *
+     * This is the production state on the day the bug was found, and no fixture in this
+     * repository could express it: FFC simply repeated MFL's null, so nothing distinguished
+     * "this market has not moved" from "this market's slope is not computable yet" and
+     * nothing could catch a card that filled the null in from MyFantasyLeague (ADR-081).
+     */
+    market_trend: null,
   };
   const cheapest = ffcAdp <= adp ? ffc.source_id : mfl.source_id;
   return {
@@ -546,6 +629,85 @@ export function arbitrageEnvelope(
     ...envelope("arbitrage", "arbitrage_record", arbitrageRecords(condition)),
     arbitrage_mode: "baseline",
   };
+}
+
+/**
+ * The retained capture cadences the two markets actually have, per condition.
+ *
+ * They differ in every respect that matters, because a fixture whose two histories matched
+ * could not tell a chart reading the right source from one reading the wrong source — the
+ * exact reason a second market shipped with no chart at all and every gate stayed green
+ * (ADR-081).
+ *
+ * `hours` are offsets back from that source's own snapshot instant, newest last. FFC's
+ * matured plan puts **two captures on one calendar day** (55h and 38h back) and spans 62
+ * hours in total: four observation days, which `phase5_trend_v1` accepts, over 2.6 days of
+ * span, which it does not. That is a chart with five points and a slope of `null`, which is
+ * the state the card has to render honestly rather than fill in from elsewhere.
+ */
+const HISTORY_PLANS: Readonly<
+  Record<string, Readonly<Record<MarketCondition, { readonly hours: readonly number[]; readonly drift: number }>>>
+> = {
+  myfantasyleague_adp: {
+    launch: { hours: [26, 0], drift: 0.3 },
+    matured: { hours: [144, 120, 96, 72, 48, 24, 0], drift: 0.3 },
+  },
+  fantasyfootballcalculator_adp: {
+    launch: { hours: [0], drift: 0.55 },
+    matured: { hours: [62, 55, 38, 19, 0], drift: 0.55 },
+  },
+};
+
+/**
+ * One market's retained history for every player it priced.
+ *
+ * Derived from the published arbitrage rows, so the chart's newest point is the ADP the card
+ * shows and the record's `market_trend` is that market's own slope — the two agreements the
+ * artifact validator checks on the Python side and the browser has no way to notice.
+ */
+export function marketTrendSeriesRecords(
+  condition: MarketCondition = "launch",
+): MarketTrendSeriesRecord[] {
+  const records: MarketTrendSeriesRecord[] = [];
+  for (const row of arbitrageRecords(condition)) {
+    const quotes: readonly MarketComparison[] =
+      (row.markets ?? []).length > 0
+        ? (row.markets ?? []).filter((entry) => entry.market_signal_type === "adp")
+        : [];
+    for (const quote of quotes) {
+      const plan = HISTORY_PLANS[quote.source_id]?.[condition];
+      if (plan === undefined) continue;
+      const anchor = Date.parse(quote.market_snapshot_at_utc);
+      // Signed from the player id, so the fixture holds both directions.
+      let codes = 0;
+      for (let i = 0; i < row.player_id.length; i += 1) codes += row.player_id.charCodeAt(i);
+      const step = codes % 2 === 0 ? plan.drift : -plan.drift;
+      records.push({
+        schema_version: "1.0",
+        build_id: FIXTURE_BUILD_ID,
+        market_source_id: quote.source_id,
+        scoring_preset: row.scoring_preset,
+        league_preset_id: row.league_preset_id,
+        player_id: row.player_id,
+        cohort_id: quote.market_cohort_id,
+        window_days: 7,
+        market_trend: quote.market_trend,
+        points: [...plan.hours]
+          .sort((a, b) => b - a)
+          .map((offset) => ({
+            observed_at: new Date(anchor - offset * 3_600_000).toISOString().replace(/\.\d{3}Z$/, "Z"),
+            market_adp: round(Math.max(0.1, quote.market_adp + step * (offset / 24))),
+          })),
+      });
+    }
+  }
+  return records;
+}
+
+export function marketTrendSeriesEnvelope(
+  condition: MarketCondition = "launch",
+): ArtifactEnvelope<MarketTrendSeriesRecord> {
+  return envelope("market_trend_series", "market_trend_series", marketTrendSeriesRecords(condition));
 }
 
 /**
@@ -807,6 +969,9 @@ export function fixtureFiles(condition: MarketCondition = "launch"): Record<stri
     "build_metadata.json": buildMetadata({}, condition),
     "tiers.json": tierEnvelope(),
     "arbitrage.json": arbitrageEnvelope(condition),
+    // Two markets' retained histories, which is the shape production has and no fixture
+    // here carried until it turned out to matter (ADR-081).
+    "market_trend_series.json": marketTrendSeriesEnvelope(condition),
     "player_status.json": playerStatusEnvelope(),
     "projections.json": projectionEnvelope(),
   };

@@ -34,6 +34,8 @@ import {
   disagreementFor,
   gapFor,
   marketLabel,
+  sourceFor,
+  trendFor,
 } from "../data/multimarket";
 import type { ArbitrageRow } from "../data/model";
 
@@ -236,9 +238,14 @@ function arbitrageColumns(
     {
       id: "market_trend",
       header: "Trend",
-      accessorFn: (row) => row.record.market_trend ?? Number.NEGATIVE_INFINITY,
+      // The selected market's own slope, from the same source the ADP and Value Gap cells in
+      // this row came from. Reading the flat V1 field here put MyFantasyLeague's movement
+      // beside FFC's price on every row of the default view (ADR-081).
+      accessorFn: (row) => trendFor(row.record, market) ?? Number.NEGATIVE_INFINITY,
       cell: (context) => {
-        const trend = context.row.original.record.market_trend;
+        const record = context.row.original.record;
+        const trend = trendFor(record, market);
+        const source = sourceFor(record, market);
         const described = describeTrend(trend);
         if (trend === null) {
           // Never `0`, never "Flat": an absence of evidence must not be dressed as evidence of
@@ -248,7 +255,11 @@ function arbitrageColumns(
               <span className="faint" aria-hidden="true">
                 {EM_DASH}
               </span>
-              <span className="visually-hidden">Trend collecting — not enough observation days yet</span>
+              <span className="visually-hidden">
+                {source === null
+                  ? "No market priced him, so there is no trend"
+                  : `${marketLabel(source)}: Trend collecting — not enough observation days yet`}
+              </span>
             </>
           );
         }
@@ -258,7 +269,9 @@ function arbitrageColumns(
               {described.direction === "earlier" ? "↑" : described.direction === "later" ? "↓" : ""}
               {formatSigned(trend, 2)}
             </span>
-            <span className="visually-hidden">{described.text}</span>
+            <span className="visually-hidden">
+              {source === null ? described.text : `${marketLabel(source)}: ${described.text}`}
+            </span>
           </span>
         );
       },

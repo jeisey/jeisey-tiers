@@ -935,3 +935,64 @@ rehearsal could reach, because both sit in the middle of a season rather than at
 
 See `docs/releases/v2.0.0.md` for the measured results and the definition-of-done verdict
 clause by clause.
+
+### Post-Release-2 bugfix — the player card's market history (ADR-081)
+
+A production card, with the board's default market (FFC) selected, showed a current FFC ADP
+beside "0 snapshots so far" while seven FFC snapshots sat in the retained store — and printed
+MyFantasyLeague's slope under the heading `Market trend`. Scope is this defect only; the
+Phase-11/12 model, the season-state rule and the frozen `phase5_trend_v1` methodology are
+untouched.
+
+- [x] **Reproduced against the real retained store before any code changed.**
+      `jeisey/jeisey-tiers-market-data@1bd7f20` holds 7 FFC snapshots for 2026 (2026-09-03
+      18:18Z .. 2026-09-06 11:22Z) and 32 MFL. The pre-fix pipeline produced 2,232
+      `market_trend_series` records, **all MyFantasyLeague**, and every FFC quote carried
+      `market_trend: null` because nothing had computed one.
+- [x] **The retained-history path is extracted, not duplicated** (`ffdraft/market/history.py`).
+      One `RetainedHistory` per source — window, cohorts, trends — built by `current.py` for
+      MyFantasyLeague and by `extra.py` for every other enabled source, over the same frozen
+      `compute_trends`. Each source's window is anchored on its own newest capture.
+- [x] **A source's cohorts are derived from its own retained rows**, so FFC's scoring-specific
+      cohort maps across every supported league preset without claiming FFC observes league
+      size (ADR-056). A scoring preset served by two cohorts is refused and reported rather
+      than resolved.
+- [x] **`market_trend_series` is generated for every priced market**, scoped per source to the
+      players that market actually priced. 3,957 records on the 2026-09-06 store — 2,232 MFL,
+      1,725 FFC.
+- [x] **`build_metadata.market.trend_sources`** records, per source, its retained snapshot
+      count, whether a slope was computable and whether a series was published.
+- [x] **The frozen rule is not weakened.** FFC's 2026-09-06 window is four observation days over
+      2.71 days of span; its slope stays `null` and the card says `collecting`.
+- [x] **One selected-source view model for the card** (`marketView`). ADP, market rank, gap,
+      sample size, cohort, snapshot time, aggregation window, trend and chart all follow the
+      selection; the only remaining fallback is a Release 1 bundle with no `markets` array at
+      all. A market that did not price a player says so and still lists the markets that did.
+- [x] **The chart draws observations, not estimates.** One point draws a point, two draw a line,
+      and the scalar stays `collecting` until `phase5_trend_v1` qualifies. The x axis is time;
+      several captures on one UTC day reduce to the latest of that day, documented as a
+      presentation rule that the slope's input does not share.
+- [x] **Cross mode overlays the real series** on one dated axis, told apart by stroke pattern
+      and named in a legend that carries each market's own trend. No synthetic `cross` history
+      is generated, requested or drawn, and no single cross-market scalar is shown.
+- [x] **The arbitrage table's Trend column follows the selector**, so a row's price, gap and
+      movement are one market's account of the player.
+- [x] **The agreement ADR-066 claimed is now checked.**
+      `cross_artifact.trend_series_agreement` compares, per source, the published slope, the
+      newest point against that market's ADP, and that every series belongs to a market on the
+      board. It found a real defect on its first real build — 20 players a market had priced
+      inside the window and dropped from its latest snapshot.
+- [x] **Both fixture pipelines carry two markets with genuinely different histories**, one
+      qualifying and one chartable-but-unqualified, and the Python fixture's board and series
+      now agree about the slope (they did not; nothing compared them).
+- [x] **Load-bearing tests**: `tests/unit/test_market_history.py`,
+      `tests/unit/test_market_extra.py` (per-source trends, cohort derivation, degradation),
+      `tests/integration/test_market_pipeline.py` (both series from retained snapshots, the
+      dropped-player rule, staleness, artifact agreement),
+      `web/tests/playercard-market.test.tsx`, `web/tests/trendchart.test.tsx`,
+      `web/tests/multimarket.test.ts`, `web/tests/model.test.ts`, and
+      `web/tests/e2e/markethistory.spec.ts` end to end from published bytes to a rendered card.
+      Ten of fourteen card tests and five of six pipeline tests fail on the pre-fix code.
+- [x] **Verified on a real-store build.** `validate-artifacts` 0 critical / 0 warning;
+      `verify:board` 0 failures with both markets charted; screenshots of FFC, MFL and Cross in
+      `docs/visual-qa/2026-09-07-market-history/`.

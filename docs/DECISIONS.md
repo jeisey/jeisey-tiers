@@ -2066,9 +2066,21 @@ The adapter, the 50/day budget (half the vendor's stated 100, per the roadmap), 
 
 **Sparse history is a state, not an empty chart.** Below three points the component says so in words. Two points make a line that implies a trend the store cannot support, and the store is genuinely young for any newly captured source.
 
+> **Superseded in part by ADR-081 (2026-09-07).** This clause conflated two questions. It is
+> right that two points cannot support a *slope*; it is wrong that they cannot be *shown*. A
+> retained ADP is an observation whether or not another follows it, and refusing to draw one
+> is how a market with seven real snapshots came to read "0 snapshots so far" on a live card.
+> The scalar's gate is unchanged and still `phase5_trend_v1`; the chart's threshold is gone.
+> The rest of this ADR stands, and the "asserted equal by the cross-artifact validator" claim
+> below is now true — ADR-081 wrote the check that was described here and never implemented.
+
 **The scalar stays.** `market_trend` still sorts the table, still exports to CSV, and is still what the accessible summary reads. The chart draws the history that produced it; it does not replace it.
 
 **Scoped to the published surface.** A series for a player no card can open is weight every visitor downloads for nothing. The restriction is by *published row* rather than by tier depth, so a market-surfaced exception (ADR-063) keeps its chart.
+
+> **Narrowed by ADR-081.** The scope is now the published row **per source**: a market that
+> priced a player last Tuesday and dropped him by Friday still has observations inside the
+> seven-day window, and charting them puts a history under a card that says it has no price.
 
 ---
 
@@ -2985,3 +2997,120 @@ held open waiting for a different vendor contract.
   will make rather than an entitlement it cannot obtain.
 - If the entitlement changes, publishing FantasyPros is a Phase-13 source change under the
   ordinary rules, not a re-opening of Release 2.
+
+---
+
+## ADR-081 — Every retained market gets a history; a null slope is a measurement, not a gap
+
+**Date:** 2026-09-07 (post-Release-2 correction)
+
+**Status:** **Accepted and implemented.** No contract version changes; `market_trend_series.json`
+gains records for a second source and loses none.
+
+**Context.** A reader opened a player card, with the board's default market (FFC) selected, and
+saw a current FFC ADP of 24.5 beside the sentence
+
+> Not enough retained FFC Recent history to draw a trend yet — 0 snapshots so far.
+
+Seven FFC snapshots were in the store at that moment, spanning 3 to 6 September. The card was
+describing our own plumbing and phrasing it as a fact about the market. In the cross-market
+view there was no chart at all.
+
+Four independent defects produced it, and each had a passing test:
+
+1. **`pipeline/market.py` loaded a trailing window for MyFantasyLeague only.** Every other
+   source went through `load_extra_quotes`, which read `read_latest` and nothing else. A second
+   market therefore arrived with a price and no past.
+2. **`market/extra.py` built `SourceQuote`s with no `market_trend`** — the field existed and was
+   never populated — so FFC's slope was `None` because nothing had computed one, which is a
+   different fact from "the frozen rule declines to fit this window".
+3. **`market_trend_series` was generated for the primary source alone**, so no FFC record was
+   ever written, so the chart had nothing to draw whatever the store held.
+4. **The frontend filled the resulting nulls in from MyFantasyLeague.** `selected?.market_trend
+   ?? arbitrage.market_trend` on the card, `record.market_trend` outright in the Trend column,
+   the flat V1 `rank_gap` in the identity rail. The flat fields are MyFantasyLeague's, so with
+   FFC selected the reader was shown one market's price beside another market's movement.
+
+And one structural impossibility: the App passed the *market selection* into an index keyed by
+source id, so `"cross"` was looked up in a map that could never contain it.
+
+**Decision.**
+
+**The retained-history path is extracted, not duplicated.** `ffdraft.market.history` holds one
+`RetainedHistory` per source — the trailing window, the cohort map, the trends — and both
+`build_current_market` and `load_extra_quotes` build one. `phase5_trend_v1` is untouched:
+`compute_trends` and `observations_from_snapshots` are the same functions Phase 5 froze, and
+what changed is that a second source can reach them. Each source's window is anchored on **its
+own** newest capture, because two markets are captured by two jobs hours apart and anchoring
+one on the other's clock would ask the rule about days a source has no evidence for.
+
+**A source's cohorts are read from its own rows.** A normalized row carries the scoring preset
+it describes and the cohort it came from, which is the mapping. FFC resolves to one cohort per
+scoring preset; MyFantasyLeague's filter-defined cohorts carry no scoring tag and keep the
+ADR-039 selection rule. A scoring preset served by two cohorts is **refused and reported**, not
+resolved — choosing would mix populations, which is the one thing the trend rule forbids
+outright. Because FFC accepts `teams` and ignores it (ADR-056), its map repeats one cohort
+across every league size; the repetition *is* the claim that the source does not observe league
+size, and the published `league_size` stays null so nothing can read it as an observation.
+
+**The frozen statistical gate is not weakened to make a chart appear.** FFC on the day this was
+found had four observation days over 2.7 days of span: enough observation days,
+not enough elapsed span. Its slope stays `null` and its card says `trend collecting`. What
+changed is that the *chart* no longer waits for the slope.
+
+**Drawing a history and estimating a trend are different questions.** The component refused to
+draw below three points, on the reasoning that two points imply a trend the store cannot
+support. That is right about the *slope* and wrong about the *history*: a retained ADP on a
+Thursday is a fact whether or not a Saturday follows it. One point draws a point, two draw a
+line, and the scalar stays `collecting` until `phase5_trend_v1` qualifies it, independently.
+
+**The chart's x axis is time, and its point reduction is stated.** Captures are not evenly
+spaced — the store holds three on one afternoon and none the next morning — so an index axis
+would draw a cadence that never happened. Several captures on one UTC calendar day reduce to
+**the latest observation of that day**: the reading that was current when the day ended, which
+also makes the newest point of the series the price the board publishes. This is a
+*presentation* reduction and is allowed to differ from the slope's input, which is still every
+retained observation, unreduced.
+
+**One resolution serves the whole card.** `marketView(record, selection)` returns the selected
+source's comparison or nothing. The only fallback that remains is the one that was ever meant:
+a Release 1 record has no `markets` array at all, and its flat fields are that single source's
+own numbers, lifted into the same shape once. A selected market that did not price a player
+says so — and still lists the markets that did, because "FFC does not price him" and "nothing
+prices him" are different sentences.
+
+**Cross-market mode overlays the real series and invents none.** There is no `cross` source
+record, no synthetic averaged history, and no single scalar labelled "cross-market trend": the
+per-source slopes are in the chart's legend, which is where a comparison belongs. A record
+naming `cross` is refused by the artifact validator and ignored by the chart.
+
+**A series belongs to the market that priced him.** The window is seven days wide and a
+market's current price list is not: a player FFC quoted on Tuesday and dropped by Friday still
+has observations inside it. Charting them would put a history under a card that says "no
+current FFC ADP". The scope is now the published arbitrage row **per source**, which also keeps
+ADR-063's market-surfaced exception charted.
+
+**The agreement ADR-066 claimed is now checked.** ADR-066 said the series carries "the same
+scalar the arbitrage row carries ... asserted equal by the cross-artifact validator". It was
+not — nothing compared them, and the fixture published `market_trend: null` on the board beside
+a fabricated slope in the series for two phases. `cross_artifact.trend_series_agreement` now
+compares, per source: the slope, the newest point against that market's published ADP, and that
+every series belongs to a market on the board. It found a real defect on its first real build
+(the dropped-player case above, 20 rows).
+
+**Why the tests missed all of it.** No fixture in this repository had ever carried a *second*
+market's retained history. The Python fixture generated `market_trend_series` for the primary
+source only; the TypeScript fixtures carried no series artifact at all, so the chart was
+rendered by a component test and by nothing else. Both fixtures now carry two markets with
+genuinely different cadences — MyFantasyLeague qualifying, FFC chartable-but-unqualified — and
+`web/tests/e2e/markethistory.spec.ts` runs the whole path from published bytes to a rendered
+card. This is the second time the same lesson has been recorded here (ADR-067); the difference
+is that the fixture now expresses the *state*, not only the shape.
+
+**Consequences.** `market_trend_series.json` roughly doubles: 2,232 records became 3,957 on the
+2026-09-06 store. The fixture board's MyFantasyLeague rows now carry a measured trend where
+they carried `null`, because the fixture's synthetic window qualifies and the artifacts have to
+agree. The arbitrage table's Trend column follows the market selector, so the default FFC board
+reads an em dash where it used to read MyFantasyLeague's number — that is the correction, not a
+regression. `verify-real-build.mjs` opens a card per published market and compares the drawn
+marks with the artifact's own bytes.

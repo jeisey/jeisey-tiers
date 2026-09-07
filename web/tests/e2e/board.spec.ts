@@ -414,14 +414,16 @@ test.describe("player detail", () => {
       "Uncertainty",
       "Value gap",
       "Arbitrage score",
-      "Market trend",
       "Market data",
     ]) {
       await expect(dialog.getByText(label, { exact: true })).toBeVisible();
     }
-    // The ADP readout is labelled with whichever market the page is showing, so it is matched
-    // by shape rather than by one source's name — the card follows the selector now.
+    // The ADP and trend readouts are labelled with whichever market the page is showing, so
+    // they are matched by shape rather than by one source's name — the card follows the
+    // selector, and a label that named a fixed source would be the defect, not the check
+    // (ADR-067, ADR-081).
     await expect(dialog.locator(".readout-label").filter({ hasText: / ADP$/ })).toBeVisible();
+    await expect(dialog.locator(".readout-label").filter({ hasText: / trend$/ })).toBeVisible();
     // The three paragraphs the Phase-8 review named are gone from the card.
     await expect(dialog).not.toContainText(/cannot filter drafts to this exact scoring/);
     await expect(dialog).not.toContainText(/It is not a probability that the player is a bargain/);

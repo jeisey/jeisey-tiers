@@ -237,16 +237,11 @@ function Board({
       rosDisclosures: inSeason?.metadata.disclosures ?? null,
       marketAvailable: index.hasArbitrage,
       cohortExact: cohortAssignment(metadata, scoring, state.teams)?.exact ?? null,
-      // The chart's own data, keyed by the market the reader has selected: switching the
-      // selector must change the history, not relabel it (roadmap 10.7). Null until the
-      // retained store holds enough of it, which the card renders as a truthful sentence.
+      // Every market's retained history for this player. The card picks which of them to
+      // draw from the selection; passing the *selection* into the index is what made the
+      // cross view look up a `cross` source that no capture ever produced (ADR-081).
       market: state.market,
-      trendSeries: index.trendSeries(
-        leaguePreset,
-        scoring,
-        state.market,
-        selectedPlayerId,
-      ),
+      trendSeries: index.trendSeriesFor(leaguePreset, scoring, selectedPlayerId),
     };
   }, [index, inSeason, metadata, selectedPlayerId, state.scoring, state.teams, state.market]);
 

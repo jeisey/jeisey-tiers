@@ -25,6 +25,7 @@ import { DEFAULT_STATE } from "../src/data/state";
 import {
   arbitrageRecords,
   buildMetadata,
+  marketTrendSeriesRecords,
   playerStatusRecords,
   projectionRecords,
   tierRecords,
@@ -212,5 +213,58 @@ describe("status semantics", () => {
   it("shows nothing at all when there is no status record", () => {
     expect(statusBadge(null)).toBeNull();
     expect(hasMeaningfulStatus(null)).toBe(false);
+  });
+});
+
+
+// --------------------------------------------------------------------------------------
+// Retained histories are looked up by source, never by selection (ADR-081)
+// --------------------------------------------------------------------------------------
+//
+// The index was keyed `block|source|player` and the App passed it `state.market` — which is
+// `cross` in the cross-market view. A lookup for a source no capture produces could only
+// ever miss, so the cross view had no chart at all and nothing in the repository noticed.
+// The accessor now returns *every* source's series and the caller chooses, which is a shape
+// in which that mistake cannot be made.
+
+describe("retained market histories", () => {
+  const withHistory = index({ trendSeries: marketTrendSeriesRecords("matured") });
+  const anyPlayer = arbitrageRecords("matured").find(
+    (record) =>
+      record.league_preset_id === "redraft-12" &&
+      record.scoring_preset === "PPR" &&
+      (record.markets ?? []).length > 1,
+  );
+
+  it("returns every market's history for one player and block", () => {
+    expect(anyPlayer).toBeTruthy();
+    const found = withHistory.trendSeriesFor("redraft-12", "PPR", anyPlayer?.player_id ?? "");
+    expect(found.map((entry) => entry.market_source_id).sort()).toEqual([
+      "fantasyfootballcalculator_adp",
+      "myfantasyleague_adp",
+    ]);
+    for (const entry of found) {
+      expect(entry.league_preset_id).toBe("redraft-12");
+      expect(entry.scoring_preset).toBe("PPR");
+      expect(entry.points.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps blocks apart, so a preset change changes the history", () => {
+    const twelve = withHistory.trendSeriesFor("redraft-12", "PPR", anyPlayer?.player_id ?? "");
+    const ten = withHistory.trendSeriesFor("redraft-10", "PPR", anyPlayer?.player_id ?? "");
+    expect(ten.every((entry) => entry.league_preset_id === "redraft-10")).toBe(true);
+    expect(twelve.every((entry) => entry.league_preset_id === "redraft-12")).toBe(true);
+  });
+
+  it("returns nothing for a player nobody charted, rather than someone else's line", () => {
+    expect(withHistory.trendSeriesFor("redraft-12", "PPR", "gsis:00-9999999")).toEqual([]);
+  });
+
+  it("reports an absent artifact rather than pretending it is empty", () => {
+    const bare = index();
+    expect(bare.hasTrendSeries).toBe(false);
+    expect(bare.trendSeriesFor("redraft-12", "PPR", anyPlayer?.player_id ?? "")).toEqual([]);
+    expect(withHistory.hasTrendSeries).toBe(true);
   });
 });

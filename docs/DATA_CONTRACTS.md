@@ -628,15 +628,42 @@ from the append-only snapshot store the trend was already computed over, and fet
 every other `/data/*.json`. A frontend test asserts the bundle's fetch list contains no vendor
 host. That property is what makes a static architecture viable here at all.
 
-`market_trend` repeats the scalar the arbitrage row carries, from the same points, so a
-consumer of this artifact alone can render the summary without a join. The scalar remains
-authoritative for sorting, CSV and the accessible summary; the chart draws the history that
-produced it.
+`market_trend` repeats the scalar the arbitrage row carries **for that source**, from the same
+points, so a consumer of this artifact alone can render the summary without a join. The scalar
+remains authoritative for sorting, CSV and the accessible summary; the chart draws the history
+that produced it.
 
-The series is scoped to **published rows** rather than to the tier depth, so a
-market-surfaced exception keeps its chart. No CSV: a row per point would be a different
-artifact from the one a reader asked to export, and the scalar is already in the arbitrage
-CSV where a spreadsheet wants it.
+**One record per market, per player, per block.** A player both markets price has two records
+— his FFC history with its own cohort, points and slope, and his MyFantasyLeague history with
+its own. There is no `cross` record and there will not be one: a cross-market ADP history would
+be a line no capture produced, and the frontend's cross view overlays the real series instead
+(ADR-081). A record naming `cross` fails `market_trend_series.synthetic_source`.
+
+**Scoped to the published row of the market that priced him.** Not to the tier depth — so a
+market-surfaced exception keeps its chart (ADR-063) — and not to the whole board either: the
+trailing window is seven days wide, so it holds players a source priced on Tuesday and dropped
+by Friday, and charting those would put a history under a card that says it has no current
+price for him.
+
+**Three agreements are enforced across artifacts**, per source, by
+`cross_artifact.trend_series_agreement`:
+
+| | |
+|---|---|
+| every series names a market that priced that player on that board | `trend_series_without_a_market` |
+| its `market_trend` is that market's own slope | `trend_scalar_disagreement` |
+| its newest point is that market's published `market_adp` | `trend_series_latest_price` |
+
+The third is what keeps "Latest 33.6" on the chart and the ADP readout beside it from being
+different numbers. `points` must also ascend by `observed_at` and must not be empty.
+
+**A null `market_trend` beside a non-empty `points` array is normal and is not a gap.**
+`phase5_trend_v1` needs three observation days spanning three days; a source captured for two
+days has real observations and no estimable slope, and the two states are published separately
+on purpose. The chart draws the points; the scalar reads `collecting`.
+
+No CSV: a row per point would be a different artifact from the one a reader asked to export,
+and the scalar is already in the arbitrage CSV where a spreadsheet wants it.
 
 ### 15.6 Identity for a source with no bridge
 

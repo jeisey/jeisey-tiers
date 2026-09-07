@@ -177,6 +177,101 @@ def _write_snapshot(
     return manifest.snapshot_key
 
 
+FFC_SOURCE = "fantasyfootballcalculator_adp"
+FFC_COHORT = "ffc-ppr"
+
+
+def _ffc_rows(*, shift: float = 0.0, drop: frozenset[str] = frozenset()) -> list[dict[str, object]]:
+    """A retained Fantasy Football Calculator snapshot's normalized rows.
+
+    Deliberately *not* MyFantasyLeague's shape: a scoring-tagged cohort, a rolling window, a
+    genuine standard deviation, no order statistics, and a null ``league_size`` because FFC
+    accepts ``teams`` and ignores it (ADR-056). Only a source that differs in these ways can
+    catch a pipeline that quietly treats every market as the first one.
+    """
+    rows: list[dict[str, object]] = []
+    for player_id, _rank, name, position, adp, sample in BOARD:
+        if adp is None or player_id in drop:
+            continue
+        rows.append(
+            {
+                "source_id": FFC_SOURCE,
+                "season": SEASON,
+                "cohort_id": FFC_COHORT,
+                "market_signal_type": "adp",
+                "external_player_id": f"ffc:{player_id}",
+                "player_id": player_id,
+                "display_name": name,
+                "position": position,
+                "raw_position": position,
+                "team": "BUF",
+                # FFC prices a riser earlier than MyFantasyLeague's season aggregate, so the
+                # two markets genuinely disagree. Agreement is what hides a consumer reading
+                # the wrong one.
+                "average_pick": round(adp * 0.9 + shift, 2),
+                "market_rank": None,
+                "min_pick": None,
+                "max_pick": None,
+                "adp_sd": 3.4,
+                "consensus_rank_mean": None,
+                "consensus_rank_min": None,
+                "consensus_rank_max": None,
+                "consensus_rank_sd": None,
+                "sample_size": sample,
+                "selection_pct": None,
+                "scoring_preset": "PPR",
+                "league_size": None,
+                "aggregation_window_type": "rolling",
+                "aggregation_window_days": 7,
+                "entity_kind": "player",
+                "source_display_name": name,
+                "source_team": "BUF",
+                "source_format_detail": "format=ppr&position=all&teams=12",
+                "quality_flags": ["league_size_not_observed"],
+            },
+        )
+    return rows
+
+
+def _write_ffc_snapshot(
+    store: MarketSnapshotStore,
+    moment: str,
+    *,
+    shift: float = 0.0,
+    drop: frozenset[str] = frozenset(),
+) -> str:
+    stamped = parse_utc(moment)
+    raw = gzip_bytes(canonical_json({"players": []}))
+    rows = _ffc_rows(shift=shift, drop=drop)
+    manifest = SnapshotManifest(
+        manifest_version="1.0",
+        source_id=FFC_SOURCE,
+        season=SEASON,
+        snapshot_key=snapshot_key(stamped),
+        retrieved_at_utc=isoformat_utc(stamped),
+        adapter_version="1.0",
+        source_policy_version="ffc-adp-rest-api-terms/2026-09-02",
+        cohorts=(
+            CohortCapture(
+                cohort_id=FFC_COHORT,
+                filters={"format": "ppr", "teams": "12", "position": "all"},
+                label="FFC recent PPR ADP",
+                raw_path=f"cohorts/{FFC_COHORT}/adp.raw.json.gz",
+                raw_content_hash=content_hash(raw),
+                row_count=len(rows),
+                resolved_players=len(rows),
+                resolvable_players=len(rows),
+            ),
+        ),
+    )
+    store.write(
+        manifest=manifest,
+        normalized_rows=rows,
+        raw_payloads={f"cohorts/{FFC_COHORT}/adp.raw.json.gz": raw},
+    )
+    return manifest.snapshot_key
+
+
 def _sufficient(cohort_id: str) -> CohortMeasurement:
     """A cohort that clears every clause of the frozen rule comfortably."""
     return CohortMeasurement(
@@ -407,6 +502,212 @@ def test_enough_retained_history_turns_the_trend_on(store, artifacts, tmp_path):
         # Every ADP fell over the window, so every player is being taken earlier.
         assert record["market_trend"] > 0
         assert "insufficient_trend_history" not in record["quality_flags"]
+
+
+# --------------------------------------------------------------------------------------
+# Every retained market has a history, not just the first one (ADR-081)
+# --------------------------------------------------------------------------------------
+#
+# The defect these cover was invisible to every gate in the repository. `pipeline/market.py`
+# loaded a trailing window for MyFantasyLeague and read only the *latest* snapshot for every
+# other source, so a second market arrived with a price and a structurally null trend, and
+# `market_trend_series.json` carried no record for it at all. The artifact was valid; the
+# board was valid; the card said "0 snapshots so far" beside a current FFC ADP while seven
+# real FFC snapshots sat in the store.
+#
+# Nothing here asserts a number the frozen rule did not produce. What they assert is that the
+# rule is *asked*, once per source, over that source's own retained window.
+
+
+def test_retained_ffc_snapshots_produce_an_ffc_series(store, artifacts, tmp_path):
+    """The failing case, stated directly: FFC snapshots exist, so an FFC history exists."""
+    _write_snapshot(store, "2026-08-20T11:00:00Z")
+    for moment in ("2026-08-18T11:00:00Z", "2026-08-19T11:00:00Z", "2026-08-20T11:05:00Z"):
+        _write_ffc_snapshot(store, moment)
+    result = _run(store, artifacts, tmp_path)
+
+    ffc = [row for row in result.trend_series if row["market_source_id"] == FFC_SOURCE]
+    assert ffc, "retained FFC snapshots must produce an FFC history"
+    assert {row["cohort_id"] for row in ffc} == {FFC_COHORT}
+    assert all(len(row["points"]) == 3 for row in ffc)
+
+
+def test_retained_mfl_snapshots_produce_an_mfl_series(store, artifacts, tmp_path):
+    """The behaviour that already worked, pinned so generalising it cannot lose it."""
+    for offset, shift in ((3, 6.0), (2, 4.0), (0, 0.0)):
+        moment = GENERATED_AT - timedelta(days=offset, hours=1)
+        _write_snapshot(store, isoformat_utc(moment), shift=shift)
+    result = _run(store, artifacts, tmp_path)
+
+    mfl = [row for row in result.trend_series if row["market_source_id"] == SOURCE]
+    assert mfl
+    assert all(len(row["points"]) == 3 for row in mfl)
+    assert all(row["market_trend"] is not None for row in mfl)
+
+
+def test_each_market_keeps_its_own_history_and_its_own_slope(store, artifacts, tmp_path):
+    """Two markets, two windows, two answers — and one of them is null on purpose.
+
+    MyFantasyLeague has four days of span and clears `phase5_trend_v1`. FFC has three
+    observations inside two days: enough to draw, not enough to fit. That is the production
+    state on the day the bug was found, and the point is that the two states coexist in one
+    build without either being borrowed from the other.
+    """
+    for offset, shift in ((4, 8.0), (2, 4.0), (0, 0.0)):
+        _write_snapshot(store, isoformat_utc(GENERATED_AT - timedelta(days=offset, hours=1)))
+        del shift
+    for hours, shift in ((30.0, 1.2), (20.0, 0.8), (2.0, 0.0)):
+        _write_ffc_snapshot(
+            store,
+            isoformat_utc(GENERATED_AT - timedelta(hours=hours)),
+            shift=shift,
+        )
+    result = _run(store, artifacts, tmp_path)
+
+    by_source: dict[str, list[dict]] = {}
+    for row in result.trend_series:
+        by_source.setdefault(str(row["market_source_id"]), []).append(row)
+    assert set(by_source) == {SOURCE, FFC_SOURCE}
+    # No synthetic market. `cross` is a view the reader selects, not a source anyone captured.
+    assert "cross" not in by_source
+
+    assert all(row["market_trend"] is None for row in by_source[FFC_SOURCE]), (
+        "FFC spans 28 hours; the frozen rule needs three days and must not be softened"
+    )
+    assert all(len(row["points"]) == 3 for row in by_source[FFC_SOURCE]), (
+        "the chart draws what was observed even while the slope is uncomputable"
+    )
+
+    ffc_quotes = [
+        entry
+        for record in result.records
+        for entry in record["markets"]
+        if entry["source_id"] == FFC_SOURCE
+    ]
+    assert ffc_quotes
+    assert all(entry["market_trend"] is None for entry in ffc_quotes)
+    assert all("insufficient_trend_history" in entry["quality_flags"] for entry in ffc_quotes), (
+        "a null slope must say why it is null rather than reading as no movement"
+    )
+
+
+def test_a_markets_slope_and_its_charted_history_are_one_number(store, artifacts, tmp_path):
+    """ADR-066 promised this agreement and nothing checked it. Now the validator does."""
+    for offset in (4, 2, 0):
+        _write_snapshot(store, isoformat_utc(GENERATED_AT - timedelta(days=offset, hours=1)))
+    for offset in (4, 2, 0):
+        _write_ffc_snapshot(
+            store,
+            isoformat_utc(GENERATED_AT - timedelta(days=offset, hours=2)),
+            shift=float(offset),
+        )
+    result = _run(store, artifacts, tmp_path)
+    assert result.gate.passed
+
+    published = {
+        (
+            str(record["league_preset_id"]),
+            str(record["scoring_preset"]),
+            str(entry["source_id"]),
+            str(record["player_id"]),
+        ): entry
+        for record in result.records
+        for entry in record["markets"]
+    }
+    assert result.trend_series
+    for row in result.trend_series:
+        key = (
+            str(row["league_preset_id"]),
+            str(row["scoring_preset"]),
+            str(row["market_source_id"]),
+            str(row["player_id"]),
+        )
+        quote = published[key]
+        assert row["market_trend"] == quote["market_trend"]
+        assert row["points"][-1]["market_adp"] == pytest.approx(quote["market_adp"], abs=0.01)
+
+    gate = validate_artifact_directory(artifacts)
+    assert gate.passed, [check.to_dict() for check in gate.critical_failures]
+    assert any(check.check_id == "cross_artifact.trend_series_agreement" for check in gate.checks)
+
+
+def test_ffcs_cohort_is_mapped_across_every_supported_league_size(store, artifacts, tmp_path):
+    """One FFC cohort per scoring preset, repeated across sizes — never claimed as observed.
+
+    FFC accepts ``teams`` and ignores it (ADR-056). The map is keyed by preset *and* size
+    because that is how the series writer asks; the value does not vary with size because the
+    source cannot see the difference, and the published ``league_size`` stays null so nothing
+    downstream can read the repetition as an observation.
+    """
+    _write_snapshot(store, "2026-08-20T11:00:00Z")
+    _write_ffc_snapshot(store, "2026-08-20T11:05:00Z")
+    result = _run(store, artifacts, tmp_path)
+
+    ffc = [row for row in result.trend_series if row["market_source_id"] == FFC_SOURCE]
+    assert ffc
+    assert {row["cohort_id"] for row in ffc} == {FFC_COHORT}
+    quotes = [
+        entry
+        for record in result.records
+        for entry in record["markets"]
+        if entry["source_id"] == FFC_SOURCE
+    ]
+    assert quotes
+    assert all(entry["league_size"] is None for entry in quotes)
+
+
+def test_a_player_a_market_has_dropped_keeps_no_chart_under_that_market(store, artifacts, tmp_path):
+    """The window is seven days wide; a market's current price list is not.
+
+    A player FFC quoted on Tuesday and dropped by Friday still has observations inside the
+    window. Charting them would put an FFC history under a card that says "no current FFC
+    ADP" — the same category of contradiction as the borrowed slope, reached from the other
+    side. Found by the new cross-artifact check on a real 2026 build, on 20 players.
+    """
+    dropped = BOARD[1][0]
+    _write_snapshot(store, isoformat_utc(GENERATED_AT - timedelta(hours=1)))
+    _write_ffc_snapshot(store, isoformat_utc(GENERATED_AT - timedelta(days=2)))
+    _write_ffc_snapshot(
+        store,
+        isoformat_utc(GENERATED_AT - timedelta(hours=2)),
+        drop=frozenset({dropped}),
+    )
+    result = _run(store, artifacts, tmp_path)
+
+    ffc = [row for row in result.trend_series if row["market_source_id"] == FFC_SOURCE]
+    assert ffc, "the market that still prices the board keeps its history"
+    assert dropped not in {row["player_id"] for row in ffc}
+    # ...and MyFantasyLeague, which does still price him, keeps his chart.
+    mfl = {row["player_id"] for row in result.trend_series if row["market_source_id"] == SOURCE}
+    assert dropped in mfl
+
+    gate = validate_artifact_directory(artifacts)
+    assert gate.passed, [check.to_dict() for check in gate.critical_failures]
+
+
+def test_a_market_with_no_retained_history_degrades_to_a_price(store, artifacts, tmp_path):
+    """One source captured, the other not. The board publishes; the absence is recorded."""
+    for offset in (4, 2, 0):
+        _write_snapshot(store, isoformat_utc(GENERATED_AT - timedelta(days=offset, hours=1)))
+    result = _run(store, artifacts, tmp_path)
+
+    assert {row["market_source_id"] for row in result.trend_series} == {SOURCE}
+    assert result.trend_series_sources == (SOURCE,)
+    assert any(check.check_id == "market.extra_source_absent" for check in result.gate.warnings)
+    assert result.gate.passed, "a missing second market must never take the board down"
+    trend_sources = result.metadata["market"]["trend_sources"]
+    assert [entry["source_id"] for entry in trend_sources] == [SOURCE]
+
+
+def test_a_stale_second_market_is_not_charted_and_says_so(store, artifacts, tmp_path):
+    """A snapshot older than the freshness rule prices nothing, so it charts nothing."""
+    _write_snapshot(store, isoformat_utc(GENERATED_AT - timedelta(hours=1)))
+    _write_ffc_snapshot(store, isoformat_utc(GENERATED_AT - timedelta(days=9)))
+    result = _run(store, artifacts, tmp_path)
+
+    assert FFC_SOURCE not in result.trend_series_sources
+    assert any(check.check_id == "market.extra_source_stale" for check in result.gate.warnings)
+    assert result.gate.passed
 
 
 # --------------------------------------------------------------------------------------

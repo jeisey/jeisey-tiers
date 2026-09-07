@@ -16,6 +16,7 @@ import {
   FIXTURE_GENERATED_AT,
   arbitrageEnvelope,
   buildMetadata,
+  marketTrendSeriesEnvelope,
   playerStatusEnvelope,
   projectionEnvelope,
   tierEnvelope,
@@ -43,6 +44,9 @@ function serve(overrides: Payloads = {}): void {
     "build_metadata.json": buildMetadata(),
     "tiers.json": tierEnvelope(),
     "arbitrage.json": arbitrageEnvelope(),
+    // Two markets' retained histories. Served by default because the card draws one on
+    // every open, and a suite that withheld it tested only the empty state (ADR-081).
+    "market_trend_series.json": marketTrendSeriesEnvelope(),
     "player_status.json": playerStatusEnvelope(),
     "projections.json": projectionEnvelope(),
     ...overrides,
@@ -437,6 +441,7 @@ describe("a matured market", () => {
     serve({
       "build_metadata.json": buildMetadata({}, "matured"),
       "arbitrage.json": arbitrageEnvelope("matured"),
+      "market_trend_series.json": marketTrendSeriesEnvelope("matured"),
     });
     go("?view=arbitrage");
   });
@@ -463,7 +468,14 @@ describe("a matured market", () => {
     expect(document.body.textContent).not.toMatch(/against the 300 the rule requires/);
   });
 
+  /**
+   * The Trend column reads the **selected** market's slope, so this asks MyFantasyLeague —
+   * the market whose retained window is long enough to have one. Asking the default (FFC)
+   * would be asking a market that, by design in this fixture and in production on the day
+   * the bug was found, has real history and not yet enough span to estimate a slope.
+   */
   it("renders a measured trend as a signed number and a direction word", async () => {
+    go("?view=arbitrage&market=myfantasyleague_adp");
     render(<App />);
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Arbitrage table" })).toBeDefined();
@@ -478,6 +490,28 @@ describe("a matured market", () => {
     expect(measured.join(" ")).toMatch(/Moving (earlier|later)/);
     // ...and the row the fixture deliberately leaves without an estimate is still an em dash.
     expect(cells.some((text) => text.includes("—") && text.includes("Trend collecting"))).toBe(true);
+  });
+
+  /**
+   * The other half of the same rule, and the one production exposed: FFC's retained window
+   * has observations and not yet three days of span, so **every** FFC slope is null. Before
+   * the Trend column followed the selector it read the flat V1 field — MyFantasyLeague's —
+   * and printed a measured trend beside an FFC price on every row (ADR-081).
+   */
+  it("never fills the selected market's null trend in from another market", async () => {
+    go("?view=arbitrage&market=fantasyfootballcalculator_adp");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Arbitrage table" })).toBeDefined();
+    });
+    const table = screen.getByRole("table", { name: /market-gap board/i });
+    const cells = within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .map((_row, index) => cellUnder(table, "Trend", index + 1)?.textContent ?? "");
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.every((text) => text.includes("—"))).toBe(true);
+    expect(cells.some((text) => /[+\u2212]\d/.test(text))).toBe(false);
   });
 
   it("still shows the trend rule in Data, worded for a window that has history", async () => {
@@ -840,9 +874,12 @@ describe("player card variants", () => {
     for (const sheet of [false, true]) {
       setMediaQuery(SHEET, sheet);
       const dialog = await openCard("Amon-Ra Bright");
-      for (const label of ["Fair rank", "Market verdict", "Arbitrage score", "Status"]) {
+      for (const label of ["Fair rank", "Arbitrage score", "Status"]) {
         expect(within(dialog).getByText(label, { exact: true })).toBeDefined();
       }
+      // The verdict names the market it came from, because the number beneath it is that
+      // market's gap and not the flat V1 field the rail used to print (ADR-081).
+      expect(within(dialog).getByText(/^\S.* verdict$/)).toBeDefined();
       cleanup();
     }
   });
