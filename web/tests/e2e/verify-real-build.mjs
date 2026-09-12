@@ -383,16 +383,84 @@ const badges = await page.$$eval("table.sheet tbody tr", (trs) =>
     badge: tr.querySelector(".status-badge span[aria-hidden]")?.textContent?.trim() ?? null,
   })),
 );
-for (const row of badges) {
-  const record = block.find((r) => r.display_name === row.name);
-  if (!record) continue;
-  const s = statusById.get(record.player_id);
-  const designation = s?.injury_status ?? null;
-  if (designation === null && row.badge !== null && !/^(RES|CUT|E14|INJU|NOTE)/.test(row.badge)) {
-    failures.push(`${row.name}: badge "${row.badge}" but the artifact reports no injury status`);
+/**
+ * Everything the status artifact says about a player, in its own words.
+ *
+ * A badge is not an injury report. It renders whenever the artifact carries *something*, and
+ * a reserve, exempt or inactive roster code is something (ADR-043). This check used to encode
+ * that as a list of the badge texts it expected to see — `RES|CUT|E14|INJU|NOTE` — which is a
+ * third instance of the species already recorded twice against this file: a verification
+ * check must assert the contract, not the day's data. nflverse publishes a code for every
+ * non-ordinary roster state, the in-season feed emits `INA` for a player declared inactive,
+ * and the 2026-09-12 refresh failed on a badge that was correct.
+ *
+ * So the condition is re-derived from the bytes instead. `ACT`/`A01`/`DEV` and a Sleeper
+ * status of `Active` are the ordinary cases and say nothing; every other value the record
+ * carries is an annotation the board is entitled to mark, and the badge must appear for
+ * exactly those players.
+ *
+ * What is deliberately *not* re-derived here is the abbreviation table — `Questionable`
+ * renders `Q`, `Injured Reserve` renders `IR`. A copy of it in this file would make the check
+ * a transcription of the code it is checking, and a second place to forget. The badge's other
+ * half is quoted from the artifact verbatim, so that half is compared literally.
+ */
+const ORDINARY_ROSTER_STATUS = new Set(["ACT", "A01", "DEV"]);
+
+function annotationsBehind(status) {
+  if (!status) return [];
+  const carried = [];
+  for (const field of ["injury_status", "injury_body_part", "injury_notes", "practice_participation"]) {
+    const value = status[field];
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      carried.push(`${field}=${value}`);
+    }
   }
-  if (designation !== null && row.badge === null) {
-    failures.push(`${row.name}: artifact reports ${designation} but no badge is rendered`);
+  const sleeper = status.sleeper_status;
+  if (sleeper && sleeper.toLowerCase() !== "active") carried.push(`sleeper_status=${sleeper}`);
+  const roster = status.roster_status;
+  if (roster && !ORDINARY_ROSTER_STATUS.has(roster.toUpperCase())) {
+    carried.push(`roster_status=${roster}`);
+  }
+  return carried;
+}
+
+/** The badge reads `IR \u00b7 Knee` when a body part is reported and a bare `IR` when one is not. */
+function badgeBodyPart(badge) {
+  const parts = badge.split(" \u00b7 ");
+  return parts.length === 1 ? null : parts.slice(1).join(" \u00b7 ");
+}
+
+/**
+ * The rendered row carries a name; the artifact is keyed by id. A name the block publishes
+ * twice is skipped rather than guessed at, because a wrong join would report a badge failure
+ * about a player the row is not.
+ */
+const recordByName = new Map();
+for (const record of block) {
+  recordByName.set(record.display_name, recordByName.has(record.display_name) ? null : record);
+}
+
+for (const row of badges) {
+  const record = recordByName.get(row.name) ?? null;
+  if (record === null) continue;
+  const statusRecord = statusById.get(record.player_id);
+  const carried = annotationsBehind(statusRecord);
+  if (row.badge !== null && carried.length === 0) {
+    failures.push(`${row.name}: badge "${row.badge}" but the artifact carries no status annotation`);
+  }
+  if (row.badge === null && carried.length > 0) {
+    failures.push(`${row.name}: artifact reports ${carried.join(", ")} but no badge is rendered`);
+  }
+  if (row.badge !== null && carried.length > 0) {
+    const artifactBody = statusRecord?.injury_body_part ?? null;
+    const renderedBody = badgeBodyPart(row.badge);
+    if (renderedBody !== artifactBody) {
+      failures.push(
+        `${row.name}: badge "${row.badge}" reports body part ` +
+          `${renderedBody === null ? "none" : `"${renderedBody}"`}, artifact has ` +
+          `${artifactBody === null ? "none" : `"${artifactBody}"`}`,
+      );
+    }
   }
 }
 const withBadge = badges.filter((b) => b.badge !== null).length;

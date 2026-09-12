@@ -996,3 +996,38 @@ untouched.
 - [x] **Verified on a real-store build.** `validate-artifacts` 0 critical / 0 warning;
       `verify:board` 0 failures with both markets charted; screenshots of FFC, MFL and Cross in
       `docs/visual-qa/2026-09-07-market-history/`.
+
+### In-season gate repair — the status badge check enumerated roster codes (ADR-082)
+
+The 2026-09-12 daily refresh failed `verify:board` with one failure —
+`CJ Daniels: badge "INA" but the artifact reports no injury status` — on a board that was
+correct. The check listed the roster codes an August feed publishes (`RES|CUT|E14|INJU|NOTE`);
+September publishes `INA` for a player declared inactive. Scope is the gate and the fixture
+behind it. No artifact, schema, model or rendered value changes.
+
+- [x] **Reproduced locally before any fix.** `Omarion Vance` in `web/tests/fixtures/artifacts.ts`
+      now carries `roster_status: "INA"` with every injury field null — the state no fixture in
+      this repository had ever held, because the one reserve player is also on IR. Against the
+      pre-fix checker that fixture emits the production failure verbatim.
+- [x] **The check derives its expectation from the bytes.** A badge appears iff the status
+      record carries an annotation — injury designation, body part, notes, practice
+      participation, a non-`Active` Sleeper status, or a roster status outside `ACT`/`A01`/`DEV`
+      — checked in both directions, where the old form only caught a badge with no injury
+      behind it. The badge's body part is compared literally with `injury_body_part`. The
+      abbreviation table stays in `web/src/data/model.ts` and is deliberately not copied into
+      the verifier.
+- [x] **Rows join by unique display name.** A name the block publishes twice is skipped rather
+      than guessed at; a wrong join would report a failure about a player the row is not.
+- [x] **Load-bearing tests**: `web/tests/model.test.ts` pins that every non-ordinary roster code
+      marks and every ordinary one does not (`INA`, `EXE`, `SUS`, `TRC`, `NON` alongside `RES`,
+      `CUT`, `E14`); `web/tests/fixtures/artifacts.ts` puts the in-season state in front of
+      `npm run e2e` and both CI `verify:board` runs.
+- [x] **Verified.** `verify:board` on the root fixture build and on `web/dist-matured`: 0
+      failures, 3 badges rendered. Negative control — the same page checked against a status
+      artifact edited three ways — reports all three: the invented badge, the missing badge and
+      the wrong body part. `npm run test -- --run` 330 passed, `npm run e2e` 102 passed,
+      `npm run typecheck` clean, `npm run lint` 0 errors.
+- [ ] **Not done here, deliberately.** `FLAGGED_STATUSES` (`src/ffdraft/pipeline/current.py`)
+      names `RES`, `CUT` and `E14`, so an inactive player gets a badge and no `current_status_*`
+      flag; and a roster-code badge still shows the raw code (`INA`, `RES`, `E14`) in its
+      accessible text. Both are contract/UX changes that need their own decision, not a CI fix.

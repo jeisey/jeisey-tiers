@@ -3114,3 +3114,82 @@ agree. The arbitrage table's Trend column follows the market selector, so the de
 reads an em dash where it used to read MyFantasyLeague's number — that is the correction, not a
 regression. `verify-real-build.mjs` opens a card per published market and compares the drawn
 marks with the artifact's own bytes.
+
+---
+
+## ADR-082 — A status badge is not an injury report, and a check that lists today's roster codes is not a contract
+
+**Date:** 2026-09-12 (in-season refresh failure)
+
+**Status:** **Accepted and implemented.** No contract version changes; no artifact, schema or
+rendered value moves. A verification check and the fixture it runs against do.
+
+**Context.** The 2026-09-12 daily refresh failed its `verify:board` gate on one line:
+
+```
+"CJ Daniels: badge \"INA\" but the artifact reports no injury status"
+```
+
+The board was right. `player_status.json` carried `roster_status: "INA"` — nflverse's code for
+a player declared inactive — with no Sleeper injury designation, and `statusBadge` marked him,
+which is what ADR-043 asks for: a badge renders whenever the artifact carries *something*, and
+`ACT`/`A01`/`DEV` is the only thing that says nothing. The check was what failed. It read:
+
+```js
+if (designation === null && row.badge !== null && !/^(RES|CUT|E14|INJU|NOTE)/.test(row.badge))
+```
+
+— an enumeration of the roster codes an August roster feed happens to publish. September
+publishes `INA` every week a player is inactive, so the first in-season refresh failed a
+correct board on a code nobody had written down.
+
+**This is the third instance of one species in this file.** ADR-052's four-day note recorded the
+first two — the Trend column asserted an em dash because the store was too young to have a
+slope, and the tier row's name assertion stripped `IR · Knee` out of the cell because that was
+the shape of the day's injury report — and stated the rule: **a verification check must assert
+the contract, not the day's data.** Both earlier instances were fixed by re-deriving the
+expectation from the artifact. This one was not caught by that audit because it does not read
+like a pinned value; it reads like a list of valid states, which is the same mistake wearing a
+different coat.
+
+**Decision.** `verify-real-build.mjs` derives the badge condition from the bytes:
+
+1. A badge appears **iff** the record carries an annotation — a non-empty `injury_status`,
+   `injury_body_part`, `injury_notes` or `practice_participation`, a `sleeper_status` other
+   than `Active`, or a `roster_status` outside `ACT`/`A01`/`DEV`. Both directions are checked;
+   the old form only caught a badge with no injury behind it, so a *missing* badge on an
+   annotated player was invisible unless the annotation happened to be an injury.
+2. The badge's second half is compared literally with `injury_body_part`, which the artifact
+   publishes verbatim and the badge quotes verbatim.
+3. The abbreviation table is deliberately **not** reproduced in the checker. `Questionable`
+   renders `Q` and `Injured Reserve` renders `IR` because `web/src/data/model.ts` says so;
+   transcribing that into the verifier would make the check a copy of the code it checks, and
+   a second place to forget. What is compared is what the artifact states in its own words.
+
+Rows are joined to the artifact by display name, and a name the block publishes twice is now
+skipped rather than guessed at — a wrong join would report a badge failure about a player the
+row is not.
+
+**Why no local gate caught it.** No fixture in this repository had ever carried a non-injury
+roster code. The one reserve player, Jaylin Lane, is on IR and reports `injury_status: "IR"`,
+so every badge on every fixture board had an injury designation behind it and the enumeration
+was never exercised. This is the same finding as ADR-081's — *the fixture expressed the shape
+and not the state* — on a different artifact. `Omarion Vance` is now `roster_status: "INA"`
+with every injury field null, so `npm run e2e` and both CI `verify:board` runs meet the
+in-season case before a production refresh does. On the pre-fix checker that fixture reproduces
+the production failure exactly.
+
+**Two things this deliberately does not change.**
+
+- `FLAGGED_STATUSES` in `src/ffdraft/pipeline/current.py` names `RES`, `CUT` and `E14`, so an
+  inactive player gets a badge and no `current_status_*` quality flag. Widening it changes a
+  published artifact's `quality_flags`, which is a contract change and needs its own decision
+  rather than riding a CI fix.
+- The badge for a roster code shows the raw code — `INA`, like `RES` and `E14` before it — and
+  its accessible text reads "Current status: INA". That is pre-existing and legible only to
+  someone who knows the vocabulary. Worth fixing; not worth fixing silently inside a gate
+  repair.
+
+**Consequences.** The gate is strictly stronger than the one it replaces: it now fails a board
+that omits a badge the artifact justifies, and one that reports a body part the artifact does
+not. It cannot fail again because upstream published a status code that nobody had listed.
