@@ -452,13 +452,25 @@ export function playerStatusRecords(): PlayerStatusRecord[] {
     .map((seed) => {
       const injured = seed.name === "Amon-Ra Bright";
       const out = seed.name === "Jaylin Lane";
+      /*
+       * Declared inactive, with no injury designation and no Sleeper annotation at all.
+       *
+       * Until 2026-09-12 no fixture in this repository carried a *non-injury* roster code:
+       * the reserve case above also reports `IR`, so every badge on every fixture board had
+       * an `injury_status` behind it. `verify:board` had encoded that coincidence as a list
+       * of the roster codes it expected to see, and the first in-season refresh - where
+       * nflverse publishes `INA` for a player who was inactive for a game - failed on a
+       * board that was right. The state now exists in the fixture, so the local gates meet
+       * it before a production refresh does.
+       */
+      const inactive = seed.name === "Omarion Vance";
       return {
         ...base,
         player_id: seed.id,
         display_name: seed.name,
         current_team: seed.team,
         position: seed.position,
-        roster_status: out ? "RES" : "ACT",
+        roster_status: out ? "RES" : inactive ? "INA" : "ACT",
         roster_depth_chart_position: seed.position,
         sleeper_status: out ? "Injured Reserve" : "Active",
         injury_status: injured ? "Questionable" : out ? "IR" : null,
@@ -466,6 +478,8 @@ export function playerStatusRecords(): PlayerStatusRecord[] {
         injury_notes: injured ? "Limited in Wednesday's session; expected to test it Friday." : null,
         depth_chart_position: seed.position,
         depth_chart_order: 1,
+        // `INA` carries no `current_status_*` flag because the build publishes none for it
+        // (`FLAGGED_STATUSES` names `RES`, `CUT` and `E14`); the badge is the whole signal.
         quality_flags: out ? ["current_status_reserve"] : [],
       } satisfies PlayerStatusRecord;
     });

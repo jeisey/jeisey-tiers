@@ -4,6 +4,13 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**In-season gate repair, 2026-09-12 — the status badge check (ADR-082).** The daily refresh
+failed `verify:board` on `CJ Daniels: badge "INA" but the artifact reports no injury status`,
+against a board that was right: `INA` is nflverse's code for a player declared inactive, the
+badge is contractually correct, and the *check* enumerated the roster codes an August feed
+publishes. Third instance of the species ADR-052 named — a verification check must assert the
+contract, not the day's data. See **What the in-season gate repair changed** below.
+
 **Post-Release-2 bugfix, 2026-09-07 — the player card's market history (ADR-081).** A card with
 the default market selected showed a current FFC ADP beside "0 snapshots so far", while seven
 FFC snapshots sat in the retained store, and printed MyFantasyLeague's slope under the heading
@@ -1419,6 +1426,38 @@ per source, not per board.
 **Verified on the real retained store** (`jeisey/jeisey-tiers-market-data@1bd7f20`):
 `validate-artifacts` 0 critical / 0 warning, `verify:board` 0 failures with both markets charted,
 and screenshots of all three modes in `docs/visual-qa/2026-09-07-market-history/`.
+
+## What the in-season gate repair changed (2026-09-12, ADR-082)
+
+**Root cause, in one line: the checker knew a list of roster codes, not the rule behind them.**
+`verify-real-build.mjs` accepted a badge with no `injury_status` behind it only when its text
+started with `RES|CUT|E14|INJU|NOTE`. `statusBadge` marks a player whenever the status record
+carries anything and `ACT`/`A01`/`DEV` is the only ordinary roster state (ADR-043), so the
+first in-season refresh — where nflverse publishes `INA` — failed a correct board.
+
+| | before | after |
+|---|---|---|
+| the condition | badge text matches a fixed list of codes | the record carries an annotation, in its own words |
+| direction | one way: a badge with no injury behind it | both ways: a missing badge on an annotated player fails too |
+| body part | not compared | compared literally with `injury_body_part` |
+| abbreviations | — | deliberately not copied into the verifier; they stay in `web/src/data/model.ts` |
+| row join | first record with a matching name | names published twice are skipped, not guessed at |
+| fixture | no non-injury roster code had ever existed in one | `Omarion Vance` is `INA` with every injury field null |
+
+**Why no local gate caught it**: the one reserve fixture player is also on IR, so every badge on
+every fixture board had an `injury_status` behind it and the enumeration was never exercised.
+Same finding as ADR-081's, different artifact — the fixture expressed the shape, not the state.
+
+**Verified**: the new fixture reproduces the production failure verbatim on the pre-fix checker;
+`verify:board` then passes on the root build and on `web/dist-matured` (0 failures, 3 badges),
+and a negative control — the same page checked against a status artifact edited three ways —
+reports the invented badge, the missing badge and the wrong body part. `npm run test -- --run`
+330 passed, `npm run e2e` 102 passed, typecheck clean, lint 0 errors. No Python file changed.
+
+**Left open on purpose** (recorded, not fixed): `FLAGGED_STATUSES` in
+`src/ffdraft/pipeline/current.py` names only `RES`/`CUT`/`E14`, so an inactive player carries a
+badge and no `current_status_*` quality flag; and a roster-code badge shows the raw code in its
+accessible text ("Current status: INA"). Both are contract/UX changes needing their own decision.
 
 ## Next action
 

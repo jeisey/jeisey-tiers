@@ -160,7 +160,7 @@ Four steps, each a script that also runs locally against a static server:
 | step | what it proves |
 |---|---|
 | `verify-live.mjs` | the document, every script/stylesheet/icon href **under the deployed base path** and answering 200, the vendored fonts, the logo's decoded `naturalWidth`, all five JSON artifacts and four CSVs, the three views, a player card, a shared query-state link across a reload, a phone reflow, and that no request leaves the site's origin |
-| `verify:board` | every rendered tier row, chart mark, arbitrage row, injury badge **and the player card's retained market history — per published market, plus the cross-market overlay** — against the bytes the site served |
+| `verify:board` | every rendered tier row, chart mark, arbitrage row, status badge **and the player card's retained market history — per published market, plus the cross-market overlay** — against the bytes the site served |
 | `verify:presets` | all nine scoring × league-size blocks resolve, in the artifact and in the browser |
 | `verify:csv` | all four exports downloaded and parsed |
 
@@ -356,7 +356,7 @@ green-or-red on things the local machine can actually decide (ADR-059).
 
 `npm run e2e` produces its own builds through `globalSetup`, so it needs no prior `npm run build`; `E2E_SKIP_BUILD=1` reuses what is on disk while iterating on a spec. The end-to-end server is `web/tests/e2e/static-server.mjs`, which maps URLs to files under `web/dist*` and serves nothing else — every spec additionally fails on a request that leaves localhost.
 
-`npm run verify:board` is the one command that needs the **real** generated artifacts rather than fixtures: build the site with `web/public/data/` populated and it serves the build itself, then cross-checks rendered tier rows, chart-mark labels, arbitrage rows and injury badges against the artifact bytes. It also opens a player card once per market in `market_trend_series.json` and compares the drawn marks, the latest reading and the legend's slope with that market's own record — the check that would have caught a second market shipping with a price and no history (ADR-081). That is the check behind the Phase-6 exit gate's "chart values agree with the table" clause, and `daily-refresh.yml` runs it on every production build before uploading the Pages artifact.
+`npm run verify:board` is the one command that needs the **real** generated artifacts rather than fixtures: build the site with `web/public/data/` populated and it serves the build itself, then cross-checks rendered tier rows, chart-mark labels, arbitrage rows and status badges against the artifact bytes. A badge is checked in both directions and against the record's own words — it must appear for exactly the players whose status record carries an annotation, injury or not, and its body part must be the artifact's (ADR-082); the roster codes themselves are never enumerated, because the in-season feed publishes ones an August feed does not. It also opens a player card once per market in `market_trend_series.json` and compares the drawn marks, the latest reading and the legend's slope with that market's own record — the check that would have caught a second market shipping with a price and no history (ADR-081). That is the check behind the Phase-6 exit gate's "chart values agree with the table" clause, and `daily-refresh.yml` runs it on every production build before uploading the Pages artifact.
 
 Phase 7 made it self-contained — Phase 6 needed a server started by hand — and gave it three options:
 

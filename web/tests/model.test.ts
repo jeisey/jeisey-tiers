@@ -210,6 +210,37 @@ describe("status semantics", () => {
     expect(badge?.full).toBe("RES");
   });
 
+  it("marks every non-ordinary roster code, including the ones the season introduces", () => {
+    // `RES`, `CUT` and `E14` are what a preseason roster feed publishes, and a check that
+    // enumerated those three failed the 2026-09-12 refresh on `INA` - a player declared
+    // inactive for a game, which the in-season feed emits and which a drafter wants marked.
+    // The rule is the absence of an ordinary code, never a list of the extraordinary ones.
+    for (const roster of ["RES", "CUT", "E14", "INA", "EXE", "SUS", "TRC", "NON"]) {
+      const record = status({
+        injury_status: null,
+        injury_body_part: null,
+        injury_notes: null,
+        practice_participation: null,
+        roster_status: roster,
+        sleeper_status: "Active",
+      });
+      expect(hasMeaningfulStatus(record)).toBe(true);
+      expect(statusBadge(record)?.short).toBe(roster);
+    }
+    for (const ordinary of ["ACT", "A01", "DEV"]) {
+      const record = status({
+        injury_status: null,
+        injury_body_part: null,
+        injury_notes: null,
+        practice_participation: null,
+        roster_status: ordinary,
+        sleeper_status: "Active",
+      });
+      expect(hasMeaningfulStatus(record)).toBe(false);
+      expect(statusBadge(record)).toBeNull();
+    }
+  });
+
   it("shows nothing at all when there is no status record", () => {
     expect(statusBadge(null)).toBeNull();
     expect(hasMeaningfulStatus(null)).toBe(false);
