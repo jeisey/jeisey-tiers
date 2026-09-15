@@ -47,6 +47,7 @@ from ffdraft.sources.nflverse_history import (
     NflverseSnapCountAdapter,
     NflverseWeeklyStatsAdapter,
 )
+from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.timeutil import utc_now
 
 __all__ = [
@@ -171,10 +172,12 @@ def load_historical_sources(
 ) -> LoadedSources:
     """Fetch and normalize every source the historical build needs.
 
-    Imports ``nflreadpy`` lazily so that importing this module - which the network-free
-    tests do, for :func:`season_windows` - never pulls in the loader.
+    Reaches ``nflreadpy`` through :func:`nflverse_loaders`, which imports it lazily - so
+    importing this module, which the network-free tests do for :func:`season_windows`,
+    still never pulls in the loader - and hands it back with the project's retry budget
+    mounted (ADR-083).
     """
-    import nflreadpy
+    nflreadpy = nflverse_loaders()
 
     retrieved_at = as_of or utc_now()
     windows = season_windows(

@@ -223,6 +223,14 @@ One adapter per source. Responsibilities:
 
 Not responsible for cross-source identity or model feature engineering.
 
+> **The retry half, for nflverse (ADR-083).** MFL, Fantasy Football Calculator and
+> FantasyPros each own their request loop because each one calls `requests` directly.
+> nflverse is reached through `nflreadpy`, which downloads on a session that retries
+> nothing, so the budget lives in `sources/nflverse_http.py` and is mounted on that session
+> instead. It is transport only — how a download is attempted, never what the payload
+> means — and every nflverse call in the package asks for its loaders through
+> `nflverse_loaders()` so a new call site cannot silently opt out.
+
 Suggested interface:
 
 ```python

@@ -3193,3 +3193,101 @@ the production failure exactly.
 **Consequences.** The gate is strictly stronger than the one it replaces: it now fails a board
 that omits a badge the artifact justifies, and one that reports a body part the artifact does
 not. It cannot fail again because upstream published a status code that nobody had listed.
+
+## ADR-083 — nflverse is the one critical source that retried nothing, and the season is what made that matter
+
+**Date:** 2026-09-15 (first post-week-1 refresh failure)
+
+**Status:** **Accepted and implemented.** No contract version changes; no artifact, schema,
+feature or rendered value moves. One HTTP budget and the call sites that carry it do.
+
+**Context.** The 2026-09-15 daily refresh — `daily-refresh` run 43, the first scheduled run
+after week 1 completed — failed 24 seconds into the capture job:
+
+```
+ConnectionError: Failed to download
+https://github.com/nflverse/nflverse-data/releases/download/players/players.parquet:
+500 Server Error: Internal Server Error
+```
+
+`capture` failed, so `build` and `deploy` never ran, and the site stayed on the previous
+day's board. That much is the job graph working as ADR-050 designed it. What is not
+working as designed is the reason the gate fired: the same URL served its 3,386,429 bytes
+correctly on the first attempt an hour later. Nothing was missing. The request was unlucky,
+and one unlucky request is currently enough to cost a day's publish.
+
+**Why it became likely now.** An nflverse-data release asset is replaced by
+delete-then-upload, and how often that happens is a function of the calendar. Measured on
+the afternoon of the failure:
+
+| asset | last modified |
+|---|---|
+| `players/players.parquet` | 2026-09-15 13:05 UTC |
+| `depth_charts/depth_charts_2026.parquet` | 2026-09-15 12:39 UTC |
+| `rosters/roster_2026.parquet` | 2026-09-15 12:40 UTC |
+| `combine/combine.parquet` | 2026-03-12 17:51 UTC |
+
+The three files a current capture reads were each rewritten within the hour; the static one
+had not moved since March. Week 1 finishing is what starts that churn, and the daily capture
+at 11:2x UTC now runs inside it. So the user's instinct that this failure had something to
+do with the season starting is right, though not in the place it looked: the season-state
+resolution was correct on this run (`product_mode: in_season`, `completed_week: 1`,
+`latest_snapshot_week: 1`), and the mode logic is not what broke. The season changed the
+*rate of upstream writes*, and the capture path had no tolerance for any of them.
+
+**The gap was specific, not general.** `docs/ARCHITECTURE.md` section 5 scopes an adapter
+to "fetch, retry/timeout, raw schema normalization", and every other vendor honours the
+retry half: `_mfl_get`, the Fantasy Football Calculator adapter and the FantasyPros adapter
+each own a bounded, backing-off request loop that reads `SourceConfig.max_retries`.
+nflverse was the exception, because it is reached through `nflreadpy` rather than through
+`requests` directly, and `nflreadpy` downloads on a plain `requests.Session` with no retry
+configured at all. The single source `config/source-registry.yaml` marks
+`criticality: critical` was the only one where the first answer was the last answer.
+
+**Decision.** `ffdraft.sources.nflverse_http` owns the transport policy and mounts it on the
+session `nflreadpy` downloads through: **4 retries** after the first attempt, urllib3 backoff
+of 0s / 2s / 4s / 8s, on **429, 500, 502, 503 and 504**. Every nflverse call in `ffdraft`
+now asks for its loaders through `nflverse_loaders()` rather than importing `nflreadpy`, so
+the budget is a property of the call site by construction rather than something the next
+call site has to remember; a test asserts no module under `src/ffdraft` imports `nflreadpy`
+directly.
+
+**404 is deliberately not retried.** nflverse publishes per-season files, so asking for a
+season that has not been released yet is a legitimate 404 that several loaders produce, and
+a 404 on a file that used to exist is a source-contract change — exactly the thing
+`AGENTS.md` section 5 wants loud and immediate. Retrying either trades a clear answer for a
+slow one. Only the server-side statuses, which are transient by definition, are worth
+waiting on.
+
+**What this is not.** It is not a fallback and it is not a cache. No mirror is substituted,
+no stale copy is served, and a download that still fails after the budget is spent still
+fails the capture job and still stops the deploy. A refresh can only ever publish bytes a
+first-try success would have published too; what changes is how many times the same URL is
+asked before the day is written off. The budget is bounded at roughly 14 seconds per
+download against a 30-minute job timeout.
+
+**Two things this deliberately does not change.**
+
+- **The capture job still has no nflverse cache.** The build job caches nflverse downloads
+  per UTC day (`docs/OPERATIONS.md` section 4); the capture job downloads fresh every run.
+  Extending that cache to capture would cut vendor calls, but at the cost of building the
+  identity spine from an earlier-in-the-day roster, and section 4's justification was
+  written for a build rather than for a capture. That is a freshness decision and deserves
+  its own, not a ride on an availability fix.
+- **`scripts/source_probe.py` keeps importing `nflreadpy` directly.** A Phase-0 probe exists
+  to measure raw upstream behaviour; a probe that quietly retried would report an
+  availability the production path does not have.
+
+**Consequences.** A transient nflverse 5xx now costs seconds instead of a day's publish. A
+persistent one still fails, with the retry count in the error. The retry budget is stated in
+`config/source-registry.yaml` under the nflreadpy entry as well as in code, and
+`tests/unit/test_nflverse_retry.py` fails if the two ever disagree.
+
+**What this does not fix, and is the next thing to watch.** Run 43 failed in `capture`,
+which meant `build` never ran — and 2026-09-15 would have been the **first** day the
+rest-of-season board was built in production. `latest_snapshot_week` was empty on every
+previous run, so the `Build the rest-of-season board` step had been skipped every day since
+the season opened (run 42, 2026-09-14: skipped). ADR-079's two windows were doing their job;
+the window has now closed and the step is live. It is covered by fixture tests and by
+`test_ros_production.py`, but it has never run against the real store, so the next refresh
+is its first production exercise rather than a repeat of a known-good one.

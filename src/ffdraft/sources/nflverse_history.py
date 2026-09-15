@@ -46,6 +46,7 @@ from ffdraft.identity.ids import IdNamespace, normalize_id
 from ffdraft.scoring.horizon import regular_season_weeks
 from ffdraft.sources.base import BaseSourceAdapter, RawRecords, SourceConfig, as_rows
 from ffdraft.sources.nflverse import NFLVERSE_SOURCE_ID, FlagCounter
+from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.timeutil import utc_now
 
 __all__ = [
@@ -253,7 +254,7 @@ class NflverseWeeklyStatsAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_player_stats(seasons=[config.season], summary_level="week")
         self.check_source_schema(frame)
@@ -352,7 +353,7 @@ class NflverseSnapCountAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_snap_counts(seasons=[config.season])
         self.check_source_schema(frame)
@@ -416,7 +417,7 @@ class NflverseScheduleAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_schedules()
         self.check_source_schema(frame)
@@ -520,7 +521,7 @@ class NflverseDraftPickAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_draft_picks()
         self.check_source_schema(frame)
@@ -609,7 +610,7 @@ class NflverseCombineAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_combine()
         self.check_source_schema(frame)
@@ -682,7 +683,7 @@ class NflversePlayerMasterAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_players()
         self.check_source_schema(frame)
@@ -776,7 +777,7 @@ class NflverseExpectedPointsAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_ff_opportunity(seasons=[config.season], stat_type="weekly")
         self.check_source_schema(frame)

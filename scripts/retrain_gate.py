@@ -37,6 +37,7 @@ from ffdraft.modeling.frozen import (
     PRODUCTION_SEASON,
 )
 from ffdraft.scoring.horizon import fantasy_horizon
+from ffdraft.sources.nflverse_http import nflverse_loaders
 
 
 def _season_is_complete(season: int) -> tuple[bool, str]:
@@ -46,7 +47,7 @@ def _season_is_complete(season: int) -> tuple[bool, str]:
     sums over, so "complete" has to mean complete *for a label*, and the horizon moved from
     weeks 1-16 to 1-17 at 2021.
     """
-    import nflreadpy
+    nflreadpy = nflverse_loaders()
 
     horizon = fantasy_horizon(season)
     try:

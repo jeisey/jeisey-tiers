@@ -179,6 +179,7 @@ from ffdraft.simulation.study import (
 )
 from ffdraft.sources.fantasypros import FANTASYPROS_SOURCE_ID
 from ffdraft.sources.ffc import FFC_SOURCE_ID
+from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.tiers.study import TierStudyConfig, run_tier_study, write_tier_report
 from ffdraft.timeutil import isoformat_utc, parse_utc, utc_now
 
@@ -1850,7 +1851,7 @@ def _build_ros(args: argparse.Namespace) -> int:
 
 def _season_state(args: argparse.Namespace) -> int:
     """Report the season state. The rule is a pure function of the schedule and a timestamp."""
-    import nflreadpy
+    nflreadpy = nflverse_loaders()
 
     from ffdraft.ros.frozen import ROS_SERVING_SEASON
     from ffdraft.season.state import season_state_from_schedule

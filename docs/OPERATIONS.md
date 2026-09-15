@@ -500,6 +500,16 @@ Never put secrets/raw tokens in summaries/logs.
 - no production deploy if critical;
 - do not auto-edit adapter blindly in the workflow.
 
+> **What counts as a failure (ADR-083).** A single transient response no longer does. Every
+> vendor adapter carries a bounded retry budget, nflverse included: 4 retries with
+> 0s/2s/4s/8s backoff on 429 and 5xx, declared in `config/source-registry.yaml` and applied
+> by `ffdraft.sources.nflverse_http`. Triage begins once that budget is spent, or
+> immediately on a 404 — which is not retried, because an nflverse per-season file that has
+> not been published yet answers 404 legitimately and a file that has moved is a contract
+> change. The retry changes when the refresh gives up, never what it publishes: no mirror is
+> substituted and no cached copy is served, so a spent budget still fails the job and still
+> leaves the previous site live.
+
 ### Model artifact mismatch
 
 Critical. Stop.

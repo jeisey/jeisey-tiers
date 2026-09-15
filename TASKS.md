@@ -1031,3 +1031,47 @@ behind it. No artifact, schema, model or rendered value changes.
       names `RES`, `CUT` and `E14`, so an inactive player gets a badge and no `current_status_*`
       flag; and a roster-code badge still shows the raw code (`INA`, `RES`, `E14`) in its
       accessible text. Both are contract/UX changes that need their own decision, not a CI fix.
+
+### nflverse downloads had no retry, and the in-season publishing rate made that a daily risk (ADR-083)
+
+The 2026-09-15 daily refresh — run 43, the first scheduled run after week 1 completed — failed
+in the capture job on `ConnectionError: ... players.parquet: 500 Server Error`. The same URL
+served correctly an hour later. Scope is the HTTP budget on nflverse downloads. No artifact,
+schema, model, feature or rendered value changes.
+
+- [x] **Root-caused against the upstream, not guessed.** The URL was re-fetched three times
+      from this workspace: 200, 3,386,429 bytes each time. Asset `Last-Modified` headers on the
+      afternoon of the failure: `players.parquet` 13:05 UTC, `roster_2026.parquet` 12:40 UTC,
+      `depth_charts_2026.parquet` 12:39 UTC — and `combine.parquet` still on 2026-03-12. A
+      release asset is replaced by delete-then-upload, so the three files a capture reads are
+      each a moving target now that the season is under way, and the 11:2x UTC capture runs
+      inside that churn.
+- [x] **Confirmed the gap was nflverse-specific.** MFL (`_mfl_get`), Fantasy Football Calculator
+      and FantasyPros each own a bounded, backing-off request loop. nflverse is reached through
+      `nflreadpy`, whose downloader uses a `requests.Session` with no retry mounted — so the one
+      source the registry marks `criticality: critical` was the only one with no second attempt.
+- [x] **The budget lives in one module.** `src/ffdraft/sources/nflverse_http.py`: 4 retries,
+      0s/2s/4s/8s backoff, on 429/500/502/503/504, mounted on the session `nflreadpy` downloads
+      through. 404 is **not** retried — an unpublished per-season file answers 404 legitimately
+      and a moved file should say so immediately.
+- [x] **Every call site carries it by construction.** All 16 `import nflreadpy` sites under
+      `src/ffdraft` now call `nflverse_loaders()`, as does `scripts/retrain_gate.py`; a test
+      fails if any module imports `nflreadpy` directly. `scripts/source_probe.py` is
+      deliberately excluded: a Phase-0 probe must measure raw upstream behaviour.
+- [x] **Load-bearing tests** (`tests/unit/test_nflverse_retry.py`, 14 tests, all loopback —
+      nothing reaches a vendor): a 500/500/200 sequence succeeds; each of the five declared
+      statuses is retried; the budget is finite and the attempt count is asserted; a 404 is
+      answered once; the policy is mounted on `nflreadpy`'s own session and installing twice is
+      a no-op; the registry's declared budget equals the code's; and **run 43 replayed through
+      the real `NflverseDownloader.download` path** — unmounted it raises the production error
+      after 1 request, mounted it returns the frame after 3.
+- [x] **Verified.** `uv run pytest` full suite, `ruff check`, `ruff format --check`, `mypy`
+      strict all clean.
+- [ ] **Not done here, deliberately.** The capture job still has no nflverse cache, unlike the
+      build job (`docs/OPERATIONS.md` section 4). Adding one would cut vendor calls but would
+      build the identity spine from an earlier-in-the-day roster; that is a freshness decision
+      and needs its own, not a ride on an availability fix.
+- [ ] **Watch the next refresh.** Run 43 died in `capture`, so `build` never ran — and
+      2026-09-15 is the first day `latest_snapshot_week` is non-empty, which means the
+      `Build the rest-of-season board` step has never executed in production (run 42, the day
+      before: skipped). The next successful refresh is that step's first real exercise.
