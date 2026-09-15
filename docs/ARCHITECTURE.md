@@ -524,6 +524,20 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 > Dependencies now: TanStack Table v8, `@playwright/test`, `@axe-core/playwright`. The
 > production bundle is React, ReactDOM and TanStack Table.
 
+> **The card-meters pass (ADR-086).** `charts/CardMeters.tsx` adds three micro-charts to the
+> player card and `data/cohort.ts` (`cohort_context_v1`) adds the statistics behind one of them.
+> The layering is the point: `cohort.ts` knows nothing about football and holds only ranks,
+> quantiles and axis arithmetic; `data/ros.ts` assembles a `RosCohortContext` from the published
+> block; `App` hands it to the card; the card renders it. A component that reached into the
+> bundle itself would be a component that could compute a rank over the reader's current filter
+> instead of over the published board, which is a rank about the filter.
+>
+> `movesBound` moved from `charts/OpportunityBoard` to `data/ros` in the same pass. It is a rule
+> over published counts rather than a geometry, and two surfaces now draw the same strip from
+> it — the moment a rule like that exists twice is the moment two pictures of one player start
+> disagreeing. No dependency was added; the production bundle is still React, ReactDOM and
+> TanStack Table.
+
 > **Phase-9A revision.** The shared grid above is unchanged and is now *measured* rather than
 > asserted: `board.spec.ts › draws the tier band on exactly the track the player bars use`
 > compares the axis, the tier band and a player's bar at three viewports. It exists because the

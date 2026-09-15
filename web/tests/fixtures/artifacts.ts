@@ -731,9 +731,18 @@ export function marketTrendSeriesEnvelope(
  * players, which is what makes the firewall assertion meaningful: an opportunity row copies
  * its intrinsic columns from the rest-of-season row, and a test can compare them.
  *
- * Three shapes are deliberately present, each of which only misbehaves in production: a
+ * Five shapes are deliberately present, each of which only misbehaves in production: a
  * long-absence row carrying the ADR-076 fields, a player surfaced from beyond the tier depth
- * with a declared reason and no tier, and behaviour counts with their requested window.
+ * with a declared reason and no tier, behaviour counts with their requested window, a
+ * **breakout** who was never on the preseason board at all, and a row whose usage shares the
+ * feed did not publish.
+ *
+ * The last two exist because of ADR-086 and are the lesson this repository keeps relearning
+ * (ADR-081, ADR-082, ADR-084, ADR-085): a fixture that expresses the *shape* of a field and
+ * not its *states* leaves the states nothing is aimed at. A constant 0.72 in every row is a
+ * snap share the type-checker is happy with and a cohort reading that can only ever say
+ * "1st of 6"; a `preseason_fair_rank` present on every row leaves the rookie who was not on
+ * the preseason board — the case a rank-move rail most needs to get right — unexercised.
  */
 export const FIXTURE_THROUGH_WEEK = 8;
 export const FIXTURE_BEHAVIOR_LOOKBACK_HOURS = 24;
@@ -741,7 +750,31 @@ export const FIXTURE_BEHAVIOR_LOOKBACK_HOURS = 24;
 export function rosTierRecords(): RosTierRecord[] {
   return tierRecords().map((record, index) => {
     const absent = index % 3 === 2;
+    // The breakout: a player the preseason board never held, scoring well above the rate the
+    // model projects for him. `preseason_fair_rank` is null and so, necessarily, is the change.
+    const breakout = index % 6 === 1;
     const scale = 0.5;
+    const preseason = breakout ? null : Math.max(1, record.fair_rank + (absent ? -12 : 3));
+    /*
+      Production to date, and the rate it implies, over the appearances this row actually claims.
+
+      Two things are deliberate here and both exist because of ADR-086, which has the card
+      dividing and comparing these fields rather than only printing them.
+
+      **They reconcile.** The rate used to divide by eight on every row including the ones that
+      state five games, so `points_to_date`, `games_played_to_date` and
+      `points_per_game_to_date` did not agree — 112.4 points over 5 games printed as 14.0 per
+      game. A fixture whose own arithmetic does not hold is a fixture that can hide a defect in
+      the thing being compared.
+
+      **They disagree with the projection in both directions.** The long-absence rows carry a
+      depressed season total, so the model's remaining rate is *above* what they have scored at;
+      the breakout's is far below his. Without that, every row on the board would project less
+      than it has produced and the pace rail's other sentence would never render.
+    */
+    const games = absent ? 5 : breakout ? 4 : 8;
+    const pointsToDate = round(record.expected_points * (1 - scale) * (absent ? 0.5 : 1));
+    const perGame = round(pointsToDate / games);
     return {
       schema_version: "1.0",
       build_id: FIXTURE_BUILD_ID,
@@ -773,17 +806,18 @@ export function rosTierRecords(): RosTierRecord[] {
       team_remaining_scheduled_games: 8,
       // Derived, not asserted independently: `fair_rank_change` is `preseason - ros`, so a
       // fixture that states both must state them consistently or the player card shows two
-      // equal ranks beside a non-zero move.
-      preseason_fair_rank: Math.max(1, record.fair_rank + (absent ? -12 : 3)),
-      fair_rank_change: Math.max(1, record.fair_rank + (absent ? -12 : 3)) - record.fair_rank,
-      games_played_to_date: absent ? 5 : 8,
-      points_to_date: round(record.expected_points * (1 - scale)),
-      points_per_game_to_date: round((record.expected_points * (1 - scale)) / 8),
+      // equal ranks beside a non-zero move. A player with no preseason rank has no change
+      // either — null and null, never a zero standing in for "we did not know".
+      preseason_fair_rank: preseason,
+      fair_rank_change: preseason === null ? null : preseason - record.fair_rank,
+      games_played_to_date: games,
+      points_to_date: pointsToDate,
+      points_per_game_to_date: perGame,
       weeks_since_last_game: absent ? 3 : 0,
       consecutive_weeks_missed: absent ? 3 : 0,
       has_played_this_season: true,
       long_absence: absent,
-      in_preseason_universe: true,
+      in_preseason_universe: !breakout,
       current_status: absent ? "RES" : null,
       outside_tier_board: false,
       surface_reasons: ["intrinsic_top_tier_depth"],
@@ -794,8 +828,15 @@ export function rosTierRecords(): RosTierRecord[] {
 
 export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[] {
   const base: OpportunityRecord[] = rosTierRecords().map((record, index) => {
-    const adds = Math.max(0, 900 - index * 37);
-    const drops = Math.max(0, 120 - index * 5);
+    // Decayed by the player's rank **within his block**, not by his index across every block.
+    // Indexing globally put every count at zero from the third block onwards, so the preset a
+    // reader actually opens — PPR, twelve teams — had a moves track of nothing but its one
+    // surfaced row, and both the board and the card's strip were empty pictures over a real
+    // axis. A count is a state, and a fixture that only produces it for the first block is a
+    // fixture that expresses the field and not the state (ADR-086).
+    const depth = record.ros_fair_rank - 1;
+    const adds = Math.max(0, 900 - depth * 37);
+    const drops = Math.max(0, 120 - depth * 5);
     return {
       schema_version: "1.0",
       build_id: FIXTURE_BUILD_ID,
@@ -828,8 +869,12 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
       long_absence: record.long_absence,
       weeks_since_last_game: record.weeks_since_last_game,
       games_played_to_date: record.games_played_to_date,
-      snap_share_last3: 0.72,
-      target_share_last3: 0.19,
+      // Varied across the board on purpose. A constant share is a cohort with no spread, so
+      // every reading over it comes out "1st of N" and nothing that orders a population is
+      // exercised at all. Every sixth row publishes neither, because the feed not reporting a
+      // share and the feed reporting zero are different facts and the card draws them apart.
+      snap_share_last3: index % 6 === 5 ? null : round(0.92 - (index % 5) * 0.14),
+      target_share_last3: index % 6 === 5 ? null : round(0.28 - (index % 4) * 0.06),
       current_status: record.current_status,
       outside_tier_board: false,
       surface_reasons: ["intrinsic_top_tier_depth"],

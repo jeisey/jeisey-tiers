@@ -36,6 +36,9 @@ import { useCallback, useMemo, useRef } from "react";
 import { useElementWidth } from "../components/useElementWidth";
 import { useRovingMarks } from "./useRovingMarks";
 import { formatRank, formatValue } from "../data/format";
+// The population bound is a rule over published counts rather than a geometry, and the player
+// card draws the same strip from it, so it lives in `data/ros` and has one definition.
+import { movesBound } from "../data/ros";
 import type { Position } from "../data/contracts";
 
 /** One row of the board. Every field is read from the artifact; nothing here is derived. */
@@ -90,23 +93,6 @@ function valueScale(marks: readonly OpportunityMark[], divisions: number): Scale
   const low = Math.floor(min / step) * step;
   const high = Math.ceil(max / step) * step;
   return { min: low, max: high, range: high - low || 1, step };
-}
-
-/**
- * The bound for the moves track, from the population rather than from its worst outlier.
- *
- * The same problem the Draft Rail solved with `railBound`, and for the same reason. A single
- * surfaced waiver-wire pickup can carry two thousand adds against a board whose ordinary rows
- * are in single digits; scaling to him renders every other row as a hairline, which hides
- * exactly the comparison the track exists for. The 85th percentile of the non-zero counts
- * sizes the axis to the rows a reader is actually comparing, and anything past it is drawn as
- * a clipped bar with its real number printed beside it — never silently truncated.
- */
-export function movesBound(counts: readonly number[]): number {
-  const nonZero = counts.filter((count) => count > 0).sort((a, b) => a - b);
-  if (nonZero.length === 0) return 1;
-  const index = Math.min(nonZero.length - 1, Math.floor(nonZero.length * 0.85));
-  return Math.max(1, nonZero[index] ?? 1);
 }
 
 /**

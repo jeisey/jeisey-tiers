@@ -490,6 +490,103 @@ const SCREENS = [
       await page.getByRole("dialog").waitFor();
     },
   },
+
+  /*
+   * The card's micro-charts (ADR-086).
+   *
+   * The owner's report was that the two in-season sections were "very static looking" and
+   * that `ROS uncertainty 82.1` told a reader nothing. Every screen below is a number that was
+   * already correct, in a picture that says what it means — so a picture is exactly the right
+   * evidence, and each one shows a different *state* rather than a different viewport.
+   */
+  {
+    // Rest of season: the rank-move rail, the interval width against its own position.
+    name: "51-card-rest-of-season-meters",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // The breakout: no preseason rank at all, and a rate the model is declining to buy. The
+    // rail is a sentence rather than a move, which is the branch a picture is worth having.
+    name: "52-card-breakout-no-preseason-rank",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // The pace rail and the production cohort strip, scrolled to.
+    name: "53-card-pace-and-usage",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).first().click();
+      await page.getByRole("dialog").waitFor();
+      await page.locator(".detail-body").evaluate((node) => {
+        node.scrollTop = node.scrollHeight;
+      });
+    },
+  },
+  {
+    // The tablet dossier: no identity rail, the same three meters at full card width.
+    name: "54-card-meters-tablet",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 900, height: 1100 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // The sheet: every meter stacks, label and readout on one line, track beneath.
+    name: "55-card-meters-mobile-ros",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await dialog.getByRole("tab", { name: "Rest of season" }).click();
+    },
+  },
+  {
+    name: "56-card-meters-mobile-usage",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await dialog.getByRole("tab", { name: "In-season usage" }).click();
+    },
+  },
+  {
+    // The feed down: the moves strip is empty and labelled, and the usage cohort rows that
+    // depend on it are absent rather than drawn at zero.
+    name: "57-card-usage-no-behaviour",
+    path: "/scenario/in-season-no-behavior/?view=ros",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      await page.getByRole("dialog").waitFor();
+      await page.locator(".detail-body").evaluate((node) => {
+        node.scrollTop = node.scrollHeight;
+      });
+    },
+  },
 ];
 
 /** Artifacts a build is allowed not to publish; see the console filter below. */

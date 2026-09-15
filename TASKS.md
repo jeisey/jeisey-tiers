@@ -1170,3 +1170,59 @@ screenshot.
 - [ ] **Not done here, deliberately.** The Opportunity Board has no filter of its own beyond
       the global position control and no "surfaced only" view. Both are product scope rather
       than presentation and neither was asked for.
+
+
+## The card-meters pass — 2026-09-15 (ADR-086)
+
+The owner looked at the in-season player card the pass above had just built and asked what
+`ROS Uncertainty 82.8` was supposed to tell him. It is the artifact's own number, every gate
+agrees with it, and it answers nothing — and the same was true of every other tile in the
+card's two in-season sections.
+
+- [x] **`ROS uncertainty` has a scale.** It is named as what it is (`P25 – P75 width`) and
+      placed among the same position's published rows: `6th widest of 7 WRs`, on a strip
+      carrying the cohort's middle half as a band and its median as a tick.
+- [x] **The rank move is a picture, on the board's own depth.** Two anchors of different
+      shapes, two model names, and the artifact's own `fair_rank_change` between them. Scaling
+      to the player's two ranks was rejected: it would draw 4→1 exactly like 244→59.
+- [x] **A player the preseason board never held gets a sentence, not a move.** Two em dashes
+      and "he was not on the preseason board at all"; no track is drawn from a rank that does
+      not exist.
+- [x] **The pace rail answers the hot-start question in the model's own unit.** Points per
+      appearance scored against points per appearance projected, on one axis because it is one
+      unit, with the number of appearances behind the observed rate printed. The card says it
+      divided remaining points by remaining games and never calls it an expectation.
+- [x] **Production and workload are placed against the position.** Points per game, snap share
+      and target share, each with its own printed denominator, from the published board rather
+      than the reader's filter.
+- [x] **The card's moves strip uses the board's own bound.** `movesBound` moved to `data/ros`
+      so one rule serves the chart and the card, and each caption names the bound it used.
+- [x] **No blended score.** A rank move, a pace gap and an add count have no shared unit;
+      `AGENTS.md` section 10 forbids the blend and ADR-086 records why a "lucky meter" would be
+      a manufactured number rather than a measured one.
+- [x] **The tiles stayed.** Every value a meter places keeps a readout tile, so a board whose
+      position cohort is too small loses the reading and never the number.
+- [x] **The fixture carries the states, not just the shapes.** A breakout with a null preseason
+      rank scoring at twice the projected rate, a player the model expects to improve, varied
+      usage shares, and a row whose shares the feed never published. Fifth instance of the same
+      species (ADR-081, ADR-082, ADR-084, ADR-085).
+- [x] **Accessibility.** Every track is `aria-hidden` with its reading printed beside it; two
+      new axe scans (the card with a rank move and the card without one) and a 320px reflow
+      check that opens a card rather than only a page. All green.
+- [x] **Verified.** `npm run lint` (0 errors, 4 pre-existing warnings), `npm run typecheck`,
+      `npm run test -- --run` (403), `npm run e2e` (124), `npm run verify:board` on five builds
+      with zero disagreements, `uv run ruff check`, `ruff format --check`, `mypy`,
+      `uv run pytest`, and 60 screens in `docs/visual-qa/2026-09-15-card-meters/`.
+- [x] **One toolchain change.** `testTimeout`/`hookTimeout` raised to 15s in `vite.config.ts`.
+      Three new App-rendering test files pushed several existing jsdom tests past Vitest's 5s
+      default under parallel load — they passed file-by-file and timed out in the full run. No
+      assertion was weakened; the config comment records the reasoning.
+- [ ] **Not done here, deliberately: the real luck metric.**
+      `points_over_expected_per_game_to_date` exists in `ros_core_v1` and is not published.
+      Publishing it is a data-contract change (schema, validator, CSV, goldens) **and** a
+      licence decision: ffopportunity's expected-points data is CC-BY-SA 4.0, so a derived
+      per-player figure on a public artifact raises the share-alike question that backlog item
+      8 records against FTN. ADR-086 states what it would take; it needs its own decision.
+- [ ] **Not done here, deliberately.** The cohort is position-scoped with no second population,
+      and the meters are on the in-season card only. Both are product scope, neither was asked
+      for.

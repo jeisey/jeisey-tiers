@@ -43,6 +43,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
 import { useMediaQuery } from "../components/useMediaQuery";
+import { CohortStrip, PaceRail, RankShift, type CohortReadingRow } from "../charts/CardMeters";
 import { MarketTrend, type TrendSeries } from "../charts/MarketTrend";
 import type {
   ArbitrageRecord,
@@ -79,10 +80,17 @@ import {
   formatSigned,
   formatValue,
 } from "../data/format";
+import { ordinal } from "../data/cohort";
 import { explainFlags, playerLevelFlags } from "../data/flags";
 import { CONFIDENCE_SHORT, describeGap, describeTrend, marketSourceLabel } from "../data/market";
 import { hasMeaningfulStatus, isNoteworthyRosterStatus, statusBadge } from "../data/model";
-import { longAbsenceLabel, rankChangeLabel } from "../data/ros";
+import {
+  longAbsenceLabel,
+  projectedRemainingRate,
+  rankChangeLabel,
+  scoredRate,
+  type RosCohortContext,
+} from "../data/ros";
 
 /** The stylesheet's sheet breakpoint. Keep in step with `base.css`. */
 const SHEET_QUERY = "(max-width: 767px)";
@@ -135,6 +143,16 @@ export interface PlayerDetailData {
   readonly opportunity?: OpportunityRecord | null;
   /** The behaviour feed's own account of itself — source, window, snapshot time. */
   readonly behavior?: RosBehaviorMetadata | null;
+  /**
+   * Where this player's published values sit among the same position's rows on this board.
+   *
+   * Assembled in `data/ros` from the published block, never from the reader's filtered view,
+   * and never recomputed here: a card is a renderer, and a rank that moved when someone
+   * changed the position control would be a rank about the control. Null before kickoff and
+   * whenever the cohort is too small to be one — both ordinary states, both drawn as an
+   * absence rather than as a zero.
+   */
+  readonly rosCohort?: RosCohortContext | null;
   /**
    * Whether this card was opened from an in-season board (ADR-085).
    *
@@ -440,10 +458,12 @@ function InSeasonUsage({
   ros,
   opportunity,
   behavior,
+  cohort,
 }: {
   readonly ros: RosTierRecord;
   readonly opportunity: OpportunityRecord | null;
   readonly behavior: RosBehaviorMetadata | null;
+  readonly cohort: RosCohortContext | null;
 }): React.JSX.Element {
   const window = opportunity?.behavior_lookback_hours ?? behavior?.lookback_hours ?? null;
   const windowText = window === null ? "the declared window" : `${String(window)}h`;
@@ -451,16 +471,45 @@ function InSeasonUsage({
   const adds = opportunity?.add_count ?? null;
   const drops = opportunity?.drop_count ?? null;
   const net = opportunity?.net_add_count ?? null;
-  // The symmetric bound for the strip below. Local to this player rather than the board's,
-  // because a card is one row and has no population to scale against; the counts are printed
-  // beside it, so the bar is a shape and the numbers are the reading.
-  const bound = Math.max(1, adds ?? 0, drops ?? 0);
-  const addsWidth = ((adds ?? 0) / bound) * 50;
-  const dropsWidth = ((drops ?? 0) / bound) * 50;
+  /*
+    The symmetric bound for the strip below, from the board rather than from this player.
 
-  const perGame =
-    ros.points_per_game_to_date ??
-    (ros.games_played_to_date > 0 ? ros.points_to_date / ros.games_played_to_date : null);
+    It used to be `max(adds, drops)` for this row alone, on the reasoning that a card has no
+    population to scale against. It has one: the board the reader just came from. Scaling to
+    the player's own larger count made every strip the same picture — whoever had more adds
+    than drops filled the right half exactly, whether that was four transactions or four
+    hundred thousand — so the shape carried no magnitude at all. The board's own `movesBound`
+    puts the two strips on one scale, and a count past it is clipped with a chevron and its
+    real number printed beside it, exactly as the board does. The bound is named in the
+    caption, because a bar whose denominator is not stated is a bar that cannot be read.
+  */
+  const bound = cohort?.movesAxis ?? Math.max(1, adds ?? 0, drops ?? 0);
+  const addsWidth = Math.min(50, ((adds ?? 0) / bound) * 50);
+  const dropsWidth = Math.min(50, ((drops ?? 0) / bound) * 50);
+
+  const perGame = scoredRate(ros);
+  const projected = projectedRemainingRate(ros);
+
+  const usageRows: readonly CohortReadingRow[] = [
+    {
+      key: "rate",
+      label: "Points per game",
+      stat: cohort?.scoredRate ?? null,
+      format: formatValue,
+    },
+    {
+      key: "snap",
+      label: "Snap share",
+      stat: cohort?.snapShare ?? null,
+      format: (value) => `${String(Math.round(value * 100))}%`,
+    },
+    {
+      key: "target",
+      label: "Target share",
+      stat: cohort?.targetShare ?? null,
+      format: (value) => `${String(Math.round(value * 100))}%`,
+    },
+  ];
 
   return (
     <>
@@ -498,6 +547,20 @@ function InSeasonUsage({
         <span>Production so far</span>
         <span className="detail-subhead-note">{`weeks 1–${String(ros.through_week)}`}</span>
       </div>
+
+      {/*
+        Pace: what he has scored per appearance, against what the model projects per remaining
+        appearance. The card's answer to the question a hot start actually raises — one the
+        artifact can answer in its own units, because `ros_label_v1` is built on points per
+        appearance and `points_per_game_to_date` is the same quantity before the cutoff.
+      */}
+      <PaceRail
+        scored={perGame}
+        projected={projected}
+        appearances={ros.games_played_to_date}
+        position={ros.position}
+      />
+
       <div className="readout-grid">
         <Readout
           label="Games played"
@@ -508,7 +571,7 @@ function InSeasonUsage({
         <Readout
           label="Points per game"
           value={perGame === null ? EM_DASH : formatValue(perGame)}
-          hint={perGame === null ? "no appearances" : undefined}
+          hint={perGame === null ? "no appearances" : "per appearance"}
         />
         <Readout
           label="Weeks since last game"
@@ -520,6 +583,12 @@ function InSeasonUsage({
                 : String(Math.round(ros.weeks_since_last_game))
           }
         />
+        {/*
+          The tile grid is the record and the meters below are the reading, which is why these
+          two published shares keep a tile of their own. A cohort reading needs a cohort, and a
+          board with two wide receivers on it has none; the value a build published must not
+          disappear because the population it would be compared against is too small.
+        */}
         <Readout
           label="Snap share"
           value={
@@ -538,21 +607,21 @@ function InSeasonUsage({
           }
           hint="last 3 games"
         />
-        <Readout
-          label="Weeks remaining"
-          value={ros.remaining_horizon_weeks === undefined ? EM_DASH : String(ros.remaining_horizon_weeks)}
-          hint="in the horizon"
-        />
-        <Readout
-          label="Team games left"
-          value={
-            ros.team_remaining_scheduled_games == null
-              ? EM_DASH
-              : String(ros.team_remaining_scheduled_games)
-          }
-          hint="scheduled"
-        />
       </div>
+
+      {/* Production and workload against the same position on the same board. Snap and target
+          share are the reading that separates a week built on volume from one built on a long
+          touchdown, and neither is legible as a bare percentage. */}
+      <CohortStrip
+        title={
+          cohort === null
+            ? "Production against this board"
+            : `Production against the ${cohort.noun} on this board`
+        }
+        noun={cohort?.noun ?? "players"}
+        rows={usageRows}
+        position={ros.position}
+      />
 
       <div className="detail-subhead">
         <span>Roster moves</span>
@@ -562,8 +631,8 @@ function InSeasonUsage({
       </div>
 
       {/* The board's own diverging strip, for one player: drops left of centre, adds right, on
-          a scale bounded by this player's own larger count. Never colour alone — the counts are
-          printed beneath it and the whole reading is in the card's text. */}
+          the board's own symmetric scale. Never colour alone — the counts are printed beneath
+          it and the whole reading is in the card's text. */}
       <div className="opp-track" data-track="moves" data-card="true" aria-hidden="true">
         <span className="opp-zero" style={{ left: "50%" }} />
         {feedUp ? (
@@ -578,11 +647,28 @@ function InSeasonUsage({
               data-kind="add"
               style={{ left: "50%", width: `${String(addsWidth)}%` }}
             />
+            {(adds ?? 0) > bound && (
+              <span className="opp-overflow" data-kind="add">
+                ›
+              </span>
+            )}
+            {(drops ?? 0) > bound && (
+              <span className="opp-overflow" data-kind="drop">
+                ‹
+              </span>
+            )}
           </>
         ) : (
           <span className="opp-track-empty" />
         )}
       </div>
+      <p className="cohort-note">
+        {feedUp
+          ? `Drops left of centre, adds right, on the board's own axis of ±${formatInteger(bound)}` +
+            (cohort?.movesAxis == null ? "" : " — the 85th percentile of its non-zero counts") +
+            ". A chevron marks a count past it; the numbers below are the reading."
+          : "The behaviour feed published nothing for this build, so the strip is empty rather than zero."}
+      </p>
 
       <div className="readout-grid">
         <Readout
@@ -687,6 +773,9 @@ export function PlayerDetail({
   // with no rest-of-season row cannot happen — the view is not offered without a bundle — but
   // the row is what the panel is made of, so it is what the branch tests.
   const inSeasonCard = data.inSeason === true && ros != null;
+  // Where this player sits among his own position on this board. Null before kickoff, and on
+  // any board whose cohort is too small to be one; every consumer treats that as an absence.
+  const cohort = data.rosCohort ?? null;
   const market = data.market ?? CROSS_MARKET;
   // One resolution, once. Every number in this card and its rail comes from `view`; nothing
   // below reaches past it to a flat field, because the flat fields are MyFantasyLeague's and
@@ -805,23 +894,27 @@ export function PlayerDetail({
           badge={`Week ${String(ros.through_week)}`}
           tabbed={sheet}
         >
+          {/*
+            The two ranks, and the distance between them as a picture rather than as a third
+            digit. The board a reader just left is 500 rows deep; "+185" says how far he moved
+            and nothing about how far that is, which is the whole difference between a number
+            and a reading.
+          */}
+          <RankShift
+            from={ros.preseason_fair_rank ?? null}
+            to={ros.ros_fair_rank}
+            depth={cohort?.boardDepth ?? null}
+            change={ros.fair_rank_change ?? null}
+            labels={{
+              from: formatRank(ros.preseason_fair_rank),
+              to: formatRank(ros.ros_fair_rank),
+              change: rankChangeLabel(ros.fair_rank_change),
+            }}
+            position={ros.position}
+            inPreseasonUniverse={ros.in_preseason_universe}
+          />
+
           <div className="readout-grid">
-            <Readout
-              label="Preseason fair rank"
-              value={ros.preseason_fair_rank == null ? EM_DASH : formatRank(ros.preseason_fair_rank)}
-              hint="draft model"
-            />
-            <Readout
-              label="Current ROS fair rank"
-              value={formatRank(ros.ros_fair_rank)}
-              hint="rest-of-season model"
-              strong
-            />
-            <Readout
-              label="Change in intrinsic view"
-              value={rankChangeLabel(ros.fair_rank_change)}
-              hint="two models, two orderings"
-            />
             <Readout
               label="ROS position rank"
               value={`${ros.position}${formatRank(ros.ros_position_rank)}`}
@@ -829,28 +922,58 @@ export function PlayerDetail({
             <Readout
               label="ROS tier"
               value={ros.ros_tier_label ?? EM_DASH}
-              hint="band, not a cut"
+              hint={
+                cohort?.tier == null
+                  ? "band, not a cut"
+                  : `${ordinal(cohort.tier.place)} of ${String(cohort.tier.size)} · band, not a cut`
+              }
             />
-            <Readout label="ROS median VORP" value={formatValue(ros.ros_vorp_p50)} hint="P50" />
+            <Readout label="ROS median VORP" value={formatValue(ros.ros_vorp_p50)} hint="P50" strong />
             <Readout
               label="ROS P25 – P75 VORP"
               value={`${formatValue(ros.ros_vorp_p25)} – ${formatValue(ros.ros_vorp_p75)}`}
             />
             <Readout label="Remaining points" value={formatValue(ros.ros_expected_points)} />
-            <Readout label="Remaining games" value={ros.ros_expected_games.toFixed(1)} />
-            <Readout label="ROS uncertainty" value={formatValue(ros.ros_uncertainty)} />
             <Readout
-              label="Games played to date"
-              value={formatValue(ros.games_played_to_date)}
-            />
-            <Readout
-              label="Weeks since last game"
-              value={
-                ros.has_played_this_season
-                  ? String(Math.round(ros.weeks_since_last_game))
-                  : "No appearances"
+              label="Remaining games"
+              value={ros.ros_expected_games.toFixed(1)}
+              hint={
+                ros.team_remaining_scheduled_games == null
+                  ? "expected appearances"
+                  : `of ${String(ros.team_remaining_scheduled_games)} team games left`
               }
             />
+            {/* The number the owner's review named. It is the P25–P75 width and nothing else,
+                so the hint says so and the strip below gives it the scale a digit cannot. */}
+            <Readout
+              label="ROS uncertainty"
+              value={formatValue(ros.ros_uncertainty)}
+              hint="P25 – P75 width"
+            />
+            <Readout
+              label="Weeks remaining"
+              value={
+                ros.remaining_horizon_weeks === undefined
+                  ? EM_DASH
+                  : String(ros.remaining_horizon_weeks)
+              }
+              hint="in the horizon"
+            />
+            {/* Production lives in `In-season usage`, which is not rendered on a card opened
+                from the draft board. There it has nowhere else to be, so it stays here. */}
+            {!inSeasonCard && (
+              <>
+                <Readout label="Games played to date" value={formatValue(ros.games_played_to_date)} />
+                <Readout
+                  label="Weeks since last game"
+                  value={
+                    ros.has_played_this_season
+                      ? String(Math.round(ros.weeks_since_last_game))
+                      : "No appearances"
+                  }
+                />
+              </>
+            )}
           </div>
           <Distribution
             title="Simulated remaining VORP · P10 → P90"
@@ -860,6 +983,39 @@ export function PlayerDetail({
             p50={ros.ros_vorp_p50}
             p75={ros.ros_vorp_p75}
             p90={ros.ros_vorp_p90}
+          />
+          {/* The scale the three headline numbers above are missing. "82.1" is not a reading;
+              "the ninth-widest interval of the ninety-six WRs on this board" is the same
+              published number and an answer. */}
+          <CohortStrip
+            title={
+              cohort === null
+                ? "Value against this board"
+                : `Value against the ${cohort.noun} on this board`
+            }
+            noun={cohort?.noun ?? "players"}
+            rows={[
+              {
+                key: "vorp",
+                label: "ROS median VORP",
+                stat: cohort?.vorp ?? null,
+                format: formatValue,
+              },
+              {
+                key: "points",
+                label: "Remaining points",
+                stat: cohort?.remainingPoints ?? null,
+                format: formatValue,
+              },
+              {
+                key: "uncertainty",
+                label: "ROS uncertainty",
+                stat: cohort?.uncertainty ?? null,
+                format: formatValue,
+                qualifier: "widest",
+              },
+            ]}
+            position={ros.position}
           />
           {ros.long_absence && (
             <div className="notice" data-severity="info" role="note" style={{ marginTop: "0.75rem" }}>
@@ -902,6 +1058,7 @@ export function PlayerDetail({
             ros={ros}
             opportunity={opportunity ?? null}
             behavior={data.behavior ?? null}
+            cohort={cohort}
           />
         </DetailSection>
       );

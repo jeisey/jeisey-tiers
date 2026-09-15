@@ -4,6 +4,15 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The card-meters pass, 2026-09-15 (ADR-086).** The owner looked at the in-season player card
+the pass below had just built and asked a question no gate can: `ROS uncertainty 82.1` — is
+that a lot? The number is the artifact's own, `verify:board` agrees with it, axe has nothing to
+say about it, and it answers nothing. The same was true of every other tile in the card's two
+in-season sections. Three micro-charts now place those published values instead of printing
+them: a rank move against the board's own depth, a pace comparison in the model's own unit, and
+a cohort strip that says where a value sits among the same position's published rows. See
+**What the card-meters pass changed** below.
+
 **The in-season presentation pass, 2026-09-15 (ADR-085).** The first live in-season week is
 published, the owner looked at the deployed site, and found four defects that **every gate had
 passed on**: the rest-of-season view published tiers and quantiles and drew no chart at all;
@@ -1362,6 +1371,17 @@ Nothing else is blocking. The four analytical findings are unchanged and none is
 released V1, kept here so a future session inherits questions rather than a search. Each names
 what would have to be true before it is worth doing.
 
+0. **Publish the per-player expected-points figures, or decide not to** (ADR-086).
+   `expected_points_per_game_to_date` and `points_over_expected_per_game_to_date` are already
+   computed in `ros_core_v1` and would give the in-season card a genuine luck reading —
+   "scoring on volume" against "scoring on conversion" — instead of the honest-but-indirect
+   pace comparison it has now. Two preconditions, and the second is the reason this is an ADR:
+   it is a data-contract change under `AGENTS.md` §18 (schema, validator, CSV, TypeScript
+   contract, goldens); and ffopportunity's expected-points data is **CC-BY-SA 4.0**, so a
+   derived per-player figure on a public artifact is much closer to redistributing the licensed
+   data than a prediction made from it is, and the share-alike obligation would bind what this
+   site publishes. Same question as item 8 below, on a source the project already depends on.
+
 1. **Multi-source market pricing, and exact half-PPR.** ADR-053 and ADR-056 are accepted with
    integration deferred. Fantasy Football Calculator serves genuine `standard`, `ppr` and
    `half-ppr` cohorts with 7-30x MFL's volume and a published per-player `stdev`; its `teams`
@@ -1610,6 +1630,76 @@ table, ADR-048's category), `npm run typecheck` clean, `npm run test -- --run` *
 **Left open on purpose**: the Opportunity Board has no position filter of its own beyond the
 global one, and no "surfaced only" view. Both are product scope rather than presentation, and
 neither was asked for.
+
+## What the card-meters pass changed (2026-09-15, ADR-086)
+
+**Root cause, in one line: every gate checks whether a number is right and none checks whether
+it can be read.** One turn past ADR-085's own finding, which was that a suite checking whether
+numbers are right cannot see whether a board is there. A board can be there, and every number
+on it can be correct, and a reader can still have no idea what any of them mean.
+
+| | before | after |
+|---|---|---|
+| `ROS uncertainty` | `47.3` | `47.3`, plus `P25 – P75 width` and `6th widest of 7 WRs` on a strip showing where that sits |
+| the two ranks | three tiles: `4`, `+3`, `1` | the same three tiles, above a rail drawing both on the **board's own depth** |
+| production so far | `Points per game 14.3` | the same tile, above `Scored so far 14.3` against `Projected ahead 14.1` on one axis |
+| snap / target share | a bare percentage | the same tile, plus a place among the position's published rows |
+| the card's moves strip | scaled to `max(adds, drops)` for that one player | the board's own `movesBound`, with the bound named in the caption |
+| cohort population | — | the **published block**, never the reader's filter |
+
+**Four things a future session should not re-derive.**
+
+1. **A cohort reading is a description of an artifact, not a new quantity.** A rank among the
+   published rows of one artifact is arithmetic over those rows, which is what makes it legal
+   under `AGENTS.md` section 11. It is not a model output and must never be presented as one.
+2. **The pace comparison is legitimate because of `ros_label_v1`.** That rule decomposes the
+   target into remaining games, remaining points *per appearance*, and their product — so a
+   projected rate is a quantity the model is built on and `points_per_game_to_date` is the same
+   quantity before the cutoff. One unit either side of the cutoff is the whole justification for
+   one shared axis, and it is the exact condition the Opportunity Board fails. The card says it
+   divided two published totals and never calls the ratio an expectation.
+3. **There is no luck score and there should not be one.** The owner asked about a "lucky
+   meter". A *number* would be manufactured: a rank move, a pace gap and an add count have no
+   shared unit, and averaging them would produce the most confident-looking figure on the page.
+   The readings sit side by side instead.
+4. **The genuine luck metric is a data-contract change, not a frontend one, and it has a
+   licence question.** `points_over_expected_per_game_to_date` already exists in `ros_core_v1`
+   (`docs/ROS_FEATURE_DICTIONARY.md`) and is not published. Publishing it touches the schema,
+   the validator, the CSV and the goldens — and ffopportunity's expected-points data is
+   **CC-BY-SA 4.0** (`docs/SECURITY_LICENSE.md` §8), so putting a derived per-player
+   expected-points figure on a public artifact raises the same share-alike question backlog
+   item 8 records against FTN. ADR-086 records it as the next decision to take and does not
+   take it.
+
+**Fifth instance of the fixture species** (ADR-081, ADR-082, ADR-084, ADR-085):
+`snap_share_last3` was `0.72` on every fixture row, so any cohort reading over it could only
+say "1st of 6"; every row carried a `preseason_fair_rank`, so the rookie the preseason board
+never held — the case a rank-move rail most needs to get right — had nothing aimed at it. The
+fixture now carries a breakout with a null preseason rank scoring at twice the model's
+projected rate, a player the model expects to improve, varied usage shares, and a row whose
+shares the feed never published.
+
+**Verified**: `npm run lint` 0 errors / 4 pre-existing warnings, `npm run typecheck` clean,
+`npm run test -- --run` **403** passed (up from 348: 22 cohort-statistics tests, 15 new
+in-season derivation tests, 16 card tests), `npm run e2e` **124** passed across chromium/mobile/a11y including two new axe scans and
+a 320px reflow check that opens a card rather than only a page, `npm run verify:board` against
+all **five** builds with zero disagreements, `uv run ruff check`, `ruff format --check`, strict
+`mypy` and `uv run pytest` clean, and 60 screens in `docs/visual-qa/2026-09-15-card-meters/`.
+
+**No Python file changed. No model, artifact, schema, feature, rank, tier, count or CSV column
+changed.**
+
+**One toolchain change, and why.** `vite.config.ts` sets `testTimeout`/`hookTimeout` to 15s,
+above Vitest's 5s default. Many of these tests render the whole App into jsdom and wait for an
+artifact load; one takes about a second idle and several times that with four workers competing,
+so the default was already marginal and this pass's three new files tipped it — the same tests
+passed file-by-file and timed out in the full run. No assertion was weakened, and the tests
+whose failure mode is a hang do not exist here: a wrong assertion throws from `getBy*` at once.
+
+**Left open on purpose**: the cohort is position-scoped and has no second population — a reader
+cannot ask "against every RB the model rates in my league's starting range" — and the meters
+appear on the in-season card only, not on the draft one. Both are product scope rather than
+presentation and neither was asked for.
 
 ## Next action
 

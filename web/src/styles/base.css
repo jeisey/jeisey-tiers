@@ -2674,14 +2674,421 @@ dialog.player-detail::backdrop {
   color: var(--ink-faint);
 }
 
-/* The board's diverging strip, in a card. One player has no population to scale against, so
-   the bar is a shape and the counts printed beneath it are the reading. */
+/* The board's diverging strip, in a card, on the board's own symmetric axis so the two
+   pictures of one player agree. The counts printed beneath it are still the reading. */
 .opp-track[data-card="true"] {
   display: block;
   height: 16px;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
   border-left: none;
   border: var(--hairline) solid var(--line);
+}
+
+/* ------------------------------------------------------- the card's micro-charts
+ *
+ * Three small pictures that give a published number a scale (`charts/CardMeters.tsx`). They
+ * share this block because they share a construction: a recessed track on the tile ground, a
+ * band or bar in accent, a glowing mark in the position's own hue, and a mono readout beside
+ * it — artboard 1c's distribution rail at one step down in size.
+ *
+ * Every one of them is a *second* channel. The direction, the value and the population are in
+ * text beside the track, and each track is `aria-hidden`; a reader who cannot see the picture
+ * loses nothing but the shape (`docs/UX_SPEC.md` section 12).
+ *
+ * They stack at the sheet breakpoint and nowhere else, which is the one place the card's
+ * content column is actually narrow: the desktop variant gives them 47rem beside the identity
+ * rail and the tablet dossier gives them the whole 46rem card, so a three-column row fits both
+ * without help. That is the same 767px the card's own variant switch uses, and the two must
+ * keep moving together.
+ */
+
+.shift,
+.pace,
+.cohort {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* The two ranks and the change, as three labelled readouts above the rail that draws them.
+   Three labels, three model names, and no arithmetic performed here (ADR-071). */
+.shift-head {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hairline);
+  background: var(--accent-wash-strong);
+  margin-top: var(--space-1);
+}
+
+.shift-end {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--tile);
+  padding: 11px 13px;
+  min-width: 0;
+}
+
+.shift-end-label {
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.shift-end-value {
+  font: 500 0.92rem/1.1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.shift-end-value[data-strong="true"] {
+  font-size: 1.25rem;
+  color: var(--accent-bright);
+}
+
+.shift-end-value[data-kind="bargain"] { color: var(--bargain); }
+.shift-end-value[data-kind="premium"] { color: var(--premium); }
+
+.shift-end-note {
+  font: 400 0.68rem/1.3 var(--font-sans);
+  color: var(--ink-muted);
+}
+
+.shift-track {
+  position: relative;
+  height: 22px;
+  border-left: var(--hairline) solid var(--line-bright);
+  border-right: var(--hairline) solid var(--line-bright);
+  background: linear-gradient(180deg, rgb(46 204 255 / 5%), transparent);
+}
+
+.shift-track::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: var(--hairline);
+  background: var(--line-strong);
+}
+
+/* The distance between the two orderings. A span, drawn from whichever anchor is on the left,
+   so the picture carries the size of the disagreement and never a direction of its own. */
+.shift-span {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, rgb(46 204 255 / 25%), rgb(102 241 255 / 70%));
+}
+
+.shift-span[data-direction="down"] {
+  background: linear-gradient(90deg, rgb(102 241 255 / 70%), rgb(46 204 255 / 25%));
+}
+
+/*
+ * Two anchors, two shapes, two heights.
+ *
+ * Shape carries the difference before colour does: the earlier ordering is a hollow diamond and
+ * the current one is the board's own glowing square. The vertical offset is what makes a player
+ * both models agree about legible — at 500 rows deep, fourth and first are half a pixel apart,
+ * and one mark hidden behind another is a picture that has lost a fact.
+ */
+.shift-anchor {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  /*
+   * `--at` is the mark's position as a percentage, set inline from the artifact value; the
+   * clamp keeps the whole glyph inside the track at both ends. Rank 1 is 0% and the board's
+   * last row is 100%, so without it every top-ranked player's mark is half outside the rail
+   * it belongs to — a mark that has left its own axis is a mark that is no longer on it.
+   */
+  inset-inline-start: clamp(0px, calc(var(--at) - 6px), calc(100% - 12px));
+}
+
+.shift-anchor[data-anchor="from"] {
+  top: 1px;
+  border: var(--hairline) solid var(--ink-accent);
+  rotate: 45deg;
+  background: var(--panel);
+}
+
+.shift-anchor[data-anchor="to"] {
+  bottom: 2px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 9px var(--accent-bright);
+}
+
+.shift-anchor[data-anchor="to"][data-pos="QB"] { background: var(--pos-qb); box-shadow: 0 0 9px var(--pos-qb); }
+.shift-anchor[data-anchor="to"][data-pos="RB"] { background: var(--pos-rb); box-shadow: 0 0 9px var(--pos-rb); }
+.shift-anchor[data-anchor="to"][data-pos="WR"] { background: var(--pos-wr); box-shadow: 0 0 9px var(--pos-wr); }
+.shift-anchor[data-anchor="to"][data-pos="TE"] { background: var(--pos-te); box-shadow: 0 0 9px var(--pos-te); }
+
+.shift-scale,
+.pace-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font: 500 0.63rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.shift-scale-mid,
+.pace-scale-mid {
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
+}
+
+.shift-note,
+.pace-note,
+.cohort-note {
+  margin: 0;
+  font: 400 0.72rem/1.45 var(--font-sans);
+  color: var(--ink-strong);
+  text-wrap: pretty;
+}
+
+.cohort-note {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+}
+
+/* Pace: two bars, one unit, one shared axis. The shared axis is the whole claim — it is
+   correct here precisely because it is not correct on the Opportunity Board (ADR-085). */
+.pace-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 3.4rem;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pace-label {
+  font: 600 0.6rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.pace-track {
+  position: relative;
+  height: 12px;
+  background: var(--tile);
+  border: var(--hairline) solid var(--line);
+}
+
+.pace-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* The model's own projection is drawn hatched rather than solid: an estimate and a count of
+   what happened should not look like the same kind of fact. */
+.pace-fill[data-kind="projected"] {
+  background: repeating-linear-gradient(
+    135deg,
+    rgb(102 241 255 / 55%) 0 3px,
+    rgb(102 241 255 / 18%) 3px 6px
+  );
+}
+
+.pace-fill[data-kind="scored"][data-pos="QB"] { background: var(--pos-qb); }
+.pace-fill[data-kind="scored"][data-pos="RB"] { background: var(--pos-rb); }
+.pace-fill[data-kind="scored"][data-pos="WR"] { background: var(--pos-wr); }
+.pace-fill[data-kind="scored"][data-pos="TE"] { background: var(--pos-te); }
+
+.pace-value {
+  justify-self: end;
+  font: 500 0.92rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.pace-row[data-kind="projected"] .pace-value {
+  color: var(--accent-bright);
+}
+
+/* The cohort strip: where one published value sits among the same position's published rows. */
+.cohort-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cohort-title {
+  font: 600 0.6rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+
+.cohort-meta {
+  flex: none;
+  font: 500 0.6rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.cohort-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cohort-row {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr) 8.5rem;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cohort-label {
+  font: 600 0.6rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.cohort-track {
+  position: relative;
+  height: 14px;
+  background: var(--tile);
+  border-inline: var(--hairline) solid var(--line-bright);
+}
+
+.cohort-track::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: var(--hairline);
+  background: var(--line);
+}
+
+/* The cohort's middle half and its median — the same two facts the distribution rail above
+   draws for one player, drawn here for the population he is being read against. */
+.cohort-band {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  background: rgb(46 204 255 / 14%);
+  border-inline: var(--hairline) solid rgb(46 204 255 / 30%);
+}
+
+.cohort-mid {
+  position: absolute;
+  inset-block: 2px;
+  width: var(--hairline);
+  background: var(--ink-faint);
+}
+
+.cohort-mark {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  inset-inline-start: clamp(0px, calc(var(--at) - 4px), calc(100% - 8px));
+  transform: translateY(-50%);
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent-bright);
+}
+
+.cohort-mark[data-pos="QB"] { background: var(--pos-qb); box-shadow: 0 0 8px var(--pos-qb); }
+.cohort-mark[data-pos="RB"] { background: var(--pos-rb); box-shadow: 0 0 8px var(--pos-rb); }
+.cohort-mark[data-pos="WR"] { background: var(--pos-wr); box-shadow: 0 0 8px var(--pos-wr); }
+.cohort-mark[data-pos="TE"] { background: var(--pos-te); box-shadow: 0 0 8px var(--pos-te); }
+
+.cohort-read {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: 0;
+  font: 400 0.66rem/1.2 var(--font-sans);
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+.cohort-read b {
+  font: 500 0.82rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/*
+ * The narrow form: label and readout on one line, the track on its own beneath them.
+ *
+ * A fixed label column plus a fixed readout column plus a track is 18rem before the gaps, and
+ * the sheet's content column is about 22rem at 390px and 17rem at the 320px the reflow check
+ * drives. Stacking is what keeps that check honest rather than merely passing — nothing here
+ * shrinks below its text, so there is no width at which a number is clipped instead of wrapped.
+ */
+@media (max-width: 767px) {
+  /*
+   * The rank readouts stack, and each one lays its label and value on one line with the model
+   * name under them. Three of the card's own tiles would be four hundred and fifty pixels of a
+   * sheet whose whole premise is that a tab bar beats a long scroll (artboard 1b); this is the
+   * same three readouts, the same three labels and the same three model names in a third of
+   * the height.
+   */
+  .shift-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shift-end {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 2px var(--space-3);
+    padding: 8px 13px;
+  }
+
+  .shift-end-value {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .shift-end-value[data-strong="true"] {
+    font-size: 1rem;
+  }
+
+  .shift-end-note {
+    grid-column: 1 / -1;
+  }
+
+  .pace-row,
+  .cohort-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .pace-label,
+  .cohort-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .pace-value,
+  .cohort-read {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .pace-track,
+  .cohort-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
 
 .detail-empty {
@@ -4099,6 +4506,16 @@ dl.facts dd {
   top: 50%;
   transform: translateY(-50%);
   font: 700 0.7rem/1 var(--font-mono);
+  /*
+   * A chevron marks a count past the axis, so it necessarily sits at the end of a bar that has
+   * been clipped to the edge — which is to say on top of a bar in its own colour. The halo is
+   * what keeps it readable there as well as over the empty track, and it matters more on the
+   * player card than on the board: the card's bound is the population's 85th percentile, so
+   * roughly one row in seven runs past it.
+   */
+  text-shadow:
+    0 0 3px var(--canvas),
+    0 0 2px var(--canvas);
 }
 
 .opp-overflow[data-kind="add"] { right: 0; color: var(--good); }

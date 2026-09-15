@@ -16,6 +16,7 @@
  */
 
 import type { Degradation } from "./bundle";
+import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   OpportunityRecord,
   Position,
@@ -293,6 +294,201 @@ export function rankChangeLabel(change: number | null | undefined): string {
   if (change === null || change === undefined) return "—";
   if (change === 0) return "0";
   return change > 0 ? `+${String(change)}` : String(change);
+}
+
+/**
+ * The bound for a diverging strip of roster transactions, from the population.
+ *
+ * The same problem `railBound` solved on the Draft Rail, and for the same reason. A single
+ * surfaced waiver-wire pickup can carry two thousand adds against a board whose ordinary rows
+ * are in single digits; scaling to him renders every other row as a hairline, which hides
+ * exactly the comparison the track exists for. The 85th percentile of the non-zero counts
+ * sizes the axis to the rows a reader is actually comparing, and anything past it is drawn as
+ * a clipped bar with its real number printed beside it — never silently truncated.
+ *
+ * It lives in the data layer rather than in the chart that first needed it because two
+ * surfaces now draw the same strip — the Opportunity Board and the player card — and the
+ * moment a rule like this is written twice is the moment the two pictures start disagreeing
+ * about the same player. One definition, two callers, each stating the bound it used.
+ */
+export function movesBound(counts: readonly number[]): number {
+  const nonZero = counts.filter((count) => count > 0).sort((a, b) => a - b);
+  if (nonZero.length === 0) return 1;
+  const index = Math.min(nonZero.length - 1, Math.floor(nonZero.length * 0.85));
+  return Math.max(1, nonZero[index] ?? 1);
+}
+
+/**
+ * The model's remaining points divided by its remaining games.
+ *
+ * **Why this is a legitimate reading and not a blend.** `ros_label_v1` decomposes the target
+ * into exactly three parts — remaining games, remaining points *per appearance*, and their
+ * product — so points per appearance is a quantity the model is built on rather than one
+ * invented here, and `points_per_game_to_date` on the same record is the identical quantity
+ * measured over the weeks before the cutoff. Two numbers in one unit, one either side of the
+ * cutoff, is a comparison the artifact supports; it is the opposite of the add-count-against-
+ * VORP blend `AGENTS.md` forbids, which has no shared unit at all.
+ *
+ * **What it is not.** The ratio of two published expectations is not the expectation of the
+ * ratio, so this is the model's remaining points divided by its remaining games and is
+ * described that way wherever it is shown — never as "expected points per game", which would
+ * claim a per-appearance estimate the artifact does not publish.
+ *
+ * Null when the model expects no remaining appearances, which is a real state at the end of a
+ * season and after a season-ending absence, and is an absence rather than a zero.
+ */
+export function projectedRemainingRate(record: {
+  readonly ros_expected_points: number;
+  readonly ros_expected_games: number;
+}): number | null {
+  const games = record.ros_expected_games;
+  if (!Number.isFinite(games) || games <= 0) return null;
+  if (!Number.isFinite(record.ros_expected_points)) return null;
+  return record.ros_expected_points / games;
+}
+
+/** The observed rate, from the published field or from the two totals behind it. */
+export function scoredRate(record: RosTierRecord): number | null {
+  if (typeof record.points_per_game_to_date === "number") {
+    return Number.isFinite(record.points_per_game_to_date) ? record.points_per_game_to_date : null;
+  }
+  if (record.games_played_to_date > 0) return record.points_to_date / record.games_played_to_date;
+  return null;
+}
+
+/** A player's place inside his own rest-of-season tier. A band has an order; it has no edge. */
+export interface TierPlacement {
+  readonly label: string;
+  readonly place: number;
+  readonly size: number;
+}
+
+export function rosTierPlacement(
+  rows: readonly RosTierRecord[],
+  record: RosTierRecord,
+): TierPlacement | null {
+  if (record.ros_tier === null || record.ros_tier_label === null) return null;
+  const members = rows
+    .filter((row) => row.ros_tier === record.ros_tier)
+    .sort((a, b) => a.ros_fair_rank - b.ros_fair_rank);
+  const place = members.findIndex((row) => row.player_id === record.player_id) + 1;
+  if (place === 0 || members.length < 2) return null;
+  return { label: record.ros_tier_label, place, size: members.length };
+}
+
+/**
+ * Everything the player card needs in order to say what a number means.
+ *
+ * Assembled here rather than in the card for the reason the whole `data/` layer exists: the
+ * card is a renderer, and a component that reached into the bundle to compute a rank would be
+ * a component that could quietly compute it over the reader's current filter instead of over
+ * the published board. The cohort is always **the published rows for this block and this
+ * position**, never the filtered view, so the same player reads the same way whatever the
+ * position control happens to say.
+ *
+ * Every member is nullable and every null is an ordinary state: a cohort under
+ * `COHORT_MINIMUM`, a field the build did not publish for this player, a behaviour feed that
+ * was down. None of them is an error and none of them renders as a zero.
+ */
+export interface RosCohortContext {
+  readonly position: Position;
+  /** The population's own name, as it is printed: `WRs`. */
+  readonly noun: string;
+  /** Published rest-of-season rows of this position in this block. */
+  readonly boardCount: number;
+  /**
+   * Published rest-of-season rows in this block, all positions — the depth a rank is a rank
+   * out of. A rank move is drawn against it rather than against the two ranks themselves, so
+   * three places at the top of a 500-deep board is drawn as the small move it is.
+   */
+  readonly boardDepth: number;
+  readonly vorp: CohortStat | null;
+  readonly uncertainty: CohortStat | null;
+  readonly remainingPoints: CohortStat | null;
+  /** Points per appearance to date, over the rows of this position that have appeared. */
+  readonly scoredRate: CohortStat | null;
+  readonly snapShare: CohortStat | null;
+  readonly targetShare: CohortStat | null;
+  /** The whole block's add and drop counts, bounded as the Opportunity Board bounds them. */
+  readonly movesAxis: number | null;
+  readonly tier: TierPlacement | null;
+}
+
+/**
+ * The population's printed name. `K` and `DST` are in the contract and on no board this
+ * project builds, so they are named rather than defaulted — a cohort heading is text a reader
+ * reads, and "the 96 Ks on this board" should be wrong loudly rather than quietly.
+ */
+const POSITION_NOUN: Readonly<Record<Position, string>> = {
+  QB: "QBs",
+  RB: "RBs",
+  WR: "WRs",
+  TE: "TEs",
+  K: "kickers",
+  DST: "defences",
+};
+
+export function buildRosCohortContext(
+  bundle: InSeasonBundle,
+  leaguePreset: string,
+  scoring: ScoringPreset,
+  record: RosTierRecord,
+  opportunity: OpportunityRecord | null,
+): RosCohortContext {
+  const board = bundle.rosFor(leaguePreset, scoring);
+  const cohort = board.filter((row) => row.position === record.position);
+  const opportunityRows = bundle.opportunityFor(leaguePreset, scoring);
+  const opportunityCohort = opportunityRows.filter((row) => row.position === record.position);
+
+  const moveCounts = finiteValues([
+    ...opportunityRows.map((row) => row.add_count),
+    ...opportunityRows.map((row) => row.drop_count),
+  ]);
+
+  return {
+    position: record.position,
+    noun: POSITION_NOUN[record.position],
+    boardCount: cohort.length,
+    boardDepth: board.length,
+    vorp: cohortStat(
+      cohort.map((row) => row.ros_vorp_p50),
+      record.ros_vorp_p50,
+      "desc",
+    ),
+    uncertainty: cohortStat(
+      cohort.map((row) => row.ros_uncertainty),
+      record.ros_uncertainty,
+      "desc",
+    ),
+    remainingPoints: cohortStat(
+      cohort.map((row) => row.ros_expected_points),
+      record.ros_expected_points,
+      "desc",
+    ),
+    // Only the players who have appeared. A rate over nobody is not a low rate, and letting a
+    // zero-appearance row into the denominator would flatter every player who has played.
+    scoredRate: cohortStat(
+      finiteValues(cohort.filter((row) => row.games_played_to_date > 0).map(scoredRate)),
+      scoredRate(record),
+      "desc",
+    ),
+    // A share has an absolute scale, so the axis is 0 to 1 rather than the cohort's own range:
+    // 91% of snaps means the same thing whoever else is on the board.
+    snapShare: cohortStat(
+      finiteValues(opportunityCohort.map((row) => row.snap_share_last3)),
+      opportunity?.snap_share_last3,
+      "desc",
+      { low: 0, high: 1 },
+    ),
+    targetShare: cohortStat(
+      finiteValues(opportunityCohort.map((row) => row.target_share_last3)),
+      opportunity?.target_share_last3,
+      "desc",
+      { low: 0, high: 1 },
+    ),
+    movesAxis: moveCounts.length === 0 ? null : movesBound(moveCounts),
+    tier: rosTierPlacement(board, record),
+  };
 }
 
 export function positionsOnBoard(bundle: InSeasonBundle, state: AppState): readonly Position[] {

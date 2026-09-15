@@ -94,6 +94,24 @@ test.describe("automated scan", () => {
     const card = page.getByRole("dialog");
     await expect(card).toBeVisible();
     await expect(card.getByRole("heading", { name: "In-season usage" })).toBeVisible();
+    // The three micro-charts are on this card (ADR-086); the scan covers them here.
+    await expect(card.locator(".shift-track")).toHaveCount(1);
+    await expect(card.locator(".pace")).toHaveCount(1);
+    await expect(card.locator(".cohort")).toHaveCount(2);
+    expect(describe(await scan(page))).toEqual([]);
+  });
+
+  test("the in-season card scans clean for a player with no rank move to draw", async ({
+    page,
+  }) => {
+    // A different DOM, not a different style: the rail is replaced by a sentence and two of
+    // its three readouts are em dashes. A scan of the card that *has* a move says nothing
+    // about the card that does not, which is the same reasoning as the test above it.
+    await page.goto("/scenario/in-season/?view=ros");
+    await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).first().click();
+    const card = page.getByRole("dialog");
+    await expect(card).toBeVisible();
+    await expect(card.locator(".shift-track")).toHaveCount(0);
     expect(describe(await scan(page))).toEqual([]);
   });
 });
@@ -248,6 +266,29 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
       expect(overflow, `${path} reflows badly at 320px`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test("the in-season card's micro-charts reflow at 320 pixels too", async ({ page }) => {
+    // The card is a `<dialog>` over the page, so the check above never opens one and a
+    // three-column meter row inside it could overflow with the page behind it reflowing
+    // perfectly. Each meter stacks at the sheet breakpoint; this is the width that proves it.
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto("/scenario/in-season/?view=ros");
+    await page.waitForLoadState("networkidle");
+    await page.locator("table.sheet .player-name").first().click();
+    const card = page.getByRole("dialog");
+    await expect(card).toBeVisible();
+    for (const tab of ["Rest of season", "In-season usage"]) {
+      await card.getByRole("tab", { name: tab }).click();
+      const body = card.locator(".detail-body");
+      await expect(body).toBeVisible();
+      const overflow = await body.evaluate((node) => node.scrollWidth - node.clientWidth);
+      expect(overflow, `${tab} overflows its pane at 320px`).toBeLessThanOrEqual(1);
+      const page_ = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(page_, `${tab} reflows badly at 320px`).toBeLessThanOrEqual(1);
     }
   });
 });

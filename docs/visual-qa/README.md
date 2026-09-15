@@ -57,6 +57,13 @@ widths and with the behaviour feed down; and the player card in season beside th
 replaced. That review exists because every one of its four defects passed every automated gate
 and was obvious in a picture — which is the standing argument for this directory.
 
+The card-meters pass added `51`-`57` (ADR-086): the same player card with three micro-charts on
+it. It is the sequel to the review above and a narrower claim — the numbers were already right
+and already there, and a reader still could not tell whether `ROS uncertainty 82.1` was a wide
+interval or a narrow one. Each screen shows a *state* rather than a viewport: a rank move drawn,
+a rank move refused because the player has no preseason rank, a pace gap in the direction that
+matters, and the behaviour feed down.
+
 The current directories:
 
 | Directory | Review |
@@ -68,3 +75,4 @@ The current directories:
 | `2026-09-04-phase12/` | Phase 12 — In-Season mode: the ROS board, the opportunity board, the two disclosure contracts |
 | `2026-09-07-market-history/` | The player card's retained market history (ADR-081) |
 | `2026-09-15-inseason-ui/` | The in-season presentation pass — both boards drawn, the status column removed, the card's draft market replaced (ADR-085) |
+| `2026-09-15-card-meters/` | The player card's micro-charts — a rank move against the board, a pace comparison in the model's own unit, a value placed among its position (ADR-086) |
