@@ -1075,3 +1075,52 @@ schema, model, feature or rendered value changes.
       2026-09-15 is the first day `latest_snapshot_week` is non-empty, which means the
       `Build the rest-of-season board` step has never executed in production (run 42, the day
       before: skipped). The next successful refresh is that step's first real exercise.
+
+### `view=auto` is not the Tier Board, and nothing verified the board the site opens (ADR-084)
+
+With ADR-083's retry in place the capture job succeeded and the rest-of-season board built for
+the first time in production. `daily-refresh` run 44 then failed `verify:board` with 82
+failures on a correct board: the verifier navigated with no `view` parameter, `auto` resolves
+to the ROS board once the season has started, and every check in the file ran against the wrong
+board. Scope is four verification scripts and the CI matrix. No artifact, schema, model or
+rendered value changes.
+
+- [x] **Reproduced locally before any fix.** `web/dist-in-season` — a fixture `globalSetup` has
+      built since Phase 12 — reproduces production exactly on the pre-fix script: 22 failures
+      opening with the same `tier table: no column headed Rank, Exp VORP, …` line. The fixture
+      that reproduces this was on disk in every CI run for weeks; no gate was pointed at it.
+- [x] **Every check that means the draft board names it.** `verify-real-build.mjs`,
+      `verify-presets.mjs`, `verify-csv.mjs` and `verify-live.mjs` now pass `view=tiers`.
+      `verify:presets` was failing all nine preset blocks in-season with "the tier board
+      rendered no rows"; the other two carried the same assumption and would have failed the
+      next live smoke.
+- [x] **What `auto` resolves to is a check, not an assumption.** The verifier reads whether the
+      build published `ros_tiers.json` and asserts the bare link opens the board that implies —
+      ROS where there is a bundle, the draft board in ADR-079's two windows where there is not.
+- [x] **The ROS board is verified against its own bytes.** The larger gap: from September the
+      rest-of-season board is what a visitor sees, and it was the one published board no
+      pre-deploy gate compared with the artifact behind it. Rank, name, ROS Exp VORP,
+      ROS P25–P75, Rem FP, Rem G, Uncertainty and Current status are now compared row by row.
+      `Δ vs preseason` and `Weeks since last game` are deliberately **not**: they render chosen
+      sentences, and restating that table here would repeat ADR-082's mistake in a new place.
+- [x] **The gate is aimed at every lifecycle state.** `ci.yml` runs `verify:board` against five
+      builds rather than two — root, matured, in-season, awaiting-first-week, season-complete.
+      All five pass.
+- [x] **Negative controls**, because a check that only passes proves nothing: a
+      `ros_expected_vorp` moved by 11.0 and an invented `current_status` are both reported
+      (`ROS row 1 ros_expected_vorp: rendered 63.0, artifact 74.0`); an in-season bundle served
+      to a draft-mode build is reported as a default-view failure naming both boards; and the
+      pre-fix script on the in-season build reproduces the production failure.
+- [x] **Verified.** `npm run e2e`, `npm run lint` (0 errors), `npm run typecheck`,
+      `npm run test -- --run`, `uv run pytest`, and `verify:board` green on all five builds.
+- [ ] **A coverage gap this surfaced, recorded not fixed.** The two ROS columns the verifier
+      deliberately does not compare — `Δ vs preseason` and `Weeks since last game` — turn out
+      not to be covered anywhere else either: `rankChangeLabel` and `longAbsenceLabel` are
+      exported from `web/src/data/ros.ts` with no unit test, and the weeks-since cell is inline
+      in `RosTable`. The fix is a component/unit test, not a transcription of the label table
+      into the verifier, so it belongs in its own change.
+- [ ] **Not done here, deliberately.** `verify-presets.mjs` counts any console error as noise,
+      and a pre-kickoff build legitimately 404s `ros_build_metadata.json` — the optional
+      in-season bundle it is correct not to publish — so that script reports noise failures
+      against a correct draft build. Pre-existing, orthogonal to the view bug, and not run in
+      `ci.yml`; it needs its own change.

@@ -287,6 +287,23 @@ jobs:
           # publishes the launch condition, where every trend is null.
           npm run verify:board -- \
             --dist web/dist-matured --base-path /scenario/matured/ --port 4181
+          # The in-season build, which is a different *product mode* rather than a different
+          # market condition: `view=auto` resolves to the ROS board once the season has
+          # started, so this is the only fixture where a bare link does not open the Tier
+          # Board. `globalSetup` had been building it since Phase 12 and no gate ever pointed
+          # at it, which is why the 2026-09-15 refresh met the change in production instead of
+          # here — the first run where the two boards stopped being the same board (ADR-084).
+          npm run verify:board -- \
+            --dist web/dist-in-season --base-path /scenario/in-season/ --port 4182
+          # The two ADR-079 windows: the season has started and no rest-of-season board
+          # exists. `auto` must fall back to the draft board in both, and the draft board is
+          # what these check — the lifecycle state between the other two, and the one a
+          # mode-aware check is most likely to get wrong.
+          npm run verify:board -- \
+            --dist web/dist-awaiting-first-week --base-path /scenario/awaiting-first-week/ \
+            --port 4183
+          npm run verify:board -- \
+            --dist web/dist-season-complete --base-path /scenario/season-complete/ --port 4184
 
       - name: Summarise the end-to-end run
         if: always()

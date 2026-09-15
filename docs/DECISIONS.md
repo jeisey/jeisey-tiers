@@ -3291,3 +3291,104 @@ the season opened (run 42, 2026-09-14: skipped). ADR-079's two windows were doin
 the window has now closed and the step is live. It is covered by fixture tests and by
 `test_ros_production.py`, but it has never run against the real store, so the next refresh
 is its first production exercise rather than a repeat of a known-good one.
+
+## ADR-084 — `auto` is not a synonym for the Tier Board, and the board the site opens was the one board nothing checked
+
+**Date:** 2026-09-15 (the first in-season production build)
+
+**Status:** **Accepted and implemented.** No contract version changes; no artifact, schema,
+model or rendered value moves. Four verification scripts and the CI matrix they run under do.
+
+**Context.** With ADR-083's retry in place the capture job succeeded, the rest-of-season board
+built for the first time in production, and `daily-refresh` run 44 then failed its
+`verify:board` gate with 82 failures on a board that was correct. The first one says all of it:
+
+```
+tier table: no column headed Rank, Exp VORP, Median VORP, P25–P75 VORP, Exp FP
+  — saw ROS Rank | Player | Pos | ROS PosRk | Team | ROS Tier | ROS Exp VORP | ROS P25–P75
+    | Rem FP | Rem G | Uncertainty | Δ vs preseason | Weeks since last game | Current status
+```
+
+The other 81 follow from it: `tierBoardRowsRendered: 0` and 25 "no mark for …" because the ROS
+view draws no tier chart, and `badgesRendered: 0` with 57 "artifact reports … but no badge is
+rendered" because the ROS table carries a `Current status` **column** where the draft board
+carries a badge beside the name.
+
+**Root cause, in one line: the verifier asked for no view and assumed it would get the Tier
+Board.** `web/src/data/state.ts` defines `view` with a default of `auto`, and `resolveView`
+resolves `auto` to `tiers` before kickoff and to `ros` after it — deliberately, so that one
+shared link stays correct in both modes. `verify-real-build.mjs` navigated to `?tiers=…` with
+no `view`, which meant "the Tier Board" for exactly as long as the season had not started. On
+2026-09-15 it stopped meaning that, and every check in the file ran against the rest-of-season
+board by accident.
+
+**This is the fourth instance of one species in this file**, and the first three are already
+recorded against this same script: ADR-052's two (a Trend cell asserted as an em dash because
+the store was too young to have a slope; a name assertion that stripped `IR · Knee` because
+that was the shape of the day's injury report), and ADR-082's (a badge checked against a list
+of the roster codes an August feed publishes). The rule they all state is the same one:
+**a verification check must assert the contract, not the day's data.** An omitted parameter is
+a way of asserting the day's data without appearing to assert anything — and it is worse than
+the other three, because while the two boards resolved to the same thing the check *passed*,
+for the wrong reason.
+
+**Why no local gate caught it.** `globalSetup` has built `web/dist-in-season` since Phase 12,
+and `npm run e2e` exercises it through `inseason.spec.ts`. But `verify:board` — the script that
+broke — ran in CI against exactly two builds, the root fixture and the matured-market one, and
+both are draft-mode builds. The fixture that reproduces this failure was sitting on disk in
+every CI run for weeks, and nothing pointed the gate at it. The ADR-082 finding was *the fixture
+expressed the shape and not the state*; this one is one turn further out: **the fixture
+expressed the state and no gate was aimed at it.**
+
+**Decision, in three parts.**
+
+1. **Every check that means the draft board says so.** `verify-real-build.mjs`,
+   `verify-presets.mjs`, `verify-csv.mjs` and `verify-live.mjs` now name `view=tiers` where
+   they previously relied on the default. `verify-presets.mjs` was failing all nine preset
+   blocks in-season with "the tier board rendered no rows"; `verify-csv.mjs` and
+   `verify-live.mjs` carried the same assumption and would have failed the next live smoke.
+
+2. **What `auto` resolves to is now a check rather than an assumption.** The verifier reads
+   whether the build published `ros_tiers.json`, opens a bare link, and asserts the board that
+   comes back is the one that bundle implies — the ROS board when there is one, the draft board
+   when there is not. That covers ADR-079's two windows too, where the season has started and
+   no rest-of-season board exists.
+
+3. **The ROS board is verified against its own bytes.** This is the larger gap the failure
+   exposed, and fixing only (1) would have left it: from September onward the rest-of-season
+   board is what a visitor sees, and it was the one published board no pre-deploy gate compared
+   against the artifact it was built from. A green refresh could have shipped it wrong. The
+   verifier now checks its rank, name, expected VORP, P25–P75, remaining points, remaining games,
+   uncertainty and `Current status` against `ros_tiers.json`, row by row.
+
+**Two ROS columns are deliberately not compared.** `Δ vs preseason` and `Weeks since last game`
+render chosen sentences — "Played latest week", "No appearances". Restating that table in the
+verifier would make the check a transcription of the code it checks and a second place to
+forget it, which is the reason ADR-082 left the badge abbreviations in `web/src/data/model.ts`.
+Unlike ADR-082's abbreviations, though, nothing else covers these two yet: `rankChangeLabel`
+and `longAbsenceLabel` are exported from `web/src/data/ros.ts` with no unit test and the
+weeks-since cell is inline in `RosTable`. That gap is recorded in `TASKS.md` rather than closed
+here, because the fix is a component test and not a second copy of the label table.
+
+**The gate is now aimed at every lifecycle state.** CI runs `verify:board` against five builds
+rather than two: the root fixture, the matured-market build, the in-season build, and both
+ADR-079 windows. All five pass, and the in-season one reproduces the production failure exactly
+on the pre-fix script — 22 failures, opening with the same column line.
+
+**Verified.** Three negative controls, because a check that only passes proves nothing: a
+`ros_expected_vorp` moved by 11.0 and a `current_status` invented in the artifact are both
+reported against the page (`ROS row 1 …: rendered 63.0, artifact 74.0`); an in-season bundle
+served to a draft-mode build is reported as a default-view failure naming both boards; and the
+pre-fix script on the in-season build reproduces the production failure. `npm run e2e`,
+`npm run lint`, `npm run typecheck`, `npm run test -- --run` and `uv run pytest` all pass.
+
+**Left open on purpose.** `verify-presets.mjs` treats any console error as noise, and a
+pre-kickoff build legitimately 404s `ros_build_metadata.json` — the optional in-season bundle it
+is correct not to publish — so that script reports noise failures against a correct draft build.
+It is pre-existing, orthogonal to the view-resolution bug, and does not run in `ci.yml`; it
+belongs in its own change rather than riding this one.
+
+**Consequences.** The rendered-versus-artifact gate now covers both product modes and both
+lifecycle windows, and it fails on the transition rather than through it. What made this bug
+invisible — a check that agreed because two different things happened to be the same thing —
+cannot recur in these four scripts, because none of them asks for a board without naming it.

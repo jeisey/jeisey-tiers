@@ -229,7 +229,10 @@ try {
   for (const board of ["tiers", "arbitrage"]) {
     const artifactCsv = board === "tiers" ? tierArtifactCsv : arbArtifactCsv;
     const artifactRows = parseCsv(artifactCsv);
-    const view = board === "tiers" ? "" : "&view=arbitrage";
+    // Named, never left to the default: `view=auto` resolves to the ROS board once the
+    // season has started, so an empty string stopped meaning "the Tier Board" on
+    // 2026-09-15 (ADR-084).
+    const view = `&view=${board}`;
 
     // ------------------------------------------------------------- the full artifact export
     {
