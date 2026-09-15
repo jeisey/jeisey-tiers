@@ -1459,6 +1459,52 @@ reports the invented badge, the missing badge and the wrong body part. `npm run 
 badge and no `current_status_*` quality flag; and a roster-code badge shows the raw code in its
 accessible text ("Current status: INA"). Both are contract/UX changes needing their own decision.
 
+## What the nflverse retry budget changed (2026-09-15, ADR-083)
+
+**Root cause, in one line: the one source marked `criticality: critical` was the only one that
+never asked twice.** `daily-refresh` run 43 failed 24 seconds into `capture` with
+`ConnectionError: ... players.parquet: 500 Server Error`. The same URL served its 3,386,429
+bytes on the first try an hour later, so nothing was missing — the request was unlucky, and one
+unlucky request cost the day's publish.
+
+**The season is why it became likely.** An nflverse-data release asset is replaced by
+delete-then-upload. Measured the afternoon of the failure: `players.parquet` last modified
+13:05 UTC, `roster_2026.parquet` 12:40 UTC, `depth_charts_2026.parquet` 12:39 UTC — the three
+files a current capture reads, each rewritten inside the hour — against `combine.parquet`,
+untouched since March. Week 1 finishing starts that churn and the 11:2x UTC capture now runs
+inside it. The season-state resolution itself was **correct** on the failing run
+(`product_mode: in_season`, `completed_week: 1`, `latest_snapshot_week: 1`); what the season
+changed was the rate of upstream writes, not the mode logic.
+
+| | before | after |
+|---|---|---|
+| nflverse download | one attempt, no retry mounted | 4 retries, 0s/2s/4s/8s backoff |
+| retried statuses | none | 429, 500, 502, 503, 504 |
+| 404 | fails immediately | fails immediately — unchanged, and deliberately so |
+| where the budget lives | nowhere | `sources/nflverse_http.py` + `config/source-registry.yaml` |
+| how a call site gets it | — | `nflverse_loaders()`; a direct `import nflreadpy` is a test failure |
+
+**What it is not:** no fallback, no mirror, no cache. A download that still fails after the
+budget is spent still fails `capture`, `build` and `deploy` never run, and the previous site
+stays live — ADR-050 unchanged. The refresh can only publish bytes a first-try success would
+have published.
+
+**Verified**: 14 loopback tests, nothing reaching a vendor, including run 43 replayed through
+the real `NflverseDownloader.download` path — unmounted it raises the production error after 1
+request, mounted it returns the frame after 3. Full `uv run pytest`, `ruff check`,
+`ruff format --check` and strict `mypy` clean.
+
+**Left open on purpose**: the capture job still has no nflverse cache (the build job caches per
+UTC day, `docs/OPERATIONS.md` section 4) — extending it would cut vendor calls at the cost of an
+earlier-in-the-day identity spine, which is a freshness decision of its own.
+
+**The thing to watch next.** Because run 43 died in `capture`, `build` never ran, and
+2026-09-15 is the **first** day `latest_snapshot_week` is non-empty. The
+`Build the rest-of-season board` step was skipped on every run since the season opened (run 42,
+2026-09-14: skipped) because ADR-079's opening-week window was still open. It has now closed.
+The step is covered by fixtures and `test_ros_production.py` but has never run against the real
+store, so the next successful refresh is its first production exercise.
+
 ## Next action
 
 **None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**

@@ -152,6 +152,24 @@ sources:
       user_agent_env: NFLREADPY_USER_AGENT
       cache_env: NFLREADPY_CACHE
       cache_dir_env: NFLREADPY_CACHE_DIR
+      # ADR-083. nflreadpy downloads through a plain requests session that retries nothing,
+      # so `ffdraft.sources.nflverse_http` mounts this budget on it. The numbers live here
+      # as well as in code, and `tests/unit/test_nflverse_retry.py` fails if the two drift.
+      retry:
+        # Requests after the first, so at most 5 attempts for one download.
+        retries: 4
+        # urllib3 sleeps backoff_factor * 2 ** (n - 1): 0s, 2s, 4s, 8s.
+        backoff_factor: 1.0
+        retry_statuses: [429, 500, 502, 503, 504]
+        # 404 is a fact, not a blip: nflverse publishes per-season files, so a season that
+        # has not been released yet answers 404 legitimately, and a file that used to exist
+        # answering 404 is a source-contract change worth failing on immediately.
+        never_retried: [404]
+        rationale: >-
+          A release asset is replaced by delete-then-upload and the in-season assets this
+          project reads are rewritten several times a day, so a daily capture runs inside
+          that churn. 2026-09-15 daily-refresh run 43 lost the whole production refresh to
+          one 500 on players.parquet that served correctly minutes later.
     roles:
       - player_stats
       - rosters

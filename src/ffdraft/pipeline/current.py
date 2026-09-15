@@ -74,6 +74,7 @@ from ffdraft.simulation.vorp import (
     sample_points,
     simulate_vorp,
 )
+from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.status.build import build_player_status_records
 from ffdraft.status.capture import StatusCapture, read_status_capture
 from ffdraft.tiers.algorithms import segment_with
@@ -473,7 +474,7 @@ def _resolve_current_roster(
         )
         return pl.DataFrame()
 
-    import nflreadpy
+    nflreadpy = nflverse_loaders()
 
     from ffdraft.sources.nflverse import NflverseRosterAdapter
 

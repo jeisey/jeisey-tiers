@@ -36,6 +36,7 @@ from ffdraft.contracts.enums import Severity
 from ffdraft.identity.ids import IdNamespace, NormalizedId, normalize_id
 from ffdraft.identity.names import name_key
 from ffdraft.sources.base import BaseSourceAdapter, RawRecords, SourceConfig, as_rows
+from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.timeutil import parse_utc, utc_now
 
 __all__ = [
@@ -197,7 +198,7 @@ class NflverseRosterAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_rosters(seasons=[config.season])
         checks = self.check_source_schema(frame)
@@ -338,7 +339,7 @@ class NflversePlayersAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_players()
         checks = self.check_source_schema(frame)
@@ -416,7 +417,7 @@ class NflversePlayerIdsAdapter(BaseSourceAdapter):
         )
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         frame = nflreadpy.load_ff_playerids()
         self.check_source_schema(frame)
@@ -526,7 +527,7 @@ class NflverseDepthChartAdapter(BaseSourceAdapter):
             return None
 
     def fetch(self, *, as_of: datetime, config: SourceConfig) -> SourceBatch:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         if config.season != self.season:
             raise ValueError(

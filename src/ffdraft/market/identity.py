@@ -23,6 +23,7 @@ import polars as pl
 
 from ffdraft.contracts import QualityCheck
 from ffdraft.identity.registry import CanonicalRegistry, build_registry
+from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.timeutil import utc_now
 
 __all__ = ["MarketIdentity", "load_market_identity", "mapping_from", "supplement_roster"]
@@ -80,7 +81,7 @@ def load_market_identity(
     checks: list[QualityCheck] = []
 
     if roster is None or player_ids is None or players is None:
-        import nflreadpy
+        nflreadpy = nflverse_loaders()
 
         from ffdraft.sources.nflverse import (
             NflversePlayerIdsAdapter,

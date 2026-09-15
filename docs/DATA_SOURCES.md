@@ -61,6 +61,21 @@ This supports a daily pre-draft refresh but makes a second current injury/status
 
 > **Phase-0 correction (2026-08-17):** the last bullet is wrong. `load_injuries(2025)` returns 6,068 rows; the loader simply refuses seasons after 2025. The real gap is different and larger: injury rows are weekly in-season reports, so **no** season provides an injury report at a preseason draft anchor. Observed depth-chart refreshes for 2026 land at roughly 07:25–08:25 UTC daily, consistent with the cadence above. See section 13.2, 13.3 and ADR-011.
 
+> **In-season correction (2026-09-15, ADR-083).** The cadence above is the *publishing*
+> schedule, and it understates how often the underlying release asset is rewritten once the
+> season is under way. An nflverse-data asset is replaced by delete-then-upload, so each
+> rewrite is a window in which the download URL can answer 5xx. Measured on 2026-09-15, the
+> morning after week 1 completed: `players.parquet` last modified 13:05 UTC,
+> `roster_2026.parquet` 12:40 UTC and `depth_charts_2026.parquet` 12:39 UTC — three rewrites
+> inside one hour — against `combine.parquet`, unchanged since March. The daily refresh runs
+> at 11:2x UTC, inside that churn, and on that morning it lost the whole production publish to
+> one 500 on `players.parquet` that served correctly minutes later. nflverse downloads
+> therefore carry a bounded retry budget, declared in `config/source-registry.yaml` under the
+> nflreadpy entry's `client_settings.retry` and applied by `ffdraft.sources.nflverse_http`:
+> 4 retries with 0s/2s/4s/8s backoff on 429 and 5xx, and **never** on 404, because a
+> per-season file that has not been published yet answers 404 legitimately and a file that
+> has moved should say so immediately.
+
 ## 4. ffopportunity usage
 
 Potential feature families:
@@ -185,6 +200,10 @@ nflverse core historical/current inputs fail or are materially stale:
 - **stop intrinsic refresh**;
 - do not deploy a new Tier artifact;
 - keep last-known-good site.
+
+A transient HTTP failure is not one of these. A 429 or 5xx on an nflverse download is
+retried inside the adapter (ADR-083) and only becomes a source failure once the budget is
+spent; a 404 is a source failure on the first answer.
 
 Optional advanced feature source fails:
 

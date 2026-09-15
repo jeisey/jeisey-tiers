@@ -76,6 +76,7 @@ from ffdraft.simulation.vorp import (
     sample_points,
     simulate_vorp,
 )
+from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.tiers.algorithms import segment_with
 from ffdraft.tiers.labels import tier_label
 from ffdraft.timeutil import isoformat_utc, utc_now
@@ -693,7 +694,7 @@ def _resolve_roster(
         )
         return pl.DataFrame()
 
-    import nflreadpy
+    nflreadpy = nflverse_loaders()
 
     from ffdraft.sources.nflverse import NflverseRosterAdapter
 
