@@ -1505,6 +1505,52 @@ earlier-in-the-day identity spine, which is a freshness decision of its own.
 The step is covered by fixtures and `test_ros_production.py` but has never run against the real
 store, so the next successful refresh is its first production exercise.
 
+## What the in-season board gate changed (2026-09-15, ADR-084)
+
+**Root cause, in one line: the verifier asked for no view and assumed it would get the Tier
+Board.** `view` defaults to `auto`, and `auto` resolves to `tiers` before kickoff and `ros`
+after it (`web/src/data/state.ts`) — deliberately, so one shared link is correct in both modes.
+`verify-real-build.mjs` navigated to `?tiers=…` with no `view`, which meant "the Tier Board"
+for exactly as long as the season had not started. Run 44 ran the whole file against the ROS
+board and reported 82 failures on a correct page: no column it looked for existed, so 0 of 40
+tier rows, 25 missing chart marks (the ROS view draws no chart) and 57 missing badges (the ROS
+table carries a `Current status` column instead).
+
+**Fourth instance of one species in this repository**, three of them already against this same
+script: ADR-052's two and ADR-082's. The rule is unchanged — *a verification check must assert
+the contract, not the day's data* — and an omitted parameter is the worst form of it, because
+while the two boards resolved to the same thing the check **passed, for the wrong reason**.
+
+| | before | after |
+|---|---|---|
+| the draft-board navigations | no `view` parameter | `view=tiers`, named |
+| what `auto` opens | never checked | asserted against whether `ros_tiers.json` was published |
+| the ROS board | **no pre-deploy gate compared it with its artifact** | rank, name, Exp VORP, P25–P75, Rem FP, Rem G, Uncertainty, Current status, row by row |
+| `verify:board` in CI | 2 builds, both draft-mode | 5 builds: root, matured, in-season, and both ADR-079 windows |
+| sibling scripts | `presets`/`csv`/`live` carried the same assumption | all three name their view |
+
+**Why no local gate caught it**: `web/dist-in-season` has been built by `globalSetup` since
+Phase 12 and `npm run e2e` uses it — but `verify:board` ran against two draft-mode builds only.
+The fixture that reproduces this failure was on disk in every CI run for weeks with nothing
+aimed at it. ADR-082's finding was *the fixture expressed the shape and not the state*; this is
+one turn further out — **the fixture expressed the state and no gate was aimed at it**.
+
+**Verified**: the pre-fix script on `web/dist-in-season` reproduces production exactly (22
+failures, same opening line); all five builds pass after; three negative controls fire — a
+moved `ros_expected_vorp`, an invented `current_status`, and an in-season bundle served to a
+draft-mode build. `npm run e2e`, lint, typecheck, `npm run test -- --run` and `uv run pytest`
+all pass.
+
+**Left open on purpose**: `verify-presets.mjs` counts any console error as noise, and a
+pre-kickoff build legitimately 404s the optional `ros_build_metadata.json`, so it reports noise
+failures against a correct draft build. Pre-existing, orthogonal, not in `ci.yml`.
+
+**What this closes.** The rest-of-season board has now built in production (run 44 produced
+`ros_tiers.json`, `inseason_opportunity.json` and `ros_build_metadata.json`), so ADR-079's
+opening-week window is behind us and the in-season product is live. The two boards will not be
+the same board again until next preseason, which is exactly why the gate now names which one it
+means.
+
 ## Next action
 
 **None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**

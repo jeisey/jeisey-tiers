@@ -252,7 +252,10 @@ try {
     try {
       // `tiers=` opens every tier the block publishes, so the board is read from the
       // artifact rather than from an assumption about how deep the default open set reaches.
-      const query = `?scoring=${scoring.value}&teams=${teams}&tiers=${row.openAll}`;
+      // `view=tiers` names the board for the same reason: `view` defaults to `auto`, which
+      // resolves to the ROS board once the season has started, so a bare link stopped
+      // meaning "the Tier Board" on 2026-09-15 (ADR-084).
+      const query = `?view=tiers&scoring=${scoring.value}&teams=${teams}&tiers=${row.openAll}`;
       await page.goto(`${base}/${query}`, { waitUntil: "networkidle" });
       await page.waitForSelector("table.sheet tbody tr", { timeout: 20000 });
 
@@ -341,7 +344,7 @@ try {
       });
       page.on("pageerror", (e) => noise.push(e.message));
       try {
-        const query = `?scoring=${scoring.value}&teams=${teams}&tiers=${row.openAll}`;
+        const query = `?view=tiers&scoring=${scoring.value}&teams=${teams}&tiers=${row.openAll}`;
         await page.goto(`${base}/${query}`, { waitUntil: "networkidle" });
         await page.waitForSelector("table.sheet tbody tr", { timeout: 20000 });
 

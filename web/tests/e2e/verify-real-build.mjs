@@ -28,6 +28,23 @@ try {
   seriesRecords = [];
 }
 
+/**
+ * The rest-of-season board, if this build published one.
+ *
+ * Optional in the same sense the market history is: before kickoff, and in the two windows
+ * ADR-079 describes, not publishing one is the correct behaviour. Present, it is not an
+ * extra — it is the board a visitor lands on, because `view=auto` resolves to it once the
+ * season has started. Its presence here is also how this file knows which board the bare
+ * URL should open, which is checked rather than assumed.
+ */
+let rosRecords = null;
+try {
+  rosRecords = JSON.parse(readFileSync(`${dataDir}/ros_tiers.json`, "utf-8")).records;
+} catch {
+  rosRecords = null;
+}
+const publishedInSeason = rosRecords !== null;
+
 const block = tiers.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => a.fair_rank - b.fair_rank);
@@ -43,7 +60,25 @@ const block = tiers.records
  * whole board".
  */
 const allTiers = [...new Set(block.map((r) => r.tier_ordinal))].sort((a, b) => a - b).join(".");
-const OPEN_ALL = `?tiers=${allTiers}`;
+
+/**
+ * The draft Tier Board, named rather than assumed, with every tier open.
+ *
+ * `view` defaults to `auto`, and `auto` is not a synonym for the Tier Board: it resolves to
+ * the draft board before kickoff and to the **ROS** board after it (`web/src/data/state.ts`).
+ * Omitting the parameter therefore meant "the Tier Board" for exactly as long as the season
+ * had not started. On 2026-09-15 it stopped meaning that, and every check in this file ran
+ * against the rest-of-season board by accident — no column it looked for existed, so it
+ * reported 0 of 40 tier rows, 25 missing chart marks and 57 missing badges against a page
+ * that was correct (ADR-084).
+ *
+ * Naming the view is the same correction this file has taken three times before: assert the
+ * contract, not the day's data. What `auto` resolves to is now a check of its own, below.
+ */
+const OPEN_ALL = `?view=tiers&tiers=${allTiers}`;
+const rosBlock = (rosRecords ?? [])
+  .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
+  .sort((a, b) => a.ros_fair_rank - b.ros_fair_rank);
 const arbBlock = arb.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => b.arbitrage_score - a.arbitrage_score);
@@ -208,6 +243,95 @@ for (const record of block.slice(0, 25)) {
   }
 }
 
+// --- The board a bare link opens, and the ROS board against its artifact --------------------
+//
+// Two claims, and the first is the one whose absence let 2026-09-15 happen. Every check above
+// names `view=tiers`; nothing named `auto`, so nothing established which board `auto` is. It
+// was invisible while the season had not started, because before kickoff the two resolve to
+// the same board — a check that agrees for the wrong reason, which this file has met before.
+//
+// The second claim is the larger gap the failure exposed. The rest-of-season board is what a
+// visitor sees from September onward, and until now it was the one published board no
+// pre-deploy gate compared against its own bytes. A green refresh could have shipped it
+// wrong (ADR-084).
+await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+await page.waitForSelector("table.sheet thead th");
+const defaultHeaders = (await headerTexts(page)).map((text) =>
+  text.replace(/[\u25b2\u25bc]/g, "").trim(),
+);
+// `ROS Rank` is never `Rank` (`web/src/app/RosTable.tsx`), so the heading names the board.
+const defaultBoard = defaultHeaders.includes("ROS Rank") ? "ros" : "tiers";
+const expectedDefault = publishedInSeason ? "ros" : "tiers";
+if (defaultBoard !== expectedDefault) {
+  failures.push(
+    `default view: a bare link opened the ${defaultBoard} board, but this build ` +
+      `${publishedInSeason ? "published a" : "published no"} rest-of-season bundle, so ` +
+      `\`view=auto\` should resolve to ${expectedDefault} — saw ${defaultHeaders.join(" | ")}`,
+  );
+}
+
+let rosRowsChecked = 0;
+if (publishedInSeason && defaultBoard === "ros") {
+  // No `tiers` parameter: the ROS view renders its rows straight, with no collapsed bands to
+  // open (`web/src/app/RosView.tsx`), so asking for one would be inventing a control.
+  const rosRendered = await page.$$eval("table.sheet tbody tr", (trs) =>
+    trs.slice(0, 40).map((tr) => ({
+      cells: [...tr.querySelectorAll("td")].map((td) => td.textContent.trim()),
+      // Read from its own element, for the reason the draft board reads it that way: the
+      // long-absence badge is the name button's sibling and stripping it would be a bet on
+      // today's absences.
+      name: tr.querySelector(".player-name")?.textContent?.trim() ?? null,
+    })),
+  );
+  const rosColumn = columnLookup(defaultHeaders);
+  // `\u0394 vs preseason` and `Weeks since last game` are deliberately absent from this
+  // lookup. They render sentences the component chooses — "Played latest week", "No
+  // appearances" — and restating that table here would make the check a transcription of the
+  // code it checks and a second place to forget it, which is why ADR-082 left the badge
+  // abbreviations in `web/src/data/model.ts`. Unlike the badge abbreviations, though, nothing
+  // else covers them yet: `rankChangeLabel` is exported from `web/src/data/ros.ts` with no
+  // unit test, and the weeks-since cell is inline in `RosTable`. Recorded in `TASKS.md`; the
+  // fix belongs in a component test, not here.
+  const rosAt = {
+    rank: rosColumn.at("ROS Rank"),
+    expectedVorp: rosColumn.at("ROS Exp VORP"),
+    interquartile: rosColumn.at("ROS P25\u2013P75"),
+    expectedPoints: rosColumn.at("Rem FP"),
+    expectedGames: rosColumn.at("Rem G"),
+    uncertainty: rosColumn.at("Uncertainty"),
+    currentStatus: rosColumn.at("Current status"),
+  };
+  const rosProblem = rosColumn.problem("ROS");
+  if (rosProblem !== null) failures.push(rosProblem);
+  else {
+    rosRowsChecked = rosRendered.length;
+    rosRendered.forEach(({ cells, name }, i) => {
+      const record = rosBlock[i];
+      if (record === undefined) {
+        failures.push(`ROS row ${i + 1}: rendered ${name ?? "?"}, artifact publishes no such row`);
+        return;
+      }
+      const expect = (label, got, want) => {
+        if (got !== want) {
+          failures.push(`ROS row ${i + 1} ${label}: rendered ${got}, artifact ${want}`);
+        }
+      };
+      expect("ros_fair_rank", cells[rosAt.rank], String(record.ros_fair_rank));
+      expect("name", name, record.display_name);
+      expect("ros_expected_vorp", cells[rosAt.expectedVorp], record.ros_expected_vorp.toFixed(1));
+      const iqr = `${record.ros_vorp_p25.toFixed(1)} \u2013 ${record.ros_vorp_p75.toFixed(1)}`;
+      expect("ros_interval", cells[rosAt.interquartile], iqr);
+      expect("ros_expected_points", cells[rosAt.expectedPoints], record.ros_expected_points.toFixed(1));
+      expect("ros_expected_games", cells[rosAt.expectedGames], record.ros_expected_games.toFixed(1));
+      expect("ros_uncertainty", cells[rosAt.uncertainty], record.ros_uncertainty.toFixed(1));
+      // The in-season analogue of the draft board's badge: the status the artifact carries,
+      // quoted verbatim, with the em dash standing for "nothing reported".
+      const status = record.current_status ?? "\u2014";
+      expect("current_status", cells[rosAt.currentStatus], status);
+    });
+  }
+}
+
 // --- Arbitrage table and rail against the artifact -----------------------------------------
 await page.goto(`${BASE}/?view=arbitrage`, { waitUntil: "networkidle" });
 await page.waitForSelector("table.sheet tbody tr");
@@ -305,7 +429,9 @@ if (seriesRecords.length > 0) {
   } else {
     for (const source of bySource.keys()) {
       const record = bySource.get(source).get(subject.player_id);
-      await page.goto(`${BASE}/?market=${source}&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+      await page.goto(`${BASE}/?view=tiers&market=${source}&scoring=ppr&teams=12`, {
+        waitUntil: "networkidle",
+      });
       await page.waitForSelector("table.sheet tbody tr");
       await page.getByRole("button", { name: subject.display_name, exact: true }).first().click();
       await page.waitForSelector("dialog[open]");
@@ -360,7 +486,9 @@ if (seriesRecords.length > 0) {
     }
 
     // The cross view overlays every real series and invents none.
-    await page.goto(`${BASE}/?market=cross&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE}/?view=tiers&market=cross&scoring=ppr&teams=12`, {
+      waitUntil: "networkidle",
+    });
     await page.waitForSelector("table.sheet tbody tr");
     await page.getByRole("button", { name: subject.display_name, exact: true }).first().click();
     await page.waitForSelector("dialog[open]");
@@ -470,6 +598,9 @@ console.log(JSON.stringify({
   tierRowsChecked: rows.length,
   tierBoardRowsRendered: marks.length,
   tierMarksChecked: 25,
+  defaultBoard,
+  publishedInSeason,
+  rosRowsChecked,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
   trendSeriesRecords: seriesRecords.length,

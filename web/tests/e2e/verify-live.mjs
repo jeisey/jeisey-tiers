@@ -224,9 +224,12 @@ try {
     !(await page.locator("header.masthead").innerText()).includes("jeisey-tiers"),
     "the header still contains the Phase-9A wordmark");
 
-  // The three views.
+  // The three views, each named. `view` defaults to `auto`, which resolves to the ROS board
+  // once the season has started, so the empty string stopped meaning "the Tier Board" on
+  // 2026-09-15 (ADR-084) — a smoke test that asked for nothing and expected the Tier Board
+  // would fail against a correct in-season site.
   for (const [view, heading] of [
-    ["", "Tier board"],
+    ["?view=tiers", "Tier board"],
     ["?view=arbitrage", "Arbitrage table"],
     ["?view=data", "What this is"],
   ]) {
@@ -235,8 +238,7 @@ try {
       .getByRole("heading", { name: heading })
       .isVisible()
       .catch(() => false);
-    check(`the ${view === "" ? "tiers" : view.replace("?view=", "")} view renders`, visible,
-      `"${heading}" not visible`);
+    check(`the ${view.replace("?view=", "")} view renders`, visible, `"${heading}" not visible`);
   }
 
   // A player card, opened the way a drafter opens one.
