@@ -25,7 +25,7 @@ import type {
   ScoringPreset,
   SeasonState,
 } from "./contracts";
-import { matchesPosition, matchesSearch } from "./model";
+import { isNoteworthyRosterStatus, matchesPosition, matchesSearch } from "./model";
 import type { AppState, PositionFilter } from "./state";
 import { SCORING_TO_PRESET, leaguePresetId } from "./state";
 
@@ -236,6 +236,56 @@ export function longAbsenceLabel(record: {
 
 export function isLongAbsence(record: { readonly long_absence: boolean }): boolean {
   return record.long_absence;
+}
+
+/**
+ * The roster codes an expansion can be given for, and nothing else.
+ *
+ * Deliberately short. These are the nflverse transaction codes whose meaning is unambiguous;
+ * any other code renders as itself rather than as a guess, which is the same rule ADR-082
+ * settled for the check that reads these badges — assert the contract, never enumerate the
+ * day's data. A wrong expansion here would put a designation the artifact never made in front
+ * of a reader, which is precisely what ADR-076 forbids.
+ */
+const ROSTER_STATUS_NAMES: Readonly<Record<string, string>> = {
+  RES: "Reserve",
+  INA: "Inactive",
+  PUP: "Physically unable to perform",
+  NFI: "Non-football injury",
+  SUS: "Suspended",
+  EXE: "Exempt",
+  CUT: "Released",
+  RET: "Retired",
+};
+
+/** The codes that mean he cannot take the field, as opposed to a note about his roster spot. */
+const ROSTER_STATUS_SEVERE = new Set(["RES", "INA", "PUP", "NFI", "SUS", "CUT", "RET"]);
+
+/**
+ * The in-season board's status badge.
+ *
+ * The same treatment the draft board gives `player_status.json`: a mark beside the player's
+ * name, rendered only when the artifact carries something worth saying. `ACT` is the ordinary
+ * case and says nothing about a player, so a column of it on every row was five hundred
+ * repetitions of "nothing to report" — the Phase-12 board printed exactly that.
+ *
+ * The visible text is the artifact's own code, verbatim. Nothing here converts a roster code
+ * into a health claim, and the badge is never the only channel: the accessible text is a
+ * sentence and the code itself is legible without colour.
+ */
+export function rosStatusBadge(status: string | null | undefined): {
+  readonly short: string;
+  readonly full: string;
+  readonly severity: "caution" | "warn";
+} | null {
+  if (status === null || status === undefined) return null;
+  const code = status.trim().toUpperCase();
+  if (code === "" || !isNoteworthyRosterStatus(code)) return null;
+  return {
+    short: code,
+    full: ROSTER_STATUS_NAMES[code] ?? code,
+    severity: ROSTER_STATUS_SEVERE.has(code) ? "warn" : "caution",
+  };
 }
 
 /** Positive means the model likes him more now than it did in August. */

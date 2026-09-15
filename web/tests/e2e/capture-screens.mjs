@@ -393,6 +393,103 @@ const SCREENS = [
     viewport: { width: 1440, height: 900 },
     fullPage: false,
   },
+
+  /*
+   * The in-season presentation pass (ADR-085).
+   *
+   * Four owner-reported defects, and every one of them was invisible to a passing suite and
+   * obvious in a picture — which is why each gets one. The rest-of-season board had no chart
+   * at all; the opportunity board had no chart and a table with no glyphs; both carried a
+   * `Current status` column that read `ACT` on every row and pushed the model's own columns
+   * off the right edge; and the player card led with a draft ADP in November.
+   */
+  {
+    // The board that did not exist: artboard 2a's own language over remaining VORP.
+    name: "41-ros-tier-board",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    // The disclosure open. The summary is the contractual sentence and is always on screen;
+    // this is what the rest of ADR-076 looks like once a reader asks for it.
+    name: "42-ros-disclosure-open",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("details.disclosure summary").click();
+    },
+  },
+  {
+    // Two tracks, two zeros, one rule between them, and no position that spans both.
+    name: "43-opportunity-board-two-tracks",
+    path: "/scenario/in-season/?view=opportunity&opportunity=adds",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    // The behaviour feed down, drawn as an absence rather than as a row of zero-length bars.
+    name: "44-opportunity-board-no-behaviour",
+    path: "/scenario/in-season-no-behavior/?view=opportunity",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+  },
+  {
+    name: "45-opportunity-board-tablet",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 900, height: 1100 },
+    fullPage: false,
+  },
+  {
+    name: "46-opportunity-board-mobile",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  {
+    name: "47-ros-board-mobile-stack",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  {
+    // The card in season: the draft market is replaced by what the player has actually done.
+    name: "48-inseason-card-usage",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      await page.getByRole("dialog").waitFor();
+      await page.locator(".detail-body").evaluate((node) => {
+        node.scrollTop = node.scrollHeight;
+      });
+    },
+  },
+  {
+    name: "49-inseason-card-usage-mobile",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await dialog.getByRole("tab", { name: "In-season usage" }).click();
+    },
+  },
+  {
+    // And the draft card, unchanged, on the draft board that stays reachable all season.
+    name: "50-draft-card-in-november",
+    path: "/scenario/in-season/?mode=draft&view=tiers",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.locator("table.sheet .player-name").first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
 ];
 
 /** Artifacts a build is allowed not to publish; see the console filter below. */

@@ -8,6 +8,7 @@
 import type { Confidence, Position } from "../data/contracts";
 import type { PlayerStatusRecord } from "../data/contracts";
 import { statusBadge } from "../data/model";
+import { rosStatusBadge } from "../data/ros";
 
 /**
  * A section header, in the design source's form: a two-digit mono index, the heading, a rule
@@ -78,6 +79,38 @@ export function StatusBadge({
       <span aria-hidden="true">{badge.short}</span>
       <span className="visually-hidden">
         {`Current status: ${badge.full}. Annotation only; the projection does not use it.`}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The in-season board's status mark.
+ *
+ * The same glyph, the same column and the same rule as `StatusBadge` beside it — a mark on the
+ * player's name, present only when the artifact carries something worth saying. The difference
+ * is the source: a rest-of-season row carries its *own* `current_status`, so this badge reads
+ * the board's own annotation rather than joining `player_status.json` to it. One board, one
+ * account of a player; the CSV export carries the identical string.
+ *
+ * `ACT` produces nothing, because "active" is the ordinary case and is not a report (ADR-043).
+ */
+export function RosStatusBadge({
+  status,
+}: {
+  readonly status: string | null | undefined;
+}): React.JSX.Element | null {
+  const badge = rosStatusBadge(status);
+  if (badge === null) return null;
+  return (
+    <span
+      className="status-badge"
+      data-severity={badge.severity}
+      title={`${badge.full} — current roster status annotation, not a model input`}
+    >
+      <span aria-hidden="true">{badge.short}</span>
+      <span className="visually-hidden">
+        {`Current roster status: ${badge.full}. Annotation only; the rest-of-season estimate does not use it.`}
       </span>
     </span>
   );

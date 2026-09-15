@@ -10,13 +10,13 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_OPEN_DEPTH, defaultOpenTiers, shortName } from "../src/charts/TierBoard";
 import { railBound } from "../src/charts/DraftRail";
-import type { TierGroup } from "../src/data/model";
+import type { BoardGroup } from "../src/charts/boardModel";
 
-function group(ordinal: number, size: number): TierGroup {
+function group(ordinal: number, size: number): BoardGroup {
   return {
     ordinal,
     label: `Tier ${String(ordinal + 1)}`,
-    rows: Array.from({ length: size }, () => ({}) as TierGroup["rows"][number]),
+    marks: Array.from({ length: size }, () => ({}) as BoardGroup["marks"][number]),
   };
 }
 
@@ -27,7 +27,7 @@ describe("defaultOpenTiers", () => {
     const open = defaultOpenTiers(groups);
     // 8 + 14 = 22 is under the depth, so the third tier opens too and the rest collapse.
     expect(open).toEqual([0, 1, 2]);
-    const shown = open.reduce((total, ordinal) => total + (groups[ordinal]?.rows.length ?? 0), 0);
+    const shown = open.reduce((total, ordinal) => total + (groups[ordinal]?.marks.length ?? 0), 0);
     expect(shown).toBeGreaterThanOrEqual(DEFAULT_OPEN_DEPTH);
   });
 

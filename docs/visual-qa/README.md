@@ -51,6 +51,12 @@ rather than the default build, because the default build publishes no in-season 
 season's first kickoff the draft board is the whole product, and a fixture that pretended otherwise
 would be evidence of a state the pipeline never produces.
 
+The in-season presentation pass added `41`-`50` (ADR-085): the rest-of-season tier board, which
+did not exist before it; the disclosure open; the Opportunity Board's two tracks, at three
+widths and with the behaviour feed down; and the player card in season beside the draft card it
+replaced. That review exists because every one of its four defects passed every automated gate
+and was obvious in a picture — which is the standing argument for this directory.
+
 The current directories:
 
 | Directory | Review |
@@ -60,3 +66,5 @@ The current directories:
 | `2026-08-31-design/` | Phase 9A — the owner's Claude Design source, implemented |
 | `2026-09-01-release/` | Phase 9B — the logo masthead, export controls and favicon |
 | `2026-09-04-phase12/` | Phase 12 — In-Season mode: the ROS board, the opportunity board, the two disclosure contracts |
+| `2026-09-07-market-history/` | The player card's retained market history (ADR-081) |
+| `2026-09-15-inseason-ui/` | The in-season presentation pass — both boards drawn, the status column removed, the card's draft market replaced (ADR-085) |

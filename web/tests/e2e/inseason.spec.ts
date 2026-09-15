@@ -152,14 +152,94 @@ test.describe("the ROS tier board", () => {
 
   test("says a tier is a band rather than drawing an edge as a fact", async ({ page }) => {
     await page.goto(IN_SEASON);
-    await expect(page.getByText(/bands, not lines/i).first()).toBeVisible();
+    // In the legend beside the board, where the bands are, and visible with no interaction.
+    // The disclosure block repeats the build's own sentence, but the claim has to be on the
+    // picture rather than one click behind it.
+    await expect(page.locator(".legend").getByText(/bands, not lines/i)).toBeVisible();
+    // And no edge is drawn as a fact: a tier strip is a span, never a rule at a cut position.
+    await expect(page.locator(".tier-band-fill").first()).toBeVisible();
+  });
+
+  test("draws the rest-of-season board in the draft board's own language", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    const board = page.locator(".tier-board");
+    await expect(board).toBeVisible();
+    // The axis names the rest-of-season quantity, never the preseason one of the same shape.
+    await expect(board.locator(".board-axis-title").first()).toHaveText(
+      "Median simulated remaining VORP",
+    );
+    // Every mark carries the whole reading, and every number in it is a remaining one.
+    const mark = board.getByRole("button", {
+      name: /^Bijan Robinson,.*median simulated remaining VORP/,
+    });
+    await expect(mark).toBeVisible();
+
+    /*
+     * The mark prints the median and the board's rank, so those are what it is checked
+     * against — deliberately not the table's `ROS Exp VORP`, which is the *expectation* and a
+     * different published number. Conflating the two is exactly the kind of agreement check
+     * that passes for the wrong reason (ADR-084), so the comparison goes through the card,
+     * which names both.
+     */
+    const rank = await mark.locator(".row-rank").textContent();
+    const median = await mark.locator(".row-value").textContent();
+    expect(String(rank).trim()).toBe("1");
+    await mark.click();
+    const card = page.getByRole("dialog");
+    await expect(card).toBeVisible();
+    const cardMedian = card
+      .locator(".readout")
+      .filter({ hasText: "ROS median VORP" })
+      .locator(".readout-value");
+    await expect(cardMedian).toHaveText(String(median).trim());
+  });
+
+  test("collapses and expands its bands, and carries the open set in the URL", async ({
+    page,
+  }) => {
+    // The Tier Board's own control, on a board that had none because it had no board. The
+    // open set is state like every other control (`docs/UX_SPEC.md` section 3), so a link to
+    // one reader's view opens the same one.
+    await page.goto(IN_SEASON);
+    const board = page.locator(".tier-board");
+    await expect(board.locator(".board-row").first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Collapse all tiers" }).click();
+    await expect(board.locator(".board-row")).toHaveCount(0);
+    await expect(page).toHaveURL(/tiers=none/);
+    // The bands themselves stay: a closed tier is still a tier, and its span is still drawn.
+    await expect(board.locator(".tier-band-fill").first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Expand all tiers" }).click();
+    await expect(board.locator(".board-row").first()).toBeVisible();
+
+    // And it survives a reload, like every other control.
+    const url = page.url();
+    await page.reload();
+    expect(page.url()).toBe(url);
+  });
+
+  test("charts the draft-relevant top and says the table has the rest", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    // The fixture board is shorter than the preview depth, so the control reads "full board"
+    // and the note says every row is charted rather than claiming a truncation there is not.
+    const toggle = page.getByRole("button", { name: /Show (full board|top)/ });
+    await expect(toggle).toBeVisible();
+    await expect(page.locator(".legend")).toContainText(/charted players are in open bands/);
   });
 
   test("states the ADR-076 disclosures where the flagged rows are", async ({ page }) => {
     await page.goto(IN_SEASON);
-    await expect(
-      page.getByText(/no injury or practice-report information/i).first(),
-    ).toBeVisible();
+    const disclosure = page.locator("details.disclosure");
+    // The contractual sentence is the always-visible summary: a reader who never opens
+    // anything has still been told the model uses no injury information (ADR-076, ADR-085).
+    await expect(disclosure.locator("summary")).toContainText(
+      /no injury or practice-report information/i,
+    );
+    await expect(disclosure).not.toHaveAttribute("open", /.*/);
+
+    // The measured weaknesses are one click behind it, and nothing is lost.
+    await disclosure.locator("summary").click();
     await expect(page.getByText(/Ranking quality inside this group is weak/i)).toBeVisible();
     await expect(page.getByText(/has not appeared for 3 or more consecutive weeks/i)).toBeVisible();
   });
@@ -177,14 +257,35 @@ test.describe("the ROS tier board", () => {
     await expect(badge).not.toContainText(/out|questionable|doubtful|injured/i);
   });
 
-  test("keeps current status visually separate from every model input", async ({ page }) => {
+  test("carries current status as a mark on the name, never as a column of ACT", async ({
+    page,
+  }) => {
     await page.goto(IN_SEASON);
     const table = page.getByRole("table", { name: /Rest-of-season board/ });
-    const annotation = table.locator("th.col-annotation");
-    await expect(annotation).toHaveText(/Current status/);
-    const border = await annotation.evaluate((node) => getComputedStyle(node).borderLeftStyle);
-    expect(border).not.toBe("none");
+    const headings = (await table.getByRole("columnheader").allTextContents()).map((text) =>
+      text.replace(/[▲▼]/g, "").trim(),
+    );
+    // The column is gone (ADR-085): it read `ACT` on nearly every row, which is not a report.
+    expect(headings).not.toContain("Current status");
+
+    // The mark is where the draft board has always put it — beside the player's name — and it
+    // appears only for a code the artifact says something with.
+    const badge = table.locator(".player-cell .status-badge").first();
+    await expect(badge).toBeVisible();
+    await expect(badge.locator(".visually-hidden")).toContainText(
+      /Current roster status: .+\. Annotation only/,
+    );
+    // And the caption still says the mark is annotation, because that is the contract.
     await expect(table.locator("caption")).toContainText(/annotation/i);
+  });
+
+  test("shows no status mark at all for the ordinary roster code", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    const table = page.getByRole("table", { name: /Rest-of-season board/ });
+    // Bijan is `ACT` in the fixture. "Active" is the ordinary case and is not a report, so the
+    // absence of a mark is the correct rendering rather than a missing one (ADR-043).
+    const row = table.getByRole("row").filter({ hasText: "Bijan Robinson" }).first();
+    await expect(row.locator(".status-badge")).toHaveCount(0);
   });
 
   test("names the cutoff, the model and the draw count with its verdict", async ({ page }) => {
@@ -203,7 +304,7 @@ test.describe("the opportunity board", () => {
     const table = page.getByRole("table", { name: /opportunity board/i });
     await expect(table).toBeVisible();
     const headings = (await table.getByRole("columnheader").allTextContents()).map((text) =>
-      text.trim(),
+      text.replace(/[▲▼]/g, "").trim(),
     );
     expect(headings).toContain("Adds (24h)");
     expect(headings).toContain("Drops (24h)");
@@ -212,7 +313,28 @@ test.describe("the opportunity board", () => {
     for (const heading of headings) {
       expect(heading).not.toMatch(/adp|rank gap|score|edge/i);
     }
-    await expect(page.getByText(/not a draft price, not a rank/i)).toBeVisible();
+    await expect(page.getByText(/not a price, not a rank/i)).toBeVisible();
+  });
+
+  test("draws two tracks on two scales and never one combined position", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity`);
+    const board = page.locator(".opp-board");
+    await expect(board).toBeVisible();
+    // Two named tracks, each with its own zero line: the picture cannot be read as one axis.
+    await expect(board.locator(".opp-track-name")).toHaveCount(2);
+    await expect(board.getByText("ROS value", { exact: true })).toBeVisible();
+    await expect(board.getByText(/Roster moves · 24h/)).toBeVisible();
+    const firstRow = board.locator(".opp-row").first();
+    await expect(firstRow.locator(".opp-track")).toHaveCount(2);
+    await expect(firstRow.locator(".opp-zero")).toHaveCount(2);
+    // And the board says so in words as well as in geometry.
+    await expect(board.getByText(/Two scales, never combined/i)).toBeVisible();
+  });
+
+  test("opens the player card from a chart row, like every other board", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity`);
+    await page.locator(".opp-board .opp-row").first().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
   });
 
   test("surfaces a player from beyond the tier depth, with a reason and no tier", async ({
@@ -251,7 +373,13 @@ test.describe("the opportunity board", () => {
     // Blank, not zero: a zero would claim nobody added him.
     await expect(firstRow).toContainText("—");
     // And the intrinsic value is still there.
-    await expect(firstRow.locator("td").nth(4)).not.toBeEmpty();
+    await expect(firstRow.locator("td").nth(5)).not.toBeEmpty();
+
+    // The chart draws the absence as an absence rather than as a row of zero-length bars.
+    const board = page.locator(".opp-board");
+    await expect(board.getByText(/Roster moves · none/)).toBeVisible();
+    await expect(board.locator(".opp-row").first().locator(".opp-track-empty")).toBeVisible();
+    await expect(board.locator(".opp-move-bar")).toHaveCount(0);
   });
 });
 
@@ -297,6 +425,48 @@ test.describe("the player card in season", () => {
     await expect(card.getByText("Preseason fair rank")).toBeVisible();
     await expect(card.getByText("Current ROS fair rank")).toBeVisible();
     await expect(card.getByText("Change in intrinsic view")).toBeVisible();
-    await expect(card.getByText("two models, two orderings")).toBeVisible();
+    await expect(card.getByText("two models, two orderings", { exact: true })).toBeVisible();
+  });
+
+  test("replaces the draft market with what is actually happening in season", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    await page.locator("table.sheet .player-name").first().click();
+    const card = page.getByRole("dialog");
+    await expect(card).toBeVisible();
+
+    // The draft price is gone: in November it is a number for a transaction nobody can make.
+    await expect(card.getByRole("heading", { name: "Draft market" })).toHaveCount(0);
+    await expect(card.getByText(/ADP/)).toHaveCount(0);
+    await expect(card.getByText("Arbitrage score")).toHaveCount(0);
+
+    // What replaces it is observation, named as observation and sourced from the feed.
+    await expect(card.getByRole("heading", { name: "In-season usage" })).toBeVisible();
+    await expect(card.getByText(/sleeper · 24h/i)).toBeVisible();
+    await expect(card.getByText("Production so far")).toBeVisible();
+    await expect(card.getByText("Roster moves")).toBeVisible();
+    await expect(card.getByText("Points per game")).toBeVisible();
+    await expect(card.getByText("Snap share")).toBeVisible();
+    // A count is never called a price, and the card says so where the counts are.
+    await expect(card.getByText(/not a price and not a rank/i)).toBeVisible();
+  });
+
+  test("leads the rail with the rest-of-season rank, not the draft one", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    await page.locator("table.sheet .player-name").first().click();
+    const rail = page.getByRole("dialog").locator(".detail-rail");
+    await expect(rail.getByText("ROS rank")).toBeVisible();
+    await expect(rail.getByText("median simulated remaining VORP")).toBeVisible();
+    await expect(rail.getByText("Fair rank")).toHaveCount(0);
+    await expect(rail.getByText("Since preseason")).toBeVisible();
+  });
+
+  test("keeps the draft market card in draft mode, all season", async ({ page }) => {
+    // The draft board stays reachable and correct in November (roadmap 12.1), and its card is
+    // the draft one: the section follows the product on screen, not the calendar.
+    await page.goto(`${IN_SEASON}?mode=draft&view=tiers`);
+    await page.locator("table.sheet .player-name").first().click();
+    const card = page.getByRole("dialog");
+    await expect(card.getByRole("heading", { name: "Draft market" })).toBeVisible();
+    await expect(card.getByRole("heading", { name: "In-season usage" })).toHaveCount(0);
   });
 });

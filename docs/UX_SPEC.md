@@ -177,6 +177,86 @@ Hover/focus/click:
 - intrinsic P10/P50/P90
 - arbitrage mode (`Model` or `Market-gap baseline`)
 
+## 6A. In-season boards
+
+The site has two products and one visual system. The rest-of-season board and the Opportunity
+Board are the in-season half, and neither has an artboard of its own — the same position the
+Draft Rail is in (`docs/DESIGN_SOURCE_MAP.md` section 6).
+
+### 6A.1 Rest-of-season Tier Board
+
+**It is the Tier Board, over a different quantity.** Same component, same stylesheet, same
+2a/2b responsive pair, same collapse behaviour and the same URL state. What changes is the
+quantity and every word around it:
+
+| | draft board | rest-of-season board |
+|---|---|---|
+| rank | `fair_rank` | `ros_fair_rank` |
+| axis | `Median simulated VORP` | `Median simulated remaining VORP` |
+| interval | `p25_vorp` – `p75_vorp` | `ros_vorp_p25` – `ros_vorp_p75` |
+| mark label | "median simulated VORP" | "median simulated **remaining** VORP" |
+
+The component is handed neutral marks and a set of strings and never learns which board it is
+drawing. That is deliberate: a chart that could tell would be one type coercion away from
+comparing two quantities that must never be compared (ADR-071).
+
+Tier bands are drawn exactly as the draft board draws them — a span, never an edge — because
+the rest-of-season boundary failed its own stability gate too (ADR-074).
+
+### 6A.2 Disclosure, without spending the fold
+
+The in-season board carries obligations the draft board does not (ADR-076). They are stated,
+not displayed at length:
+
+- the sentence that the model uses **no injury or practice-report information** is always
+  visible, with no interaction;
+- the measured ordering weakness, the tier-boundary statement and the flag's definition open
+  from it;
+- all of them are rendered from the artifact, never from constants in a component, so a build
+  that changed what the model reads changes these sentences with it;
+- `Data` states every one of them again in full, which is where methodology lives (ADR-058).
+
+A disclosure a reader must scroll past to reach the board is not more honest than one they can
+open; it is the same words costing the first screen.
+
+### 6A.3 Opportunity Board
+
+**Two tracks, two scales, one rule between them, and nothing that spans both.** The board
+shows a rest-of-season value in points beside a count of roster transactions over a declared
+window. Those have no common unit, so the geometry must make a combined reading impossible:
+
+- each track has its own zero line, its own tick strip and its own heading;
+- the divider is a border, not a gap;
+- the transaction track is **diverging and symmetric** — drops left of centre, adds right —
+  and its bound comes from the population rather than from its worst outlier, with a chevron
+  where a count runs past the axis and the real number printed beside it;
+- ordering is the reader's, from three choices, and there is no blended score at any point.
+
+Direction is never colour alone: the side of the zero line, the two printed counts and the
+row's accessible label all carry it.
+
+Where the behaviour feed is down the track is drawn **empty and labelled**, never as
+zero-length bars — "nobody added him" and "the feed said nothing" are different facts and a
+reader has to be able to tell them apart.
+
+### 6A.4 Current status on an in-season board
+
+A mark beside the player's name, exactly as the draft board has always carried it, and only
+when the artifact's code says something. `ACT` is the ordinary case and renders nothing
+(ADR-043). It is never a column: a column of `ACT` is the same non-report five hundred times
+and it pushes the model's own columns off the right edge.
+
+### 6A.5 The player card in season
+
+The card belongs to the board the row was clicked on, not to the calendar. From an in-season
+board, the `Draft market` section is **replaced** by `In-season usage`: production to date,
+workload shares, and roster moves over the declared window, in two blocks that are separated
+for the same reason the board's tracks are. The identity rail leads with the rest-of-season
+rank and carries the change since preseason and the net adds in place of a market verdict and
+an arbitrage score.
+
+The draft board stays reachable all season and keeps its own card, unchanged.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
@@ -194,6 +274,33 @@ Default visible:
 - Uncertainty
 
 Optional column picker may expose P10/P90 and model metadata if easy, but do not overbuild.
+
+### 7.1A In-season table columns
+
+Both in-season tables are the Tier table's construction — sortable headers, position chips,
+tier tags, and the design's micro-glyphs drawn as the cell's own `background-image`. A board
+that is a bare grid of numbers beside a board that is not reads as a different product on the
+same page.
+
+Rest-of-season table, default visible:
+
+- ROS Rank, Player, Pos, ROS PosRk, Team, ROS Tier
+- ROS Exp VORP, ROS P25–P75, Rem FP, Rem G, Uncertainty
+- Δ vs preseason, Weeks since last game
+
+Opportunity table, default visible:
+
+- ROS Rank, Player, Pos, ROS PosRk, Team
+- ROS Exp VORP, Adds (window), Drops (window), Net adds, Snap share
+- Weeks since last game
+
+**Every column name is a rest-of-season name.** `ROS Rank` is never `Rank`: a reader who saw a
+bare "Rank" would reasonably read it as the draft one, and the two are not comparable.
+
+**A bar's denominator is stated in the caption.** Adds and drops share one denominator with
+each other, because eight adds and eight drops are the same size; the value bar has its own;
+the snap-share bar is the percentage itself. A null renders as an em dash with **no bar** —
+the feed saying nothing and the feed saying zero are different facts.
 
 ### 7.2 Arbitrage table columns
 
@@ -317,6 +424,8 @@ Primary target too. Controls may wrap into two compact rows. Chart remains full-
 - sticky compact controls or horizontally scrollable segmented control where accessible
 - Tier Board may use vertical card alignment inside lanes with axis simplified
 - Draft Rail can stack player rows
+- the Opportunity Board stacks each row into identity, then its two tracks, each keeping its
+  own zero, its own readout and a micro-label naming it
 - table uses essential columns and horizontal scroll or a compact row detail expander
 
 Do not create a completely separate mobile product.
@@ -348,5 +457,9 @@ Capture Playwright screenshots for at least:
 - methodology/data view
 - mobile Tier Board
 - stale/degraded market state
+- rest-of-season Tier Board, desktop and phone
+- Opportunity Board, desktop, tablet and phone
+- Opportunity Board with the behaviour feed down
+- the in-season player card, desktop and phone
 
 Use screenshot review to catch clipping, label overlap, unreadable scales, and Pages base-path failures. Pixel-perfect snapshots should not become brittle blockers for dynamic data unless fixtures are fixed.

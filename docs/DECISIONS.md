@@ -3392,3 +3392,99 @@ belongs in its own change rather than riding this one.
 lifecycle windows, and it fails on the transition rather than through it. What made this bug
 invisible — a check that agreed because two different things happened to be the same thing —
 cannot recur in these four scripts, because none of them asks for a board without naming it.
+
+## ADR-085 — The in-season product gets the design system the draft product already had
+
+**Date:** 2026-09-15 (post-Release-2 presentation pass)
+
+**Status:** accepted.
+
+**Context.** The first live in-season week published on 2026-09-15 (ADR-083, ADR-084), and the
+owner reviewed the deployed site rather than the test suite. Four defects, and the useful thing
+about all four is that **every gate passed on every one of them**: `verify:board` compared the
+rest-of-season table against its bytes and agreed, the Playwright suite was green, axe found
+nothing, and the artifacts validated. They were defects of presentation, and a suite that
+checks whether numbers are *right* cannot see whether a board is *there*.
+
+| what the owner saw | what was actually built |
+|---|---|
+| "NO TIER CHART RENDERING" | the rest-of-season view published tiers, quantiles and a tier label and drew none of it — a legend and a facts strip sat where the board should be |
+| "NO OPPORTUNITY CHART RENDERING" / "DATA IS TOO BLAND" | the Opportunity Board was a hand-rolled `<table>` with no chart, no position chips, no sort and no glyphs, beside a draft board that had all four |
+| "why did this column get created?" | `Current status` had a column of its own on both in-season boards, reading `ACT` on essentially every row |
+| "DRAFT MARKET IS USELESS WHEN WE ARE IN IN-SEASON MODE" | the player card led with an FFC draft ADP and an arbitrage score in week 1 |
+| "too much text" | four paragraphs of disclosure and a three-sentence section note above the board, on the first screen |
+
+**Decision — the rest-of-season board is the Tier Board, not a second chart.** `TierBoard` now
+takes a neutral view model (`charts/boardModel.ts`): a rank, five quantiles, a position, some
+badges, a label, and a `BoardAxis` carrying every string it prints. Both views map their own
+records into it. One component, one stylesheet, one set of responsive rules, and the 2a/2b
+breakpoint pair works on the in-season board because it is literally the same DOM.
+
+The mapping is deliberately lossy. A `BoardMark` carries no field names, so the component
+cannot tell a preseason VORP from a remaining one — which is the point. ADR-071 forbids the
+two quantities meeting; a chart that knew which it was drawing would be one coercion away
+from letting them.
+
+**Decision — the Opportunity Board draws two tracks and never one.** A rest-of-season value in
+points and a count of roster transactions over a window have no common unit, and `AGENTS.md`
+already forbids a blended score. The chart holds to that literally: two tracks, each with its
+own zero line, its own tick strip and its own heading, separated by a border rather than a
+gap. The transaction track is diverging and symmetric about zero, bounded by the 85th
+percentile of the non-zero counts on the rows shown — `movesBound`, the same rule and the same
+reason as the Draft Rail's `railBound`, because one surfaced waiver pickup with 2,400 adds
+would otherwise draw every other row as a hairline. A count past the bound keeps its bar at
+the axis edge and takes a chevron; its real number is printed beside the track either way.
+
+This is not a constraint worked around. The useful in-season question — *is the wire moving on
+someone the model still rates?* — **is** a comparison of two separate readings, and averaging
+them would destroy the only thing the picture is for.
+
+**Decision — current status is a mark on the name, never a column.** The same treatment, in the
+same place, that the draft board has carried since Phase 6. It renders only when the artifact's
+code is noteworthy; `ACT`, `A01` and `DEV` render nothing, because "active" is the ordinary
+case and the absence of a designation is not a report (ADR-043). The visible text is the
+artifact's own code, verbatim. A short expansion table names the eight codes whose meaning is
+unambiguous and anything else reads as itself — ADR-082's lesson runs in both directions, and a
+renderer that guessed at an expansion would put a designation in front of a reader that the
+artifact never made.
+
+The board's own `current_status` is the source, not `player_status.json`. One board, one
+account of a player, and the CSV export carries the identical string.
+
+**Decision — the card belongs to the board, not to the calendar.** From an in-season board the
+`Draft market` section is replaced by `In-season usage`: production to date, workload shares
+and roster moves over the declared window, in two blocks separated for the same reason the
+board's tracks are. The identity rail leads with the rest-of-season rank and carries the change
+since preseason and the net adds where a market verdict and an arbitrage score used to be.
+
+It keys off the **view**, not the mode. The draft board stays reachable all season (roadmap
+12.1), and a reader who asked for it asked for its card too — a row on the Tier Board is a
+draft-model row and its market comparison is the draft market, whatever month it is. Keying it
+off the mode gave the draft board an in-season card in November, which `verify:board` caught on
+the in-season build. It also makes ADR-079's two lifecycle windows correct with no second
+condition.
+
+**Decision — state the disclosure, do not spend the fold on it.** ADR-076 requires the
+in-season board to say that the model uses no injury or practice-report information, and to
+publish the measured ordering weakness. That sentence is now the always-visible summary of a
+`details`; the ordering weakness, the tier-boundary statement and the flag's definition open
+from it. Nothing is removed and nothing is hidden from the accessibility tree — the axe scan
+runs against the board both closed and open, because a contract nobody can reach is not met.
+`Data` carries all of it again in full, which is where methodology lives (ADR-058).
+
+**What did not change.** No model, artifact, schema, feature, simulation, tier, rank, count or
+CSV column. `verify:board` runs against all five builds and reports zero disagreements, which
+is the check that fails if one had.
+
+**Consequences.**
+
+- `TierBoard`'s props changed, so any future board wanting the 2a/2b treatment implements an
+  adapter rather than a chart. That is the intended cost.
+- `state.board` and `state.tiers` now govern whichever board is on screen. Only one is ever
+  rendered, so the URL surface stays the size it was.
+- The verifier's rest-of-season status check is a **contract** — the badge exists exactly when
+  the code is noteworthy, and its text is that code — rather than a cell comparison against a
+  list of codes. Both directions have a negative control.
+- Four axe scans and a roving-focus check were added for surfaces that had never been scanned:
+  neither in-season board nor the in-season card had ever been through one, because the ROS
+  board did not exist and the opportunity board was a bare table.

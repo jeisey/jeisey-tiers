@@ -52,11 +52,29 @@ test.describe("automated scan", () => {
     ["data", "/?view=data", "h2#definitions-heading"],
     ["a degraded market", "/scenario/no-market/?view=arbitrage", '.notice[data-severity="warning"]'],
     ["a refused contract", "/scenario/bad-schema/", '.notice[data-severity="error"]'],
+    // The in-season product, on its own builds. Both boards are charts this suite had never
+    // seen: the rest-of-season board did not exist before ADR-085 and the opportunity board
+    // was a bare table, so neither had ever been scanned.
+    ["the rest-of-season board", "/scenario/in-season/?view=ros", ".board-row"],
+    ["the rest-of-season board, disclosure open", "/scenario/in-season/?view=ros", ".board-row"],
+    ["the opportunity board", "/scenario/in-season/?view=opportunity", ".opp-row"],
+    [
+      "the opportunity board with no behaviour feed",
+      "/scenario/in-season-no-behavior/?view=opportunity",
+      ".opp-track-empty",
+    ],
   ] as const) {
     test(`${name} has no WCAG A or AA violations`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       await expect(page.locator(landmark).first()).toBeVisible();
+      // A collapsed `details` hides its contents from axe as well as from the reader, so the
+      // disclosure is scanned open too — the sentences inside it are a contract (ADR-076) and
+      // an unreachable contract is not met.
+      if (name.endsWith("disclosure open")) {
+        await page.locator("details.disclosure summary").click();
+        await expect(page.getByText(/Ranking quality inside this group is weak/i)).toBeVisible();
+      }
       expect(describe(await scan(page))).toEqual([]);
     });
   }
@@ -65,6 +83,17 @@ test.describe("automated scan", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
+    expect(describe(await scan(page))).toEqual([]);
+  });
+
+  test("the in-season player card has no violations either", async ({ page }) => {
+    // A different set of sections and a different rail (ADR-085), so scanning the draft card
+    // says nothing about this one.
+    await page.goto("/scenario/in-season/?view=ros");
+    await page.locator("table.sheet .player-name").first().click();
+    const card = page.getByRole("dialog");
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("heading", { name: "In-season usage" })).toBeVisible();
     expect(describe(await scan(page))).toEqual([]);
   });
 });
@@ -176,11 +205,43 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
     }
   });
 
+  test("the opportunity board's rows are one tab stop with a visible focus ring", async ({
+    page,
+  }) => {
+    // The same composite-widget pattern the Tier Board uses, on a board the check predates.
+    await page.goto("/scenario/in-season/?view=opportunity");
+    const rows = page.locator(".opp-board .opp-row");
+    await expect(rows.first()).toBeVisible();
+    const stops = await rows.evaluateAll((nodes) =>
+      nodes.filter((node) => node.getAttribute("tabindex") === "0").length,
+    );
+    expect(stops, "the opportunity board is not one tab stop").toBe(1);
+
+    await rows.first().focus();
+    const visible = await rows.first().evaluate((element) => {
+      const style = getComputedStyle(element);
+      return style.outlineStyle !== "none" && Number.parseFloat(style.outlineWidth) > 0;
+    });
+    expect(visible, "an opportunity row has no visible focus indicator").toBe(true);
+
+    // Arrow keys walk the board rather than leaving it.
+    await page.keyboard.press("ArrowDown");
+    const active = await page.evaluate(() => document.activeElement?.className ?? "");
+    expect(active).toContain("opp-row");
+  });
+
   test("the page reflows at 320 CSS pixels without a horizontal scrollbar", async ({ page }) => {
     // WCAG 2.1 "Reflow": 320 CSS pixels wide is what 400% zoom of a 1280px viewport reduces
     // to, and it is the width the spec actually names.
     await page.setViewportSize({ width: 320, height: 800 });
-    for (const path of ["/", "/?view=arbitrage", "/?view=data"]) {
+    for (const path of [
+      "/",
+      "/?view=arbitrage",
+      "/?view=data",
+      // The in-season boards, which are two charts built after this check existed.
+      "/scenario/in-season/?view=ros",
+      "/scenario/in-season/?view=opportunity",
+    ]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       const overflow = await page.evaluate(

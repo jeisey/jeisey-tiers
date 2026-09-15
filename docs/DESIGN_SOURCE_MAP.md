@@ -180,6 +180,8 @@ the first things in the implemented card's identity rail.
 | Tier Board on mobile | **REPLACE** | 2b tier stack instead of a compressed desktop board |
 | Tier table | **ADAPT** | semantic `<table>` kept; header tint, hairline rows, mono numerics, mini P25–P75 track and amber uncertainty bar added from the design's DATA view |
 | Draft Rail | **ADAPT** | no design source; Phase-8 semantics kept, HUD vocabulary applied |
+| ROS Tier Board | **REUSE** | 2a and 2b literally — one component over a second quantity (ADR-085) |
+| Opportunity Board | **EXTEND** | no design source, like the Draft Rail; 2a's vocabulary over two tracks (ADR-085) |
 | Arbitrage table | **ADAPT** | same as Tier table |
 | Player detail | **REPLACE** | three real variants replacing one responsive card |
 | status / injury chips | **ADAPT** | design's amber outline chip and green dot-and-word |
@@ -239,6 +241,32 @@ Each of these is a place the implementation does not match the source, and why.
     its `alt` is the product name, which is the heading the page never had while the brand was a
     `<span>`. The glyph's chamfer motif survives on the card frame, the tier-stack blocks and the
     primary buttons, so deviation 6 above is unaffected.
+
+## 6A. The in-season boards, which the source predates (ADR-085)
+
+The design handoff is a *draft* product: five artboards, a tier board, a player card, and an
+arbitrage panel captioned "NOT PART OF THIS PASS". Nothing in it contemplates a week-8 board.
+Two surfaces therefore had to be designed rather than read, and the rule for both is the one
+deviation 6 already implies — **borrow the system, do not invent a second one.**
+
+**The rest-of-season Tier Board is 2a and 2b, unchanged.** Not "in the style of": the same
+component, the same CSS, the same collapse control, the same breakpoint. It is handed different
+marks and different words. Everything artboard 2a decided — the tier gutter as the toggle, the
+tick header on the interval column, the glowing square median, the band that is a span and
+never an edge — holds on the in-season board because it is the same code.
+
+**The Opportunity Board is an extension, like the Draft Rail.** It has no artboard, so it takes
+2a's vocabulary — the lane grid, the tick header, the mono readouts, the axis footer — and adds
+one thing the source has no equivalent for: a **second track on its own scale**, divided from
+the first by a border. That division is not decoration. The board carries two quantities with
+no common unit, and the source's single shared axis would be a picture of an exchange rate the
+product does not have.
+
+**The card's third section is conditional on the board, not on the artboard.** The source
+hard-codes `02 DRAFT MARKET`; deviation 10 already says the indices follow the data. ADR-085
+extends that to the section itself: from an in-season board the slot holds `In-season usage`
+instead. The metric-tile grid, the section header, the annotation bar and the tab bar are all
+the source's, unchanged.
 
 ## 7. What did not change
 

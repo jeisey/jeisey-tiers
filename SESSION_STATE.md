@@ -4,6 +4,14 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The in-season presentation pass, 2026-09-15 (ADR-085).** The first live in-season week is
+published, the owner looked at the deployed site, and found four defects that **every gate had
+passed on**: the rest-of-season view published tiers and quantiles and drew no chart at all;
+the Opportunity Board was a hand-rolled table with no chart, no position chips, no sort and no
+glyphs; both boards carried a `Current status` column reading `ACT` on nearly every row, which
+pushed the model's own columns off the right edge; and the player card led with a draft ADP in
+week 1. See **What the in-season presentation pass changed** below.
+
 **In-season gate repair, 2026-09-12 — the status badge check (ADR-082).** The daily refresh
 failed `verify:board` on `CJ Daniels: badge "INA" but the artifact reports no injury status`,
 against a board that was right: `INA` is nflverse's code for a player declared inactive, the
@@ -1550,6 +1558,58 @@ failures against a correct draft build. Pre-existing, orthogonal, not in `ci.yml
 opening-week window is behind us and the in-season product is live. The two boards will not be
 the same board again until next preseason, which is exactly why the gate now names which one it
 means.
+
+## What the in-season presentation pass changed (2026-09-15, ADR-085)
+
+**Root cause, in one line: the gates check whether numbers are right and cannot see whether a
+board is there.** `verify:board` compared the rest-of-season table against its own bytes and
+agreed; Playwright was green; axe found nothing; the artifacts validated; every ROS value was
+correct to the digit. All four defects were visible in a screenshot and invisible to all of it.
+That is Phase 12's own finding — four UI defects the screenshots caught that the tests did not —
+one phase later and one level up: it is not enough to picture the things a test can check.
+
+| | before | after |
+|---|---|---|
+| ROS view | a legend and a facts strip where the board should be | artboard 2a/2b, the *same component*, over `ros_vorp_*` |
+| Opportunity view | no chart; a bare `<table>` | a two-track chart; the Tier table's construction |
+| current status | a column of `ACT` on both boards | a mark on the name, only for a noteworthy code |
+| player card in season | `03 Draft market` — an FFC ADP in week 1 | `03 In-season usage` — production, workload, roster moves |
+| board preamble | 4 disclosure paragraphs + a 3-sentence note | 1 sentence + a `details` whose summary is the contractual one |
+| a11y scans | neither in-season board had ever been scanned | 4 new scans + a roving-focus check + 2 new reflow paths |
+
+**Three decisions inside it are load-bearing and should not be undone casually.**
+
+1. **`TierBoard` is generic and deliberately lossy.** It takes a `BoardMark` — rank, five
+   quantiles, badges, a label — and a `BoardAxis` carrying every string it prints, and never
+   learns which board it is drawing. ADR-071 forbids the preseason and rest-of-season
+   quantities meeting; a chart that knew which it had would be one coercion away from letting
+   them. A future board wanting the 2a/2b treatment writes an adapter, not a chart.
+2. **The Opportunity chart draws two tracks and can never draw one.** Two zeros, two tick
+   strips, a border between them. The moves track is symmetric about zero and bounded by
+   `movesBound` — the 85th percentile of non-zero counts, the same rule and reason as the Draft
+   Rail's `railBound` — with a chevron where a count runs past it. Do not "simplify" this into
+   one axis; the absence of a common unit is the product rule, not a layout problem.
+3. **The card keys off the *view*, not the mode.** A row on the Tier Board is a draft-model row
+   and its market comparison is the draft market, whatever month it is. Keying it off the mode
+   gave the draft board an in-season card in November — caught by `verify:board` on the
+   in-season build, not by a test — and it also makes ADR-079's two lifecycle windows correct
+   with no second condition.
+
+**The status badge check is a contract now, not a cell comparison.** `verify-real-build.mjs`
+asserts the badge exists exactly when `current_status` is a code the product treats as
+noteworthy, and that its text is that code verbatim. `ACT`, `A01` and `DEV` produce nothing.
+Both directions have a negative control, run and confirmed: an artifact code with no badge
+rendered, and a badge whose artifact code is the ordinary one.
+
+**Verified**: `npm run lint` 0 errors / 4 warnings (3 pre-existing TanStack + 1 on the new
+table, ADR-048's category), `npm run typecheck` clean, `npm run test -- --run` **348** passed,
+`npm run e2e` **117** passed across chromium/mobile/a11y, `npm run verify:board` against all
+**five** builds with zero disagreements, `uv run pytest` clean, and 54 screens captured in
+`docs/visual-qa/2026-09-15-inseason-ui/`.
+
+**Left open on purpose**: the Opportunity Board has no position filter of its own beyond the
+global one, and no "surfaced only" view. Both are product scope rather than presentation, and
+neither was asked for.
 
 ## Next action
 

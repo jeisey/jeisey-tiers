@@ -1113,14 +1113,60 @@ rendered value changes.
       pre-fix script on the in-season build reproduces the production failure.
 - [x] **Verified.** `npm run e2e`, `npm run lint` (0 errors), `npm run typecheck`,
       `npm run test -- --run`, `uv run pytest`, and `verify:board` green on all five builds.
-- [ ] **A coverage gap this surfaced, recorded not fixed.** The two ROS columns the verifier
-      deliberately does not compare — `Δ vs preseason` and `Weeks since last game` — turn out
-      not to be covered anywhere else either: `rankChangeLabel` and `longAbsenceLabel` are
-      exported from `web/src/data/ros.ts` with no unit test, and the weeks-since cell is inline
-      in `RosTable`. The fix is a component/unit test, not a transcription of the label table
-      into the verifier, so it belongs in its own change.
+- [x] **A coverage gap this surfaced, closed in the presentation pass (ADR-085).**
+      `rankChangeLabel` and `longAbsenceLabel` now have unit tests in
+      `web/tests/inseason.test.ts` — sign, zero, absent, rounding, and the ADR-076 rule that no
+      wording may read as a designation. The verifier still does not compare those two columns,
+      which is the right place for the line to sit: a check that transcribed the label table
+      would repeat ADR-082's mistake in a new file.
 - [ ] **Not done here, deliberately.** `verify-presets.mjs` counts any console error as noise,
       and a pre-kickoff build legitimately 404s `ros_build_metadata.json` — the optional
       in-season bundle it is correct not to publish — so that script reports noise failures
       against a correct draft build. Pre-existing, orthogonal to the view bug, and not run in
       `ci.yml`; it needs its own change.
+
+
+## The in-season presentation pass — 2026-09-15 (ADR-085)
+
+The owner reviewed the deployed site after the first live in-season week and found four
+defects. Every automated gate had passed on every one of them; all four were visible in a
+screenshot.
+
+- [x] **The rest-of-season board is drawn.** `TierBoard` takes a neutral view model
+      (`charts/boardModel.ts`) and both boards map into it, so the ROS view is artboard 2a/2b
+      — the same component, the same stylesheet, the same collapse control and the same
+      breakpoint — over `ros_vorp_*`. The component never learns which board it is drawing,
+      which is what keeps ADR-071's two quantities apart.
+- [x] **The draft board's DOM did not move.** `verify:board` compares it cell by cell and
+      reports zero disagreements on all five builds; 340 vitest and the full Playwright suite
+      pass on the refactor.
+- [x] **The Opportunity Board has a chart.** Two tracks, two zeros, two tick strips, a border
+      between them, and nothing that spans both — the product rule (no blended score) as
+      geometry. The moves track is symmetric and bounded by `movesBound`, the 85th percentile
+      of non-zero counts, with a chevron where a count runs past the axis.
+- [x] **The Opportunity table matches the draft table.** Rebuilt on TanStack: position chips,
+      sortable headers, and the design's micro-glyphs as the cell's own `background-image`.
+      Adds and drops share one denominator; a null renders as an em dash with no bar.
+- [x] **Current status is a mark on the name on both in-season boards**, and only for a code
+      the artifact says something with. `ACT`, `A01` and `DEV` render nothing (ADR-043).
+- [x] **The verifier's status check is a contract, with negative controls in both directions.**
+      Badge present iff the code is noteworthy; text equals the code. Confirmed by mutating the
+      artifact the verifier reads while the page serves the real one.
+- [x] **The card follows the board, not the calendar.** `Draft market` is replaced by
+      `In-season usage` on an in-season view; the rail leads with the ROS rank and carries the
+      change since preseason and the net adds. The draft board keeps its own card all season.
+- [x] **The board's preamble is one sentence and a disclosure.** ADR-076's contractual sentence
+      is the always-visible summary; the measured weaknesses open from it and `Data` carries
+      all of it in full (ADR-058).
+- [x] **Accessibility, on surfaces that had never been scanned.** Four axe scans (both boards,
+      the disclosure open, the feed down), the in-season card, a roving-focus check on the new
+      chart, and two more 320px reflow paths. All green.
+- [x] **Responsive by measurement, not by assumption.** 1440 / 900 / 768 / 390 captured for
+      every new surface; the Opportunity Board stacks into identity plus two labelled tracks
+      below 768px, and the ROS board takes artboard 2b like the draft board does.
+- [x] **Verified.** `npm run lint` (0 errors, 4 warnings), `npm run typecheck`,
+      `npm run test -- --run` (348), `npm run e2e` (117), `npm run verify:board` on five
+      builds, `uv run pytest`, and 54 screens in `docs/visual-qa/2026-09-15-inseason-ui/`.
+- [ ] **Not done here, deliberately.** The Opportunity Board has no filter of its own beyond
+      the global position control and no "surfaced only" view. Both are product scope rather
+      than presentation and neither was asked for.
