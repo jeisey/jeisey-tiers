@@ -50,8 +50,10 @@ import type {
   ExpertConsensus,
   MarketComparison,
   MarketTrendSeriesRecord,
+  OpportunityRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
+  RosBehaviorMetadata,
   RosDisclosures,
   RosTierRecord,
   TierRecord,
@@ -123,6 +125,31 @@ export interface PlayerDetailData {
   readonly ros?: RosTierRecord | null;
   /** ADR-076's sentences, from the in-season artifact. Required wherever the flag is shown. */
   readonly rosDisclosures?: RosDisclosures | null;
+  /**
+   * This player's Opportunity Board row, when an in-season bundle published one.
+   *
+   * Behaviour, and only behaviour: counts of roster transactions over a declared window, plus
+   * the usage shares the board already carries. Never differenced against a rank, never
+   * converted into a price.
+   */
+  readonly opportunity?: OpportunityRecord | null;
+  /** The behaviour feed's own account of itself — source, window, snapshot time. */
+  readonly behavior?: RosBehaviorMetadata | null;
+  /**
+   * Whether this card was opened from an in-season board (ADR-085).
+   *
+   * It decides which of two sections occupies the same slot: a draft ADP comparison, or what
+   * is actually happening to the player this week. In November the first is a price nobody
+   * can act on — the draft is over — so it is replaced rather than sat beside it.
+   *
+   * **The board decides, not the calendar.** A row on the Tier Board is a draft-model row and
+   * its market comparison is the draft market, whatever month it is; the draft board stays
+   * reachable all season (roadmap 12.1) and a reader who asked for it asked for its card too.
+   * So this is true for the rest-of-season and opportunity views only — which also makes
+   * ADR-079's two lifecycle windows, in season with no board at all, correct without a second
+   * condition.
+   */
+  readonly inSeason?: boolean;
 }
 
 /**
@@ -389,6 +416,219 @@ function Distribution({
   );
 }
 
+/**
+ * The in-season usage panel (ADR-085).
+ *
+ * It occupies the slot `Draft market` holds before kickoff, and it is a replacement rather
+ * than an addition. A draft ADP is a price for a transaction nobody can make any more: in
+ * November the draft is over, the number moves only because next August's mocks have started,
+ * and a card that leads with it is answering a question the reader stopped asking in
+ * September. What they ask instead is what the player has actually done and what the wire is
+ * doing about him, and both are in artifacts this build already publishes.
+ *
+ * Every rule the Opportunity Board runs on holds here too, because they are the same numbers:
+ *
+ * - **a count is a count.** Adds and drops are transactions over the window the artifact
+ *   declares, never a price, never a rank, and never differenced against one;
+ * - **two quantities, never combined.** Production to date is in points and roster moves are
+ *   in transactions; they sit in separate blocks with separate headings for the same reason
+ *   the board draws them on separate tracks;
+ * - **nothing here is a model input.** These are observations about what happened, shown
+ *   beside an estimate that did not read them.
+ */
+function InSeasonUsage({
+  ros,
+  opportunity,
+  behavior,
+}: {
+  readonly ros: RosTierRecord;
+  readonly opportunity: OpportunityRecord | null;
+  readonly behavior: RosBehaviorMetadata | null;
+}): React.JSX.Element {
+  const window = opportunity?.behavior_lookback_hours ?? behavior?.lookback_hours ?? null;
+  const windowText = window === null ? "the declared window" : `${String(window)}h`;
+  const feedUp = opportunity?.behavior_available === true;
+  const adds = opportunity?.add_count ?? null;
+  const drops = opportunity?.drop_count ?? null;
+  const net = opportunity?.net_add_count ?? null;
+  // The symmetric bound for the strip below. Local to this player rather than the board's,
+  // because a card is one row and has no population to scale against; the counts are printed
+  // beside it, so the bar is a shape and the numbers are the reading.
+  const bound = Math.max(1, adds ?? 0, drops ?? 0);
+  const addsWidth = ((adds ?? 0) / bound) * 50;
+  const dropsWidth = ((drops ?? 0) / bound) * 50;
+
+  const perGame =
+    ros.points_per_game_to_date ??
+    (ros.games_played_to_date > 0 ? ros.points_to_date / ros.games_played_to_date : null);
+
+  return (
+    <>
+      {/* The verdict line, in the same slot the market verdict occupies in draft mode. It is a
+          sentence about transactions and says nothing about value. */}
+      <div
+        className="market-verdict"
+        data-kind={
+          !feedUp || net === null ? "even" : net > 0 ? "bargain" : net < 0 ? "premium" : "even"
+        }
+      >
+        <strong>
+          {/*
+            Three absences, and they are three different facts. "He is not on the opportunity
+            board" is not "the feed said nothing", and neither is "nobody moved on him" — the
+            last of those is a reading and the first two are the lack of one.
+          */}
+          {opportunity === null
+            ? "He is not on this build's opportunity board."
+            : !feedUp
+              ? "No add or drop activity is published for this build."
+              : (adds ?? 0) === 0 && (drops ?? 0) === 0
+                ? `No rosters added or dropped him in the last ${windowText}.`
+                : `${formatInteger(adds ?? 0)} roster${(adds ?? 0) === 1 ? "" : "s"} added him and ` +
+                  `${formatInteger(drops ?? 0)} dropped him in the last ${windowText}.`}
+        </strong>{" "}
+        <span>
+          {feedUp
+            ? "A count of transactions, not a price and not a rank."
+            : "Every value on this card is unaffected: behaviour decides who is visible, never what he is worth."}
+        </span>
+      </div>
+
+      <div className="detail-subhead">
+        <span>Production so far</span>
+        <span className="detail-subhead-note">{`weeks 1–${String(ros.through_week)}`}</span>
+      </div>
+      <div className="readout-grid">
+        <Readout
+          label="Games played"
+          value={ros.has_played_this_season ? formatValue(ros.games_played_to_date) : "None"}
+          strong
+        />
+        <Readout label="Fantasy points" value={formatValue(ros.points_to_date)} hint="to date" />
+        <Readout
+          label="Points per game"
+          value={perGame === null ? EM_DASH : formatValue(perGame)}
+          hint={perGame === null ? "no appearances" : undefined}
+        />
+        <Readout
+          label="Weeks since last game"
+          value={
+            !ros.has_played_this_season
+              ? "No appearances"
+              : Math.round(ros.weeks_since_last_game) === 0
+                ? "Played latest"
+                : String(Math.round(ros.weeks_since_last_game))
+          }
+        />
+        <Readout
+          label="Snap share"
+          value={
+            opportunity?.snap_share_last3 == null
+              ? EM_DASH
+              : `${String(Math.round(opportunity.snap_share_last3 * 100))}%`
+          }
+          hint="last 3 games"
+        />
+        <Readout
+          label="Target share"
+          value={
+            opportunity?.target_share_last3 == null
+              ? EM_DASH
+              : `${String(Math.round(opportunity.target_share_last3 * 100))}%`
+          }
+          hint="last 3 games"
+        />
+        <Readout
+          label="Weeks remaining"
+          value={ros.remaining_horizon_weeks === undefined ? EM_DASH : String(ros.remaining_horizon_weeks)}
+          hint="in the horizon"
+        />
+        <Readout
+          label="Team games left"
+          value={
+            ros.team_remaining_scheduled_games == null
+              ? EM_DASH
+              : String(ros.team_remaining_scheduled_games)
+          }
+          hint="scheduled"
+        />
+      </div>
+
+      <div className="detail-subhead">
+        <span>Roster moves</span>
+        <span className="detail-subhead-note">
+          {feedUp ? `${windowText} window` : "feed unavailable"}
+        </span>
+      </div>
+
+      {/* The board's own diverging strip, for one player: drops left of centre, adds right, on
+          a scale bounded by this player's own larger count. Never colour alone — the counts are
+          printed beneath it and the whole reading is in the card's text. */}
+      <div className="opp-track" data-track="moves" data-card="true" aria-hidden="true">
+        <span className="opp-zero" style={{ left: "50%" }} />
+        {feedUp ? (
+          <>
+            <span
+              className="opp-move-bar"
+              data-kind="drop"
+              style={{ left: `${String(50 - dropsWidth)}%`, width: `${String(dropsWidth)}%` }}
+            />
+            <span
+              className="opp-move-bar"
+              data-kind="add"
+              style={{ left: "50%", width: `${String(addsWidth)}%` }}
+            />
+          </>
+        ) : (
+          <span className="opp-track-empty" />
+        )}
+      </div>
+
+      <div className="readout-grid">
+        <Readout
+          label="Drops"
+          value={drops === null ? EM_DASH : formatInteger(drops)}
+          hint={feedUp ? windowText : "not published"}
+        />
+        <Readout
+          label="Adds"
+          value={adds === null ? EM_DASH : formatInteger(adds)}
+          hint={feedUp ? windowText : "not published"}
+          strong
+        />
+        <Readout
+          label="Net adds"
+          value={net === null ? EM_DASH : net > 0 ? `+${formatInteger(net)}` : formatInteger(net)}
+          kind={net === null || net === 0 ? "even" : net > 0 ? "bargain" : "premium"}
+        />
+        <Readout
+          label="Add rank"
+          value={opportunity?.add_rank == null ? EM_DASH : formatRank(opportunity.add_rank)}
+          hint="on the feed"
+        />
+        <Readout
+          label="Behaviour source"
+          value={opportunity?.behavior_source_id ?? behavior?.source_id ?? EM_DASH}
+          size="sm"
+        />
+        <Readout
+          label="Snapshot"
+          value={formatEastern(opportunity?.behavior_snapshot_at_utc ?? behavior?.snapshot_at_utc)}
+          hint="retrieved"
+          size="sm"
+        />
+      </div>
+
+      {opportunity?.outside_tier_board === true && (
+        <p className="status-annotation">
+          Published from beyond the tier depth because current evidence made him relevant, so he
+          carries a rest-of-season value and no tier.
+        </p>
+      )}
+    </>
+  );
+}
+
 export function PlayerDetail({
   data,
   onClose,
@@ -442,7 +682,11 @@ export function PlayerDetail({
 
   if (data === null) return null;
 
-  const { tier, arbitrage, status, projection, ros, rosDisclosures } = data;
+  const { tier, arbitrage, status, projection, ros, rosDisclosures, opportunity } = data;
+  // The in-season card, and only when there is in-season data to put in it. An in-season view
+  // with no rest-of-season row cannot happen — the view is not offered without a bundle — but
+  // the row is what the panel is made of, so it is what the branch tests.
+  const inSeasonCard = data.inSeason === true && ros != null;
   const market = data.market ?? CROSS_MARKET;
   // One resolution, once. Every number in this card and its rail comes from `view`; nothing
   // below reaches past it to a flat field, because the flat fields are MyFantasyLeague's and
@@ -483,10 +727,11 @@ export function PlayerDetail({
   ]);
 
   /** Sections actually rendered, in order. The index and the tab list both follow this. */
-  const sections: readonly ("intrinsic" | "ros" | "market" | "status")[] = [
+  const sections: readonly ("intrinsic" | "ros" | "usage" | "market" | "status")[] = [
     ...(tier !== null ? (["intrinsic"] as const) : []),
     ...(ros != null ? (["ros"] as const) : []),
-    "market",
+    // One slot, two panels, and the season decides which. See `PlayerDetailData.inSeason`.
+    inSeasonCard ? ("usage" as const) : ("market" as const),
     "status",
   ];
   // The tab label is the panel's own heading, word for word: a tab that says something else
@@ -495,6 +740,7 @@ export function PlayerDetail({
   const tabLabels: Readonly<Record<string, string>> = {
     intrinsic: "Intrinsic value",
     ros: "Rest of season",
+    usage: "In-season usage",
     market: "Draft market",
     status: "Current status",
   };
@@ -628,6 +874,35 @@ export function PlayerDetail({
               </p>
             </div>
           )}
+        </DetailSection>
+      );
+    }
+    if (kind === "usage" && ros != null) {
+      return (
+        <DetailSection
+          key={kind}
+          index={index}
+          id={id}
+          title="In-season usage"
+          badge={
+            <>
+              <span className="detail-badge-label">Observed</span>
+              {opportunity?.behavior_available === true
+                ? `${opportunity.behavior_source_id ?? "feed"} · ${
+                    opportunity.behavior_lookback_hours == null
+                      ? "window unknown"
+                      : `${String(opportunity.behavior_lookback_hours)}h`
+                  }`
+                : "no behaviour feed"}
+            </>
+          }
+          tabbed={sheet}
+        >
+          <InSeasonUsage
+            ros={ros}
+            opportunity={opportunity ?? null}
+            behavior={data.behavior ?? null}
+          />
         </DetailSection>
       );
     }
@@ -867,52 +1142,136 @@ export function PlayerDetail({
                 <h2 id={`${baseId}-title`}>{name}</h2>
                 <div className="detail-subtitle">
                   {position !== null && <PositionTag position={position} />}
-                  {tier !== null && (
+                  {inSeasonCard && ros != null ? (
                     <span className="detail-posrank">
-                      {tier.position}
-                      {formatRank(tier.position_rank)}
+                      {ros.position}
+                      {formatRank(ros.ros_position_rank)}
                     </span>
+                  ) : (
+                    tier !== null && (
+                      <span className="detail-posrank">
+                        {tier.position}
+                        {formatRank(tier.position_rank)}
+                      </span>
+                    )
                   )}
                   {team !== null && <span className="detail-posrank">{team}</span>}
-                  {tier !== null && <TierTag label={tier.tier_label} />}
+                  {inSeasonCard && ros != null
+                    ? ros.ros_tier_label !== null && <TierTag label={ros.ros_tier_label} />
+                    : tier !== null && <TierTag label={tier.tier_label} />}
                   <StatusBadge status={status} />
                 </div>
               </div>
             </div>
 
-            {tier !== null && (
+            {/*
+              The one number the card is organised around, and in season that is not the draft
+              one. A rest-of-season rank comes from a different model over a different horizon
+              (ADR-071), so the label changes with it rather than the value quietly swapping
+              underneath a heading that would then be wrong.
+            */}
+            {inSeasonCard && ros != null ? (
               <div className="rail-hero">
-                <span className="rail-hero-label">Fair rank</span>
-                <span className="rail-hero-value">{formatRank(tier.fair_rank)}</span>
-                <span className="rail-hero-note">median simulated VORP</span>
+                <span className="rail-hero-label">ROS rank</span>
+                <span className="rail-hero-value">{formatRank(ros.ros_fair_rank)}</span>
+                <span className="rail-hero-note">median simulated remaining VORP</span>
               </div>
+            ) : (
+              tier !== null && (
+                <div className="rail-hero">
+                  <span className="rail-hero-label">Fair rank</span>
+                  <span className="rail-hero-value">{formatRank(tier.fair_rank)}</span>
+                  <span className="rail-hero-note">median simulated VORP</span>
+                </div>
+              )
             )}
 
-            {/* The three things a drafter reads first, before any grid. */}
+            {/* The three things a reader looks at first, before any grid. Which three depends
+                on the season: a draft price and an arbitrage score answer a question that
+                closed in September, so in season they are what the wire is doing instead
+                (ADR-085). */}
             <div className="rail-verdict">
-              {selected !== null && gap !== null && (
-                <div>
-                  {/* The number and the sentence must be the same market's. The rail printed
-                      the flat V1 gap — MyFantasyLeague's — beneath a sentence computed from
-                      the selected market, so with FFC selected the two disagreed (ADR-081). */}
-                  <span className="rail-verdict-label">
-                    {`${marketLabel(selected.source_id)} verdict`}
-                  </span>
-                  <span className="rail-verdict-value" data-kind={gap.kind}>
-                    {`${formatSigned(selected.rank_gap)} ${
-                      gap.kind === "bargain" ? "later" : gap.kind === "premium" ? "earlier" : "even"
-                    }`}
-                  </span>
-                  <span className="rail-verdict-note">{gap.sentence}</span>
-                </div>
-              )}
-              {arbitrage !== null && (
-                <div>
-                  <span className="rail-verdict-label">Arbitrage score</span>
-                  <span className="rail-verdict-value" data-kind="accent">
-                    {formatScore(arbitrage.arbitrage_score)}
-                  </span>
-                </div>
+              {inSeasonCard && ros != null ? (
+                <>
+                  <div>
+                    <span className="rail-verdict-label">Since preseason</span>
+                    <span
+                      className="rail-verdict-value"
+                      data-kind={
+                        ros.fair_rank_change == null || ros.fair_rank_change === 0
+                          ? undefined
+                          : ros.fair_rank_change > 0
+                            ? "bargain"
+                            : "premium"
+                      }
+                    >
+                      {rankChangeLabel(ros.fair_rank_change)}
+                    </span>
+                    <span className="rail-verdict-note">
+                      a different model over a different horizon
+                    </span>
+                  </div>
+                  {opportunity?.behavior_available === true && (
+                    <div>
+                      <span className="rail-verdict-label">
+                        {`Net adds${
+                          opportunity.behavior_lookback_hours == null
+                            ? ""
+                            : ` · ${String(opportunity.behavior_lookback_hours)}h`
+                        }`}
+                      </span>
+                      <span
+                        className="rail-verdict-value"
+                        data-kind={
+                          opportunity.net_add_count == null || opportunity.net_add_count === 0
+                            ? undefined
+                            : opportunity.net_add_count > 0
+                              ? "bargain"
+                              : "premium"
+                        }
+                      >
+                        {opportunity.net_add_count == null
+                          ? EM_DASH
+                          : opportunity.net_add_count > 0
+                            ? `+${formatInteger(opportunity.net_add_count)}`
+                            : formatInteger(opportunity.net_add_count)}
+                      </span>
+                      <span className="rail-verdict-note">transactions, not a price</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {selected !== null && gap !== null && (
+                    <div>
+                      {/* The number and the sentence must be the same market's. The rail
+                          printed the flat V1 gap — MyFantasyLeague's — beneath a sentence
+                          computed from the selected market, so with FFC selected the two
+                          disagreed (ADR-081). */}
+                      <span className="rail-verdict-label">
+                        {`${marketLabel(selected.source_id)} verdict`}
+                      </span>
+                      <span className="rail-verdict-value" data-kind={gap.kind}>
+                        {`${formatSigned(selected.rank_gap)} ${
+                          gap.kind === "bargain"
+                            ? "later"
+                            : gap.kind === "premium"
+                              ? "earlier"
+                              : "even"
+                        }`}
+                      </span>
+                      <span className="rail-verdict-note">{gap.sentence}</span>
+                    </div>
+                  )}
+                  {arbitrage !== null && (
+                    <div>
+                      <span className="rail-verdict-label">Arbitrage score</span>
+                      <span className="rail-verdict-value" data-kind="accent">
+                        {formatScore(arbitrage.arbitrage_score)}
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
               <div>
                 <span className="rail-verdict-label">Status</span>
@@ -994,9 +1353,11 @@ export function PlayerDetail({
 
             <div className="detail-foot">
               <span className="detail-foot-stamp">
-                {selected === null
-                  ? "Intrinsic values from this build"
-                  : `${marketLabel(selected.source_id)} snapshot ${formatEastern(selected.market_snapshot_at_utc)}`}
+                {inSeasonCard && ros != null
+                  ? `Rest-of-season values through week ${String(ros.through_week)}`
+                  : selected === null
+                    ? "Intrinsic values from this build"
+                    : `${marketLabel(selected.source_id)} snapshot ${formatEastern(selected.market_snapshot_at_utc)}`}
               </span>
               {onOpenData !== undefined && (
                 <p className="detail-methodology">

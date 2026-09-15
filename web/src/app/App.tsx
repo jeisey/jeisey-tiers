@@ -17,6 +17,7 @@ import { cohortAssignment } from "../data/market";
 import { selectArbitrageRows, selectTierRows, type ArtifactIndex } from "../data/model";
 import { selectOpportunityRows, selectRosRows, type InSeasonBundle } from "../data/ros";
 import {
+  IN_SEASON_VIEWS,
   SCORING_TO_PRESET,
   leaguePresetId,
   resolveMode,
@@ -235,6 +236,17 @@ function Board({
       projection: index.projectionFor(scoring, selectedPlayerId),
       ros: inSeason?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null,
       rosDisclosures: inSeason?.metadata.disclosures ?? null,
+      // The in-season panel's own inputs.
+      //
+      // `inSeason` is keyed off the *view*, not the mode. The card belongs to the board the
+      // row was clicked on: a row on the Tier Board is a draft-model row and its market
+      // comparison is the draft market, whatever month it is. Keying it off the mode instead
+      // gave the draft board an in-season card in November — which is also how ADR-079's two
+      // lifecycle windows, in-season with no board at all, end up correct here for free.
+      opportunity:
+        inSeason?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null,
+      behavior: inSeason?.metadata.behavior ?? null,
+      inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
       marketAvailable: index.hasArbitrage,
       cohortExact: cohortAssignment(metadata, scoring, state.teams)?.exact ?? null,
       // Every market's retained history for this player. The card picks which of them to
@@ -243,7 +255,7 @@ function Board({
       market: state.market,
       trendSeries: index.trendSeriesFor(leaguePreset, scoring, selectedPlayerId),
     };
-  }, [index, inSeason, metadata, selectedPlayerId, state.scoring, state.teams, state.market]);
+  }, [index, inSeason, metadata, view, selectedPlayerId, state.scoring, state.teams, state.market]);
 
   return (
     <>
@@ -337,6 +349,7 @@ function Board({
                 <RosView
                   bundle={inSeason}
                   state={state}
+                  onChange={setState}
                   onSelect={onSelect}
                   selectedPlayerId={selectedPlayerId}
                 />

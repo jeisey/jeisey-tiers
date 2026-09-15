@@ -281,6 +281,11 @@ if (publishedInSeason && defaultBoard === "ros") {
       // long-absence badge is the name button's sibling and stripping it would be a bet on
       // today's absences.
       name: tr.querySelector(".player-name")?.textContent?.trim() ?? null,
+      // Current status is a badge on the name rather than a column of its own (ADR-085), and
+      // it renders only for a code that says something. `null` therefore means two different
+      // things — `ACT`, and a status the artifact did not carry — which is why the check below
+      // is a contract about noteworthiness rather than a cell comparison.
+      status: tr.querySelector(".player-cell .status-badge span[aria-hidden]")?.textContent?.trim() ?? null,
     })),
   );
   const rosColumn = columnLookup(defaultHeaders);
@@ -299,13 +304,13 @@ if (publishedInSeason && defaultBoard === "ros") {
     expectedPoints: rosColumn.at("Rem FP"),
     expectedGames: rosColumn.at("Rem G"),
     uncertainty: rosColumn.at("Uncertainty"),
-    currentStatus: rosColumn.at("Current status"),
   };
   const rosProblem = rosColumn.problem("ROS");
   if (rosProblem !== null) failures.push(rosProblem);
   else {
     rosRowsChecked = rosRendered.length;
-    rosRendered.forEach(({ cells, name }, i) => {
+    rosRendered.forEach((rendered, i) => {
+      const { cells, name } = rendered;
       const record = rosBlock[i];
       if (record === undefined) {
         failures.push(`ROS row ${i + 1}: rendered ${name ?? "?"}, artifact publishes no such row`);
@@ -324,10 +329,35 @@ if (publishedInSeason && defaultBoard === "ros") {
       expect("ros_expected_points", cells[rosAt.expectedPoints], record.ros_expected_points.toFixed(1));
       expect("ros_expected_games", cells[rosAt.expectedGames], record.ros_expected_games.toFixed(1));
       expect("ros_uncertainty", cells[rosAt.uncertainty], record.ros_uncertainty.toFixed(1));
-      // The in-season analogue of the draft board's badge: the status the artifact carries,
-      // quoted verbatim, with the em dash standing for "nothing reported".
-      const status = record.current_status ?? "\u2014";
-      expect("current_status", cells[rosAt.currentStatus], status);
+
+      /*
+       * The status badge, as a contract rather than as a list of codes.
+       *
+       * ADR-082 failed this repository on a badge that was correct, because the check
+       * enumerated the roster codes an August feed happened to publish. The rule here is the
+       * one that survives a feed publishing something new: the badge exists exactly when the
+       * artifact's `current_status` is a code the product treats as noteworthy, and when it
+       * exists its text is that code verbatim. `ACT`, `A01` and `DEV` are the ordinary cases
+       * and produce nothing — which is the point of the change, not a gap in it.
+       */
+      const code = (record.current_status ?? "").trim().toUpperCase();
+      const noteworthy = code !== "" && !["ACT", "A01", "DEV"].includes(code);
+      if (noteworthy && rendered.status === null) {
+        failures.push(
+          `ROS row ${i + 1}: artifact reports current_status "${code}" and no badge is rendered`,
+        );
+      }
+      if (!noteworthy && rendered.status !== null) {
+        failures.push(
+          `ROS row ${i + 1}: badge "${rendered.status}" but the artifact's current_status ` +
+            `${code === "" ? "is absent" : `is the ordinary code "${code}"`}`,
+        );
+      }
+      if (noteworthy && rendered.status !== null && rendered.status !== code) {
+        failures.push(
+          `ROS row ${i + 1} current_status: badge reads ${rendered.status}, artifact ${code}`,
+        );
+      }
     });
   }
 }

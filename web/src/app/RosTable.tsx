@@ -11,12 +11,17 @@
  * Two disclosures are structural rather than decorative:
  *
  * **Long absence is a fact about appearances, never a status** (ADR-076). The badge says
- * "Has not appeared for N weeks", carries a text label as well as a shape, and sits in its own
- * column beside `weeks_since_last_game` so the claim is checkable. It is never rendered by
- * colour alone, and it is never worded as a designation the model has no information about.
+ * "Has not appeared for N weeks", carries a text label as well as a shape, and sits beside the
+ * player's name with `weeks_since_last_game` in its own column so the claim is checkable. It
+ * is never rendered by colour alone, and it is never worded as a designation the model has no
+ * information about.
  *
- * **The current status column is annotation.** It is separated from every model-derived column
- * by a rule and labelled as such: nothing in it reached the model.
+ * **Current status is a mark on the name, not a column** (ADR-085). Phase 12 gave it a column
+ * of its own, and on a real board that column read `ACT` on essentially every row — five
+ * hundred repetitions of "nothing to report", pushing the model's own columns off the right
+ * edge. It is the same annotation the draft board has always carried as a badge, so it is
+ * carried as a badge here too: present only when the artifact says something, absent when the
+ * code is the ordinary one, and never beside a model-derived number.
  */
 
 import {
@@ -29,14 +34,15 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, type RefObject } from "react";
 
-import { PositionTag, TierTag } from "../components/primitives";
+import { PositionTag, RosStatusBadge, TierTag } from "../components/primitives";
 import { formatRange, formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rankChangeLabel, type RosRow } from "../data/ros";
 
 export const ROS_TABLE_CAPTION =
   "Rest-of-season board. Every column is a rest-of-season quantity computed at the cutoff " +
   "week shown above — none of them is the preseason value of the same name. Sorting " +
-  "re-orders these rows without changing the published ROS rank.";
+  "re-orders these rows without changing the published ROS rank. The mark beside a name is " +
+  "the roster status the build recorded: annotation, and no input to any number here.";
 
 interface Scale {
   readonly min: number;
@@ -134,6 +140,7 @@ function rosColumns(onSelect: (playerId: string) => void, scale: Scale): ColumnD
             >
               {row.record.display_name}
             </button>
+            <RosStatusBadge status={row.record.current_status} />
             <LongAbsenceBadge row={row} />
           </span>
         );
@@ -267,17 +274,6 @@ function rosColumns(onSelect: (playerId: string) => void, scale: Scale): ColumnD
       },
       meta: { align: "right", width: "9rem" },
     },
-    {
-      id: "current_status",
-      header: "Current status",
-      accessorFn: (row) => row.record.current_status ?? "",
-      cell: (context) => (
-        <span className="muted annotation-cell">
-          {context.row.original.record.current_status ?? "—"}
-        </span>
-      ),
-      meta: { width: "7rem", className: "col-annotation" },
-    },
   ];
 }
 
@@ -327,7 +323,6 @@ export function RosTable({
           {ROS_TABLE_CAPTION}{" "}
           {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}. `}
           Interval and uncertainty bars are scaled against the widest on the rows shown.
-          &ldquo;Current status&rdquo; is annotation: no value in it reached the model.
         </caption>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (

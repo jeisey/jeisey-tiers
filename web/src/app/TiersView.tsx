@@ -17,9 +17,11 @@
 import { useCallback, useMemo, useRef } from "react";
 
 import { TierBoard, TIER_SOFT_EDGE_NOTE, defaultOpenTiers } from "../charts/TierBoard";
-import { Notice, SectionHead } from "../components/primitives";
+import type { BoardAxis, BoardGroup } from "../charts/boardModel";
+import { Notice, SectionHead, StatusBadge } from "../components/primitives";
 import { tierRowsToCsv } from "../data/csv";
-import { groupByTier, type ArtifactIndex, type TierRow } from "../data/model";
+import { formatRank, formatValue } from "../data/format";
+import { groupByTier, type ArtifactIndex, type TierGroup, type TierRow } from "../data/model";
 import { selectTierRows } from "../data/model";
 import { SCORING_LABELS, type AppState } from "../data/state";
 import { ExportControls } from "./ExportControls";
@@ -27,6 +29,48 @@ import { TierTable } from "./TierTable";
 
 /** How deep the default board goes. The table below still holds the whole board. */
 export const BOARD_PREVIEW_DEPTH = 100;
+
+/**
+ * The preseason board's own mark label.
+ *
+ * Every quantity in it is named `…VORP` with no qualifier, which on this board means a whole
+ * season's simulated value. The rest-of-season board builds its own label with its own words
+ * (`RosView`), because the two are different quantities and a shared sentence would be the
+ * first place they got confused.
+ */
+function markLabel(row: TierRow, tierLabel: string): string {
+  const record = row.record;
+  return (
+    `${record.display_name}, ${record.position}${String(record.position_rank)}` +
+    `${record.team === null ? "" : `, ${record.team}`}, tier ${tierLabel}, ` +
+    `fair rank ${formatRank(record.fair_rank)}, median simulated VORP ` +
+    `${formatValue(record.p50_vorp)}, P25 to P75 ${formatValue(record.p25_vorp)} ` +
+    `to ${formatValue(record.p75_vorp)}, P10 to P90 ${formatValue(record.p10_vorp)} ` +
+    `to ${formatValue(record.p90_vorp)}`
+  );
+}
+
+/** The preseason tier groups, as marks the board can draw. Nothing is recomputed. */
+function toBoardGroups(groups: readonly TierGroup[]): readonly BoardGroup[] {
+  return groups.map((group) => ({
+    ordinal: group.ordinal,
+    label: group.label,
+    marks: group.rows.map((row) => ({
+      playerId: row.record.player_id,
+      rank: row.record.fair_rank,
+      position: row.record.position,
+      positionRank: row.record.position_rank,
+      displayName: row.record.display_name,
+      p10: row.record.p10_vorp,
+      p25: row.record.p25_vorp,
+      p50: row.record.p50_vorp,
+      p75: row.record.p75_vorp,
+      p90: row.record.p90_vorp,
+      badges: <StatusBadge status={row.status} />,
+      label: markLabel(row, group.label),
+    })),
+  }));
+}
 
 export function TiersView({
   index,
@@ -51,11 +95,12 @@ export function TiersView({
     [rows, state.board],
   );
   const groups = useMemo(() => groupByTier(charted), [charted]);
+  const boardGroups = useMemo(() => toBoardGroups(groups), [groups]);
   const truncated = charted.length < rows.length;
 
   const openTiers = useMemo(
-    () => new Set(state.tiers ?? defaultOpenTiers(groups)),
-    [groups, state.tiers],
+    () => new Set(state.tiers ?? defaultOpenTiers(boardGroups)),
+    [boardGroups, state.tiers],
   );
   const allOpen = groups.length > 0 && groups.every((group) => openTiers.has(group.ordinal));
 
@@ -79,6 +124,18 @@ export function TiersView({
   const openCount = groups
     .filter((group) => openTiers.has(group.ordinal))
     .reduce((total, group) => total + group.rows.length, 0);
+
+  const axis: BoardAxis = {
+    title: "Median simulated VORP",
+    unit: "Median",
+    quantityShort: "VORP",
+    note: "Rows in fair-rank order · P10–P90 is in player detail",
+    summary:
+      `${String(groups.length)} tier groups of ${SCORING_LABELS[state.scoring]} players. Each ` +
+      "row shows the player's median simulated VORP and the P25 to P75 interval around it on " +
+      "a shared scale. Tier bands overlap because exact tier edges are not statistically " +
+      "stable. The table below carries the same values.",
+  };
 
   return (
     <>
@@ -110,10 +167,10 @@ export function TiersView({
           </Notice>
         ) : (
           <TierBoard
-            groups={groups}
+            groups={boardGroups}
+            axis={axis}
             onSelect={onSelect}
             selectedPlayerId={selectedPlayerId}
-            scoringLabel={SCORING_LABELS[state.scoring]}
             openTiers={openTiers}
             onToggleTier={onToggleTier}
           />

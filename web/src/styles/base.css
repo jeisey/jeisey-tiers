@@ -857,6 +857,83 @@ code {
   margin-bottom: var(--space-4);
 }
 
+/*
+ * A notice that opens (ADR-085).
+ *
+ * The in-season board is obliged to state four things about what it does not know, and Phase
+ * 12 stated all four as paragraphs above the chart — most of a laptop's first screen spent on
+ * caveats. The obligation is to state them, not to spend the fold: the summary carries the
+ * contractual sentence and stays visible with no interaction, the rest opens beneath it, and
+ * both are in the DOM and in the accessibility tree either way.
+ *
+ * The marker is a `+`/`-` drawn as text rather than the platform triangle, which varies by
+ * engine and does not read as part of a HUD. `list-style: none` plus the WebKit pseudo-element
+ * is what it takes to suppress the native one everywhere.
+ */
+.notice.disclosure {
+  padding: 0;
+}
+
+.notice.disclosure > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  transition: var(--t-control);
+}
+
+.notice.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.notice.disclosure > summary::after {
+  content: "+";
+  margin-left: auto;
+  flex: none;
+  align-self: center;
+  font: 500 0.9rem/1 var(--font-mono);
+  color: var(--accent);
+}
+
+.notice.disclosure[open] > summary::after {
+  content: "\2212";
+}
+
+.notice.disclosure > summary:hover {
+  background: var(--surface-hover);
+}
+
+.notice.disclosure > summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* The lede wraps with the heading rather than starting a block of its own: one sentence, on
+   the same line where there is room, and the `+` stays at the end of the row either way. */
+.disclosure-lede {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.notice.disclosure > :not(summary) {
+  margin: 0;
+  padding: 0 var(--space-4);
+}
+
+.notice.disclosure > :not(summary):first-of-type {
+  padding-top: var(--space-1);
+}
+
+.notice.disclosure > :last-child {
+  padding-bottom: var(--space-3);
+}
+
+.notice.disclosure > p + p {
+  padding-top: var(--space-2);
+}
+
 .notice[data-severity="warning"] {
   border-color: var(--warn-line);
   border-left-color: var(--warn);
@@ -2052,6 +2129,21 @@ table.sheet tbody tr[data-selected="true"] td {
   border-color: var(--warn-line);
 }
 
+/* The Opportunity Board's drop swatch. It takes the same red the net-adds column and the
+   `\u0394 vs preseason` column already use for "down", so the page has one vocabulary for the
+   direction rather than a second green-and-amber pair meaning something else. */
+.legend-bar[data-kind="drop"] {
+  background: rgb(255 138 128 / 26%);
+  border-color: var(--danger-line);
+}
+
+/* A short paragraph under a board, sized like a caption rather than like body prose. */
+.board-note {
+  margin: var(--space-3) 0 0;
+  font-size: 0.75rem;
+  max-width: 62ch;
+}
+
 /* The legend's own divider, the source's 1px vertical rule. */
 .legend-sep {
   width: 1px;
@@ -2545,6 +2637,51 @@ dialog.player-detail::backdrop {
 .dist-scale b {
   font-weight: 500;
   color: var(--ink-accent);
+}
+
+/*
+ * A sub-heading inside a card section (ADR-085).
+ *
+ * The in-season panel carries two blocks of readouts that are two different quantities —
+ * points on the field and transactions on a wire — and a single undivided grid would read as
+ * one set of facts about one thing. The rule is the design's section rule at one step down in
+ * weight, which is the same distinction the board makes with a border between its two tracks.
+ */
+.detail-subhead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-2);
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+}
+
+.detail-subhead::after {
+  content: "";
+  flex: 1;
+  height: var(--hairline);
+  background: linear-gradient(90deg, var(--line-strong), transparent);
+}
+
+.detail-subhead-note {
+  order: 1;
+  flex: none;
+  font: 500 0.6rem/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+
+/* The board's diverging strip, in a card. One player has no population to scale against, so
+   the bar is a shape and the counts printed beneath it are the reading. */
+.opp-track[data-card="true"] {
+  display: block;
+  height: 16px;
+  margin-bottom: var(--space-2);
+  border-left: none;
+  border: var(--hairline) solid var(--line);
 }
 
 .detail-empty {
@@ -3710,23 +3847,425 @@ dl.facts dd {
   white-space: nowrap;
 }
 
-/*
- * The annotation column.
- *
- * Separated from every model-derived column by a rule, because `docs/DATA_CONTRACTS.md` and
- * ADR-043 both require current status to be visibly distinct from model inputs: nothing in
- * it reached a projection, a rank or a tier, and a table that laid it out identically would
- * be implying otherwise.
- */
-.sheet th.col-annotation,
-.sheet td.col-annotation {
-  border-left: var(--hairline) solid var(--line-strong);
-}
-
-.annotation-cell {
-  font-style: italic;
-}
-
 /* Up is better: the model likes him more now than it did in August. */
 [data-change="up"] { color: var(--good); }
 [data-change="down"] { color: var(--danger); }
+
+/* ----------------------------------------------------------- opportunity board
+ *
+ * The in-season board's chart (ADR-085). Artboard 2a's vocabulary — a lane grid, a tick
+ * header, mono readouts, a glowing mark, an axis footer — over a different pair of
+ * quantities. Like the Draft Rail it has no artboard of its own, so it borrows the system
+ * rather than inventing a second one (`docs/DESIGN_SOURCE_MAP.md` section 6).
+ *
+ * **Two tracks, one rule between them, and nothing spanning both.** A rest-of-season value in
+ * points and a count of roster transactions have no common unit, and this board is three
+ * orderings over unlike quantities with no blend (`AGENTS.md` section, roadmap 12.5). The
+ * geometry has to make that impossible to misread, which is why each track has its own zero,
+ * its own ticks and its own heading, and why the divider is a real border rather than a gap.
+ */
+
+.opp-board {
+  --opp-cols:
+    2.5rem 3.6rem minmax(0, 1fr) minmax(0, 1.6fr) 3.6rem minmax(0, 1.2fr) 3.4rem 4.4rem 3rem;
+  --opp-pad: var(--space-3);
+
+  border: var(--hairline) solid var(--line-strong);
+  background: linear-gradient(180deg, var(--panel), var(--canvas));
+}
+
+/*
+ * Two header rows, and the split between them is the whole point.
+ *
+ * Row 1 names each track across the track *and* its readout column. Row 2 carries the ticks on
+ * the track column alone — the same column the bars below occupy. A tick strip stretched over
+ * track-plus-readout is wider than the bars it labels, so every value comes out shifted; that
+ * is the defect `.board-scale` above records against its own axis, and this is the same trap
+ * one column further along.
+ */
+.opp-scale {
+  display: grid;
+  grid-template-columns: var(--opp-cols);
+  grid-template-rows: auto auto;
+  align-items: end;
+  gap: 5px var(--space-2);
+  padding: 9px var(--opp-pad) 6px;
+  border-bottom: var(--hairline) solid var(--line-strong);
+  min-width: 0;
+}
+
+.opp-scale-head {
+  grid-area: 1 / 1 / 2 / 4;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/*
+ * The left border is the divider between the two measurements. A border rather than a gap,
+ * because "these are two quantities and they are never combined" is a claim the picture has to
+ * make, and whitespace does not make it.
+ */
+.opp-track-name {
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: var(--hairline) solid var(--line-strong);
+  padding-left: var(--space-2);
+}
+
+.opp-track-name[data-track="value"] {
+  grid-area: 1 / 4 / 2 / 6;
+}
+
+.opp-track-name[data-track="moves"] {
+  grid-area: 1 / 6 / 2 / 8;
+}
+
+.opp-scale-ticks {
+  position: relative;
+  height: 12px;
+}
+
+.opp-scale-ticks[data-track="value"] {
+  grid-area: 2 / 4 / 3 / 5;
+}
+
+.opp-scale-ticks[data-track="moves"] {
+  grid-area: 2 / 6 / 3 / 7;
+}
+
+.opp-tick {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  font: 500 0.6rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.opp-scale-unit {
+  grid-row: 1;
+  text-align: right;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.opp-scale-unit[data-col="snap"] { grid-column: 8; }
+.opp-scale-unit[data-col="net"] { grid-column: 9; }
+
+.opp-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.opp-row {
+  display: grid;
+  grid-template-columns: var(--opp-cols);
+  align-items: center;
+  gap: 0 var(--space-2);
+  min-height: var(--row-height);
+  padding: 3px var(--opp-pad);
+  cursor: pointer;
+  transition: background var(--t);
+}
+
+.opp-row:hover {
+  background: var(--surface-hover);
+}
+
+.opp-row:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.opp-row[data-selected="true"] {
+  background: var(--surface-selected);
+}
+
+/* A surfaced row is published because current evidence made him relevant and carries no tier.
+   The left rule is a second channel for the badge the name already carries. */
+.opp-row[data-surfaced="true"] {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.opp-track {
+  position: relative;
+  height: 14px;
+  background: rgb(46 204 255 / 5%);
+  border-left: var(--hairline) solid var(--line-strong);
+}
+
+/* Zero is drawn, not implied. Both tracks grow from it and one of them grows both ways. */
+.opp-zero {
+  position: absolute;
+  inset-block: -2px;
+  width: var(--hairline);
+  background: var(--line-bright);
+}
+
+.opp-value-bar {
+  position: absolute;
+  top: 4px;
+  height: 6px;
+  opacity: 0.75;
+}
+
+.opp-value-bar[data-pos="QB"] { background: var(--pos-qb); }
+.opp-value-bar[data-pos="RB"] { background: var(--pos-rb); }
+.opp-value-bar[data-pos="WR"] { background: var(--pos-wr); }
+.opp-value-bar[data-pos="TE"] { background: var(--pos-te); }
+
+/* A rest-of-season value below replacement is a real reading. It is drawn on the other side
+   of zero and hatched, so the direction survives without a second colour vocabulary. */
+.opp-value-bar[data-sign="negative"] {
+  opacity: 0.45;
+}
+
+.opp-value-mark {
+  position: absolute;
+  top: 3px;
+  width: 2px;
+  height: 8px;
+  margin-left: -1px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 7px var(--accent-bright);
+}
+
+/*
+ * Adds and drops. Green up, red down — the same pair `Δ vs preseason` already uses in the
+ * table below, so the page has one vocabulary for "more" and "less". Never colour alone: the
+ * side of the zero line, the two printed counts and the accessible label all carry it.
+ */
+.opp-move-bar {
+  position: absolute;
+  top: 4px;
+  height: 6px;
+}
+
+.opp-move-bar[data-kind="add"] {
+  background: var(--good);
+  box-shadow: 0 0 6px rgb(34 209 154 / 45%);
+}
+
+.opp-move-bar[data-kind="drop"] {
+  background: var(--danger);
+  box-shadow: 0 0 6px rgb(255 138 128 / 45%);
+}
+
+/* The feed is optional by construction. Its absence is drawn as an absence, never as zero. */
+.opp-track-empty {
+  position: absolute;
+  inset: 4px 0;
+  border-top: var(--hairline) dashed var(--line-strong);
+}
+
+.opp-readout {
+  text-align: right;
+  font: 500 0.72rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-strong);
+  white-space: nowrap;
+}
+
+.opp-readout[data-track="moves"] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  font-size: 0.66rem;
+}
+
+.opp-count[data-kind="add"] { color: var(--good); }
+.opp-count[data-kind="drop"] { color: var(--danger); }
+
+/* Zero is not a direction. A red zero on every quiet row reads as an alert about nothing. */
+.opp-count[data-zero="true"] { color: var(--ink-faint); }
+
+/*
+ * A count past the axis bound. The bar stops at the edge and the chevron says it was clipped;
+ * the real number is printed in the readout beside it either way, so nothing is lost — this is
+ * the Draft Rail's `.rail-overflow` rule, in the one place this board can overflow.
+ */
+.opp-overflow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 700 0.7rem/1 var(--font-mono);
+}
+
+.opp-overflow[data-kind="add"] { right: 0; color: var(--good); }
+.opp-overflow[data-kind="drop"] { left: 0; color: var(--danger); }
+
+.opp-count-sep {
+  color: var(--ink-faint);
+}
+
+.opp-snap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.opp-snap-track {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 4px;
+  background: rgb(46 204 255 / 10%);
+}
+
+.opp-snap-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.opp-snap-value,
+.opp-snap-none {
+  flex: none;
+  font: 500 0.64rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.opp-net {
+  text-align: right;
+  font: 500 0.72rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.opp-axis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--space-3);
+  padding: 7px var(--opp-pad);
+  border-top: var(--hairline) solid var(--line-strong);
+  background: var(--canvas-deep);
+}
+
+@media (max-width: 1023px) {
+  .opp-board {
+    --opp-cols:
+      2.2rem 3.2rem minmax(0, 1fr) minmax(0, 1.4fr) 3.2rem minmax(0, 1.1fr) 3.2rem 3.6rem 2.6rem;
+  }
+}
+
+/*
+ * The phone treatment, on the same principle artboard 2b applies to the Tier Board: trade the
+ * shared tick strip for density. Each row becomes two lines — identity above, the two tracks
+ * below — and the tracks keep their divider, their zeros and their own readouts, because
+ * those are the whole claim. Nothing is dropped that carries a number.
+ */
+@media (max-width: 767px) {
+  .opp-board {
+    --opp-cols: 2.2rem 3.4rem minmax(0, 1fr);
+    --opp-pad: var(--space-2);
+  }
+
+  /*
+   * The header becomes one line of three labels rather than a grid over columns that no
+   * longer exist. Each row below carries its own two-line layout, so there is nothing for a
+   * column header to sit over; what is left is naming the two quantities, which the rows'
+   * own readouts then print in full.
+   */
+  .opp-scale {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px var(--space-3);
+  }
+
+  .opp-scale-head,
+  .opp-track-name {
+    grid-area: auto;
+  }
+
+  .opp-track-name {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  /* The tick strip is already suppressed by the component below 768px; the units go with it,
+     because the row's own readouts print every number the ticks would have approximated. */
+  .opp-scale-ticks,
+  .opp-scale-unit {
+    display: none;
+  }
+
+  .opp-row {
+    grid-template-columns: 2.2rem 3.4rem minmax(0, 1fr) 4.2rem;
+    grid-template-areas:
+      "rank pos name value"
+      "vtrack vtrack vtrack vtrack"
+      "mtrack mtrack mtrack moves"
+      "snap snap snap net";
+    gap: 5px var(--space-2);
+    padding: var(--space-2);
+    border-bottom: var(--hairline) solid var(--line-faint);
+  }
+
+  .opp-row .row-rank { grid-area: rank; }
+  .opp-row .row-pos { grid-area: pos; }
+  .opp-row .row-name { grid-area: name; }
+  .opp-row .opp-track[data-track="value"] { grid-area: vtrack; }
+  .opp-row .opp-readout[data-track="value"] { grid-area: value; }
+  .opp-row .opp-track[data-track="moves"] { grid-area: mtrack; }
+  .opp-row .opp-readout[data-track="moves"] { grid-area: moves; }
+  .opp-row .opp-snap { grid-area: snap; justify-content: flex-start; }
+  .opp-row .opp-net { grid-area: net; }
+
+  .opp-track {
+    border-left: none;
+    border-bottom: var(--hairline) solid var(--line-faint);
+  }
+
+  /*
+   * Micro-labels, on the phone only. The desktop column headers name each readout; stacked,
+   * there are no columns left to head, and three unlabelled bars in a row is a picture with
+   * nothing to read it by. Decoration for the eye — every one of these words is already in the
+   * row's accessible label, so they are hidden from the accessibility tree by being generated
+   * content rather than repeated as text.
+   */
+  .opp-row .opp-readout[data-track="moves"]::before,
+  .opp-row .opp-snap::before,
+  .opp-row .opp-net::before {
+    font: 600 0.55rem/1 var(--font-sans);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    align-self: center;
+    flex: none;
+  }
+
+  .opp-row .opp-readout[data-track="moves"]::before {
+    content: "D / A";
+    margin-right: auto;
+  }
+
+  .opp-row .opp-snap::before {
+    content: "Snap";
+    margin-right: 2px;
+  }
+
+  .opp-row .opp-net::before {
+    content: "Net ";
+  }
+
+  .opp-row .opp-net {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+}

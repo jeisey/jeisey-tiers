@@ -27,7 +27,12 @@
  * tier strip draws the tier's own P25-P75 span as a band on the shared scale, which makes the
  * softness *visible*: adjacent tier bands overlap, because the values do.
  *
- * **The axis is `p50_vorp` and says so.** Fair rank is median simulated VORP (ADR-034).
+ * **The axis is whatever the caller says it is.** Fair rank is median simulated VORP
+ * (ADR-034) on the draft board; the rest-of-season board's rank is median simulated
+ * *remaining* VORP from a different model over a different horizon (ADR-071). This component
+ * is handed `BoardMark`s and a `BoardAxis` and never learns which of the two it is drawing,
+ * which is the point: a picture that could tell would be one type coercion away from
+ * comparing them.
  *
  * **What changed in Phase 9A.** The owner's Claude Design source arrived and artboard 2a is
  * this board. Three structural moves came out of it, and none of them touches a value:
@@ -47,11 +52,10 @@
 
 import { useCallback, useMemo, useRef } from "react";
 
-import { StatusBadge } from "../components/primitives";
 import { useElementWidth } from "../components/useElementWidth";
 import { useRovingMarks } from "./useRovingMarks";
 import { formatRank, formatValue } from "../data/format";
-import type { TierGroup, TierRow } from "../data/model";
+import type { BoardAxis, BoardGroup } from "./boardModel";
 
 export const TIER_SOFT_EDGE_NOTE =
   "Tier groups are useful; exact tier edges are statistically soft. Membership reproduces " +
@@ -67,14 +71,14 @@ interface Span {
 }
 
 /** The tier's own interquartile envelope, on the shared scale. Never a cut position. */
-function tierSpan(group: TierGroup): Span {
+function tierSpan(group: BoardGroup): Span {
   let low = Number.POSITIVE_INFINITY;
   let high = Number.NEGATIVE_INFINITY;
-  for (const row of group.rows) {
-    low = Math.min(low, row.record.p25_vorp);
-    high = Math.max(high, row.record.p75_vorp);
+  for (const mark of group.marks) {
+    low = Math.min(low, mark.p25);
+    high = Math.max(high, mark.p75);
   }
-  const first = group.rows[0]?.record.p50_vorp ?? 0;
+  const first = group.marks[0]?.p50 ?? 0;
   return {
     low: Number.isFinite(low) ? low : first,
     high: Number.isFinite(high) ? high : first,
@@ -90,7 +94,7 @@ function tierSpan(group: TierGroup): Span {
  * always open, so the board is never a wall of closed headers.
  */
 export function defaultOpenTiers(
-  groups: readonly TierGroup[],
+  groups: readonly BoardGroup[],
   depth = DEFAULT_OPEN_DEPTH,
 ): readonly number[] {
   const open: number[] = [];
@@ -98,7 +102,7 @@ export function defaultOpenTiers(
   for (const group of groups) {
     if (open.length > 0 && shown >= depth) break;
     open.push(group.ordinal);
-    shown += group.rows.length;
+    shown += group.marks.length;
   }
   return open;
 }
@@ -121,40 +125,29 @@ function pct(value: number, min: number, range: number): number {
   return Math.max(0, Math.min(100, ((value - min) / range) * 100));
 }
 
-function positionMix(group: TierGroup): readonly { position: string; count: number }[] {
+function positionMix(group: BoardGroup): readonly { position: string; count: number }[] {
   const counts = new Map<string, number>();
-  for (const row of group.rows) {
-    counts.set(row.record.position, (counts.get(row.record.position) ?? 0) + 1);
+  for (const mark of group.marks) {
+    counts.set(mark.position, (counts.get(mark.position) ?? 0) + 1);
   }
   return [...counts.entries()]
     .map(([position, count]) => ({ position, count }))
     .sort((a, b) => b.count - a.count || a.position.localeCompare(b.position));
 }
 
-function markLabel(row: TierRow, tierLabel: string): string {
-  const record = row.record;
-  return (
-    `${record.display_name}, ${record.position}${String(record.position_rank)}` +
-    `${record.team === null ? "" : `, ${record.team}`}, tier ${tierLabel}, ` +
-    `fair rank ${formatRank(record.fair_rank)}, median simulated VORP ` +
-    `${formatValue(record.p50_vorp)}, P25 to P75 ${formatValue(record.p25_vorp)} ` +
-    `to ${formatValue(record.p75_vorp)}, P10 to P90 ${formatValue(record.p10_vorp)} ` +
-    `to ${formatValue(record.p90_vorp)}`
-  );
-}
-
 export function TierBoard({
   groups,
+  axis,
   onSelect,
   selectedPlayerId,
-  scoringLabel,
   openTiers,
   onToggleTier,
 }: {
-  readonly groups: readonly TierGroup[];
+  readonly groups: readonly BoardGroup[];
+  /** Every word the board prints about its own quantity. See `BoardAxis`. */
+  readonly axis: BoardAxis;
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
-  readonly scoringLabel: string;
   /** The tier ordinals currently expanded. */
   readonly openTiers: ReadonlySet<number>;
   readonly onToggleTier: (ordinal: number) => void;
@@ -173,9 +166,9 @@ export function TierBoard({
     let min = Number.POSITIVE_INFINITY;
     let max = Number.NEGATIVE_INFINITY;
     for (const group of groups) {
-      for (const row of group.rows) {
-        min = Math.min(min, row.record.p25_vorp);
-        max = Math.max(max, row.record.p75_vorp);
+      for (const mark of group.marks) {
+        min = Math.min(min, mark.p25);
+        max = Math.max(max, mark.p75);
       }
     }
     if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: 0, max: 1, range: 1 };
@@ -195,15 +188,15 @@ export function TierBoard({
     return out;
   }, [scale]);
 
-  // One flat list over the rows that are actually rendered, in fair-rank order, so arrow keys
-  // walk the open board rather than stepping into a tier the reader has closed.
+  // One flat list over the rows that are actually rendered, in rank order, so arrow keys walk
+  // the open board rather than stepping into a tier the reader has closed.
   const visible = useMemo(
     () =>
       groups
         .filter((group) => openTiers.has(group.ordinal))
-        .flatMap((group) => group.rows)
-        .sort((a, b) => a.record.fair_rank - b.record.fair_rank)
-        .map((row) => row.record.player_id),
+        .flatMap((group) => group.marks)
+        .sort((a, b) => a.rank - b.rank)
+        .map((mark) => mark.playerId),
     [groups, openTiers],
   );
   const indexOf = useMemo(() => new Map(visible.map((id, index) => [id, index])), [visible]);
@@ -233,12 +226,7 @@ export function TierBoard({
       // every row, so the lines land under the tick labels rather than near them.
       style={{ "--board-grid": `${String(((scale.step ?? scale.range) / scale.range) * 100)}%` } as React.CSSProperties}
     >
-      <p className="visually-hidden">
-        {`${String(groups.length)} tier groups of ${scoringLabel} players. Each row shows the ` +
-          "player's median simulated VORP and the P25 to P75 interval around it on a shared " +
-          "scale. Tier bands overlap because exact tier edges are not statistically stable. " +
-          "The table below carries the same values."}
-      </p>
+      <p className="visually-hidden">{axis.summary}</p>
 
       {/* The axis header, from artboard 2a: tick labels sit over the interval column, on the
           same grid the strips and rows use, so a tick and a median at the same value are the
@@ -263,7 +251,7 @@ export function TierBoard({
               </span>
             ))}
           </span>
-          <span className="board-scale-unit">Median</span>
+          <span className="board-scale-unit">{axis.unit}</span>
         </div>
       </div>
 
@@ -271,8 +259,8 @@ export function TierBoard({
         {groups.map((group) => {
           const open = openTiers.has(group.ordinal);
           const span = tierSpan(group);
-          const first = group.rows[0]?.record.fair_rank;
-          const last = group.rows[group.rows.length - 1]?.record.fair_rank;
+          const first = group.marks[0]?.rank;
+          const last = group.marks[group.marks.length - 1]?.rank;
           const headId = `tier-head-${String(group.ordinal)}`;
           const rowsId = `tier-rows-${String(group.ordinal)}`;
           return (
@@ -302,19 +290,20 @@ export function TierBoard({
                 >
                   <span className="tier-head-name">{group.label}</span>
                   <span className="tier-head-count" aria-hidden="true">
-                    {group.rows.length}
+                    {group.marks.length}
                   </span>
                   <span className="tier-head-toggle" aria-hidden="true">
                     ▾
                   </span>
                   <span className="visually-hidden">
-                    {`Tier ${group.label}, ${String(group.rows.length)} player` +
-                      (group.rows.length === 1 ? "" : "s") +
+                    {`Tier ${group.label}, ${String(group.marks.length)} player` +
+                      (group.marks.length === 1 ? "" : "s") +
                       (first !== undefined && last !== undefined
                         ? `, ranks ${formatRank(first)} to ${formatRank(last)}`
                         : "") +
                       `, P25 to P75 across the tier ${formatValue(span.low)} to ` +
-                      `${formatValue(span.high)} VORP. ${open ? "Collapse" : "Expand"}.`}
+                      `${formatValue(span.high)} ${axis.quantityShort}. ` +
+                      `${open ? "Collapse" : "Expand"}.`}
                   </span>
                 </button>
               </h3>
@@ -336,7 +325,7 @@ export function TierBoard({
                   */}
                   <span className="tier-strip-meta">
                     <span className="tier-strip-count">
-                      {`${String(group.rows.length)} player${group.rows.length === 1 ? "" : "s"}`}
+                      {`${String(group.marks.length)} player${group.marks.length === 1 ? "" : "s"}`}
                       {first !== undefined && last !== undefined && (
                         <>
                           <span className="dot-sep" />
@@ -381,32 +370,31 @@ export function TierBoard({
                     resolves. */}
                 <ol className="tier-rows" id={rowsId} hidden={!open}>
                   {open &&
-                    group.rows.map((row) => {
-                      const record = row.record;
-                      const index = indexOf.get(record.player_id) ?? 0;
-                      const left = pct(record.p25_vorp, scale.min, scale.range);
-                      const right = pct(record.p75_vorp, scale.min, scale.range);
+                    group.marks.map((mark) => {
+                      const index = indexOf.get(mark.playerId) ?? 0;
+                      const left = pct(mark.p25, scale.min, scale.range);
+                      const right = pct(mark.p75, scale.min, scale.range);
                       return (
-                        <li key={record.player_id}>
+                        <li key={mark.playerId}>
                           <div
                             className="board-row"
                             role="button"
-                            data-selected={record.player_id === selectedPlayerId}
-                            data-player={record.player_id}
-                            aria-label={markLabel(row, group.label)}
+                            data-selected={mark.playerId === selectedPlayerId}
+                            data-player={mark.playerId}
+                            aria-label={mark.label}
                             {...roving.markProps(index)}
                             onClick={() => {
-                              onSelect(record.player_id);
+                              onSelect(mark.playerId);
                             }}
                           >
-                            <span className="row-rank">{formatRank(record.fair_rank)}</span>
-                            <span className="row-pos pos-tag" data-pos={record.position}>
-                              {record.position}
-                              <b>{record.position_rank}</b>
+                            <span className="row-rank">{formatRank(mark.rank)}</span>
+                            <span className="row-pos pos-tag" data-pos={mark.position}>
+                              {mark.position}
+                              <b>{mark.positionRank}</b>
                             </span>
                             <span className="row-name">
-                              <span className="row-name-text">{record.display_name}</span>
-                              <StatusBadge status={row.status} />
+                              <span className="row-name-text">{mark.displayName}</span>
+                              {mark.badges}
                             </span>
                             {/* The interval, unchanged: P25 to P75 on the shared scale. The
                                 median is the source's glowing square rather than a tick.
@@ -414,7 +402,7 @@ export function TierBoard({
                             <span className="row-interval" aria-hidden="true">
                               <span
                                 className="interval-bar"
-                                data-pos={record.position}
+                                data-pos={mark.position}
                                 style={{
                                   left: `${String(left)}%`,
                                   width: `${String(Math.max(right - left, 0.6))}%`,
@@ -422,13 +410,13 @@ export function TierBoard({
                               />
                               <span
                                 className="interval-median"
-                                data-pos={record.position}
+                                data-pos={mark.position}
                                 style={{
-                                  left: `${String(pct(record.p50_vorp, scale.min, scale.range))}%`,
+                                  left: `${String(pct(mark.p50, scale.min, scale.range))}%`,
                                 }}
                               />
                             </span>
-                            <span className="row-value">{formatValue(record.p50_vorp)}</span>
+                            <span className="row-value">{formatValue(mark.p50)}</span>
                           </div>
                         </li>
                       );
@@ -442,12 +430,12 @@ export function TierBoard({
 
       {/*
         The design source captions this axis "Vertical position inside a tier carries no
-        meaning". That is not true of this board: rows are in fair-rank order and each one
-        prints its rank. Reproducing the caption would have been a truthfulness defect, so the
-        note says what is actually drawn instead.
+        meaning". That is not true of this board: rows are in rank order and each one prints
+        its rank. Reproducing the caption would have been a truthfulness defect, so the note
+        says what is actually drawn instead.
       */}
       <div className="board-axis" aria-hidden="true">
-        <span className="board-axis-title">Median simulated VORP</span>
+        <span className="board-axis-title">{axis.title}</span>
         {/*
           The scale, in words, as a sibling rather than a child — the title has to stay an
           exact string. Artboard 2b has no shared axis; its own caption says it "trades the
@@ -459,9 +447,7 @@ export function TierBoard({
         <span className="board-axis-range">
           {`${formatValue(scale.min)} to ${formatValue(scale.max)}`}
         </span>
-        <span className="board-axis-title">
-          Rows in fair-rank order · P10–P90 is in player detail
-        </span>
+        <span className="board-axis-title">{axis.note}</span>
       </div>
     </div>
   );
