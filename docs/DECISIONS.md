@@ -3488,3 +3488,129 @@ is the check that fails if one had.
 - Four axe scans and a roving-focus check were added for surfaces that had never been scanned:
   neither in-season board nor the in-season card had ever been through one, because the ROS
   board did not exist and the opportunity board was a bare table.
+
+## ADR-086 — A number with no scale is not a reading, and the card's own artifact can give it one
+
+**Date:** 2026-09-15 (the card-meters pass, immediately after ADR-085)
+
+**Status:** accepted.
+
+**Context.** ADR-085 assembled the in-season player card and every number in it is correct.
+The owner then looked at the same card and asked a question no gate can:
+
+> `ROS Uncertainty` just shows a number, e.g. `82.8`. A viewer has no idea what that means. Is
+> that really uncertain? A little uncertain? Are we confident?
+
+He is right, and the example generalises to both in-season sections. `82.1` is the artifact's
+own `ros_uncertainty`; `verify:board` compares it against the published bytes and agrees; axe
+has nothing to say about it; the artifact validates. It is also, on its own, unreadable — and
+so were `Change in intrinsic view +185`, `Points per game 11.9`, `Snap share 91%` and
+`Remaining games 12.5`. Two sections of correct digits with a scale on none of them.
+
+This is one turn past ADR-085's finding. That ADR recorded that a suite which checks whether
+numbers are *right* cannot see whether a board is *there*. This one records the step after:
+a board can be there, and every number on it can be right, and a reader can still not be able
+to read it.
+
+**Decision — three micro-charts, and not one score.** `charts/CardMeters.tsx` adds `RankShift`,
+`PaceRail` and `CohortStrip` to the card. Each places a published value; none invents one.
+
+| | what it draws | the rule that makes it honest |
+|---|---|---|
+| `RankShift` | the preseason and rest-of-season ranks as two anchors on the board's own rank axis | two shapes, two model names, the artifact's own `fair_rank_change` — never one rank that moved |
+| `PaceRail` | points per appearance scored, against points per appearance the model projects | one unit on both bars, which is the only reason they may share an axis |
+| `CohortStrip` | where a value sits among the same position's rows on the same board | the denominator printed on every reading |
+
+**Decision — a cohort reading is a description of the artifact, not a new quantity.**
+`AGENTS.md` section 11 requires every value shown in the UI to originate from a versioned
+public artifact contract. A rank among the published rows of one artifact is arithmetic *over*
+those rows rather than a quantity beside them, which is what licenses it. `data/cohort.ts`
+(`cohort_context_v1`) holds the statistics and `data/ros.ts` assembles them, so the card stays
+a renderer and the population cannot quietly become the reader's current filter — a rank that
+moved when someone changed the position control would be a rank about the control.
+
+Four sub-rules, each of which is a thing that would otherwise go quietly wrong:
+
+1. **The denominator is always carried.** `docs/UX_SPEC.md` section 7.1A already requires this
+   of a bar. A rank is worse than a bar without one, because it looks exact.
+2. **A rank, never a percentile.** "Ninth of ninety-six" is a fact about a finite list;
+   "ninety-first percentile" implies a distribution a board of published rows is not, and would
+   need a sample-size caveat this product would then have to keep repeating.
+3. **Ties share the better rank**, so two identical values cannot be ordered by an accident of
+   the sort.
+4. **A cohort too small to be one says nothing**, rather than "1st of 2"; the quartile band is
+   withheld separately and later, at eight rows, because a quartile over four numbers is two
+   values pretending to be a distribution.
+
+**Decision — the pace comparison is legitimate and the blend next door is not.** `ros_label_v1`
+decomposes the rest-of-season target into exactly three parts: remaining games, remaining points
+**per appearance**, and their product. So points per appearance is a quantity the model is built
+on, and `points_per_game_to_date` on the same record is the identical quantity measured before
+the cutoff. Two numbers, one unit, one either side of the cutoff — which is precisely the
+condition the Opportunity Board fails and why that board draws two tracks and no blend
+(`AGENTS.md` section 10, ADR-085). The card states what it divided: *remaining points divided by
+remaining games*, never "expected points per game", because the ratio of two published
+expectations is not the expectation of the ratio and the artifact publishes no per-appearance
+estimate.
+
+**What this deliberately does not build: a single "luck" or "hot" score.** The owner asked
+whether there could be a lucky meter. There could be a *number* — and it would be manufactured.
+The honest version of that question is answered by putting the readings side by side and letting
+the reader make the call: the rate against the model's rate, the production against the
+position, and the workload that produced it. Averaging a rank move, a pace gap and an add count
+into one figure would be the blended score `AGENTS.md` forbids, over three quantities with no
+shared unit, and it would be the most confident-looking number on the page.
+
+**The genuine luck metric exists, in the feature table and not in the artifact.**
+`points_over_expected_per_game_to_date` — "points per game minus expected points per game;
+separates a player who is scoring on volume from one who is scoring on conversion" — is already
+computed in `ros_core_v1` (`docs/ROS_FEATURE_DICTIONARY.md`). Publishing it is **not** a
+frontend change and not a one-line one:
+
+- it is a data-contract change (`schemas/ros_tiers.schema.json`, `docs/DATA_CONTRACTS.md`, the
+  validator, the CSV, the TypeScript contract, the golden artifacts) under `AGENTS.md` §18;
+- and it carries a licensing question, which is why it is an ADR and not a task.
+  ffopportunity's expected-points data is **CC-BY-SA 4.0** (`docs/SECURITY_LICENSE.md` §8).
+  Using it as a model input and publishing a prediction is one thing; publishing a derived
+  per-player expected-points figure on a public JSON artifact is a good deal closer to
+  redistributing the licensed data, and the share-alike obligation would then bind what this
+  site publishes — the same question backlog item 8 records against FTN and has never resolved.
+
+Recorded as the next decision to take, deliberately not taken here.
+
+**Decision — `movesBound` moves to the data layer.** The card's roster-moves strip was scaled to
+`max(adds, drops)` for that one player, on the reasoning that a card has no population to scale
+against. It has one: the board the reader just came from. The old scale made every strip the
+same picture — whoever had more adds than drops filled the right half exactly, whether that was
+four transactions or four hundred thousand — so the shape carried no magnitude at all. The rule
+now lives in `data/ros.ts` with one definition and two callers, each stating in its own caption
+which population it bounded against.
+
+**Decision — the tiles stay, and the duplication is the point.** Every value a meter places also
+keeps a readout tile. The tile grid is the *record* and the meters are the *reading*: a board
+whose position cohort is too small loses the reading and must never lose the number.
+
+**The fixture had to carry the states, again.** This is the fifth instance of one species in
+this repository (ADR-081, ADR-082, ADR-084, ADR-085): a fixture that expresses the *shape* of a
+field and not its *states* leaves the states nothing is aimed at. `snap_share_last3` was `0.72`
+on every row, so every cohort reading over it could only ever say "1st of 6"; every row carried
+a `preseason_fair_rank`, so the rookie who was never on the preseason board — the case a
+rank-move rail most needs to get right — was unexercised. The fixture now carries a breakout
+with a null preseason rank scoring at twice the rate the model projects, a player the model
+expects to improve, varied usage shares, and a row whose shares the feed never published.
+
+**What did not change.** No model, artifact, schema, feature, simulation, tier, rank, count,
+CSV column or Python file. `verify:board` runs against all five builds and reports zero
+disagreements, which is the check that fails if one had.
+
+**Consequences.**
+
+- `PlayerDetailData` gains `rosCohort`, assembled in `App` from the published block. A future
+  surface wanting the same readings builds the same context rather than re-deriving a rank.
+- `movesBound` is imported from `data/ros` by `charts/OpportunityBoard`. A third caller adds no
+  third definition.
+- The card is longer. It scrolls on the desktop variant and the sheet's tab bar was already the
+  answer to that on a phone; the meters stack at the sheet breakpoint, and the 320px reflow
+  check now opens a card rather than only a page.
+- `cohort_context_v1` is a versioned rule. Changing what a reading means — the population, the
+  ranking convention, the band threshold — bumps it.

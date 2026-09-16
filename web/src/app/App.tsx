@@ -15,7 +15,12 @@ import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bun
 import { easternIsoDate } from "../data/format";
 import { cohortAssignment } from "../data/market";
 import { selectArbitrageRows, selectTierRows, type ArtifactIndex } from "../data/model";
-import { selectOpportunityRows, selectRosRows, type InSeasonBundle } from "../data/ros";
+import {
+  buildRosCohortContext,
+  selectOpportunityRows,
+  selectRosRows,
+  type InSeasonBundle,
+} from "../data/ros";
 import {
   IN_SEASON_VIEWS,
   SCORING_TO_PRESET,
@@ -228,14 +233,30 @@ function Board({
     if (selectedPlayerId === null) return null;
     const leaguePreset = leaguePresetId(state.teams);
     const scoring = SCORING_TO_PRESET[state.scoring];
+    const ros = inSeason?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
+    const opportunity =
+      inSeason?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
     return {
       playerId: selectedPlayerId,
       tier: index.tierFor(leaguePreset, scoring, selectedPlayerId),
       arbitrage: index.arbitrageRecordFor(leaguePreset, scoring, selectedPlayerId),
       status: index.statusFor(selectedPlayerId),
       projection: index.projectionFor(scoring, selectedPlayerId),
-      ros: inSeason?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null,
+      ros,
       rosDisclosures: inSeason?.metadata.disclosures ?? null,
+      /*
+        What a published number means, against the rows it was published beside.
+
+        Computed from the block rather than from `selectRosRows`, deliberately: the reader's
+        position filter is a question about what to show, not about what a player's interval
+        width compares with, and a cohort that moved when the filter did would be a reading
+        about the control. Assembled in `data/ros` rather than in the card, so the card stays a
+        renderer and the rule has one home and one test.
+      */
+      rosCohort:
+        inSeason === null || ros === null
+          ? null
+          : buildRosCohortContext(inSeason, leaguePreset, scoring, ros, opportunity),
       // The in-season panel's own inputs.
       //
       // `inSeason` is keyed off the *view*, not the mode. The card belongs to the board the
@@ -243,8 +264,7 @@ function Board({
       // comparison is the draft market, whatever month it is. Keying it off the mode instead
       // gave the draft board an in-season card in November — which is also how ADR-079's two
       // lifecycle windows, in-season with no board at all, end up correct here for free.
-      opportunity:
-        inSeason?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null,
+      opportunity,
       behavior: inSeason?.metadata.behavior ?? null,
       inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
       marketAvailable: index.hasArbitrage,

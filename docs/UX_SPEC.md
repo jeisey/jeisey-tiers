@@ -257,6 +257,37 @@ an arbitrage score.
 
 The draft board stays reachable all season and keeps its own card, unchanged.
 
+### 6A.6 A number with no scale is not a reading (ADR-086)
+
+`ROS uncertainty 82.1` is correct, published, validated — and answers nothing. Both in-season
+sections therefore carry **micro-charts beside the readouts**, and the rule for all of them is
+that they place a published value rather than create one:
+
+- **the rank move** is two anchors on the *board's own depth*, with two shapes, two model names
+  and the artifact's own `fair_rank_change` between them. Never one rank that moved (ADR-071),
+  and never scaled to the player: a three-place shuffle at the top of a five-hundred-deep board
+  is drawn as the small thing it is. Where there is no preseason rank there is a sentence and
+  no track, because the absence of an earlier ordering is not a move of zero;
+- **the pace rail** is points per appearance scored against points per appearance the model
+  projects, on **one** axis — permitted here precisely because it is one unit, which is the
+  condition the Opportunity Board fails. The card says what it divided (remaining points by
+  remaining games) and how many appearances stand behind the observed rate, and never calls the
+  ratio an expectation;
+- **the cohort strip** places a value among the same position's published rows: the cohort's
+  middle half as a band, its median as a tick, this player as a mark, and a reading that always
+  names its population — `2nd widest of 7 WRs`, never `2nd widest`. The population is the
+  published board, never the reader's current filter.
+
+Three further rules hold across all of them:
+
+1. **The tiles are the record; the meters are the reading.** Every value a meter places keeps a
+   readout tile of its own, so a board whose position cohort is too small loses the reading and
+   never the number.
+2. **A cohort too small to be one says nothing**, and says which case it is in.
+3. **No blended score, at any point.** A rank move, a pace gap and an add count have no shared
+   unit; averaging them would be the most confident-looking number on the page and the least
+   supported. The readings sit side by side and the reading is the reader's.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
@@ -301,6 +332,10 @@ bare "Rank" would reasonably read it as the draft one, and the two are not compa
 each other, because eight adds and eight drops are the same size; the value bar has its own;
 the snap-share bar is the percentage itself. A null renders as an em dash with **no bar** —
 the feed saying nothing and the feed saying zero are different facts.
+
+The same rule binds a *rank*, and harder (ADR-086). A rank without its population looks exact,
+so every cohort reading on the player card prints one, and two readings in one strip may carry
+different counts where they come from different artifacts.
 
 ### 7.2 Arbitrage table columns
 
@@ -461,5 +496,7 @@ Capture Playwright screenshots for at least:
 - Opportunity Board, desktop, tablet and phone
 - Opportunity Board with the behaviour feed down
 - the in-season player card, desktop and phone
+- the card's micro-charts: a rank move drawn, a rank move refused because there is no preseason
+  rank, a pace gap in both directions, and the behaviour feed down (ADR-086)
 
 Use screenshot review to catch clipping, label overlap, unreadable scales, and Pages base-path failures. Pixel-perfect snapshots should not become brittle blockers for dynamic data unless fixtures are fixed.

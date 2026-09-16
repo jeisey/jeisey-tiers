@@ -444,10 +444,94 @@ test.describe("the player card in season", () => {
     await expect(card.getByText(/sleeper · 24h/i)).toBeVisible();
     await expect(card.getByText("Production so far")).toBeVisible();
     await expect(card.getByText("Roster moves")).toBeVisible();
-    await expect(card.getByText("Points per game")).toBeVisible();
-    await expect(card.getByText("Snap share")).toBeVisible();
+    // Scoped to the tile, because the same quantity is also a row in the cohort strip below
+    // it. That duplication is the card's own rule — the tiles are the record and the meters
+    // are the reading — so the assertion names which of the two it means.
+    await expect(card.locator(".readout-label", { hasText: /^Points per game$/ })).toBeVisible();
+    await expect(card.locator(".readout-label", { hasText: /^Snap share$/ })).toBeVisible();
     // A count is never called a price, and the card says so where the counts are.
     await expect(card.getByText(/not a price and not a rank/i)).toBeVisible();
+  });
+
+  /*
+   * The micro-charts (ADR-086). Each one is asserted on the fact that makes it honest rather
+   * than on its shape: a picture is what the screenshots are for, and a picture that says the
+   * wrong thing about a number is what a test can catch.
+   */
+  test("draws the rank move against the board, with both orderings named", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    await page.locator("table.sheet .player-name").first().click();
+    const shift = page.getByRole("dialog").locator(".shift");
+    await expect(shift).toBeVisible();
+    // Two anchors, never one mark that moved.
+    await expect(shift.locator('.shift-anchor[data-anchor="from"]')).toHaveCount(1);
+    await expect(shift.locator('.shift-anchor[data-anchor="to"]')).toHaveCount(1);
+    await expect(shift.getByText(/Two orderings of one board, not one rank that moved/)).toBeVisible();
+    // The axis is the board's depth, so its right-hand end is the published row count and not
+    // the player's own deeper rank. 18 rows per block in this scenario.
+    await expect(shift.locator(".shift-scale span").last()).toHaveText("18");
+  });
+
+  test("compares the rate he has scored at with the rate the model projects", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    await page.locator("table.sheet .player-name").first().click();
+    const pace = page.getByRole("dialog").locator(".pace");
+    await expect(pace.getByText("Scored so far")).toBeVisible();
+    await expect(pace.getByText("Projected ahead")).toBeVisible();
+    // One unit on both bars is the only reason they may share an axis, and the axis says so.
+    await expect(pace.locator(".pace-scale-mid")).toHaveText("points per appearance");
+    // The card never calls the ratio an expectation: it is two published totals divided.
+    await expect(
+      pace.getByText(/remaining points divided by its remaining games/i),
+    ).toBeVisible();
+  });
+
+  test("places a published value among its own position, with the denominator printed", async ({
+    page,
+  }) => {
+    await page.goto(IN_SEASON);
+    await page.locator("table.sheet .player-name").first().click();
+    const card = page.getByRole("dialog");
+    // The first row of this scenario is a running back, so the population is named as one.
+    await expect(card.getByText(/Value against the RBs on this board/i)).toBeVisible();
+    await expect(card.getByText(/Production against the RBs on this board/i)).toBeVisible();
+    // The interval width is the number the owner's review named, and it now has a scale.
+    const strip = card.locator(".cohort").first();
+    await expect(strip.getByText("ROS uncertainty")).toBeVisible();
+    await expect(strip.getByText(/\d+(st|nd|rd|th) widest of \d+ RBs/)).toBeVisible();
+    // Every reading carries its population; a rank without one looks exact and is not.
+    for (const read of await strip.locator(".cohort-read > span").all()) {
+      await expect(read).toHaveText(/of \d+ RBs$/);
+    }
+  });
+
+  test("says so rather than drawing a move for a player the preseason board never held", async ({
+    page,
+  }) => {
+    await page.goto(IN_SEASON);
+    // The fixture's breakout: `in_preseason_universe` false, so there is no earlier ordering
+    // to place him in and no change to print. A rail drawn from a rank that does not exist is
+    // the defect this branch exists to prevent; an em dash and a sentence are the report.
+    await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).first().click();
+    const card = page.getByRole("dialog");
+    await expect(card).toBeVisible();
+    await expect(card.locator(".shift-track")).toHaveCount(0);
+    await expect(card.getByText(/not on the preseason board at all/i)).toBeVisible();
+    await expect(card.locator('.shift-end[data-role="from"] .shift-end-value')).toHaveText("—");
+    await expect(card.locator('.shift-end[data-role="change"] .shift-end-value')).toHaveText("—");
+  });
+
+  test("shows the model declining to buy a hot start, in the model's own unit", async ({ page }) => {
+    await page.goto(IN_SEASON);
+    // The same breakout: 28.4 points per appearance so far against a projected 14.0. That the
+    // two disagree is the reading; that they are the same unit is why they may be compared.
+    await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).first().click();
+    const pace = page.getByRole("dialog").locator(".pace");
+    await expect(pace.locator('.pace-row[data-kind="scored"] .pace-value')).toHaveText("28.4");
+    await expect(pace.locator('.pace-row[data-kind="projected"] .pace-value')).toHaveText("14.0");
+    await expect(pace.getByText(/projects 14.4 fewer points per appearance/i)).toBeVisible();
+    // Four appearances stand behind the first number, and the card says how many.
+    await expect(pace.getByText(/against 4 appearances so far/i)).toBeVisible();
   });
 
   test("leads the rail with the rest-of-season rank, not the draft one", async ({ page }) => {

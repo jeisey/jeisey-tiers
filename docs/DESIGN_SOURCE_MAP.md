@@ -182,6 +182,7 @@ the first things in the implemented card's identity rail.
 | Draft Rail | **ADAPT** | no design source; Phase-8 semantics kept, HUD vocabulary applied |
 | ROS Tier Board | **REUSE** | 2a and 2b literally — one component over a second quantity (ADR-085) |
 | Opportunity Board | **EXTEND** | no design source, like the Draft Rail; 2a's vocabulary over two tracks (ADR-085) |
+| Player-card micro-charts | **EXTEND** | 1a/1b/1c's distribution rail at one step down, three times over (ADR-086, section 6B) |
 | Arbitrage table | **ADAPT** | same as Tier table |
 | Player detail | **REPLACE** | three real variants replacing one responsive card |
 | status / injury chips | **ADAPT** | design's amber outline chip and green dot-and-word |
@@ -267,6 +268,42 @@ hard-codes `02 DRAFT MARKET`; deviation 10 already says the indices follow the d
 extends that to the section itself: from an in-season board the slot holds `In-season usage`
 instead. The metric-tile grid, the section header, the annotation bar and the tab bar are all
 the source's, unchanged.
+
+## 6B. The card's micro-charts, which the source has one of (ADR-086)
+
+The source draws exactly one chart inside a card: the **distribution rail** — a track, a
+P25–P75 band, a glowing median tick and the endpoints printed beneath it — and it draws it on
+all three player-card artboards. Everything else on those artboards is a metric tile.
+
+That is enough of a system to extend rather than invent from. Three micro-charts were added,
+and every one of them is the distribution rail at one step down in scale:
+
+| chart | what it borrows from 1a/1b/1c | what it adds |
+|---|---|---|
+| `RankShift` | the track with a hairline centre rule, the glowing square mark, the endpoints printed below | a second anchor — a hollow diamond — for the earlier ordering, and a span between the two |
+| `PaceRail` | the track, the accent fill, the mono readout at the end of the row | a **hatched** fill for the model's projection, so an estimate and a count of what happened do not look like the same kind of fact |
+| `CohortStrip` | the band, the median tick and the mark, all three verbatim | the band belongs to the *population* rather than to the player, and the mark is the player inside it |
+
+Four decisions inside that are deliberate departures from the source, and are the only ones:
+
+1. **A second anchor shape.** The source has one mark, because a card shows one player at one
+   moment. Two orderings need two, and the difference has to survive being drawn at the same x
+   (ADR-071) — so shape carries it, and the two anchors sit above and below the centre line.
+   The Draft Rail made the same decision for the same reason and is the precedent.
+2. **A hatch.** No pattern appears anywhere in the source. It is introduced for one job only —
+   marking a projection as a projection — and is used nowhere else.
+3. **A stacked form at the sheet breakpoint.** The source's artboards are fixed widths and its
+   distribution rail is never narrower than 600px. Three columns do not fit 390px, so at the
+   sheet breakpoint each meter puts its label and readout on one line and its track beneath.
+   This is the same breakpoint `PlayerDetail` already branches on and the two move together.
+4. **A readout that is a sentence.** The source's numbers stand alone. These carry
+   `2nd widest of 7 WRs`, because a rank without its population looks exact (ADR-086).
+
+**What was not borrowed: the confidence meter.** Artboard 1b's three-bar meter was considered
+for the cohort readings and refused. It is a *level* — three discrete steps with a word beside
+them — and a rank inside a population is neither discrete nor three-valued; reusing it would
+have made a cohort place look like a rated quality. It stays where the source puts it, on the
+market-data badge.
 
 ## 7. What did not change
 
