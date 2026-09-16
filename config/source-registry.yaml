@@ -39,6 +39,28 @@ phase7_decisions_as_of: "2026-08-22"
 #   ADR-066 - the market-trend chart reads a published artifact; the browser calls no vendor.
 phase10_decisions_as_of: "2026-09-02"
 phase10_evidence: "docs/source-probes/2026-09-02/phase10-report.md"
+# 2026-09-16 (ADR-087). The player card shows ESPN's public headshot, fetched by the
+# visitor's browser when a card is opened. This changes nothing below: ESPN remains
+# `disabled` as a DATA source, no ESPN endpoint is called by the pipeline, and no ESPN
+# quantity enters this product. The player-to-picture mapping is nflverse's `espn_id`, which
+# has been the primary market identity bridge since ADR-019. Recorded here because the one
+# third-party host this deployment reaches is a source-policy fact even though the thing
+# fetched is an image rather than data.
+player_image_reference:
+  provider: espn
+  host: a.espncdn.com
+  url_pattern: "https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png"
+  id_source: nflreadpy_rosters
+  id_column: espn_id
+  fetched_by: browser_on_card_open
+  fetched_by_pipeline: false
+  redistributed: false
+  attribution_required: true
+  attribution_surface: "Data view, Sources and attribution"
+  terms_reviewed_by: owner
+  terms_reviewed_as_of: "2026-09-16"
+  decision_ref: "docs/DECISIONS.md ADR-087"
+  evidence: "docs/DATA_SOURCES.md section 17"
 policy_states:
   - production_allowed
   - allowed_optional

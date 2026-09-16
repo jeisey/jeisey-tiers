@@ -20,6 +20,8 @@ import { resolve } from "node:path";
 
 import { chromium } from "@playwright/test";
 
+import { stubPortraits } from "./portrait-stub.mjs";
+
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:4173";
 
 /** Viewport, path and any interaction each required screen needs. */
@@ -98,6 +100,58 @@ const SCREENS = [
     async act(page) {
       await page.getByRole("button", { name: "Kyle Pitts Sr.", exact: true }).click();
       await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    // The portrait at each of the three card variants, plus the monogram the card falls back
+    // to. ADR-087: the picture is a drawn silhouette, not a real player - the fixture's ESPN
+    // ids are synthetic and resolve to nothing at the real host, so what these show is the
+    // *treatment* (the wash, the scanlines, the corner ticks, the bottom fade, the crop) and
+    // not a face.
+    name: "58-card-portrait-desktop",
+    path: "/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+      await page.locator("img.portrait-image").waitFor();
+    },
+  },
+  {
+    name: "59-card-portrait-tablet-band",
+    path: "/",
+    viewport: { width: 900, height: 1100 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+      await page.locator("img.portrait-image").waitFor();
+    },
+  },
+  {
+    name: "60-card-portrait-mobile-sheet",
+    path: "/",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+      await page.locator("img.portrait-image").waitFor();
+    },
+  },
+  {
+    // The fallback, at the widest variant where it is most visible. Deebo Gray is the
+    // fixture's unbridged player; the frame, the wash and the ticks are identical and the
+    // face is a monogram, so nothing about the card's geometry depends on the picture.
+    name: "61-card-portrait-monogram",
+    path: "/",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Deebo Gray", exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+      await page.locator(".portrait-monogram").waitFor();
     },
   },
   {
@@ -601,6 +655,9 @@ const problems = [];
 
 for (const screen of SCREENS) {
   const page = await browser.newPage({ viewport: screen.viewport });
+  // A silhouette, not a refusal: these images are a design review, and the card's fallback
+  // is not what is being reviewed. See `portrait-stub.mjs` for why neither is a real face.
+  await stubPortraits(page);
   page.on("pageerror", (error) => problems.push(`${screen.name}: ${String(error)}`));
   page.on("console", (message) => {
     if (message.type() !== "error") return;

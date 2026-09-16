@@ -13,6 +13,18 @@
 
 import { expect, test } from "@playwright/test";
 
+import { stubPortraits } from "./boundary";
+
+/*
+ * No test in this repository reaches a third party. The player card fetches its portrait from
+ * one declared host; this serves it locally instead, so the suite neither depends on a
+ * provider's uptime nor makes a request on a reader's behalf every time CI runs (ADR-087).
+ */
+test.beforeEach(async ({ page }) => {
+  await stubPortraits(page);
+});
+
+
 test("the whole product is usable on a phone without hover", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();

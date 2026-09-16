@@ -137,16 +137,24 @@ describe("loadBundle", () => {
     serve(everything());
     await loadBundle();
     const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
-    // Seven: metadata, tiers, arbitrage, player status, projections, the retained trend
-    // series and the in-season bundle's own metadata — which 404s on a draft-only build and
-    // is *supposed* to, because before kickoff there is no in-season bundle to load.
-    // Every one of them is a generated file under `/data/`. The assertion below is
-    // the load-bearing half — a vendor host must never appear in this list, because a static
-    // page that fetched a market feed would put a vendor on the critical path (ADR-066).
-    expect(calls).toHaveLength(7);
+    // Eight: metadata, tiers, arbitrage, player status, projections, the retained trend
+    // series, the portrait crosswalk, and the in-season bundle's own metadata — which 404s
+    // on a draft-only build and is *supposed* to, because before kickoff there is no
+    // in-season bundle to load. Every one of them is a generated file under `/data/`. The
+    // assertion below is the load-bearing half — a vendor host must never appear in this
+    // list, because a static page that fetched a market feed would put a vendor on the
+    // critical path (ADR-066).
+    //
+    // `a.espncdn.com` is in that list too, and belongs there. Loading the page fetches the
+    // *crosswalk*; the portrait it names is requested by the card, when a reader opens one
+    // (ADR-087). If a headshot host ever appears here, something moved a third-party request
+    // onto first paint.
+    expect(calls).toHaveLength(8);
     for (const url of calls) {
       expect(url).toMatch(/\/data\/[a-z_]+\.json$/);
-      expect(url).not.toMatch(/myfantasyleague|sleeper|nflverse|fantasypros|fantasycalc/i);
+      expect(url).not.toMatch(
+        /myfantasyleague|sleeper|nflverse|fantasypros|fantasycalc|espncdn/i,
+      );
     }
   });
 

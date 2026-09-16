@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "artifact": "player_headshots",
+  "record_schema": "player_headshot_record",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 15,
+  "records": [
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000001",
+      "provider": "espn",
+      "provider_player_id": "4000001",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000001.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000002",
+      "provider": "espn",
+      "provider_player_id": "4000002",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000002.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000003",
+      "provider": "espn",
+      "provider_player_id": "4000003",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000003.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000004",
+      "provider": "espn",
+      "provider_player_id": "4000004",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000004.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000005",
+      "provider": "espn",
+      "provider_player_id": "4000005",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000005.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000006",
+      "provider": "espn",
+      "provider_player_id": "4000006",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000006.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000007",
+      "provider": "espn",
+      "provider_player_id": "4000007",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000007.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000008",
+      "provider": "espn",
+      "provider_player_id": "4000008",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000008.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000010",
+      "provider": "espn",
+      "provider_player_id": "4000010",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000010.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000011",
+      "provider": "espn",
+      "provider_player_id": "4000011",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000011.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000012",
+      "provider": "espn",
+      "provider_player_id": "4000012",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000012.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000013",
+      "provider": "espn",
+      "provider_player_id": "4000013",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000013.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000014",
+      "provider": "espn",
+      "provider_player_id": "4000014",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000014.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000015",
+      "provider": "espn",
+      "provider_player_id": "4000015",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000015.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000016",
+      "provider": "espn",
+      "provider_player_id": "4000016",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000016.png"
+    }
+  ]
+}

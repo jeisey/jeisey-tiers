@@ -16,7 +16,9 @@
  *    and the behaviour columns are asserted to go blank rather than to zero.
  */
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
+import { guardBoundary } from "./boundary";
 
 const IN_SEASON = "/scenario/in-season/";
 const NO_BEHAVIOR = "/scenario/in-season-no-behavior/";
@@ -25,26 +27,8 @@ const AWAITING = "/scenario/awaiting-first-week/";
 /** The far end: every scored week played, no remaining horizon. */
 const SEASON_COMPLETE = "/scenario/season-complete/";
 
-/** Fail the test on any request that leaves the static server. */
-function forbidExternalRequests(page: Page): void {
-  const escaped: string[] = [];
-  page.on("request", (request) => {
-    const url = request.url();
-    if (
-      !url.startsWith("http://localhost") &&
-      !url.startsWith("data:") &&
-      !url.startsWith("blob:")
-    ) {
-      escaped.push(url);
-    }
-  });
-  page.on("close", () => {
-    expect(escaped, "the browser must fetch only generated artifacts").toEqual([]);
-  });
-}
-
-test.beforeEach(({ page }) => {
-  forbidExternalRequests(page);
+test.beforeEach(async ({ page }) => {
+  await guardBoundary(page);
 });
 
 test.describe("season mode", () => {

@@ -241,6 +241,9 @@ function Board({
       tier: index.tierFor(leaguePreset, scoring, selectedPlayerId),
       arbitrage: index.arbitrageRecordFor(leaguePreset, scoring, selectedPlayerId),
       status: index.statusFor(selectedPlayerId),
+      // Null whenever the build published no portrait for him, which is ordinary. The card
+      // draws a monogram and nothing else about it changes (ADR-087).
+      headshotUrl: index.headshotFor(selectedPlayerId)?.image_url ?? null,
       projection: index.projectionFor(scoring, selectedPlayerId),
       ros,
       rosDisclosures: inSeason?.metadata.disclosures ?? null,

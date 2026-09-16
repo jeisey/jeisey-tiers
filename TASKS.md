@@ -1226,3 +1226,59 @@ card's two in-season sections.
 - [ ] **Not done here, deliberately.** The cohort is position-scoped with no second population,
       and the meters are on the in-season card only. Both are product scope, neither was asked
       for.
+
+## The card portrait — 2026-09-16 (ADR-087)
+
+The owner asked for ESPN headshots on the player card, rendered as layered overlays that blend
+into the HUD, and expected the hard part to be mapping ESPN's athlete id onto ours.
+
+- [x] **The mapping already existed and no scrape was written.** `4429795` — the id in the
+      owner's example URL — is Jahmyr Gibbs' nflverse `espn_id`, and `espn_id` has been this
+      project's **primary market identity bridge** since ADR-019: read off the roster,
+      cross-checked against the `ff_playerids` mirror with any disagreeing row rejected whole,
+      and already on every `CanonicalPlayer`. Verified against the live 2026 roster. Coverage
+      **793/925 core rows (85.7%)**, **494/499 active (99.0%)**; the misses are cut and
+      practice-squad players no board publishes.
+- [x] **`player_headshots` is a published artifact**, not a hand-maintained file. New schema,
+      envelope entry, `ArtifactSpec`, `src/ffdraft/headshots.py`, both pipelines, a
+      `build_metadata` provenance block, and regenerated goldens. A blob under `web/public/`
+      would have been a second source of truth that goes stale the first time a player moves.
+- [x] **The address is published, not assembled in the browser**, so the one host the page may
+      reach is a property the build validates. Three checks read it, and the third —
+      `artifact.headshot_url_disagrees_with_id` — is the only one that can catch one player's
+      id beside another player's picture.
+- [x] **Hotlinked, not copied.** The owner's permission is "public and freely accessible with
+      attribution". Copying several hundred ESPN photographs into a public repository is
+      *redistribution*, a materially stronger claim, so no image is stored anywhere here.
+- [x] **The cost is stated rather than glossed.** Until this change the site made no
+      cross-origin request at all — that is why the fonts are vendored (ADR-059). A reader who
+      opens a card now tells ESPN their IP and an athlete id. Four bounds, each enforced: one
+      host, never on first paint, `no-referrer`, never on a board row.
+- [x] **Decoration, weaker than annotation.** `alt=""`, monogram and veil `aria-hidden`,
+      nothing sortable or exportable. A status is at least a measurement of something; a
+      picture is not.
+- [x] **Every way there can be no picture looks the same.** An unbridged player, a missing
+      artifact, a slow network and a provider 404 all show the monogram in the same frame at
+      the same size. No broken-image glyph, no empty frame, no layout shift, no transition.
+- [x] **The boundary guard is one module now.** `web/tests/e2e/boundary.ts` replaces three
+      hand-copied `beforeEach` blocks, allows exactly one host, and was **negative-controlled**
+      against a foreign host — which failed the run, as it must.
+- [x] **No test fetches a real portrait.** The specs serve a local pixel; `verify-real-build`
+      blocks the host, because a gate between a build and the deployed site may not depend on
+      a third party's uptime. `capture-screens` is the one exception and serves a drawn
+      silhouette, since a design review against a monogram reviews the fallback.
+- [x] **Two defects the screenshots caught that the tests did not.** The bottom-right corner
+      tick was buried under the fade (paint order), and the monogram would have shown through
+      a transparent cut-out on every card. Sixth instance of the species ADR-081 named.
+- [x] **Attribution is live**, on the Data view's Sources section, and says the two things a
+      reader cannot see: that their own browser fetches the picture from `a.espncdn.com` with
+      no referrer, and that the player-to-picture mapping is nflverse's, not ESPN's.
+- [x] **Verified.** `uv run ruff check`, `ruff format --check`, strict `mypy` (155 files),
+      `uv run pytest`, `npm run lint` (0 errors, 4 pre-existing warnings), `npm run typecheck`,
+      `npm run test -- --run`, `npm run e2e`, `npm run verify:board`, and 64 screens in
+      `docs/visual-qa/2026-09-16-card-portrait/`.
+- [ ] **Not done here, deliberately: no portrait on any board row.** 300 rows would be 300
+      third-party requests for decoration. It was not asked for and it is not a good idea.
+- [ ] **Not done here, deliberately: no second provider.** `provider` is an enum of one in the
+      schema, because adding one is a rights decision (`docs/SECURITY_LICENSE.md` section 8),
+      not a config change.

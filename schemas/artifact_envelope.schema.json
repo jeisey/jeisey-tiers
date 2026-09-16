@@ -26,7 +26,8 @@
         "market_snapshot",
         "player_status",
         "ros_tiers",
-        "inseason_opportunity"
+        "inseason_opportunity",
+        "player_headshots"
       ]
     },
     "record_schema": {

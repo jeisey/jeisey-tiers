@@ -328,6 +328,7 @@ jobs:
       model_version: ${{ steps.facts.outputs.model_version }}
       tier_rows: ${{ steps.facts.outputs.tier_rows }}
       arbitrage_rows: ${{ steps.facts.outputs.arbitrage_rows }}
+      headshot_coverage: ${{ steps.facts.outputs.headshot_coverage }}
       ros_rows: ${{ steps.facts.outputs.ros_rows }}
       ros_through_week: ${{ steps.facts.outputs.ros_through_week }}
     steps:
@@ -517,6 +518,10 @@ jobs:
           print(f"model_version={meta['intrinsic_model_version']}")
           print(f"tier_rows={count('tiers.json')}")
           print(f"arbitrage_rows={count('arbitrage.json')}")
+          # Portrait coverage, so the first real build says how many cards get a picture
+          # rather than leaving it to be noticed. Decoration, so it gates nothing (ADR-087).
+          headshots = meta.get("player_headshots") or {}
+          print(f"headshot_coverage={headshots.get('resolved', 0)}/{headshots.get('published_players', 0)}")
           ros_meta = data / "ros_build_metadata.json"
           if ros_meta.is_file():
               ros = json.loads(ros_meta.read_text(encoding="utf-8"))
@@ -539,7 +544,7 @@ jobs:
             echo "::error::built asset URLs do not respect VITE_BASE_PATH"
             exit 1
           fi
-          for artifact in tiers projections arbitrage player_status build_metadata; do
+          for artifact in tiers projections arbitrage player_status player_headshots build_metadata; do
             test -f "web/dist/data/${artifact}.json" \
               || { echo "::error::web/dist/data/${artifact}.json missing from the build"; exit 1; }
           done

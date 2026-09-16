@@ -7,6 +7,8 @@
 import { readFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
+import { blockPortraits } from "./portrait-stub.mjs";
+
 const BASE = process.argv[2] ?? "http://localhost:4180";
 const dataDir = process.argv[3] ?? "web/dist-real/data";
 const tiers = JSON.parse(readFileSync(`${dataDir}/tiers.json`, "utf-8"));
@@ -180,6 +182,10 @@ const MARKET_LABELS = {
 const exe = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
 const browser = await chromium.launch(exe ? { executablePath: exe } : {});
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+// This verifier stands between a build and the deployed site, so it may not depend on
+// anybody else's uptime. The card falls back to its monogram and every number it checks is
+// unaffected (ADR-087).
+await blockPortraits(page);
 const failures = [];
 
 // --- Tier table rows against the artifact -------------------------------------------------
