@@ -15,6 +15,8 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
+import { guardBoundary } from "./boundary";
+
 const MATURED = "/scenario/matured/";
 const NO_FFC_HISTORY = "/scenario/no-ffc-history/";
 
@@ -35,24 +37,8 @@ interface SeriesRecord {
   readonly points: readonly { readonly observed_at: string; readonly market_adp: number }[];
 }
 
-/** Fail the test on any request that leaves the static server. No vendor call may exist. */
-function forbidExternalRequests(page: Page): void {
-  const escaped: string[] = [];
-  page.on("request", (request) => {
-    const url = request.url();
-    if (!url.startsWith("http://localhost") && !url.startsWith("data:") && !url.startsWith("blob:")) {
-      escaped.push(url);
-    }
-  });
-  page.on("close", () => {
-    expect(escaped, "the chart's history must come from the artifact, never from a vendor").toEqual(
-      [],
-    );
-  });
-}
-
-test.beforeEach(({ page }) => {
-  forbidExternalRequests(page);
+test.beforeEach(async ({ page }) => {
+  await guardBoundary(page, "the chart's history must come from the artifact, never from a vendor");
 });
 
 /** The artifacts the site itself serves, read back over the same origin. */

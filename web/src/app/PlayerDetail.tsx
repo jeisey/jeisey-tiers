@@ -42,6 +42,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 import { ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
+import { PlayerPortrait } from "../components/PlayerPortrait";
 import { useMediaQuery } from "../components/useMediaQuery";
 import { CohortStrip, PaceRail, RankShift, type CohortReadingRow } from "../charts/CardMeters";
 import { MarketTrend, type TrendSeries } from "../charts/MarketTrend";
@@ -100,6 +101,14 @@ export interface PlayerDetailData {
   readonly tier: TierRecord | null;
   readonly arbitrage: ArbitrageRecord | null;
   readonly status: PlayerStatusRecord | null;
+  /**
+   * The published address of this player's portrait, or null.
+   *
+   * A string rather than the record, because the card has no business with the provider or
+   * its id: the build decided which provider and validated which host, and the card's only
+   * question is whether there is a picture to draw (ADR-087).
+   */
+  readonly headshotUrl?: string | null;
   readonly projection: PlayerProjectionRecord | null;
   /** True when the arbitrage artifact loaded but holds no row for this player. */
   readonly marketAvailable: boolean;
@@ -1288,6 +1297,18 @@ export function PlayerDetail({
             always in the DOM, so the accessible title never moves.
           */}
           <div className="detail-rail">
+            {/*
+              The portrait leads the rail on the wide variant and sits left of the identity
+              block on the two narrow ones — one DOM position serves all three, because the
+              rail is a column at 1c and a row at 1a/1b and "first" reads correctly either
+              way. It is the only element on the page that fetches from another origin, and
+              it exists only while this dialog is open (ADR-087).
+            */}
+            <PlayerPortrait
+              name={name}
+              position={position}
+              imageUrl={data.headshotUrl ?? null}
+            />
             <div className="detail-identity-block">
               {position !== null && (
                 <span className="detail-eyebrow">

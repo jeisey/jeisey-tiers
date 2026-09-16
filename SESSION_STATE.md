@@ -4,6 +4,15 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The card portrait, 2026-09-16 (ADR-087).** The owner asked for ESPN headshots on the player
+card and expected the work to be an identity-mapping exercise against ESPN's public API. It was
+not: `espn_id` has been this project's **primary market identity bridge** since ADR-019, the id
+in his example URL is Jahmyr Gibbs' nflverse `espn_id`, and the crosswalk was already computed
+and already failing closed on every build. What the change actually cost is the thing worth
+remembering — this site made **no cross-origin request at all** until today, on purpose, and
+now makes exactly one, from one host, when a reader opens a card. See **What the card portrait
+changed** below.
+
 **The card-meters pass, 2026-09-15 (ADR-086).** The owner looked at the in-season player card
 the pass below had just built and asked a question no gate can: `ROS uncertainty 82.1` — is
 that a lot? The number is the artifact's own, `verify:board` agrees with it, axe has nothing to
@@ -1700,6 +1709,70 @@ whose failure mode is a hang do not exist here: a wrong assertion throws from `g
 cannot ask "against every RB the model rates in my league's starting range" — and the meters
 appear on the in-season card only, not on the draft one. Both are product scope rather than
 presentation and neither was asked for.
+
+## What the card portrait changed (2026-09-16, ADR-087)
+
+**Root cause of the work, in one line: the owner asked for a scrape and the repository already
+had the answer.** He suggested ESPN's public API, `espn-api`, or a community gist, and expected
+an ad-hoc EDA pass. `4429795` in his example URL is Jahmyr Gibbs' **nflverse `espn_id`** —
+`espn_id_via_nflverse_rosters`, the primary market identity bridge ADR-019 named, already read
+off the roster, already cross-checked against the `ff_playerids` mirror with any disagreeing row
+rejected whole, and already on every `CanonicalPlayer`. No ESPN endpoint is called by anything.
+
+| | before | after |
+|---|---|---|
+| cross-origin requests | **zero**, enforced by a test | one, one host, on opening a card |
+| the crosswalk | in the registry, unpublished | `player_headshots.json`, a versioned artifact |
+| the address | — | published and validated, not assembled in the bundle |
+| the boundary guard | three hand-copied `beforeEach` blocks | one module, one allowance, negative-controlled |
+| a card with no picture | — | the same frame, a monogram, no layout shift |
+
+**Five things a future session should not re-derive.**
+
+1. **`espn_id` is already ours and it is 99% covered where it matters.** 793/925 core rows on
+   the 2026 roster (85.7%); 494/499 of the rows nflverse reports active (99.0%). The misses are
+   `CUT`, `DEV` and `RES` players a fantasy board does not publish. Do not write a scrape, and
+   do not reach for the `ff_playerids` mirror — it publishes no licence, Phase 10 recorded that
+   the question it raises was never reached, and the roster alone carries the bridge.
+2. **The published `image_url` is redundant with `provider_player_id` on purpose.** It makes
+   the one reachable host a property the *build* validates rather than a string in a JavaScript
+   bundle. It also makes `artifact.headshot_url_disagrees_with_id` possible, and that is the
+   only check that can catch one player's id beside another player's picture — the schema's
+   pattern cannot, because both strings are well-formed addresses on the right host.
+3. **Hotlinking was chosen over vendoring on *rights*, not on convenience,** and that is the
+   opposite trade from the fonts. The OFL grants redistribution explicitly, so vendoring the
+   typefaces is the safer option; the owner's ESPN permission is "public and freely accessible
+   with attribution", and copying several hundred photographs into a public repository is
+   redistribution. If this is ever reconsidered, reconsider it as a rights question.
+4. **The asymmetry in the cross-artifact check is the contract.** A board row with no portrait
+   is ordinary and is reported as coverage; a portrait with no board row is critical. And there
+   is deliberately **no coverage floor** anywhere: a gate that could stop a deploy over a
+   missing picture could take the whole board down for a cosmetic reason.
+5. **No test in this repository fetches a real portrait, and `verify-real-build` blocks the
+   host outright.** A gate standing between a build and the deployed site may not go red
+   because somebody else's image server was slow. `capture-screens` is the one exception and
+   serves a drawn silhouette; the faces in `docs/visual-qa/2026-09-16-card-portrait/` are not
+   faces, and the REVIEW there says so first.
+
+**Sixth instance of the fixture/screenshot species** (ADR-081, ADR-082, ADR-084, ADR-085,
+ADR-086): two defects that no test failed on and the first capture made obvious. The bottom-right
+corner tick was buried under the fade, because a `::after` on the frame is the last child in
+paint order; and the monogram would have shown **through** every transparent cut-out, because it
+was hidden on having a URL rather than on a picture having painted. The component has three
+states now, not two.
+
+**Verified**: `uv run ruff check`, `ruff format --check`, strict `mypy` (155 files),
+`uv run pytest`, `npm run lint` (0 errors, 4 pre-existing warnings), `npm run typecheck`,
+`npm run test -- --run`, `npm run e2e` **129** passed, `npm run verify:board` with zero
+disagreements, and 64 screens in `docs/visual-qa/2026-09-16-card-portrait/`.
+
+**No model, feature, projection, rank, tier, VORP, ADP, arbitrage score or CSV column changed.**
+No existing record schema moved. `build_metadata` gained one optional block and the envelope
+gained one artifact name; both are additive.
+
+**Left open on purpose**: no portrait on any board row (300 rows would be 300 third-party
+requests for decoration), and no second provider — `provider` is an enum of one because adding
+one is a rights decision, not a config change.
 
 ## Next action
 

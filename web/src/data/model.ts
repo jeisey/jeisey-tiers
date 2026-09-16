@@ -18,6 +18,7 @@ import type {
   ArbitrageRecord,
   BuildMetadata,
   MarketTrendSeriesRecord,
+  PlayerHeadshotRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   Position,
@@ -46,6 +47,7 @@ export interface ArtifactBundle {
   readonly tiers: readonly TierRecord[];
   readonly arbitrage: readonly ArbitrageRecord[] | null;
   readonly playerStatus: readonly PlayerStatusRecord[] | null;
+  readonly headshots?: readonly PlayerHeadshotRecord[] | null;
   readonly projections: readonly PlayerProjectionRecord[] | null;
   /**
    * Retained ADP history, absent until the store holds enough of it and absent on any
@@ -68,8 +70,10 @@ export class ArtifactIndex {
   private readonly arbitrageByBlockPlayer: ReadonlyMap<string, ArbitrageRecord>;
   private readonly projectionByScoringPlayer: ReadonlyMap<string, PlayerProjectionRecord>;
   private readonly statusByPlayer: ReadonlyMap<string, PlayerStatusRecord>;
+  private readonly headshotByPlayer: ReadonlyMap<string, PlayerHeadshotRecord>;
   readonly hasArbitrage: boolean;
   readonly hasPlayerStatus: boolean;
+  readonly hasHeadshots: boolean;
   readonly hasProjections: boolean;
   readonly hasTrendSeries: boolean;
   /** Every source's series for one block and player. Source-keyed inside, never selection-keyed. */
@@ -79,6 +83,7 @@ export class ArtifactIndex {
     this.metadata = bundle.metadata;
     this.hasArbitrage = bundle.arbitrage !== null;
     this.hasPlayerStatus = bundle.playerStatus !== null;
+    this.hasHeadshots = (bundle.headshots ?? null) !== null;
     this.hasProjections = bundle.projections !== null;
     this.hasTrendSeries = (bundle.trendSeries ?? null) !== null;
 
@@ -117,6 +122,10 @@ export class ArtifactIndex {
     const statusByPlayer = new Map<string, PlayerStatusRecord>();
     for (const record of bundle.playerStatus ?? []) statusByPlayer.set(record.player_id, record);
     this.statusByPlayer = statusByPlayer;
+
+    const headshotByPlayer = new Map<string, PlayerHeadshotRecord>();
+    for (const record of bundle.headshots ?? []) headshotByPlayer.set(record.player_id, record);
+    this.headshotByPlayer = headshotByPlayer;
 
     const trendsByBlockPlayer = new Map<string, MarketTrendSeriesRecord[]>();
     for (const record of bundle.trendSeries ?? []) {
@@ -177,6 +186,19 @@ export class ArtifactIndex {
 
   statusFor(playerId: string): PlayerStatusRecord | null {
     return this.statusByPlayer.get(playerId) ?? null;
+  }
+
+  /**
+   * This player's portrait, or null.
+   *
+   * Null is ordinary and means only that the crosswalk does not reach him — the card draws a
+   * monogram and every number on it is unchanged. Nothing else in the app calls this: a
+   * portrait belongs to the one surface that shows a single player at a time, and putting one
+   * on a three-hundred-row board would be three hundred third-party requests for decoration
+   * (ADR-087).
+   */
+  headshotFor(playerId: string): PlayerHeadshotRecord | null {
+    return this.headshotByPlayer.get(playerId) ?? null;
   }
 }
 

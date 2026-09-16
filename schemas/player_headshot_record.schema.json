@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/player_headshot_record.schema.json",
+  "title": "PlayerHeadshotRecord",
+  "description": "Where one canonical player's public portrait lives, keyed once by player_id rather than duplicated across every tier and arbitrage row. DECORATION ONLY: no field here may enter a projection, a VORP, a fair rank, a tier or an arbitrage score, and nothing here is a measurement of the player (ADR-087). `provider_player_id` is the crosswalk id the identity registry already holds — for ESPN that is `espn_id`, the primary market identity bridge of ADR-019 — so this artifact mints no new identity and resolves no name. `image_url` is the resolved address the browser will request; it is published rather than assembled in the browser so the one host the page may reach is a validated property of the build, not a string in a bundle.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "player_id", "provider", "provider_player_id", "image_url"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "player_id": {"type": "string", "minLength": 1},
+    "provider": {
+      "enum": ["espn"],
+      "description": "The portrait provider. An enum rather than a free string: adding one is a rights decision (docs/SECURITY_LICENSE.md section 8), not a data change."
+    },
+    "provider_player_id": {
+      "type": "string",
+      "pattern": "^[0-9]{1,12}$",
+      "description": "The provider's own athlete id, taken from the canonical crosswalk. Never a name and never a fuzzy match."
+    },
+    "image_url": {
+      "type": "string",
+      "pattern": "^https://a\\.espncdn\\.com/i/headshots/nfl/players/full/[0-9]{1,12}\\.png$",
+      "description": "The exact address the browser requests. The pattern pins the host, so a build that tried to point the page at a different origin fails validation rather than shipping."
+    }
+  }
+}

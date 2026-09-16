@@ -9,6 +9,8 @@
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { PORTRAIT_HOST, guardBoundary, type PortraitRecorder } from "./boundary";
+
 /**
  * A column's index, read from its heading.
  *
@@ -26,23 +28,32 @@ async function columnIndex(table: Locator, heading: string): Promise<number> {
   return index;
 }
 
-/** Fail the test on any request that leaves the static server. No vendor call may exist. */
-function forbidExternalRequests(page: Page): void {
-  const escaped: string[] = [];
-  page.on("request", (request) => {
-    const url = request.url();
-    if (!url.startsWith("http://localhost") && !url.startsWith("data:") && !url.startsWith("blob:")) {
-      escaped.push(url);
-    }
-  });
-  page.on("close", () => {
-    expect(escaped, "the browser must fetch only generated artifacts").toEqual([]);
-  });
+/**
+ * The boundary guard, plus a recorder for the one host it allows.
+ *
+ * Stored per page so a test can ask *when* a portrait was fetched. Everything else about the
+ * rule lives in `boundary.ts`.
+ */
+const portraits = new WeakMap<Page, PortraitRecorder>();
+
+test.beforeEach(async ({ page }) => {
+  portraits.set(page, await guardBoundary(page));
+});
+
+/** This page's portrait recorder. Registered in `beforeEach`, so it is always present. */
+function portraits_(page: Page): PortraitRecorder {
+  const recorder = portraits.get(page);
+  if (recorder === undefined) throw new Error("no portrait recorder for this page");
+  return recorder;
 }
 
-test.beforeEach(({ page }) => {
-  forbidExternalRequests(page);
-});
+/** One published artifact's records, read back over the same origin the page was served from. */
+async function readArtifact<T>(page: Page, artifact: string): Promise<T[]> {
+  const response = await page.request.get(`/data/${artifact}.json`);
+  expect(response.ok(), `${artifact}.json was not served`).toBe(true);
+  const envelope = (await response.json()) as { records: T[] };
+  return envelope.records;
+}
 
 async function openBoard(page: Page, path = "/"): Promise<void> {
   await page.goto(path);
@@ -478,6 +489,81 @@ test.describe("player detail", () => {
     await mark.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("dialog").getByRole("heading", { name: "Bijan Robinson" })).toBeVisible();
+  });
+});
+
+/*
+ * The portrait is the one element that leaves this origin, so what is asserted here is *when*
+ * (ADR-087). The host allowance in `boundary.ts` would be satisfied by a board that fetched
+ * three hundred pictures on first paint, which is precisely the thing section 3.2 forbids;
+ * only a count taken at two moments can tell the two apart.
+ */
+test.describe("the portrait's browser boundary", () => {
+  test("loads a whole board without reaching the provider once", async ({ page }) => {
+    const portraits = portraits_(page);
+    await openBoard(page);
+    await expect(page.getByRole("button", { name: "Bijan Robinson", exact: true })).toBeVisible();
+    expect(portraits.requested, "first paint must not touch a third party").toEqual([]);
+  });
+
+  test("requests exactly one picture, from the declared host, when a card opens", async ({ page }) => {
+    const portraits = portraits_(page);
+    await openBoard(page);
+    await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Bijan Robinson" })).toBeVisible();
+    await expect(page.locator("img.portrait-image")).toHaveCount(1);
+    await expect.poll(() => portraits.requested.length).toBe(1);
+    expect(portraits.requested[0]).toMatch(
+      new RegExp(`^https://${PORTRAIT_HOST.replace(/\./gu, "\\.")}/i/headshots/nfl/players/full/\\d+\\.png$`),
+    );
+  });
+
+  test("renders the address the artifact published, not one the page composed", async ({ page }) => {
+    await openBoard(page);
+    const published = (await readArtifact<{ player_id: string; image_url: string }>(
+      page,
+      "player_headshots",
+    )).find((record) => record.player_id === "gsis:00-0000001");
+    expect(published, "no published portrait for the fixture's first player").toBeTruthy();
+    await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+    await expect(page.locator("img.portrait-image")).toHaveAttribute("src", published?.image_url ?? "");
+  });
+
+  test("draws a monogram, and asks for nothing, for a player the crosswalk cannot reach", async ({ page }) => {
+    const portraits = portraits_(page);
+    await openBoard(page);
+    // Deebo Gray is the fixture's unbridged player — the same seed that carries no status
+    // record. The card must show his numbers and simply have no picture.
+    await page.getByRole("button", { name: "Deebo Gray", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("heading", { name: "Deebo Gray" })).toBeVisible();
+    await expect(page.locator("img.portrait-image")).toHaveCount(0);
+    await expect(dialog.locator(".portrait-monogram")).toHaveText("DG");
+    expect(portraits.requested).toEqual([]);
+  });
+
+  test("keeps the frame at every card variant, so no viewport loses the identity block", async ({ page }) => {
+    for (const size of [
+      { width: 1440, height: 900 },
+      { width: 900, height: 900 },
+      { width: 390, height: 844 },
+      { width: 320, height: 720 },
+    ]) {
+      await page.setViewportSize(size);
+      await openBoard(page);
+      await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+      const frame = page.getByRole("dialog").locator(".portrait");
+      await expect(frame, `no portrait frame at ${String(size.width)}px`).toBeVisible();
+      const box = await frame.boundingBox();
+      expect(box, `no box at ${String(size.width)}px`).toBeTruthy();
+      // Square-ish at every size and never wider than the card it sits in. The ratio differs
+      // by variant on purpose — a hero at 1c, an identity anchor at 1a/1b — so what is pinned
+      // is that it has real area and stays inside the frame.
+      expect(box?.width ?? 0, `zero-width portrait at ${String(size.width)}px`).toBeGreaterThan(30);
+      expect(box?.height ?? 0, `zero-height portrait at ${String(size.width)}px`).toBeGreaterThan(30);
+      expect(box?.width ?? 0).toBeLessThanOrEqual(size.width);
+      await page.keyboard.press("Escape");
+    }
   });
 });
 

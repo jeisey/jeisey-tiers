@@ -59,6 +59,7 @@ from ffdraft.contracts import (
     SurfaceReason,
 )
 from ffdraft.contracts.enums import MarketSignalType
+from ffdraft.headshots import build_player_headshot_records, crosswalk_from_registry
 from ffdraft.identity import (
     CanonicalRegistry,
     build_registry,
@@ -449,13 +450,23 @@ def run_fixture_pipeline(
     )
     trend_series = _trend_series_records(arbitrage, build_id=build_id, snapshot_at=now)
 
+    published_players = [str(row["player_id"]) for row in tiers]
     status = _player_status_records(
         registry=registry,
         roster=roster_batch.frame,
         sleeper_batch=sleeper_batch,
         build_id=build_id,
         generated_at=now,
-        published=[str(row["player_id"]) for row in tiers],
+        published=published_players,
+        gate=gate,
+    )
+    # The fixture registry deliberately holds a player the crosswalk cannot bridge, so the
+    # artifact ships with a hole in it and the card's no-portrait path is exercised by the
+    # default fixture rather than only by a unit test (ADR-087).
+    headshots = build_player_headshot_records(
+        crosswalk=crosswalk_from_registry(registry),
+        published=published_players,
+        build_id=build_id,
         gate=gate,
     )
 
@@ -469,6 +480,7 @@ def run_fixture_pipeline(
         "market_trend_series": trend_series,
         "market_snapshot": market_records,
         "player_status": status.records,
+        "player_headshots": headshots.records,
         "ros_tiers": ros_tiers,
         "inseason_opportunity": opportunity,
     }
@@ -483,6 +495,7 @@ def run_fixture_pipeline(
         git_sha=git_sha or _git_sha(),
         presets=_LAUNCH_PRESETS,
         status=status,
+        headshots=headshots,
         market={
             "source_id": market_batch.source_id,
             "snapshot_key": snapshot_key(now),
@@ -1561,6 +1574,7 @@ def _build_metadata(
     git_sha: str,
     presets: Sequence[str],
     status: PlayerStatusResult | None = None,
+    headshots: Any | None = None,
     market: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     seen: dict[str, dict[str, Any]] = {}
@@ -1608,6 +1622,7 @@ def _build_metadata(
         "arbitrage_method_version": ARBITRAGE_METHOD_VERSION,
         "market": dict(market) if market is not None else None,
         "player_status": status.summary() if status is not None else None,
+        "player_headshots": headshots.summary() if headshots is not None else None,
         "supported_presets": list(presets),
         "sources": [seen[key] for key in sorted(seen)],
         "quality_gate": gate.summary(),

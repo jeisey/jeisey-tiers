@@ -2261,6 +2261,140 @@ dialog.player-detail::backdrop {
   color: var(--warn);
 }
 
+/* -- the portrait (ADR-087) ------------------------------------------------
+ *
+ * Four layers over one cut rectangle, and each one is doing a job the picture cannot do for
+ * itself.
+ *
+ *   1. the **wash** — the frame's own background, tinted by position. The provider serves a
+ *      cut-out PNG with a transparent ground, so without this the player would float on the
+ *      rail's gradient and read as a sticker rather than as part of the panel.
+ *   2. the **monogram** — always present, behind everything. It is what a reader sees while
+ *      the picture is in flight, when the crosswalk does not reach the player, and when the
+ *      request fails, so all three look the same and none of them moves the layout.
+ *   3. the **veil** — the HUD's scanline motif, a hairline frame and two corner ticks, drawn
+ *      as one element's background plus its two pseudo-elements so the whole treatment costs
+ *      one node.
+ *   4. the **fade** — the frame's `::after`, a gradient from transparent to the rail's own
+ *      ground across the bottom third. This is the layer that makes the portrait *blend*: it
+ *      dissolves the cut-out's lower edge into the panel instead of ending it on a line.
+ *
+ * **The geometry assumes nothing about the provider's dimensions**, and cannot, because this
+ * site never fetches one at build time and must not start. `cover` on a fixed `aspect-ratio`
+ * frame cannot letterbox, cannot overflow and cannot shift the rail, whatever arrives. Which
+ * axis it crops follows from which way the source leans: a landscape headshot fills the height
+ * and is trimmed at the sides, where `50%` centres it; a portrait one fills the width and is
+ * trimmed top and bottom, where `14%` keeps the head rather than the chest. Both cases are
+ * covered on purpose — the one the provider serves today is not a contract.
+ */
+
+.portrait {
+  /*
+   * The tint as bare channels, not as a colour. `--pos-wr` and friends are hex, and there is
+   * no way to take an alpha of a hex token that every engine in the browser matrix agrees on
+   * — relative colour syntax (`rgb(from ...)`) is too new for the Firefox/WebKit smoke gate
+   * to be assumed. A channel triple composes with `/ <alpha>` everywhere, which is also the
+   * form every existing rule in this file already uses.
+   */
+  --portrait-rgb: 46 204 255;
+  --notch: 14px;
+
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 6;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(var(--portrait-rgb) / 22%), transparent 70%),
+    linear-gradient(180deg, rgb(11 20 32 / 90%), rgb(5 11 20 / 96%));
+  border: var(--hairline) solid var(--line-strong);
+}
+
+.portrait[data-pos="QB"] { --portrait-rgb: 181 140 255; }
+.portrait[data-pos="RB"] { --portrait-rgb: 34 209 154; }
+.portrait[data-pos="WR"] { --portrait-rgb: 46 204 255; }
+.portrait[data-pos="TE"] { --portrait-rgb: 255 179 71; }
+
+/*
+ * Hidden the moment a picture has actually *painted*, not the moment one is requested.
+ *
+ * The provider serves a cut-out with a transparent ground, so letters left behind it would
+ * show through around the player's shoulders. Keyed on `loaded` rather than on having a URL
+ * because the gap between the two is exactly when the monogram is earning its place.
+ */
+.portrait[data-state="loaded"] .portrait-monogram {
+  visibility: hidden;
+}
+
+.portrait-monogram {
+  grid-area: 1 / 1;
+  font: 500 3.2rem/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  /* Deliberately quiet. It is a placeholder for a picture, not a reading. */
+  color: rgb(var(--portrait-rgb) / 34%);
+  user-select: none;
+}
+
+.portrait-image {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 14%;
+  /*
+   * A cut-out on a dark ground keeps a pale halo from the provider's own matting. Pulling
+   * contrast and dropping brightness a little seats it in the panel; the player is still
+   * plainly himself, which is the whole point of showing him.
+   */
+  filter: contrast(1.04) saturate(1.02) brightness(0.94);
+}
+
+/*
+ * Scanlines and the bottom blend on **one** element, so the corner ticks below — which are
+ * this element's own pseudo-elements — paint above both.
+ *
+ * They started as a `::after` on `.portrait`, which is the last child in paint order and so
+ * buried the bottom-right tick under the fade. A gradient layer is free; a wrapper is not.
+ *
+ * The fade's stop is `--panel-raised` written out (#091523): a gradient needs channels and the
+ * token is hex, so the two must move together. It is the layer that does the actual blending —
+ * it dissolves the cut-out's lower edge into the rail instead of ending it on a line.
+ */
+.portrait-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent, rgb(9 21 35 / 94%)) bottom / 100% 42% no-repeat,
+    /* The HUD scanline. 3px period, two-thirds transparent, so it reads as texture. */
+    repeating-linear-gradient(180deg, rgb(5 11 20 / 16%) 0 1px, transparent 1px 3px);
+}
+
+/* Two corner ticks, top-left and bottom-right — the source's own frame vocabulary. */
+.portrait-veil::before,
+.portrait-veil::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: var(--hairline) solid rgb(var(--portrait-rgb) / 62%);
+}
+
+.portrait-veil::before {
+  top: 6px;
+  left: 6px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.portrait-veil::after {
+  right: 6px;
+  bottom: 6px;
+  border-left: none;
+  border-top: none;
+}
+
 /* -- the identity rail (1c) ------------------------------------------------ */
 
 .detail-rail {
@@ -3394,6 +3528,34 @@ dl.facts dd {
     flex: none;
   }
 
+  /*
+   * The rail is a row here, so the portrait stops being a hero and becomes an identity
+   * anchor: a small square beside the name, at the same height as the identity block it sits
+   * next to. A rail-width portrait in a header band would be a picture with a card beside it.
+   */
+  .portrait {
+    --notch: 8px;
+
+    flex: none;
+    width: 4.5rem;
+    aspect-ratio: 1;
+  }
+
+  .portrait-monogram {
+    font-size: 1.4rem;
+  }
+
+  /* The blend has nothing to blend into at this size — the frame ends against the band. */
+  .portrait-veil {
+    background: repeating-linear-gradient(180deg, rgb(5 11 20 / 16%) 0 1px, transparent 1px 3px);
+  }
+
+  .portrait-veil::before,
+  .portrait-veil::after {
+    width: 8px;
+    height: 8px;
+  }
+
   .detail-rail > .detail-identity-block {
     flex: 1 1 16rem;
     min-width: 0;
@@ -3838,6 +4000,19 @@ dl.facts dd {
   .detail-rail {
     padding: var(--space-3) 3.6rem var(--space-3) var(--space-3);
     gap: var(--space-3);
+  }
+
+  /*
+   * Smaller again, and it stays. The sheet's whole argument is that fair rank, the verdict
+   * and the status line are on screen with no tap; a 3.25rem square costs one line of the
+   * identity block's width and nothing vertical, because the block is already taller.
+   */
+  .portrait {
+    width: 3.25rem;
+  }
+
+  .portrait-monogram {
+    font-size: 1rem;
   }
 
   /* The close control is a square on a phone: the word costs a third of the header's width. */

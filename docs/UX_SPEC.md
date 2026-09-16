@@ -288,6 +288,33 @@ Three further rules hold across all of them:
    unit; averaging them would be the most confident-looking number on the page and the least
    supported. The readings sit side by side and the reading is the reader's.
 
+### 6A.7 The portrait (ADR-087)
+
+The card leads with the player's public ESPN headshot, layered so it reads as part of the HUD
+rather than as a picture pasted onto it. Four layers, and each one is doing a job:
+
+| layer | why it is there |
+|---|---|
+| position-tinted wash | the provider serves a cut-out on a transparent ground; without a ground behind it the player floats and reads as a sticker |
+| monogram, always behind | a slow network, an unbridged player and a provider 404 then all look the same and none of them moves the layout |
+| scanline veil + two corner ticks | the source's own frame vocabulary, at one DOM node |
+| bottom fade to the panel's own ground | the layer that does the blending: it dissolves the cut-out's lower edge into the rail instead of ending it on a line |
+
+**It is a hero at 1c and an identity anchor at 1a/1b.** Full rail width above the name on the
+wide variant; a small square beside the name in the header band and in the sheet, because a
+rail-width picture in a header band would be a picture with a card beside it, and because the
+sheet's whole argument is that fair rank, the verdict and the status line are on screen with
+no tap.
+
+**It carries no information and must never be given any.** The name, position, team, tier and
+status are all text within a few pixels of the frame. `alt=""`; the monogram and the veil are
+`aria-hidden`. It is not a status indicator, not a tier cue, and never a row on a board — a
+portrait on three hundred rows would be three hundred third-party requests for decoration.
+
+**It is the only element on the site that fetches from another origin**, it does so only when
+a card is opened, and the Data view says so in the reader's own words. See
+`docs/ARCHITECTURE.md` section 3.2 and ADR-087 for what that costs and what bounds it.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns

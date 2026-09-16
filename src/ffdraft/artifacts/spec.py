@@ -132,6 +132,24 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "add/drop behaviour, which is never a price and never a rank"
         ),
     ),
+    "player_headshots": ArtifactSpec(
+        artifact="player_headshots",
+        schema_name="player_headshot_record",
+        json_filename="player_headshots.json",
+        # No CSV. A CSV is the export a reader opens in a spreadsheet, and a column of image
+        # addresses is not a fantasy-football quantity; publishing one would also put the
+        # provider's URLs into a file this site hands out, which is a distribution question
+        # the portrait itself does not raise (ADR-087).
+        csv_filename=None,
+        key_fields=("build_id", "player_id"),
+        sort_fields=("player_id",),
+        description=(
+            "Where each published player's public portrait lives, one row per canonical "
+            "player. Decoration only: no field here can move a projection, a fair rank, a "
+            "tier or an arbitrage score, and the id is the crosswalk the identity registry "
+            "already holds rather than a new one (ADR-087)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

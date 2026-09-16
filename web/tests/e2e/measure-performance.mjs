@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 
 import { chromium } from "@playwright/test";
 
+import { blockPortraits } from "./portrait-stub.mjs";
 import { createStaticServer } from "./static-server.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -337,6 +338,8 @@ async function median(label, run) {
 /** Every page the run opens, with the diagnostic override applied when one was asked for. */
 async function newPage() {
   const created = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  // A measurement of this page must not include a third party's latency.
+  await blockPortraits(created);
   if (overrideCss !== null) await created.addInitScript(injectCss, overrideCss);
   return created;
 }

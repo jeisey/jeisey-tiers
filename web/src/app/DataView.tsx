@@ -552,6 +552,15 @@ export function DataView({
             <a href="https://docs.sleeper.com/">Sleeper API docs</a>
           </li>
           <li>
+            <strong>ESPN</strong> — player headshots, shown on the player card only. The
+            pictures are served by ESPN and are loaded by your browser directly from{" "}
+            <span className="mono">a.espncdn.com</span> when you open a card, with no referrer
+            sent; none is copied onto this site. Which picture belongs to which player comes
+            from nflverse&apos;s published <span className="mono">espn_id</span>, not from
+            ESPN. No ESPN ranking, projection or ADP is used anywhere in this product.{" "}
+            <a href="https://www.espn.com/">ESPN</a>
+          </li>
+          <li>
             <strong>FantasyPros</strong> — expert consensus rankings, retrieved server-side
             with an API key that never reaches this page. Their key is on the free public
             tier, which caps every response at ten rows, so no FantasyPros number is published

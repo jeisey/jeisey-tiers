@@ -28,6 +28,16 @@
       }
     ]
   },
+  "player_headshots": {
+    "provider": "espn",
+    "host": "a.espncdn.com",
+    "source_ids": [
+      "nflreadpy"
+    ],
+    "published_players": 16,
+    "resolved": 15,
+    "coverage": 0.9375
+  },
   "player_status": {
     "players": 16,
     "sleeper_available": true,

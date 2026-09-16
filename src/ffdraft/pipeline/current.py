@@ -58,6 +58,7 @@ from ffdraft.contracts.enums import Severity
 from ffdraft.features.build import build_feature_table
 from ffdraft.features.dictionary import feature_schema_hash
 from ffdraft.features.sources import load_historical_sources
+from ffdraft.headshots import build_player_headshot_records, crosswalk_from_registry
 from ffdraft.modeling.build_config import CurrentBuildConfig
 from ffdraft.modeling.features import core_feature_selection
 from ffdraft.modeling.production import ProductionModel
@@ -381,16 +382,31 @@ def run_current_build(
     # instance, so it cannot participate in producing a single published number. It is
     # deliberately restricted to players the board actually names: a status row nobody
     # references is payload the browser downloads for nothing (ADR-043).
+    published_players = [str(row["player_id"]) for row in records.get("tiers", ())]
+    annotation_registry = _annotation_registry(roster)
     status = _player_status(
+        registry=annotation_registry,
         roster=roster,
         capture=status_capture or _retained_status(status_store, season, gate),
         build_id=resolved_build_id,
         season=season,
         as_of=stamped,
-        published=[str(row["player_id"]) for row in records.get("tiers", ())],
+        published=published_players,
         gate=gate,
     )
     records["player_status"] = status.records
+
+    # The portraits ride the same registry for the same reason: it is the annotation-side
+    # object, it never touches the model path, and its `espn_id` has already survived the
+    # crosswalk cross-check that ADR-019 requires. A player it cannot bridge gets no row and
+    # the card draws a monogram (ADR-087).
+    headshots = build_player_headshot_records(
+        crosswalk=crosswalk_from_registry(annotation_registry),
+        published=published_players,
+        build_id=resolved_build_id,
+        gate=gate,
+    )
+    records["player_headshots"] = headshots.records
 
     metadata = _build_metadata(
         settings,
@@ -402,6 +418,7 @@ def run_current_build(
         git_sha=git_sha,
         model=model,
         status=status,
+        headshots=headshots,
         season_state=_season_state_block(loaded.sources.schedule, season, stamped),
     )
     written: list[Path] = []
@@ -526,8 +543,21 @@ def _retained_status(store: Any, season: int, gate: QualityGate) -> StatusCaptur
         return None
 
 
+def _annotation_registry(roster: pl.DataFrame) -> Any:
+    """The registry the annotation artifacts are built from.
+
+    Rebuilt here rather than shared with the feature build, which is not duplication for its
+    own sake: it makes the status and portrait paths structurally incapable of handing
+    anything to the model path, because the two never touch the same object.
+    """
+    from ffdraft.identity.registry import build_registry
+
+    return build_registry(roster) if not roster.is_empty() else build_registry(pl.DataFrame())
+
+
 def _player_status(
     *,
+    registry: Any,
     roster: pl.DataFrame,
     capture: StatusCapture | None,
     build_id: str,
@@ -536,15 +566,7 @@ def _player_status(
     published: Sequence[str],
     gate: QualityGate,
 ) -> Any:
-    """Build the annotation artifact from a registry of its own.
-
-    The registry is rebuilt here rather than shared with the feature build, which is not
-    duplication for its own sake: it makes the status path structurally incapable of
-    handing anything to the model path, because the two never touch the same object.
-    """
-    from ffdraft.identity.registry import build_registry
-
-    registry = build_registry(roster) if not roster.is_empty() else build_registry(pl.DataFrame())
+    """Build the annotation artifact (ADR-043)."""
     return build_player_status_records(
         registry=registry,
         roster=roster,
@@ -801,6 +823,7 @@ def _build_metadata(
     git_sha: str | None,
     model: ProductionModel,
     status: Any | None = None,
+    headshots: Any | None = None,
     season_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     summary = gate.summary()
@@ -819,6 +842,7 @@ def _build_metadata(
         # does not exist yet.
         "arbitrage_method_version": None,
         "player_status": status.summary() if status is not None else None,
+        "player_headshots": headshots.summary() if headshots is not None else None,
         "supported_presets": sorted(settings.league.presets),
         "sources": [
             {

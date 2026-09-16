@@ -77,6 +77,26 @@ The frontend may load only generated public files under `public/data/` (or Vite-
 > localhost, which is what turns this section into a check rather than a convention — and is
 > what made the decision for us.
 
+> **2026-09-16 note (ADR-087).** The rule now has exactly one exception, and it is named,
+> single and checked: the player card's portrait, fetched from `a.espncdn.com` **when a reader
+> opens a card**. The sentence above is unchanged — the portrait is in no render path a page
+> load takes, and a board loads without requesting one. What changed is that "no cross-origin
+> request at all", which was true until this ADR, is now "no cross-origin request except this
+> one, from this host, on this interaction".
+>
+> The guard moved to `web/tests/e2e/boundary.ts` so the allowance exists once rather than in
+> three hand-copied `beforeEach` blocks. It still fails on every other host; a negative
+> control was run against a foreign host and the guard caught it. `board.spec.ts` additionally
+> counts portrait requests *before* and *after* a card is opened, because a host allowance
+> alone would be satisfied by a board that fetched three hundred pictures on first paint,
+> which is precisely what this section forbids.
+>
+> The address the browser requests is published in `player_headshots.json` rather than
+> assembled in the bundle, so the one reachable host is a property the build validates. No
+> test in this repository fetches a real portrait: the specs serve a local pixel and
+> `verify-real-build.mjs` blocks the host outright, because a gate standing between a build
+> and the deployed site may not depend on a third party's uptime.
+
 ### 3.3 Benchmark boundary
 
 Benchmark-only source data must never be serialized into public artifacts unless its current license/terms explicitly permit redistribution.

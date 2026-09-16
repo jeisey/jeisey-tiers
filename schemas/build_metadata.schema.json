@@ -116,6 +116,19 @@
         }
       }
     },
+    "player_headshots": {
+      "type": ["object", "null"],
+      "description": "Portrait-artifact provenance (ADR-087). Decoration only: nothing described here can move a projection, a fair rank, a tier or an arbitrage score, and no field here is a measurement of a player. `host` is the single third-party origin the page may reach; the Data view names it so a reader can see what opening a card costs before opening one.",
+      "additionalProperties": true,
+      "properties": {
+        "provider": {"type": "string"},
+        "host": {"type": "string"},
+        "published_players": {"type": "integer", "minimum": 0},
+        "resolved": {"type": "integer", "minimum": 0},
+        "coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "source_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
     "player_status": {
       "type": [
         "object",

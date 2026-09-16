@@ -822,3 +822,47 @@ says only which boards it holds. It is deliberately a block on an existing artif
 than a `season_state.json` of its own — a second file would be a second schema, a second
 fetch, a second 404 path and a second way for two published files to disagree about one
 season.
+
+## 17. The portrait contract — 2026-09-16 (ADR-087)
+
+`player_headshots` (`player_headshot_record` 1.0) is a new artifact, keyed once per canonical
+`player_id` and joined in the browser. Additive: no existing record schema moved, no published
+number changed, and a bundle without it is a complete bundle.
+
+| field | meaning |
+|---|---|
+| `player_id` | the canonical key, as everywhere else |
+| `provider` | `espn`. An **enum of one** — adding a second is a rights decision (`docs/SECURITY_LICENSE.md` section 8), not a config change |
+| `provider_player_id` | the provider's athlete id, from the identity registry's crosswalk. Numeric, never a name |
+| `image_url` | the exact address the browser will request |
+
+**It is decoration, which is one step weaker than `player_status`'s annotation.** A status is
+at least a measurement of something; a portrait is a measurement of nothing. No field here may
+enter a projection, a VORP, a fair rank, a tier or an arbitrage score, be sorted on, or be
+exported.
+
+**`image_url` is deliberately redundant with `provider_player_id`.** Publishing the resolved
+address rather than assembling it in the browser makes the one host this page may reach a
+property the build validates. Three independent checks read it, and the third is the one that
+matters most:
+
+| check | catches |
+|---|---|
+| the schema's `pattern` | any address that is not this host and this path shape |
+| `artifact.headshot_foreign_host` | the same, surviving a schema edit |
+| `artifact.headshot_url_disagrees_with_id` | a row carrying one player's id beside another player's picture |
+
+**Population and direction.** Rows exist for players the tier board publishes — the same scope
+and the same reason as `player_status`: a row nobody can open is payload the browser downloads
+for nothing. `cross_artifact.headshot_player_not_in_tiers` enforces one direction only. A
+board row with **no** portrait is ordinary and is reported as coverage, never as a failure; a
+portrait with no board row is an identity mistake and is critical. That asymmetry is the
+contract, not an oversight.
+
+**No CSV.** A column of image addresses is not a fantasy-football quantity, and an export is
+what a reader opens in a spreadsheet.
+
+**`build_metadata` gains an optional `player_headshots` block** naming the provider, the host
+and the coverage the build achieved, so the Data view can state what opening a card costs
+without hardcoding it. Absent-or-null is valid, as for `market` and `player_status`.
+

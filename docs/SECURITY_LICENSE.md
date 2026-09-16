@@ -129,6 +129,40 @@ MFL publicly promotes its developer API for third-party add-ons, but exact 2026 
 
 Commercial; use only under purchased agreement/license.
 
+### ESPN player headshots
+
+**Displayed, never redistributed (ADR-087, 2026-09-16).** The player card shows a player's
+public ESPN headshot. The image is fetched by the visitor's browser directly from
+`a.espncdn.com` when a card is opened; **no image is copied into this repository, into a
+build artifact, or into the Pages deployment.** The project owner reviewed ESPN's terms and
+recorded that the headshots are public and freely accessible provided ESPN is attributed, and
+the attribution is live on the Data view's "Sources and attribution" section rather than
+planned.
+
+The distinction this section draws for every other source is the one that decided the
+implementation. Copying several hundred ESPN photographs into a public repository is
+redistribution — a materially stronger claim than "public and freely accessible with
+attribution" — so it was not done, and hotlinking was chosen over vendoring on rights rather
+than on convenience. That is the opposite trade from the fonts below, where the OFL grants
+redistribution explicitly and vendoring is therefore the *safer* option; the two are not
+inconsistent, because the licences differ.
+
+**No ESPN data is used.** Which picture belongs to which player comes from nflverse's
+published `espn_id` (CC-BY 4.0), which this project already uses as its primary market
+identity bridge (ADR-019). No ESPN endpoint is called by the pipeline, and no ESPN ranking,
+projection, ADP or other quantity enters this product at any point. ESPN stays `disabled` as
+a *data* source in `config/source-registry.yaml`; that is a separate question and its answer
+is unchanged.
+
+**What it costs a visitor, recorded rather than glossed.** Until this ADR the site made no
+cross-origin request at all — section 11 below and the vendored fonts were the reason. A
+reader who opens a player card now tells ESPN their IP address and which athlete id they
+looked at. The request carries `referrerpolicy="no-referrer"`, so ESPN is not told which page
+or which board; it is never made on page load, only on opening a card; and it is never made
+from a board row. Those bounds are asserted by tests, not intended. Adding a second image
+provider is a decision for this section, not a configuration change, which is why the record
+schema's `provider` is an enum of one.
+
 ### Vendored fonts
 
 **Exo 2** and **JetBrains Mono**, both **SIL Open Font License 1.1**, added in Phase 9A under
@@ -171,6 +205,14 @@ Methodology/Data section should contain concise source acknowledgements and link
 
 Generated CSV may include a short `source_methodology`/metadata reference or companion metadata rather than repeating long license text in every row.
 
+**ESPN (ADR-087, 2026-09-16).** ESPN is acknowledged in the Data view's "Sources and
+attribution" section, which is the owner's stated condition for using the headshots. The entry
+says three things deliberately, because two of them are what a reader cannot see: that the
+picture is loaded by their own browser from `a.espncdn.com` when they open a card, that no
+referrer is sent and no image is copied onto this site, and that the player-to-picture mapping
+comes from nflverse rather than from ESPN. It is not in any CSV, because no export carries a
+portrait.
+
 ## 10. Non-commercial boundary
 
 As of the 2026-08-18 owner decisions, the non-commercial-only sources in the plan are **Sleeper** (verified, and on the current-status path), **FantasyPros-derived ECR** (benchmark-only, ADR-014 as amended) and FantasyCalc (disabled). `config/source-registry.yaml` keeps the authoritative list in `decisions.non_commercial_deployment_required_by`, and a unit test fails if a source is marked non-commercial without being listed there.
@@ -208,6 +250,15 @@ MyFantasyLeague's published rules permit the ADP read and are unchanged; the Pha
 ## 11. Privacy
 
 No user accounts/analytics are needed for V1. Prefer no third-party behavioral analytics. If basic analytics are later desired, require a privacy decision and avoid collecting draft/user data by default.
+
+**Amended 2026-09-16 (ADR-087).** The site is no longer free of third-party requests. Opening
+a player card fetches that player's headshot from `a.espncdn.com`, which discloses the
+visitor's IP address and the athlete id to ESPN. This is a *request for an image*, not
+analytics, and nothing on this site reports anything about a visitor to anyone: there is still
+no account, no tracker, no analytics script, no cookie and no beacon. The disclosure is
+bounded by `no-referrer`, by happening only on an explicit interaction, and by being one
+host — see section 8. It is stated on the Data view in the reader's own words so the cost is
+visible before it is paid.
 
 ## 12. Incident response
 

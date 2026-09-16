@@ -769,3 +769,42 @@ when the season starts, and a feed first captured in week 3 can only describe we
 
 Not probed and not built on. There is no verified sanctioned public production route that
 meets this project's reliability and policy standard (roadmap 10.1.5). Unchanged.
+
+## 17. ESPN player headshots — 2026-09-16 (ADR-087)
+
+**ESPN is not a data source here and its policy state is unchanged: `disabled`.** What was
+added is an *image reference*, and the distinction is the whole record.
+
+| | |
+|---|---|
+| What is used | the public headshot at `https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png` |
+| What is not used | every ESPN ranking, projection, ADP, ownership figure and API endpoint |
+| Who fetches it | the visitor's browser, on opening a player card — never the pipeline, never a runner |
+| Where the mapping comes from | nflverse `espn_id` (CC-BY 4.0), this project's primary market identity bridge since ADR-019 |
+| What is stored | nothing. No image is committed, built into an artifact, or served from this site |
+| Attribution | the Data view's "Sources and attribution" section, live |
+| Terms | reviewed by the project owner: public and freely accessible with attribution |
+
+**Verified against the 2026 roster, 2026-09-16.** `Jahmyr Gibbs` → `gsis:00-0039139` →
+`espn_id 4429795`, which is the id in the address the owner supplied. Coverage over core
+positions: **793 of 925 rows (85.7%)**; over rows nflverse reports as active, **494 of 499
+(99.0%)**. The 132 unbridged rows are `CUT` (63), `DEV` (47), `RES` (13), `RET` (3), `EXE` (1)
+and `ACT` (5) — practice-squad and cut players a fantasy board does not publish.
+
+**No ESPN endpoint was called to build this.** The owner suggested an ad-hoc mapping exercise
+against ESPN's public API or a community wrapper; none was needed, because `espn_id` was
+already normalized off the nflverse roster, already cross-checked against the `ff_playerids`
+mirror with any disagreeing row rejected whole, and already carried on every `CanonicalPlayer`.
+Adding a scrape would have introduced a second, unreviewed identity path for a decorative
+field — and `AGENTS.md` section 6 is specifically about not doing that.
+
+**The `ff_playerids` mirror is not leaned on here.** It publishes no licence
+(`ff_playerids_unlicensed_mirror`), and Phase 10 recorded that the licensing question it raises
+was never reached because coverage was sufficient without it. The same holds: the roster alone
+carries the bridge for 99% of active players, so nothing about this feature depends on the
+mirror.
+
+**If the addresses ever stop resolving**, the product degrades to a monogram on every card and
+nothing else changes. There is no coverage gate and deliberately so (ADR-087): a check that
+could stop a deploy over a missing picture could take the whole board down for a cosmetic
+reason.

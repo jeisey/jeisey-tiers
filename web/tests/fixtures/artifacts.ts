@@ -41,6 +41,7 @@ import type {
   ArtifactEnvelope,
   BuildMetadata,
   OpportunityRecord,
+  PlayerHeadshotRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   Position,
@@ -1018,6 +1019,34 @@ export function playerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {
   return envelope("player_status", "player_status", playerStatusRecords());
 }
 
+/**
+ * The portrait crosswalk, with a hole in it on purpose.
+ *
+ * Deebo Gray gets no portrait, the same seed that gets no status record — a player the
+ * annotation and decoration layers both fail to reach is the case both fall-back paths exist
+ * for, and giving every fixture row a picture would mean the card's monogram was rendered by
+ * nothing but a unit test. The production fixture build has the same hole, for an unrelated
+ * and load-bearing reason: its one player with a null `espn_id` on both id bridges is
+ * ADR-054's, so the case cannot quietly disappear from either side.
+ */
+export function playerHeadshotRecords(): PlayerHeadshotRecord[] {
+  return SEEDS.filter((seed) => seed.name !== "Deebo Gray").map((seed, index) => {
+    const providerPlayerId = String(4_000_001 + index);
+    return {
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      player_id: seed.id,
+      provider: "espn",
+      provider_player_id: providerPlayerId,
+      image_url: `https://a.espncdn.com/i/headshots/nfl/players/full/${providerPlayerId}.png`,
+    };
+  });
+}
+
+export function playerHeadshotEnvelope(): ArtifactEnvelope<PlayerHeadshotRecord> {
+  return envelope("player_headshots", "player_headshot_record", playerHeadshotRecords());
+}
+
 export function projectionEnvelope(): ArtifactEnvelope<PlayerProjectionRecord> {
   return envelope("projections", "player_projection", projectionRecords());
 }
@@ -1032,6 +1061,7 @@ export function fixtureFiles(condition: MarketCondition = "launch"): Record<stri
     // here carried until it turned out to matter (ADR-081).
     "market_trend_series.json": marketTrendSeriesEnvelope(condition),
     "player_status.json": playerStatusEnvelope(),
+    "player_headshots.json": playerHeadshotEnvelope(),
     "projections.json": projectionEnvelope(),
   };
 }

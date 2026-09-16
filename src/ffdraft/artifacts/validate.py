@@ -31,6 +31,7 @@ from ffdraft.artifacts.spec import (
 )
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import Severity
+from ffdraft.headshots import HEADSHOT_HOST, HEADSHOT_PROVIDER, headshot_url
 from ffdraft.quality import (
     QualityGate,
     check_duplicate_keys,
@@ -136,6 +137,7 @@ def validate_artifact_directory(directory: Path) -> QualityGate:
     gate.extend(_build_metadata_checks(directory, envelopes))
     gate.extend(_ros_metadata_checks(directory, envelopes))
     gate.extend(_cross_artifact_checks(envelopes))
+    gate.extend(_headshot_cross_checks(envelopes))
     gate.extend(_in_season_cross_checks(envelopes))
     if not envelopes:
         gate.add(
@@ -222,7 +224,88 @@ def _semantic_checks(
             ]
         case "market_trend_series":
             return _trend_series_checks(records, stage)
+        case "player_headshots":
+            return _headshot_checks(records, stage)
     return []
+
+
+def _headshot_checks(
+    records: Sequence[Mapping[str, Any]],
+    stage: str,
+) -> list[QualityCheck]:
+    """The one place a published address can point the browser somewhere new (ADR-087).
+
+    The record schema already pins the host with a pattern, so this is a second reading of the
+    same claim rather than the only one - deliberately, because it is the check that has to
+    survive a future schema edit. It asserts two things the pattern alone cannot: that the URL
+    and the id agree, so a row cannot carry one player's id beside another's picture, and that
+    every row names the provider its id came from.
+    """
+    wrong_host: list[str] = []
+    disagreeing: list[str] = []
+    wrong_provider: list[str] = []
+
+    for record in records:
+        player_id = str(record.get("player_id"))
+        provider = record.get("provider")
+        provider_id = str(record.get("provider_player_id") or "")
+        url = str(record.get("image_url") or "")
+        if provider != HEADSHOT_PROVIDER:
+            wrong_provider.append(f"{player_id}: {provider!r}")
+            continue
+        if not url.startswith(f"https://{HEADSHOT_HOST}/"):
+            wrong_host.append(f"{player_id}: {url}")
+            continue
+        if url != headshot_url(provider_id):
+            disagreeing.append(f"{player_id}: {provider_id} -> {url}")
+
+    checks: list[QualityCheck] = []
+    if wrong_provider:
+        checks.append(
+            QualityCheck.fail(
+                "artifact.headshot_unknown_provider",
+                stage=stage,
+                message="a portrait row names a provider this build does not publish",
+                observed="; ".join(wrong_provider[:10]),
+                expected=HEADSHOT_PROVIDER,
+            ),
+        )
+    if wrong_host:
+        checks.append(
+            QualityCheck.fail(
+                "artifact.headshot_foreign_host",
+                stage=stage,
+                message=(
+                    "a portrait address points somewhere other than the one declared host; "
+                    "publishing it would open the page to an origin nothing reviewed"
+                ),
+                observed="; ".join(wrong_host[:10]),
+                expected=f"https://{HEADSHOT_HOST}/",
+            ),
+        )
+    if disagreeing:
+        checks.append(
+            QualityCheck.fail(
+                "artifact.headshot_url_disagrees_with_id",
+                stage=stage,
+                message=(
+                    "a portrait address does not resolve from the id beside it, so the row "
+                    "could show one player's picture under another player's name"
+                ),
+                observed="; ".join(disagreeing[:10]),
+                expected="image_url == headshot_url(provider_player_id)",
+            ),
+        )
+    if not checks:
+        checks.append(
+            QualityCheck.ok(
+                "artifact.headshot_addresses_agree",
+                stage=stage,
+                message="every portrait address resolves from its own id on the declared host",
+                observed=f"{len(records)} row(s), host {HEADSHOT_HOST}",
+            ),
+        )
+    return checks
 
 
 def _trend_series_checks(
@@ -1116,6 +1199,49 @@ def _trend_series_agreement(
             ),
         )
     return checks
+
+
+def _headshot_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:
+    """A portrait may only describe a player the board publishes.
+
+    One direction only, and that asymmetry is the contract. A board row with no portrait is
+    the normal state - the crosswalk does not reach every player and the card draws a monogram
+    instead - so the missing direction is not a finding and is reported as coverage rather
+    than as a failure. A *portrait* with no board row is the other thing entirely: it is
+    either an identity mistake or payload for a card nobody can open.
+    """
+    headshots = envelopes.get("player_headshots")
+    tiers = envelopes.get("tiers")
+    if headshots is None or tiers is None:
+        return []
+
+    board = {str(record.get("player_id")) for record in tiers.get("records", ())}
+    orphans = sorted(
+        {
+            str(record.get("player_id"))
+            for record in headshots.get("records", ())
+            if str(record.get("player_id")) not in board
+        },
+    )
+    if orphans:
+        return [
+            QualityCheck.fail(
+                "cross_artifact.headshot_player_not_in_tiers",
+                stage="artifacts",
+                message="every portrait must describe a player the tier board publishes",
+                observed="; ".join(orphans[:10]),
+                expected="portrait players are a subset of tier players",
+            ),
+        ]
+    covered = len({str(r.get("player_id")) for r in headshots.get("records", ())})
+    return [
+        QualityCheck.ok(
+            "cross_artifact.headshot_coverage",
+            stage="artifacts",
+            message="board players with a published portrait",
+            observed=f"{covered}/{len(board)} player(s)",
+        ),
+    ]
 
 
 def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:

@@ -28,6 +28,7 @@ export const RECORD_SCHEMA_VERSIONS = {
   player_status: "1.0",
   ros_tiers: "1.0",
   inseason_opportunity: "1.0",
+  player_headshots: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -43,7 +44,8 @@ export type ArtifactName =
   | "market_snapshot"
   | "player_status"
   | "ros_tiers"
-  | "inseason_opportunity";
+  | "inseason_opportunity"
+  | "player_headshots";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -265,6 +267,26 @@ export interface PlayerStatusRecord {
   readonly observed_at_utc: string;
   readonly source_ids: readonly string[];
   readonly quality_flags: readonly string[];
+}
+
+/**
+ * Where one player's public portrait lives (ADR-087).
+ *
+ * Decoration, in the same sense that `PlayerStatusRecord` is annotation and for a stronger
+ * reason: it carries no measurement of the player at all. Nothing here may be sorted on,
+ * exported, or presented as a fact about how good he is.
+ *
+ * `image_url` is published rather than assembled here on purpose. The site makes no other
+ * cross-origin request, so the one host a card may reach is a property the build validates
+ * and this file reads — not a string a frontend could quietly change.
+ */
+export interface PlayerHeadshotRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly player_id: string;
+  readonly provider: "espn";
+  readonly provider_player_id: string;
+  readonly image_url: string;
 }
 
 export interface PlayerProjectionRecord {
@@ -556,6 +578,15 @@ export const PLAYER_STATUS_FIELDS = [
   "quality_flags",
 ] as const satisfies readonly (keyof PlayerStatusRecord)[];
 
+export const PLAYER_HEADSHOT_FIELDS = [
+  "schema_version",
+  "build_id",
+  "player_id",
+  "provider",
+  "provider_player_id",
+  "image_url",
+] as const satisfies readonly (keyof PlayerHeadshotRecord)[];
+
 export const PROJECTION_FIELDS = [
   "schema_version",
   "build_id",
@@ -624,6 +655,10 @@ export const MARKET_SNAPSHOT_FIELDS_COMPLETE: NoMissingKeys<
 export const PLAYER_STATUS_FIELDS_COMPLETE: NoMissingKeys<
   PlayerStatusRecord,
   typeof PLAYER_STATUS_FIELDS
+> = true;
+export const PLAYER_HEADSHOT_FIELDS_COMPLETE: NoMissingKeys<
+  PlayerHeadshotRecord,
+  typeof PLAYER_HEADSHOT_FIELDS
 > = true;
 
 
@@ -927,6 +962,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   player_status: PLAYER_STATUS_FIELDS,
   ros_tiers: ROS_TIER_FIELDS,
   inseason_opportunity: OPPORTUNITY_FIELDS,
+  player_headshots: PLAYER_HEADSHOT_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -938,6 +974,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   player_status: "player_status.json",
   ros_tiers: "ros_tiers.json",
   inseason_opportunity: "inseason_opportunity.json",
+  player_headshots: "player_headshots.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";
