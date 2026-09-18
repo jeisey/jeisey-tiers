@@ -97,6 +97,15 @@ The frontend may load only generated public files under `public/data/` (or Vite-
 > `verify-real-build.mjs` blocks the host outright, because a gate standing between a build
 > and the deployed site may not depend on a third party's uptime.
 
+> **2026-09-18 note (ADR-088).** The allowance is unchanged in kind and now has a second
+> caller: Pick of the Week renders at most four `PlayerPortrait`s, one per position, on a tab
+> a reader chose to open. The rule above still holds — no portrait on a board row, and no
+> portrait fetched by arriving at the site — and the bound here is structural rather than
+> promised: only the visible set is in the DOM, so cycling sets replaces four requests instead
+> of accumulating twenty. `inseason.spec.ts` counts the requests after the cards render and
+> asserts the image count never exceeds the card count; the host allowance in
+> `web/tests/e2e/boundary.ts` is untouched, so every other origin is still a failure.
+
 ### 3.3 Benchmark boundary
 
 Benchmark-only source data must never be serialized into public artifacts unless its current license/terms explicitly permit redistribution.
@@ -526,6 +535,15 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 > URL state is read through `useSyncExternalStore` rather than mirrored into component state, so the address bar and the board cannot disagree for a frame. Every chart is one tab stop with arrow-key movement between marks (`useRovingMarks`), because three hundred tab stops in front of a table is not accessibility.
 >
 > Added dependencies: TanStack Table v8, `d3-scale`, `d3-array`, `@playwright/test`. Nothing else.
+
+> **2026-09-18 addition (ADR-088).** `data/potw.ts` is the Pick-of-the-Week selection, and it
+> is a `data/` module rather than an artifact for the reason ADR-086 gave `cohort.ts`: it
+> computes no player value. Every number a card prints is copied from `inseason_opportunity`
+> or `ros_tiers`; what the module decides is *which rows to render*, by a set of boolean gates
+> over published fields followed by an ordering on one published quantity. There is no line in
+> it where a transaction count and a points value appear on the same side of an operator, and
+> the test suite asserts that behaviourally rather than by inspection. `app/PotwView.tsx`
+> renders it and writes nothing but the shared URL state.
 
 > **Phase-8 revision (ADR-058, ADR-059).** Both bespoke charts moved off SVG. The Tier Board is
 > a CSS grid of HUD rows with the P25-P75 interval drawn as a positioned bar, and the Draft

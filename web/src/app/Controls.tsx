@@ -29,8 +29,13 @@ import {
  * The tab set each mode owns.
  *
  * Roadmap 12.4: Draft mode is Tier Board plus Arbitrage Board; In-Season mode is ROS Tier
- * Board plus Opportunity Board. `Data` is shared, because the methodology and provenance a
- * reader needs do not change with the season.
+ * Board, Opportunity Board and Pick of the Week. `Data` is shared, because the methodology
+ * and provenance a reader needs do not change with the season.
+ *
+ * `POTW` sits last of the three in-season boards because it is the narrowest: the two boards
+ * before it publish every row, and it publishes four of them. A reader who disagrees with a
+ * pick needs the board it was selected from to be one click away, and reading order is the
+ * cheapest way to say which is which (ADR-088).
  *
  * The other mode's boards are still *reachable* — a URL naming them opens them, and the
  * mode switch is one click — they are simply not what this mode leads with.
@@ -44,6 +49,7 @@ const DRAFT_TABS: readonly { id: ResolvedViewId; label: string }[] = [
 const IN_SEASON_TABS: readonly { id: ResolvedViewId; label: string }[] = [
   { id: "ros", label: "ROS tiers" },
   { id: "opportunity", label: "Opportunity" },
+  { id: "potw", label: "POTW" },
   { id: "data", label: "Data" },
 ];
 

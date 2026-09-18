@@ -399,6 +399,103 @@ test.describe("in-season exports and links", () => {
   });
 });
 
+test.describe("pick of the week", () => {
+  /*
+    The tab makes a positive claim about four players, which is a different kind of thing from
+    the two boards beside it. These assert the parts of that claim a unit test cannot see: that
+    the bar is on the screen, that no sentence anywhere reads as a share of leagues, that the
+    portraits stay bounded, and that a set survives a reload as a link.
+  */
+  test("shows one pick per position, each naming the position it is a pick at", async ({
+    page,
+  }) => {
+    await page.goto(`${IN_SEASON}?view=potw`);
+    await expect(page.getByRole("heading", { name: /Pick of the Week/ })).toBeVisible();
+    const cards = page.locator(".potw-card");
+    await expect(cards).toHaveCount(4);
+    for (const position of ["QB", "RB", "WR", "TE"]) {
+      await expect(cards.filter({ has: page.locator(`[data-pos="${position}"]`) })).not.toHaveCount(
+        0,
+      );
+    }
+    await expect(page.getByText("QB waiver pick")).toBeVisible();
+  });
+
+  test("prints the bar each pick cleared and the population that set it", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=potw`);
+    const first = page.locator(".potw-card").first();
+    await expect(first.getByText(/bar [\d,]+ · median of \d+/)).toBeVisible();
+    await expect(first.getByText(/adds in 24h/).first()).toBeVisible();
+  });
+
+  test("never states a rostered share, a matchup or a multi-week trend", async ({ page }) => {
+    // The three things a waiver card conventionally shows and this product cannot source
+    // (ADR-088). A regression here is a truthfulness defect rather than a layout one, which
+    // is why it is asserted over the whole rendered panel rather than over one element.
+    await page.goto(`${IN_SEASON}?view=potw`);
+    await expect(page.locator(".potw-card").first()).toBeVisible();
+    const text = (await page.locator("#panel-potw").innerText()).toLowerCase();
+    expect(text).not.toMatch(/\d+% rostered|rostered in|percent of leagues|% owned/);
+    expect(text).not.toMatch(/matchup/);
+    expect(text).not.toMatch(/last 3 games/);
+    // And it says so in as many words, because the absence is the finding.
+    expect(text).toContain("there is no rostered percentage here");
+  });
+
+  test("cycles sets, keeps the set in the URL, and survives a reload", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=potw`);
+    await page.getByRole("button", { name: "Set 2" }).click();
+    await expect(page).toHaveURL(/set=2/);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Set 2" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    // Set 2 is deeper than the fixture's quarterback pool, so the absence is stated.
+    await expect(page.locator(".potw-absence")).not.toHaveCount(0);
+  });
+
+  test("fetches at most one set of portraits, and replaces them when the set changes", async ({
+    page,
+  }) => {
+    // ADR-087's bound, carried onto this view. Four cards is four requests; cycling a set
+    // must swap them rather than add a fifth, sixth and seventh.
+    const portraits = await guardBoundary(page);
+    await page.goto(`${IN_SEASON}?view=potw`);
+    await expect(page.locator(".potw-card")).toHaveCount(4);
+    const afterFirst = portraits.requested.length;
+    expect(afterFirst, "a set of four cards must not exceed four portrait requests").toBeLessThanOrEqual(
+      4,
+    );
+    await expect(page.locator(".potw-card img.portrait-image")).toHaveCount(afterFirst);
+  });
+
+  test("says which case it is in when the behaviour feed published nothing", async ({ page }) => {
+    await page.goto(`${NO_BEHAVIOR}?view=potw`);
+    await expect(page.getByText("No current add/drop behaviour.")).toBeVisible();
+    await expect(page.locator(".potw-card")).toHaveCount(0);
+    // The other boards are untouched, and the notice says so rather than leaving a reader to
+    // wonder whether the whole build is degraded.
+    await expect(
+      page.getByText(/Every rest-of-season value on the boards beside this one is unchanged/),
+    ).toBeVisible();
+    await page.getByRole("tab", { name: "ROS tiers" }).click();
+    await expect(page.locator(".board-row").first()).toBeVisible();
+  });
+
+  test("opens the player card from a pick", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=potw`);
+    const name = page.locator(".potw-card .player-name").first();
+    const label = (await name.innerText()).trim();
+    await name.click();
+    const card = page.getByRole("dialog");
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("heading", { name: label })).toBeVisible();
+    // The card belongs to the board the row was clicked on (ADR-085), and POTW is in-season.
+    await expect(card.getByRole("heading", { name: "In-season usage" })).toBeVisible();
+  });
+});
+
 test.describe("the player card in season", () => {
   test("shows the two ranks side by side rather than reconciling them", async ({ page }) => {
     await page.goto(IN_SEASON);

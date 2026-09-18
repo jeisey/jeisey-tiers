@@ -25,7 +25,7 @@ import type { ScoringPreset } from "./contracts";
  * because the season decides, not the link. Naming a view explicitly always wins — a link to
  * the Arbitrage Board in November still opens the Arbitrage Board.
  */
-export const VIEWS = ["auto", "tiers", "arbitrage", "ros", "opportunity", "data"] as const;
+export const VIEWS = ["auto", "tiers", "arbitrage", "ros", "opportunity", "potw", "data"] as const;
 export type ViewId = (typeof VIEWS)[number];
 
 /** A concrete panel, after `auto` has been resolved against the season. */
@@ -40,7 +40,18 @@ export const OPPORTUNITY_SORTS = ["value", "adds", "net"] as const;
 export type OpportunitySort = (typeof OPPORTUNITY_SORTS)[number];
 
 export const DRAFT_VIEWS: readonly ResolvedViewId[] = ["tiers", "arbitrage"];
-export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = ["ros", "opportunity"];
+export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = ["ros", "opportunity", "potw"];
+
+/**
+ * The deepest Pick-of-the-Week set a URL may name.
+ *
+ * A bound, not a contract, for the same reason `MAX_TIER_ORDINAL` is one: it stops a
+ * pathological query string driving an unbounded index into the view. How many sets actually
+ * exist depends on how many candidates cleared the week's bar, so the real clamp happens
+ * against the build in `clampSet` — a parser may not depend on a build, because a link shared
+ * from one has to parse against the next.
+ */
+export const MAX_POTW_SET = 5;
 
 export const SCORING_VALUES = ["std", "half", "ppr"] as const;
 export type ScoringValue = (typeof SCORING_VALUES)[number];
@@ -101,6 +112,14 @@ export interface AppState {
   readonly mode: ModeId;
   /** The Opportunity Board's ordering. */
   readonly opportunity: OpportunitySort;
+  /**
+   * Which Pick-of-the-Week set is on screen, 1-based.
+   *
+   * A depth into each position's eligible pool rather than a tier: set 3 is the third-ranked
+   * acquirable player at each position, and the three players in it have nothing to do with
+   * one another beyond sharing that depth.
+   */
+  readonly set: number;
 }
 
 /**
@@ -131,6 +150,7 @@ export const DEFAULT_STATE: AppState = {
   market: "fantasyfootballcalculator_adp",
   mode: "auto",
   opportunity: "value",
+  set: 1,
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
@@ -146,6 +166,7 @@ const PARAM_ORDER = [
   "market",
   "mode",
   "opportunity",
+  "set",
 ] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
@@ -217,6 +238,19 @@ export function parseState(search: string): ParsedState {
     DEFAULT_STATE.opportunity,
   );
   note(opportunity.valid);
+
+  // The Pick-of-the-Week set. Bounded here only against `MAX_POTW_SET`; the real bound is how
+  // many sets the build produced, which `clampSet` applies where the build is in hand.
+  const rawSet = params.get("set");
+  let set = DEFAULT_STATE.set;
+  if (rawSet !== null) {
+    const parsed = Number.parseInt(rawSet, 10);
+    if (Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_POTW_SET) {
+      set = parsed;
+    } else {
+      normalized = false;
+    }
+  }
 
   const rawTeams = params.get("teams");
   let teams: TeamCount = DEFAULT_STATE.teams;
@@ -296,6 +330,7 @@ export function parseState(search: string): ParsedState {
       rail: rail.value,
       mode: mode.value,
       opportunity: opportunity.value,
+      set,
     },
     normalized,
   };

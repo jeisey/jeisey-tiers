@@ -47,6 +47,21 @@ try {
 }
 const publishedInSeason = rosRecords !== null;
 
+/**
+ * The opportunity artifact, which is where a Pick-of-the-Week card's numbers come from.
+ *
+ * Optional for the same reason the two above are: a build with no behaviour capture publishes
+ * no opportunity board, and that is a degradation the product states rather than a defect.
+ */
+let opportunityRecords = null;
+try {
+  opportunityRecords = JSON.parse(
+    readFileSync(`${dataDir}/inseason_opportunity.json`, "utf-8"),
+  ).records;
+} catch {
+  opportunityRecords = null;
+}
+
 const block = tiers.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => a.fair_rank - b.fair_rank);
@@ -629,6 +644,136 @@ for (const row of badges) {
 }
 const withBadge = badges.filter((b) => b.badge !== null).length;
 
+/*
+  ------------------------------------------------------------------ pick of the week
+
+  ADR-084's finding, applied to the newest surface: the rest-of-season board shipped with no
+  pre-deploy gate comparing it with its artifact, and a correct page then failed a check that
+  had never looked at it. This view makes a *positive claim about four named players*, which
+  is a stronger thing to publish than a board of rows, so it gets the same treatment.
+
+  **What is asserted, and what deliberately is not.** Every number on a card is compared with
+  the artifact's own value for that player — the ADR-084 species. The four properties a pick
+  must have are asserted as a contract: the product says "this player is a waiver target", and
+  a player the artifact reports on injured reserve, or worth no more than replacement, or
+  being net dropped, is not one whatever the selection code believes.
+
+  The *floor* and the *ordering* are not recomputed here. Restating a rule in its own checker
+  gives a build two implementations that can disagree, and Phase 9B recorded what that costs:
+  a verifier's own bugs look exactly like product findings. `web/tests/potw.test.ts` owns the
+  rule; this owns the claim.
+*/
+let potwCardsChecked = 0;
+if (publishedInSeason && opportunityRecords !== null) {
+  await page.goto(`${BASE}/?view=potw&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+
+  const oppBlock = opportunityRecords.filter(
+    (r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR",
+  );
+  // Names published twice are skipped rather than guessed at — the same rule the badge check
+  // uses, and for the same reason: a duplicate name would make a card be compared against a
+  // record describing somebody else.
+  const oppByName = new Map();
+  for (const record of oppBlock) {
+    oppByName.set(record.display_name, oppByName.has(record.display_name) ? null : record);
+  }
+
+  const potw = await page.$$eval(".potw-card", (cards) =>
+    cards.map((card) => ({
+      position: card.getAttribute("data-pos"),
+      name: card.querySelector(".player-name")?.textContent?.trim() ?? null,
+      text: card.textContent ?? "",
+      tiles: [...card.querySelectorAll(".potw-tile")].map((tile) => ({
+        label: tile.querySelector(".readout-label")?.textContent?.trim() ?? "",
+        value: tile.querySelector(".readout-value")?.textContent?.trim() ?? "",
+      })),
+    })),
+  );
+
+  /** A rendered tile's value by its label prefix, or null when the card has no such tile. */
+  const tileValue = (card, prefix) =>
+    card.tiles.find((tile) => tile.label.startsWith(prefix))?.value ?? null;
+  /** `1,240` and `▲ +1,196` both read back as numbers. */
+  const asNumber = (text) =>
+    text === null ? null : Number.parseFloat(text.replace(/[^0-9.\-]/g, ""));
+
+  for (const card of potw) {
+    potwCardsChecked += 1;
+    if (card.name === null) {
+      failures.push("pick of the week: a card rendered with no player name");
+      continue;
+    }
+    const record = oppByName.get(card.name);
+    if (record === undefined) {
+      failures.push(
+        `pick of the week: "${card.name}" is on screen and is not in the published ` +
+          "opportunity board for this block",
+      );
+      continue;
+    }
+    if (record === null) continue;
+
+    if (record.position !== card.position) {
+      failures.push(
+        `${card.name}: card is filed under ${card.position}, artifact says ${record.position}`,
+      );
+    }
+
+    // The numbers, against the artifact's own.
+    const renderedAdds = asNumber(tileValue(card, "Adds"));
+    if (renderedAdds !== record.add_count) {
+      failures.push(
+        `${card.name}: card shows ${String(renderedAdds)} adds, artifact has ` +
+          `${String(record.add_count)}`,
+      );
+    }
+    const renderedNet = asNumber(tileValue(card, "Net roster moves"));
+    if (renderedNet !== record.net_add_count) {
+      failures.push(
+        `${card.name}: card shows net ${String(renderedNet)}, artifact has ` +
+          `${String(record.net_add_count)}`,
+      );
+    }
+    const renderedVorp = asNumber(tileValue(card, "ROS expected VORP"));
+    if (renderedVorp === null || Math.abs(renderedVorp - record.ros_expected_vorp) > 0.05) {
+      failures.push(
+        `${card.name}: card shows ROS expected VORP ${String(renderedVorp)}, artifact has ` +
+          `${String(record.ros_expected_vorp)}`,
+      );
+    }
+
+    // The four properties the claim itself requires.
+    if (record.long_absence) {
+      failures.push(`${card.name}: published as a waiver pick while the artifact flags a long absence`);
+    }
+    if (!ORDINARY_ROSTER_STATUS.has(String(record.current_status ?? "ACT").toUpperCase())) {
+      failures.push(
+        `${card.name}: published as a waiver pick while the artifact reports status ` +
+          `"${String(record.current_status)}"`,
+      );
+    }
+    if (!(record.ros_expected_vorp > 0)) {
+      failures.push(
+        `${card.name}: published as a waiver pick at ${String(record.ros_expected_vorp)} ` +
+          "remaining VORP, which is no better than the wire he would come off",
+      );
+    }
+    if (!(record.net_add_count > 0)) {
+      failures.push(
+        `${card.name}: published as a waiver pick while the feed is net shedding him ` +
+          `(${String(record.net_add_count)})`,
+      );
+    }
+
+    // The truthfulness invariant, on the deployed bytes rather than in a component test: no
+    // card may state or imply a share of leagues, because no source this project publishes
+    // from reports one (ADR-088).
+    if (/\d+\s*%\s*rostered|rostered in|percent of leagues|%\s*owned/i.test(card.text)) {
+      failures.push(`${card.name}: a pick card claims a rostered share, which no source supplies`);
+    }
+  }
+}
+
 await browser.close();
 console.log(JSON.stringify({
   tierRowsChecked: rows.length,
@@ -637,6 +782,7 @@ console.log(JSON.stringify({
   defaultBoard,
   publishedInSeason,
   rosRowsChecked,
+  potwCardsChecked,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
   trendSeriesRecords: seriesRecords.length,
