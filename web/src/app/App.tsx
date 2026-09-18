@@ -15,6 +15,7 @@ import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bun
 import { easternIsoDate } from "../data/format";
 import { cohortAssignment } from "../data/market";
 import { selectArbitrageRows, selectTierRows, type ArtifactIndex } from "../data/model";
+import { selectPotwBoard, visiblePicks, clampSet } from "../data/potw";
 import {
   buildRosCohortContext,
   selectOpportunityRows,
@@ -37,6 +38,7 @@ import { DataView } from "./DataView";
 import { Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
 import { PlayerDetail, type PlayerDetailData } from "./PlayerDetail";
+import { PotwView } from "./PotwView";
 import { RosView } from "./RosView";
 import { TiersView } from "./TiersView";
 import { useAppState } from "./useAppState";
@@ -226,6 +228,16 @@ function Board({
         total: inSeason.opportunityFor(leaguePreset, scoring).length,
       };
     }
+    if (view === "potw" && inSeason !== null) {
+      // Picks on screen against picks in the whole set. The readout is the same "what the
+      // filters select of what the build produced" it is on every other board; here the
+      // denominator is a set rather than a board, because a set is what the view publishes.
+      const board = selectPotwBoard(inSeason, state);
+      const set = board.sets[clampSet(state.set, board) - 1];
+      return set === undefined
+        ? { shown: 0, total: 0 }
+        : { shown: visiblePicks(set, state.position).length, total: set.picks.length };
+    }
     return undefined;
   }, [index, inSeason, state, view]);
 
@@ -387,6 +399,19 @@ function Board({
                   onChange={setState}
                   onSelect={onSelect}
                   selectedPlayerId={selectedPlayerId}
+                />
+              ))}
+            {view === "potw" &&
+              (inSeason === null ? (
+                <NoInSeasonBundle />
+              ) : (
+                <PotwView
+                  bundle={inSeason}
+                  state={state}
+                  onChange={setState}
+                  onSelect={onSelect}
+                  selectedPlayerId={selectedPlayerId}
+                  headshotFor={(playerId) => index.headshotFor(playerId)?.image_url ?? null}
                 />
               ))}
             {view === "data" && (

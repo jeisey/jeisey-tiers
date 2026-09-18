@@ -75,6 +75,18 @@ test.describe("automated scan", () => {
       "/scenario/in-season-no-behavior/?view=opportunity",
       ".opp-track-empty",
     ],
+    // Pick of the Week (ADR-088). A different construction again — cards rather than rows,
+    // four portraits, and a set switcher — so neither board's scan says anything about it.
+    ["pick of the week", "/scenario/in-season/?view=potw", ".potw-card"],
+    ["pick of the week, one position", "/scenario/in-season/?view=potw&position=rb", ".potw-card"],
+    [
+      "pick of the week with no behaviour feed",
+      "/scenario/in-season-no-behavior/?view=potw",
+      ".notice",
+    ],
+    // A set deep enough that a position has run out of candidates. The absence list is its own
+    // DOM and it is the state a quiet week actually produces.
+    ["pick of the week, a position with no pick", "/scenario/in-season/?view=potw&set=2", ".potw-absence"],
   ] as const) {
     test(`${name} has no WCAG A or AA violations`, async ({ page }) => {
       await page.goto(path);
@@ -271,6 +283,11 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
       // The in-season boards, which are two charts built after this check existed.
       "/scenario/in-season/?view=ros",
       "/scenario/in-season/?view=opportunity",
+      // Pick of the Week is the widest thing this product draws per unit of content — a
+      // portrait column beside a tile grid — so it is the surface most likely to push a
+      // number off the edge rather than wrap it (ADR-088).
+      "/scenario/in-season/?view=potw",
+      "/scenario/in-season/?view=potw&position=te",
     ]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");

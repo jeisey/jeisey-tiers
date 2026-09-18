@@ -707,8 +707,17 @@ code {
   align-self: center;
 }
 
+/*
+ * The heading may shrink, and therefore wrap, rather than push the document sideways.
+ *
+ * `flex: none` held while every section title was short enough to fit at 320px. "Pick of the
+ * Week — through week 8" is not, and an unshrinkable flex item overflows its container in
+ * silence: the 320px reflow check found 3px of horizontal scroll on a page that looked
+ * correct (ADR-088). `flex-shrink: 1` engages only when a line genuinely overflows, so every
+ * heading that fits today is laid out exactly as it was.
+ */
 .section-head h2 {
-  flex: none;
+  flex: 0 1 auto;
   align-self: center;
 }
 
@@ -4859,5 +4868,433 @@ dl.facts dd {
     align-items: center;
     justify-content: flex-end;
     gap: 4px;
+  }
+}
+
+/* --------------------------------------------------- pick of the week
+ *
+ * Four player highlights, one per position (ADR-088). The vocabulary is the one the rest of
+ * the product already speaks — cut corners, a 1px accent hairline, micro-label over readout,
+ * mono numerals — applied at card scale rather than at row scale, because this view publishes
+ * four players where the boards beside it publish five hundred.
+ *
+ * The position hue is the card's organising colour and it is never the only channel: the
+ * position is printed in the badge, in the tag under the name and in the seal's own words.
+ */
+
+.potw-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.potw-card {
+  --potw-rgb: 46 204 255;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background:
+    linear-gradient(180deg, rgb(var(--potw-rgb) / 5%), transparent 38%),
+    var(--panel-raised);
+  border: var(--hairline) solid var(--line);
+  border-left: 2px solid rgb(var(--potw-rgb) / 55%);
+}
+
+.potw-card[data-pos="QB"] { --potw-rgb: 181 140 255; }
+.potw-card[data-pos="RB"] { --potw-rgb: 34 209 154; }
+.potw-card[data-pos="WR"] { --potw-rgb: 46 204 255; }
+.potw-card[data-pos="TE"] { --potw-rgb: 255 179 71; }
+
+.potw-card[data-selected="true"] {
+  border-color: rgb(var(--potw-rgb) / 45%);
+  background:
+    linear-gradient(180deg, rgb(var(--potw-rgb) / 9%), transparent 38%),
+    var(--surface-selected);
+}
+
+.potw-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--hairline) solid var(--line-faint);
+}
+
+/* The source's boxed position glyph: a square, the position's hue, mono and tracked. */
+.potw-card-pos {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  font: 700 0.72rem/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: rgb(var(--potw-rgb));
+  background: rgb(var(--potw-rgb) / 10%);
+  border: var(--hairline) solid rgb(var(--potw-rgb) / 40%);
+}
+
+.potw-card-identity {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.potw-card-name {
+  margin: 0;
+  font: 600 1.05rem/1.2 var(--font-sans);
+  color: var(--ink);
+}
+
+.potw-card-name .player-name {
+  font: inherit;
+  color: inherit;
+}
+
+.potw-card-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+
+/*
+ * The seal. It says a depth and the position it is a depth *at* — "#1 WR waiver pick" —
+ * because "#1" alone on four cards at once reads as a ranking of the four against each other,
+ * which is the one thing these four numbers are not.
+ */
+.potw-card-seal {
+  --notch: 8px;
+
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px var(--space-2);
+  background: rgb(var(--potw-rgb) / 8%);
+  border: var(--hairline) solid rgb(var(--potw-rgb) / 35%);
+}
+
+.potw-seal-rank {
+  font: 700 0.95rem/1 var(--font-mono);
+  color: rgb(var(--potw-rgb));
+}
+
+.potw-seal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: 600 0.55rem/1.3 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  max-width: 8rem;
+}
+
+/* The denominator the "#1" is a #1 out of. A rank without its population looks exact. */
+.potw-seal-of {
+  font: 400 0.52rem/1.3 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+
+/*
+ * The source's own card shape: the portrait beside the three readouts that justify the pick
+ * and the sentences that explain it, then two full-width rows beneath.
+ *
+ * A first draft put the portrait in a column of its own beside everything, and the capture
+ * showed what the arithmetic should have: a card body three times taller than a portrait's
+ * natural ratio leaves a third of the card empty, and stretching the frame to fill it turns a
+ * head-and-shoulders cut-out into a vertical sliver, because `object-fit: cover` crops what it
+ * cannot fit. Spanning two rows rather than four gives the frame about 3:4 to work with, which
+ * is a portrait.
+ */
+.potw-card-body {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  grid-template-areas:
+    "portrait tiles"
+    "portrait why"
+    "more     more"
+    "moves    moves";
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.potw-card-portrait { grid-area: portrait; }
+.potw-tiles[data-row="primary"] { grid-area: tiles; }
+.potw-why { grid-area: why; }
+.potw-tiles[data-row="secondary"] { grid-area: more; }
+.potw-moves { grid-area: moves; }
+
+/*
+ * The portrait fills the card's body rather than sitting in the top of a column.
+ *
+ * `.portrait` is `aspect-ratio: 5 / 6` because on the player card it is a hero with nothing
+ * beneath it. Here it is a column beside a tile grid that is three times taller, so the ratio
+ * left a third of the card empty — visible in the first capture, invisible to every test. The
+ * frame stretches instead, and `object-fit: cover` on the image means stretching crops rather
+ * than distorts. The minimum keeps it a portrait on a short card.
+ */
+.potw-card-portrait {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.potw-card-portrait .portrait {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 150px;
+}
+
+.potw-portrait-team {
+  font: 600 0.6rem/1 var(--font-mono);
+  letter-spacing: var(--track-label);
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.potw-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/*
+ * Three readouts beside the portrait, four across the card beneath it — the source's own
+ * counts. The shared `readout-grid` is a four-column rule, which inside a half-width card is
+ * 90px a tile and a value wrapping mid-number.
+ */
+.readout-grid.potw-tiles {
+  gap: var(--hairline);
+  align-content: start;
+}
+
+/*
+ * The shared grid's "last tile fills the row" rule is switched off here.
+ *
+ * `.readout-grid > .readout:last-child:nth-child(4n + 3)` spans two columns, which is right in
+ * a four-column grid ending three across and wrong in a three-column one: the third tile
+ * needed two columns, could not have them, wrapped, and left a hole. Visible in the capture,
+ * invisible to every assertion about the tiles' text.
+ */
+.readout-grid.potw-tiles > .readout:last-child {
+  grid-column: auto;
+}
+
+.readout-grid.potw-tiles[data-row="primary"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.readout-grid.potw-tiles[data-row="secondary"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.potw-tile .readout-value {
+  font-size: 0.95rem;
+}
+
+.potw-why {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--tile);
+  border-left: 2px solid rgb(var(--potw-rgb) / 35%);
+}
+
+.potw-why-list {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.potw-why-list li + li {
+  margin-top: 2px;
+}
+
+.potw-why-list li::marker {
+  color: rgb(var(--potw-rgb) / 70%);
+}
+
+.potw-moves {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.potw-moves .opp-track {
+  height: 18px;
+}
+
+/* -- the set switcher and the position chips ------------------------------- */
+
+.potw-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent-wash);
+  border: var(--hairline) solid var(--line-faint);
+}
+
+.potw-chiprow-label {
+  font: 600 0.6rem/1 var(--font-sans);
+  letter-spacing: var(--track-header);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+}
+
+.potw-chiprow-meta {
+  margin-left: auto;
+  font: 400 0.65rem/1.4 var(--font-mono);
+}
+
+/* -- a position with no pick ----------------------------------------------- */
+
+.potw-absences {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hairline);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+
+.potw-absence {
+  --notch: 8px;
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+  background: var(--tile);
+  border: var(--hairline) solid var(--line-faint);
+}
+
+.potw-absence-pos {
+  flex: none;
+  width: 2.2rem;
+  font: 700 0.7rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.potw-absence-pos[data-pos="QB"] { color: var(--pos-qb); }
+.potw-absence-pos[data-pos="RB"] { color: var(--pos-rb); }
+.potw-absence-pos[data-pos="WR"] { color: var(--pos-wr); }
+.potw-absence-pos[data-pos="TE"] { color: var(--pos-te); }
+
+/*
+ * One card per row below the two-column breakpoint, and one column inside the card below the
+ * phone one. The portrait keeps its place beside the name on a phone for the same reason the
+ * player card's 1a/1b variants do: a rail-width picture in a header band is a picture with a
+ * card beside it, and the numbers are what the reader came for.
+ */
+@media (max-width: 1099px) {
+  .potw-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .potw-card-body {
+    grid-template-columns: 96px minmax(0, 1fr);
+    padding: var(--space-3);
+  }
+
+  .readout-grid.potw-tiles[data-row="primary"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .readout-grid.potw-tiles[data-row="secondary"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /*
+   * The chip row keeps its label and its meta line and drops its buttons.
+   *
+   * They write the *same* `position` parameter as the control strip directly above them, so on
+   * a phone — where the strip has already wrapped the position chips onto a row of their own —
+   * they are the identical control twice, and the second copy costs the fold. Same finding as
+   * ADR-085's season-mode band, same response: the duplicate goes, the reading stays.
+   */
+  .potw-chiprow .segmented {
+    display: none;
+  }
+
+  .potw-card-head {
+    flex-wrap: wrap;
+    padding: var(--space-3);
+  }
+
+  .potw-card-seal {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .potw-seal-label {
+    max-width: none;
+  }
+
+  .potw-chiprow-meta {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/*
+ * The 320px reflow path. `readout-grid` at two columns is 2 x 96px plus the card's padding,
+ * which is the width that made the tiles' own values wrap mid-number; one column is wider
+ * than any value it holds, so nothing is clipped rather than merely fitting.
+ */
+@media (max-width: 30rem) {
+  /*
+   * One column, and the portrait becomes a small square beside the team code rather than a
+   * panel of its own — the same call the player card's sheet variant makes at this width, for
+   * the same reason: the numbers are what the reader came for and a picture may not take the
+   * screen to say the name that is already above it.
+   */
+  .potw-card-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "portrait"
+      "tiles"
+      "why"
+      "more"
+      "moves";
+  }
+
+  .potw-card-portrait {
+    grid-template-rows: auto;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .potw-card-portrait .portrait {
+    width: 76px;
+    min-height: 0;
+    aspect-ratio: 5 / 6;
+  }
+
+  .readout-grid.potw-tiles[data-row="secondary"] {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -123,6 +123,32 @@ export function DataView({
             <dd>The width of the player&apos;s simulated value distribution, in fantasy points.</dd>
           </div>
           <div>
+            <dt>Pick of the Week</dt>
+            <dd>
+              The most valuable player at each position that the add/drop feed shows rosters
+              still acquiring. Roster moves decide who is <em>eligible</em>; the rest-of-season
+              model decides who <em>wins</em>. There is no combined score: a count of
+              transactions and a number of points share no unit.
+            </dd>
+          </div>
+          <div>
+            <dt>The add bar</dt>
+            <dd>
+              A pick has to be added at least as often as the median of his own
+              position&apos;s non-zero add counts on the published board. It is taken from the
+              population rather than fixed, so it means the same thing in a busy week and a
+              quiet one, and every card prints the bar it cleared and how many players set it.
+            </dd>
+          </div>
+          <div>
+            <dt>A pick set</dt>
+            <dd>
+              A depth, not a tier. Set 3 is the third-ranked eligible player at each position,
+              so the players in one set have nothing to do with each other beyond sharing that
+              depth. At most five are published.
+            </dd>
+          </div>
+          <div>
             <dt>MFL ADP</dt>
             <dd>
               The average pick at which a player was drafted across the selected MyFantasyLeague
@@ -431,6 +457,17 @@ export function DataView({
             &ldquo;has not appeared for N weeks&rdquo; and never as a status. Add and drop counts
             on the Opportunity Board are counts of transactions over the window above; they are
             not a draft price, not a rank, and are never subtracted from one.
+          </p>
+          <p className="prose">
+            <strong>There is no rostered percentage anywhere on this site.</strong> It is the
+            natural way to say whether a waiver target is actually available, and no source
+            this project may publish from reports one: Sleeper documents no ownership field,
+            FantasyPros&apos; ownership columns are benchmark-only and may not be
+            redistributed, and ESPN is disabled in the source registry. Pick of the Week uses
+            the add count instead, which is availability evidence in the direction that
+            matters — a roster that added a player did not have him, so a player rostered
+            almost everywhere cannot post a large count. It recovers no percentage, and nothing
+            on this site claims otherwise.
           </p>
           <ul className="limitations">
             {inSeason.metadata.limitations.map((limitation) => (

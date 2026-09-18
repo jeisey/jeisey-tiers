@@ -4,6 +4,13 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Pick of the Week, 2026-09-18 (ADR-088).** The owner asked for a new in-season tab showing
+the number-one waiver target at each position, and named the signal he wanted it built on:
+rostered percentage, with a clear cut-off, "because we don't want to say someone like Kyren
+Williams is a PotW (they are 99% rostered)". **No source this project may publish from reports
+one**, and the four routes are closed for four different reasons — which turned the feature's
+design into the answer to that. See **What Pick of the Week changed** below.
+
 **The card portrait, 2026-09-16 (ADR-087).** The owner asked for ESPN headshots on the player
 card and expected the work to be an identity-mapping exercise against ESPN's public API. It was
 not: `espn_id` has been this project's **primary market identity bridge** since ADR-019, the id
@@ -1391,6 +1398,17 @@ what would have to be true before it is worth doing.
    data than a prediction made from it is, and the share-alike obligation would bind what this
    site publishes. Same question as item 8 below, on a source the project already depends on.
 
+0b. **Publish a behaviour history, so "momentum" can be a reading rather than a direction**
+   (ADR-088). The retained store has held a daily Sleeper add/drop snapshot under `behavior/`
+   since the season opened, and nothing publishes a series over them — so Pick of the Week can
+   say "net +1,120 over 24 hours" and cannot say "rising for four days". A
+   `behavior_trend_series.json` mirroring `market_trend_series.json` is the shape, and the
+   precedent for the honest version is ADR-081's: draw the observations, and gate the *slope*
+   on its own frozen rule, because showing an observation and estimating a trend are different
+   claims. It is a data-contract change under `AGENTS.md` §18 (schema, validator, CSV,
+   TypeScript contract, goldens, a cross-artifact check), which is why the visual pass did not
+   take it.
+
 1. **Multi-source market pricing, and exact half-PPR.** ADR-053 and ADR-056 are accepted with
    integration deferred. Fantasy Football Calculator serves genuine `standard`, `ppr` and
    `half-ppr` cohorts with 7-30x MFL's volume and a published per-player `stdev`; its `teams`
@@ -1773,6 +1791,115 @@ gained one artifact name; both are additive.
 **Left open on purpose**: no portrait on any board row (300 rows would be 300 third-party
 requests for decoration), and no second provider — `provider` is an enum of one because adding
 one is a rights decision, not a config change.
+
+## What Pick of the Week changed (2026-09-18, ADR-088)
+
+**Root cause of the work, in one line: the obvious availability signal does not exist, and the
+one this project has is better than a substitute usually is.** The owner asked for a rostered
+percentage. Sleeper documents no ownership field anywhere — `/players/nfl` has none in its
+recorded schema and both trending endpoints return a bare `{player_id, count}` list.
+FantasyPros publishes `player_owned_avg`/`_espn`/`_yahoo` and is `benchmark_only` (ADR-014), so
+it may not reach a public artifact *whatever key we hold* — and the provisioned key is
+free-tier anyway (ADR-080). ESPN publishes `percentOwned` and is `disabled` in the registry.
+Sampling public leagues is a scrape at a volume `AGENTS.md` §5 forbids.
+
+**What replaced it is the owner's own fallback, and the reason it works is worth keeping.** A
+roster that added a player *did not have him*. So an add count is a lower bound on rosters that
+did not hold him, in transactions — and a player rostered in 99% of leagues cannot post a large
+one, because at most 1% are in a position to add him at all. **The owner's example is excluded
+by construction rather than by a tuned threshold.** What it cannot do is recover the level:
+"38% rostered" is not derivable in any direction, so nothing in the feature prints a
+percentage, and two tests fail on any sentence that reads as one.
+
+| | |
+|---|---|
+| Rule | `potw_selection_v1` — six boolean gates, then one ordering |
+| Gate | behaviour: evidence exists, volume over the position's own median, `net_add_count > 0` |
+| Gate | playability: not `long_absence`, no severe roster code, `ros_expected_vorp > 0` |
+| Ordering | `ros_expected_vorp` desc, tie-broken on `ros_fair_rank` then `player_id` |
+| Sets | set *k* = the *k*-th eligible at each position, capped at 5, in the URL as `set` |
+| Published | **nothing** — no artifact, no schema, no Python file changed |
+| New files | `web/src/data/potw.ts`, `web/src/app/PotwView.tsx`, two test files |
+
+**Five things a future session should not re-derive.**
+
+1. **Behaviour gates; the intrinsic model orders. That is not a new rule.** It is the
+   Opportunity Board's own rule — behaviour decides visibility and never a value — applied one
+   level up, to a *selection* instead of a row. It is what keeps the feature inside
+   `AGENTS.md` §10's ban on blending an add count with a VORP, and the ban is asserted
+   **behaviourally** rather than by reading the comparator: hold the adds equal and the winner
+   follows the VORP; multiply one candidate's adds two-hundred-fold and the winner does not
+   move. A weighting of any size fails the second.
+2. **`ros_expected_vorp > 0` is the replacement rule, not a threshold somebody picked.** The
+   in-season replacement interpretation is `rostered_depth` (ADR-071) — *the best unrostered
+   player* — so a remaining VORP at or below zero is the model stating in its own units that
+   the player is no better than what is already on the wire. "Add him" and "he is not worth
+   more than the wire" cannot both be true. This alignment is a gift of ADR-071 and should not
+   be loosened without noticing what it costs.
+3. **The bar is a population median, per position, and printed.** Sleeper's feed is a top-100
+   list whose absolute counts scale with how many leagues exist that season, so a constant
+   would mean something different next August; and one cross-position bar would be a bar on
+   running backs and receivers only. Under three non-zero counts there is no distribution, so
+   it falls back to "the feed saw him" and the card says which case it is in.
+4. **`preseason_fair_rank` is context and was rejected as a gate.** It is the closest published
+   answer to "was he drafted", and a clause on it would have excluded a star who was
+   mass-dropped during an absence and is being re-added — who is a genuine waiver target. It
+   also would have needed a drafted-depth constant the frontend does not have, because the
+   roster shape in `config/league-defaults.yaml` reaches no published artifact.
+5. **No `potw.json`, on purpose.** The selection computes no player value; every number a card
+   prints is copied from `inseason_opportunity` or `ros_tiers`. That makes it arithmetic over
+   published rows in exactly the sense ADR-086 licensed for the card's cohort readings, and it
+   lives in `data/` beside them.
+
+**Three defects the screenshots caught that the tests did not** — sixth, seventh and eighth
+instances of the species ADR-081 named, and the first of them was caught by a *check* rather
+than by looking:
+
+1. **3px of horizontal scroll at 320px, from a heading.** `.section-head h2` was `flex: none`,
+   which held for as long as every section title fitted. "Pick of the Week — through week 8"
+   does not, and an unshrinkable flex item overflows in silence. `flex: 0 1 auto`; shrinking
+   engages only on a line that overflows, so no existing heading moved.
+2. **A third of each card empty, and a portrait stretched into a sliver when it was filled.**
+   A card body three times taller than a portrait's ratio leaves dead space, and
+   `object-fit: cover` crops what it cannot fit. The portrait spans the readouts and the
+   rationale and stops there.
+3. **A hole in the three-tile row.** `.readout-grid > .readout:last-child:nth-child(4n + 3)`
+   spans two columns, right in a four-column grid and wrong in a three-column one.
+
+**The mock-up was read as a claim to check, not a string to copy** — Phase 9A's finding about
+the design source, applied to a supplied mock-up. Three of its readouts have no source in this
+product and each was replaced rather than faked: `38% ROSTERED` → the add count with its bar;
+`▲ +26% LAST 3 GAMES` → net roster moves over the one declared window, labelled a direction and
+not a trend; `MATCHUP vs IND` → the rest-of-season value with its position-cohort reading. The
+`ADD MOMENTUM` sparkline is the one that is a *data* gap rather than a rights gap and is in the
+backlog below.
+
+**The portrait rule was extended once and bounded.** ADR-087 ends with "no portrait on any
+board row". That stands: this is not a board but at most four cards on a tab a reader opened.
+Only the visible set is in the DOM, so cycling replaces four requests rather than accumulating
+twenty, and `PlayerPortrait` is reused unchanged so the published address, the `no-referrer`
+policy and the monogram fallback all come along.
+
+**A pre-deploy gate now compares the picks with their artifact** (ADR-084's finding, applied to
+the newest surface): every rendered number against the artifact's own, plus the four properties
+the claim itself requires. **Negative-controlled four ways and all four fire.** It deliberately
+does **not** recompute the floor or the ordering — a rule restated in its own checker gives a
+build two implementations that can disagree, which Phase 9B already paid for once.
+
+**Verified**: `npm run lint` 0 errors / 4 pre-existing warnings, `npm run typecheck` clean,
+`npm run test -- --run` **476** passed (up from 429: 31 engine tests, 16 view tests),
+`npm run e2e` **140** passed across chromium/mobile/a11y including four new axe scans and two
+new 320px reflow paths, `npm run verify:board` against every build with zero disagreements,
+`npm run build` clean, `uv run ruff check`, `ruff format --check`, strict `mypy` and
+`uv run pytest` clean, and 64 screens in `docs/visual-qa/2026-09-18-potw/`.
+
+**No model, feature, projection, rank, tier, VORP, ADP, arbitrage score, schema or CSV column
+changed. No Python file changed.**
+
+**Left open on purpose**: no real add/drop momentum — the retained store holds a daily
+behaviour snapshot since the season opened and nothing publishes a series over them; no CSV
+export, because the Opportunity Board exports the same rows in full; and the picks are not
+available in draft mode, because there is no wire to be a target on before the season starts.
 
 ## Next action
 

@@ -641,6 +641,60 @@ const SCREENS = [
       });
     },
   },
+  /*
+    Pick of the Week (ADR-088). Seven screens, and five of them exist because the view has
+    states a happy-path capture would never reach: a set deep enough that a position has run
+    out of candidates, a behaviour feed that published nothing, and the three viewports where
+    a portrait beside a tile grid is the widest thing this product draws.
+  */
+  {
+    name: "58-desktop-potw",
+    path: "/scenario/in-season/?view=potw",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    name: "59-desktop-potw-set-2",
+    path: "/scenario/in-season/?view=potw&set=2",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    // One position. The chip row writes the shared filter, so this is the same state the
+    // boards beside it would be in.
+    name: "60-desktop-potw-one-position",
+    path: "/scenario/in-season/?view=potw&position=rb",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+  },
+  {
+    name: "61-tablet-potw",
+    path: "/scenario/in-season/?view=potw",
+    viewport: { width: 900, height: 1300 },
+    fullPage: true,
+  },
+  {
+    name: "62-mobile-potw",
+    path: "/scenario/in-season/?view=potw",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  {
+    // The card at the reflow width the spec names. A portrait column beside a tile grid is
+    // the layout most likely to push a number off the edge rather than wrap it.
+    name: "63-potw-320",
+    path: "/scenario/in-season/?view=potw",
+    viewport: { width: 320, height: 900 },
+    fullPage: false,
+  },
+  {
+    // No behaviour feed: no picks, and a notice saying which case that is. "Nobody qualified"
+    // and "the feed said nothing" are different facts and this is the second one.
+    name: "64-potw-behaviour-absent",
+    path: "/scenario/in-season-no-behavior/?view=potw",
+    viewport: { width: 1440, height: 900 },
+    fullPage: false,
+  },
 ];
 
 /** Artifacts a build is allowed not to publish; see the console filter below. */

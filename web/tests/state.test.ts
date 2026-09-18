@@ -52,7 +52,9 @@ describe("parseState", () => {
   });
 
   it("reads every supported parameter", () => {
-    const parsed = parseState("?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all");
+    const parsed = parseState(
+      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&set=3",
+    );
     expect(parsed.state).toEqual({
       view: "arbitrage",
       market: "fantasyfootballcalculator_adp",
@@ -65,6 +67,7 @@ describe("parseState", () => {
       rail: "all",
       mode: "auto",
       opportunity: "value",
+      set: 3,
     });
     expect(parsed.normalized).toBe(true);
   });

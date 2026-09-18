@@ -1282,3 +1282,71 @@ into the HUD, and expected the hard part to be mapping ESPN's athlete id onto ou
 - [ ] **Not done here, deliberately: no second provider.** `provider` is an enum of one in the
       schema, because adding one is a rights decision (`docs/SECURITY_LICENSE.md` section 8),
       not a config change.
+
+## Pick of the Week — 2026-09-18 (ADR-088)
+
+A new in-season tab: the number-one waiver target at each of QB, RB, WR and TE, as player
+highlight cards rather than board rows, cycleable through up to five sets of four. Owner
+request with two mock-ups. Frontend only — no schema, no artifact, no Python file changed.
+
+- [x] **The rostered-percentage question, answered before any code.** Four routes checked and
+      all four closed: Sleeper documents no ownership field anywhere; FantasyPros' ownership
+      columns are `benchmark_only` and may not be redistributed (and the key is free-tier);
+      ESPN is `disabled` in the source registry and enabling it is a source decision with its
+      own probe and ADR; sampling public leagues is a scrape the cadence rule forbids.
+      Recorded in ADR-088 §1 rather than worked around.
+- [x] **The substitute is honest in one direction and says so.** A roster that added a player
+      did not have him, so a widely-rostered player cannot post a large add count — the owner's
+      own example is excluded by construction. It recovers no percentage, and nothing on the
+      page claims it does. Asserted twice: a component test over the rendered cards and a check
+      over the deployed bytes in `verify-real-build.mjs`.
+- [x] **Behaviour gates, the model orders, and there is no score.** Six boolean gates over
+      published fields, then one ordering on `ros_expected_vorp`. The Opportunity Board's own
+      rule applied to a selection instead of a row.
+- [x] **The no-blend rule is asserted behaviourally, not by inspection.** Hold the adds equal
+      and the winner follows the VORP; multiply one candidate's adds two-hundred-fold and the
+      winner does not move. A weighting of any size fails the second test.
+- [x] **Gate 6 is the replacement rule, not a threshold somebody chose.** In-season replacement
+      is `rostered_depth` — the best unrostered player — so `ros_expected_vorp <= 0` is the
+      model saying he is not an upgrade on the wire he would come off.
+- [x] **The bar is population-relative and per position**, and printed on every card with its
+      denominator. A constant would mean something different next season; one cross-position
+      bar would be a bar on RB and WR only.
+- [x] **A set is a depth, not a tier**, capped at five, in the URL as `set`, clamped against
+      the build so a link naming set 5 against a two-set build opens set 2.
+- [x] **A position with no pick names which of three cases it is in** rather than rendering an
+      empty frame, and a behaviour outage says the boards beside it are unaffected.
+- [x] **The portrait rule extended once and bounded.** Not a board: at most four cards on a tab
+      a reader opened, only the visible set in the DOM, `PlayerPortrait` reused unchanged.
+      `docs/ARCHITECTURE.md` section 3.2 records it; an e2e test counts the requests.
+- [x] **A pre-deploy gate compares the picks with their artifact** — ADR-084's finding applied
+      to the newest surface. Every rendered number against the artifact's own, plus the four
+      properties the claim requires. **Negative-controlled four ways** and all four fire. It
+      does not recompute the floor or the ordering, because a rule restated in its own checker
+      gives a build two implementations that can disagree.
+- [x] **Three defects the screenshots caught that the tests did not** (sixth, seventh and
+      eighth instance of ADR-081's species): 3px of horizontal scroll at 320px from an
+      unshrinkable heading — found by the reflow check; a third of each card empty, and a
+      portrait stretched into a sliver when it was filled; and a hole in the three-tile row
+      from the shared readout grid's last-child span rule.
+- [x] **The mock-up was read as a claim to check.** Three of its readouts have no source —
+      a rostered share, a multi-week ownership trend and a matchup rating — and each is
+      replaced by a published field rather than faked. Same rule Phase 9A applied to the design
+      source itself.
+- [x] **Verified.** `npm run lint` (0 errors, 4 pre-existing warnings), `npm run typecheck`,
+      `npm run test -- --run` **476** passed, `npm run e2e` **140** passed across
+      chromium/mobile/a11y including four new axe scans and two new reflow paths,
+      `npm run verify:board` on every build with zero disagreements, `npm run build`, and 64
+      screens in `docs/visual-qa/2026-09-18-potw/`.
+- [ ] **Not done here, deliberately: no published `potw.json`.** The selection computes no
+      player value, so it is arithmetic over published rows in the sense ADR-086 licensed. A
+      new artifact would be a data-contract change that bought the reader nothing.
+- [ ] **Not done here, deliberately: no CSV export.** The four rows are a selection from the
+      Opportunity Board, which exports in full.
+- [ ] **Not done here, deliberately: no preseason-rank gate.** It would have excluded a star
+      mass-dropped during an absence and being re-added, who is a genuine waiver target. It is
+      on the card as context and never as a gate.
+- [ ] **Open, recorded in the backlog: no real add/drop momentum.** The retained store holds a
+      daily behaviour snapshot since the season opened and nothing publishes a series over
+      them. A `behavior_trend_series.json` mirroring `market_trend_series.json` would make the
+      mock-up's sparkline a real reading; it is a data-contract change and was not taken here.

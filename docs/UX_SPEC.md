@@ -315,6 +315,73 @@ portrait on three hundred rows would be three hundred third-party requests for d
 a card is opened, and the Data view says so in the reader's own words. See
 `docs/ARCHITECTURE.md` section 3.2 and ADR-087 for what that costs and what bounds it.
 
+### 6A.8 Pick of the Week (ADR-088)
+
+**The two in-season boards publish every row and let the reader order them. This tab makes a
+claim about four players**, which is a stronger thing to put on a page, so the design is mostly
+about making the claim checkable.
+
+One card per position — QB, RB, WR, TE — for the most valuable player at that position the
+add/drop feed shows rosters still acquiring. A reader cycles up to five **sets**, where set *k*
+holds the *k*-th ranked eligible player at each position. A set is a depth, not a tier: the
+players in one have nothing to do with each other beyond sharing that depth, and the copy never
+implies otherwise.
+
+**The rule is on the page, not behind it.** Every card prints the add count that qualified the
+player, the bar he cleared, and how many players at his position set that bar. A reader who
+disagrees with a pick can see exactly which threshold produced it and go to the Opportunity
+Board, which has every row and every count behind the decision.
+
+**Behaviour gates; the model orders.** The same sentence the Opportunity Board is built on,
+applied to a selection instead of a row. There is no combined score anywhere in this feature
+and there must not be: an add count is transactions and a remaining VORP is points, and the
+page says so in as many words under the cards.
+
+**The seal names the position it is a seal for.** `#1` beside `WR waiver pick`, with the
+denominator — `of 3 eligible` — under it. Four bare `#1`s on one screen would read as a ranking
+of the four against each other, which they are not, and a rank without its population looks
+exact (section 7.1A, ADR-086).
+
+#### 6A.8.1 There is no rostered percentage, and that is stated
+
+A share of leagues is the obvious way to say whether a waiver target is available, and no
+source this project may publish from reports one: Sleeper documents no ownership field,
+FantasyPros' ownership columns are `benchmark_only` and may not be redistributed, and ESPN is
+disabled in the source registry (ADR-088 §1).
+
+The substitute is the add count itself, and it is honest in one direction only: a roster that
+added a player did not have him, so a player rostered almost everywhere cannot post a large
+count. It recovers no percentage. **No surface in this feature prints a percentage of leagues,
+implies one, or leaves room to infer one**, the tab says so in the reader's own words, and
+`Data` says it again in full. Three things a waiver card conventionally shows are therefore
+absent by design and replaced rather than faked:
+
+| conventional | why it is absent | what is there instead |
+|---|---|---|
+| a rostered share | no publishable source reports one | the add count, its window, and the bar it cleared |
+| a multi-week ownership trend | a delta of that same unavailable share | net roster moves over the one declared window, labelled as a direction and not a trend |
+| a matchup rating | there is no opponent or schedule-strength artifact | the rest-of-season value with its position-cohort reading, which is *why* he is the pick |
+
+#### 6A.8.2 A position with no pick says which case it is in
+
+Three states, and a reader can act on the difference, so they are three sentences and never a
+blank card: the behaviour feed published nothing; nobody at that position cleared the bar; or
+the pool is shallower than this set is deep. Where the feed is down there are no cards at all,
+the build's own reason is quoted, and the notice says the boards beside it are unaffected —
+the same construction the Opportunity Board uses for the same outage.
+
+#### 6A.8.3 The portrait, and why it is allowed here
+
+ADR-087's rule — never a portrait on a board row — stands, and this is not a board: at most
+four cards, on a tab a reader opened, where the picture is the format rather than decoration
+added to a table. Only the visible set's portraits exist in the DOM, so cycling replaces four
+requests rather than accumulating twenty, and the frame, the fallback monogram and the
+`no-referrer` policy are the player card's own component unchanged.
+
+The portrait spans the readouts and the rationale and stops there. Spanning the whole card body
+leaves a third of it empty at a portrait's natural ratio, and filling that space crops a
+head-and-shoulders cut-out into a vertical sliver.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
@@ -525,5 +592,7 @@ Capture Playwright screenshots for at least:
 - the in-season player card, desktop and phone
 - the card's micro-charts: a rank move drawn, a rank move refused because there is no preseason
   rank, a pace gap in both directions, and the behaviour feed down (ADR-086)
+- Pick of the Week, desktop, tablet and phone; a set deep enough that a position has run out of
+  candidates; one position filtered; 320px reflow; and the behaviour feed down (ADR-088)
 
 Use screenshot review to catch clipping, label overlap, unreadable scales, and Pages base-path failures. Pixel-perfect snapshots should not become brittle blockers for dynamic data unless fixtures are fixed.
