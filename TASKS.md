@@ -1395,6 +1395,21 @@ request with two mock-ups. Frontend only — no schema, no artifact, no Python f
       reads the ROS build's artifacts off `pipeline/ros.py` so the next one fails on a unit
       test. Its own first version derived its fixture from the set under test and passed on the
       broken code; it derives from the pipeline now, and the revert was re-run to confirm red.
+- [x] **Bar-count fix, 2026-09-19 (daily-refresh run 55, ADR-090).** The refresh after the
+      bundle fix cleared `validate-artifacts` and stopped at `verify:board`: the strip capped
+      itself at twelve bars and the artifact published fifteen. A snapshot is a `daily-refresh`
+      run and not a day — the schedule adds a second run on Tuesdays and a morning of re-running
+      the workflow adds five — so the seven-day window holds fifteen points across eight dates.
+      The cap is gone, because nothing else in the panel truncates and the component cannot
+      restate `behavior_trend_v1` for the stretch it drew. Width was never the constraint:
+      measured, the narrowest strip fits 65 bars before overflowing.
+- [x] **The fixtures now carry the cadence, which is the actual fix.** Both held one snapshot
+      per calendar day, so no fixture in the repository could reach a twelve-bar cap and the
+      one test about bar counts ran only against the two-point case. Both build from
+      `daily-refresh`'s own run history now, giving the goldens three states they never had:
+      `observations` ≠ `observation_days`, a two-point window spanning **hours**, and counts
+      that walk per day elapsed so a cluster of captures reads as one afternoon's drift.
+      Three Python guards and one vitest case pin it; all four were reverted and confirmed red.
 - [ ] **Not done here, deliberately: the strip is on Pick of the Week only.** The player card
       and the Opportunity Board carry the same counts and could carry the same reading; neither
       was asked for.

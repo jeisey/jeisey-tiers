@@ -873,11 +873,19 @@ without hardcoding it. Absent-or-null is valid, as for `market` and `player_stat
 
 ### 18.1 `behavior_trend_series` 1.0 — the retained add/drop window, published
 
-The append-only store has held a daily Sleeper add/drop snapshot under `behavior/` since the
-season opened, and until this contract existed the only reader resolved `latest_key` — so the
-whole history reached the published board as a single 24-hour number per player. This is the
-artifact that publishes the window, so the in-season momentum sparkline needs no vendor call,
-exactly as `market_trend_series` does for ADP history.
+The append-only store has held a Sleeper add/drop snapshot under `behavior/` since the season
+opened, and until this contract existed the only reader resolved `latest_key` — so the whole
+history reached the published board as a single 24-hour number per player. This is the artifact
+that publishes the window, so the in-season momentum sparkline needs no vendor call, exactly as
+`market_trend_series` does for ADP history.
+
+**A snapshot is a refresh run, not a day** (ADR-090). One `daily-refresh` run writes one
+snapshot; the schedule fires once most mornings and twice on Tuesdays, and a `workflow_dispatch`
+re-run adds another, so the seven-day window routinely holds **fifteen** points across eight
+calendar dates and several of them can share an afternoon. Consumers must read `observations`
+as a count of snapshots and `observation_days` as the count of distinct dates — they are
+different numbers and neither is the window length. `behavior_trend_v1` fits on elapsed days and
+not on sample index, so the published slope does not move when the capture cadence does.
 
 | | |
 |---|---|
@@ -912,6 +920,10 @@ paid by two required fields:
 - **`observations`** — always the length of `points`. It exists so a reader can compare it with
   `snapshots_in_window`; if it could drift from the array beside it that comparison would mean
   nothing, and `behavior_trend_series.observation_count_disagrees` fails a record where it does.
+  A renderer draws one mark per **published point** and never a subset: `verify-real-build.mjs`
+  compares the two, and it is the check that failed the 2026-09-19 refresh when the momentum
+  strip capped itself at twelve bars (ADR-090). `points` has no upper bound in the schema, by
+  design — the window is bounded in time, never in samples.
 
 `behavior_trend_series.trend_without_two_points` fails any record carrying a direction with
 fewer than two points. A single observation publishes `add_trend: null`, `net_trend: null` and

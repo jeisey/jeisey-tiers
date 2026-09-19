@@ -9,16 +9,24 @@
  *
  * **It draws observations; the caption states the estimate.** The same separation ADR-081
  * settled for the market chart, and it matters more here, not less. A bar is a count that was
- * retained on a day — a fact, whether or not a second day follows it. The slope beside it is
- * an estimate under `behavior_trend_v1`, which will state one from as few as two observations
- * precisely because an add count moves in hours. What makes that honest rather than reckless
- * is that **the span is printed with it, always**: `+320/day over 2 days` is a different
- * claim from `+320/day over 6 days` and the reader gets to see which one they have.
+ * retained at one instant — a fact, whether or not a second observation follows it. The slope
+ * beside it is an estimate under `behavior_trend_v1`, which will state one from as few as two
+ * observations precisely because an add count moves in hours. What makes that honest rather
+ * than reckless is that **the span is printed with it, always**: `+320/day over 2 days` is a
+ * different claim from `+320/day over 6 days` and the reader gets to see which one they have.
  *
- * **A gap is drawn as a gap.** Sleeper's feed is a top-100 list, so a day the player was
- * outside it carries no count at all — unknown, not zero. Those days render as a hairline
- * rather than a zero-height bar, because a floor-height bar reads as "nobody added him" and
- * that is a different fact. The caption says how many there were.
+ * **A bar is a snapshot, not a day** (ADR-090). The window is seven days and the snapshots in
+ * it are `daily-refresh` runs, which are neither one per day nor evenly spaced: the schedule
+ * adds a second run on Tuesdays and a morning spent re-running the workflow adds five. So the
+ * strip is as long as the week happened to be sampled — fifteen bars is an ordinary week —
+ * and the count of bars is never the count of days. The caption's `/day` figure is unaffected,
+ * because `behavior_trend_v1` fits on elapsed days and not on sample index; `observation_days`
+ * on the same record is the distinct-day count when one is wanted.
+ *
+ * **A gap is drawn as a gap.** Sleeper's feed is a top-100 list, so a snapshot the player was
+ * outside it carries no count at all — unknown, not zero. Those render as a hairline rather
+ * than a zero-height bar, because a floor-height bar reads as "nobody added him" and that is a
+ * different fact. The caption says how many there were.
  *
  * **Bars, not a line, and not by accident.** A line implies a value between two samples; a
  * daily transaction count has none. The Opportunity Board makes the same choice for the same
@@ -32,9 +40,6 @@ import { useId } from "react";
 
 import { EM_DASH, formatInteger, formatValue } from "../data/format";
 import type { BehaviorMomentum } from "../data/ros";
-
-/** How many bars fit before the strip stops being legible in a card tile. */
-const MAX_BARS = 12;
 
 function directionOf(trend: number | null): "rising" | "falling" | "flat" | "unknown" {
   if (trend === null) return "unknown";
@@ -86,8 +91,23 @@ export function BehaviorSparkline({
 }): React.JSX.Element {
   const summaryId = useId();
   const direction = directionOf(momentum.trend);
-  // The newest bars, if a long window ever outgrows the strip. Oldest-left is preserved.
-  const bars = momentum.points.slice(-MAX_BARS);
+  /*
+    **Every retained point, and no cap** (ADR-090).
+
+    This drew the newest twelve and dropped the rest, which read as a sensible guard against a
+    long window and was not one. Nothing else on the card truncates: the slope, the span, the
+    gap count and `peak` are all measured over the whole window, and `behavior_trend_v1` is
+    the artifact's rule rather than this component's, so a truncated strip cannot restate any
+    of them for the window it actually drew. A cap therefore does not shorten the reading, it
+    just makes the picture describe a different window from the four numbers beside it —
+    including the y-axis, because heights are scaled to a peak the cap can push off-screen.
+
+    The window is bounded in *time* (seven days), never in samples, and a sample is one
+    `daily-refresh` run: two on a Tuesday, five on an afternoon somebody spent re-running it.
+    Fifteen in a week is ordinary. `.momentum-bar` shrinks to fit and `momentum.test.tsx`
+    pins the count to the artifact's own.
+  */
+  const bars = momentum.points;
   const sentence = momentumSentence(momentum);
 
   return (
@@ -97,7 +117,7 @@ export function BehaviorSparkline({
       <div className="momentum-body">
         {/*
           `aria-hidden` on the bars and a real sentence beside them: the strip is a picture of
-          numbers that are all in the sentence, so announcing twelve bars would be twelve
+          numbers that are all in the sentence, so announcing every bar would be a dozen-odd
           announcements of one reading. This is the same construction every other micro-chart
           in the card uses.
         */}

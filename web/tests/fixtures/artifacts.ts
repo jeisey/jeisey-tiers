@@ -1020,8 +1020,24 @@ export function playerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {
   return envelope("player_status", "player_status", playerStatusRecords());
 }
 
-/** How many retained snapshots the mature fixture window holds. */
-export const FIXTURE_BEHAVIOR_SNAPSHOTS = 7;
+/**
+ * Hours before the anchor at which the mature fixture window retained a snapshot, oldest
+ * first. `daily-refresh`'s own run history for the week ending 2026-09-19, rounded to the
+ * hour, and the same cadence `fixture_pipeline.py` builds the Python goldens from.
+ *
+ * **A snapshot is a run, not a day** (ADR-090). Fifteen of them across eight calendar dates,
+ * five of them inside one afternoon. The window was seven evenly spaced days until this file
+ * was corrected, and that tidiness is what let a twelve-bar cap look generous.
+ */
+export const FIXTURE_BEHAVIOR_SNAPSHOT_HOURS = [
+  167, 151, 127, 100, 99, 97, 95, 89, 79, 73, 55, 31, 26, 7, 0,
+] as const;
+
+/** A window two snapshots deep because the season is two days old, not because of a gap. */
+export const FIXTURE_BEHAVIOR_YOUNG_HOURS = [24, 0] as const;
+
+/** How many retained snapshots the mature fixture window holds. Read off the cadence. */
+export const FIXTURE_BEHAVIOR_SNAPSHOTS = FIXTURE_BEHAVIOR_SNAPSHOT_HOURS.length;
 
 /**
  * The retained add/drop window, as a fixture that carries its **states** (ADR-089).
@@ -1033,8 +1049,8 @@ export const FIXTURE_BEHAVIOR_SNAPSHOTS = 7;
  *
  * | seed | what it is | what it must render as |
  * |---|---|---|
- * | 0 | a full rising window | bars climbing, a positive direction, a multi-day span |
- * | 1 | **exactly two observations** | a direction, and a span that says *two days* |
+ * | 0 | a full rising window | fifteen bars climbing, a positive direction, a multi-day span |
+ * | 1 | **exactly two observations** | a direction, and a span that says *seven hours* |
  * | 2 | **one observation** | one bar, no direction, "one observation" beside it |
  * | 3 | a gap inside the window | a gap mark, and a caption naming the missing snapshots |
  * | 4 | a falling window | a negative direction, and never a colour alone |
@@ -1042,19 +1058,29 @@ export const FIXTURE_BEHAVIOR_SNAPSHOTS = 7;
  *
  * `young` builds the other case a single bundle cannot hold: a window that is genuinely only
  * two snapshots deep because the season is two days old. That is different from seed 1, whose
- * two points sit in a seven-snapshot window and therefore carry `sparse_feed_coverage`; here
- * nothing is missing and the reading is simply short. It is the exact state the site is in
- * the week a season opens, and the reason `behavior_trend_v1` states a direction at all.
+ * two points sit in a fifteen-snapshot window and therefore carry `sparse_feed_coverage`;
+ * here nothing is missing and the reading is simply short. It is the exact state the site is
+ * in the week a season opens, and the reason `behavior_trend_v1` states a direction at all.
+ *
+ * **The window's length is the seventh state** (ADR-090). Seed 0 carries fifteen points
+ * because production's week holds fifteen `daily-refresh` runs, not seven days; the strip
+ * drew the newest twelve and dropped the rest until that count reached a fixture. Seed 1's
+ * two observations now sit seven hours apart rather than a day, which is what two runs on one
+ * afternoon actually look like and the only case that exercises the hours branch of
+ * `spanLabel` in a rendered card.
  */
 export function behaviorSeriesRecords(
   options: { readonly young?: boolean } = {},
 ): BehaviorTrendSeriesRecord[] {
   const young = options.young ?? false;
-  const snapshots = young ? 2 : FIXTURE_BEHAVIOR_SNAPSHOTS;
+  const hours = young ? FIXTURE_BEHAVIOR_YOUNG_HOURS : FIXTURE_BEHAVIOR_SNAPSHOT_HOURS;
+  const snapshots = hours.length;
   const anchor = Date.parse(FIXTURE_GENERATED_AT);
   const day = 86_400_000;
   const stampAt = (index: number): string =>
-    new Date(anchor - (snapshots - 1 - index) * day).toISOString().replace(".000Z", "Z");
+    new Date(anchor - (hours[index] ?? 0) * 3_600_000).toISOString().replace(".000Z", "Z");
+  const daysBetween = (from: number, to: number): number =>
+    ((hours[from] ?? 0) - (hours[to] ?? 0)) / 24;
 
   const rows = opportunityRecords();
   const byPlayer = new Map<string, OpportunityRecord>();
@@ -1063,7 +1089,7 @@ export function behaviorSeriesRecords(
 
   const carried: Record<number, readonly number[]> = young
     ? {}
-    : { 1: [5, 6], 2: [6], 3: [0, 1, 5, 6] };
+    : { 1: [13, 14], 2: [14], 3: [0, 1, 2, 12, 13, 14] };
   const falling = new Set([4]);
   const absent = new Set(players.slice(-1));
 
@@ -1076,12 +1102,16 @@ export function behaviorSeriesRecords(
     const finalDrops = row.drop_count ?? 0;
     const indices = carried[seed] ?? [...Array(snapshots).keys()];
     const newest = Math.max(...indices);
-    const step = 40 + (seed % 5) * 15;
+    const rate = 40 + (seed % 5) * 15;
 
     const points = indices.map((index) => {
-      const steps = newest - index;
-      const adds = falling.has(seed) ? finalAdds + steps * step : finalAdds - steps * step;
-      const drops = finalDrops + steps * 3;
+      // Per day elapsed, never per snapshot: five captures inside one afternoon have to read
+      // as one afternoon's drift. Walking per index would make the slope a function of how
+      // often we sampled, which is the confusion ADR-090 exists to keep out of the fixture.
+      const elapsed = daysBetween(index, newest);
+      const drift = Math.round(elapsed * rate);
+      const adds = falling.has(seed) ? finalAdds + drift : finalAdds - drift;
+      const drops = finalDrops + Math.round(elapsed * 3);
       return {
         observed_at: stampAt(index),
         add_count: Math.max(0, adds),
@@ -1096,9 +1126,11 @@ export function behaviorSeriesRecords(
       first === undefined || last === undefined
         ? 0
         : (Date.parse(last.observed_at) - Date.parse(first.observed_at)) / day;
-    // The same statistic the Python side computes, over these same points. At two points an
-    // OLS slope is the difference over the elapsed days, which is what makes the short case a
-    // continuous extension of the long one rather than a second rule.
+    // The same statistic the Python side computes, over these same points. These counts are
+    // a straight line in elapsed time by construction, and an OLS slope through collinear
+    // points is exactly the difference over the elapsed days however unevenly they are
+    // spaced — so this shortcut is the rule rather than an approximation of it, up to the
+    // integer rounding each count carries.
     const addTrend =
       points.length < 2 || spanDays <= 0
         ? null

@@ -384,6 +384,16 @@ survives the reflow rather than the layout.
 **Bars, not a line.** A line implies a value between two samples and a daily transaction count
 has none.
 
+**One bar per retained snapshot, and the strip is never truncated** (ADR-090). A snapshot is a
+`daily-refresh` run rather than a day: the schedule fires once most mornings and twice on
+Tuesdays, and a morning spent re-running the workflow contributes five, so a seven-day window
+routinely holds fifteen and the count of bars is never the count of days. Nothing else in the
+panel truncates — the slope, the span, the gap count and the bar scale are all measured over
+the whole window, and `behavior_trend_v1` belongs to the artifact rather than to the component,
+so a shortened strip cannot restate any of them for the stretch it actually drew. A cap
+therefore does not shorten the reading; it makes the picture describe a different window from
+the numbers printed beside it, including the vertical scale. Bars shrink to fit instead.
+
 **A direction is never drawn without its span.** `behavior_trend_v1` states one from as few as
 two observations, on purpose: an add count moves in hours and the market rule's three-day bar
 would admit a waiver signal after the edge has gone. What makes that honest rather than reckless
@@ -391,8 +401,8 @@ is that `+320/day` always appears beside `over 2 days`, in the same reading. A s
 says hours. One observation prints an em dash and the words `one observation`, because a line
 needs two points and a direction of zero would be an invented one.
 
-**A gap is drawn as a gap.** The feed is a top-100 list, so a day the player sat outside it
-carries no count at all — unknown, not zero. Those render as a hairline mark rather than a
+**A gap is drawn as a gap.** The feed is a top-100 list, so a snapshot the player sat outside
+it carries no count at all — unknown, not zero. Those render as a hairline mark rather than a
 short bar, and the caption says how many there were. A floor-height bar would read as "nobody
 added him", which is a different fact.
 
@@ -402,7 +412,7 @@ observation and therefore no direction yet. A reader can act on the difference.
 
 **Never colour alone.** Direction is in the caption's words, in the arrow glyph and in the
 accessible summary; the tint is the fourth channel. The bars are `aria-hidden` and the reading
-is a sentence, because announcing twelve bars would be twelve announcements of one number.
+is a sentence, because announcing every bar would be a dozen-odd announcements of one number.
 
 **Still no share of leagues.** 6A.8.1 binds the history exactly as it binds the day: a count of
 transactions has no denominator in leagues however many days of it are drawn. No percentage
@@ -640,8 +650,11 @@ Capture Playwright screenshots for at least:
   rank, a pace gap in both directions, and the behaviour feed down (ADR-086)
 - Pick of the Week, desktop, tablet and phone; a set deep enough that a position has run out of
   candidates; one position filtered; 320px reflow; and the behaviour feed down (ADR-088)
-- the add-momentum strip in each of its states (ADR-089): a full window, a two-point window,
-  a single observation, a window with a gap in it, a falling count, and a card whose player the
-  feed has never carried — plus the 320px stack, where the two behaviour panels separate
+- the add-momentum strip in each of its states (ADR-089, ADR-090): a full window of *as many
+  snapshots as the week actually held* — fifteen, not seven — a two-point window hours rather
+  than days apart, a single observation, a window with a gap in it, a falling count, and a card
+  whose player the feed has never carried; plus the 320px stack, where the two behaviour panels
+  separate. Count the bars against the artifact's `observations`: a strip that silently drops
+  its oldest points is the ADR-090 defect, and it is invisible in every text assertion
 
 Use screenshot review to catch clipping, label overlap, unreadable scales, and Pages base-path failures. Pixel-perfect snapshots should not become brittle blockers for dynamic data unless fixtures are fixed.
