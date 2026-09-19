@@ -69,7 +69,21 @@ ROS_BUILD_METADATA_SCHEMA = "ros_build_metadata"
 
 #: Which artifacts belong to which bundle. A build id is compared inside a bundle and never
 #: across one: a site legitimately holds a Tuesday draft board beside a Monday ROS board.
-_IN_SEASON_ARTIFACTS = frozenset({"ros_tiers", "inseason_opportunity"})
+#:
+#: **Adding an in-season artifact means adding it here, and the omission fails in production
+#: rather than in a fixture.** `behavior_trend_series` was published by the ROS build and left
+#: out of this set (ADR-089), so `_build_metadata_checks` read it as a *draft* artifact and
+#: compared its ROS build id against the draft bundle's — a critical failure on a correct
+#: build, which stopped the 2026-09-19 refresh at `validate-artifacts`. The same omission
+#: silently skipped it in `_ros_metadata_checks`, so the agreement it *should* have been
+#: getting was never asserted either. One membership list, two directions, one line.
+#:
+#: The fixture build cannot catch this: it produces every artifact in one pass under one
+#: build id, so draft and in-season trivially agree there. `test_two_bundle_validation.py`
+#: is the test that can, and it builds the two-bundle shape production actually has.
+_IN_SEASON_ARTIFACTS = frozenset(
+    {"ros_tiers", "inseason_opportunity", "behavior_trend_series"},
+)
 
 #: How far two copies of the same intrinsic number may differ before the firewall check
 #: fails. Zero, in effect: the opportunity board copies these values rather than computing

@@ -1972,6 +1972,34 @@ snapshots deep — what the site looks like the week a season opens, which a sin
 bundle cannot express. Built against the six recorded instances of that species rather than
 after joining them.
 
+**The first production refresh on this code failed, and the fix is one line** (run 54,
+2026-09-19). `validate-artifacts` raised
+`build_metadata.build_id_mismatch: behavior_trend_series carries a different build_id from
+build_metadata` on a build whose numbers were all correct. `daily-refresh` runs two builds into
+one directory under two build ids, and `_IN_SEASON_ARTIFACTS` in `artifacts/validate.py` is the
+one place that says which artifact belongs to which bundle. The new artifact is written by
+`run_ros_build` and was not in that set, so it was compared against the *draft* bundle — and,
+in the same stroke, silently skipped by the ROS check that should have covered it.
+
+**No local gate could catch it, and that is the durable part.** The fixture build emits every
+artifact in one pass under **one** build id, so draft and in-season trivially agree there and a
+misfiled artifact is invisible. `tests/contract/test_two_bundle_validation.py` builds the
+two-bundle shape production actually has; a fifth test reads the ROS build's published
+artifacts off `pipeline/ros.py` and compares them with the membership list, so the *next*
+in-season artifact fails on a unit test instead of three minutes into a refresh.
+
+**And a trap inside the test, worth more than the fix.** Its first version built its fixture by
+iterating `_IN_SEASON_ARTIFACTS` — the set under test — so reverting the fix also stopped the
+fixture re-stamping the missing artifact, and the test written to reproduce the production
+failure **passed on the broken code**. A fixture derived from the thing it is testing asserts
+its own assumptions. It derives from the pipeline now, and the revert was re-run to confirm it
+goes red with production's exact message.
+
+**Production was never at risk.** ADR-050's job graph: `validate` failed, every later step
+skipped including the Pages upload, `deploy` was skipped, the previous site stayed live. The
+capture job had already committed, so the day's behaviour snapshot is in the store and the
+history is not short a day.
+
 **One defect the capture caught that no test failed on.** A single observation rendered as a
 **full-width bar** — the picture of maximum momentum, beside text correctly saying there was no
 direction yet. `flex: 1 1 0` gives one bar the whole strip and every assertion about the
@@ -1980,7 +2008,7 @@ short. Ninth instance of the species, and the second time a capture has been the
 that could see it.
 
 **Verified**: `uv run ruff check`, `ruff format --check` (250 files), strict `mypy` (157 files)
-and `uv run pytest` **1,516** passed clean; `ffdraft validate-artifacts` 0 critical / 0 warning;
+and `uv run pytest` **1,523** passed clean; `ffdraft validate-artifacts` 0 critical / 0 warning;
 `npm run lint` 0 errors / 4 pre-existing warnings, `npm run typecheck` clean,
 `npm run test -- --run` **497** passed (up from 480), `npm run e2e` **140** passed across
 chromium/mobile/a11y, `npm run build` clean, `npm run verify:board` with **zero disagreements

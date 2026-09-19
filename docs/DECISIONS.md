@@ -4024,10 +4024,64 @@ assert it on the rendered bytes.
    both sides and the check correctly agrees. Controls must corrupt the *checker's* copy:
    `--dist <clean> --data <corrupted>`. Five controls were run that way and all five fire — a
    moved slope, a dropped point, a nulled direction, an invented gap and a deleted series.
-5. **The fixture carries six states and none of them is "the normal one."** A full rising
+5. **An in-season artifact must be added to `_IN_SEASON_ARTIFACTS`, and the fixture cannot
+   tell you when you forget.** Added after the fact, because this shipped wrong. See the
+   correction below.
+6. **The fixture carries six states and none of them is "the normal one."** A full rising
    window, a two-point one, a single observation, a gap, a falling count and a board player with
    no series at all. Six instances of the fixture species are already recorded in
    `SESSION_STATE.md` (ADR-081, 082, 084, 085, 086, 088); this was built against that list
    rather than after joining it. The frontend fixture adds a seventh state a single bundle
    cannot hold — a window that is genuinely only two snapshots deep, which is what the site
    looks like the week a season opens.
+
+### Correction, 2026-09-19 — the bundle boundary (daily-refresh run 54)
+
+The first production refresh on this code **failed at `validate-artifacts`**, on a build whose
+numbers were all correct:
+
+```
+[critical] build_metadata.build_id_mismatch (artifacts.build_metadata):
+  behavior_trend_series carries a different build_id from build_metadata
+  observed: 2026w01-intrinsic-ros-v1-20260919T112638Z
+  expected: 2026-intrinsic-cb-hurdle-v1-20260919T112419Z
+```
+
+**The check was right and the membership list was wrong.** `daily-refresh` runs two builds into
+one directory — `build-current` stamps the draft bundle, `build-ros` stamps the in-season one
+minutes later — and `_IN_SEASON_ARTIFACTS` in `ffdraft/artifacts/validate.py` is the single
+place that says which artifact belongs to which. A build id is compared *inside* a bundle and
+never across one. `behavior_trend_series` is written by `run_ros_build` and was not added to
+that set, so `_build_metadata_checks` read it as a draft artifact and compared its ROS build id
+against the draft bundle's.
+
+**The omission cost two things, and the loud one hid the quiet one.** The draft check failed on
+it; and `_ros_metadata_checks` — which filters on the same set — silently skipped it, so the
+build-id and `through_week` agreement it *should* have been getting was never asserted at all.
+One membership list, two directions, one line.
+
+**Why every local gate passed.** The fixture build produces every artifact in one pass under
+**one** build id, so a draft artifact and an in-season artifact trivially agree there and an
+artifact filed in the wrong bundle is invisible — its id matches whichever metadata it is
+compared against. Tenth instance of the species, and the first aimed at the *bundle boundary*
+rather than at a rendering.
+
+**What was added, and the trap inside it.** `tests/contract/test_two_bundle_validation.py`
+builds the two-bundle shape by re-stamping the in-season half with its own build id, and
+asserts three things: the production shape validates; breaking an in-season artifact's id
+raises `ros_build_metadata.build_id_mismatch` and *not* the draft one; and a draft artifact
+stamped with the ROS id still fails, so the fix can never become "stop comparing build ids".
+
+The first version of that file built its fixture by iterating `_IN_SEASON_ARTIFACTS` — **the
+set under test**. Reverting the fix therefore also stopped the fixture re-stamping the missing
+artifact, no mismatch occurred, and the test written to reproduce the production failure passed
+on the broken code. It now derives the list from `pipeline/ros.py` instead, and a fifth test
+compares the two directly, so a *future* in-season artifact fails on a unit test rather than
+three minutes into a refresh. **A fixture derived from the thing it is testing asserts its own
+assumptions** — that is the durable lesson, not the one-line fix.
+
+**Production was never at risk.** The job graph did what ADR-050 built it to do: `validate`
+failed, every step after it skipped including the Pages upload, `deploy` was **skipped**, and
+the previously deployed site stayed live and unchanged. The capture job had already committed,
+so the day's behaviour snapshot is in the store and the history is not short a day.
+
