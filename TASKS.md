@@ -1383,9 +1383,18 @@ request with two mock-ups. Frontend only — no schema, no artifact, no Python f
       two-point one, a single observation, a gap, a falling count, a board player with no series
       at all, and a window genuinely only two snapshots deep.
 - [x] **Verified.** `ruff`, `ruff format --check`, strict `mypy` (159 files) and `pytest`
-      **1,516** clean; `npm run lint` 0 errors / 4 pre-existing warnings, `typecheck` clean,
+      **1,523** clean; `npm run lint` 0 errors / 4 pre-existing warnings, `typecheck` clean,
       `npm run test -- --run` **497** passed, `npm run e2e` **140** passed, `npm run build`
       clean, `npm run verify:board` zero disagreements across all six builds.
+- [x] **Bundle-boundary fix, 2026-09-19 (daily-refresh run 54).** The new artifact is written
+      by the ROS build and was missing from `_IN_SEASON_ARTIFACTS`, so `validate-artifacts`
+      compared its ROS build id against the *draft* bundle's and failed a correct build — and
+      silently skipped the ROS check that should have covered it. One line. The fixture build
+      cannot catch this (one pass, one build id), so
+      `tests/contract/test_two_bundle_validation.py` builds the two-bundle shape, and a test
+      reads the ROS build's artifacts off `pipeline/ros.py` so the next one fails on a unit
+      test. Its own first version derived its fixture from the set under test and passed on the
+      broken code; it derives from the pipeline now, and the revert was re-run to confirm red.
 - [ ] **Not done here, deliberately: the strip is on Pick of the Week only.** The player card
       and the Opportunity Board carry the same counts and could carry the same reading; neither
       was asked for.
