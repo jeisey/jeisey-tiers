@@ -10,11 +10,15 @@
  *   A reader who thinks the pick is wrong can see exactly which threshold produced it.
  * - **the reasons are published fields read back in words.** `reasonsFor` in `data/potw.ts`
  *   builds them; nothing in this file writes a sentence about a player.
- * - **no percentage of leagues, no matchup, no multi-week trend.** The three things a waiver
- *   card conventionally shows that this product cannot source. ADR-088 records the four routes
- *   that were checked for a rostered share and why all four are closed; the honest substitute
- *   is the add volume itself, and it is labelled as a count of transactions every time it
- *   appears.
+ * - **no percentage of leagues and no matchup rating.** Two of the three things a waiver card
+ *   conventionally shows that this product cannot source. ADR-088 records the four routes that
+ *   were checked for a rostered share and why all four are closed; the honest substitute is
+ *   the add volume itself, and it is labelled as a count of transactions every time it appears.
+ * - **the third one is now sourced.** The mockup's `ADD MOMENTUM` sparkline was a *data* gap
+ *   rather than a rights gap: the retained store had held a daily add/drop snapshot since the
+ *   season opened and nothing published a series over them. `behavior_trend_series.json` does,
+ *   and `BehaviorSparkline` draws it (ADR-089). It is still not a rostered share and still
+ *   cannot become one — a count of transactions has no denominator in leagues.
  *
  * **The portrait is here on purpose and is bounded** (ADR-087 as extended by ADR-088). The
  * rule that a portrait never goes on a board row stands — three hundred rows would be three
@@ -26,6 +30,7 @@
 
 import { useCallback, useMemo } from "react";
 
+import { BehaviorSparkline } from "../charts/BehaviorSparkline";
 import { PlayerPortrait } from "../components/PlayerPortrait";
 import { Notice, PositionTag, RosStatusBadge, SectionHead } from "../components/primitives";
 import { cohortStat, finiteValues } from "../data/cohort";
@@ -43,7 +48,13 @@ import {
   type PotwPick,
   type PotwSet,
 } from "../data/potw";
-import { longAbsenceLabel, movesBound, type InSeasonBundle } from "../data/ros";
+import {
+  behaviorMomentum,
+  longAbsenceLabel,
+  movesBound,
+  type BehaviorMomentum,
+  type InSeasonBundle,
+} from "../data/ros";
 import {
   POSITION_FILTERS,
   POSITION_LABELS,
@@ -78,9 +89,12 @@ function Tile({
  *
  * The same geometry the Opportunity Board and the player card already draw, for the same
  * reason they draw it: drops left of centre, adds right, a bound taken from the population
- * rather than from the worst outlier, and a chevron where a count runs past it. It replaces
- * the mockup's "add momentum" sparkline, which would have needed a retained history of add
- * counts that no artifact publishes.
+ * rather than from the worst outlier, and a chevron where a count runs past it.
+ *
+ * It is **today's counts**, and it sits beside the momentum strip rather than being replaced
+ * by it: one says how many rosters moved on him in the last window, the other says which way
+ * that has been going. Two readings, side by side, no blended score — the rule the whole
+ * feature is built on (ADR-088, ADR-089).
  */
 function MovesStrip({
   adds,
@@ -134,6 +148,8 @@ function PickCard({
   onSelect,
   selectedPlayerId,
   portraitUrl,
+  momentum,
+  seriesPublished,
 }: {
   readonly pick: PotwPick;
   readonly movesAxis: number;
@@ -141,6 +157,10 @@ function PickCard({
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
   readonly portraitUrl: string | null;
+  /** The retained add window, or null when the feed has never carried this player. */
+  readonly momentum: BehaviorMomentum | null;
+  /** Whether this build published a series artifact at all. A different fact from the above. */
+  readonly seriesPublished: boolean;
 }): React.JSX.Element {
   const record = pick.opportunity;
   const window =
@@ -277,17 +297,50 @@ function PickCard({
         </div>
 
         <div className="potw-moves">
-          <span className="readout-label">
-            {`Roster moves — drops left, adds right, axis ±${formatInteger(movesAxis)}`}
-          </span>
-          <MovesStrip
-            adds={record.add_count ?? null}
-            drops={record.drop_count ?? null}
-            bound={movesAxis}
-          />
+          {/*
+            Two readings side by side, and the split is the product rule rather than a layout
+            choice. The left strip is *this window*: how many rosters moved on him in the last
+            24 hours, on the board's own symmetric axis. The right strip is *the window behind
+            it*: which way that count has been going, over the days the store actually holds.
+            They are never combined into one score — an instantaneous count and a rate have no
+            shared unit, and a blend of them would be the most confident-looking number on the
+            card (AGENTS.md section 10, ADR-088).
+          */}
+          <div className="potw-moves-pair">
+            <div className="potw-moves-today">
+              <span className="readout-label">
+                {`Roster moves — drops left, adds right, axis ±${formatInteger(movesAxis)}`}
+              </span>
+              <MovesStrip
+                adds={record.add_count ?? null}
+                drops={record.drop_count ?? null}
+                bound={movesAxis}
+              />
+            </div>
+            {momentum === null ? (
+              /*
+                Three absences and a reader can act on the difference, so they are three
+                sentences and never a blank panel — the same construction 6A.8.2 uses for a
+                position with no pick.
+              */
+              <div className="momentum" data-direction="absent">
+                <span className="readout-label">Add momentum</span>
+                <p className="momentum-reading momentum-absent">
+                  {seriesPublished
+                    ? "No retained history: the feed has not carried him inside the window."
+                    : "This build published no add/drop history."}
+                </p>
+              </div>
+            ) : (
+              <BehaviorSparkline momentum={momentum} />
+            )}
+          </div>
           <p className="cohort-note">
             {`${formatInteger(record.drop_count)} drops and ${formatInteger(record.add_count)} adds over the ${window} window. ` +
-              "A count is a count of transactions, not a share of leagues."}
+              "A count is a count of transactions, not a share of leagues." +
+              (momentum === null
+                ? ""
+                : ` The strip beside it draws the ${String(momentum.record.observations)} retained snapshot${momentum.record.observations === 1 ? "" : "s"} behind that count.`)}
           </p>
         </div>
       </div>
@@ -446,6 +499,8 @@ export function PotwView({
               onSelect={onSelect}
               selectedPlayerId={selectedPlayerId}
               portraitUrl={headshotFor(pick.opportunity.player_id)}
+              momentum={behaviorMomentum(bundle, pick.opportunity.player_id)}
+              seriesPublished={bundle.hasBehaviorSeries}
             />
           ))}
         </div>

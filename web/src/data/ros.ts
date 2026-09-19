@@ -18,6 +18,7 @@
 import type { Degradation } from "./bundle";
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
+  BehaviorTrendSeriesRecord,
   OpportunityRecord,
   Position,
   ProductMode,
@@ -39,6 +40,31 @@ export interface InSeasonInput {
   readonly rosTiers: readonly RosTierRecord[];
   readonly opportunity: readonly OpportunityRecord[] | null;
   readonly opportunityDegradation: Degradation | null;
+  /** The retained add/drop window (ADR-089). Null or empty costs a sparkline and nothing else. */
+  readonly behaviorSeries?: readonly BehaviorTrendSeriesRecord[] | null;
+}
+
+/**
+ * A momentum reading, with everything a caller needs to print it honestly.
+ *
+ * `behavior_trend_v1` states a direction from as few as two observations, because an add
+ * count moves in hours and the market rule's three-day bar would admit a waiver signal after
+ * the edge has gone. The price of that is that **the span travels with the number**: every
+ * consumer of this shape prints `spanLabel` beside `trend`, so a one-day reading can never be
+ * mistaken for a week's.
+ */
+export interface BehaviorMomentum {
+  readonly record: BehaviorTrendSeriesRecord;
+  /** Ascending. One entry per retained snapshot that carried the player. */
+  readonly points: readonly { readonly at: string; readonly adds: number; readonly drops: number }[];
+  /** Transactions per day, or null when one observation cannot support a direction. */
+  readonly trend: number | null;
+  /** "over 3 days", "over 18 hours" — never absent when `trend` is present. */
+  readonly spanLabel: string;
+  /** Snapshots in the window that did not carry this player: days outside the feed's top N. */
+  readonly missing: number;
+  /** The largest add count in the series, for a bar scale that is the player's own. */
+  readonly peak: number;
 }
 
 /** A rest-of-season row. `status` is the row's own annotation string, never a model input. */
@@ -63,15 +89,26 @@ export class InSeasonBundle {
   readonly metadata: RosBuildMetadata;
   readonly opportunityDegradation: Degradation | null;
   readonly hasOpportunity: boolean;
+  readonly hasBehaviorSeries: boolean;
   private readonly rosByBlock: ReadonlyMap<string, readonly RosTierRecord[]>;
   private readonly rosByBlockPlayer: ReadonlyMap<string, RosTierRecord>;
   private readonly opportunityByBlock: ReadonlyMap<string, readonly OpportunityRecord[]>;
   private readonly opportunityByBlockPlayer: ReadonlyMap<string, OpportunityRecord>;
+  private readonly behaviorByPlayer: ReadonlyMap<string, BehaviorTrendSeriesRecord>;
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
     this.opportunityDegradation = input.opportunityDegradation;
     this.hasOpportunity = input.opportunity !== null;
+
+    // Keyed by player alone, because the artifact is: the same transactions are observed
+    // however points are scored, so a per-preset index would be eight copies of one map.
+    const behaviorByPlayer = new Map<string, BehaviorTrendSeriesRecord>();
+    for (const record of input.behaviorSeries ?? []) {
+      behaviorByPlayer.set(record.player_id, record);
+    }
+    this.behaviorByPlayer = behaviorByPlayer;
+    this.hasBehaviorSeries = behaviorByPlayer.size > 0;
 
     const rosByBlock = new Map<string, RosTierRecord[]>();
     const rosByBlockPlayer = new Map<string, RosTierRecord>();
@@ -144,6 +181,18 @@ export class InSeasonBundle {
     return (
       this.opportunityByBlockPlayer.get(`${blockKey(leaguePreset, scoring)}|${playerId}`) ?? null
     );
+  }
+
+  /**
+   * The retained add/drop window for one player, or null.
+   *
+   * Null is three different facts and the caller has to be able to tell them apart: the
+   * build published no series artifact at all, the feed has never carried this player, or
+   * he fell out of the published surface. `hasBehaviorSeries` separates the first from the
+   * other two, which is as far as the artifact can honestly take a reader.
+   */
+  behaviorSeriesFor(playerId: string): BehaviorTrendSeriesRecord | null {
+    return this.behaviorByPlayer.get(playerId) ?? null;
   }
 
   availableBlocks(): readonly { leaguePreset: string; scoring: ScoringPreset }[] {
@@ -311,6 +360,57 @@ export function rankChangeLabel(change: number | null | undefined): string {
  * moment a rule like this is written twice is the moment the two pictures start disagreeing
  * about the same player. One definition, two callers, each stating the bound it used.
  */
+/**
+ * A span, in the largest unit that does not round it away.
+ *
+ * The whole point of `behavior_trend_v1` is that it will state a direction over one day, so
+ * the label has to be able to say "over 18 hours" as precisely as it says "over 6 days". A
+ * span rendered as "over 1 day" when it was six hours would be the exact misreading the rule
+ * publishes `span_days` to prevent.
+ */
+export function spanLabel(days: number): string {
+  if (!Number.isFinite(days) || days <= 0) return "at one moment";
+  if (days < 1) {
+    const hours = Math.max(1, Math.round(days * 24));
+    return `over ${String(hours)} hour${hours === 1 ? "" : "s"}`;
+  }
+  const whole = Math.round(days);
+  return `over ${String(whole)} day${whole === 1 ? "" : "s"}`;
+}
+
+/**
+ * Read a published series into the shape a sparkline and its caption both need.
+ *
+ * **It computes nothing.** Every number is copied from the record; `peak` is the largest of
+ * the record's own counts, which is a bar scale rather than a quantity. That keeps this on
+ * the right side of the line ADR-086 drew: a reading is arithmetic over published rows, and a
+ * new value would be a model output the artifact never published.
+ *
+ * Returns null when there is no series, which the caller must distinguish from a series with
+ * no direction — those are "the feed has never carried him" and "he arrived today", and they
+ * are different sentences on the card.
+ */
+export function behaviorMomentum(
+  bundle: InSeasonBundle,
+  playerId: string,
+): BehaviorMomentum | null {
+  const record = bundle.behaviorSeriesFor(playerId);
+  if (record === null || record.points.length === 0) return null;
+  const points = record.points.map((point) => ({
+    at: point.observed_at,
+    adds: point.add_count,
+    drops: point.drop_count,
+  }));
+  return {
+    record,
+    points,
+    trend: record.add_trend,
+    spanLabel: spanLabel(record.span_days),
+    missing: Math.max(0, record.snapshots_in_window - record.observations),
+    peak: Math.max(1, ...points.map((point) => point.adds)),
+  };
+}
+
 export function movesBound(counts: readonly number[]): number {
   const nonZero = counts.filter((count) => count > 0).sort((a, b) => a - b);
   if (nonZero.length === 0) return 1;

@@ -62,6 +62,24 @@ try {
   opportunityRecords = null;
 }
 
+/**
+ * The retained add/drop window (ADR-089).
+ *
+ * Optional a level below the board above it: a build can publish an Opportunity Board and no
+ * series at all — the feed carried nobody inside the window, or the store was unreadable —
+ * and that costs a sparkline rather than a board. Absent here means the momentum checks below
+ * do not run, which is correct; a *present* artifact that disagrees with the page is a
+ * failure, which is the whole point of reading it.
+ */
+let behaviorSeries = null;
+try {
+  behaviorSeries = JSON.parse(
+    readFileSync(`${dataDir}/behavior_trend_series.json`, "utf-8"),
+  ).records;
+} catch {
+  behaviorSeries = null;
+}
+
 const block = tiers.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => a.fair_rank - b.fair_rank);
@@ -687,6 +705,16 @@ if (publishedInSeason && opportunityRecords !== null) {
         label: tile.querySelector(".readout-label")?.textContent?.trim() ?? "",
         value: tile.querySelector(".readout-value")?.textContent?.trim() ?? "",
       })),
+      momentum: (() => {
+        const panel = card.querySelector(".momentum");
+        if (panel === null || panel.querySelector(".momentum-bars") === null) return null;
+        return {
+          bars: panel.querySelectorAll(".momentum-bar").length,
+          gaps: panel.querySelectorAll(".momentum-gap").length,
+          value: panel.querySelector(".momentum-value")?.textContent?.trim() ?? "",
+          span: panel.querySelector(".momentum-span")?.textContent?.trim() ?? "",
+        };
+      })(),
     })),
   );
 
@@ -771,6 +799,81 @@ if (publishedInSeason && opportunityRecords !== null) {
     if (/\d+\s*%\s*rostered|rostered in|percent of leagues|%\s*owned/i.test(card.text)) {
       failures.push(`${card.name}: a pick card claims a rostered share, which no source supplies`);
     }
+
+    /*
+      ------------------------------------------------- the momentum strip (ADR-089)
+
+      Two claims, and the second is the one the rule is built on.
+
+      **The bars are the artifact's own points.** One bar per published observation and no
+      more. A strip that drew a bar for a day the feed skipped would be asserting a count
+      nobody retained, which is exactly the zero-for-unknown the artifact refuses to publish.
+
+      **A direction never appears without its span.** `behavior_trend_v1` states one from as
+      few as two observations on purpose; what stops that being reckless is that the number
+      is always printed beside the window it was measured over. A `/day` figure with no span
+      text beside it is the defect the whole rule exists to prevent, so it is a failure here
+      rather than a style note.
+
+      The slope is deliberately **not recomputed**. Phase 9B paid for restating a rule in its
+      own checker once already: this compares the page with the artifact, and the artifact's
+      own arithmetic is `tests/unit/test_behavior_history.py`'s to own.
+    */
+    if (behaviorSeries !== null) {
+      const series = behaviorSeries.find((r) => r.player_id === record.player_id) ?? null;
+      const strip = card.momentum;
+      if (series === null) {
+        if (strip !== null && strip.bars > 0) {
+          failures.push(
+            `${card.name}: a momentum strip drew ${String(strip.bars)} bar(s) and the build ` +
+              "published no series for him",
+          );
+        }
+      } else if (strip === null) {
+        failures.push(
+          `${card.name}: the build published ${String(series.observations)} retained ` +
+            "observation(s) and the card drew no momentum strip",
+        );
+      } else {
+        if (strip.bars !== series.observations) {
+          failures.push(
+            `${card.name}: momentum strip drew ${String(strip.bars)} bar(s), artifact ` +
+              `publishes ${String(series.observations)} observation(s)`,
+          );
+        }
+        const statesDirection = strip.value.includes("/day");
+        if (statesDirection !== (series.add_trend !== null)) {
+          failures.push(
+            `${card.name}: momentum reads "${strip.value}" while the artifact's add_trend is ` +
+              `${String(series.add_trend)}`,
+          );
+        }
+        if (statesDirection) {
+          const rendered = asNumber(strip.value);
+          if (rendered === null || Math.abs(rendered - series.add_trend) > 0.05) {
+            failures.push(
+              `${card.name}: momentum shows ${String(rendered)}/day, artifact has ` +
+                `${String(series.add_trend)}`,
+            );
+          }
+          if (!/over \d+ (hour|day)s?/.test(strip.span)) {
+            failures.push(
+              `${card.name}: momentum states a direction with no span beside it ` +
+                `(span text "${strip.span}")`,
+            );
+          }
+        }
+        const gapDrawn = strip.gaps > 0;
+        const gapPublished = series.snapshots_in_window > series.observations;
+        if (gapDrawn !== gapPublished) {
+          failures.push(
+            `${card.name}: momentum ${gapDrawn ? "draws" : "draws no"} gap while the artifact ` +
+              `publishes ${String(series.observations)} of ` +
+              `${String(series.snapshots_in_window)} snapshot(s)`,
+          );
+        }
+      }
+    }
   }
 }
 
@@ -783,6 +886,7 @@ console.log(JSON.stringify({
   publishedInSeason,
   rosRowsChecked,
   potwCardsChecked,
+  behaviorSeriesRecords: behaviorSeries === null ? null : behaviorSeries.length,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
   trendSeriesRecords: seriesRecords.length,

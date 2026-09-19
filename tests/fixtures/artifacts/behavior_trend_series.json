@@ -1,0 +1,925 @@
+{
+  "schema_version": "1.0",
+  "artifact": "behavior_trend_series",
+  "record_schema": "behavior_trend_series",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 16,
+  "records": [
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000001",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 40.0,
+      "net_trend": 43.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 475,
+          "drop_count": 113,
+          "net_add_count": 362
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 515,
+          "drop_count": 110,
+          "net_add_count": 405
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 555,
+          "drop_count": 107,
+          "net_add_count": 448
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 595,
+          "drop_count": 104,
+          "net_add_count": 491
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 635,
+          "drop_count": 101,
+          "net_add_count": 534
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 675,
+          "drop_count": 98,
+          "net_add_count": 577
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 715,
+          "drop_count": 95,
+          "net_add_count": 620
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000002",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 2,
+      "observation_days": 2,
+      "span_days": 1.0,
+      "add_trend": 55.0,
+      "net_trend": 58.0,
+      "quality_flags": [
+        "sparse_feed_coverage"
+      ],
+      "points": [
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 845,
+          "drop_count": 123,
+          "net_add_count": 722
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 900,
+          "drop_count": 120,
+          "net_add_count": 780
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000002-surfaced",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 1,
+      "observation_days": 1,
+      "span_days": 0.0,
+      "add_trend": null,
+      "net_trend": null,
+      "quality_flags": [
+        "single_observation",
+        "sparse_feed_coverage"
+      ],
+      "points": [
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 1450,
+          "drop_count": 20,
+          "net_add_count": 1430
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000003",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 4,
+      "observation_days": 4,
+      "span_days": 6.0,
+      "add_trend": 85.0,
+      "net_trend": 88.0,
+      "quality_flags": [
+        "sparse_feed_coverage"
+      ],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 242,
+          "drop_count": 118,
+          "net_add_count": 124
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 327,
+          "drop_count": 115,
+          "net_add_count": 212
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 667,
+          "drop_count": 103,
+          "net_add_count": 564
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 752,
+          "drop_count": 100,
+          "net_add_count": 652
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000004",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": -100.0,
+      "net_trend": -97.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 1426,
+          "drop_count": 128,
+          "net_add_count": 1298
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 1326,
+          "drop_count": 125,
+          "net_add_count": 1201
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 1226,
+          "drop_count": 122,
+          "net_add_count": 1104
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 1126,
+          "drop_count": 119,
+          "net_add_count": 1007
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 1026,
+          "drop_count": 116,
+          "net_add_count": 910
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 926,
+          "drop_count": 113,
+          "net_add_count": 813
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 826,
+          "drop_count": 110,
+          "net_add_count": 716
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000005",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 40.0,
+      "net_trend": 43.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 438,
+          "drop_count": 108,
+          "net_add_count": 330
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 478,
+          "drop_count": 105,
+          "net_add_count": 373
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 518,
+          "drop_count": 102,
+          "net_add_count": 416
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 558,
+          "drop_count": 99,
+          "net_add_count": 459
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 598,
+          "drop_count": 96,
+          "net_add_count": 502
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 638,
+          "drop_count": 93,
+          "net_add_count": 545
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 678,
+          "drop_count": 90,
+          "net_add_count": 588
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000006",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 55.0,
+      "net_trend": 58.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 459,
+          "drop_count": 123,
+          "net_add_count": 336
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 514,
+          "drop_count": 120,
+          "net_add_count": 394
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 569,
+          "drop_count": 117,
+          "net_add_count": 452
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 624,
+          "drop_count": 114,
+          "net_add_count": 510
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 679,
+          "drop_count": 111,
+          "net_add_count": 568
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 734,
+          "drop_count": 108,
+          "net_add_count": 626
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 789,
+          "drop_count": 105,
+          "net_add_count": 684
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000007",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 70.0,
+      "net_trend": 73.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 443,
+          "drop_count": 133,
+          "net_add_count": 310
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 513,
+          "drop_count": 130,
+          "net_add_count": 383
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 583,
+          "drop_count": 127,
+          "net_add_count": 456
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 653,
+          "drop_count": 124,
+          "net_add_count": 529
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 723,
+          "drop_count": 121,
+          "net_add_count": 602
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 793,
+          "drop_count": 118,
+          "net_add_count": 675
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 863,
+          "drop_count": 115,
+          "net_add_count": 748
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000008",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 85.0,
+      "net_trend": 88.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 20,
+          "drop_count": 88,
+          "net_add_count": -68
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 105,
+          "drop_count": 85,
+          "net_add_count": 20
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 190,
+          "drop_count": 82,
+          "net_add_count": 108
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 275,
+          "drop_count": 79,
+          "net_add_count": 196
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 360,
+          "drop_count": 76,
+          "net_add_count": 284
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 445,
+          "drop_count": 73,
+          "net_add_count": 372
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 530,
+          "drop_count": 70,
+          "net_add_count": 460
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000009",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 100.0,
+      "net_trend": 103.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 4,
+          "drop_count": 98,
+          "net_add_count": -94
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 104,
+          "drop_count": 95,
+          "net_add_count": 9
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 204,
+          "drop_count": 92,
+          "net_add_count": 112
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 304,
+          "drop_count": 89,
+          "net_add_count": 215
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 404,
+          "drop_count": 86,
+          "net_add_count": 318
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 504,
+          "drop_count": 83,
+          "net_add_count": 421
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 604,
+          "drop_count": 80,
+          "net_add_count": 524
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000010",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 40.0,
+      "net_trend": 43.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 401,
+          "drop_count": 103,
+          "net_add_count": 298
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 441,
+          "drop_count": 100,
+          "net_add_count": 341
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 481,
+          "drop_count": 97,
+          "net_add_count": 384
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 521,
+          "drop_count": 94,
+          "net_add_count": 427
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 561,
+          "drop_count": 91,
+          "net_add_count": 470
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 601,
+          "drop_count": 88,
+          "net_add_count": 513
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 641,
+          "drop_count": 85,
+          "net_add_count": 556
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000011",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 55.0,
+      "net_trend": 58.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 237,
+          "drop_count": 93,
+          "net_add_count": 144
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 292,
+          "drop_count": 90,
+          "net_add_count": 202
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 347,
+          "drop_count": 87,
+          "net_add_count": 260
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 402,
+          "drop_count": 84,
+          "net_add_count": 318
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 457,
+          "drop_count": 81,
+          "net_add_count": 376
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 512,
+          "drop_count": 78,
+          "net_add_count": 434
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 567,
+          "drop_count": 75,
+          "net_add_count": 492
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000012",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 69.8929,
+      "net_trend": 72.8929,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 0,
+          "drop_count": 73,
+          "net_add_count": -73
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 69,
+          "drop_count": 70,
+          "net_add_count": -1
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 139,
+          "drop_count": 67,
+          "net_add_count": 72
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 209,
+          "drop_count": 64,
+          "net_add_count": 145
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 279,
+          "drop_count": 61,
+          "net_add_count": 218
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 349,
+          "drop_count": 58,
+          "net_add_count": 291
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 419,
+          "drop_count": 55,
+          "net_add_count": 364
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000013",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 68.2143,
+      "net_trend": 71.2143,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 0,
+          "drop_count": 68,
+          "net_add_count": -68
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 0,
+          "drop_count": 65,
+          "net_add_count": -65
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 42,
+          "drop_count": 62,
+          "net_add_count": -20
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 127,
+          "drop_count": 59,
+          "net_add_count": 68
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 212,
+          "drop_count": 56,
+          "net_add_count": 156
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 297,
+          "drop_count": 53,
+          "net_add_count": 244
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 382,
+          "drop_count": 50,
+          "net_add_count": 332
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000014",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 81.4286,
+      "net_trend": 84.4286,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 0,
+          "drop_count": 78,
+          "net_add_count": -78
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 0,
+          "drop_count": 75,
+          "net_add_count": -75
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 56,
+          "drop_count": 72,
+          "net_add_count": -16
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 156,
+          "drop_count": 69,
+          "net_add_count": 87
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 256,
+          "drop_count": 66,
+          "net_add_count": 190
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 356,
+          "drop_count": 63,
+          "net_add_count": 293
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 456,
+          "drop_count": 60,
+          "net_add_count": 396
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000015",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 7,
+      "observations": 7,
+      "observation_days": 7,
+      "span_days": 6.0,
+      "add_trend": 40.0,
+      "net_trend": 43.0,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-12T12:00:00Z",
+          "add_count": 253,
+          "drop_count": 83,
+          "net_add_count": 170
+        },
+        {
+          "observed_at": "2026-08-13T12:00:00Z",
+          "add_count": 293,
+          "drop_count": 80,
+          "net_add_count": 213
+        },
+        {
+          "observed_at": "2026-08-14T12:00:00Z",
+          "add_count": 333,
+          "drop_count": 77,
+          "net_add_count": 256
+        },
+        {
+          "observed_at": "2026-08-15T12:00:00Z",
+          "add_count": 373,
+          "drop_count": 74,
+          "net_add_count": 299
+        },
+        {
+          "observed_at": "2026-08-16T12:00:00Z",
+          "add_count": 413,
+          "drop_count": 71,
+          "net_add_count": 342
+        },
+        {
+          "observed_at": "2026-08-17T12:00:00Z",
+          "add_count": 453,
+          "drop_count": 68,
+          "net_add_count": 385
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 493,
+          "drop_count": 65,
+          "net_add_count": 428
+        }
+      ]
+    }
+  ]
+}

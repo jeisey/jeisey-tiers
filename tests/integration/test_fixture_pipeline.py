@@ -61,6 +61,12 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # ADR-087. Decoration, and the same reason it is here: a browser boundary nothing
         # exercises offline is a browser boundary whose one allowance drifts.
         "player_headshots",
+        # ADR-089. The retained behaviour window. Here for the same reason again, and with
+        # the sharpest version of it: the six shapes a real window produces — a full series,
+        # a two-point one, a single observation, a gap, a falling count and a board player
+        # with no series at all — are states a fixture has to carry, because every one of
+        # them renders differently and none of them is "the normal one".
+        "behavior_trend_series",
     }
     assert all(records for records in pipeline_result.records.values())
 

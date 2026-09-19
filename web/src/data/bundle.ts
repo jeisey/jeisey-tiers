@@ -15,6 +15,7 @@
 import type {
   ArbitrageRecord,
   ArtifactName,
+  BehaviorTrendSeriesRecord,
   BuildMetadata,
   MarketTrendSeriesRecord,
   OpportunityRecord,
@@ -178,10 +179,14 @@ async function loadInSeason(base: string | undefined): Promise<InSeasonBundle | 
     return null;
   }
   const opportunity = await optional<OpportunityRecord>("inseason_opportunity", base);
+  // One level softer again (ADR-089): the momentum series is an enrichment of an enrichment.
+  // A bundle without it renders every board, every card and every pick — minus one sparkline.
+  const behavior = await optional<BehaviorTrendSeriesRecord>("behavior_trend_series", base);
   return new InSeasonBundle({
     metadata,
     rosTiers,
     opportunity: opportunity.records,
     opportunityDegradation: opportunity.degradation,
+    behaviorSeries: behavior.records,
   });
 }

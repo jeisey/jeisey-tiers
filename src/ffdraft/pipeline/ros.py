@@ -375,6 +375,25 @@ def run_ros_build(
     )
     records["inseason_opportunity"] = opportunity_diagnostics.pop("records")
 
+    # The retained behaviour window, published for the first time (ADR-089). Strictly after
+    # the Opportunity Board exists, because the series is restricted to the players that
+    # board publishes — a history for a player no card can open is bytes for nothing. It
+    # reads the same store the board just read and cannot change a value on it: the board's
+    # counts come from `resolve_behavior_signals` reading the newest capture, and nothing
+    # below touches that object.
+    history, series_records = _behavior_series(
+        opportunity_records=records["inseason_opportunity"],
+        roster=roster,
+        store=store,
+        season=season,
+        cutoff=cutoff,
+        build_id=resolved_build_id,
+        as_of=stamped,
+        gate=gate,
+    )
+    if series_records:
+        records["behavior_trend_series"] = series_records
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -390,6 +409,7 @@ def run_ros_build(
         records=records.get("ros_tiers", []),
         leagues=leagues,
         signals=signals,
+        history=history,
         surface=[universe.to_dict() for universe in surface_universes],
     )
 
@@ -789,6 +809,105 @@ def _opportunity(
     return signals, universes, {**diagnostics, "records": rows}
 
 
+def _behavior_series(
+    *,
+    opportunity_records: Sequence[Mapping[str, Any]],
+    roster: pl.DataFrame,
+    store: Path | None,
+    season: int,
+    cutoff: RosCutoff,
+    build_id: str,
+    as_of: datetime,
+    gate: QualityGate,
+) -> tuple[Any | None, list[dict[str, Any]]]:
+    """Read the retained behaviour window and shape it into the published series (ADR-089).
+
+    **Every failure here costs a sparkline and nothing else.** The series is an enrichment of
+    an enrichment: the behaviour feed is already optional by construction (ADR-079), and a
+    history over it is optional again. An unreadable store, an empty window or a registry
+    that cannot be built all produce a warning and no artifact, and the two in-season boards
+    are published exactly as they would have been.
+
+    The one thing this must never do is move a number the Opportunity Board published, which
+    is why it takes that board's records as *input* rather than sharing its computation: the
+    only thing it reads from them is which players exist.
+    """
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.behavior.history import build_behavior_history, load_behavior_window
+    from ffdraft.behavior.trend import BEHAVIOR_TREND_RULE, behavior_series_records
+    from ffdraft.identity.registry import build_registry
+
+    if store is None or roster.is_empty():
+        return None, []
+
+    try:
+        captures = load_behavior_window(store, season=season, now=as_of)
+    except (OSError, ValueError) as exc:
+        gate.add(
+            QualityCheck.fail(
+                "ros.behavior_history_unreadable",
+                stage="ros_build",
+                message=(
+                    "the retained behaviour window could not be read; the momentum series "
+                    "is withheld and every published board and count is unaffected"
+                ),
+                observed=str(exc),
+                expected="a readable behaviour store",
+                severity=Severity.WARNING,
+            ),
+        )
+        return None, []
+
+    history = build_behavior_history(captures, registry=build_registry(roster), now=as_of)
+    if history.is_empty:
+        gate.add(
+            QualityCheck.fail(
+                "ros.behavior_history_empty",
+                stage="ros_build",
+                message=(
+                    "no retained behaviour observation falls inside the trend window, so no "
+                    "momentum series is published; the boards are unaffected"
+                ),
+                observed=f"{len(captures)} capture(s) in the window",
+                expected="at least one resolved observation",
+                severity=Severity.WARNING,
+            ),
+        )
+        return history, []
+
+    published = {str(record.get("player_id")) for record in opportunity_records}
+    records = behavior_series_records(
+        history.observations,
+        trends=history.trends,
+        build_id=build_id,
+        season=season,
+        through_week=cutoff.through_week,
+        behavior_source_id=history.source_id,
+        lookback_hours=history.lookback_hours,
+        request_limit=history.request_limit,
+        window_days=BEHAVIOR_TREND_RULE.window_days,
+        schema_version=record_schema_version("behavior_trend_series"),
+        players=published,
+    )
+    single = sum(1 for record in records if record.get("add_trend") is None)
+    gate.add(
+        QualityCheck.ok(
+            "ros.behavior_history_published",
+            stage="ros_build",
+            message=(
+                f"{BEHAVIOR_TREND_RULE.version}: a direction is stated from "
+                f"{BEHAVIOR_TREND_RULE.min_observations} observations and every record "
+                "carries the span it was measured over"
+            ),
+            observed=(
+                f"{len(records)} series over {history.snapshots_in_window} retained "
+                f"snapshot(s); {single} with one observation and no direction"
+            ),
+        ),
+    )
+    return history, records
+
+
 def _opportunity_context(
     frame: pl.DataFrame,
     status_by_player: Mapping[str, str],
@@ -1130,6 +1249,7 @@ def _ros_metadata(
     records: Sequence[Mapping[str, Any]],
     leagues: Sequence[str],
     signals: Any | None = None,
+    history: Any | None = None,
     surface: Sequence[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
@@ -1168,7 +1288,17 @@ def _ros_metadata(
         "source_freshness": {
             key: value for key, value in freshness_payload.items() if key != "weeks"
         },
-        "behavior": signals.to_dict() if signals is not None else None,
+        "behavior": (
+            None
+            if signals is None
+            else {
+                **signals.to_dict(),
+                # The window behind the day's counts, beside them rather than instead of
+                # them: `snapshot_at_utc` above is the instant the board's numbers came
+                # from, and this is every instant the sparkline draws (ADR-089).
+                "history": None if history is None or history.is_empty else history.summary(),
+            }
+        ),
         "surface": (
             {
                 "rule_version": SURFACE_RULE_VERSION,

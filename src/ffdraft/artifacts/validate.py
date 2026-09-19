@@ -14,6 +14,7 @@ from __future__ import annotations
 import csv
 import json
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +47,11 @@ __all__ = ["validate_artifact_directory"]
 #: ``rank_gap = market_adp - fair_rank`` (docs/DATA_CONTRACTS.md section 10). Positive means
 #: the model would take the player earlier than the market does.
 _RANK_GAP_TOLERANCE = 1e-6
+
+#: Slack on the published `span_days` against the record's own first and last point.
+#: Generous by design: the field is rounded for the artifact and a tolerance this size
+#: still catches the failure it exists for, which is a span describing a different window.
+_SPAN_TOLERANCE_DAYS = 1e-3
 
 #: Selections the frontend offers that no capture produces. A series record naming one would
 #: be a synthesized cross-market history — the thing ADR-081 declines to invent.
@@ -139,6 +145,7 @@ def validate_artifact_directory(directory: Path) -> QualityGate:
     gate.extend(_cross_artifact_checks(envelopes))
     gate.extend(_headshot_cross_checks(envelopes))
     gate.extend(_in_season_cross_checks(envelopes))
+    gate.extend(_behavior_series_cross_checks(envelopes))
     if not envelopes:
         gate.add(
             QualityCheck.fail(
@@ -224,6 +231,8 @@ def _semantic_checks(
             ]
         case "market_trend_series":
             return _trend_series_checks(records, stage)
+        case "behavior_trend_series":
+            return _behavior_series_checks(records, stage)
         case "player_headshots":
             return _headshot_checks(records, stage)
     return []
@@ -306,6 +315,168 @@ def _headshot_checks(
             ),
         )
     return checks
+
+
+def _behavior_series_checks(
+    records: Sequence[Mapping[str, Any]],
+    stage: str,
+) -> list[QualityCheck]:
+    """The momentum series, checked against the claim it is allowed to make (ADR-089).
+
+    Four things a schema cannot say, and the first two are what keep a two-point slope
+    honest rather than merely permitted:
+
+    **A slope needs two points.** `behavior_trend_v1` deliberately estimates one from as few
+    as two observations, because an add count moves in hours and a three-day rule would
+    admit a waiver signal after the edge is gone. The price of that is that a single
+    observation must never carry a trend — that would not be a short measurement, it would
+    be an invented one.
+
+    **A slope is never published without its span.** ``span_days`` and ``observations`` are
+    required fields precisely so a consumer can print "over 2 days"; a record whose span
+    disagrees with its own points would let a chart label a two-day reading as a week.
+
+    **``observations`` counts the points.** The field exists so a reader can compare it with
+    ``snapshots_in_window`` and see the days the player was outside the feed's top N. If it
+    can drift from the array beside it, that comparison means nothing.
+
+    **Net is the difference.** ``net_add_count`` is the one subtraction this product allows
+    on behaviour data, and it is allowed because both sides are the same unit at the same
+    moment. A row where it is not the difference is a row where something else was computed.
+    """
+    unordered: list[str] = []
+    miscounted: list[str] = []
+    invented: list[str] = []
+    bad_span: list[str] = []
+    bad_net: list[str] = []
+    impossible_coverage: list[str] = []
+
+    for record in records:
+        key = str(record.get("player_id"))
+        points = list(record.get("points", ()))
+        stamps = [str(point.get("observed_at")) for point in points]
+        if stamps != sorted(stamps):
+            unordered.append(key)
+        observations = record.get("observations")
+        if observations != len(points):
+            miscounted.append(f"{key}: observations={observations} points={len(points)}")
+        if len(points) < 2 and (
+            record.get("add_trend") is not None or record.get("net_trend") is not None
+        ):
+            invented.append(key)
+        span = record.get("span_days")
+        if len(points) >= 2 and span is not None:
+            first = _parse_iso(stamps[0])
+            last = _parse_iso(stamps[-1])
+            if first is not None and last is not None:
+                measured = (last - first).total_seconds() / 86400.0
+                if abs(measured - float(span)) > _SPAN_TOLERANCE_DAYS:
+                    bad_span.append(f"{key}: field={span} points={measured:.4f}")
+        elif len(points) < 2 and span not in (None, 0, 0.0):
+            bad_span.append(f"{key}: one point but span_days={span}")
+        snapshots = record.get("snapshots_in_window")
+        if isinstance(snapshots, int) and snapshots < len(points):
+            impossible_coverage.append(f"{key}: {len(points)} point(s) in {snapshots} snapshot(s)")
+        for point in points:
+            add = point.get("add_count")
+            drop = point.get("drop_count")
+            net = point.get("net_add_count")
+            if add is None or drop is None or net is None:
+                continue
+            if int(net) != int(add) - int(drop):
+                bad_net.append(f"{key}@{point.get('observed_at')}: {add} - {drop} != {net}")
+
+    checks: list[QualityCheck] = []
+    if unordered:
+        checks.append(
+            QualityCheck.fail(
+                "behavior_trend_series.points_out_of_order",
+                stage=stage,
+                message="points must ascend by observed_at; a sparkline trusts the order",
+                observed="; ".join(unordered[:10]),
+                expected="ascending observed_at",
+            ),
+        )
+    if miscounted:
+        checks.append(
+            QualityCheck.fail(
+                "behavior_trend_series.observation_count_disagrees",
+                stage=stage,
+                message=(
+                    "observations must equal the number of points, because it is what a "
+                    "reader compares against snapshots_in_window"
+                ),
+                observed="; ".join(miscounted[:10]),
+                expected="observations == len(points)",
+            ),
+        )
+    if invented:
+        checks.append(
+            QualityCheck.fail(
+                "behavior_trend_series.trend_without_two_points",
+                stage=stage,
+                message=(
+                    "a single observation carries no direction; behavior_trend_v1 estimates "
+                    "a slope from two points and never from one"
+                ),
+                observed="; ".join(invented[:10]),
+                expected="add_trend and net_trend null below two observations",
+            ),
+        )
+    if bad_span:
+        checks.append(
+            QualityCheck.fail(
+                "behavior_trend_series.span_disagrees_with_points",
+                stage=stage,
+                message=(
+                    "span_days must describe this record's own points; it is the field that "
+                    "stops a two-day reading being labelled as a week"
+                ),
+                observed="; ".join(bad_span[:10]),
+                expected="span_days == last observed_at - first observed_at, in days",
+            ),
+        )
+    if impossible_coverage:
+        checks.append(
+            QualityCheck.fail(
+                "behavior_trend_series.more_points_than_snapshots",
+                stage=stage,
+                message=("a player cannot be observed more times than the window held snapshots"),
+                observed="; ".join(impossible_coverage[:10]),
+                expected="observations <= snapshots_in_window",
+            ),
+        )
+    if bad_net:
+        checks.append(
+            QualityCheck.fail(
+                "behavior_trend_series.net_is_not_the_difference",
+                stage=stage,
+                message="net_add_count must be add_count minus drop_count at that instant",
+                observed="; ".join(bad_net[:10]),
+                expected="net_add_count == add_count - drop_count",
+            ),
+        )
+    if not checks and records:
+        with_trend = sum(1 for record in records if record.get("add_trend") is not None)
+        checks.append(
+            QualityCheck.ok(
+                "behavior_trend_series.series_well_formed",
+                stage=stage,
+                message=(
+                    "every series ascends, counts its own points, states the span it was "
+                    "measured over and carries a direction only where two points support one"
+                ),
+                observed=f"{len(records)} series, {with_trend} with a direction",
+            ),
+        )
+    return checks
+
+
+def _parse_iso(value: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def _trend_series_checks(
@@ -1242,6 +1413,103 @@ def _headshot_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
             observed=f"{covered}/{len(board)} player(s)",
         ),
     ]
+
+
+def _behavior_series_cross_checks(
+    envelopes: Mapping[str, Mapping[str, Any]],
+) -> list[QualityCheck]:
+    """The momentum series must describe the board it sits under (ADR-089).
+
+    ADR-081's finding, on a new artifact: a series and the row beside it are two published
+    accounts of one thing, and nothing had compared them, so a chart could draw a history for
+    a player the board did not price and no gate would notice. Two agreements here, and the
+    second is the one that catches a real mistake:
+
+    **Every series names a player on the Opportunity Board.** A series for anyone else is
+    either an identity mistake or payload for a card nobody can open. The reverse direction
+    is *not* a finding — a board row with no series is the ordinary state for a player the
+    feed has never carried — so it is reported as coverage.
+
+    **The newest point is the board's own count.** Where a series' last observation was taken
+    at the same instant the board's behaviour columns came from, the two must carry the same
+    numbers; otherwise the sparkline's final bar and the "Adds (24h)" readout beside it would
+    be different numbers describing one moment. Where the instants differ the player was
+    outside the feed's top N on the latest snapshot, which is a legitimate state and is
+    skipped rather than failed.
+    """
+    series = envelopes.get("behavior_trend_series")
+    opportunity = envelopes.get("inseason_opportunity")
+    if series is None or opportunity is None:
+        return []
+
+    latest: dict[str, Mapping[str, Any]] = {}
+    for record in opportunity.get("records", ()):
+        # Behaviour columns are preset-independent, so the first block's row answers for the
+        # player; a differing second block would already have failed the firewall check.
+        latest.setdefault(str(record.get("player_id")), record)
+
+    orphans: list[str] = []
+    disagreeing: list[str] = []
+    for record in series.get("records", ()):
+        player_id = str(record.get("player_id"))
+        row = latest.get(player_id)
+        if row is None:
+            orphans.append(player_id)
+            continue
+        points = list(record.get("points", ()))
+        if not points:
+            continue
+        newest = points[-1]
+        if str(newest.get("observed_at")) != str(row.get("behavior_snapshot_at_utc")):
+            continue
+        for field, point_field in (("add_count", "add_count"), ("drop_count", "drop_count")):
+            published = row.get(field)
+            drawn = newest.get(point_field)
+            if published is None or drawn is None:
+                continue
+            if int(published) != int(drawn):
+                disagreeing.append(f"{player_id}/{field}: board={published} series={drawn}")
+
+    checks: list[QualityCheck] = []
+    if orphans:
+        checks.append(
+            QualityCheck.fail(
+                "cross_artifact.behavior_series_player_not_on_board",
+                stage="artifacts",
+                message=(
+                    "every momentum series must describe a player the Opportunity Board publishes"
+                ),
+                observed="; ".join(sorted(set(orphans))[:10]),
+                expected="series players are a subset of opportunity players",
+            ),
+        )
+    if disagreeing:
+        checks.append(
+            QualityCheck.fail(
+                "cross_artifact.behavior_series_latest_count",
+                stage="artifacts",
+                message=(
+                    "the series' newest point and the board's behaviour columns come from "
+                    "the same snapshot and must carry the same counts"
+                ),
+                observed="; ".join(disagreeing[:10]),
+                expected="identical add_count and drop_count at the shared instant",
+            ),
+        )
+    if not checks:
+        covered = len({str(record.get("player_id")) for record in series.get("records", ())})
+        checks.append(
+            QualityCheck.ok(
+                "cross_artifact.behavior_series_agreement",
+                stage="artifacts",
+                message=(
+                    "every momentum series names a board player and agrees with his "
+                    "published counts at the snapshot they share"
+                ),
+                observed=f"{covered}/{len(latest)} board player(s) with a retained history",
+            ),
+        )
+    return checks
 
 
 def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:

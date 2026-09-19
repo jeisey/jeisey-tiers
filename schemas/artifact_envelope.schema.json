@@ -27,7 +27,8 @@
         "player_status",
         "ros_tiers",
         "inseason_opportunity",
-        "player_headshots"
+        "player_headshots",
+        "behavior_trend_series"
       ]
     },
     "record_schema": {

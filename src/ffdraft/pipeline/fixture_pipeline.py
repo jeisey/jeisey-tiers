@@ -472,6 +472,7 @@ def run_fixture_pipeline(
 
     ros_tiers = _ros_tier_records(tiers, build_id=build_id)
     opportunity = _opportunity_records(ros_tiers, build_id=build_id)
+    behavior_series = _behavior_series_records(opportunity, build_id=build_id)
 
     records = {
         "projections": projections,
@@ -483,6 +484,7 @@ def run_fixture_pipeline(
         "player_headshots": headshots.records,
         "ros_tiers": ros_tiers,
         "inseason_opportunity": opportunity,
+        "behavior_trend_series": behavior_series,
     }
     gate.extend(_published_identity_checks(records, market_outcomes))
 
@@ -929,6 +931,119 @@ def _opportunity_records(
             },
         )
     return records
+
+
+#: How many retained snapshots the fixture window pretends to hold. Seven, so the shapes a
+#: real window produces all fit inside one fixture: a full history, a two-point one, a single
+#: observation and a gap.
+FIXTURE_BEHAVIOR_SNAPSHOTS = 7
+
+
+def _behavior_series_records(
+    opportunity: Sequence[Mapping[str, Any]],
+    *,
+    build_id: str,
+) -> list[dict[str, Any]]:
+    """The retained behaviour window, as a fixture that expresses its *states* (ADR-089).
+
+    Six instances of one species are recorded in `SESSION_STATE.md` — a fixture that carried
+    the shape of a feature and not its states, so a gate passed against a condition
+    production reached weeks later. This fixture is built against that list, and every case
+    below is one a real window produces on an ordinary day:
+
+    * a **full** series across every retained snapshot, rising;
+    * a series that **falls**, so a consumer cannot hard-code a direction;
+    * a series with exactly **two** points — the smallest window `behavior_trend_v1` will
+      state a direction over, and the case the whole rule exists for;
+    * a **single observation**, which must carry no direction at all;
+    * a series with a **gap**, where the window held snapshots the player was outside the
+      feed's top N for — `sparse_feed_coverage`, and the case where "absent" must not be
+      drawn as zero;
+    * a board player with **no series whatsoever**, because the feed has never carried him.
+      Nothing in the artifact marks this one; it is an absence, and the card has to handle it.
+
+    The newest point of every full-length series is the Opportunity Board's own count at the
+    same instant, because the cross-artifact check compares exactly that. A fixture that drew
+    a different last bar from the readout beside it would be the defect ADR-081 recorded,
+    reproduced in the evidence meant to catch it.
+    """
+    from ffdraft.artifacts import record_schema_version
+    from ffdraft.behavior.trend import (
+        BEHAVIOR_TREND_RULE,
+        BehaviorObservation,
+        behavior_series_records,
+        compute_behavior_trends,
+    )
+
+    anchor = parse_utc(FIXTURE_GENERATED_AT)
+    stamps = [
+        anchor - timedelta(days=FIXTURE_BEHAVIOR_SNAPSHOTS - 1 - index)
+        for index in range(FIXTURE_BEHAVIOR_SNAPSHOTS)
+    ]
+
+    # Behaviour is preset-independent, so one row per player answers for every block. The
+    # first block's ordering is deterministic and is what decides which player gets which
+    # case, so the fixture is reproducible.
+    by_player: dict[str, Mapping[str, Any]] = {}
+    for row in opportunity:
+        by_player.setdefault(str(row["player_id"]), row)
+    players = sorted(by_player)
+
+    #: player index -> which snapshots carry him. Everything not listed gets the full window.
+    special: dict[int, list[int]] = {
+        1: [5, 6],  # two points: the rule's own minimum
+        2: [6],  # one point: no direction anywhere
+        3: [0, 1, 5, 6],  # a gap: outside the top N for three of the seven
+    }
+    #: player index -> whether his count rises or falls across the window.
+    falling = {4}
+    #: The last player on the board is deliberately given no series at all.
+    absent = set(players[-1:])
+
+    observations: list[BehaviorObservation] = []
+    for index, player_id in enumerate(players):
+        if player_id in absent:
+            continue
+        row = by_player[player_id]
+        final_adds = int(row.get("add_count") or 0)
+        final_drops = int(row.get("drop_count") or 0)
+        indices = special.get(index, list(range(FIXTURE_BEHAVIOR_SNAPSHOTS)))
+        newest = max(indices)
+        for position in indices:
+            # Walk backwards from the board's own published count, so the series' last point
+            # and the readout beside it are one number rather than two.
+            steps = newest - position
+            step = 40 + (index % 5) * 15
+            adds = final_adds + steps * step if index in falling else final_adds - steps * step
+            drops = final_drops + steps * 3
+            observations.append(
+                BehaviorObservation(
+                    player_id=player_id,
+                    observed_at=stamps[position],
+                    add_count=max(0, adds),
+                    drop_count=max(0, drops),
+                ),
+            )
+
+    trends = compute_behavior_trends(
+        observations,
+        now=anchor,
+        snapshot_times=stamps,
+        rule=BEHAVIOR_TREND_RULE,
+    )
+    return behavior_series_records(
+        observations,
+        trends=trends,
+        build_id=build_id,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        behavior_source_id=SLEEPER_SOURCE_ID,
+        lookback_hours=FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
+        request_limit=100,
+        window_days=BEHAVIOR_TREND_RULE.window_days,
+        schema_version=record_schema_version("behavior_trend_series"),
+        players={str(row["player_id"]) for row in opportunity},
+    )
 
 
 def _ros_build_metadata(

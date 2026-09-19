@@ -359,8 +359,54 @@ absent by design and replaced rather than faked:
 | conventional | why it is absent | what is there instead |
 |---|---|---|
 | a rostered share | no publishable source reports one | the add count, its window, and the bar it cleared |
-| a multi-week ownership trend | a delta of that same unavailable share | net roster moves over the one declared window, labelled as a direction and not a trend |
+| a multi-week ownership trend | a delta of that same unavailable share | **the add count's own history** — see 6A.8.4 |
 | a matchup rating | there is no opponent or schedule-strength artifact | the rest-of-season value with its position-cohort reading, which is *why* he is the pick |
+
+The middle row changed in ADR-089 and the distinction it now draws is the point: what remains
+unavailable is a trend in *ownership*, because the level it would be a delta of does not exist.
+What is available, and now drawn, is a trend in the **counts themselves** — a quantity this
+project has been retaining daily since the season opened.
+
+#### 6A.8.4 Add momentum (ADR-089)
+
+The mockup's fourth readout is a small rising bar chart labelled `ADD MOMENTUM`, and until the
+retained window was published it was the one element of that design with no source. It is drawn
+now, beside today's counts rather than instead of them.
+
+**Two panels, and the split is the product rule.** The left strip is *this window*: how many
+rosters moved on him in the last 24 hours, on the board's own symmetric axis, drops left and
+adds right. The right strip is *the window behind it*: which way that count has been going over
+the days the store actually holds. They are never combined into one score — an instantaneous
+count and a rate share no unit — which is the Opportunity Board's own two-track rule applied one
+level in. At 320px they stack and each keeps its heading; the divider is the meaning, so it
+survives the reflow rather than the layout.
+
+**Bars, not a line.** A line implies a value between two samples and a daily transaction count
+has none.
+
+**A direction is never drawn without its span.** `behavior_trend_v1` states one from as few as
+two observations, on purpose: an add count moves in hours and the market rule's three-day bar
+would admit a waiver signal after the edge has gone. What makes that honest rather than reckless
+is that `+320/day` always appears beside `over 2 days`, in the same reading. A span under a day
+says hours. One observation prints an em dash and the words `one observation`, because a line
+needs two points and a direction of zero would be an invented one.
+
+**A gap is drawn as a gap.** The feed is a top-100 list, so a day the player sat outside it
+carries no count at all — unknown, not zero. Those render as a hairline mark rather than a
+short bar, and the caption says how many there were. A floor-height bar would read as "nobody
+added him", which is a different fact.
+
+**Three absences, three sentences**, on the same principle as 6A.8.2: the build published no
+history at all, the feed has not carried this player inside the window, or he has one
+observation and therefore no direction yet. A reader can act on the difference.
+
+**Never colour alone.** Direction is in the caption's words, in the arrow glyph and in the
+accessible summary; the tint is the fourth channel. The bars are `aria-hidden` and the reading
+is a sentence, because announcing twelve bars would be twelve announcements of one number.
+
+**Still no share of leagues.** 6A.8.1 binds the history exactly as it binds the day: a count of
+transactions has no denominator in leagues however many days of it are drawn. No percentage
+appears in a momentum panel, and both a component test and the pre-deploy gate assert it.
 
 #### 6A.8.2 A position with no pick says which case it is in
 
@@ -594,5 +640,8 @@ Capture Playwright screenshots for at least:
   rank, a pace gap in both directions, and the behaviour feed down (ADR-086)
 - Pick of the Week, desktop, tablet and phone; a set deep enough that a position has run out of
   candidates; one position filtered; 320px reflow; and the behaviour feed down (ADR-088)
+- the add-momentum strip in each of its states (ADR-089): a full window, a two-point window,
+  a single observation, a window with a gap in it, a falling count, and a card whose player the
+  feed has never carried — plus the 320px stack, where the two behaviour panels separate
 
 Use screenshot review to catch clipping, label overlap, unreadable scales, and Pages base-path failures. Pixel-perfect snapshots should not become brittle blockers for dynamic data unless fixtures are fixed.

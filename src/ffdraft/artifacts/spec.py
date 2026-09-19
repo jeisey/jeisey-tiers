@@ -150,6 +150,24 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "already holds rather than a new one (ADR-087)."
         ),
     ),
+    "behavior_trend_series": ArtifactSpec(
+        artifact="behavior_trend_series",
+        schema_name="behavior_trend_series",
+        json_filename="behavior_trend_series.json",
+        # No CSV, for the same reason the market series has none: the record is a series, and
+        # a row per point would be a different artifact from the one a reader asked to
+        # export. The Opportunity Board's CSV already carries the day's counts, which is what
+        # a spreadsheet wants.
+        csv_filename=None,
+        key_fields=("build_id", "player_id"),
+        sort_fields=("player_id",),
+        description=(
+            "Retained per-player add/drop history, so the in-season momentum sparkline "
+            "needs no vendor call. Keyed by player alone: an add count is the same "
+            "transactions however points are scored, so a per-preset copy would be eight "
+            "identical duplicates (ADR-089)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",
