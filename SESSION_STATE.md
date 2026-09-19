@@ -1410,7 +1410,13 @@ while every new *published context* does not** — which reorders the backlog.
    data than a prediction made from it is, and the share-alike obligation would bind what this
    site publishes. Same question as item 8 below, on a source the project already depends on.
 
-0b. **Publish a behaviour history, so "momentum" can be a reading rather than a direction**
+0b. ~~**Publish a behaviour history, so "momentum" can be a reading rather than a direction**~~
+   **Done (2026-09-19, ADR-089)**, and the honest version was taken: the observations are
+   drawn, the *slope* is gated on its own frozen rule, and that rule is deliberately not
+   `phase5_trend_v1` — two observations state a direction and the span is printed with it.
+   See **What add momentum changed** above. The original entry follows as the record of what
+   was asked for.
+
    (ADR-088). The retained store has held a daily Sleeper add/drop snapshot under `behavior/`
    since the season opened, and nothing publishes a series over them — so Pick of the Week can
    say "net +1,120 over 24 hours" and cannot say "rising for four days". A
@@ -1912,6 +1918,82 @@ changed. No Python file changed.**
 behaviour snapshot since the season opened and nothing publishes a series over them; no CSV
 export, because the Opportunity Board exports the same rows in full; and the picks are not
 available in draft mode, because there is no wire to be a target on before the season starts.
+
+## What add momentum changed (2026-09-19, ADR-089)
+
+**Root cause of the work, in one line: the store was always holding this and only one reader
+ever asked for it.** `read_behavior_capture` resolves `latest_key`, so nine days of retained
+add/drop observations reached the published board as a single 24-hour number per player. The
+market side had built the same machinery twice — a trailing-window read, a frozen slope, a
+published series and a chart — and behaviour had none of the four. Nothing was blocked, no
+source was added and no rights question was reached.
+
+| | before | after |
+|---|---|---|
+| retained window | appended daily, read by nothing beyond the newest key | `behavior/history.py`, the trailing window every build reads |
+| the statistic | none | `behavior_trend_v1` — OLS slope of `add_count` on days elapsed |
+| minimum to state a direction | — | **two observations**, with the span printed beside every one |
+| published series | none | `behavior_trend_series.json`, one record per player |
+| PotW's fourth readout | the mockup's one unsourced element | the sparkline it asked for |
+| a day the feed skipped a player | — | no point, a gap mark, and a stated ceiling |
+
+**Five things a future session should not re-derive.**
+
+1. **Two observations is a feature, not a tolerance.** `phase5_trend_v1` refuses below three
+   observation days spanning three days, which is right for an ADP and wrong for an add count:
+   one moves slowly and the other moves in hours, and a waiver edge is gone by the time a
+   three-day bar admits it. What pays for the shorter bar is that **`span_days` is a required
+   field and no surface may print a direction without it** — `+320/day` always appears beside
+   `over 2 days`. If a later session wants to raise `min_observations`, the question to ask is
+   whether the span is still being printed, because that is what the bound stands in for.
+2. **The sign is not negated and must not be "fixed" to match the market module.** A falling
+   ADP means a player is getting more expensive, which is why `phase5_trend_v1` negates; a
+   bigger add count is straightforwardly more interest, so positive means rising.
+3. **An absence is not a zero.** The feed is a top-100 list, so a day the player sat outside it
+   is an unknown count. It produces no point, `snapshots_in_window` makes the gap visible and
+   `request_limit` gives it a ceiling. The one place a zero *is* right: a player in the top 100
+   adds and outside the top 100 drops was reported on that day, so the union is taken per
+   capture rather than per feed.
+4. **`--dist` alone cannot negative-control `verify:board`.** The gate compares the rendered
+   page with the bytes that page was served, so corrupting an artifact inside the dist corrupts
+   both sides and the check correctly agrees — which reads exactly like an inert check. Controls
+   must corrupt the *checker's* copy: `--dist <clean> --data <corrupted>`. Five were run that
+   way and all five fire: a moved slope, a dropped point, a nulled direction, an invented gap
+   and a deleted series.
+5. **Nothing the board publishes moved, and that is asserted rather than intended.** The
+   Opportunity Board's counts still come from the newest capture. `test_behavior_history.py`
+   proves a week-deep store and a one-snapshot store resolve byte-identical behaviour signals,
+   *and* that the two histories differ — so the invariance is not vacuous.
+
+**The fixture carries six states and the frontend fixture a seventh.** A full rising window, a
+two-point one, a single observation, a gap, a falling count, and a board player with no series
+at all; plus, in `web/tests/fixtures/artifacts.ts`, a window that is genuinely only two
+snapshots deep — what the site looks like the week a season opens, which a single seven-snapshot
+bundle cannot express. Built against the six recorded instances of that species rather than
+after joining them.
+
+**One defect the capture caught that no test failed on.** A single observation rendered as a
+**full-width bar** — the picture of maximum momentum, beside text correctly saying there was no
+direction yet. `flex: 1 1 0` gives one bar the whole strip and every assertion about the
+reading's text passed, because the text was right. Capped at 20px; a short series now looks
+short. Ninth instance of the species, and the second time a capture has been the only thing
+that could see it.
+
+**Verified**: `uv run ruff check`, `ruff format --check` (250 files), strict `mypy` (157 files)
+and `uv run pytest` **1,516** passed clean; `ffdraft validate-artifacts` 0 critical / 0 warning;
+`npm run lint` 0 errors / 4 pre-existing warnings, `npm run typecheck` clean,
+`npm run test -- --run` **497** passed (up from 480), `npm run e2e` **140** passed across
+chromium/mobile/a11y, `npm run build` clean, `npm run verify:board` with **zero disagreements
+against all six builds**, and 73 screens in `docs/visual-qa/2026-09-19-momentum/`.
+
+**No model, feature, projection, rank, tier, VORP, ADP, arbitrage score or existing schema
+changed.** `ros_build_metadata` gained one optional block inside `behavior`, and the artifact
+envelope gained one name; both additive.
+
+**Left open on purpose**: the momentum strip is on Pick of the Week only — the player card and
+the Opportunity Board carry the same counts and could carry the same reading, and neither was
+asked for; and the series is not exported, because the Opportunity Board's CSV already carries
+the day's counts.
 
 ## Next action
 

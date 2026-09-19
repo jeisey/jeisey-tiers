@@ -96,7 +96,37 @@
         "matched_players": {"type": ["integer", "null"], "minimum": 0},
         "age_hours": {"type": ["number", "null"], "minimum": 0},
         "degraded_reason": {"type": ["string", "null"]},
-        "signal_semantics": {"type": "string"}
+        "signal_semantics": {"type": "string"},
+        "history": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "description": "The retained window behind `behavior_trend_series.json` (ADR-089). Null when no retained observation falls inside the trend window, which withholds the momentum sparkline and nothing else. `snapshot_at_utc` above is the single instant the board's own counts came from; this describes every instant the series draws.",
+          "properties": {
+            "rule_version": {"type": "string", "description": "`behavior_trend_v1`."},
+            "window_days": {"type": "number", "exclusiveMinimum": 0},
+            "min_observations": {
+              "type": "integer",
+              "minimum": 2,
+              "description": "Observations required before a direction is stated. Two: a line needs two points, and an add count moves far too fast for the market rule's three-day bar."
+            },
+            "snapshots_in_window": {"type": "integer", "minimum": 0},
+            "snapshot_keys": {"type": "array", "items": {"type": "string"}},
+            "anchored_at_utc": {"type": ["string", "null"], "format": "date-time"},
+            "observations": {"type": "integer", "minimum": 0},
+            "players": {"type": "integer", "minimum": 0},
+            "players_with_trend": {"type": "integer", "minimum": 0},
+            "players_with_sparse_coverage": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Players the window held snapshots for that did not carry them — days they were outside the feed's top N, which is an unknown count rather than a zero."
+            },
+            "trend_available": {"type": "boolean"},
+            "unresolved_rows": {"type": "integer", "minimum": 0},
+            "lookback_hours": {"type": ["integer", "null"]},
+            "request_limit": {"type": ["integer", "null"]},
+            "source_id": {"type": ["string", "null"]}
+          }
+        }
       }
     },
     "surface": {

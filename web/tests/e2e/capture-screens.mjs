@@ -695,10 +695,33 @@ const SCREENS = [
     viewport: { width: 1440, height: 900 },
     fullPage: false,
   },
+  {
+    /*
+      Add momentum (ADR-089), in every state one screen can hold.
+
+      The default set carries four of them at once and that is not luck — the fixture is built
+      to: a full seven-point rising window (RB), a falling one (TE), a single observation with
+      a gap beside it (WR), and a player the feed has never carried (QB). The sixth state, a
+      two-point window, is the surfaced player deeper in the sets.
+    */
+    name: "65-potw-momentum-states",
+    path: "/scenario/in-season/?view=potw",
+    viewport: { width: 1440, height: 1100 },
+    fullPage: true,
+  },
+  {
+    // The two behaviour panels stack rather than shrink, and each keeps its own heading. A
+    // 140px-wide twelve-bar strip is a picture of nothing.
+    name: "66-potw-momentum-320",
+    path: "/scenario/in-season/?view=potw",
+    viewport: { width: 320, height: 900 },
+    fullPage: true,
+  },
 ];
 
 /** Artifacts a build is allowed not to publish; see the console filter below. */
-const OPTIONAL_ARTIFACTS = /market_trend_series\.json|ros_build_metadata\.json/;
+const OPTIONAL_ARTIFACTS =
+  /market_trend_series\.json|ros_build_metadata\.json|behavior_trend_series\.json/;
 
 const outDir = resolve(process.argv[2] ?? "docs/visual-qa/local");
 mkdirSync(outDir, { recursive: true });

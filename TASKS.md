@@ -1346,7 +1346,48 @@ request with two mock-ups. Frontend only — no schema, no artifact, no Python f
 - [ ] **Not done here, deliberately: no preseason-rank gate.** It would have excluded a star
       mass-dropped during an absence and being re-added, who is a genuine waiver target. It is
       on the card as context and never as a gate.
-- [ ] **Open, recorded in the backlog: no real add/drop momentum.** The retained store holds a
-      daily behaviour snapshot since the season opened and nothing publishes a series over
-      them. A `behavior_trend_series.json` mirroring `market_trend_series.json` would make the
-      mock-up's sparkline a real reading; it is a data-contract change and was not taken here.
+- [x] ~~**Open, recorded in the backlog: no real add/drop momentum.**~~ **Closed 2026-09-19
+      (ADR-089).** The store had held a daily behaviour snapshot since the season opened and
+      the only reader resolved `latest_key`, so nine days of observations reached the board as
+      one 24-hour number. See the section below.
+
+## Add momentum — 2026-09-19 (ADR-089)
+
+- [x] **The trailing-window read.** `ffdraft/behavior/history.py` mirrors
+      `ffdraft/market/history.py`: read the window, project every snapshot onto canonical ids
+      nflverse-first, hand the result to a frozen statistic. The Opportunity Board's counts
+      still come from the newest capture and are untouched.
+- [x] **`behavior_trend_v1`, and deliberately not `phase5_trend_v1`.** Two observations state a
+      direction, because an add count moves in hours and a three-day bar would admit a waiver
+      signal after the edge has gone. The shorter bar is paid for by a required `span_days`:
+      `+320/day` is always printed beside `over 2 days`, asserted by a validator check, a
+      pre-deploy gate check and a component test independently.
+- [x] **An absence is not a zero.** The feed is a top-100 list, so a skipped day produces no
+      point; `snapshots_in_window` makes the gap visible, `request_limit` gives it a ceiling,
+      and the strip draws a gap mark rather than a floor-height bar.
+- [x] **`behavior_trend_series.json`**, one record per player — an add count is the same
+      transactions however points are scored. Schema, artifact spec, validator checks, a
+      cross-artifact agreement check, and an additive `behavior.history` metadata block.
+- [x] **The mock-up's `ADD MOMENTUM` sparkline**, beside today's counts rather than instead of
+      them, in the same two-panel construction the Opportunity Board uses — no blended score,
+      and the two panels stack at 320px.
+- [x] **The invariance is asserted rather than intended.** A week-deep store and a one-snapshot
+      store resolve byte-identical behaviour signals, *and* their histories differ, so the test
+      is not vacuous.
+- [x] **The pre-deploy gate covers it, negative-controlled five ways** — a moved slope, a
+      dropped point, a nulled direction, an invented gap and a deleted series, all fire. The
+      controls corrupt the *checker's* copy (`--dist <clean> --data <corrupted>`), because the
+      gate compares the page with the bytes that page was served and corrupting the dist
+      corrupts both sides.
+- [x] **Six fixture states, plus a seventh in the frontend fixture**: a full rising window, a
+      two-point one, a single observation, a gap, a falling count, a board player with no series
+      at all, and a window genuinely only two snapshots deep.
+- [x] **Verified.** `ruff`, `ruff format --check`, strict `mypy` (159 files) and `pytest`
+      **1,516** clean; `npm run lint` 0 errors / 4 pre-existing warnings, `typecheck` clean,
+      `npm run test -- --run` **497** passed, `npm run e2e` **140** passed, `npm run build`
+      clean, `npm run verify:board` zero disagreements across all six builds.
+- [ ] **Not done here, deliberately: the strip is on Pick of the Week only.** The player card
+      and the Opportunity Board carry the same counts and could carry the same reading; neither
+      was asked for.
+- [ ] **Not done here, deliberately: no CSV.** The record is a series, and the Opportunity
+      Board's export already carries the day's counts.

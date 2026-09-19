@@ -39,6 +39,7 @@
 import type {
   ArbitrageRecord,
   ArtifactEnvelope,
+  BehaviorTrendSeriesRecord,
   BuildMetadata,
   OpportunityRecord,
   PlayerHeadshotRecord,
@@ -1019,6 +1020,140 @@ export function playerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {
   return envelope("player_status", "player_status", playerStatusRecords());
 }
 
+/** How many retained snapshots the mature fixture window holds. */
+export const FIXTURE_BEHAVIOR_SNAPSHOTS = 7;
+
+/**
+ * The retained add/drop window, as a fixture that carries its **states** (ADR-089).
+ *
+ * Six instances of one species are recorded in `SESSION_STATE.md`: a fixture that expressed
+ * the shape of a feature and not its states, so a gate passed against a condition production
+ * reached weeks later. Every case below is one a real window produces on an ordinary day, and
+ * none of them is "the normal one":
+ *
+ * | seed | what it is | what it must render as |
+ * |---|---|---|
+ * | 0 | a full rising window | bars climbing, a positive direction, a multi-day span |
+ * | 1 | **exactly two observations** | a direction, and a span that says *two days* |
+ * | 2 | **one observation** | one bar, no direction, "one observation" beside it |
+ * | 3 | a gap inside the window | a gap mark, and a caption naming the missing snapshots |
+ * | 4 | a falling window | a negative direction, and never a colour alone |
+ * | last | **no series at all** | the card's own absence sentence, not a blank panel |
+ *
+ * `young` builds the other case a single bundle cannot hold: a window that is genuinely only
+ * two snapshots deep because the season is two days old. That is different from seed 1, whose
+ * two points sit in a seven-snapshot window and therefore carry `sparse_feed_coverage`; here
+ * nothing is missing and the reading is simply short. It is the exact state the site is in
+ * the week a season opens, and the reason `behavior_trend_v1` states a direction at all.
+ */
+export function behaviorSeriesRecords(
+  options: { readonly young?: boolean } = {},
+): BehaviorTrendSeriesRecord[] {
+  const young = options.young ?? false;
+  const snapshots = young ? 2 : FIXTURE_BEHAVIOR_SNAPSHOTS;
+  const anchor = Date.parse(FIXTURE_GENERATED_AT);
+  const day = 86_400_000;
+  const stampAt = (index: number): string =>
+    new Date(anchor - (snapshots - 1 - index) * day).toISOString().replace(".000Z", "Z");
+
+  const rows = opportunityRecords();
+  const byPlayer = new Map<string, OpportunityRecord>();
+  for (const row of rows) if (!byPlayer.has(row.player_id)) byPlayer.set(row.player_id, row);
+  const players = [...byPlayer.keys()].sort();
+
+  const carried: Record<number, readonly number[]> = young
+    ? {}
+    : { 1: [5, 6], 2: [6], 3: [0, 1, 5, 6] };
+  const falling = new Set([4]);
+  const absent = new Set(players.slice(-1));
+
+  const records: BehaviorTrendSeriesRecord[] = [];
+  players.forEach((playerId, seed) => {
+    if (absent.has(playerId)) return;
+    const row = byPlayer.get(playerId);
+    if (row === undefined) return;
+    const finalAdds = row.add_count ?? 0;
+    const finalDrops = row.drop_count ?? 0;
+    const indices = carried[seed] ?? [...Array(snapshots).keys()];
+    const newest = Math.max(...indices);
+    const step = 40 + (seed % 5) * 15;
+
+    const points = indices.map((index) => {
+      const steps = newest - index;
+      const adds = falling.has(seed) ? finalAdds + steps * step : finalAdds - steps * step;
+      const drops = finalDrops + steps * 3;
+      return {
+        observed_at: stampAt(index),
+        add_count: Math.max(0, adds),
+        drop_count: Math.max(0, drops),
+        net_add_count: Math.max(0, adds) - Math.max(0, drops),
+      };
+    });
+
+    const first = points[0];
+    const last = points[points.length - 1];
+    const spanDays =
+      first === undefined || last === undefined
+        ? 0
+        : (Date.parse(last.observed_at) - Date.parse(first.observed_at)) / day;
+    // The same statistic the Python side computes, over these same points. At two points an
+    // OLS slope is the difference over the elapsed days, which is what makes the short case a
+    // continuous extension of the long one rather than a second rule.
+    const addTrend =
+      points.length < 2 || spanDays <= 0
+        ? null
+        : Number(
+            (
+              ((last?.add_count ?? 0) - (first?.add_count ?? 0)) /
+              spanDays
+            ).toFixed(4),
+          );
+    const netTrend =
+      points.length < 2 || spanDays <= 0
+        ? null
+        : Number(
+            (
+              ((last?.net_add_count ?? 0) - (first?.net_add_count ?? 0)) /
+              spanDays
+            ).toFixed(4),
+          );
+    const flags: string[] = [];
+    if (points.length < 2) flags.push("single_observation");
+    if (points.length < snapshots) flags.push("sparse_feed_coverage");
+
+    records.push({
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      season: 2026,
+      through_week: FIXTURE_THROUGH_WEEK,
+      behavior_source_id: "sleeper",
+      player_id: playerId,
+      lookback_hours: FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
+      request_limit: 100,
+      window_days: 7,
+      snapshots_in_window: snapshots,
+      observations: points.length,
+      observation_days: new Set(points.map((point) => point.observed_at.slice(0, 10))).size,
+      span_days: Number(spanDays.toFixed(4)),
+      add_trend: addTrend,
+      net_trend: netTrend,
+      quality_flags: flags,
+      points,
+    });
+  });
+  return records.sort((a, b) => a.player_id.localeCompare(b.player_id));
+}
+
+export function behaviorSeriesEnvelope(options: {
+  readonly young?: boolean;
+} = {}): ArtifactEnvelope<BehaviorTrendSeriesRecord> {
+  return envelope(
+    "behavior_trend_series",
+    "behavior_trend_series",
+    behaviorSeriesRecords(options),
+  );
+}
+
 /**
  * The portrait crosswalk, with a hole in it on purpose.
  *
@@ -1067,7 +1202,11 @@ export function fixtureFiles(condition: MarketCondition = "launch"): Record<stri
 }
 
 /** Everything a page load needs **in season**, on top of the draft bundle. */
-export function inSeasonFixtureFiles(behaviorAvailable = true): Record<string, unknown> {
+export function inSeasonFixtureFiles(
+  behaviorAvailable = true,
+  options: { readonly behaviorSeries?: "mature" | "young" | "absent" } = {},
+): Record<string, unknown> {
+  const series = options.behaviorSeries ?? "mature";
   return {
     // The draft build's own record of the season, replaced because in season it says
     // something different — and the page reads it whether or not a ROS bundle is beside it.
@@ -1085,6 +1224,14 @@ export function inSeasonFixtureFiles(behaviorAvailable = true): Record<string, u
     "ros_build_metadata.json": rosBuildMetadata({}, behaviorAvailable),
     "ros_tiers.json": rosTierEnvelope(),
     "inseason_opportunity.json": opportunityEnvelope(behaviorAvailable),
+    // The retained window, and its absence is a real published state rather than a fixture
+    // convenience: a build whose behaviour feed is down publishes no series at all, and the
+    // card has to say which of the three absences it is in (ADR-089).
+    ...(behaviorAvailable && series !== "absent"
+      ? {
+          "behavior_trend_series.json": behaviorSeriesEnvelope({ young: series === "young" }),
+        }
+      : {}),
   };
 }
 

@@ -866,3 +866,99 @@ what a reader opens in a spreadsheet.
 and the coverage the build achieved, so the Data view can state what opening a card costs
 without hardcoding it. Absent-or-null is valid, as for `market` and `player_status`.
 
+
+---
+
+## 18. The momentum contract — 2026-09-19 (ADR-089)
+
+### 18.1 `behavior_trend_series` 1.0 — the retained add/drop window, published
+
+The append-only store has held a daily Sleeper add/drop snapshot under `behavior/` since the
+season opened, and until this contract existed the only reader resolved `latest_key` — so the
+whole history reached the published board as a single 24-hour number per player. This is the
+artifact that publishes the window, so the in-season momentum sparkline needs no vendor call,
+exactly as `market_trend_series` does for ADP history.
+
+| | |
+|---|---|
+| File | `behavior_trend_series.json` — **no CSV** |
+| Key | `(build_id, player_id)` |
+| Sort | `player_id` |
+| Grain | **one record per player**, not per preset |
+| Universe | players the Opportunity Board publishes |
+| Rule | `behavior_trend_v1` |
+
+**Keyed by player alone, deliberately.** An add count is the same set of transactions however
+points are scored. `inseason_opportunity` already deduplicates its role columns across presets
+for the same reason, and a per-preset copy of this artifact would be nine identical histories.
+
+**No CSV, for the same reason `market_trend_series` has none.** The record is a series; a row
+per point would be a different artifact from the one a reader asked to export, and the
+Opportunity Board's CSV already carries the day's counts, which is what a spreadsheet wants.
+
+### 18.2 The two fields that make a short window honest
+
+`behavior_trend_v1` states a direction from as few as **two** observations, where
+`phase5_trend_v1` requires three observation days spanning three days. That is a deliberate
+divergence, not a relaxation: an ADP moves slowly and an add count moves in hours, and a
+waiver edge is gone by the time a three-day bar admits it. The price of the shorter bar is
+paid by two required fields:
+
+- **`span_days`** — elapsed days between the first and last point. A slope presented without
+  the span it was measured over is the defect this rule exists to prevent, and no surface may
+  print one. `behavior_trend_series.span_disagrees_with_points` fails a record whose span does
+  not describe its own points, and `verify-real-build.mjs` fails a rendered `/day` figure with
+  no span text beside it.
+- **`observations`** — always the length of `points`. It exists so a reader can compare it with
+  `snapshots_in_window`; if it could drift from the array beside it that comparison would mean
+  nothing, and `behavior_trend_series.observation_count_disagrees` fails a record where it does.
+
+`behavior_trend_series.trend_without_two_points` fails any record carrying a direction with
+fewer than two points. A single observation publishes `add_trend: null`, `net_trend: null` and
+a `single_observation` quality flag.
+
+### 18.3 An absence is not a zero
+
+Sleeper's trending endpoints return the 100 most-added players and nothing else, so a player
+outside that list on a given day has a count somewhere in `[0, the smallest count that did
+appear]` — **unknown, not zero**. The contract encodes that in three places:
+
+- a snapshot that did not carry the player produces **no point**;
+- `snapshots_in_window` counts every retained snapshot in the window regardless, so
+  `snapshots_in_window - observations` is the number of days he was outside the feed;
+- `request_limit` is published, so that difference has a stated ceiling.
+
+Records where the two disagree carry `sparse_feed_coverage`.
+`behavior_trend_series.more_points_than_snapshots` fails the impossible direction.
+
+**One zero is correct and the code distinguishes it.** A player can be in the top 100 adds and
+outside the top 100 drops — the feed *did* report on him that day — so the union is taken per
+capture rather than per feed, and the missing half is a zero.
+
+### 18.4 Sign, and why it is not the market's
+
+`add_trend` is the plain OLS slope of `add_count` on days elapsed, in transactions per day.
+**Positive means rising.** `phase5_trend_v1` negates its slope because a falling ADP means a
+player is getting more expensive; there is no such inversion here, and "fixing" this to match
+the market module would invert every reading on the page.
+
+### 18.5 Agreement with the board beside it
+
+`cross_artifact.behavior_series_player_not_on_board` fails a series naming a player the
+Opportunity Board does not publish. The reverse is **not** a finding — a board row with no
+series is the ordinary state for a player the feed has never carried — and is reported as
+coverage.
+
+`cross_artifact.behavior_series_latest_count` compares the series' newest point with the
+board's own behaviour columns **where they describe the same instant**, so the sparkline's
+final bar and the `Adds (24h)` readout beside it can never be different numbers. Where the
+instants differ the player was outside the feed on the latest snapshot, which is legitimate
+and is skipped rather than failed.
+
+### 18.6 Degradation, at three levels
+
+The behaviour feed is optional by construction (ADR-079); a history over it is optional again;
+and a series for a given player is optional a third time. An unreadable store, an empty window
+or a registry that cannot be built each produce a **warning** and no artifact, and both
+in-season boards publish exactly as they would have. `ros_build_metadata.behavior.history` is
+null in that case, and the page renders the absence as a sentence rather than an empty panel.

@@ -29,6 +29,7 @@ export const RECORD_SCHEMA_VERSIONS = {
   ros_tiers: "1.0",
   inseason_opportunity: "1.0",
   player_headshots: "1.0",
+  behavior_trend_series: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -45,7 +46,8 @@ export type ArtifactName =
   | "player_status"
   | "ros_tiers"
   | "inseason_opportunity"
-  | "player_headshots";
+  | "player_headshots"
+  | "behavior_trend_series";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -554,6 +556,72 @@ export const MARKET_TREND_SERIES_FIELDS = [
   "points",
 ] as const satisfies readonly (keyof MarketTrendSeriesRecord)[];
 
+/**
+ * One player's retained add/drop history, from the append-only behaviour store (ADR-089).
+ *
+ * **Behaviour, never a price.** Every number here is a count of roster transactions inside a
+ * declared lookback window. Nothing derived from it may become a draft position, a rank gap
+ * or an input to any published value — the same rule the Opportunity Board is built on,
+ * applied to the history instead of the day.
+ *
+ * Two fields carry the honesty of a short window and a consumer must use both.
+ * `span_days` is what the reading was measured over: `behavior_trend_v1` states a direction
+ * from as few as two observations, because an add count moves in hours, so a slope printed
+ * without its span would read as a week. `snapshots_in_window` minus `observations` is how
+ * many retained snapshots did not carry this player at all — days he was outside the feed's
+ * top N, which is an unknown count and never a zero.
+ *
+ * Keyed by player alone, not by preset: the same transactions are observed however points
+ * are scored.
+ */
+export interface BehaviorTrendSeriesRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly behavior_source_id: string;
+  readonly player_id: string;
+  /** The window every point was REQUESTED over; null when the captures disagree. */
+  readonly lookback_hours?: number | null;
+  /** The feed depth requested. It is what gives a day with no point a stated ceiling. */
+  readonly request_limit?: number | null;
+  readonly window_days: number;
+  readonly snapshots_in_window: number;
+  readonly observations: number;
+  readonly observation_days: number;
+  readonly span_days: number;
+  /** Transactions per day. Positive means rising. Null below two observations. */
+  readonly add_trend: number | null;
+  readonly net_trend: number | null;
+  readonly quality_flags?: readonly string[];
+  readonly points: readonly {
+    readonly observed_at: string;
+    readonly add_count: number;
+    readonly drop_count: number;
+    readonly net_add_count: number;
+  }[];
+}
+
+export const BEHAVIOR_TREND_SERIES_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "behavior_source_id",
+  "player_id",
+  "lookback_hours",
+  "request_limit",
+  "window_days",
+  "snapshots_in_window",
+  "observations",
+  "observation_days",
+  "span_days",
+  "add_trend",
+  "net_trend",
+  "quality_flags",
+  "points",
+] as const satisfies readonly (keyof BehaviorTrendSeriesRecord)[];
+
 export const PLAYER_STATUS_FIELDS = [
   "schema_version",
   "build_id",
@@ -963,6 +1031,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   ros_tiers: ROS_TIER_FIELDS,
   inseason_opportunity: OPPORTUNITY_FIELDS,
   player_headshots: PLAYER_HEADSHOT_FIELDS,
+  behavior_trend_series: BEHAVIOR_TREND_SERIES_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -975,6 +1044,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   ros_tiers: "ros_tiers.json",
   inseason_opportunity: "inseason_opportunity.json",
   player_headshots: "player_headshots.json",
+  behavior_trend_series: "behavior_trend_series.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

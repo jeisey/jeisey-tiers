@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/behavior_trend_series.schema.json",
+  "title": "BehaviorTrendSeries",
+  "description": "One player's retained add/drop history from the append-only behaviour store, carrying the points the in-season momentum sparkline draws (ADR-089). Behaviour, never a price: an add count is a number of roster transactions inside a declared lookback window, it is never converted into a draft position, and no field here may move a projection, a fair rank, a tier or a rest-of-season value. One record per player rather than per preset, because the same transactions are observed however points are scored.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "behavior_source_id",
+    "player_id", "window_days", "snapshots_in_window", "observations", "observation_days",
+    "span_days", "add_trend", "net_trend", "points"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 1999},
+    "through_week": {"type": "integer", "minimum": 0, "maximum": 22},
+    "behavior_source_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Which behaviour feed supplied the counts. `sleeper` in Release 2."
+    },
+    "player_id": {"type": "string", "minLength": 1},
+    "lookback_hours": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "The window every point in this series was REQUESTED over. Sleeper publishes nothing about the window it actually used. Null when the retained captures disagree, because a 6-hour count and a 24-hour count are different quantities and a series may not silently mix them."
+    },
+    "request_limit": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "The feed depth requested. It is what gives an absent day a ceiling: a player with no point that day was outside the top N, so his count was at most the smallest count that did appear."
+    },
+    "window_days": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "The trailing window this series was cut from. Points may be fewer than the window allows; that is the series being young, not the window changing."
+    },
+    "snapshots_in_window": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Retained snapshots inside the window, whether or not they carried this player. `snapshots_in_window - observations` is how many days he was outside the feed's top N."
+    },
+    "observations": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Points in this series. Always equal to the length of `points`."
+    },
+    "observation_days": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Distinct calendar days carrying an observation. Two captures on one day are two observations and one observation day."
+    },
+    "span_days": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Elapsed days between the first and last point. Required beside every trend: a slope presented without the span it was measured over is the defect `behavior_trend_v1` exists to prevent."
+    },
+    "add_trend": {
+      "type": ["number", "null"],
+      "description": "OLS slope of add_count on days elapsed, in transactions per day, over the points in this series. Positive means the count is rising. Null with a single observation, because a line needs two points. NOT negated: unlike an ADP, a bigger add count is straightforwardly more interest."
+    },
+    "net_trend": {
+      "type": ["number", "null"],
+      "description": "The same slope over net_add_count. Null under the same condition."
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "`single_observation` when there is one point; `sparse_feed_coverage` when the window held snapshots this player did not appear in."
+    },
+    "points": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ascending by observed_at. One point per retained snapshot that carried this player. A snapshot that did not carry him produces NO point — the feed is a top-N list, so an absence is an unknown count rather than a zero, and filling it with zero would manufacture a collapse in interest out of a player leaving a leaderboard.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["observed_at", "add_count", "drop_count", "net_add_count"],
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the snapshot was taken. Sleeper publishes no observation time of its own, so this is the retrieval instant and is not a data-as-of claim."
+          },
+          "add_count": {"type": "integer", "minimum": 0},
+          "drop_count": {"type": "integer", "minimum": 0},
+          "net_add_count": {
+            "type": "integer",
+            "description": "add_count minus drop_count. Legitimate for the narrow reason the Opportunity Board already relies on: both sides are the same unit, over the same window, from the same feed, at the same moment."
+          }
+        }
+      }
+    }
+  }
+}

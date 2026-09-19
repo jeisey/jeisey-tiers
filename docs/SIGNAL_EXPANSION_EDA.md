@@ -1,10 +1,15 @@
 # Signal Expansion EDA — 2026-09-19
 
-**Status: exploratory. Nothing here is a decision, and nothing here changed a file outside this
-document.** No source was added, no adapter written, no schema moved, no model touched, no ADR
-opened. The purpose is to hand a future build session a *measured* starting position instead of
-a search, and — where the repository's own rules say a decision is required before work begins —
-to name the decision rather than pre-empt it.
+**Status: exploratory, with one item since built.** The audit added no source, wrote no adapter
+and touched no model. Its purpose is to hand a future build session a *measured* starting
+position instead of a search, and — where the repository's own rules say a decision is required
+before work begins — to name the decision rather than pre-empt it.
+
+**One finding was acted on the same week.** Part 1's — that the retained Sleeper add/drop window
+had never been read — turned out to need no decision at all, and shipped as **ADR-089**
+(`behavior_trend_v1`, `behavior_trend_series.json`, the Pick of the Week momentum strip). That
+section is marked accordingly and records what the build actually cost. Everything else here is
+still analysis, and the three decisions named in Part 4 are still unmade.
 
 Read `AGENTS.md` first. Three of its rules decide most of what follows and are cited by number
 throughout: §5 (a source marked `verify_before_use` is not a production dependency until the
@@ -54,8 +59,8 @@ complete by then it will read *through week 2*. Nothing needs fixing; the gate i
 
 # Part 1 — How Sleeper data is fetched and stored
 
-**Short answer: daily point-in-time snapshots, yes. Trends built from them, no — for exactly one
-of the three Sleeper feeds, and the machinery to fix it already exists for a different source.**
+**Short answer: daily point-in-time snapshots, yes. Trends built from them — no, until this
+week. The data was always there; the read was not. Built as ADR-089 on 2026-09-19.**
 
 ## 1.1 The three Sleeper reads, and where each one lands
 
@@ -101,69 +106,58 @@ Two properties of the capture worth carrying forward:
   store.** A failure anywhere in the job therefore drops that run's snapshots entirely, which is
   why 2026-09-15's behaviour snapshot came from a later run rather than from run 43.
 
-## 1.3 Are we using them to create trends? — No. This is the finding.
+## 1.3 Are we using them to create trends? — We are now. Until 2026-09-19 we were not.
 
-There is exactly one reader of the behaviour store, and it reads exactly one snapshot:
+**The finding, in one sentence: nothing was stopping it, and nobody had written the read.**
+
+The data was being saved. The store held nine days of observations. There was exactly one
+reader and it asked for the newest file:
 
 ```
-src/ffdraft/pipeline/ros.py:755   read_behavior_capture(SnapshotStore(root=store, prefix=BEHAVIOR_PREFIX), season=season)
-src/ffdraft/behavior/capture.py:285   resolved = key or behavior_store.latest_key(source_id, season)
+src/ffdraft/pipeline/ros.py      read_behavior_capture(...)
+src/ffdraft/behavior/capture.py  resolved = key or behavior_store.latest_key(source_id, season)
 ```
 
-`latest_key` returns the newest directory. Nine days of retained observations reach the published
-board as **one** number per player per feed. `add_count`, `drop_count` and `net_add_count` on
-`inseason_opportunity.json` describe the most recent 24-hour window and nothing before it.
+`latest_key` returns the last directory. `SnapshotStore.keys()` — the function that returns
+*all* of them, oldest first — was on the same class, and the market side had been using it to
+draw an ADP chart since Phase 5. Behaviour had none of the four pieces the market had:
 
-**The asymmetry is the point.** The market side already solved this problem, and solved it twice:
+| | market | behaviour, before | behaviour, now |
+|---|---|---|---|
+| retained daily | since 2026-08-20 | since 2026-09-10 | unchanged |
+| trailing-window reader | `market/history.py` | **none** | `behavior/history.py` |
+| frozen slope rule | `phase5_trend_v1` | **none** | `behavior_trend_v1` |
+| published series | `market_trend_series.json` | **none** | `behavior_trend_series.json` |
+| chart | `MarketTrend.tsx` | **none** | `BehaviorSparkline.tsx` |
 
-| | market | behaviour |
-|---|---|---|
-| retained daily | yes, since 2026-08-20 | yes, since 2026-09-10 |
-| trailing-window reader | `ffdraft/market/history.py` → `load_trend_window()` | **none** |
-| frozen slope rule | `phase5_trend_v1` — trailing 7 days, ≥3 observation days, ≥3 days of span | **none** |
-| published series artifact | `market_trend_series.json` (2,698 records on run 53, two sources) | **none** |
-| chart | `MarketTrend.tsx`, inverted axis, direction in text as well as colour | **none** |
+**This was built on 2026-09-19 (ADR-089).** The rest of this section is the analysis that led
+to it, kept because two of its conclusions are load-bearing and one of them was wrong.
 
-`market/history.py` even carries the scar of getting this wrong once: ADR-081 records that FFC
-arrived with a price and no past because only the first market had a retained window, and a player
-card showed a current ADP beside "0 snapshots so far". Behaviour is in that pre-ADR-081 state
-today — with the difference that its history has never been read at all, rather than read for one
-source only.
+## 1.4 What it took, and the one judgement inside it
 
-**What it costs, in the product's own words.** ADR-088 (Pick of the Week, 2026-09-18) records the
-gap explicitly: the feature "can say *net +1,120 over 24 hours* and cannot say *rising for four
-days*", and its `ADD MOMENTUM` sparkline is listed as the one element of the supplied mock-up that
-is a **data** gap rather than a rights gap. `SESSION_STATE.md` backlog item 0b names the shape of
-the fix and the precedent it should follow.
+The mechanical part was as small as it looks: read a window instead of a key, compute a slope,
+publish the points, draw them. No new source, no new licence question, no model change.
 
-## 1.4 What a behaviour history would take, and the trap in it
+The one judgement was **how short a window may state a direction**, and the first draft of this
+document got it wrong by assuming the market rule should be copied. `phase5_trend_v1` refuses
+to estimate a slope below three observation days spanning three days. That is right for an
+ADP — it moves slowly, and a two-point line through one is mostly noise. It is wrong for an add
+count, which is a count of transactions over 24 hours, moves in hours, and describes a waiver
+edge that is gone by the time a three-day bar admits it.
 
-The mechanical part is small: mirror `market/history.py` with a `behavior/history.py`, read a
-trailing window of keys instead of `latest_key`, publish `behavior_trend_series.json` against a new
-schema, add a cross-artifact check.
+So `behavior_trend_v1` states a direction from **two** observations, and pays for the shorter
+bar with a required field rather than with a threshold: `span_days` travels with every
+direction, so `+320/day` is always printed beside `over 2 days`. A validator check, a
+pre-deploy gate check and a component test each assert that independently.
 
-The non-mechanical part is the one ADR-081 already paid for, and it should be copied deliberately:
+**Two things this document first called "wrinkles" and one of them was inflation.**
 
-> **Draw the observations; gate the *slope* on its own frozen rule.** Showing an observation and
-> estimating a trend are different claims. `phase5_trend_v1` publishes a null slope beside a
-> non-empty history for a young source, and `SESSION_STATE.md` records that "a null slope beside a
-> non-empty history is the normal, correct state … do not 'fix' it by softening the rule."
-
-Two behaviour-specific wrinkles `phase5_trend_v1` does not have to handle:
-
-1. **The feed is a top-100 list.** A player who leaves the list has `count` 0 in the next snapshot
-   for the same reason an unowned player does — absence and zero are the same byte. A series over
-   that is a series with censoring in it, and a slope computed without saying so would read a
-   player falling out of the top 100 as a collapse in interest. `BehaviorSignals` already
-   distinguishes "not in a top-N feed" (0) from "no feed at all" (`None`); a *series* needs the
-   same distinction at every point, not just the last one.
-2. **Absolute counts scale with how many leagues exist.** ADR-088 already refused a constant
-   threshold for this reason and used a per-position population median instead. A trend in raw
-   counts inherits the same problem; a trend in *rank* or in *share of the day's total* does not.
-
-**Scope note under AGENTS.md §18.** This is a data-contract change — schema, validator, CSV,
-TypeScript contract, goldens, cross-artifact check — which is exactly why the ADR-088 session
-recorded it and did not take it.
+- **Right, and it shipped:** the feed is a top-100 list, so a day the player was outside it
+  carries an unknown count rather than a zero. That is a real distinction — filling those days
+  with zero would draw a collapse in interest out of a player leaving a leaderboard — and it is
+  now three fields (`snapshots_in_window`, `observations`, `request_limit`) and a gap mark.
+- **Overstated:** that absolute counts scale with how many leagues exist. True across seasons,
+  irrelevant inside a seven-day window, and it should not have been raised beside the first.
 
 ---
 
@@ -452,7 +446,7 @@ cost (identity, licence, payload, point-in-time risk) — not raw predictive val
 | **1** | **Team xFP share / weighted opportunity share** | `ff_opportunity` `*_team` block, 147 unconsumed columns | one division | CC-BY-SA question (§2a.2) | no new question |
 | **2** | **Per-position role tiles** (carry share, pass attempts/G, air yards/G, catch rate, the three `_trend` columns) | `ros_core_v1`, 19 computed and unpublished | schema + contract | yes | already features |
 | **3** | **Air-yards share, WOPR, RACR, PACR, EPA, CPOE, YAC, first downs, explosive-play buckets** | `player_stats` weekly, 118 unconsumed columns | adapter column additions | yes | sealed season |
-| **4** | **Behaviour trend series** (Part 1) | `behavior/` store, ≥9 days retained | new module + schema, mirrors `market/history.py` | yes | never — behaviour gates, it does not value |
+| ~~4~~ | ~~**Behaviour trend series** (Part 1)~~ — **done 2026-09-19, ADR-089** | `behavior/` store | one module, one schema, one chart | shipped | never — behaviour gates, it does not value |
 | **5** | **Weather, rest differential, divisional game** | `load_schedules`, 38 unconsumed columns | adapter column additions | yes | sealed season |
 | **6** | **Team implied total / spread** | `load_schedules` | **ADR required first** (AGENTS.md §8, §2a.3) | reading 3 only | reading 1 or 2 |
 | 7 | Defensive snap share, ST snap share | `load_snap_counts`, 7 unconsumed | trivial | yes | low value here |
@@ -609,7 +603,7 @@ plan, and the phase-gate discipline in `docs/IMPLEMENTATION_PLAN.md` still appli
 |---|---|---|---|
 | 1 | Correct the `injuries_in_season_only` registry note; probe `load_injuries` on a runner for 2026 and for point-in-time immutability | AGENTS.md §18 drift, and it is the cheapest step toward the model's largest measured weakness | none — a probe and a doc fix |
 | 2 | Per-position card tiles from `ros_core_v1` columns already computed | fixes a live defect the owner found, no new source, no model change | schema + contract |
-| 3 | Behaviour trend series, slope on its own frozen rule | nine days already retained and unread; every day this waits is a day the chart is shorter | schema + a frozen rule committed before its evidence |
+| ~~3~~ | ~~Behaviour trend series, slope on its own frozen rule~~ **done (ADR-089)** | nine days were already retained and unread | shipped: `behavior_trend_v1`, frozen before its evidence |
 | 4 | Decide the three rights/firewall questions in ADRs | they block six separate items and cost nothing to answer | ADR |
 | 5 | Matchup / SoS panel from schedules + `load_team_stats` | the product has no opponent artifact at all and the UX spec already records the hole | new loader + schema |
 | 6 | Capture paths and fail-closed checks for injuries, NGS and PFR advstats — **retained, consumed by nothing** | ADR-070's four conditions, built in the order Phase 10 used for Sleeper behaviour | registry + capture |

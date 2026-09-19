@@ -5138,6 +5138,146 @@ dl.facts dd {
   height: 18px;
 }
 
+/*
+ * Today's counts beside the window behind them (ADR-089).
+ *
+ * Two panels, a hairline between them, and deliberately no shared axis: the left strip is a
+ * count of transactions in the last window and the right is a rate over days. The Opportunity
+ * Board draws its two tracks the same way for the same reason — the absence of a common unit
+ * is the product rule, not a layout problem to solve.
+ */
+.potw-moves-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--hairline);
+  background: var(--line-faint);
+}
+
+.potw-moves-today,
+.potw-moves-pair .momentum {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--tile);
+  min-width: 0;
+}
+
+.momentum-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/*
+ * Bars, not a line. A line implies a value between two samples and a daily transaction count
+ * has none. `align-items: flex-end` puts every bar on one baseline, which is what makes the
+ * shape readable at 40px tall.
+ */
+.momentum-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 2px;
+  height: 34px;
+  min-width: 0;
+}
+
+/*
+ * A bar is capped, and the cap is the whole reason a single observation reads correctly.
+ *
+ * `flex: 1 1 0` alone makes one bar fill the strip, and a full-width block is the picture of
+ * *maximum* momentum — the exact opposite of "one observation, no direction yet". Caught in the
+ * first capture and invisible to every assertion about the reading's text. With a cap, a short
+ * series is a short series: one bar is one bar, and seven still share the width evenly because
+ * the cap only binds below about four.
+ */
+.momentum-bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  max-width: 20px;
+  background: rgb(var(--potw-rgb) / 38%);
+}
+
+/*
+ * The newest bar carries the count the readout beside it prints, so it is the one a reader
+ * checks against. Weight rather than hue: the direction tints below are a fourth channel and
+ * this is the third (UX_SPEC section 12).
+ */
+.momentum-bar[data-latest="true"] {
+  background: rgb(var(--potw-rgb) / 85%);
+}
+
+.momentum[data-direction="rising"] .momentum-bar[data-latest="true"] {
+  background: var(--bargain);
+}
+
+.momentum[data-direction="falling"] .momentum-bar[data-latest="true"] {
+  background: var(--premium);
+}
+
+/*
+ * A gap is a gap. Days the player was outside the feed's top 100 carry no count at all, so
+ * they are a hairline rather than a short bar — a floor-height bar reads as "nobody added
+ * him", which is a different fact and the one the artifact refuses to assert.
+ */
+.momentum-gap {
+  flex: 0 0 4px;
+  align-self: stretch;
+  margin-left: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--ink-faint) 0,
+    var(--ink-faint) 2px,
+    transparent 2px,
+    transparent 5px
+  );
+  opacity: 0.55;
+}
+
+.momentum-reading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--space-1);
+  margin: 0;
+  min-width: 0;
+}
+
+.momentum-glyph {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+
+.momentum[data-direction="rising"] .momentum-glyph {
+  color: var(--bargain);
+}
+
+.momentum[data-direction="falling"] .momentum-glyph {
+  color: var(--premium);
+}
+
+.momentum-value {
+  font: 600 0.82rem/1.2 var(--font-mono);
+  color: var(--ink);
+}
+
+/*
+ * The span, and it is never optional: `behavior_trend_v1` states a direction from as few as
+ * two observations, so this is the text that stops a one-day reading being read as a week's.
+ * It is `--ink-muted` rather than `--ink-faint` because it is load-bearing, not a hint.
+ */
+.momentum-span {
+  font: 400 0.68rem/1.4 var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.momentum-absent {
+  font: 400 0.68rem/1.45 var(--font-sans);
+  color: var(--ink-muted);
+}
+
 /* -- the set switcher and the position chips ------------------------------- */
 
 .potw-chiprow {
@@ -5295,6 +5435,18 @@ dl.facts dd {
   }
 
   .readout-grid.potw-tiles[data-row="secondary"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /*
+   * The two behaviour panels stack rather than shrink.
+   *
+   * Side by side at 320px each panel is about 140px, which is a twelve-bar strip at 9px a bar
+   * and a span label that wraps mid-word. Stacked they keep their own headings, which is the
+   * same call the Opportunity Board's two tracks make at this width and for the same reason —
+   * the divider between them is the meaning, so it survives the reflow rather than the layout.
+   */
+  .potw-moves-pair {
     grid-template-columns: minmax(0, 1fr);
   }
 }

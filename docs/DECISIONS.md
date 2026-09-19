@@ -3898,3 +3898,136 @@ a data-contract change, and this pass publishes no new artifact on purpose.
 - `.section-head h2` became shrinkable. It was `flex: none`, which held while every section
   title fitted at 320px and produced 3px of silent horizontal scroll on the first one that did
   not. Shrinking engages only on a line that overflows, so no existing heading moves.
+
+---
+
+## ADR-089 — The retained behaviour window is published, and a direction may be stated from two observations
+
+**Status.** Accepted, 2026-09-19. Rule `behavior_trend_v1`. Supersedes nothing; extends
+ADR-088's Pick of the Week and closes `SESSION_STATE.md` backlog item 0b.
+
+**Context.** The append-only store has held a daily Sleeper add/drop snapshot under
+`behavior/` since the season opened — nine days of observations by the time this was written,
+appended by every successful `daily-refresh` since 2026-09-10. Exactly one thing read them:
+
+```
+src/ffdraft/pipeline/ros.py     read_behavior_capture(...)
+src/ffdraft/behavior/capture.py resolved = key or behavior_store.latest_key(source_id, season)
+```
+
+`latest_key` returns the newest directory, so the whole retained history reached the published
+board as **one 24-hour number per player**. ADR-088 recorded the consequence in the product's
+own words: Pick of the Week can say "net +1,120 over 24 hours" and cannot say "rising for four
+days", and the mockup's `ADD MOMENTUM` sparkline was listed as the one element of that design
+that was a *data* gap rather than a rights gap.
+
+Nothing was blocking it. The market side had already built the same machinery twice —
+`ffdraft/market/history.py` reads a trailing window, `phase5_trend_v1` estimates a slope over
+it, `market_trend_series.json` publishes the points and `MarketTrend.tsx` draws them. Behaviour
+had none of the four.
+
+**Decision 1 — read the window, and change nothing the board publishes.** A new module,
+`ffdraft/behavior/history.py`, reads every retained capture inside the trend window, projects
+each onto canonical ids nflverse-first (ADR-011, once per snapshot rather than once), and hands
+the result to a frozen statistic. The Opportunity Board's `add_count`, `drop_count`,
+`net_add_count`, `add_rank` and `drop_rank` still come from `resolve_behavior_signals` reading
+the newest capture and are untouched. `test_behavior_history.py` asserts that a store with a
+week behind it and a store holding only today's snapshot resolve **byte-identical** behaviour
+signals, and that the two histories genuinely differ — so the invariance is not vacuous.
+
+**Decision 2 — `behavior_trend_v1` states a direction from two observations, and
+`phase5_trend_v1` is deliberately not reused.** The market rule refuses to estimate a slope
+below three observation days spanning three days. That is right for a draft price: an ADP moves
+slowly, a two-point line through one is mostly noise, and a reader comparing Tuesday's board
+with Friday's needs the same window on both. An add count is the opposite kind of quantity — a
+count of transactions inside a declared 24-hour window, moving in hours — and a waiver edge is
+gone by the time a three-day bar admits it. So:
+
+```
+add_trend = OLS slope of add_count on days elapsed, over the retained window,
+            using every observation that exists
+```
+
+with two observations enough. At two points that reduces exactly to the difference over the
+elapsed days, which is what makes `min_observations = 2` a continuous extension of one
+statistic rather than a second rule bolted beside it. One observation carries no direction,
+which is arithmetic rather than policy: a line needs two.
+
+**What keeps that honest is the label, not suppression.** A two-point slope is a real
+measurement of a short window and a bad estimate of a long one, so `span_days` and
+`observations` are **required** fields and no surface may print a direction without the span it
+was measured over. The artifact validator fails a record carrying a trend with fewer than two
+points, or a span that disagrees with its own points; `verify-real-build.mjs` fails a rendered
+`/day` figure with no span text beside it; and the component test asserts the same from the
+page's side.
+
+**Decision 3 — the sign is not negated, and must not be "fixed" to match the market module.**
+`phase5_trend_v1` negates its slope because a *falling* ADP means a player is getting more
+expensive. There is no such inversion here: a bigger add count is straightforwardly more
+interest, so positive means rising.
+
+**Decision 4 — an absence is not a zero.** Sleeper's trending endpoints return the 100
+most-added players and nothing else, so a player outside that list on a given day has a count
+somewhere in `[0, the smallest count that did appear]` — unknown, not zero. A snapshot that did
+not carry the player therefore produces **no point**, the record publishes
+`snapshots_in_window` beside `observations` so the difference is visible, and the strip draws a
+gap mark rather than a floor-height bar. Filling those days with zero would manufacture a
+collapse in interest out of a player leaving a leaderboard.
+
+There is one place a zero *is* correct and the code takes the distinction seriously: a player
+can be in the top 100 adds and outside the top 100 drops, and the feed did report on him that
+day. The union is therefore taken per *capture* rather than per feed.
+
+**Decision 5 — one record per player, not per preset.** An add count is the same set of
+transactions however points are scored. `inseason_opportunity` already deduplicates its role
+columns across presets for this reason; keying the series by league and scoring would publish
+nine identical copies of every history.
+
+**What is published.** `behavior_trend_series.json`, record schema `behavior_trend_series` 1.0,
+keyed `(build_id, player_id)`, restricted to players the Opportunity Board publishes. No CSV —
+the record is a series, a row per point would be a different artifact from the one a reader
+asked to export, and the Opportunity Board's CSV already carries the day's counts. The
+in-season metadata gains `behavior.history`, describing the window the series was cut from.
+
+**Degradation, at three levels rather than one.** The behaviour feed is optional by
+construction (ADR-079); a history over it is optional again; and a series for a given player is
+optional a third time. An unreadable store, an empty window or a registry that cannot be built
+each produce a warning and no artifact, and both in-season boards publish exactly as they
+would have. On the page, the three absences are **three sentences** — the build published no
+history, the feed has not carried this player, or he has one observation and therefore no
+direction yet — because a reader can act on the difference.
+
+**What this does not change.** No model, feature, projection, rank, tier, VORP, ADP, arbitrage
+score or existing schema. No Release 1 or Phase 10 record moved. `AGENTS.md` section 10's ban
+on blending an add count with a VORP is untouched and the new surface is inside it: today's
+counts and the window behind them sit side by side, in the same unit as each other and in no
+unit shared with anything intrinsic, and there is no combined score anywhere. ADR-088's rule
+that no surface in this feature may print, imply or leave room to infer a share of leagues
+binds the history exactly as it binds the day — a count of transactions has no denominator in
+leagues however many days of it are drawn — and both a component test and the pre-deploy gate
+assert it on the rendered bytes.
+
+**Five things a future session should not re-derive.**
+
+1. **The store was always holding this.** Nothing was blocked, no source was added and no
+   rights question was reached. The only thing missing was a reader that asked for more than
+   `latest_key`, and the market module had shown what that looks like since Phase 5.
+2. **A two-point slope is a feature, not a tolerance.** If a future session is tempted to raise
+   `min_observations` to match the market rule, the thing to change is not the bound: it is to
+   ask whether the *span* is still being printed, because that is what the bound would be
+   standing in for.
+3. **`snapshots_in_window` is what makes a gap legible.** Without it a short series and a
+   sparse one look identical, and the difference between "the season is three days old" and "he
+   was outside the top 100 for four of seven days" is the whole reading.
+4. **`--dist` alone cannot negative-control `verify:board`.** The gate compares the rendered
+   page with the bytes that page was served, so corrupting an artifact inside the dist corrupts
+   both sides and the check correctly agrees. Controls must corrupt the *checker's* copy:
+   `--dist <clean> --data <corrupted>`. Five controls were run that way and all five fire — a
+   moved slope, a dropped point, a nulled direction, an invented gap and a deleted series.
+5. **The fixture carries six states and none of them is "the normal one."** A full rising
+   window, a two-point one, a single observation, a gap, a falling count and a board player with
+   no series at all. Six instances of the fixture species are already recorded in
+   `SESSION_STATE.md` (ADR-081, 082, 084, 085, 086, 088); this was built against that list
+   rather than after joining it. The frontend fixture adds a seventh state a single bundle
+   cannot hold — a window that is genuinely only two snapshots deep, which is what the site
+   looks like the week a season opens.
