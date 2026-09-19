@@ -1387,6 +1387,18 @@ Nothing else is blocking. The four analytical findings are unchanged and none is
 released V1, kept here so a future session inherits questions rather than a search. Each names
 what would have to be true before it is worth doing.
 
+**`docs/SIGNAL_EXPANSION_EDA.md` (2026-09-19) measures several of them** and is exploratory: it
+took no decision, opened no ADR and changed no code. Read it before picking up items 0, 0b or 8,
+because it answers the data half of each and isolates the rights half. Its three load-bearing
+findings: the retained Sleeper add/drop history has never been read (only `latest_key` is, so
+nine days of observations reach the board as one number, while `market/history.py` already
+implements the trailing-window pattern that would fix it); the daily download already contains
+118 unconsumed `player_stats` columns, 147 unconsumed `ff_opportunity` columns and 38 unconsumed
+`load_schedules` columns, the last of which carry sportsbook lines and therefore require the
+AGENTS.md §8 "stop and document" decision before any use; and **the 2025 holdout is spent for
+both models, so every new *model feature* waits on a fresh sealed season (2026, ≈January 2027)
+while every new *published context* does not** — which reorders the backlog.
+
 0. **Publish the per-player expected-points figures, or decide not to** (ADR-086).
    `expected_points_per_game_to_date` and `points_over_expected_per_game_to_date` are already
    computed in `ros_core_v1` and would give the in-season card a genuine luck reading —
