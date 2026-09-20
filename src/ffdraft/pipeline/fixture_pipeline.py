@@ -933,10 +933,24 @@ def _opportunity_records(
     return records
 
 
-#: How many retained snapshots the fixture window pretends to hold. Seven, so the shapes a
-#: real window produces all fit inside one fixture: a full history, a two-point one, a single
-#: observation and a gap.
-FIXTURE_BEHAVIOR_SNAPSHOTS = 7
+#: Hours before the fixture's anchor at which the window retained a snapshot, oldest first.
+#:
+#: **Production's cadence rather than a tidy one, and that is the whole point.** A snapshot is
+#: one `daily-refresh` run, not one day. The schedule fires once most mornings and a second
+#: time on Tuesdays, and any day somebody re-runs the workflow contributes however many runs
+#: they clicked. These fifteen offsets are `daily-refresh`'s own run history for the week
+#: ending 2026-09-19, rounded to the hour: a quiet start, five runs inside eight hours on one
+#: afternoon of debugging, then a pair most days.
+#:
+#: Before ADR-090 this was seven evenly spaced days, and the tidiness cost a production
+#: failure. Twelve bars is a generous cap for "a week of daily snapshots" and a miserly one
+#: for the fifteen a real week held, so the strip silently dropped the three oldest and the
+#: pre-deploy check that compares bars with points failed a correct build.
+FIXTURE_BEHAVIOR_SNAPSHOT_HOURS = (167, 151, 127, 100, 99, 97, 95, 89, 79, 73, 55, 31, 26, 7, 0)
+
+#: How many retained snapshots the fixture window holds. Read off the cadence rather than
+#: stated beside it, so the two cannot drift apart.
+FIXTURE_BEHAVIOR_SNAPSHOTS = len(FIXTURE_BEHAVIOR_SNAPSHOT_HOURS)
 
 
 def _behavior_series_records(
@@ -976,10 +990,7 @@ def _behavior_series_records(
     )
 
     anchor = parse_utc(FIXTURE_GENERATED_AT)
-    stamps = [
-        anchor - timedelta(days=FIXTURE_BEHAVIOR_SNAPSHOTS - 1 - index)
-        for index in range(FIXTURE_BEHAVIOR_SNAPSHOTS)
-    ]
+    stamps = [anchor - timedelta(hours=hours) for hours in FIXTURE_BEHAVIOR_SNAPSHOT_HOURS]
 
     # Behaviour is preset-independent, so one row per player answers for every block. The
     # first block's ordering is deterministic and is what decides which player gets which
@@ -991,9 +1002,9 @@ def _behavior_series_records(
 
     #: player index -> which snapshots carry him. Everything not listed gets the full window.
     special: dict[int, list[int]] = {
-        1: [5, 6],  # two points: the rule's own minimum
-        2: [6],  # one point: no direction anywhere
-        3: [0, 1, 5, 6],  # a gap: outside the top N for three of the seven
+        1: [13, 14],  # two points: the rule's own minimum
+        2: [14],  # one point: no direction anywhere
+        3: [0, 1, 2, 12, 13, 14],  # a gap: outside the top N for nine of the fifteen
     }
     #: player index -> whether his count rises or falls across the window.
     falling = {4}
@@ -1012,10 +1023,17 @@ def _behavior_series_records(
         for position in indices:
             # Walk backwards from the board's own published count, so the series' last point
             # and the readout beside it are one number rather than two.
-            steps = newest - position
-            step = 40 + (index % 5) * 15
-            adds = final_adds + steps * step if index in falling else final_adds - steps * step
-            drops = final_drops + steps * 3
+            #
+            # **Per day elapsed, never per snapshot.** An add count drifts with time and not
+            # with how often we happened to sample it, so five captures inside one afternoon
+            # have to read as one afternoon's drift rather than five days of it. Walking per
+            # index would make the fitted slope a function of the capture cadence, which is
+            # the confusion this fixture now exists to reproduce rather than to commit.
+            elapsed = (stamps[newest] - stamps[position]).total_seconds() / 86400.0
+            rate = 40 + (index % 5) * 15
+            drift = round(elapsed * rate)
+            adds = final_adds + drift if index in falling else final_adds - drift
+            drops = final_drops + round(elapsed * 3)
             observations.append(
                 BehaviorObservation(
                     player_id=player_id,

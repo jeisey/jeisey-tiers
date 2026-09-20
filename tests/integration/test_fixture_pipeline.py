@@ -395,3 +395,62 @@ def test_csv_export_matches_the_json_artifact(built_artifacts):
         projected = project(records[0])
         assert set(projected) == set(columns)
         assert projected["player_id"] == rows[0]["player_id"]
+
+
+# --------------------------------------------------------------------------------------
+# The behaviour window's own state, not only its shape (ADR-090)
+# --------------------------------------------------------------------------------------
+
+
+def test_the_behaviour_window_holds_as_many_snapshots_as_a_real_week(built_artifacts):
+    """The fixture guard the twelve-bar cap slipped past.
+
+    `verify:board` compares the rendered strip with this artifact's published points, and it
+    could not fail while the fixture's window was seven evenly spaced days: twelve is a
+    generous cap for a week of daily snapshots, so no fixture in the repository could reach
+    it. Production's week held fifteen, the strip drew twelve, and a correct build stopped at
+    the pre-deploy gate.
+
+    So the assertion that matters is about the *fixture*, and it belongs beside the build
+    rather than in the frontend suite alone: a renderer test that draws every point proves
+    nothing if the fixture never has more points than a cap would allow.
+    """
+    records = _load(built_artifacts, "behavior_trend_series.json")["records"]
+    longest = max(len(record["points"]) for record in records)
+    assert longest > 12, (
+        f"the fixture's longest behaviour window is {longest} point(s); twelve was the cap "
+        "that shipped, so a window this short cannot catch the next one"
+    )
+    for record in records:
+        assert record["observations"] == len(record["points"])
+
+
+def test_a_snapshot_is_a_run_and_not_a_day(built_artifacts):
+    """`observations` and `observation_days` must be different numbers on the goldens.
+
+    They were the same on every fixture record until ADR-090, because the window was built one
+    snapshot per calendar day — so a consumer reading either as the other was correct on the
+    fixtures and wrong in production, where five `daily-refresh` runs can share an afternoon.
+    """
+    records = _load(built_artifacts, "behavior_trend_series.json")["records"]
+    full = max(records, key=lambda record: len(record["points"]))
+    assert full["observation_days"] < full["observations"], (
+        "every fixture snapshot landed on its own calendar day, so the distinction between "
+        "a snapshot and a day is untested"
+    )
+
+
+def test_a_two_point_window_can_span_hours_rather_than_days(built_artifacts):
+    """The short-window case at production's real resolution.
+
+    `behavior_trend_v1` states a direction from two observations because an add count moves in
+    hours. The fixture's two-point record sat a full day apart, so `spanLabel`'s hours branch
+    never reached a rendered card — the one case the rule exists for was the one the evidence
+    rounded up to a day.
+    """
+    records = _load(built_artifacts, "behavior_trend_series.json")["records"]
+    short = [record for record in records if record["observations"] == 2]
+    assert short, "the fixture publishes no two-observation window"
+    assert any(record["span_days"] < 1.0 for record in short), (
+        "no two-point window spans less than a day, so a slope stated over hours is untested"
+    )

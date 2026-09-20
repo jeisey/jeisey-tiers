@@ -2022,6 +2022,74 @@ envelope gained one name; both additive.
 the Opportunity Board carry the same counts and could carry the same reading, and neither was
 asked for; and the series is not exported, because the Opportunity Board's CSV already carries
 the day's counts.
+## 2026-09-19 — A snapshot is a run, not a day (ADR-090)
+
+**The refresh after the bundle fix cleared `validate-artifacts` and stopped one step later, at
+`verify:board`**, on four cards at once:
+
+    Dalton Kincaid: momentum strip drew 12 bar(s), artifact publishes 15 observation(s)
+
+`BehaviorSparkline` held `const MAX_BARS = 12` and drew `points.slice(-MAX_BARS)`. The check was
+right and the component was wrong, and the number that made them disagree was **fifteen**.
+
+**Why fifteen, when the window is seven days.** Because a snapshot is a `daily-refresh` run and
+not a day. The schedule is daily plus a second run on Tuesdays; the week ending 2026-09-19 held
+sixteen runs — five of them inside eight hours of one afternoon — because `workflow_dispatch` is
+how this repository gets deployed and there had been a lot of deploying. The Python side had
+anticipated this exactly: `compute_behavior_trends` fits on **elapsed days** rather than sample
+index and already publishes `observation_days` beside `observations`. The frontend had not, the
+fixtures had not, and the two agreed with each other.
+
+**The fix: no cap, anywhere.** A cap looks like a legible-width guard and is not one, because
+nothing else in the panel truncates — the slope, the span, the gap count and the bar scale are
+all measured over the whole window, and `behavior_trend_v1` is the artifact's rule rather than
+the component's, so a shortened strip cannot restate any of them for the stretch it drew. It
+does not shorten the reading; it makes the picture describe a different window from the numbers
+beside it, and silently rescales the y-axis against a peak the cap can push off-screen.
+
+**Width was never the constraint it looked like.** Measured on the built page: the narrowest
+strip is 261px at 320px, and `min-width: 2px` with a 2px gap fits **65 bars** before anything
+overflows — a seven-day window reaches that at ~9.4 runs a day for a week. At fifteen the bars
+are 15–20px at every breakpoint and page overflow is 0px at 1440/1024/768/420/320.
+
+**Eleventh instance of the species, and the fix is in the fixture first.** Both fixtures held
+`FIXTURE_BEHAVIOR_SNAPSHOTS = 7`, one per calendar day, so **no fixture in the repository could
+reach the cap** and `momentum.test.tsx`'s "draws one bar per retained snapshot and no more" ran
+only against the two-point `young` case. Both now build from `daily-refresh`'s own run history
+for the week ending 2026-09-19 — `167, 151, 127, 100, 99, 97, 95, 89, 79, 73, 55, 31, 26, 7, 0`
+hours before the anchor. Three things are true of a fixture here for the first time:
+`observations` (15) differs from `observation_days` (8); a two-point window spans **seven hours**
+rather than a day, which is the only case that drives `spanLabel`'s hours branch through a
+rendered card; and the counts walk per day elapsed rather than per sample, so five captures in an
+afternoon read as an afternoon's drift (`548, 550, 553, 557` in the goldens) instead of five
+days of it.
+
+**Controls run, both directions.** The fixture change alone against the unmodified component
+reproduces production's message on a local build. Restoring `slice(-12)` fails the new vitest
+case with `expected …(12) to have a length of 15 but got 12`; reverting the fixture to one
+snapshot per day fails all three new Python guards, naming what each one stops testing. A
+corrupted checker copy (`--dist` clean, `--data` corrupted, per ADR-089) fires the bar-count and
+gap checks together.
+
+**One note from the capture that is not a defect.** A fifteen-bar window reads flatter than a
+seven-bar one at the same slope, because the bar scale is zero-based (ADR-086) and more samples
+over one span make a smoother picture: Bijan Robinson's 437→715 window is 69%→100% of peak, about
+11px of rise across 34px. Scaling to the series' own minimum would make every small move look
+dramatic, so the zero base stays.
+
+**Verified**: `ruff check`, `ruff format --check` (251 files), strict `mypy` (157 files) clean;
+`uv run pytest` **1,526** passed (3 new guards); `ffdraft validate-artifacts` 0 critical /
+0 warning; `npm run lint` 0 errors / 4 pre-existing warnings; `npm run typecheck` clean;
+`npm run test -- --run` **500** passed (up from 497); `npm run e2e` **140** passed;
+`npm run build` clean; `npm run verify:board` zero failures; 73 screens captured and
+inspected, the nine Pick of the Week ones committed to
+`docs/visual-qa/2026-09-19-momentum-window/` with the strips read at 3× — the rest are
+unchanged from `2026-09-19-momentum/` and the PNGs are not byte-deterministic, so a second
+full set is 15MB of diff nobody can read.
+
+**No rule, model, feature, schema or contract changed.** `behavior_trend_v1` is untouched —
+same window, same `min_observations: 2`, same sign convention, same fields — so no sealed season
+is spent (ADR-078). The only published bytes that move are the committed goldens.
 
 ## Next action
 

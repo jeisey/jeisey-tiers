@@ -27,6 +27,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
 import { spanLabel } from "../src/data/ros";
 import {
+  FIXTURE_BEHAVIOR_SNAPSHOTS,
   FIXTURE_GENERATED_AT,
   behaviorSeriesRecords,
   fixtureFiles,
@@ -165,6 +166,61 @@ describe("a young window", () => {
     for (const panel of panels) {
       expect(panel.querySelectorAll(".momentum-bar")).toHaveLength(2);
     }
+  });
+});
+
+/*
+  ------------------------------------------------------ a window as long as the week was
+
+  The regression ADR-090 exists for, and the reason it is a *describe* of its own rather than
+  another assertion inside the young-window block.
+
+  The strip drew the newest twelve points and dropped the rest. Every gate passed, because the
+  fixture's window was seven evenly spaced days and twelve is a generous cap for a week of
+  daily snapshots. It is not a cap for a week of `daily-refresh` runs: the schedule adds a
+  second run on Tuesdays, a morning of re-running the workflow adds five, and the week ending
+  2026-09-19 held fifteen. The pre-deploy check that compares bars with published points
+  failed a correct production build three minutes into a refresh.
+
+  So these two assert the fixture's state and the rendering against it, in that order. The
+  first is the one that matters: a test that draws every point is worth nothing if the fixture
+  never has more points than a cap would allow, which is precisely how the defect shipped.
+*/
+describe("a window as long as the week actually was", () => {
+  it("carries more snapshots than a plausible cap, so a cap can be tripped at all", () => {
+    const longest = Math.max(...behaviorSeriesRecords().map((record) => record.points.length));
+    expect(longest).toBe(FIXTURE_BEHAVIOR_SNAPSHOTS);
+    // Twelve was the cap. A fixture that shrinks back under it silently stops testing this.
+    expect(longest).toBeGreaterThan(12);
+  });
+
+  it("counts snapshots and not days, so the two can never be read as one number", () => {
+    const full = behaviorSeriesRecords().find(
+      (record) => record.points.length === FIXTURE_BEHAVIOR_SNAPSHOTS,
+    );
+    expect(full).toBeDefined();
+    // Fifteen runs across eight dates. A strip with one bar per day would draw eight.
+    expect(full?.observation_days).toBeLessThan(full?.observations ?? 0);
+  });
+
+  it("draws one bar per published point on every card, however long the window", async () => {
+    await open();
+    const byPlayer = new Map(
+      behaviorSeriesRecords().map((record) => [record.player_id, record] as const),
+    );
+    const drawn: number[] = [];
+    for (const card of document.querySelectorAll<HTMLElement>(".potw-card")) {
+      const playerId =
+        card.querySelector<HTMLElement>(".potw-card-name")?.id.replace(/^potw-name-/, "") ?? "";
+      const record = byPlayer.get(playerId);
+      const strip = card.querySelector(".momentum-bars");
+      if (record === undefined || strip === null) continue;
+      expect(strip.querySelectorAll(".momentum-bar")).toHaveLength(record.points.length);
+      drawn.push(record.points.length);
+    }
+    expect(drawn.length).toBeGreaterThan(0);
+    // ...and one of the cards is the long window, or the loop above proved nothing about caps.
+    expect(Math.max(...drawn)).toBe(FIXTURE_BEHAVIOR_SNAPSHOTS);
   });
 });
 

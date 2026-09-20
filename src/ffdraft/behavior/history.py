@@ -72,11 +72,14 @@ def load_behavior_window(
 ) -> list[BehaviorCapture]:
     """Retained behaviour captures inside the window, oldest first.
 
-    Reading only the window keeps a build's cost flat as the store grows: a season of daily
-    captures is 365 directories and a momentum reading needs at most eight of them. Each one
-    goes through :func:`read_behavior_capture`, so every file is re-hashed against its own
-    manifest on the way in — a truncated snapshot fails here rather than becoming a point on
-    a chart.
+    Reading only the window keeps a build's cost flat as the store grows: a season's captures
+    are hundreds of directories and a momentum reading needs the handful inside the window.
+    How many that is depends on the refresh cadence and not on the calendar — a snapshot is
+    one `daily-refresh` run, the schedule adds a second on Tuesdays, and a day spent re-running
+    the workflow adds however many were clicked, so fifteen in a seven-day window is ordinary
+    (ADR-090). Each one goes through :func:`read_behavior_capture`, so every file is re-hashed
+    against its own manifest on the way in — a truncated snapshot fails here rather than
+    becoming a point on a chart.
 
     A capture that cannot be read is **skipped, not fatal**. The behaviour feed is optional by
     construction (ADR-079) and a history missing its oldest day is a shorter history, which

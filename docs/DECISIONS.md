@@ -4085,3 +4085,128 @@ failed, every step after it skipped including the Pages upload, `deploy` was **s
 the previously deployed site stayed live and unchanged. The capture job had already committed,
 so the day's behaviour snapshot is in the store and the history is not short a day.
 
+
+---
+
+## ADR-090 — A snapshot is a run, not a day, and the momentum strip draws every one of them
+
+**Status:** accepted, 2026-09-19
+**Supersedes:** nothing. **Amends:** ADR-089's rendering, not its rule.
+
+### What happened
+
+The refresh immediately after ADR-089's bundle fix cleared `validate-artifacts` and stopped one
+step later, at `verify:board`:
+
+```
+Bryce Young: momentum strip drew 12 bar(s), artifact publishes 14 observation(s)
+Jacory Croskey-Merritt: momentum strip drew 12 bar(s), artifact publishes 15 observation(s)
+Caleb Douglas: momentum strip drew 12 bar(s), artifact publishes 15 observation(s)
+Dalton Kincaid: momentum strip drew 12 bar(s), artifact publishes 15 observation(s)
+```
+
+`BehaviorSparkline` held `const MAX_BARS = 12` and drew `points.slice(-MAX_BARS)`. The check was
+right, the component was wrong, and the number that made them disagree was **fifteen**.
+
+### Why fifteen, when the window is seven days
+
+Because a snapshot is a `daily-refresh` run and not a day. The schedule is `17 7 * * *` plus
+`40 12 * * 2`, so an ordinary week already holds eight; the week ending 2026-09-19 held sixteen
+runs, one of which died before its capture step, because a `workflow_dispatch` re-run is how this
+repository gets deployed and there had been a lot of deploying. Five of those runs were inside
+eight hours of one afternoon.
+
+Nothing downstream was wrong about this. `compute_behavior_trends` already fits on **elapsed
+days** rather than on sample index, and already publishes `observation_days` beside
+`observations` — the docstring says "several snapshots on one calendar day all count as
+observations but only one observation day". The Python side anticipated the case exactly. The
+frontend did not, the fixture did not, and the two agreed with each other.
+
+### The decision
+
+**The strip draws every published point. No cap, in the component or anywhere else.**
+
+A cap looks like a legible-width guard and is not one, because *nothing else in the panel
+truncates*:
+
+| what the card shows | measured over |
+|---|---|
+| the slope, `+40.0/day` | the whole window |
+| the span, `over 7 days` | the whole window |
+| the gap mark and its count | the whole window |
+| the bar heights, scaled to `peak` | the whole window |
+| the bars — until this ADR | the newest twelve |
+
+So a truncating cap does not shorten the reading. It makes the picture describe a different
+window from the four numbers printed beside it, and it silently rescales the y-axis against a
+maximum the cap can push off-screen. The component cannot fix that by restating the reading for
+the stretch it drew, because `behavior_trend_v1` is the artifact's rule and Phase 9B already
+paid for restating a rule in a second language. Draw all of it, or draw none of it.
+
+**Width is not the constraint it looked like.** Measured on the built page: the narrowest strip
+is 261px at a 320px viewport, and `.momentum-bar`'s `min-width: 2px` with a 2px gap fits **65
+bars** before anything overflows. A seven-day window reaches that at ~9.4 runs a day sustained
+for a week. At fifteen bars the bars are 15–20px wide at every breakpoint and the page overflows
+by 0px at 1440, 1024, 768, 420 and 320. `max-width: 20px` stays exactly as ADR-089 left it —
+that cap is for the *short* series, and it is still the only reason one observation does not
+render as the picture of maximum momentum.
+
+### Why the gates all passed, again
+
+`FIXTURE_BEHAVIOR_SNAPSHOTS = 7`, one snapshot per calendar day, in both the Python fixture and
+the frontend one. Twelve is a generous cap for a week of daily snapshots and a miserly one for a
+week of runs, so **no fixture in the repository could reach the cap**, and `momentum.test.tsx`'s
+"draws one bar per retained snapshot and no more" ran only against the two-point `young` case.
+Eleventh instance of the species `SESSION_STATE.md` records: a fixture carrying a feature's shape
+and not its state.
+
+The fix is therefore in the fixture first and the component second. Both fixtures now build from
+`daily-refresh`'s own run history for the week ending 2026-09-19, rounded to the hour:
+
+```
+167, 151, 127, 100, 99, 97, 95, 89, 79, 73, 55, 31, 26, 7, 0   (hours before the anchor)
+```
+
+Fifteen snapshots across **eight** calendar dates, five of them in one afternoon. Three things
+that had never been true of a fixture in this repository are now true of this one:
+
+- `observations` (15) differs from `observation_days` (8), so any consumer that reads one as the
+  other is wrong on the goldens rather than only in production;
+- the two-point case spans **seven hours** rather than a day, which is what two runs on one
+  afternoon look like and the only case that drives `spanLabel`'s hours branch through a rendered
+  card;
+- the counts walk per *day elapsed* rather than per sample, so the fitted slope is not a function
+  of how often we happened to capture. Five samples in an afternoon now read as an afternoon's
+  drift — visible in the goldens as `548, 550, 553, 557`, four near-equal bars in the middle of a
+  rising window.
+
+### Evidence
+
+Reproduced before fixing: the fixture change alone, against the unmodified component, produces
+`momentum strip drew 12 bar(s), artifact publishes 15 observation(s)` — production's message on
+a local build. After the fix, `verify:board` reports zero failures.
+
+Negative control on the new unit test: restoring `slice(-12)` fails
+`a window as long as the week actually was > draws one bar per published point on every card`
+with `expected …(12) to have a length of 15 but got 12`. The two fixture-state assertions beside
+it still pass under that control, which is the separation they are for — one test owns the
+rendering, the others own the fixture being capable of catching it. That second guard is the
+lesson ADR-089 wrote down and is applied here: a test that draws every point proves nothing if
+the fixture never has more points than a cap would allow.
+
+Captured: `docs/visual-qa/2026-09-19-momentum-window/` — all 73 screens inspected, the nine
+Pick of the Week ones committed, and the strips read at 3× rather than at page scale, because a
+count is exactly the thing a page-scale screenshot cannot settle. One note for a future reviewer that is **not** a defect: a fifteen-bar window
+reads flatter than a seven-bar one at the same slope, because the bar scale is zero-based
+(ADR-086) and more samples over the same span make a smoother picture. Bijan Robinson's window
+runs 437→715 adds, which is `69%`→`100%` of peak and about 11px of rise across 34px of strip. The
+alternative — scaling to the series' own min — would make every small move look dramatic, so the
+zero base stays.
+
+### What this does not change
+
+`behavior_trend_v1` is untouched: same window, same `min_observations: 2`, same sign convention,
+same fields. This is a rendering fix and a fixture correction, so no sealed season is spent
+(ADR-078) and no model artifact moves. `_IN_SEASON_ARTIFACTS` and ADR-089's bundle fix are
+unaffected. The only published bytes that change are the committed goldens, whose behaviour
+series now carries the cadence production has.
