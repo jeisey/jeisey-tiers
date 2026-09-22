@@ -163,11 +163,14 @@ function PickEvidence({
   scoring,
   matchup,
   usagePublished,
+  matchupsPublished,
 }: {
   readonly pick: PotwPick;
   readonly scoring: ScoringPreset;
   readonly matchup: TeamMatchupRecord | null;
   readonly usagePublished: boolean;
+  /** Whether this build published `team_matchups.json` at all. A different fact from the above. */
+  readonly matchupsPublished: boolean;
 }): React.JSX.Element {
   const { usage } = pick;
   const metrics = ROLE_METRICS_BY_POSITION[pick.position].slice(0, 2);
@@ -266,7 +269,11 @@ function PickEvidence({
       <section className="potw-evidence-block" data-evidence="matchup" aria-label="Next game">
         <span className="potw-evidence-kind">Next game · context</span>
         {matchup === null ? (
-          <p className="potw-evidence-row">{`No next game is published for ${record.team ?? "his team"}.`}</p>
+          <p className="potw-evidence-row">
+            {matchupsPublished
+              ? `No next game is published for ${record.team ?? "his team"}.`
+              : "This build published no schedule context."}
+          </p>
         ) : (
           <MatchupPanel record={matchup} team={matchup.team} statement={null} compact />
         )}
@@ -294,6 +301,7 @@ function PickCard({
   scoring,
   matchup,
   usagePublished,
+  matchupsPublished,
 }: {
   readonly pick: PotwPick;
   readonly movesAxis: number;
@@ -309,6 +317,7 @@ function PickCard({
   /** His team's next game, or null. Context only (ADR-091). */
   readonly matchup: TeamMatchupRecord | null;
   readonly usagePublished: boolean;
+  readonly matchupsPublished: boolean;
 }): React.JSX.Element {
   const record = pick.opportunity;
   const window =
@@ -427,6 +436,7 @@ function PickCard({
           scoring={scoring}
           matchup={matchup}
           usagePublished={usagePublished}
+          matchupsPublished={matchupsPublished}
         />
 
         <div className="potw-moves">
@@ -637,6 +647,7 @@ export function PotwView({
               scoring={SCORING_TO_PRESET[state.scoring]}
               matchup={bundle.matchupFor(pick.usage?.team ?? pick.opportunity.team)}
               usagePublished={bundle.hasUsage}
+              matchupsPublished={bundle.hasMatchups}
             />
           ))}
         </div>

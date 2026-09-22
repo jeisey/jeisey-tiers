@@ -5030,7 +5030,8 @@ dl.facts dd {
 .potw-card-portrait { grid-area: portrait; }
 .potw-tiles[data-row="primary"] { grid-area: tiles; }
 .potw-why { grid-area: why; }
-.potw-tiles[data-row="secondary"] { grid-area: more; }
+/* The evidence row (ADR-091) spans the card, under the portrait and the "why". */
+.potw-evidence { grid-area: more; }
 .potw-moves { grid-area: moves; }
 
 /*
@@ -5093,10 +5094,6 @@ dl.facts dd {
 
 .readout-grid.potw-tiles[data-row="primary"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.readout-grid.potw-tiles[data-row="secondary"] {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .potw-tile .readout-value {
@@ -5361,10 +5358,6 @@ dl.facts dd {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .readout-grid.potw-tiles[data-row="secondary"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   /*
    * The chip row keeps its label and its meta line and drops its buttons.
    *
@@ -5432,10 +5425,6 @@ dl.facts dd {
     width: 76px;
     min-height: 0;
     aspect-ratio: 5 / 6;
-  }
-
-  .readout-grid.potw-tiles[data-row="secondary"] {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   /*
@@ -5609,6 +5598,22 @@ dl.facts dd {
 
 .signal-absent {
   margin-bottom: var(--space-2);
+}
+
+/*
+ * Add momentum on the player card. The strip's bar colour is read from `--potw-rgb`, which
+ * Pick of the Week sets per position on its card; the dialog has no such ancestor, so without
+ * a scope of its own every bar but the tinted latest one painted transparent — caught by the
+ * first capture, not by a test.
+ */
+.detail-section .momentum {
+  --potw-rgb: 46 204 255;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--tile);
 }
 
 /* -- the next game ---------------------------------------------------------------------- */

@@ -95,6 +95,7 @@ import {
   longAbsenceLabel,
   projectedRemainingRate,
   rankChangeLabel,
+  POSITION_NOUN,
   scoredRate,
   type BehaviorMomentum,
   type RosCohortContext,
@@ -511,7 +512,13 @@ function InSeasonUsage({
   cohort,
   signal,
 }: {
-  readonly ros: RosTierRecord;
+  /**
+   * Null for a player the Opportunity Board surfaced from beyond the rest-of-season board's
+   * published depth — a waiver candidate by construction, with no projection published. His
+   * observed role, next game and roster moves still have a home; only the pace and the
+   * production tiles, which are rest-of-season fields, are withheld (ADR-091).
+   */
+  readonly ros: RosTierRecord | null;
   readonly opportunity: OpportunityRecord | null;
   readonly behavior: RosBehaviorMetadata | null;
   readonly cohort: RosCohortContext | null;
@@ -539,11 +546,16 @@ function InSeasonUsage({
   const addsWidth = Math.min(50, ((adds ?? 0) / bound) * 50);
   const dropsWidth = Math.min(50, ((drops ?? 0) / bound) * 50);
 
-  const perGame = scoredRate(ros);
-  const projected = projectedRemainingRate(ros);
-  const passer = ros.position === "QB";
+  const perGame = ros === null ? null : scoredRate(ros);
+  const projected = ros === null ? null : projectedRemainingRate(ros);
+  // Identity for the panel: the rest-of-season row when there is one, else the Opportunity
+  // Board row the card was opened from. The caller guarantees one of the two.
+  const position = ros?.position ?? opportunity?.position ?? "WR";
+  const scoring = ros?.scoring_preset ?? opportunity?.scoring_preset ?? "PPR";
+  const throughWeek = ros?.through_week ?? opportunity?.through_week ?? 0;
+  const passer = position === "QB";
   const { usage, usageCohort } = signal;
-  const touchdownShare = usage?.touchdown_points_share[ros.scoring_preset] ?? null;
+  const touchdownShare = usage?.touchdown_points_share[scoring] ?? null;
 
   /*
     Position decides which readings sit here (ADR-091). A quarterback's snap share is ~100%
@@ -590,7 +602,7 @@ function InSeasonUsage({
       qualifier: "highest",
     },
   ];
-  const readings = usage === null ? [] : roleReadingsFor(usage, ros.position);
+  const readings = usage === null ? [] : roleReadingsFor(usage, position);
 
   return (
     <>
@@ -646,8 +658,8 @@ function InSeasonUsage({
         <>
           <UsageRails
             readings={readings}
-            production={productionBars(usage, ros.scoring_preset)}
-            productionLabel={`Fantasy points (${ros.scoring_preset})`}
+            production={productionBars(usage, scoring)}
+            productionLabel={`Fantasy points (${scoring})`}
             weeks={usage.weeks.map((week) => week.week)}
           />
           <p className="cohort-note">
@@ -660,44 +672,56 @@ function InSeasonUsage({
 
       <div className="detail-subhead">
         <span>Production so far</span>
-        <span className="detail-subhead-note">{`weeks 1–${String(ros.through_week)}`}</span>
+        <span className="detail-subhead-note">{`weeks 1–${String(throughWeek)}`}</span>
       </div>
 
-      {/*
-        Pace: what he has scored per appearance, against what the model projects per remaining
-        appearance. The card's answer to the question a hot start actually raises — one the
-        artifact can answer in its own units, because `ros_label_v1` is built on points per
-        appearance and `points_per_game_to_date` is the same quantity before the cutoff.
-      */}
-      <PaceRail
-        scored={perGame}
-        projected={projected}
-        appearances={ros.games_played_to_date}
-        position={ros.position}
-      />
+      {ros === null ? (
+        <p className="cohort-note signal-absent">
+          Surfaced from beyond the rest-of-season board&rsquo;s published depth, so no
+          projection or pace is published for him; the role above and the readings below are
+          observed.
+        </p>
+      ) : (
+        /*
+          Pace: what he has scored per appearance, against what the model projects per remaining
+          appearance. The card's answer to the question a hot start actually raises — one the
+          artifact can answer in its own units, because `ros_label_v1` is built on points per
+          appearance and `points_per_game_to_date` is the same quantity before the cutoff.
+        */
+        <PaceRail
+          scored={perGame}
+          projected={projected}
+          appearances={ros.games_played_to_date}
+          position={ros.position}
+        />
+      )}
 
       <div className="readout-grid">
-        <Readout
-          label="Games played"
-          value={ros.has_played_this_season ? formatValue(ros.games_played_to_date) : "None"}
-          strong
-        />
-        <Readout label="Fantasy points" value={formatValue(ros.points_to_date)} hint="to date" />
-        <Readout
-          label="Points per game"
-          value={perGame === null ? EM_DASH : formatValue(perGame)}
-          hint={perGame === null ? "no appearances" : "per appearance"}
-        />
-        <Readout
-          label="Weeks since last game"
-          value={
-            !ros.has_played_this_season
-              ? "No appearances"
-              : Math.round(ros.weeks_since_last_game) === 0
-                ? "Played latest"
-                : String(Math.round(ros.weeks_since_last_game))
-          }
-        />
+        {ros !== null && (
+          <>
+            <Readout
+              label="Games played"
+              value={ros.has_played_this_season ? formatValue(ros.games_played_to_date) : "None"}
+              strong
+            />
+            <Readout label="Fantasy points" value={formatValue(ros.points_to_date)} hint="to date" />
+            <Readout
+              label="Points per game"
+              value={perGame === null ? EM_DASH : formatValue(perGame)}
+              hint={perGame === null ? "no appearances" : "per appearance"}
+            />
+            <Readout
+              label="Weeks since last game"
+              value={
+                !ros.has_played_this_season
+                  ? "No appearances"
+                  : Math.round(ros.weeks_since_last_game) === 0
+                    ? "Played latest"
+                    : String(Math.round(ros.weeks_since_last_game))
+              }
+            />
+          </>
+        )}
         {/*
           The tile grid is the record and the meters below are the reading, which is why these
           two published shares keep a tile of their own. A cohort reading needs a cohort, and a
@@ -751,13 +775,11 @@ function InSeasonUsage({
           touchdown, and neither is legible as a bare percentage. */}
       <CohortStrip
         title={
-          cohort === null
-            ? "Production against this board"
-            : `Production against the ${cohort.noun} on this board`
+          `Production against the ${cohort?.noun ?? POSITION_NOUN[position]} on this board`
         }
-        noun={cohort?.noun ?? "players"}
+        noun={cohort?.noun ?? POSITION_NOUN[position]}
         rows={usageRows}
-        position={ros.position}
+        position={position}
       />
 
       {/*
@@ -945,7 +967,10 @@ export function PlayerDetail({
   // The in-season card, and only when there is in-season data to put in it. An in-season view
   // with no rest-of-season row cannot happen — the view is not offered without a bundle — but
   // the row is what the panel is made of, so it is what the branch tests.
-  const inSeasonCard = data.inSeason === true && ros != null;
+  // An Opportunity Board row alone is enough: a player surfaced from beyond the rest-of-season
+  // depth has no ROS row by contract, and a draft-market card in November was the wrong
+  // answer for exactly the waiver candidates the board surfaces (ADR-091).
+  const inSeasonCard = data.inSeason === true && (ros != null || opportunity != null);
   // Where this player sits among his own position on this board. Null before kickoff, and on
   // any board whose cohort is too small to be one; every consumer treats that as an absence.
   const cohort = data.rosCohort ?? null;
@@ -968,9 +993,19 @@ export function PlayerDetail({
       trend: record.market_trend,
     }),
   );
-  const name = tier?.display_name ?? arbitrage?.display_name ?? status?.display_name ?? "Player";
-  const position = tier?.position ?? arbitrage?.position ?? status?.position ?? null;
-  const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? null;
+  // The in-season records are identity sources too. A waiver breakout the draft board never
+  // held has no tier, market or status row — he is the player Pick of the Week exists to find
+  // — and his card used to be headed "Player" with no team (ADR-091, caught by a capture).
+  const name =
+    tier?.display_name ??
+    arbitrage?.display_name ??
+    status?.display_name ??
+    ros?.display_name ??
+    opportunity?.display_name ??
+    "Player";
+  const position =
+    tier?.position ?? arbitrage?.position ?? status?.position ?? ros?.position ?? null;
+  const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? ros?.team ?? null;
   const gap = selected === null ? null : describeGap(selected.rank_gap);
   // Null under `cross` by construction, and null when the selected market genuinely has no
   // slope yet. Both read as "collecting"; neither borrows another market's number.
@@ -1206,7 +1241,7 @@ export function PlayerDetail({
         </DetailSection>
       );
     }
-    if (kind === "usage" && ros != null) {
+    if (kind === "usage" && (ros != null || opportunity != null)) {
       return (
         <DetailSection
           key={kind}
@@ -1228,7 +1263,7 @@ export function PlayerDetail({
           tabbed={sheet}
         >
           <InSeasonUsage
-            ros={ros}
+            ros={ros ?? null}
             opportunity={opportunity ?? null}
             behavior={data.behavior ?? null}
             cohort={cohort}

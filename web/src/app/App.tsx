@@ -292,7 +292,7 @@ function Board({
           ? null
           : buildUsageCohort(inSeason.usageRecords, usage, scoring),
       usagePublished: inSeason?.hasUsage ?? false,
-      matchup: inSeason?.matchupFor(usage?.team ?? ros?.team) ?? null,
+      matchup: inSeason?.matchupFor(usage?.team ?? ros?.team ?? opportunity?.team) ?? null,
       matchupsPublished: inSeason?.hasMatchups ?? false,
       signals: inSeason?.metadata.signals ?? null,
       momentum: inSeason === null ? null : behaviorMomentum(inSeason, selectedPlayerId),

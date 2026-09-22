@@ -110,6 +110,15 @@ export async function prepare(): Promise<void> {
       ...fixtures.inSeasonFixtureFiles(false),
     },
     /*
+     * In season, with the signal layer withheld (ADR-091). The ROS build publishes neither
+     * signal artifact when either builder fails, and every board, card and pick must still
+     * render — each missing block saying which artifact is absent rather than drawing zeros.
+     */
+    "in-season-no-signals": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(true, { signals: "absent" }),
+    },
+    /*
      * The *other* market condition, as its own site.
      *
      * `MARKET_CONDITIONS` exists because Phase 8 found every market-sensitive test written

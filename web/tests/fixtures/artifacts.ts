@@ -834,7 +834,26 @@ export function rosTierRecords(): RosTierRecord[] {
   });
 }
 
+/**
+ * The three-week shares the Opportunity Board publishes, read off the same weekly rows the
+ * usage fixture draws — so a card's "last 3 games" tile and its role rails describe one
+ * player. Mean of the played weeks' values in weeks 6–8, as `ros_core_v1` defines them.
+ */
+function lastThree(playerId: string): { snap: number | null; target: number | null } {
+  const record = usageRecords().find((row) => row.player_id === playerId);
+  const recent = (record?.weeks ?? []).filter((week) => week.status === "played" && week.week >= 6);
+  const mean = (values: readonly (number | null)[]): number | null => {
+    const present = values.filter((value): value is number => value !== null);
+    return present.length === 0 ? null : round(present.reduce((a, b) => a + b, 0) / present.length);
+  };
+  return {
+    snap: mean(recent.map((week) => week.snap_share)),
+    target: mean(recent.map((week) => week.target_share)),
+  };
+}
+
 export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[] {
+  const shares = new Map(SEEDS.map((seed) => [seed.id, lastThree(seed.id)]));
   const base: OpportunityRecord[] = rosTierRecords().map((record, index) => {
     // Decayed by the player's rank **within his block**, not by his index across every block.
     // Indexing globally put every count at zero from the third block onwards, so the preset a
@@ -881,8 +900,10 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
       // every reading over it comes out "1st of N" and nothing that orders a population is
       // exercised at all. Every sixth row publishes neither, because the feed not reporting a
       // share and the feed reporting zero are different facts and the card draws them apart.
-      snap_share_last3: index % 6 === 5 ? null : round(0.92 - (index % 5) * 0.14),
-      target_share_last3: index % 6 === 5 ? null : round(0.28 - (index % 4) * 0.06),
+      // Read off the usage fixture's own weeks (ADR-091), so the tile and the rails beside it
+      // describe one player; a player absent through weeks 6–8 has no three-week share at all.
+      snap_share_last3: index % 6 === 5 ? null : (shares.get(record.player_id)?.snap ?? null),
+      target_share_last3: index % 6 === 5 ? null : (shares.get(record.player_id)?.target ?? null),
       current_status: record.current_status,
       outside_tier_board: false,
       surface_reasons: ["intrinsic_top_tier_depth"],
@@ -899,9 +920,18 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
     if (!blocks.has(key)) blocks.set(key, record);
   }
   for (const anchor of blocks.values()) {
+    // His own weeks, not the anchor's: spreading the anchor carried a starter's three-week
+    // shares onto a player with one appearance, and the card drew a 55% tile beside a
+    // single 45% rail.
+    const surfacedId = `${anchor.player_id}-surfaced`;
+    const own = lastThree(surfacedId);
+    const appearances =
+      usageRecords()
+        .find((row) => row.player_id === surfacedId)
+        ?.weeks.filter((week) => week.status === "played").length ?? 0;
     base.push({
       ...anchor,
-      player_id: `${anchor.player_id}-surfaced`,
+      player_id: surfacedId,
       display_name: `${anchor.display_name} (surfaced)`,
       ros_fair_rank: 900,
       ros_position_rank: 90,
@@ -918,6 +948,9 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
       drop_rank: behaviorAvailable ? 90 : null,
       long_absence: false,
       weeks_since_last_game: 0,
+      games_played_to_date: appearances,
+      snap_share_last3: own.snap,
+      target_share_last3: own.target,
       outside_tier_board: true,
       surface_reasons: ["sleeper_trending_add"],
       quality_flags: [],

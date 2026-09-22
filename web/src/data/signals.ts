@@ -130,11 +130,22 @@ export interface RoleReading {
   readonly direction: ChangeDirection | null;
 }
 
-function directionOf(change: number | null | undefined): ChangeDirection | null {
+/**
+ * The direction as the reader will see it: from the change *at the precision it is printed*,
+ * so a glyph can never point down beside text that says "no change". A snap share that moved
+ * by 0.3 points is printed as "no change" and marked flat.
+ */
+function directionOf(
+  spec: RoleMetricSpec,
+  change: number | null | undefined,
+): ChangeDirection | null {
   if (change === null || change === undefined || !Number.isFinite(change)) return null;
-  if (change > 0) return "up";
-  if (change < 0) return "down";
-  return "flat";
+  if (printedMagnitude(spec, change) === 0) return "flat";
+  return change > 0 ? "up" : "down";
+}
+
+function printedMagnitude(spec: RoleMetricSpec, change: number): number {
+  return spec.unit === "share" ? Math.round(Math.abs(change) * 100) : Math.round(Math.abs(change));
 }
 
 /** One metric's week-by-week bars and its published change. */
@@ -153,7 +164,7 @@ export function roleReading(record: PlayerUsageRecord, metric: RoleMetric): Role
     change,
     bars,
     axisMax: spec.unit === "share" ? 1 : Math.max(1, peak),
-    direction: directionOf(change?.change),
+    direction: directionOf(spec, change?.change),
   };
 }
 
@@ -201,7 +212,7 @@ export function formatMetric(spec: RoleMetricSpec, value: number | null | undefi
  */
 export function formatChange(spec: RoleMetricSpec, change: number | null | undefined): string {
   if (change === null || change === undefined || !Number.isFinite(change)) return EM_DASH;
-  const magnitude = spec.unit === "share" ? Math.round(Math.abs(change) * 100) : Math.round(Math.abs(change));
+  const magnitude = printedMagnitude(spec, change);
   if (magnitude === 0) return "no change";
   const sign = change > 0 ? "+" : "−";
   return spec.unit === "share" ? `${sign}${String(magnitude)} pts` : `${sign}${String(magnitude)}`;
@@ -214,7 +225,7 @@ export const DIRECTION_GLYPH: Readonly<Record<ChangeDirection, string>> = {
 };
 
 /**
- * The window a change was measured over, in words: `week 8 vs weeks 1–7 (7 games)`.
+ * The window a change was measured over, in words: `week 8 vs 7 earlier games`.
  *
  * Never absent when a change is printed, for the reason `span_days` travels with every
  * momentum reading (ADR-089): a change against one earlier game and a change against seven

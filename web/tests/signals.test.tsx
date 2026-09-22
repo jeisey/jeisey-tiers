@@ -137,6 +137,18 @@ describe("which readings a position leads with", () => {
     expect(reading.axisMax).toBe(1);
   });
 
+  it("never draws a direction the printed change does not have", () => {
+    for (const record of usageRecords()) {
+      for (const metric of ROLE_METRICS_BY_POSITION[record.position]) {
+        const reading = roleReading(record, metric);
+        const text = formatChange(reading.spec, reading.change?.change);
+        if (text === "no change") expect(reading.direction).toBe("flat");
+        if (text.startsWith("+")) expect(reading.direction).toBe("up");
+        if (text.startsWith("\u2212")) expect(reading.direction).toBe("down");
+      }
+    }
+  });
+
   it("states a share's change in percentage points and a count's in its own unit", () => {
     expect(formatChange(ROLE_METRIC_SPECS.snap_share, 0.184)).toBe("+18 pts");
     expect(formatChange(ROLE_METRIC_SPECS.snap_share, -0.25)).toBe("−25 pts");
@@ -246,6 +258,34 @@ describe("the in-season card's role block", () => {
   });
 });
 
+describe("a card for a player the draft board never held", () => {
+  it("is headed by his in-season name, position and team rather than 'Player'", async () => {
+    go("?view=opportunity&scoring=ppr&teams=12");
+    render(<App />);
+    const surfaced = required(
+      opportunityRecords().find(
+        (row) =>
+          row.outside_tier_board && row.league_preset_id === "redraft-12" && row.scoring_preset === "PPR",
+      ),
+      "a surfaced row",
+    );
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: surfaced.display_name }).length).toBeGreaterThan(0);
+    });
+    await userEvent.setup().click(
+      required(screen.getAllByRole("button", { name: surfaced.display_name })[0], "the surfaced row"),
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: surfaced.display_name })).toBeDefined();
+    });
+    // And the in-season panel, not the draft market: his role is what he was surfaced for.
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByText("Draft market")).toBeNull();
+    expect(dialog.querySelector(".usage-rails")).not.toBeNull();
+    expect(within(dialog).getByText(/no\s+projection or pace is published for him/)).toBeDefined();
+  });
+});
+
 describe("the in-season card's next-game block", () => {
   it("prints the artifact's implied points and spread with the context statement", async () => {
     const dialog = await openCard(RISING_RB);
@@ -275,12 +315,34 @@ describe("the in-season card's next-game block", () => {
 
 describe("Pick of the Week's evidence", () => {
   it("selects exactly the same picks with and without the signal layer", () => {
-    for (const scoring of ["PPR", "HALF", "STD"] as const) {
-      const withSignals = buildPotwBoard(bundle(true), "redraft-12", scoring);
-      const without = buildPotwBoard(bundle(false), "redraft-12", scoring);
-      const ids = (board: typeof withSignals) =>
-        board.sets.map((set) => set.picks.map((pick) => pick.opportunity.player_id));
-      expect(ids(withSignals)).toEqual(ids(without));
+    const leagues = [...new Set(opportunityRecords().map((r) => r.league_preset_id))];
+    expect(leagues.length).toBeGreaterThan(1);
+    for (const league of leagues) {
+      for (const scoring of ["PPR", "HALF", "STD"] as const) {
+        const withSignals = buildPotwBoard(bundle(true), league, scoring);
+        const without = buildPotwBoard(bundle(false), league, scoring);
+        const ids = (board: typeof withSignals) =>
+          board.sets.map((set) => set.picks.map((pick) => pick.opportunity.player_id));
+        expect(ids(withSignals).flat().length).toBeGreaterThan(0);
+        expect(ids(withSignals)).toEqual(ids(without));
+      }
+    }
+  });
+
+  it("says which artifact is missing when the build published neither", async () => {
+    vi.unstubAllGlobals();
+    serve({ signals: "absent" });
+    go("?view=potw&scoring=ppr&teams=12");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
+    });
+    for (const card of screen.getAllByRole("article")) {
+      const role = required(card.querySelector<HTMLElement>('[data-evidence="role"]'), "role block");
+      const next = required(card.querySelector<HTMLElement>('[data-evidence="matchup"]'), "next game");
+      expect(within(role).getByText("This build published no role series.")).toBeDefined();
+      // Not "no next game for his team", which would claim a schedule was read and was empty.
+      expect(within(next).getByText("This build published no schedule context.")).toBeDefined();
     }
   });
 

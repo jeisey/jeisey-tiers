@@ -550,7 +550,7 @@ export interface RosCohortContext {
  * project builds, so they are named rather than defaulted — a cohort heading is text a reader
  * reads, and "the 96 Ks on this board" should be wrong loudly rather than quietly.
  */
-const POSITION_NOUN: Readonly<Record<Position, string>> = {
+export const POSITION_NOUN: Readonly<Record<Position, string>> = {
   QB: "QBs",
   RB: "RBs",
   WR: "WRs",
