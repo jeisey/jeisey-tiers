@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/team_matchup.schema.json",
+  "title": "TeamMatchup",
+  "description": "One team's next unplayed regular-season game inside the fantasy horizon, under `next_game_v1` (ADR-091), from nflverse's schedule. PUBLISHED CONTEXT ONLY. The sportsbook fields (`total_line`, `team_expected_margin`, the implied points) are a market quantity AGENTS.md section 8 forbids as an intrinsic feature: they are printed beside a player and computed into nothing — no model reads them, no rank, tier or Pick of the Week selection moves with them, and the forbidden-feature guard fails any feature named for them. The upstream sportsbook is not documented by nflverse; no odds prices are published, only the consensus spread and total.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "team", "matchup_rule_version",
+    "game_id", "week", "kickoff_utc", "opponent", "home_away", "neutral_site",
+    "team_rest_days", "opponent_rest_days", "roof", "total_line", "team_expected_margin",
+    "implied_team_points", "implied_opponent_points", "upcoming_bye_weeks",
+    "lines_source_id", "lines_retrieved_at_utc"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 1999},
+    "through_week": {"type": "integer", "minimum": 1, "maximum": 22},
+    "team": {"type": "string", "minLength": 2},
+    "matchup_rule_version": {"const": "next_game_v1"},
+    "game_id": {"type": "string", "minLength": 1},
+    "week": {"type": "integer", "minimum": 1, "maximum": 22},
+    "kickoff_utc": {"type": "string", "format": "date-time", "description": "Scheduled kickoff; always after the build's own timestamp, which is what makes it the NEXT game."},
+    "opponent": {"type": "string", "minLength": 2},
+    "home_away": {"enum": ["home", "away"], "description": "The designation the schedule gives. On a neutral site this is still who the league calls home, and `neutral_site` says the stadium is neither team's."},
+    "neutral_site": {"type": "boolean"},
+    "team_rest_days": {"type": ["integer", "null"], "minimum": 0},
+    "opponent_rest_days": {"type": ["integer", "null"], "minimum": 0},
+    "roof": {"type": ["string", "null"], "description": "outdoors / open / closed / dome as nflverse publishes it. No temperature or wind: none is published for an unplayed game."},
+    "total_line": {"type": ["number", "null"], "minimum": 0, "description": "Sportsbook game total. Null until posted, which is about two weeks ahead."},
+    "team_expected_margin": {"type": ["number", "null"], "description": "The spread from THIS team's side: positive means it is favoured by that many points. Re-expressed from nflverse's home-oriented `spread_line` once, at build time, so no consumer handles the upstream sign convention. Null until posted; a null is never a pick'em."},
+    "implied_team_points": {"type": ["number", "null"], "description": "(total_line + team_expected_margin) / 2 — the sportsbook's implied score for this team, not a projection of this product. Null unless both lines are posted."},
+    "implied_opponent_points": {"type": ["number", "null"], "description": "(total_line - team_expected_margin) / 2."},
+    "upcoming_bye_weeks": {"type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true, "description": "Fantasy-horizon weeks after the cutoff in which this team has no game."},
+    "lines_source_id": {"type": ["string", "null"], "description": "Where the lines were read: nflverse's schedule (`nflreadpy`). Null when no line is posted."},
+    "lines_retrieved_at_utc": {"type": ["string", "null"], "format": "date-time", "description": "When this build retrieved the schedule the lines came from. nflverse publishes no as-of time of its own for a line, so this is the retrieval time and is labelled as such."}
+  }
+}

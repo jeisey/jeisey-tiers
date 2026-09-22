@@ -41,6 +41,17 @@ FORBIDDEN_NAME_TOKENS = frozenset(
         "ktc",
         "arbitrage",
         "surplus",
+        # ADR-091: sportsbook quantities. The schedule now carries them for the in-season
+        # matchup panel, which publishes them as context beside a player. Publishing a line
+        # and training on one are different decisions, and only the first has been taken;
+        # AGENTS.md section 8 names sportsbook lines among the market proxies it forbids, so
+        # a feature carrying one fails here until an ADR says otherwise.
+        "spread",
+        "moneyline",
+        "vegas",
+        "sportsbook",
+        "odds",
+        "implied",
     },
 )
 
@@ -56,6 +67,11 @@ FORBIDDEN_NAME_SUBSTRINGS = (
     "expert_rank",
     "average_draft_position",
     "arbitrage",
+    "spread_line",
+    "total_line",
+    "expected_margin",
+    "implied_team",
+    "implied_opponent",
 )
 
 #: Sources whose data may never feed the intrinsic model, whatever the column is called.

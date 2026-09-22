@@ -71,7 +71,7 @@ def test_required_columns_exist_in_the_phase0_recorded_schema(adapter, read_sour
     available = {column["name"] for column in recorded["columns"]} or set(
         recorded.get("sample_rows", [{}])[0],
     )
-    missing = adapter.required_source_columns - available
+    missing = (adapter.required_source_columns | adapter.context_source_columns) - available
     assert not missing, (
         f"{adapter.source_id}/{adapter.resource} reads columns absent from the recorded "
         f"{adapter.recorded_schema_fixture} schema: {sorted(missing)}"
@@ -84,6 +84,22 @@ def test_every_adapter_declares_its_contract_and_licence(adapter):
     assert adapter.contract.contract_id
     assert adapter.contract.version
     assert adapter.license_policy_version, "the source metadata contract requires a policy version"
+
+
+def test_context_and_required_columns_never_overlap():
+    """A column is either a model input's source or published context, never both (ADR-091)."""
+    for adapter in ADAPTERS:
+        assert not adapter.required_source_columns & adapter.context_source_columns
+
+
+def test_missing_context_column_warns_and_never_blocks():
+    adapter = NflverseScheduleAdapter()
+    row = {name: None for name in adapter.required_source_columns}
+    checks = adapter.check_source_schema([row])
+    missing = [c for c in checks if c.check_id == "source_schema.missing_context_columns"]
+    assert missing, "a schedule without its betting lines must be reported"
+    assert not any(check.blocking for check in checks)
+    assert "spread_line" in missing[0].observed
 
 
 def test_missing_upstream_column_is_a_critical_schema_break():

@@ -67,8 +67,50 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # with no series at all — are states a fixture has to carry, because every one of
         # them renders differently and none of them is "the normal one".
         "behavior_trend_series",
+        # ADR-091. The signal layer, built from a synthetic season of weekly rows through the
+        # real builders — a rising role, a declining one, a latest game with no snap row, a
+        # snaps-only week, absences, byes, one-appearance history, posted and unposted lines.
+        "player_usage",
+        "team_matchups",
     }
     assert all(records for records in pipeline_result.records.values())
+
+
+def test_the_signal_fixture_carries_every_state_a_card_has_to_draw(pipeline_result):
+    """The states `usage_signals_v1` and `next_game_v1` render differently (ADR-091)."""
+    usage = {row["display_name"]: row for row in pipeline_result.records["player_usage"]}
+    rising = usage["Dez Okonkwo"]["role_changes"]["snap_share"]
+    assert rising["change"] > 0.25
+    assert usage["Chris Johnson"]["role_changes"]["target_share"]["change"] < -0.1
+    # A latest game with no snap row withholds the change rather than reaching back.
+    assert usage["Tobias Ferreira"]["role_changes"]["snap_share"] is None
+    # On the field and never targeted: an appearance, with a genuine zero.
+    snaps_only = usage["Bram Kowalczyk"]["weeks"][-1]
+    assert snaps_only["status"] == "played" and snaps_only["targets"] == 0.0
+    # One appearance is a reading and not a change.
+    thin = usage["Dez Okonkwo (surfaced)"]
+    assert thin["appearances"] == 1 and thin["role_changes"]["snap_share"]["change"] is None
+    statuses = {week["status"] for row in usage.values() for week in row["weeks"]}
+    assert statuses == {"played", "bye", "did_not_play"}
+    assert any(row["pass_epa_per_dropback"] is not None for row in usage.values())
+
+    matchups = {row["team"]: row for row in pipeline_result.records["team_matchups"]}
+    assert any(row["implied_team_points"] is None for row in matchups.values())
+    assert any(row["team_expected_margin"] == 0.0 for row in matchups.values())
+    assert any(row["neutral_site"] for row in matchups.values())
+    assert any(row["week"] > 9 for row in matchups.values()), "a team on bye next week"
+
+
+def test_each_player_has_one_absence_history_on_every_block(pipeline_result):
+    """Appearances are a fact about a player, not about a league preset (ADR-091).
+
+    The in-season fixture used to derive `long_absence` from each row's index, which gave ten
+    players a long absence in one league preset and not in the other.
+    """
+    seen: dict[str, set[bool]] = {}
+    for row in pipeline_result.records["ros_tiers"]:
+        seen.setdefault(row["player_id"], set()).add(row["long_absence"])
+    assert all(len(values) == 1 for values in seen.values())
 
 
 def test_the_in_season_fixture_carries_the_shapes_only_production_breaks(pipeline_result):

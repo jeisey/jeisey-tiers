@@ -184,6 +184,8 @@ class NflverseWeeklyStatsAdapter(BaseSourceAdapter):
             "fantasy_points_ppr",
         },
     )
+    #: Read only into the published in-season signals (ADR-091), never into a feature.
+    context_source_columns = frozenset({"passing_epa", "sacks_suffered"})
 
     def normalize(
         self,
@@ -243,6 +245,10 @@ class NflverseWeeklyStatsAdapter(BaseSourceAdapter):
                     "upstream_fantasy_points_ppr": _number(record.get("fantasy_points_ppr")),
                     "upstream_fumbles_lost_total": _number(record.get("fumbles_lost_total")),
                     "upstream_special_teams_tds": _zero(record.get("special_teams_tds")),
+                    # Null, never zero, when upstream has no value: an EPA of 0.0 is a
+                    # reading and an absent one is not.
+                    "passing_epa": _number(record.get("passing_epa")),
+                    "sacks_suffered": _number(record.get("sacks_suffered")),
                 },
             )
         flags.note("weekly_rows_without_key", dropped)
@@ -361,11 +367,23 @@ class NflverseSnapCountAdapter(BaseSourceAdapter):
 
 
 class NflverseScheduleAdapter(BaseSourceAdapter):
-    """``load_schedules()`` -> the game calendar the draft anchor is derived from.
+    """``load_schedules()`` -> the game calendar, plus the next game's published context.
 
-    Only the calendar columns are normalized. The loader also publishes scores, betting
-    lines and weather; none of that is preseason-known, and none of it is needed to answer
-    "when does week 1 kick off".
+    The calendar columns answer "when does week 1 kick off" and "how many games are left",
+    and they are the only columns anything feature-building reads.
+
+    **The rest is context, and the distinction is the whole design (ADR-091).** The loader
+    also publishes rest days, the roof and sportsbook lines. None of that is preseason-known,
+    and the lines are a *market* quantity AGENTS.md section 8 forbids as an intrinsic feature.
+    They are normalized because the in-season matchup panel publishes them beside a player
+    as context — "his team is implied for 27 points" — which is a different product decision
+    from making that number a model input, and one that raises no firewall question because
+    no feature exists. ``context_source_columns`` makes their absence a warning rather than a
+    build failure, and :mod:`ffdraft.quality.forbidden` refuses any feature named for them.
+
+    Scores, results and weather are still not read: the first two are outcomes, and the
+    live 2026 file carries no temperature or wind for any unplayed game (probed 2026-09-22),
+    so a forward-looking weather reading has no source.
     """
 
     source_id = NFLVERSE_SOURCE_ID
@@ -377,6 +395,9 @@ class NflverseScheduleAdapter(BaseSourceAdapter):
     min_expected_records = 1
     required_source_columns = frozenset(
         {"game_id", "season", "game_type", "week", "gameday", "gametime", "away_team", "home_team"},
+    )
+    context_source_columns = frozenset(
+        {"location", "away_rest", "home_rest", "roof", "spread_line", "total_line"},
     )
 
     def normalize(
@@ -407,6 +428,12 @@ class NflverseScheduleAdapter(BaseSourceAdapter):
                     "gametime": _text(record.get("gametime")),
                     "away_team": _text(record.get("away_team")),
                     "home_team": _text(record.get("home_team")),
+                    "location": _text(record.get("location")),
+                    "away_rest": _integer(record.get("away_rest")),
+                    "home_rest": _integer(record.get("home_rest")),
+                    "roof": _text(record.get("roof")),
+                    "spread_line": _number(record.get("spread_line")),
+                    "total_line": _number(record.get("total_line")),
                 },
             )
         return self.build_batch(

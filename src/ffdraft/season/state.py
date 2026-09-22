@@ -67,6 +67,7 @@ __all__ = [
     "WeekWindow",
     "build_season_calendar",
     "resolve_season_state",
+    "scheduled_kickoff_utc",
 ]
 
 #: Bump when the meaning of a state changes. Travels on every build's metadata, so a board
@@ -292,20 +293,11 @@ def build_season_calendar(schedule: pl.DataFrame, season: int) -> SeasonCalendar
     teams_by_week: dict[int, set[str]] = {}
     for record in rows.iter_rows(named=True):
         week = record.get("week")
-        gameday = record.get("gameday")
-        if week is None or gameday is None:
+        if week is None:
             continue
-        day = gameday if isinstance(gameday, date) else _parse_date(str(gameday))
-        if day is None:
+        moment = scheduled_kickoff_utc(record.get("gameday"), record.get("gametime"))
+        if moment is None:
             continue
-        # A missing kickoff time makes the window *earlier*, which would call a week
-        # complete too soon, so an unknown time is treated as the end of the day instead:
-        # every ambiguity here resolves towards "not yet played".
-        moment = datetime.combine(
-            day,
-            _parse_time(record.get("gametime")) or _end_of_day(),
-            tzinfo=_EASTERN,
-        ).astimezone(UTC)
         by_week.setdefault(int(week), []).append(moment)
         sides = teams_by_week.setdefault(int(week), set())
         for column in ("home_team", "away_team"):
@@ -365,6 +357,25 @@ def season_state_from_schedule(
 ) -> SeasonStateResolution:
     """Convenience: build the calendar and resolve in one call."""
     return resolve_season_state(build_season_calendar(schedule, season), as_of)
+
+
+def scheduled_kickoff_utc(gameday: object, gametime: object) -> datetime | None:
+    """A schedule row's kickoff in UTC, from nflverse's Eastern date and ``HH:MM`` time.
+
+    A missing kickoff time would make a moment *earlier* than the real one, which would call
+    a week complete too soon or a game already played, so an unknown time is treated as the
+    end of the day instead: every ambiguity here resolves towards "not yet played".
+    """
+    if gameday is None:
+        return None
+    day = gameday if isinstance(gameday, date) else _parse_date(str(gameday))
+    if day is None:
+        return None
+    return datetime.combine(
+        day,
+        _parse_time(gametime) or _end_of_day(),
+        tzinfo=_EASTERN,
+    ).astimezone(UTC)
 
 
 def _parse_date(value: str) -> date | None:

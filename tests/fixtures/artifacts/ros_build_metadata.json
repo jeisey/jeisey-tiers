@@ -58,13 +58,30 @@
     "signal_semantics": "add and drop COUNTS over the requested lookback window; never an ADP, never a rank, never differenced against one"
   },
   "surface": null,
+  "signals": {
+    "usage_rule": {
+      "version": "usage_signals_v1",
+      "change_rule_version": "role_change_v1",
+      "min_earlier_games": 1,
+      "min_touchdown_share_points": 10.0,
+      "min_epa_dropbacks": 20.0
+    },
+    "usage_records": 17,
+    "matchup_rule_version": "next_game_v1",
+    "matchup_records": 16,
+    "lines_source_id": "nflreadpy",
+    "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+    "lines_posted_teams": 13,
+    "sportsbook_context_statement": "The spread, total and implied points are sportsbook numbers read from nflverse's schedule and shown as matchup context only. No model reads them: they move no projection, VORP, rank, tier or Pick of the Week selection.",
+    "expected_points_statement": "No expected-fantasy-points reading is published. ffopportunity's expected points are licensed CC-BY-SA 4.0, and whether this site may publish a per-player figure derived from them is an open decision (ADR-086). The rest-of-season model reads them as an input; the card does not print them."
+  },
   "disclosures": {
     "uses_injury_information": false,
     "long_absence_definition": "has played at least once this season and has not appeared for 3 or more consecutive weeks ending at the cutoff",
     "long_absence_statement": "This estimate uses no injury or practice-report information of any kind. The model infers absence from appearances alone, so a player cleared to return this week and a player out for the season are identical rows that have not appeared for N weeks. \"Has not appeared for N weeks\" is what is known; it is not a status or a designation.",
     "long_absence_ordering_weakness": "Ranking quality inside this group is weak. Measured on 18,951 development rows, the rest-of-season ordering within the long-absence cohort reaches a Spearman correlation of 0.311 against 0.797 on the full universe, so the order of these players relative to each other carries little information.",
     "status_is_annotation_only": true,
-    "long_absence_players": 10,
+    "long_absence_players": 8,
     "tier_boundary_statement": "Rest-of-season tiers are bands, not lines. Membership is highly reproducible (bootstrap ARI 0.857) and tiers order realised remaining value across every adjacent pair, but the exact boundary position is not reproducible (agreement 0.167 against a 0.500 bar), so a player near an edge should be read as belonging to both neighbouring bands."
   },
   "limitations": [

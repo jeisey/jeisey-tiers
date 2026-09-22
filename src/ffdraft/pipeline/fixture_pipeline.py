@@ -94,6 +94,12 @@ from ffdraft.market.trend import (
     compute_trends,
     trend_series_records,
 )
+from ffdraft.pipeline.fixture_season import (
+    FIXTURE_INSEASON_AS_OF,
+    FixtureSeason,
+    PlayerFacts,
+    build_fixture_season,
+)
 from ffdraft.quality import QualityGate, check_source_freshness
 from ffdraft.quality.forbidden import (
     audit_intrinsic_feature_names,
@@ -103,6 +109,12 @@ from ffdraft.quality.thresholds import MARKET_SOURCE_MAX_AGE
 from ffdraft.retention import snapshot_key
 from ffdraft.scoring.horizon import fantasy_horizon
 from ffdraft.season.state import SEASON_STATE_RULE_VERSION
+from ffdraft.signals import (
+    EXPECTED_POINTS_STATEMENT,
+    MATCHUP_RULE_VERSION,
+    SPORTSBOOK_CONTEXT_STATEMENT,
+    USAGE_RULE,
+)
 from ffdraft.sources import (
     SLEEPER_SOURCE_ID,
     NflverseDepthChartAdapter,
@@ -117,6 +129,7 @@ from ffdraft.sources.market import (
     MflPlayerDirectory,
     MflPlayerDirectoryAdapter,
 )
+from ffdraft.sources.nflverse import NFLVERSE_SOURCE_ID
 from ffdraft.status.build import PlayerStatusResult, build_player_status_records
 from ffdraft.status.capture import StatusCapture
 from ffdraft.timeutil import isoformat_utc, parse_utc
@@ -470,9 +483,15 @@ def run_fixture_pipeline(
         gate=gate,
     )
 
-    ros_tiers = _ros_tier_records(tiers, build_id=build_id)
-    opportunity = _opportunity_records(ros_tiers, build_id=build_id)
+    # The in-season half reads one synthetic season of weekly rows (ADR-091): the signal
+    # layer is built from them through the real builders, and the rest-of-season fixture's
+    # to-date fields are read off the same rows, so a card's weekly bars sum to the points
+    # to date printed beside them.
+    season = _fixture_season(tiers, app)
+    ros_tiers = _ros_tier_records(tiers, build_id=build_id, facts=season.facts)
+    opportunity = _opportunity_records(ros_tiers, build_id=build_id, facts=season.facts)
     behavior_series = _behavior_series_records(opportunity, build_id=build_id)
+    usage, matchups = _signal_records(opportunity, season=season, app=app, build_id=build_id)
 
     records = {
         "projections": projections,
@@ -485,6 +504,8 @@ def run_fixture_pipeline(
         "ros_tiers": ros_tiers,
         "inseason_opportunity": opportunity,
         "behavior_trend_series": behavior_series,
+        "player_usage": usage,
+        "team_matchups": matchups,
     }
     gate.extend(_published_identity_checks(records, market_outcomes))
 
@@ -531,6 +552,8 @@ def run_fixture_pipeline(
             app,
             ros_tiers=ros_tiers,
             opportunity=opportunity,
+            usage=usage,
+            matchups=matchups,
             build_id=build_id,
             generated_at=now,
             git_sha=git_sha or _git_sha(),
@@ -750,6 +773,7 @@ def _ros_tier_records(
     tiers: Sequence[Mapping[str, Any]],
     *,
     build_id: str,
+    facts: Mapping[str, PlayerFacts],
 ) -> list[dict[str, Any]]:
     """A rest-of-season shape derived from the fixture tier rows.
 
@@ -757,18 +781,25 @@ def _ros_tier_records(
     that is left, which is arithmetic rather than a model — and that is the point: this
     exercises the contract, and `intrinsic-ros-v1` is exercised by the real build.
 
-    Every third player is given a three-week absence so the ADR-076 disclosure path is on the
-    committed fixture rather than only in a unit test.
+    The to-date fields — games, points, weeks since the last game, the long-absence flag —
+    are read off the fixture's synthetic weekly rows (:mod:`ffdraft.pipeline.fixture_season`)
+    by the definitions the real build uses. Until ADR-091 they were a function of each row's
+    *index*, which gave ten players a long absence in one league preset and not the other; a
+    player's appearances are a fact about the player, and are one fact on every block now.
     """
+    from ffdraft.pipeline.ros import LONG_ABSENCE_MIN_CONSECUTIVE_WEEKS
+
     horizon = fantasy_horizon(FIXTURE_SEASON)
     remaining_weeks = horizon.last_week - FIXTURE_THROUGH_WEEK
     share = remaining_weeks / horizon.week_count
 
     records: list[dict[str, Any]] = []
-    for index, row in enumerate(tiers):
-        absent = index % 3 == 2
-        weeks_since = 3.0 if absent else 0.0
-        played = float(FIXTURE_THROUGH_WEEK - (3 if absent else 0))
+    for row in tiers:
+        fact = facts[str(row["player_id"])]
+        weeks_since = fact.weeks_since_last_game(FIXTURE_THROUGH_WEEK)
+        absent = fact.games > 0 and weeks_since >= LONG_ABSENCE_MIN_CONSECUTIVE_WEEKS
+        played = float(fact.games)
+        points_to_date = fact.points[str(row["scoring_preset"])]
         scale = round(share, 4)
         records.append(
             {
@@ -803,15 +834,13 @@ def _ros_tier_records(
                 "preseason_fair_rank": int(row["fair_rank"]),
                 "fair_rank_change": 0,
                 "games_played_to_date": played,
-                "points_to_date": round(float(row["expected_points"]) * (1.0 - scale), 4),
+                "points_to_date": points_to_date,
                 "points_per_game_to_date": (
-                    round(float(row["expected_points"]) * (1.0 - scale) / played, 4)
-                    if played > 0
-                    else None
+                    round(points_to_date / played, 4) if played > 0 else None
                 ),
                 "weeks_since_last_game": weeks_since,
                 "consecutive_weeks_missed": weeks_since,
-                "has_played_this_season": True,
+                "has_played_this_season": played > 0,
                 "long_absence": absent,
                 "in_preseason_universe": True,
                 "current_status": None,
@@ -827,6 +856,7 @@ def _opportunity_records(
     ros_tiers: Sequence[Mapping[str, Any]],
     *,
     build_id: str,
+    facts: Mapping[str, PlayerFacts],
 ) -> list[dict[str, Any]]:
     """The opportunity rows, with every intrinsic column copied rather than recomputed.
 
@@ -873,8 +903,8 @@ def _opportunity_records(
                 "long_absence": row["long_absence"],
                 "weeks_since_last_game": row["weeks_since_last_game"],
                 "games_played_to_date": row["games_played_to_date"],
-                "snap_share_last3": 0.72,
-                "target_share_last3": 0.19,
+                "snap_share_last3": facts[str(row["player_id"])].snap_share_last3,
+                "target_share_last3": facts[str(row["player_id"])].target_share_last3,
                 "current_status": row["current_status"],
                 "outside_tier_board": False,
                 "surface_reasons": [str(SurfaceReason.INTRINSIC_TOP_TIER_DEPTH)],
@@ -888,6 +918,7 @@ def _opportunity_records(
             continue
         anchor = min(block, key=lambda r: int(r["ros_fair_rank"]))
         deepest = max(int(r["ros_fair_rank"]) for r in block)
+        surfaced = facts[f"{anchor['player_id']}-surfaced"]
         records.append(
             {
                 "schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -921,9 +952,9 @@ def _opportunity_records(
                 "drop_rank": 90,
                 "long_absence": False,
                 "weeks_since_last_game": 0.0,
-                "games_played_to_date": 2.0,
-                "snap_share_last3": 0.81,
-                "target_share_last3": 0.24,
+                "games_played_to_date": float(surfaced.games),
+                "snap_share_last3": surfaced.snap_share_last3,
+                "target_share_last3": surfaced.target_share_last3,
                 "current_status": None,
                 "outside_tier_board": True,
                 "surface_reasons": [str(SurfaceReason.SLEEPER_TRENDING_ADD)],
@@ -1064,11 +1095,100 @@ def _behavior_series_records(
     )
 
 
+def _in_season_players(tiers: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Every player the in-season fixture describes: the tier rows plus each surfaced one.
+
+    The surfaced player's id is the one `_opportunity_records` mints for its block, read
+    here from the same anchor so the two cannot disagree.
+    """
+    players: dict[str, dict[str, Any]] = {}
+    for row in tiers:
+        players.setdefault(
+            str(row["player_id"]),
+            {
+                "player_id": str(row["player_id"]),
+                "display_name": row["display_name"],
+                "position": row["position"],
+                "team": row["team"],
+            },
+        )
+    for preset_id in sorted({str(row["league_preset_id"]) for row in tiers}):
+        block = [row for row in tiers if str(row["league_preset_id"]) == preset_id]
+        anchor = min(block, key=lambda row: int(row["fair_rank"]))
+        surfaced = f"{anchor['player_id']}-surfaced"
+        players.setdefault(
+            surfaced,
+            {
+                "player_id": surfaced,
+                "display_name": f"{anchor['display_name']} (surfaced)",
+                "position": anchor["position"],
+                "team": anchor["team"],
+            },
+        )
+    return [players[key] for key in sorted(players)]
+
+
+def _fixture_season(tiers: Sequence[Mapping[str, Any]], app: AppConfig) -> FixtureSeason:
+    from ffdraft.scoring.engine import score_weekly_frame
+
+    return build_fixture_season(
+        _in_season_players(tiers),
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        scoring_presets=[str(preset) for preset in sorted(app.league.scoring)],
+        score=lambda frame: score_weekly_frame(frame, app.league.scoring),
+    )
+
+
+def _signal_records(
+    opportunity: Sequence[Mapping[str, Any]],
+    *,
+    season: FixtureSeason,
+    app: AppConfig,
+    build_id: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """`player_usage` and `team_matchups`, through the real builders (ADR-091)."""
+    from ffdraft.artifacts import record_schema_version
+    from ffdraft.signals import build_player_usage_records, build_team_matchup_records
+
+    players: dict[str, dict[str, Any]] = {}
+    for row in opportunity:
+        players.setdefault(
+            str(row["player_id"]),
+            {"display_name": row["display_name"], "position": row["position"]},
+        )
+    usage = build_player_usage_records(
+        players=players,
+        weekly=season.weekly,
+        snap_counts=season.snap_counts,
+        schedule=season.schedule,
+        scoring=app.league.scoring,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        build_id=build_id,
+        schema_version=record_schema_version("player_usage"),
+    )
+    as_of = parse_utc(FIXTURE_INSEASON_AS_OF)
+    matchups = build_team_matchup_records(
+        schedule=season.schedule,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        as_of=as_of,
+        build_id=build_id,
+        schema_version=record_schema_version("team_matchup"),
+        lines_source_id=NFLVERSE_SOURCE_ID,
+        lines_retrieved_at=as_of,
+    )
+    return usage, matchups
+
+
 def _ros_build_metadata(
     app: AppConfig,
     *,
     ros_tiers: Sequence[Mapping[str, Any]],
     opportunity: Sequence[Mapping[str, Any]],
+    usage: Sequence[Mapping[str, Any]],
+    matchups: Sequence[Mapping[str, Any]],
     build_id: str,
     generated_at: datetime,
     git_sha: str,
@@ -1136,6 +1256,17 @@ def _ros_build_metadata(
             ),
         },
         "surface": None,
+        "signals": {
+            "usage_rule": USAGE_RULE.to_dict(),
+            "usage_records": len(usage),
+            "matchup_rule_version": MATCHUP_RULE_VERSION,
+            "matchup_records": len(matchups),
+            "lines_source_id": NFLVERSE_SOURCE_ID,
+            "lines_retrieved_at_utc": FIXTURE_INSEASON_AS_OF,
+            "lines_posted_teams": sum(1 for row in matchups if row["total_line"] is not None),
+            "sportsbook_context_statement": SPORTSBOOK_CONTEXT_STATEMENT,
+            "expected_points_statement": EXPECTED_POINTS_STATEMENT,
+        },
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

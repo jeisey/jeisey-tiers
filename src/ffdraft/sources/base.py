@@ -129,6 +129,12 @@ class BaseSourceAdapter:
     adapter_version: str = "1.0"
     contract: FrameContract
     required_source_columns: frozenset[str] = frozenset()
+    #: Upstream columns read **only** into published in-season context (ADR-091) — a matchup
+    #: line, a per-play efficiency — and never into a feature. They are declared separately
+    #: because their absence has a different cost: a missing required column breaks a model
+    #: input and is critical, while a missing context column empties one published context
+    #: field. Checked at the same boundary, reported as a warning, never blocking.
+    context_source_columns: frozenset[str] = frozenset()
     #: Name of the Phase-0 recorded schema in ``tests/fixtures/source_schemas/`` that this
     #: adapter was written against. A test asserts the required columns are a subset of it,
     #: which keeps adapters tied to measured evidence rather than to assumption.
@@ -151,7 +157,7 @@ class BaseSourceAdapter:
                     expected=", ".join(sorted(self.required_source_columns)),
                 ),
             ]
-        return [
+        checks = [
             QualityCheck.ok(
                 "source_schema.present",
                 stage=self.source_id,
@@ -159,6 +165,23 @@ class BaseSourceAdapter:
                 observed=f"{len(present)} column(s)",
             ),
         ]
+        missing_context = sorted(self.context_source_columns - present)
+        if missing_context:
+            checks.append(
+                QualityCheck.fail(
+                    "source_schema.missing_context_columns",
+                    stage=self.source_id,
+                    message=(
+                        f"{self.resource} no longer supplies columns read only into published "
+                        "in-season context; those context fields publish as null and no model "
+                        "input is affected"
+                    ),
+                    observed=", ".join(missing_context),
+                    expected=", ".join(sorted(self.context_source_columns)),
+                    severity=Severity.WARNING,
+                ),
+            )
+        return checks
 
     def build_batch(
         self,
