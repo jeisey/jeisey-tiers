@@ -82,8 +82,23 @@ ROS_BUILD_METADATA_SCHEMA = "ros_build_metadata"
 #: build id, so draft and in-season trivially agree there. `test_two_bundle_validation.py`
 #: is the test that can, and it builds the two-bundle shape production actually has.
 _IN_SEASON_ARTIFACTS = frozenset(
-    {"ros_tiers", "inseason_opportunity", "behavior_trend_series"},
+    {
+        "ros_tiers",
+        "inseason_opportunity",
+        "behavior_trend_series",
+        # ADR-091. Both written by `run_ros_build`; added here in the same change that adds
+        # them to the pipeline, which is the lesson ADR-089's refresh paid for.
+        "player_usage",
+        "team_matchups",
+    },
 )
+
+#: Two sums of one set of weekly rows, one rounded per week and one per season. Five
+#: hundredths is far past any rounding and far short of one reception.
+_USAGE_POINTS_TOLERANCE = 0.05
+
+#: Implied points are published to two decimals from lines published to one.
+_IMPLIED_TOLERANCE = 0.011
 
 #: How far two copies of the same intrinsic number may differ before the firewall check
 #: fails. Zero, in effect: the opportunity board copies these values rather than computing
@@ -160,6 +175,7 @@ def validate_artifact_directory(directory: Path) -> QualityGate:
     gate.extend(_headshot_cross_checks(envelopes))
     gate.extend(_in_season_cross_checks(envelopes))
     gate.extend(_behavior_series_cross_checks(envelopes))
+    gate.extend(_signal_cross_checks(envelopes))
     if not envelopes:
         gate.add(
             QualityCheck.fail(
@@ -247,9 +263,268 @@ def _semantic_checks(
             return _trend_series_checks(records, stage)
         case "behavior_trend_series":
             return _behavior_series_checks(records, stage)
+        case "player_usage":
+            return _usage_checks(records, stage)
+        case "team_matchups":
+            return _matchup_checks(records, stage)
         case "player_headshots":
             return _headshot_checks(records, stage)
     return []
+
+
+def _usage_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
+    """What ``usage_signals_v1`` promises about every record, checked on the bytes (ADR-091).
+
+    The schema pins shapes; these pin the promises a card relies on when it draws a series:
+    one entry per week in order, an absence published as null rather than as zero, a change
+    that is exactly the difference of the two numbers printed beside it, and thresholds that
+    withhold a reading rather than print one from too small a sample.
+    """
+    bad_weeks: list[str] = []
+    zero_absence: list[str] = []
+    miscounted: list[str] = []
+    bad_change: list[str] = []
+    bad_totals: list[str] = []
+    thin: list[str] = []
+    for record in records:
+        key = str(record.get("player_id"))
+        weeks = list(record.get("weeks", ()))
+        through = int(record.get("through_week") or 0)
+        numbers = [int(week.get("week", 0)) for week in weeks]
+        if numbers != list(range(1, len(numbers) + 1)) or (numbers and numbers[-1] > through):
+            bad_weeks.append(f"{key}: {numbers}")
+        played = [week for week in weeks if week.get("status") == "played"]
+        if int(record.get("appearances", -1)) != len(played):
+            miscounted.append(
+                f"{key}: appearances={record.get('appearances')} played={len(played)}"
+            )
+        for week in weeks:
+            if week.get("status") == "played":
+                continue
+            carried = [
+                name
+                for name in (
+                    "snap_share",
+                    "target_share",
+                    "carry_share",
+                    "air_yards_share",
+                    "targets",
+                    "carries",
+                    "pass_attempts",
+                    "fantasy_points",
+                )
+                if week.get(name) is not None
+            ]
+            if carried:
+                zero_absence.append(f"{key}@{week.get('week')}: {', '.join(carried)}")
+        last_played = played[-1]["week"] if played else None
+        for metric, change in (record.get("role_changes") or {}).items():
+            if change is None:
+                continue
+            if change.get("latest_week") != last_played:
+                bad_change.append(f"{key}/{metric}: latest_week={change.get('latest_week')}")
+            latest, earlier, delta = (
+                change.get("latest"),
+                change.get("earlier"),
+                change.get("change"),
+            )
+            if (earlier is None) != (delta is None):
+                bad_change.append(f"{key}/{metric}: earlier={earlier} change={delta}")
+            elif earlier is not None and abs(float(latest) - float(earlier) - float(delta)) > 1e-6:
+                bad_change.append(f"{key}/{metric}: {latest} - {earlier} != {delta}")
+            if int(change.get("earlier_games", 0)) > max(0, len(played) - 1):
+                bad_change.append(f"{key}/{metric}: earlier_games exceeds earlier appearances")
+        totals = record.get("fantasy_points_to_date") or {}
+        for preset, total in totals.items():
+            summed = sum(
+                float((week.get("fantasy_points") or {}).get(preset) or 0.0) for week in played
+            )
+            if total is None or abs(summed - float(total)) > _USAGE_POINTS_TOLERANCE:
+                bad_totals.append(f"{key}/{preset}: weeks={summed:.2f} total={total}")
+            share = (record.get("touchdown_points_share") or {}).get(preset)
+            if share is not None and total is not None and float(total) < 10.0:
+                thin.append(f"{key}/{preset}: touchdown share on {total} points")
+        if (
+            record.get("pass_epa_per_dropback") is not None
+            and float(record.get("dropbacks") or 0) < 20
+        ):
+            thin.append(f"{key}: EPA per dropback on {record.get('dropbacks')} dropbacks")
+
+    checks: list[QualityCheck] = []
+    for check_id, found, message, expected in (
+        (
+            "player_usage.weeks_not_contiguous",
+            bad_weeks,
+            "a usage series must carry every week from 1 through the cutoff, in order",
+            "weeks == 1..n with n <= through_week",
+        ),
+        (
+            "player_usage.absence_published_as_a_value",
+            zero_absence,
+            "a week he did not play must carry null metrics; a zero there would read as a role",
+            "every metric null unless status is played",
+        ),
+        (
+            "player_usage.appearances_disagree",
+            miscounted,
+            "appearances must count the played weeks it summarises",
+            "appearances == weeks with status played",
+        ),
+        (
+            "player_usage.change_is_not_the_difference",
+            bad_change,
+            "role_change_v1: the change is the latest appearance minus the earlier average, "
+            "exactly as published, and only where an earlier appearance exists",
+            "change == latest - earlier; latest_week == last played week",
+        ),
+        (
+            "player_usage.points_do_not_sum",
+            bad_totals,
+            "fantasy points to date must be the sum of the weekly points the card draws",
+            "sum(weeks.fantasy_points) == fantasy_points_to_date",
+        ),
+        (
+            "player_usage.reading_below_minimum",
+            thin,
+            "a touchdown share or an EPA was published from a sample below its declared minimum",
+            "null below 10 points / 20 dropbacks",
+        ),
+    ):
+        if found:
+            checks.append(
+                QualityCheck.fail(
+                    check_id,
+                    stage=stage,
+                    message=message,
+                    observed="; ".join(found[:10]),
+                    expected=expected,
+                ),
+            )
+    if not checks and records:
+        with_change = sum(
+            1
+            for record in records
+            if any(value is not None for value in (record.get("role_changes") or {}).values())
+        )
+        checks.append(
+            QualityCheck.ok(
+                "player_usage.series_well_formed",
+                stage=stage,
+                message=(
+                    "every usage series is contiguous, publishes absences as null, and states "
+                    "changes that are exactly the difference of its own published numbers"
+                ),
+                observed=f"{len(records)} player(s), {with_change} with a role change",
+            ),
+        )
+    return checks
+
+
+def _matchup_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
+    """``next_game_v1``'s arithmetic and its one sign convention, checked on the bytes.
+
+    The implied points are two published numbers' arithmetic and must reproduce them; the
+    two sides of one game must be each other's mirror, which is the check that catches the
+    upstream spread convention being applied backwards — the one mistake in this artifact
+    that would still look plausible on every card.
+    """
+    arithmetic: list[str] = []
+    provenance: list[str] = []
+    mirrored: list[str] = []
+    self_play: list[str] = []
+    by_game: dict[str, list[Mapping[str, Any]]] = {}
+    for record in records:
+        key = str(record.get("team"))
+        if record.get("team") == record.get("opponent"):
+            self_play.append(key)
+        by_game.setdefault(str(record.get("game_id")), []).append(record)
+        total = record.get("total_line")
+        margin = record.get("team_expected_margin")
+        mine = record.get("implied_team_points")
+        theirs = record.get("implied_opponent_points")
+        if total is None or margin is None:
+            if mine is not None or theirs is not None:
+                arithmetic.append(f"{key}: implied points without both lines")
+        else:
+            if mine is None or theirs is None:
+                arithmetic.append(f"{key}: both lines posted and no implied points")
+            elif (
+                abs(float(mine) + float(theirs) - float(total)) > _IMPLIED_TOLERANCE
+                or abs(float(mine) - float(theirs) - float(margin)) > _IMPLIED_TOLERANCE
+            ):
+                arithmetic.append(f"{key}: {mine} / {theirs} from total {total} margin {margin}")
+        has_lines = total is not None or margin is not None
+        if has_lines != (record.get("lines_source_id") is not None):
+            provenance.append(f"{key}: lines={has_lines} source={record.get('lines_source_id')}")
+    for game_id, sides in by_game.items():
+        if len(sides) != 2:
+            continue
+        first, second = sides
+        if first.get("opponent") != second.get("team") or first.get("home_away") == second.get(
+            "home_away",
+        ):
+            mirrored.append(f"{game_id}: sides disagree on who plays where")
+        a, b = first.get("team_expected_margin"), second.get("team_expected_margin")
+        if a is None or b is None:
+            if (a is None) != (b is None):
+                mirrored.append(f"{game_id}: one side has a margin and the other none")
+        elif abs(float(a) + float(b)) > 1e-9:
+            mirrored.append(f"{game_id}: margins {a} and {b} are not opposite")
+        if first.get("total_line") != second.get("total_line"):
+            mirrored.append(f"{game_id}: totals differ")
+
+    checks: list[QualityCheck] = []
+    for check_id, found, message, expected in (
+        (
+            "team_matchups.implied_points_disagree",
+            arithmetic,
+            "implied points must be (total ± margin) / 2 and exist exactly when both lines do",
+            "implied_team + implied_opponent == total; difference == margin",
+        ),
+        (
+            "team_matchups.line_without_provenance",
+            provenance,
+            "a published line must name where it was read, and a missing one must not",
+            "lines_source_id set exactly when a line is posted",
+        ),
+        (
+            "team_matchups.sides_disagree",
+            mirrored,
+            "the two teams of one game must mirror each other: opposite venues and margins, "
+            "one total",
+            "opposite home_away and team_expected_margin, equal total_line",
+        ),
+        (
+            "team_matchups.team_plays_itself",
+            self_play,
+            "a team cannot be its own opponent",
+            "team != opponent",
+        ),
+    ):
+        if found:
+            checks.append(
+                QualityCheck.fail(
+                    check_id,
+                    stage=stage,
+                    message=message,
+                    observed="; ".join(found[:10]),
+                    expected=expected,
+                ),
+            )
+    if not checks and records:
+        lined = sum(1 for record in records if record.get("total_line") is not None)
+        checks.append(
+            QualityCheck.ok(
+                "team_matchups.well_formed",
+                stage=stage,
+                message=(
+                    "every next game mirrors its opponent's and every implied score reproduces "
+                    "the lines it came from; the lines are context and feed no model"
+                ),
+                observed=f"{len(records)} team(s), {lined} with posted lines",
+            ),
+        )
+    return checks
 
 
 def _headshot_checks(
@@ -1521,6 +1796,110 @@ def _behavior_series_cross_checks(
                     "published counts at the snapshot they share"
                 ),
                 observed=f"{covered}/{len(latest)} board player(s) with a retained history",
+            ),
+        )
+    return checks
+
+
+def _signal_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:
+    """The signal layer must describe the board it sits beside (ADR-091).
+
+    Three agreements, each a thing a reader would see as a contradiction on one card:
+
+    * **every usage record names a player the Opportunity Board publishes** — the same
+      subset rule the momentum series follows, for the same reason;
+    * **his weekly points sum to the board's points to date** — the card draws the weeks and
+      prints the total beside them, and two computations of one number that disagree are a
+      defect whichever one is right;
+    * **his team has a published next game** — reported as coverage rather than failed,
+      because a team whose season is over legitimately has none.
+    """
+    usage = envelopes.get("player_usage")
+    if usage is None:
+        return []
+    opportunity = envelopes.get("inseason_opportunity")
+    ros = envelopes.get("ros_tiers")
+    matchups = envelopes.get("team_matchups")
+
+    checks: list[QualityCheck] = []
+    records = list(usage.get("records", ()))
+    if opportunity is not None:
+        board = {str(record.get("player_id")) for record in opportunity.get("records", ())}
+        orphans = sorted({str(r.get("player_id")) for r in records} - board)
+        if orphans:
+            checks.append(
+                QualityCheck.fail(
+                    "cross_artifact.usage_player_not_on_board",
+                    stage="artifacts",
+                    message=(
+                        "every usage record must describe a player the Opportunity Board publishes"
+                    ),
+                    observed="; ".join(orphans[:10]),
+                    expected="usage players are a subset of opportunity players",
+                ),
+            )
+    if ros is not None:
+        points: dict[tuple[str, str], float] = {}
+        for row in ros.get("records", ()):
+            if row.get("points_to_date") is None:
+                continue
+            points.setdefault(
+                (str(row.get("player_id")), str(row.get("scoring_preset"))),
+                float(row["points_to_date"]),
+            )
+        disagreeing: list[str] = []
+        for record in records:
+            for preset, total in (record.get("fantasy_points_to_date") or {}).items():
+                published = points.get((str(record.get("player_id")), str(preset)))
+                if published is None or total is None:
+                    continue
+                if abs(published - float(total)) > _USAGE_POINTS_TOLERANCE:
+                    disagreeing.append(
+                        f"{record.get('player_id')}/{preset}: ros={published} usage={total}",
+                    )
+        if disagreeing:
+            checks.append(
+                QualityCheck.fail(
+                    "cross_artifact.usage_points_disagree_with_ros",
+                    stage="artifacts",
+                    message=(
+                        "a player's weekly points must sum to the points to date the "
+                        "rest-of-season board publishes for him"
+                    ),
+                    observed="; ".join(disagreeing[:10]),
+                    expected="identical fantasy points to date",
+                ),
+            )
+    if matchups is not None:
+        teams = {str(record.get("team")) for record in matchups.get("records", ())}
+        missing = sorted(
+            {
+                str(r.get("team"))
+                for r in records
+                if r.get("team") and str(r.get("team")) not in teams
+            },
+        )
+        checks.append(
+            QualityCheck.ok(
+                "cross_artifact.usage_matchup_coverage",
+                stage="artifacts",
+                message="usage teams with a published next game",
+                observed=(
+                    f"{len(teams)} team(s) with a next game"
+                    + (f"; none published for {', '.join(missing[:8])}" if missing else "")
+                ),
+            ),
+        )
+    if not any(check.blocking for check in checks):
+        checks.append(
+            QualityCheck.ok(
+                "cross_artifact.usage_agreement",
+                stage="artifacts",
+                message=(
+                    "every usage record names a board player and its weekly points sum to "
+                    "the rest-of-season board's points to date"
+                ),
+                observed=f"{len(records)} usage record(s)",
             ),
         )
     return checks

@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/player_usage.schema.json",
+  "title": "PlayerUsage",
+  "description": "One player's observed role and production this season, week by week, under `usage_signals_v1` (ADR-091). OBSERVED FACTS, never a model output and never a model input: every number is arithmetic over nflverse's weekly player rows and snap counts (CC-BY 4.0) through the build's cutoff week, and nothing here may move a projection, a VORP, a rank, a tier, a Pick of the Week selection or an add count. Nothing here is derived from ffopportunity, whose CC-BY-SA publication question is open (ADR-086). One record per player rather than per league preset, because a role is the same however points are scored; the three preset-dependent quantities (fantasy points, touchdown share) are keyed by preset inside the record. A missing value is null, never zero.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "player_id", "display_name",
+    "position", "team", "usage_rule_version", "appearances", "weeks", "role_changes",
+    "fantasy_points_to_date", "touchdown_points_share", "dropbacks", "pass_epa_per_dropback"
+  ],
+  "$defs": {
+    "share": {
+      "type": ["number", "null"],
+      "description": "A fraction of the team's total in the same game(s), 0-1 for snaps, targets and carries. Air yards can be negative on a screen, so an air-yards share may fall outside 0-1; it is published as measured."
+    },
+    "by_preset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["STD", "HALF", "PPR"],
+      "properties": {
+        "STD": {"type": ["number", "null"]},
+        "HALF": {"type": ["number", "null"]},
+        "PPR": {"type": ["number", "null"]}
+      }
+    },
+    "week": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "week", "status", "team", "opponent", "snap_share", "target_share", "carry_share",
+        "air_yards_share", "targets", "carries", "pass_attempts", "fantasy_points"
+      ],
+      "properties": {
+        "week": {"type": "integer", "minimum": 1, "maximum": 22},
+        "status": {
+          "enum": ["played", "bye", "did_not_play"],
+          "description": "`played`: a weekly stats row or at least one offensive snap. `bye`: his team had no game that week. `did_not_play`: his team played and he did not appear, for any reason — the product has no injury feed and says nothing about which. Every metric is null unless `played`."
+        },
+        "team": {"type": ["string", "null"]},
+        "opponent": {"type": ["string", "null"]},
+        "snap_share": {"$ref": "#/$defs/share", "description": "Share of his team's offensive snaps, from nflverse snap counts. Null when he played and no snap row bridged to him — an absence, not a zero."},
+        "target_share": {"$ref": "#/$defs/share"},
+        "carry_share": {"$ref": "#/$defs/share"},
+        "air_yards_share": {"$ref": "#/$defs/share", "description": "His receiving air yards over his team's receiving air yards in the same game, both from the weekly player rows. Not nflverse's own `air_yards_share` column, whose denominator is built differently; one provenance for both halves, as `target_share_to_date` already does."},
+        "targets": {"type": ["number", "null"], "minimum": 0},
+        "carries": {"type": ["number", "null"], "minimum": 0},
+        "pass_attempts": {"type": ["number", "null"], "minimum": 0},
+        "fantasy_points": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/by_preset"}],
+          "description": "Points scored that week under each preset, by this project's scoring engine."
+        }
+      }
+    },
+    "role_change": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["latest_week", "latest", "earlier", "earlier_games", "change"],
+          "properties": {
+            "latest_week": {"type": "integer", "minimum": 1},
+            "latest": {"type": "number", "description": "The metric in his most recent appearance."},
+            "earlier": {"type": ["number", "null"], "description": "The metric over every earlier appearance: pooled (his total over his team's) for target, carry and air-yards share; a per-game mean for snap share and raw attempts. Null below one earlier appearance with the metric defined."},
+            "earlier_games": {"type": "integer", "minimum": 0},
+            "change": {"type": ["number", "null"], "description": "`latest - earlier`, computed from the two published (rounded) numbers so a reader who subtracts them gets exactly this. Positive: a bigger role in his latest game than before it."}
+          }
+        }
+      ],
+      "description": "`role_change_v1`. Null when his latest appearance has no value for the metric: the rule never falls back to an older game."
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 1999},
+    "through_week": {"type": "integer", "minimum": 1, "maximum": 22},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
+    "team": {
+      "type": ["string", "null"],
+      "description": "The team this player's matchup is read for: his one current roster team when nflverse's roster names exactly one, else the team of his latest appearance. The key `team_matchups.json` is joined on."
+    },
+    "usage_rule_version": {"const": "usage_signals_v1"},
+    "appearances": {"type": "integer", "minimum": 0, "description": "Weeks with status `played`."},
+    "weeks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/week"},
+      "description": "Every fantasy-horizon week from 1 through `through_week`, in order, one entry each — including byes and absences, so a gap in a drawn series is a published fact rather than a missing row."
+    },
+    "role_changes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snap_share", "target_share", "carry_share", "air_yards_share", "pass_attempts", "carries"],
+      "properties": {
+        "snap_share": {"$ref": "#/$defs/role_change"},
+        "target_share": {"$ref": "#/$defs/role_change"},
+        "carry_share": {"$ref": "#/$defs/role_change"},
+        "air_yards_share": {"$ref": "#/$defs/role_change"},
+        "pass_attempts": {"$ref": "#/$defs/role_change"},
+        "carries": {"$ref": "#/$defs/role_change"}
+      }
+    },
+    "fantasy_points_to_date": {
+      "$ref": "#/$defs/by_preset",
+      "description": "The sum of `weeks[].fantasy_points`. Agrees with `ros_tiers.points_to_date` for the same player and preset; a cross-artifact check asserts it."
+    },
+    "touchdown_points_share": {
+      "$ref": "#/$defs/by_preset",
+      "description": "Points from passing, rushing and receiving touchdowns divided by fantasy points to date, per preset. A sustainability reading, not a prediction: touchdowns are the most regression-prone part of a fantasy score. Null below 10 points to date. Can exceed 1 when turnovers took points away."
+    },
+    "dropbacks": {"type": "number", "minimum": 0, "description": "Pass attempts plus sacks in the weeks nflverse published an EPA for. The denominator of the next field, published so its sample is visible."},
+    "pass_epa_per_dropback": {
+      "type": ["number", "null"],
+      "description": "nflverse passing EPA (attempts and sacks) divided by `dropbacks`. Null below 20 dropbacks. Scrambles are in neither half."
+    }
+  }
+}

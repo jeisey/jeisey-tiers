@@ -168,6 +168,39 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "identical duplicates (ADR-089)."
         ),
     ),
+    "player_usage": ArtifactSpec(
+        artifact="player_usage",
+        schema_name="player_usage",
+        json_filename="player_usage.json",
+        # No CSV, for the reason neither series has one: the record *is* a week-by-week
+        # series, and flattening it would be a different artifact from the one a reader
+        # asked to export (ADR-091).
+        csv_filename=None,
+        key_fields=("build_id", "player_id"),
+        sort_fields=("player_id",),
+        description=(
+            "Observed role and production week by week under usage_signals_v1: snap, target, "
+            "carry and air-yards share, attempts, fantasy points, the latest-game change rule "
+            "and two sustainability readings. Observed facts from nflverse, never a model "
+            "input or output (ADR-091)."
+        ),
+    ),
+    "team_matchups": ArtifactSpec(
+        artifact="team_matchups",
+        schema_name="team_matchup",
+        json_filename="team_matchups.json",
+        # No CSV. The matchup is read beside a player on a card; a downloadable table of
+        # sportsbook lines would be a redistribution step this project has no reason to
+        # take while their upstream book is undocumented (ADR-091).
+        csv_filename=None,
+        key_fields=("build_id", "team"),
+        sort_fields=("team",),
+        description=(
+            "Each team's next unplayed game under next_game_v1: opponent, venue, rest, and "
+            "the posted spread and total as published context only. Never a model input "
+            "(AGENTS.md section 8, ADR-091)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

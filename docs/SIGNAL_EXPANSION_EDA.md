@@ -1,6 +1,33 @@
 # Signal Expansion EDA — 2026-09-19
 
-**Status: exploratory, with one item since built.** The audit added no source, wrote no adapter
+> **Framing corrected by the owner, 2026-09-22 (ADR-091). Read this before anything below.**
+> This audit was written as preparation for a future sealed-season retrain, and Part 4 ordered the
+> backlog around that. That is not the objective. **The objective of signal expansion is better
+> fantasy decisions in the current season** — is this player worth a waiver claim this week, did
+> his role change before his box score did, is his scoring built on volume or on touchdowns, who
+> does he play next. The rest-of-season model is one signal among several, not the thing being
+> improved, and most of what this audit ranks can reach a reader as *published, observed context*
+> without touching either model.
+>
+> What that changed, concretely:
+>
+> - **Built (ADR-091):** `player_usage.json` (`usage_signals_v1`, `role_change_v1`) — weekly
+>   snap, target, carry and air-yards share, pass and rush attempts, fantasy points per preset,
+>   a change per role metric, points from touchdowns, and pass EPA per dropback; and
+>   `team_matchups.json` (`next_game_v1`) — each team's next game, rest, roof, and the posted
+>   spread and total as context only. A position-aware card (Part 2b fixed) and an evidence row on
+>   Pick of the Week. Pick of the Week's selection rule is unchanged.
+> - **Decided:** the Vegas question (§2a.3) for **reading 3 only** — sportsbook lines are
+>   published context and read by no model. Readings 1 and 2 remain open and are not pre-empted.
+> - **Still open:** the CC-BY-SA publication question (§2a.2) — nothing published derives from
+>   ffopportunity; ESPN QBR (#18) and FTN (#19) are out of scope; `load_pbp` (#20) not built.
+> - **Unchanged:** Part 4's table is still an accurate statement of what a *model* may consume
+>   and when. It no longer orders the product backlog.
+>
+> Items below are annotated **[built]**, **[partly built]** or **[deferred]** with the reason, in
+> place, so the measurements stay readable as they were taken.
+
+**Status (as of 2026-09-19): exploratory, with one item since built.** The audit added no source, wrote no adapter
 and touched no model. Its purpose is to hand a future build session a *measured* starting
 position instead of a search, and — where the repository's own rules say a decision is required
 before work begins — to name the decision rather than pre-empt it.
@@ -202,6 +229,14 @@ different denominator. Adopting it would be a change to a computed feature, not 
 and the existing one is better documented. **Do not swap them.** `air_yards_share` and `wopr` have
 no local equivalent and are genuine additions.
 
+> **[partly built, ADR-091]** Air-yards share is published — computed here from
+> `receiving_air_yards` over the team's, the same pooled way as target share, because nflverse's
+> `air_yards_share` was measured up to 9 points away from that on the 2026 rows (a different
+> denominator). `passing_epa` and `sacks_suffered` are read into **pass EPA per dropback**.
+> WOPR is **deferred**: a fixed-weight blend of two shares the card already shows separately.
+> RACR, PACR, CPOE, YAC, first downs and the explosive-play buckets are **deferred** — one
+> efficiency reading per position to start.
+
 ## 2a.2 `ff_opportunity` — 147 unconsumed columns, and the whole `_team` denominator block
 
 **VALIDATED** (recorded schema, 159 columns).
@@ -232,6 +267,12 @@ reason.
 **So the licence question gates publication, not use.** Using these columns as model inputs raises
 no new licence question that `ros_core_v1` has not already answered. Publishing them does. That
 distinction runs through the whole of Part 3 and is restated in Part 4.
+
+> **[deferred, ADR-091 Decision 4]** xFP share and points over expected are the readings a
+> waiver card would most like to show, and neither is published: the ADR-086 decision is still
+> open. Touchdown share (sustainability) and air-yards share (unrealised downfield opportunity)
+> were taken as the next-best signals, and the build metadata's `expected_points_statement`
+> says why the expected-points reading is absent.
 
 ## 2a.3 `load_schedules` — Vegas lines, weather and rest, in a file fetched every day
 
@@ -283,6 +324,15 @@ One practical caveat, **UNVERIFIED**: whether `spread_line`/`total_line` are pop
 matchup panel needs the former. Probe: `load_schedules()` on a runner, filter `season == 2026 &
 week > completed_week`, count non-null `total_line`.
 
+> **[answered and built, 2026-09-22, ADR-091]** Populated ahead of play: at week 2, `spread_line`
+> and `total_line` are posted for **weeks 3–4** (about two weeks out); rest and roof for every
+> future game; `temp` and `wind` are **null for every unplayed game**, so weather is not
+> published. `spread_line` is positive for a home favourite (31 of 31 lined games agree with the
+> moneyline favourite). **Reading 3 was taken**: `team_matchups.json` prints the spread, total
+> and implied points as context; no model reads them, and `ffdraft.quality.forbidden` now
+> refuses sportsbook tokens as feature names. `div_game` and the moneylines/odds are not
+> published. Details: `docs/DATA_SOURCES.md` §18.
+
 ## 2a.4 Sleeper's player map — 39 unconsumed fields
 
 **VALIDATED** (recorded schema, 53 fields, 12,225 records). Worth noting, none worth much:
@@ -303,6 +353,17 @@ week > completed_week`, count non-null `total_line`.
 # Part 2b — Position-specific metrics
 
 **Confirmed, and it is worse than "noise": the cohort reading ranks the noise.**
+
+> **[fixed, ADR-091]** Position now decides which role metrics lead, in one place
+> (`ROLE_METRICS_BY_POSITION`, `web/src/data/signals.ts`): QB pass and rush attempts; RB snap,
+> carry and target share; WR snap, target and air-yards share; TE snap and target share. A
+> quarterback's card and cohort rows are points per game, EPA per dropback and points from TDs,
+> and Pick of the Week no longer states a quarterback's snap share as a reason. The readings come
+> from `player_usage.json` (weekly rows and snap counts), not from newly published `ros_core_v1`
+> columns: the card needed a week-by-week series the feature table does not hold, and building
+> it beside the model rather than out of it keeps the model's contract untouched. The
+> Opportunity table's snap-share column is unchanged — a column is one quantity for every row,
+> and a reader filtering to quarterbacks sees the constant for what it is.
 
 ## 2b.1 What is actually shown today, per surface
 
@@ -423,7 +484,7 @@ decides whether it can serve an in-season product at all.
 
 **Two of these overturn something the repository currently records.**
 
-- `config/source-registry.yaml`'s known issue `injuries_in_season_only` says `load_injuries`
+- **[corrected 2026-09-22]** `config/source-registry.yaml`'s known issue `injuries_in_season_only` said `load_injuries`
   "refuses seasons after 2025". That was true when probed on 2026-08-31 and is **false today** —
   the 2026 asset exists and was rewritten yesterday. The `loader_error` the probe recorded was a
   preseason 404 for a file that had not been published yet, which is exactly the case ADR-083
@@ -444,11 +505,11 @@ cost (identity, licence, payload, point-in-time risk) — not raw predictive val
 | # | quantity | where it already is | cost | publish | model |
 |---:|---|---|---|---|---|
 | **1** | **Team xFP share / weighted opportunity share** | `ff_opportunity` `*_team` block, 147 unconsumed columns | one division | CC-BY-SA question (§2a.2) | no new question |
-| **2** | **Per-position role tiles** (carry share, pass attempts/G, air yards/G, catch rate, the three `_trend` columns) | `ros_core_v1`, 19 computed and unpublished | schema + contract | yes | already features |
-| **3** | **Air-yards share, WOPR, RACR, PACR, EPA, CPOE, YAC, first downs, explosive-play buckets** | `player_stats` weekly, 118 unconsumed columns | adapter column additions | yes | sealed season |
+| **2** | **Per-position role tiles** (carry share, pass attempts/G, air yards/G, catch rate, the three `_trend` columns) — **[built differently, ADR-091]**: a weekly role series and `role_change_v1` in `player_usage.json`, from the weekly rows | `ros_core_v1`, 19 computed and unpublished | schema + contract | yes | already features |
+| **3** | **Air-yards share, WOPR, RACR, PACR, EPA, CPOE, YAC, first downs, explosive-play buckets** — **[partly built]**: air-yards share, pass EPA per dropback | `player_stats` weekly, 118 unconsumed columns | adapter column additions | yes | sealed season |
 | ~~4~~ | ~~**Behaviour trend series** (Part 1)~~ — **done 2026-09-19, ADR-089** | `behavior/` store | one module, one schema, one chart | shipped | never — behaviour gates, it does not value |
-| **5** | **Weather, rest differential, divisional game** | `load_schedules`, 38 unconsumed columns | adapter column additions | yes | sealed season |
-| **6** | **Team implied total / spread** | `load_schedules` | **ADR required first** (AGENTS.md §8, §2a.3) | reading 3 only | reading 1 or 2 |
+| **5** | **Weather, rest differential, divisional game** — **[partly built]**: rest and roof; weather has no value before kickoff | `load_schedules`, 38 unconsumed columns | adapter column additions | yes | sealed season |
+| **6** | **Team implied total / spread** — **[built as reading 3, ADR-091]** | `load_schedules` | **ADR required first** (AGENTS.md §8, §2a.3) | reading 3 only | reading 1 or 2 |
 | 7 | Defensive snap share, ST snap share | `load_snap_counts`, 7 unconsumed | trivial | yes | low value here |
 | 8 | `news_updated`, `team_changed_at` | Sleeper player map | trivial | annotation only | never (ADR-043/044) |
 
@@ -527,6 +588,11 @@ download is paid once per day rather than per job.
 
 # Part 4 — The constraint that orders all of this
 
+> **[superseded as an ordering, 2026-09-22]** The table below still states correctly what a
+> *model* may consume and when. It is no longer how the backlog is ordered: the owner set the
+> objective as current-season decisions, and published context — which this Part already says
+> needs no sealed season — is where that work lives. ADR-091 is the first slice of it.
+
 **Any new *model feature* is gated on a sealed season that does not exist yet. Any new *published
 context* is not.** This is the single most important thing for a follow-up session to internalise,
 because it changes the order of the backlog completely.
@@ -582,7 +648,8 @@ a point-in-time history that a 2027 session cannot reconstruct.
 ### Decisions to take before code, not during it
 
 1. **The Vegas firewall question** (§2a.3). AGENTS.md §8 requires it in writing, before a result
-   exists. Three readings are laid out above; pick one in an ADR.
+   exists. Three readings are laid out above; pick one in an ADR. **Reading 3 taken for
+   published context (ADR-091); readings 1 and 2 remain undecided.**
 2. **The CC-BY-SA publication question** (§2a.2). Already recorded twice as backlog items 0 and 8
    and now blocking three separate items. It is one question — *does publishing a derived
    per-player figure from CC-BY-SA data bind this site's output?* — and answering it once unblocks
@@ -601,11 +668,11 @@ plan, and the phase-gate discipline in `docs/IMPLEMENTATION_PLAN.md` still appli
 
 | | work | why here | gate |
 |---|---|---|---|
-| 1 | Correct the `injuries_in_season_only` registry note; probe `load_injuries` on a runner for 2026 and for point-in-time immutability | AGENTS.md §18 drift, and it is the cheapest step toward the model's largest measured weakness | none — a probe and a doc fix |
-| 2 | Per-position card tiles from `ros_core_v1` columns already computed | fixes a live defect the owner found, no new source, no model change | schema + contract |
+| 1 | Correct the `injuries_in_season_only` registry note **[done 2026-09-22]**; probe `load_injuries` on a runner for 2026 and for point-in-time immutability **[not done]** | AGENTS.md §18 drift, and it is the cheapest step toward the model's largest measured weakness | none — a probe and a doc fix |
+| 2 | Per-position card tiles **[done, ADR-091 — from the weekly rows, not `ros_core_v1` columns]** | fixes a live defect the owner found, no new source, no model change | schema + contract |
 | ~~3~~ | ~~Behaviour trend series, slope on its own frozen rule~~ **done (ADR-089)** | nine days were already retained and unread | shipped: `behavior_trend_v1`, frozen before its evidence |
 | 4 | Decide the three rights/firewall questions in ADRs | they block six separate items and cost nothing to answer | ADR |
-| 5 | Matchup / SoS panel from schedules + `load_team_stats` | the product has no opponent artifact at all and the UX spec already records the hole | new loader + schema |
+| 5 | Matchup / SoS panel from schedules + `load_team_stats` **[next game done, ADR-091, from schedules alone; opponent strength deferred — two games is not a defensive profile]** | the product has no opponent artifact at all and the UX spec already records the hole | new loader + schema |
 | 6 | Capture paths and fail-closed checks for injuries, NGS and PFR advstats — **retained, consumed by nothing** | ADR-070's four conditions, built in the order Phase 10 used for Sleeper behaviour | registry + capture |
 | 7 | After the 2026 season completes: evaluate the accumulated features against a fresh sealed season | the only honest way any of Band 2 becomes a model input | ADR-077 / ADR-078 |
 
@@ -628,7 +695,7 @@ uv run python -c "import nflreadpy as n; print(n.load_pfr_advstats([2026], stat_
 uv run python -c "import nflreadpy as n; print(n.load_nextgen_stats([2026], stat_type='passing').columns)"
 uv run python -c "import nflreadpy as n; print(n.load_nextgen_stats([2026], stat_type='rushing').columns)"
 
-# §2a.3 — are Vegas lines populated for FUTURE games, or only back-filled?
+# §2a.3 — are Vegas lines populated for FUTURE games, or only back-filled?  [ANSWERED 2026-09-22: weeks 3–4 at week 2]
 uv run python -c "import nflreadpy as n, polars as pl; f=n.load_schedules([2026]); print(f.select(['week','total_line','spread_line']).filter(pl.col('week')>2))"
 
 # §3.3 #14 / #16 / #18 — loaders this repository has never called

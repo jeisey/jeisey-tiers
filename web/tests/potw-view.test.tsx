@@ -135,7 +135,12 @@ describe("a pick card", () => {
       expect(text, "a card must not claim a rostered share").not.toMatch(
         /rostered|% owned|owned in|percent of leagues/i,
       );
-      expect(text, "a card must not invent a matchup").not.toMatch(/matchup/i);
+      // ADR-088 refused the mock-up's matchup rating because nothing sourced it; ADR-091
+      // sources the next game as context. What stays refused is a *rating* — a grade the
+      // artifact never published.
+      expect(text, "a card must not invent a matchup rating").not.toMatch(
+        /matchup (rating|grade)|(easy|tough|favou?rable|good|bad) matchup/i,
+      );
       expect(text, "a card must not claim a multi-week trend").not.toMatch(/last 3 games/i);
     }
   });

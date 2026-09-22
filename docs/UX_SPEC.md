@@ -257,6 +257,14 @@ an arbitrage score.
 
 The draft board stays reachable all season and keeps its own card, unchanged.
 
+**Amended 2026-09-22 (ADR-091).** The in-season section now reads top to bottom in the order a
+waiver decision is made: roster moves headline → **Role, week by week** → **Production so far**
+→ the cohort strip → **Next game** → roster moves strip → momentum. Section 6A.9 specifies the
+two new blocks. The card also renders for a player the draft board never held: identity falls
+back to the in-season records, and a player surfaced from beyond the rest-of-season depth gets
+the in-season section from his Opportunity Board row, with the projection-dependent pace and
+tiles withheld and a sentence saying why — never the draft market card.
+
 ### 6A.6 A number with no scale is not a reading (ADR-086)
 
 `ROS uncertainty 82.1` is correct, published, validated — and answers nothing. Both in-season
@@ -438,6 +446,87 @@ The portrait spans the readouts and the rationale and stops there. Spanning the 
 leaves a third of it empty at a portrait's natural ratio, and filling that space crops a
 head-and-shoulders cut-out into a vertical sliver.
 
+### 6A.9 Role and the next game (ADR-091)
+
+**The question the card now answers first: did his role change before his box score did?**
+The signal layer publishes what a manager weighs on a Tuesday — the role, the production, the
+next game — as observed context beside the model, never inside it. The six concepts stay
+separate on the page and in the data: rest-of-season value (model), observed role, opportunity
+quality, efficiency, the next game (context), and roster moves (market behaviour). There is no
+combined waiver score and there must not be.
+
+#### 6A.9.1 Role rails
+
+Small multiples on one shared week axis, one rail per role metric, with the player's fantasy
+points in the reader's preset as the last rail — "has the scoring followed?". Position decides
+which metrics lead, in one place (`ROLE_METRICS_BY_POSITION`, `web/src/data/signals.ts`):
+
+| position | rails |
+|---|---|
+| QB | pass attempts, rush attempts |
+| RB | snap share, carry share, target share |
+| WR | snap share, target share, air-yards share |
+| TE | snap share, target share |
+
+A quarterback's snap share is ~100% and his target share ~0%, so ranking those constants — what
+the card did before — is noise. The artifact still carries all six metrics for every player.
+
+- **Scale.** A share keeps its absolute 0–100% scale for every player; a count (attempts,
+  points) is scaled to the player's own peak and the caption says which is which.
+- **Reading.** Beside each rail: the published latest value, a glyph and signed change
+  (`▲ +12 pts`, `▼ −4 pts`, `▬ no change`), the earlier value and the window —
+  `from 31% · week 3 vs 2 earlier games`. The glyph follows the printed rounding, so a `▼` never
+  sits beside "no change". With no earlier game the window reads `week 1 only` and no change is
+  printed.
+- **Absence.** A bye (`B`), a week he did not play (`×`) and a played week with no value for
+  that measure (`·`, e.g. no snap-count row bridged to him) are three marks, never a
+  floor-height bar. Never colour alone: every rail has a screen-reader sentence.
+- **Nothing is recomputed.** Every bar, value and change is the artifact's own; the frontend
+  selects and formats. `verify:board` compares them against the bytes.
+
+#### 6A.9.2 Production tiles and the cohort strip
+
+A quarterback's tiles and cohort rows are points per game, **EPA per dropback** (null below 20
+dropbacks, and the tile says so) and **points from TDs**. Everyone else keeps the two
+three-week shares and gains points from TDs (null below 10 points; it can exceed 100% when
+turnovers subtracted points). The cohort noun is the position's own (`POSITION_NOUN`: "QBs",
+"RBs") — never "players".
+
+#### 6A.9.3 Next game
+
+Opponent, venue (`vs`/`@`, neutral site flagged), kickoff in Eastern time, rest days for both
+teams and the roof. When a line is posted: the implied points for each side as a split bar of
+the posted total, the spread from this team's side (`Favoured by 3.5`, `Underdog by 6`,
+`Pick'em`) and the total, with the build's `sportsbook_context_statement` printed beneath and
+the time the lines were retrieved. The subhead says **context · not a model input**. Before a
+line is posted the panel says so — an unposted line is never drawn as an even split. A bye
+before the next game, or a bye still ahead, is one sentence. There is no matchup *rating*
+(ADR-088 stands): the next game is sourced, a judgement about it is not.
+
+#### 6A.9.4 Pick of the Week evidence row
+
+The pick card's secondary tile row (two three-week shares for every position) is replaced by
+three labelled blocks: **Role · observed** (the position's leading metrics with their change
+and window), **Production** (points per game against the model's remaining points ÷ remaining
+games), and **Next game · context** (the compact panel: opponent, implied points, spread and
+total, with "Sportsbook context, read by no model."). "Why he is the pick" gains one sentence
+only when his leading role grew — the heading makes a claim, and a shrinking role is shown in
+the evidence row, not argued for. The selection rule (`potw_selection_v1`) is unchanged.
+
+#### 6A.9.5 Degraded states
+
+Every block stays on the page and says which of the two facts it is — the build did not publish
+the artifact, or it did and holds nothing for this player — because a reader acts on the
+difference. Selection is unchanged in every row.
+
+| state | card | Pick of the Week |
+|---|---|---|
+| build published no `player_usage.json` | "This build published no week-by-week role series; every value on this card is unaffected." | Role: "This build published no role series." |
+| artifact published, no record for him | "No week-by-week role is published for him on this build." | Role: "No week-by-week role is published for him." |
+| build published no `team_matchups.json` | "This build published no schedule context." | Next game: "This build published no schedule context." |
+| no record for his team | "No next game is published for his team on this build." | Next game: "No next game is published for DET." |
+| line not yet posted | "no line posted yet" hints; no split bar | "No line posted yet — sportsbooks post about two weeks ahead." |
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
@@ -585,6 +674,13 @@ Arbitrage tab banner: concise, e.g. `Market data is 2 days old; rankings shown f
 ### Optional source down
 
 No dramatic error if critical output remains valid. Methodology/source status notes degraded source.
+
+### In-season signal layer absent (ADR-091)
+
+The boards, the card and Pick of the Week render in full without `player_usage.json` or
+`team_matchups.json`; the role and next-game blocks say which artifact is missing (section
+6A.9.5). The build's own warning (`ros.player_usage_failed`, `ros.team_matchups_failed`) is the
+reason, and no value elsewhere on the page changes.
 
 ### Unsupported URL config
 

@@ -37,8 +37,8 @@
       "long_absence": false,
       "weeks_since_last_game": 0.0,
       "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": 0.7267,
+      "target_share_last3": 0.098,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -61,7 +61,7 @@
       "ros_position_rank": 1,
       "ros_expected_vorp": 55.0576,
       "ros_expected_points": 122.8208,
-      "ros_expected_games": 8.1,
+      "ros_expected_games": 5.4,
       "ros_uncertainty": 34.411,
       "ros_tier": 1,
       "behavior_source_id": "sleeper",
@@ -74,17 +74,19 @@
       "net_add_count": 748,
       "add_rank": 2,
       "drop_rank": 2,
-      "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": true,
+      "weeks_since_last_game": 3.0,
+      "games_played_to_date": 5.0,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [
+        "long_absence"
+      ]
     },
     {
       "schema_version": "1.0",
@@ -101,7 +103,7 @@
       "ros_position_rank": 1,
       "ros_expected_vorp": 46.0578,
       "ros_expected_points": 150.879,
-      "ros_expected_games": 5.4,
+      "ros_expected_games": 8.1,
       "ros_uncertainty": 42.2461,
       "ros_tier": 2,
       "behavior_source_id": "sleeper",
@@ -114,19 +116,17 @@
       "net_add_count": 716,
       "add_rank": 3,
       "drop_rank": 3,
-      "long_absence": true,
-      "weeks_since_last_game": 3.0,
-      "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": 8.0,
+      "snap_share_last3": 0.75,
+      "target_share_last3": 0.1667,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": [
-        "long_absence"
-      ]
+      "quality_flags": []
     },
     {
       "schema_version": "1.0",
@@ -158,9 +158,9 @@
       "drop_rank": 4,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -183,7 +183,7 @@
       "ros_position_rank": 2,
       "ros_expected_vorp": 39.1756,
       "ros_expected_points": 138.7028,
-      "ros_expected_games": 8.1,
+      "ros_expected_games": 5.4,
       "ros_uncertainty": 38.858,
       "ros_tier": 2,
       "behavior_source_id": "sleeper",
@@ -196,17 +196,19 @@
       "net_add_count": 652,
       "add_rank": 5,
       "drop_rank": 5,
-      "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": true,
+      "weeks_since_last_game": 3.0,
+      "games_played_to_date": 5.0,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [
+        "long_absence"
+      ]
     },
     {
       "schema_version": "1.0",
@@ -223,7 +225,7 @@
       "ros_position_rank": 1,
       "ros_expected_vorp": 34.9404,
       "ros_expected_points": 187.937,
-      "ros_expected_games": 5.4,
+      "ros_expected_games": 8.1,
       "ros_uncertainty": 52.6224,
       "ros_tier": 2,
       "behavior_source_id": "sleeper",
@@ -236,19 +238,17 @@
       "net_add_count": 620,
       "add_rank": 6,
       "drop_rank": 6,
-      "long_absence": true,
-      "weeks_since_last_game": 3.0,
-      "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": 8.0,
+      "snap_share_last3": 0.99,
+      "target_share_last3": 0.0,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": [
-        "long_absence"
-      ]
+      "quality_flags": []
     },
     {
       "schema_version": "1.0",
@@ -280,9 +280,9 @@
       "drop_rank": 7,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -305,7 +305,7 @@
       "ros_position_rank": 2,
       "ros_expected_vorp": 15.3526,
       "ros_expected_points": 168.3492,
-      "ros_expected_games": 8.1,
+      "ros_expected_games": 5.4,
       "ros_uncertainty": 47.1166,
       "ros_tier": 3,
       "behavior_source_id": "sleeper",
@@ -318,17 +318,19 @@
       "net_add_count": 556,
       "add_rank": 8,
       "drop_rank": 8,
-      "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": true,
+      "weeks_since_last_game": 3.0,
+      "games_played_to_date": 5.0,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [
+        "long_absence"
+      ]
     },
     {
       "schema_version": "1.0",
@@ -345,7 +347,7 @@
       "ros_position_rank": 4,
       "ros_expected_vorp": 14.2938,
       "ros_expected_points": 119.115,
-      "ros_expected_games": 5.4,
+      "ros_expected_games": 8.1,
       "ros_uncertainty": 33.3522,
       "ros_tier": 3,
       "behavior_source_id": "sleeper",
@@ -358,19 +360,17 @@
       "net_add_count": 524,
       "add_rank": 9,
       "drop_rank": 9,
-      "long_absence": true,
-      "weeks_since_last_game": 3.0,
-      "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": 8.0,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": [
-        "long_absence"
-      ]
+      "quality_flags": []
     },
     {
       "schema_version": "1.0",
@@ -401,10 +401,10 @@
       "add_rank": 10,
       "drop_rank": 10,
       "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "weeks_since_last_game": 1.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.695,
+      "target_share_last3": 0.1471,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -441,10 +441,10 @@
       "add_rank": 11,
       "drop_rank": 11,
       "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "weeks_since_last_game": 1.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.545,
+      "target_share_last3": 0.0588,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -467,7 +467,7 @@
       "ros_position_rank": 5,
       "ros_expected_vorp": 6.3528,
       "ros_expected_points": 111.174,
-      "ros_expected_games": 5.4,
+      "ros_expected_games": 8.1,
       "ros_uncertainty": 31.1287,
       "ros_tier": 3,
       "behavior_source_id": "sleeper",
@@ -480,19 +480,17 @@
       "net_add_count": 428,
       "add_rank": 12,
       "drop_rank": 12,
-      "long_absence": true,
-      "weeks_since_last_game": 3.0,
-      "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": [
-        "long_absence"
-      ]
+      "quality_flags": []
     },
     {
       "schema_version": "1.0",
@@ -524,9 +522,9 @@
       "drop_rank": 13,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.985,
+      "target_share_last3": 0.0,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -549,7 +547,7 @@
       "ros_position_rank": 6,
       "ros_expected_vorp": 0.0,
       "ros_expected_points": 104.8212,
-      "ros_expected_games": 8.1,
+      "ros_expected_games": 5.4,
       "ros_uncertainty": 48.2283,
       "ros_tier": 3,
       "behavior_source_id": "sleeper",
@@ -562,17 +560,19 @@
       "net_add_count": 364,
       "add_rank": 14,
       "drop_rank": 14,
-      "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": true,
+      "weeks_since_last_game": 3.0,
+      "games_played_to_date": 5.0,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [
+        "long_absence"
+      ]
     },
     {
       "schema_version": "1.0",
@@ -589,7 +589,7 @@
       "ros_position_rank": 4,
       "ros_expected_vorp": 0.0,
       "ros_expected_points": 99.5272,
-      "ros_expected_games": 5.4,
+      "ros_expected_games": 8.1,
       "ros_uncertainty": 27.8464,
       "ros_tier": 3,
       "behavior_source_id": "sleeper",
@@ -602,19 +602,17 @@
       "net_add_count": 332,
       "add_rank": 15,
       "drop_rank": 15,
-      "long_absence": true,
-      "weeks_since_last_game": 3.0,
-      "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.54,
+      "target_share_last3": 0.0588,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": [
-        "long_absence"
-      ]
+      "quality_flags": []
     },
     {
       "schema_version": "1.0",
@@ -645,10 +643,10 @@
       "add_rank": 16,
       "drop_rank": 16,
       "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "weeks_since_last_game": 1.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.695,
+      "target_share_last3": 0.1471,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -686,9 +684,9 @@
       "drop_rank": 90,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 2.0,
-      "snap_share_last3": 0.81,
-      "target_share_last3": 0.24,
+      "games_played_to_date": 1.0,
+      "snap_share_last3": 0.31,
+      "target_share_last3": 0.0294,
       "current_status": null,
       "outside_tier_board": true,
       "surface_reasons": [
@@ -727,8 +725,8 @@
       "long_absence": false,
       "weeks_since_last_game": 0.0,
       "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": 0.7267,
+      "target_share_last3": 0.098,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -767,8 +765,8 @@
       "long_absence": true,
       "weeks_since_last_game": 3.0,
       "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -809,8 +807,8 @@
       "long_absence": false,
       "weeks_since_last_game": 0.0,
       "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": 0.75,
+      "target_share_last3": 0.1667,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -848,9 +846,9 @@
       "drop_rank": 20,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -889,8 +887,8 @@
       "long_absence": true,
       "weeks_since_last_game": 3.0,
       "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -931,8 +929,8 @@
       "long_absence": false,
       "weeks_since_last_game": 0.0,
       "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": 0.99,
+      "target_share_last3": 0.0,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -970,9 +968,9 @@
       "drop_rank": 23,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1011,8 +1009,8 @@
       "long_absence": true,
       "weeks_since_last_game": 3.0,
       "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1053,8 +1051,8 @@
       "long_absence": false,
       "weeks_since_last_game": 0.0,
       "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1091,10 +1089,10 @@
       "add_rank": 26,
       "drop_rank": 26,
       "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "weeks_since_last_game": 1.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.695,
+      "target_share_last3": 0.1471,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1117,7 +1115,7 @@
       "ros_position_rank": 3,
       "ros_expected_vorp": 8.9998,
       "ros_expected_points": 108.527,
-      "ros_expected_games": 5.4,
+      "ros_expected_games": 8.1,
       "ros_uncertainty": 30.3876,
       "ros_tier": 3,
       "behavior_source_id": "sleeper",
@@ -1130,19 +1128,17 @@
       "net_add_count": 0,
       "add_rank": 27,
       "drop_rank": 27,
-      "long_absence": true,
-      "weeks_since_last_game": 3.0,
-      "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "long_absence": false,
+      "weeks_since_last_game": 1.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.545,
+      "target_share_last3": 0.0588,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": [
-        "long_absence"
-      ]
+      "quality_flags": []
     },
     {
       "schema_version": "1.0",
@@ -1174,9 +1170,9 @@
       "drop_rank": 28,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.85,
+      "target_share_last3": 0.2059,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1214,9 +1210,9 @@
       "drop_rank": 29,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.985,
+      "target_share_last3": 0.0,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1255,8 +1251,8 @@
       "long_absence": true,
       "weeks_since_last_game": 3.0,
       "games_played_to_date": 5.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "snap_share_last3": null,
+      "target_share_last3": null,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1296,9 +1292,9 @@
       "drop_rank": 31,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.54,
+      "target_share_last3": 0.0588,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1335,10 +1331,10 @@
       "add_rank": 32,
       "drop_rank": 32,
       "long_absence": false,
-      "weeks_since_last_game": 0.0,
-      "games_played_to_date": 8.0,
-      "snap_share_last3": 0.72,
-      "target_share_last3": 0.19,
+      "weeks_since_last_game": 1.0,
+      "games_played_to_date": 7.0,
+      "snap_share_last3": 0.695,
+      "target_share_last3": 0.1471,
       "current_status": null,
       "outside_tier_board": false,
       "surface_reasons": [
@@ -1376,9 +1372,9 @@
       "drop_rank": 90,
       "long_absence": false,
       "weeks_since_last_game": 0.0,
-      "games_played_to_date": 2.0,
-      "snap_share_last3": 0.81,
-      "target_share_last3": 0.24,
+      "games_played_to_date": 1.0,
+      "snap_share_last3": 0.31,
+      "target_share_last3": 0.0294,
       "current_status": null,
       "outside_tier_board": true,
       "surface_reasons": [

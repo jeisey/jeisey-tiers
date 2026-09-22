@@ -717,11 +717,101 @@ const SCREENS = [
     viewport: { width: 320, height: 900 },
     fullPage: true,
   },
+  // --------------------------------------------------------------- the signal layer (ADR-091)
+  signalCard("67-card-qb-attempts-bye-next-week", "Jalen Marsh"),
+  signalCard("68-card-rb-role-rising", "Jahmyr Cook"),
+  signalCard("69-card-wr-role-declining", "Deebo Gray"),
+  signalCard("70-card-te-no-snap-row-unposted-line", "Trey McBride"),
+  signalCard("71-card-absent-player", "James Cook III"),
+  signalCard("72-card-no-usage-record", "Jaylin Lane"),
+  signalCard("73-card-signals-not-published", "Jahmyr Cook", "/scenario/in-season-no-signals/"),
+  signalCard("74-card-next-game-and-momentum", "Jahmyr Cook", "/scenario/in-season/", ".matchup"),
+  {
+    // Thin history: the surfaced player has one appearance, which is a reading and not a
+    // change. Opened from the Opportunity Board, the one board that publishes him.
+    name: "75-card-one-appearance",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: /\(surfaced\)/ }).first().click();
+      await scrollTo(page, ".usage-rails");
+    },
+  },
+  {
+    name: "76-card-role-mobile-tab",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Jahmyr Cook", exact: true }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await dialog.getByRole("tab", { name: "In-season usage" }).click();
+      await scrollTo(page, ".usage-rails");
+    },
+  },
+  {
+    name: "77-card-role-320",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 320, height: 800 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: "Jahmyr Cook", exact: true }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await dialog.getByRole("tab", { name: "In-season usage" }).click();
+      await scrollTo(page, ".matchup");
+    },
+  },
+  {
+    name: "78-potw-evidence-desktop",
+    path: "/scenario/in-season/?view=potw",
+    viewport: { width: 1440, height: 1200 },
+    fullPage: true,
+  },
+  {
+    name: "79-potw-evidence-mobile",
+    path: "/scenario/in-season/?view=potw&position=rb",
+    viewport: { width: 390, height: 844 },
+    fullPage: true,
+  },
+  {
+    name: "80-potw-signals-not-published",
+    path: "/scenario/in-season-no-signals/?view=potw&position=wr",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    expectMissingArtifact: true,
+  },
 ];
+
+/** Scroll the open card so `selector` is at the top of its scrolling body. */
+async function scrollTo(page, selector) {
+  await page.getByRole("dialog").waitFor();
+  await page.locator(".detail-body").evaluate((body, target) => {
+    const node = body.querySelector(target);
+    if (node !== null) body.scrollTop = node.offsetTop - 60;
+  }, selector);
+}
+
+/** An in-season card for `player`, scrolled to its role block (or to `anchor`). */
+function signalCard(name, player, scenario = "/scenario/in-season/", anchor = ".detail-subhead") {
+  return {
+    name,
+    path: `${scenario}?view=ros&scoring=ppr&teams=12`,
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    expectMissingArtifact: scenario.includes("no-signals"),
+    async act(page) {
+      await page.getByRole("button", { name: player, exact: true }).first().click();
+      await scrollTo(page, anchor === ".detail-subhead" ? ".usage-rails, .signal-absent" : anchor);
+    },
+  };
+}
 
 /** Artifacts a build is allowed not to publish; see the console filter below. */
 const OPTIONAL_ARTIFACTS =
-  /market_trend_series\.json|ros_build_metadata\.json|behavior_trend_series\.json/;
+  /market_trend_series\.json|ros_build_metadata\.json|behavior_trend_series\.json|player_usage\.json|team_matchups\.json/;
 
 const outDir = resolve(process.argv[2] ?? "docs/visual-qa/local");
 mkdirSync(outDir, { recursive: true });

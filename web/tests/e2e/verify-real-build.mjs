@@ -80,6 +80,27 @@ try {
   behaviorSeries = null;
 }
 
+/**
+ * The signal layer (ADR-091): observed role week by week, and each team's next game.
+ *
+ * Optional one level below the boards, like the momentum series: a build whose signal
+ * builders failed publishes neither and says so on every card. A *present* artifact that
+ * disagrees with the card drawing it is a failure, and so is the one defect the layer exists
+ * to remove — a quarterback's card leading with a snap or target share.
+ */
+let playerUsage = null;
+try {
+  playerUsage = JSON.parse(readFileSync(`${dataDir}/player_usage.json`, "utf-8")).records;
+} catch {
+  playerUsage = null;
+}
+let teamMatchups = null;
+try {
+  teamMatchups = JSON.parse(readFileSync(`${dataDir}/team_matchups.json`, "utf-8")).records;
+} catch {
+  teamMatchups = null;
+}
+
 const block = tiers.records
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => a.fair_rank - b.fair_rank);
@@ -681,6 +702,70 @@ const withBadge = badges.filter((b) => b.badge !== null).length;
   a verifier's own bugs look exactly like product findings. `web/tests/potw.test.ts` owns the
   rule; this owns the claim.
 */
+/**
+ * A drawn momentum strip against its `behavior_trend_series.json` record — on a Pick of the
+ * Week card and on a player card alike, because both draw the same component from the same
+ * record (ADR-089, ADR-091). Returns failure messages; `who` prefixes each.
+ */
+function momentumFailures(who, series, strip) {
+  const out = [];
+  const number = (text) => Number.parseFloat(text.replace(/[^0-9.\-]/g, ""));
+  if (series === null) {
+    if (strip !== null && strip.bars > 0) {
+      out.push(
+        `${who}: a momentum strip drew ${String(strip.bars)} bar(s) and the build ` +
+          "published no series for him",
+      );
+    }
+    return out;
+  }
+  if (strip === null) {
+    out.push(
+      `${who}: the build published ${String(series.observations)} retained ` +
+        "observation(s) and the card drew no momentum strip",
+    );
+    return out;
+  }
+  if (strip.bars !== series.observations) {
+    out.push(
+      `${who}: momentum strip drew ${String(strip.bars)} bar(s), artifact ` +
+        `publishes ${String(series.observations)} observation(s)`,
+    );
+  }
+  const statesDirection = strip.value.includes("/day");
+  if (statesDirection !== (series.add_trend !== null)) {
+    out.push(
+      `${who}: momentum reads "${strip.value}" while the artifact's add_trend is ` +
+        `${String(series.add_trend)}`,
+    );
+  }
+  if (statesDirection) {
+    const rendered = number(strip.value);
+    if (!Number.isFinite(rendered) || Math.abs(rendered - series.add_trend) > 0.05) {
+      out.push(
+        `${who}: momentum shows ${String(rendered)}/day, artifact has ` +
+          `${String(series.add_trend)}`,
+      );
+    }
+    if (!/over \d+ (hour|day)s?/.test(strip.span)) {
+      out.push(
+        `${who}: momentum states a direction with no span beside it ` +
+          `(span text "${strip.span}")`,
+      );
+    }
+  }
+  const gapDrawn = strip.gaps > 0;
+  const gapPublished = series.snapshots_in_window > series.observations;
+  if (gapDrawn !== gapPublished) {
+    out.push(
+      `${who}: momentum ${gapDrawn ? "draws" : "draws no"} gap while the artifact ` +
+        `publishes ${String(series.observations)} of ` +
+        `${String(series.snapshots_in_window)} snapshot(s)`,
+    );
+  }
+  return out;
+}
+
 let potwCardsChecked = 0;
 if (publishedInSeason && opportunityRecords !== null) {
   await page.goto(`${BASE}/?view=potw&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
@@ -821,57 +906,201 @@ if (publishedInSeason && opportunityRecords !== null) {
     */
     if (behaviorSeries !== null) {
       const series = behaviorSeries.find((r) => r.player_id === record.player_id) ?? null;
-      const strip = card.momentum;
-      if (series === null) {
-        if (strip !== null && strip.bars > 0) {
-          failures.push(
-            `${card.name}: a momentum strip drew ${String(strip.bars)} bar(s) and the build ` +
-              "published no series for him",
-          );
-        }
-      } else if (strip === null) {
-        failures.push(
-          `${card.name}: the build published ${String(series.observations)} retained ` +
-            "observation(s) and the card drew no momentum strip",
+      failures.push(...momentumFailures(card.name, series, card.momentum));
+    }
+  }
+}
+
+/*
+  ------------------------------------------------------------------ the signal layer (ADR-091)
+
+  **What is asserted.** On in-season cards — one per position, from the rest-of-season board —
+  every role rail's latest value, published change and bar count against `player_usage.json`,
+  the points rail's latest week against the same record, and the next-game block's opponent,
+  venue and implied points against `team_matchups.json`, and the card's add-momentum strip
+  against `behavior_trend_series.json` by the same rule the pick cards use. On Pick of the
+  Week, each role row's
+  "earlier → latest" and each matchup line's implied points. And one contract: no
+  quarterback's card or pick leads with a snap or target share.
+
+  **What is not.** The change is not recomputed from the weekly values — `role_change_v1` is
+  the artifact's rule and `tests/unit/test_signal_usage.py` owns its arithmetic; a checker that
+  restated it would be a second implementation that could disagree (Phase 9B). The formatting
+  below is restated, as every other check in this file restates `toFixed(1)`, because a
+  rendered string can only be compared with a rendered string.
+*/
+const shareText = (value) => `${String(Math.round(value * 100))}%`;
+const metricText = (metric, value) =>
+  value === null || value === undefined
+    ? "\u2014"
+    : metric.endsWith("_share")
+      ? shareText(value)
+      : String(Math.round(value));
+const changeText = (metric, change) => {
+  const share = metric.endsWith("_share");
+  const magnitude = share ? Math.round(Math.abs(change) * 100) : Math.round(Math.abs(change));
+  if (magnitude === 0) return "no change";
+  return `${change > 0 ? "+" : "\u2212"}${String(magnitude)}${share ? " pts" : ""}`;
+};
+const LEADS_WITH_A_SHARE = new Set(["snap_share", "target_share"]);
+
+let signalCardsChecked = 0;
+let signalPicksChecked = 0;
+let signalMomentumChecked = 0;
+if (publishedInSeason && playerUsage !== null) {
+  const usageById = new Map(playerUsage.map((record) => [record.player_id, record]));
+  const matchupByTeam = new Map((teamMatchups ?? []).map((record) => [record.team, record]));
+  const names = new Map();
+  for (const record of rosBlock) names.set(record.display_name, names.has(record.display_name) ? null : record);
+
+  // One subject per position: the best-ranked row whose name is unique on the block and who
+  // has a usage record with at least one published change, so the change text is exercised.
+  const subjects = [];
+  for (const position of ["QB", "RB", "WR", "TE"]) {
+    const row = rosBlock.find((record) => {
+      if (record.position !== position || names.get(record.display_name) !== record) return false;
+      const usage = usageById.get(record.player_id);
+      return usage !== undefined && Object.values(usage.role_changes).some((c) => c?.change != null);
+    });
+    if (row !== undefined) subjects.push(row);
+  }
+
+  for (const row of subjects) {
+    const usage = usageById.get(row.player_id);
+    await page.goto(
+      `${BASE}/?view=ros&scoring=ppr&teams=12&search=${encodeURIComponent(row.display_name)}`,
+      { waitUntil: "networkidle" },
+    );
+    await page.getByRole("button", { name: row.display_name, exact: true }).first().click();
+    await page.waitForSelector("dialog[open]");
+    signalCardsChecked += 1;
+    const drawn = await page.$eval("dialog[open]", (dialog) => ({
+      rails: [...dialog.querySelectorAll(".usage-rail[data-metric]")].map((rail) => ({
+        metric: rail.getAttribute("data-metric"),
+        value: rail.querySelector(".usage-rail-value")?.textContent?.trim() ?? "",
+        change: rail.querySelector(".usage-rail-change")?.textContent?.trim() ?? null,
+        bars: rail.querySelectorAll(".usage-bar").length,
+      })),
+      momentum: (() => {
+        const panel = dialog.querySelector(".momentum");
+        if (panel === null || panel.querySelector(".momentum-bars") === null) return null;
+        return {
+          bars: panel.querySelectorAll(".momentum-bar").length,
+          gaps: panel.querySelectorAll(".momentum-gap").length,
+          value: panel.querySelector(".momentum-value")?.textContent?.trim() ?? "",
+          span: panel.querySelector(".momentum-span")?.textContent?.trim() ?? "",
+        };
+      })(),
+      matchup: (() => {
+        const panel = dialog.querySelector(".matchup");
+        if (panel === null) return null;
+        const tile = [...panel.querySelectorAll(".readout")].find((node) =>
+          (node.querySelector(".readout-label")?.textContent ?? "").startsWith("Implied team points"),
         );
-      } else {
-        if (strip.bars !== series.observations) {
-          failures.push(
-            `${card.name}: momentum strip drew ${String(strip.bars)} bar(s), artifact ` +
-              `publishes ${String(series.observations)} observation(s)`,
-          );
-        }
-        const statesDirection = strip.value.includes("/day");
-        if (statesDirection !== (series.add_trend !== null)) {
-          failures.push(
-            `${card.name}: momentum reads "${strip.value}" while the artifact's add_trend is ` +
-              `${String(series.add_trend)}`,
-          );
-        }
-        if (statesDirection) {
-          const rendered = asNumber(strip.value);
-          if (rendered === null || Math.abs(rendered - series.add_trend) > 0.05) {
-            failures.push(
-              `${card.name}: momentum shows ${String(rendered)}/day, artifact has ` +
-                `${String(series.add_trend)}`,
-            );
-          }
-          if (!/over \d+ (hour|day)s?/.test(strip.span)) {
-            failures.push(
-              `${card.name}: momentum states a direction with no span beside it ` +
-                `(span text "${strip.span}")`,
-            );
-          }
-        }
-        const gapDrawn = strip.gaps > 0;
-        const gapPublished = series.snapshots_in_window > series.observations;
-        if (gapDrawn !== gapPublished) {
-          failures.push(
-            `${card.name}: momentum ${gapDrawn ? "draws" : "draws no"} gap while the artifact ` +
-              `publishes ${String(series.observations)} of ` +
-              `${String(series.snapshots_in_window)} snapshot(s)`,
-          );
-        }
+        return {
+          head: panel.querySelector(".matchup-opponent")?.textContent?.trim() ?? "",
+          implied: tile?.querySelector(".readout-value")?.textContent?.trim() ?? null,
+          text: panel.textContent ?? "",
+        };
+      })(),
+    }));
+    const who = `${row.display_name} (${row.position}) card`;
+
+    if (row.position === "QB" && drawn.rails.some((rail) => LEADS_WITH_A_SHARE.has(rail.metric))) {
+      failures.push(`${who}: a quarterback's role block leads with a snap or target share`);
+    }
+    const roleRails = drawn.rails.filter((rail) => rail.metric !== "fantasy_points");
+    if (roleRails.length === 0) failures.push(`${who}: the build published a usage record and the card drew no role rail`);
+    for (const rail of roleRails) {
+      const change = usage.role_changes[rail.metric];
+      if (rail.bars !== usage.weeks.length) {
+        failures.push(`${who} ${rail.metric}: ${String(rail.bars)} bar slot(s), artifact publishes ${String(usage.weeks.length)} week(s)`);
+      }
+      const wantValue = change === null ? "\u2014" : metricText(rail.metric, change.latest);
+      if (rail.value !== wantValue) {
+        failures.push(`${who} ${rail.metric}: latest reads "${rail.value}", artifact ${wantValue}`);
+      }
+      const wantChange = change?.change == null ? null : changeText(rail.metric, change.change);
+      if ((rail.change === null) !== (wantChange === null) || (wantChange !== null && !rail.change.includes(wantChange))) {
+        failures.push(`${who} ${rail.metric}: change reads "${String(rail.change)}", artifact ${String(wantChange)}`);
+      }
+    }
+    const points = drawn.rails.find((rail) => rail.metric === "fantasy_points");
+    const lastPlayed = [...usage.weeks].reverse().find((week) => week.status === "played");
+    const wantPoints = lastPlayed?.fantasy_points?.PPR;
+    if (points !== undefined && wantPoints != null && points.value !== wantPoints.toFixed(1)) {
+      failures.push(`${who}: latest points read "${points.value}", artifact ${wantPoints.toFixed(1)}`);
+    }
+
+    const matchup = matchupByTeam.get(usage.team) ?? null;
+    if ((matchup === null) !== (drawn.matchup === null)) {
+      failures.push(`${who}: next-game block ${drawn.matchup === null ? "missing" : "drawn"} while team_matchups ${matchup === null ? "publishes none" : "publishes one"} for ${String(usage.team)}`);
+    } else if (matchup !== null) {
+      const head = `Week ${String(matchup.week)} ${matchup.home_away === "home" ? "vs" : "@"} ${matchup.opponent}`;
+      if (drawn.matchup.head !== head) failures.push(`${who}: next game reads "${drawn.matchup.head}", artifact ${head}`);
+      const implied = matchup.implied_team_points === null ? "\u2014" : matchup.implied_team_points.toFixed(1);
+      if (drawn.matchup.implied !== implied) {
+        failures.push(`${who}: implied points read "${String(drawn.matchup.implied)}", artifact ${implied}`);
+      }
+      if (matchup.implied_team_points !== null && !/No model reads them/.test(drawn.matchup.text)) {
+        failures.push(`${who}: sportsbook lines printed without the statement that no model reads them`);
+      }
+    }
+    // The card draws the same momentum component Pick of the Week does, from the same record.
+    if (behaviorSeries !== null) {
+      const series = behaviorSeries.find((r) => r.player_id === row.player_id) ?? null;
+      failures.push(...momentumFailures(who, series, drawn.momentum));
+      signalMomentumChecked += 1;
+    }
+    await page.keyboard.press("Escape");
+  }
+
+  // Pick of the Week: the evidence row against the same bytes.
+  await page.goto(`${BASE}/?view=potw&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+  const oppByName = new Map();
+  for (const record of opportunityRecords ?? []) {
+    if (record.league_preset_id !== "redraft-12" || record.scoring_preset !== "PPR") continue;
+    oppByName.set(record.display_name, oppByName.has(record.display_name) ? null : record);
+  }
+  const picks = await page.$$eval(".potw-card", (cards) =>
+    cards.map((card) => ({
+      position: card.getAttribute("data-pos"),
+      name: card.querySelector(".player-name")?.textContent?.trim() ?? null,
+      roles: [...card.querySelectorAll(".potw-role[data-metric]")].map((role) => ({
+        metric: role.getAttribute("data-metric"),
+        text: role.querySelector(".potw-evidence-row")?.textContent ?? "",
+      })),
+      matchupLine: card.querySelector(".matchup-line")?.textContent ?? null,
+    })),
+  );
+  for (const pick of picks) {
+    const record = pick.name === null ? undefined : oppByName.get(pick.name);
+    if (record == null) continue;
+    signalPicksChecked += 1;
+    const usage = usageById.get(record.player_id);
+    if (pick.position === "QB" && pick.roles.some((role) => LEADS_WITH_A_SHARE.has(role.metric))) {
+      failures.push(`${pick.name}: a quarterback's pick leads with a snap or target share`);
+    }
+    if (usage === undefined) {
+      if (pick.roles.length > 0) failures.push(`${pick.name}: pick draws role rows and the build published no usage record`);
+      continue;
+    }
+    for (const role of pick.roles) {
+      const change = usage.role_changes[role.metric];
+      if (change === null) continue;
+      const want =
+        change.earlier === null
+          ? metricText(role.metric, change.latest)
+          : `${metricText(role.metric, change.earlier)} \u2192 ${metricText(role.metric, change.latest)}`;
+      if (!role.text.includes(want)) {
+        failures.push(`${pick.name} ${role.metric}: pick reads "${role.text.trim()}", artifact ${want}`);
+      }
+    }
+    const matchup = matchupByTeam.get(usage.team);
+    if (matchup !== undefined && matchup.implied_team_points !== null && pick.matchupLine !== null) {
+      const want = `implied ${matchup.implied_team_points.toFixed(1)}`;
+      if (!pick.matchupLine.includes(want)) {
+        failures.push(`${pick.name}: matchup line "${pick.matchupLine}" does not carry ${want}`);
       }
     }
   }
@@ -887,6 +1116,11 @@ console.log(JSON.stringify({
   rosRowsChecked,
   potwCardsChecked,
   behaviorSeriesRecords: behaviorSeries === null ? null : behaviorSeries.length,
+  usageRecords: playerUsage === null ? null : playerUsage.length,
+  matchupRecords: teamMatchups === null ? null : teamMatchups.length,
+  signalCardsChecked,
+  signalMomentumChecked,
+  signalPicksChecked,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
   trendSeriesRecords: seriesRecords.length,

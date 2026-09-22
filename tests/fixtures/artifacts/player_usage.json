@@ -1,0 +1,3538 @@
+{
+  "schema_version": "1.0",
+  "artifact": "player_usage",
+  "record_schema": "player_usage",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 17,
+  "records": [
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000001",
+      "display_name": "Marcus Vandelay",
+      "position": "QB",
+      "team": "ATL",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 8,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "NO",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 13.3,
+            "PPR": 13.3,
+            "STD": 13.3
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "BUF",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 15.86,
+            "PPR": 15.86,
+            "STD": 15.86
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "NO",
+          "snap_share": 1.0,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 32.0,
+          "fantasy_points": {
+            "HALF": 18.7,
+            "PPR": 18.7,
+            "STD": 18.7
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "BUF",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 19.3,
+            "PPR": 19.3,
+            "STD": 19.3
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "NO",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 13.86,
+            "PPR": 13.86,
+            "STD": 13.86
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "BUF",
+          "snap_share": 1.0,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 32.0,
+          "fantasy_points": {
+            "HALF": 18.7,
+            "PPR": 18.7,
+            "STD": 18.7
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "NO",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 15.3,
+            "PPR": 15.3,
+            "STD": 15.3
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "ATL",
+          "opponent": "BUF",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 19.86,
+            "PPR": 19.86,
+            "STD": 19.86
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.98,
+          "earlier": 0.99,
+          "earlier_games": 7,
+          "change": -0.01
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.115,
+          "earlier": 0.115,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 36.0,
+          "earlier": 34.0,
+          "earlier_games": 7,
+          "change": 2.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 3.0,
+          "earlier": 3.0,
+          "earlier_games": 7,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 134.88,
+        "PPR": 134.88,
+        "STD": 134.88
+      },
+      "touchdown_points_share": {
+        "HALF": 0.3559,
+        "PPR": 0.3559,
+        "STD": 0.3559
+      },
+      "dropbacks": 290.0,
+      "pass_epa_per_dropback": 0.132
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000002",
+      "display_name": "Dez Okonkwo",
+      "position": "RB",
+      "team": "BUF",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 8,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "CHI",
+          "snap_share": 0.42,
+          "target_share": 0.059,
+          "carry_share": 0.346,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 9.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 6.3,
+            "PPR": 7.3,
+            "STD": 5.3
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "ATL",
+          "snap_share": 0.42,
+          "target_share": 0.059,
+          "carry_share": 0.346,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 9.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 6.3,
+            "PPR": 7.3,
+            "STD": 5.3
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "CHI",
+          "snap_share": 0.42,
+          "target_share": 0.059,
+          "carry_share": 0.346,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 9.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 12.3,
+            "PPR": 13.3,
+            "STD": 11.3
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "ATL",
+          "snap_share": 0.42,
+          "target_share": 0.059,
+          "carry_share": 0.346,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 9.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 6.3,
+            "PPR": 7.3,
+            "STD": 5.3
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "CHI",
+          "snap_share": 0.42,
+          "target_share": 0.059,
+          "carry_share": 0.346,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 9.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 6.3,
+            "PPR": 7.3,
+            "STD": 5.3
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "ATL",
+          "snap_share": 0.61,
+          "target_share": 0.088,
+          "carry_share": 0.5,
+          "air_yards_share": 0.01,
+          "targets": 3.0,
+          "carries": 13.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.0,
+            "PPR": 15.0,
+            "STD": 13.0
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "CHI",
+          "snap_share": 0.74,
+          "target_share": 0.088,
+          "carry_share": 0.615,
+          "air_yards_share": 0.01,
+          "targets": 3.0,
+          "carries": 16.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 9.3,
+            "PPR": 10.3,
+            "STD": 8.3
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "ATL",
+          "snap_share": 0.83,
+          "target_share": 0.118,
+          "carry_share": 0.692,
+          "air_yards_share": 0.014,
+          "targets": 4.0,
+          "carries": 18.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 11.3,
+            "PPR": 12.8,
+            "STD": 9.8
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.83,
+          "earlier": 0.493,
+          "earlier_games": 7,
+          "change": 0.337
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.118,
+          "earlier": 0.067,
+          "earlier_games": 7,
+          "change": 0.051
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.692,
+          "earlier": 0.407,
+          "earlier_games": 7,
+          "change": 0.285
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.014,
+          "earlier": 0.008,
+          "earlier_games": 7,
+          "change": 0.006
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 18.0,
+          "earlier": 10.57,
+          "earlier_games": 7,
+          "change": 7.43
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 72.1,
+        "PPR": 80.6,
+        "STD": 63.6
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1664,
+        "PPR": 0.1489,
+        "STD": 0.1887
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000002-surfaced",
+      "display_name": "Dez Okonkwo (surfaced)",
+      "position": "RB",
+      "team": "BUF",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 1,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 2,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 3,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 4,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 5,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 6,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 7,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "BUF",
+          "opponent": "ATL",
+          "snap_share": 0.31,
+          "target_share": 0.029,
+          "carry_share": 0.269,
+          "air_yards_share": 0.003,
+          "targets": 1.0,
+          "carries": 7.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.2,
+            "PPR": 4.7,
+            "STD": 3.7
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.31,
+          "earlier": null,
+          "earlier_games": 0,
+          "change": null
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.029,
+          "earlier": null,
+          "earlier_games": 0,
+          "change": null
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.269,
+          "earlier": null,
+          "earlier_games": 0,
+          "change": null
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.003,
+          "earlier": null,
+          "earlier_games": 0,
+          "change": null
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": null,
+          "earlier_games": 0,
+          "change": null
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 7.0,
+          "earlier": null,
+          "earlier_games": 0,
+          "change": null
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 4.2,
+        "PPR": 4.7,
+        "STD": 3.7
+      },
+      "touchdown_points_share": {
+        "HALF": null,
+        "PPR": null,
+        "STD": null
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000003",
+      "display_name": "Ravi Thibodeaux",
+      "position": "RB",
+      "team": "CHI",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 5,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "CHI",
+          "opponent": "BUF",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "CHI",
+          "opponent": "DAL",
+          "snap_share": 0.53,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "CHI",
+          "opponent": "BUF",
+          "snap_share": 0.55,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 13.6,
+            "PPR": 14.6,
+            "STD": 12.6
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "CHI",
+          "opponent": "DAL",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "CHI",
+          "opponent": "BUF",
+          "snap_share": 0.53,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 6,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 7,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 8,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 5,
+          "latest": 0.53,
+          "earlier": 0.54,
+          "earlier_games": 4,
+          "change": -0.01
+        },
+        "target_share": {
+          "latest_week": 5,
+          "latest": 0.059,
+          "earlier": 0.059,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 5,
+          "latest": 0.462,
+          "earlier": 0.462,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 5,
+          "latest": 0.007,
+          "earlier": 0.007,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 5,
+          "latest": 12.0,
+          "earlier": 12.0,
+          "earlier_games": 4,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 44.0,
+        "PPR": 49.0,
+        "STD": 39.0
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1364,
+        "PPR": 0.1224,
+        "STD": 0.1538
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000004",
+      "display_name": "Chris Johnson",
+      "position": "WR",
+      "team": "DAL",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 8,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "DEN",
+          "snap_share": 0.93,
+          "target_share": 0.265,
+          "carry_share": 0.0,
+          "air_yards_share": 0.403,
+          "targets": 9.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 10.5,
+            "PPR": 13.5,
+            "STD": 7.5
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "CHI",
+          "snap_share": 0.93,
+          "target_share": 0.265,
+          "carry_share": 0.0,
+          "air_yards_share": 0.403,
+          "targets": 9.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 10.5,
+            "PPR": 13.5,
+            "STD": 7.5
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "DEN",
+          "snap_share": 0.93,
+          "target_share": 0.265,
+          "carry_share": 0.0,
+          "air_yards_share": 0.403,
+          "targets": 9.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 10.5,
+            "PPR": 13.5,
+            "STD": 7.5
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "CHI",
+          "snap_share": 0.93,
+          "target_share": 0.265,
+          "carry_share": 0.0,
+          "air_yards_share": 0.403,
+          "targets": 9.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 16.5,
+            "PPR": 19.5,
+            "STD": 13.5
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "GB",
+          "snap_share": 0.93,
+          "target_share": 0.265,
+          "carry_share": 0.0,
+          "air_yards_share": 0.403,
+          "targets": 9.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 10.5,
+            "PPR": 13.5,
+            "STD": 7.5
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "CHI",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "DEN",
+          "snap_share": 0.77,
+          "target_share": 0.176,
+          "carry_share": 0.0,
+          "air_yards_share": 0.269,
+          "targets": 6.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.0,
+            "PPR": 9.0,
+            "STD": 5.0
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "DAL",
+          "opponent": "CHI",
+          "snap_share": 0.64,
+          "target_share": 0.118,
+          "carry_share": 0.0,
+          "air_yards_share": 0.179,
+          "targets": 4.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 11.25,
+            "PPR": 12.75,
+            "STD": 9.75
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.64,
+          "earlier": 0.894,
+          "earlier_games": 7,
+          "change": -0.254
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.118,
+          "earlier": 0.244,
+          "earlier_games": 7,
+          "change": -0.126
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.179,
+          "earlier": 0.371,
+          "earlier_games": 7,
+          "change": -0.192
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 85.5,
+        "PPR": 106.5,
+        "STD": 64.5
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1404,
+        "PPR": 0.1127,
+        "STD": 0.186
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000005",
+      "display_name": "Chris Johnson Jr.",
+      "position": "WR",
+      "team": "DEN",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 7,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "DEN",
+          "opponent": "DAL",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "DEN",
+          "opponent": "GB",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "DEN",
+          "opponent": "DAL",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "DEN",
+          "opponent": "GB",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        },
+        {
+          "week": 5,
+          "status": "bye",
+          "team": "DEN",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "DEN",
+          "opponent": "HOU",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "DEN",
+          "opponent": "DAL",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "DEN",
+          "opponent": "GB",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.84,
+          "earlier": 0.852,
+          "earlier_games": 6,
+          "change": -0.012
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.206,
+          "earlier": 0.206,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.314,
+          "earlier": 0.314,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 73.25,
+        "PPR": 90.75,
+        "STD": 55.75
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1638,
+        "PPR": 0.1322,
+        "STD": 0.2152
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000006",
+      "display_name": "Tobias Ferreira",
+      "position": "WR",
+      "team": "GB",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 7,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "GB",
+          "opponent": "HOU",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "GB",
+          "opponent": "DEN",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "GB",
+          "opponent": "HOU",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "GB",
+          "opponent": "DEN",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "GB",
+          "opponent": "DAL",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 6,
+          "status": "bye",
+          "team": "GB",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "GB",
+          "opponent": "IND",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "GB",
+          "opponent": "DEN",
+          "snap_share": null,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": null,
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.206,
+          "earlier": 0.206,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.314,
+          "earlier": 0.314,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 73.25,
+        "PPR": 90.75,
+        "STD": 55.75
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1638,
+        "PPR": 0.1322,
+        "STD": 0.2152
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000007",
+      "display_name": "Kip Salvatore",
+      "position": "TE",
+      "team": "HOU",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 5,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "HOU",
+          "opponent": "GB",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "HOU",
+          "opponent": "IND",
+          "snap_share": 0.68,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "HOU",
+          "opponent": "GB",
+          "snap_share": 0.7,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "HOU",
+          "opponent": "IND",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 10.5,
+            "PPR": 12.0,
+            "STD": 9.0
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "HOU",
+          "opponent": "IND",
+          "snap_share": 0.68,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 6,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 7,
+          "status": "bye",
+          "team": "HOU",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 8,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 5,
+          "latest": 0.68,
+          "earlier": 0.69,
+          "earlier_games": 4,
+          "change": -0.01
+        },
+        "target_share": {
+          "latest_week": 5,
+          "latest": 0.147,
+          "earlier": 0.147,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 5,
+          "latest": 0.121,
+          "earlier": 0.121,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 28.5,
+        "PPR": 36.0,
+        "STD": 21.0
+      },
+      "touchdown_points_share": {
+        "HALF": 0.2105,
+        "PPR": 0.1667,
+        "STD": 0.2857
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000008",
+      "display_name": "Nnamdi Brightwater",
+      "position": "RB",
+      "team": "IND",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 7,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "IND",
+          "opponent": "JAX",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "IND",
+          "opponent": "HOU",
+          "snap_share": 0.53,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "IND",
+          "opponent": "JAX",
+          "snap_share": 0.55,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 13.6,
+            "PPR": 14.6,
+            "STD": 12.6
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "IND",
+          "opponent": "HOU",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "IND",
+          "opponent": "HOU",
+          "snap_share": 0.53,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "IND",
+          "opponent": "JAX",
+          "snap_share": 0.55,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 13.6,
+            "PPR": 14.6,
+            "STD": 12.6
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "IND",
+          "opponent": "GB",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 8,
+          "status": "bye",
+          "team": "IND",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 7,
+          "latest": 0.54,
+          "earlier": 0.54,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "target_share": {
+          "latest_week": 7,
+          "latest": 0.059,
+          "earlier": 0.059,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 7,
+          "latest": 0.462,
+          "earlier": 0.462,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 7,
+          "latest": 0.007,
+          "earlier": 0.007,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 7,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 7,
+          "latest": 12.0,
+          "earlier": 12.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 65.2,
+        "PPR": 72.2,
+        "STD": 58.2
+      },
+      "touchdown_points_share": {
+        "HALF": 0.184,
+        "PPR": 0.1662,
+        "STD": 0.2062
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000009",
+      "display_name": "Emeka Vasquez",
+      "position": "WR",
+      "team": "JAX",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 8,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "IND",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "KC",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "IND",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "KC",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "KC",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "IND",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "KC",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "JAX",
+          "opponent": "HOU",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.84,
+          "earlier": 0.85,
+          "earlier_games": 7,
+          "change": -0.01
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.206,
+          "earlier": 0.206,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.314,
+          "earlier": 0.314,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 82.0,
+        "PPR": 102.0,
+        "STD": 62.0
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1463,
+        "PPR": 0.1176,
+        "STD": 0.1935
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000010",
+      "display_name": "Sol Marchetti",
+      "position": "QB",
+      "team": "KC",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 5,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "KC",
+          "opponent": "LAC",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 13.3,
+            "PPR": 13.3,
+            "STD": 13.3
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "KC",
+          "opponent": "JAX",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 15.86,
+            "PPR": 15.86,
+            "STD": 15.86
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "KC",
+          "opponent": "LAC",
+          "snap_share": 1.0,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 32.0,
+          "fantasy_points": {
+            "HALF": 18.7,
+            "PPR": 18.7,
+            "STD": 18.7
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "KC",
+          "opponent": "JAX",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 19.3,
+            "PPR": 19.3,
+            "STD": 19.3
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "KC",
+          "opponent": "JAX",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.115,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 3.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 13.86,
+            "PPR": 13.86,
+            "STD": 13.86
+          }
+        },
+        {
+          "week": 6,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 7,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 8,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 5,
+          "latest": 0.98,
+          "earlier": 0.99,
+          "earlier_games": 4,
+          "change": -0.01
+        },
+        "target_share": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 5,
+          "latest": 0.115,
+          "earlier": 0.115,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 5,
+          "latest": 36.0,
+          "earlier": 34.0,
+          "earlier_games": 4,
+          "change": 2.0
+        },
+        "carries": {
+          "latest_week": 5,
+          "latest": 3.0,
+          "earlier": 3.0,
+          "earlier_games": 4,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 81.02,
+        "PPR": 81.02,
+        "STD": 81.02
+      },
+      "touchdown_points_share": {
+        "HALF": 0.3456,
+        "PPR": 0.3456,
+        "STD": 0.3456
+      },
+      "dropbacks": 182.0,
+      "pass_epa_per_dropback": 0.132
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000011",
+      "display_name": "Bram Kowalczyk",
+      "position": "TE",
+      "team": "LV",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 8,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "LV",
+          "opponent": "MIA",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "LV",
+          "opponent": "LAC",
+          "snap_share": 0.68,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "LV",
+          "opponent": "MIA",
+          "snap_share": 0.7,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "LV",
+          "opponent": "LAC",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 10.5,
+            "PPR": 12.0,
+            "STD": 9.0
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "LV",
+          "opponent": "LAC",
+          "snap_share": 0.68,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "LV",
+          "opponent": "MIA",
+          "snap_share": 0.7,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "LV",
+          "opponent": "LAC",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "LV",
+          "opponent": "MIA",
+          "snap_share": 0.58,
+          "target_share": 0.0,
+          "carry_share": 0.0,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 0.0,
+            "PPR": 0.0,
+            "STD": 0.0
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.58,
+          "earlier": 0.69,
+          "earlier_games": 7,
+          "change": -0.11
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.147,
+          "earlier_games": 7,
+          "change": -0.147
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.121,
+          "earlier_games": 7,
+          "change": -0.121
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 7,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 37.5,
+        "PPR": 48.0,
+        "STD": 27.0
+      },
+      "touchdown_points_share": {
+        "HALF": 0.16,
+        "PPR": 0.125,
+        "STD": 0.2222
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000012",
+      "display_name": "Yusuf Lindqvist",
+      "position": "WR",
+      "team": "LAC",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 5,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "LAC",
+          "opponent": "KC",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "LAC",
+          "opponent": "LV",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "LAC",
+          "opponent": "KC",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "LAC",
+          "opponent": "LV",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "LAC",
+          "opponent": "LV",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 6,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 7,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 8,
+          "status": "did_not_play",
+          "team": null,
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 5,
+          "latest": 0.84,
+          "earlier": 0.85,
+          "earlier_games": 4,
+          "change": -0.01
+        },
+        "target_share": {
+          "latest_week": 5,
+          "latest": 0.206,
+          "earlier": 0.206,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 5,
+          "latest": 0.314,
+          "earlier": 0.314,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 5,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 4,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 49.75,
+        "PPR": 62.25,
+        "STD": 37.25
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1206,
+        "PPR": 0.0964,
+        "STD": 0.1611
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000013",
+      "display_name": "Ade Fontenot",
+      "position": "RB",
+      "team": "MIA",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 7,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "MIA",
+          "opponent": "LV",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "MIA",
+          "opponent": "MIN",
+          "snap_share": 0.53,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "MIA",
+          "opponent": "LV",
+          "snap_share": 0.55,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 13.6,
+            "PPR": 14.6,
+            "STD": 12.6
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "MIA",
+          "opponent": "MIN",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 5,
+          "status": "bye",
+          "team": "MIA",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "MIA",
+          "opponent": "LV",
+          "snap_share": 0.55,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 13.6,
+            "PPR": 14.6,
+            "STD": 12.6
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "MIA",
+          "opponent": "MIN",
+          "snap_share": 0.54,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "MIA",
+          "opponent": "LV",
+          "snap_share": 0.53,
+          "target_share": 0.059,
+          "carry_share": 0.462,
+          "air_yards_share": 0.007,
+          "targets": 2.0,
+          "carries": 12.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 7.6,
+            "PPR": 8.6,
+            "STD": 6.6
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.53,
+          "earlier": 0.542,
+          "earlier_games": 6,
+          "change": -0.012
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.059,
+          "earlier": 0.059,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.462,
+          "earlier": 0.462,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.007,
+          "earlier": 0.007,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 12.0,
+          "earlier": 12.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 65.2,
+        "PPR": 72.2,
+        "STD": 58.2
+      },
+      "touchdown_points_share": {
+        "HALF": 0.184,
+        "PPR": 0.1662,
+        "STD": 0.2062
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000014",
+      "display_name": "Teodor Vargas",
+      "position": "QB",
+      "team": "MIN",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 7,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "MIN",
+          "opponent": "NE",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.308,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 8.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 21.8,
+            "PPR": 21.8,
+            "STD": 21.8
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "MIN",
+          "opponent": "MIA",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.308,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 8.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 18.36,
+            "PPR": 18.36,
+            "STD": 18.36
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "MIN",
+          "opponent": "NE",
+          "snap_share": 1.0,
+          "target_share": 0.0,
+          "carry_share": 0.308,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 8.0,
+          "pass_attempts": 32.0,
+          "fantasy_points": {
+            "HALF": 21.2,
+            "PPR": 21.2,
+            "STD": 21.2
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "MIN",
+          "opponent": "MIA",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.308,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 8.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 27.8,
+            "PPR": 27.8,
+            "STD": 27.8
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "MIN",
+          "opponent": "NE",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.308,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 8.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 16.36,
+            "PPR": 16.36,
+            "STD": 16.36
+          }
+        },
+        {
+          "week": 6,
+          "status": "bye",
+          "team": "MIN",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "MIN",
+          "opponent": "MIA",
+          "snap_share": 0.99,
+          "target_share": 0.0,
+          "carry_share": 0.308,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 8.0,
+          "pass_attempts": 34.0,
+          "fantasy_points": {
+            "HALF": 23.8,
+            "PPR": 23.8,
+            "STD": 23.8
+          }
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "MIN",
+          "opponent": "NE",
+          "snap_share": 0.98,
+          "target_share": 0.0,
+          "carry_share": 0.308,
+          "air_yards_share": 0.0,
+          "targets": 0.0,
+          "carries": 8.0,
+          "pass_attempts": 36.0,
+          "fantasy_points": {
+            "HALF": 22.36,
+            "PPR": 22.36,
+            "STD": 22.36
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.98,
+          "earlier": 0.988,
+          "earlier_games": 6,
+          "change": -0.008
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.308,
+          "earlier": 0.308,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 36.0,
+          "earlier": 34.33,
+          "earlier_games": 6,
+          "change": 1.67
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 8.0,
+          "earlier": 8.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 151.68,
+        "PPR": 151.68,
+        "STD": 151.68
+      },
+      "touchdown_points_share": {
+        "HALF": 0.3824,
+        "PPR": 0.3824,
+        "STD": 0.3824
+      },
+      "dropbacks": 256.0,
+      "pass_epa_per_dropback": -0.038
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000015",
+      "display_name": "Hollis Amadi",
+      "position": "WR",
+      "team": "NE",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 7,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "NE",
+          "opponent": "MIN",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "NE",
+          "opponent": "NO",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "NE",
+          "opponent": "MIN",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "NE",
+          "opponent": "NO",
+          "snap_share": 0.85,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "NE",
+          "opponent": "MIN",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "NE",
+          "opponent": "NO",
+          "snap_share": 0.86,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 8.75,
+            "PPR": 11.25,
+            "STD": 6.25
+          }
+        },
+        {
+          "week": 7,
+          "status": "bye",
+          "team": "NE",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        },
+        {
+          "week": 8,
+          "status": "played",
+          "team": "NE",
+          "opponent": "MIN",
+          "snap_share": 0.84,
+          "target_share": 0.206,
+          "carry_share": 0.0,
+          "air_yards_share": 0.314,
+          "targets": 7.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 14.75,
+            "PPR": 17.25,
+            "STD": 12.25
+          }
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 8,
+          "latest": 0.84,
+          "earlier": 0.85,
+          "earlier_games": 6,
+          "change": -0.01
+        },
+        "target_share": {
+          "latest_week": 8,
+          "latest": 0.206,
+          "earlier": 0.206,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 8,
+          "latest": 0.314,
+          "earlier": 0.314,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 73.25,
+        "PPR": 90.75,
+        "STD": 55.75
+      },
+      "touchdown_points_share": {
+        "HALF": 0.1638,
+        "PPR": 0.1322,
+        "STD": 0.2152
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "player_id": "gsis:00-0000016",
+      "display_name": "Xavier Nkemdiche",
+      "position": "TE",
+      "team": "NO",
+      "usage_rule_version": "usage_signals_v1",
+      "appearances": 7,
+      "weeks": [
+        {
+          "week": 1,
+          "status": "played",
+          "team": "NO",
+          "opponent": "ATL",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 2,
+          "status": "played",
+          "team": "NO",
+          "opponent": "NE",
+          "snap_share": 0.68,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 3,
+          "status": "played",
+          "team": "NO",
+          "opponent": "ATL",
+          "snap_share": 0.7,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 4,
+          "status": "played",
+          "team": "NO",
+          "opponent": "NE",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 10.5,
+            "PPR": 12.0,
+            "STD": 9.0
+          }
+        },
+        {
+          "week": 5,
+          "status": "played",
+          "team": "NO",
+          "opponent": "ATL",
+          "snap_share": 0.68,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 6,
+          "status": "played",
+          "team": "NO",
+          "opponent": "NE",
+          "snap_share": 0.7,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 7,
+          "status": "played",
+          "team": "NO",
+          "opponent": "ATL",
+          "snap_share": 0.69,
+          "target_share": 0.147,
+          "carry_share": 0.0,
+          "air_yards_share": 0.121,
+          "targets": 5.0,
+          "carries": 0.0,
+          "pass_attempts": 0.0,
+          "fantasy_points": {
+            "HALF": 4.5,
+            "PPR": 6.0,
+            "STD": 3.0
+          }
+        },
+        {
+          "week": 8,
+          "status": "bye",
+          "team": "NO",
+          "opponent": null,
+          "snap_share": null,
+          "target_share": null,
+          "carry_share": null,
+          "air_yards_share": null,
+          "targets": null,
+          "carries": null,
+          "pass_attempts": null,
+          "fantasy_points": null
+        }
+      ],
+      "role_changes": {
+        "snap_share": {
+          "latest_week": 7,
+          "latest": 0.69,
+          "earlier": 0.69,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "target_share": {
+          "latest_week": 7,
+          "latest": 0.147,
+          "earlier": 0.147,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carry_share": {
+          "latest_week": 7,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "air_yards_share": {
+          "latest_week": 7,
+          "latest": 0.121,
+          "earlier": 0.121,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "pass_attempts": {
+          "latest_week": 7,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        },
+        "carries": {
+          "latest_week": 7,
+          "latest": 0.0,
+          "earlier": 0.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
+      },
+      "fantasy_points_to_date": {
+        "HALF": 37.5,
+        "PPR": 48.0,
+        "STD": 27.0
+      },
+      "touchdown_points_share": {
+        "HALF": 0.16,
+        "PPR": 0.125,
+        "STD": 0.2222
+      },
+      "dropbacks": 0,
+      "pass_epa_per_dropback": null
+    }
+  ]
+}

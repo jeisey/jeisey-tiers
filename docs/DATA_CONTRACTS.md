@@ -974,3 +974,105 @@ and a series for a given player is optional a third time. An unreadable store, a
 or a registry that cannot be built each produce a **warning** and no artifact, and both
 in-season boards publish exactly as they would have. `ros_build_metadata.behavior.history` is
 null in that case, and the page renders the absence as a sentence rather than an empty panel.
+
+## 19. The signal-layer contracts — 2026-09-22 (ADR-091)
+
+Two in-season artifacts, both **observed context**: neither is a model input, neither reads a
+model output, and neither can move a projection, VORP, rank, tier, Pick of the Week selection or
+add count. Both are written by `run_ros_build`, carry the ROS bundle's build id, and are members
+of `_IN_SEASON_ARTIFACTS`. Neither has a CSV (19.4).
+
+### 19.1 `player_usage` 1.0 — observed role and production, week by week
+
+One record per player on the Opportunity Board, keyed `(build_id, player_id)`, sorted by
+`player_id`. Rule `usage_signals_v1`. Source: nflverse weekly player rows and snap counts
+(CC-BY 4.0). **Nothing is derived from ffopportunity** (19.5).
+
+| field | meaning |
+|---|---|
+| `team` | the team `team_matchups` is read for: the player's single current roster team, else the team of his latest appearance |
+| `appearances` | weeks with status `played` |
+| `weeks[]` | one entry per fantasy-horizon week 1..`through_week`, in order |
+| `weeks[].status` | `played` (a stats row **or** an offensive snap), `bye` (his team had no game), `did_not_play` |
+| `weeks[].snap_share` | share of team offensive snaps; null when no snap row bridged to him |
+| `weeks[].target_share`, `carry_share`, `air_yards_share` | his total over his team's total in that game, both from the weekly player rows (not nflverse's own `air_yards_share`, whose denominator differs); null when the team total is not positive |
+| `weeks[].targets`, `carries`, `pass_attempts` | counts; zero on a snaps-only week, which is an observation |
+| `weeks[].fantasy_points` | `{STD, HALF, PPR}` by this project's scoring engine |
+| `role_changes.{metric}` | `role_change_v1` per metric (19.2), or null when his latest game has no value for it |
+| `fantasy_points_to_date` | `{STD, HALF, PPR}`, the sum of the weekly points |
+| `touchdown_points_share` | `{STD, HALF, PPR}` points from passing/rushing/receiving TDs over points to date; null below 10 points; may exceed 1 when turnovers subtracted points |
+| `dropbacks` | pass attempts plus sacks over weeks nflverse published an EPA for |
+| `pass_epa_per_dropback` | nflverse passing EPA (attempts and sacks) over `dropbacks`; null below 20 |
+
+**Every metric is null unless the week is `played`.** A zero where he did not play would read as
+a role; the validator fails `player_usage.absence_published_as_a_value`.
+
+### 19.2 `role_change_v1`
+
+`{latest_week, latest, earlier, earlier_games, change}` for each of `snap_share`,
+`target_share`, `carry_share`, `air_yards_share`, `pass_attempts`, `carries`.
+
+- **window** — latest appearance at or before the cutoff, against every earlier appearance;
+- **averaging** — pooled for target, carry and air-yards share; a per-game mean for snap share
+  and attempts;
+- **minimum** — one earlier appearance with the metric defined; otherwise `earlier` and
+  `change` are null and `latest` still publishes;
+- **sign** — `change = latest − earlier`, computed from the two *published, rounded* halves;
+  positive is a bigger role;
+- **missing** — a metric undefined in the latest game makes the whole entry null. The rule never
+  reaches back to an older game.
+
+Shares round to three decimals (0.1 point), counts to two.
+
+### 19.3 `team_matchup` 1.0 — each team's next game, as context
+
+One record per team with a game left in the horizon, keyed `(build_id, team)`, sorted by `team`
+(the one artifact whose tie-break is not `player_id`). Rule `next_game_v1`: the earliest
+regular-season game in the fantasy horizon whose scheduled kickoff is after the build timestamp.
+
+| field | meaning |
+|---|---|
+| `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `week`, `game_id` | the game |
+| `team_rest_days`, `opponent_rest_days`, `roof` | from the schedule; null where it publishes none |
+| `total_line` | posted game total; null until posted (about two weeks ahead) |
+| `team_expected_margin` | the posted spread from **this team's** side: positive = favoured. Re-expressed once from nflverse's home-oriented `spread_line`; a null is never a pick'em |
+| `implied_team_points`, `implied_opponent_points` | `(total ± margin) / 2`; null unless both lines are posted |
+| `upcoming_bye_weeks` | horizon weeks after the cutoff with no game for this team |
+| `lines_source_id`, `lines_retrieved_at_utc` | `nflreadpy` and the schedule's retrieval time, present exactly when a line is |
+
+**Context only.** The sportsbook fields are a market quantity AGENTS.md §8 forbids as an
+intrinsic feature; `ffdraft.quality.forbidden` refuses any feature named for them. Validator:
+`team_matchups.implied_points_disagree`, `.line_without_provenance`, `.sides_disagree` (the two
+teams of a game must have opposite venues and margins and one total — the check that catches a
+spread read the wrong way round) and `.team_plays_itself`.
+
+### 19.4 Cross-artifact agreement, degradation, and why no CSV
+
+- `cross_artifact.usage_player_not_on_board` (critical): every usage record names an
+  Opportunity Board player.
+- `cross_artifact.usage_points_disagree_with_ros` (critical): weekly points sum to the ROS
+  board's `points_to_date` for the same player and preset, within 0.05.
+- `cross_artifact.usage_matchup_coverage` (informational): usage teams without a published game.
+- **Degradation.** Either builder failing is a warning (`ros.player_usage_failed`,
+  `ros.team_matchups_failed`) that withholds that artifact; every board publishes unchanged. The
+  frontend says which absence it is in — no record for him, no artifact, no game for his team.
+- **No CSV.** `player_usage` is a series; `team_matchups` is sportsbook lines whose upstream book
+  nflverse does not document, and a downloadable table of them is a redistribution step with no
+  reason to take it.
+
+### 19.5 What is deliberately absent
+
+No expected fantasy points, xFP share or points over expected: ffopportunity is CC-BY-SA 4.0 and
+the publication decision is open (ADR-086). `ros_build_metadata.signals.expected_points_statement`
+says so on the artifact.
+
+### 19.6 `ros_build_metadata.signals` and the source-contract changes
+
+`ros_build_metadata` gains an optional, additive `signals` block: the usage rule and its
+minimums, record counts, `lines_source_id`, `lines_retrieved_at_utc`, `lines_posted_teams`,
+`sportsbook_context_statement` and `expected_points_statement`.
+
+`nflverse_weekly_player_stats` 1.1 adds `passing_epa`, `sacks_suffered`; `nflverse_schedule` 1.1
+adds `location`, `away_rest`, `home_rest`, `roof`, `spread_line`, `total_line`. All are
+**context columns** (`BaseSourceAdapter.context_source_columns`): read only into published
+context, their absence a warning rather than a critical, and never a feature input.

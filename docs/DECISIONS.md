@@ -4210,3 +4210,211 @@ same fields. This is a rendering fix and a fixture correction, so no sealed seas
 (ADR-078) and no model artifact moves. `_IN_SEASON_ARTIFACTS` and ADR-089's bundle fix are
 unaffected. The only published bytes that change are the committed goldens, whose behaviour
 series now carries the cadence production has.
+
+---
+
+## ADR-091 — The in-season signal layer: observed role and the next game, published beside the model and never inside it
+
+**Status:** accepted, 2026-09-22
+**Supersedes:** nothing. **Amends:** `docs/SIGNAL_EXPANSION_EDA.md`'s framing (Part 4), and the
+Pick of the Week card's secondary tile row (ADR-088). **Takes:** the EDA's §2a.3 Vegas decision,
+reading 3 only.
+
+### The question, restated by the owner
+
+The EDA framed signal expansion as preparation for a future sealed-season retrain. The owner
+corrected that framing: the objective is **current-season decision support** — whether a player
+is worth a waiver claim *this week* — and the rest-of-season model is one signal among several,
+not the thing to be improved. A manager deciding on a claim asks whether a role is expanding,
+whether snaps rose before the box score did, whether a receiver is earning downfield looks the
+catches have not caught up with, whether scoring leans on touchdowns, who he plays next, and
+whether the wire's interest is following a football change or just itself. The product answered
+the last question (ADR-088, ADR-089) and none of the others.
+
+### What was already downloaded, measured rather than assumed (2026-09-22)
+
+This sandbox reached `github.com/nflverse/nflverse-data` release assets for the first time, so
+the EDA's UNVERIFIED items were probed live on the 2026 files (weeks 1–2 complete):
+
+| feed | finding |
+|---|---|
+| `load_player_stats(week)` | 2,225 rows; `target_share` recomputed from the same rows matches nflverse's exactly; nflverse's `air_yards_share` does **not** (up to 9 points apart — a different denominator) |
+| `load_snap_counts` | 2,994 rows; 6 of 818 skill rows fail the `pfr_id` bridge |
+| `load_schedules` | spread and total posted for **weeks 3–4 only**; rest and roof populated for every future game; **temperature and wind null for every unplayed game** |
+| `load_injuries` | the 2026 file is live (433 rows); the registry's "refuses seasons after 2025" was stale drift, corrected |
+
+### Decision 1 — two artifacts, both observed context
+
+**`player_usage.json`** (`usage_signals_v1`, one record per Opportunity Board player): every
+fantasy-horizon week through the cutoff with its status (`played` / `bye` / `did_not_play`),
+snap, target, carry and air-yards share, targets, carries, pass attempts and fantasy points per
+preset; a change per role metric; the share of points from touchdowns per preset; and pass EPA
+per dropback. Arithmetic over nflverse's weekly rows and snap counts (CC-BY 4.0), which every
+in-season build already downloads.
+
+**`team_matchups.json`** (`next_game_v1`, one record per team): the team's earliest
+regular-season game in the horizon that has not kicked off at build time — opponent, venue,
+neutral-site flag, kickoff, rest days for both sides, roof — and the posted spread and total,
+re-expressed from the team's own side, with the two implied scores.
+
+Neither is a model input and neither reads a model output. Both are written by `run_ros_build`
+after every board exists, reading from the boards only *which players exist*, and both are in
+`_IN_SEASON_ARTIFACTS` in the same change (ADR-089's lesson).
+
+### Decision 2 — the change rule, `role_change_v1`
+
+**Latest appearance against the average of every earlier appearance this season.**
+
+| | |
+|---|---|
+| window | latest appearance at or before the cutoff vs every earlier appearance — not a fixed trailing window, because in week 2 the only comparison that exists is week 2 against week 1, and a three-week rule says nothing until week 4, after the waiver runs that matter most |
+| averaging | shares counted in team units (targets, carries, air yards) are **pooled**, as `target_share_to_date` is; snap share and raw attempts are a **per-game mean**, as `snap_pct_mean_to_date` is |
+| minimum | one earlier appearance with the metric defined; below it the change is null and the latest value still publishes |
+| sign | `change = latest − earlier` in the metric's own unit; positive is a bigger role |
+| missing | a metric undefined in the latest game (no snap row) yields a null change — it never falls back to an older game |
+| rounding | `change` is the difference of the two *published, rounded* halves, so a reader subtracting them gets exactly it |
+
+**An appearance is a stats row or an offensive snap.** nflverse writes a stats row only when a
+player records a statistic, so a receiver who ran routes and was never targeted has a snap row
+and no stats row — the week a role reading most needs. On that week every count is a genuine
+zero. This is deliberately wider than the ROS panel's "played" (a stats row), and the difference
+is documented rather than hidden: games played on the card is still the ROS definition.
+
+Two sustainability readings, each with a declared minimum: **points from touchdowns** (null
+below 10 points to date; can exceed 100% when turnovers subtracted points) and **pass EPA per
+dropback** (nflverse passing EPA over attempts plus sacks; null below 20 dropbacks).
+
+### Decision 3 — the sportsbook lines are context, and only context (EDA §2a.3, reading 3)
+
+AGENTS.md §8 requires a written decision before a market-expectation proxy is *added as a
+feature*. This ADR adds none. It takes reading 3 exactly: the spread, the total and the implied
+points are **printed beside a player** and computed into nothing — no projection, VORP, rank,
+tier, cohort reading or Pick of the Week selection reads them. Readings 1 and 2 (lines as an
+intrinsic or ROS feature) remain unmade and carry a sealed-season cost; nothing here pre-empts
+them.
+
+The firewall is enforced, not stated:
+
+- `ffdraft.quality.forbidden` now refuses feature names carrying `spread`, `moneyline`,
+  `vegas`, `sportsbook`, `odds`, `implied`, `total_line`, `expected_margin`, `implied_team`;
+- `tests/unit/test_signal_matchup.py` asserts every sportsbook field is refused by name, and
+  that no field either signal artifact publishes is a feature of `ros_core_v1` or
+  `intrinsic_core_v1`;
+- the schedule's new columns are *context columns* (Decision 5): a feature builder that read
+  one would be reading a column the contract labels context-only.
+
+The build metadata carries `sportsbook_context_statement`, printed wherever a line is shown.
+
+**Provenance.** nflverse does not document which sportsbook its schedule lines come from (the
+nflreadr dictionary and nfldata's DATASETS.md are both silent, checked 2026-09-22). The lines
+are published under nflverse's CC-BY statement with nflverse attribution; this project publishes
+the consensus **spread and total only — no odds prices, no moneylines** — and no CSV of them.
+Recorded as a residual rights question for the owner, not a blocker.
+
+**Weather is not published** — no source carries it for an unplayed game.
+
+### Decision 4 — ffopportunity stays off the published layer
+
+Expected fantasy points, team xFP share and points over expected are the readings a waiver card
+would most like to show ("scoring on volume or on conversion"). ffopportunity's expected points
+are CC-BY-SA 4.0 and whether a derived per-player figure may be published is the open ADR-086
+owner decision. **Nothing in either artifact derives from ffopportunity**, and the build metadata
+carries `expected_points_statement` saying why. The next-best signals were taken instead: touchdown
+share for sustainability, air-yards share for unrealised downfield opportunity.
+
+### Decision 5 — context columns do not block builds
+
+`BaseSourceAdapter.context_source_columns` declares upstream columns read **only** into
+published context. A missing one is a warning (`source_schema.missing_context_columns`) that
+nulls a context field; a missing required column is still critical. The weekly adapter gains
+`passing_epa` and `sacks_suffered`; the schedule adapter gains `location`, `away_rest`,
+`home_rest`, `roof`, `spread_line`, `total_line` (contracts 1.1, additive). A test asserts the
+two sets never overlap.
+
+### Decision 6 — position decides what leads, in one place
+
+`web/src/data/signals.ts` holds `ROLE_METRICS_BY_POSITION`:
+
+| position | role rails | why |
+|---|---|---|
+| QB | pass attempts, rush attempts | a starter's snap share is ~100% and target share ~0%; the card used to rank those constants (EDA Part 2b) |
+| RB | snap, carry, target share | "is he taking over the backfield" |
+| WR | snap, target, air-yards share | "is he earning downfield looks the catches have not caught up with" |
+| TE | snap, target share | the field and the targets |
+
+The card's cohort strip and tiles follow the same map: a quarterback's rows are points per game,
+EPA per dropback and points from touchdowns; everyone else keeps the two three-week shares and
+gains points from touchdowns. The artifact carries all six metrics for every player — which ones
+lead is presentation, and a quarterback's target share is still a fact.
+
+### Decision 7 — Pick of the Week's selection does not change
+
+`potw_selection_v1` is untouched: six gates, one ordering on `ros_expected_vorp`. A vitest builds
+every set for every preset with and without the signal artifacts and requires identical picks.
+What changes is the explanation: an evidence row — **Role · observed**, **Production**,
+**Next game · context** — replaces the tile row that printed two three-week shares for every
+position, and "why he is the pick" gains one sentence when (and only when) his leading role grew,
+because that heading makes a claim; a shrinking role is shown in the evidence row, never hidden.
+ADR-088's "no matchup rating" stands: the next game is sourced now, a *rating* still is not.
+
+### Decision 8 — add momentum reaches the player card
+
+The in-season card now carries the same `BehaviorSparkline` Pick of the Week draws (ADR-089),
+from the same `behavior_trend_series.json` record, below the roster-moves strip. It is the
+*market behaviour* concept, kept in its own block beside the observed role rather than blended
+with it, and it is absent — with the reason stated — for a player the trending feed never
+carried. ADR-089 left the card out because it was not asked for; a waiver decision made from the
+card is exactly where "is the wire's interest building or fading" belongs next to "is his role
+building or fading", and the two readings sit in separate, labelled blocks.
+
+### Two pre-existing defects the captures found
+
+1. **A card for a player the draft board never held was headed "Player".** The header read only
+   draft records (tier, arbitrage, status). The in-season records are identity sources now.
+2. **A surfaced player's card was a draft-market card.** A player surfaced from beyond the ROS
+   depth has no ROS row by contract, so the in-season panel — keyed on that row — fell back to
+   "No current FFC ADP" in-season. The panel now renders from the Opportunity Board row, withholds
+   only the projection-dependent pace and tiles, and says why.
+
+Plus three defects in this change's own first draft that no test failed on and the first capture
+showed: the evidence row landed in the portrait column, the card's momentum strip painted every
+bar but the latest transparent (its colour variable is scoped to Pick of the Week cards), and a
+`▼` glyph sat beside "no change" (the glyph now follows the printed rounding). And one in the
+frontend fixture: the surfaced row spread its anchor's record and inherited a starter's
+three-week shares, so a one-appearance card drew a 55% tile beside a single 45% rail; its shares
+and appearances now come from its own weeks. And one the final capture found: in a build with
+no signal artifacts, Pick of the Week's next-game block said "No next game is published for
+DET" — a claim that a schedule was read and was empty. It now says the build published no
+schedule context, as the card does, and a test fails on the old sentence.
+
+### Verification
+
+`verify-real-build.mjs` compares every rendered role value, change and bar count, the points
+rail, the next game and the implied points against the artifacts, on one card per position and
+on every pick, and fails a quarterback card or pick that leads with a snap or target share.
+The card's momentum strip is compared against `behavior_trend_series.json` by the same function
+the pick cards use (`momentumFailures`), so the two surfaces cannot drift apart. Negative-controlled
+six ways (a moved change, a dropped week, moved implied points, a deleted game, a patched bundle
+leading a QB with snap share, and an inflated observation count, which fires on all four
+cards) — all fire. A real `build-ros` on live
+2026 week-2 data validates 0 critical / 0 warning and passes the gate with zero disagreements.
+
+### Payload
+
+588 usage records at week 2 are 1.36 MB (≈258 bytes per week entry), projecting to about 2.6 MB
+at week 17 — against 6.6 MB for `ros_tiers.json` today. No CSV for either artifact: one is a
+series, and a downloadable table of sportsbook lines is a redistribution step with no reason to
+take it.
+
+### Deliberately deferred
+
+| signal | why not now |
+|---|---|
+| xFP, xFP share, points over expected | the open CC-BY-SA decision (ADR-086) |
+| WOPR | a fixed-weight blend of two shares the card already shows separately |
+| RACR, yards per target/carry, CPOE | one efficiency reading per position is enough to start; CPOE needs a play-weighting the weekly file cannot reproduce exactly |
+| red-zone / goal-line opportunity | needs play-by-play; not built for one metric |
+| opponent points allowed by position | derivable from the weekly rows, but two games is not a defensive profile; revisit around week 5 |
+| weather | no source for an unplayed game |
+| injuries | the feed is live; its point-in-time behaviour is unprobed (AGENTS §7) |
+| POTW selection using role signals | a separate, explicit design decision; not taken |

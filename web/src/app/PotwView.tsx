@@ -31,10 +31,12 @@
 import { useCallback, useMemo } from "react";
 
 import { BehaviorSparkline } from "../charts/BehaviorSparkline";
+import { MatchupPanel } from "../charts/MatchupPanel";
+import { Bars } from "../charts/UsageRails";
 import { PlayerPortrait } from "../components/PlayerPortrait";
 import { Notice, PositionTag, RosStatusBadge, SectionHead } from "../components/primitives";
 import { cohortStat, finiteValues } from "../data/cohort";
-import type { Position } from "../data/contracts";
+import type { Position, ScoringPreset, TeamMatchupRecord } from "../data/contracts";
 import { EM_DASH, formatInteger, formatValue } from "../data/format";
 import {
   POTW_POSITIONS,
@@ -55,6 +57,17 @@ import {
   type BehaviorMomentum,
   type InSeasonBundle,
 } from "../data/ros";
+import {
+  DIRECTION_GLYPH,
+  ROLE_METRICS_BY_POSITION,
+  changeWindow,
+  formatChange,
+  formatMetric,
+  formatShare,
+  productionBars,
+  roleReading,
+  roleSentence,
+} from "../data/signals";
 import {
   POSITION_FILTERS,
   POSITION_LABELS,
@@ -135,6 +148,141 @@ function MovesStrip({
 }
 
 /**
+ * The three kinds of evidence behind a pick, side by side and never combined (ADR-091).
+ *
+ * **Role** is what he is doing on the field, **production** is what it has scored and what
+ * the model projects, **matchup** is the next game as context. Each has its own heading and
+ * its own unit, for the reason the moves pair beneath it is two panels rather than one: they
+ * share no scale, and a single "why" number made of them would be manufactured. Every figure
+ * is a published field — the role change is the artifact's own difference and the implied
+ * points the artifact's own arithmetic — and none of it chose this player: the pick is the
+ * six gates and the rest-of-season ordering, exactly as before.
+ */
+function PickEvidence({
+  pick,
+  scoring,
+  matchup,
+  usagePublished,
+  matchupsPublished,
+}: {
+  readonly pick: PotwPick;
+  readonly scoring: ScoringPreset;
+  readonly matchup: TeamMatchupRecord | null;
+  readonly usagePublished: boolean;
+  /** Whether this build published `team_matchups.json` at all. A different fact from the above. */
+  readonly matchupsPublished: boolean;
+}): React.JSX.Element {
+  const { usage } = pick;
+  const metrics = ROLE_METRICS_BY_POSITION[pick.position].slice(0, 2);
+  const readings = usage === null ? [] : metrics.map((metric) => roleReading(usage, metric));
+  const production = usage === null ? null : productionBars(usage, scoring);
+  const latestGame = production?.bars.find((bar) => bar.latest) ?? null;
+  const touchdowns = usage?.touchdown_points_share[scoring] ?? null;
+  const record = pick.opportunity;
+  const perGame =
+    pick.ros === null
+      ? null
+      : typeof pick.ros.points_per_game_to_date === "number"
+        ? pick.ros.points_per_game_to_date
+        : null;
+
+  return (
+    <div className="potw-evidence">
+      <section className="potw-evidence-block" data-evidence="role" aria-label="Role, observed">
+        <span className="potw-evidence-kind">Role · observed</span>
+        {usage === null ? (
+          <p className="potw-evidence-row">
+            {usagePublished
+              ? "No week-by-week role is published for him."
+              : "This build published no role series."}
+          </p>
+        ) : (
+          readings.map((reading) => {
+            const { spec, change, direction } = reading;
+            return (
+              <div key={spec.metric} className="potw-role" data-metric={spec.metric}>
+                <p className="potw-evidence-row" title={roleSentence(reading)}>
+                  <strong>{spec.label}</strong>
+                  <span>
+                    {change === null
+                      ? "—"
+                      : change.earlier === null
+                        ? formatMetric(spec, change.latest)
+                        : `${formatMetric(spec, change.earlier)} → ${formatMetric(spec, change.latest)}`}
+                  </span>
+                  {change?.change !== null && change?.change !== undefined && direction !== null && (
+                    <span className="usage-rail-change" data-direction={direction}>
+                      <span aria-hidden="true">{DIRECTION_GLYPH[direction]}</span>{" "}
+                      {formatChange(spec, change.change)}
+                    </span>
+                  )}
+                </p>
+                <div className="usage-rail" data-direction={direction ?? "none"}>
+                  <Bars bars={reading.bars} axisMax={reading.axisMax} />
+                </div>
+                <span className="visually-hidden">{roleSentence(reading)}</span>
+              </div>
+            );
+          })
+        )}
+        {readings[0]?.change != null && (
+          <p className="cohort-note">{changeWindow(readings[0].change)}</p>
+        )}
+      </section>
+
+      <section
+        className="potw-evidence-block"
+        data-evidence="production"
+        aria-label="Production"
+      >
+        <span className="potw-evidence-kind">Production</span>
+        <p className="potw-evidence-row">
+          <strong>Latest game</strong>
+          <span>
+            {latestGame?.value == null
+              ? EM_DASH
+              : `${formatValue(latestGame.value)} pts · week ${String(latestGame.week)}`}
+          </span>
+        </p>
+        <p className="potw-evidence-row">
+          <strong>Per game so far</strong>
+          <span>{formatValue(perGame)}</span>
+        </p>
+        <p className="potw-evidence-row">
+          <strong>Projected rate</strong>
+          <span>{pick.projectedRate === null ? EM_DASH : formatValue(pick.projectedRate)}</span>
+          {/* The division it is, word for word (ADR-086): never "expected points per game". */}
+          <span className="usage-rail-window">remaining points ÷ remaining games</span>
+        </p>
+        <p className="potw-evidence-row">
+          <strong>Points from TDs</strong>
+          <span>
+            {usage === null
+              ? EM_DASH
+              : touchdowns === null
+                ? "under 10 points so far"
+                : formatShare(touchdowns)}
+          </span>
+        </p>
+      </section>
+
+      <section className="potw-evidence-block" data-evidence="matchup" aria-label="Next game">
+        <span className="potw-evidence-kind">Next game · context</span>
+        {matchup === null ? (
+          <p className="potw-evidence-row">
+            {matchupsPublished
+              ? `No next game is published for ${record.team ?? "his team"}.`
+              : "This build published no schedule context."}
+          </p>
+        ) : (
+          <MatchupPanel record={matchup} team={matchup.team} statement={null} compact />
+        )}
+      </section>
+    </div>
+  );
+}
+
+/**
  * One pick.
  *
  * The whole card is a rendering of two artifact records. The only arithmetic is the cohort
@@ -150,6 +298,10 @@ function PickCard({
   portraitUrl,
   momentum,
   seriesPublished,
+  scoring,
+  matchup,
+  usagePublished,
+  matchupsPublished,
 }: {
   readonly pick: PotwPick;
   readonly movesAxis: number;
@@ -161,6 +313,11 @@ function PickCard({
   readonly momentum: BehaviorMomentum | null;
   /** Whether this build published a series artifact at all. A different fact from the above. */
   readonly seriesPublished: boolean;
+  readonly scoring: ScoringPreset;
+  /** His team's next game, or null. Context only (ADR-091). */
+  readonly matchup: TeamMatchupRecord | null;
+  readonly usagePublished: boolean;
+  readonly matchupsPublished: boolean;
 }): React.JSX.Element {
   const record = pick.opportunity;
   const window =
@@ -168,8 +325,6 @@ function PickCard({
       ? "window unknown"
       : `${String(record.behavior_lookback_hours)}h`;
   const net = record.net_add_count ?? 0;
-  const snap = record.snap_share_last3;
-  const target = record.target_share_last3;
 
   return (
     <article
@@ -269,32 +424,20 @@ function PickCard({
           </ul>
         </div>
 
-        <div className="readout-grid potw-tiles" data-row="secondary">
-          <Tile
-            label="Projected rate"
-            value={pick.projectedRate === null ? EM_DASH : formatValue(pick.projectedRate)}
-            hint="remaining points ÷ remaining games"
-          />
-          <Tile
-            label="Snap share"
-            value={
-              typeof snap === "number" ? `${String(Math.round(snap * 100))}%` : EM_DASH
-            }
-            hint={typeof snap === "number" ? "last 3 weeks" : "not published"}
-          />
-          <Tile
-            label="Target share"
-            value={
-              typeof target === "number" ? `${String(Math.round(target * 100))}%` : EM_DASH
-            }
-            hint={typeof target === "number" ? "last 3 weeks" : "not published"}
-          />
-          <Tile
-            label="Rest-of-season rank"
-            value={`#${String(record.ros_fair_rank)}`}
-            hint={record.outside_tier_board ? "surfaced, no tier" : "on the published board"}
-          />
-        </div>
+        {/*
+          The evidence row (ADR-091) replaces the four-tile row that printed two three-week
+          shares for every position — a quarterback's two constants included. Role is now his
+          position's own readings week by week, production says what it scored, and the next
+          game is context. The rest-of-season rank the old row carried is in the header's
+          position rank and the seal beside it.
+        */}
+        <PickEvidence
+          pick={pick}
+          scoring={scoring}
+          matchup={matchup}
+          usagePublished={usagePublished}
+          matchupsPublished={matchupsPublished}
+        />
 
         <div className="potw-moves">
           {/*
@@ -501,6 +644,10 @@ export function PotwView({
               portraitUrl={headshotFor(pick.opportunity.player_id)}
               momentum={behaviorMomentum(bundle, pick.opportunity.player_id)}
               seriesPublished={bundle.hasBehaviorSeries}
+              scoring={SCORING_TO_PRESET[state.scoring]}
+              matchup={bundle.matchupFor(pick.usage?.team ?? pick.opportunity.team)}
+              usagePublished={bundle.hasUsage}
+              matchupsPublished={bundle.hasMatchups}
             />
           ))}
         </div>

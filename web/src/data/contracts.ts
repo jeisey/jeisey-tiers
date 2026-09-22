@@ -30,6 +30,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   inseason_opportunity: "1.0",
   player_headshots: "1.0",
   behavior_trend_series: "1.0",
+  player_usage: "1.0",
+  team_matchups: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -47,7 +49,9 @@ export type ArtifactName =
   | "ros_tiers"
   | "inseason_opportunity"
   | "player_headshots"
-  | "behavior_trend_series";
+  | "behavior_trend_series"
+  | "player_usage"
+  | "team_matchups";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -622,6 +626,160 @@ export const BEHAVIOR_TREND_SERIES_FIELDS = [
   "points",
 ] as const satisfies readonly (keyof BehaviorTrendSeriesRecord)[];
 
+/** A value per scoring preset. Null where the rule withholds a reading for that preset. */
+export interface ByPreset {
+  readonly STD: number | null;
+  readonly HALF: number | null;
+  readonly PPR: number | null;
+}
+
+/** `played`: a stats row or an offensive snap. Every metric is null unless `played`. */
+export type UsageWeekStatus = "played" | "bye" | "did_not_play";
+
+export interface UsageWeek {
+  readonly week: number;
+  readonly status: UsageWeekStatus;
+  readonly team: string | null;
+  readonly opponent: string | null;
+  readonly snap_share: number | null;
+  readonly target_share: number | null;
+  readonly carry_share: number | null;
+  readonly air_yards_share: number | null;
+  readonly targets: number | null;
+  readonly carries: number | null;
+  readonly pass_attempts: number | null;
+  readonly fantasy_points: ByPreset | null;
+}
+
+/**
+ * `role_change_v1`: the latest appearance against the average of every earlier one.
+ *
+ * `change` is exactly `latest - earlier` as published, so a surface prints it rather than
+ * subtracting — the two numbers and their difference can never disagree on a card.
+ */
+export interface RoleChange {
+  readonly latest_week: number;
+  readonly latest: number;
+  readonly earlier: number | null;
+  readonly earlier_games: number;
+  readonly change: number | null;
+}
+
+export type RoleMetric =
+  | "snap_share"
+  | "target_share"
+  | "carry_share"
+  | "air_yards_share"
+  | "pass_attempts"
+  | "carries";
+
+/**
+ * One player's observed role and production this season, week by week (ADR-091).
+ *
+ * **Observed facts, never a model output and never a model input.** Every number is
+ * arithmetic over nflverse's weekly rows and snap counts through the cutoff. Nothing here is
+ * from ffopportunity: whether an expected-points figure may be published is an open
+ * CC-BY-SA question (ADR-086), so this contract deliberately carries none.
+ */
+export interface PlayerUsageRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly position: Position;
+  /** The team `team_matchups.json` is read for. */
+  readonly team: string | null;
+  readonly usage_rule_version: string;
+  readonly appearances: number;
+  readonly weeks: readonly UsageWeek[];
+  readonly role_changes: Readonly<Record<RoleMetric, RoleChange | null>>;
+  readonly fantasy_points_to_date: ByPreset;
+  /** Points from touchdowns over points to date. Null below 10 points. */
+  readonly touchdown_points_share: ByPreset;
+  readonly dropbacks: number;
+  /** Null below 20 dropbacks. */
+  readonly pass_epa_per_dropback: number | null;
+}
+
+export const PLAYER_USAGE_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "player_id",
+  "display_name",
+  "position",
+  "team",
+  "usage_rule_version",
+  "appearances",
+  "weeks",
+  "role_changes",
+  "fantasy_points_to_date",
+  "touchdown_points_share",
+  "dropbacks",
+  "pass_epa_per_dropback",
+] as const satisfies readonly (keyof PlayerUsageRecord)[];
+
+/**
+ * One team's next unplayed game (ADR-091). **Published context only.**
+ *
+ * The sportsbook fields are a market quantity AGENTS.md section 8 forbids as a model input.
+ * They are printed beside a player and move no projection, VORP, rank, tier or pick. The
+ * spread has already been re-expressed from this team's side — positive means favoured — so
+ * nothing downstream handles nflverse's home-oriented convention.
+ */
+export interface TeamMatchupRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly team: string;
+  readonly matchup_rule_version: string;
+  readonly game_id: string;
+  readonly week: number;
+  readonly kickoff_utc: string;
+  readonly opponent: string;
+  readonly home_away: "home" | "away";
+  readonly neutral_site: boolean;
+  readonly team_rest_days: number | null;
+  readonly opponent_rest_days: number | null;
+  readonly roof: string | null;
+  readonly total_line: number | null;
+  readonly team_expected_margin: number | null;
+  readonly implied_team_points: number | null;
+  readonly implied_opponent_points: number | null;
+  readonly upcoming_bye_weeks: readonly number[];
+  readonly lines_source_id: string | null;
+  readonly lines_retrieved_at_utc: string | null;
+}
+
+export const TEAM_MATCHUP_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "team",
+  "matchup_rule_version",
+  "game_id",
+  "week",
+  "kickoff_utc",
+  "opponent",
+  "home_away",
+  "neutral_site",
+  "team_rest_days",
+  "opponent_rest_days",
+  "roof",
+  "total_line",
+  "team_expected_margin",
+  "implied_team_points",
+  "implied_opponent_points",
+  "upcoming_bye_weeks",
+  "lines_source_id",
+  "lines_retrieved_at_utc",
+] as const satisfies readonly (keyof TeamMatchupRecord)[];
+
 export const PLAYER_STATUS_FIELDS = [
   "schema_version",
   "build_id",
@@ -876,6 +1034,27 @@ export interface RosBehaviorMetadata {
   readonly signal_semantics?: string;
 }
 
+/** The signal layer's own account of itself (ADR-091), carried on `ros_build_metadata`. */
+export interface RosSignalMetadata {
+  readonly usage_rule: {
+    readonly version: string;
+    readonly change_rule_version: string;
+    readonly min_earlier_games: number;
+    readonly min_touchdown_share_points: number;
+    readonly min_epa_dropbacks: number;
+  };
+  readonly usage_records: number;
+  readonly matchup_rule_version: string;
+  readonly matchup_records: number;
+  readonly lines_source_id: string | null;
+  readonly lines_retrieved_at_utc: string | null;
+  readonly lines_posted_teams: number;
+  /** Printed wherever a line is shown. */
+  readonly sportsbook_context_statement: string;
+  /** Why no expected-points reading is published. */
+  readonly expected_points_statement: string;
+}
+
 export interface RosBuildMetadata {
   readonly schema_version: string;
   readonly build_id: string;
@@ -916,6 +1095,7 @@ export interface RosBuildMetadata {
   };
   readonly behavior?: RosBehaviorMetadata | null;
   readonly surface?: Record<string, unknown> | null;
+  readonly signals?: RosSignalMetadata | null;
   readonly disclosures: RosDisclosures;
   readonly limitations: readonly string[];
   readonly supported_presets: readonly string[];
@@ -1020,6 +1200,14 @@ export const OPPORTUNITY_FIELDS_COMPLETE: NoMissingKeys<
   OpportunityRecord,
   typeof OPPORTUNITY_FIELDS
 > = true;
+export const PLAYER_USAGE_FIELDS_COMPLETE: NoMissingKeys<
+  PlayerUsageRecord,
+  typeof PLAYER_USAGE_FIELDS
+> = true;
+export const TEAM_MATCHUP_FIELDS_COMPLETE: NoMissingKeys<
+  TeamMatchupRecord,
+  typeof TEAM_MATCHUP_FIELDS
+> = true;
 
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
@@ -1032,6 +1220,8 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   inseason_opportunity: OPPORTUNITY_FIELDS,
   player_headshots: PLAYER_HEADSHOT_FIELDS,
   behavior_trend_series: BEHAVIOR_TREND_SERIES_FIELDS,
+  player_usage: PLAYER_USAGE_FIELDS,
+  team_matchups: TEAM_MATCHUP_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -1045,6 +1235,8 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   inseason_opportunity: "inseason_opportunity.json",
   player_headshots: "player_headshots.json",
   behavior_trend_series: "behavior_trend_series.json",
+  player_usage: "player_usage.json",
+  team_matchups: "team_matchups.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

@@ -4,6 +4,15 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The in-season signal layer, 2026-09-22 (ADR-091).** The owner corrected the framing of
+`docs/SIGNAL_EXPANSION_EDA.md`: signal expansion exists to improve **current-season decisions**
+— a waiver claim this week, Pick of the Week, the player card — not to prepare features for a
+January-2027 retrain. Two observed-context artifacts now publish beside the boards
+(`player_usage.json`, `team_matchups.json`), the card and Pick of the Week lead with the role
+metrics that mean something for each position, and the next game is printed with its sportsbook
+lines as context that no model reads. **No model, feature table, selection rule or tier changed.**
+See **What the signal layer changed** below.
+
 **Pick of the Week, 2026-09-18 (ADR-088).** The owner asked for a new in-season tab showing
 the number-one waiver target at each position, and named the signal he wanted it built on:
 rostered percentage, with a clear cut-off, "because we don't want to say someone like Kyren
@@ -1379,6 +1388,11 @@ The Phase-8 blocker — the Claude Design MCP being unreachable, so the design l
 
 Nothing else is blocking. The four analytical findings are unchanged and none is a blocker: the Monte Carlo residual (ADR-034 as narrowed by ADR-057), tier boundary stability (ADR-035), the non-discriminating `wide_market_range` flag (ADR-041) and the all-scoring cohort serving STD and HALF (ADR-012). All four are published as limitations on the site's Data view rather than repaired by moving a threshold, and all four are in the post-V1 backlog below with what would have to be true before touching them.
 
+**Egress varies by environment — check, don't assume (2026-09-22).** The ADR-091 session
+reached `github.com/nflverse/nflverse-data` release assets directly and ran a real `build-ros`
+on live 2026 week-2 data; it still could not reach the private market-data store, so that build
+published without behaviour. The paragraph below describes the earlier sessions' environment.
+
 **Two things this environment cannot do, and a later session should not plan around.** It has no egress to vendor hosts or to the deployed site (ADR-009), and it cannot download a workflow artifact — `actions/artifacts/<id>/zip` answers 403. So a real board can only be built on a runner, a deployed site can only be smoked on a runner, and a runner's screenshots are evidence for a human rather than for the session. What *is* readable is a job log: `get_job_logs` returns a daily refresh's whole rendered summary, which is where release metadata should be read from rather than guessed.
 
 ## Post-V1 research backlog
@@ -1399,6 +1413,11 @@ AGENTS.md §8 "stop and document" decision before any use; and **the 2025 holdou
 both models, so every new *model feature* waits on a fresh sealed season (2026, ≈January 2027)
 while every new *published context* does not** — which reorders the backlog.
 
+**Framing corrected by the owner, 2026-09-22 (ADR-091).** The objective is current-season
+decision support, and published context is where that work lives; the sealed-season constraint
+still governs any *model* feature and no longer orders the product backlog. ADR-091 built the
+first slice (role, production, next game) and the EDA is annotated item by item.
+
 0. **Publish the per-player expected-points figures, or decide not to** (ADR-086).
    `expected_points_per_game_to_date` and `points_over_expected_per_game_to_date` are already
    computed in `ros_core_v1` and would give the in-season card a genuine luck reading —
@@ -1409,6 +1428,11 @@ while every new *published context* does not** — which reorders the backlog.
    derived per-player figure on a public artifact is much closer to redistributing the licensed
    data than a prediction made from it is, and the share-alike obligation would bind what this
    site publishes. Same question as item 8 below, on a source the project already depends on.
+   **Still open after ADR-091, and now the reading the in-season card most visibly lacks:** the
+   signal layer was built around it (touchdown share and air-yards share as next-best), and the
+   build metadata's `expected_points_statement` tells a reader why the reading is absent. A
+   decision here would add xFP share and points over expected to `player_usage.json`, not to a
+   ROS artifact.
 
 0b. ~~**Publish a behaviour history, so "momentum" can be a reading rather than a direction**~~
    **Done (2026-09-19, ADR-089)**, and the honest version was taken: the observations are
@@ -1458,7 +1482,21 @@ while every new *published context* does not** — which reorders the backlog.
    derived bar (ADR-056 §1). Give it its own constant and a stated derivation at a moment when
    nobody is reading a number it would move.
 8. **FTN advanced metrics.** Still open, still not needed, and still carrying a share-alike
-   obligation that would bind what this site publishes.
+   obligation that would bind what this site publishes. Out of scope for ADR-091 by the owner's
+   instruction, as are ESPN QBR, FantasyPros/ECR and paid charting.
+9. **Should role signals affect Pick of the Week's *selection*?** (ADR-091 Decision 7.) Today they
+   explain a pick and never choose one; `potw_selection_v1` is unchanged and a vitest pins it
+   across every league and scoring preset. Changing that is an explicit owner design decision —
+   a new rule version, frozen before its evidence, with no blended score.
+10. **The sportsbook behind nflverse's schedule lines** (`schedule_lines_context_only`). nflverse
+    does not name it. The spread and total are published as context under nflverse's CC-BY
+    statement, with no odds prices and no CSV; if the owner wants the upstream terms settled,
+    that is a rights question, not a code one. The Vegas *model* question (EDA §2a.3 readings 1
+    and 2) is separate and still undecided.
+11. **Signal-layer follow-ups, each deferred with a reason in ADR-091:** opponent strength by
+    position (revisit around week 5, when a defence has a profile), the injury feed's
+    point-in-time behaviour (a runner probe a week apart), WOPR/RACR/CPOE, red-zone opportunity
+    (needs play-by-play), and the Opportunity Board's role and momentum columns.
 
 ## What the market-history bugfix changed (2026-09-07, ADR-081)
 
@@ -2091,9 +2129,80 @@ full set is 15MB of diff nobody can read.
 same window, same `min_observations: 2`, same sign convention, same fields — so no sealed season
 is spent (ADR-078). The only published bytes that move are the committed goldens.
 
+## What the signal layer changed (2026-09-22, ADR-091)
+
+**The question.** A manager deciding a waiver claim asks whether a role is expanding, whether
+snaps rose before the box score did, whether scoring leans on touchdowns, and who he plays next.
+The product answered only "is the wire adding him" (ADR-088/089). The six concepts are kept
+separate on the page and in the data — rest-of-season value (model), observed role, opportunity
+quality, efficiency, next game (context), market behaviour — and there is no blended score.
+
+**What publishes now** (both written by `run_ros_build` after the boards, both in
+`_IN_SEASON_ARTIFACTS`, neither with a CSV):
+
+- `player_usage.json` — `usage_signals_v1`: per horizon week, a status (`played`/`bye`/
+  `did_not_play`), snap/target/carry/air-yards share, targets, carries, pass attempts and
+  points per preset; per role metric a `role_change_v1` reading (latest appearance vs the
+  average of earlier ones; min one earlier game; change = difference of the published rounded
+  halves; null, never a fallback); points from TDs (null below 10 points) and pass EPA per
+  dropback (null below 20 dropbacks). An appearance is a stats row **or** an offensive snap —
+  wider than the ROS panel's "played", on purpose, and documented.
+- `team_matchups.json` — `next_game_v1`: each team's earliest horizon game not yet kicked off,
+  with rest, roof, neutral flag, and the spread and total from the team's own side plus both
+  implied scores. **Context only**; the forbidden-feature guard refuses sportsbook tokens.
+
+**Facts a later session should not re-derive** (probed live 2026-09-22):
+
+- nflverse's `air_yards_share` uses a different denominator (up to 9 points off a pooled
+  recomputation); ours is pooled from `receiving_air_yards`. `target_share` matches exactly.
+- `spread_line` is positive for a **home** favourite (dictionary, and 31/31 lined games agree
+  with the moneyline favourite). Lines are posted about two weeks ahead (weeks 3–4 at week 2).
+  `temp`/`wind` are null for every unplayed game, so weather is not publishable.
+- 6 of 818 skill rows fail the `pfr_id` snap bridge in weeks 1–2; those weeks publish a null
+  snap share, drawn as "played, no value".
+- `load_injuries(2026)` is live (433 rows); the registry note saying otherwise was stale and is
+  corrected. Its point-in-time behaviour is still unprobed.
+
+**Real build, 2026-09-22.** `ffdraft build-ros --season 2026 --as-of 2026-09-22T16:00:00Z`
+on live data: quality gate pass, 0 critical, three known warnings (tier stability,
+convergence, behaviour unavailable because the private store was not reachable here);
+`validate-artifacts` 0/0; 588 usage records, 32 team matchups, all 32 with posted lines;
+`verify:board` zero disagreements. Readings it produced: Emanuel Wilson snap 6%→41%, carry
+9%→53%; Aaron Jones Sr. snap 46%→81%, carry 35%→82%; Josh Allen pass EPA +0.46 per dropback,
+3rd of 33 QBs. Payload 1.36 MB at week 2, projecting to ~2.6 MB by week 17.
+
+**Surfaces.** The card's in-season section reads: roster-moves headline → *Role, week by week*
+(position-aware rails with the points rail on one week axis) → *Production so far* → cohort
+strip → *Next game* (context) → roster moves → add momentum (newly on the card). Pick of the
+Week's two-share tile row became an evidence row (Role · observed / Production / Next game ·
+context). Two pre-existing card defects fixed on the way: a card for a player the draft board
+never held was headed "Player", and a surfaced player got the draft-market card in season.
+
+**What did not change.** `ros_core_v1`, `intrinsic_core_v1`, both models, every tier, every
+projection, and `potw_selection_v1`. No sealed season is spent (ADR-078). ffopportunity feeds
+nothing published.
+
+**Degradation.** A missing context column is a warning that nulls its field; a failure anywhere
+in the signal layer is `ros.player_usage_failed` / `ros.team_matchups_failed` and the boards
+publish without it. `verify:board` runs on an `in-season-no-signals` fixture build in CI.
+
+**Verified**: `ruff check`, `ruff format --check`, strict `mypy` (161 files) clean;
+`uv run pytest` **1,574** passed; `ffdraft validate-artifacts` 0 critical / 0 warning;
+`npm run lint` 0 errors / 4 pre-existing warnings; `typecheck` clean; vitest **528**;
+`npm run e2e` **140**; `npm run build` clean; `verify:board` zero failures on eight builds
+(dist, matured, in-season, in-season-no-signals, in-season-no-behavior, awaiting-first-week,
+season-complete, and the real week-2 build); six negative controls on the new gate checks fire.
+Screens in `docs/visual-qa/2026-09-22-in-season-signals/` (fixture 48–80, real-01–06).
+
 ## Next action
 
 **None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**
+
+**After ADR-091 merges, read the first daily refresh's summary for the signal layer**: confirm
+no `ros.player_usage_failed` / `ros.team_matchups_failed` / `source_schema.missing_context_columns`
+warning, that `verify:board` reports `signalCardsChecked: 4` and `signalPicksChecked` equal to
+the pick count, and that `team_matchups.json` carries lines for the coming week. A team whose
+next game has no posted line should read "No line posted yet" on its cards, never an even split.
 
 The ordinary operating loop from here is `docs/OPERATIONS.md`: the daily refresh runs at 07:17 America/New_York, a failed gate leaves the previous site serving, and `live-smoke.yml` is the dispatch-only way to check the deployed site afterwards. Two standing operational chores, neither urgent: `MARKET_DATA_REPO_TOKEN` expires and needs a calendar reminder (section 5.3), and GitHub disables scheduled workflows in public repositories after long inactivity, which the daily capture no longer prevents because it commits to the *private data* repository (section 12).
 

@@ -134,6 +134,53 @@
       "description": "The public surface universe for the in-season board (ADR-063): who is visible and why.",
       "additionalProperties": true
     },
+    "signals": {
+      "type": ["object", "null"],
+      "description": "The in-season signal layer (ADR-091): which rules produced player_usage.json and team_matchups.json, how many records each carries, and the two sentences that must travel with them. Optional and additive: absent or null removes the evidence blocks those artifacts feed and nothing else.",
+      "additionalProperties": false,
+      "required": [
+        "usage_rule", "usage_records", "matchup_rule_version", "matchup_records",
+        "lines_source_id", "lines_retrieved_at_utc", "lines_posted_teams",
+        "sportsbook_context_statement", "expected_points_statement"
+      ],
+      "properties": {
+        "usage_rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "version", "change_rule_version", "min_earlier_games",
+            "min_touchdown_share_points", "min_epa_dropbacks"
+          ],
+          "properties": {
+            "version": {"const": "usage_signals_v1"},
+            "change_rule_version": {"const": "role_change_v1"},
+            "min_earlier_games": {"type": "integer", "minimum": 1},
+            "min_touchdown_share_points": {"type": "number", "minimum": 0},
+            "min_epa_dropbacks": {"type": "number", "minimum": 0}
+          }
+        },
+        "usage_records": {"type": "integer", "minimum": 0},
+        "matchup_rule_version": {"const": "next_game_v1"},
+        "matchup_records": {"type": "integer", "minimum": 0},
+        "lines_source_id": {"type": ["string", "null"]},
+        "lines_retrieved_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "lines_posted_teams": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Teams whose next game carries a posted spread and total."
+        },
+        "sportsbook_context_statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Printed wherever a line is shown: the lines are context, read by no model."
+        },
+        "expected_points_statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why no expected-points reading is published (the open CC-BY-SA decision, ADR-086)."
+        }
+      }
+    },
     "disclosures": {
       "type": "object",
       "description": "ADR-076's disclosure contract, carried on the artifact so the frontend cannot publish the flag without the sentences that make it honest.",

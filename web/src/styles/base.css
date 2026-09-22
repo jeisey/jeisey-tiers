@@ -5030,7 +5030,8 @@ dl.facts dd {
 .potw-card-portrait { grid-area: portrait; }
 .potw-tiles[data-row="primary"] { grid-area: tiles; }
 .potw-why { grid-area: why; }
-.potw-tiles[data-row="secondary"] { grid-area: more; }
+/* The evidence row (ADR-091) spans the card, under the portrait and the "why". */
+.potw-evidence { grid-area: more; }
 .potw-moves { grid-area: moves; }
 
 /*
@@ -5093,10 +5094,6 @@ dl.facts dd {
 
 .readout-grid.potw-tiles[data-row="primary"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.readout-grid.potw-tiles[data-row="secondary"] {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .potw-tile .readout-value {
@@ -5361,10 +5358,6 @@ dl.facts dd {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .readout-grid.potw-tiles[data-row="secondary"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   /*
    * The chip row keeps its label and its meta line and drops its buttons.
    *
@@ -5434,10 +5427,6 @@ dl.facts dd {
     aspect-ratio: 5 / 6;
   }
 
-  .readout-grid.potw-tiles[data-row="secondary"] {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   /*
    * The two behaviour panels stack rather than shrink.
    *
@@ -5448,5 +5437,335 @@ dl.facts dd {
    */
   .potw-moves-pair {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* =========================================================================================
+ * The in-season signal layer (ADR-091): role rails, the next game, and Pick of the Week's
+ * evidence row. Observed role, production, matchup context and market behaviour each keep
+ * their own block and heading; nothing here blends them.
+ * ========================================================================================= */
+
+/*
+ * Role, week by week. Small multiples on one week axis: a label, the bars, the reading.
+ * The reading column is wide enough for "▲ +31 pts" beside a value, so the change never
+ * wraps away from the number it describes.
+ */
+.usage-rails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hairline);
+  background: var(--line-faint);
+  border: var(--hairline) solid var(--line-faint);
+  margin-bottom: var(--space-2);
+}
+
+.usage-rail,
+.usage-axis {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 10.5rem;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--tile);
+  min-width: 0;
+}
+
+.usage-axis {
+  padding-top: 2px;
+  padding-bottom: var(--space-1);
+}
+
+.usage-rail-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font: 600 0.6rem/1.1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  min-width: 0;
+}
+
+.usage-rail-question {
+  font: 400 0.64rem/1.3 var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-muted);
+}
+
+.usage-bars,
+.usage-axis-weeks {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.usage-bars {
+  height: 30px;
+}
+
+/* One slot per week, capped so a two-week season is two narrow bars rather than two slabs:
+ * a short series should look short (the momentum strip's lesson, ADR-089). */
+.usage-bar,
+.usage-axis-weeks > span {
+  flex: 1 1 0;
+  min-width: 3px;
+  max-width: 22px;
+}
+
+.usage-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  font: 500 0.55rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.usage-bar-fill {
+  display: block;
+  width: 100%;
+  background: rgb(46 204 255 / 34%);
+}
+
+.usage-bar[data-latest="true"] .usage-bar-fill {
+  background: rgb(46 204 255 / 80%);
+}
+
+/* The latest bar carries the direction as a tint — the fourth channel, after the glyph, the
+ * signed number and the sentence (UX_SPEC section 12). */
+.usage-rail[data-direction="up"] .usage-bar[data-latest="true"] .usage-bar-fill {
+  background: var(--bargain);
+}
+
+.usage-rail[data-direction="down"] .usage-bar[data-latest="true"] .usage-bar-fill {
+  background: var(--premium);
+}
+
+/* A bye, a missed week and a week with no value are marks with a letter, never a
+ * floor-height bar: "he was on the field and got nothing" is a different fact. */
+.usage-bar[data-status="bye"],
+.usage-bar[data-status="did_not_play"],
+.usage-bar[data-status="no_value"] {
+  align-items: center;
+  border-bottom: var(--hairline) dashed var(--line-strong);
+}
+
+.usage-axis-weeks > span {
+  text-align: center;
+  font: 500 0.52rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-rail-reading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-2);
+  margin: 0;
+  min-width: 0;
+}
+
+.usage-rail-value {
+  font: 600 0.9rem/1.1 var(--font-mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-rail-change {
+  font: 600 0.72rem/1.1 var(--font-mono);
+  color: var(--ink-strong);
+  white-space: nowrap;
+}
+
+.usage-rail-change[data-direction="up"] {
+  color: var(--bargain);
+}
+
+.usage-rail-change[data-direction="down"] {
+  color: var(--premium);
+}
+
+.usage-rail-window {
+  flex-basis: 100%;
+  font: 400 0.62rem/1.3 var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.signal-absent {
+  margin-bottom: var(--space-2);
+}
+
+/*
+ * Add momentum on the player card. The strip's bar colour is read from `--potw-rgb`, which
+ * Pick of the Week sets per position on its card; the dialog has no such ancestor, so without
+ * a scope of its own every bar but the tinted latest one painted transparent — caught by the
+ * first capture, not by a test.
+ */
+.detail-section .momentum {
+  --potw-rgb: 46 204 255;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--tile);
+}
+
+/* -- the next game ---------------------------------------------------------------------- */
+
+.matchup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.matchup-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-2);
+  margin: 0;
+}
+
+.matchup-opponent {
+  font: 600 0.86rem/1.2 var(--font-mono);
+  color: var(--ink);
+}
+
+.matchup-when {
+  font: 400 0.66rem/1.2 var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.matchup-flag {
+  padding: 1px 6px;
+  font: 600 0.56rem/1.4 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+  border: var(--hairline) solid var(--line-strong);
+}
+
+/* The two implied scores as two parts of the posted total. Labels sit inside the segments,
+ * so the picture is never the only channel. */
+.matchup-split {
+  display: flex;
+  height: 20px;
+  border: var(--hairline) solid var(--line);
+  font: 600 0.62rem/20px var(--font-mono);
+  overflow: hidden;
+}
+
+.matchup-split-team,
+.matchup-split-opponent {
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.matchup-split-team {
+  flex: none;
+  background: var(--accent-fill);
+  color: var(--accent-fill-ink);
+}
+
+.matchup-split-opponent {
+  flex: 1 1 0;
+  text-align: right;
+  background: var(--accent-wash);
+  color: var(--ink-strong);
+}
+
+.matchup-line,
+.matchup-bye {
+  margin: 0;
+  font: 400 0.7rem/1.4 var(--font-mono);
+  color: var(--ink-strong);
+}
+
+.matchup-bye {
+  color: var(--ink-accent);
+}
+
+/* -- Pick of the Week's evidence row ---------------------------------------------------- */
+
+.potw-evidence {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hairline);
+  background: var(--line-faint);
+}
+
+.potw-evidence-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--tile);
+  min-width: 0;
+}
+
+.potw-evidence-kind {
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-header);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+}
+
+.potw-evidence-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-2);
+  margin: 0;
+  font: 400 0.7rem/1.35 var(--font-mono);
+  color: var(--ink-strong);
+}
+
+.potw-evidence-row strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.potw-evidence-row .usage-rail-change {
+  font-size: 0.68rem;
+}
+
+.potw-evidence .usage-bars {
+  height: 22px;
+}
+
+.potw-evidence .matchup-split {
+  height: 18px;
+  line-height: 18px;
+}
+
+@media (max-width: 1099px) {
+  .potw-evidence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  /* The sheet: label over bars over reading, so the bars get the full width. */
+  .usage-rail,
+  .usage-axis {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .usage-axis > span:empty {
+    display: none;
+  }
+
+  .usage-rail-window {
+    flex-basis: auto;
   }
 }

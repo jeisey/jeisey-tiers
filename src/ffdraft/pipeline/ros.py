@@ -394,6 +394,26 @@ def run_ros_build(
     if series_records:
         records["behavior_trend_series"] = series_records
 
+    # The in-season signal layer (ADR-091): observed role week by week, and each team's next
+    # game. Strictly after every board exists and reading none of them beyond which players
+    # to describe, so nothing below can move a published value — and, like the series above,
+    # an enrichment whose failure costs its own artifacts and nothing else.
+    usage_records, matchup_records, signal_summary = _signal_layer(
+        opportunity_records=records["inseason_opportunity"],
+        loaded=loaded,
+        roster=roster,
+        settings=settings,
+        season=season,
+        cutoff=cutoff,
+        build_id=resolved_build_id,
+        as_of=stamped,
+        gate=gate,
+    )
+    if usage_records:
+        records["player_usage"] = usage_records
+    if matchup_records:
+        records["team_matchups"] = matchup_records
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -411,6 +431,7 @@ def run_ros_build(
         signals=signals,
         history=history,
         surface=[universe.to_dict() for universe in surface_universes],
+        signal_layer=signal_summary,
     )
 
     written: list[Path] = []
@@ -908,6 +929,152 @@ def _behavior_series(
     return history, records
 
 
+def _signal_layer(
+    *,
+    opportunity_records: Sequence[Mapping[str, Any]],
+    loaded: Any,
+    roster: pl.DataFrame,
+    settings: AppConfig,
+    season: int,
+    cutoff: RosCutoff,
+    build_id: str,
+    as_of: datetime,
+    gate: QualityGate,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
+    """Build ``player_usage`` and ``team_matchups`` (ADR-091), or explain why not.
+
+    **Every failure here costs the evidence blocks and nothing else.** Both artifacts are
+    observed context beside a board that is already complete; a defect in either must not
+    take a correct rest-of-season board down with it. So a failure is a warning naming what
+    was withheld, and the boards publish exactly as they would have.
+
+    The only thing read from the published boards is *which players exist*: the usage
+    records describe the Opportunity Board's players, so every card that can be opened has
+    one and none exists for a card nobody can open.
+    """
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.signals import (
+        EXPECTED_POINTS_STATEMENT,
+        MATCHUP_RULE_VERSION,
+        SPORTSBOOK_CONTEXT_STATEMENT,
+        USAGE_RULE,
+        build_player_usage_records,
+        build_team_matchup_records,
+        current_teams_from_roster,
+    )
+    from ffdraft.sources.nflverse import NFLVERSE_SOURCE_ID
+
+    players: dict[str, dict[str, Any]] = {}
+    for record in opportunity_records:
+        players.setdefault(
+            str(record["player_id"]),
+            {"display_name": record.get("display_name"), "position": record.get("position")},
+        )
+    sources = loaded.sources
+    lines_retrieved_at = next(
+        (
+            item.retrieved_at_utc
+            for item in getattr(loaded, "metadata", ())
+            if getattr(item, "resource", "") == "load_schedules"
+        ),
+        as_of,
+    )
+
+    try:
+        usage = build_player_usage_records(
+            players=players,
+            weekly=sources.weekly_stats,
+            snap_counts=bridged_snap_counts(sources),
+            schedule=sources.schedule,
+            scoring=settings.league.scoring,
+            season=season,
+            through_week=cutoff.through_week,
+            build_id=build_id,
+            schema_version=record_schema_version("player_usage"),
+            current_teams=current_teams_from_roster(roster),
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        usage = []
+        gate.add(
+            QualityCheck.fail(
+                "ros.player_usage_failed",
+                stage="ros_build",
+                message=(
+                    "the observed-role series could not be built, so player_usage.json is "
+                    "withheld; every board, count and value is unaffected"
+                ),
+                observed=f"{type(exc).__name__}: {exc}",
+                expected="a usage record per Opportunity Board player",
+                severity=Severity.WARNING,
+            ),
+        )
+    try:
+        matchups = build_team_matchup_records(
+            schedule=sources.schedule,
+            season=season,
+            through_week=cutoff.through_week,
+            as_of=as_of,
+            build_id=build_id,
+            schema_version=record_schema_version("team_matchup"),
+            lines_source_id=NFLVERSE_SOURCE_ID,
+            lines_retrieved_at=lines_retrieved_at,
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        matchups = []
+        gate.add(
+            QualityCheck.fail(
+                "ros.team_matchups_failed",
+                stage="ros_build",
+                message=(
+                    "the next-game context could not be built, so team_matchups.json is "
+                    "withheld; every board, count and value is unaffected"
+                ),
+                observed=f"{type(exc).__name__}: {exc}",
+                expected="a next-game record per team with one left",
+                severity=Severity.WARNING,
+            ),
+        )
+
+    lined = [record for record in matchups if record.get("total_line") is not None]
+    changes = sum(
+        1 for record in usage if any(value is not None for value in record["role_changes"].values())
+    )
+    gate.add(
+        QualityCheck.ok(
+            "ros.signal_layer",
+            stage="ros_build",
+            message=(
+                f"{USAGE_RULE.version} and {MATCHUP_RULE_VERSION}: observed role and next-game "
+                "context published beside the boards; no model reads either"
+            ),
+            observed=(
+                f"{len(usage)} usage record(s), {changes} with a role change; "
+                f"{len(matchups)} next game(s), {len(lined)} with posted lines"
+            ),
+        ),
+    )
+    if not usage and not matchups:
+        return usage, matchups, None
+    return (
+        usage,
+        matchups,
+        {
+            "usage_rule": USAGE_RULE.to_dict(),
+            "usage_records": len(usage),
+            "matchup_rule_version": MATCHUP_RULE_VERSION,
+            "matchup_records": len(matchups),
+            "lines_source_id": NFLVERSE_SOURCE_ID if lined else None,
+            "lines_retrieved_at_utc": (
+                isoformat_utc(lines_retrieved_at) if lined and lines_retrieved_at else None
+            ),
+            "lines_posted_teams": len(lined),
+            "sportsbook_context_statement": SPORTSBOOK_CONTEXT_STATEMENT,
+            "expected_points_statement": EXPECTED_POINTS_STATEMENT,
+        },
+    )
+
+
 def _opportunity_context(
     frame: pl.DataFrame,
     status_by_player: Mapping[str, str],
@@ -1251,6 +1418,7 @@ def _ros_metadata(
     signals: Any | None = None,
     history: Any | None = None,
     surface: Sequence[Mapping[str, Any]] | None = None,
+    signal_layer: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -1308,6 +1476,7 @@ def _ros_metadata(
             if surface is not None
             else None
         ),
+        "signals": None if signal_layer is None else dict(signal_layer),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

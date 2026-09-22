@@ -295,6 +295,11 @@ jobs:
           # here — the first run where the two boards stopped being the same board (ADR-084).
           npm run verify:board -- \
             --dist web/dist-in-season --base-path /scenario/in-season/ --port 4182
+          # The same season with the signal layer withheld (ADR-091): every board and pick must
+          # still agree with its bytes when neither player_usage nor team_matchups exists.
+          npm run verify:board -- \
+            --dist web/dist-in-season-no-signals --base-path /scenario/in-season-no-signals/ \
+            --port 4185
           # The two ADR-079 windows: the season has started and no rest-of-season board
           # exists. `auto` must fall back to the draft board in both, and the draft board is
           # what these check — the lifecycle state between the other two, and the one a

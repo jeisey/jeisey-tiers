@@ -338,7 +338,9 @@ RESOLUTION_CONTRACT = FrameContract(
 
 WEEKLY_STATS_CONTRACT = FrameContract(
     contract_id="nflverse_weekly_player_stats",
-    version="1.0",
+    # 1.1 (ADR-091): two context columns for the published in-season signals. Additive, and
+    # read by nothing that builds a feature.
+    version="1.1",
     primary_key=("season", "week", "season_type", "gsis_id"),
     columns=(
         ColumnSpec("season", pl.Int32, nullable=False),
@@ -373,6 +375,19 @@ WEEKLY_STATS_CONTRACT = FrameContract(
             pl.Float64,
             description="return touchdowns; not scored (see ffdraft.scoring.engine), sanity only",
         ),
+        ColumnSpec(
+            "passing_epa",
+            pl.Float64,
+            description=(
+                "nflverse EPA on pass attempts and sacks. Published in-season context only "
+                "(ADR-091); not a feature of any model"
+            ),
+        ),
+        ColumnSpec(
+            "sacks_suffered",
+            pl.Float64,
+            description="sacks taken; the denominator half of pass EPA per dropback (ADR-091)",
+        ),
     ),
 )
 
@@ -396,7 +411,11 @@ SNAP_COUNTS_CONTRACT = FrameContract(
 
 SCHEDULE_CONTRACT = FrameContract(
     contract_id="nflverse_schedule",
-    version="1.0",
+    # 1.1 (ADR-091): the next game's context for the in-season matchup panel. Every added
+    # column is *published context only*: the sportsbook lines are a market quantity that
+    # AGENTS.md section 8 forbids as an intrinsic feature, and `ffdraft.quality.forbidden`
+    # refuses any feature named for them. The calendar half of the contract is unchanged.
+    version="1.1",
     primary_key=("game_id",),
     columns=(
         ColumnSpec("game_id", pl.String, nullable=False),
@@ -407,6 +426,23 @@ SCHEDULE_CONTRACT = FrameContract(
         ColumnSpec("gametime", pl.String, description="kickoff HH:MM, America/New_York"),
         ColumnSpec("away_team", pl.String),
         ColumnSpec("home_team", pl.String),
+        ColumnSpec("location", pl.String, description="Home, or Neutral for a neutral site"),
+        ColumnSpec("away_rest", pl.Int32, description="days of rest the away team is coming off"),
+        ColumnSpec("home_rest", pl.Int32, description="days of rest the home team is coming off"),
+        ColumnSpec("roof", pl.String, description="outdoors / open / closed / dome, or null"),
+        ColumnSpec(
+            "spread_line",
+            pl.Float64,
+            description=(
+                "sportsbook spread; POSITIVE means the HOME team is favoured (nflverse's "
+                "convention, the opposite of a betting slip's). Context only, never a feature"
+            ),
+        ),
+        ColumnSpec(
+            "total_line",
+            pl.Float64,
+            description="sportsbook game total. Context only, never a feature",
+        ),
     ),
 )
 

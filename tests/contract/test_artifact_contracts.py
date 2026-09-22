@@ -65,10 +65,18 @@ def test_every_artifact_spec_points_at_a_real_schema(artifact):
     assert not missing_sort, f"{artifact} sorts on undeclared fields {sorted(missing_sort)}"
 
 
+#: The entity id that closes each artifact's ordering. Every artifact describes players except
+#: the one that describes each team's next game (ADR-091), whose entity is the team.
+_TIE_BREAK = {"team_matchups": "team"}
+
+
 @pytest.mark.parametrize("artifact", sorted(ARTIFACT_SPECS))
 def test_sort_order_ends_in_a_stable_tie_break(artifact):
     """A total ordering is what makes two identical builds byte-identical."""
-    assert ARTIFACT_SPECS[artifact].sort_fields[-1] == "player_id"
+    spec = ARTIFACT_SPECS[artifact]
+    expected = _TIE_BREAK.get(artifact, "player_id")
+    assert spec.sort_fields[-1] == expected
+    assert expected in spec.key_fields
 
 
 def test_date_time_format_is_asserted_not_merely_annotated():

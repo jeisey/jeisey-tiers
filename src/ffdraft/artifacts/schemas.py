@@ -62,6 +62,11 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # the store has always held, published for the first time. A bundle without it renders
     # every board and every card, minus one sparkline.
     "behavior_trend_series",
+    # ADR-091. The in-season signal layer: observed role week by week, and each team's next
+    # game as published context. Additive and independent: a bundle without either renders
+    # every board, card and pick, minus the evidence blocks they feed.
+    "player_usage",
+    "team_matchup",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -85,6 +90,8 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "inseason_opportunity_record": "1.0",
     "player_headshot_record": "1.0",
     "behavior_trend_series": "1.0",
+    "player_usage": "1.0",
+    "team_matchup": "1.0",
 }
 
 

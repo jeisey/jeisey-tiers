@@ -1412,6 +1412,83 @@ request with two mock-ups. Frontend only — no schema, no artifact, no Python f
       Three Python guards and one vitest case pin it; all four were reverted and confirmed red.
 - [ ] **Not done here, deliberately: the strip is on Pick of the Week only.** The player card
       and the Opportunity Board carry the same counts and could carry the same reading; neither
-      was asked for.
+      was asked for. *(The card now carries it — ADR-091 Decision 8, 2026-09-22. The
+      Opportunity Board still does not.)*
 - [ ] **Not done here, deliberately: no CSV.** The record is a series, and the Opportunity
       Board's export already carries the day's counts.
+
+## In-season signal layer — 2026-09-22 (ADR-091)
+
+The owner corrected the framing of `docs/SIGNAL_EXPANSION_EDA.md`: signal expansion is for
+**current-season decisions** (waiver claims, Pick of the Week, the card), not preparation for a
+2027 retrain. Neither model, no feature table and no selection rule changed.
+
+- [x] **`player_usage.json` (`usage_signals_v1`, `role_change_v1`).** One record per Opportunity
+      Board player: every horizon week through the cutoff with a status (`played` / `bye` /
+      `did_not_play`), snap / target / carry / air-yards share, targets, carries, pass attempts,
+      points per preset; a change per role metric (latest appearance vs the average of earlier
+      ones — pooled for team-unit shares, per-game mean for snap share and attempts; min one
+      earlier game; change = difference of the published rounded halves; null, never a
+      fallback); points from TDs (min 10 points) and pass EPA per dropback (min 20 dropbacks).
+      An appearance is a stats row **or** an offensive snap. `src/ffdraft/signals/usage.py`.
+- [x] **`team_matchups.json` (`next_game_v1`).** One record per team: the earliest horizon
+      game not kicked off at build time — opponent, venue, neutral flag, kickoff, rest days both
+      sides, roof, and the posted spread and total from the team's own side with both implied
+      scores. `src/ffdraft/signals/matchup.py`.
+- [x] **The sportsbook firewall is enforced, not stated.** EDA §2a.3 reading 3 only: lines are
+      published context, read by no model. `ffdraft.quality.forbidden` refuses `spread`,
+      `moneyline`, `vegas`, `sportsbook`, `odds`, `implied`, `total_line`, `expected_margin`,
+      `implied_team`, `implied_opponent`; a test asserts no signal field is a `ros_core_v1` or
+      `intrinsic_core_v1` feature. Readings 1 and 2 remain undecided.
+- [x] **Context columns do not block builds.** `context_source_columns` on the adapter base: a
+      missing one warns (`source_schema.missing_context_columns`) and nulls a context field.
+      Weekly contract 1.1 (`passing_epa`, `sacks_suffered`), schedule contract 1.1 (`location`,
+      rest, `roof`, `spread_line`, `total_line`). The signal layer's failure is caught and
+      reported (`ros.player_usage_failed`, `ros.team_matchups_failed`); the boards still publish.
+- [x] **Contracts end to end.** Two JSON schemas, `artifact_envelope` enum, `ros_build_metadata.signals`
+      block, artifact specs, validator checks (contiguous weeks, absence published as a value,
+      change ≠ difference, points ≠ sum, reading below minimum, implied disagree, line without
+      provenance, sides disagree, team plays itself), cross-artifact checks (usage player not on
+      board, points ≠ ROS to-date, matchup coverage), `_IN_SEASON_ARTIFACTS` membership in the
+      same change, goldens regenerated, TS contracts, optional loaders. No CSV for either.
+- [x] **ffopportunity stays off the published layer.** ADR-086's CC-BY-SA question is still
+      open; nothing in either artifact derives from it, and `expected_points_statement` says so.
+      Touchdown share and air-yards share were taken as the next-best signals.
+- [x] **Position decides what leads, in one place** (`ROLE_METRICS_BY_POSITION`): QB pass/rush
+      attempts; RB snap/carry/target share; WR snap/target/air-yards share; TE snap/target share.
+      QB tiles and cohort rows are points/G, EPA per dropback, points from TDs. The EDA Part 2b
+      defect (ranking a QB's ~100% snap share and ~0% target share) is gone.
+- [x] **The card:** *Role, week by week* rails with the points rail on one week axis, three
+      absence marks (bye / did not play / no value), the published change with its window;
+      *Next game* panel with the sportsbook statement; add momentum (Decision 8). Cards for a
+      player the draft board never held are headed by name (was "Player"), and a surfaced
+      player gets the in-season card, not the draft-market card.
+- [x] **Pick of the Week:** an evidence row (Role · observed / Production / Next game ·
+      context) replaces the two-share tile row; one "why" sentence only when the leading role
+      grew; the QB snap-share reason is gone. Each evidence block says whether the build
+      published no artifact or published nothing for this player. **`potw_selection_v1`
+      unchanged** — a vitest requires identical picks with and without the signal artifacts,
+      every set, every league and scoring preset (mutation-checked).
+- [x] **Pre-deploy gate.** `verify-real-build.mjs` compares role values, changes, bar counts,
+      the points rail, the next game, implied points and the card's momentum strip with the
+      bytes, on one card per position and on every pick, and fails a QB led by a share. Six
+      negative controls fire. A new `in-season-no-signals` fixture build is gated in CI.
+- [x] **Docs.** ADR-091; `DATA_CONTRACTS.md` §19; `DATA_SOURCES.md` §18; `SECURITY_LICENSE.md`
+      (ffopportunity status, schedule lines, attribution); `UX_SPEC.md` §6A.9; the EDA reframed
+      with each item marked built/partly built/deferred; the registry's stale injuries note
+      corrected; the Data view's nflverse and ffopportunity entries updated.
+- [x] **Verified.** `ruff`, `ruff format --check`, strict `mypy` (161 files), `pytest`
+      **1,574**; `validate-artifacts` 0 critical / 0 warning; `npm run lint` 0 errors / 4
+      pre-existing warnings, `typecheck` clean, vitest **528**, `npm run e2e` **140**, `build`
+      clean; `verify:board` zero disagreements on dist, matured, in-season, in-season-no-signals,
+      in-season-no-behavior, awaiting-first-week, season-complete and a real 2026 week-2 build.
+      Screens: `docs/visual-qa/2026-09-22-in-season-signals/`.
+- [ ] **Deferred, each with its reason in ADR-091:** xFP / xFP share / points over expected
+      (CC-BY-SA, ADR-086); WOPR (a blend of two shown shares); RACR, YPT/YPC, CPOE; red-zone
+      and goal-line opportunity (needs play-by-play); opponent strength by position (two games
+      is not a profile — revisit ~week 5); weather (no pre-kickoff source); injuries
+      (point-in-time unprobed); the Opportunity Board's momentum and role columns.
+- [ ] **Not taken, deliberately: POTW selection using role signals.** A separate, explicit
+      design decision for the owner.
+- [ ] **Owner questions left open:** the ffopportunity publication decision (ADR-086), and the
+      sportsbook provenance behind nflverse's schedule lines (`schedule_lines_context_only`).

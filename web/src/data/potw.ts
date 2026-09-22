@@ -80,8 +80,15 @@
  */
 
 import { quantileAt } from "./cohort";
-import type { OpportunityRecord, Position, RosTierRecord, ScoringPreset } from "./contracts";
+import type {
+  OpportunityRecord,
+  PlayerUsageRecord,
+  Position,
+  RosTierRecord,
+  ScoringPreset,
+} from "./contracts";
 import { projectedRemainingRate, type InSeasonBundle } from "./ros";
+import { ROLE_METRICS_BY_POSITION, ROLE_METRIC_SPECS, formatMetric } from "./signals";
 import { SCORING_TO_PRESET, leaguePresetId, type AppState } from "./state";
 
 /** Bump when the meaning of a pick changes. Printed on the view beside the picks. */
@@ -171,6 +178,12 @@ export interface PotwPick {
   readonly reasons: readonly string[];
   /** Remaining points divided by remaining games, or null. Described, never called an expectation. */
   readonly projectedRate: number | null;
+  /**
+   * His observed role week by week (ADR-091), or null when the build published none for him.
+   * Evidence the card states, never an input to which card it is: selection is still the six
+   * gates and the one ordering above, and `potw.test.ts` holds that with and without it.
+   */
+  readonly usage: PlayerUsageRecord | null;
 }
 
 /** One cycle of the picker: at most one pick per position, plus why a position is missing. */
@@ -254,10 +267,35 @@ export function isPotwCandidate(record: OpportunityRecord, floor: PotwFloor): bo
  * adjective could smuggle a claim into, and there is none that describes a rostered share,
  * a matchup or a multi-week trend — the three things this product does not have.
  */
+/**
+ * His leading role reading as a sentence, when it grew (ADR-091).
+ *
+ * Only a *growing* role is stated under "why he is the pick", because that heading makes a
+ * claim; the evidence row beneath it states every role reading whichever way it moved, so a
+ * shrinking share is shown and never hidden. The sentence is two published numbers and the
+ * window they were measured over — no adjective, and no threshold on how much growth counts.
+ */
+function roleReason(usage: PlayerUsageRecord | null, position: Position): string | null {
+  if (usage === null) return null;
+  const metric = ROLE_METRICS_BY_POSITION[position][0];
+  if (metric === undefined) return null;
+  const change = usage.role_changes[metric];
+  if (change?.earlier == null || change.change === null) return null;
+  if (!(change.change > 0)) return null;
+  const spec = ROLE_METRIC_SPECS[metric];
+  const games = change.earlier_games;
+  return (
+    `${spec.label} up from ${formatMetric(spec, change.earlier)} to ` +
+    `${formatMetric(spec, change.latest)} in week ${String(change.latest_week)}, against his ` +
+    `${String(games)} earlier game${games === 1 ? "" : "s"}`
+  );
+}
+
 function reasonsFor(
   record: OpportunityRecord,
   ros: RosTierRecord | null,
   floor: PotwFloor,
+  usage: PlayerUsageRecord | null,
 ): readonly string[] {
   const reasons: string[] = [];
   const adds = record.add_count ?? 0;
@@ -290,8 +328,11 @@ function reasonsFor(
     }
   }
 
+  const role = roleReason(usage, record.position);
+  if (role !== null) reasons.push(role);
+
   const snap = record.snap_share_last3;
-  if (typeof snap === "number" && Number.isFinite(snap)) {
+  if (typeof snap === "number" && Number.isFinite(snap) && record.position !== "QB") {
     reasons.push(`${String(Math.round(snap * 100))}% of snaps over the last three weeks`);
   }
   if (record.outside_tier_board) {
@@ -346,6 +387,8 @@ export function buildPotwBoard(
       position,
       eligible.slice(0, POTW_MAX_SETS).map((record, index) => {
         const ros = rosByPlayer.get(record.player_id) ?? null;
+        // Read after the order is fixed, for the pick that is already chosen.
+        const usage = bundle.usageFor(record.player_id);
         return {
           position,
           depth: index + 1,
@@ -353,7 +396,8 @@ export function buildPotwBoard(
           ros,
           poolSize: eligible.length,
           floor,
-          reasons: reasonsFor(record, ros, floor),
+          reasons: reasonsFor(record, ros, floor, usage),
+          usage,
           projectedRate:
             typeof record.ros_expected_points === "number" &&
             typeof record.ros_expected_games === "number"
