@@ -202,6 +202,10 @@ sources:
       - current_status
       - nextgen_stats_optional
       - pfr_advstats_optional
+      # ADR-091. Published in-season context, never a feature: observed role week by week
+      # (player stats, snap counts) and each team's next game (schedule).
+      - inseason_usage_context
+      - matchup_context
     verified_loaders:
       load_players: {rows: 25040}
       load_ff_playerids: {rows: 12472, gsis_id_coverage: 0.64, mfl_id_coverage: 1.0}
@@ -214,11 +218,14 @@ sources:
       load_rosters_weekly: {"2019": 51632, "2025": 46849}
       load_depth_charts: {"2019": 36308, "2024": 37312, "2025": 554215, "2026": 442872}
       load_snap_counts: {"2019": 23862, "2025": 26612}
-      load_injuries: {"2019": 5392, "2024": 6215, "2025": 6068}
+      load_injuries: {"2019": 5392, "2024": 6215, "2025": 6068, "2026_weeks_1_2": 433}
       load_nextgen_stats_receiving: {"2025": 1402}
       load_pfr_advstats_rec_season: {"2025": 531}
       load_ftn_charting: {"2025": 47316}
       load_schedules: {"2026": 272}
+      # Probed live 2026-09-22 for ADR-091, weeks 1-2 complete.
+      load_player_stats_week_2026: {"weeks_1_2": 2225}
+      load_snap_counts_2026: {"weeks_1_2": 2994}
     known_issues:
       - id: depth_chart_schema_break_2025
         detail: >-
@@ -231,13 +238,26 @@ sources:
           those seasons. Week-1 data postdates the anchor and leaks. See ADR-015.
       - id: injuries_in_season_only
         detail: >-
-          load_injuries returns weekly in-season reports and refuses seasons after 2025, so
-          it cannot supply current preseason status. See ADR-011.
+          load_injuries returns weekly in-season reports, so it cannot supply current
+          preseason status (ADR-011). Corrected 2026-09-22: the 2026 file is live (433 rows,
+          weeks 1-2, probed through nflreadpy) - the 2026-08-31 "refuses seasons after 2025"
+          was a preseason 404 for a file not yet published. Still consumed by nothing; a
+          point-in-time probe (does a completed week's row change later?) comes first.
       - id: current_season_helper_lags
         detail: >-
           get_current_season() returned 2025 on 2026-08-17 while
           get_current_season(roster=True) returned 2026. Never derive the draft-target
           season from get_current_season().
+      - id: schedule_lines_context_only
+        detail: >-
+          load_schedules carries spread_line (POSITIVE = HOME favoured), total_line,
+          moneylines, rest, roof, temp and wind. Probed 2026-09-22: spread and total are
+          posted for weeks 3-4 only (about two weeks ahead); rest and roof are populated for
+          every future game; temp and wind are null for every unplayed game. The upstream
+          sportsbook is not documented by nflverse (nflreadr dictionary and nfldata
+          DATASETS.md both silent). ADR-091 publishes spread and total - never odds prices -
+          as matchup context under nflverse attribution, and the forbidden-feature guard
+          refuses any model feature named for them.
       - id: ff_playerids_unlicensed_mirror
         detail: >-
           load_ff_playerids is served from the dynastyprocess mirror, which publishes no
@@ -264,6 +284,12 @@ sources:
     known_issues:
       - id: season_column_is_string
         detail: "season arrives as a string here but as an integer elsewhere; cast in the adapter."
+      - id: publication_undecided
+        detail: >-
+          A model input, not a published field. Whether a per-player expected-points figure
+          (xFP, xFP share, points over expected) may appear on a public artifact is an open
+          owner decision under CC-BY-SA 4.0's share-alike terms (ADR-086). ADR-091 keeps every
+          ffopportunity-derived value off the in-season signal layer until it is taken.
   myfantasyleague_adp:
     policy: production_allowed
     verified: true

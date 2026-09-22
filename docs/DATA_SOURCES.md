@@ -808,3 +808,67 @@ mirror.
 nothing else changes. There is no coverage gate and deliberately so (ADR-087): a check that
 could stop a deploy over a missing picture could take the whole board down for a cosmetic
 reason.
+
+## 18. In-season signal layer — probed 2026-09-22 (ADR-091)
+
+**Nothing new is downloaded.** Both signal artifacts (`player_usage.json`,
+`team_matchups.json`) are arithmetic over feeds every in-season build already retrieves; what
+changed is which of their columns are read, and that each newly read column is declared as
+*context* rather than required (§18.3). Probed live against the 2026 release assets, weeks 1–2
+complete.
+
+### 18.1 What was measured
+
+| feed | rows | finding that shaped the build |
+|---|---|---|
+| `load_player_stats` (week) | 2,225 | `target_share` recomputed as the player's targets over the team's targets in the same rows matches nflverse's column exactly. nflverse's `air_yards_share` does **not** — up to 9 points apart on the same rows, a different denominator — so `air_yards_share` is computed here from `receiving_air_yards` over the team's, the same way as target share, and nflverse's column is not read. `passing_epa` and `sacks_suffered` are populated for every passer row. |
+| `load_snap_counts` | 2,994 | `offense_pct` is the snap share. 6 of 818 skill-position rows fail the `pfr_id` → `gsis_id` bridge; those players publish a **null** snap share for that week (never 0), and the card draws the week as "played, no value". |
+| `load_schedules` | 272 (REG) | `spread_line` and `total_line` are posted for **weeks 3–4 only** at week 2 — about two weeks ahead. `away_rest`, `home_rest`, `roof` and `location` are populated for **every** future game. `temp` and `wind` are **null for every unplayed game** (they are recorded after kickoff), so weather is not published. |
+| `load_injuries` | 433 (2026) | The 2026 file is live. The source registry's "the loader refuses seasons after 2025" was true of the Phase-0 library and is stale now; corrected in `config/source-registry.yaml`. Not used: its point-in-time behaviour is unprobed (AGENTS §7), and Sleeper already carries current status. |
+
+**Sign convention, verified two ways.** nflverse's `spread_line` is positive when the **home**
+team is favoured — the opposite of the sportsbook display convention. The nflreadr dictionary
+says so ("a positive number means the home team was favored"), and on the probed file the sign
+agrees with the moneyline favourite on **31 of 31** lined, unplayed games (the moneylines were
+read for this check only; no code reads them). `team_expected_margin` re-expresses it from each team's own side —
+positive means that team is favoured — and the implied scores are
+`(total ± margin) / 2`. A neutral-site game keeps nflverse's nominal home/away and is flagged.
+
+### 18.2 Provenance of the lines
+
+nflverse does not state which sportsbook, or which consensus, its schedule lines come from: the
+nflreadr data dictionary and `nfldata`'s `DATASETS.md` were both checked on 2026-09-22 and are
+silent. The lines arrive under nflverse's CC-BY 4.0 statement and are attributed to nflverse.
+This project publishes the **spread and total only** — no moneyline, no odds price, no
+book-by-book quote — inside a JSON artifact with no CSV companion, with the retrieval timestamp
+beside every line (`lines_retrieved_at_utc`). Whether the underlying provider's terms add
+anything is recorded as a residual rights question (`schedule_lines_context_only` in the
+registry), not a blocker; the incident procedure in `docs/SECURITY_LICENSE.md` §12 applies if
+it is ever answered the other way, and the build degrades cleanly (§18.3).
+
+### 18.3 Context columns and degradation
+
+`BaseSourceAdapter.context_source_columns` names upstream columns that are read **only** into
+published context:
+
+| adapter | context columns | contract |
+|---|---|---|
+| weekly stats | `passing_epa`, `sacks_suffered` | `WEEKLY_STATS_CONTRACT` 1.1 |
+| schedules | `location`, `away_rest`, `home_rest`, `roof`, `spread_line`, `total_line` | `SCHEDULE_CONTRACT` 1.1 |
+
+A missing context column is a **warning** (`source_schema.missing_context_columns`) that nulls
+the fields it feeds; a missing required column is still critical. A failure anywhere in the
+signal layer is caught and reported as `ros.player_usage_failed` / `ros.team_matchups_failed`,
+and the boards publish without the two artifacts — the site renders the card and Pick of the
+Week without the role and next-game blocks, which `verify:board` checks on a dedicated
+`in-season-no-signals` build.
+
+### 18.4 What stays out
+
+- **ffopportunity** — no field of either artifact derives from it. Its expected points are
+  CC-BY-SA 4.0 and publishing a derived per-player figure is the open ADR-086 decision; the
+  build metadata carries `expected_points_statement` saying so. Touchdown share and air-yards
+  share were taken as the next-best readings.
+- **FTN charting** (CC-BY-SA), **ESPN QBR**, **FantasyPros/ECR**, and paid charting (PFF,
+  Fantasy Points, SIS) — out of scope for this layer.
+- **Play-by-play** — red-zone and goal-line opportunity need it; not built for one metric.

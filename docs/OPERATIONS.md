@@ -356,7 +356,7 @@ green-or-red on things the local machine can actually decide (ADR-059).
 
 `npm run e2e` produces its own builds through `globalSetup`, so it needs no prior `npm run build`; `E2E_SKIP_BUILD=1` reuses what is on disk while iterating on a spec. The end-to-end server is `web/tests/e2e/static-server.mjs`, which maps URLs to files under `web/dist*` and serves nothing else — every spec additionally fails on a request that leaves localhost.
 
-`npm run verify:board` is the one command that needs the **real** generated artifacts rather than fixtures: build the site with `web/public/data/` populated and it serves the build itself, then cross-checks rendered tier rows, chart-mark labels, arbitrage rows and status badges against the artifact bytes. A badge is checked in both directions and against the record's own words — it must appear for exactly the players whose status record carries an annotation, injury or not, and its body part must be the artifact's (ADR-082); the roster codes themselves are never enumerated, because the in-season feed publishes ones an August feed does not. It also opens a player card once per market in `market_trend_series.json` and compares the drawn marks, the latest reading and the legend's slope with that market's own record — the check that would have caught a second market shipping with a price and no history (ADR-081). That is the check behind the Phase-6 exit gate's "chart values agree with the table" clause, and `daily-refresh.yml` runs it on every production build before uploading the Pages artifact. Every navigation names its view: `view` defaults to `auto`, which resolves to the ROS board once the season has started, so a bare link stopped meaning "the Tier Board" on 2026-09-15 and took the whole gate with it (ADR-084). Which board `auto` opens is itself checked against whether the build published `ros_tiers.json`, and where it did, the rest-of-season rows are compared with that artifact — the board a visitor actually sees in season, and until then the one published board no pre-deploy gate looked at.
+`npm run verify:board` is the one command that needs the **real** generated artifacts rather than fixtures: build the site with `web/public/data/` populated and it serves the build itself, then cross-checks rendered tier rows, chart-mark labels, arbitrage rows and status badges against the artifact bytes. A badge is checked in both directions and against the record's own words — it must appear for exactly the players whose status record carries an annotation, injury or not, and its body part must be the artifact's (ADR-082); the roster codes themselves are never enumerated, because the in-season feed publishes ones an August feed does not. It also opens a player card once per market in `market_trend_series.json` and compares the drawn marks, the latest reading and the legend's slope with that market's own record — the check that would have caught a second market shipping with a price and no history (ADR-081). In season it opens one card per position and compares every role rail's latest value, change and bar count, the points rail, the next game, the implied points and the add-momentum strip with `player_usage.json`, `team_matchups.json` and `behavior_trend_series.json`, does the same for every Pick of the Week evidence row, and fails any quarterback card or pick that leads with a snap or target share (ADR-091). That is the check behind the Phase-6 exit gate's "chart values agree with the table" clause, and `daily-refresh.yml` runs it on every production build before uploading the Pages artifact. Every navigation names its view: `view` defaults to `auto`, which resolves to the ROS board once the season has started, so a bare link stopped meaning "the Tier Board" on 2026-09-15 and took the whole gate with it (ADR-084). Which board `auto` opens is itself checked against whether the build published `ros_tiers.json`, and where it did, the rest-of-season rows are compared with that artifact — the board a visitor actually sees in season, and until then the one published board no pre-deploy gate looked at.
 
 Phase 7 made it self-contained — Phase 6 needed a server started by hand — and gave it three options:
 
@@ -1010,3 +1010,28 @@ The in-season checks that only exist here:
 - `cross_artifact.intrinsic_firewall` — every intrinsic column on the Opportunity Board is
   identical to the rest-of-season board's. This is the market-firewall audit in its in-season
   form: behaviour changed visibility and nothing else, verified over the published bytes.
+
+The signal layer's checks (ADR-091), both artifacts optional in the in-season bundle:
+
+- `player_usage.*` — weeks contiguous from 1 to the cutoff (`weeks_not_contiguous`), a bye or
+  a missed game never carries a value (`absence_published_as_a_value`), appearances agree with
+  the weeks (`appearances_disagree`), every change equals the difference of its published
+  halves (`change_is_not_the_difference`), weekly points sum to the published total
+  (`points_do_not_sum`), and no reading publishes below its declared minimum
+  (`reading_below_minimum`);
+- `team_matchups.*` — implied points agree with the spread and total
+  (`implied_points_disagree`), no line without a source and retrieval time
+  (`line_without_provenance`), the two teams' records mirror each other (`sides_disagree`),
+  and no team plays itself;
+- `cross_artifact.usage_*` — every usage player is on the Opportunity Board and points to date
+  agree with the rest-of-season row (tolerance 0.05), both blocking; `usage_matchup_coverage`
+  is informational and names any usage team with no published next game (a team with no game
+  left in the horizon legitimately has none).
+
+**If the signal layer fails in a refresh**, the build still publishes: the failure is caught
+and recorded as a warning (`ros.player_usage_failed` or `ros.team_matchups_failed`, with the
+exception text) and the two artifacts are simply absent, which the site renders as "This build
+published no week-by-week role series" / "no schedule context". A missing *context* column
+upstream (`passing_epa`, `spread_line`, …) is `source_schema.missing_context_columns`, a
+warning that nulls the fields it feeds. Neither is a reason to hold a deploy; both are a reason
+to read the source schema the next morning.

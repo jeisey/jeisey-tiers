@@ -332,6 +332,17 @@ The frozen A0 baseline (`rank_gap`, `regional_value_gap`, the within-preset perc
 
 Current player status: the Sleeper capture, its retention, and the annotation-only `player_status` artifact. Nothing here may enter a prediction (ADR-043).
 
+### `signals/`
+
+> **2026-09-22 addition (ADR-091).** Observed in-season context, published beside the model and
+> never inside it. `usage.py` builds `player_usage.json` from the weekly stats rows and snap
+> counts (`usage_signals_v1`, `role_change_v1`); `matchup.py` builds `team_matchups.json` from the
+> schedule (`next_game_v1`), including the sportsbook spread and total as context. Both read
+> the boards only to learn *which players exist*, run after every board is written, and are
+> wrapped so a failure degrades to a warning. Nothing in `ros/`, `features/` or `modeling/`
+> imports this package, and `quality/forbidden.py` refuses the sportsbook tokens by name so a
+> feature builder cannot quietly start reading a line.
+
 ### `artifacts/`
 
 Convert internal outputs to strict public schemas, JSON, CSV, and metadata.
@@ -544,6 +555,13 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 > it where a transaction count and a points value appear on the same side of an operator, and
 > the test suite asserts that behaviourally rather than by inspection. `app/PotwView.tsx`
 > renders it and writes nothing but the shared URL state.
+
+> **2026-09-22 addition (ADR-091).** `data/signals.ts` is the signal layer's presentation module:
+> `ROLE_METRICS_BY_POSITION` (the one place position decides which role metrics lead), the
+> formatting of published shares and changes, and the reading of a matchup record. It selects
+> and formats; it never recomputes a change, a share or an implied score, and `verify:board`
+> compares its output with the bytes. `charts/UsageRails.tsx` and `charts/MatchupPanel.tsx`
+> draw it. `player_usage` and `team_matchups` are optional in `bundle.ts`, below the boards.
 
 > **Phase-8 revision (ADR-058, ADR-059).** Both bespoke charts moved off SVG. The Tier Board is
 > a CSS grid of HUD rows with the P25-P75 interval drawn as a positioned bar, and the Draft

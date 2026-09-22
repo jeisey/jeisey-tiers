@@ -76,3 +76,4 @@ The current directories:
 | `2026-09-07-market-history/` | The player card's retained market history (ADR-081) |
 | `2026-09-15-inseason-ui/` | The in-season presentation pass — both boards drawn, the status column removed, the card's draft market replaced (ADR-085) |
 | `2026-09-15-card-meters/` | The player card's micro-charts — a rank move against the board, a pace comparison in the model's own unit, a value placed among its position (ADR-086) |
+| `2026-09-22-in-season-signals/` | The signal layer — observed role week by week, the next game as context, and Pick of the Week's evidence row; fixture states plus six real week-2 cards (ADR-091) |

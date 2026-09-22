@@ -97,9 +97,29 @@ Research finding as of 2026-08-12: nflreadpy code is MIT; majority of nflverse d
 
 **Confirmed.** `LICENSE.md` is MIT ("Copyright (c) 2025 nflreadpy contributors"); the client README states "The majority of all nflverse data available (ie all but the FTN data as of July 2025) is broadly licensed as CC-BY 4.0, and the FTN data is CC-BY-SA 4.0". nflreadr adds that "NFL data accessed by this package belong to their respective owners, and are governed by their terms of use". `load_ftn_charting` is therefore the one nflverse loader that drags in share-alike obligations, and it should stay unused unless a feature justifies them.
 
+**Schedule lines, 2026-09-22 (ADR-091).** The next-game spread and total on a player card are
+nflverse's `load_schedules` columns, published under nflverse's CC-BY statement and attributed
+to nflverse. nflverse does not name the sportsbook or consensus behind them, and its CC-BY
+statement cannot grant rights an upstream provider did not give it — "NFL data … belong to their
+respective owners". The exposure is kept deliberately small: the spread and total only (no
+moneyline, no odds price, no per-book quote), inside `team_matchups.json` with no CSV companion,
+with a retrieval timestamp beside each line. They are **context, read by no model**
+(`docs/DATA_SOURCES.md` §18, ADR-091 Decision 3). If the upstream terms are ever found to forbid
+it, section 12 applies and the artifact publishes with the two line fields null — the build
+already degrades that way when a line is missing.
+
 ### ffopportunity
 
 Expected-points model/data are CC-BY-SA 4.0. Preserve attribution/share-alike obligations applicable to derivative data artifacts as advised by the project license. Package R code being GPL does not mean Python simply importing precomputed licensed data becomes GPL; nevertheless license handling should be documented carefully.
+
+**Publication status, 2026-09-22 (ADR-086, ADR-091).** ffopportunity is a **model input only**.
+No published artifact carries a per-player expected-points figure, points over expected, or
+an expected-points share: publishing one is closer to redistributing the licensed data than
+publishing a prediction is, and whether the share-alike obligation would then bind this site's
+artifacts is an open owner decision (ADR-086). The in-season signal layer was built around
+that decision rather than through it — every field of `player_usage.json` and
+`team_matchups.json` is arithmetic over nflverse's CC-BY feeds, and the build metadata's
+`expected_points_statement` says so where a reader would look for the missing reading.
 
 ### Sleeper
 
@@ -212,6 +232,12 @@ picture is loaded by their own browser from `a.espncdn.com` when they open a car
 referrer is sent and no image is copied onto this site, and that the player-to-picture mapping
 comes from nflverse rather than from ESPN. It is not in any CSV, because no export carries a
 portrait.
+
+**nflverse and ffopportunity (ADR-091, 2026-09-22).** The nflverse entry now names weekly
+player statistics and schedules, and says that the card's next-game spread and total are
+nflverse schedule lines shown as context and read by no model. The ffopportunity entry now says
+it is a model input and that no per-player expected-points figure is published — true today,
+and the sentence to change first if ADR-086 is ever decided the other way.
 
 ## 10. Non-commercial boundary
 

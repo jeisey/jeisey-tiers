@@ -560,13 +560,16 @@ export function DataView({
         <SectionHead index="07" id="sources-heading" title="Sources and attribution" />
         <ul className="source-list">
           <li>
-            <strong>nflverse</strong> — play-by-play, rosters, depth charts, snap counts, draft and
-            combine data, accessed through nflreadpy. Data is broadly CC-BY 4.0 and belongs to its
+            <strong>nflverse</strong> — play-by-play, rosters, depth charts, snap counts, weekly
+            player statistics, schedules, draft and combine data, accessed through nflreadpy.
+            The next-game spread and total on a player card are nflverse&apos;s schedule lines,
+            shown as context and read by no model. Data is broadly CC-BY 4.0 and belongs to its
             respective owners.{" "}
             <a href="https://github.com/nflverse/nflverse-data">nflverse-data</a>
           </li>
           <li>
-            <strong>ffopportunity</strong> — expected fantasy points, CC-BY-SA 4.0.{" "}
+            <strong>ffopportunity</strong> — expected fantasy points, CC-BY-SA 4.0, used as a
+            model input; no per-player expected-points figure is published.{" "}
             <a href="https://ffopportunity.ffverse.com/">ffopportunity</a>
           </li>
           <li>
