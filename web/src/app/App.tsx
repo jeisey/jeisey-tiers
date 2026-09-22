@@ -17,11 +17,13 @@ import { cohortAssignment } from "../data/market";
 import { selectArbitrageRows, selectTierRows, type ArtifactIndex } from "../data/model";
 import { selectPotwBoard, visiblePicks, clampSet } from "../data/potw";
 import {
+  behaviorMomentum,
   buildRosCohortContext,
   selectOpportunityRows,
   selectRosRows,
   type InSeasonBundle,
 } from "../data/ros";
+import { buildUsageCohort } from "../data/signals";
 import {
   IN_SEASON_VIEWS,
   SCORING_TO_PRESET,
@@ -248,6 +250,7 @@ function Board({
     const ros = inSeason?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
     const opportunity =
       inSeason?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
+    const usage = inSeason?.usageFor(selectedPlayerId) ?? null;
     return {
       playerId: selectedPlayerId,
       tier: index.tierFor(leaguePreset, scoring, selectedPlayerId),
@@ -281,6 +284,19 @@ function Board({
       // lifecycle windows, in-season with no board at all, end up correct here for free.
       opportunity,
       behavior: inSeason?.metadata.behavior ?? null,
+      // The signal layer (ADR-091). The usage record names the team whose next game is read;
+      // the rest-of-season row's team is the fallback for a player with no usage record.
+      usage,
+      usageCohort:
+        inSeason === null || usage === null
+          ? null
+          : buildUsageCohort(inSeason.usageRecords, usage, scoring),
+      usagePublished: inSeason?.hasUsage ?? false,
+      matchup: inSeason?.matchupFor(usage?.team ?? ros?.team) ?? null,
+      matchupsPublished: inSeason?.hasMatchups ?? false,
+      signals: inSeason?.metadata.signals ?? null,
+      momentum: inSeason === null ? null : behaviorMomentum(inSeason, selectedPlayerId),
+      seriesPublished: inSeason?.hasBehaviorSeries ?? false,
       inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
       marketAvailable: index.hasArbitrage,
       cohortExact: cohortAssignment(metadata, scoring, state.teams)?.exact ?? null,

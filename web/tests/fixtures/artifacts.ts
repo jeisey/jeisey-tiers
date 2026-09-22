@@ -45,11 +45,17 @@ import type {
   PlayerHeadshotRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
+  PlayerUsageRecord,
   Position,
+  RoleChange,
+  RoleMetric,
   RosBuildMetadata,
+  RosSignalMetadata,
   RosTierRecord,
   ScoringPreset,
+  TeamMatchupRecord,
   TierRecord,
+  UsageWeek,
   MarketComparison,
   MarketTrendSeriesRecord,
 } from "../../src/data/contracts";
@@ -920,6 +926,327 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
   return base;
 }
 
+// --------------------------------------------------------------------------- signal layer
+
+/**
+ * How each player's role moves across the eight fixture weeks (ADR-091).
+ *
+ * Built against the states a card has to draw differently, not against a happy path:
+ * a role that **rises** before the points do, one that **declines**, a latest game with **no
+ * snap row** (the change is withheld, never reached back for), a latest week of **snaps and no
+ * statistic**, a **bye**, **absences**, a surfaced player with **one appearance**, and a
+ * player with **no usage record at all**. Everything else is steady with a little texture.
+ */
+type RoleProfile = "steady" | "rising" | "declining" | "missing_snap" | "snaps_only";
+
+const ROLE_PROFILES: Readonly<Record<string, RoleProfile>> = {
+  // Each on a player the default block has playing through the cutoff, so the state is the
+  // one his latest game actually shows — a decline assigned to a player absent since week 5
+  // would never reach his card.
+  "gsis:00-0000011": "rising",
+  "gsis:00-0000012": "rising",
+  "gsis:00-0000006": "declining",
+  "gsis:00-0000005": "missing_snap",
+  "gsis:00-0000015": "snaps_only",
+};
+
+/** No usage record is published for him: the card must say so rather than draw zeros. */
+export const FIXTURE_NO_USAGE_PLAYER_ID = "gsis:00-0000010";
+
+/** Base snap share per position, before a profile bends it. */
+const BASE_SNAP: Readonly<Record<Position, number>> = {
+  QB: 1,
+  RB: 0.56,
+  WR: 0.84,
+  TE: 0.72,
+  K: 0,
+  DST: 0,
+};
+
+function roleCurve(profile: RoleProfile, week: number): number {
+  // A multiplier on the base share. The rise and the decline both begin in week 6, so the
+  // latest-vs-earlier reading has five quiet weeks to be measured against.
+  if (profile === "rising") return week < 6 ? 0.7 : week === 6 ? 1.1 : week === 7 ? 1.3 : 1.45;
+  if (profile === "declining") return week < 6 ? 1.1 : week === 6 ? 0.95 : week === 7 ? 0.85 : 0.7;
+  return 1 - 0.02 * (week % 3);
+}
+
+function shareValue(position: Position, metric: RoleMetric, curve: number): number | null {
+  const base = BASE_SNAP[position];
+  switch (metric) {
+    case "snap_share":
+      return round(Math.min(1, base * curve), 3);
+    case "target_share":
+      return position === "QB"
+        ? 0
+        : round(Math.min(0.45, (position === "RB" ? 0.09 : position === "TE" ? 0.15 : 0.21) * curve), 3);
+    case "carry_share":
+      return position === "RB" ? round(Math.min(0.9, 0.42 * curve), 3) : position === "QB" ? 0.18 : 0;
+    case "air_yards_share":
+      return position === "WR" || position === "TE"
+        ? round(Math.min(0.6, (position === "WR" ? 0.27 : 0.14) * curve), 3)
+        : 0;
+    case "pass_attempts":
+      return position === "QB" ? Math.round(33 * curve) : 0;
+    case "carries":
+      return position === "QB" ? Math.round(6 * curve) : position === "RB" ? Math.round(14 * curve) : 0;
+  }
+}
+
+const ROLE_METRICS: readonly RoleMetric[] = [
+  "snap_share",
+  "target_share",
+  "carry_share",
+  "air_yards_share",
+  "pass_attempts",
+  "carries",
+];
+
+/** `role_change_v1`, restated over fixture weeks — latest appearance against the earlier mean. */
+function fixtureChange(weeks: readonly UsageWeek[], metric: RoleMetric): RoleChange | null {
+  const played = weeks.filter((week) => week.status === "played");
+  const latest = played.at(-1);
+  if (latest === undefined) return null;
+  const value = (week: UsageWeek): number | null =>
+    metric === "pass_attempts" ? week.pass_attempts : metric === "carries" ? week.carries : week[metric];
+  const latestValue = value(latest);
+  if (latestValue === null) return null;
+  const earlier = played.slice(0, -1).map(value).filter((v): v is number => v !== null);
+  const digits = metric.endsWith("_share") ? 3 : 2;
+  const earlierValue = earlier.length === 0 ? null : round(earlier.reduce((a, b) => a + b, 0) / earlier.length, digits);
+  const latestRounded = round(latestValue, digits);
+  return {
+    latest_week: latest.week,
+    latest: latestRounded,
+    earlier: earlierValue,
+    earlier_games: earlier.length,
+    change: earlierValue === null ? null : round(latestRounded - earlierValue, digits),
+  };
+}
+
+/**
+ * One usage record per published player, coherent with the default block's rest-of-season
+ * row: the same appearances, and weekly PPR points that sum to its `points_to_date`.
+ */
+export function usageRecords(): PlayerUsageRecord[] {
+  const defaults = new Map(
+    rosTierRecords()
+      .filter((row) => row.league_preset_id === "redraft-12" && row.scoring_preset === "PPR")
+      .map((row) => [row.player_id, row]),
+  );
+  const players: { id: string; name: string; position: Position; team: string }[] = SEEDS.map(
+    (seed) => ({ id: seed.id, name: seed.name, position: seed.position, team: seed.team }),
+  );
+  const anchor = [...defaults.values()].sort((a, b) => a.ros_fair_rank - b.ros_fair_rank)[0];
+  if (anchor !== undefined) {
+    players.push({
+      id: `${anchor.player_id}-surfaced`,
+      name: `${anchor.display_name} (surfaced)`,
+      position: anchor.position,
+      team: anchor.team ?? "ATL",
+    });
+  }
+
+  const records: PlayerUsageRecord[] = [];
+  for (const player of players) {
+    if (player.id === FIXTURE_NO_USAGE_PLAYER_ID) continue;
+    const ros = defaults.get(player.id) ?? null;
+    const surfaced = player.id.endsWith("-surfaced");
+    const absent = ros?.long_absence ?? false;
+    const breakout = ros !== null && !ros.in_preseason_universe;
+    const profile = ROLE_PROFILES[player.id] ?? "steady";
+    const status = (week: number): UsageWeek["status"] => {
+      if (surfaced) return week === 8 ? "played" : week === 4 ? "bye" : "did_not_play";
+      if (breakout) return week >= 5 ? "played" : week === 4 ? "bye" : "did_not_play";
+      if (absent) return week <= 5 ? "played" : "did_not_play";
+      return "played";
+    };
+    const playedWeeks = [1, 2, 3, 4, 5, 6, 7, 8].filter((week) => status(week) === "played");
+    const total = surfaced ? 11.4 : (ros?.points_to_date ?? 0);
+    // Points follow the role with a lag of a week, which is the picture the rails exist for.
+    const weights = playedWeeks.map((week) => Math.max(0.3, roleCurve(profile, week - 1)));
+    const weightSum = weights.reduce((a, b) => a + b, 0) || 1;
+    let assigned = 0;
+    const weeks: UsageWeek[] = [1, 2, 3, 4, 5, 6, 7, 8].map((week) => {
+      const state = status(week);
+      if (state !== "played") {
+        return {
+          week,
+          status: state,
+          team: state === "bye" ? player.team : null,
+          opponent: null,
+          snap_share: null,
+          target_share: null,
+          carry_share: null,
+          air_yards_share: null,
+          targets: null,
+          carries: null,
+          pass_attempts: null,
+          fantasy_points: null,
+        };
+      }
+      const index = playedWeeks.indexOf(week);
+      const last = index === playedWeeks.length - 1;
+      const ppr = last ? round(total - assigned, 2) : round((total * (weights[index] ?? 1)) / weightSum, 2);
+      assigned = round(assigned + ppr, 2);
+      const curve = surfaced ? 0.8 : roleCurve(profile, week);
+      const snapsOnly = profile === "snaps_only" && week === 8;
+      const noSnap = profile === "missing_snap" && week === 8;
+      const shares = Object.fromEntries(
+        ROLE_METRICS.map((metric) => [metric, shareValue(player.position, metric, curve)]),
+      ) as Record<RoleMetric, number | null>;
+      return {
+        week,
+        status: "played",
+        team: player.team,
+        opponent: TEAM_OPPONENTS[player.team] ?? null,
+        snap_share: noSnap ? null : shares.snap_share,
+        target_share: snapsOnly ? 0 : shares.target_share,
+        carry_share: snapsOnly ? 0 : shares.carry_share,
+        air_yards_share: snapsOnly ? 0 : shares.air_yards_share,
+        targets: snapsOnly ? 0 : Math.round((shares.target_share ?? 0) * 34),
+        carries: snapsOnly ? 0 : shares.carries,
+        pass_attempts: snapsOnly ? 0 : shares.pass_attempts,
+        fantasy_points: snapsOnly
+          ? { STD: 0, HALF: 0, PPR: 0 }
+          : { STD: round(ppr * 0.86, 2), HALF: round(ppr * 0.93, 2), PPR: ppr },
+      };
+    });
+    const sum = (preset: ScoringPreset): number =>
+      round(weeks.reduce((acc, week) => acc + (week.fantasy_points?.[preset] ?? 0), 0), 2);
+    const tdShare = (preset: ScoringPreset): number | null =>
+      sum(preset) < 10 ? null : round(Math.min(0.62, 0.14 + (player.name.length % 7) * 0.05), 4);
+    const dropbacks = player.position === "QB" ? playedWeeks.length * 35 : 0;
+    records.push({
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      season: 2026,
+      through_week: FIXTURE_THROUGH_WEEK,
+      player_id: player.id,
+      display_name: player.name,
+      position: player.position,
+      team: player.team,
+      usage_rule_version: "usage_signals_v1",
+      appearances: playedWeeks.length,
+      weeks,
+      role_changes: Object.fromEntries(
+        ROLE_METRICS.map((metric) => [metric, fixtureChange(weeks, metric)]),
+      ) as Record<RoleMetric, RoleChange | null>,
+      fantasy_points_to_date: { STD: sum("STD"), HALF: sum("HALF"), PPR: sum("PPR") },
+      touchdown_points_share: { STD: tdShare("STD"), HALF: tdShare("HALF"), PPR: tdShare("PPR") },
+      dropbacks,
+      pass_epa_per_dropback:
+        dropbacks >= 20 ? round(player.team === "BUF" ? 0.21 : player.team === "CIN" ? -0.06 : 0.08, 3) : null,
+    });
+  }
+  return records;
+}
+
+/** Week-9 opponents, so each usage week names someone and the next game agrees. */
+const TEAM_OPPONENTS: Readonly<Record<string, string>> = {
+  ATL: "DET",
+  DET: "ATL",
+  CIN: "BUF",
+  BUF: "CIN",
+  LAR: "BAL",
+  BAL: "LAR",
+  LAC: "KC",
+  KC: "LAC",
+  PHI: "SF",
+  SF: "PHI",
+  ARI: "WAS",
+  WAS: "ARI",
+};
+
+/**
+ * Each team's next game (ADR-091), with every state the matchup block draws: a favourite and
+ * its underdog, a pick'em, a neutral site, an unposted line, and two teams on bye next week
+ * whose next game is further out. WAS publishes no record at all: a team whose next game the
+ * build could not name is a sentence on the card, never an empty panel.
+ */
+export function teamMatchupRecords(): TeamMatchupRecord[] {
+  const games: {
+    home: string;
+    away: string;
+    week: number;
+    kickoff: string;
+    spread: number | null;
+    total: number | null;
+    neutral?: boolean;
+  }[] = [
+    { home: "DET", away: "ATL", week: 9, kickoff: "2026-11-08T18:00:00Z", spread: 3.5, total: 51.5 },
+    { home: "BUF", away: "CIN", week: 9, kickoff: "2026-11-08T21:25:00Z", spread: -2.5, total: 48.5 },
+    { home: "BAL", away: "LAR", week: 9, kickoff: "2026-11-08T18:00:00Z", spread: 0, total: 44.5, neutral: true },
+    { home: "KC", away: "LAC", week: 9, kickoff: "2026-11-09T01:20:00Z", spread: 6, total: 45.5 },
+    { home: "PHI", away: "SF", week: 10, kickoff: "2026-11-15T18:00:00Z", spread: null, total: null },
+    { home: "ARI", away: "WAS", week: 9, kickoff: "2026-11-08T21:05:00Z", spread: null, total: null },
+  ];
+  const records: TeamMatchupRecord[] = [];
+  for (const game of games) {
+    for (const side of ["home", "away"] as const) {
+      const team = side === "home" ? game.home : game.away;
+      if (team === "WAS") continue;
+      const margin = game.spread === null ? null : side === "home" ? game.spread : -game.spread + 0;
+      const lined = game.total !== null && margin !== null;
+      records.push({
+        schema_version: "1.0",
+        build_id: FIXTURE_BUILD_ID,
+        season: 2026,
+        through_week: FIXTURE_THROUGH_WEEK,
+        team,
+        matchup_rule_version: "next_game_v1",
+        game_id: `2026_${String(game.week).padStart(2, "0")}_${game.away}_${game.home}`,
+        week: game.week,
+        kickoff_utc: game.kickoff,
+        opponent: side === "home" ? game.away : game.home,
+        home_away: side,
+        neutral_site: game.neutral === true,
+        team_rest_days: game.week === 10 ? 14 : 7,
+        opponent_rest_days: game.week === 10 ? 14 : 7,
+        roof: team === "DET" || team === "ATL" ? "dome" : "outdoors",
+        total_line: game.total,
+        team_expected_margin: margin === 0 ? 0 : margin,
+        implied_team_points:
+          lined && game.total !== null && margin !== null ? round((game.total + margin) / 2, 2) : null,
+        implied_opponent_points:
+          lined && game.total !== null && margin !== null ? round((game.total - margin) / 2, 2) : null,
+        upcoming_bye_weeks: game.week === 10 ? [9] : team === "BUF" ? [12] : [],
+        lines_source_id: lined ? "nflreadpy" : null,
+        lines_retrieved_at_utc: lined ? "2026-11-03T12:00:00Z" : null,
+      });
+    }
+  }
+  return records.sort((a, b) => a.team.localeCompare(b.team));
+}
+
+export function usageEnvelope(): ArtifactEnvelope<PlayerUsageRecord> {
+  return envelope("player_usage", "player_usage", usageRecords());
+}
+
+export function teamMatchupEnvelope(): ArtifactEnvelope<TeamMatchupRecord> {
+  return envelope("team_matchups", "team_matchup", teamMatchupRecords());
+}
+
+export const FIXTURE_SIGNALS: RosSignalMetadata = {
+  usage_rule: {
+    version: "usage_signals_v1",
+    change_rule_version: "role_change_v1",
+    min_earlier_games: 1,
+    min_touchdown_share_points: 10,
+    min_epa_dropbacks: 20,
+  },
+  usage_records: 18,
+  matchup_rule_version: "next_game_v1",
+  matchup_records: 11,
+  lines_source_id: "nflreadpy",
+  lines_retrieved_at_utc: "2026-11-03T12:00:00Z",
+  lines_posted_teams: 8,
+  sportsbook_context_statement:
+    "The spread, total and implied points are sportsbook numbers read from nflverse's schedule and shown as matchup context only. No model reads them: they move no projection, VORP, rank, tier or Pick of the Week selection.",
+  expected_points_statement:
+    "No expected-fantasy-points reading is published. ffopportunity's expected points are licensed CC-BY-SA 4.0, and whether this site may publish a per-player figure derived from them is an open decision (ADR-086). The rest-of-season model reads them as an input; the card does not print them.",
+};
+
 export function rosBuildMetadata(
   overrides: Partial<RosBuildMetadata> = {},
   behaviorAvailable = true,
@@ -996,6 +1323,7 @@ export function rosBuildMetadata(
     ],
     supported_presets: ["redraft-10", "redraft-12", "redraft-14"],
     sources: [],
+    signals: FIXTURE_SIGNALS,
     quality_gate: { status: "pass", critical_failures: 0, warnings: 0 },
     warnings: [],
     ...overrides,
@@ -1236,9 +1564,14 @@ export function fixtureFiles(condition: MarketCondition = "launch"): Record<stri
 /** Everything a page load needs **in season**, on top of the draft bundle. */
 export function inSeasonFixtureFiles(
   behaviorAvailable = true,
-  options: { readonly behaviorSeries?: "mature" | "young" | "absent" } = {},
+  options: {
+    readonly behaviorSeries?: "mature" | "young" | "absent";
+    /** `absent` publishes neither signal artifact: a build whose signal layer failed. */
+    readonly signals?: "present" | "absent";
+  } = {},
 ): Record<string, unknown> {
   const series = options.behaviorSeries ?? "mature";
+  const signals = options.signals ?? "present";
   return {
     // The draft build's own record of the season, replaced because in season it says
     // something different — and the page reads it whether or not a ROS bundle is beside it.
@@ -1262,6 +1595,14 @@ export function inSeasonFixtureFiles(
     ...(behaviorAvailable && series !== "absent"
       ? {
           "behavior_trend_series.json": behaviorSeriesEnvelope({ young: series === "young" }),
+        }
+      : {}),
+    // The signal layer (ADR-091). Its absence is a real published state: the ROS build
+    // withholds both artifacts when either builder fails, and the boards are unaffected.
+    ...(signals === "present"
+      ? {
+          "player_usage.json": usageEnvelope(),
+          "team_matchups.json": teamMatchupEnvelope(),
         }
       : {}),
   };

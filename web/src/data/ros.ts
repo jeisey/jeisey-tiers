@@ -20,12 +20,14 @@ import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   BehaviorTrendSeriesRecord,
   OpportunityRecord,
+  PlayerUsageRecord,
   Position,
   ProductMode,
   RosBuildMetadata,
   RosTierRecord,
   ScoringPreset,
   SeasonState,
+  TeamMatchupRecord,
 } from "./contracts";
 import { isNoteworthyRosterStatus, matchesPosition, matchesSearch } from "./model";
 import type { AppState, PositionFilter } from "./state";
@@ -42,6 +44,10 @@ export interface InSeasonInput {
   readonly opportunityDegradation: Degradation | null;
   /** The retained add/drop window (ADR-089). Null or empty costs a sparkline and nothing else. */
   readonly behaviorSeries?: readonly BehaviorTrendSeriesRecord[] | null;
+  /** Observed role week by week (ADR-091). Null costs the card's role block and nothing else. */
+  readonly usage?: readonly PlayerUsageRecord[] | null;
+  /** Each team's next game (ADR-091). Null costs the matchup block and nothing else. */
+  readonly matchups?: readonly TeamMatchupRecord[] | null;
 }
 
 /**
@@ -95,6 +101,12 @@ export class InSeasonBundle {
   private readonly opportunityByBlock: ReadonlyMap<string, readonly OpportunityRecord[]>;
   private readonly opportunityByBlockPlayer: ReadonlyMap<string, OpportunityRecord>;
   private readonly behaviorByPlayer: ReadonlyMap<string, BehaviorTrendSeriesRecord>;
+  readonly hasUsage: boolean;
+  readonly hasMatchups: boolean;
+  /** Every published usage record, in artifact order: a cohort's population. */
+  readonly usageRecords: readonly PlayerUsageRecord[];
+  private readonly usageByPlayer: ReadonlyMap<string, PlayerUsageRecord>;
+  private readonly matchupByTeam: ReadonlyMap<string, TeamMatchupRecord>;
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
@@ -109,6 +121,14 @@ export class InSeasonBundle {
     }
     this.behaviorByPlayer = behaviorByPlayer;
     this.hasBehaviorSeries = behaviorByPlayer.size > 0;
+
+    // Keyed by player, and by team: a role is the same however points are scored, and a
+    // team's next game is the same for every player on it (ADR-091).
+    this.usageRecords = input.usage ?? [];
+    this.usageByPlayer = new Map(this.usageRecords.map((record) => [record.player_id, record]));
+    this.hasUsage = this.usageByPlayer.size > 0;
+    this.matchupByTeam = new Map((input.matchups ?? []).map((record) => [record.team, record]));
+    this.hasMatchups = this.matchupByTeam.size > 0;
 
     const rosByBlock = new Map<string, RosTierRecord[]>();
     const rosByBlockPlayer = new Map<string, RosTierRecord>();
@@ -193,6 +213,17 @@ export class InSeasonBundle {
    */
   behaviorSeriesFor(playerId: string): BehaviorTrendSeriesRecord | null {
     return this.behaviorByPlayer.get(playerId) ?? null;
+  }
+
+  /** A player's observed role, or null — the build published none, or not for him. */
+  usageFor(playerId: string): PlayerUsageRecord | null {
+    return this.usageByPlayer.get(playerId) ?? null;
+  }
+
+  /** A team's next unplayed game, or null — its season is over, or none was published. */
+  matchupFor(team: string | null | undefined): TeamMatchupRecord | null {
+    if (team === null || team === undefined) return null;
+    return this.matchupByTeam.get(team) ?? null;
   }
 
   availableBlocks(): readonly { leaguePreset: string; scoring: ScoringPreset }[] {

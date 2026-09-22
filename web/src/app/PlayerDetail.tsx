@@ -44,8 +44,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
 import { PlayerPortrait } from "../components/PlayerPortrait";
 import { useMediaQuery } from "../components/useMediaQuery";
+import { BehaviorSparkline } from "../charts/BehaviorSparkline";
 import { CohortStrip, PaceRail, RankShift, type CohortReadingRow } from "../charts/CardMeters";
+import { MatchupPanel } from "../charts/MatchupPanel";
 import { MarketTrend, type TrendSeries } from "../charts/MarketTrend";
+import { UsageRails } from "../charts/UsageRails";
 import type {
   ArbitrageRecord,
   CrossMarketSummary,
@@ -55,9 +58,12 @@ import type {
   OpportunityRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
+  PlayerUsageRecord,
   RosBehaviorMetadata,
   RosDisclosures,
+  RosSignalMetadata,
   RosTierRecord,
+  TeamMatchupRecord,
   TierRecord,
 } from "../data/contracts";
 import {
@@ -90,8 +96,16 @@ import {
   projectedRemainingRate,
   rankChangeLabel,
   scoredRate,
+  type BehaviorMomentum,
   type RosCohortContext,
 } from "../data/ros";
+import {
+  formatEpa,
+  formatShare,
+  productionBars,
+  roleReadingsFor,
+  type UsageCohort,
+} from "../data/signals";
 
 /** The stylesheet's sheet breakpoint. Keep in step with `base.css`. */
 const SHEET_QUERY = "(max-width: 767px)";
@@ -162,6 +176,21 @@ export interface PlayerDetailData {
    * absence rather than as a zero.
    */
   readonly rosCohort?: RosCohortContext | null;
+  /**
+   * The signal layer for this player (ADR-091): his observed role week by week, where his
+   * touchdown share and pass EPA sit among his position's published rows, his team's next
+   * game, and his retained add momentum. Each is null on its own and each absence is drawn
+   * as a sentence saying which one it is — never as a zero.
+   */
+  readonly usage?: PlayerUsageRecord | null;
+  readonly usageCohort?: UsageCohort | null;
+  /** Whether the build published a usage artifact at all. A different fact from the above. */
+  readonly usagePublished?: boolean;
+  readonly matchup?: TeamMatchupRecord | null;
+  readonly matchupsPublished?: boolean;
+  readonly signals?: RosSignalMetadata | null;
+  readonly momentum?: BehaviorMomentum | null;
+  readonly seriesPublished?: boolean;
   /**
    * Whether this card was opened from an in-season board (ADR-085).
    *
@@ -463,16 +492,30 @@ function Distribution({
  * - **nothing here is a model input.** These are observations about what happened, shown
  *   beside an estimate that did not read them.
  */
+/** The evidence the signal layer adds to the in-season card (ADR-091). */
+interface SignalInputs {
+  readonly usage: PlayerUsageRecord | null;
+  readonly usageCohort: UsageCohort | null;
+  readonly usagePublished: boolean;
+  readonly matchup: TeamMatchupRecord | null;
+  readonly matchupsPublished: boolean;
+  readonly signals: RosSignalMetadata | null;
+  readonly momentum: BehaviorMomentum | null;
+  readonly seriesPublished: boolean;
+}
+
 function InSeasonUsage({
   ros,
   opportunity,
   behavior,
   cohort,
+  signal,
 }: {
   readonly ros: RosTierRecord;
   readonly opportunity: OpportunityRecord | null;
   readonly behavior: RosBehaviorMetadata | null;
   readonly cohort: RosCohortContext | null;
+  readonly signal: SignalInputs;
 }): React.JSX.Element {
   const window = opportunity?.behavior_lookback_hours ?? behavior?.lookback_hours ?? null;
   const windowText = window === null ? "the declared window" : `${String(window)}h`;
@@ -498,7 +541,17 @@ function InSeasonUsage({
 
   const perGame = scoredRate(ros);
   const projected = projectedRemainingRate(ros);
+  const passer = ros.position === "QB";
+  const { usage, usageCohort } = signal;
+  const touchdownShare = usage?.touchdown_points_share[ros.scoring_preset] ?? null;
 
+  /*
+    Position decides which readings sit here (ADR-091). A quarterback's snap share is ~100%
+    and his target share ~0% for every starter, so the strip used to rank two constants for a
+    quarter of the board (SIGNAL_EXPANSION_EDA.md Part 2b). His rows are the ones that
+    separate quarterbacks: points per game, EPA per dropback, and how much of his scoring
+    came from touchdowns. Everyone else keeps the two shares and gains the touchdown reading.
+  */
   const usageRows: readonly CohortReadingRow[] = [
     {
       key: "rate",
@@ -506,19 +559,38 @@ function InSeasonUsage({
       stat: cohort?.scoredRate ?? null,
       format: formatValue,
     },
+    ...(passer
+      ? [
+          {
+            key: "epa",
+            label: "EPA per dropback",
+            stat: usageCohort?.passEpa ?? null,
+            format: formatEpa,
+          },
+        ]
+      : [
+          {
+            key: "snap",
+            label: "Snap share",
+            stat: cohort?.snapShare ?? null,
+            format: formatShare,
+          },
+          {
+            key: "target",
+            label: "Target share",
+            stat: cohort?.targetShare ?? null,
+            format: formatShare,
+          },
+        ]),
     {
-      key: "snap",
-      label: "Snap share",
-      stat: cohort?.snapShare ?? null,
-      format: (value) => `${String(Math.round(value * 100))}%`,
-    },
-    {
-      key: "target",
-      label: "Target share",
-      stat: cohort?.targetShare ?? null,
-      format: (value) => `${String(Math.round(value * 100))}%`,
+      key: "touchdowns",
+      label: "Points from TDs",
+      stat: usageCohort?.touchdownShare ?? null,
+      format: formatShare,
+      qualifier: "highest",
     },
   ];
+  const readings = usage === null ? [] : roleReadingsFor(usage, ros.position);
 
   return (
     <>
@@ -551,6 +623,40 @@ function InSeasonUsage({
             : "Every value on this card is unaffected: behaviour decides who is visible, never what he is worth."}
         </span>
       </div>
+
+      {/*
+        Role first, because it moves first (ADR-091). The rails and the points rail share one
+        week axis, so "did his role change before his box score did" is a glance rather than
+        a comparison of three numbers. Every value is the artifact's own; every change is the
+        artifact's `role_change_v1` difference, printed with the window it was measured over.
+      */}
+      <div className="detail-subhead">
+        <span>Role, week by week</span>
+        <span className="detail-subhead-note">
+          {usage === null ? "not published" : `observed · weeks 1–${String(usage.through_week)}`}
+        </span>
+      </div>
+      {usage === null ? (
+        <p className="cohort-note signal-absent">
+          {signal.usagePublished
+            ? "No week-by-week role is published for him on this build."
+            : "This build published no week-by-week role series; every value on this card is unaffected."}
+        </p>
+      ) : (
+        <>
+          <UsageRails
+            readings={readings}
+            production={productionBars(usage, ros.scoring_preset)}
+            productionLabel={`Fantasy points (${ros.scoring_preset})`}
+            weeks={usage.weeks.map((week) => week.week)}
+          />
+          <p className="cohort-note">
+            {"Each reading is his latest game against the average of his earlier games. " +
+              "Shares are drawn on a 0–100% scale; attempts and points against his own peak. " +
+              "B is a bye, × a week he did not play, · a week with no value for that measure."}
+          </p>
+        </>
+      )}
 
       <div className="detail-subhead">
         <span>Production so far</span>
@@ -598,23 +704,45 @@ function InSeasonUsage({
           board with two wide receivers on it has none; the value a build published must not
           disappear because the population it would be compared against is too small.
         */}
+        {passer ? (
+          <Readout
+            label="EPA per dropback"
+            value={formatEpa(usage?.pass_epa_per_dropback)}
+            hint={
+              usage === null
+                ? "not published"
+                : usage.pass_epa_per_dropback === null
+                  ? "under 20 dropbacks"
+                  : `${formatInteger(usage.dropbacks)} dropbacks`
+            }
+          />
+        ) : (
+          <>
+            <Readout
+              label="Snap share"
+              value={formatShare(opportunity?.snap_share_last3)}
+              hint="last 3 games"
+            />
+            <Readout
+              label="Target share"
+              value={formatShare(opportunity?.target_share_last3)}
+              hint="last 3 games"
+            />
+          </>
+        )}
+        {/* How much of the scoring came from touchdowns — the most regression-prone part of
+            a fantasy score. A sustainability reading, not a prediction, and never a zero
+            when the sample is too small to be one. */}
         <Readout
-          label="Snap share"
-          value={
-            opportunity?.snap_share_last3 == null
-              ? EM_DASH
-              : `${String(Math.round(opportunity.snap_share_last3 * 100))}%`
+          label="Points from TDs"
+          value={formatShare(touchdownShare)}
+          hint={
+            usage === null
+              ? "not published"
+              : touchdownShare === null
+                ? "under 10 points so far"
+                : "of points to date"
           }
-          hint="last 3 games"
-        />
-        <Readout
-          label="Target share"
-          value={
-            opportunity?.target_share_last3 == null
-              ? EM_DASH
-              : `${String(Math.round(opportunity.target_share_last3 * 100))}%`
-          }
-          hint="last 3 games"
         />
       </div>
 
@@ -631,6 +759,28 @@ function InSeasonUsage({
         rows={usageRows}
         position={ros.position}
       />
+
+      {/*
+        The next game, as context (ADR-091). The sportsbook numbers are printed with the
+        sentence the build carries about them, and move nothing on this card or any other.
+      */}
+      <div className="detail-subhead">
+        <span>Next game</span>
+        <span className="detail-subhead-note">context · not a model input</span>
+      </div>
+      {signal.matchup === null ? (
+        <p className="cohort-note signal-absent">
+          {signal.matchupsPublished
+            ? "No next game is published for his team on this build."
+            : "This build published no schedule context."}
+        </p>
+      ) : (
+        <MatchupPanel
+          record={signal.matchup}
+          team={signal.matchup.team}
+          statement={signal.signals?.sportsbook_context_statement ?? null}
+        />
+      )}
 
       <div className="detail-subhead">
         <span>Roster moves</span>
@@ -678,6 +828,20 @@ function InSeasonUsage({
             ". A chevron marks a count past it; the numbers below are the reading."
           : "The behaviour feed published nothing for this build, so the strip is empty rather than zero."}
       </p>
+      {/* The window behind today's counts, beside them rather than instead of them — the
+          same two readings Pick of the Week shows, now on every in-season card (ADR-089). */}
+      {signal.momentum === null ? (
+        <div className="momentum" data-direction="absent">
+          <span className="readout-label">Add momentum</span>
+          <p className="momentum-reading momentum-absent">
+            {signal.seriesPublished
+              ? "No retained history: the feed has not carried him inside the window."
+              : "This build published no add/drop history."}
+          </p>
+        </div>
+      ) : (
+        <BehaviorSparkline momentum={signal.momentum} />
+      )}
 
       <div className="readout-grid">
         <Readout
@@ -1068,6 +1232,16 @@ export function PlayerDetail({
             opportunity={opportunity ?? null}
             behavior={data.behavior ?? null}
             cohort={cohort}
+            signal={{
+              usage: data.usage ?? null,
+              usageCohort: data.usageCohort ?? null,
+              usagePublished: data.usagePublished === true,
+              matchup: data.matchup ?? null,
+              matchupsPublished: data.matchupsPublished === true,
+              signals: data.signals ?? null,
+              momentum: data.momentum ?? null,
+              seriesPublished: data.seriesPublished === true,
+            }}
           />
         </DetailSection>
       );

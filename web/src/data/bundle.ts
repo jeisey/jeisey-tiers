@@ -16,6 +16,8 @@ import type {
   ArbitrageRecord,
   ArtifactName,
   BehaviorTrendSeriesRecord,
+  PlayerUsageRecord,
+  TeamMatchupRecord,
   BuildMetadata,
   MarketTrendSeriesRecord,
   OpportunityRecord,
@@ -182,11 +184,20 @@ async function loadInSeason(base: string | undefined): Promise<InSeasonBundle | 
   // One level softer again (ADR-089): the momentum series is an enrichment of an enrichment.
   // A bundle without it renders every board, every card and every pick — minus one sparkline.
   const behavior = await optional<BehaviorTrendSeriesRecord>("behavior_trend_series", base);
+  // The signal layer (ADR-091), softer again: observed role and next-game context beside the
+  // boards. A bundle without either renders every board, card and pick, minus the evidence
+  // blocks they feed — and says which one is missing rather than drawing a zero.
+  const [usage, matchups] = await Promise.all([
+    optional<PlayerUsageRecord>("player_usage", base),
+    optional<TeamMatchupRecord>("team_matchups", base),
+  ]);
   return new InSeasonBundle({
     metadata,
     rosTiers,
     opportunity: opportunity.records,
     opportunityDegradation: opportunity.degradation,
     behaviorSeries: behavior.records,
+    usage: usage.records,
+    matchups: matchups.records,
   });
 }
