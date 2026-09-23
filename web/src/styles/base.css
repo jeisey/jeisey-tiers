@@ -4975,14 +4975,16 @@ dl.facts dd {
  */
 /*
  * Eleven columns on a laptop: a little less side padding than the other sheets, the same
- * type. The measured margin at 1440px is what keeps a seven-digit add count from pushing the
+ * type. Selected as `table.sheet.opp-sheet` on purpose: the base sheet rules are
+ * `table.sheet thead th …`, and a bare `.opp-sheet thead th …` is one element weaker and
+ * silently loses — which is how this padding shipped in ADR-092 without applying. The measured margin at 1440px is what keeps a seven-digit add count from pushing the
  * table past the page (`inseason.spec.ts` measures 1024, 1280 and 1440).
  */
-.opp-sheet thead th button {
+table.sheet.opp-sheet thead th button {
   padding-inline: 8px;
 }
 
-.opp-sheet tbody td {
+table.sheet.opp-sheet tbody td {
   padding-inline: 8px;
 }
 
@@ -4992,30 +4994,50 @@ dl.facts dd {
   }
 }
 
+/*
+ * Wrapping is allowed at every width, not only below 1440px. A flex row only wraps when its
+ * column is actually short of room, so a wide screen still reads each reading on one line —
+ * but the table's *minimum* width is then set by its headers and shortest phrases rather than
+ * by its longest unwrapped cell. With wrapping confined to narrow screens, the fixture table
+ * at 1440px had 1px of slack on the machine it was built on and overflowed by 8px on CI's
+ * Chromium: a layout that fits only on one font rasteriser does not fit (ADR-092 correction).
+ */
+.opp-sheet .col-player .player-cell {
+  flex-wrap: wrap;
+  row-gap: 3px;
+}
+
+/*
+ * A two-word heading may take two lines. Eleven one-line headings were the table's floor at
+ * 1024 and 1280px — 17px of slack on one machine is none on another.
+ */
+table.sheet.opp-sheet thead th {
+  white-space: normal;
+  vertical-align: bottom;
+}
+
+table.sheet.opp-sheet thead th button {
+  line-height: 1.25;
+}
+
+/* A reading's change may drop under its value, and a window under its slope. */
+.opp-sheet .signal-line {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.opp-sheet .signal-detail {
+  white-space: normal;
+}
+
+/* `wk 8 vs 7 gms` is one short phrase; broken across lines it reads as two readings. */
+.opp-sheet .signal-cell[data-signal="role"] .signal-detail {
+  white-space: nowrap;
+}
+
 @media (max-width: 1439px) {
   .opp-sheet .col-player {
     min-width: 9.5rem;
-  }
-
-  /* The status marks wrap under a long name rather than widening the column past the page. */
-  .opp-sheet .col-player .player-cell {
-    flex-wrap: wrap;
-    row-gap: 3px;
-  }
-
-  /* A reading's change may drop under its value, and a window under its slope. */
-  .opp-sheet .signal-line {
-    flex-wrap: wrap;
-    row-gap: 2px;
-  }
-
-  .opp-sheet .signal-detail {
-    white-space: normal;
-  }
-
-  /* `wk 8 vs 7 gms` is one short phrase; broken across lines it reads as two readings. */
-  .opp-sheet .signal-cell[data-signal="role"] .signal-detail {
-    white-space: nowrap;
   }
 }
 

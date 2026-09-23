@@ -2243,6 +2243,15 @@ with `*_reading` kinds and **no sportsbook number**; its 29 existing columns are
 - `InSeasonBundle.has{Usage,Matchups,BehaviorSeries}` now mean *published* (non-null), not
   *non-empty*. `signalTeam()` is the one rule for which team's next game a player gets.
 
+**Correction after merge (CI run 35843180505).** `Frontend end-to-end` failed the 1440px
+no-sideways-scroll test by 8px on CI's Chromium; `daily-refresh` was green (it runs
+`verify:board`, not the layout suite). The table had 1px of slack locally, and its density
+rules (`.opp-sheet …`) lost to `table.sheet …` on specificity and never applied. Fixed by
+allowing wraps at every width and selecting `table.sheet.opp-sheet …`; slack is now ≥ 241px
+at 1024–1600px. **Fact to keep:** assert layout *margin* (`min-content` slack), not just "fits
+here" — a table that fits by a pixel on one rasteriser overflows on another; and a component
+override of `table.sheet thead th` must be at least `table.sheet.<class> thead th`.
+
 **POTW-v2 observations** (for an owner decision, not acted on): QB and TE set-1 picks (Purdy,
 Kincaid) have declining leading roles and falling momentum while eligible players at the same
 positions are rising (Stroud ▲ +17 attempts, T. Ferguson ▲ +7 pts); Mahomes and Kelce have

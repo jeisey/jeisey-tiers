@@ -4602,3 +4602,36 @@ Recorded for a future POTW-v2 design session — observations, not a mandate to 
 - **Two live records with `display_name: "None"`** (`gsis:00-0041326`, `gsis:00-0041436`) in
   `ros_tiers`, `inseason_opportunity` and `player_usage` — an upstream name gap serialised as a
   string. Pre-existing and pipeline-side; recorded, not fixed here.
+
+### Correction, 2026-09-23 — the table fitted on one rasteriser (CI run 35843180505)
+
+The post-merge `ci` run failed `Frontend end-to-end` on one test — `fits the table without a
+sideways scroll at 1440px`: the Opportunity table was **8px** wider than its container on CI's
+Chromium. `daily-refresh` stayed green because it runs `verify:board`, not the Playwright layout
+suite, so production published normally; the defect was a real 8px sideways scroll at 1440px
+on that rasteriser.
+
+**Root cause: two defects, the second hiding the first.**
+
+1. *The fit had no margin.* Measured as container width minus the table's `min-content` width,
+   the fixture table had **1px** of slack at 1440px, 17px at 1280px and 27px at 1024px on the
+   machine it was built on. Signal cells were only allowed to wrap below 1440px, so at 1440 the
+   longest unwrapped cell in each column (the surfaced player's name and badge, the role reading)
+   set the floor. Eleven columns of glyph-width differences between font rasterisers is more
+   than a pixel.
+2. *The density rules never applied.* The tighter cell padding and header rules were written as
+   `.opp-sheet thead th …` and `.opp-sheet tbody td`, one element weaker than the base
+   `table.sheet thead th …` / `table.sheet tbody td` they meant to override, so they lost
+   silently. The first ADR-092 build shipped with the base padding and single-line headers.
+
+**Fix.** Wrapping (player badges, a change under its value, a window under its slope, a
+two-word heading onto two lines) is allowed at every width — a flex row wraps only when its
+column is actually short of room, so wide screens are unchanged — and the density rules are
+selected as `table.sheet.opp-sheet …`. Slack is now 251 / 326 / 479 / 575px at 1024 / 1280 /
+1440 / 1600px on the fixture, and 241 / 316 / 462 / 558px on the live week-2 board.
+
+**The test asserted the outcome and not the margin, so it passed by luck on one machine.** It
+now also requires ≥ 64px of `min-content` slack at 1024, 1280 and 1440px and checks that the
+density rules apply (`white-space: normal` on a heading, 8px cell padding). Negative control:
+the new assertions fail against the merged CSS on the machine where the old test passed
+(1px / 17px / 27px of slack).

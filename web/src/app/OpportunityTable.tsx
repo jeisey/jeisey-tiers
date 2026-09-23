@@ -115,7 +115,7 @@ function opportunityColumns(
       header: "ROS Rank",
       accessorFn: (row) => row.row.record.ros_fair_rank,
       cell: (context) => formatRank(context.row.original.row.record.ros_fair_rank),
-      meta: { align: "right", width: "4.5rem", className: "col-low col-mid" },
+      meta: { align: "right", className: "col-low col-mid" },
     },
     {
       id: "player",
@@ -183,7 +183,6 @@ function opportunityColumns(
           </span>
         );
       },
-      meta: { width: "4.25rem" },
     },
     {
       id: "team",
@@ -201,7 +200,7 @@ function opportunityColumns(
       cell: (context) => formatValue(context.row.original.row.record.ros_expected_vorp),
       meta: {
         align: "right",
-        width: "6rem",
+        width: "5.5rem",
         // On a phone the chart above prints this value, with its bar, on every row it draws;
         // the table's narrow form leads with the readings the chart does not carry.
         className: "col-low",
@@ -259,7 +258,6 @@ function opportunityColumns(
       cell: (context) => countCell(context.row.original.row.record.add_count),
       meta: {
         align: "right",
-        width: "5rem",
         // No bar at all when the feed said nothing: a zero-width bar and "nobody added him"
         // look identical, and only one of them is a reading.
         track: (row: OpportunityCandidate) =>
@@ -279,7 +277,6 @@ function opportunityColumns(
       cell: (context) => countCell(context.row.original.row.record.drop_count),
       meta: {
         align: "right",
-        width: "5.5rem",
         className: "col-mid",
         track: (row: OpportunityCandidate) =>
           row.row.record.drop_count === null || row.row.record.drop_count === undefined
@@ -313,7 +310,7 @@ function opportunityColumns(
           </span>
         );
       },
-      meta: { align: "right", width: "4.5rem" },
+      meta: { align: "right" },
     },
     {
       /*
