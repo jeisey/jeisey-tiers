@@ -1542,6 +1542,13 @@ No artifact, schema, model, rule version or Pick-of-the-Week rule changed.
       awaiting-first-week, season-complete, live week 2); `ruff` clean, `pytest` **1,574**.
 - [x] **Docs**: ADR-092; `UX_SPEC.md` §6A.10, §7.1A, §11, §14; `DATA_CONTRACTS.md` §19.4;
       `SIGNAL_EXPANSION_EDA.md` note. Screens: `docs/visual-qa/2026-09-23-opportunity-signals/`.
+- [x] **Correction (CI run 35843180505):** the table overflowed by 8px at 1440px on CI's
+      Chromium — 1px of slack locally, and the `.opp-sheet` density rules lost to the base
+      `table.sheet` selectors and never applied. Wrapping now allowed at every width, selectors
+      raised to `table.sheet.opp-sheet`; slack ≥ 241px at 1024–1600px (fixture and live). The
+      e2e test now requires ≥ 64px of `min-content` slack and checks the rules apply; it fails
+      on the merged CSS locally (1 / 17 / 27px). lint 0 errors, typecheck clean, vitest 575,
+      e2e 154, build clean, `verify:board` zero failures on all eight builds.
 - [ ] **Deferred, with reasons in ADR-092:** opponent strength (`load_team_stats`, after ~week 5);
       xFP (ADR-086); `role_change_v1` window checkpoint after weeks 5–6; the board's
       `add_count: 0` for a player outside the top 100 (artifact contract); two live

@@ -507,6 +507,26 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       await expect(scroller.locator("table.sheet")).toBeVisible();
       const overflow = await scroller.evaluate((node) => node.scrollWidth - node.clientWidth);
       expect(overflow, `the opportunity table scrolls sideways at ${String(width)}px`).toBeLessThanOrEqual(1);
+      /*
+        Fitting is not enough; it has to fit with room to spare. The first version of this
+        table had 1px of slack at 1440px on the machine it was built on and overflowed by 8px
+        on CI's Chromium, because font rasterisation differs by a few pixels across eleven
+        columns. So the table's *minimum* width must leave a margin no rasteriser eats.
+      */
+      const slack = await scroller.evaluate((node) => {
+        const table = node.querySelector("table");
+        if (table === null) return -1;
+        table.style.width = "min-content";
+        const minimum = table.getBoundingClientRect().width;
+        table.style.width = "";
+        return node.clientWidth - minimum;
+      });
+      expect(slack, `the opportunity table has only ${String(Math.round(slack))}px of slack at ${String(width)}px`).toBeGreaterThanOrEqual(64);
+      // The density rules must actually apply: a `.opp-sheet` selector one element weaker than
+      // the base `table.sheet` rules loses silently, which is how they first shipped.
+      const header = scroller.locator('th[data-col="ros_expected_vorp"]');
+      await expect(header).toHaveCSS("white-space", "normal");
+      await expect(scroller.locator("tbody td").first()).toHaveCSS("padding-left", "8px");
       // Whatever steps aside, the three signal columns never do on a laptop.
       for (const column of ["role", "add_momentum", "next_game"]) {
         await expect(scroller.locator(`th[data-col="${column}"]`)).toBeVisible();

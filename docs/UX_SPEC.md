@@ -571,9 +571,12 @@ one position is on screen, and a note under the chips says which rule is in forc
 
 #### 6A.10.3 Width
 
-The table never scrolls sideways on a laptop: below 1280px Team and Drops step aside (the chart
-draws every drop count) and signal cells wrap to two lines; below 768px ROS rank and ROS value
-go too (the chart prints both), and the player's name is pinned while the readings scroll. The
+The table never scrolls sideways on a laptop, **with room to spare**: at every width a cell or
+a two-word heading may wrap when its column is short, below 1280px Team and Drops step aside
+(the chart draws every drop count), and below 768px ROS rank and ROS value go too (the chart
+prints both) and the player's name is pinned while the readings scroll. "Fits" means at least
+64px between the table's minimum width and its container at 1024, 1280 and 1440px — a table
+that fits by one pixel on one font rasteriser does not fit on another (ADR-092 correction). The
 filtered export keeps its fixed column list whatever a screen hides.
 
 ## 7. Tables
