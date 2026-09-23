@@ -35,6 +35,7 @@ import { MatchupPanel } from "../charts/MatchupPanel";
 import { Bars } from "../charts/UsageRails";
 import { PlayerPortrait } from "../components/PlayerPortrait";
 import { Notice, PositionTag, RosStatusBadge, SectionHead } from "../components/primitives";
+import { signalTeam } from "../data/candidates";
 import { cohortStat, finiteValues } from "../data/cohort";
 import type { Position, ScoringPreset, TeamMatchupRecord } from "../data/contracts";
 import { EM_DASH, formatInteger, formatValue } from "../data/format";
@@ -645,7 +646,7 @@ export function PotwView({
               momentum={behaviorMomentum(bundle, pick.opportunity.player_id)}
               seriesPublished={bundle.hasBehaviorSeries}
               scoring={SCORING_TO_PRESET[state.scoring]}
-              matchup={bundle.matchupFor(pick.usage?.team ?? pick.opportunity.team)}
+              matchup={bundle.matchupFor(signalTeam(pick.usage, pick.opportunity.team))}
               usagePublished={bundle.hasUsage}
               matchupsPublished={bundle.hasMatchups}
             />

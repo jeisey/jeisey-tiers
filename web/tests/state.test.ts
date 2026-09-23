@@ -53,7 +53,7 @@ describe("parseState", () => {
 
   it("reads every supported parameter", () => {
     const parsed = parseState(
-      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&set=3",
+      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&set=3",
     );
     expect(parsed.state).toEqual({
       view: "arbitrage",
@@ -67,6 +67,7 @@ describe("parseState", () => {
       rail: "all",
       mode: "auto",
       opportunity: "value",
+      only: ["role", "surfaced"],
       set: 3,
     });
     expect(parsed.normalized).toBe(true);
@@ -149,6 +150,64 @@ describe("leaguePresetId", () => {
     expect(leaguePresetId(10)).toBe("redraft-10");
     expect(leaguePresetId(12)).toBe("redraft-12");
     expect(leaguePresetId(14)).toBe("redraft-14");
+  });
+});
+
+/**
+ * The Opportunity Board's orderings and filters in the URL (ADR-092).
+ *
+ * The filters are a *set* written as a string, so the string has to be canonical: two links
+ * naming the same filters must compare equal, and a token the app does not know must be
+ * dropped with a rewrite rather than kept as a silent no-op.
+ */
+describe("opportunity orderings and filters", () => {
+  it("reads the two new orderings", () => {
+    expect(parseState("?opportunity=momentum").state.opportunity).toBe("momentum");
+    expect(parseState("?opportunity=role").state.opportunity).toBe("role");
+    expect(parseState("?opportunity=role").normalized).toBe(true);
+  });
+
+  it("offers no blended ordering under any name", () => {
+    for (const name of ["score", "signal", "waiver", "breakout", "composite", "hot"]) {
+      const parsed = parseState(`?opportunity=${name}`);
+      expect(parsed.state.opportunity).toBe("value");
+      expect(parsed.normalized).toBe(false);
+    }
+  });
+
+  it("writes filters in canonical order, whatever order they were switched on", () => {
+    expect(serializeState({ ...DEFAULT_STATE, only: ["surfaced", "role"] })).toBe(
+      "?only=role.surfaced",
+    );
+    expect(serializeState({ ...DEFAULT_STATE, only: ["momentum", "role", "momentum"] })).toBe(
+      "?only=role.momentum",
+    );
+  });
+
+  it("omits the parameter when no filter is on", () => {
+    expect(serializeState({ ...DEFAULT_STATE, only: [] })).toBe("");
+  });
+
+  it("round-trips every filter", () => {
+    const state = { ...DEFAULT_STATE, only: ["role", "momentum", "surfaced"] as const };
+    expect(parseState(serializeState(state)).state).toEqual(state);
+  });
+
+  it("normalizes an out-of-order or duplicated list and drops an unknown token", () => {
+    const reordered = parseState("?only=surfaced.role");
+    expect(reordered.state.only).toEqual(["role", "surfaced"]);
+    expect(reordered.normalized).toBe(false);
+
+    const unknown = parseState("?only=role.hot");
+    expect(unknown.state.only).toEqual(["role"]);
+    expect(unknown.normalized).toBe(false);
+    expect(serializeState(unknown.state)).toBe("?only=role");
+  });
+
+  it("has no filter that counts agreeing signals", () => {
+    const parsed = parseState("?only=two_of_three.all_positive.strong");
+    expect(parsed.state.only).toEqual([]);
+    expect(parsed.normalized).toBe(false);
   });
 });
 

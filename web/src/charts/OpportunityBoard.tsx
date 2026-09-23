@@ -25,6 +25,13 @@
  * so. When the feed is down the moves track is drawn empty and labelled, and every value
  * beside it is untouched.
  *
+ * **Role is a readout, not a third track** (ADR-092). The column that printed a generic
+ * three-week snap share — a constant for every quarterback — now prints the position's own
+ * leading measure from `player_usage.json`: its latest value and the card's glyph and change.
+ * It is text in its own column rather than a bar on either track, because a change in pass
+ * attempts and a change in snap share have no common scale and a bar would pretend they do.
+ * Momentum and the next game live in the table beneath; the chart does not need every signal.
+ *
  * The vocabulary — the lane grid, the tick header, the glowing mark, the axis footer — is
  * artboard 2a's, the same one the Tier Board uses. Like the Draft Rail before it, this board
  * has no artboard of its own (`docs/DESIGN_SOURCE_MAP.md` section 6), so it borrows the
@@ -35,6 +42,7 @@ import { useCallback, useMemo, useRef } from "react";
 
 import { useElementWidth } from "../components/useElementWidth";
 import { useRovingMarks } from "./useRovingMarks";
+import type { RoleCell } from "../data/candidates";
 import { formatRank, formatValue } from "../data/format";
 // The population bound is a rule over published counts rather than a geometry, and the player
 // card draws the same strip from it, so it lives in `data/ros` and has one definition.
@@ -52,7 +60,8 @@ export interface OpportunityMark {
   readonly addCount: number | null;
   readonly dropCount: number | null;
   readonly netAddCount: number | null;
-  readonly snapShare: number | null;
+  /** The position's leading role reading, formatted by the card's own functions. */
+  readonly role: RoleCell;
   readonly surfaced: boolean;
   readonly badges?: React.ReactNode;
   readonly label: string;
@@ -140,7 +149,7 @@ export function OpportunityBoard({
   /** The requested behaviour window, e.g. `24h`, straight from the artifact. */
   readonly windowLabel: string;
   readonly behaviorAvailable: boolean;
-  /** Which of the three orderings the rows are in, for the accessible summary. */
+  /** Which ordering the rows are in, for the accessible summary. */
   readonly orderLabel: string;
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
@@ -181,8 +190,9 @@ export function OpportunityBoard({
           "separate readings on two separate scales: rest-of-season expected VORP in points, " +
           "and roster adds and drops as counts of transactions over the " +
           `${windowLabel} window. They are never combined into one number, because a count of ` +
-          "transactions and a projected value have no common unit. The table below carries " +
-          "the same values."}
+          "transactions and a projected value have no common unit. Beside them, as text, is " +
+          "the position's leading role measure in the latest game against earlier games. The " +
+          "table below carries the same values, with add momentum and the next game."}
       </p>
 
       {/*
@@ -203,8 +213,8 @@ export function OpportunityBoard({
         <span className="opp-track-name" data-track="moves">
           {behaviorAvailable ? `Roster moves · ${windowLabel}` : "Roster moves · none"}
         </span>
-        <span className="opp-scale-unit" data-col="snap">
-          Snap
+        <span className="opp-scale-unit" data-col="role">
+          Role · latest
         </span>
         <span className="opp-scale-unit" data-col="net">
           Net
@@ -334,26 +344,17 @@ export function OpportunityBoard({
                   </span>
                 </span>
 
-                {/* Usage, on its own bounded 0-100 scale: a share, never a count. */}
-                <span className="opp-snap">
-                  {mark.snapShare === null ? (
-                    <span className="opp-snap-none" aria-hidden="true">
-                      —
-                    </span>
-                  ) : (
-                    <>
-                      <span className="opp-snap-track" aria-hidden="true">
-                        <span
-                          className="opp-snap-fill"
-                          style={{
-                            width: `${String(Math.max(0, Math.min(100, mark.snapShare * 100)))}%`,
-                          }}
-                        />
-                      </span>
-                      <span className="opp-snap-value">
-                        {`${String(Math.round(mark.snapShare * 100))}%`}
-                      </span>
-                    </>
+                {/* The position's leading role measure, as text: latest value, then the card's
+                    own glyph and change. No bar — its unit depends on the position. */}
+                <span
+                  className="opp-role"
+                  data-direction={mark.role.direction ?? "none"}
+                  title={mark.role.sentence}
+                >
+                  <span className="opp-role-metric">{mark.role.metric}</span>
+                  <span className="opp-role-value">{mark.role.value}</span>
+                  {mark.role.change !== null && (
+                    <span className="opp-role-change">{mark.role.change}</span>
                   )}
                 </span>
 

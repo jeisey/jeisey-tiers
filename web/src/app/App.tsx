@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import logoUrl from "../assets/jt_logo.png";
 
 import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bundle";
+import { selectOpportunityCandidates, signalTeam } from "../data/candidates";
 import { easternIsoDate } from "../data/format";
 import { cohortAssignment } from "../data/market";
 import { selectArbitrageRows, selectTierRows, type ArtifactIndex } from "../data/model";
@@ -19,7 +20,6 @@ import { selectPotwBoard, visiblePicks, clampSet } from "../data/potw";
 import {
   behaviorMomentum,
   buildRosCohortContext,
-  selectOpportunityRows,
   selectRosRows,
   type InSeasonBundle,
 } from "../data/ros";
@@ -226,7 +226,7 @@ function Board({
     }
     if (view === "opportunity" && inSeason !== null) {
       return {
-        shown: selectOpportunityRows(inSeason, state).length,
+        shown: selectOpportunityCandidates(inSeason, state).candidates.length,
         total: inSeason.opportunityFor(leaguePreset, scoring).length,
       };
     }
@@ -292,7 +292,7 @@ function Board({
           ? null
           : buildUsageCohort(inSeason.usageRecords, usage, scoring),
       usagePublished: inSeason?.hasUsage ?? false,
-      matchup: inSeason?.matchupFor(usage?.team ?? ros?.team ?? opportunity?.team) ?? null,
+      matchup: inSeason?.matchupFor(signalTeam(usage, ros?.team, opportunity?.team)) ?? null,
       matchupsPublished: inSeason?.hasMatchups ?? false,
       signals: inSeason?.metadata.signals ?? null,
       momentum: inSeason === null ? null : behaviorMomentum(inSeason, selectedPlayerId),

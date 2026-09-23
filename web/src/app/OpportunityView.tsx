@@ -10,11 +10,19 @@
  * *An add count is not an ADP.* It is a number of transactions inside a declared window. The
  * column says "Adds (24h)" with the window from the artifact, never "ADP" and never "rank".
  *
- * *There is no combined score.* The board offers three orderings — by rest-of-season value,
- * by adds, by net adds — and they are different sorts of the same rows. A single blended
- * number would imply a common unit between a fair rank and a transaction count, and there
- * isn't one. The chart added in ADR-085 holds to that literally: two tracks with their own
- * zeros, their own scales and a rule between them, and nothing that spans both.
+ * *There is no combined score.* The board offers five orderings — rest-of-season value,
+ * adds, net adds, add momentum and role direction — and they are different sorts of the same
+ * rows. A single blended number would imply a common unit between a fair rank and a
+ * transaction count, and there isn't one. The chart added in ADR-085 holds to that literally:
+ * two tracks with their own zeros, their own scales and a rule between them, and nothing that
+ * spans both.
+ *
+ * *A filter is one question about one reading* (ADR-092). "Role rising", "Momentum rising" and
+ * "Surfaced" each test one published signal and compose by AND. There is no chip that counts
+ * how many signals agree, because that count is a score with its arithmetic hidden. A row with
+ * no reading does not pass a filter and is not counted as failing it either: the status line
+ * prints both numbers, and a filter whose artifact the build did not publish is named and
+ * left off rather than emptying the board.
  *
  * *Behaviour decides visibility, never value.* A player surfaced from beyond the published
  * tier depth carries the fair rank the model gave him and no tier at all, labelled as an
@@ -25,18 +33,23 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { OpportunityBoard, type OpportunityMark } from "../charts/OpportunityBoard";
 import { Notice, RosStatusBadge, SectionHead, Segmented } from "../components/primitives";
+import {
+  filterAvailable,
+  roleCell,
+  selectOpportunityCandidates,
+  type FilterReport,
+  type OpportunityCandidate,
+  type OpportunitySelection,
+} from "../data/candidates";
 import { opportunityRowsToCsv } from "../data/csv";
 import { formatRank, formatValue } from "../data/format";
+import { longAbsenceLabel, type InSeasonBundle } from "../data/ros";
 import {
-  longAbsenceLabel,
-  selectOpportunityRows,
-  type InSeasonBundle,
-  type OpportunityRow,
-} from "../data/ros";
-import {
+  OPPORTUNITY_FILTERS,
   OPPORTUNITY_SORTS,
   SCORING_LABELS,
   type AppState,
+  type OpportunityFilter,
   type OpportunitySort,
 } from "../data/state";
 import { ExportControls } from "./ExportControls";
@@ -46,7 +59,65 @@ const SORT_LABELS: Readonly<Record<OpportunitySort, string>> = {
   value: "ROS value",
   adds: "Adds",
   net: "Net adds",
+  momentum: "Momentum",
+  role: "Role",
 };
+
+/** The long form a screen reader hears for each ordering. */
+const SORT_DESCRIPTIONS: Readonly<Record<OpportunitySort, string>> = {
+  value: "ROS value",
+  adds: "Adds",
+  net: "Net adds",
+  momentum: "Add momentum, steepest published rise first",
+  role: "Role direction: rising, flat, falling, then no reading",
+};
+
+const FILTER_LABELS: Readonly<Record<OpportunityFilter, string>> = {
+  role: "Role rising",
+  momentum: "Momentum rising",
+  surfaced: "Surfaced",
+};
+
+/** What each chip tests, in one sentence — the chip's tooltip and its accessible description. */
+const FILTER_RULES: Readonly<Record<OpportunityFilter, string>> = {
+  role:
+    "His position's leading role measure (pass attempts for a QB, snap share otherwise) has a " +
+    "published rise in his latest game against his earlier games.",
+  momentum:
+    "His published add-count slope over the retained window is positive, and the window " +
+    "reaches the latest snapshot — a slope that ended earlier in the week is not current.",
+  surfaced: "Published from beyond the rest-of-season tier depth by current evidence.",
+};
+
+/** Why a chip cannot be applied, in the words of the artifact that is missing. */
+const FILTER_UNAVAILABLE: Readonly<Record<OpportunityFilter, string>> = {
+  role: "This build published no week-by-week role series, so no role direction can be read.",
+  momentum:
+    "This build published no add-momentum series, so no add trend can be read. Adds and drops " +
+    "for the latest window are unaffected.",
+  surfaced: "",
+};
+
+/** `Role rising: 12 · 40 with no published change`. Two numbers, never folded into one. */
+function reportText(report: FilterReport): string {
+  const noun: Readonly<Record<OpportunityFilter, string>> = {
+    role: "with no published change",
+    momentum: "with no current published slope",
+    surfaced: "",
+  };
+  const missing =
+    report.withoutReading > 0 && report.filter !== "surfaced"
+      ? ` · ${String(report.withoutReading)} ${noun[report.filter]}, not counted either way`
+      : "";
+  return `${FILTER_LABELS[report.filter]}: ${String(report.passing)}${missing}`;
+}
+
+/** How the role ordering compared rows, which depends on how many positions are on screen. */
+function roleOrderNote(selection: OpportunitySelection): string {
+  return selection.roleOrdering.magnitudes
+    ? "Role order: rising, flat, falling, then no reading; within each, the larger published change first."
+    : "Role order: rising, flat, falling, then no reading; within each, by ROS rank — a QB's change is in attempts and everyone else's in share points, so sizes are compared only within one position.";
+}
 
 /** How deep the chart goes by default. The table below still holds every published row. */
 export const OPPORTUNITY_BOARD_PREVIEW_DEPTH = 40;
@@ -63,25 +134,22 @@ function windowLabel(hours: number | null | undefined): string {
  * kept apart in the picture: a value in points, then a count of transactions over a window.
  * Nothing here joins them with a word like "versus" that would imply an exchange rate.
  */
-function markLabel(row: OpportunityRow, windowText: string): string {
-  const record = row.record;
+function markLabel(candidate: OpportunityCandidate, windowText: string): string {
+  const record = candidate.row.record;
   const moves =
     record.add_count === null || record.add_count === undefined
       ? "no add or drop counts published"
       : `${String(record.add_count)} add${record.add_count === 1 ? "" : "s"} and ` +
         `${String(record.drop_count ?? 0)} drop${record.drop_count === 1 ? "" : "s"} ` +
         `over the ${windowText} window`;
-  const snap =
-    record.snap_share_last3 === null || record.snap_share_last3 === undefined
-      ? ""
-      : `, snap share ${String(Math.round(record.snap_share_last3 * 100))} percent`;
+  const role = ` Role: ${roleCell(candidate.role, record.position).sentence}`;
   return (
     `${record.display_name}, ${record.position}${String(record.ros_position_rank)}` +
     `${record.team === null ? "" : `, ${record.team}`}, rest-of-season rank ` +
     `${formatRank(record.ros_fair_rank)}, rest-of-season expected VORP ` +
-    `${formatValue(record.ros_expected_vorp)} points. Separately: ${moves}${snap}` +
-    (record.outside_tier_board ? ". Surfaced from beyond the tier depth; no tier" : "") +
-    (record.long_absence ? `. ${longAbsenceLabel(record)}` : "")
+    `${formatValue(record.ros_expected_vorp)} points. Separately: ${moves}.${role}` +
+    (record.outside_tier_board ? " Surfaced from beyond the tier depth; no tier." : "") +
+    (record.long_absence ? ` ${longAbsenceLabel(record)}.` : "")
   );
 }
 
@@ -98,8 +166,9 @@ export function OpportunityView({
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
 }): React.JSX.Element {
-  const rows = useMemo(() => selectOpportunityRows(bundle, state), [bundle, state]);
-  const visibleRows = useRef<readonly OpportunityRow[]>(rows);
+  const selection = useMemo(() => selectOpportunityCandidates(bundle, state), [bundle, state]);
+  const rows = selection.candidates;
+  const visibleRows = useRef<readonly OpportunityCandidate[]>(rows);
   useEffect(() => {
     visibleRows.current = rows;
   }, [rows]);
@@ -109,8 +178,17 @@ export function OpportunityView({
   const available = behavior?.available === true;
   const buildDate = metadata.generated_at_utc.slice(0, 10);
   const surfaced = useMemo(
-    () => rows.filter((row) => row.record.outside_tier_board).length,
+    () => rows.filter((row) => row.row.record.outside_tier_board).length,
     [rows],
+  );
+  const toggleFilter = useCallback(
+    (filter: OpportunityFilter) => {
+      const next = state.only.includes(filter)
+        ? state.only.filter((active) => active !== filter)
+        : [...state.only, filter];
+      onChange({ only: OPPORTUNITY_FILTERS.filter((candidate) => next.includes(candidate)) });
+    },
+    [onChange, state.only],
   );
 
   const window = behavior?.lookback_hours;
@@ -123,45 +201,48 @@ export function OpportunityView({
   );
   const marks: readonly OpportunityMark[] = useMemo(
     () =>
-      charted.map((row) => ({
-        playerId: row.record.player_id,
-        rosRank: row.record.ros_fair_rank,
-        position: row.record.position,
-        positionRank: row.record.ros_position_rank,
-        displayName: row.record.display_name,
-        rosExpectedVorp: row.record.ros_expected_vorp,
-        addCount: row.record.add_count ?? null,
-        dropCount: row.record.drop_count ?? null,
-        netAddCount: row.record.net_add_count ?? null,
-        snapShare: row.record.snap_share_last3 ?? null,
-        surfaced: row.record.outside_tier_board,
-        badges: (
-          <>
-            {row.record.outside_tier_board && (
-              <span
-                className="surface-badge"
-                title="Surfaced by current evidence; published without a tier"
-              >
-                surfaced
-              </span>
-            )}
-            <RosStatusBadge status={row.record.current_status} />
-            {row.record.long_absence && (
-              <span
-                className="absence-badge"
-                data-flag="long-absence"
-                title={longAbsenceLabel(row.record)}
-              >
-                <span aria-hidden="true">◷</span>
-                <span className="absence-weeks">
-                  {`${String(Math.round(row.record.weeks_since_last_game))}w`}
+      charted.map((candidate) => {
+        const row = candidate.row;
+        return {
+          playerId: row.record.player_id,
+          rosRank: row.record.ros_fair_rank,
+          position: row.record.position,
+          positionRank: row.record.ros_position_rank,
+          displayName: row.record.display_name,
+          rosExpectedVorp: row.record.ros_expected_vorp,
+          addCount: row.record.add_count ?? null,
+          dropCount: row.record.drop_count ?? null,
+          netAddCount: row.record.net_add_count ?? null,
+          role: roleCell(candidate.role, row.record.position),
+          surfaced: row.record.outside_tier_board,
+          badges: (
+            <>
+              {row.record.outside_tier_board && (
+                <span
+                  className="surface-badge"
+                  title="Surfaced by current evidence; published without a tier"
+                >
+                  surfaced
                 </span>
-              </span>
-            )}
-          </>
-        ),
-        label: markLabel(row, windowText),
-      })),
+              )}
+              <RosStatusBadge status={row.record.current_status} />
+              {row.record.long_absence && (
+                <span
+                  className="absence-badge"
+                  data-flag="long-absence"
+                  title={longAbsenceLabel(row.record)}
+                >
+                  <span aria-hidden="true">◷</span>
+                  <span className="absence-weeks">
+                    {`${String(Math.round(row.record.weeks_since_last_game))}w`}
+                  </span>
+                </span>
+              )}
+            </>
+          ),
+          label: markLabel(candidate, windowText),
+        };
+      }),
     [charted, windowText],
   );
   const truncated = charted.length < rows.length;
@@ -204,7 +285,11 @@ export function OpportunityView({
             name="opportunity"
             label="Order by"
             value={state.opportunity}
-            options={OPPORTUNITY_SORTS.map((sort) => ({ value: sort, label: SORT_LABELS[sort] }))}
+            options={OPPORTUNITY_SORTS.map((sort) => ({
+              value: sort,
+              label: SORT_LABELS[sort],
+              description: SORT_DESCRIPTIONS[sort],
+            }))}
             onChange={(opportunity) => {
               onChange({ opportunity });
             }}
@@ -232,11 +317,66 @@ export function OpportunityView({
           </Notice>
         )}
 
+        {/*
+          The filters. Toggle buttons rather than a radio group, because they compose: each is
+          one question about one published reading, and switching on two asks both. A chip
+          whose artifact is missing is disabled and says so, and if a shared link names it the
+          notice below names it again rather than letting it empty the board.
+        */}
+        <div className="opp-filters" role="group" aria-labelledby="opp-filters-label">
+          <span className="control-label" id="opp-filters-label">
+            Show only
+          </span>
+          <div className="segmented opp-filter-set">
+            {OPPORTUNITY_FILTERS.map((filter) => {
+              const available = filterAvailable(bundle, filter);
+              const pressed = state.only.includes(filter);
+              return (
+                <button
+                  key={filter}
+                  type="button"
+                  className="opp-filter"
+                  data-filter={filter}
+                  aria-pressed={pressed && available}
+                  disabled={!available}
+                  title={available ? FILTER_RULES[filter] : FILTER_UNAVAILABLE[filter]}
+                  onClick={() => {
+                    toggleFilter(filter);
+                  }}
+                >
+                  {FILTER_LABELS[filter]}
+                </button>
+              );
+            })}
+          </div>
+          <span className="opp-filter-status muted">
+            {[
+              selection.filters.length === 0
+                ? `${String(rows.length)} shown`
+                : `${String(rows.length)} of ${String(selection.matched)} shown`,
+              ...selection.filters.filter((report) => report.available).map(reportText),
+            ].join(" · ")}
+          </span>
+        </div>
+        {state.opportunity === "role" && (
+          <p className="muted opp-order-note">{roleOrderNote(selection)}</p>
+        )}
+
+        {selection.unavailable.length > 0 && (
+          <Notice title="A filter in this link cannot be applied to this build.">
+            {selection.unavailable.map((filter) => FILTER_UNAVAILABLE[filter]).join(" ")} The
+            board below is shown without {selection.unavailable.length === 1 ? "that filter" : "those filters"}{" "}
+            rather than as though no player passed it.
+          </Notice>
+        )}
+
         {rows.length === 0 ? (
           <Notice title="No players match.">
-            {state.search === ""
-              ? "This position filter returns nothing for the selected preset."
-              : `No player on the ${SCORING_LABELS[state.scoring]} opportunity board matches “${state.search}”.`}
+            {selection.matched > 0 && selection.filters.length > 0
+              ? `None of the ${String(selection.matched)} players the position and search controls leave passes every filter switched on.`
+              : state.search === ""
+                ? "This position filter returns nothing for the selected preset."
+                : `No player on the ${SCORING_LABELS[state.scoring]} opportunity board matches “${state.search}”.`}
           </Notice>
         ) : (
           <OpportunityBoard
@@ -266,6 +406,9 @@ export function OpportunityView({
             Adds right of centre
             <span className="legend-bar" data-kind="drop" />
             drops left, on their own count scale
+          </span>
+          <span className="legend-item">
+            Role: ▲ ▬ ▼ latest game against earlier games, in the position&rsquo;s own measure
           </span>
           <span className="legend-item muted">
             {truncated
@@ -305,6 +448,13 @@ export function OpportunityView({
           observation time of its own, so the time above is when the snapshot was retrieved,
           not a claim about when the transactions happened.
         </p>
+        <p className="muted board-note">
+          Four readings sit side by side and are never combined: rest-of-season value (the
+          model), role (observed: the position&rsquo;s leading measure, latest game against the
+          average of earlier games), add momentum (the published slope of the add count over
+          the retained window, with its span) and the next game (sportsbook context read by no
+          model; nothing here rates an opponent). A filter tests one of them at a time.
+        </p>
       </section>
 
       <section className="section" aria-labelledby="opportunity-table-heading">
@@ -330,14 +480,17 @@ export function OpportunityView({
 
         {rows.length === 0 ? (
           <Notice title="No players match.">
-            {state.search === ""
-              ? "This position filter returns nothing for the selected preset."
-              : `No player on the ${SCORING_LABELS[state.scoring]} opportunity board matches “${state.search}”.`}
+            {selection.matched > 0 && selection.filters.length > 0
+              ? "No player passes every filter switched on above."
+              : state.search === ""
+                ? "This position filter returns nothing for the selected preset."
+                : `No player on the ${SCORING_LABELS[state.scoring]} opportunity board matches “${state.search}”.`}
           </Notice>
         ) : (
           <OpportunityTable
             rows={rows}
             windowSuffix={windowSuffix}
+            roleOrdering={selection.roleOrdering}
             onSelect={onSelect}
             selectedPlayerId={selectedPlayerId}
             visibleRowsRef={visibleRows}

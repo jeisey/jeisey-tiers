@@ -40,6 +40,8 @@ export const SIGNAL_PRESENTATION_VERSION = "signal_presentation_v1";
 export interface RoleMetricSpec {
   readonly metric: RoleMetric;
   readonly label: string;
+  /** The label a board cell has room for (ADR-092). The card prints `label`. */
+  readonly short: string;
   /** A share is 0–1 on an absolute axis; a count is scaled to the player's own peak. */
   readonly unit: "share" | "count";
   /** The question the reading answers, in the reader's words. */
@@ -51,6 +53,7 @@ export const ROLE_METRIC_SPECS: Readonly<Record<RoleMetric, RoleMetricSpec>> = {
   snap_share: {
     metric: "snap_share",
     label: "Snap share",
+    short: "Snap",
     unit: "share",
     question: "Is he on the field more?",
     weekValue: (week) => week.snap_share,
@@ -58,6 +61,7 @@ export const ROLE_METRIC_SPECS: Readonly<Record<RoleMetric, RoleMetricSpec>> = {
   target_share: {
     metric: "target_share",
     label: "Target share",
+    short: "Tgt share",
     unit: "share",
     question: "Is he getting more of his team's targets?",
     weekValue: (week) => week.target_share,
@@ -65,6 +69,7 @@ export const ROLE_METRIC_SPECS: Readonly<Record<RoleMetric, RoleMetricSpec>> = {
   carry_share: {
     metric: "carry_share",
     label: "Carry share",
+    short: "Carry share",
     unit: "share",
     question: "Is he taking over the backfield?",
     weekValue: (week) => week.carry_share,
@@ -72,6 +77,7 @@ export const ROLE_METRIC_SPECS: Readonly<Record<RoleMetric, RoleMetricSpec>> = {
   air_yards_share: {
     metric: "air_yards_share",
     label: "Air-yards share",
+    short: "Air yds",
     unit: "share",
     question: "Is he getting the downfield looks, caught or not?",
     weekValue: (week) => week.air_yards_share,
@@ -79,6 +85,7 @@ export const ROLE_METRIC_SPECS: Readonly<Record<RoleMetric, RoleMetricSpec>> = {
   pass_attempts: {
     metric: "pass_attempts",
     label: "Pass attempts",
+    short: "Pass att",
     unit: "count",
     question: "Is he the one throwing?",
     weekValue: (week) => week.pass_attempts,
@@ -86,6 +93,7 @@ export const ROLE_METRIC_SPECS: Readonly<Record<RoleMetric, RoleMetricSpec>> = {
   carries: {
     metric: "carries",
     label: "Rush attempts",
+    short: "Rush att",
     unit: "count",
     question: "Is he running?",
     weekValue: (week) => week.carries,
