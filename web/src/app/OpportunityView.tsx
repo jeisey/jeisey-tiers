@@ -29,10 +29,16 @@
  * exception rather than quietly slotted in.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { OpportunityBoard, type OpportunityMark } from "../charts/OpportunityBoard";
-import { Notice, RosStatusBadge, SectionHead, Segmented } from "../components/primitives";
+import {
+  Notice,
+  PanelToggle,
+  RosStatusBadge,
+  SectionHead,
+  Segmented,
+} from "../components/primitives";
 import {
   filterAvailable,
   roleCell,
@@ -121,6 +127,29 @@ function roleOrderNote(selection: OpportunitySelection): string {
 
 /** How deep the chart goes by default. The table below still holds every published row. */
 export const OPPORTUNITY_BOARD_PREVIEW_DEPTH = 40;
+
+/**
+ * What the folded board options print on a phone (ADR-093): the ordering, the filters that
+ * are actually applied, and how many rows the chart draws — the three things the folded
+ * controls decide, so none of them can be on without the row saying so. A filter named by a
+ * link that this build cannot apply is not listed; the notice below the options names it.
+ */
+export function opportunityOptionsSummary(
+  state: Pick<AppState, "opportunity" | "board">,
+  selection: Pick<OpportunitySelection, "filters">,
+  rowCount: number,
+): readonly string[] {
+  const applied = selection.filters
+    .filter((report) => report.available)
+    .map((report) => FILTER_LABELS[report.filter]);
+  return [
+    `By ${SORT_LABELS[state.opportunity]}`,
+    applied.length === 0 ? "No filters" : applied.join(" + "),
+    state.board === "full" || rowCount <= OPPORTUNITY_BOARD_PREVIEW_DEPTH
+      ? `All ${String(rowCount)}`
+      : `Top ${String(OPPORTUNITY_BOARD_PREVIEW_DEPTH)} of ${String(rowCount)}`,
+  ];
+}
 
 function windowLabel(hours: number | null | undefined): string {
   if (hours === null || hours === undefined) return "window unknown";
@@ -251,6 +280,16 @@ export function OpportunityView({
     onChange({ board: state.board === "full" ? "top" : "full" });
   }, [onChange, state.board]);
 
+  /*
+    The phone's board options (ADR-093): the orderings, the depth switch and the filter chips
+    fold behind one row. The status line beneath them never folds — it is the filters' census,
+    and ADR-092 prints it so that a filter is never read as a count of the whole board.
+  */
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const toggleOptions = useCallback(() => {
+    setOptionsOpen((open) => !open);
+  }, []);
+
   if (!bundle.hasOpportunity) {
     return (
       <section className="section" aria-labelledby="opportunity-missing-heading">
@@ -281,30 +320,44 @@ export function OpportunityView({
             "combined with a value."
           }
         >
-          <Segmented<OpportunitySort>
-            name="opportunity"
-            label="Order by"
-            value={state.opportunity}
-            options={OPPORTUNITY_SORTS.map((sort) => ({
-              value: sort,
-              label: SORT_LABELS[sort],
-              description: SORT_DESCRIPTIONS[sort],
-            }))}
-            onChange={(opportunity) => {
-              onChange({ opportunity });
-            }}
+          <PanelToggle
+            className="opp-options-toggle"
+            label="Options"
+            items={opportunityOptionsSummary(state, selection, rows.length)}
+            open={optionsOpen}
+            controls="opp-order-options opp-filter-options"
+            onToggle={toggleOptions}
           />
-          <button
-            type="button"
-            className="button chamfer"
-            data-variant="primary"
-            aria-pressed={state.board === "full"}
-            onClick={onToggleDepth}
+          <div
+            id="opp-order-options"
+            className="phone-panel phone-panel-contents"
+            data-open={optionsOpen}
           >
-            {state.board === "full"
-              ? `Show top ${String(OPPORTUNITY_BOARD_PREVIEW_DEPTH)}`
-              : `Show full board (${String(rows.length)})`}
-          </button>
+            <Segmented<OpportunitySort>
+              name="opportunity"
+              label="Order by"
+              value={state.opportunity}
+              options={OPPORTUNITY_SORTS.map((sort) => ({
+                value: sort,
+                label: SORT_LABELS[sort],
+                description: SORT_DESCRIPTIONS[sort],
+              }))}
+              onChange={(opportunity) => {
+                onChange({ opportunity });
+              }}
+            />
+            <button
+              type="button"
+              className="button chamfer"
+              data-variant="primary"
+              aria-pressed={state.board === "full"}
+              onClick={onToggleDepth}
+            >
+              {state.board === "full"
+                ? `Show top ${String(OPPORTUNITY_BOARD_PREVIEW_DEPTH)}`
+                : `Show full board (${String(rows.length)})`}
+            </button>
+          </div>
         </SectionHead>
 
         {!available && (
@@ -324,30 +377,36 @@ export function OpportunityView({
           notice below names it again rather than letting it empty the board.
         */}
         <div className="opp-filters" role="group" aria-labelledby="opp-filters-label">
-          <span className="control-label" id="opp-filters-label">
-            Show only
-          </span>
-          <div className="segmented opp-filter-set">
-            {OPPORTUNITY_FILTERS.map((filter) => {
-              const available = filterAvailable(bundle, filter);
-              const pressed = state.only.includes(filter);
-              return (
-                <button
-                  key={filter}
-                  type="button"
-                  className="opp-filter"
-                  data-filter={filter}
-                  aria-pressed={pressed && available}
-                  disabled={!available}
-                  title={available ? FILTER_RULES[filter] : FILTER_UNAVAILABLE[filter]}
-                  onClick={() => {
-                    toggleFilter(filter);
-                  }}
-                >
-                  {FILTER_LABELS[filter]}
-                </button>
-              );
-            })}
+          <div
+            id="opp-filter-options"
+            className="phone-panel phone-panel-contents"
+            data-open={optionsOpen}
+          >
+            <span className="control-label" id="opp-filters-label">
+              Show only
+            </span>
+            <div className="segmented opp-filter-set">
+              {OPPORTUNITY_FILTERS.map((filter) => {
+                const available = filterAvailable(bundle, filter);
+                const pressed = state.only.includes(filter);
+                return (
+                  <button
+                    key={filter}
+                    type="button"
+                    className="opp-filter"
+                    data-filter={filter}
+                    aria-pressed={pressed && available}
+                    disabled={!available}
+                    title={available ? FILTER_RULES[filter] : FILTER_UNAVAILABLE[filter]}
+                    onClick={() => {
+                      toggleFilter(filter);
+                    }}
+                  >
+                    {FILTER_LABELS[filter]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <span className="opp-filter-status muted">
             {[

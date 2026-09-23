@@ -494,6 +494,31 @@ code {
   background: var(--canvas);
 }
 
+/*
+ * The phone's folded control bands (ADR-093).
+ *
+ * `PanelToggle` renders a disclosure row and names its panels with `aria-controls`; each panel
+ * is a `.phone-panel` carrying `data-open`. Above the sheet breakpoint the row does not exist
+ * and `data-open` means nothing — every control is on screen exactly as it was. Below it, a
+ * closed panel is `display: none` and the row prints what the panel holds. One DOM, so the
+ * controls keep their state while folded and no first paint can be the wrong variant.
+ *
+ * The chevron flips instantly. The stylesheet's one rotation transition is the tier chevron's,
+ * and the reduced-motion section below depends on that staying true.
+ */
+.panel-toggle {
+  display: none;
+}
+
+/*
+ * A panel that only exists to be folded. Its children lay out as though it were not there, so
+ * wrapping an existing row of controls in one changes nothing at any width until it is closed
+ * on a phone. A plain `div` has no role for `display: contents` to lose.
+ */
+.phone-panel-contents {
+  display: contents;
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -3673,7 +3698,14 @@ dl.facts dd {
     flex-basis: 100%;
   }
 
-  /* Controls stay reachable while the board scrolls: the sheet is used one-handed at a draft. */
+  /*
+   * Controls stay reachable while the board scrolls: the sheet is used one-handed at a draft.
+   *
+   * Reachable, not resident (ADR-093). What stays on screen is one summary row and the tabs —
+   * about 86px of an 839px phone rather than the 248px the four controls took, which was 30%
+   * of the screen for as long as the board scrolled. The controls fold between the two and
+   * open from the row.
+   */
   .sticky-controls {
     position: sticky;
     top: 0;
@@ -3681,6 +3713,101 @@ dl.facts dd {
     border-bottom: var(--hairline) solid var(--line-strong);
     margin: 0 calc(-1 * var(--space-2));
     padding: 0 var(--space-2);
+  }
+
+  .panel-toggle {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 12px;
+    border: var(--hairline) solid var(--line-strong);
+    background: var(--accent-wash);
+    color: var(--ink-strong);
+    font: 600 0.66rem/1.2 var(--font-sans);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+    transition: var(--t-control);
+  }
+
+  .panel-toggle:hover {
+    background: var(--surface-hover);
+  }
+
+  .panel-toggle[aria-expanded="true"] {
+    border-color: var(--line-bright);
+  }
+
+  .panel-toggle-label {
+    flex: none;
+    color: var(--ink-faint);
+  }
+
+  /*
+   * The values, on one line. A long search term ellipsises rather than wrapping the row.
+   *
+   * `position: relative` is load-bearing: the screen-reader commas between items are
+   * `.visually-hidden`, which is absolutely positioned, and an absolute box escapes an
+   * `overflow: hidden` ancestor that is not its containing block. Without it the commas of a
+   * clipped summary sat past the right edge and pushed a 320px page 164px sideways.
+   */
+  .panel-toggle-summary {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--accent-bright);
+  }
+
+  .panel-toggle-sep {
+    margin: 0 0.45em;
+    color: var(--ink-faint);
+  }
+
+  .panel-toggle-chevron {
+    flex: none;
+    font: 500 0.8rem/1 var(--font-mono);
+    color: var(--ink-faint);
+  }
+
+  .panel-toggle[aria-expanded="true"] .panel-toggle-chevron {
+    transform: rotate(180deg);
+  }
+
+  .phone-panel[data-open="false"] {
+    display: none;
+  }
+
+  /* The page's own bar is flat and full-bleed like the tab strip under it, not a framed
+     control. */
+  .settings-toggle {
+    width: calc(100% + 2 * var(--space-2));
+    margin: 0 calc(-1 * var(--space-2));
+    padding: 0 var(--space-2);
+    border: none;
+    border-bottom: var(--hairline) solid var(--line);
+    background: transparent;
+  }
+
+  /*
+   * An open panel may not push the tabs off a short screen — a phone on its side is 320px
+   * tall — so it scrolls inside itself past that height. The 3px inset keeps the focus ring
+   * of a control at the panel's edge from being clipped by that scroll box.
+   */
+  .board-settings {
+    max-height: calc(100vh - 7rem);
+    max-height: calc(100dvh - 7rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 -3px;
+    padding: 0 3px;
   }
 
   .controls {
@@ -3710,9 +3837,13 @@ dl.facts dd {
     min-width: 36px;
   }
 
+  /* `min-width: 0` so a folded-options row sizes to the line rather than to its one-line
+     summary: a flex item's automatic minimum is its content, and that summary is `nowrap` so
+     that it can ellipsise. Without it the row pushed a 320px page 231px sideways (ADR-093). */
   .section-actions {
     margin-left: 0;
     flex-basis: 100%;
+    min-width: 0;
   }
 
   /*
@@ -4057,6 +4188,7 @@ dl.facts dd {
 
 @media print {
   .controls,
+  .panel-toggle,
   .tabs-row,
   .section-actions,
   .tier-board,
