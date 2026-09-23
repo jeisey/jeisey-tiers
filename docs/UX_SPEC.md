@@ -563,7 +563,9 @@ each other and with position and search, written to the URL as `only=role.moment
 The status line beside them prints, per active filter, how many rows pass and how many had no
 reading to decide on ("not counted either way"). A chip whose artifact is missing is struck
 through and disabled; a link naming it shows a notice and the board unfiltered by it. There is
-no chip that counts agreeing signals.
+no chip that counts agreeing signals. Below 768px the chips and the orderings fold behind one
+**Options** row that names the ordering, the applied filters and the chart depth; the census
+line stays outside the fold (ADR-093, §11).
 
 "Order by" offers ROS value, Adds, Net adds, **Momentum** (current slopes, then ended ones, then
 none) and **Role** (rising, flat, falling, no reading; the size of a change is compared only when
@@ -758,7 +760,18 @@ Primary target too. Controls may wrap into two compact rows. Chart remains full-
 
 ### Mobile < 768
 
-- sticky compact controls or horizontally scrollable segmented control where accessible
+- sticky compact controls or horizontally scrollable segmented control where accessible —
+  implemented as **reachable, not resident** (ADR-093): the sticky block is one **Settings** row
+  that prints every folded value (`PPR · 12 teams · All positions`, then any search term, then
+  an overridden season mode) above the tabs, at most 96px and 12% of the viewport; tapping it
+  opens the season-mode switch and the four controls between the row and the tabs, Escape folds
+  it and returns focus, `/` opens it and focuses search, and on a short screen the open panel
+  scrolls inside itself so the tabs stay on screen. Open/closed is chrome, not in the URL.
+- the Opportunity Board's orderings, depth switch and "Show only" chips fold behind one
+  **Options** row (`By Adds · Role rising · Top 40 of 176`); the filter census line under
+  them never folds (ADR-092)
+- above 767px nothing folds and nothing is sticky: the rows are not rendered and every pixel
+  matches the pre-fold layout
 - Tier Board may use vertical card alignment inside lanes with axis simplified
 - Draft Rail can stack player rows
 - the Opportunity Board stacks each row into identity, then its two tracks, each keeping its
@@ -798,6 +811,8 @@ Capture Playwright screenshots for at least:
 - stale/degraded market state
 - rest-of-season Tier Board, desktop and phone
 - Opportunity Board, desktop, tablet and phone
+- the phone's folded controls: first screen, scrolled, each panel open, a shared link's
+  filters named while folded, 320px, and a short landscape screen with the panel open (ADR-093)
 - Opportunity Board with the behaviour feed down
 - the in-season player card, desktop and phone
 - the card's micro-charts: a rank move drawn, a rank move refused because there is no preseason

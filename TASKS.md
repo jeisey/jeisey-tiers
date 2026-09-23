@@ -1554,3 +1554,47 @@ No artifact, schema, model, rule version or Pick-of-the-Week rule changed.
       `add_count: 0` for a player outside the top 100 (artifact contract); two live
       `display_name: "None"` records (pipeline); POTW-v2 (an explicit owner decision).
 
+
+## The phone's control bands fold — 2026-09-23 (ADR-093)
+
+The owner reported that on a phone "half the mobile screen is just navbar". Measured: the sticky
+controls and tabs were 248px of an 839px phone at all times, and the Opportunity chart's first
+row sat at y = 716. Now the controls are reachable rather than resident. No artifact, schema,
+model, rule version, URL parameter or desktop/tablet pixel changed.
+
+- [x] **`PanelToggle`** (`web/src/components/primitives.tsx`): a disclosure row that prints what
+      its folded controls are set to; `aria-expanded` + `aria-controls`; dots for the eye,
+      commas for a screen reader. CSS over one DOM: the row is `display: none` above 767px and a
+      closed `.phone-panel` is hidden only below it.
+- [x] **Settings row** (sticky, above the tabs): `settingsSummary()` — scoring, teams, position,
+      then any search term, then an overridden season mode. The season-mode switch moved into
+      the panel. Escape folds and returns focus; `/` opens and focuses search; the open panel
+      scrolls inside itself on a short screen. Not in the URL.
+- [x] **Options row** on the Opportunity Board: `opportunityOptionsSummary()` — ordering, applied
+      filters, chart depth. Folds Order by, the depth button and the Show-only chips; the census
+      line never folds (ADR-092).
+- [x] **Measured**: sticky block 248 → 86px (390×844 and 412×839); first-paint chart row at
+      412×839 — Tiers 518 → 356, ROS 665 → 429, Opportunity 716 → 382, POTW 681 → 445.
+- [x] **Desktop/tablet unchanged**: 32 full-page screenshots (8 views × 1440/1024/900/768px)
+      byte-identical to the parent commit `70491d5`.
+- [x] **Two capture-found defects fixed**: the Options row widened a 320px page by 231px
+      (`.section-actions` `min-width: auto`), then by 164px (absolute screen-reader commas
+      escaping the clipped summary).
+- [x] **Tests**: `mobile.spec.ts` (+13: sticky budget on five boards, chart in the first screen
+      on four, open/change/Escape, shared-link state named, Options fold, sideways phone);
+      `board.spec.ts` (+5: nothing folds at 1440/1024/768, folds at 767, `/` opens the panel);
+      `a11y.spec.ts` (+3 and the 320px reflow now also with panels open); `fold.test.tsx` (+9
+      vitest). Two existing tests re-scoped for stated reasons (ADR-093 § Verification).
+- [x] **Negative controls** against the built CSS: each of five load-bearing rules removed in
+      turn fails the test that guards it.
+- [x] **Verified**: `npm run lint` 0 errors / 4 pre-existing warnings; `typecheck` clean; vitest
+      **584** (25 files); `npm run e2e` **175** (and the mobile project 85/85 at
+      `--repeat-each=5`); `verify:board` zero failures on dist, matured,
+      in-season, in-season-no-signals, in-season-no-behavior, awaiting-first-week and
+      season-complete; `e2e:screens` 106 screens with no overflow or console error. No Python
+      changed: `ruff check`, `ruff format --check` clean, `pytest` 1,574 collected, exit 0.
+- [x] **Docs**: ADR-093; `UX_SPEC.md` §6A.10.2, §11, §14. Screens:
+      `docs/visual-qa/2026-09-23-mobile-fold/`.
+- [ ] **Not done, with reasons in ADR-093:** hide-on-scroll chrome; folding the Tier/ROS buttons or
+      the POTW set chips (one short row each); the masthead; "ROS TIERS" wrapping at 320px
+      (pre-existing).
