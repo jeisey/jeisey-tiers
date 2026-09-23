@@ -330,7 +330,7 @@ test.describe("the opportunity board", () => {
     await expect(surfaced.locator(".surface-badge")).toContainText("surfaced");
   });
 
-  test("offers three orderings and no blended score", async ({ page }) => {
+  test("offers five orderings over separate quantities and no blended score", async ({ page }) => {
     await page.goto(`${IN_SEASON}?view=opportunity`);
     // `Segmented` renders an ARIA radiogroup, which is not the same role as `group`.
     const group = page.getByRole("radiogroup", { name: /Order by/i });
@@ -338,6 +338,12 @@ test.describe("the opportunity board", () => {
     // `exact` because "Net adds" contains "Adds".
     await expect(group.getByRole("radio", { name: "Adds", exact: true })).toBeVisible();
     await expect(group.getByRole("radio", { name: "Net adds" })).toBeVisible();
+    await expect(group.getByRole("radio", { name: /^Add momentum/ })).toBeVisible();
+    await expect(group.getByRole("radio", { name: /^Role direction/ })).toBeVisible();
+    await expect(group.getByRole("radio")).toHaveCount(5);
+    for (const label of await group.getByRole("radio").allTextContents()) {
+      expect(label).not.toMatch(/score|signal|waiver|breakout|hot|composite/i);
+    }
 
     await group.getByRole("radio", { name: "Adds", exact: true }).click();
     await expect(page).toHaveURL(/opportunity=adds/);
@@ -356,8 +362,16 @@ test.describe("the opportunity board", () => {
     const firstRow = table.getByRole("row").nth(1);
     // Blank, not zero: a zero would claim nobody added him.
     await expect(firstRow).toContainText("—");
-    // And the intrinsic value is still there.
-    await expect(firstRow.locator("td").nth(5)).not.toBeEmpty();
+    // And the intrinsic value is still there. Found by column, not by position: the table's
+    // columns moved in ADR-092 and a positional lookup would have gone on passing on the
+    // role cell beside it.
+    await expect(firstRow.locator('td[data-col="ros_expected_vorp"]')).not.toBeEmpty();
+    // With no feed there is no momentum series, and the column says so rather than "0/day".
+    await expect(firstRow.locator('td[data-col="add_momentum"] .signal-cell')).toHaveAttribute(
+      "data-kind",
+      "unpublished",
+    );
+    await expect(page.getByRole("button", { name: "Momentum rising" })).toBeDisabled();
 
     // The chart draws the absence as an absence rather than as a row of zero-length bars.
     const board = page.locator(".opp-board");
@@ -365,6 +379,166 @@ test.describe("the opportunity board", () => {
     await expect(board.locator(".opp-row").first().locator(".opp-track-empty")).toBeVisible();
     await expect(board.locator(".opp-move-bar")).toHaveCount(0);
   });
+});
+
+test.describe("the opportunity board's signals (ADR-092)", () => {
+  test("reads each position's own role measure, with the window and the card's glyph", async ({
+    page,
+  }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity`);
+    const table = page.getByRole("table", { name: /opportunity board/i });
+    await expect(table).toBeVisible();
+    const headings = (await table.getByRole("columnheader").allTextContents()).map((text) =>
+      text.replace(/[▲▼]/g, "").trim(),
+    );
+    expect(headings).toEqual(expect.arrayContaining(["Role", "Add momentum", "Next game"]));
+    // The generic three-week snap share is gone: it was a constant for every quarterback.
+    expect(headings).not.toContain("Snap share");
+
+    const qb = table.locator("tr", { hasText: "Jalen Marsh" });
+    await expect(qb.locator('td[data-col="role"] .signal-metric')).toHaveText("Pass att");
+    await expect(qb.locator('td[data-col="role"] .signal-line')).toContainText("48▲ +20");
+    await expect(qb.locator('td[data-col="role"] .signal-detail')).toHaveText("wk 8 vs 7 gms");
+
+    const rb = table.locator("tr", { hasText: "Jahmyr Cook" });
+    await expect(rb.locator('td[data-col="role"] .signal-line')).toContainText("81%▲ +34 pts");
+    // A flat lead is flat, whatever the card's other rails say.
+    const wr = table.locator("tr", { hasText: "Rashee Kirk" });
+    await expect(wr.locator('td[data-col="role"] .signal-change')).toHaveText("▬ no change");
+    // No value in the latest game: no change, and the reason, never a reach back.
+    const te = table.locator("tr", { hasText: "Trey McBride" });
+    await expect(te.locator('td[data-col="role"] .signal-detail')).toHaveText(
+      "no latest value",
+    );
+    await expect(te.locator('td[data-col="role"] .signal-change')).toHaveCount(0);
+  });
+
+  test("prints momentum with its span and never as a zero it does not have", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity`);
+    const table = page.getByRole("table", { name: /opportunity board/i });
+    const rising = table.locator("tr", { hasText: "Jahmyr Cook" }).locator('td[data-col="add_momentum"]');
+    await expect(rising.locator(".signal-value")).toHaveText(/^▲ \+\d+\.\d\/day$/);
+    await expect(rising.locator(".signal-detail")).toHaveText(/^over \d+ (day|hour)s?$/);
+    const absent = table.locator("tr", { hasText: "Jalen Marsh" }).locator('td[data-col="add_momentum"]');
+    await expect(absent.locator(".signal-value")).toHaveText("not in feed");
+    const single = table.locator("tr", { hasText: "Amon-Ra Bright" }).locator('td[data-col="add_momentum"]');
+    await expect(single.locator(".signal-value")).toHaveText("one obs.");
+  });
+
+  test("states the next game as context and never rates it", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity`);
+    const table = page.getByRole("table", { name: /opportunity board/i });
+    const lined = table.locator("tr", { hasText: "Jahmyr Cook" }).locator('td[data-col="next_game"]');
+    await expect(lined.locator(".signal-value")).toHaveText("W9 vs ATL");
+    await expect(lined.locator(".signal-detail")).toHaveText("27.5 implied");
+    const bye = table.locator("tr", { hasText: "Jalen Marsh" }).locator('td[data-col="next_game"]');
+    await expect(bye.locator(".signal-value")).toHaveText("W10 vs SF");
+    await expect(bye.locator(".signal-detail")).toHaveText("bye W9 · no line yet");
+    // Not sortable: ordering the board by a sportsbook number would be its loudest claim.
+    await expect(table.locator('th[data-col="next_game"] button')).toHaveCount(0);
+    await expect(table).not.toContainText(/easy|tough|good matchup|bad matchup/i);
+  });
+
+  test("filters by one reading at a time, composes them, and keeps the link", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity`);
+    await page.getByRole("button", { name: "Role rising" }).click();
+    await expect(page).toHaveURL(/only=role/);
+    await expect(page.getByRole("button", { name: "Role rising" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    const cells = page.locator('table.sheet tbody td[data-col="role"] .signal-cell');
+    const count = await cells.count();
+    expect(count).toBeGreaterThan(0);
+    for (let index = 0; index < count; index += 1) {
+      await expect(cells.nth(index)).toHaveAttribute("data-direction", "up");
+    }
+    // The status line prints both numbers: rows kept, and rows with no reading to decide on.
+    await expect(page.locator(".opp-filter-status")).toContainText(/Role rising: \d+ · \d+ with no published change/);
+
+    await page.getByRole("radiogroup", { name: "Position" }).getByRole("radio", { name: "RB" }).click();
+    await expect(page).toHaveURL(/position=rb.*only=role|only=role.*position=rb/);
+    await expect(page.locator("table.sheet tbody tr")).toHaveCount(1);
+    await expect(page.locator("table.sheet tbody tr")).toContainText("Jahmyr Cook");
+  });
+
+  test("names a filter the build cannot apply instead of emptying the board", async ({ page }) => {
+    await page.goto("/scenario/in-season-no-signals/?view=opportunity&only=role");
+    await expect(page.getByText(/A filter in this link cannot be applied/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Role rising" })).toBeDisabled();
+    await expect(page.locator("table.sheet tbody tr")).toHaveCount(19);
+    await expect(
+      page.locator('table.sheet tbody td[data-col="role"] .signal-cell').first(),
+    ).toHaveAttribute("data-kind", "unpublished");
+  });
+
+  test("orders role by direction, and by size only inside one position", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity&opportunity=role`);
+    await expect(page.locator(".opp-order-note")).toContainText(/sizes are compared only within one position/);
+    const names = await page.locator("table.sheet tbody .player-name").allTextContents();
+    // Rising, by ROS rank: the QB's +20 attempts does not jump the backs and receivers.
+    expect(names.slice(0, 3)).toEqual(["Jahmyr Cook", "Puka Nightingale", "Jalen Marsh"]);
+    await page.goto(`${IN_SEASON}?view=opportunity&opportunity=role&position=wr`);
+    await expect(page.locator(".opp-order-note")).toContainText(/the larger published change first/);
+  });
+
+  test("exports the signal summary with the rows on screen, and no sportsbook line", async ({
+    page,
+  }) => {
+    await page.goto(`${IN_SEASON}?view=opportunity&only=role`);
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: /Export filtered CSV/ }).click();
+    const stream = await (await download).createReadStream();
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of stream) chunks.push(new Uint8Array(Buffer.from(chunk as Buffer)));
+    const lines = Buffer.concat(chunks).toString("utf-8").replace(/^\uFEFF/, "").trim().split("\r\n");
+    const header = (lines[0] ?? "").split(",");
+    expect(header).toEqual(expect.arrayContaining(["role_reading", "role_change", "add_trend_per_day", "next_game_opponent"]));
+    expect(header.join(",")).not.toMatch(/implied|spread|total_line/);
+    const shown = await page.locator("table.sheet tbody tr").count();
+    expect(lines).toHaveLength(shown + 1);
+  });
+
+  for (const width of [1024, 1280, 1440]) {
+    test(`fits the table without a sideways scroll at ${String(width)}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`${IN_SEASON}?view=opportunity`);
+      const scroller = page.locator(".table-scroll").last();
+      await expect(scroller.locator("table.sheet")).toBeVisible();
+      const overflow = await scroller.evaluate((node) => node.scrollWidth - node.clientWidth);
+      expect(overflow, `the opportunity table scrolls sideways at ${String(width)}px`).toBeLessThanOrEqual(1);
+      // Whatever steps aside, the three signal columns never do on a laptop.
+      for (const column of ["role", "add_momentum", "next_game"]) {
+        await expect(scroller.locator(`th[data-col="${column}"]`)).toBeVisible();
+      }
+    });
+  }
+
+  for (const width of [420, 320]) {
+    test(`keeps the name and the role in view at ${String(width)}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`${IN_SEASON}?view=opportunity`);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
+      // The chart row carries the role line on a phone.
+      await expect(page.locator(".opp-row").first().locator(".opp-role")).toBeVisible();
+      // The table hides what the chart already prints and pins the name.
+      const table = page.locator("table.sheet");
+      await expect(table.locator('th[data-col="ros_expected_vorp"]')).toBeHidden();
+      await expect(table.locator('th[data-col="role"]')).toBeVisible();
+      const player = table.locator("tbody tr").first().locator("td.col-player");
+      await expect(player).toHaveCSS("position", "sticky");
+      // Every ordering and chip is reachable, wrapped rather than clipped.
+      for (const name of [/^Role direction/, /^Add momentum/]) {
+        const radio = page.getByRole("radiogroup", { name: /Order by/ }).getByRole("radio", { name });
+        const box = await radio.boundingBox();
+        expect(box, String(name)).not.toBeNull();
+        expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width);
+      }
+    });
+  }
 });
 
 test.describe("in-season exports and links", () => {

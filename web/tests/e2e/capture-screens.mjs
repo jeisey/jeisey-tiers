@@ -783,7 +783,78 @@ const SCREENS = [
     fullPage: false,
     expectMissingArtifact: true,
   },
+  // ------------------------------------------- the Opportunity Board's signals (ADR-092)
+  // The chart's role readout and the three filter chips, at the top of the board.
+  {
+    name: "81-opportunity-signals-desktop",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+  },
+  // The table's Role / Add momentum / Next game columns, every state the fixture holds: a QB
+  // in attempts, a flat lead, a missing snap row, one appearance, an ended window, one
+  // observation, never in the feed, a bye before the next game, an unposted line.
+  tableScreen("82-opportunity-table-signal-columns", "/scenario/in-season/?view=opportunity"),
+  tableScreen(
+    "83-opportunity-filter-role-and-momentum",
+    "/scenario/in-season/?view=opportunity&only=role.momentum",
+    ".opp-filters",
+  ),
+  tableScreen("84-opportunity-order-role-mixed", "/scenario/in-season/?view=opportunity&opportunity=role", ".opp-filters"),
+  tableScreen(
+    "85-opportunity-order-role-one-position",
+    "/scenario/in-season/?view=opportunity&opportunity=role&position=wr",
+    ".opp-filters",
+  ),
+  tableScreen("86-opportunity-order-momentum", "/scenario/in-season/?view=opportunity&opportunity=momentum"),
+  {
+    ...tableScreen(
+      "87-opportunity-filter-unavailable",
+      "/scenario/in-season-no-signals/?view=opportunity&only=role",
+      ".opp-filters",
+    ),
+    expectMissingArtifact: true,
+  },
+  tableScreen("88-opportunity-no-behaviour-signals", "/scenario/in-season-no-behavior/?view=opportunity"),
+  {
+    ...tableScreen("89-opportunity-tablet", "/scenario/in-season/?view=opportunity"),
+    viewport: { width: 1024, height: 1000 },
+  },
+  {
+    name: "90-opportunity-mobile-420-board",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 420, height: 900 },
+    fullPage: false,
+    async act(page) {
+      await page.locator(".opp-board").scrollIntoViewIfNeeded();
+    },
+  },
+  {
+    ...tableScreen("91-opportunity-mobile-420-table", "/scenario/in-season/?view=opportunity"),
+    viewport: { width: 420, height: 900 },
+  },
+  {
+    name: "92-opportunity-mobile-320-controls",
+    path: "/scenario/in-season/?view=opportunity&only=role.momentum",
+    viewport: { width: 320, height: 1000 },
+    fullPage: false,
+  },
 ];
+
+/** An Opportunity screen scrolled so `anchor` (the table, by default) is at the top. */
+function tableScreen(name, path, anchor = "table.sheet") {
+  return {
+    name,
+    path,
+    viewport: { width: 1440, height: 1000 },
+    fullPage: false,
+    async act(page) {
+      await page.locator(anchor).first().evaluate((node) => {
+        node.scrollIntoView({ block: "start" });
+      });
+    },
+  };
+}
 
 /** Scroll the open card so `selector` is at the top of its scrolling body. */
 async function scrollTo(page, selector) {

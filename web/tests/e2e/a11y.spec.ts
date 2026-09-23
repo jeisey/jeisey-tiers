@@ -75,6 +75,18 @@ test.describe("automated scan", () => {
       "/scenario/in-season-no-behavior/?view=opportunity",
       ".opp-track-empty",
     ],
+    // ADR-092: three toggle chips, two new orderings and three signal columns, including the
+    // state where a shared link names a filter the build cannot apply.
+    [
+      "the opportunity board, filtered and ordered by role",
+      "/scenario/in-season/?view=opportunity&only=role.momentum&opportunity=role",
+      ".opp-filters",
+    ],
+    [
+      "the opportunity board, a filter the build cannot apply",
+      "/scenario/in-season-no-signals/?view=opportunity&only=role",
+      ".notice",
+    ],
     // Pick of the Week (ADR-088). A different construction again — cards rather than rows,
     // four portraits, and a set switcher — so neither board's scan says anything about it.
     ["pick of the week", "/scenario/in-season/?view=potw", ".potw-card"],
@@ -283,6 +295,8 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
       // The in-season boards, which are two charts built after this check existed.
       "/scenario/in-season/?view=ros",
       "/scenario/in-season/?view=opportunity",
+      // Five orderings and three chips have to wrap, not clip (ADR-092).
+      "/scenario/in-season/?view=opportunity&only=role.momentum.surfaced&opportunity=momentum",
       // Pick of the Week is the widest thing this product draws per unit of content — a
       // portrait column beside a tile grid — so it is the surface most likely to push a
       // number off the edge rather than wrap it (ADR-088).
