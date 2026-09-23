@@ -1059,6 +1059,12 @@ spread read the wrong way round) and `.team_plays_itself`.
 - **No CSV.** `player_usage` is a series; `team_matchups` is sportsbook lines whose upstream book
   nflverse does not document, and a downloadable table of them is a redistribution step with no
   reason to take it.
+- **The Opportunity Board's filtered export (ADR-092)** is a client-side file, not an artifact:
+  it appends a flattened one-row summary of the role, momentum and next-game readings to its 29
+  unchanged columns — the leading role metric's `role_change_v1` fields, the series' slope,
+  span, observations, snapshots and last observation time, and the next game's week, opponent,
+  venue and a bye before it — with `*_reading` columns naming which absence an empty cell is.
+  It carries **no spread, total or implied points**, for the reason above.
 
 ### 19.5 What is deliberately absent
 

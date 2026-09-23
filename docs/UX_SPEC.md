@@ -527,6 +527,55 @@ difference. Selection is unchanged in every row.
 | no record for his team | "No next game is published for his team on this build." | Next game: "No next game is published for DET." |
 | line not yet posted | "no line posted yet" hints; no split bar | "No line posted yet — sportsbooks post about two weeks ahead." |
 
+### 6A.10 The Opportunity Board as the triage surface (ADR-092)
+
+**The question the board now answers without opening a card: which waiver candidates deserve a
+deeper look, and why?** The card is where the evidence lives; the board is where a reader finds
+the handful of players worth opening. It shows four readings side by side and combines none of
+them: rest-of-season value (the model), role (observed), add momentum (market behaviour) and the
+next game (sportsbook context).
+
+#### 6A.10.1 The three readings
+
+| reading | chart | table cell | source |
+|---|---|---|---|
+| Role | fourth readout, text: `SNAP 81% ▲ +34 pts` | `SNAP 81% ▲ +34 pts` over `wk 8 vs 7 gms` | `player_usage.role_changes[ROLE_METRICS_BY_POSITION[pos][0]]` |
+| Add momentum | — | `▲ +55.0/day` over `over 7 days` | `behavior_trend_series.add_trend`, `span_days` |
+| Next game | — | `W9 vs ATL` over `27.5 implied` | `team_matchups` for the team the card reads |
+
+- **Role** leads with the position's first mapped metric — pass attempts for a QB, snap share
+  otherwise — using the card's own glyph and wording, so the two cannot disagree. A change that
+  rounds to nothing is `▬ no change`. Absences: `—` over `not published`, `no record`,
+  `no games`, `no latest value`; one appearance is a level over `wk 8 only`.
+- **Add momentum** always carries its span. A slope at or past 100/day prints in whole
+  transactions (`+72,054/day`, on the card too). Absences: `not in feed` (never `0`), `one obs.`
+  over `no direction yet`, `—` when no series was published. A slope whose window **ended
+  before the latest snapshot** prints muted with the day it ended — `over 10 hours · to Sep 16`
+  — and is not a current reading.
+- **Next game** is `W{n} vs|@ OPP` over the implied team points, `no line yet`, or
+  `bye W9 · no line yet`. It is not sortable and nothing rates the opponent.
+
+#### 6A.10.2 Filters and orderings
+
+"Show only" holds three toggle chips in the segmented control's frame — **Role rising**,
+**Momentum rising**, **Surfaced** — each one predicate over one reading, composing by AND with
+each other and with position and search, written to the URL as `only=role.momentum.surfaced`.
+The status line beside them prints, per active filter, how many rows pass and how many had no
+reading to decide on ("not counted either way"). A chip whose artifact is missing is struck
+through and disabled; a link naming it shows a notice and the board unfiltered by it. There is
+no chip that counts agreeing signals.
+
+"Order by" offers ROS value, Adds, Net adds, **Momentum** (current slopes, then ended ones, then
+none) and **Role** (rising, flat, falling, no reading; the size of a change is compared only when
+one position is on screen, and a note under the chips says which rule is in force).
+
+#### 6A.10.3 Width
+
+The table never scrolls sideways on a laptop: below 1280px Team and Drops step aside (the chart
+draws every drop count) and signal cells wrap to two lines; below 768px ROS rank and ROS value
+go too (the chart prints both), and the player's name is pinned while the readings scroll. The
+filtered export keeps its fixed column list whatever a screen hides.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
@@ -558,18 +607,22 @@ Rest-of-season table, default visible:
 - ROS Exp VORP, ROS P25–P75, Rem FP, Rem G, Uncertainty
 - Δ vs preseason, Weeks since last game
 
-Opportunity table, default visible:
+Opportunity table, default visible (ADR-092):
 
-- ROS Rank, Player, Pos, ROS PosRk, Team
-- ROS Exp VORP, Adds (window), Drops (window), Net adds, Snap share
-- Weeks since last game
+- ROS Rank, Player, ROS PosRk (the position tag with its rank, `RB12`), Team
+- ROS Exp VORP, Role, Adds (window), Drops (window), Net adds, Add momentum, Next game
+
+The generic `Snap share` column (a constant for every quarterback) became **Role**, the
+position's leading measure; `Weeks since last game` went because the long-absence mark on the
+name and the role window carry its one useful reading. Both fields stay in the filtered export.
 
 **Every column name is a rest-of-season name.** `ROS Rank` is never `Rank`: a reader who saw a
 bare "Rank" would reasonably read it as the draft one, and the two are not comparable.
 
 **A bar's denominator is stated in the caption.** Adds and drops share one denominator with
-each other, because eight adds and eight drops are the same size; the value bar has its own;
-the snap-share bar is the percentage itself. A null renders as an em dash with **no bar** —
+each other, because eight adds and eight drops are the same size; the value bar has its own.
+The signal columns carry no bar: a role change is in attempts or share points depending on the
+position, and a bar would claim one scale. A null renders as an em dash with **no bar** —
 the feed saying nothing and the feed saying zero are different facts.
 
 The same rule binds a *rank*, and harder (ADR-086). A rank without its population looks exact,
@@ -706,7 +759,9 @@ Primary target too. Controls may wrap into two compact rows. Chart remains full-
 - Tier Board may use vertical card alignment inside lanes with axis simplified
 - Draft Rail can stack player rows
 - the Opportunity Board stacks each row into identity, then its two tracks, each keeping its
-  own zero, its own readout and a micro-label naming it
+  own zero, its own readout and a micro-label naming it, then its role reading and net adds
+- the Opportunity table pins the player's name and leads with Role; rank, team, value and drops
+  step aside because the chart above prints them (ADR-092)
 - table uses essential columns and horizontal scroll or a compact row detail expander
 
 Do not create a completely separate mobile product.
@@ -752,5 +807,13 @@ Capture Playwright screenshots for at least:
   whose player the feed has never carried; plus the 320px stack, where the two behaviour panels
   separate. Count the bars against the artifact's `observations`: a strip that silently drops
   its oldest points is the ADR-090 defect, and it is invisible in every text assertion
+
+- the Opportunity Board's signal layer (ADR-092): the table's Role / Add momentum / Next game
+  columns in every state the fixture holds (QB attempts, a flat lead, no snap value, one
+  appearance, an ended window, one observation, never in the feed, a bye before the next game,
+  an unposted line); Role rising + Momentum rising; the role order mixed and one-position; the
+  momentum order; a filter the build cannot apply; the feed down; 1024px; 420px board and table;
+  320px controls. And the same board on a live build, because the fixture cannot show what six-
+  and seven-digit Sleeper counts do to a column
 
 Use screenshot review to catch clipping, label overlap, unreadable scales, and Pages base-path failures. Pixel-perfect snapshots should not become brittle blockers for dynamic data unless fixtures are fixed.
