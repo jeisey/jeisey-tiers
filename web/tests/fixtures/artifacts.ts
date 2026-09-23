@@ -970,7 +970,14 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
  * statistic**, a **bye**, **absences**, a surfaced player with **one appearance**, and a
  * player with **no usage record at all**. Everything else is steady with a little texture.
  */
-type RoleProfile = "steady" | "rising" | "declining" | "missing_snap" | "snaps_only";
+type RoleProfile =
+  | "steady"
+  | "rising"
+  | "declining"
+  | "missing_snap"
+  | "snaps_only"
+  /** Snap share dead level, targets and air yards climbing: the board's lead reads flat (ADR-092). */
+  | "targets_up";
 
 const ROLE_PROFILES: Readonly<Record<string, RoleProfile>> = {
   // Each on a player the default block has playing through the cutoff, so the state is the
@@ -981,6 +988,12 @@ const ROLE_PROFILES: Readonly<Record<string, RoleProfile>> = {
   "gsis:00-0000006": "declining",
   "gsis:00-0000005": "missing_snap",
   "gsis:00-0000015": "snaps_only",
+  // ADR-092: the two states the Opportunity Board needed and no fixture held. A quarterback
+  // whose pass attempts rise — the board's QB lead, in attempts rather than a share — and a
+  // receiver whose snap share is flat while his targets and air yards climb, so the board's
+  // one-metric reading ("no change") and the card's three rails visibly say different things.
+  "gsis:00-0000018": "rising",
+  "gsis:00-0000017": "targets_up",
 };
 
 /** No usage record is published for him: the card must say so rather than draw zeros. */
@@ -999,9 +1012,17 @@ const BASE_SNAP: Readonly<Record<Position, number>> = {
 function roleCurve(profile: RoleProfile, week: number): number {
   // A multiplier on the base share. The rise and the decline both begin in week 6, so the
   // latest-vs-earlier reading has five quiet weeks to be measured against.
-  if (profile === "rising") return week < 6 ? 0.7 : week === 6 ? 1.1 : week === 7 ? 1.3 : 1.45;
+  if (profile === "rising" || profile === "targets_up") {
+    return week < 6 ? 0.7 : week === 6 ? 1.1 : week === 7 ? 1.3 : 1.45;
+  }
   if (profile === "declining") return week < 6 ? 1.1 : week === 6 ? 0.95 : week === 7 ? 0.85 : 0.7;
   return 1 - 0.02 * (week % 3);
+}
+
+/** The curve one metric follows. `targets_up` holds the snap share exactly level. */
+function metricCurve(profile: RoleProfile, metric: RoleMetric, week: number): number {
+  if (profile === "targets_up" && metric === "snap_share") return 1;
+  return roleCurve(profile, week);
 }
 
 function shareValue(position: Position, metric: RoleMetric, curve: number): number | null {
@@ -1122,11 +1143,13 @@ export function usageRecords(): PlayerUsageRecord[] {
       const last = index === playedWeeks.length - 1;
       const ppr = last ? round(total - assigned, 2) : round((total * (weights[index] ?? 1)) / weightSum, 2);
       assigned = round(assigned + ppr, 2);
-      const curve = surfaced ? 0.8 : roleCurve(profile, week);
       const snapsOnly = profile === "snaps_only" && week === 8;
       const noSnap = profile === "missing_snap" && week === 8;
       const shares = Object.fromEntries(
-        ROLE_METRICS.map((metric) => [metric, shareValue(player.position, metric, curve)]),
+        ROLE_METRICS.map((metric) => [
+          metric,
+          shareValue(player.position, metric, surfaced ? 0.8 : metricCurve(profile, metric, week)),
+        ]),
       ) as Record<RoleMetric, number | null>;
       return {
         week,
@@ -1415,6 +1438,7 @@ export const FIXTURE_BEHAVIOR_SNAPSHOTS = FIXTURE_BEHAVIOR_SNAPSHOT_HOURS.length
  * | 2 | **one observation** | one bar, no direction, "one observation" beside it |
  * | 3 | a gap inside the window | a gap mark, and a caption naming the missing snapshots |
  * | 4 | a falling window | a negative direction, and never a colour alone |
+ * | 15 | a rising window that **ended four days before the latest snapshot** | the slope and span, the day it ended, and no place in "Momentum rising" (ADR-092) |
  * | last | **no series at all** | the card's own absence sentence, not a blank panel |
  *
  * `young` builds the other case a single bundle cannot hold: a window that is genuinely only
@@ -1448,9 +1472,12 @@ export function behaviorSeriesRecords(
   for (const row of rows) if (!byPlayer.has(row.player_id)) byPlayer.set(row.player_id, row);
   const players = [...byPlayer.keys()].sort();
 
+  // Seed 15 (ADR-092): a rising window the feed stopped carrying four days before the latest
+  // snapshot. The slope is real and published; it is not a current reading, and the board
+  // must say so rather than let "Momentum rising" admit it.
   const carried: Record<number, readonly number[]> = young
     ? {}
-    : { 1: [13, 14], 2: [14], 3: [0, 1, 2, 12, 13, 14] };
+    : { 1: [13, 14], 2: [14], 3: [0, 1, 2, 12, 13, 14], 15: [0, 1, 2, 3, 4] };
   const falling = new Set([4]);
   const absent = new Set(players.slice(-1));
 

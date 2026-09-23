@@ -4418,3 +4418,187 @@ take it.
 | weather | no source for an unplayed game |
 | injuries | the feed is live; its point-in-time behaviour is unprobed (AGENTS §7) |
 | POTW selection using role signals | a separate, explicit design decision; not taken |
+
+---
+
+## ADR-092 — The Opportunity Board reads the signal layer: one join, three readings, three filters, and no score
+
+**Status:** accepted, 2026-09-23
+**Supersedes:** nothing. **Amends:** ADR-085 (the Opportunity table's columns and the chart's
+fourth readout), ADR-089 (the momentum reading gains an *ended* state on the board, and one
+printed precision shared with the card), ADR-091 (the board is now a consumer of the signal
+layer). **Leaves untouched:** every artifact, schema, model, rule version and
+`potw_selection_v1`.
+
+### The question
+
+ADR-091 taught the player card and Pick of the Week to read observed role, add momentum and
+the next game. The Opportunity Board — the one surface a manager scans five hundred waiver
+candidates on — could read none of them: it printed ROS value, adds, drops, net adds and a
+generic three-week snap share (a constant ~100% for every quarterback). A reader could learn
+that a back's snap share went 6% → 41% only by opening his card, which is the thing a scanning
+surface exists to spare them. The owner's brief: make the board the *triage* surface for the
+signal layer — scan, find interesting combinations, open the card for the evidence — without
+inventing a master score and without new data.
+
+### Decision 1 — one join, in one module, and absences are kinds
+
+`web/src/data/candidates.ts` joins each published Opportunity row to its `player_usage` record,
+its `behavior_trend_series` record and its team's `team_matchups` record, and computes nothing:
+every value is a published field, the role direction is `roleReading`'s (the card's function)
+and the momentum direction is `momentumDirection` (the card's strip's function, moved to
+`data/ros.ts` so the two cannot drift). Each reading is a discriminated union:
+
+| reading | kinds |
+|---|---|
+| role | `unpublished` · `no_record` · `no_appearance` · `no_latest_value` · `one_game` · `measured` |
+| momentum | `unpublished` · `not_in_feed` · `one_observation` · `ended` · `measured` |
+| next game | `unpublished` · `no_team` · `no_record` · `published` |
+
+"The build published no file", "it published one without him" and "his latest game has no
+value for this measure" stay three sentences on the page, in the export and in `verify:board`.
+`InSeasonBundle.hasUsage` / `hasMatchups` / `hasBehaviorSeries` now mean *the build published
+the artifact* (non-null) rather than *it holds at least one record*; the Python side never
+writes an empty signal artifact, so the two agree on every real build, and the stricter one is
+the right name. `signalTeam()` is now the one rule for which team's next game a player gets —
+the card, Pick of the Week and the board all ask it.
+
+No backend artifact was added. A published `opportunity_candidates.json` would duplicate three
+artifacts' bytes under a fourth contract for a join the browser can make exactly.
+
+### Decision 2 — the position's leading role metric replaces the generic snap share
+
+The board's role reading is `ROLE_METRICS_BY_POSITION[position][0]` — pass attempts for a
+quarterback, snap share for backs, receivers and tight ends — with no second map. The table's
+**Role** cell prints the latest value, the card's glyph and change (`▲ +34 pts`, `▲ +20`,
+`▬ no change`) and the window (`wk 8 vs 7 gms`, `wk 2 only`); the chart's fourth readout, which
+printed the generic `snap_share_last3`, prints the same reading as text. It is text rather than
+a bar because a change in attempts and a change in share points have no common scale.
+The table's `Snap share` and `Weeks since last game` columns are gone: the first was a constant
+for a quarter of the board, and the second's one useful reading is the long-absence mark on the
+name plus the role window. Both remain in the filtered export, unchanged.
+
+### Decision 3 — momentum on the scan surface, and the window that ended
+
+The board prints the published `add_trend` with its glyph and **always** its span (ADR-089),
+and never recomputes the slope. Measured on the live week-2 build's PPR 12-team board, 47 of
+the 184 published slopes come from windows that **ended before the latest snapshot** — the feed carried the
+player earlier in the week and has not since (T.J. Hockenson: two points on Sep 16, "rising").
+The slope is correct under `behavior_trend_v1`; reading it as "interest is accelerating now"
+would not be. So a board reading is `measured` only when its newest point is the build's
+behaviour snapshot (`ros_build_metadata.behavior.snapshot_at_utc`, else the newest point any
+series carries); otherwise it is `ended`, printed muted with `over 10 hours · to Sep 16`, passes
+no filter and sorts after every current slope. Treating the silence since as zero would invent a
+collapse (ADR-089 Decision 4); treating the old slope as today's would invent a surge. This is a
+presentation rule over two published fields, not a change to `behavior_trend_v1`.
+
+Slopes at or past 100/day print in whole transactions with separators (`+72,054/day`) on the
+board **and** the card — Sleeper's week-two counts run to six figures — and below that to one
+decimal. `verify:board` compares at the precision printed.
+
+### Decision 4 — the next game as a line of context, never a rating
+
+`W3 vs CHI` over `25.5 implied`, `no line yet`, or `bye W9 · no line yet`. The implied team
+points are the artifact's own and are sportsbook context read by no model. The column is not
+sortable: ordering the board by a sportsbook number would make it the board's loudest claim
+about matchups, and there is still no opponent-strength dataset (ADR-088, ADR-091). No cell,
+tooltip or sentence says easy, hard, favourable or "Nth vs WR", and a test asserts it.
+
+### Decision 5 — three filters, each one predicate over one reading
+
+`only=role.momentum.surfaced` (canonical order; unknown tokens dropped with a rewrite):
+
+| chip | keeps a row when |
+|---|---|
+| Role rising | the leading role metric's published `role_change_v1` reads up at the printed precision |
+| Momentum rising | the published add slope is positive **and** its window reaches the latest snapshot |
+| Surfaced | `outside_tier_board` |
+
+They compose by AND with each other and with position and search. A row without a reading does
+not pass and is **not counted as failing**: the status line prints both (`Role rising: 175 ·
+150 with no published change, not counted either way`). A chip whose artifact the build did not
+publish is disabled, and a link that names it is not applied and says so — an empty board would
+read as "nobody's role rose", a claim built out of a missing file. There is no chip that counts
+how many signals agree ("hot", "breakout", "3 of 4"): that is a score with the arithmetic hidden.
+
+### Decision 6 — five orderings, and magnitudes only where they share a unit
+
+`value`, `adds`, `net` are unchanged. `momentum` orders current slopes highest first (one unit:
+transactions per day), then ended slopes, then every row with none — an unknown is never placed
+between a rising and a falling player. `role` is **categorical** — rising, flat, falling, no
+reading — and compares the size of a change only when every row on screen is one position; across
+positions it orders by ROS rank inside a category. The rule lives in `compareRole`, which checks
+position and metric on both rows itself, so a permissive caller still cannot compare "+6
+attempts" with "+18 pts". The table's header sort uses the same comparators, and a row without a
+reading sorts last in both directions.
+
+### Decision 7 — chart and table, by width
+
+The chart keeps its two tracks; only its fourth readout changed. The table is the richer triage
+surface. Below 1280px the team and drop count step aside (the chart draws every drop count);
+below 768px the rank and value go too (the chart prints both on every row it draws) and the
+player's name is pinned while the readings scroll. Nothing is shrunk into illegibility: signal
+cells wrap to a second line instead. Measured: no sideways scroll at 1024, 1280, 1440 or 1600px
+on the fixture or the live 507-row board, under three orderings.
+
+### Decision 8 — the filtered export carries a flattened summary, and no line
+
+The 29 existing columns are unchanged in order and meaning. Eighteen are appended —
+`role_reading`, `role_metric`, `role_latest_week`, `role_latest`, `role_earlier`,
+`role_earlier_games`, `role_change`, `momentum_reading`, `add_trend_per_day`,
+`add_trend_span_days`, `add_trend_observations`, `add_trend_snapshots_in_window`,
+`add_trend_last_observed_at_utc`, `next_game_reading`, `next_game_week`, `next_game_opponent`,
+`next_game_home_away`, `next_game_bye_week_before` — every one a published field, with the
+`*_reading` columns naming which absence an empty cell is. **No sportsbook number is exported**:
+ADR-091 published the lines with no CSV on purpose, and a filtered export that quietly became one
+would reverse that from the browser. No direction column either: the glyph follows the printed
+rounding, and the export carries the published change itself. Row order is still the visible
+table's. The artifact CSV (`inseason_opportunity.csv`) is untouched.
+
+### Decision 9 — Pick of the Week does not move
+
+`potw_selection_v1` is untouched and reads none of this. `candidates.test.ts` builds every set
+under every filter combination × ordering × position and requires identical picks, and asserts
+the published records are never mutated (frozen-record run); `verify:board` compares the pick
+names with and without `only=role.momentum.surfaced&opportunity=role` on the served page.
+
+### Verification
+
+`verify:board` now checks every Opportunity row and every charted row: the role reading (metric,
+value, change, glyph, window), the momentum reading (kind, glyph, slope at printed precision,
+span, the ended date), the next game (head and detail for the team the card reads), the three
+filters against the artifacts, the momentum and role orderings, and Pick-of-the-Week invariance.
+Five source mutations were built and served and all five fail both `verify:board` and vitest:
+a reversed role direction (42 gate failures), a missing slope read as zero, another row's next
+game (34), an ended slope read as current, and role magnitudes compared across positions. Zero
+disagreements on the fixture builds (in-season, no-signals, no-behaviour) and on a real
+`build-ros` of live week-2 data **with** the retained behaviour window (507 rows, 4 real picks).
+
+### What the live week-2 board showed (2026-09-22T23:50Z build)
+
+Recorded for a future POTW-v2 design session — observations, not a mandate to tune today's rule:
+
+| observation | players |
+|---|---|
+| a set-1 pick whose leading role **declined** | QB Brock Purdy (22 attempts, ▼ −12; momentum falling), TE Dalton Kincaid (snap 66%, ▼ −6 pts; momentum falling) |
+| an eligible player at the same position with a sharply rising role | QB C.J. Stroud (set 4: 55 attempts, ▲ +17); TE Terrance Ferguson (set 3: ▲ +7 pts, momentum rising); RB Jonah Coleman (set 4: snap ▲ +34 pts, ROS VORP 3.8) |
+| rising role and momentum, strong ROS value, **not eligible** (adds under the position's bar) | Patrick Mahomes (▲ +20 attempts, 32,822 adds vs a 107,900 QB bar), Travis Kelce (▲ +14 pts, 18,908 vs 34,073) |
+| market momentum and ROS value disagree | Emanuel Wilson (2.58M adds, +265,334/day, snap ▲ +35 pts, ROS VORP −6.6); Devaughn Vele (WR set 4 pick, momentum −371,427/day); Aaron Jones Sr. (snap ▲ +35 pts, ROS VORP 55.2, 0 adds in the latest window, momentum falling) |
+| next-game environment differs materially | RB pick Rachaad White vs SEA, 16.8 implied (the board's lowest is 16.75); TE pick Kincaid vs LAC, 28.8; RB set-2 Emmett Johnson @ MIA, 29.0 (the highest) |
+
+### Deliberately not done
+
+- **Opponent strength.** Two games is not a defensive profile; `load_team_stats` is the next data
+  expansion, not this one.
+- **Expected opportunity / xFP.** The ffopportunity CC-BY-SA decision (ADR-086) is still open.
+- **`role_change_v1`'s window.** Unchanged. *Checkpoint:* once weeks 5–6 are complete, compare the
+  season-long earlier baseline with a trailing two-to-three-game baseline on the live board and
+  ask whether the long baseline is too slow to flag a multi-week takeover (a back who took over
+  in week 3 still reads against weeks 1–2 in week 7).
+- **The board's `add_count: 0` for a player outside Sleeper's top 100.** Pre-existing: when the
+  feed is up, `inseason_opportunity` publishes 0 (with `add_rank: null`) for a player the feed
+  did not list, where the series publishes no point. The board now shows "not in feed" beside a
+  0; making the day count null is an artifact-contract change for its own session.
+- **Two live records with `display_name: "None"`** (`gsis:00-0041326`, `gsis:00-0041436`) in
+  `ros_tiers`, `inseason_opportunity` and `player_usage` — an upstream name gap serialised as a
+  string. Pre-existing and pipeline-side; recorded, not fixed here.

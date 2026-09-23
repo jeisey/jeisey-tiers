@@ -29,6 +29,7 @@ import type {
   SeasonState,
   TeamMatchupRecord,
 } from "./contracts";
+import { EM_DASH } from "./format";
 import { isNoteworthyRosterStatus, matchesPosition, matchesSearch } from "./model";
 import type { AppState, PositionFilter } from "./state";
 import { SCORING_TO_PRESET, leaguePresetId } from "./state";
@@ -101,6 +102,13 @@ export class InSeasonBundle {
   private readonly opportunityByBlock: ReadonlyMap<string, readonly OpportunityRecord[]>;
   private readonly opportunityByBlockPlayer: ReadonlyMap<string, OpportunityRecord>;
   private readonly behaviorByPlayer: ReadonlyMap<string, BehaviorTrendSeriesRecord>;
+  /**
+   * The newest retained snapshot the momentum series speaks for: the build's own behaviour
+   * snapshot time, or — for a build that did not record one — the newest point any series
+   * carries. A series whose last point is older than this ended before the feed's latest
+   * word on the player (ADR-092).
+   */
+  readonly latestBehaviorSnapshot: string | null;
   readonly hasUsage: boolean;
   readonly hasMatchups: boolean;
   /** Every published usage record, in artifact order: a cohort's population. */
@@ -120,15 +128,34 @@ export class InSeasonBundle {
       behaviorByPlayer.set(record.player_id, record);
     }
     this.behaviorByPlayer = behaviorByPlayer;
-    this.hasBehaviorSeries = behaviorByPlayer.size > 0;
+    let newestPoint: string | null = null;
+    for (const record of behaviorByPlayer.values()) {
+      const last = record.points.at(-1)?.observed_at ?? null;
+      if (last !== null && (newestPoint === null || Date.parse(last) > Date.parse(newestPoint))) {
+        newestPoint = last;
+      }
+    }
+    this.latestBehaviorSnapshot = input.metadata.behavior?.snapshot_at_utc ?? newestPoint;
 
     // Keyed by player, and by team: a role is the same however points are scored, and a
     // team's next game is the same for every player on it (ADR-091).
     this.usageRecords = input.usage ?? [];
     this.usageByPlayer = new Map(this.usageRecords.map((record) => [record.player_id, record]));
-    this.hasUsage = this.usageByPlayer.size > 0;
     this.matchupByTeam = new Map((input.matchups ?? []).map((record) => [record.team, record]));
-    this.hasMatchups = this.matchupByTeam.size > 0;
+
+    /*
+      "Published" means the build wrote the file, not that the file holds this player (ADR-092).
+
+      These were `size > 0` until the Opportunity Board started reading them for five hundred
+      rows at once, and the difference is exactly the one every surface has to keep: *the
+      build published no series* and *the series has nobody in it* are two sentences. The
+      Python side never writes an empty signal artifact (it withholds instead), so the two
+      definitions agree on every real build — which is why the stricter one is safe to adopt
+      and the right one to name.
+    */
+    this.hasBehaviorSeries = input.behaviorSeries !== null && input.behaviorSeries !== undefined;
+    this.hasUsage = input.usage !== null && input.usage !== undefined;
+    this.hasMatchups = input.matchups !== null && input.matchups !== undefined;
 
     const rosByBlock = new Map<string, RosTierRecord[]>();
     const rosByBlockPlayer = new Map<string, RosTierRecord>();
@@ -244,41 +271,6 @@ export function selectRosRows(bundle: InSeasonBundle, state: AppState): readonly
     rows.push({ record });
   }
   return rows;
-}
-
-/**
- * The Opportunity Board's rows, ordered by the sort the reader chose.
- *
- * `net` and `adds` sort by behaviour and `value` by intrinsic rank — and the two are
- * genuinely different orderings of the same rows rather than one blended score. There is no
- * combined ranking on this board on purpose: an add count and a fair rank have no common
- * unit, and a single number mixing them would imply one this product does not have.
- */
-export function selectOpportunityRows(
-  bundle: InSeasonBundle,
-  state: AppState,
-): readonly OpportunityRow[] {
-  const leaguePreset = leaguePresetId(state.teams);
-  const scoring = SCORING_TO_PRESET[state.scoring];
-  const matched = bundle
-    .opportunityFor(leaguePreset, scoring)
-    .filter(
-      (record) =>
-        matchesPosition(record.position, state.position) && matchesSearch(record, state.search),
-    );
-  const sorted = [...matched];
-  if (state.opportunity === "adds") {
-    sorted.sort((a, b) => (b.add_count ?? -1) - (a.add_count ?? -1) || a.ros_fair_rank - b.ros_fair_rank);
-  } else if (state.opportunity === "net") {
-    sorted.sort(
-      (a, b) =>
-        (b.net_add_count ?? Number.NEGATIVE_INFINITY) -
-          (a.net_add_count ?? Number.NEGATIVE_INFINITY) || a.ros_fair_rank - b.ros_fair_rank,
-    );
-  } else {
-    sorted.sort((a, b) => a.ros_fair_rank - b.ros_fair_rank);
-  }
-  return sorted.map((record, index) => ({ record, rank: index + 1 }));
 }
 
 /** Contiguous runs sharing a tier ordinal. A surfaced row has no tier and forms no band. */
@@ -441,6 +433,53 @@ export function behaviorMomentum(
     peak: Math.max(1, ...points.map((point) => point.adds)),
   };
 }
+
+export type MomentumDirection = "rising" | "falling" | "flat";
+
+/**
+ * The direction of a published add trend, **as the reader will see it printed**.
+ *
+ * One definition for the card's strip, Pick of the Week and the Opportunity Board, so the
+ * three can never disagree about one player (ADR-092). It reads the sign of the artifact's
+ * own `add_trend` and computes no slope — `behavior_trend_v1` is the Python rule's, and a
+ * browser that refitted it would be a second implementation (ADR-089). The one judgement it
+ * makes is the one the role glyph already makes (ADR-091): a slope that prints as `0.0/day`
+ * is flat, so an arrow can never sit beside a number that says nothing moved.
+ *
+ * Null when there is no slope — one observation cannot state a direction.
+ */
+export function momentumDirection(trend: number | null | undefined): MomentumDirection | null {
+  if (trend === null || trend === undefined || !Number.isFinite(trend)) return null;
+  if (Number(Math.abs(trend).toFixed(1)) === 0) return "flat";
+  return trend > 0 ? "rising" : "falling";
+}
+
+/**
+ * `+40.0/day`, `-12.5/day`, `0.0/day`, `+72,054/day`. The published slope, signed.
+ *
+ * One decimal below a hundred a day and whole transactions from there: Sleeper's week-two
+ * counts run to six figures, and `+72053.7/day` in a column of them is a string to parse
+ * rather than a number to scan (ADR-092). The precision is a presentation of the artifact's
+ * slope and never a new one; `verify:board` compares at the precision printed.
+ */
+export function formatMomentumRate(trend: number | null | undefined): string {
+  if (trend === null || trend === undefined || !Number.isFinite(trend)) return EM_DASH;
+  const direction = momentumDirection(trend);
+  if (direction === "flat") return "0.0/day";
+  const sign = trend > 0 ? "+" : "-";
+  const magnitude = Math.abs(trend);
+  const printed =
+    magnitude >= 100
+      ? Math.round(magnitude).toLocaleString("en-US")
+      : magnitude.toFixed(1);
+  return `${sign}${printed}/day`;
+}
+
+export const MOMENTUM_GLYPH: Readonly<Record<MomentumDirection, string>> = {
+  rising: "▲",
+  falling: "▼",
+  flat: "▬",
+};
 
 export function movesBound(counts: readonly number[]): number {
   const nonZero = counts.filter((count) => count > 0).sort((a, b) => a - b);

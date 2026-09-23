@@ -4,6 +4,14 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The Opportunity Board as the triage surface, 2026-09-23 (ADR-092).** ADR-091 gave the card and
+Pick of the Week the signal layer and left the board a manager actually scans without it. The
+board now reads it: a position-aware **Role** reading (replacing the generic snap share),
+**Add momentum** with its span, the **Next game** as context, three one-reading filters
+(`only=role.momentum.surfaced`) and two orderings (`momentum`, categorical `role`). One frontend
+join (`web/src/data/candidates.ts`) and no new artifact. **No artifact, schema, model, rule
+version or `potw_selection_v1` changed.** See **What the Opportunity Board pass changed** below.
+
 **The in-season signal layer, 2026-09-22 (ADR-091).** The owner corrected the framing of
 `docs/SIGNAL_EXPANSION_EDA.md`: signal expansion exists to improve **current-season decisions**
 — a waiver claim this week, Pick of the Week, the player card — not to prepare features for a
@@ -2194,9 +2202,71 @@ publish without it. `verify:board` runs on an `in-season-no-signals` fixture bui
 season-complete, and the real week-2 build); six negative controls on the new gate checks fire.
 Screens in `docs/visual-qa/2026-09-22-in-season-signals/` (fixture 48–80, real-01–06).
 
+## What the Opportunity Board pass changed (2026-09-23, ADR-092)
+
+**The asymmetry.** The card and Pick of the Week understood role, momentum and the next game;
+the board a manager scans five hundred players on printed ROS value, adds, drops and a
+three-week snap share that is a constant for every quarterback. Now the board is the triage
+surface and the card is where the evidence lives. There is still no score of any kind.
+
+**What is on the board now** (every value a published field; nothing recomputed):
+
+| reading | from | shown as |
+|---|---|---|
+| Role | `player_usage.role_changes[ROLE_METRICS_BY_POSITION[pos][0]]` | `SNAP 81% ▲ +34 pts` / `wk 8 vs 7 gms`; QB `PASS ATT 48 ▲ +20` |
+| Add momentum | `behavior_trend_series.add_trend`, `span_days`, newest point | `▲ +55.0/day` / `over 7 days`; ended: muted, `over 10 hours · to Sep 16` |
+| Next game | `team_matchups` for `signalTeam()` | `W9 vs ATL` / `27.5 implied`, `bye W9 · no line yet`; not sortable |
+
+Filters: Role rising, Momentum rising (current window only), Surfaced — AND, canonical URL, a
+row with no reading excluded and counted apart, an unavailable filter named and not applied.
+Orderings: `momentum` (current → ended → none), `role` (categorical; sizes only within one
+position, enforced in `compareRole`). The filtered export appends 18 flattened signal columns
+with `*_reading` kinds and **no sportsbook number**; its 29 existing columns are unchanged.
+
+**Facts a later session should not re-derive:**
+
+- **An "ended" window is common.** On the live week-2 board 47 of 184 published slopes end
+  before the latest snapshot (the feed carried the player earlier and not since). They are
+  printed with the day they ended and never pass "Momentum rising". This is a presentation rule
+  over two published fields, not a change to `behavior_trend_v1`.
+- **The board's `add_count` is 0, not null, for a player outside the top 100** when the feed is
+  up (`add_rank` is null). Pre-existing board contract; the board shows "not in feed" momentum
+  beside it. Changing the count to null is an artifact-contract decision.
+- **Two live records have `display_name: "None"`** (`gsis:00-0041326`, `gsis:00-0041436`) in
+  `ros_tiers`, `inseason_opportunity` and `player_usage`. Pre-existing, pipeline-side.
+- **The deployed site and the Actions artifact store are not reachable from this sandbox**
+  (egress policy); the private store *is* readable through the GitHub API, file by file. A live
+  build with behaviour is reproducible by fetching the seven days of
+  `behavior/sleeper/2026/<key>/{manifest.json,behavior.normalized.json.gz}` into a local store
+  and running `ffdraft build-ros --store <dir> --as-of <production anchor>`; the reader re-hashes
+  every file against its manifest.
+- `InSeasonBundle.has{Usage,Matchups,BehaviorSeries}` now mean *published* (non-null), not
+  *non-empty*. `signalTeam()` is the one rule for which team's next game a player gets.
+
+**POTW-v2 observations** (for an owner decision, not acted on): QB and TE set-1 picks (Purdy,
+Kincaid) have declining leading roles and falling momentum while eligible players at the same
+positions are rising (Stroud ▲ +17 attempts, T. Ferguson ▲ +7 pts); Mahomes and Kelce have
+rising role and momentum with strong ROS value and are below the add bar; Emanuel Wilson leads
+the wire (2.58M adds, +265k/day, snap ▲ +35 pts) at ROS VORP −6.6; the RB pick plays at 16.8
+implied, the board's lowest. Table in ADR-092.
+
+**Verified**: `npm run lint` 0 errors / 4 pre-existing warnings; `typecheck` clean; vitest
+**575** (24 files); `npm run e2e` **154**; `npm run build` clean; `verify:board` zero
+disagreements on dist, matured, in-season, in-season-no-signals, in-season-no-behavior,
+awaiting-first-week, season-complete and a live week-2 build with behaviour (507 opportunity
+rows, 40 chart rows, 3 filters, 4 picks). Five source mutations each fail both `verify:board`
+and vitest. No Python changed; `ruff check`, `ruff format --check` clean and `uv run pytest`
+**1,574** passed. Screens:
+`docs/visual-qa/2026-09-23-opportunity-signals/` (fixture 81–92, real-01–07).
+
 ## Next action
 
 **None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**
+
+**After ADR-092 merges:** open the deployed Opportunity Board and check that `verify:board` in the
+daily refresh reports `oppRowsChecked` equal to the PPR/12 block size and `oppFiltersChecked: 3`.
+**Around weeks 5–6:** the `role_change_v1` window checkpoint (ADR-092, "Deliberately not done")
+and the opponent-strength question (`load_team_stats`) become answerable on real data.
 
 **After ADR-091 merges, read the first daily refresh's summary for the signal layer**: confirm
 no `ros.player_usage_failed` / `ros.team_matchups_failed` / `source_schema.missing_context_columns`

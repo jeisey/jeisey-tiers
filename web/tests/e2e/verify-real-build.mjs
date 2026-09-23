@@ -88,6 +88,14 @@ try {
  * disagrees with the card drawing it is a failure, and so is the one defect the layer exists
  * to remove — a quarterback's card leading with a snap or target share.
  */
+/** The in-season metadata: here, for the behaviour snapshot the momentum series speaks for. */
+let rosMetadata = null;
+try {
+  rosMetadata = JSON.parse(readFileSync(`${dataDir}/ros_build_metadata.json`, "utf-8"));
+} catch {
+  rosMetadata = null;
+}
+
 let playerUsage = null;
 try {
   playerUsage = JSON.parse(readFileSync(`${dataDir}/player_usage.json`, "utf-8")).records;
@@ -741,7 +749,10 @@ function momentumFailures(who, series, strip) {
   }
   if (statesDirection) {
     const rendered = number(strip.value);
-    if (!Number.isFinite(rendered) || Math.abs(rendered - series.add_trend) > 0.05) {
+    // Compared at the precision printed: one decimal below 100/day, whole numbers above it
+    // (`formatMomentumRate`, ADR-092). A tolerance of half the last printed digit.
+    const tolerance = strip.value.includes(".") ? 0.05 : 0.5;
+    if (!Number.isFinite(rendered) || Math.abs(rendered - series.add_trend) > tolerance) {
       out.push(
         `${who}: momentum shows ${String(rendered)}/day, artifact has ` +
           `${String(series.add_trend)}`,
@@ -1106,6 +1117,353 @@ if (publishedInSeason && playerUsage !== null) {
   }
 }
 
+/*
+  ------------------------------------------------ the Opportunity Board's signals (ADR-092)
+
+  **What is asserted.** Every row of the Opportunity table and every chart row it draws: the
+  role reading (the position's leading metric, its latest value, the published change, the
+  glyph and the window) against `player_usage.json`; the add-momentum reading (glyph, slope at
+  the printed precision, span) against `behavior_trend_series.json`; the next-game reading
+  (week, venue, opponent, a bye before it, implied points or the absence of a line) against
+  `team_matchups.json` for the team the card itself reads. Every absence must be the absence
+  the artifacts describe — "not in feed" is never a zero, a missing artifact never a record.
+  Then the three filters keep exactly the rows their one reading allows, the momentum order
+  follows the published slope with every row lacking one after it, the role order across
+  mixed positions is categorical with ROS rank inside a category (never a magnitude), and
+  Pick of the Week names the same players whatever the board's filters say.
+
+  **What is not.** No slope is refitted and no change is subtracted: `behavior_trend_v1` and
+  `role_change_v1` are the Python side's (`test_behavior_history.py`, `test_signal_usage.py`).
+  The formatting is restated because a rendered string can only be compared with a rendered
+  string, and the position -> leading metric map is restated as the contract it is.
+*/
+/** A value the page rendered must be one the artifact published; a miss is a thrown failure. */
+function required(value, what = "a published record") {
+  if (value === undefined || value === null) throw new Error(`verify: expected ${what}`);
+  return value;
+}
+const LEADING_METRIC = { QB: "pass_attempts", RB: "snap_share", WR: "snap_share", TE: "snap_share" };
+const METRIC_SHORT = { pass_attempts: "Pass att", snap_share: "Snap" };
+const GLYPH = { up: "\u25b2", down: "\u25bc", flat: "\u25ac" };
+const printedChange = (metric, change) =>
+  metric.endsWith("_share") ? Math.round(Math.abs(change) * 100) : Math.round(Math.abs(change));
+const roleDirection = (metric, change) =>
+  printedChange(metric, change) === 0 ? "flat" : change > 0 ? "up" : "down";
+const momentumDirection = (trend) =>
+  Number(Math.abs(trend).toFixed(1)) === 0 ? "flat" : trend > 0 ? "rising" : "falling";
+const spanText = (days) => {
+  if (!(days > 0)) return "at one moment";
+  if (days < 1) {
+    const hours = Math.max(1, Math.round(days * 24));
+    return `over ${String(hours)} hour${hours === 1 ? "" : "s"}`;
+  }
+  const whole = Math.round(days);
+  return `over ${String(whole)} day${whole === 1 ? "" : "s"}`;
+};
+
+let oppRowsChecked = 0;
+let oppChartRowsChecked = 0;
+let oppFiltersChecked = 0;
+if (publishedInSeason && opportunityRecords !== null) {
+  const oppBlock = opportunityRecords
+    .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
+    .sort((a, b) => a.ros_fair_rank - b.ros_fair_rank || a.player_id.localeCompare(b.player_id));
+  const oppById = new Map(oppBlock.map((record) => [record.player_id, record]));
+  const usageById = new Map((playerUsage ?? []).map((record) => [record.player_id, record]));
+  const seriesById = new Map((behaviorSeries ?? []).map((record) => [record.player_id, record]));
+  const matchupByTeam = new Map((teamMatchups ?? []).map((record) => [record.team, record]));
+  // The snapshot the momentum series speaks for: the build's own, else the newest point. A
+  // series whose last point is older ended before it, and is printed as ended (ADR-092).
+  const newestPoint = (behaviorSeries ?? [])
+    .map((record) => record.points.at(-1)?.observed_at)
+    .filter((stamp) => stamp !== undefined)
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
+  const latestSnapshot = rosMetadata?.behavior?.snapshot_at_utc ?? newestPoint;
+
+  /** What the artifacts say a row's three readings must be, in the page's own words. */
+  const expectedFor = (record) => {
+    const usage = usageById.get(record.player_id) ?? null;
+    const metric = LEADING_METRIC[record.position];
+    let role;
+    if (playerUsage === null) role = { kind: "unpublished", value: "\u2014" };
+    else if (usage === null) role = { kind: "no_record", value: "\u2014" };
+    else if (usage.appearances === 0) role = { kind: "no_appearance", value: "\u2014" };
+    else {
+      const change = usage.role_changes[metric];
+      if (change === null) role = { kind: "no_latest_value", value: "\u2014", metric };
+      else {
+        const value = metricText(metric, change.latest);
+        if (change.earlier === null || change.change === null) {
+          role = { kind: "one_game", value, metric, detail: `wk ${String(change.latest_week)} only` };
+        } else {
+          const direction = roleDirection(metric, change.change);
+          const games = change.earlier_games;
+          role = {
+            kind: "measured",
+            value,
+            metric,
+            direction,
+            change: `${GLYPH[direction]} ${changeText(metric, change.change)}`,
+            detail: `wk ${String(change.latest_week)} vs ${String(games)} gm${games === 1 ? "" : "s"}`,
+          };
+        }
+      }
+    }
+
+    const series = seriesById.get(record.player_id) ?? null;
+    let momentum;
+    if (behaviorSeries === null) momentum = { kind: "unpublished" };
+    else if (series === null || series.points.length === 0) momentum = { kind: "not_in_feed" };
+    else if (series.add_trend === null) momentum = { kind: "one_observation" };
+    else {
+      const last = series.points.at(-1)?.observed_at ?? null;
+      const current =
+        last !== null && latestSnapshot !== null && Date.parse(last) >= Date.parse(latestSnapshot);
+      const day = last === null
+        ? ""
+        : new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" }).format(new Date(Date.parse(last)));
+      momentum = {
+        kind: current ? "measured" : "ended",
+        trend: series.add_trend,
+        direction: momentumDirection(series.add_trend),
+        span: current ? spanText(series.span_days) : `${spanText(series.span_days)} \u00b7 to ${day}`,
+      };
+    }
+
+    const team = usage?.team ?? record.team ?? null;
+    let next;
+    if (teamMatchups === null) next = { kind: "unpublished" };
+    else if (team === null) next = { kind: "no_team" };
+    else {
+      const game = matchupByTeam.get(team) ?? null;
+      if (game === null) next = { kind: "no_record" };
+      else {
+        const byes = [...game.upcoming_bye_weeks].sort((a, b) => a - b);
+        const bye = byes.find((week) => week < game.week);
+        const head =
+          `W${String(game.week)} ${game.home_away === "home" ? "vs" : "@"} ${game.opponent}`;
+        const posted = game.total_line !== null || game.team_expected_margin !== null;
+        const line =
+          game.implied_team_points !== null
+            ? `${game.implied_team_points.toFixed(1)} implied`
+            : posted
+              ? `total ${game.total_line === null ? "\u2014" : game.total_line.toFixed(1)}`
+              : "no line yet";
+        const detail = bye === undefined ? line : `bye W${String(bye)} \u00b7 ${line}`;
+        next = { kind: "published", head, detail, team };
+      }
+    }
+    return { role, momentum, next };
+  };
+
+  const readTable = () =>
+    page.$$eval("table.sheet tbody tr[data-player]", (trs) =>
+      trs.map((tr) => {
+        const cell = (col) => {
+          const node = tr.querySelector(`td[data-col="${col}"] .signal-cell`);
+          if (node === null) return null;
+          const text = (selector) => node.querySelector(selector)?.textContent?.trim() ?? null;
+          return {
+            kind: node.getAttribute("data-kind"),
+            direction: node.getAttribute("data-direction"),
+            metric: text(".signal-metric"),
+            value: text(".signal-value"),
+            change: text(".signal-change"),
+            detail: text(".signal-detail"),
+          };
+        };
+        return {
+          id: tr.getAttribute("data-player"),
+          role: cell("role"),
+          momentum: cell("add_momentum"),
+          next: cell("next_game"),
+        };
+      }),
+    );
+
+  await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+  await page.waitForSelector("table.sheet tbody tr[data-player]");
+  const table = await readTable();
+
+  if (table.length !== oppBlock.length) {
+    failures.push(`opportunity table: ${String(table.length)} rows rendered, artifact block publishes ${String(oppBlock.length)}`);
+  }
+  table.forEach((row, index) => {
+    const who = `opportunity row ${String(index + 1)} (${String(row.id)})`;
+    const record = oppById.get(row.id);
+    if (record === undefined) {
+      failures.push(`${who}: rendered, and the artifact block publishes no such player`);
+      return;
+    }
+    if (oppBlock[index]?.player_id !== row.id) {
+      failures.push(`${who}: out of ROS order — the artifact puts ${String(oppBlock[index]?.display_name)} here`);
+    }
+    oppRowsChecked += 1;
+    const want = expectedFor(record);
+
+    // Role.
+    const role = row.role;
+    if (role === null) failures.push(`${who}: no role cell`);
+    else {
+      if (role.kind !== want.role.kind) {
+        failures.push(`${who} role: reads as "${role.kind}", artifacts say "${want.role.kind}"`);
+      }
+      if (role.value !== want.role.value) {
+        failures.push(`${who} role: latest reads "${role.value}", artifact ${want.role.value}`);
+      }
+      if (want.role.metric !== undefined && role.metric !== METRIC_SHORT[want.role.metric]) {
+        failures.push(`${who} role: leads with "${role.metric}", the ${record.position} contract is ${want.role.metric}`);
+      }
+      if (record.position === "QB" && role.metric === "Snap") {
+        failures.push(`${who}: a quarterback's board row leads with a snap share`);
+      }
+      const wantChange = want.role.change ?? null;
+      if (role.change !== wantChange) {
+        failures.push(`${who} role: change reads "${String(role.change)}", artifact ${String(wantChange)}`);
+      }
+      if ((want.role.direction ?? "none") !== role.direction) {
+        failures.push(`${who} role: direction "${String(role.direction)}", artifact ${String(want.role.direction ?? "none")}`);
+      }
+      if (want.role.detail !== undefined && role.detail !== want.role.detail) {
+        failures.push(`${who} role: window reads "${String(role.detail)}", artifact ${want.role.detail}`);
+      }
+    }
+
+    // Momentum.
+    const momentum = row.momentum;
+    if (momentum === null) failures.push(`${who}: no momentum cell`);
+    else {
+      if (momentum.kind !== want.momentum.kind) {
+        failures.push(`${who} momentum: reads as "${momentum.kind}", artifacts say "${want.momentum.kind}"`);
+      }
+      if (want.momentum.kind === "measured" || want.momentum.kind === "ended") {
+        const printed = momentum.value ?? "";
+        const rendered = Number.parseFloat(printed.replace(/[^0-9.\-]/g, ""));
+        const tolerance = printed.includes(".") ? 0.05 : 0.5;
+        if (!Number.isFinite(rendered) || Math.abs(rendered - want.momentum.trend) > tolerance) {
+          failures.push(`${who} momentum: shows "${printed}", artifact slope ${String(want.momentum.trend)}`);
+        }
+        if (!printed.startsWith({ rising: "\u25b2", falling: "\u25bc", flat: "\u25ac" }[want.momentum.direction])) {
+          failures.push(`${who} momentum: glyph in "${printed}" disagrees with the published ${want.momentum.direction} slope`);
+        }
+        if (momentum.detail !== want.momentum.span) {
+          failures.push(`${who} momentum: a direction printed with span "${String(momentum.detail)}", artifact ${want.momentum.span}`);
+        }
+      } else if (/\/day|^0(\.0)?$/.test(momentum.value ?? "")) {
+        failures.push(`${who} momentum: "${String(momentum.value)}" states a rate the artifacts do not publish (${want.momentum.kind})`);
+      }
+    }
+
+    // Next game.
+    const next = row.next;
+    if (next === null) failures.push(`${who}: no next-game cell`);
+    else {
+      if (next.kind !== want.next.kind) {
+        failures.push(`${who} next game: reads as "${next.kind}", artifacts say "${want.next.kind}"`);
+      }
+      if (want.next.kind === "published") {
+        if (next.value !== want.next.head) {
+          failures.push(`${who} next game: "${String(next.value)}", team_matchups for ${want.next.team} says "${want.next.head}"`);
+        }
+        if (next.detail !== want.next.detail) {
+          failures.push(`${who} next game: "${String(next.detail)}", team_matchups says "${want.next.detail}"`);
+        }
+      }
+    }
+  });
+
+  // The chart draws the same role reading for the rows it charts.
+  const chart = await page.$$eval(".opp-board .opp-row[data-player]", (rows) =>
+    rows.map((row) => ({
+      id: row.getAttribute("data-player"),
+      direction: row.querySelector(".opp-role")?.getAttribute("data-direction") ?? null,
+      metric: row.querySelector(".opp-role-metric")?.textContent?.trim() ?? null,
+      value: row.querySelector(".opp-role-value")?.textContent?.trim() ?? null,
+      change: row.querySelector(".opp-role-change")?.textContent?.trim() ?? null,
+    })),
+  );
+  for (const row of chart) {
+    const record = oppById.get(row.id);
+    if (record === undefined) continue;
+    oppChartRowsChecked += 1;
+    const want = expectedFor(record).role;
+    if (row.value !== want.value || row.change !== (want.change ?? null) || row.direction !== (want.direction ?? "none")) {
+      failures.push(
+        `opportunity chart ${record.display_name}: role reads "${String(row.value)} ${String(row.change)}" ` +
+          `(${String(row.direction)}), artifact "${want.value} ${String(want.change ?? null)}" (${String(want.direction ?? "none")})`,
+      );
+    }
+  }
+
+  // The filters: each keeps exactly the rows its one reading allows.
+  const expectIds = (predicate) =>
+    oppBlock.filter((record) => predicate(expectedFor(record), record)).map((record) => record.player_id).sort();
+  const filterCases = [
+    ["role", playerUsage !== null, (want) => want.role.kind === "measured" && want.role.direction === "up"],
+    ["momentum", behaviorSeries !== null, (want) => want.momentum.kind === "measured" && want.momentum.direction === "rising"],
+    ["surfaced", true, (_want, record) => record.outside_tier_board],
+  ];
+  for (const [filter, available, predicate] of filterCases) {
+    await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12&only=${filter}`, { waitUntil: "networkidle" });
+    await page.waitForSelector("section[aria-labelledby='opportunity-table-heading']");
+    const shown = (await page.$$eval("table.sheet tbody tr[data-player]", (trs) =>
+      trs.map((tr) => tr.getAttribute("data-player")),
+    )).sort();
+    const want = available ? expectIds(predicate) : oppBlock.map((record) => record.player_id).sort();
+    if (JSON.stringify(shown) !== JSON.stringify(want)) {
+      failures.push(
+        `opportunity filter "${filter}": ${String(shown.length)} rows shown, the artifacts allow ${String(want.length)}` +
+          (available ? "" : " (an unavailable filter must not be applied)"),
+      );
+    }
+    oppFiltersChecked += 1;
+  }
+
+  // Momentum order: current slopes highest first, then slopes that ended early (by slope),
+  // then every row with no slope at all.
+  await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12&opportunity=momentum`, { waitUntil: "networkidle" });
+  const byMomentum = (await readTable()).map((row) => expectedFor(required(oppById.get(row.id))).momentum);
+  const tierOf = (momentum) => (momentum.kind === "measured" ? 0 : momentum.kind === "ended" ? 1 : 2);
+  byMomentum.forEach((momentum, index) => {
+    const before = byMomentum[index - 1];
+    if (before === undefined) return;
+    if (tierOf(before) > tierOf(momentum)) {
+      failures.push(`momentum order: row ${String(index + 1)} (${momentum.kind}) follows a ${before.kind} row`);
+    } else if (tierOf(before) === tierOf(momentum) && tierOf(momentum) < 2 && momentum.trend > before.trend) {
+      failures.push(`momentum order: row ${String(index + 1)} slope ${String(momentum.trend)} above ${String(before.trend)}`);
+    }
+  });
+
+  // Role order across positions: categorical, and ROS rank inside a category — never a size.
+  await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12&opportunity=role`, { waitUntil: "networkidle" });
+  const byRole = (await readTable()).map((row) => required(oppById.get(row.id)));
+  const category = { up: 0, flat: 1, down: 2, none: 3 };
+  for (let index = 1; index < byRole.length; index += 1) {
+    const a = byRole[index - 1];
+    const b = byRole[index];
+    const ca = category[expectedFor(a).role.direction ?? "none"];
+    const cb = category[expectedFor(b).role.direction ?? "none"];
+    if (ca > cb) failures.push(`role order: ${b.display_name} is ahead of its category`);
+    if (ca === cb && a.ros_fair_rank > b.ros_fair_rank && new Set(byRole.map((r) => r.position)).size > 1) {
+      failures.push(
+        `role order: ${a.display_name} above ${b.display_name} inside one category against ROS rank — ` +
+          "a magnitude compared across positions",
+      );
+    }
+  }
+
+  // Pick of the Week does not read the board's filters or orderings.
+  const pickNames = async (query) => {
+    await page.goto(`${BASE}/?view=potw&scoring=ppr&teams=12${query}`, { waitUntil: "networkidle" });
+    return page.$$eval(".potw-card .player-name", (nodes) => nodes.map((node) => node.textContent?.trim()));
+  };
+  const plain = await pickNames("");
+  const filtered = await pickNames("&only=role.momentum.surfaced&opportunity=role");
+  if (JSON.stringify(plain) !== JSON.stringify(filtered)) {
+    failures.push(`pick of the week: picks moved with the board's filters (${plain.join(", ")} vs ${filtered.join(", ")})`);
+  }
+}
+
 await browser.close();
 console.log(JSON.stringify({
   tierRowsChecked: rows.length,
@@ -1121,6 +1479,9 @@ console.log(JSON.stringify({
   signalCardsChecked,
   signalMomentumChecked,
   signalPicksChecked,
+  oppRowsChecked,
+  oppChartRowsChecked,
+  oppFiltersChecked,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
   trendSeriesRecords: seriesRecords.length,

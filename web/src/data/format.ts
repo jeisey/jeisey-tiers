@@ -94,6 +94,20 @@ export function formatEastern(iso: string | null | undefined): string {
   return `${get("month")} ${get("day")} · ${get("hour")}:${get("minute")} ${get("dayPeriod")} ET`;
 }
 
+const ET_DAY = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  month: "short",
+  day: "numeric",
+});
+
+/** `Sep 16`, in Eastern: a day inside the current season, where the year says nothing. */
+export function formatEasternDay(iso: string | null | undefined): string {
+  if (!iso) return EM_DASH;
+  const parsed = Date.parse(iso);
+  if (Number.isNaN(parsed)) return EM_DASH;
+  return ET_DAY.format(new Date(parsed));
+}
+
 export function formatEasternDate(iso: string | null | undefined): string {
   if (!iso) return EM_DASH;
   const parsed = Date.parse(iso);

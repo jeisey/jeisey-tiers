@@ -38,22 +38,24 @@
 
 import { useId } from "react";
 
-import { EM_DASH, formatInteger, formatValue } from "../data/format";
-import type { BehaviorMomentum } from "../data/ros";
+import { EM_DASH, formatInteger } from "../data/format";
+import {
+  MOMENTUM_GLYPH,
+  formatMomentumRate,
+  momentumDirection,
+  type BehaviorMomentum,
+} from "../data/ros";
 
+/*
+  The direction and the printed rate come from `data/ros`, not from here (ADR-092). The
+  Opportunity Board prints the same reading for five hundred rows at once, and two definitions
+  of "rising" — one in this strip, one in the board — would be two answers about one player.
+*/
 function directionOf(trend: number | null): "rising" | "falling" | "flat" | "unknown" {
-  if (trend === null) return "unknown";
-  if (trend > 0) return "rising";
-  if (trend < 0) return "falling";
-  return "flat";
+  return momentumDirection(trend) ?? "unknown";
 }
 
-const GLYPH: Readonly<Record<string, string>> = {
-  rising: "▲",
-  falling: "▼",
-  flat: "▬",
-  unknown: "·",
-};
+const GLYPH: Readonly<Record<string, string>> = { ...MOMENTUM_GLYPH, unknown: "·" };
 
 /**
  * The sentence a screen reader gets, and the one printed under the bars.
@@ -77,8 +79,8 @@ export function momentumSentence(momentum: BehaviorMomentum): string {
       `two.${gap}`
     );
   }
-  const per = `${trend > 0 ? "+" : ""}${formatValue(trend)} adds per day`;
-  const word = trend > 0 ? "rising" : trend < 0 ? "falling" : "flat";
+  const per = `${formatMomentumRate(trend).replace("/day", "")} adds per day`;
+  const word = momentumDirection(trend) ?? "flat";
   return `${observed}. ${word.charAt(0).toUpperCase()}${word.slice(1)} at ${per}, ${spanLabel}.${gap}`;
 }
 
@@ -148,9 +150,7 @@ export function BehaviorSparkline({
             {GLYPH[direction] ?? "·"}
           </span>
           <span className="momentum-value">
-            {momentum.trend === null
-              ? EM_DASH
-              : `${momentum.trend > 0 ? "+" : ""}${formatValue(momentum.trend)}/day`}
+            {momentum.trend === null ? EM_DASH : formatMomentumRate(momentum.trend)}
           </span>
           {/*
             The span, printed and never optional. `behavior_trend_v1` states a direction from

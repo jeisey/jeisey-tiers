@@ -13,10 +13,11 @@
  * quantity that was measured and lost rather than one that was never claimed (ADR-010).
  */
 
+import type { OpportunityCandidate } from "./candidates";
 import type { ArbitrageRecord } from "./contracts";
 import { crossMarketOf, marketsOf } from "./multimarket";
 import type { ArbitrageRow, TierRow } from "./model";
-import type { OpportunityRow, RosRow } from "./ros";
+import type { RosRow } from "./ros";
 import type { ScoringValue, TeamCount } from "./state";
 
 /** RFC 4180: quote whenever the value contains a comma, a quote, or a line break. */
@@ -298,42 +299,151 @@ export const OPPORTUNITY_EXPORT_COLUMNS = [
   "outside_tier_board",
   "surface_reasons",
   "quality_flags",
+  // ADR-092: the signal readings the table shows, flattened to one row each. Every value is a
+  // published field copied from its artifact; the `*_reading` columns say which of the
+  // absences an empty cell is, because "not published", "no record for him" and "no value in
+  // his latest game" are three facts and an empty cell is one.
+  "role_reading",
+  "role_metric",
+  "role_latest_week",
+  "role_latest",
+  "role_earlier",
+  "role_earlier_games",
+  "role_change",
+  "momentum_reading",
+  "add_trend_per_day",
+  "add_trend_span_days",
+  "add_trend_observations",
+  "add_trend_snapshots_in_window",
+  "add_trend_last_observed_at_utc",
+  "next_game_reading",
+  "next_game_week",
+  "next_game_opponent",
+  "next_game_home_away",
+  "next_game_bye_week_before",
 ] as const;
 
-export function opportunityRowsToCsv(rows: readonly OpportunityRow[]): string {
+/**
+ * The reading kinds, in the words an export uses. A candidate's `kind` is an internal name;
+ * this is the published vocabulary of the `*_reading` columns, and a test pins it.
+ */
+const ROLE_READING_EXPORT: Readonly<Record<OpportunityCandidate["role"]["kind"], string>> = {
+  unpublished: "artifact_not_published",
+  no_record: "no_record",
+  no_metric: "no_metric",
+  no_appearance: "no_appearance",
+  no_latest_value: "no_latest_value",
+  one_game: "no_earlier_game",
+  measured: "measured",
+};
+
+const MOMENTUM_READING_EXPORT: Readonly<Record<OpportunityCandidate["momentum"]["kind"], string>> =
+  {
+    unpublished: "artifact_not_published",
+    not_in_feed: "not_in_feed",
+    one_observation: "one_observation",
+    ended: "ended_before_latest_snapshot",
+    measured: "measured",
+  };
+
+const NEXT_GAME_READING_EXPORT: Readonly<Record<OpportunityCandidate["nextGame"]["kind"], string>> =
+  {
+    unpublished: "artifact_not_published",
+    no_team: "no_team",
+    no_record: "no_record",
+    published: "published",
+  };
+
+/**
+ * The signal cells for one row, beside the header list so the two cannot drift.
+ *
+ * **Deliberately absent: the sportsbook lines.** The table prints the implied team points as
+ * context, and the export does not carry them. ADR-091 published the spread and total with no
+ * CSV on purpose — a downloadable table of sportsbook lines is a redistribution step with no
+ * reason to take it — and a filtered export that quietly became one would reverse that
+ * decision from the browser. The opponent, venue and week are schedule facts and travel.
+ *
+ * **Deliberately absent: a direction column.** The glyph on the page follows the printed
+ * rounding (`roleReading`, `momentumDirection`); the export carries the published change and
+ * slope themselves, at full precision, and a reader's spreadsheet can take its own sign.
+ */
+function signalCells(candidate: OpportunityCandidate): (string | number | null)[] {
+  const { role, momentum, nextGame } = candidate;
+  const change =
+    role.kind === "no_latest_value" || role.kind === "one_game" || role.kind === "measured"
+      ? role.reading.change
+      : null;
+  const metric =
+    role.kind === "no_appearance"
+      ? role.metric
+      : role.kind === "no_latest_value" || role.kind === "one_game" || role.kind === "measured"
+        ? role.reading.spec.metric
+        : null;
+  const series =
+    momentum.kind === "measured" || momentum.kind === "ended" || momentum.kind === "one_observation"
+      ? momentum.momentum.record
+      : null;
+  const game = nextGame.kind === "published" ? nextGame.reading : null;
+  return [
+    ROLE_READING_EXPORT[role.kind],
+    metric,
+    change?.latest_week ?? null,
+    change?.latest ?? null,
+    change?.earlier ?? null,
+    change === null ? null : change.earlier_games,
+    change?.change ?? null,
+    MOMENTUM_READING_EXPORT[momentum.kind],
+    series?.add_trend ?? null,
+    series?.span_days ?? null,
+    series?.observations ?? null,
+    series?.snapshots_in_window ?? null,
+    series?.points.at(-1)?.observed_at ?? null,
+    NEXT_GAME_READING_EXPORT[nextGame.kind],
+    game?.record.week ?? null,
+    game?.record.opponent ?? null,
+    game?.record.home_away ?? null,
+    game?.byeBeforeGame ?? null,
+  ];
+}
+
+export function opportunityRowsToCsv(rows: readonly OpportunityCandidate[]): string {
   return toCsv(
     OPPORTUNITY_EXPORT_COLUMNS,
-    rows.map(({ record }) => [
-      record.season,
-      record.through_week,
-      record.ros_fair_rank,
-      record.display_name,
-      record.position,
-      record.team,
-      record.ros_position_rank,
-      record.ros_tier,
-      record.ros_expected_vorp,
-      record.ros_expected_points ?? null,
-      record.ros_uncertainty,
-      record.behavior_source_id ?? null,
-      record.behavior_available ? "true" : "false",
-      record.behavior_snapshot_at_utc ?? null,
-      record.behavior_lookback_hours ?? null,
-      record.add_count ?? null,
-      record.drop_count ?? null,
-      record.net_add_count ?? null,
-      record.add_rank ?? null,
-      record.drop_rank ?? null,
-      record.snap_share_last3 ?? null,
-      record.target_share_last3 ?? null,
-      record.games_played_to_date ?? null,
-      record.weeks_since_last_game,
-      record.long_absence ? "true" : "false",
-      record.current_status,
-      record.outside_tier_board ? "true" : "false",
-      record.surface_reasons.join("|"),
-      record.quality_flags.join("|"),
-    ]),
+    rows.map((candidate) => {
+      const { record } = candidate.row;
+      return [
+        record.season,
+        record.through_week,
+        record.ros_fair_rank,
+        record.display_name,
+        record.position,
+        record.team,
+        record.ros_position_rank,
+        record.ros_tier,
+        record.ros_expected_vorp,
+        record.ros_expected_points ?? null,
+        record.ros_uncertainty,
+        record.behavior_source_id ?? null,
+        record.behavior_available ? "true" : "false",
+        record.behavior_snapshot_at_utc ?? null,
+        record.behavior_lookback_hours ?? null,
+        record.add_count ?? null,
+        record.drop_count ?? null,
+        record.net_add_count ?? null,
+        record.add_rank ?? null,
+        record.drop_rank ?? null,
+        record.snap_share_last3 ?? null,
+        record.target_share_last3 ?? null,
+        record.games_played_to_date ?? null,
+        record.weeks_since_last_game,
+        record.long_absence ? "true" : "false",
+        record.current_status,
+        record.outside_tier_board ? "true" : "false",
+        record.surface_reasons.join("|"),
+        record.quality_flags.join("|"),
+        ...signalCells(candidate),
+      ];
+    }),
   );
 }
 

@@ -1413,7 +1413,7 @@ request with two mock-ups. Frontend only — no schema, no artifact, no Python f
 - [ ] **Not done here, deliberately: the strip is on Pick of the Week only.** The player card
       and the Opportunity Board carry the same counts and could carry the same reading; neither
       was asked for. *(The card now carries it — ADR-091 Decision 8, 2026-09-22. The
-      Opportunity Board still does not.)*
+      Opportunity Board carries the reading, not the strip — ADR-092, 2026-09-23.)*
 - [ ] **Not done here, deliberately: no CSV.** The record is a series, and the Opportunity
       Board's export already carries the day's counts.
 
@@ -1487,8 +1487,63 @@ The owner corrected the framing of `docs/SIGNAL_EXPANSION_EDA.md`: signal expans
       (CC-BY-SA, ADR-086); WOPR (a blend of two shown shares); RACR, YPT/YPC, CPOE; red-zone
       and goal-line opportunity (needs play-by-play); opponent strength by position (two games
       is not a profile — revisit ~week 5); weather (no pre-kickoff source); injuries
-      (point-in-time unprobed); the Opportunity Board's momentum and role columns.
+      (point-in-time unprobed); ~~the Opportunity Board's momentum and role columns~~ (done,
+      ADR-092).
 - [ ] **Not taken, deliberately: POTW selection using role signals.** A separate, explicit
       design decision for the owner.
 - [ ] **Owner questions left open:** the ffopportunity publication decision (ADR-086), and the
       sportsbook provenance behind nflverse's schedule lines (`schedule_lines_context_only`).
+
+## The Opportunity Board as the triage surface — 2026-09-23 (ADR-092)
+
+The detail surfaces understood the signal layer and the board a manager scans did not. The
+board now reads it — three readings, three filters, two orderings — and combines none of it.
+No artifact, schema, model, rule version or Pick-of-the-Week rule changed.
+
+- [x] **One candidate view model** (`web/src/data/candidates.ts`): each Opportunity row joined
+      to its usage record, momentum series and next game, computing nothing; every absence a
+      named kind (not published / no record / no value / one game; not in feed / one
+      observation / ended / measured; no team / no record / published). `has*` on the bundle
+      now means "published". `signalTeam()` is the one next-game team rule for the card, Pick of
+      the Week and the board.
+- [x] **Role replaces the generic snap share** on the table and the chart: the position's first
+      `ROLE_METRICS_BY_POSITION` metric (QB pass attempts, otherwise snap share), the card's glyph
+      and change, and the window. `Weeks since last game` left the table (the absence mark and
+      the role window carry it); both fields stay in the export.
+- [x] **Add momentum on the board**, from the published `behavior_trend_v1` slope with its span;
+      a window that **ended before the latest snapshot** (47 of 184 live slopes) is printed muted
+      with the day it ended and is not current. Slopes ≥ 100/day print whole on board and card.
+- [x] **Next game** (`W9 vs ATL` / `27.5 implied` / `bye W9 · no line yet`), not sortable, never
+      a rating.
+- [x] **Filters** `only=role.momentum.surfaced`: one predicate each, AND, canonical URL, counts of
+      rows with no reading printed apart, an unavailable filter named and not applied, no
+      composite chip.
+- [x] **Orderings** `momentum` (current, then ended, then none) and `role` (categorical; sizes only
+      within one position, enforced in `compareRole`). Table header sorts use the same rules.
+- [x] **Responsive**: no sideways table scroll at 1024–1600px (fixture and live, three orderings);
+      phones pin the name and lead with Role; controls wrap at 320px.
+- [x] **Filtered export**: 29 columns unchanged, 18 appended (role, momentum, next game, with
+      `*_reading` kinds); **no sportsbook number**; row order is the visible table's.
+- [x] **Pick of the Week unchanged**: identical picks under every filter × ordering × position
+      (vitest) and on the served page (`verify:board`); records never mutated (frozen-record run).
+- [x] **`verify:board`** checks every Opportunity row and charted row against the three
+      artifacts, the three filters, both orderings and pick invariance. Five source mutations
+      (reversed role direction, zero for a missing slope, another row's matchup, an ended slope
+      read as current, cross-position magnitudes) each fail both the gate and vitest.
+- [x] **Fixture states added**: a QB with rising pass attempts (Jalen Marsh), a WR whose snap
+      share is flat while targets and air yards rise (Rashee Kirk), a momentum window that ended
+      four days before the latest snapshot (Zay Meadows).
+- [x] **Live**: a real `build-ros` of week 2 **with** the retained Sleeper window (14 snapshots,
+      read as data from the private store) — 507-row board, 4 real picks, zero disagreements.
+      POTW-v2 observations recorded in ADR-092.
+- [x] **Verified**: `npm run lint` 0 errors / 4 pre-existing warnings; `typecheck` clean; vitest
+      **575**; `npm run e2e` **154**; `build` clean; `verify:board` zero disagreements on all
+      eight builds (dist, matured, in-season, in-season-no-signals, in-season-no-behavior,
+      awaiting-first-week, season-complete, live week 2); `ruff` clean, `pytest` **1,574**.
+- [x] **Docs**: ADR-092; `UX_SPEC.md` §6A.10, §7.1A, §11, §14; `DATA_CONTRACTS.md` §19.4;
+      `SIGNAL_EXPANSION_EDA.md` note. Screens: `docs/visual-qa/2026-09-23-opportunity-signals/`.
+- [ ] **Deferred, with reasons in ADR-092:** opponent strength (`load_team_stats`, after ~week 5);
+      xFP (ADR-086); `role_change_v1` window checkpoint after weeks 5–6; the board's
+      `add_count: 0` for a player outside the top 100 (artifact contract); two live
+      `display_name: "None"` records (pipeline); POTW-v2 (an explicit owner decision).
+

@@ -35,9 +35,32 @@ export type ResolvedViewId = Exclude<ViewId, "auto">;
 export const MODES = ["auto", "draft", "in_season"] as const;
 export type ModeId = (typeof MODES)[number];
 
-/** How the Opportunity Board is ordered. Three orderings, never one blended score. */
-export const OPPORTUNITY_SORTS = ["value", "adds", "net"] as const;
+/**
+ * How the Opportunity Board is ordered. Five orderings over separate quantities, never one
+ * blended score (ADR-085, ADR-092).
+ *
+ * `momentum` orders by the published add-trend slope, which every row states in one unit
+ * (transactions per day). `role` is **categorical first** — rising, flat, falling, no reading
+ * — and compares the size of a change only among rows that all share one position, because a
+ * quarterback's change is in pass attempts and everyone else's is in share points
+ * (`compareRole` in `data/candidates.ts` owns the rule and refuses the mixed case).
+ */
+export const OPPORTUNITY_SORTS = ["value", "adds", "net", "momentum", "role"] as const;
 export type OpportunitySort = (typeof OPPORTUNITY_SORTS)[number];
+
+/**
+ * The Opportunity Board's filters (ADR-092). Each is one predicate over one published signal,
+ * and several compose by AND:
+ *
+ * - `role` — the position's leading role metric has a published upward `role_change_v1`;
+ * - `momentum` — the published `behavior_trend_v1` add slope is positive;
+ * - `surfaced` — the row is published from beyond the tier depth (`outside_tier_board`).
+ *
+ * There is deliberately no filter that counts how many of these hold. "Two of three" is a
+ * score with the arithmetic hidden in a chip.
+ */
+export const OPPORTUNITY_FILTERS = ["role", "momentum", "surfaced"] as const;
+export type OpportunityFilter = (typeof OPPORTUNITY_FILTERS)[number];
 
 export const DRAFT_VIEWS: readonly ResolvedViewId[] = ["tiers", "arbitrage"];
 export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = ["ros", "opportunity", "potw"];
@@ -113,6 +136,11 @@ export interface AppState {
   /** The Opportunity Board's ordering. */
   readonly opportunity: OpportunitySort;
   /**
+   * The Opportunity Board's active filters, in canonical order, or empty for none. Written as
+   * `only=role.momentum`; the order is fixed so one set of filters is one string.
+   */
+  readonly only: readonly OpportunityFilter[];
+  /**
    * Which Pick-of-the-Week set is on screen, 1-based.
    *
    * A depth into each position's eligible pool rather than a tier: set 3 is the third-ranked
@@ -150,6 +178,7 @@ export const DEFAULT_STATE: AppState = {
   market: "fantasyfootballcalculator_adp",
   mode: "auto",
   opportunity: "value",
+  only: [],
   set: 1,
 };
 
@@ -166,6 +195,7 @@ const PARAM_ORDER = [
   "market",
   "mode",
   "opportunity",
+  "only",
   "set",
 ] as const;
 
@@ -311,6 +341,17 @@ export function parseState(search: string): ParsedState {
     }
   }
 
+  // `only=role.momentum` — the Opportunity Board's filters. A token the app does not know is
+  // dropped and the URL rewritten, and the survivors are put in canonical order, so two links
+  // naming the same filters are the same string.
+  const rawOnly = params.get("only");
+  let only: readonly OpportunityFilter[] = DEFAULT_STATE.only;
+  if (rawOnly !== null) {
+    const tokens = rawOnly.toLowerCase().split(".").filter((token) => token !== "");
+    only = OPPORTUNITY_FILTERS.filter((filter) => tokens.includes(filter));
+    if (serializeFilters(only) !== rawOnly) normalized = false;
+  }
+
   // A parameter the app does not know is dropped rather than preserved: keeping it would make
   // two URLs describing the same state compare unequal.
   for (const key of params.keys()) {
@@ -330,6 +371,7 @@ export function parseState(search: string): ParsedState {
       rail: rail.value,
       mode: mode.value,
       opportunity: opportunity.value,
+      only,
       set,
     },
     normalized,
@@ -341,12 +383,22 @@ export function serializeTiers(tiers: readonly number[]): string {
   return tiers.length === 0 ? "none" : [...new Set(tiers)].sort((a, b) => a - b).join(".");
 }
 
+/** `["momentum", "role"]` -> `role.momentum`: canonical order, duplicates dropped. */
+export function serializeFilters(filters: readonly OpportunityFilter[]): string {
+  return OPPORTUNITY_FILTERS.filter((filter) => filters.includes(filter)).join(".");
+}
+
 /** `?scoring=half&position=rb` — defaults omitted, order fixed, empty string when default. */
 export function serializeState(state: AppState): string {
   const params = new URLSearchParams();
   for (const key of PARAM_ORDER) {
     if (key === "tiers") {
       if (state.tiers !== null) params.set(key, serializeTiers(state.tiers));
+      continue;
+    }
+    if (key === "only") {
+      const filters = serializeFilters(state.only);
+      if (filters !== "") params.set(key, filters);
       continue;
     }
     const value = state[key];

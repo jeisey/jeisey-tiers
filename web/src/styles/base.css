@@ -4458,7 +4458,7 @@ dl.facts dd {
 
 .opp-board {
   --opp-cols:
-    2.5rem 3.6rem minmax(0, 1fr) minmax(0, 1.6fr) 3.6rem minmax(0, 1.2fr) 3.4rem 4.4rem 3rem;
+    2.5rem 3.6rem minmax(0, 1fr) minmax(0, 1.5fr) 3.6rem minmax(0, 1.1fr) 3.4rem 9.6rem 3rem;
   --opp-pad: var(--space-3);
 
   border: var(--hairline) solid var(--line-strong);
@@ -4549,7 +4549,7 @@ dl.facts dd {
   color: var(--ink-faint);
 }
 
-.opp-scale-unit[data-col="snap"] { grid-column: 8; }
+.opp-scale-unit[data-col="role"] { grid-column: 8; }
 .opp-scale-unit[data-col="net"] { grid-column: 9; }
 
 .opp-rows {
@@ -4709,34 +4709,38 @@ dl.facts dd {
   color: var(--ink-faint);
 }
 
-.opp-snap {
+/*
+ * The role readout (ADR-092): the position's leading measure as text — a micro-label, the
+ * latest value, and the card's own glyph and change. Text rather than a bar because its unit
+ * depends on the position, and a bar on one scale would claim a quarterback's attempts and a
+ * back's snap share share one. The glyph carries direction; colour is the second channel.
+ */
+.opp-role {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  align-items: baseline;
   justify-content: flex-end;
+  gap: 5px;
   min-width: 0;
-}
-
-.opp-snap-track {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 4px;
-  background: rgb(46 204 255 / 10%);
-}
-
-.opp-snap-fill {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-}
-
-.opp-snap-value,
-.opp-snap-none {
-  flex: none;
+  white-space: nowrap;
   font: 500 0.64rem/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink-muted);
 }
+
+.opp-role-metric {
+  font: 600 0.52rem/1 var(--font-sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.opp-role-value {
+  color: var(--ink-strong);
+}
+
+.opp-role[data-direction="up"] .opp-role-change { color: var(--bargain); }
+.opp-role[data-direction="down"] .opp-role-change { color: var(--premium); }
+.opp-role[data-direction="flat"] .opp-role-change { color: var(--ink-muted); }
 
 .opp-net {
   text-align: right;
@@ -4758,7 +4762,7 @@ dl.facts dd {
 @media (max-width: 1023px) {
   .opp-board {
     --opp-cols:
-      2.2rem 3.2rem minmax(0, 1fr) minmax(0, 1.4fr) 3.2rem minmax(0, 1.1fr) 3.2rem 3.6rem 2.6rem;
+      2.2rem 3.2rem minmax(0, 1fr) minmax(0, 1.3fr) 3.2rem minmax(0, 1fr) 3.2rem 8.8rem 2.6rem;
   }
 }
 
@@ -4810,7 +4814,7 @@ dl.facts dd {
       "rank pos name value"
       "vtrack vtrack vtrack vtrack"
       "mtrack mtrack mtrack moves"
-      "snap snap snap net";
+      "role role role net";
     gap: 5px var(--space-2);
     padding: var(--space-2);
     border-bottom: var(--hairline) solid var(--line-faint);
@@ -4823,7 +4827,7 @@ dl.facts dd {
   .opp-row .opp-readout[data-track="value"] { grid-area: value; }
   .opp-row .opp-track[data-track="moves"] { grid-area: mtrack; }
   .opp-row .opp-readout[data-track="moves"] { grid-area: moves; }
-  .opp-row .opp-snap { grid-area: snap; justify-content: flex-start; }
+  .opp-row .opp-role { grid-area: role; justify-content: flex-start; }
   .opp-row .opp-net { grid-area: net; }
 
   .opp-track {
@@ -4839,7 +4843,7 @@ dl.facts dd {
    * content rather than repeated as text.
    */
   .opp-row .opp-readout[data-track="moves"]::before,
-  .opp-row .opp-snap::before,
+  .opp-row .opp-role::before,
   .opp-row .opp-net::before {
     font: 600 0.55rem/1 var(--font-sans);
     letter-spacing: var(--track-label);
@@ -4854,8 +4858,8 @@ dl.facts dd {
     margin-right: auto;
   }
 
-  .opp-row .opp-snap::before {
-    content: "Snap";
+  .opp-row .opp-role::before {
+    content: "Role";
     margin-right: 2px;
   }
 
@@ -4868,6 +4872,181 @@ dl.facts dd {
     align-items: center;
     justify-content: flex-end;
     gap: 4px;
+  }
+}
+
+/* ----------------------------------------------- opportunity filters and signal cells
+ *
+ * ADR-092. Three toggle chips in the segmented control's own frame — pressed is the same inset
+ * ring the orderings use, and an unavailable filter is struck through exactly as a disabled
+ * segment is. The status line beside them prints how many rows each filter keeps and how many
+ * had no reading to decide on, so a filter is never read as a census.
+ */
+.opp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.opp-filter-status {
+  font: 500 0.66rem/1.35 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.opp-order-note {
+  margin: calc(-1 * var(--space-1)) 0 var(--space-3);
+  font-size: 0.72rem;
+}
+
+/*
+ * A signal cell in the table: one line of reading, one line of window or context beneath.
+ * Two short lines rather than one long one, so the column stays narrow enough that the table
+ * still fits a laptop with every column on screen.
+ */
+.signal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.signal-line {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+  font: 500 0.74rem/1.1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-strong);
+}
+
+.signal-metric {
+  font: 600 0.54rem/1 var(--font-sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.signal-detail {
+  font: 400 0.62rem/1.2 var(--font-mono);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.signal-cell[data-signal="role"][data-direction="up"] .signal-change,
+.signal-cell[data-signal="momentum"][data-direction="rising"] .signal-value {
+  color: var(--bargain);
+}
+
+.signal-cell[data-signal="role"][data-direction="down"] .signal-change,
+.signal-cell[data-signal="momentum"][data-direction="falling"] .signal-value {
+  color: var(--premium);
+}
+
+/* A slope whose window ended before the latest snapshot is printed, and never as current. */
+.signal-cell[data-signal="momentum"][data-kind="ended"] .signal-value {
+  color: var(--ink-muted);
+}
+
+/* No reading is not a reading: an absence is quieter than any value, never coloured. */
+.signal-cell[data-direction="none"] .signal-value {
+  color: var(--ink-faint);
+}
+
+.signal-cell[data-signal="next"] .signal-value {
+  color: var(--ink-strong);
+}
+
+.signal-cell[data-signal="next"][data-lines="unposted"] .signal-detail {
+  color: var(--ink-faint);
+}
+
+/*
+ * Responsive priority, in two steps, so the table never scrolls sideways on a laptop (UX
+ * spec 7.3). Below 1280px the team and the drop count step aside — the chart above prints
+ * every drop count on its own track, and the next-game cell names the opponent. On a phone
+ * the rank and the value go too, because the chart prints both on every row it draws, and
+ * the player's name stays put while the readings scroll under it, so the first thing beside
+ * a name is his role. The filtered export is a fixed column list and is unaffected by what a
+ * narrow screen hides.
+ */
+/*
+ * Eleven columns on a laptop: a little less side padding than the other sheets, the same
+ * type. The measured margin at 1440px is what keeps a seven-digit add count from pushing the
+ * table past the page (`inseason.spec.ts` measures 1024, 1280 and 1440).
+ */
+.opp-sheet thead th button {
+  padding-inline: 8px;
+}
+
+.opp-sheet tbody td {
+  padding-inline: 8px;
+}
+
+@media (max-width: 1279px) {
+  .opp-sheet .col-mid {
+    display: none;
+  }
+}
+
+@media (max-width: 1439px) {
+  .opp-sheet .col-player {
+    min-width: 9.5rem;
+  }
+
+  /* The status marks wrap under a long name rather than widening the column past the page. */
+  .opp-sheet .col-player .player-cell {
+    flex-wrap: wrap;
+    row-gap: 3px;
+  }
+
+  /* A reading's change may drop under its value, and a window under its slope. */
+  .opp-sheet .signal-line {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .opp-sheet .signal-detail {
+    white-space: normal;
+  }
+
+  /* `wk 8 vs 7 gms` is one short phrase; broken across lines it reads as two readings. */
+  .opp-sheet .signal-cell[data-signal="role"] .signal-detail {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .opp-sheet .col-low {
+    display: none;
+  }
+
+  .opp-sheet .col-player {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 0;
+    max-width: 9.5rem;
+    box-shadow: 1px 0 0 var(--line-strong);
+  }
+
+  .opp-sheet thead th.col-player {
+    z-index: 3;
+  }
+
+  .opp-sheet .col-player .player-name {
+    max-width: 8.5rem;
+  }
+}
+
+/* Five orderings do not fit one row at 320px. They wrap rather than clip the last one. */
+@media (max-width: 30rem) {
+  .section-actions .segmented,
+  .opp-filters .segmented {
+    flex-wrap: wrap;
   }
 }
 

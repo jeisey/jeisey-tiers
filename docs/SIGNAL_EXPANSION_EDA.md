@@ -362,8 +362,13 @@ week > completed_week`, count non-null `total_line`.
 > from `player_usage.json` (weekly rows and snap counts), not from newly published `ros_core_v1`
 > columns: the card needed a week-by-week series the feature table does not hold, and building
 > it beside the model rather than out of it keeps the model's contract untouched. The
-> Opportunity table's snap-share column is unchanged — a column is one quantity for every row,
-> and a reader filtering to quarterbacks sees the constant for what it is.
+> Opportunity table's snap-share column was left unchanged by ADR-091 — a column is one quantity
+> for every row, and a reader filtering to quarterbacks sees the constant for what it is.
+>
+> **Superseded 2026-09-23 (ADR-092).** The column is now **Role**: the position's leading
+> measure from the same map (pass attempts for a QB), with the published `role_change_v1`
+> change and window, beside Add momentum and Next game, and three one-reading filters. The
+> table below is the pre-ADR-091 inventory and is kept as the record it was.
 
 ## 2b.1 What is actually shown today, per surface
 
