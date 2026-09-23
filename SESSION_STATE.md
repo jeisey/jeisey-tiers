@@ -4,6 +4,14 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The phone's control bands fold, 2026-09-23 (ADR-093).** The owner reported that on a phone
+"half the mobile screen is just navbar". The sticky controls and tabs were 248px of an 839px
+phone at all times. They are now one **Settings** summary row above the tabs (86px in total),
+the Opportunity Board's orderings and chips fold behind one **Options** row, and every folded
+value is printed on its row. CSS over one DOM: desktop and tablet are byte-identical to the
+parent commit. **No artifact, schema, model, rule version or URL parameter changed.** See
+**What the mobile fold changed** below.
+
 **The Opportunity Board as the triage surface, 2026-09-23 (ADR-092).** ADR-091 gave the card and
 Pick of the Week the signal layer and left the board a manager actually scans without it. The
 board now reads it: a position-aware **Role** reading (replacing the generic snap share),
@@ -2268,9 +2276,59 @@ and vitest. No Python changed; `ruff check`, `ruff format --check` clean and `uv
 **1,574** passed. Screens:
 `docs/visual-qa/2026-09-23-opportunity-signals/` (fixture 81–92, real-01–07).
 
+## What the mobile fold changed (2026-09-23, ADR-093)
+
+**Reachable, not resident.** The phone rule "controls stay reachable while the board scrolls" had
+been implemented by keeping all four controls on screen, which cost 30% of the viewport. Now:
+
+| 412×839 | before | after |
+|---|---|---|
+| sticky block while scrolling | 248px | 86px |
+| Opportunity chart, first paint | y = 716 | y = 382 |
+| Tier board chart, first paint | y = 518 | y = 356 |
+
+**Facts a later session should not re-derive:**
+
+- **The fold is CSS, keyed on the 767px sheet breakpoint.** `PanelToggle` rows are rendered at
+  every width and are `display: none` above it; `.phone-panel[data-open="false"]` is hidden only
+  below it. Do not move the branch into JS: the tree is the same at both widths (unlike the
+  player card's sheet), and a CSS branch is why the first paint cannot be wrong and why desktop
+  stayed byte-identical. `.phone-panel-contents` (`display: contents`) wraps existing controls
+  without changing their layout.
+- **Open/closed is not URL state** and resets on load. The settings row's state lives in the
+  shell, the Options row's in `OpportunityView`.
+- **A folded value must be on its row.** `settingsSummary()` and `opportunityOptionsSummary()`
+  are the rule; a new folded control needs a summary item, or it becomes a filter a reader can
+  forget is on. The Opportunity census line is deliberately outside every fold (ADR-092).
+- **An absolutely positioned child escapes `overflow: hidden` unless the clipper is its
+  containing block.** The screen-reader commas are `.visually-hidden` (absolute), so
+  `.panel-toggle-summary` has `position: relative`. Without it a clipped row widened a 320px
+  page by 164px. And a flex item's automatic minimum is its content, so `.section-actions` needs
+  `min-width: 0` at phone width, or a `nowrap` summary sizes the row.
+- **`getByRole(name)` is a substring match**, and the Options row's name now contains the active
+  filter labels. Chip lookups use `exact: true`; a folded (hidden) chip is not returned by
+  `getByRole` at all, so it is read by `.opp-filter[data-filter=…]`.
+- **`page.mouse.wheel` does not wait for the scroll.** A measurement straight after it read
+  the sticky block at its unscrolled position under load and passed alone. The fold's tests
+  scroll with `window.scrollTo` and poll until the block is stuck (`scrollUntilStuck`).
+- **The season-mode switch now lives inside `#board-settings`** on every width. Visually
+  unchanged above 767px.
+- **`verify:presets` against a fixture `dist` reports console 404s for every block**, identically
+  on the parent commit. It expects a real build's full artifact set; CI does not run it on
+  fixtures. Pre-existing, not a regression.
+
+**Verified**: lint 0 errors / 4 pre-existing warnings; typecheck clean; vitest **584**; e2e
+**175** (mobile project 85/85 at `--repeat-each=5`); ruff clean, pytest 1,574, exit 0;
+`verify:board` zero failures on seven fixture builds; 106 screens with no overflow; five CSS
+negative controls each fail their guard. Screens: `docs/visual-qa/2026-09-23-mobile-fold/`.
+
 ## Next action
 
 **None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**
+
+**After ADR-093 merges:** open the deployed site on a phone and check that the sticky block is the
+Settings row and the tabs, that the row names the preset in force, and that the Opportunity
+Options row folds the orderings and chips while the census line stays.
 
 **After ADR-092 merges:** open the deployed Opportunity Board and check that `verify:board` in the
 daily refresh reports `oppRowsChecked` equal to the PPR/12 block size and `oppFiltersChecked: 3`.

@@ -115,6 +115,33 @@ test.describe("automated scan", () => {
     });
   }
 
+  /*
+   * The phone's folded controls (ADR-093). A different DOM state from every scan above, which
+   * run at desktop width where the summary rows are not rendered: here they are the only
+   * controls on screen when folded, and the whole control strip is inside a scroll box when
+   * open. Both states are scanned, on the draft board and on the board with two folds.
+   */
+  for (const [name, path, landmark] of [
+    ["the tier board", "/", ".board-row"],
+    ["the opportunity board", "/scenario/in-season/?view=opportunity&only=role", ".opp-row"],
+  ] as const) {
+    test(`${name} on a phone scans clean folded and open`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      await expect(page.locator(landmark).first()).toBeVisible();
+      const settings = page.getByRole("button", { name: /^Settings/ });
+      await expect(settings).toBeVisible();
+      expect(describe(await scan(page)), "folded").toEqual([]);
+
+      await settings.click();
+      const options = page.getByRole("button", { name: /^Options/ });
+      if ((await options.count()) > 0) await options.click();
+      await expect(page.getByRole("radiogroup", { name: "Scoring" })).toBeVisible();
+      expect(describe(await scan(page)), "open").toEqual([]);
+    });
+  }
+
   test("the player card has no violations while it is open", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Amon-Ra Bright", exact: true }).click();
@@ -284,6 +311,38 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
     expect(active).toContain("opp-row");
   });
 
+  test("a folded panel is a disclosure a keyboard can drive, one tab stop from the tabs", async ({
+    page,
+  }) => {
+    // ADR-093. The row names what it controls, says whether it is open, and a closed panel's
+    // controls are out of the tab order rather than focusable while invisible.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/scenario/in-season/?view=ros");
+    await expect(page.locator(".board-row").first()).toBeVisible();
+    const settings = page.getByRole("button", { name: /^Settings/ });
+    const controls = await settings.getAttribute("aria-controls");
+    expect(controls).toBe("board-settings");
+    await expect(page.locator(`#${controls ?? ""}`)).toHaveCount(1);
+
+    await settings.focus();
+    await page.keyboard.press("Tab");
+    // Folded, the next stop after the row is the tab strip — no invisible radio in between.
+    await expect(page.getByRole("tab", { name: "ROS tiers" })).toBeFocused();
+
+    await settings.focus();
+    await page.keyboard.press("Enter");
+    await expect(settings).toHaveAttribute("aria-expanded", "true");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("radiogroup", { name: "Season mode" }).getByRole("radio", { checked: true })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(settings).toBeFocused();
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+
+    // The row is a real touch target, not a line of text.
+    const box = await settings.boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
+  });
+
   test("the page reflows at 320 CSS pixels without a horizontal scrollbar", async ({ page }) => {
     // WCAG 2.1 "Reflow": 320 CSS pixels wide is what 400% zoom of a 1280px viewport reduces
     // to, and it is the width the spec actually names.
@@ -309,6 +368,16 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
       expect(overflow, `${path} reflows badly at 320px`).toBeLessThanOrEqual(1);
+
+      // …and with every folded panel open (ADR-093). The folded summary rows ellipsise, and
+      // the first draft of them pushed this page 164px sideways from inside a clipped row.
+      await page.getByRole("button", { name: /^Settings/ }).click();
+      const options = page.getByRole("button", { name: /^Options/ });
+      if ((await options.count()) > 0) await options.click();
+      const open = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(open, `${path} reflows badly at 320px with its panels open`).toBeLessThanOrEqual(1);
     }
   });
 

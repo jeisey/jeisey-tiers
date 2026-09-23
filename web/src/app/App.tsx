@@ -7,10 +7,12 @@
  * as the build produced it (`docs/DATA_CONTRACTS.md` section 13, `docs/UX_SPEC.md` section 10).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 import logoUrl from "../assets/jt_logo.png";
 
+import { PanelToggle } from "../components/primitives";
 import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bundle";
 import { selectOpportunityCandidates, signalTeam } from "../data/candidates";
 import { easternIsoDate } from "../data/format";
@@ -35,7 +37,7 @@ import {
 } from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
-import { Controls, SeasonMode, SeasonModeChip, ViewTabs } from "./Controls";
+import { Controls, SeasonMode, SeasonModeChip, ViewTabs, settingsSummary } from "./Controls";
 import { DataView } from "./DataView";
 import { Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
@@ -196,6 +198,38 @@ function Board({
     setState({ view: "data" });
   }, [setState]);
 
+  /*
+    The phone's settings panel (ADR-093). Closed by default: the sticky bar a phone carries
+    while the board scrolls is one summary row and the tabs, and the controls are one tap
+    away. Local state rather than URL state, because it is chrome and not board — a shared
+    link names a board, and should not open someone else's panel. Above the sheet breakpoint
+    the stylesheet ignores it and every control is on screen, exactly as before.
+  */
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsToggle = useRef<HTMLButtonElement>(null);
+  const toggleSettings = useCallback(() => {
+    setSettingsOpen((open) => !open);
+  }, []);
+  // Synchronous, so the `/` shortcut can focus the search box in the same keystroke.
+  const revealSearch = useCallback(() => {
+    flushSync(() => {
+      setSettingsOpen(true);
+    });
+  }, []);
+  // Escape closes the panel and returns focus to the row that opened it — but only where
+  // there is a panel to close. A search box with text uses its own Escape to clear first.
+  const onSettingsKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== "Escape" || event.isDefaultPrevented() || !settingsOpen) return;
+      const toggle = settingsToggle.current;
+      if (toggle === null || toggle.getClientRects().length === 0) return;
+      event.preventDefault();
+      setSettingsOpen(false);
+      toggle.focus();
+    },
+    [settingsOpen],
+  );
+
   /**
    * The row count beside the navigation, from the design source.
    *
@@ -330,23 +364,45 @@ function Board({
           }
         />
 
-        <SeasonMode
-          mode={state.mode}
-          resolved={mode}
-          throughWeek={inSeason?.throughWeek ?? null}
-          available={inSeason !== null}
-          onChange={(next) => {
-            setState({ mode: next });
-          }}
-        />
-
+        {/*
+          One sticky block. On a phone it is the summary row and the tabs, with every control
+          folded between them until the row is tapped; above the sheet breakpoint the row is
+          not rendered, nothing is sticky, and the season-mode band, the controls and the tabs
+          stack exactly as they always have (ADR-093).
+        */}
         <div className="sticky-controls">
-          <Controls
-            state={state}
-            onChange={setState}
-            availableScoring={availableScoring}
-            availableTeams={availableTeams}
+          <PanelToggle
+            className="settings-toggle"
+            label="Settings"
+            items={settingsSummary(state, inSeason !== null)}
+            open={settingsOpen}
+            controls="board-settings"
+            onToggle={toggleSettings}
+            toggleRef={settingsToggle}
           />
+          <div
+            id="board-settings"
+            className="board-settings phone-panel"
+            data-open={settingsOpen}
+            onKeyDown={onSettingsKeyDown}
+          >
+            <SeasonMode
+              mode={state.mode}
+              resolved={mode}
+              throughWeek={inSeason?.throughWeek ?? null}
+              available={inSeason !== null}
+              onChange={(next) => {
+                setState({ mode: next });
+              }}
+            />
+            <Controls
+              state={state}
+              onChange={setState}
+              availableScoring={availableScoring}
+              availableTeams={availableTeams}
+              onRevealSearch={revealSearch}
+            />
+          </div>
           <ViewTabs
             view={view}
             mode={mode}

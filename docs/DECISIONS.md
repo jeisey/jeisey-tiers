@@ -4635,3 +4635,155 @@ now also requires ≥ 64px of `min-content` slack at 1024, 1280 and 1440px and c
 density rules apply (`white-space: normal` on a heading, 8px cell padding). Negative control:
 the new assertions fail against the merged CSS on the machine where the old test passed
 (1px / 17px / 27px of slack).
+
+## ADR-093 — On a phone the control bands fold behind summary rows: reachable, not resident
+
+**Status:** accepted, 2026-09-23
+**Supersedes:** nothing. **Amends:** UX spec §11 ("sticky compact controls"), §6A.10.2 (where
+the Opportunity Board's orderings and chips live below 768px), ADR-085's shell layout on a
+phone. **Leaves untouched:** every artifact, schema, model, rule version, URL parameter and
+`potw_selection_v1`; every pixel above the sheet breakpoint.
+
+### The question
+
+The owner sent a screenshot of the deployed Opportunity Board on a phone with three bands
+circled: the global controls (scoring, teams, position, search), the board's orderings and
+depth switch, and its "Show only" filter chips. "Currently half the mobile screen is just
+navbar." Measured on the fixture build at Pixel-7 size (412×839), before this change:
+
+| | before |
+|---|---|
+| sticky block while the board scrolls (four controls + tabs) | **248px — 30% of the viewport, all the time** |
+| season-mode band above it | 67px |
+| Opportunity chart's first row on first paint | **y = 716** (85% of the way down the first screen); 743 at 390×844 |
+| Arbitrage chart's first row on first paint | y = 964 — below the fold |
+
+The controls were sticky for a real reason (UX spec §11 and the stylesheet's phone rule: the
+sheet is used one-handed, and the controls have to stay reachable while the board scrolls).
+The defect was that *reachable* had been implemented as *resident*.
+
+### Decision 1 — one summary row per band, and the row prints the state it hides
+
+Below 768px each control band folds behind a disclosure row (`PanelToggle`,
+`web/src/components/primitives.tsx`) that prints what the folded controls are set to:
+
+| row | prints | folds |
+|---|---|---|
+| **Settings** (sticky, above the tabs) | `PPR · 12 teams · All positions`, then the search term when there is one, then the season mode when a reader overrode `auto` | the season-mode switch, Scoring, Teams, Position, Player search |
+| **Options** (Opportunity Board head) | `By ROS value · No filters · All 19` / `Top 40 of 176` | Order by, the depth button, the Show-only chips |
+
+A folded control whose value is not on screen is a filter a reader can forget is on, so every
+value a folded control holds is on its row — including a shared link's search, filters and mode
+override. A filter a link names that the build cannot apply is **not** listed (the board did not
+apply it; the existing notice names it). The Opportunity **census line** (`176 of 508 shown ·
+Role rising: 176 · 155 with no published change…`) never folds: ADR-092 prints it so a filter is
+never read as a count of the whole board, and that obligation does not depend on the width.
+
+The season-mode switch moved *into* the settings panel rather than keeping a band of its own:
+it is a rarely used override, and the masthead chip already names the mode in force. On a desktop
+the band renders exactly where it did.
+
+Items are separated by a dot for the eye (`aria-hidden`) and a visually hidden comma for a screen
+reader, so the row's accessible name is its visible text read as a list ("Settings PPR, 12 teams,
+All positions"). The mode goes last although its switch is first in the panel: at 320px the row
+ellipsises, and a rare override should be what is cut, not the scoring.
+
+### Decision 2 — CSS over one DOM, not a JavaScript branch
+
+The rows are rendered at every width and are `display: none` above 767px; a panel is a
+`.phone-panel` with `data-open`, hidden only below 767px when closed. The Opportunity panels are
+`display: contents` wrappers, so wrapping the existing controls changes no layout until they are
+closed on a phone.
+
+- **Desktop and tablet are byte-identical.** 32 full-page screenshots (8 views × 1440, 1024, 900,
+  768px) of this build and of its parent `70491d5`, compared as PNG bytes: 32 identical.
+- **No first paint can be the wrong variant**, because nothing reads the viewport — unlike the
+  player card, whose sheet is a different accessibility tree and has to branch in JS (Phase 9A).
+  Here the tree is the same; only visibility changes.
+- **Folded controls keep their state**, because they stay mounted.
+
+767px is the sheet breakpoint the stylesheet and `PlayerDetail` already share; the fold uses the
+same block, so there is still one phone breakpoint.
+
+### Decision 3 — open/closed is chrome, not board state, and is not in the URL
+
+`AGENTS.md` §11 requires URL state to be deterministic and shareable. A shared link names a
+board; it should not open someone else's panel. Both rows start closed on every load. The
+settings row's state lives in the shell (it survives a tab change); the Options row's lives in the
+Opportunity view.
+
+### Decision 4 — the behaviours a fold needs
+
+- **Escape** inside the settings panel folds it and returns focus to its row — but only where
+  there is a row (the handler checks that the row has a layout box), and only after the search
+  box's own Escape, which clears a non-empty search first.
+- **`/`** focuses the search box even when it is folded: `focus()` on an element that is not
+  rendered is a silent no-op, so the shortcut asks the shell to open the panel synchronously
+  (`flushSync`) first. Only when the box has no layout box — on a desktop nothing changes.
+- **A short screen.** A sticky block taller than the viewport cannot be scrolled to, so the open
+  settings panel is capped at `100dvh − 7rem` and scrolls inside itself (568×320, a small phone
+  held sideways, is below the breakpoint and shorter than the open panel).
+- **No animation.** The chevron flips instantly; the stylesheet's one rotation transition is still
+  the tier chevron's, which the reduced-motion invariant depends on.
+
+### Two defects found in capture, not by a test
+
+1. *The Options row pushed a 320px page 231px sideways.* `.section-actions` is a flex item with
+   `min-width: auto`, so it sized to its one-line `nowrap` summary instead of the line. Fixed with
+   `min-width: 0` on it at phone width.
+2. *Then 164px, from inside a clipped row.* The screen-reader commas are `.visually-hidden`, which
+   is `position: absolute`, and an absolute box escapes an `overflow: hidden` ancestor that is not
+   its containing block. Fixed with `position: relative` on the summary.
+
+Both are now caught: the 320px reflow check in `a11y.spec.ts` measures every surface with its
+panels open as well as closed.
+
+### Result
+
+| 390×844, Opportunity Board | before | after |
+|---|---|---|
+| sticky block while scrolling | 248px | **86px** |
+| chart's first row on first paint | y = 743 | **y = 391** |
+
+| 412×839 (Pixel 7), first paint | before | after |
+|---|---|---|
+| Tier board chart | 518 | 356 |
+| ROS board chart | 665 | 429 |
+| Opportunity chart | 716 | 382 |
+| Pick of the Week grid | 681 | 445 |
+| Arbitrage rail | 964 | 802 (the market-confidence notice above it is content, not navigation, and is unchanged) |
+
+### Verification
+
+- `mobile.spec.ts`: the sticky block ≤ 96px and ≤ 12% of the viewport on all five boards; the
+  chart starts in the top 60% of the first screen on four; the settings row's name, open/change/
+  Escape/focus; a shared link's search, filters and mode named while folded; the Options row
+  folds both panels and leaves the census; the sideways phone keeps its tabs on screen.
+- `board.spec.ts`: nothing folds and nothing is sticky at 1440, 1024 and 768px; everything folds
+  at 767px; a panel opened on a phone shows every control once widened; `/` opens and focuses.
+- `a11y.spec.ts`: axe clean at 390px folded and open on the tier and Opportunity boards; the row
+  is a disclosure a keyboard drives, a folded panel's controls are out of the tab order; the 320px
+  reflow check now also runs with every panel open.
+- `fold.test.tsx` (vitest): both summaries, `PanelToggle`'s semantics, folding changes neither the
+  URL nor the controls' state, the census is outside every fold.
+- **Negative controls, run against the built CSS:** removing the closed-panel rule fails ten
+  mobile tests; removing the open panel's scroll box fails the sideways test; removing the
+  summary's `position: relative` or `.section-actions`' `min-width: 0` fails the 320px reflow
+  check; showing the row above the breakpoint fails all three "folds nothing" tests.
+- Totals: vitest **584**, `npm run e2e` **175** (the mobile project also 85/85 at
+  `--repeat-each=5`), `verify:board` zero failures on seven fixture builds, lint 0 errors,
+  typecheck clean; no Python changed (ruff clean, pytest 1,574).
+- Two existing tests changed, both for a reason stated here and neither weakened: the draft-mode
+  indicator check is scoped to the masthead (the settings row can now name an overridden mode
+  too), and the 420/320px Opportunity check opens the Options row before asserting that every
+  ordering fits — and now also asserts the row itself fits.
+
+### Deliberately not done
+
+- **Hide-on-scroll chrome** (the browser-address-bar pattern). It moves under the reader's thumb,
+  needs a scroll listener and an animation this stylesheet does not have, and makes the controls'
+  position depend on scroll direction. An explicit row is predictable and deterministic.
+- **Folding the Tier/ROS "Expand all · Show full board" buttons and the POTW set chips.** Each is
+  one short row already; a summary row would cost as much as it saves.
+- **The masthead** (105px on a phone) scrolls away and carries the brand, freshness and status.
+- **"ROS TIERS" wrapping onto two lines at 320px** in the tab strip is pre-existing and unchanged.

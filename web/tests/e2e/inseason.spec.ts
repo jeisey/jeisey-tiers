@@ -61,7 +61,9 @@ test.describe("season mode", () => {
     await page.goto(`${IN_SEASON}?mode=draft`);
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Arbitrage" })).toBeVisible();
-    await expect(page.getByText("Draft mode")).toBeVisible();
+    // The masthead's indicator. Scoped because the phone's folded settings row names an
+    // overridden mode too (ADR-093) — not rendered at this width, but still in the DOM.
+    await expect(page.locator("header.masthead").getByText("Draft mode")).toBeVisible();
   });
 
   test("an explicit view wins over the season's default", async ({ page }) => {
@@ -550,7 +552,13 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       await expect(table.locator('th[data-col="role"]')).toBeVisible();
       const player = table.locator("tbody tr").first().locator("td.col-player");
       await expect(player).toHaveCSS("position", "sticky");
-      // Every ordering and chip is reachable, wrapped rather than clipped.
+      // Every ordering and chip is reachable, wrapped rather than clipped — one tap away on a
+      // phone, where they fold behind the board's options row (ADR-093). The row itself must
+      // fit too: its summary ellipsises rather than widening the page.
+      const options = page.getByRole("button", { name: /^Options/ });
+      const row = await options.boundingBox();
+      expect((row?.x ?? 0) + (row?.width ?? Infinity)).toBeLessThanOrEqual(width);
+      await options.click();
       for (const name of [/^Role direction/, /^Add momentum/]) {
         const radio = page.getByRole("radiogroup", { name: /Order by/ }).getByRole("radio", { name });
         const box = await radio.boundingBox();

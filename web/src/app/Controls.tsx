@@ -1,9 +1,11 @@
 /**
  * The global control strip and the view tabs.
  *
- * One compact row on desktop, wrapping to two on tablet, sticky on mobile. Every control
- * writes to the URL, so the state a user is looking at is the state they can send someone
- * (`docs/UX_SPEC.md` section 3).
+ * One compact row on desktop, wrapping to two on tablet. On a phone the strip folds behind one
+ * sticky summary row above the tabs, and opens from it (ADR-093). Every control writes to the
+ * URL, so the state a user is looking at is the state they can send someone
+ * (`docs/UX_SPEC.md` section 3); whether the phone panel is open is not board state and is
+ * not in the URL.
  */
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -233,16 +235,49 @@ export function SeasonMode({
   );
 }
 
+/**
+ * What the folded settings bar prints on a phone (ADR-093).
+ *
+ * Every folded control's value, so a reader can tell which board is on screen without opening
+ * the panel — a folded control whose value you cannot see is a filter you can forget is on.
+ * Two items appear only when they say something: the search term, when there is one, and the
+ * season mode, when a reader has overridden `auto` — the masthead chip already names the mode
+ * the schedule chose. The mode goes last although its switch is first in the panel: at 320px
+ * the row ellipsises, and a rare override should be what is cut, not the scoring.
+ *
+ * Every value is the URL's, so the summary is the applied state: a search still inside its
+ * debounce is not on the board yet and is not printed here yet either.
+ */
+export function settingsSummary(state: AppState, modeSwitch: boolean): readonly string[] {
+  const items: string[] = [
+    state.scoring === "half" ? "Half" : state.scoring.toUpperCase(),
+    `${String(state.teams)} teams`,
+    state.position === "all" ? "All positions" : POSITION_LABELS[state.position],
+  ];
+  if (state.search !== "") items.push(`“${state.search}”`);
+  if (modeSwitch && state.mode !== "auto") {
+    items.push(state.mode === "draft" ? "Draft mode" : "In-season mode");
+  }
+  return items;
+}
+
 export function Controls({
   state,
   onChange,
   availableScoring,
   availableTeams,
+  onRevealSearch,
 }: {
   readonly state: AppState;
   readonly onChange: (next: Partial<AppState>) => void;
   readonly availableScoring: ReadonlySet<ScoringValue>;
   readonly availableTeams: ReadonlySet<TeamCount>;
+  /**
+   * Make the search box visible, synchronously, before the `/` shortcut focuses it. On a phone
+   * the box can be inside a folded panel, and focusing an element that is not rendered does
+   * nothing at all (ADR-093).
+   */
+  readonly onRevealSearch?: (() => void) | undefined;
 }): React.JSX.Element {
   return (
     <div className="controls">
@@ -293,6 +328,7 @@ export function Controls({
           onChange={(search) => {
             onChange({ search });
           }}
+          onReveal={onRevealSearch}
         />
       </div>
     </div>
@@ -310,9 +346,12 @@ export function Controls({
 export function PlayerSearch({
   value,
   onChange,
+  onReveal,
 }: {
   readonly value: string;
   readonly onChange: (value: string) => void;
+  /** Called before the shortcut focuses the box, when the box is not rendered. */
+  readonly onReveal?: (() => void) | undefined;
 }): React.JSX.Element {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
@@ -357,6 +396,9 @@ export function PlayerSearch({
         return;
       }
       event.preventDefault();
+      // A box inside a folded phone panel has no layout box, and `focus()` on it would be a
+      // silent no-op. Ask for it to be shown first; the caller shows it synchronously.
+      if (input.current !== null && input.current.getClientRects().length === 0) onReveal?.();
       input.current?.focus();
       input.current?.select();
     };
@@ -364,7 +406,7 @@ export function PlayerSearch({
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, []);
+  }, [onReveal]);
 
   return (
     <>

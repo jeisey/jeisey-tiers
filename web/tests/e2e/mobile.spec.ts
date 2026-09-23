@@ -11,7 +11,7 @@
  * and the close control is a real target — not that it happens to have a particular height.
  */
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { stubPortraits } from "./boundary";
 
@@ -48,9 +48,213 @@ test("the whole product is usable on a phone without hover", async ({ page }) =>
   await page.getByRole("button", { name: "Close player detail" }).click();
   await expect(dialog).toBeHidden();
 
-  // Controls stay put while the board scrolls under them.
+  // Controls stay reachable while the board scrolls under them: the summary row that opens
+  // them stays on screen, and one tap puts them on screen too (ADR-093). They used to stay
+  // resident instead, which cost 30% of the viewport for as long as the board scrolled.
   await page.mouse.wheel(0, 900);
+  const settings = page.getByRole("button", { name: /^Settings/ });
+  await expect(settings).toBeInViewport();
+  await settings.click();
   await expect(page.getByRole("radio", { name: "PPR", exact: true })).toBeInViewport();
+});
+
+/*
+ * The phone's control bands fold (ADR-093).
+ *
+ * The owner's screenshot of the Opportunity Board was half navigation: four sticky controls
+ * and the tabs took 248px of an 839px phone at all times, and the board's own orderings and
+ * filters pushed its chart to the bottom of the first screen. The budget below is what the
+ * fold is for, measured rather than described: a sticky block that grows back past it is the
+ * regression, whatever the reason.
+ */
+test.describe("folded controls on a phone (ADR-093)", () => {
+  /** The sticky block's ceiling. One 40px summary row plus the 44px tab strip and rules. */
+  const STICKY_BUDGET = 96;
+
+  /**
+   * Scroll the page and wait until the sticky block is actually stuck.
+   *
+   * `mouse.wheel` "does not wait for the scrolling to finish before returning", so measuring
+   * straight after it races the scroll: under load the first draft of the sideways test read
+   * the block at its unscrolled position (389px down a 320px screen) and failed, and passed
+   * alone. Scrolling to an offset and polling for the stuck position removes the race.
+   */
+  async function scrollUntilStuck(page: Page, y: number): Promise<void> {
+    await page.evaluate((top) => {
+      window.scrollTo(0, top);
+    }, y);
+    await expect
+      .poll(async () => (await page.locator(".sticky-controls").boundingBox())?.y ?? Infinity)
+      .toBeLessThanOrEqual(1);
+  }
+
+  /**
+   * A summary row's accessible name: its label, then its items read as a list. The commas are
+   * the screen reader's separators (the dots are hidden from it), and the name computation may
+   * pad them with spaces, so the match is on the words and their order.
+   */
+  const summaryName = (label: string, ...items: (string | RegExp)[]): RegExp =>
+    new RegExp(
+      `^${label} ` +
+        items
+          .map((item) =>
+            typeof item === "string" ? item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : item.source,
+          )
+          .join("\\s*,\\s*") +
+        "$",
+    );
+
+  for (const [name, path, chart] of [
+    ["the tier board", "/", ".tier-board"],
+    ["the arbitrage board", "/?view=arbitrage", ".draft-rail"],
+    ["the rest-of-season board", "/scenario/in-season/?view=ros", ".tier-board"],
+    ["the opportunity board", "/scenario/in-season/?view=opportunity", ".opp-board"],
+    ["pick of the week", "/scenario/in-season/?view=potw", ".potw-grid"],
+  ] as const) {
+    test(`${name} keeps its sticky chrome to one row and the tabs`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.locator(chart).first()).toBeVisible();
+      const viewport = page.viewportSize();
+      const height = viewport?.height ?? 0;
+
+      // Folded by default, and the row says what the folded controls are set to.
+      const settings = page.getByRole("button", { name: /^Settings/ });
+      await expect(settings).toHaveAttribute("aria-expanded", "false");
+      await expect(page.locator("#board-settings")).toBeHidden();
+
+      // Scrolled, the sticky block is the summary row and the tabs, and nothing more.
+      await scrollUntilStuck(page, 1200);
+      await expect(settings).toBeInViewport();
+      await expect(page.getByRole("tablist", { name: "Board" })).toBeInViewport();
+      const sticky = await page.locator(".sticky-controls").boundingBox();
+      expect(sticky?.height ?? Infinity).toBeLessThanOrEqual(STICKY_BUDGET);
+      expect(sticky?.height ?? Infinity).toBeLessThanOrEqual(height * 0.12);
+    });
+  }
+
+  for (const [name, path, chart] of [
+    ["the tier board", "/", ".tier-board"],
+    ["the rest-of-season board", "/scenario/in-season/?view=ros", ".tier-board"],
+    ["the opportunity board", "/scenario/in-season/?view=opportunity", ".opp-board"],
+    ["pick of the week", "/scenario/in-season/?view=potw", ".potw-grid"],
+  ] as const) {
+    test(`${name} starts in the first screen, not under its controls`, async ({ page }) => {
+      await page.goto(path);
+      const box = await page.locator(chart).first().boundingBox();
+      const height = page.viewportSize()?.height ?? 0;
+      // The Opportunity chart started at 716px of 839 before the fold — 85% of the way down
+      // the first screen. The board is the product; it gets at least the lower half of it.
+      expect(box?.y ?? Infinity, `${name} is pushed down the first screen`).toBeLessThanOrEqual(
+        height * 0.6,
+      );
+    });
+  }
+
+  test("the settings row opens, prints the state it hides, and closes with Escape", async ({
+    page,
+  }) => {
+    await page.goto("/scenario/in-season/?view=opportunity");
+    const settings = page.getByRole("button", { name: /^Settings/ });
+    await expect(settings).toHaveAccessibleName(summaryName("Settings", "PPR", "12 teams", "All positions"));
+    await expect(settings).toHaveAttribute("aria-controls", "board-settings");
+
+    await settings.click();
+    await expect(settings).toHaveAttribute("aria-expanded", "true");
+    // The season-mode switch folds with the controls rather than taking a band of its own.
+    for (const group of ["Season mode", "Scoring", "Teams", "Position"]) {
+      await expect(page.getByRole("radiogroup", { name: group })).toBeInViewport();
+    }
+    await expect(page.getByLabel("Player search")).toBeInViewport();
+
+    // A change is on the board and in the summary at once; the panel stays open for the next.
+    await page.getByRole("radio", { name: "Half PPR" }).click();
+    await page.getByRole("radio", { name: "RB" }).click();
+    await expect(page).toHaveURL(/scoring=half/);
+    await expect(settings).toHaveAccessibleName(summaryName("Settings", "Half", "12 teams", "RB"));
+    await expect(settings).toHaveAttribute("aria-expanded", "true");
+
+    // Escape inside the panel folds it and hands focus back to the row that opened it.
+    await page.getByRole("radio", { name: "RB" }).focus();
+    await page.keyboard.press("Escape");
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await expect(settings).toBeFocused();
+    await expect(page.locator("#board-settings")).toBeHidden();
+    // Folded is not reset: the board is still the one the reader chose.
+    await expect(page).toHaveURL(/scoring=half&position=rb/);
+  });
+
+  test("a shared link's search, filters and mode are named while folded", async ({ page }) => {
+    // A folded control whose value you cannot see is a filter you can forget is on.
+    await page.goto(
+      "/scenario/in-season/?view=opportunity&scoring=std&position=rb&search=cook" +
+        "&mode=in_season&opportunity=momentum&only=role.momentum",
+    );
+    await expect(page.locator(".opp-board")).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Settings/ })).toHaveAccessibleName(
+      summaryName("Settings", "STD", "12 teams", "RB", "“cook”", "In-season mode"),
+    );
+    const options = page.getByRole("button", { name: /^Options/ });
+    await expect(options).toHaveAccessibleName(
+      summaryName("Options", "By Momentum", "Role rising + Momentum rising", /All \d+/),
+    );
+    // The filters' census never folds (ADR-092): how many pass, and how many had no reading.
+    await expect(page.locator(".opp-filter-status")).toBeInViewport();
+    await expect(page.locator(".opp-filter-status")).toContainText(/Role rising: \d+/);
+  });
+
+  test("the opportunity board's orderings and filters fold behind one row", async ({ page }) => {
+    await page.goto("/scenario/in-season/?view=opportunity");
+    const options = page.getByRole("button", { name: /^Options/ });
+    await expect(options).toHaveAttribute("aria-expanded", "false");
+    await expect(options).toHaveAttribute("aria-controls", "opp-order-options opp-filter-options");
+    await expect(options).toHaveAccessibleName(
+      summaryName("Options", "By ROS value", "No filters", /All \d+/),
+    );
+    await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeHidden();
+    await expect(page.getByRole("button", { name: "Role rising", exact: true })).toBeHidden();
+    await expect(page.locator(".opp-filter-status")).toBeVisible();
+
+    await options.click();
+    await expect(options).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Show full board/ })).toBeVisible();
+    await page.getByRole("button", { name: "Role rising", exact: true }).click();
+    await page.getByRole("radio", { name: "Adds", exact: true }).click();
+    await expect(page).toHaveURL(/opportunity=adds&only=role/);
+    await expect(options).toHaveAccessibleName(summaryName("Options", "By Adds", "Role rising", /All \d+/));
+
+    await options.click();
+    await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeHidden();
+    // Folding hides the controls, not what they did. (`getByRole` skips a hidden node, so
+    // the folded chip is read by its own attribute.)
+    await expect(page.locator('.opp-filter[data-filter="role"]')).toBeHidden();
+    await expect(page.locator('.opp-filter[data-filter="role"]')).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page).toHaveURL(/only=role/);
+  });
+
+  test("an open panel on a phone held sideways never buries the tabs", async ({ page }) => {
+    // 568x320 — a small phone on its side — is below the sheet breakpoint and shorter than
+    // the open panel. A sticky block taller than the screen cannot be scrolled to, so the
+    // panel scrolls inside itself instead and the tabs stay on screen however long it is.
+    await page.setViewportSize({ width: 568, height: 320 });
+    await page.goto("/scenario/in-season/?view=ros");
+    await expect(page.locator(".tier-board")).toBeVisible();
+    await page.getByRole("button", { name: /^Settings/ }).click();
+    await scrollUntilStuck(page, 800);
+    const sticky = await page.locator(".sticky-controls").boundingBox();
+    expect((sticky?.y ?? 0) + (sticky?.height ?? Infinity)).toBeLessThanOrEqual(320);
+    await expect(page.getByRole("tablist", { name: "Board" })).toBeInViewport({ ratio: 1 });
+    const panel = page.locator("#board-settings");
+    expect(await panel.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
+    // Every control is still reachable, by scrolling the panel rather than the page.
+    const te = page.getByRole("radiogroup", { name: "Position" }).getByRole("radio", { name: "TE" });
+    await te.scrollIntoViewIfNeeded();
+    await expect(te).toBeInViewport();
+    await expect(page.getByLabel("Player search")).toBeAttached();
+  });
 });
 
 test("the player card becomes a sheet, with the draft-critical readouts above the fold", async ({

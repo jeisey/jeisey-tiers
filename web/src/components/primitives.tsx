@@ -5,6 +5,8 @@
  * and an injury badge look and read the same in a table cell, a chart tooltip and a dialog.
  */
 
+import { Fragment } from "react";
+
 import type { Confidence, Position } from "../data/contracts";
 import type { PlayerStatusRecord } from "../data/contracts";
 import { statusBadge } from "../data/model";
@@ -41,6 +43,75 @@ export function SectionHead({
       {children !== undefined && <div className="section-actions">{children}</div>}
       {note !== undefined && <p className="section-note">{note}</p>}
     </div>
+  );
+}
+
+/**
+ * The phone's disclosure for a band of controls (ADR-093).
+ *
+ * Below the sheet breakpoint a band of controls folds behind one row that prints what those
+ * controls are set to, so the state in force is always on screen and the controls are one tap
+ * away. It is a disclosure button — `aria-expanded` and `aria-controls` — and every panel it
+ * names carries `data-open` and the `phone-panel` class.
+ *
+ * The stylesheet does the rest, and only at phone width: the button is `display: none` above
+ * 767px and a closed panel is `display: none` below it. So a desktop and a tablet render
+ * exactly what they did, from the same DOM, and nothing here reads the viewport — which is
+ * also why the first paint cannot be the wrong variant, and why a panel's controls keep their
+ * state while it is closed.
+ *
+ * The summary items are separated by a dot for the eye and a comma for a screen reader, so
+ * the button's accessible name is its visible text read as a list.
+ */
+export function PanelToggle({
+  label,
+  items,
+  open,
+  controls,
+  onToggle,
+  className,
+  toggleRef,
+}: {
+  /** The visible micro-label, which is the start of the accessible name. */
+  readonly label: string;
+  /** What the folded controls are set to, in the order the controls appear. */
+  readonly items: readonly string[];
+  readonly open: boolean;
+  /** The ids of the panels this button shows and hides, space-separated. */
+  readonly controls: string;
+  readonly onToggle: () => void;
+  readonly className?: string;
+  readonly toggleRef?: React.Ref<HTMLButtonElement>;
+}): React.JSX.Element {
+  return (
+    <button
+      ref={toggleRef}
+      type="button"
+      className={className === undefined ? "panel-toggle" : `panel-toggle ${className}`}
+      aria-expanded={open}
+      aria-controls={controls}
+      onClick={onToggle}
+    >
+      <span className="panel-toggle-label">{label}</span>{" "}
+      <span className="panel-toggle-summary">
+        {items.map((item, index) => (
+          <Fragment key={`${String(index)}:${item}`}>
+            {index > 0 && (
+              <>
+                <span className="panel-toggle-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span className="visually-hidden">, </span>
+              </>
+            )}
+            <span className="panel-toggle-item">{item}</span>
+          </Fragment>
+        ))}
+      </span>
+      <span className="panel-toggle-chevron" aria-hidden="true">
+        ▾
+      </span>
+    </button>
   );
 }
 

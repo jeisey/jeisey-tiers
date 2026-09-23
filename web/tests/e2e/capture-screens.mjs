@@ -838,6 +838,76 @@ const SCREENS = [
     path: "/scenario/in-season/?view=opportunity&only=role.momentum",
     viewport: { width: 320, height: 1000 },
     fullPage: false,
+    // The orderings and chips fold on a phone (ADR-093); this screen is about how they wrap
+    // once shown, so it shows them.
+    async act(page) {
+      await page.getByRole("button", { name: /^Options/ }).click();
+    },
+  },
+  // --------------------------------------------- the phone's folded controls (ADR-093)
+  // Folded, first screen: the settings row and the tabs are the only chrome, the board's
+  // options are one row, and the census line under them is still printed.
+  {
+    name: "93-mobile-fold-opportunity-first-screen",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  // Scrolled: the sticky block is 86px — the row and the tabs — rather than 248px.
+  {
+    name: "94-mobile-fold-opportunity-scrolled",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.mouse.wheel(0, 900);
+    },
+  },
+  {
+    name: "95-mobile-fold-settings-open",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: /^Settings/ }).click();
+    },
+  },
+  {
+    name: "96-mobile-fold-options-open",
+    path: "/scenario/in-season/?view=opportunity",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: /^Options/ }).click();
+    },
+  },
+  // A shared link with a search, two filters, an ordering and a mode override: every one of
+  // them is named on a folded row, so none can be on without the reader seeing it.
+  {
+    name: "97-mobile-fold-shared-link-named",
+    path:
+      "/scenario/in-season/?view=opportunity&scoring=half&search=cook&mode=in_season" +
+      "&opportunity=momentum&only=role.momentum",
+    viewport: { width: 390, height: 844 },
+    fullPage: false,
+  },
+  // 320px: the rows ellipsise rather than wrap or widen the page.
+  {
+    name: "98-mobile-fold-320",
+    path: "/scenario/in-season/?view=opportunity&search=cook&only=role.momentum.surfaced",
+    viewport: { width: 320, height: 700 },
+    fullPage: false,
+  },
+  // A small phone on its side, panel open: the panel scrolls inside itself and the tabs stay.
+  {
+    name: "99-mobile-fold-landscape-open",
+    path: "/scenario/in-season/?view=ros",
+    viewport: { width: 568, height: 320 },
+    fullPage: false,
+    async act(page) {
+      await page.getByRole("button", { name: /^Settings/ }).click();
+      await page.mouse.wheel(0, 600);
+    },
   },
 ];
 

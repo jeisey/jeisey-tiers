@@ -839,3 +839,75 @@ test.describe("accessibility", () => {
     await expect(page.locator("svg animate, svg animateTransform")).toHaveCount(0);
   });
 });
+
+/*
+ * The phone's folded controls stay on the phone (ADR-093).
+ *
+ * The fold is CSS over one DOM: the summary rows exist at every width and are `display: none`
+ * above the sheet breakpoint, and a closed panel is hidden only below it. That is what keeps a
+ * desktop and a tablet pixel-identical to the build before the fold — and it is also exactly
+ * the kind of rule a later media-query edit could break silently, so it is asserted at the
+ * widths either side of the breakpoint rather than trusted.
+ */
+test.describe("the phone fold above the sheet breakpoint (ADR-093)", () => {
+  for (const width of [1440, 1024, 768]) {
+    test(`folds nothing at ${String(width)}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto("/scenario/in-season/?view=opportunity");
+      await expect(page.locator(".opp-board")).toBeVisible();
+      for (const toggle of await page.locator(".panel-toggle").all()) {
+        await expect(toggle).toBeHidden();
+      }
+      for (const group of ["Season mode", "Scoring", "Teams", "Position", "Order by"]) {
+        await expect(page.getByRole("radiogroup", { name: group })).toBeVisible();
+      }
+      await expect(page.getByLabel("Player search")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Role rising" })).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Show full board/ })).toBeVisible();
+      // Nothing is sticky above the breakpoint either; the fold did not change that.
+      expect(
+        await page.locator(".sticky-controls").evaluate((node) => getComputedStyle(node).position),
+      ).toBe("static");
+    });
+  }
+
+  test("folds at 767px, the sheet breakpoint the player card also uses", async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 1000 });
+    await page.goto("/scenario/in-season/?view=opportunity");
+    await expect(page.locator(".opp-board")).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Settings/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Options/ })).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "Scoring" })).toBeHidden();
+    await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeHidden();
+
+    // A panel opened on a phone and then widened past the breakpoint shows every control; the
+    // open state means nothing up there, so there is nothing to get stuck.
+    await page.getByRole("button", { name: /^Settings/ }).click();
+    await page.setViewportSize({ width: 1024, height: 1000 });
+    await expect(page.getByRole("radiogroup", { name: "Scoring" })).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeVisible();
+  });
+
+  test("the search shortcut opens a folded panel before it focuses the box", async ({ page }) => {
+    // A narrow window with a keyboard. Focusing an element that is not rendered is a silent
+    // no-op, so `/` would otherwise do nothing below the breakpoint.
+    await page.setViewportSize({ width: 700, height: 900 });
+    await openBoard(page);
+    const settings = page.getByRole("button", { name: /^Settings/ });
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await page.keyboard.press("/");
+    await expect(page.getByLabel("Player search")).toBeFocused();
+    await expect(settings).toHaveAttribute("aria-expanded", "true");
+
+    // Escape clears a search first — its own, older meaning — and folds the panel second.
+    await page.keyboard.type("bij");
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/search=bij/);
+    await page.keyboard.press("Escape");
+    await expect(page).not.toHaveURL(/search=/);
+    await expect(settings).toHaveAttribute("aria-expanded", "true");
+    await page.keyboard.press("Escape");
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await expect(settings).toBeFocused();
+  });
+});
