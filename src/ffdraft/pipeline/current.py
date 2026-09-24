@@ -420,6 +420,7 @@ def run_current_build(
         status=status,
         headshots=headshots,
         season_state=_season_state_block(loaded.sources.schedule, season, stamped),
+        information_cutoff=_information_cutoff_block(anchor, cutoff),
     )
     written: list[Path] = []
     if write and gate.passed:
@@ -825,10 +826,12 @@ def _build_metadata(
     status: Any | None = None,
     headshots: Any | None = None,
     season_state: dict[str, Any] | None = None,
+    information_cutoff: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     summary = gate.summary()
     return {
         "season_state": season_state,
+        "information_cutoff": information_cutoff,
         "schema_version": ARTIFACT_SCHEMA_VERSION,
         "build_id": build_id,
         "generated_at_utc": isoformat_utc(as_of),
@@ -864,6 +867,23 @@ def _build_metadata(
         },
         "warnings": [check.message for check in gate.warnings],
         "methodology_version": CURRENT_METHODOLOGY_VERSION,
+    }
+
+
+def _information_cutoff_block(anchor: SeasonAnchor, cutoff: SeasonAnchor) -> dict[str, Any]:
+    """The instant this board's information stops, on the artifact every stage reads.
+
+    Published because the arbitrage stage must price the board with the market *as it stood
+    at that instant*, and it runs offline from the retained store with no schedule of its
+    own. Once the draft anchor binds, the board is the draft-time board every day of the
+    season; the draft market it is compared with has to be the draft-time market too, not
+    whatever a thinning post-draft feed says in October (ADR-094).
+    """
+    return {
+        "rule_version": cutoff.rule_version,
+        "cutoff_at_utc": isoformat_utc(cutoff.anchor_at_utc),
+        "season_anchor_at_utc": isoformat_utc(anchor.anchor_at_utc),
+        "anchor_binds": cutoff.rule_version == anchor.rule_version,
     }
 
 

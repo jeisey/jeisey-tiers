@@ -111,7 +111,15 @@ class _Store:
         self._windows = windows or {}
         self.root = "fake"
 
-    def read_latest(self, source_id: str, season: int) -> MarketSnapshot | None:
+    def read_latest(
+        self,
+        source_id: str,
+        season: int,
+        *,
+        at_or_before: datetime | None = None,
+    ) -> MarketSnapshot | None:
+        # The bound is the store's job and is covered against a real store in
+        # `test_market_snapshot_store.py`; this stub serves whatever it was given.
         found = self._snapshots.get(source_id)
         if isinstance(found, Exception):
             raise found

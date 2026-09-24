@@ -126,8 +126,23 @@ class SnapshotStore:
             if entry.is_dir() and SNAPSHOT_KEY_PATTERN.match(entry.name)
         )
 
-    def latest_key(self, source_id: str, season: int) -> str | None:
+    def latest_key(
+        self,
+        source_id: str,
+        season: int,
+        *,
+        at_or_before: datetime | None = None,
+    ) -> str | None:
+        """The newest retained key, or the newest retrieved no later than ``at_or_before``.
+
+        A key *is* its retrieval instant, so the bound is read from the name rather than
+        from a manifest: a board whose information stops at a cutoff can ask for the market
+        as it stood at that cutoff without opening every snapshot the season has retained.
+        """
         keys = self.keys(source_id, season)
+        if at_or_before is not None:
+            bound = ensure_utc(at_or_before)
+            keys = [key for key in keys if parse_snapshot_key(key) <= bound]
         return keys[-1] if keys else None
 
     def write_files(

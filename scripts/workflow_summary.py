@@ -122,6 +122,9 @@ def _market_section(metadata: Mapping[str, Any], arbitrage: Any) -> list[str]:
                     ("Source", f"`{market.get('source_id', '—')}`"),
                     ("Snapshot", f"`{market.get('snapshot_key', '—')}`"),
                     ("Snapshot at", f"`{market.get('snapshot_at_utc', '—')}`"),
+                    # Set once the draft anchor binds: the market is read at the board's
+                    # cutoff, so the snapshot stops moving for the season (ADR-094).
+                    ("Read at or before", f"`{market.get('read_at_or_before_utc') or 'newest'}`"),
                     ("Cohort rule", f"`{market.get('cohort_rule_version', '—')}`"),
                     (
                         "Trend",

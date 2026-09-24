@@ -409,6 +409,10 @@ jobs:
       # newest retained snapshot, because a later snapshot may legitimately select a
       # different cohort as the draft season matures. The report is a build input here, not a
       # committed document, so it is written outside the checkout and uploaded for the record.
+      # Once the draft anchor binds, this step and the next read the market at the board's
+      # own `information_cutoff` rather than the newest snapshot: the draft board is the
+      # draft-time board all season, and a post-draft feed thins until it prices almost
+      # nothing (ADR-094).
       - name: Select the market cohort
         run: |
           set -euo pipefail

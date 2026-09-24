@@ -256,8 +256,14 @@ class MarketSnapshotStore(SnapshotStore):
         rows = json.loads(gzip.decompress(payload).decode("utf-8"))
         return MarketSnapshot(manifest=manifest, rows=tuple(rows))
 
-    def read_latest(self, source_id: str, season: int) -> MarketSnapshot | None:
-        key = self.latest_key(source_id, season)
+    def read_latest(
+        self,
+        source_id: str,
+        season: int,
+        *,
+        at_or_before: datetime | None = None,
+    ) -> MarketSnapshot | None:
+        key = self.latest_key(source_id, season, at_or_before=at_or_before)
         return None if key is None else self.read(source_id, season, key)
 
     def read_window(

@@ -360,6 +360,12 @@ export interface BuildMarketMetadata {
   readonly snapshot_at_utc?: string;
   /** Always null for MyFantasyLeague: its response timestamp is generation time. */
   readonly source_as_of_utc?: string | null;
+  readonly cutoff_rule_version?: string;
+  /**
+   * Set once the draft anchor binds: every market was read at or before this instant, the
+   * board's own information cutoff, so the snapshot stops moving for the season (ADR-094).
+   */
+  readonly read_at_or_before_utc?: string | null;
   readonly cohort_rule_version?: string;
   readonly confidence_rubric_version?: string;
   readonly trend_rule_version?: string;

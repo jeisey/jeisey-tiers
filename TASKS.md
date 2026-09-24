@@ -1598,3 +1598,30 @@ model, rule version, URL parameter or desktop/tablet pixel changed.
 - [ ] **Not done, with reasons in ADR-093:** hide-on-scroll chrome; folding the Tier/ROS buttons or
       the POTW set chips (one short row each); the masthead; "ROS TIERS" wrapping at 320px
       (pre-existing).
+
+## The draft market is read at the draft anchor — 2026-09-24 (ADR-094)
+
+The scheduled refresh [35993094874](https://github.com/jeisey/jeisey-tiers/actions/runs/35993094874)
+failed `arbitrage.top_board_priced` (worst block 89.3% < 95%) on the commit that passed the day
+before. MFL's keeper-free cohort had thinned from 735 drafts (08-31) to 28: drafting is over.
+The failed build job also stopped the in-season board deploying. Owner chose to freeze the
+market at the draft anchor over downgrading the gate.
+
+- [x] **`build_metadata.information_cutoff`** (optional block, schema + `build-current`):
+      `rule_version`, `cutoff_at_utc`, `season_anchor_at_utc`, `anchor_binds`.
+- [x] **`draft_market_at_board_cutoff_v1`** (`ffdraft.market.cutoff`): once the anchor binds,
+      `measure-market-cohorts` and `build-arbitrage` read MFL and FFC at the newest snapshot at
+      or before the cutoff (`SnapshotStore.latest_key(at_or_before=)`); staleness is measured
+      from the cutoff; trend windows follow the pinned snapshot. No pre-anchor snapshot fails
+      closed. Before the anchor, and with no block, behaviour is unchanged.
+- [x] **Published**: `build_metadata.market.cutoff_rule_version` / `read_at_or_before_utc`, an
+      `arbitrage.market_cutoff` gate check, a Data-view sentence, and a refresh-summary row.
+- [x] **Tests**: +6 pipeline (anchored MFL, trend window, anchored FFC, pre-anchor unchanged, no
+      block unchanged, post-anchor-only fails closed), +1 store, +1 current-build; the four
+      anchored tests fail with the rule disabled. One test stub's `read_latest` signature updated.
+- [x] **Verified**: ruff/format clean, mypy clean, pytest **1,582** passed (4 live deselected);
+      npm lint 0 errors / 4 pre-existing warnings, typecheck clean, vitest **584**, build ok.
+- [ ] **Not verified here**: the real store is private and unreachable from the sandbox, so the
+      first production refresh after merge is the end-to-end check (see SESSION_STATE).
+- [x] **Docs**: ADR-094; `DATA_CONTRACTS.md` §16.7; `OPERATIONS.md` steps 9–10 and job graph;
+      workflow comment.

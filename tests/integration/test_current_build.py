@@ -141,6 +141,33 @@ def test_the_build_records_which_cutoff_applied(
     )
     assert "as_of=" in cutoff_check.observed
     assert result.model_version == "test-current-v1"
+    # The market stages read this block to decide which snapshot prices the board (ADR-094).
+    block = result.metadata["information_cutoff"]
+    assert block["rule_version"] == CURRENT_CUTOFF_RULE_VERSION
+    assert block["cutoff_at_utc"] == "2025-08-01T12:00:00Z"
+    assert block["anchor_binds"] is False
+
+
+def test_after_the_anchor_the_metadata_says_the_anchor_binds(fixture_sources) -> None:
+    """The block the arbitrage stage pins the market to once the season is under way."""
+    from ffdraft.anchors import DRAFT_ANCHOR_RULE_VERSION, build_season_anchors
+    from ffdraft.market.cutoff import market_cutoff
+    from ffdraft.pipeline.current import _information_cutoff_block
+
+    anchor = build_season_anchors(fixture_sources.sources.schedule, [FIXTURE_SEASON])[
+        FIXTURE_SEASON
+    ]
+    block = _information_cutoff_block(
+        anchor, current_cutoff(anchor, datetime(2025, 12, 1, tzinfo=UTC))
+    )
+    assert block["rule_version"] == DRAFT_ANCHOR_RULE_VERSION
+    assert block["anchor_binds"] is True
+    assert block["cutoff_at_utc"] == block["season_anchor_at_utc"]
+    assert market_cutoff({"information_cutoff": block}) == anchor.anchor_at_utc
+
+    before = _information_cutoff_block(anchor, current_cutoff(anchor, BEFORE_THE_ANCHOR))
+    assert market_cutoff({"information_cutoff": before}) is None
+    assert market_cutoff({}) is None
 
 
 def test_the_build_refuses_a_model_built_on_another_feature_contract(

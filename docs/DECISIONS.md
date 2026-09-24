@@ -4787,3 +4787,90 @@ panels open as well as closed.
   one short row already; a summary row would cost as much as it saves.
 - **The masthead** (105px on a phone) scrolls away and carries the brand, freshness and status.
 - **"ROS TIERS" wrapping onto two lines at 320px** in the tab strip is pre-existing and unchanged.
+
+---
+
+## ADR-094 — After the draft anchor, the draft board is priced with the draft-time market
+
+**Status:** accepted, 2026-09-24 (owner's choice between this and an in-season gate downgrade)
+**Amends:** ADR-039's "re-run the rule against the newest snapshot" and ADR-067's "every
+retained market prices the board", both of which now read *the newest snapshot at or before
+the board's information cutoff*. **Leaves untouched:** A0, every frozen rule version, the cohort
+sufficiency rule, `TOP_BOARD_PRICED_MINIMUM` and every gate's severity, the market-capture job,
+the rest-of-season build.
+
+### What happened
+
+The scheduled refresh [35993094874](https://github.com/jeisey/jeisey-tiers/actions/runs/35993094874)
+failed `Build the arbitrage board`:
+
+> `[critical] arbitrage.top_board_priced` — observed: worst block 89.3%; expected: >= 95%
+
+The commit was the one that had passed the day before (`c1f7755`). What moved was the market.
+MyFantasyLeague's keeper-free cohort measured **735** drafts on 2026-08-31, **78** on 2026-09-23
+and **28** on 2026-09-24; 133 top-150 rows across the nine blocks had no price. Drafting is over
+and the feed thins every day, so the gate would only have gone on failing. Because the build job
+failed, the deploy job did not run, and the **in-season** board — the product the site opens on
+in September — stopped refreshing with it: the same shape as the opening-week failure ADR-079
+fixed.
+
+### Why the gate was right and the input was wrong
+
+The draft board's information cutoff is `min(build time, season draft anchor)`
+(`current_cutoff`, ADR-021). From 2026-09-09 03:59:59Z onward, `build-current` produces the
+draft-time board every day. The arbitrage stage was still comparing that frozen board with the
+**newest** market snapshot — a population of late and mock-like drafts that shrinks towards zero.
+A 2026-09-24 draft ADP is not the draft market the board describes. ADR-085 had already said this
+about the card ("a row on the Tier Board is a draft-model row and its market comparison is the
+draft market, whatever month it is"); the pipeline had not caught up.
+
+Downgrading `top_board_priced` in season was the alternative, and it was rejected: the board
+would keep publishing a market that means less each day, and every other market check
+(identity, surface coverage, cohort presence) would fail next as volume reached zero.
+
+### Decision
+
+1. **`build-current` records its cutoff.** `build_metadata.json` gains an optional
+   `information_cutoff` block: `rule_version`, `cutoff_at_utc`, `season_anchor_at_utc` and
+   `anchor_binds` (true once the cutoff is the anchor rather than the build time).
+2. **`draft_market_at_board_cutoff_v1`.** When `anchor_binds` is true, every market stage reads
+   the newest retained snapshot **retrieved at or before `cutoff_at_utc`**
+   (`SnapshotStore.latest_key(..., at_or_before=)`, `ffdraft.market.cutoff`). That covers
+   `measure-market-cohorts` (so the cohort rule selects on the snapshot that will price the
+   board), the MFL price, every extra source (FFC), and both trend windows, which were already
+   anchored on their own snapshot and so stop at the anchor as well.
+3. **Staleness is measured against the cutoff, not the build clock.** A snapshot sixteen hours
+   before the anchor is current for a board that describes the anchor. `MARKET_SOURCE_MAX_AGE`
+   and `EXTRA_SOURCE_MAX_AGE_HOURS` are unchanged; only the instant they are measured from moves.
+4. **No pre-anchor snapshot fails closed.** If the store holds only post-anchor evidence,
+   `arbitrage.no_retained_snapshot` is critical, as it always was. A post-anchor snapshot is
+   not substituted.
+5. **Before the anchor binds, nothing changes.** No block, or `anchor_binds: false`, means the
+   newest snapshot, exactly as before. The block is optional in the schema, so an older build
+   validates and prices the old way.
+6. **It is published.** `build_metadata.market` carries `cutoff_rule_version` and
+   `read_at_or_before_utc` (null before the anchor), and the Data view says the market is the
+   last snapshot before the anchor and why it no longer moves. An `arbitrage.market_cutoff`
+   check in the gate names the bound on every run where it applies.
+
+### Consequences
+
+- From the anchor onward the arbitrage board, its trend chart and its cohort selection are
+  identical every day for the rest of the season. That is correct: they describe a draft that
+  has happened.
+- The capture job still retains a daily market snapshot. Nothing is deleted and the store stays
+  append-only, so a later methodology can still use post-anchor evidence deliberately.
+- A 2026 re-run of any build before the anchor is unaffected. `--snapshot` still overrides the
+  rule for an explicit replay.
+
+### Verification
+
+- `test_market_pipeline.py`: once the anchor binds, the pre-anchor snapshot prices the board and
+  no row is flagged stale; the trend window stops at the anchor; FFC is read at the anchor too,
+  with no stale warning; before the anchor binds, and with no block at all, the newest snapshot
+  still wins; only post-anchor evidence fails closed. With the rule disabled, the four anchored
+  tests fail.
+- `test_market_snapshot_store.py`: the bound is inclusive, returns `None` below the first
+  snapshot, and leaves the unbounded behaviour alone.
+- `test_current_build.py`: the block is written before the anchor with `anchor_binds: false`,
+  and after it with the anchor as the cutoff.

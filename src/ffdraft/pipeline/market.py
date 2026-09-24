@@ -34,6 +34,7 @@ from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import MarketSignalType, Severity, SourceStatus
 from ffdraft.market.cohorts import assignments_from_report
 from ffdraft.market.current import build_current_market
+from ffdraft.market.cutoff import MARKET_CUTOFF_RULE_VERSION, market_cutoff
 from ffdraft.market.extra import load_extra_quotes
 from ffdraft.market.history import RetainedHistory, load_trend_window
 from ffdraft.market.snapshot import MarketSnapshotStore
@@ -117,14 +118,40 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         ),
     )
 
-    key = request.snapshot_key or request.store.latest_key(MFL_SOURCE_ID, request.season)
+    # Once the draft anchor binds, the board is the draft-time board and is priced with the
+    # draft-time market: every source is read at or before the board's own cutoff, and
+    # staleness is measured against that instant rather than the build clock (ADR-094).
+    cutoff = market_cutoff(metadata)
+    market_now = cutoff or stamped
+    if cutoff is not None:
+        gate.add(
+            QualityCheck.ok(
+                "arbitrage.market_cutoff",
+                stage="arbitrage.pipeline",
+                message=(
+                    "the draft anchor binds, so the board is priced with the market as it "
+                    f"stood at the board's cutoff ({MARKET_CUTOFF_RULE_VERSION}, ADR-094)"
+                ),
+                observed=f"snapshots at or before {isoformat_utc(cutoff)}",
+            ),
+        )
+
+    key = request.snapshot_key or request.store.latest_key(
+        MFL_SOURCE_ID,
+        request.season,
+        at_or_before=cutoff,
+    )
     if key is None:
         gate.add(
             QualityCheck.fail(
                 "arbitrage.no_retained_snapshot",
                 stage="arbitrage.pipeline",
                 message="no retained market snapshot; the Tier board is unaffected",
-                observed=str(request.store.root),
+                observed=(
+                    str(request.store.root)
+                    if cutoff is None
+                    else f"{request.store.root}, at or before {isoformat_utc(cutoff)}"
+                ),
                 expected="at least one snapshot (ADR-038)",
             ),
         )
@@ -147,7 +174,7 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
     market = build_current_market(
         snapshot,
         assignments=assignments,
-        now=stamped,
+        now=market_now,
         history=history,
     )
 
@@ -164,9 +191,10 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         request.store,
         season=request.season,
         source_ids=request.extra_source_ids,
-        now=stamped,
+        now=market_now,
         gate=gate,
         league_sizes=sorted(set(league_sizes.values())),
+        at_or_before=cutoff,
     )
 
     # The surface rule needs the whole board, so it runs only when `build-current` handed one
@@ -257,6 +285,7 @@ def run_arbitrage_build(request: ArbitrageBuildRequest) -> ArbitrageBuildRespons
         git_sha=request.git_sha,
         gate=gate,
         extra_sources=extra.sources,
+        cutoff=cutoff,
     )
 
     if request.write and gate.passed:
@@ -415,6 +444,7 @@ def _merge_metadata(
     git_sha: str | None,
     gate: QualityGate,
     extra_sources: Sequence[Mapping[str, Any]] = (),
+    cutoff: datetime | None = None,
 ) -> dict[str, Any]:
     """Add the arbitrage block to the intrinsic build's metadata, keeping everything else.
 
@@ -455,6 +485,11 @@ def _merge_metadata(
         "snapshot_key": response.snapshot_key,
         "snapshot_at_utc": isoformat_utc(market.snapshot_at_utc),
         "source_as_of_utc": None,
+        # Null before the draft anchor binds: the newest snapshot priced the board. Set after
+        # it: every source was read at or before this instant, which is why the snapshot above
+        # stops moving once the season starts (ADR-094).
+        "cutoff_rule_version": MARKET_CUTOFF_RULE_VERSION,
+        "read_at_or_before_utc": isoformat_utc(cutoff) if cutoff is not None else None,
         "cohort_rule_version": str(selection.get("rule_version", "")),
         "cohort_report": str(selection.get("snapshot_key", "")),
         "confidence_rubric_version": ARBITRAGE_CONFIDENCE_VERSION,

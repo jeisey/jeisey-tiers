@@ -110,6 +110,7 @@ import json
 import sys
 from collections.abc import Sequence
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -2293,6 +2294,16 @@ def _reference_board(artifacts: Path, league_preset_id: str) -> Any:
     return board_from_tier_records(payload["records"], league_preset_id=league_preset_id)
 
 
+def _board_market_cutoff(artifacts: Path) -> datetime | None:
+    """The board's market cutoff from its `build_metadata.json`, if it records one."""
+    from ffdraft.market.cutoff import market_cutoff
+
+    path = artifacts / "build_metadata.json"
+    if not path.is_file():
+        return None
+    return market_cutoff(json.loads(path.read_text(encoding="utf-8")))
+
+
 def _launch_presets(app: Any) -> list[tuple[str, int]]:
     """Every (scoring preset, league size) the launch build publishes."""
     return sorted(
@@ -2314,12 +2325,16 @@ def _measure_market_cohorts(args: argparse.Namespace) -> int:
     app = load_app_config()
     season = args.season or PRODUCTION_SEASON
     store = _market_store(args.store)
-    key = args.snapshot or store.latest_key(MFL_SOURCE_ID, season)
+    artifacts = args.board or (repo_root() / DEFAULT_ARTIFACT_DIR)
+    # The selection is made on the snapshot the arbitrage build will price with, which after
+    # the draft anchor is the one at the board's cutoff, not the newest (ADR-094).
+    cutoff = _board_market_cutoff(artifacts)
+    key = args.snapshot or store.latest_key(MFL_SOURCE_ID, season, at_or_before=cutoff)
     if key is None:
-        print(f"no retained snapshot for {MFL_SOURCE_ID}/{season} under {store.root}")
+        bound = "" if cutoff is None else f" at or before {cutoff.isoformat()}"
+        print(f"no retained snapshot for {MFL_SOURCE_ID}/{season}{bound} under {store.root}")
         return 1
     snapshot = store.read(MFL_SOURCE_ID, season, key)
-    artifacts = args.board or (repo_root() / DEFAULT_ARTIFACT_DIR)
     board = _reference_board(artifacts, app.league.default_preset.preset_id)
 
     report = measure_cohorts(

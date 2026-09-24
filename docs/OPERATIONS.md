@@ -77,8 +77,8 @@ capture ──▶ build ──▶ deploy          report (needs all three, if: a
 
 7. check out the store **at the exact commit `capture` pushed**, read-only (`persist-credentials: false`);
 8. `ffdraft build-current --full-board` — loads the production model, does **not** retrain, and refuses to run if the feature-set or feature-schema hash disagrees (ADR-037). It publishes at `TIER_DEPTH_RULE.depth`, which is the *publication* rule and not Phase 4's frozen `TIER_BOARD_DEPTH`, and writes the untruncated fair-ranked board to `${RUNNER_TEMP}` for the next stage. Nothing uploads that file;
-9. `ffdraft measure-market-cohorts` — re-runs the frozen selection rule against the newest snapshot (ADR-039), writing outside the checkout;
-10. `ffdraft build-arbitrage --full-board` — the deterministic A0 board against that selection, priced by every retained market rather than only MFL, and surfacing market-relevant players from beyond the published depth using the untruncated board from step 7 (ADR-063, ADR-067);
+9. `ffdraft measure-market-cohorts` — re-runs the frozen selection rule against the newest snapshot (ADR-039), writing outside the checkout. Once the draft anchor binds, "newest" means newest at or before the board's `information_cutoff`, so from the anchor onward the selection stops moving (ADR-094);
+10. `ffdraft build-arbitrage --full-board` — the deterministic A0 board against that selection, priced by every retained market rather than only MFL, and surfacing market-relevant players from beyond the published depth using the untruncated board from step 7 (ADR-063, ADR-067). After the anchor every market is read at the board's cutoff, so a thinning post-draft feed cannot fail `arbitrage.top_board_priced` (ADR-094);
 11. `validate-artifacts` — the pre-deploy gate;
 12. `npm ci`, then `npm run build` at `VITE_BASE_PATH=/jeisey-tiers/`, asserting the asset URLs and that every artifact reached `web/dist/data/`;
 13. `npm run verify:board` — the rendered board cross-checked against the artifact bytes, on the real board rather than fixtures;
@@ -938,7 +938,7 @@ The in-season half of the job graph:
 capture ──▶ build ──▶ deploy
    │          │
    │          ├─ build-current      the draft board (always)
-   │          ├─ build-arbitrage    the draft market comparison (always)
+   │          ├─ build-arbitrage    the draft market comparison (always; at the anchor, ADR-094)
    │          └─ build-ros          the in-season bundle (in_season only)
    │
    ├─ capture-status     the full Sleeper player map, at most once a day

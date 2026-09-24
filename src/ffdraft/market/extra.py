@@ -221,6 +221,7 @@ def load_extra_quotes(
     league_sizes: Sequence[int] = (),
     max_age_hours: int = EXTRA_SOURCE_MAX_AGE_HOURS,
     top_depth: int = MARKET_TOP_DEPTH,
+    at_or_before: datetime | None = None,
 ) -> ExtraMarketLoad:
     """Read every requested source's retained window into quotes, trends and a history.
 
@@ -235,10 +236,20 @@ def load_extra_quotes(
     cohort map the way the series writer asks for it; a source that does not observe league
     size maps every one of them onto the same cohort, which is the honest encoding rather
     than a shortcut (:func:`~ffdraft.market.history.expand_cohorts_over_league_sizes`).
+
+    ``at_or_before`` bounds which snapshot is read, for a board whose information stops at
+    its draft anchor (ADR-094). The caller passes the same instant as ``now``, so staleness
+    is measured against the moment the board describes rather than the build clock.
     """
     load = ExtraMarketLoad()
     for source_id in source_ids:
-        snapshot = _read_latest(store, source_id=source_id, season=season, gate=gate)
+        snapshot = _read_latest(
+            store,
+            source_id=source_id,
+            season=season,
+            gate=gate,
+            at_or_before=at_or_before,
+        )
         if snapshot is None:
             load.sources.append({"source_id": source_id, "status": "absent", "rows": 0})
             continue
@@ -422,6 +433,7 @@ def _read_latest(
     source_id: str,
     season: int,
     gate: QualityGate,
+    at_or_before: datetime | None = None,
 ) -> MarketSnapshot | None:
     """The newest retained snapshot, or ``None`` with the reason recorded.
 
@@ -430,7 +442,7 @@ def _read_latest(
     take the whole board down with it.
     """
     try:
-        snapshot = store.read_latest(source_id, season)
+        snapshot = store.read_latest(source_id, season, at_or_before=at_or_before)
     except Exception as error:  # noqa: BLE001 - a bad read must not take the board down
         gate.add(
             QualityCheck.fail(
