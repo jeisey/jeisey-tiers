@@ -4,6 +4,14 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The draft market is read at the draft anchor, 2026-09-24 (ADR-094).** The daily refresh failed
+`arbitrage.top_board_priced` (89.3% < 95%) with no code change: MFL's post-draft feed thinned
+from 735 keeper-free drafts to 28, and the failed build job also stopped the in-season board
+deploying. Once the anchor binds, the draft board is now priced with the newest MFL and FFC
+snapshots at or before its own `information_cutoff` (new optional `build_metadata` block), with
+staleness measured from that instant. Before the anchor nothing changes. **No model, rule
+threshold, gate severity or A0 formula changed.**
+
 **The phone's control bands fold, 2026-09-23 (ADR-093).** The owner reported that on a phone
 "half the mobile screen is just navbar". The sticky controls and tabs were 248px of an 839px
 phone at all times. They are now one **Settings** summary row above the tabs (86px in total),
@@ -2325,6 +2333,13 @@ negative controls each fail their guard. Screens: `docs/visual-qa/2026-09-23-mob
 ## Next action
 
 **None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**
+
+**After ADR-094 merges, dispatch `daily-refresh`** (or read the next scheduled run): `Build the
+arbitrage board` should print `arbitrage.market_cutoff` with `snapshots at or before
+2026-09-09T03:59:59Z`, a snapshot key from 2026-09-08, `top_board_priced` passing, and the
+deploy job should run. If the store holds no MFL or FFC snapshot at or before the anchor, the
+build fails closed with `arbitrage.no_retained_snapshot`; that is a store gap, not a reason to
+unpin.
 
 **After ADR-093 merges:** open the deployed site on a phone and check that the sticky block is the
 Settings row and the tabs, that the row names the preset in force, and that the Opportunity

@@ -355,7 +355,17 @@ export function DataView({
           <ConfidenceDistribution index={index} state={state} />
           <p>
             The retained snapshot behind these prices was taken{" "}
-            {formatEastern(market?.snapshot_at_utc)}. MyFantasyLeague publishes no data-as-of time
+            {formatEastern(market?.snapshot_at_utc)}.{" "}
+            {typeof market?.read_at_or_before_utc === "string" && (
+              <>
+                The draft board&apos;s information stops at the draft anchor,{" "}
+                {formatEastern(market.read_at_or_before_utc)}, so its market is the last snapshot
+                taken before then and does not move for the rest of the season: the draft market
+                thins once drafting stops, and a later snapshot would measure that rather than
+                what drafters paid.{" "}
+              </>
+            )}
+            MyFantasyLeague publishes no data-as-of time
             and no standard deviation, so dispersion is shown as the earliest and latest observed
             picks. Those are extreme single observations that widen with sample size, so they
             describe a range rather than a disagreement.

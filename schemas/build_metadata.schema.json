@@ -320,6 +320,38 @@
           "type": "string"
         }
       }
+    },
+    "information_cutoff": {
+      "description": "The instant this board's information stops: `min(build time, season draft anchor)` (ADR-021, `current_cutoff`). Once the anchor binds, the arbitrage stage prices the board with the retained market as it stood at this instant rather than with a post-draft feed that thins every day (ADR-094). Absent or null on a build older than that rule.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "rule_version",
+        "cutoff_at_utc",
+        "season_anchor_at_utc",
+        "anchor_binds"
+      ],
+      "properties": {
+        "rule_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cutoff_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "season_anchor_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "anchor_binds": {
+          "description": "True once the build runs at or after the season's draft anchor, so the cutoff is the anchor rather than the build time.",
+          "type": "boolean"
+        }
+      }
     }
   }
 }

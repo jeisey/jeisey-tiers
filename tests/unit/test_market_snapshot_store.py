@@ -113,6 +113,24 @@ def test_keys_are_returned_oldest_first(store):
     assert store.latest_key(SOURCE, SEASON) == "2026-08-22T09-00-00Z"
 
 
+def test_the_latest_key_can_be_bounded_by_a_cutoff(store):
+    """ADR-094: a board whose information stops at its anchor reads the market at the anchor."""
+    for moment in ("2026-09-07T11:00:00Z", "2026-09-08T11:00:00Z", "2026-09-24T11:00:00Z"):
+        _write(store, moment)
+    anchor = parse_utc("2026-09-09T03:59:59Z")
+    assert store.latest_key(SOURCE, SEASON, at_or_before=anchor) == "2026-09-08T11-00-00Z"
+    # Inclusive: a snapshot taken at the cutoff instant is inside it.
+    assert (
+        store.latest_key(SOURCE, SEASON, at_or_before=parse_utc("2026-09-08T11:00:00Z"))
+        == "2026-09-08T11-00-00Z"
+    )
+    assert store.latest_key(SOURCE, SEASON, at_or_before=parse_utc("2026-09-01T00:00:00Z")) is None
+    assert store.latest_key(SOURCE, SEASON) == "2026-09-24T11-00-00Z"
+    bounded = store.read_latest(SOURCE, SEASON, at_or_before=anchor)
+    assert bounded is not None
+    assert bounded.manifest.snapshot_key == "2026-09-08T11-00-00Z"
+
+
 def test_an_earlier_snapshot_is_untouched_by_a_later_one(store):
     first = _write(store, "2026-08-20T12:00:00Z", price=12.5)
     before = (first.directory / NORMALIZED_FILENAME).read_bytes()

@@ -28,7 +28,13 @@ from ffdraft.market.snapshot import (
     SnapshotManifest,
 )
 from ffdraft.pipeline.market import ArbitrageBuildRequest, run_arbitrage_build
-from ffdraft.retention import canonical_json, content_hash, gzip_bytes, snapshot_key
+from ffdraft.retention import (
+    canonical_json,
+    content_hash,
+    gzip_bytes,
+    parse_snapshot_key,
+    snapshot_key,
+)
 from ffdraft.timeutil import isoformat_utc, parse_utc
 
 SOURCE = "myfantasyleague_adp"
@@ -872,3 +878,136 @@ def test_a_sufficient_cohort_publishes_an_empty_clause_list(store, artifacts, tm
     for assignment in metadata["market"]["assignments"]:
         assert assignment["sufficient"] is True
         assert assignment["failed_clauses"] == []
+
+
+# --------------------------------------------------------------------------------------
+# After the draft anchor the draft market is the draft-time market (ADR-094)
+# --------------------------------------------------------------------------------------
+#
+# The failure these cover was a production refresh on 2026-09-24: the draft board's
+# information had stopped at the anchor two weeks earlier, but it was still priced with the
+# newest MFL snapshot, and a draft ADP feed does not stop when drafting does — it thins. The
+# keeper-free cohort fell from 735 drafts to 28, `arbitrage.top_board_priced` went critical,
+# and the whole refresh, in-season board included, stopped deploying.
+
+ANCHOR = "2026-09-09T03:59:59Z"
+IN_SEASON = parse_utc("2026-09-24T12:00:00Z")
+#: A post-anchor snapshot is shifted far enough that reading it is unmistakable.
+LATE_SHIFT = 40.0
+
+
+def _bind_anchor(artifacts: Path, *, binds: bool = True) -> None:
+    path = artifacts / "build_metadata.json"
+    metadata = json.loads(path.read_text(encoding="utf-8"))
+    metadata["information_cutoff"] = {
+        "rule_version": "draft_anchor_v1_tuesday_eod_pre_week1",
+        "cutoff_at_utc": ANCHOR if binds else isoformat_utc(GENERATED_AT),
+        "season_anchor_at_utc": ANCHOR,
+        "anchor_binds": binds,
+    }
+    path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+
+
+def _in_season(store, artifacts, tmp_path, **overrides):
+    overrides.setdefault("as_of", IN_SEASON)
+    overrides.setdefault("selection_path", _selection(tmp_path / "cohorts.json"))
+    return run_arbitrage_build(
+        ArbitrageBuildRequest(season=SEASON, store=store, artifacts_dir=artifacts, **overrides),
+    )
+
+
+def test_once_the_anchor_binds_the_board_is_priced_at_the_anchor(store, artifacts, tmp_path):
+    _bind_anchor(artifacts)
+    _write_snapshot(store, "2026-09-08T11:00:00Z")
+    _write_snapshot(store, "2026-09-24T11:00:00Z", shift=LATE_SHIFT)
+    result = _in_season(store, artifacts, tmp_path)
+
+    assert result.gate.passed, [check.to_dict() for check in result.gate.critical_failures]
+    assert result.snapshot_key == "2026-09-08T11-00-00Z"
+    assert any(check.check_id == "arbitrage.market_cutoff" for check in result.gate.checks)
+    adp = {row[0]: row[4] for row in BOARD if row[4] is not None}
+    for record in result.records:
+        assert record["market_adp"] == pytest.approx(adp[record["player_id"]])
+        # Staleness is measured against the moment the board describes, not the build clock:
+        # a sixteen-hour-old snapshot at the anchor is current for a board frozen there.
+        assert "market_snapshot_stale" not in record["quality_flags"]
+    market = result.metadata["market"]
+    assert market["read_at_or_before_utc"] == ANCHOR
+    assert market["cutoff_rule_version"] == "draft_market_at_board_cutoff_v1"
+    assert market["snapshot_key"] == "2026-09-08T11-00-00Z"
+
+
+def test_the_trend_window_stops_at_the_anchor_too(store, artifacts, tmp_path):
+    _bind_anchor(artifacts)
+    for moment in ("2026-09-05T11:00:00Z", "2026-09-07T11:00:00Z", "2026-09-08T11:00:00Z"):
+        _write_snapshot(store, moment)
+    _write_snapshot(store, "2026-09-10T11:00:00Z", shift=LATE_SHIFT)
+    result = _in_season(store, artifacts, tmp_path)
+
+    assert result.trend_history_keys
+    assert all(parse_snapshot_key(key) <= parse_utc(ANCHOR) for key in result.trend_history_keys)
+
+
+def test_a_second_market_is_read_at_the_anchor_too(store, artifacts, tmp_path):
+    _bind_anchor(artifacts)
+    _write_snapshot(store, "2026-09-08T11:00:00Z")
+    _write_ffc_snapshot(store, "2026-09-08T11:05:00Z")
+    _write_ffc_snapshot(store, "2026-09-24T11:05:00Z", shift=LATE_SHIFT)
+    result = _in_season(store, artifacts, tmp_path)
+
+    assert result.gate.passed, [check.to_dict() for check in result.gate.critical_failures]
+    assert not any(
+        check.check_id == "market.extra_source_stale" for check in result.gate.warnings
+    ), "a pre-anchor snapshot is current for a board frozen at the anchor"
+    quotes = [
+        entry
+        for record in result.records
+        for entry in record.get("markets") or ()
+        if entry["source_id"] == FFC_SOURCE
+    ]
+    assert quotes, "the pre-anchor FFC snapshot prices the board"
+    assert {entry["market_snapshot_at_utc"] for entry in quotes} == {"2026-09-08T11:05:00Z"}
+    series = [row for row in result.trend_series if row["market_source_id"] == FFC_SOURCE]
+    assert all(
+        parse_utc(point["observed_at"]) <= parse_utc(ANCHOR)
+        for row in series
+        for point in row["points"]
+    )
+
+
+def test_before_the_anchor_binds_the_newest_snapshot_still_prices_the_board(
+    store,
+    artifacts,
+    tmp_path,
+):
+    """The preseason behaviour is unchanged: no cutoff, newest snapshot."""
+    _bind_anchor(artifacts, binds=False)
+    _write_snapshot(store, "2026-08-19T11:00:00Z", shift=LATE_SHIFT)
+    _write_snapshot(store, "2026-08-20T11:00:00Z")
+    result = _run(store, artifacts, tmp_path)
+
+    assert result.snapshot_key == "2026-08-20T11-00-00Z"
+    assert result.metadata["market"]["read_at_or_before_utc"] is None
+    assert not any(check.check_id == "arbitrage.market_cutoff" for check in result.gate.checks)
+
+
+def test_a_board_with_no_recorded_cutoff_is_priced_as_before(store, artifacts, tmp_path):
+    """A build older than the `information_cutoff` block has no cutoff to honour."""
+    _write_snapshot(store, "2026-08-19T11:00:00Z", shift=LATE_SHIFT)
+    _write_snapshot(store, "2026-08-20T11:00:00Z")
+    result = _run(store, artifacts, tmp_path)
+    assert result.snapshot_key == "2026-08-20T11-00-00Z"
+
+
+def test_no_snapshot_before_the_anchor_fails_closed(store, artifacts, tmp_path):
+    """Only post-anchor evidence is not a draft-time market, so nothing is published."""
+    _bind_anchor(artifacts)
+    _write_snapshot(store, "2026-09-24T11:00:00Z")
+    result = _in_season(store, artifacts, tmp_path)
+
+    assert not result.gate.passed
+    assert any(
+        check.check_id == "arbitrage.no_retained_snapshot"
+        for check in result.gate.critical_failures
+    )
+    assert not (artifacts / "arbitrage.json").exists()

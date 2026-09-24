@@ -823,6 +823,24 @@ than a `season_state.json` of its own — a second file would be a second schema
 fetch, a second 404 path and a second way for two published files to disagree about one
 season.
 
+### 16.7 `build_metadata.information_cutoff` — the instant the draft board describes (ADR-094)
+
+`build-current` writes the cutoff it applied, because the market stages that run after it are
+offline and have no schedule of their own:
+
+| field | meaning |
+|---|---|
+| `rule_version` | `current_build_as_of_v1` before the anchor, `draft_anchor_v1_tuesday_eod_pre_week1` after it |
+| `cutoff_at_utc` | `min(build time, season draft anchor)` |
+| `season_anchor_at_utc` | the season's draft anchor |
+| `anchor_binds` | true once the cutoff is the anchor |
+
+When `anchor_binds` is true, `measure-market-cohorts` and `build-arbitrage` read every market at
+the newest snapshot retrieved at or before `cutoff_at_utc`, and `build_metadata.market` records
+`cutoff_rule_version` (`draft_market_at_board_cutoff_v1`) and `read_at_or_before_utc` (null
+before the anchor). Optional: a build without the block is priced from the newest snapshot, as
+before.
+
 ## 17. The portrait contract — 2026-09-16 (ADR-087)
 
 `player_headshots` (`player_headshot_record` 1.0) is a new artifact, keyed once per canonical
