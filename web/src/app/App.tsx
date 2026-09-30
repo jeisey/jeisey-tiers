@@ -7,7 +7,7 @@
  * as the build produced it (`docs/DATA_CONTRACTS.md` section 13, `docs/UX_SPEC.md` section 10).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import logoUrl from "../assets/jt_logo.png";
@@ -26,6 +26,7 @@ import {
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
+import { selectWeekBoard, startableFor, toggleDuel } from "../data/duel";
 import {
   IN_SEASON_VIEWS,
   SCORING_TO_PRESET,
@@ -46,6 +47,16 @@ import { PotwView } from "./PotwView";
 import { RosView } from "./RosView";
 import { TiersView } from "./TiersView";
 import { useAppState } from "./useAppState";
+
+/**
+ * The Start/Sit tab and its chart, loaded when the tab is first opened (ADR-096). It is the one
+ * view a draft-season reader never opens, and splitting it keeps the entry bundle under the
+ * size it was before the tab existed. The arithmetic it shares with the player card
+ * (`data/startsit.ts`, `data/duel.ts`) stays in the entry bundle, so the split is a view only.
+ */
+const StartSitView = lazy(() =>
+  import("./StartSitView").then((module) => ({ default: module.StartSitView })),
+);
 
 type LoadState =
   | { readonly status: "loading" }
@@ -264,6 +275,14 @@ function Board({
         total: inSeason.opportunityFor(leaguePreset, scoring).length,
       };
     }
+    if (view === "startsit" && inSeason !== null) {
+      // Board rows the filters select against the week's published projections for this
+      // scoring preset: the same "shown of published" readout every other board prints.
+      return {
+        shown: selectWeekBoard(inSeason, state, "median").length,
+        total: inSeason.weeklyFor(scoring).length,
+      };
+    }
     if (view === "potw" && inSeason !== null) {
       // Picks on screen against picks in the whole set. The readout is the same "what the
       // filters select of what the build produced" it is on every other board; here the
@@ -285,6 +304,7 @@ function Board({
     const opportunity =
       inSeason?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
     const usage = inSeason?.usageFor(selectedPlayerId) ?? null;
+    const weekly = inSeason?.weeklyRecordFor(scoring, selectedPlayerId) ?? null;
     return {
       playerId: selectedPlayerId,
       tier: index.tierFor(leaguePreset, scoring, selectedPlayerId),
@@ -332,6 +352,11 @@ function Board({
       momentum: inSeason === null ? null : behaviorMomentum(inSeason, selectedPlayerId),
       seriesPublished: inSeason?.hasBehaviorSeries ?? false,
       inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
+      // The weekly start/sit layer (ADR-096): shown on an in-season card only.
+      weekly,
+      weeklyMeta: inSeason?.metadata.weekly ?? null,
+      weeklyStartable: startableFor(weekly, inSeason?.metadata.weekly, leaguePreset, scoring),
+      inDuel: state.duel.includes(selectedPlayerId),
       marketAvailable: index.hasArbitrage,
       cohortExact: cohortAssignment(metadata, scoring, state.teams)?.exact ?? null,
       // Every market's retained history for this player. The card picks which of them to
@@ -340,7 +365,29 @@ function Board({
       market: state.market,
       trendSeries: index.trendSeriesFor(leaguePreset, scoring, selectedPlayerId),
     };
-  }, [index, inSeason, metadata, view, selectedPlayerId, state.scoring, state.teams, state.market]);
+  }, [
+    index,
+    inSeason,
+    metadata,
+    view,
+    selectedPlayerId,
+    state.scoring,
+    state.teams,
+    state.market,
+    state.duel,
+  ]);
+
+  // From a card to the comparison: add him (a full comparison is left as it is) and go.
+  const onCompare = useCallback(
+    (playerId: string) => {
+      setState({
+        view: "startsit",
+        duel: state.duel.includes(playerId) ? state.duel : toggleDuel(state.duel, playerId),
+      });
+      onCloseDetail();
+    },
+    [setState, state.duel, onCloseDetail],
+  );
 
   return (
     <>
@@ -473,6 +520,26 @@ function Board({
                   selectedPlayerId={selectedPlayerId}
                 />
               ))}
+            {view === "startsit" &&
+              (inSeason === null ? (
+                <NoInSeasonBundle />
+              ) : (
+                <Suspense
+                  fallback={
+                    <section className="section startsit" aria-busy="true">
+                      <p className="startsit-loading">Loading Start/Sit…</p>
+                    </section>
+                  }
+                >
+                  <StartSitView
+                    bundle={inSeason}
+                    state={state}
+                    onChange={setState}
+                    onSelect={onSelect}
+                    now={now}
+                  />
+                </Suspense>
+              ))}
             {view === "potw" &&
               (inSeason === null ? (
                 <NoInSeasonBundle />
@@ -516,7 +583,12 @@ function Board({
         </footer>
       </div>
 
-      <PlayerDetail data={detail} onClose={onCloseDetail} onOpenData={openData} />
+      <PlayerDetail
+        data={detail}
+        onClose={onCloseDetail}
+        onOpenData={openData}
+        onCompare={inSeason?.hasWeekly === true ? onCompare : undefined}
+      />
     </>
   );
 }

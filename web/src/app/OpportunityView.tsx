@@ -49,7 +49,7 @@ import {
 } from "../data/candidates";
 import { opportunityRowsToCsv } from "../data/csv";
 import { formatRank, formatValue } from "../data/format";
-import { longAbsenceLabel, type InSeasonBundle } from "../data/ros";
+import { longAbsenceLabel, rosValue, type InSeasonBundle } from "../data/ros";
 import {
   OPPORTUNITY_FILTERS,
   OPPORTUNITY_SORTS,
@@ -175,8 +175,8 @@ function markLabel(candidate: OpportunityCandidate, windowText: string): string 
   return (
     `${record.display_name}, ${record.position}${String(record.ros_position_rank)}` +
     `${record.team === null ? "" : `, ${record.team}`}, rest-of-season rank ` +
-    `${formatRank(record.ros_fair_rank)}, rest-of-season expected VORP ` +
-    `${formatValue(record.ros_expected_vorp)} points. Separately: ${moves}.${role}` +
+    `${formatRank(record.ros_fair_rank)}, rest-of-season median VORP ` +
+    `${formatValue(rosValue(record))} points. Separately: ${moves}.${role}` +
     (record.outside_tier_board ? " Surfaced from beyond the tier depth; no tier." : "") +
     (record.long_absence ? ` ${longAbsenceLabel(record)}.` : "")
   );
@@ -238,7 +238,7 @@ export function OpportunityView({
           position: row.record.position,
           positionRank: row.record.ros_position_rank,
           displayName: row.record.display_name,
-          rosExpectedVorp: row.record.ros_expected_vorp,
+          rosValue: rosValue(row.record),
           addCount: row.record.add_count ?? null,
           dropCount: row.record.drop_count ?? null,
           netAddCount: row.record.net_add_count ?? null,

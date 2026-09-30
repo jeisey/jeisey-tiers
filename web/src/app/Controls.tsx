@@ -31,7 +31,7 @@ import {
  * The tab set each mode owns.
  *
  * Roadmap 12.4: Draft mode is Tier Board plus Arbitrage Board; In-Season mode is ROS Tier
- * Board, Opportunity Board and Pick of the Week. `Data` is shared, because the methodology
+ * Board, Start/Sit (ADR-096), Opportunity Board and Pick of the Week. `Data` is shared, because the methodology
  * and provenance a reader needs do not change with the season.
  *
  * `POTW` sits last of the three in-season boards because it is the narrowest: the two boards
@@ -50,6 +50,9 @@ const DRAFT_TABS: readonly { id: ResolvedViewId; label: string }[] = [
 
 const IN_SEASON_TABS: readonly { id: ResolvedViewId; label: string }[] = [
   { id: "ros", label: "ROS tiers" },
+  // Second, beside the board it is read against: this week's decision is the one a manager
+  // makes most often, and the rest-of-season board is its context (ADR-096).
+  { id: "startsit", label: "Start/Sit" },
   { id: "opportunity", label: "Opportunity" },
   { id: "potw", label: "POTW" },
   { id: "data", label: "Data" },

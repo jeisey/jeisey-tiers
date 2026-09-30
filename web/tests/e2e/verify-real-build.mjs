@@ -1053,8 +1053,11 @@ if (publishedInSeason && playerUsage !== null) {
       if (drawn.matchup.implied !== implied) {
         failures.push(`${who}: implied points read "${String(drawn.matchup.implied)}", artifact ${implied}`);
       }
-      if (matchup.implied_team_points !== null && !/No model reads them/.test(drawn.matchup.text)) {
-        failures.push(`${who}: sportsbook lines printed without the statement that no model reads them`);
+      if (
+        matchup.implied_team_points !== null &&
+        !/No model reads them|models never read them/.test(drawn.matchup.text)
+      ) {
+        failures.push(`${who}: sportsbook lines printed without the statement of which models read them`);
       }
     }
     // The card draws the same momentum component Pick of the Week does, from the same record.

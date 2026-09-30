@@ -63,9 +63,12 @@ import type {
   RosDisclosures,
   RosSignalMetadata,
   RosTierRecord,
+  RosWeeklyMetadata,
   TeamMatchupRecord,
   TierRecord,
+  WeeklyProjectionRecord,
 } from "../data/contracts";
+import { injuryReading } from "../data/duel";
 import {
   CROSS_MARKET,
   consensusOf,
@@ -207,6 +210,17 @@ export interface PlayerDetailData {
    * condition.
    */
   readonly inSeason?: boolean;
+  /**
+   * His next game as a distribution, from the weekly start/sit model (ADR-096), with the
+   * build's weekly block and his chance of a startable week in the reader's league. Shown on an
+   * in-season card only, as its own section: a this-week number beside a rest-of-season one
+   * would otherwise read as two versions of one quantity.
+   */
+  readonly weekly?: WeeklyProjectionRecord | null;
+  readonly weeklyMeta?: RosWeeklyMetadata | null;
+  readonly weeklyStartable?: { readonly threshold: number; readonly probability: number } | null;
+  /** Whether he is already on the reader's Start/Sit comparison. */
+  readonly inDuel?: boolean;
 }
 
 /**
@@ -505,6 +519,71 @@ interface SignalInputs {
   readonly seriesPublished: boolean;
 }
 
+/**
+ * The card's "This week" section (ADR-096): his next game as the weekly model sees it, and the
+ * one action a Tuesday reader most often wants from a card — put him beside the player he is
+ * deciding between.
+ */
+function WeekBlock({
+  record,
+  meta,
+  startable,
+  inDuel,
+  onCompare,
+}: {
+  readonly record: WeeklyProjectionRecord;
+  readonly meta: RosWeeklyMetadata | null;
+  readonly startable: { readonly threshold: number; readonly probability: number } | null;
+  readonly inDuel: boolean;
+  readonly onCompare: ((playerId: string) => void) | undefined;
+}): React.JSX.Element {
+  const q = record.quantiles;
+  const injury = injuryReading(record, meta);
+  const game = record.game;
+  return (
+    <>
+      {q === null ? (
+        <p className="cohort-note">{`His team is on bye in week ${String(record.target_week)}, so there is no start to decide.`}</p>
+      ) : (
+        <div className="readout-grid">
+          <Readout label="Median" value={formatValue(q.q50)} hint="points, given he plays" strong />
+          <Readout label="Floor – ceiling" value={`${formatValue(q.q10)} – ${formatValue(q.q90)}`} hint="P10 – P90" />
+          <Readout
+            label="Startable week"
+            value={startable === null ? EM_DASH : `${String(Math.round(startable.probability * 100))}%`}
+            hint={startable === null ? "no threshold published" : `≥ ${formatValue(startable.threshold)} pts in your league`}
+          />
+          <Readout
+            label="Game"
+            value={game === null ? EM_DASH : `${game.home_away === "home" || game.neutral_site ? "vs" : "@"} ${game.opponent}`}
+            hint={game?.team_points == null ? "no line posted yet" : `team total ${formatValue(game.team_points)}`}
+          />
+        </div>
+      )}
+      {injury !== null && <p className="cohort-note week-injury">{injury.sentence}</p>}
+      {onCompare !== undefined && q !== null && (
+        <p className="week-compare">
+          <button
+            type="button"
+            className="button"
+            data-variant={inDuel ? undefined : "primary"}
+            onClick={() => {
+              onCompare(record.player_id);
+            }}
+          >
+            {inDuel ? "Open Start/Sit" : "Compare in Start/Sit"}
+          </button>
+          <span className="cohort-note">
+            {inDuel
+              ? "He is already on your comparison."
+              : "Puts him beside the players you are deciding between, with the win-probability verdict."}
+          </span>
+        </p>
+      )}
+    </>
+  );
+}
+
 function InSeasonUsage({
   ros,
   opportunity,
@@ -788,7 +867,7 @@ function InSeasonUsage({
       */}
       <div className="detail-subhead">
         <span>Next game</span>
-        <span className="detail-subhead-note">context · not a model input</span>
+        <span className="detail-subhead-note">context · read by the weekly projection only</span>
       </div>
       {signal.matchup === null ? (
         <p className="cohort-note signal-absent">
@@ -914,11 +993,14 @@ export function PlayerDetail({
   data,
   onClose,
   onOpenData,
+  onCompare,
 }: {
   readonly data: PlayerDetailData | null;
   readonly onClose: () => void;
   /** Where the methodology went. One link, not a paragraph on every card. */
   readonly onOpenData?: (() => void) | undefined;
+  /** Put this player on the Start/Sit comparison and go there (ADR-096). */
+  readonly onCompare?: ((playerId: string) => void) | undefined;
 }): React.JSX.Element | null {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const returnFocusTo = useRef<HTMLElement | null>(null);
@@ -1024,9 +1106,10 @@ export function PlayerDetail({
   ]);
 
   /** Sections actually rendered, in order. The index and the tab list both follow this. */
-  const sections: readonly ("intrinsic" | "ros" | "usage" | "market" | "status")[] = [
+  const sections: readonly ("intrinsic" | "ros" | "week" | "usage" | "market" | "status")[] = [
     ...(tier !== null ? (["intrinsic"] as const) : []),
     ...(ros != null ? (["ros"] as const) : []),
+    ...(inSeasonCard && data.weekly != null ? (["week"] as const) : []),
     // One slot, two panels, and the season decides which. See `PlayerDetailData.inSeason`.
     inSeasonCard ? ("usage" as const) : ("market" as const),
     "status",
@@ -1037,6 +1120,7 @@ export function PlayerDetail({
   const tabLabels: Readonly<Record<string, string>> = {
     intrinsic: "Intrinsic value",
     ros: "Rest of season",
+    week: "This week",
     usage: "In-season usage",
     market: "Draft market",
     status: "Current status",
@@ -1238,6 +1322,31 @@ export function PlayerDetail({
               </p>
             </div>
           )}
+        </DetailSection>
+      );
+    }
+    if (kind === "week" && data.weekly != null) {
+      return (
+        <DetailSection
+          key={kind}
+          index={index}
+          id={id}
+          title="This week"
+          badge={
+            <>
+              <span className="detail-badge-label">{`Week ${String(data.weekly.target_week)}`}</span>
+              {data.weekly.model_version}
+            </>
+          }
+          tabbed={sheet}
+        >
+          <WeekBlock
+            record={data.weekly}
+            meta={data.weeklyMeta ?? null}
+            startable={data.weeklyStartable ?? null}
+            inDuel={data.inDuel === true}
+            onCompare={onCompare}
+          />
         </DetailSection>
       );
     }

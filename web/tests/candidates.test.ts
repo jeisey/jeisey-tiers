@@ -331,7 +331,7 @@ describe("the board's next-game reading", () => {
     const cell = nextGameCell(candidate(RB_RISING).nextGame);
     expect(cell.head).toBe("W9 vs ATL");
     expect(cell.detail).toBe("27.5 implied");
-    expect(cell.sentence).toMatch(/context, read by no model/);
+    expect(cell.sentence).toMatch(/context, read by no board/);
   });
 
   it("says a line is not posted rather than drawing a pick'em", () => {

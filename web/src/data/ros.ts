@@ -28,6 +28,7 @@ import type {
   ScoringPreset,
   SeasonState,
   TeamMatchupRecord,
+  WeeklyProjectionRecord,
 } from "./contracts";
 import { EM_DASH } from "./format";
 import { isNoteworthyRosterStatus, matchesPosition, matchesSearch } from "./model";
@@ -49,6 +50,8 @@ export interface InSeasonInput {
   readonly usage?: readonly PlayerUsageRecord[] | null;
   /** Each team's next game (ADR-091). Null costs the matchup block and nothing else. */
   readonly matchups?: readonly TeamMatchupRecord[] | null;
+  /** Next-game distributions (ADR-096). Null costs the Start/Sit tab's content and nothing else. */
+  readonly weekly?: readonly WeeklyProjectionRecord[] | null;
 }
 
 /**
@@ -115,6 +118,10 @@ export class InSeasonBundle {
   readonly usageRecords: readonly PlayerUsageRecord[];
   private readonly usageByPlayer: ReadonlyMap<string, PlayerUsageRecord>;
   private readonly matchupByTeam: ReadonlyMap<string, TeamMatchupRecord>;
+  /** Whether the build wrote `weekly_projections.json` at all (ADR-096). */
+  readonly hasWeekly: boolean;
+  private readonly weeklyByScoring: ReadonlyMap<ScoringPreset, readonly WeeklyProjectionRecord[]>;
+  private readonly weeklyByScoringPlayer: ReadonlyMap<string, WeeklyProjectionRecord>;
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
@@ -156,6 +163,20 @@ export class InSeasonBundle {
     this.hasBehaviorSeries = input.behaviorSeries !== null && input.behaviorSeries !== undefined;
     this.hasUsage = input.usage !== null && input.usage !== undefined;
     this.hasMatchups = input.matchups !== null && input.matchups !== undefined;
+    this.hasWeekly = input.weekly !== null && input.weekly !== undefined;
+
+    // Keyed by scoring preset alone: a next-game distribution is the same whatever the league
+    // size, which only moves the startable threshold it is read against.
+    const weeklyByScoring = new Map<ScoringPreset, WeeklyProjectionRecord[]>();
+    const weeklyByScoringPlayer = new Map<string, WeeklyProjectionRecord>();
+    for (const record of input.weekly ?? []) {
+      const bucket = weeklyByScoring.get(record.scoring_preset);
+      if (bucket === undefined) weeklyByScoring.set(record.scoring_preset, [record]);
+      else bucket.push(record);
+      weeklyByScoringPlayer.set(`${record.scoring_preset}|${record.player_id}`, record);
+    }
+    this.weeklyByScoring = weeklyByScoring;
+    this.weeklyByScoringPlayer = weeklyByScoringPlayer;
 
     const rosByBlock = new Map<string, RosTierRecord[]>();
     const rosByBlockPlayer = new Map<string, RosTierRecord>();
@@ -245,6 +266,16 @@ export class InSeasonBundle {
   /** A player's observed role, or null — the build published none, or not for him. */
   usageFor(playerId: string): PlayerUsageRecord | null {
     return this.usageByPlayer.get(playerId) ?? null;
+  }
+
+  /** Every next-game distribution for one scoring preset, in artifact order. */
+  weeklyFor(scoring: ScoringPreset): readonly WeeklyProjectionRecord[] {
+    return this.weeklyByScoring.get(scoring) ?? [];
+  }
+
+  /** One player's next-game distribution, or null — not published for him, or no layer. */
+  weeklyRecordFor(scoring: ScoringPreset, playerId: string): WeeklyProjectionRecord | null {
+    return this.weeklyByScoringPlayer.get(`${scoring}|${playerId}`) ?? null;
   }
 
   /** A team's next unplayed game, or null — its season is over, or none was published. */
@@ -359,6 +390,22 @@ export function rosStatusBadge(status: string | null | undefined): {
     full: ROSTER_STATUS_NAMES[code] ?? code,
     severity: ROSTER_STATUS_SEVERE.has(code) ? "warn" : "caution",
   };
+}
+
+/**
+ * The Opportunity Board's ROS value: the **median** simulated remaining VORP (ADR-097).
+ *
+ * The board is ordered by `ros_fair_rank`, and that rank orders by the median — the
+ * rest-of-season model's frozen `ranking_statistic`. The board used to print the *mean* beside
+ * that order, so on the live week-3 board 338 of 4,950 top-100 pairs read out of order and one
+ * player carried two "ROS values" on two tabs (the ROS board draws the median). Printing the
+ * statistic the rank is built from makes the value and the order one account.
+ *
+ * A 1.0 artifact has no median on the row; it falls back to the mean it did carry, which is
+ * what that artifact printed.
+ */
+export function rosValue(record: OpportunityRecord): number {
+  return record.ros_vorp_p50 ?? record.ros_expected_vorp;
 }
 
 /** Positive means the model likes him more now than it did in August. */

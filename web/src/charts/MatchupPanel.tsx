@@ -107,7 +107,7 @@ export function MatchupPanel({
       {reading.linesPosted && statement !== null && (
         <p className="cohort-note matchup-statement">
           {compact
-            ? "Sportsbook context, read by no model."
+            ? "Sportsbook context: no board reads it; the weekly projection does."
             : `${statement} Lines as retrieved ${formatEastern(record.lines_retrieved_at_utc)}.`}
         </p>
       )}

@@ -53,7 +53,7 @@ describe("parseState", () => {
 
   it("reads every supported parameter", () => {
     const parsed = parseState(
-      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&set=3",
+      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&set=3&duel=00-0036389.00-0039164&margin=-12",
     );
     expect(parsed.state).toEqual({
       view: "arbitrage",
@@ -69,6 +69,8 @@ describe("parseState", () => {
       opportunity: "value",
       only: ["role", "surfaced"],
       set: 3,
+      duel: ["gsis:00-0036389", "gsis:00-0039164"],
+      margin: -12,
     });
     expect(parsed.normalized).toBe(true);
   });

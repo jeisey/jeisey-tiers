@@ -8,7 +8,7 @@
  * | position decides which role readings lead | a quarterback's snap and target share are constants, and the card used to rank them |
  * | every printed value and change is the artifact's own | a change subtracted in the browser can disagree with the one the build published |
  * | an absence is a sentence, never a zero | a missing snap row, a missing record and a missing artifact are three different facts |
- * | the sportsbook numbers travel with their statement | a line printed without "read by no model" is a line that reads like a projection |
+ * | the sportsbook numbers travel with their statement | a line printed without the statement of which models read it is a line that reads like a projection |
  * | Pick of the Week's selection does not move | the evidence explains a pick; it never chooses one |
  */
 
