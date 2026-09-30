@@ -4874,3 +4874,55 @@ would keep publishing a market that means less each day, and every other market 
   snapshot, and leaves the unbounded behaviour alone.
 - `test_current_build.py`: the block is written before the anchor with `anchor_binds: false`,
   and after it with the anchor as the cutoff.
+
+## ADR-095 — A failed current MFL capture cannot block the anchored in-season refresh
+
+**Status:** accepted, 2026-09-30 (daily-refresh repair requested by the owner)
+**Amends:** ADR-094's unchanged capture-job failure handling. Daily market capture is still
+attempted and retained; the draft pricing rule, source contracts, quality-check severities,
+models, thresholds and append-only storage are unchanged.
+
+### Evidence
+
+Scheduled run [36708638832](https://github.com/jeisey/jeisey-tiers/actions/runs/36708638832),
+job [109864840028](https://github.com/jeisey/jeisey-tiers/actions/runs/36708638832/job/109864840028),
+resolved to `in_season`, completed week 3. Sleeper behaviour captured 100 adds and 100 drops.
+Then MFL returned zero normalized rows across all four production cohorts, with only three
+or four drafts per cohort. `market.capture_empty` correctly reported one critical failure
+and `snapshot-market` exited 1. Status capture, store validation and persistence never ran;
+the build and deploy were skipped. This is the next edge of the post-draft thinning ADR-094
+recorded, now in capture rather than arbitrage.
+
+### Decision
+
+`Capture the market snapshot` in `daily-refresh.yml` uses
+`continue-on-error: ${{ steps.season.outputs.mode == 'in_season' }}`. The exception applies
+only to that step and only after the schedule-derived mode flips at the first kickoff. The
+draft anchor is strictly before that kickoff (ADR-021), and ADR-094 reads prices at that
+anchor: today's post-draft ADP is not a consumed production input. In Draft mode, or with no
+resolved mode, capture failure still blocks the refresh. `skip_capture` keeps its existing
+meaning and no date, new source or user input is added.
+
+The capture command still exits nonzero and retains any response evidence it managed to
+write. An explicit warning checks `steps.market.outcome`, not `conclusion`, because
+`continue-on-error` changes the latter to success. The always-run capture summary includes
+product mode, MFL outcome and `snapshot.log`. Failure is visible rather than relabelled as
+a passing source-quality check.
+
+Status capture, store validation, persistence, every build check and deployment remain
+blocking. Empty response evidence may be retained if its hashes verify, as the capture CLI
+already allows; a corrupt or partial write cannot pass the integrity check. Missing
+pre-anchor prices still fail the arbitrage build. This does not implement the rejected
+ADR-094 alternative of lowering `arbitrage.top_board_priced`: the draft board must still
+pass that gate against the correct market.
+
+### Verification
+
+- Workflow tests pin the season-only exception and assert that status, retention, build and
+  deploy cannot bypass their failures; warnings and summaries must use the raw step outcome.
+- An integration replay drives the real capture CLI with four empty fixture responses:
+  exit 1 and `market.capture_empty` remain; evidence is retained and verifies; the anchored
+  board publishes from the pre-anchor snapshot and validates; corrupting the empty capture
+  then fails retained-store validation.
+- Existing market tests still refuse a store with only post-anchor prices. No live vendor
+  was queried and no production deployment was run during this branch's validation.

@@ -67,7 +67,7 @@ capture ──▶ build ──▶ deploy          report (needs all three, if: a
 `capture` — the only job that contacts a vendor, and the only irreversible one:
 
 1. check out the application source and the **private** retained store (`.github/actions/market-data-store`, with `persist-credentials: true` because this job pushes);
-2. `ffdraft snapshot-market` — MFL cohorts plus the player directory, normalized and identity-resolved into the store;
+2. `ffdraft snapshot-market` — MFL cohorts plus the player directory, normalized and identity-resolved into the store. Required in Draft mode. In In-Season mode only, `continue-on-error` lets a failed capture proceed with an explicit warning and the raw step outcome in the summary: ADR-094 reads the draft market at the retained draft anchor, so today's ADP is evidence rather than a build input (ADR-095). The command still fails on an empty feed, and the store-integrity check remains required;
 3. `ffdraft capture-market-source fantasyfootballcalculator_adp` — the second ADP market, retained under the same append-only discipline. `continue-on-error`: a second market is an enrichment, so an FFC outage degrades the board to one market rather than failing the refresh that publishes the intrinsic tiers (ADR-067);
 4. `ffdraft capture-status` — the Sleeper current-status capture;
 5. `ffdraft validate-market-history` — re-hash the whole store **before** anything is pushed, so a corrupt write is caught in the workspace rather than committed;
@@ -975,6 +975,8 @@ Unchanged from ADR-038's discipline, extended to the behaviour feed:
 
 | failure | effect |
 |---|---|
+| MFL ADP capture fails in In-Season mode | warning and failed step outcome in the capture summary; status/behaviour persistence and builds continue using retained draft-anchor prices (ADR-094, ADR-095); a corrupt store or missing draft-anchor evidence still blocks publication |
+| MFL ADP capture fails in Draft mode | capture job fails; build and deploy are skipped |
 | behaviour capture fails or is > 48h old | Opportunity Board's behaviour columns are empty and say why; **every intrinsic value is unchanged** |
 | the opportunity artifact is absent | the ROS tab is unaffected; the Opportunity tab says the build published none |
 | the preseason board is absent | the "change in intrinsic view" column is omitted; no rest-of-season value changes |

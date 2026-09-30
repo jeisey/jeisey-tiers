@@ -13,15 +13,19 @@ from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 
+import polars as pl
 import pytest
 
+from ffdraft import cli
 from ffdraft.artifacts import validate_artifact_directory, write_artifact
+from ffdraft.identity.registry import CanonicalRegistry
 from ffdraft.market.cohorts import (
     CANDIDATE_COHORTS,
     CohortMeasurement,
     cohort_by_id,
     select_cohorts,
 )
+from ffdraft.market.identity import MarketIdentity
 from ffdraft.market.snapshot import (
     CohortCapture,
     MarketSnapshotStore,
@@ -935,6 +939,68 @@ def test_once_the_anchor_binds_the_board_is_priced_at_the_anchor(store, artifact
     assert market["read_at_or_before_utc"] == ANCHOR
     assert market["cutoff_rule_version"] == "draft_market_at_board_cutoff_v1"
     assert market["snapshot_key"] == "2026-09-08T11-00-00Z"
+
+
+def test_an_empty_in_season_capture_is_retained_but_never_prices_the_board(
+    store, artifacts, tmp_path, pipeline_fixture_dir, monkeypatch, capsys
+):
+    """Replay the September failure through the real CLI, with fixture vendor responses.
+
+    Continuing this step in the workflow is safe only because the failed evidence cannot
+    enter the anchored build, while its bytes still have to pass the retention gate.
+    """
+    _bind_anchor(artifacts)
+    anchor_key = _write_snapshot(store, "2026-09-08T11:00:00Z")
+    players = json.loads((pipeline_fixture_dir / "mfl_players.json").read_text())
+    identity = MarketIdentity(
+        registry=CanonicalRegistry(players={}, indexes={}, collisions={}, name_index={}),
+        gsis_by_mfl_id={},
+        roster=pl.DataFrame(),
+        player_ids=pl.DataFrame(),
+    )
+    monkeypatch.setattr("ffdraft.market.capture.load_market_identity", lambda *a, **k: identity)
+    monkeypatch.setattr(
+        "ffdraft.market.capture._fetch_json",
+        lambda **k: (
+            players
+            if k["params"]["TYPE"] == "players"
+            else {"adp": {"totalDrafts": "4", "totalPicks": "0", "player": []}}
+        ),
+    )
+    assert (
+        cli.main(
+            [
+                "snapshot-market",
+                "--season",
+                str(SEASON),
+                "--store",
+                str(store.root),
+                "--as-of",
+                "2026-09-30T11:27:49Z",
+                "--pause",
+                "0",
+            ]
+        )
+        == 1
+    )
+    assert "[critical] market.capture_empty" in capsys.readouterr().out
+    empty = store.read_latest(SOURCE, SEASON)
+    assert empty is not None
+    assert empty.manifest.snapshot_key == "2026-09-30T11-27-49Z"
+    assert len(empty.manifest.cohorts) == 4
+    assert not empty.rows
+    assert cli.main(["validate-market-history", str(store.root), "--season", str(SEASON)]) == 0
+
+    result = _in_season(store, artifacts, tmp_path, as_of=parse_utc("2026-09-30T12:00:00Z"))
+    assert result.gate.passed, [check.to_dict() for check in result.gate.critical_failures]
+    assert result.snapshot_key == anchor_key
+    assert result.records
+    assert validate_artifact_directory(artifacts).passed
+
+    # The operational exception must never bypass the next step's integrity check.
+    retained = store.snapshot_dir(SOURCE, SEASON, empty.manifest.snapshot_key)
+    (retained / empty.manifest.normalized_path).write_bytes(b"corrupt")
+    assert cli.main(["validate-market-history", str(store.root), "--season", str(SEASON)]) == 1
 
 
 def test_the_trend_window_stops_at_the_anchor_too(store, artifacts, tmp_path):
