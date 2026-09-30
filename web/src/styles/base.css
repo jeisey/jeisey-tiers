@@ -682,6 +682,10 @@ code {
   background: transparent;
   height: 44px;
   padding: 0 2px;
+  /* A label never wraps inside its tab (a two-line "ROS / TIERS" on a phone, ADR-096's
+     fifth tab); a row too narrow for all of them scrolls instead. */
+  white-space: nowrap;
+  flex: none;
   cursor: pointer;
   font: 600 0.75rem/1 var(--font-sans);
   letter-spacing: var(--track-nav);
@@ -6191,6 +6195,7 @@ table.sheet.opp-sheet thead th button {
 }
 
 .deck-card[data-state="bye"],
+.deck-card[data-state="pending"],
 .deck-card[data-state="out"] {
   opacity: 0.78;
 }
@@ -7026,12 +7031,25 @@ table.sheet.weekboard-table thead th.wb-num {
     font-size: 0.86rem;
   }
 
+  /* With a verdict to read, an empty slot is a half-screen of invitation between the reader
+     and it; the week board below offers "add" to every player anyway. */
+  .deck:has(.deck-card:not(.deck-empty) ~ .deck-card:not(.deck-empty)) .deck-empty {
+    display: none;
+  }
+
+  .deck-range {
+    /* Two cards share a phone's width, so the middle cell gets the room its range needs. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+
   .deck-range div {
     padding: 5px 6px;
   }
 
   .deck-range dd {
     font-size: 0.72rem;
+    /* A range that still does not fit breaks after its en dash rather than being clipped. */
+    white-space: normal;
   }
 
   .verdict {
@@ -7127,5 +7145,27 @@ table.sheet.weekboard-table thead th.wb-num {
   .deck-remove,
   .wb-toggle {
     transition: none;
+  }
+}
+
+/* Five in-season tabs on a phone (ADR-096): tighter tracking and gaps so the whole row fits
+   at 375-390px; narrower screens keep the row's sideways scroll. */
+@media (max-width: 479px) {
+  .tabs {
+    gap: var(--space-3);
+  }
+
+  .tabs button {
+    letter-spacing: 0.07em;
+  }
+}
+
+@media (max-width: 374px) {
+  .tabs {
+    gap: var(--space-2);
+  }
+
+  .tabs button {
+    letter-spacing: 0.04em;
   }
 }

@@ -101,7 +101,7 @@ test.describe("automated scan", () => {
     ["pick of the week, a position with no pick", "/scenario/in-season/?view=potw&set=2", ".potw-absence"],
     // Start/Sit (ADR-096): meters, a ridge chart, a matrix and a board of bars — every one a
     // drawing that has to carry its number in text as well.
-    ["start/sit, empty", "/scenario/in-season/?view=startsit", ".verdict"],
+    ["start/sit, empty", "/scenario/in-season/?view=startsit", ".deck"],
     ["start/sit, a pair", "/scenario/in-season/?view=startsit&duel=00-0000011.00-0000012", ".verdict-head"],
     [
       "start/sit, four players and a margin",

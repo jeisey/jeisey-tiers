@@ -38,8 +38,11 @@ test.describe("the tab", () => {
 
   test("builds a comparison from the week board, and the URL carries it", async ({ page }) => {
     await page.goto(`${IN_SEASON}?view=startsit`);
-    await expect(page.locator(".verdict-empty")).toHaveText("Add a second player to get a verdict.");
+    // No players: four open slots and no verdict at all.
+    await expect(page.locator(".deck-card.deck-empty")).toHaveCount(4);
+    await expect(page.locator(".verdict")).toHaveCount(0);
     await page.getByRole("button", { name: "Add Jahmyr Cook to the comparison" }).first().click();
+    await expect(page.locator(".verdict-empty")).toHaveText("Add a second player to get a verdict.");
     await page.getByRole("button", { name: "Add Puka Nightingale to the comparison" }).first().click();
     await expect(page).toHaveURL(/duel=00-0000011\.00-0000012/);
     await expect(page.locator(".verdict-head")).toHaveText("Start Puka Nightingale");
@@ -126,6 +129,8 @@ test.describe("layout", () => {
   test("uses the width on a desktop: the deck is one row of four", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${IN_SEASON}?view=startsit&${FOUR}`);
+    // The view is lazy-loaded: wait for the cards before measuring them.
+    await expect(page.locator(".deck-card:not(.deck-empty)")).toHaveCount(4);
     const tops = await page
       .locator(".deck-card:not(.deck-empty)")
       .evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
@@ -135,15 +140,48 @@ test.describe("layout", () => {
   test("stacks on a phone: two cards a row, never one squeezed row of four", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${IN_SEASON}?view=startsit&${FOUR}`);
+    await expect(page.locator(".deck-card:not(.deck-empty)")).toHaveCount(4);
     const tops = await page
       .locator(".deck-card:not(.deck-empty)")
       .evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
     expect(new Set(tops).size).toBeGreaterThanOrEqual(2);
   });
 
+  test("on a phone, a chosen pair puts the verdict on the first screen", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${IN_SEASON}?view=startsit&${PAIR}`);
+    await expect(page.locator(".verdict-head")).toBeVisible();
+    // The empty slots step aside on a phone once there is a verdict to read.
+    await expect(page.locator(".deck-card.deck-empty").first()).toBeHidden();
+    const box = await page.locator(".verdict-head").boundingBox();
+    expect(box?.y ?? Infinity).toBeLessThan(844);
+    // No range is clipped inside a half-width card.
+    const clipped = await page
+      .locator(".deck-range dd")
+      .evaluateAll((nodes) => nodes.filter((node) => node.scrollWidth > node.clientWidth + 1).length);
+    expect(clipped).toBe(0);
+  });
+
+  test("the five in-season tabs fit one row from 360px, each on one line", async ({ page }) => {
+    for (const width of [360, 390, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto(`${IN_SEASON}?view=startsit`);
+      const tabs = page.getByRole("tablist", { name: "Board" });
+      await expect(tabs.getByRole("tab")).toHaveCount(5);
+      const fit = await tabs.evaluate((node) => node.scrollWidth - node.clientWidth);
+      expect(fit, `the tabs scroll at ${String(width)}px`).toBeLessThanOrEqual(1);
+      const heights = await tabs
+        .getByRole("tab")
+        .evaluateAll((nodes) => [...new Set(nodes.map((node) => Math.round(node.getBoundingClientRect().height)))]);
+      expect(heights, `a tab label wraps at ${String(width)}px`).toHaveLength(1);
+    }
+  });
+
   test("honours reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`${IN_SEASON}?view=startsit&${PAIR}`);
+    // Wait for the lazy view, or this would pass vacuously over no elements.
+    await expect(page.locator(".shield-cells").first()).toBeVisible();
     const durations = await page
       .locator(".shield-cells, .startsit-figure svg *")
       .evaluateAll((nodes) =>
