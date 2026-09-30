@@ -1625,3 +1625,27 @@ market at the draft anchor over downgrading the gate.
       first production refresh after merge is the end-to-end check (see SESSION_STATE).
 - [x] **Docs**: ADR-094; `DATA_CONTRACTS.md` §16.7; `OPERATIONS.md` steps 9–10 and job graph;
       workflow comment.
+
+## In-season MFL capture cannot freeze the refresh — 2026-09-30 (ADR-095)
+
+Run [36708638832](https://github.com/jeisey/jeisey-tiers/actions/runs/36708638832) stopped at
+`market.capture_empty` (zero rows across all four production cohorts) in week 3. The capture
+step still required a fresh draft price although ADR-094 consumes pre-anchor prices.
+
+- [x] **Scoped operational fix:** only `Capture the market snapshot` has a conditional
+      `continue-on-error` in In-Season mode; daily ADP collection is still attempted.
+- [x] **Visible failure:** explicit warning and raw MFL outcome plus product mode in the
+      always-run capture summary; original CLI exit and quality checks remain intact.
+- [x] **Blocking gates preserved:** Draft-mode capture, status, retention integrity,
+      persistence, every build check and deploy. No pre-anchor evidence still fails closed.
+- [x] **Regression tests:** two workflow contracts and one real-CLI/pipeline replay covering
+      empty capture, retained evidence, anchored publication and corrupt-store refusal.
+      Both workflow checks reject the unfixed parent.
+- [x] **Docs:** ADR-095; `OPERATIONS.md` capture semantics and failure table; session state.
+- [x] **Validation:** focused workflow/market/lifecycle suite **78 passed**; full Python suite
+      **1,585 passed, 4 live deselected**; `ruff check .` / `ruff format --check .` clean
+      (258 files); `mypy` clean (162 source files); fixture build **0 critical / 5 expected
+      warnings** and artifact validation **0 critical / 0 warning**. Generated JSON records
+      inspected. Frontend checks were not repeated: no frontend or public contract changed.
+- [ ] **Production confirmation:** pending merge and a new daily refresh. No live vendor
+      queried, failed run rerun, PR created or deployment attempted on this branch.
