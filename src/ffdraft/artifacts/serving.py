@@ -888,6 +888,7 @@ def validate_serving_layout(
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             problems.append(f"{path}: does not decode ({type(exc).__name__}: {exc})")
     problems.extend(_coverage_problems(layout, envelopes))
+    problems.extend(_schema_problems(layout))
     if problems:
         checks.append(
             _fail(
@@ -929,6 +930,22 @@ def _coverage_problems(
         total = len(envelope.get("records", ()))
         if served != total:
             problems.append(f"{family.name}: {served} of {total} records served")
+    return problems
+
+
+def _schema_problems(layout: ServingLayout) -> list[str]:
+    """The manifest and every served file against `schemas/serving_*.schema.json`."""
+    from ffdraft.artifacts.schemas import validator_for
+
+    problems = [
+        f"manifest.json: {error.message}"
+        for error in validator_for("serving_manifest").iter_errors(layout.manifest)
+    ]
+    file_validator = validator_for("serving_file")
+    for path, data in layout.files.items():
+        for error in file_validator.iter_errors(json.loads(data.decode("utf-8"))):
+            problems.append(f"{path}: {error.message}")
+            break
     return problems
 
 

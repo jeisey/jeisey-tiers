@@ -36,6 +36,8 @@ No live data vendor access in normal PR CI.
 >
 > Caching: `~/.cache/uv` keyed on the lockfile, npm through `setup-node`, and the Playwright browser keyed on `package-lock.json` so a client upgrade can never pair with an old browser build. Each job writes a step summary.
 >
+> **ADR-098 additions.** The fixture sites are laid out by the production packager, so the `e2e` and cross-browser jobs install uv and the locked Python environment before `globalSetup` runs; the golden check uses `git status --porcelain`, because a stale served layout appears as new content-hashed files as well as deletions; and `e2e` ends with the **payload budget gate** — `npm run e2e:size-model` then `npm run verify:budget` on the size model — which fails the run on any budget miss (section 17.3).
+>
 > Permissions are `contents: read` with no per-job elevation, and three properties are pinned by `tests/unit/test_workflows.py` rather than left to review: CI never references `MARKET_DATA_REPO_TOKEN` or checks out the retained store, never runs a command that needs a vendor, and never requests a `pages:` scope. A pull request from a fork therefore cannot reach private data, and a MyFantasyLeague outage cannot turn a pull request red.
 
 ### 2.2 `daily-refresh.yml`
@@ -80,14 +82,16 @@ capture ──▶ build ──▶ deploy          report (needs all three, if: a
 9. `ffdraft measure-market-cohorts` — re-runs the frozen selection rule against the newest snapshot (ADR-039), writing outside the checkout. Once the draft anchor binds, "newest" means newest at or before the board's `information_cutoff`, so from the anchor onward the selection stops moving (ADR-094);
 10. `ffdraft build-arbitrage --full-board` — the deterministic A0 board against that selection, priced by every retained market rather than only MFL, and surfacing market-relevant players from beyond the published depth using the untruncated board from step 8 (ADR-063, ADR-067). After the anchor every market is read at the board's cutoff, so a thinning post-draft feed cannot fail `arbitrage.top_board_priced` (ADR-094);
 11. `ffdraft build-ros` — only when the capture job resolved a `snapshot_week` (section 16.1.1). The in-season bundle: rest-of-season tiers, the Opportunity Board, the signal layer and the weekly start/sit projections, from the committed `intrinsic-ros-v1` and `weekly-startsit-v1` artifacts. Never trains, and not `continue-on-error`: the bundle is all-or-nothing inside the command, except that the weekly layer is withheld with a warning rather than costing a board (section 16.7, ADR-096);
-12. `validate-artifacts` — the pre-deploy gate;
-13. `npm ci`, then `npm run build` at `VITE_BASE_PATH=/jeisey-tiers/`, asserting the asset URLs and that every artifact reached `web/dist/data/`: the draft bundle always, the in-season bundle whenever `ros_tiers.json` was written, and `weekly_projections.json` whenever it was written;
-14. `npm run verify:board` — the rendered board cross-checked against the artifact bytes, on the real board rather than fixtures;
-15. assert the Pages artifact boundary, then `actions/upload-pages-artifact` as the **last** step.
+12. `ffdraft package-site-data` — the served layout (manifest, slices, card shards) derived from whatever the steps above wrote (ADR-098, section 17.2);
+13. `validate-artifacts --require-serving` — the pre-deploy gate, which now also proves the served layout exact and fails without it;
+14. `npm ci`, then `npm run build` at `VITE_BASE_PATH=/jeisey-tiers/`, asserting the asset URLs and that every artifact reached `web/dist/data/`: the draft bundle always, the in-season bundle whenever `ros_tiers.json` was written, `weekly_projections.json` whenever it was written, and the manifest with every file it names;
+15. `npm run verify:board` — the rendered board cross-checked against the artifact bytes, on the real board rather than fixtures. The page renders from the served slices and the check reads the full artifacts, so a pass is also the proof that serving changed no displayed value;
+16. `npm run verify:budget --report-only` — the payload budgets on the real build, as warnings and in the summary (section 17.3);
+17. assert the Pages artifact boundary, then `actions/upload-pages-artifact` as the **last** step.
 
 `deploy` — `actions/configure-pages` and `actions/deploy-pages`, nothing else.
 
-`report` — renders `scripts/workflow_summary.py` into the step summary whatever happened, so a failed refresh explains itself in the same place a successful one does. The run facts include the product mode, the rest-of-season board's week and rows, and the Start/Sit week and projection count, so a refresh that withheld the weekly layer on a warning says so on the page an operator reads (section 10).
+`report` — renders `scripts/workflow_summary.py` into the step summary whatever happened, so a failed refresh explains itself in the same place a successful one does. The run facts include the product mode, the rest-of-season board's week and rows, and the Start/Sit week and projection count, so a refresh that withheld the weekly layer on a warning says so on the page an operator reads (section 10). Since ADR-098 it also renders a **Served payload** section: every served family's file count, raw and level-5 gzip bytes and largest file, and the budget measurements beside their limits.
 
 **Manual dispatch inputs.** `season` and `cohorts` override the defaults. `skip_capture` rebuilds and redeploys from retained history without calling a vendor — the intended way to re-run a deploy after a code fix, because MFL asks that the player database be requested at most once a day (ADR-017). `force_validation_failure` is the proof run described in section 8.
 
@@ -212,6 +216,13 @@ Cache misses must be correct, only slower.
 > The nflverse cache is the one that needed thought, and it has **no `restore-keys`** on purpose. The obvious pattern — a unique key plus a prefix fallback — would restore *yesterday's* release on a fresh key, which means a cache hit would serve staler rosters than a cache miss. That is precisely the failure this section forbids. With the UTC date in the key and no fallback, a hit can only ever be the same day's release; a miss re-downloads and is merely slower. `NFLREADPY_CACHE=filesystem` and `NFLREADPY_CACHE_DIR` point the client at it.
 >
 > Nothing caches a credential, a model artifact, or the private store. The store is a git checkout made fresh in each job that needs it, at a named commit.
+
+> **The browser's caches (ADR-098).** GitHub Pages sends `max-age=600` and an ETag that is the
+> deploy time, so HTTP caching keeps a file for one deploy at most (section 17.1). The page adds
+> one cache of its own: every content-addressed file under `data/serve/` is kept in the Cache API
+> (`jeisey-tiers-data-serving-v1`), verified against its hash on every read, and pruned to the
+> files the current manifest names. The manifest itself is always revalidated. There is no
+> service worker.
 
 ## 5. Market snapshot persistence
 
@@ -1125,3 +1136,99 @@ withheld; `build-ros.log` in the build record names the warning. None of the cau
 specification mismatch at load is the one that needs a person: someone changed the committed
 artifact or `frozen.py` without refitting, and the fix is to restore the committed files or to
 run step 4.
+
+## 17. Serving the site under load (ADR-098)
+
+### 17.1 How GitHub Pages serves this site — verified 2026-09-30
+
+Measured from a runner, because the development sandbox cannot reach `*.github.io`:
+`live-smoke.yml` dispatched with `probe_only: true` runs `scripts/pages_probe.mjs headers`
+(every document, asset, font and data file under three `Accept-Encoding` values, then
+conditional re-requests) and `fields` (per-file raw/gzip/brotli, per-block and per-field byte
+cost). `dump_data: true` also prints the served JSON (xz, base64, one checksum) into the log so a
+sandbox can measure the exact public bytes. Runs 36776435211 and 36777661295.
+
+| | observed |
+|---|---|
+| compression | gzip only. `Accept-Encoding: br, gzip` is answered with gzip; no file was ever brotli |
+| gzip level | zlib level 5. Re-compressing eight served JSON files at level 5 reproduces each `Content-Length` to the byte (levels 4 and 6 do not) |
+| what is compressed | `text/html`, JavaScript, CSS, JSON, CSV and `image/vnd.microsoft.icon`; PNG and WOFF2 are sent as they are |
+| `Cache-Control` | `max-age=600` on everything, with a matching `Expires`; nothing is `immutable` |
+| `ETag` / `Last-Modified` | weak `W/"<mtime hex>-<size hex>"`; the mtime is the **deploy time for every file** (the 17:51:45 UTC deploy stamped all 30 probed files) |
+| conditional requests | `If-None-Match` and `If-Modified-Since` both answer 304 with an empty body |
+| edge | Fastly (`via: 1.1 varnish`, `x-served-by: cache-…`, `x-cache`), `Vary: Accept-Encoding`, `access-control-allow-origin: *` |
+| a 404 | an HTML page (`text/html`), gzip, no `Cache-Control` |
+| 40 parallel GETs from one client | 40 × 200, no 429 |
+
+GitHub's documented limits (the GitHub Pages limits page, confirmed 2026-09-30): a published site
+is at most 1 GB; bandwidth has a **soft limit of 100 GB per month**; builds have a soft limit of
+10 per hour, which does not apply to a custom Actions workflow such as `daily-refresh.yml`;
+rate limits may apply and answer **429** with an HTML body. No numeric rate limit is published.
+
+What follows from these facts, and is why ADR-098 is shaped the way it is:
+
+* **Every deploy invalidates every cached file.** An ETag is the deploy's mtime, so a file whose
+  bytes did not change still revalidates to a 200 after a deploy. Only a copy the page keeps
+  itself (the Cache API, keyed by content hash) survives one.
+* **Within one deploy, a repeat visit is free**: fresh for ten minutes, then 304s with no body.
+* **Size budgets are gzip-5 budgets.** Brotli numbers do not apply to this host.
+
+### 17.2 The served layout in operation
+
+`ffdraft package-site-data <dir>` derives `manifest.json` and `serve/` from the artifacts in
+`<dir>` and prints their sizes (level-5 gzip). Run it after the **last** artifact write — in the
+daily refresh, after `build-ros`, whichever bundles exist. `validate-artifacts --require-serving`
+then re-derives the layout, fails if a byte differs or a slice is not exactly its subset, and
+fails if the manifest is missing. `build-fixture-artifacts` packages its own output.
+
+```bash
+uv run ffdraft package-site-data web/public/data
+uv run python -m ffdraft.cli validate-artifacts --require-serving web/public/data
+```
+
+Failure triage:
+
+| check | meaning | fix |
+|---|---|---|
+| `serving.manifest_missing` | the deploy gate found no manifest | run `package-site-data` after the builds |
+| `serving.manifest_stale` / `serving.file_unlisted` | an artifact changed after packaging | re-run `package-site-data`; never edit a served file |
+| `serving.file_differs` / `serving.file_missing` | a served file was edited, truncated or lost | re-run `package-site-data` |
+| `serving.slice_not_subset` | the encoder produced a file that does not decode to its source | a code defect in `serving.py`; do not deploy |
+
+A reader who sees "This part of the board could not be loaded" had a page open across a deploy:
+the old manifest names files the new deploy removed. Reloading reads the new manifest.
+
+### 17.3 Payload budgets
+
+`npm run verify:budget -- --dist <site> --base-path <base>` measures, in Chromium against
+`static-server.mjs` in Pages mode (gzip-5, mtime ETags, 304s, `max-age=0` so a return visit
+revalidates at once), bytes counted at the server:
+
+| scenario | budget |
+|---|---:|
+| first visit, in-season default view — everything | ≤ 450 kB |
+| first visit — data | ≤ 150 kB |
+| then opening Start/Sit adds | ≤ 60 kB |
+| opening a player card adds | ≤ 30 kB |
+| repeat visit to the same deploy — data | ≤ 1 kB |
+| redeploy of unchanged data — served data files | 0 B |
+
+and that a redeploy which renames a player is shown at once to a reader holding the old files.
+
+* **CI** (`ci.yml`, e2e job) builds the size model (`npm run e2e:size-model`:
+  `scripts/size_model.py` with `config/size-model.json`) and **fails** on any budget miss.
+* **The daily refresh** runs it on the real build with `--report-only` and renders the result,
+  and every served family's size, in the run summary; a miss is a warning, because a correct
+  board a few kilobytes over should still reach readers — the regression is blocked where it is
+  introduced.
+* When the board's shape changes (a new block, a longer series), re-measure the counts with the
+  probe and update `config/size-model.json`.
+
+### 17.4 Bandwidth arithmetic (re-do it when the numbers move)
+
+A typical in-season session is the first visit, Start/Sit and two cards (≈ 359 kB); a heavy one
+adds a card, the Opportunity Board and Pick of the Week (≈ 466 kB). A reader returning after the
+daily deploy pays the shell again (≈ 224 kB, because the deploy reset its ETags), the manifest
+(16 kB) and whichever data slices changed. ADR-098 has the table: the 60–80k-reader burst is
+22–75 GB (it was 169–451 GB) and 1,000 daily readers are about 10 GB a month (it was 85 GB),
+against the 100 GB soft limit.

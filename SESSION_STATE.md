@@ -4,6 +4,69 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Serving the site under load, 2026-09-30 (ADR-098).** The owner asked for the site to survive a
+60–80k-reader burst and then ~1,000 daily readers on GitHub Pages alone, with no feature and no
+change to any number. A cold visit downloaded all fourteen artifacts — **2,816 kB in 21
+requests**, 2,499 kB of it data — and every daily deploy made every returning reader pay it again,
+because Pages' ETag is the deploy time (verified from a runner; OPERATIONS §17.1). The site now
+reads `data/manifest.json` and then only the content-addressed slices and card shards the open
+view, block and card need, keeps them in the Cache API, and never fetches a full artifact:
+**285 kB in 10 requests** (60 kB data); Start/Sit +34 kB; a card +20 kB; a repeat visit 0 B; a
+redeploy of unchanged data 0 served bytes. `verify:board` passes on the real week-4 build served
+this way. Burst 22–75 GB (was 169–451 GB), steady state ≈ 10 GB/month (was 85 GB). See **What the
+serving pass changed** below. **Next gate:** the first production refresh on this code. **Not
+done:** no PR (not requested), no deployment.
+
+### What the serving pass changed (ADR-098)
+
+| | |
+|---|---|
+| New command | `ffdraft package-site-data <dir>` → `manifest.json` + `serve/` (run after the last artifact write) |
+| Gate | `validate-artifacts --require-serving`: byte-identical re-derivation, independent decode of every table, schema checks (`schemas/serving_{manifest,file}.schema.json`) |
+| Layout | per-block `tiers`/`arbitrage`/`ros_tiers`/`inseason_opportunity` (ROS fields joined), `inseason_opportunity_cohort`, per-scoring `weekly_projections`, whole small families, `player_usage_cohort`, one `players` dictionary, `card/<block>/<bucket>` × 64 buckets; 622 files on the week-4 board |
+| Frontend | `bundle.ts` → `openSite`; `store.ts` (`requiredKeys` is the dependency map, ARCHITECTURE §14); `serving.ts` (decoder, hash check, Cache API); indexes built from exactly the view's keys |
+| Shell | font core/rest (`scripts/make_web_assets.py`), 2×/3× logo, no deployed source maps |
+| Budgets | `npm run verify:budget` (Pages-like server in `static-server.mjs`, bytes counted at the server); CI gates the size model (`npm run e2e:size-model`, `scripts/size_model.py`, `config/size-model.json`); the refresh reports the real build |
+| Kept | every full artifact and CSV at its old URL; the validator, `verify:board`, the firewall checks read them |
+| Declined | a service worker (would save only the post-deploy shell re-download, ~6.7 GB/month); rounding (would change the view CSV export; not needed) |
+
+Facts a later session should not re-derive:
+
+* **Pages serves gzip at zlib level 5, never brotli**; PNG and WOFF2 uncompressed; `max-age=600`;
+  weak ETag = deploy-time mtime + size, so a deploy invalidates every cached file.
+* **The real artifacts reach the sandbox only through a runner log**: `live-smoke.yml` with
+  `probe_only: true, dump_data: true` prints the served JSON as xz+base64 in lines of 2,000; the
+  MCP job-log tool returns at most 5,000 lines, so keep the lines long. The CSVs are not dumped;
+  regenerate them with `records_to_csv` to validate the directory.
+* **Playwright disables Chromium's HTTP cache whenever `page.route` is active.** A test that
+  measures caching must block third parties another way (`--host-resolver-rules`).
+* **Node's zlib compresses ~1% tighter than Pages** at the same level; budget headroom covers it.
+* The card path is the tight budget (real worst case 24.3 of 30 kB) and grows with the weekly
+  usage series through the season.
+* The e2e and cross-browser CI jobs now need uv: the fixture sites are packaged by the Python
+  packager.
+
+Validation of this pass (local unless noted):
+
+```
+uv sync --frozen; uv run ruff check .; uv run ruff format --check .   # clean, 287 files
+uv run mypy                                  # clean, 177 source files
+uv run pytest                                # 1,694 passed, 4 live deselected
+uv run ffdraft package-site-data <real week-4 data>                  # 622 files
+uv run python -m ffdraft.cli validate-artifacts --require-serving <real week-4 data>  # 0/0
+npm run lint                                 # 0 errors (4 pre-existing TanStack warnings)
+npm run typecheck; npm run test -- --run     # clean; 642 vitest
+npm run build                                # root and /jeisey-tiers/
+npm run e2e                                  # 197 passed (chromium, mobile, a11y)
+npm run verify:board                         # 6 fixture builds and the real week-4 build: 0 failures
+npm run e2e:size-model && npm run verify:budget -- --dist web/dist-size-model --base-path /jeisey-tiers/
+npm run verify:budget -- --dist <real build> --base-path /jeisey-tiers/   # all budgets met
+```
+
+On runners: `live-smoke.yml` probe runs 36776435211 / 36777661295 (hosting facts, data dump);
+`ci.yml` run 36786086298 on the branch — Python, web, e2e with the size-model budget gate, and
+the Chromium/Firefox/WebKit smoke all green.
+
 **Start/Sit and the weekly start/sit model, 2026-09-30 (ADR-096, ADR-097).** A decision-layer
 model, `weekly-startsit-v1`, now publishes each Opportunity Board player's next game as seven
 quantiles with an additive explanation, and a Start/Sit tab compares two to four players by the

@@ -1712,3 +1712,51 @@ start/sit, trade or waiver decision is valid to use. Numbered ADR-096/097 becaus
 - [ ] **Owed**: a point-in-time probe of `load_injuries` before the report could ever be a
       feature; the first production refresh with the weekly layer (the private store is
       unreachable from the sandbox); no PR was opened (not requested).
+
+## Surviving a hug of death on GitHub Pages — 2026-09-30 (ADR-098)
+
+The owner asked for the site to survive a 1–2 day burst of 60,000–80,000 readers and then about
+1,000 a day, on GitHub Pages alone (no other host, no backend, no serverless), without a product
+feature and without changing any model, value, rank, tier or displayed number.
+
+- [x] **Hosting facts verified** from a runner (`scripts/pages_probe.mjs`, `live-smoke.yml`
+      `probe_only`/`dump_data`): gzip only at zlib level 5 (reproduced to the byte), `max-age=600`
+      everywhere, weak ETags of the **deploy-time** mtime (every deploy invalidates every file),
+      304s on `If-None-Match`/`If-Modified-Since`, Fastly edge, no 429 at 40 parallel requests;
+      documented limits 1 GB site, 100 GB/month soft bandwidth. Recorded in OPERATIONS §17.1.
+- [x] **Dependency map**: which served files and fields each view, mode, card, search and export
+      needs — ARCHITECTURE §14, and `requiredKeys` in `web/src/data/store.ts` is the same rule.
+- [x] **Slices** (`ffdraft package-site-data`, `serving.py`): per-block / per-scoring / whole
+      column-major files, one player dictionary, card shards (block × 64 buckets), the
+      Opportunity slice's copied ROS fields joined, a content-hashed manifest with both metadata
+      objects inline. Build identity kept out of served bytes, so an unchanged slice keeps its name.
+- [x] **Derived and proven**: `validate-artifacts` re-derives the layout, requires byte identity,
+      decodes every table independently and requires exact equality with the artifact subset,
+      checks `schemas/serving_{manifest,file}.schema.json`; `--require-serving` in the refresh.
+      Negative controls: stale manifest, tampered slice, stray file, missing file, a lossy encoder.
+- [x] **Full artifacts kept** (validator, `verify:board`, firewall checks, CSVs); the page never
+      fetches them. ADR-098 decision 6.
+- [x] **Lazy, parallel loading**: manifest (`no-cache`) then only the open view's, block's and
+      card's files, in parallel; URL state unchanged; indexes scoped to the view's own keys so a
+      card's shard never re-renders the board (found by the focus-restore test).
+- [x] **Trimmed without changing a value**: dictionary names, constants, nested leaves, the ROS
+      join, card-only artifacts only in shards, two cohort-only families. No rounding — published
+      precision preserved exactly (DATA_CONTRACTS §21.6).
+- [x] **Shell**: font core/rest split clamped to the declared 400–700 axis (72 → 42 kB), 2×/3×
+      logo (75 → 10 kB), source maps no longer deployed (`VITE_SOURCEMAP=1` locally).
+- [x] **Repeat visits**: Cache API keyed by content hash, digest-verified on every read, pruned
+      to the current manifest; **no service worker** (ADR-098 decision 8). A redeploy that renames
+      a player is shown at once to a reader holding the old files (tested).
+- [x] **Budget gate in CI** (`verify-budget.mjs` on the size model, `scripts/size_model.py` +
+      `config/size-model.json`), bytes counted at a Pages-like server; the daily refresh reports
+      the same on the real build and in the summary.
+- [x] **Real week-4 build**: first visit 285 kB (60 kB data, 10 requests; was 2,816 kB / 21);
+      Start/Sit +34 kB; card +20 kB (worst shard path 24 kB); repeat 0 B; redeploy of unchanged
+      data 0 served bytes; `verify:board` 0 failures on the served layout.
+- [x] **Scenario math redone** (ADR-098): burst 22–75 GB (was 169–451 GB); steady state
+      ≈ 10 GB/month (was 85 GB).
+- [x] **Validation**: see SESSION_STATE for commands and counts; CI dispatched on the branch
+      (run 36786086298) — e2e with the budget gate, web, and the Chromium/Firefox/WebKit smoke green.
+- [ ] **Owed**: the first production refresh on this code (the live proof; the private store is
+      unreachable from the sandbox); the weekly usage series grow through the season and the card
+      path has ~6 kB of headroom — watch the summary. No PR opened (not requested).

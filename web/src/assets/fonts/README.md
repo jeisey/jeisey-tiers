@@ -32,3 +32,24 @@ including the `/jeisey-tiers/` project-Pages path.
 
 **Licences:** `Exo2-OFL.txt`, `JetBrainsMono-OFL.txt`. Neither may be sold on its own; both may
 be bundled and served as they are here. See also `docs/SECURITY_LICENSE.md`.
+
+## What is served (ADR-098)
+
+The four files above are the **sources**. The stylesheet serves six files derived from them by
+`scripts/make_web_assets.py`:
+
+| file | from | characters | weight axis |
+|---|---|---|---|
+| `exo2-core.woff2` | `exo2-latin.woff2` | ASCII plus the sixteen typographic characters the interface prints | clamped to 400–700 |
+| `exo2-latin-rest.woff2` | `exo2-latin.woff2` | every other character of the original latin file | clamped to 400–700 |
+| `jetbrains-mono-core.woff2` | `jetbrains-mono-latin.woff2` | as above | clamped to 400–700 |
+| `jetbrains-mono-latin-rest.woff2` | `jetbrains-mono-latin.woff2` | as above | clamped to 400–700 |
+| `exo2-latin-ext.woff2`, `jetbrains-mono-latin-ext.woff2` | unchanged | unchanged | unchanged |
+
+The core and rest ranges partition the original latin file's code points, and `unicode-range`
+sends a browser to the rest file only for a page that prints one of its characters, so every
+character is still drawn by the same family; the stylesheet already declared `font-weight: 400
+700`, so no browser ever rendered outside the clamped range. A first paint downloads the two core
+files, 42 kB instead of 72 kB. Both licences permit subsetting (OFL 1.1, section on Modified
+Versions: no Reserved Font Name is declared for either family).
+

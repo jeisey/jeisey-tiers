@@ -1167,3 +1167,111 @@ placeholder (`None`, `null`, `NaN`, empty or blank; `artifact.placeholder_displa
 critical). The build fills a missing name from this season's weekly rows, then the roster, then
 the player master, and falls back to the player id, which the validator reports as a warning
 (`artifact.id_as_display_name`).
+
+## 21. The served layout — `serving_v1` (ADR-098)
+
+The artifacts in sections 8–20 are the contract. The site no longer downloads them: it reads a
+**derivation** of them, laid out for one reader looking at one block of one view. Everything in
+this section is produced by `ffdraft package-site-data` (`src/ffdraft/artifacts/serving.py`),
+read by `web/src/data/serving.ts` and `store.ts`, and described by
+`schemas/serving_manifest.schema.json` and `schemas/serving_file.schema.json`.
+
+### 21.1 Derived, never a second source of truth
+
+Every served file is a pure function of the artifacts and metadata beside it.
+`validate-artifacts` re-derives the whole layout and requires the manifest and every served file
+to be **byte-identical** to the derivation, then decodes every table with an independent decoder
+and requires every decoded record to serialize exactly as its source record (field order, JSON
+types and float representation included). `--require-serving` makes a missing manifest critical,
+and the daily refresh runs with it. A served file that is not exactly its subset cannot be
+deployed. The browser decoder is pinned to the Python encoder by `web/tests/serving.test.ts`,
+which decodes files the encoder wrote (`tests/fixtures/artifacts/serve/`).
+
+The full artifacts stay published at their old URLs, unchanged: the validator, `verify:board`,
+the cross-artifact firewall checks and the CSV exports read them.
+
+### 21.2 The manifest — `data/manifest.json`
+
+The one URL whose content changes without its name changing; the page fetches it with
+`cache: "no-cache"`.
+
+| field | meaning |
+|---|---|
+| `format`, `version` | `serving_v1`, `1.0`. The page refuses an unknown format or major version, as it refuses an artifact envelope (section 13) |
+| `card_buckets` | how many player buckets card shards are split into (64) |
+| `artifacts` | source artifact → its envelope without `records`. `schema_version` is checked before any slice of it is read; `build_id` is restored into records (21.4) |
+| `build_metadata`, `ros_build_metadata` | the two metadata files, verbatim; the second only when an in-season bundle was published |
+| `files` | served key → the first 16 hex digits of the file's SHA-256 |
+
+A key is `players`, `<family>/<partition>` or `card/<league>.<scoring>/<bucket>`, and the file is
+served at `data/serve/<key>.<hash>.json`. Since the name carries the hash, the bytes at a URL
+never change.
+
+### 21.3 Families
+
+| family | source | partition | fields |
+|---|---|---|---|
+| `tiers`, `arbitrage`, `ros_tiers` | same | block | all |
+| `inseason_opportunity` | same | block | all; copied ROS fields joined (21.4) |
+| `inseason_opportunity_cohort` | `inseason_opportunity` | block | `league_preset_id`, `scoring_preset`, `player_id`, `position`, `add_count`, `drop_count`, `snap_share_last3`, `target_share_last3` |
+| `weekly_projections` | same | scoring | all |
+| `player_status`, `team_matchups`, `behavior_trend_series`, `player_headshots`, `player_usage` | same | whole | all |
+| `player_usage_cohort` | `player_usage` | whole | `player_id`, `position`, `touchdown_points_share`, `pass_epa_per_dropback` |
+| `players` | every artifact with names | whole | `player_id` → `display_name` |
+| `card` | tiers, arbitrage, market trend series (block); projections, weekly projections (scoring); player status, headshots, usage, behaviour series (whole); ROS, Opportunity (block) | block × bucket | every field of every row of those artifacts whose player falls in the bucket |
+
+`projections` and `market_trend_series` are served only inside card shards: nothing but a card
+reads them. A player's bucket is FNV-1a (32-bit) over the UTF-8 bytes of `player_id`, modulo
+`card_buckets`; the Python and TypeScript implementations share a test vector.
+
+### 21.4 A table
+
+A slice is one table; a card shard is one table per artifact under `sections`. A table is
+column-major and decodes to records by these rules, in this order:
+
+| key | rule |
+|---|---|
+| `count`, `fields` | the number of records, and every field in the source record's order |
+| `absent` | field → rows that **do not carry the key at all** (distinct from a null) |
+| `nested` | field → the key tree every row's object shares; each leaf is the column or constant `<field>.<key>…` |
+| `constants` | field or leaf path → the one value every row holds |
+| `envelope` | fields every row takes from the manifest's envelope of the source artifact (`build_id`) — so an unchanged slice keeps its hash across builds |
+| `names` | the field (`display_name`) every row takes from `players` by `player_id`; present only when every row agrees with the dictionary |
+| `columns` | field or leaf path → one value per row |
+| `join` | rows marked `1` in `rows` take every listed field from the row of the same player in the named family's table of the same partition |
+
+The Opportunity join lists every field the two artifacts share except keys, identity and each
+side's own constants and flags. A row joins only if all of them are equal to its ROS row;
+otherwise it carries its own. The `cross_artifact.intrinsic_firewall` check still runs on the
+full artifacts, and 21.1's decode proof makes it hold for the served values too.
+
+### 21.5 Caching and freshness
+
+The page keeps every served file it reads in the Cache API and re-verifies its digest on every
+read; a mismatch drops the copy (cached) or fails the request (network). Only the current
+manifest decides which files are current, so a file from an older deploy is never shown after a
+newer manifest has been read. Files the manifest no longer names are pruned. There is no service
+worker.
+
+### 21.6 Precision policy — published precision, preserved exactly
+
+The served layout rounds nothing. Every number is the artifact's own double, written with the
+same shortest round-trip representation, and 21.1's byte-exact decode enforces it. The table
+records what that precision is and what the page prints, so a future change can see the margin:
+
+| artifact | fields | published | printed |
+|---|---|---|---|
+| `tiers`, `projections` | VORP and point quantiles, expected points, uncertainty | ≤ 4 dp | 1 dp |
+| `ros_tiers`, `inseason_opportunity` | ROS VORP and point quantiles, expected points and games, uncertainty | ≤ 4 dp | 1 dp |
+| `ros_tiers` | points to date | ≤ 2 dp | 1 dp |
+| `inseason_opportunity` | `snap_share_last3`, `target_share_last3` | full double (≤ 19 dp) | whole percent; the view's CSV export writes the value itself |
+| `weekly_projections` | quantiles, drivers, implied points / lines, opponent index | 2 dp / 1 dp / 3 dp | 1 dp, signed 1 dp |
+| `arbitrage` | ADP, rank gap, score / trend / regional value gap | 2 dp / 4 dp / 6 dp | 1 dp, signed 1 dp |
+| `player_usage` | shares, points, counts, touchdown share, EPA | 2–4 dp | whole percent, 1 dp, integers, 2 dp |
+| `behavior_trend_series` | span, add and net trend | 4 dp | "over N days/hours", 1 dp or whole per day |
+| `market_trend_series` | point ADP, trend | 2 dp, 4 dp | 1 dp |
+| `team_matchups` | lines, implied points | 1 dp, 2 dp | 1 dp |
+
+Rounding the two full-precision shares was measured and declined: every budget is met without it,
+and rounding would change the Opportunity view's CSV export and could create ties inside a card's
+cohort percentile — both changes to what a reader sees.

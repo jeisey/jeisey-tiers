@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/serving_manifest.schema.json",
+  "title": "ServingManifest",
+  "description": "data/manifest.json: the one fixed URL the site reads (ADR-098, docs/DATA_CONTRACTS.md section 21). It names every served file by content hash, carries each source artifact's envelope without its records, and carries build_metadata.json and ros_build_metadata.json verbatim. Derived by `ffdraft package-site-data`; `ffdraft validate-artifacts` requires it byte-identical to a fresh derivation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "card_buckets", "artifacts", "files"],
+  "properties": {
+    "format": { "const": "serving_v1" },
+    "version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "card_buckets": { "type": "integer", "minimum": 1 },
+    "artifacts": {
+      "description": "Source artifact name -> its envelope without `records`. Its `schema_version` is what the page checks before reading a slice of it; its `build_id` is restored into every record that carried the envelope's build id.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["schema_version", "artifact", "build_id", "generated_at_utc", "record_count"],
+        "not": { "required": ["records"] }
+      }
+    },
+    "build_metadata": { "type": "object", "description": "build_metadata.json, verbatim." },
+    "ros_build_metadata": { "type": "object", "description": "ros_build_metadata.json, verbatim, when an in-season bundle was published." },
+    "files": {
+      "description": "Served key -> the first 16 hex digits of the file's SHA-256. Key `players`, `<family>/<partition>` or `card/<league>.<scoring>/<bucket>`; the file is served at data/serve/<key>.<hash>.json.",
+      "type": "object",
+      "required": ["players"],
+      "propertyNames": { "pattern": "^(players|[a-z_]+/[A-Za-z0-9_.-]+|card/[A-Za-z0-9_-]+\\.[A-Z]+/[0-9]{2,})$" },
+      "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{16}$" }
+    }
+  }
+}
