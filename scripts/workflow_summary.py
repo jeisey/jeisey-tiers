@@ -36,6 +36,15 @@ RUN_FACTS: tuple[tuple[str, str], ...] = (
     ("store_commit_before", "Store commit (before)"),
     ("store_commit", "Store commit (after)"),
     ("store_appended", "Store appended"),
+    # The in-season facts daily-refresh.yml has always passed. Before this list named them
+    # they were parsed and silently dropped, because the list is an allow-list.
+    ("season_state", "Season state"),
+    ("product_mode", "Product mode"),
+    ("ros_through_week", "ROS board through week"),
+    ("ros_rows", "ROS rows"),
+    # ADR-096: a withheld weekly layer is a warning, never a gate, so it is stated here.
+    ("weekly_target_week", "Start/Sit week"),
+    ("weekly_rows", "Start/Sit projections"),
     ("deploy_result", "Pages deployment"),
     ("pages_url", "Pages URL"),
 )

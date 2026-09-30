@@ -345,6 +345,8 @@ jobs:
       headshot_coverage: ${{ steps.facts.outputs.headshot_coverage }}
       ros_rows: ${{ steps.facts.outputs.ros_rows }}
       ros_through_week: ${{ steps.facts.outputs.ros_through_week }}
+      weekly_rows: ${{ steps.facts.outputs.weekly_rows }}
+      weekly_target_week: ${{ steps.facts.outputs.weekly_target_week }}
     steps:
       - uses: actions/checkout@v4
 
@@ -455,7 +457,11 @@ jobs:
       #
       # It never trains. `build-ros` loads the committed `intrinsic-ros-v1` artifact and
       # refuses a feature contract it was not fitted against; a refresh that retrained would
-      # serve a different model every day (ADR-078).
+      # serve a different model every day (ADR-078). The same holds for the weekly start/sit
+      # layer it also publishes: the committed `weekly-startsit-v1` artifact is loaded with
+      # its booster digests checked, and the week's official injury report is read through
+      # the same day-keyed nflverse cache. Either failing withholds `weekly_projections.json`
+      # with a warning and leaves every board unchanged (ADR-096).
       #
       # `--preseason-board` hands it the draft board written above, which is what makes the
       # "change in intrinsic view" column possible. Absent, that column is omitted and every
@@ -548,6 +554,17 @@ jobs:
           else:
               print("ros_rows=0")
               print("ros_through_week=")
+          # The weekly start/sit layer (ADR-096). Withholding it is a warning, never a gate,
+          # so the count is surfaced here: a refresh that published no projections says so
+          # in the summary instead of only in build-ros.log.
+          weekly = data / "weekly_projections.json"
+          if weekly.is_file():
+              print(f"weekly_rows={count('weekly_projections.json')}")
+              ros_weekly = json.loads(ros_meta.read_text(encoding="utf-8")).get("weekly") or {}
+              print(f"weekly_target_week={ros_weekly.get('target_week') or ''}")
+          else:
+              print("weekly_rows=0")
+              print("weekly_target_week=")
           PY
 
       # ---- Frontend -----------------------------------------------------------------------
@@ -577,6 +594,12 @@ jobs:
               test -f "web/dist/data/${artifact}.json" \
                 || { echo "::error::web/dist/data/${artifact}.json missing from the build"; exit 1; }
             done
+          fi
+          # The weekly start/sit layer is optional inside the in-season bundle (ADR-096): a
+          # failed or empty weekly build withholds it with a warning. Written means packaged.
+          if [ -f "web/public/data/weekly_projections.json" ]; then
+            test -f "web/dist/data/weekly_projections.json" \
+              || { echo "::error::web/dist/data/weekly_projections.json missing from the build"; exit 1; }
           fi
 
       - name: Cache the Playwright browser
@@ -749,6 +772,8 @@ jobs:
             --fact "product_mode=${{ needs.capture.outputs.mode }}" \
             --fact "ros_through_week=${{ needs.build.outputs.ros_through_week || 'not built' }}" \
             --fact "ros_rows=${{ needs.build.outputs.ros_rows || '0' }}" \
+            --fact "weekly_rows=${{ needs.build.outputs.weekly_rows || '0' }}" \
+            --fact "weekly_target_week=${{ needs.build.outputs.weekly_target_week || 'not published' }}" \
             --fact "deploy_result=${DEPLOY}" \
             --fact "forced_failure=${{ inputs.force_validation_failure == true && 'yes — deploy must be skipped' || '' }}" \
             --fact "pages_url=${{ needs.deploy.outputs.page_url || 'not deployed — previous production remains live' }}"
