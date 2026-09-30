@@ -76,7 +76,7 @@ jobs:
         if: ${{ inputs.dump_data == true }}
         run: |
           set -euo pipefail
-          tar -C probe/data -cf - $(cd probe/data && ls *.json) | xz -9e | base64 -w 120 > probe/data.tar.xz.b64
+          tar -C probe/data -cf - $(cd probe/data && ls *.json) | xz -9e | base64 -w 2000 > probe/data.tar.xz.b64
           echo "lines=$(wc -l < probe/data.tar.xz.b64) sha256=$(sha256sum probe/data.tar.xz.b64 | cut -c1-64)"
           echo "----- BEGIN DATA -----"
           cat probe/data.tar.xz.b64
