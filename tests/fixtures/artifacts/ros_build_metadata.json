@@ -72,8 +72,334 @@
     "lines_source_id": "nflreadpy",
     "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
     "lines_posted_teams": 13,
-    "sportsbook_context_statement": "The spread, total and implied points are sportsbook numbers read from nflverse's schedule and shown as matchup context only. No model reads them: they move no projection, VORP, rank, tier or Pick of the Week selection.",
+    "sportsbook_context_statement": "The spread, total and implied points are sportsbook numbers read from nflverse's schedule. The draft and rest-of-season models never read them: they move no draft or rest-of-season projection, VORP, rank, tier or Pick of the Week selection. The weekly start/sit projection does read them, for the one game it projects (ADR-096).",
     "expected_points_statement": "No expected-fantasy-points reading is published. ffopportunity's expected points are licensed CC-BY-SA 4.0, and whether this site may publish a per-player figure derived from them is an open decision (ADR-086). The rest-of-season model reads them as an input; the card does not print them."
+  },
+  "weekly": {
+    "model_version": "weekly-startsit-v1",
+    "candidate_version": "wc1_quantile_gbm_conformal_v1",
+    "configuration_hash": "692c1886548cde7f",
+    "training_seasons": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "fitted_at_utc": "2026-09-30T15:58:51Z",
+    "through_week": 8,
+    "target_week": 9,
+    "records": 51,
+    "upcoming": 45,
+    "kicked_off": 0,
+    "bye": 6,
+    "quantile_levels": [
+      0.05,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9,
+      0.95
+    ],
+    "distribution_rule": {
+      "version": "quantile_distribution_v1",
+      "tail_lower_factor": 1.0,
+      "tail_upper_factor": 2.0,
+      "grid_points": 200
+    },
+    "families": {
+      "form": "Recent production",
+      "role": "Role and volume",
+      "availability": "Availability",
+      "offense": "His offence",
+      "game": "Game environment",
+      "opponent": "Opponent",
+      "prior": "Track record"
+    },
+    "margin": {
+      "HALF": {
+        "lineup_variance": 449.467,
+        "margin_sd_by_slot": {
+          "QB": 28.9,
+          "RB": 28.99,
+          "TE": 29.31,
+          "WR": 29.02
+        },
+        "position_variance": {
+          "QB": 63.722,
+          "RB": 58.521,
+          "TE": 39.965,
+          "WR": 56.739
+        },
+        "starter_rows": 7980
+      },
+      "PPR": {
+        "lineup_variance": 527.817,
+        "margin_sd_by_slot": {
+          "QB": 31.5,
+          "RB": 31.48,
+          "TE": 31.67,
+          "WR": 31.35
+        },
+        "position_variance": {
+          "QB": 63.684,
+          "RB": 64.511,
+          "TE": 52.62,
+          "WR": 72.66
+        },
+        "starter_rows": 7980
+      },
+      "STD": {
+        "lineup_variance": 389.145,
+        "margin_sd_by_slot": {
+          "QB": 26.7,
+          "RB": 26.92,
+          "TE": 27.35,
+          "WR": 27.1
+        },
+        "position_variance": {
+          "QB": 65.598,
+          "RB": 53.682,
+          "TE": 30.258,
+          "WR": 44.081
+        },
+        "starter_rows": 7980
+      }
+    },
+    "correlation": {
+      "method": "spearman of PIT values -> 2 sin(pi r / 6)",
+      "pairs": {
+        "opponents:any": {
+          "pairs": 11007,
+          "rho": 0.0292,
+          "spearman": 0.0279
+        },
+        "teammates:QB-RB": {
+          "pairs": 1214,
+          "rho": 0.005,
+          "spearman": 0.0048
+        },
+        "teammates:QB-TE": {
+          "pairs": 562,
+          "rho": 0.2673,
+          "spearman": 0.256
+        },
+        "teammates:QB-WR": {
+          "pairs": 1337,
+          "rho": 0.3191,
+          "spearman": 0.306
+        },
+        "teammates:RB-RB": {
+          "pairs": 417,
+          "rho": -0.098,
+          "spearman": -0.0936
+        },
+        "teammates:RB-TE": {
+          "pairs": 1146,
+          "rho": -0.0445,
+          "spearman": -0.0425
+        },
+        "teammates:RB-WR": {
+          "pairs": 2940,
+          "rho": -0.0218,
+          "spearman": -0.0208
+        },
+        "teammates:TE-WR": {
+          "pairs": 1056,
+          "rho": -0.0329,
+          "spearman": -0.0314
+        },
+        "teammates:WR-WR": {
+          "pairs": 819,
+          "rho": 0.0405,
+          "spearman": 0.0386
+        }
+      }
+    },
+    "startable": {
+      "redraft-10": {
+        "HALF": {
+          "QB": 19.73,
+          "RB": 9.69,
+          "TE": 9.21,
+          "WR": 9.62
+        },
+        "PPR": {
+          "QB": 19.74,
+          "RB": 11.54,
+          "TE": 11.17,
+          "WR": 11.44
+        },
+        "STD": {
+          "QB": 19.72,
+          "RB": 7.93,
+          "TE": 7.48,
+          "WR": 7.81
+        }
+      },
+      "redraft-12": {
+        "HALF": {
+          "QB": 18.34,
+          "RB": 8.26,
+          "TE": 8.12,
+          "WR": 8.15
+        },
+        "PPR": {
+          "QB": 18.36,
+          "RB": 9.88,
+          "TE": 9.79,
+          "WR": 9.87
+        },
+        "STD": {
+          "QB": 18.33,
+          "RB": 6.58,
+          "TE": 6.36,
+          "WR": 6.48
+        }
+      },
+      "redraft-14": {
+        "HALF": {
+          "QB": 17.04,
+          "RB": 7.03,
+          "TE": 6.97,
+          "WR": 6.92
+        },
+        "PPR": {
+          "QB": 17.05,
+          "RB": 8.54,
+          "TE": 8.55,
+          "WR": 8.43
+        },
+        "STD": {
+          "QB": 17.02,
+          "RB": 5.47,
+          "TE": 5.33,
+          "WR": 5.36
+        }
+      }
+    },
+    "injury_base_rates": {
+      "Doubtful": {
+        "appearance_rate": 0.0125,
+        "appeared": 5,
+        "reports": 400
+      },
+      "Out": {
+        "appearance_rate": 0.0008,
+        "appeared": 2,
+        "reports": 2640
+      },
+      "Questionable": {
+        "appearance_rate": 0.6411,
+        "appeared": 2242,
+        "reports": 3497
+      },
+      "_rule": {
+        "definition": "Among QB/RB/WR/TE players the official report designated for a regular-season game, the share who then appeared in it (a stats row or an offensive snap).",
+        "seasons": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "version": "designation_appearance_rate_v1"
+      }
+    },
+    "evaluation": {
+      "best_baseline_pair_accuracy": 0.6454016665957564,
+      "calibration": [
+        {
+          "high": 0.55,
+          "low": 0.5,
+          "observed": 0.5243586765340325,
+          "pairs": 30133,
+          "predicted": 0.524911433893074
+        },
+        {
+          "high": 0.6,
+          "low": 0.55,
+          "observed": 0.5742604765817584,
+          "pairs": 29208,
+          "predicted": 0.574611708692824
+        },
+        {
+          "high": 0.65,
+          "low": 0.6,
+          "observed": 0.6248907965206821,
+          "pairs": 26327,
+          "predicted": 0.6243455520948076
+        },
+        {
+          "high": 0.7,
+          "low": 0.65,
+          "observed": 0.6747333157013136,
+          "pairs": 22686,
+          "predicted": 0.674342797319933
+        },
+        {
+          "high": 0.75,
+          "low": 0.7,
+          "observed": 0.7277248346612508,
+          "pairs": 19203,
+          "predicted": 0.7240383468728844
+        },
+        {
+          "high": 0.8,
+          "low": 0.75,
+          "observed": 0.7819177895739757,
+          "pairs": 14694,
+          "predicted": 0.7738982492854226
+        },
+        {
+          "high": 0.85,
+          "low": 0.8,
+          "observed": 0.8427147858874225,
+          "pairs": 11139,
+          "predicted": 0.8236305974503995
+        },
+        {
+          "high": 0.9,
+          "low": 0.85,
+          "observed": 0.8875656035526847,
+          "pairs": 7431,
+          "predicted": 0.8731183555376127
+        },
+        {
+          "high": 0.95,
+          "low": 0.9,
+          "observed": 0.9373427277302466,
+          "pairs": 3974,
+          "predicted": 0.921100987669854
+        },
+        {
+          "high": 1.0,
+          "low": 0.95,
+          "observed": 0.9503105590062112,
+          "pairs": 805,
+          "predicted": 0.9639047204968942
+        }
+      ],
+      "development_verdict": true,
+      "holdout_coverage_50": 0.5108067975581587,
+      "holdout_coverage_80": 0.8029478083924545,
+      "holdout_pair_accuracy": 0.6656354276197828,
+      "holdout_pair_brier": 0.20720991191055443,
+      "holdout_pairs": 165600,
+      "holdout_season": 2025,
+      "holdout_verdict": true
+    },
+    "injuries_retrieved_at_utc": "2026-11-03T12:00:00Z",
+    "statement": "Next-game fantasy points given that he plays, from weekly-startsit-v1: his role, form and track record through the cutoff, his offence, the opposing defence's allowed points, and the game's sportsbook total and spread. It reads no injury report; the league's report is printed beside it instead. No draft or rest-of-season number reads this model."
   },
   "disclosures": {
     "uses_injury_information": false,

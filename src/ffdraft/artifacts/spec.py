@@ -201,6 +201,23 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "(AGENTS.md section 8, ADR-091)."
         ),
     ),
+    "weekly_projections": ArtifactSpec(
+        artifact="weekly_projections",
+        schema_name="weekly_projection",
+        json_filename="weekly_projections.json",
+        # No CSV. A row is a distribution plus a driver account, read by the Start/Sit tab;
+        # flattening it would publish the sportsbook lines it carries as a table (ADR-096).
+        csv_filename=None,
+        key_fields=("build_id", "scoring_preset", "player_id"),
+        sort_fields=("scoring_preset", "position", "player_id"),
+        description=(
+            "The weekly start/sit model's next-game distribution per player and scoring "
+            "preset: seven quantiles given an appearance, an additive driver account of the "
+            "median, the opponent reading and the official injury report beside it. A "
+            "decision-layer model that reads sportsbook lines; no intrinsic model reads it "
+            "(ADR-096)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

@@ -7,7 +7,7 @@
   "record_count": 34,
   "records": [
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -20,6 +20,7 @@
       "ros_fair_rank": 1,
       "ros_position_rank": 1,
       "ros_expected_vorp": 80.4688,
+      "ros_vorp_p50": 80.4688,
       "ros_expected_points": 179.996,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 50.3989,
@@ -47,7 +48,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -60,6 +61,7 @@
       "ros_fair_rank": 2,
       "ros_position_rank": 1,
       "ros_expected_vorp": 55.0576,
+      "ros_vorp_p50": 55.0576,
       "ros_expected_points": 122.8208,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 34.411,
@@ -89,7 +91,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -102,6 +104,7 @@
       "ros_fair_rank": 3,
       "ros_position_rank": 1,
       "ros_expected_vorp": 46.0578,
+      "ros_vorp_p50": 46.0578,
       "ros_expected_points": 150.879,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 42.2461,
@@ -129,7 +132,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -142,6 +145,7 @@
       "ros_fair_rank": 4,
       "ros_position_rank": 2,
       "ros_expected_vorp": 42.352,
+      "ros_vorp_p50": 42.352,
       "ros_expected_points": 147.1732,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 41.1873,
@@ -169,7 +173,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -182,6 +186,7 @@
       "ros_fair_rank": 5,
       "ros_position_rank": 2,
       "ros_expected_vorp": 39.1756,
+      "ros_vorp_p50": 39.1756,
       "ros_expected_points": 138.7028,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 38.858,
@@ -211,7 +216,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -224,6 +229,7 @@
       "ros_fair_rank": 6,
       "ros_position_rank": 1,
       "ros_expected_vorp": 34.9404,
+      "ros_vorp_p50": 34.9404,
       "ros_expected_points": 187.937,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 52.6224,
@@ -251,7 +257,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -264,6 +270,7 @@
       "ros_fair_rank": 7,
       "ros_position_rank": 3,
       "ros_expected_vorp": 22.2348,
+      "ros_vorp_p50": 22.2348,
       "ros_expected_points": 127.056,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 52.093,
@@ -291,7 +298,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -304,6 +311,7 @@
       "ros_fair_rank": 8,
       "ros_position_rank": 2,
       "ros_expected_vorp": 15.3526,
+      "ros_vorp_p50": 15.3526,
       "ros_expected_points": 168.3492,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 47.1166,
@@ -333,7 +341,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -346,6 +354,7 @@
       "ros_fair_rank": 9,
       "ros_position_rank": 4,
       "ros_expected_vorp": 14.2938,
+      "ros_vorp_p50": 14.2938,
       "ros_expected_points": 119.115,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 33.3522,
@@ -373,7 +382,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -386,6 +395,7 @@
       "ros_fair_rank": 10,
       "ros_position_rank": 2,
       "ros_expected_vorp": 11.6468,
+      "ros_vorp_p50": 11.6468,
       "ros_expected_points": 79.41,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 39.705,
@@ -413,7 +423,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -426,6 +436,7 @@
       "ros_fair_rank": 11,
       "ros_position_rank": 3,
       "ros_expected_vorp": 8.9998,
+      "ros_vorp_p50": 8.9998,
       "ros_expected_points": 108.527,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 30.3876,
@@ -453,7 +464,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -466,6 +477,7 @@
       "ros_fair_rank": 12,
       "ros_position_rank": 5,
       "ros_expected_vorp": 6.3528,
+      "ros_vorp_p50": 6.3528,
       "ros_expected_points": 111.174,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 31.1287,
@@ -493,7 +505,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -506,6 +518,7 @@
       "ros_fair_rank": 13,
       "ros_position_rank": 3,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 152.9966,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 42.8285,
@@ -533,7 +546,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -546,6 +559,7 @@
       "ros_fair_rank": 14,
       "ros_position_rank": 6,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 104.8212,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 48.2283,
@@ -575,7 +589,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -588,6 +602,7 @@
       "ros_fair_rank": 15,
       "ros_position_rank": 4,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 99.5272,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 27.8464,
@@ -615,7 +630,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -628,6 +643,7 @@
       "ros_fair_rank": 16,
       "ros_position_rank": 3,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 67.7632,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 18.9525,
@@ -655,7 +671,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -667,10 +683,11 @@
       "position": "RB",
       "ros_fair_rank": 56,
       "ros_position_rank": 41,
-      "ros_expected_vorp": 0.0,
-      "ros_expected_points": null,
-      "ros_expected_games": null,
-      "ros_uncertainty": 0.0,
+      "ros_expected_vorp": -6.25,
+      "ros_vorp_p50": -6.0,
+      "ros_expected_points": 31.5,
+      "ros_expected_games": 4.25,
+      "ros_uncertainty": 50.3989,
       "ros_tier": null,
       "behavior_source_id": "sleeper",
       "behavior_available": true,
@@ -695,7 +712,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -708,6 +725,7 @@
       "ros_fair_rank": 1,
       "ros_position_rank": 1,
       "ros_expected_vorp": 80.4688,
+      "ros_vorp_p50": 80.4688,
       "ros_expected_points": 179.996,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 50.3989,
@@ -735,7 +753,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -748,6 +766,7 @@
       "ros_fair_rank": 2,
       "ros_position_rank": 1,
       "ros_expected_vorp": 55.0576,
+      "ros_vorp_p50": 55.0576,
       "ros_expected_points": 122.8208,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 34.411,
@@ -777,7 +796,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -790,6 +809,7 @@
       "ros_fair_rank": 3,
       "ros_position_rank": 1,
       "ros_expected_vorp": 46.0578,
+      "ros_vorp_p50": 46.0578,
       "ros_expected_points": 150.879,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 42.2461,
@@ -817,7 +837,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -830,6 +850,7 @@
       "ros_fair_rank": 4,
       "ros_position_rank": 2,
       "ros_expected_vorp": 42.352,
+      "ros_vorp_p50": 42.352,
       "ros_expected_points": 147.1732,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 41.1873,
@@ -857,7 +878,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -870,6 +891,7 @@
       "ros_fair_rank": 5,
       "ros_position_rank": 2,
       "ros_expected_vorp": 39.1756,
+      "ros_vorp_p50": 39.1756,
       "ros_expected_points": 138.7028,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 38.858,
@@ -899,7 +921,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -912,6 +934,7 @@
       "ros_fair_rank": 6,
       "ros_position_rank": 1,
       "ros_expected_vorp": 34.9404,
+      "ros_vorp_p50": 34.9404,
       "ros_expected_points": 187.937,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 52.6224,
@@ -939,7 +962,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -952,6 +975,7 @@
       "ros_fair_rank": 7,
       "ros_position_rank": 3,
       "ros_expected_vorp": 22.2348,
+      "ros_vorp_p50": 22.2348,
       "ros_expected_points": 127.056,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 52.093,
@@ -979,7 +1003,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -992,6 +1016,7 @@
       "ros_fair_rank": 8,
       "ros_position_rank": 2,
       "ros_expected_vorp": 15.3526,
+      "ros_vorp_p50": 15.3526,
       "ros_expected_points": 168.3492,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 47.1166,
@@ -1021,7 +1046,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1034,6 +1059,7 @@
       "ros_fair_rank": 9,
       "ros_position_rank": 4,
       "ros_expected_vorp": 14.2938,
+      "ros_vorp_p50": 14.2938,
       "ros_expected_points": 119.115,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 33.3522,
@@ -1061,7 +1087,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1074,6 +1100,7 @@
       "ros_fair_rank": 10,
       "ros_position_rank": 2,
       "ros_expected_vorp": 11.6468,
+      "ros_vorp_p50": 11.6468,
       "ros_expected_points": 79.41,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 39.705,
@@ -1101,7 +1128,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1114,6 +1141,7 @@
       "ros_fair_rank": 11,
       "ros_position_rank": 3,
       "ros_expected_vorp": 8.9998,
+      "ros_vorp_p50": 8.9998,
       "ros_expected_points": 108.527,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 30.3876,
@@ -1141,7 +1169,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1154,6 +1182,7 @@
       "ros_fair_rank": 12,
       "ros_position_rank": 5,
       "ros_expected_vorp": 6.3528,
+      "ros_vorp_p50": 6.3528,
       "ros_expected_points": 111.174,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 31.1287,
@@ -1181,7 +1210,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1194,6 +1223,7 @@
       "ros_fair_rank": 13,
       "ros_position_rank": 3,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 152.9966,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 42.8285,
@@ -1221,7 +1251,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1234,6 +1264,7 @@
       "ros_fair_rank": 14,
       "ros_position_rank": 6,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 104.8212,
       "ros_expected_games": 5.4,
       "ros_uncertainty": 48.2283,
@@ -1263,7 +1294,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1276,6 +1307,7 @@
       "ros_fair_rank": 15,
       "ros_position_rank": 4,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 99.5272,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 27.8464,
@@ -1303,7 +1335,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1316,6 +1348,7 @@
       "ros_fair_rank": 16,
       "ros_position_rank": 3,
       "ros_expected_vorp": 0.0,
+      "ros_vorp_p50": 0.0,
       "ros_expected_points": 67.7632,
       "ros_expected_games": 8.1,
       "ros_uncertainty": 18.9525,
@@ -1343,7 +1376,7 @@
       "quality_flags": []
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1355,10 +1388,11 @@
       "position": "RB",
       "ros_fair_rank": 56,
       "ros_position_rank": 41,
-      "ros_expected_vorp": 0.0,
-      "ros_expected_points": null,
-      "ros_expected_games": null,
-      "ros_uncertainty": 0.0,
+      "ros_expected_vorp": -6.25,
+      "ros_vorp_p50": -6.0,
+      "ros_expected_points": 31.5,
+      "ros_expected_games": 4.25,
+      "ros_uncertainty": 50.3989,
       "ros_tier": null,
       "behavior_source_id": "sleeper",
       "behavior_available": true,

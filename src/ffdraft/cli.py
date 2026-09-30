@@ -765,6 +765,16 @@ def _build_parser() -> argparse.ArgumentParser:
             "rest-of-season value is unaffected"
         ),
     )
+    ros_build.add_argument(
+        "--weekly-model",
+        type=Path,
+        default=None,
+        help=(
+            "the promoted weekly start/sit artifact (default "
+            "models/production/weekly-startsit-v1); without one no weekly_projections.json "
+            "is published and every board is unaffected (ADR-096)"
+        ),
+    )
     ros_build.add_argument("--no-write", action="store_true", help="build without writing files")
     ros_build.set_defaults(handler=_build_ros)
 
@@ -998,7 +1008,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     dictionary.set_defaults(handler=_feature_dictionary)
 
-    # The weekly start/sit model (ADR-095) keeps its commands in one module of its own.
+    # The weekly start/sit model (ADR-096) keeps its commands in one module of its own.
     from ffdraft.weekly.cli import register as register_weekly
 
     register_weekly(subparsers, repo_root=repo_root)
@@ -1837,6 +1847,7 @@ def _build_ros(args: argparse.Namespace) -> int:
         preseason_board=args.preseason_board,
         full_board_out=args.full_board,
         snapshot_out=args.snapshot,
+        weekly_model_dir=args.weekly_model,
         write=not args.no_write,
     )
     print(f"season state  : {result.state.state} ({result.state.mode})")

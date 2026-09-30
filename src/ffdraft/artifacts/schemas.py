@@ -67,6 +67,9 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # every board, card and pick, minus the evidence blocks they feed.
     "player_usage",
     "team_matchup",
+    # ADR-096. The weekly start/sit model's next-game distributions. Additive and
+    # independent: a bundle without it renders every board and card, minus the Start/Sit tab.
+    "weekly_projection",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -87,11 +90,13 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "player_status": "1.0",
     "build_metadata": "1.0",
     "ros_tier_record": "1.0",
-    "inseason_opportunity_record": "1.0",
+    # 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
+    "inseason_opportunity_record": "1.1",
     "player_headshot_record": "1.0",
     "behavior_trend_series": "1.0",
     "player_usage": "1.0",
     "team_matchup": "1.0",
+    "weekly_projection": "1.0",
 }
 
 

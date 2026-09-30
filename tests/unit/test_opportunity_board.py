@@ -31,8 +31,10 @@ from ffdraft.identity.registry import build_registry
 from ffdraft.opportunity.board import (
     BEHAVIOR_MAX_AGE_HOURS,
     SURFACE_ADD_COUNT_MINIMUM,
+    SurfacedValueMissing,
     build_opportunity_records,
     resolve_behavior_signals,
+    surfaced_values,
 )
 from ffdraft.quality import QualityGate
 from ffdraft.retention import SnapshotStore
@@ -158,6 +160,14 @@ def _full_board(depth_extra: int = 0) -> list[dict[str, Any]]:
                 "team": "KC",
                 "scoring_preset": "PPR",
                 "league_preset_id": "redraft-12",
+                # The model's own values for a player beyond the published depth (ADR-097):
+                # a negative VORP and a position rank well down the list.
+                "position_rank": 31 + index,
+                "expected_vorp": -14.25,
+                "p50_vorp": -15.5,
+                "uncertainty": 9.75,
+                "expected_points": 41.0,
+                "expected_games": 6.2,
             },
         )
     return board
@@ -330,6 +340,11 @@ def test_a_trending_player_beyond_the_depth_is_surfaced_without_a_tier() -> None
     # He carries the fair rank the model gave him and no tier at all.
     assert surfaced[0]["ros_fair_rank"] == 10
     assert surfaced[0]["ros_tier"] is None
+    # ...and the model's own values, never the invented rank 1 and 0.0 VORP of ADR-097.
+    assert surfaced[0]["ros_position_rank"] == 31
+    assert surfaced[0]["ros_expected_vorp"] == -14.25
+    assert surfaced[0]["ros_vorp_p50"] == -15.5
+    assert surfaced[0]["ros_uncertainty"] == 9.75
     assert "sleeper_trending_add" in surfaced[0]["surface_reasons"]
     assert diagnostics["surfaced_beyond_depth"] == 1
     # The behaviour population is never a coverage requirement: a feed that trends a player
@@ -384,3 +399,12 @@ def test_net_adds_are_the_only_difference_the_board_takes() -> None:
     assert not any(
         key for key in records[0] if "gap" in key or "score" in key or key.endswith("_index")
     )
+
+
+def test_a_surfaced_row_missing_a_model_value_fails_closed() -> None:
+    """ADR-097: a surfaced row copies the model's value or is not published at all."""
+    row = _full_board(depth_extra=1)[-1]
+    assert surfaced_values(row["player_id"], row)["ros_position_rank"] == 31
+    del row["p50_vorp"]
+    with pytest.raises(SurfacedValueMissing, match="p50_vorp"):
+        surfaced_values(row["player_id"], row)

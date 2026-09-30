@@ -172,13 +172,57 @@
         "sportsbook_context_statement": {
           "type": "string",
           "minLength": 1,
-          "description": "Printed wherever a line is shown: the lines are context, read by no model."
+          "description": "Printed wherever a line is shown: which models read the lines (since ADR-096, the weekly start/sit projection only) and which never do (every draft and rest-of-season number)."
         },
         "expected_points_statement": {
           "type": "string",
           "minLength": 1,
           "description": "Why no expected-points reading is published (the open CC-BY-SA decision, ADR-086)."
         }
+      }
+    },
+    "weekly": {
+      "type": ["object", "null"],
+      "description": "The weekly start/sit layer (ADR-096): which model produced weekly_projections.json, for which week, how a page turns seven quantiles into a distribution, and the measured numbers the Start/Sit tab prints beside it — matchup-margin uncertainty, same-game correlation, league startable thresholds, injury-designation appearance rates and the sealed-season evaluation. Optional and additive: absent or null removes the Start/Sit tab's content and nothing else.",
+      "additionalProperties": false,
+      "required": [
+        "model_version", "candidate_version", "configuration_hash", "training_seasons",
+        "fitted_at_utc", "through_week", "target_week", "records", "upcoming", "kicked_off",
+        "bye", "quantile_levels", "distribution_rule", "families", "margin", "correlation",
+        "startable", "injury_base_rates", "evaluation", "injuries_retrieved_at_utc", "statement"
+      ],
+      "properties": {
+        "model_version": {"const": "weekly-startsit-v1"},
+        "candidate_version": {"type": "string", "minLength": 1},
+        "configuration_hash": {"type": "string", "minLength": 8},
+        "training_seasons": {"type": "array", "items": {"type": "integer"}, "minItems": 1},
+        "fitted_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "through_week": {"type": "integer", "minimum": 1},
+        "target_week": {"type": "integer", "minimum": 2},
+        "records": {"type": "integer", "minimum": 0},
+        "upcoming": {"type": "integer", "minimum": 0},
+        "kicked_off": {"type": "integer", "minimum": 0},
+        "bye": {"type": "integer", "minimum": 0},
+        "quantile_levels": {"type": "array", "items": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "minItems": 3},
+        "distribution_rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version", "tail_lower_factor", "tail_upper_factor", "grid_points"],
+          "properties": {
+            "version": {"const": "quantile_distribution_v1"},
+            "tail_lower_factor": {"type": "number", "minimum": 0},
+            "tail_upper_factor": {"type": "number", "minimum": 0},
+            "grid_points": {"type": "integer", "minimum": 10}
+          }
+        },
+        "families": {"type": "object", "additionalProperties": {"type": "string"}},
+        "margin": {"type": "object", "description": "Per scoring preset: residual variance by position among starters, the lineup total, and margin_sd_by_slot — the standard deviation of a matchup's margin from every other slot. Out-of-fold."},
+        "correlation": {"type": "object", "description": "Same-game Gaussian-copula correlations, teammates by position pair and opponents, from out-of-fold PIT values."},
+        "startable": {"type": "object", "description": "Per league preset and scoring preset: the average points of the last starter at each position."},
+        "injury_base_rates": {"type": "object", "description": "Per official designation: reports, appearances and the appearance rate over the training seasons."},
+        "evaluation": {"type": "object", "description": "The sealed-season (2025) result the page quotes, including the start/sit calibration table."},
+        "injuries_retrieved_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "statement": {"type": "string", "minLength": 40}
       }
     },
     "disclosures": {

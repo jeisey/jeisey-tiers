@@ -1,0 +1,1136 @@
+{
+  "artifact_schema": "weekly_model_artifact_v1",
+  "calibration_season": 2025,
+  "configuration_hash": "692c1886548cde7f",
+  "feature_set_hash": "319076736ffe5aeb",
+  "fitted_at_utc": "2026-09-30T15:58:51Z",
+  "groups": [
+    {
+      "boosters": [
+        {
+          "file": "boosters/QB-HALF-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "30ce22c001edfb06c5041eb15417431c452a75d052a7a286995825c134a302ca"
+        },
+        {
+          "file": "boosters/QB-HALF-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "cc9a49be9becc9bf1bd6341c1b5223a01638281e01e498b5f258578082917517"
+        },
+        {
+          "file": "boosters/QB-HALF-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "430137448d1bbb6a40b6b4281aba3b73e4e7cbf312b03b58452130c41d520231"
+        },
+        {
+          "file": "boosters/QB-HALF-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "376b5835a56fbe53f9eaa6327fbe38ea9ea38f2b52e491521f059db2edd48785"
+        },
+        {
+          "file": "boosters/QB-HALF-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "2b8f03ab082829cac2895afc41b3e6e534e1981c4993d3351e3034ec71e44618"
+        },
+        {
+          "file": "boosters/QB-HALF-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "ab6e205b69af8704cf66acb6c4afdc1dea78c5c7f912e2618d29f7ede3498ffb"
+        },
+        {
+          "file": "boosters/QB-HALF-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "16cc6451663abdf3c60f0704e4969351a68c62a6dd831f108fa45ad7d76f4e1d"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.09764309764309764,
+        0.17003367003367004,
+        0.30134680134680136,
+        0.531986531986532,
+        0.7474747474747475,
+        0.8787878787878788,
+        0.930976430976431
+      ],
+      "calibration_rows": 594,
+      "offsets": [
+        -1.6558458817984798,
+        -1.3134492582941273,
+        -0.37572762167075463,
+        -0.29065453452390966,
+        0.014504732767838924,
+        0.6910627576960287,
+        1.6400520261278748
+      ],
+      "position": "QB",
+      "raw_crossing_rate": 0.10774410774410774,
+      "scoring_preset": "HALF",
+      "training_rows": 5166
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/QB-PPR-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "29756c4edf9b7e7f861f27418c6c593947bd1c24c8bfc1d48d54c11fb0bab61b"
+        },
+        {
+          "file": "boosters/QB-PPR-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "f4b11238d53092005b7eb377890da722fdd009889d7874cb06a7313ff5fdac60"
+        },
+        {
+          "file": "boosters/QB-PPR-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "89a5add14a8b329a61b624522fc87d4e35353e881006f325b3656ecc686ce784"
+        },
+        {
+          "file": "boosters/QB-PPR-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "8f6c3c8e92ee3dc2932687273f6f2cffee8d8d0f141e6f0fe6a919038c3c0c8a"
+        },
+        {
+          "file": "boosters/QB-PPR-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "b7ff52f8d964cf76ea766ebf1041e0c78b0b64e99feac5d14964d55d041a9fb6"
+        },
+        {
+          "file": "boosters/QB-PPR-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "7f5dfc001e94f0baeb8a71417526eb2329c60b56a3abb978216e0c731dd3a5d2"
+        },
+        {
+          "file": "boosters/QB-PPR-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "a9415c701b1c4aa75204fea01eeccf309bf25245e0ea9169ba66f105a8c3669c"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.09932659932659933,
+        0.16835016835016836,
+        0.3114478114478115,
+        0.5235690235690236,
+        0.7542087542087542,
+        0.8855218855218855,
+        0.9292929292929293
+      ],
+      "calibration_rows": 594,
+      "offsets": [
+        -1.6102360820526767,
+        -1.2486599012965562,
+        -0.39182159560172475,
+        -0.14603290002879304,
+        -0.19074255027325338,
+        0.8923420450201099,
+        1.4146503614321668
+      ],
+      "position": "QB",
+      "raw_crossing_rate": 0.07744107744107744,
+      "scoring_preset": "PPR",
+      "training_rows": 5166
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/QB-STD-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "ada89b18717766f624aa6b5c3b4fd43af942cc3a13b8e5e8130f0c9156b1542d"
+        },
+        {
+          "file": "boosters/QB-STD-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "3a2179b0125b966c062bb21e500305484a474376a073abf20a73c1ffafa916c4"
+        },
+        {
+          "file": "boosters/QB-STD-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "0aa39f13f0c9e6c496f68e65e4fd13d9a642e86be113f7cbc538e4c6166b0480"
+        },
+        {
+          "file": "boosters/QB-STD-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "e349fdfca8f29493dfafda7cb6f475f6c0add9b17e4c696f386cb47c8a1cec24"
+        },
+        {
+          "file": "boosters/QB-STD-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "05ca4e5e3b80ec919de6cf8989f91e68871e0d63c70c7bc288a643d416513b4c"
+        },
+        {
+          "file": "boosters/QB-STD-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "5667bd8fa852d43ae345a3d7504562fc1684670f5351c70b631e31e95c7ea981"
+        },
+        {
+          "file": "boosters/QB-STD-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "4a7d9f5172ab1377900341829cca470e22b20a1fd7ebfce2eef39e338e1fa539"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.1026936026936027,
+        0.17676767676767677,
+        0.3148148148148148,
+        0.5387205387205387,
+        0.7525252525252525,
+        0.8703703703703703,
+        0.9259259259259259
+      ],
+      "calibration_rows": 594,
+      "offsets": [
+        -1.8065168221520376,
+        -1.3804355923841118,
+        -0.3507747269099257,
+        -0.32598483187496474,
+        -0.08320494717605764,
+        0.7496256560089257,
+        1.4488709479558903
+      ],
+      "position": "QB",
+      "raw_crossing_rate": 0.09932659932659933,
+      "scoring_preset": "STD",
+      "training_rows": 5166
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/RB-HALF-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "c464fa5741b48e2323c898fdf0608a31eee4c000ceb773a79ac6349c6425b55a"
+        },
+        {
+          "file": "boosters/RB-HALF-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "fa19a159eb3e4fcf6b7b85bca98b8853d1baabe664d575190a412a7a8cc2b5f7"
+        },
+        {
+          "file": "boosters/RB-HALF-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "ac40bdf929a26f1bd2ce4f9504488a55df75ae7310dd90139a7154581b923fe2"
+        },
+        {
+          "file": "boosters/RB-HALF-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "648776e94c6d8c31642a30396e218bba3ee0cfc4c30dbba268e6c681f93060ea"
+        },
+        {
+          "file": "boosters/RB-HALF-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "12cf352e6e7a7ade1ab87bbcd6b198da5066949948332abbe3f301a0dc894a99"
+        },
+        {
+          "file": "boosters/RB-HALF-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "d3b234fa7d33fe23cf9f8a298c2a5b0644d028d023f46757dadb58a6672e1edc"
+        },
+        {
+          "file": "boosters/RB-HALF-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "d40a19d7662a24b44ab91b49f1f94aba9c209e1b20599895a2c48f88bc9135f0"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.041223404255319146,
+        0.12965425531914893,
+        0.31648936170212766,
+        0.5319148936170213,
+        0.7533244680851063,
+        0.8809840425531915,
+        0.9308510638297872
+      ],
+      "calibration_rows": 1504,
+      "offsets": [
+        0.00018828951165065746,
+        -2.785839909577546e-05,
+        -0.0035316048790142943,
+        -0.017318688993339146,
+        -0.015067877047749256,
+        0.9114527323742487,
+        1.1496987492537194
+      ],
+      "position": "RB",
+      "raw_crossing_rate": 0.19680851063829788,
+      "scoring_preset": "HALF",
+      "training_rows": 13571
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/RB-PPR-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "999193f19b3c6678a84d0aab36af20d3bc7a4a04510ec7bb633e0227254bfa94"
+        },
+        {
+          "file": "boosters/RB-PPR-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "bad1c3bb106a11233698768b610ce3a47b94b97aef6c7ecb14a08f3ea4bf355c"
+        },
+        {
+          "file": "boosters/RB-PPR-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "81549607d4584388430dbc7cbbd49ccac0caa866ed675783ac22ac8008e61bdd"
+        },
+        {
+          "file": "boosters/RB-PPR-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "f2263d4a363dd102ad407dbebaef64d0b8260b037207a82babe30a36f52599bb"
+        },
+        {
+          "file": "boosters/RB-PPR-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "2dc1c00fb0cb2e27cdaca4c7edb1370a0b403c707e4995a2d9812a45c692b099"
+        },
+        {
+          "file": "boosters/RB-PPR-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "e94e31de18a1dd14d942eaf0345c9de71d9ba14d3f5cd51aff742bfc5a39e000"
+        },
+        {
+          "file": "boosters/RB-PPR-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "9936138e94c013b41a67ac2be8d93d624e17471d41ea6174d4b8bd12ba37034a"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.0398936170212766,
+        0.12632978723404256,
+        0.3038563829787234,
+        0.5325797872340425,
+        0.7473404255319149,
+        0.879654255319149,
+        0.9308510638297872
+      ],
+      "calibration_rows": 1504,
+      "offsets": [
+        0.001563984279437103,
+        -5.747350887047113e-05,
+        -0.0023757019673864756,
+        -0.011996800294023368,
+        0.026376642601644573,
+        0.8763271605251196,
+        1.1820773688618194
+      ],
+      "position": "RB",
+      "raw_crossing_rate": 0.18949468085106383,
+      "scoring_preset": "PPR",
+      "training_rows": 13571
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/RB-STD-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "99a7723ebd6369f0e4d284fd0595cfc2bd8b6a0b571649ed9e532dc265f9e6b3"
+        },
+        {
+          "file": "boosters/RB-STD-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "f10ae1978474518c65dbb5509a49fb65e8356eacab966e8ae85574c00cc31acf"
+        },
+        {
+          "file": "boosters/RB-STD-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "7e0df0d9018b34a4f1ed4557cb7bc887cf2414e707730eade28050e4515377fe"
+        },
+        {
+          "file": "boosters/RB-STD-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "b07555c91cac7d5af1dc8da54baef07c465ece6336ef17b0c349830a098a4d06"
+        },
+        {
+          "file": "boosters/RB-STD-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "345035c3684c5b2752e8c119479f2ff53d2f58404b18abf0a577baa3dd1dfaba"
+        },
+        {
+          "file": "boosters/RB-STD-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "36e4b250616289a16e8119ae3a80ebc78aaf4630514440a54808d420ae1cd9fc"
+        },
+        {
+          "file": "boosters/RB-STD-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "87b45053bdd9768d51287f1ade0e8189621399ff25d60d1bea9c6ef6306b9ee8"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.04853723404255319,
+        0.14095744680851063,
+        0.3191489361702128,
+        0.5418882978723404,
+        0.7553191489361702,
+        0.8789893617021277,
+        0.9335106382978723
+      ],
+      "calibration_rows": 1504,
+      "offsets": [
+        3.5912061193257267e-05,
+        -0.0009798089686853667,
+        -0.006171124706486867,
+        -0.01909760710819839,
+        -0.01647802281000539,
+        0.8018577285545889,
+        1.29924227031324
+      ],
+      "position": "RB",
+      "raw_crossing_rate": 0.21808510638297873,
+      "scoring_preset": "STD",
+      "training_rows": 13571
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/TE-HALF-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "e436e76eb10eec037a75d1d9491d295e17d2f317887ad5a7fb4a389b119b874a"
+        },
+        {
+          "file": "boosters/TE-HALF-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "c6b7a5e941b3af9f77ab53d2c7e8f154c334f7a0345cc749dfb1856ed24647b6"
+        },
+        {
+          "file": "boosters/TE-HALF-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "847ab326fc6ea52b66c1fbf999c290aed99f88c00a1533ab6029fd7368ea1861"
+        },
+        {
+          "file": "boosters/TE-HALF-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "ab1b4de5a2965ae903edcf2100206fadd9391b25cd9421cbbfc545b1ba4149d0"
+        },
+        {
+          "file": "boosters/TE-HALF-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "81501651cdb0afdee749d871d2fefb60f0163ad8cef284e2ac22722fb432c5e9"
+        },
+        {
+          "file": "boosters/TE-HALF-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "b930b05a7a1456fd71a27c4d4ba9fb05931fc88898406eb041cbe31f3ad34504"
+        },
+        {
+          "file": "boosters/TE-HALF-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "9726303a764f370b3e4ef1c9b0906f00bb035e6b42e0528c229152593b3ddd86"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.16424802110817943,
+        0.2948548812664908,
+        0.4287598944591029,
+        0.5864116094986808,
+        0.7651715039577837,
+        0.8937994722955145,
+        0.9445910290237467
+      ],
+      "calibration_rows": 1516,
+      "offsets": [
+        0.0,
+        0.0,
+        0.0,
+        -3.160710688367703e-05,
+        -0.011636046377830236,
+        0.08740869480935398,
+        0.3751394117912217
+      ],
+      "position": "TE",
+      "raw_crossing_rate": 0.4426121372031662,
+      "scoring_preset": "HALF",
+      "training_rows": 12260
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/TE-PPR-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "0eccc7588881864b46c4d3945edda86c476efa955189409d5f902cac6003deba"
+        },
+        {
+          "file": "boosters/TE-PPR-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "70412b11f32c782c785d4d25d978548454c7d3361e069d2c5abb94174f1507af"
+        },
+        {
+          "file": "boosters/TE-PPR-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "bdd89c33d4fbddaef06cbe0a60d7054bdd0aaf3a285b9d3290b74c83769a50b2"
+        },
+        {
+          "file": "boosters/TE-PPR-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "be3de240c8a62ee752c6fc048b620e5a904b2d3c1e8d92f84e630dee9cb7c970"
+        },
+        {
+          "file": "boosters/TE-PPR-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "78daa4af01a48ca0b581ea4e7c202addd6e3ba61400aed225a2fd0fe0fec7f02"
+        },
+        {
+          "file": "boosters/TE-PPR-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "b10e4484717176ee44beab6559d70c106bfe676f7f19726c4b10f247b3ce1d39"
+        },
+        {
+          "file": "boosters/TE-PPR-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "02031dede542fac440c5b2a58e7e4c523912565d5ff1ec5810873db0009b08ed"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.18337730870712401,
+        0.30408970976253297,
+        0.4399736147757256,
+        0.5844327176781002,
+        0.771108179419525,
+        0.8924802110817942,
+        0.9439313984168866
+      ],
+      "calibration_rows": 1516,
+      "offsets": [
+        0.0,
+        0.0,
+        0.0,
+        -4.4551325585568394e-05,
+        -0.05025701423492514,
+        0.21444103105324852,
+        0.3693524204727674
+      ],
+      "position": "TE",
+      "raw_crossing_rate": 0.40633245382585753,
+      "scoring_preset": "PPR",
+      "training_rows": 12260
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/TE-STD-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "4e96a51fe2432d1bc4aa7ffff34d7a2442b79fbb96e36f3089fadbe1c833431a"
+        },
+        {
+          "file": "boosters/TE-STD-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "47312062d355db21395351eb77760de3c79f4726a3da7837882793c2c878574b"
+        },
+        {
+          "file": "boosters/TE-STD-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "4560b5e4e1e4d587d5ec76bceb35ec5147422a887eeffa8239393cae01323fbf"
+        },
+        {
+          "file": "boosters/TE-STD-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "7a1e49aa3c876009d74ca909cf265f42e4e4680202778dcb1198ac2207a7bdd0"
+        },
+        {
+          "file": "boosters/TE-STD-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "2622d8a9b6020453e9bb4f8fa562dba6322eb15968d6b14f21aa7ab58197022c"
+        },
+        {
+          "file": "boosters/TE-STD-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "c0b889da579cce3dcc7765556938871e4d94b9386775c349802b89da74ec32fd"
+        },
+        {
+          "file": "boosters/TE-STD-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "bb5a0f981e0531771e6426ef85b01b3022b6ae19ce18675b7ddf17beec4e1daf"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.14511873350923482,
+        0.23482849604221637,
+        0.3627968337730871,
+        0.570580474934037,
+        0.7704485488126649,
+        0.8964379947229552,
+        0.9452506596306068
+      ],
+      "calibration_rows": 1516,
+      "offsets": [
+        0.0,
+        0.0,
+        0.0,
+        -1.8759113376471973e-05,
+        -0.006489335580972672,
+        0.10547160365986763,
+        0.2929004959904016
+      ],
+      "position": "TE",
+      "raw_crossing_rate": 0.4241424802110818,
+      "scoring_preset": "STD",
+      "training_rows": 12260
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/WR-HALF-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "1c537d9634784f799427f097bc72f708e9e61b61046268afe82701e06f36d7bb"
+        },
+        {
+          "file": "boosters/WR-HALF-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "d4558a33d26d2351211c5ccb9664a02087eeda3b850ecf071cb83fc635fb86e1"
+        },
+        {
+          "file": "boosters/WR-HALF-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "949d7c96fd6f56092130535e6b125246d26aedb6745528843c79d4f8b50ff0b3"
+        },
+        {
+          "file": "boosters/WR-HALF-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "7587029349a7607d265b584053ae92284871b27b54adc1b4a6e2260d33751b08"
+        },
+        {
+          "file": "boosters/WR-HALF-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "da0cb3b422544a4b09e71f491dc680e1f1dbb36db17af61c98be55ddc69cb416"
+        },
+        {
+          "file": "boosters/WR-HALF-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "f7936e03f6d93408d4a4898c8b04c602c6765afec7500dd6d381ba5c4857e285"
+        },
+        {
+          "file": "boosters/WR-HALF-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "ace16699772e1b2599c818b62430bc418c86953d1b7b896e1c4e257c9be08636"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.10502656313853699,
+        0.1961585615038823,
+        0.35553739272578666,
+        0.5651818553330609,
+        0.769922353902738,
+        0.8990600735594606,
+        0.9448304045770332
+      ],
+      "calibration_rows": 2447,
+      "offsets": [
+        0.0,
+        -2.1985489599580384e-05,
+        -8.636559946281313e-05,
+        -0.0006898349813064395,
+        -0.08958472890451312,
+        0.03244395497796249,
+        0.42609648615719764
+      ],
+      "position": "WR",
+      "raw_crossing_rate": 0.28320392317123005,
+      "scoring_preset": "HALF",
+      "training_rows": 20881
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/WR-PPR-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "a52899e62c4b997080df3d0998b076dea4e2b3accb0785e015256c59e119aa72"
+        },
+        {
+          "file": "boosters/WR-PPR-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "ffc6a1bc3d589b36dc74e32d87a8e78c620188a44f0b568384760fe920f0d5d1"
+        },
+        {
+          "file": "boosters/WR-PPR-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "881ccdc1ba681352ba71c8c3c3cf4edbdf014e5b2965082f510bae9ccdca3ee8"
+        },
+        {
+          "file": "boosters/WR-PPR-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "947f8874d916e05d8bb68902e70df49b08e2ae91173fac85dbbf24f08b8de78d"
+        },
+        {
+          "file": "boosters/WR-PPR-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "988431d08481aaa52b269388911c1f71d26b9006fa0ba22d688447da3691806e"
+        },
+        {
+          "file": "boosters/WR-PPR-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "c5926c05ee6d2eaa1022c6374d69cb60b2d9229369b7b2aa35f2edc09f1868ed"
+        },
+        {
+          "file": "boosters/WR-PPR-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "8a6279968e19595730f0afd2176a920e12bfb5cb3aa6cb92adf90909de396ea8"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.10502656313853699,
+        0.19043727012668574,
+        0.3420514916223948,
+        0.5582345729464651,
+        0.7736003269309358,
+        0.8990600735594606,
+        0.9431957498978341
+      ],
+      "calibration_rows": 2447,
+      "offsets": [
+        0.0,
+        -4.871866868872793e-05,
+        -1.949793839962815e-05,
+        -0.0010221438956921683,
+        -0.16737754927860804,
+        0.0532533528936291,
+        0.41061689723879385
+      ],
+      "position": "WR",
+      "raw_crossing_rate": 0.3011851246424193,
+      "scoring_preset": "PPR",
+      "training_rows": 20881
+    },
+    {
+      "boosters": [
+        {
+          "file": "boosters/WR-STD-q05.txt.gz",
+          "level": 0.05,
+          "sha256": "f925b5ead2a9204f5c8a9ec8c08f43d8baabbd8af6a4654e6416dfed7352a5f1"
+        },
+        {
+          "file": "boosters/WR-STD-q10.txt.gz",
+          "level": 0.1,
+          "sha256": "55f169584378c4331fa90f63ba900c3727513c205ab242fc6e703e35b1c74910"
+        },
+        {
+          "file": "boosters/WR-STD-q25.txt.gz",
+          "level": 0.25,
+          "sha256": "a9e15fe1a56cea2e0c5b805ace23556019021b06650842ef7d057bcb5729c01a"
+        },
+        {
+          "file": "boosters/WR-STD-q50.txt.gz",
+          "level": 0.5,
+          "sha256": "2e9722870df4eb96596c8789109f6c8b09603b54b6fb45103e9183eeb11f45d7"
+        },
+        {
+          "file": "boosters/WR-STD-q75.txt.gz",
+          "level": 0.75,
+          "sha256": "1eb52e50da49951c5d279534239bf321b80226e8d44669bbc2107dd49a416fb1"
+        },
+        {
+          "file": "boosters/WR-STD-q90.txt.gz",
+          "level": 0.9,
+          "sha256": "3a8af9eb0f5e5774502e730b27218c6e570bfe6d1ac64d0117e9f2e703afa1d5"
+        },
+        {
+          "file": "boosters/WR-STD-q95.txt.gz",
+          "level": 0.95,
+          "sha256": "ea9b3652a61bb96cb1f6f2960232f741f565b1d84abbb8cfbe4680fc91d9593f"
+        }
+      ],
+      "calibration_coverage_before": [
+        0.11401716387413159,
+        0.20024519820187986,
+        0.3543114017163874,
+        0.559869227625664,
+        0.7691050265631385,
+        0.8994687372292604,
+        0.9452390682468329
+      ],
+      "calibration_rows": 2447,
+      "offsets": [
+        0.0,
+        -0.0001228491284993553,
+        -0.0001300824055903367,
+        -0.00032956031105187735,
+        -0.046909703230800216,
+        0.025216176942611534,
+        0.4114461685096722
+      ],
+      "position": "WR",
+      "raw_crossing_rate": 0.28156926849203107,
+      "scoring_preset": "STD",
+      "training_rows": 20881
+    }
+  ],
+  "measurements": {
+    "correlation": {
+      "method": "spearman of PIT values -> 2 sin(pi r / 6)",
+      "pairs": {
+        "opponents:any": {
+          "pairs": 11007,
+          "rho": 0.0292,
+          "spearman": 0.0279
+        },
+        "teammates:QB-RB": {
+          "pairs": 1214,
+          "rho": 0.005,
+          "spearman": 0.0048
+        },
+        "teammates:QB-TE": {
+          "pairs": 562,
+          "rho": 0.2673,
+          "spearman": 0.256
+        },
+        "teammates:QB-WR": {
+          "pairs": 1337,
+          "rho": 0.3191,
+          "spearman": 0.306
+        },
+        "teammates:RB-RB": {
+          "pairs": 417,
+          "rho": -0.098,
+          "spearman": -0.0936
+        },
+        "teammates:RB-TE": {
+          "pairs": 1146,
+          "rho": -0.0445,
+          "spearman": -0.0425
+        },
+        "teammates:RB-WR": {
+          "pairs": 2940,
+          "rho": -0.0218,
+          "spearman": -0.0208
+        },
+        "teammates:TE-WR": {
+          "pairs": 1056,
+          "rho": -0.0329,
+          "spearman": -0.0314
+        },
+        "teammates:WR-WR": {
+          "pairs": 819,
+          "rho": 0.0405,
+          "spearman": 0.0386
+        }
+      }
+    },
+    "evaluation": {
+      "best_baseline_pair_accuracy": 0.6454016665957564,
+      "calibration": [
+        {
+          "high": 0.55,
+          "low": 0.5,
+          "observed": 0.5243586765340325,
+          "pairs": 30133,
+          "predicted": 0.524911433893074
+        },
+        {
+          "high": 0.6,
+          "low": 0.55,
+          "observed": 0.5742604765817584,
+          "pairs": 29208,
+          "predicted": 0.574611708692824
+        },
+        {
+          "high": 0.65,
+          "low": 0.6,
+          "observed": 0.6248907965206821,
+          "pairs": 26327,
+          "predicted": 0.6243455520948076
+        },
+        {
+          "high": 0.7,
+          "low": 0.65,
+          "observed": 0.6747333157013136,
+          "pairs": 22686,
+          "predicted": 0.674342797319933
+        },
+        {
+          "high": 0.75,
+          "low": 0.7,
+          "observed": 0.7277248346612508,
+          "pairs": 19203,
+          "predicted": 0.7240383468728844
+        },
+        {
+          "high": 0.8,
+          "low": 0.75,
+          "observed": 0.7819177895739757,
+          "pairs": 14694,
+          "predicted": 0.7738982492854226
+        },
+        {
+          "high": 0.85,
+          "low": 0.8,
+          "observed": 0.8427147858874225,
+          "pairs": 11139,
+          "predicted": 0.8236305974503995
+        },
+        {
+          "high": 0.9,
+          "low": 0.85,
+          "observed": 0.8875656035526847,
+          "pairs": 7431,
+          "predicted": 0.8731183555376127
+        },
+        {
+          "high": 0.95,
+          "low": 0.9,
+          "observed": 0.9373427277302466,
+          "pairs": 3974,
+          "predicted": 0.921100987669854
+        },
+        {
+          "high": 1.0,
+          "low": 0.95,
+          "observed": 0.9503105590062112,
+          "pairs": 805,
+          "predicted": 0.9639047204968942
+        }
+      ],
+      "development_verdict": true,
+      "holdout_coverage_50": 0.5108067975581587,
+      "holdout_coverage_80": 0.8029478083924545,
+      "holdout_pair_accuracy": 0.6656354276197828,
+      "holdout_pair_brier": 0.20720991191055443,
+      "holdout_pairs": 165600,
+      "holdout_season": 2025,
+      "holdout_verdict": true
+    },
+    "injuries": {
+      "Doubtful": {
+        "appearance_rate": 0.0125,
+        "appeared": 5,
+        "reports": 400
+      },
+      "Out": {
+        "appearance_rate": 0.0008,
+        "appeared": 2,
+        "reports": 2640
+      },
+      "Questionable": {
+        "appearance_rate": 0.6411,
+        "appeared": 2242,
+        "reports": 3497
+      },
+      "_rule": {
+        "definition": "Among QB/RB/WR/TE players the official report designated for a regular-season game, the share who then appeared in it (a stats row or an offensive snap).",
+        "seasons": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "version": "designation_appearance_rate_v1"
+      }
+    },
+    "margin": {
+      "HALF": {
+        "lineup_variance": 449.467,
+        "margin_sd_by_slot": {
+          "QB": 28.9,
+          "RB": 28.99,
+          "TE": 29.31,
+          "WR": 29.02
+        },
+        "position_variance": {
+          "QB": 63.722,
+          "RB": 58.521,
+          "TE": 39.965,
+          "WR": 56.739
+        },
+        "starter_rows": 7980
+      },
+      "PPR": {
+        "lineup_variance": 527.817,
+        "margin_sd_by_slot": {
+          "QB": 31.5,
+          "RB": 31.48,
+          "TE": 31.67,
+          "WR": 31.35
+        },
+        "position_variance": {
+          "QB": 63.684,
+          "RB": 64.511,
+          "TE": 52.62,
+          "WR": 72.66
+        },
+        "starter_rows": 7980
+      },
+      "STD": {
+        "lineup_variance": 389.145,
+        "margin_sd_by_slot": {
+          "QB": 26.7,
+          "RB": 26.92,
+          "TE": 27.35,
+          "WR": 27.1
+        },
+        "position_variance": {
+          "QB": 65.598,
+          "RB": 53.682,
+          "TE": 30.258,
+          "WR": 44.081
+        },
+        "starter_rows": 7980
+      }
+    },
+    "startable": {
+      "redraft-10": {
+        "HALF": {
+          "QB": 19.73,
+          "RB": 9.69,
+          "TE": 9.21,
+          "WR": 9.62
+        },
+        "PPR": {
+          "QB": 19.74,
+          "RB": 11.54,
+          "TE": 11.17,
+          "WR": 11.44
+        },
+        "STD": {
+          "QB": 19.72,
+          "RB": 7.93,
+          "TE": 7.48,
+          "WR": 7.81
+        }
+      },
+      "redraft-12": {
+        "HALF": {
+          "QB": 18.34,
+          "RB": 8.26,
+          "TE": 8.12,
+          "WR": 8.15
+        },
+        "PPR": {
+          "QB": 18.36,
+          "RB": 9.88,
+          "TE": 9.79,
+          "WR": 9.87
+        },
+        "STD": {
+          "QB": 18.33,
+          "RB": 6.58,
+          "TE": 6.36,
+          "WR": 6.48
+        }
+      },
+      "redraft-14": {
+        "HALF": {
+          "QB": 17.04,
+          "RB": 7.03,
+          "TE": 6.97,
+          "WR": 6.92
+        },
+        "PPR": {
+          "QB": 17.05,
+          "RB": 8.54,
+          "TE": 8.55,
+          "WR": 8.43
+        },
+        "STD": {
+          "QB": 17.02,
+          "RB": 5.47,
+          "TE": 5.33,
+          "WR": 5.36
+        }
+      }
+    }
+  },
+  "refit_reason": "initial_production_fit",
+  "spec": {
+    "calibration": "split-conformal additive shift per quantile, last training season",
+    "candidate_version": "wc1_quantile_gbm_conformal_v1",
+    "context_rule": "weekly_game_context_v1",
+    "feature_set": "weekly_core_v1",
+    "feature_set_hash": "319076736ffe5aeb",
+    "features": [
+      "ppg_to_date",
+      "ppg_last3",
+      "ppg_trend",
+      "best_week_points_to_date",
+      "points_sd_to_date",
+      "points_per_opportunity_to_date",
+      "td_per_opportunity_to_date",
+      "points_over_expected_per_game_to_date",
+      "snap_pct_mean_to_date",
+      "snap_pct_last3",
+      "snap_pct_trend",
+      "target_share_to_date",
+      "target_share_last3",
+      "target_share_trend",
+      "carry_share_to_date",
+      "targets_per_game_to_date",
+      "carries_per_game_to_date",
+      "pass_attempts_per_game_to_date",
+      "touches_per_game_to_date",
+      "air_yards_per_game_to_date",
+      "expected_points_per_game_to_date",
+      "games_to_date",
+      "games_last3",
+      "active_last_week",
+      "weeks_since_last_game",
+      "through_week",
+      "team_points_per_game_to_date",
+      "team_pass_rate_to_date",
+      "team_plays_per_game_to_date",
+      "team_changed_in_season",
+      "game_total_line",
+      "game_team_margin",
+      "game_team_points",
+      "game_is_home",
+      "game_rest_advantage",
+      "game_indoors",
+      "opp_allowed_ppg",
+      "opp_allowed_index",
+      "opp_allowed_prior_ppg",
+      "opp_games_to_date",
+      "prev1_fantasy_ppg_ppr",
+      "prev1_fantasy_ppg_std",
+      "prev1_games",
+      "prev1_snap_share",
+      "prev1_target_share",
+      "prev1_targets_pg",
+      "prev1_carries_pg",
+      "prev1_pass_attempts_pg",
+      "prev1_xfp_pg",
+      "recent3_fantasy_ppg_ppr_w",
+      "prior5_fantasy_ppg_ppr",
+      "draft_overall",
+      "age_at_anchor",
+      "experience_years",
+      "rookie_flag"
+    ],
+    "levels": [
+      0.05,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9,
+      0.95
+    ],
+    "model_version": "weekly-startsit-v1",
+    "num_boost_round": 350,
+    "opponent_shrinkage_games": 4.0,
+    "parameters": {
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "deterministic": true,
+      "feature_fraction": 0.8,
+      "force_row_wise": true,
+      "lambda_l2": 1.0,
+      "learning_rate": 0.03,
+      "max_bin": 127,
+      "min_data_in_leaf": 200,
+      "num_leaves": 15,
+      "num_threads": 4,
+      "verbosity": -1
+    },
+    "seed": 20260930,
+    "target_rule": "next_game_points_given_appearance_v1"
+  },
+  "training_seasons": [
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ]
+}

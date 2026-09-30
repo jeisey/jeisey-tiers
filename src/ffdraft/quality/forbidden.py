@@ -72,6 +72,12 @@ FORBIDDEN_NAME_SUBSTRINGS = (
     "expected_margin",
     "implied_team",
     "implied_opponent",
+    # ADR-096: the weekly start/sit model's names for the same lines, expressed from a
+    # team's side. That model may read them; the intrinsic and rest-of-season models may not,
+    # and a name carried over from the weekly frame must fail here rather than read as a
+    # harmless "team" feature.
+    "game_team_margin",
+    "game_team_points",
 )
 
 #: Sources whose data may never feed the intrinsic model, whatever the column is called.

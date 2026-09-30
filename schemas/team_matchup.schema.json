@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/schemas/team_matchup.schema.json",
   "title": "TeamMatchup",
-  "description": "One team's next unplayed regular-season game inside the fantasy horizon, under `next_game_v1` (ADR-091), from nflverse's schedule. PUBLISHED CONTEXT ONLY. The sportsbook fields (`total_line`, `team_expected_margin`, the implied points) are a market quantity AGENTS.md section 8 forbids as an intrinsic feature: they are printed beside a player and computed into nothing — no model reads them, no rank, tier or Pick of the Week selection moves with them, and the forbidden-feature guard fails any feature named for them. The upstream sportsbook is not documented by nflverse; no odds prices are published, only the consensus spread and total.",
+  "description": "One team's next unplayed regular-season game inside the fantasy horizon, under `next_game_v1` (ADR-091), from nflverse's schedule. PUBLISHED CONTEXT for every board. The sportsbook fields (`total_line`, `team_expected_margin`, the implied points) are a market quantity AGENTS.md section 8 forbids as an intrinsic feature: no draft or rest-of-season model reads them, no rank, tier or Pick of the Week selection moves with them, and the forbidden-feature guard fails any intrinsic or rest-of-season feature named for them. Since ADR-096 the weekly start/sit model — a decision-layer model downstream of both — reads the same lines for the one game it projects, from the schedule rather than from this artifact. The upstream sportsbook is not documented by nflverse; no odds prices are published, only the consensus spread and total.",
   "type": "object",
   "additionalProperties": false,
   "required": [

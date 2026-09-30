@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/weekly_projection.schema.json",
+  "title": "WeeklyProjection",
+  "description": "One player's next game as a distribution, from `weekly-startsit-v1` (ADR-096): seven quantiles of fantasy points in the row's scoring preset, GIVEN THAT HE PLAYS, for the game in `target_week`. A decision-layer model: it reads the rest-of-season snapshot's point-in-time features plus the game's sportsbook environment and the opponent's allowed points, and no intrinsic model reads it. The injury block is the league's official report printed beside the projection; the model never reads it. One record per player and scoring preset; league size changes nothing here, only the startable threshold the page compares against (published in `ros_build_metadata.weekly`).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "target_week", "player_id",
+    "display_name", "position", "team", "scoring_preset", "model_version", "game_state",
+    "game", "quantiles", "drivers", "opponent", "injury"
+  ],
+  "$defs": {
+    "points": {"type": "number", "minimum": -20, "maximum": 100}
+  },
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 1999},
+    "through_week": {"type": "integer", "minimum": 1, "maximum": 22, "description": "The snapshot cutoff: weeks 1..through_week are the only in-season evidence."},
+    "target_week": {"type": "integer", "minimum": 2, "maximum": 22, "description": "The week being projected: always through_week + 1."},
+    "player_id": {"type": "string", "pattern": "^gsis:"},
+    "display_name": {"type": "string", "minLength": 1},
+    "position": {"enum": ["QB", "RB", "WR", "TE"]},
+    "team": {"type": "string", "minLength": 2},
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "model_version": {"const": "weekly-startsit-v1"},
+    "game_state": {
+      "enum": ["upcoming", "kicked_off", "bye"],
+      "description": "`upcoming`: the game had not kicked off when the build ran. `kicked_off`: it had (a Thursday game read on Friday) and the projection is kept for the record, not for a decision. `bye`: his team has no game in target_week; `game`, `quantiles`, `drivers` and `opponent` are null."
+    },
+    "game": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["game_id", "opponent", "home_away", "neutral_site", "kickoff_utc", "roof", "total_line", "team_margin", "team_points"],
+      "properties": {
+        "game_id": {"type": "string", "minLength": 1},
+        "opponent": {"type": "string", "minLength": 2},
+        "home_away": {"enum": ["home", "away"]},
+        "neutral_site": {"type": "boolean"},
+        "kickoff_utc": {"type": ["string", "null"], "format": "date-time"},
+        "roof": {"type": ["string", "null"]},
+        "total_line": {"type": ["number", "null"], "minimum": 0, "description": "Sportsbook game total, from nflverse's schedule. A MODEL INPUT for this model (ADR-096), and for no other."},
+        "team_margin": {"type": ["number", "null"], "description": "The spread from this team's side: positive means favoured by that many."},
+        "team_points": {"type": ["number", "null"], "description": "(total + margin) / 2: the sportsbook's implied score for his team."}
+      }
+    },
+    "quantiles": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["q05", "q10", "q25", "q50", "q75", "q90", "q95"],
+      "description": "Fantasy points in this preset, given an appearance. Monotone by construction; `quantile_distribution_v1` (in the build metadata) says how a page turns them into a distribution.",
+      "properties": {
+        "q05": {"$ref": "#/$defs/points"},
+        "q10": {"$ref": "#/$defs/points"},
+        "q25": {"$ref": "#/$defs/points"},
+        "q50": {"$ref": "#/$defs/points"},
+        "q75": {"$ref": "#/$defs/points"},
+        "q90": {"$ref": "#/$defs/points"},
+        "q95": {"$ref": "#/$defs/points"}
+      }
+    },
+    "drivers": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["baseline", "form", "role", "availability", "offense", "game", "opponent", "prior", "calibration", "rearrangement"],
+      "description": "An additive account of q50: the median booster's expected value (`baseline`), grouped TreeSHAP contributions per feature family, the conformal shift (`calibration`) and whatever the monotone repair and rounding moved (`rearrangement`). The ten numbers sum to q50.",
+      "properties": {
+        "baseline": {"type": "number"},
+        "form": {"type": "number"},
+        "role": {"type": "number"},
+        "availability": {"type": "number"},
+        "offense": {"type": "number"},
+        "game": {"type": "number"},
+        "opponent": {"type": "number"},
+        "prior": {"type": "number"},
+        "calibration": {"type": "number"},
+        "rearrangement": {"type": "number"}
+      }
+    },
+    "opponent": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["defense", "allowed_ppg", "league_ppg", "index", "rank", "defenses", "games"],
+      "description": "Fantasy points the opposing defence has allowed to this position per game through the cutoff, shrunk toward the league rate by four games (`weekly_game_context_v1`). `rank` 1 is the most generous defence.",
+      "properties": {
+        "defense": {"type": "string", "minLength": 2},
+        "allowed_ppg": {"type": ["number", "null"]},
+        "league_ppg": {"type": ["number", "null"]},
+        "index": {"type": ["number", "null"], "minimum": 0},
+        "rank": {"type": ["integer", "null"], "minimum": 1},
+        "defenses": {"type": ["integer", "null"], "minimum": 1},
+        "games": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "injury": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["week", "designation", "practice_status", "primary_injury"],
+      "description": "The league's official report for target_week as nflverse publishes it, or null when he is not on it. Printed beside the projection; never read by the model.",
+      "properties": {
+        "week": {"type": "integer", "minimum": 1},
+        "designation": {"enum": ["Out", "Doubtful", "Questionable", null]},
+        "practice_status": {"type": ["string", "null"]},
+        "primary_injury": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
