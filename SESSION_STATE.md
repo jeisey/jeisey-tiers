@@ -4,6 +4,17 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**An empty post-draft MFL capture no longer fails the refresh, 2026-09-30 (ADR-095).** The daily
+refresh failed its capture job on `market.capture_empty`: MFL's export counted four drafts and
+priced nothing in any cohort (735 drafts on 08-31, 28 on 09-24, none priced on 09-30). `build`
+`needs: capture`, so the build and the in-season deploy were skipped and the Sleeper add/drop
+capture from the same job was never pushed. ADR-094 had held for runs 66-72; this is the same
+draining market one step further. `snapshot-market` now takes `--draft-window-closed`, which the
+workflow passes only when the season state is `in_season`: an empty capture is then the
+`market.capture_empty_post_draft` **warning** and is not retained, while before the first kickoff
+it is still the critical failure. **No model, schema, rule version, threshold or gate severity
+before the first kickoff changed.**
+
 **The draft market is read at the draft anchor, 2026-09-24 (ADR-094).** The daily refresh failed
 `arbitrage.top_board_priced` (89.3% < 95%) with no code change: MFL's post-draft feed thinned
 from 735 keeper-free drafts to 28, and the failed build job also stopped the in-season board
@@ -2333,6 +2344,13 @@ negative controls each fail their guard. Screens: `docs/visual-qa/2026-09-23-mob
 ## Next action
 
 **None that is a gate. V1.0.0 is released and the site is live and refreshing itself daily.**
+
+**After ADR-095 merges, dispatch `daily-refresh`** (or read the next scheduled run): the
+`Capture the market snapshot` step should print `not retained   : the draft window is closed and
+the capture priced nothing (ADR-095)` and a `[warning] market.capture_empty_post_draft`, exit 0,
+and the build and deploy jobs should run. If MFL still prices a few players the step retains that
+snapshot as before and prints neither line. The manual `market-capture.yml` does not set the flag;
+an empty in-season result there still fails on purpose.
 
 **After ADR-094 merges, dispatch `daily-refresh`** (or read the next scheduled run): `Build the
 arbitrage board` should print `arbitrage.market_cutoff` with `snapshots at or before

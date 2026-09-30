@@ -127,6 +127,9 @@ class CaptureResult:
     raw_payloads: RawPayloads = field(default_factory=dict)
     write: WriteResult | None = None
     gate: QualityGate = field(default_factory=QualityGate)
+    #: Why a capture that was asked to write was deliberately not retained, or ``None``.
+    #: A withheld capture is a decision the caller can read back, not a silent skip.
+    withheld: str | None = None
 
 
 def _gzip_json(payload: Any) -> bytes:
@@ -157,6 +160,7 @@ def build_snapshot(
     git_sha: str | None = None,
     gate: QualityGate | None = None,
     aliases: AliasMap | None = None,
+    draft_window_closed: bool = False,
 ) -> CaptureResult:
     """Normalize, resolve and assemble a snapshot from already-retrieved payloads.
 
@@ -167,6 +171,10 @@ def build_snapshot(
     point of the escape hatch: the resolver refuses to guess, so the only way a genuinely
     unreachable id ever resolves is a review someone wrote down, and a review that is not
     loaded is not a review. Pass ``AliasMap.empty()`` to resolve on live bridges alone.
+
+    ``draft_window_closed`` says the season's drafting is over (the caller knows: the daily
+    refresh reads it from the season state). It changes exactly one verdict, and see
+    :func:`_capture_checks` for which and why.
     """
     checks = gate or QualityGate()
     alias_map = aliases if aliases is not None else load_alias_map(default_alias_path())
@@ -239,7 +247,9 @@ def build_snapshot(
             ),
         )
 
-    checks.extend(_capture_checks(rows, len(raw_by_cohort)))
+    checks.extend(
+        _capture_checks(rows, len(raw_by_cohort), draft_window_closed=draft_window_closed),
+    )
     manifest = SnapshotManifest(
         manifest_version=SNAPSHOT_MANIFEST_VERSION,
         source_id=MFL_SOURCE_ID,
@@ -320,9 +330,40 @@ def _cohort_checks(
     return checks
 
 
-def _capture_checks(rows: Sequence[Mapping[str, Any]], cohorts: int) -> list[QualityCheck]:
-    """Capture-level checks. An empty *capture* is a source outage, not a finding."""
+def _capture_checks(
+    rows: Sequence[Mapping[str, Any]],
+    cohorts: int,
+    *,
+    draft_window_closed: bool = False,
+) -> list[QualityCheck]:
+    """Capture-level checks. Before the draft window closes, an empty *capture* is an outage.
+
+    That reading stops being true when drafting stops. MFL's ADP export is built from drafts
+    people are running, so once the season starts it thins every day and then drains: the
+    keeper-free cohort measured 735 drafts on 2026-08-31 and 28 on 2026-09-24, and on
+    2026-09-30 all four cohorts came back with rows for none of them. That is the market
+    ending, not the source failing, and the draft board no longer reads it anyway (ADR-094).
+    With ``draft_window_closed`` the same emptiness is a warning under its own id, so it is
+    still counted and still printed, but it cannot fail the capture job and take the
+    in-season deploy down with it (ADR-095). Before the window closes nothing changes.
+    """
     if not rows:
+        observed = f"0 rows across {cohorts} cohort(s)"
+        if draft_window_closed:
+            return [
+                QualityCheck.fail(
+                    "market.capture_empty_post_draft",
+                    stage="market.capture",
+                    message=(
+                        "the draft window is closed and no cohort returned a usable price; "
+                        "the draft market has drained, which is expected once drafting "
+                        "stops (ADR-095), so nothing is retained"
+                    ),
+                    observed=observed,
+                    expected="> 0 while drafts are still being run",
+                    severity=Severity.WARNING,
+                ),
+            ]
         return [
             QualityCheck.fail(
                 "market.capture_empty",
@@ -331,7 +372,7 @@ def _capture_checks(rows: Sequence[Mapping[str, Any]], cohorts: int) -> list[Qua
                     "no cohort returned a usable price; this is a source failure rather "
                     "than a cohort measurement"
                 ),
-                observed=f"0 rows across {cohorts} cohort(s)",
+                observed=observed,
                 expected="> 0",
             ),
         ]
@@ -402,8 +443,16 @@ def capture_market(
     identity: MarketIdentity | None = None,
     write: bool = True,
     pause_seconds: float = 1.0,
+    draft_window_closed: bool = False,
 ) -> CaptureResult:
-    """Retrieve every requested cohort and append one snapshot. **Network I/O.**"""
+    """Retrieve every requested cohort and append one snapshot. **Network I/O.**
+
+    With ``draft_window_closed`` a capture that priced nothing is withheld rather than
+    retained. A zero-price snapshot is not evidence of a price, the store is immutable, and
+    it would become the newest snapshot for any reader that does not bound its read by the
+    board's cutoff (ADR-094). The vendor was still asked, the raw counts are printed and the
+    gate carries the warning; what is not done is appending a permanent empty row of history.
+    """
     settings = app or load_app_config()
     stamped = (as_of or utc_now()).replace(microsecond=0)
     wanted = tuple(cohorts) if cohorts is not None else cohort_set("production")
@@ -440,8 +489,11 @@ def capture_market(
         identity=resolved_identity,
         git_sha=git_sha,
         gate=gate,
+        draft_window_closed=draft_window_closed,
     )
-    if write:
+    if write and draft_window_closed and not result.rows:
+        result.withheld = "the draft window is closed and the capture priced nothing (ADR-095)"
+    elif write:
         result.write = store.write(
             manifest=result.manifest,
             normalized_rows=result.rows,

@@ -1625,3 +1625,27 @@ market at the draft anchor over downgrading the gate.
       first production refresh after merge is the end-to-end check (see SESSION_STATE).
 - [x] **Docs**: ADR-094; `DATA_CONTRACTS.md` §16.7; `OPERATIONS.md` steps 9–10 and job graph;
       workflow comment.
+
+## An empty post-draft MFL capture no longer fails the refresh — 2026-09-30 (ADR-095)
+
+The scheduled refresh [36708638832](https://github.com/jeisey/jeisey-tiers/actions/runs/36708638832)
+failed its **capture** job on `market.capture_empty`: MFL's export counted four drafts and priced
+no player in any cohort. `build` needs `capture`, so the build and the in-season deploy were
+skipped, and the Sleeper add/drop capture that had already succeeded was never pushed. Runs 66-72
+had passed on the same commit after ADR-094.
+
+- [x] **`draft_window_closed`** on `capture_market` / `build_snapshot`: an empty capture raises
+      `market.capture_empty_post_draft` (warning) instead of `market.capture_empty` (critical), and
+      is withheld from the store (`CaptureResult.withheld`). Default off: pre-draft behaviour and
+      severity are unchanged.
+- [x] **`snapshot-market --draft-window-closed`**, passed by `daily-refresh.yml` only when
+      `steps.season.outputs.mode == 'in_season'`.
+- [x] **Tests**: `test_market_capture_draft_window.py` (+11: both verdicts on both payload shapes,
+      unchanged priced capture, one priced cohort, nothing written / priced still retained,
+      pre-draft not withheld, CLI exit codes and output) and `test_workflows.py` (+1: flag gated on
+      the season mode and accepted by the parser).
+- [x] **Verified**: ruff / format / mypy clean; the failed run's payload replayed through the CLI
+      reproduces its output and exit 1 without the flag, exit 0 and no file with it.
+- [x] **Docs**: ADR-095; `OPERATIONS.md` step 2; workflow comment; `snapshot-market` docstring.
+- [ ] **Not verified here**: the real store is private, so the next scheduled refresh is the
+      end-to-end check (see SESSION_STATE).

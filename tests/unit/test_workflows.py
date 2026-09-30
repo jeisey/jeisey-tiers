@@ -229,6 +229,37 @@ def test_the_ros_build_is_gated_on_a_snapshot_week_not_on_the_mode(workflows):
     assert "snapshot_week" in refresh["jobs"]["capture"]["outputs"]
 
 
+def test_the_market_capture_learns_the_draft_window_from_the_season_mode(workflows):
+    """An empty MFL capture fails the job before drafting ends and must not after (ADR-095).
+
+    MyFantasyLeague's draft feed drains once the season starts. If the capture job failed on
+    that, the build and the deploy would be skipped and the in-season site would stop
+    refreshing over a market nothing reads (ADR-094). The workflow already resolves the
+    season mode for the Sleeper behaviour step, so the market step reads the same output
+    rather than deriving a second opinion — and passes the flag to a parser that must accept
+    it, because a renamed flag would fail the job the moment the season starts.
+    """
+    from ffdraft.cli import _build_parser
+
+    capture = workflows["daily-refresh.yml"]["jobs"]["capture"]["steps"]
+    step = next(s for s in capture if s.get("name") == "Capture the market snapshot")
+
+    assert step["env"]["SEASON_MODE"] == "${{ steps.season.outputs.mode }}"
+    assert '"${SEASON_MODE}" = "in_season"' in step["run"]
+
+    # The flag is conditional. Passed unconditionally it would make a preseason outage a
+    # warning, which is the failure this whole check exists to catch. It is only ever added
+    # inside the `in_season` branch, and the command reads it back from that variable.
+    branch = step["run"].split('"${SEASON_MODE}" = "in_season"', 1)[1].split("fi", 1)[0]
+    assert "--draft-window-closed" in branch
+    assert step["run"].count("--draft-window-closed") == 1
+    assert '"${draft_window[@]}"' in step["run"]
+
+    args = _build_parser().parse_args(["snapshot-market", "--draft-window-closed"])
+    assert args.draft_window_closed is True
+    assert _build_parser().parse_args(["snapshot-market"]).draft_window_closed is False
+
+
 def test_the_refresh_does_not_retrain(workflow_dir):
     """Daily = capture + inference + market comparison + build. Never training."""
     text = _code(workflow_dir / "daily-refresh.yml")

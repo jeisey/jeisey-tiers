@@ -208,6 +208,14 @@ jobs:
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" | tee behavior.log
 
+      # Once the season is `in_season` drafting is over and MFL's draft feed drains towards
+      # nothing: 735 keeper-free drafts on 2026-08-31, 28 on 2026-09-24, and on 2026-09-30
+      # every cohort came back empty. Before that day an empty capture meant the source was
+      # down and had to fail the job; after it, it means the market ended, and failing the job
+      # would skip the build and the deploy, which is the in-season site (ADR-095, the sequel
+      # to ADR-094). `--draft-window-closed` keeps the request, the warning and the log, and
+      # withholds the empty snapshot instead of failing. The mode is the one `season-state`
+      # already resolved above, so the workflow adds no second opinion about the calendar.
       - name: Capture the market snapshot
         if: ${{ inputs.skip_capture != true }}
         env:
@@ -217,14 +225,20 @@ jobs:
           # than failing the run.
           MFL_API_USER_AGENT: ${{ secrets.MFL_API_USER_AGENT }}
           MFL_API_CLIENT_NAME: ${{ secrets.MFL_API_CLIENT_NAME }}
+          SEASON_MODE: ${{ steps.season.outputs.mode }}
         run: |
           set -euo pipefail
+          draft_window=()
+          if [ "${SEASON_MODE}" = "in_season" ]; then
+            draft_window=(--draft-window-closed)
+          fi
           uv run ffdraft snapshot-market \
             --season "${{ steps.plan.outputs.season }}" \
             --cohorts "${{ steps.plan.outputs.cohorts }}" \
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" \
-            --pause 1.5 | tee snapshot.log
+            --pause 1.5 \
+            "${draft_window[@]}" | tee snapshot.log
 
       # The second ADP market. Separate from `snapshot-market` because MyFantasyLeague's
       # capture is unchanged by Phase 10 and the safest way to keep its behaviour identical

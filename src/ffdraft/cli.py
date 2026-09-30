@@ -66,7 +66,10 @@ reproducible offline and diffable against the commit that captured it:
 
 ``snapshot-market`` (network)
     Retrieve every requested MFL cohort plus the player directory and append one immutable
-    point-in-time snapshot to the append-only store (ADR-006, ADR-038).
+    point-in-time snapshot to the append-only store (ADR-006, ADR-038). Once drafting is over
+    the daily refresh passes ``--draft-window-closed``: a capture that prices nothing is then
+    an expected consequence of the draft market draining, so it warns and is not retained
+    rather than failing the job (ADR-095).
 
 ``capture-market-source`` (network)
     Retrieve one Phase-10 market source (Fantasy Football Calculator or FantasyPros) and
@@ -826,6 +829,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="seconds between MFL requests; MFL throttles over-limit clients",
     )
     snapshot.add_argument("--no-write", action="store_true", help="fetch without retaining")
+    snapshot.add_argument(
+        "--draft-window-closed",
+        action="store_true",
+        help=(
+            "drafting is over (season state in_season): a capture that prices nothing is "
+            "a warning and is not retained, instead of a critical source failure (ADR-095)"
+        ),
+    )
     snapshot.set_defaults(handler=_snapshot_market)
 
     source_capture = subparsers.add_parser(
@@ -1998,6 +2009,7 @@ def _snapshot_market(args: argparse.Namespace) -> int:
         git_sha=args.git_sha,
         write=not args.no_write,
         pause_seconds=args.pause,
+        draft_window_closed=args.draft_window_closed,
     )
     print(f"snapshot       : {result.snapshot_key}")
     print(f"season         : {result.season}")
@@ -2012,6 +2024,8 @@ def _snapshot_market(args: argparse.Namespace) -> int:
     if result.write is not None:
         verb = "already retained (idempotent)" if result.write.idempotent else "retained"
         print(f"{verb}: {result.write.directory}")
+    if result.withheld:
+        print(f"not retained   : {result.withheld}")
     return _report_gate(result.gate)
 
 

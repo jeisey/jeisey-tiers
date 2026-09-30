@@ -67,7 +67,7 @@ capture ──▶ build ──▶ deploy          report (needs all three, if: a
 `capture` — the only job that contacts a vendor, and the only irreversible one:
 
 1. check out the application source and the **private** retained store (`.github/actions/market-data-store`, with `persist-credentials: true` because this job pushes);
-2. `ffdraft snapshot-market` — MFL cohorts plus the player directory, normalized and identity-resolved into the store;
+2. `ffdraft snapshot-market` — MFL cohorts plus the player directory, normalized and identity-resolved into the store. When the season state is `in_season` the workflow adds `--draft-window-closed`: MFL's draft feed drains once drafting stops (no price row in any cohort on 2026-09-30), and a capture that prices nothing is then a `market.capture_empty_post_draft` **warning** that retains nothing, rather than the critical `market.capture_empty` that would skip the build and the deploy (ADR-095). Before the first kickoff the flag is absent and an empty capture still fails the job;
 3. `ffdraft capture-market-source fantasyfootballcalculator_adp` — the second ADP market, retained under the same append-only discipline. `continue-on-error`: a second market is an enrichment, so an FFC outage degrades the board to one market rather than failing the refresh that publishes the intrinsic tiers (ADR-067);
 4. `ffdraft capture-status` — the Sleeper current-status capture;
 5. `ffdraft validate-market-history` — re-hash the whole store **before** anything is pushed, so a corrupt write is caught in the workspace rather than committed;

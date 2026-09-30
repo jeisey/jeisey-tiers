@@ -4874,3 +4874,102 @@ would keep publishing a market that means less each day, and every other market 
   snapshot, and leaves the unbounded behaviour alone.
 - `test_current_build.py`: the block is written before the anchor with `anchor_binds: false`,
   and after it with the anchor as the cutoff.
+
+---
+
+## ADR-095 — After the draft window closes, an empty MFL capture is the market ending, not the source failing
+
+**Status:** accepted, 2026-09-30
+**Amends:** ADR-094's "the capture job still retains a daily market snapshot", which now reads *a
+daily snapshot that priced something*. **Leaves untouched:** the pre-draft verdict
+(`market.capture_empty` is still critical), every cohort check, the FFC and Sleeper captures,
+`TOP_BOARD_PRICED_MINIMUM`, A0, every frozen rule version and every artifact schema.
+
+### What happened
+
+The scheduled refresh [36708638832](https://github.com/jeisey/jeisey-tiers/actions/runs/36708638832)
+failed in the **capture** job, at `Capture the market snapshot`:
+
+> `[critical] market.capture_empty (market.capture)` — observed: 0 rows across 4 cohort(s); expected: > 0
+
+The commit was the one that had passed on every scheduled or dispatched run since ADR-094
+(runs 66-72). What moved was the market again, one step past where ADR-094 stopped. MFL's
+keeper-free cohort measured 735 drafts on 2026-08-31, 28 on 2026-09-24, and on 2026-09-30 the
+export still counted four drafts and returned **no price row in any of the four cohorts**.
+Drafting is over and the feed does not thin to a floor; it drains to nothing.
+
+The failure cost more than the feed it was about. `build` `needs: capture`, so the build and the
+deploy were skipped and the in-season site stopped refreshing; the Sleeper add/drop capture that
+had already succeeded in the same job was never pushed, because the persist step comes after the
+step that failed. ADR-094 had named this shape ("every other market check ... would fail next as
+volume reached zero") for the arbitrage stages; the capture gate was the one it did not reach.
+
+### Why the check was right and the input was wrong
+
+`market.capture_empty` says "no cohort returned a usable price; this is a source failure rather
+than a cohort measurement". During draft season that is true: an empty export means MFL is down,
+an id scheme changed, or a filter stopped matching, and the daily job should refuse to go on. It
+stops being true when drafting stops, because the export is built from drafts people are running.
+The draft board has read the draft-time market since ADR-094, so no output depends on today's
+row. An outage and an ended market look identical to the check; only the caller knows which one
+it is, and the caller already does — the workflow resolves the season state one step earlier.
+
+Two alternatives were rejected. `continue-on-error` on the whole step would have made a
+*preseason* MFL outage a green run that quietly appended nothing, which is the failure the
+critical severity exists to catch, and it would have hidden every other error in the step (an
+HTTP failure, a schema drift) along with this one. Skipping the MFL capture in season would have
+overridden the owner's ADR-094 choice to keep capturing; a thin tail that still prices something
+is still worth recording.
+
+### Decision
+
+1. **`capture_market` / `build_snapshot` take `draft_window_closed` (default `False`).** With it
+   set, a capture that priced nothing raises `market.capture_empty_post_draft`, a **warning**,
+   instead of the critical `market.capture_empty`. Nothing else about the verdict changes:
+   `market.empty_cohort` is unchanged, an HTTP or schema failure still raises, and a capture with
+   any row at all takes the same path as before.
+2. **A capture that priced nothing is not retained** when the flag is set. The store is
+   immutable; a zero-price snapshot is not evidence of a price, and it would be the newest
+   snapshot for any reader that does not bound its read by the board's cutoff (ADR-094). The
+   command prints `not retained   : ...` and the gate prints the warning, so the run summary says
+   what happened. `CaptureResult.withheld` carries the reason. A capture with **any** row is
+   retained exactly as before.
+3. **`ffdraft snapshot-market --draft-window-closed`.** The flag is set by the workflow when
+   `steps.season.outputs.mode == 'in_season'` — the output the job already computes for the
+   Sleeper behaviour step, so there is one opinion about the calendar and it is
+   `ffdraft season-state`'s. It is not passed before the first kickoff, and it is not the
+   default: an unflagged run keeps the pre-draft contract.
+4. **Documented.** `docs/OPERATIONS.md` step 2 and the workflow comment say the flag exists and
+   why. No schema, artifact, rule version, model, threshold or gate severity changed.
+
+### Consequences
+
+- From the first kickoff onward a drained MFL feed cannot fail the capture job. The build and
+  deploy run, the Sleeper behaviour and status captures are pushed, and the MFL step's log carries
+  a `market.capture_empty_post_draft` warning for as long as the feed stays empty.
+- A partially thinned feed is unchanged: it still prices, still retains, and ADR-094 still keeps
+  it out of the draft board.
+- Between the anchor and the first kickoff (a Wednesday to a Thursday), `mode` is still `draft`,
+  so an empty capture is still critical. That window is a day and the feed is at its fullest.
+- The manual `market-capture.yml` workflow does not set the flag. It is an on-demand capture, and
+  an empty result there is worth failing on. Set `--draft-window-closed` by hand for an in-season
+  study capture.
+- `market.empty_cohort`'s message still says "retained as evidence" for a cohort inside a capture
+  that is withheld as a whole. The per-cohort finding is printed, and the `not retained` line
+  above it is the accurate one for the capture; the message was left alone to keep this change to
+  the verdict it is about.
+
+### Verification
+
+- `test_market_capture_draft_window.py`: an empty capture (envelope with no `player` key, and with
+  `"player": []`) is critical by default and a warning under the flag; a capture that priced
+  something is identical with and without the flag; one priced cohort among empty ones is not an
+  empty capture; a drained capture with the flag writes no file and a priced one is retained; the
+  command exits 0 with `not retained` under the flag and 1 without it.
+- `test_workflows.py`: the market step reads `SEASON_MODE` from the season step's output, adds the
+  flag only inside the `in_season` branch, and the parser accepts the flag.
+- A 2026-09-30 payload (four drafts, no rows) was replayed through the CLI: without the flag the
+  output is the failed run's, line for line, including `[critical] market.capture_empty` and exit
+  1; with it, exit 0 and no file written.
+- Not verifiable here: the real store is private, so the next scheduled refresh is the end-to-end
+  check (see `SESSION_STATE.md`).
