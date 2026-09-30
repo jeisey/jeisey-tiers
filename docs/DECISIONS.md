@@ -5119,3 +5119,172 @@ reports all 72 surfaced rows (for example "QB1 is inside the published QB1-29").
 clause cannot fire on those files because they predate `ros_vorp_p50`; the unit tests cover it.
 Unit tests also pin the fill order, the single-club rule, the untouched model column,
 fail-closed surfaced values and every placeholder spelling.
+
+## ADR-098 — Serve the board in slices: a hashed manifest, per-block files, card shards, and payload budgets
+
+**Status:** accepted, 2026-09-30. The owner asked for the site to survive a "Reddit hug of
+death" while staying on GitHub Pages — no Cloudflare, no other host, no backend, no
+serverless — for a 1–2 day burst of 60,000–80,000 readers visiting once or twice, then about
+1,000 readers a day. No product feature, model, value, rank, tier or displayed number changes.
+
+### Evidence: how Pages serves this site (measured, not assumed)
+
+Measured from a GitHub-hosted runner against the live site with `scripts/pages_probe.mjs`
+(`live-smoke.yml`, `probe_only`), runs 36776435211 and 36777661295; the sandbox cannot reach
+`*.github.io`. docs/OPERATIONS.md section 17 holds the full record.
+
+| fact | observed |
+|---|---|
+| compression | **gzip only**, even for `Accept-Encoding: br, gzip`; never brotli |
+| gzip level | **zlib level 5**: re-compressing the served JSON at level 5 reproduces `Content-Length` to the byte on eight files |
+| compressed types | HTML, JS, CSS, JSON, CSV, ICO. Not PNG or WOFF2 |
+| `Cache-Control` | `max-age=600` on every file, data and hashed assets alike; no `immutable` |
+| validators | weak `ETag: W/"<mtime hex>-<size hex>"` and `Last-Modified`; **both are the deploy time for every file** (all 30 probed files: `Wed, 30 Sep 2026 17:51:45 GMT`) |
+| conditional requests | `If-None-Match` and `If-Modified-Since` answer **304** with an empty body |
+| CDN | Fastly (`via: 1.1 varnish`, `x-served-by: cache-…`), `access-control-allow-origin: *` |
+| rate limiting | 40 parallel GETs from one client: 40 × 200 |
+| documented limits | published site ≤ 1 GB; **soft 100 GB/month bandwidth**; soft 10 builds/hour (not for Actions deploys); rate limits may answer 429 (GitHub Pages limits page) |
+
+The fourth row decides the design: **every deploy invalidates every cached file**, because a
+file's ETag is its deploy-time mtime, not its content. The daily refresh deploys every day, so
+HTTP caching alone makes every returning reader re-download everything every day, whether or
+not a byte changed. A content-addressed URL does not fix this by itself (the URL is the same,
+the ETag is new); what fixes it is a copy the page keeps itself.
+
+### Evidence: what a visit cost (real 2026 week-4 artifacts, the same bytes the site served)
+
+The served JSON was captured from the probe run (xz, base64, in the log; checksum-verified) and
+built locally with the pre-change code (`828622b`). `verify-budget.mjs` measured it exactly as
+it measures the new layout (Chromium, Pages-like server, bytes counted at the server):
+
+* a cold visit: **2,816 kB** in **21 requests**, of which **2,499 kB** is data — all fourteen
+  artifacts, whatever view is open, fetched as `loadBundle → loadInSeason`, about seven
+  sequential round trips;
+* every other tab adds almost nothing (Start/Sit +7.9 kB, a card +0 kB), because everything is
+  already downloaded;
+* every deploy: the full 2,816 kB again.
+
+The biggest files were `ros_tiers` (574 kB), `arbitrage` (421 kB), `inseason_opportunity`
+(390 kB), `tiers` (344 kB), `market_trend_series` (271 kB); the nine-block artifacts carry nine
+league × scoring blocks of which a reader sees one, and `display_name` was the costliest field
+of both big in-season files. Of the prompt's figures, the only correction is that the
+arbitrage/market-series/behaviour trio measures **0.71 MB** at Pages' level, inside its bound.
+
+### Decision
+
+1. **Slices.** `ffdraft package-site-data` (`src/ffdraft/artifacts/serving.py`) derives, from the
+   artifacts and nothing else, a served layout under `data/serve/`: per-block files for the
+   nine-block artifacts, per-scoring files for the weekly layer, whole files for the small ones,
+   column-major, with per-file constants lifted into a header, uniform nested objects flattened
+   to leaf columns, `display_name` resolved through one player dictionary, and build identity
+   (`build_id`) restored from the manifest so an unchanged slice keeps its name across builds.
+2. **The Opportunity join.** A row of the Opportunity slice whose copied fields equal the ROS
+   row of the same block and player serves them once, from the ROS slice; any row that differs in
+   any of them serves its own. The `cross_artifact.intrinsic_firewall` check still runs on the
+   full artifacts, unchanged, and the slice validator proves every joined value equals the
+   Opportunity artifact's own — so the firewall holds for what the page shows, not only for
+   what is published.
+3. **Card shards.** One file per block and bucket of 64 players (FNV-1a of `player_id`) holds
+   every per-player record a card reads. Card-only artifacts (`projections`,
+   `market_trend_series`, portraits, the weekly series) are never downloaded by a board. Two
+   small per-block/whole families carry only the fields a card's cohort strips read
+   (`inseason_opportunity_cohort`, `player_usage_cohort`).
+4. **The manifest** (`data/manifest.json`) is the one fixed URL: every served file by the first
+   16 hex digits of its SHA-256, each source envelope without records, and both metadata objects
+   inline, so one request decides the mode, the refusals and the degradations.
+5. **Derived, never a second source of truth.** `validate-artifacts` re-derives the whole layout
+   from the artifacts, requires every served file and the manifest byte-identical to it, then
+   decodes every table with an independent decoder and requires each record to serialize exactly
+   as its source record does; `--require-serving` makes a missing manifest critical. The browser
+   decoder is pinned to the Python encoder by a golden test over files the encoder wrote.
+6. **The full artifacts stay.** They are the contract the validator, `verify:board`, the
+   cross-artifact firewall checks, the CSV exports and every downstream consumer read; the page
+   no longer fetches them. They cost site size (about 40 MB of a 1 GB limit), not bandwidth.
+   Old URLs keep working.
+7. **Lazy, parallel loading.** The page fetches the manifest with `cache: "no-cache"`, then only
+   the keys the open mode, view, block and card need (`requiredKeys` in `web/src/data/store.ts`),
+   all in parallel: two data round trips instead of seven. Indexes are built from exactly the
+   open view's keys, so a card's shard arriving never re-renders the board under the reader's
+   pointer. URL state is unchanged.
+8. **Repeat visits: the Cache API, no service worker.** A hashed file is immutable, so the page
+   keeps a verified copy in the Cache API and serves a later request for the same hash without
+   the network. Every byte used, from network or cache, is checked against its hash; a mismatch
+   drops the copy (cache) or fails the request (network). Only a manifest read with `no-cache`
+   decides which hashes are current, so no file from an older deploy can be shown after a newer
+   manifest has been read; `verify-budget.mjs` proves it by renaming a player in a redeploy
+   while the reader holds the old files. A **service worker was rejected**: it would save only
+   the shell's re-download after a deploy (~224 kB per daily reader, ~6.7 GB/month) at the cost
+   of a component that can outlive the deploy it came from, which is exactly the failure this
+   decision must not be able to have.
+9. **The shell.** Each font family's latin file is split into a core (the characters the page
+   prints) and a rest (the remainder of the original range), both clamped to the declared
+   400–700 weight axis; `unicode-range` downloads the rest only for a page that prints one of its
+   characters, in the same family (72 → 42 kB). The logo is served at 2× and 3× (75 → 10 kB,
+   18 kB on a 3× screen). **Source maps are not deployed**: the repository is public so they
+   hide nothing, but they were 2.3 MB of every upload that only an open devtools panel requests;
+   `VITE_SOURCEMAP=1` builds them locally. `scripts/make_web_assets.py` derives all of it from
+   the committed sources.
+10. **No rounding.** The build already publishes model floats at ≤ 4 decimals; the only
+    full-precision fields are two Opportunity shares (`snap_share_last3`, `target_share_last3`,
+    printed as whole percentages). Rounding them would change the view's CSV export, which writes
+    the value itself, and could create ties inside a cohort strip's percentile. Every budget is
+    met without it, so the policy is **published precision, preserved exactly** (docs/DATA_CONTRACTS.md
+    section 21.6), and the validator's byte-exact decode enforces it.
+11. **Budgets, gated.** `web/tests/e2e/verify-budget.mjs` measures in Chromium against a server that
+    behaves like Pages (`static-server.mjs` Pages mode: gzip-5, mtime ETags, 304s; `max-age=0`
+    so a return visit revalidates at once), counting bytes at the server. CI gates it on a
+    **size model** (`scripts/size_model.py`, `config/size-model.json`: the golden records cloned to
+    the production board's counts, perturbed at published precision, packaged by the production
+    packager) — no production data is committed. The daily refresh measures the real build with
+    the same script and reports it in the summary without blocking a correct board.
+
+### Measurements, before and after (real week-4 build, same method)
+
+| scenario | before | after | budget |
+|---|---:|---:|---:|
+| first visit, in-season default — total | 2,816 kB | **285 kB** | ≤ 450 |
+| first visit — data | 2,499 kB | **60 kB** | ≤ 150 |
+| first visit — requests | 21 | **10** | |
+| first visit, draft board (`?mode=draft`) | 2,816 kB | 284 kB | |
+| then opening Start/Sit adds | 7.9 kB | **34 kB** | ≤ 60 |
+| opening a player card adds | 0 | **20 kB** (worst shard 24 kB) | ≤ 30 |
+| opening the Opportunity Board adds | 0 | 81 kB | |
+| repeat visit, same deploy | 0 | **0** | ≈ 0 |
+| next visit after a deploy of unchanged data | 2,816 kB | **240 kB** (shell 224 + manifest 16; data files 0) | |
+
+The size model measured 285.6 / 61.1 / 35.5 / 20.4 kB on the same four budgeted rows (within
+1–5% of the real build, on the high side). Served layout: 622 files, manifest 16 kB, one ROS
+block 33 kB, one weekly scoring block 26 kB, player dictionary 12 kB, largest card shard 13 kB.
+Node's zlib compresses about 1% tighter than Pages at level 5; every budget keeps at least
+19% headroom (the worst card shard, 24.3 of 30 kB).
+
+### Scenario math, redone
+
+Assumptions, stated so they can be argued with: an in-season week; a *typical* session is the
+first visit, Start/Sit and two cards (285 + 34 + 40 = **359 kB**); a *heavy* one adds a third card
+and the Opportunity Board and Pick of the Week (**466 kB**); a second visit on the same deploy
+costs ~0, and one after a deploy costs about a first visit again (shell 224 kB plus whatever data
+changed, bounded by a heavy session). Before, any session cost 2.82 MB.
+
+| | before | after |
+|---|---:|---:|
+| burst, low: 60,000 readers × 1 typical visit | 169 GB | **22 GB** |
+| burst, high: 80,000 × 2 heavy visits, both after a deploy | 451 GB | **75 GB** |
+| steady state: 1,000 readers/day × 30 days, each after a daily deploy (shell 224 + manifest 16 + changed ROS block 33 + Start/Sit 34 + 2 cards 40) | 85 GB/month | **10.4 GB/month** |
+
+The burst fits inside one month's soft limit even at its high end, and the steady state uses a
+tenth of it. Requests per first visit halve (21 → 10), which matters for the undocumented rate
+limit more than bytes do.
+
+### Consequences and risks
+
+* The first production refresh on this code is the live proof; the local rehearsal ran
+  `package-site-data`, `validate-artifacts --require-serving`, the build, `verify:board`
+  (0 failures: 507 Opportunity rows, 554 Start/Sit rows, cards, Pick of the Week, arbitrage with
+  trends) and `verify:budget` on the real week-4 bytes.
+* A deploy that lands while a page is open can leave that page's manifest naming files the new
+  deploy removed. The page says so and offers a reload; it never mixes two deploys.
+* Weekly usage series grow through the season (3 weeks today); the card path has 6 kB of
+  headroom on the real board, and the daily summary will show it shrinking before it binds.
+* The size model is only as good as its counts. `config/size-model.json` records when they were
+  measured; re-measure with the probe when the board's shape changes.

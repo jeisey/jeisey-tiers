@@ -281,11 +281,84 @@ def _quality_section(metadata: Mapping[str, Any]) -> list[str]:
     return lines
 
 
+#: GitHub Pages compresses JSON at zlib level 5 (docs/OPERATIONS.md section 17): the sizes
+#: below are what a reader's browser receives, not what sits on disk.
+_PAGES_GZIP_LEVEL = 5
+
+
+def _serving_section(artifacts: Path, budget: Any) -> list[str]:
+    """What the site serves (ADR-098): sizes by family, and the budget gate's measurements."""
+    manifest = _read_json(artifacts / "manifest.json")
+    lines = ["### Served payload", ""]
+    if not isinstance(manifest, Mapping) or not isinstance(manifest.get("files"), Mapping):
+        return [*lines, "No `manifest.json`: the site has nothing it can load.", ""]
+    import gzip
+
+    families: dict[str, list[int]] = {}
+    for key, digest in manifest["files"].items():
+        path = artifacts / "serve" / f"{key}.{digest}.json"
+        if not path.is_file():
+            continue
+        data = path.read_bytes()
+        entry = families.setdefault(str(key).split("/", 1)[0], [0, 0, 0, 0])
+        size = len(gzip.compress(data, compresslevel=_PAGES_GZIP_LEVEL, mtime=0))
+        entry[0] += 1
+        entry[1] += len(data)
+        entry[2] += size
+        entry[3] = max(entry[3], size)
+    manifest_bytes = (artifacts / "manifest.json").read_bytes()
+    rows = [
+        [
+            "`manifest.json`",
+            "1",
+            f"{len(manifest_bytes):,}",
+            f"{len(gzip.compress(manifest_bytes, compresslevel=_PAGES_GZIP_LEVEL, mtime=0)):,}",
+            "—",
+        ],
+    ]
+    for family, (count, raw, gz, largest) in sorted(families.items()):
+        rows.append([f"`{family}`", str(count), f"{raw:,}", f"{gz:,}", f"{largest:,}"])
+    lines.extend(_table(["family", "files", "raw B", "gzip B", "largest gzip B"], rows))
+    lines.append("")
+    if isinstance(budget, Mapping) and isinstance(budget.get("results"), Mapping):
+        results = budget["results"]
+        budgets = budget.get("budgets", {})
+        rows = []
+        for name, label in (
+            ("firstVisitTotal", "First visit, in-season default — everything"),
+            ("firstVisitData", "First visit, in-season default — data"),
+            ("startSitAdds", "Opening Start/Sit adds"),
+            ("cardAdds", "Opening a player card adds"),
+            ("repeatVisitData", "Repeat visit, same deploy — data"),
+            ("redeployServedData", "Redeploy of unchanged data — served files"),
+        ):
+            entry = results.get(name)
+            if not isinstance(entry, Mapping):
+                continue
+            ok = entry.get("bytes", 0) <= budgets.get(name, entry.get("budget", 0))
+            rows.append(
+                [
+                    label,
+                    f"{entry.get('bytes', 0):,}",
+                    f"{entry.get('budget', 0):,}",
+                    "ok" if ok else "**over**",
+                ],
+            )
+        lines.extend(["**Budgets, measured in Chromium against a Pages-like server**", ""])
+        lines.extend(_table(["scenario", "bytes", "budget", ""], rows))
+        failures = budget.get("failures") or []
+        if failures:
+            lines.extend(["", *[f"- :warning: {failure}" for failure in failures]])
+        lines.append("")
+    return lines
+
+
 def render(
     artifacts: Path,
     store: Path | None,
     facts: Mapping[str, str],
     title: str,
+    budget: Any = None,
 ) -> str:
     lines = [f"## {title}", ""]
     lines.extend(_run_section(facts))
@@ -309,6 +382,7 @@ def render(
     lines.extend(_market_section(metadata, _read_json(artifacts / "arbitrage.json")))
     lines.extend(_identity_section(store, metadata))
     lines.extend(_artifact_section(artifacts, metadata))
+    lines.extend(_serving_section(artifacts, budget))
     lines.extend(_quality_section(metadata))
     return "\n".join(lines) + "\n"
 
@@ -319,6 +393,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--store", type=Path, default=None)
     parser.add_argument("--title", default="Daily refresh")
     parser.add_argument("--out", type=Path, default=None, help="write here as well as stdout")
+    parser.add_argument(
+        "--budget",
+        type=Path,
+        default=None,
+        help="verify-budget.mjs --json output, rendered beside the served sizes (ADR-098)",
+    )
     parser.add_argument(
         "--fact",
         action="append",
@@ -335,7 +415,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             facts[key.strip()] = value.strip()
 
     store = args.store if args.store and args.store.exists() else None
-    text = render(args.artifacts, store, facts, args.title)
+    budget = _read_json(args.budget) if args.budget is not None else None
+    text = render(args.artifacts, store, facts, args.title, budget)
     print(text, end="")
     if args.out is not None:
         with args.out.open("a", encoding="utf-8") as handle:

@@ -22,7 +22,8 @@
  * `/src/...` path would resolve in exactly one of those.
  */
 
-import logoUrl from "../assets/jt_logo.png";
+import logoUrl from "../assets/jt_logo-96.png";
+import logoUrl3x from "../assets/jt_logo-145.png";
 import type { BuildMetadata } from "../data/contracts";
 import type { Degradation } from "../data/bundle";
 import { formatAge, formatEastern } from "../data/format";
@@ -89,7 +90,14 @@ export function Masthead({
       <h1 className="masthead-brand">
         {/* Intrinsic dimensions are the artwork's own, so the row reserves the right box
             before the image decodes rather than reflowing the freshness stamp into it. */}
-        <img className="masthead-logo" src={logoUrl} alt="Jeisey Tiers" width={434} height={145} />
+        <img
+          className="masthead-logo"
+          src={logoUrl}
+          srcSet={`${logoUrl} 2x, ${logoUrl3x} 3x`}
+          alt="Jeisey Tiers"
+          width={434}
+          height={145}
+        />
       </h1>
       <div className="masthead-meta">
         {seasonMode}

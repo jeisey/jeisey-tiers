@@ -23,6 +23,18 @@ on:
         description: The deployed site to smoke, without a trailing slash
         type: string
         default: https://jeisey.github.io/jeisey-tiers
+      dump_data:
+        description: >-
+          Also print the served JSON artifacts (xz, base64) into the probe log, so a
+          development sandbox that cannot reach the site can measure the exact public bytes.
+        type: boolean
+        default: false
+      probe_only:
+        description: >-
+          Run only the hosting probe (headers, compression, conditional requests, payload
+          composition) and skip the browser smoke.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -35,8 +47,53 @@ env:
   NODE_VERSION: "22"
 
 jobs:
+  # How GitHub Pages actually serves this site (ADR-098): the compression it negotiates for
+  # each file type, its Cache-Control, ETag and Last-Modified, whether a conditional request is
+  # answered 304, and what the served payload is made of, field by field. It observes only;
+  # the numbers it prints are recorded in docs/OPERATIONS.md section 17.
+  probe:
+    name: Hosting and payload probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Response headers, compression and conditional requests
+        run: node scripts/pages_probe.mjs headers --url "${SITE}" --out probe
+        env:
+          SITE: ${{ inputs.url }}
+
+      - name: Payload composition of the served data
+        run: node scripts/pages_probe.mjs fields --data probe/data | tee probe/fields.json
+
+      - name: Print the served JSON (public bytes) for offline measurement
+        if: ${{ inputs.dump_data == true }}
+        run: |
+          set -euo pipefail
+          tar -C probe/data -cf - $(cd probe/data && ls *.json) | xz -9e | base64 -w 2000 > probe/data.tar.xz.b64
+          echo "lines=$(wc -l < probe/data.tar.xz.b64) sha256=$(sha256sum probe/data.tar.xz.b64 | cut -c1-64)"
+          echo "----- BEGIN DATA -----"
+          cat probe/data.tar.xz.b64
+          echo "----- END DATA -----"
+
+      - name: Upload the probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-probe-${{ github.run_id }}
+          path: probe
+          if-no-files-found: warn
+          retention-days: 7
+
   smoke:
     name: Deployed-site smoke
+    if: ${{ inputs.probe_only != true }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

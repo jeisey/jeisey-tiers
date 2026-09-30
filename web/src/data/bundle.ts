@@ -1,208 +1,44 @@
 /**
- * Loading the whole board, with the critical and the degradable told apart.
+ * Opening the site: the manifest, then only what the open view needs (ADR-098).
  *
- * Not every artifact is equally load-bearing. `build_metadata.json` and `tiers.json` *are*
- * the product: if either is unreadable or declares a version this build does not understand,
- * the honest outcome is a refusal, because a half-understood tier board looks fine and is
- * wrong (`docs/DATA_CONTRACTS.md` section 13). Arbitrage, player status and projections are
- * additive: without them the intrinsic board is still exactly correct, so their absence
- * degrades a feature rather than the page.
+ * Not every artifact is equally load-bearing, and that has not changed: `build_metadata` and
+ * the tier board *are* the product, so a manifest that does not carry a version of either this
+ * build understands is a refusal, never a best-effort render. Arbitrage, player status and
+ * projections are additive: their absence degrades a feature rather than the page.
+ *
+ * What changed is how much is fetched to find that out. The whole-artifact loader downloaded
+ * all fourteen artifacts, in a chain of sequential requests, before drawing anything; the
+ * manifest now names every served file and carries both metadata objects inline, so one small
+ * request decides the mode, the refusals and the degradations, and `DataStore` fetches the rest
+ * in parallel as views and cards open.
  *
  * The browser fetches generated static files and nothing else — no MyFantasyLeague, no
  * Sleeper, no nflverse, no FantasyPros (`docs/ARCHITECTURE.md` section 3.2).
  */
 
-import type {
-  ArbitrageRecord,
-  ArtifactName,
-  BehaviorTrendSeriesRecord,
-  PlayerUsageRecord,
-  TeamMatchupRecord,
-  BuildMetadata,
-  MarketTrendSeriesRecord,
-  OpportunityRecord,
-  PlayerHeadshotRecord,
-  PlayerProjectionRecord,
-  PlayerStatusRecord,
-  RosBuildMetadata,
-  RosTierRecord,
-  TierRecord,
-  WeeklyProjectionRecord,
-} from "./contracts";
-import {
-  ArtifactVersionError,
-  loadArtifact,
-  loadBuildMetadata,
-  loadRosBuildMetadata,
-} from "./load";
-import { ArtifactIndex } from "./model";
-import { InSeasonBundle } from "./ros";
+import { CriticalArtifactError } from "./errors";
+import { fetchManifest, pruneCache } from "./serving";
+import { DataStore } from "./store";
 
-/** Why an optional artifact is missing, in the words the Data panel will use. */
-export interface Degradation {
-  readonly artifact: ArtifactName;
-  readonly reason: "incompatible" | "unavailable";
-  readonly message: string;
-}
-
-export interface LoadedBundle {
-  readonly index: ArtifactIndex;
-  readonly degradations: readonly Degradation[];
-  /**
-   * The in-season bundle, or null when this build published none.
-   *
-   * Null is the normal state before kickoff and is not a failure: the draft product is the
-   * whole product until the season starts. It is also what a site shows when an in-season
-   * refresh failed its gate — the last good draft board stays, and the in-season tabs say
-   * why they are absent rather than rendering an empty table.
-   */
-  readonly inSeason: InSeasonBundle | null;
-}
-
-export class CriticalArtifactError extends Error {
-  readonly artifact: string;
-  readonly incompatible: boolean;
-  readonly expected: string | null;
-  readonly found: string | null;
-
-  constructor(artifact: string, cause: unknown) {
-    const versionError = cause instanceof ArtifactVersionError ? cause : null;
-    super(cause instanceof Error ? cause.message : String(cause));
-    this.name = "CriticalArtifactError";
-    this.artifact = artifact;
-    this.incompatible = versionError !== null;
-    this.expected = versionError?.supported ?? null;
-    this.found = versionError?.found ?? null;
-  }
-}
-
-interface OptionalResult<TRecord> {
-  readonly records: readonly TRecord[] | null;
-  readonly degradation: Degradation | null;
-}
-
-async function optional<TRecord>(
-  artifact: ArtifactName,
-  base: string | undefined,
-): Promise<OptionalResult<TRecord>> {
-  const where: { base?: string } = base === undefined ? {} : { base };
-  try {
-    const envelope = await loadArtifact<TRecord>(artifact, where);
-    return { records: envelope.records, degradation: null };
-  } catch (error) {
-    // An unsupported version is reported differently from a missing file: one means the build
-    // and the site disagree about a contract, the other means the build did not produce it.
-    // Both leave the intrinsic board untouched, which is the point of the split.
-    return {
-      records: null,
-      degradation: {
-        artifact,
-        reason: error instanceof ArtifactVersionError ? "incompatible" : "unavailable",
-        message: error instanceof Error ? error.message : String(error),
-      },
-    };
-  }
-}
-
-export async function loadBundle(options: { readonly base?: string } = {}): Promise<LoadedBundle> {
-  // `exactOptionalPropertyTypes` is on, so an absent base is an absent key rather than an
-  // explicit `undefined`; the loader then falls back to Vite's `BASE_URL`.
-  const where: { base?: string } = options.base === undefined ? {} : { base: options.base };
-  const base = options.base;
-
-  let metadata: BuildMetadata;
-  try {
-    metadata = await loadBuildMetadata(where);
-  } catch (error) {
-    throw new CriticalArtifactError("build_metadata.json", error);
-  }
-
-  let tiers: readonly TierRecord[];
-  try {
-    tiers = (await loadArtifact<TierRecord>("tiers", where)).records;
-  } catch (error) {
-    throw new CriticalArtifactError("tiers.json", error);
-  }
-
-  // Fetched together, but reported in a fixed order: a Data panel that listed degraded
-  // sources in whatever order the network happened to settle would read differently on
-  // every reload.
-  const [arbitrage, playerStatus, projections, trendSeries, headshots] = await Promise.all([
-    optional<ArbitrageRecord>("arbitrage", base),
-    optional<PlayerStatusRecord>("player_status", base),
-    optional<PlayerProjectionRecord>("projections", base),
-    // Absent until the retained store holds enough history to draw one, and absent on any
-    // Release 1 bundle. The card degrades to the scalar trend it has always shown.
-    optional<MarketTrendSeriesRecord>("market_trend_series", base),
-    // Decoration, so its absence is not a degradation and is not listed as one: a build
-    // without it renders every board and every card, minus one picture (ADR-087).
-    optional<PlayerHeadshotRecord>("player_headshots", base),
-  ]);
-  const degradations = [arbitrage, playerStatus, projections]
-    .map((result) => result.degradation)
-    .filter((entry): entry is Degradation => entry !== null);
-
-  return {
-    index: new ArtifactIndex({
-      metadata,
-      tiers,
-      arbitrage: arbitrage.records,
-      playerStatus: playerStatus.records,
-      projections: projections.records,
-      trendSeries: trendSeries.records,
-      headshots: headshots.records,
-    }),
-    degradations,
-    inSeason: await loadInSeason(base),
-  };
-}
+export { CriticalArtifactError, type Degradation } from "./errors";
 
 /**
- * Load the in-season bundle, or explain its absence.
+ * Read the manifest and open the store, or refuse.
  *
- * Deliberately all-or-nothing about its *metadata*: the rest-of-season board may not be
- * rendered without `ros_build_metadata.json`, because that file carries the cutoff week and
- * ADR-076's disclosure sentences, and a board showing a long-absence flag without them is
- * exactly the misleading product the ADR exists to prevent. The Opportunity Board is one
- * level softer — it is additive on top of a valid ROS board, so its absence removes a tab
- * rather than the mode.
+ * Throws `CriticalArtifactError` for a missing or unreadable manifest, and for build metadata
+ * or a tier board this build cannot read.
  */
-async function loadInSeason(base: string | undefined): Promise<InSeasonBundle | null> {
-  const where: { base?: string } = base === undefined ? {} : { base };
-  let metadata: RosBuildMetadata;
+export async function openSite(options: { readonly base?: string } = {}): Promise<DataStore> {
+  let store: DataStore;
   try {
-    metadata = await loadRosBuildMetadata(where);
-  } catch {
-    return null;
+    store = new DataStore(await fetchManifest(options.base), options.base);
+  } catch (error) {
+    if (error instanceof CriticalArtifactError) throw error;
+    throw new CriticalArtifactError("manifest.json", error);
   }
-  let rosTiers: readonly RosTierRecord[];
-  try {
-    rosTiers = (await loadArtifact<RosTierRecord>("ros_tiers", where)).records;
-  } catch {
-    return null;
-  }
-  const opportunity = await optional<OpportunityRecord>("inseason_opportunity", base);
-  // One level softer again (ADR-089): the momentum series is an enrichment of an enrichment.
-  // A bundle without it renders every board, every card and every pick — minus one sparkline.
-  const behavior = await optional<BehaviorTrendSeriesRecord>("behavior_trend_series", base);
-  // The signal layer (ADR-091), softer again: observed role and next-game context beside the
-  // boards. A bundle without either renders every board, card and pick, minus the evidence
-  // blocks they feed — and says which one is missing rather than drawing a zero.
-  // The weekly start/sit layer (ADR-096), at the same level: a bundle without it renders
-  // every board, card and pick, and the Start/Sit tab says why it has nothing to compare.
-  const [usage, matchups, weekly] = await Promise.all([
-    optional<PlayerUsageRecord>("player_usage", base),
-    optional<TeamMatchupRecord>("team_matchups", base),
-    optional<WeeklyProjectionRecord>("weekly_projections", base),
-  ]);
-  return new InSeasonBundle({
-    metadata,
-    rosTiers,
-    opportunity: opportunity.records,
-    opportunityDegradation: opportunity.degradation,
-    behaviorSeries: behavior.records,
-    usage: usage.records,
-    matchups: matchups.records,
-    weekly: weekly.records,
-  });
+  // Housekeeping, off the critical path: the cache keeps one deploy's files, not every one's.
+  setTimeout(() => {
+    void pruneCache(store.manifest, options.base);
+  }, 5_000);
+  return store;
 }

@@ -54,6 +54,18 @@ export interface ArtifactBundle {
    * Release 1 bundle. The player card degrades to the scalar trend it has always shown.
    */
   readonly trendSeries?: readonly MarketTrendSeriesRecord[] | null;
+  /**
+   * The blocks the build published, when the records above hold only the blocks loaded so far
+   * (ADR-098: the page fetches one block at a time). Absent, the loaded tier blocks are the
+   * published ones — which is what every caller that hands over a whole artifact means.
+   */
+  readonly blocks?: readonly { readonly leaguePreset: string; readonly scoring: ScoringPreset }[];
+  /**
+   * Whether the build published the market board, when that differs from "records were
+   * handed over": a lazily loaded page knows from the manifest that arbitrage exists before
+   * it has fetched a single row of it.
+   */
+  readonly arbitragePublished?: boolean;
 }
 
 /**
@@ -79,9 +91,14 @@ export class ArtifactIndex {
   /** Every source's series for one block and player. Source-keyed inside, never selection-keyed. */
   private readonly trendsByBlockPlayer: Map<string, MarketTrendSeriesRecord[]>;
 
+  private readonly publishedBlocks:
+    | readonly { readonly leaguePreset: string; readonly scoring: ScoringPreset }[]
+    | null;
+
   constructor(bundle: ArtifactBundle) {
     this.metadata = bundle.metadata;
-    this.hasArbitrage = bundle.arbitrage !== null;
+    this.hasArbitrage = bundle.arbitragePublished ?? bundle.arbitrage !== null;
+    this.publishedBlocks = bundle.blocks ?? null;
     this.hasPlayerStatus = bundle.playerStatus !== null;
     this.hasHeadshots = (bundle.headshots ?? null) !== null;
     this.hasProjections = bundle.projections !== null;
@@ -154,6 +171,7 @@ export class ArtifactIndex {
 
   /** Preset blocks the build actually published, so a control can offer only what exists. */
   availableBlocks(): readonly { leaguePreset: string; scoring: ScoringPreset }[] {
+    if (this.publishedBlocks !== null) return this.publishedBlocks;
     return [...this.tiersByBlock.keys()].map((key) => {
       const [leaguePreset, scoring] = key.split("|");
       return { leaguePreset: leaguePreset ?? "", scoring: (scoring ?? "PPR") as ScoringPreset };

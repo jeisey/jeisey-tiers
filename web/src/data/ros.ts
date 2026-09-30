@@ -15,7 +15,7 @@
  * the interface cannot drift apart, and a build that omitted them cannot render at all.
  */
 
-import type { Degradation } from "./bundle";
+import type { Degradation } from "./errors";
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   BehaviorTrendSeriesRecord,
@@ -27,7 +27,9 @@ import type {
   RosTierRecord,
   ScoringPreset,
   SeasonState,
+  OpportunityCohortRecord,
   TeamMatchupRecord,
+  UsageCohortRecord,
   WeeklyProjectionRecord,
 } from "./contracts";
 import { EM_DASH } from "./format";
@@ -52,7 +54,28 @@ export interface InSeasonInput {
   readonly matchups?: readonly TeamMatchupRecord[] | null;
   /** Next-game distributions (ADR-096). Null costs the Start/Sit tab's content and nothing else. */
   readonly weekly?: readonly WeeklyProjectionRecord[] | null;
+  /**
+   * What the build published, when the records above hold only what has been loaded so far
+   * (ADR-098). "Published" and "loaded" are different facts on a page that fetches one block
+   * and one view at a time: every `has*` flag answers the first, and a view renders only once
+   * its own records are loaded. Absent, a non-null input means published — the meaning every
+   * caller that hands over whole artifacts has always had.
+   */
+  readonly published?: {
+    readonly opportunity: boolean;
+    readonly behaviorSeries: boolean;
+    readonly usage: boolean;
+    readonly matchups: boolean;
+    readonly weekly: boolean;
+  };
+  /** Published rest-of-season blocks, when `rosTiers` holds only the loaded ones. */
+  readonly blocks?: readonly { readonly leaguePreset: string; readonly scoring: ScoringPreset }[];
+  /** A usage population for card cohorts, when `usage` itself is not loaded (ADR-098). */
+  readonly usageCohort?: readonly UsageCohortRecord[] | null;
+  /** The block's cohort fields, when the whole Opportunity Board is not loaded (ADR-098). */
+  readonly opportunityCohort?: readonly OpportunityCohortRecord[] | null;
 }
+
 
 /**
  * A momentum reading, with everything a caller needs to print it honestly.
@@ -104,6 +127,7 @@ export class InSeasonBundle {
   private readonly rosByBlockPlayer: ReadonlyMap<string, RosTierRecord>;
   private readonly opportunityByBlock: ReadonlyMap<string, readonly OpportunityRecord[]>;
   private readonly opportunityByBlockPlayer: ReadonlyMap<string, OpportunityRecord>;
+  private readonly opportunityCohortByBlock: ReadonlyMap<string, readonly OpportunityCohortRecord[]>;
   private readonly behaviorByPlayer: ReadonlyMap<string, BehaviorTrendSeriesRecord>;
   /**
    * The newest retained snapshot the momentum series speaks for: the build's own behaviour
@@ -123,10 +147,17 @@ export class InSeasonBundle {
   private readonly weeklyByScoring: ReadonlyMap<ScoringPreset, readonly WeeklyProjectionRecord[]>;
   private readonly weeklyByScoringPlayer: ReadonlyMap<string, WeeklyProjectionRecord>;
 
+  /** Every published usage record's cohort fields: a card cohort strip's population. */
+  readonly usageCohortRecords: readonly UsageCohortRecord[];
+  private readonly publishedBlocks:
+    | readonly { readonly leaguePreset: string; readonly scoring: ScoringPreset }[]
+    | null;
+
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
     this.opportunityDegradation = input.opportunityDegradation;
-    this.hasOpportunity = input.opportunity !== null;
+    this.hasOpportunity = input.published?.opportunity ?? input.opportunity !== null;
+    this.publishedBlocks = input.blocks ?? null;
 
     // Keyed by player alone, because the artifact is: the same transactions are observed
     // however points are scored, so a per-preset index would be eight copies of one map.
@@ -148,6 +179,7 @@ export class InSeasonBundle {
     // team's next game is the same for every player on it (ADR-091).
     this.usageRecords = input.usage ?? [];
     this.usageByPlayer = new Map(this.usageRecords.map((record) => [record.player_id, record]));
+    this.usageCohortRecords = input.usage ?? input.usageCohort ?? [];
     this.matchupByTeam = new Map((input.matchups ?? []).map((record) => [record.team, record]));
 
     /*
@@ -160,10 +192,14 @@ export class InSeasonBundle {
       definitions agree on every real build — which is why the stricter one is safe to adopt
       and the right one to name.
     */
-    this.hasBehaviorSeries = input.behaviorSeries !== null && input.behaviorSeries !== undefined;
-    this.hasUsage = input.usage !== null && input.usage !== undefined;
-    this.hasMatchups = input.matchups !== null && input.matchups !== undefined;
-    this.hasWeekly = input.weekly !== null && input.weekly !== undefined;
+    this.hasBehaviorSeries =
+      input.published?.behaviorSeries ??
+      (input.behaviorSeries !== null && input.behaviorSeries !== undefined);
+    this.hasUsage = input.published?.usage ?? (input.usage !== null && input.usage !== undefined);
+    this.hasMatchups =
+      input.published?.matchups ?? (input.matchups !== null && input.matchups !== undefined);
+    this.hasWeekly =
+      input.published?.weekly ?? (input.weekly !== null && input.weekly !== undefined);
 
     // Keyed by scoring preset alone: a next-game distribution is the same whatever the league
     // size, which only moves the startable threshold it is read against.
@@ -207,6 +243,15 @@ export class InSeasonBundle {
     }
     this.opportunityByBlock = opportunityByBlock;
     this.opportunityByBlockPlayer = opportunityByBlockPlayer;
+
+    const cohortByBlock = new Map<string, OpportunityCohortRecord[]>();
+    for (const record of input.opportunityCohort ?? []) {
+      const key = blockKey(record.league_preset_id, record.scoring_preset);
+      const bucket = cohortByBlock.get(key);
+      if (bucket === undefined) cohortByBlock.set(key, [record]);
+      else bucket.push(record);
+    }
+    this.opportunityCohortByBlock = cohortByBlock;
   }
 
   get season(): number {
@@ -239,6 +284,19 @@ export class InSeasonBundle {
 
   opportunityFor(leaguePreset: string, scoring: ScoringPreset): readonly OpportunityRecord[] {
     return this.opportunityByBlock.get(blockKey(leaguePreset, scoring)) ?? [];
+  }
+
+  /**
+   * The rows a card's cohort strips place one player among: the whole board when it is loaded,
+   * otherwise the served cohort fields of the same rows (ADR-098). Either way, every row of
+   * the published block.
+   */
+  opportunityCohortFor(
+    leaguePreset: string,
+    scoring: ScoringPreset,
+  ): readonly OpportunityCohortRecord[] {
+    const full = this.opportunityByBlock.get(blockKey(leaguePreset, scoring));
+    return full ?? this.opportunityCohortByBlock.get(blockKey(leaguePreset, scoring)) ?? [];
   }
 
   opportunityRecordFor(
@@ -285,6 +343,7 @@ export class InSeasonBundle {
   }
 
   availableBlocks(): readonly { leaguePreset: string; scoring: ScoringPreset }[] {
+    if (this.publishedBlocks !== null) return this.publishedBlocks;
     return [...this.rosByBlock.keys()].map((key) => {
       const [leaguePreset = "", scoring = "PPR"] = key.split("|");
       return { leaguePreset, scoring: scoring as ScoringPreset };
@@ -654,7 +713,7 @@ export function buildRosCohortContext(
 ): RosCohortContext {
   const board = bundle.rosFor(leaguePreset, scoring);
   const cohort = board.filter((row) => row.position === record.position);
-  const opportunityRows = bundle.opportunityFor(leaguePreset, scoring);
+  const opportunityRows = bundle.opportunityCohortFor(leaguePreset, scoring);
   const opportunityCohort = opportunityRows.filter((row) => row.position === record.position);
 
   const moveCounts = finiteValues([

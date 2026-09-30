@@ -4,11 +4,17 @@
  * `docs/DATA_CONTRACTS.md` section 13 requires a refusal on an unsupported major version. The
  * point of the split is that an optional artifact going missing must not take the intrinsic
  * board with it — every number in `tiers.json` is correct whether or not a market price exists.
+ *
+ * Since ADR-098 the page reads a manifest and fetches served slices lazily; `loadBundle` below
+ * opens the site and then loads every non-card slice, which is the whole-artifact view these
+ * assertions were written against. What a first paint actually fetches is pinned separately,
+ * at the end of this file.
  */
 
 import { describe, expect, it, vi } from "vitest";
 
-import { CriticalArtifactError, loadBundle } from "../src/data/bundle";
+import { CriticalArtifactError, openSite } from "../src/data/bundle";
+import { requiredKeys } from "../src/data/store";
 import {
   arbitrageEnvelope,
   buildMetadata,
@@ -20,24 +26,20 @@ import {
   rosTierEnvelope,
   tierEnvelope,
 } from "./fixtures/artifacts";
+import { MISSING, stubSite } from "./site";
 
 type Payloads = Record<string, unknown>;
 
-/** Sentinel for "this build did not publish that artifact". */
-const MISSING = Symbol("missing");
-
 function serve(payloads: Payloads): void {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const name = input.split("/").pop() ?? "";
-      const payload = payloads[name];
-      if (payload === undefined || payload === MISSING) {
-        return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) } as Response);
-      }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(payload) } as Response);
-    }),
-  );
+  stubSite(payloads);
+}
+
+/** Open the site and load every served slice except card shards: the whole board, in memory. */
+async function loadBundle(options: { readonly base?: string } = {}) {
+  const store = await openSite(options);
+  const keys = Object.keys(store.manifest.files).filter((key) => !key.startsWith("card/"));
+  await store.ensure(keys);
+  return { index: store.boardIndex(keys), degradations: store.degradations, inSeason: store.inSeason(keys) };
 }
 
 function everything(overrides: Payloads = {}): Payloads {
@@ -133,25 +135,19 @@ describe("loadBundle", () => {
     expect(second.degradations).toEqual(first.degradations);
   });
 
-  it("fetches only generated artifacts and never a vendor", async () => {
+  it("fetches only generated files and never a vendor", async () => {
     serve(everything());
     await loadBundle();
     const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
-    // Eight: metadata, tiers, arbitrage, player status, projections, the retained trend
-    // series, the portrait crosswalk, and the in-season bundle's own metadata — which 404s
-    // on a draft-only build and is *supposed* to, because before kickoff there is no
-    // in-season bundle to load. Every one of them is a generated file under `/data/`. The
-    // assertion below is the load-bearing half — a vendor host must never appear in this
-    // list, because a static page that fetched a market feed would put a vendor on the
-    // critical path (ADR-066).
-    //
-    // `a.espncdn.com` is in that list too, and belongs there. Loading the page fetches the
-    // *crosswalk*; the portrait it names is requested by the card, when a reader opens one
-    // (ADR-087). If a headshot host ever appears here, something moved a third-party request
-    // onto first paint.
-    expect(calls).toHaveLength(8);
+    // The manifest, then content-addressed files under `/data/serve/`. The load-bearing half
+    // is the second assertion: a vendor host must never appear here, because a static page
+    // that fetched a market feed would put a vendor on the critical path (ADR-066). A
+    // portrait host (ADR-087) must not either — a portrait is requested by an open card.
+    expect(calls[0]).toMatch(/\/data\/manifest\.json$/);
+    for (const url of calls.slice(1)) {
+      expect(url).toMatch(/\/data\/serve\/[a-z_]+\/?[A-Za-z0-9_.-]*\.[0-9a-f]{16}\.json$|\/data\/serve\/players\.[0-9a-f]{16}\.json$/);
+    }
     for (const url of calls) {
-      expect(url).toMatch(/\/data\/[a-z_]+\.json$/);
       expect(url).not.toMatch(
         /myfantasyleague|sleeper|nflverse|fantasypros|fantasycalc|espncdn/i,
       );
@@ -246,5 +242,57 @@ describe("loadBundle", () => {
     await loadBundle({ base: "/jeisey-tiers/" });
     const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
     expect(calls.every((url) => url.startsWith("/jeisey-tiers/data/"))).toBe(true);
+  });
+});
+
+describe("what a first paint fetches (ADR-098)", () => {
+  it("the in-season default view fetches the manifest, the names and one ROS block", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles() });
+    const store = await openSite();
+    await store.ensure(
+      requiredKeys(store.manifest, {
+        view: "ros",
+        leaguePreset: "redraft-12",
+        scoring: "PPR",
+        cardPlayerId: null,
+      }),
+    );
+    const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
+    expect(calls).toHaveLength(3);
+    expect(calls[0]).toBe("/data/manifest.json");
+    expect(calls.some((url) => url.includes("/serve/players."))).toBe(true);
+    expect(calls.some((url) => url.includes("/serve/ros_tiers/redraft-12.PPR."))).toBe(true);
+    // Nothing from the draft bundle, and nothing for any other block.
+    expect(calls.some((url) => /tiers\/|arbitrage|projections|market_trend/.test(url.replace("ros_tiers", "")))).toBe(false);
+    const bundle = store.inSeason(Object.keys(store.manifest.files));
+    expect(bundle?.rosFor("redraft-12", "PPR").length).toBeGreaterThan(0);
+    expect(bundle?.rosFor("redraft-10", "PPR")).toEqual([]);
+  });
+
+  it("the manifest is always revalidated, and slices are not", async () => {
+    serve(everything());
+    const store = await openSite();
+    await store.ensure(["players"]);
+    const [first, second] = vi.mocked(fetch).mock.calls;
+    expect((first?.[1])?.cache).toBe("no-cache");
+    expect((second?.[1])?.cache).toBeUndefined();
+  });
+
+  it("a card fetches one shard, plus the in-season cohort the ROS view lacks", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles() });
+    const store = await openSite();
+    const context = { view: "ros" as const, leaguePreset: "redraft-12", scoring: "PPR" as const };
+    const board = requiredKeys(store.manifest, { ...context, cardPlayerId: null });
+    const card = requiredKeys(store.manifest, { ...context, cardPlayerId: "gsis:00-0000002" });
+    const added = card.filter((key) => !board.includes(key));
+    expect(added.filter((key) => key.startsWith("card/"))).toHaveLength(1);
+    expect(added.filter((key) => !key.startsWith("card/")).sort()).toEqual(
+      ["inseason_opportunity_cohort/redraft-12.PPR", "player_usage_cohort/all", "team_matchups/all"].sort(),
+    );
+  });
+
+  it("refuses when the site has no manifest at all", async () => {
+    stubSite(everything(), { manifest: false });
+    await expect(openSite()).rejects.toBeInstanceOf(CriticalArtifactError);
   });
 });

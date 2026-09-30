@@ -353,10 +353,14 @@ def test_the_published_contract_marks_the_optional_artifacts_as_optional() -> No
     for name in ("tier_record", "arbitrage_record", "player_status", "player_projection"):
         assert (schemas / f"{name}.schema.json").is_file(), name
 
+    # Since ADR-098 the site opens from the manifest: `bundle.ts` refuses, and `store.ts`
+    # decides the refusals and the degradations from the manifest's envelopes.
     loader = Path("web/src/data/bundle.ts").read_text(encoding="utf-8")
     assert "CriticalArtifactError" in loader
-    for optional in ("arbitrage", "player_status", "projections"):
-        assert optional in loader, optional
+    store = Path("web/src/data/store.ts").read_text(encoding="utf-8")
+    assert 'new CriticalArtifactError("tiers.json"' in store
+    assert 'new CriticalArtifactError("build_metadata.json"' in store
+    assert '["arbitrage", "player_status", "projections"] as const' in store
 
 
 def test_no_workflow_can_deploy_without_the_build_gate() -> None:

@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
 import { FIXTURE_GENERATED_AT, fixtureFiles, inSeasonFixtureFiles } from "./fixtures/artifacts";
 import { required } from "./required";
+import { stubSite } from "./site";
 
 const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 1000);
 const DUEL = "?view=startsit&scoring=ppr&teams=12&duel=00-0000011.00-0000012";
@@ -24,18 +25,7 @@ function serve(signals: "present" | "absent" = "present"): void {
     ...fixtureFiles(),
     ...inSeasonFixtureFiles(true, { signals }),
   };
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const name = input.split("/").pop() ?? "";
-      const payload = payloads[name];
-      return Promise.resolve({
-        ok: payload !== undefined,
-        status: payload === undefined ? 404 : 200,
-        json: () => Promise.resolve(payload ?? null),
-      } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 function go(query = ""): void {

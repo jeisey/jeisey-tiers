@@ -630,7 +630,13 @@ test.describe("project Pages base path", () => {
 
     await expect(page.getByRole("table", { name: /Intrinsic tier board/ }).getByRole("row")).toHaveCount(19);
     expect(requested.some((path) => path.startsWith("/jeisey-tiers/assets/"))).toBe(true);
-    expect(requested.some((path) => path === "/jeisey-tiers/data/tiers.json")).toBe(true);
+    // The manifest, then the content-addressed tier slice for the open block (ADR-098).
+    expect(requested.some((path) => path === "/jeisey-tiers/data/manifest.json")).toBe(true);
+    expect(
+      requested.some((path) => /^\/jeisey-tiers\/data\/serve\/tiers\/redraft-12\.PPR\.[0-9a-f]{16}\.json$/.test(path)),
+    ).toBe(true);
+    // The whole artifact stays published for export and verification, and is never fetched.
+    expect(requested.some((path) => path === "/jeisey-tiers/data/tiers.json")).toBe(false);
     // No absolute `/data/...` assumption may survive under a base path.
     expect(requested.filter((path) => path.startsWith("/data/"))).toEqual([]);
 

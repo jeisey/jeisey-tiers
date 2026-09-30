@@ -24,6 +24,7 @@ from ffdraft.artifacts.schemas import (
     validate_envelope,
     validate_records,
 )
+from ffdraft.artifacts.serving import validate_serving_layout
 from ffdraft.artifacts.spec import (
     ARTIFACT_SPECS,
     BUILD_METADATA_FILENAME,
@@ -135,12 +136,20 @@ _COPIED_INTRINSIC_FIELDS = (
 )
 
 
-def validate_artifact_directory(directory: Path) -> QualityGate:
+def validate_artifact_directory(
+    directory: Path,
+    *,
+    require_serving: bool = False,
+) -> QualityGate:
     """Validate every artifact present in ``directory``.
 
     A missing optional artifact is not an error - a build may legitimately emit tiers
     without arbitrage when the market source failed (`docs/DATA_SOURCES.md` section 10).
     A missing ``build_metadata.json`` *is* an error: the frontend reads freshness from it.
+
+    The served layout (ADR-098) is validated whenever ``manifest.json`` is present, and its
+    absence is itself critical under ``require_serving`` — which is how a deploy gate says
+    "written means packaged": the site reads nothing but the manifest and what it names.
     """
     gate = QualityGate()
     if not directory.is_dir():
@@ -181,6 +190,8 @@ def validate_artifact_directory(directory: Path) -> QualityGate:
     gate.extend(_behavior_series_cross_checks(envelopes))
     gate.extend(_signal_cross_checks(envelopes))
     gate.extend(_weekly_cross_checks(envelopes))
+    if envelopes:
+        gate.extend(validate_serving_layout(directory, envelopes, required=require_serving))
     if not envelopes:
         gate.add(
             QualityCheck.fail(

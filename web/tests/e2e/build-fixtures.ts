@@ -63,6 +63,19 @@ function writeArtifacts(dataDir: string, files: Record<string, unknown>): void {
   }
 }
 
+/**
+ * Lay a data directory out the way the deployed site serves it (ADR-098): the manifest, the
+ * per-block slices and the card shards, written by the **production** packager. The page
+ * reads nothing else, so every end-to-end spec exercises the real encoder against these
+ * fixtures — the same code `daily-refresh.yml` runs on the real board.
+ */
+function packageSiteData(dataDir: string): void {
+  execFileSync("uv", ["run", "--frozen", "ffdraft", "package-site-data", dataDir], {
+    cwd: repo,
+    stdio: ["ignore", "ignore", "inherit"],
+  });
+}
+
 /** A tiny CSV so the full-download link resolves to a real file under both base paths. */
 function writeCsv(dataDir: string, name: string, header: string): void {
   writeFileSync(resolve(dataDir, name), `${header}\r\n`, "utf-8");
@@ -82,6 +95,7 @@ export async function prepare(): Promise<void> {
     writeArtifacts(dataDir, fixtures.fixtureFiles());
     writeCsv(dataDir, "tiers.csv", "fair_rank,display_name");
     writeCsv(dataDir, "arbitrage.csv", "fair_rank,display_name");
+    packageSiteData(dataDir);
   }
 
   /** A build that simply does not publish one artifact; the server then 404s it. */
@@ -169,7 +183,23 @@ export async function prepare(): Promise<void> {
     writeCsv(dataDir, "arbitrage.csv", "fair_rank,display_name");
     writeCsv(dataDir, "ros_tiers.csv", "ros_fair_rank,player");
     writeCsv(dataDir, "inseason_opportunity.csv", "ros_fair_rank,player");
+    packageSiteData(dataDir);
   }
+}
+
+/**
+ * The size model (ADR-098): the app with a real-sized, synthetic data set in it, for the
+ * payload budget gate (`verify-budget.mjs`). Built only when asked — it is the one build no
+ * behavioural spec reads — with `E2E_SIZE_MODEL=1` or `npm run e2e:size-model`.
+ */
+export function prepareSizeModel(): void {
+  const out = resolve(repo, "web/dist-size-model");
+  viteBuild("/jeisey-tiers/", out);
+  execFileSync(
+    "uv",
+    ["run", "--frozen", "python", "scripts/size_model.py", "--out", resolve(out, "data")],
+    { cwd: repo, stdio: ["ignore", "ignore", "inherit"] },
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1] ?? ""}`) {

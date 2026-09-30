@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/serving_file.schema.json",
+  "title": "ServingFile",
+  "description": "One content-addressed file under data/serve/ (ADR-098, docs/DATA_CONTRACTS.md section 21): the player-name dictionary, a slice (one column-major table of one artifact's records for one partition) or a card shard (one table per artifact for one block and player bucket). Every table decodes to exactly the matching records of its source artifact; the validator proves it.",
+  "$defs": {
+    "table": {
+      "type": "object",
+      "required": ["count", "fields", "columns"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "fields": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "absent": {
+          "description": "Field -> indices of rows that do not carry the field at all (distinct from a null).",
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
+        },
+        "envelope": {
+          "description": "Fields every row takes from the source artifact's envelope in the manifest (build identity).",
+          "type": "array",
+          "items": { "enum": ["build_id"] }
+        },
+        "names": { "description": "The field every row takes from the player dictionary by player_id.", "const": "display_name" },
+        "nested": { "description": "Field -> the key tree its object values share; each leaf is served as the column `<field>.<key>...`.", "type": "object" },
+        "constants": { "description": "Field or leaf path -> the one value every row holds.", "type": "object" },
+        "columns": { "description": "Field or leaf path -> one value per row.", "type": "object", "additionalProperties": { "type": "array" } },
+        "join": {
+          "description": "Rows marked 1 take `fields` from the row of the same player in the named family's slice of the same partition, which the validator proves equal.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["family", "fields", "rows"],
+          "properties": {
+            "family": { "type": "string" },
+            "fields": { "type": "array", "items": { "type": "string" } },
+            "rows": { "type": "string", "pattern": "^[01]*$" }
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": ["format"],
+  "properties": { "format": { "const": "serving_v1" } },
+  "oneOf": [
+    {
+      "title": "PlayerDictionary",
+      "required": ["names"],
+      "properties": { "names": { "type": "object", "additionalProperties": { "type": "string" } } }
+    },
+    {
+      "title": "Slice",
+      "allOf": [{ "$ref": "#/$defs/table" }],
+      "required": ["family", "artifact", "partition"],
+      "properties": { "family": { "type": "string", "not": { "const": "card" } } }
+    },
+    {
+      "title": "CardShard",
+      "required": ["family", "partition", "sections"],
+      "properties": {
+        "family": { "const": "card" },
+        "sections": { "type": "object", "additionalProperties": { "$ref": "#/$defs/table" } }
+      }
+    }
+  ]
+}

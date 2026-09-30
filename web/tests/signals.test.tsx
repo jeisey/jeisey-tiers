@@ -42,6 +42,7 @@ import {
   usageRecords,
 } from "./fixtures/artifacts";
 import { required } from "./required";
+import { stubSite } from "./site";
 
 const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 1000);
 
@@ -62,17 +63,7 @@ function serve(options: { readonly signals?: "present" | "absent" } = {}): void 
     ...fixtureFiles(),
     ...inSeasonFixtureFiles(true, options),
   };
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const name = input.split("/").pop() ?? "";
-      const payload = payloads[name];
-      if (payload === undefined) {
-        return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) } as Response);
-      }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(payload) } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 function go(query = ""): void {

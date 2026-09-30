@@ -254,7 +254,26 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     validate.add_argument("directory", type=Path, nargs="?", default=None)
     validate.add_argument("--json", action="store_true", help="emit machine-readable output")
+    validate.add_argument(
+        "--require-serving",
+        action="store_true",
+        help=(
+            "fail when data/manifest.json is absent; the deploy gate's setting, because the "
+            "site loads only the manifest and the files it names (ADR-098)"
+        ),
+    )
     validate.set_defaults(handler=_validate_artifacts)
+
+    package = subparsers.add_parser(
+        "package-site-data",
+        help=(
+            "derive the served layout (manifest, per-block slices, card shards) from the "
+            "artifacts in a directory; run after the last artifact write (ADR-098)"
+        ),
+    )
+    package.add_argument("directory", type=Path, nargs="?", default=None)
+    package.add_argument("--json", action="store_true", help="print the size report as JSON")
+    package.set_defaults(handler=_package_site_data)
 
     historical = subparsers.add_parser(
         "build-historical",
@@ -1080,9 +1099,32 @@ def _build_fixture(args: argparse.Namespace) -> int:
     return _report_gate(result.gate)
 
 
+def _package_site_data(args: argparse.Namespace) -> int:
+    from ffdraft.artifacts.serving import package_serving, serving_report
+
+    directory = args.directory or (repo_root() / DEFAULT_ARTIFACT_DIR)
+    if not directory.is_dir():
+        print(f"no artifact directory at {directory}", file=sys.stderr)
+        return 2
+    layout = package_serving(directory)
+    report = serving_report(directory)
+    if args.json:
+        print(json.dumps(report, indent=2))
+        return 0
+    print(f"packaged {len(layout.files)} served files into {directory}")
+    manifest = report["manifest"]
+    print(f"  manifest.json  {manifest['raw']:>10,} B raw  {manifest['gzip']:>8,} B gzip")
+    for family, entry in report["families"].items():
+        print(
+            f"  {family:<24} {entry['files']:>4} file(s) {entry['raw']:>10,} B raw "
+            f"{entry['gzip']:>9,} B gzip  (largest {entry['max_gzip']:,} B)",
+        )
+    return 0
+
+
 def _validate_artifacts(args: argparse.Namespace) -> int:
     directory = args.directory or (repo_root() / DEFAULT_ARTIFACT_DIR)
-    gate = validate_artifact_directory(directory)
+    gate = validate_artifact_directory(directory, require_serving=args.require_serving)
     if args.json:
         print(json.dumps(gate.to_dict(), indent=2))
         return 0 if gate.passed else 1

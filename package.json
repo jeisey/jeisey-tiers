@@ -21,6 +21,8 @@
     "verify:presets": "node web/tests/e2e/verify-presets.mjs",
     "verify:csv": "node web/tests/e2e/verify-csv.mjs",
     "verify:live": "node web/tests/e2e/verify-live.mjs",
+    "verify:budget": "node web/tests/e2e/verify-budget.mjs",
+    "e2e:size-model": "node --experimental-strip-types -e \"import('./web/tests/e2e/build-fixtures.ts').then((m) => m.prepareSizeModel())\"",
     "e2e:browsers": "playwright test --project=smoke-chromium --project=smoke-firefox --project=smoke-webkit",
     "e2e:all": "playwright test"
   },

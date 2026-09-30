@@ -24,6 +24,7 @@
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   PlayerUsageRecord,
+  UsageCohortRecord,
   Position,
   RoleChange,
   RoleMetric,
@@ -273,8 +274,8 @@ export interface UsageCohort {
 }
 
 export function buildUsageCohort(
-  records: readonly PlayerUsageRecord[],
-  record: PlayerUsageRecord,
+  records: readonly UsageCohortRecord[],
+  record: UsageCohortRecord,
   scoring: ScoringPreset,
 ): UsageCohort {
   const peers = records.filter((row) => row.position === record.position);

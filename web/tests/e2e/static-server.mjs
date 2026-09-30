@@ -10,10 +10,11 @@
  * given roots and serves nothing else, so a test cannot accidentally reach a vendor.
  */
 
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { gzipSync } from "node:zlib";
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -23,9 +24,55 @@ const TYPES = {
   ".csv": "text/csv; charset=utf-8",
   ".map": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".ico": "image/vnd.microsoft.icon",
+  ".woff2": "font/woff2",
 };
 
-export function createStaticServer({ roots }) {
+/**
+ * What GitHub Pages compresses: every text type plus the icon, never PNG or WOFF2, at zlib
+ * level 5 (docs/OPERATIONS.md section 17, measured 2026-09-30).
+ */
+const COMPRESSED = new Set([".html", ".js", ".css", ".json", ".csv", ".map", ".svg", ".ico"]);
+export const PAGES_GZIP_LEVEL = 5;
+
+/**
+ * Answer one request the way GitHub Pages does (ADR-098): `Cache-Control: max-age=600`, a weak
+ * ETag of the file's mtime and size in hex, `Last-Modified`, a bodiless 304 for a matching
+ * conditional request, and gzip level 5 for the types Pages compresses. `maxAge` overrides the
+ * 600 seconds so a test can make a browser revalidate without waiting ten minutes.
+ */
+function servePages(request, response, file, maxAge, onServe) {
+  const path = new URL(request.url ?? "/", "http://localhost").pathname;
+  const stat = statSync(file);
+  const etag = `W/"${Math.floor(stat.mtimeMs / 1000).toString(16)}-${stat.size.toString(16)}"`;
+  const headers = {
+    "content-type": TYPES[extname(file)] ?? "application/octet-stream",
+    "cache-control": `max-age=${String(maxAge)}`,
+    etag,
+    "last-modified": stat.mtime.toUTCString(),
+    vary: "Accept-Encoding",
+  };
+  if (request.headers["if-none-match"] === etag) {
+    response.writeHead(304, headers);
+    response.end();
+    onServe?.({ path, status: 304, bytes: 0 });
+    return;
+  }
+  const body = readFileSync(file);
+  const gzip =
+    COMPRESSED.has(extname(file)) && /\bgzip\b/.test(String(request.headers["accept-encoding"] ?? ""));
+  const payload = gzip ? gzipSync(body, { level: PAGES_GZIP_LEVEL }) : body;
+  response.writeHead(200, {
+    ...headers,
+    ...(gzip ? { "content-encoding": "gzip" } : {}),
+    "content-length": String(payload.length),
+  });
+  response.end(payload);
+  onServe?.({ path, status: 200, bytes: payload.length });
+}
+
+export function createStaticServer({ roots, pages = null }) {
   return createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
     let pathname = decodeURIComponent(url.pathname);
@@ -59,6 +106,10 @@ export function createStaticServer({ roots }) {
       file = join(mount.dir, "index.html");
     }
 
+    if (pages !== null) {
+      servePages(request, response, file, pages.maxAge ?? 600, pages.onServe);
+      return;
+    }
     response.writeHead(200, {
       "content-type": TYPES[extname(file)] ?? "application/octet-stream",
       "cache-control": "no-store",

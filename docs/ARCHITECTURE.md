@@ -492,6 +492,11 @@ Each record contains scoring/league preset.
 
 Choose after measuring browser payload. Keep CSV export paths stable.
 
+> **2026-09-30 (ADR-098): both.** The artifacts stay Shape A — one file per product, the
+> contract every validator, CSV and verifier reads — and the site is served a Shape-B-style
+> derivation of them: per-block and per-scoring slices, card shards and a hashed manifest under
+> `data/serve/`, measured first as this section always asked. See section 14.
+>
 > **Chosen for V1: Shape A** (ADR-020). There is no payload to measure yet, and one file per product keeps the loader, the export path and the validator simple; a preset switch is a client-side filter rather than a fetch. Each JSON file is wrapped in the envelope described in `docs/DATA_CONTRACTS.md` section 13.1. Moving to Shape B later changes only the envelope, not the record contracts, so CSV export paths survive the migration.
 >
 > Phase 1 also emits `projections.json`/`.csv` and `market_snapshot.json` alongside the PRD's minimum set, so every schema in `schemas/` has a serializer and a validator rather than only a definition.
@@ -541,6 +546,13 @@ Prefer React-rendered SVG elements driven by D3 scales, rather than opaque D3-ow
 
 No routing library is required for V1. A single page with tabs and `URLSearchParams` avoids GitHub Pages SPA fallback complexity.
 
+> **ADR-098.** `bundle.ts` no longer loads artifacts. `openSite` reads `data/manifest.json` and
+> opens a `DataStore` (`store.ts`), which fetches only the served files the open view, block and
+> card need (`requiredKeys`, section 14) and builds `ArtifactIndex` and `InSeasonBundle` from
+> exactly those; `serving.ts` is the format — the decoder, the content-hash check and the Cache
+> API. The indexes and every view are unchanged in shape, and "published" (from the manifest)
+> is kept apart from "loaded".
+>
 > **Phase-6 implementation (ADR-048).** `web/src/data/` is the whole data layer: `contracts.ts` mirrors the JSON Schemas, `load.ts` fetches and version-checks, `bundle.ts` splits critical (`build_metadata`, `tiers`) from degradable (`arbitrage`, `player_status`, `projections`), `model.ts` builds the indexes and the joins, and `market.ts`, `flags.ts`, `format.ts`, `csv.ts` and `state.ts` hold the derivations, the flag vocabulary, the number formats, the export and the URL state. `web/src/app/` composes; `web/src/charts/` holds the bespoke charts, which take D3 scales and render React-owned SVG. `ros.ts` is the in-season sibling of `model.ts`, deliberately not an extension of it (ADR-071), and `charts/boardModel.ts` is the one place the two meet: a neutral view model that lets the draft board and the rest-of-season board share `TierBoard` without either quantity learning the other's field names (ADR-085).
 >
 > URL state is read through `useSyncExternalStore` rather than mirrored into component state, so the address bar and the board cannot disagree for a frame. Every chart is one tab stop with arrow-key movement between marks (`useRovingMarks`), because three hundred tab stops in front of a table is not accessibility.
@@ -666,3 +678,41 @@ Given:
 an agent should be able to regenerate public artifacts within deterministic numeric tolerance.
 
 All stochastic components use recorded seeds. Sort keys/tie behavior must be deterministic.
+
+## 14. What each view loads (ADR-098)
+
+The page reads `data/manifest.json` (always revalidated) and then only the served files the open
+mode, view, block and card need. This table is `requiredKeys` in `web/src/data/store.ts`, in
+prose; the files are laid out by `src/ffdraft/artifacts/serving.py` and their contract is
+`docs/DATA_CONTRACTS.md` section 21. `<block>` is the reader's league × scoring preset
+(`redraft-12.PPR`), `<scoring>` the scoring preset alone.
+
+**Every view.** The manifest carries `build_metadata` (masthead freshness and sources, footer,
+season state, market cohort, the Data panel) and `ros_build_metadata` (the mode, the week, the
+ADR-076 disclosures, the behaviour, signal and weekly blocks) inline, so the mode, the refusals
+and the degradations are decided before any data file is fetched. `players` — the name
+dictionary every slice resolves `display_name` through — comes with the first view.
+
+| mode | view | served files | fields the view reads from them |
+|---|---|---|---|
+| draft | Tier board (`tiers`, the preseason default) | `tiers/<block>`, `player_status/all` | fair and position rank, tier, VORP quantiles, expected points, uncertainty, flags; status badges |
+| draft | Arbitrage | `arbitrage/<block>`, `tiers/<block>`, `player_status/all` | market ADP, rank gap, score, confidence, every market and the cross-market summary, trend; the tier column and the unpriced list; badges |
+| both | Data | `arbitrage/<block>`, `tiers/<block>`, `player_status/all` | metadata, degradations, the block's market rows for its counts |
+| in-season | ROS tiers (`ros`, the in-season default) | `ros_tiers/<block>` | every ROS field, including `current_status` for the badge and `long_absence` with the manifest's disclosures |
+| in-season | Start/Sit | `weekly_projections/<scoring>` | quantiles, drivers, game, opponent, injury; the weekly block's thresholds from the manifest |
+| in-season | Opportunity | `ros_tiers/<block>`, `inseason_opportunity/<block>`, `player_usage/all`, `behavior_trend_series/all`, `team_matchups/all` | the board's own fields (its copied ROS fields joined from the ROS slice); the leading role metric's change and weekly series; add momentum and its last point; the next game |
+| in-season | Pick of the Week | as Opportunity, plus `player_headshots/all` | the same readings, and the four picks' portrait addresses |
+| both | player card | `card/<block>/<bucket>` — one file | the player's own row in every per-player artifact: tier, arbitrage, market history, projection, status, portrait, ROS, Opportunity, next-game distribution, usage, momentum |
+| in-season | player card, cohorts | from an in-season board: `inseason_opportunity_cohort/<block>`, `player_usage_cohort/all`, `team_matchups/all` (the ROS block is already loaded); from a draft board in season: `ros_tiers/<block>`, `inseason_opportunity_cohort/<block>` | the block's share and transaction fields and the position's touchdown share and pass EPA, which the cohort strips place one player among; the next game |
+| both | search, filters, sort | nothing new | the open view's rows |
+| both | CSV export | nothing new | the view export writes the loaded rows; "Download full CSV" is a static link to the full artifact's CSV |
+| both | mode or block switch | the new mode's or block's files | as the view |
+
+A card's bucket is FNV-1a of `player_id` modulo the manifest's `card_buckets` (64). Card-only
+artifacts — projections, market history, portraits outside Pick of the Week, weekly usage
+series outside the Opportunity tabs — are never downloaded by a board.
+
+Measured on the week-4 board (level-5 gzip, as Pages serves it): a first in-season visit is 285 kB
+in 10 requests, 60 kB of it data; Start/Sit adds 34 kB, a card 20 kB, the Opportunity Board
+81 kB; a repeat visit to the same deploy costs nothing (ADR-098).
+

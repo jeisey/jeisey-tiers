@@ -7,13 +7,23 @@
  * as the build produced it (`docs/DATA_CONTRACTS.md` section 13, `docs/UX_SPEC.md` section 10).
  */
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { flushSync } from "react-dom";
 
-import logoUrl from "../assets/jt_logo.png";
+import logoUrl from "../assets/jt_logo-96.png";
+import logoUrl3x from "../assets/jt_logo-145.png";
 
 import { PanelToggle } from "../components/primitives";
-import { CriticalArtifactError, loadBundle, type Degradation } from "../data/bundle";
+import { CriticalArtifactError, openSite, type Degradation } from "../data/bundle";
 import { selectOpportunityCandidates, signalTeam } from "../data/candidates";
 import { easternIsoDate } from "../data/format";
 import { cohortAssignment } from "../data/market";
@@ -26,6 +36,7 @@ import {
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
+import { requiredKeys, type DataStore } from "../data/store";
 import { selectWeekBoard, startableFor, toggleDuel } from "../data/duel";
 import {
   IN_SEASON_VIEWS,
@@ -60,12 +71,7 @@ const StartSitView = lazy(() =>
 
 type LoadState =
   | { readonly status: "loading" }
-  | {
-      readonly status: "ready";
-      readonly index: ArtifactIndex;
-      readonly degradations: readonly Degradation[];
-      readonly inSeason: InSeasonBundle | null;
-    }
+  | { readonly status: "ready"; readonly store: DataStore }
   | { readonly status: "error"; readonly error: CriticalArtifactError };
 
 /**
@@ -80,16 +86,9 @@ export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
 
   useEffect(() => {
     let cancelled = false;
-    loadBundle()
-      .then((bundle) => {
-        if (!cancelled) {
-          setLoad({
-            status: "ready",
-            index: bundle.index,
-            degradations: bundle.degradations,
-            inSeason: bundle.inSeason,
-          });
-        }
+    openSite()
+      .then((store) => {
+        if (!cancelled) setLoad({ status: "ready", store });
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -114,13 +113,7 @@ export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
   }, []);
 
   if (load.status === "loading") {
-    return (
-      <main className="app">
-        <p role="status" className="muted" style={{ padding: "2rem 0" }}>
-          Loading the board…
-        </p>
-      </main>
-    );
+    return <LoadingBoard />;
   }
 
   if (load.status === "error") {
@@ -128,16 +121,119 @@ export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
   }
 
   return (
-    <Board
-      index={load.index}
-      inSeason={load.inSeason}
-      degradations={load.degradations}
+    <SiteBoard
+      store={load.store}
       state={state}
       setState={setState}
       selectedPlayerId={selectedPlayerId}
       onSelect={onSelect}
       onCloseDetail={onCloseDetail}
       now={now}
+    />
+  );
+}
+
+function LoadingBoard(): React.JSX.Element {
+  return (
+    <main className="app">
+      <p role="status" className="muted" style={{ padding: "2rem 0" }}>
+        Loading the board…
+      </p>
+    </main>
+  );
+}
+
+/**
+ * The served files the open view and card need, fetched as they are needed (ADR-098).
+ *
+ * The view's own files gate the first paint, exactly as the whole-artifact loader's single
+ * promise did; after that a switch of tab, block or card fetches only what that switch adds,
+ * and the chrome stays on screen while it does.
+ */
+function SiteBoard({
+  store,
+  state,
+  setState,
+  selectedPlayerId,
+  onSelect,
+  onCloseDetail,
+  now,
+}: {
+  readonly store: DataStore;
+  readonly state: ReturnType<typeof useAppState>["state"];
+  readonly setState: ReturnType<typeof useAppState>["setState"];
+  readonly selectedPlayerId: string | null;
+  readonly onSelect: (playerId: string) => void;
+  readonly onCloseDetail: () => void;
+  readonly now?: Date | undefined;
+}): React.JSX.Element {
+  // Re-render when anything arrives; what to build from it is decided below.
+  useSyncExternalStore(
+    useCallback((listener: () => void) => store.subscribe(listener), [store]),
+    () => store.version,
+  );
+  const mode = resolveMode(state.mode, store.rosMetadata?.season_state.product_mode ?? null);
+  const view = resolveView(state.view, mode);
+  const leaguePreset = leaguePresetId(state.teams);
+  const scoring = SCORING_TO_PRESET[state.scoring];
+  const viewKeys = useMemo(
+    () => requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: null }),
+    [store, view, leaguePreset, scoring],
+  );
+  const cardKeys = useMemo(
+    () =>
+      selectedPlayerId === null
+        ? []
+        : requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: selectedPlayerId }),
+    [store, view, leaguePreset, scoring, selectedPlayerId],
+  );
+  const [failure, setFailure] = useState<Error | null>(null);
+  const [firstPaint, setFirstPaint] = useState(false);
+  const viewReady = store.isLoaded(viewKeys);
+  const cardReady = store.isLoaded(cardKeys);
+  if (viewReady && !firstPaint) setFirstPaint(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    store.ensure([...viewKeys, ...cardKeys]).catch((error: unknown) => {
+      if (!cancelled) setFailure(error instanceof Error ? error : new Error(String(error)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [store, viewKeys, cardKeys]);
+
+  // Each built from exactly the keys it reads; the store hands back the same object until one
+  // of those keys loads, so a card's shard arriving never gives the board a new index.
+  const index = store.boardIndex(viewKeys);
+  const inSeason = store.inSeason(viewKeys);
+  const cohorts = store.inSeason(cardKeys);
+  // A shard is immutable once loaded, so the card's records are fixed by these inputs.
+  const card = useMemo(
+    () =>
+      selectedPlayerId === null || !cardReady
+        ? null
+        : store.cardData(leaguePreset, scoring, selectedPlayerId),
+    [store, selectedPlayerId, cardReady, leaguePreset, scoring],
+  );
+
+  if (!firstPaint && failure === null) return <LoadingBoard />;
+
+  return (
+    <Board
+      index={index}
+      inSeason={inSeason}
+      degradations={store.degradations}
+      state={state}
+      setState={setState}
+      selectedPlayerId={selectedPlayerId}
+      onSelect={onSelect}
+      onCloseDetail={onCloseDetail}
+      now={now}
+      panelReady={viewReady}
+      failure={failure}
+      card={card}
+      cohorts={cohorts}
     />
   );
 }
@@ -152,7 +248,22 @@ function Board({
   onSelect,
   onCloseDetail,
   now,
+  panelReady,
+  failure,
+  card,
+  cohorts,
 }: {
+  /**
+   * The in-season bundle built from the card's own keys: the blocks and populations a card's
+   * cohort strips place one player among (ADR-098). Null before kickoff.
+   */
+  readonly cohorts: InSeasonBundle | null;
+  /** Every served file the open view reads is loaded (ADR-098). */
+  readonly panelReady: boolean;
+  /** A served file failed to load; the panel says so rather than drawing a partial board. */
+  readonly failure: Error | null;
+  /** The open card's records, from its shard; null until it has loaded. */
+  readonly card: ReturnType<DataStore["cardData"]>;
   readonly index: ArtifactIndex;
   /** The in-season bundle, or null before kickoff. See `LoadedBundle.inSeason`. */
   readonly inSeason: InSeasonBundle | null;
@@ -249,6 +360,7 @@ function Board({
    * none. This is a filter readout, not a derived quantity.
    */
   const rowCount = useMemo(() => {
+    if (!panelReady) return undefined;
     const leaguePreset = leaguePresetId(state.teams);
     const scoring = SCORING_TO_PRESET[state.scoring];
     if (view === "tiers") {
@@ -294,26 +406,29 @@ function Board({
         : { shown: visiblePicks(set, state.position).length, total: set.picks.length };
     }
     return undefined;
-  }, [index, inSeason, state, view]);
+  }, [index, inSeason, state, view, panelReady]);
 
   const detail: PlayerDetailData | null = useMemo(() => {
-    if (selectedPlayerId === null) return null;
+    // The card opens once its shard is in (ADR-098): every per-player record below is read
+    // from it, so the card is the same whichever board it was opened from. Flags that say what
+    // the build *published*, and the cohorts a value is placed among, come from the boards.
+    if (selectedPlayerId === null || card === null) return null;
     const leaguePreset = leaguePresetId(state.teams);
     const scoring = SCORING_TO_PRESET[state.scoring];
-    const ros = inSeason?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
-    const opportunity =
-      inSeason?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
-    const usage = inSeason?.usageFor(selectedPlayerId) ?? null;
-    const weekly = inSeason?.weeklyRecordFor(scoring, selectedPlayerId) ?? null;
+    const own = card.inSeason;
+    const ros = own?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
+    const opportunity = own?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
+    const usage = own?.usageFor(selectedPlayerId) ?? null;
+    const weekly = own?.weeklyRecordFor(scoring, selectedPlayerId) ?? null;
     return {
       playerId: selectedPlayerId,
-      tier: index.tierFor(leaguePreset, scoring, selectedPlayerId),
-      arbitrage: index.arbitrageRecordFor(leaguePreset, scoring, selectedPlayerId),
-      status: index.statusFor(selectedPlayerId),
+      tier: card.index.tierFor(leaguePreset, scoring, selectedPlayerId),
+      arbitrage: card.index.arbitrageRecordFor(leaguePreset, scoring, selectedPlayerId),
+      status: card.index.statusFor(selectedPlayerId),
       // Null whenever the build published no portrait for him, which is ordinary. The card
       // draws a monogram and nothing else about it changes (ADR-087).
-      headshotUrl: index.headshotFor(selectedPlayerId)?.image_url ?? null,
-      projection: index.projectionFor(scoring, selectedPlayerId),
+      headshotUrl: card.index.headshotFor(selectedPlayerId)?.image_url ?? null,
+      projection: card.index.projectionFor(scoring, selectedPlayerId),
       ros,
       rosDisclosures: inSeason?.metadata.disclosures ?? null,
       /*
@@ -326,9 +441,9 @@ function Board({
         renderer and the rule has one home and one test.
       */
       rosCohort:
-        inSeason === null || ros === null
+        cohorts === null || ros === null
           ? null
-          : buildRosCohortContext(inSeason, leaguePreset, scoring, ros, opportunity),
+          : buildRosCohortContext(cohorts, leaguePreset, scoring, ros, opportunity),
       // The in-season panel's own inputs.
       //
       // `inSeason` is keyed off the *view*, not the mode. The card belongs to the board the
@@ -342,14 +457,14 @@ function Board({
       // the rest-of-season row's team is the fallback for a player with no usage record.
       usage,
       usageCohort:
-        inSeason === null || usage === null
+        cohorts === null || usage === null
           ? null
-          : buildUsageCohort(inSeason.usageRecords, usage, scoring),
+          : buildUsageCohort(cohorts.usageCohortRecords, usage, scoring),
       usagePublished: inSeason?.hasUsage ?? false,
-      matchup: inSeason?.matchupFor(signalTeam(usage, ros?.team, opportunity?.team)) ?? null,
+      matchup: cohorts?.matchupFor(signalTeam(usage, ros?.team, opportunity?.team)) ?? null,
       matchupsPublished: inSeason?.hasMatchups ?? false,
       signals: inSeason?.metadata.signals ?? null,
-      momentum: inSeason === null ? null : behaviorMomentum(inSeason, selectedPlayerId),
+      momentum: own === null ? null : behaviorMomentum(own, selectedPlayerId),
       seriesPublished: inSeason?.hasBehaviorSeries ?? false,
       inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
       // The weekly start/sit layer (ADR-096): shown on an in-season card only.
@@ -363,11 +478,13 @@ function Board({
       // draw from the selection; passing the *selection* into the index is what made the
       // cross view look up a `cross` source that no capture ever produced (ADR-081).
       market: state.market,
-      trendSeries: index.trendSeriesFor(leaguePreset, scoring, selectedPlayerId),
+      trendSeries: card.index.trendSeriesFor(leaguePreset, scoring, selectedPlayerId),
     };
   }, [
     index,
     inSeason,
+    card,
+    cohorts,
     metadata,
     view,
     selectedPlayerId,
@@ -474,7 +591,8 @@ function Board({
             aria-labelledby={`tab-${view}`}
             tabIndex={-1}
           >
-            {view === "tiers" && (
+            {!panelReady && <PanelLoading failure={failure} />}
+            {panelReady && view === "tiers" && (
               <TiersView
                 index={index}
                 state={state}
@@ -484,7 +602,7 @@ function Board({
                 buildDate={buildDate}
               />
             )}
-            {view === "arbitrage" && (
+            {panelReady && view === "arbitrage" && (
               <ArbitrageView
                 index={index}
                 state={state}
@@ -496,7 +614,7 @@ function Board({
                 onOpenData={openData}
               />
             )}
-            {view === "ros" &&
+            {panelReady && view === "ros" &&
               (inSeason === null ? (
                 <NoInSeasonBundle />
               ) : (
@@ -508,7 +626,7 @@ function Board({
                   selectedPlayerId={selectedPlayerId}
                 />
               ))}
-            {view === "opportunity" &&
+            {panelReady && view === "opportunity" &&
               (inSeason === null ? (
                 <NoInSeasonBundle />
               ) : (
@@ -520,7 +638,7 @@ function Board({
                   selectedPlayerId={selectedPlayerId}
                 />
               ))}
-            {view === "startsit" &&
+            {panelReady && view === "startsit" &&
               (inSeason === null ? (
                 <NoInSeasonBundle />
               ) : (
@@ -540,7 +658,7 @@ function Board({
                   />
                 </Suspense>
               ))}
-            {view === "potw" &&
+            {panelReady && view === "potw" &&
               (inSeason === null ? (
                 <NoInSeasonBundle />
               ) : (
@@ -553,7 +671,7 @@ function Board({
                   headshotFor={(playerId) => index.headshotFor(playerId)?.image_url ?? null}
                 />
               ))}
-            {view === "data" && (
+            {panelReady && view === "data" && (
               <DataView
                 index={index}
                 inSeason={inSeason}
@@ -629,6 +747,49 @@ function AwaitingFirstRosBoard({
   );
 }
 
+/**
+ * The open view's files are on their way, or one of them could not be read.
+ *
+ * A failure here is almost always a deploy that landed while the page was open: the manifest
+ * this page read names files the new deploy replaced. Reloading reads the new manifest, and
+ * nothing from either deploy is ever mixed into one board.
+ */
+function PanelLoading({ failure }: { readonly failure: Error | null }): React.JSX.Element {
+  if (failure === null) {
+    return (
+      <section className="section" aria-busy="true">
+        <p role="status" className="muted">
+          Loading…
+        </p>
+      </section>
+    );
+  }
+  return (
+    <section className="section">
+      <div className="notice" data-severity="error" role="alert">
+        <strong>This part of the board could not be loaded.</strong>
+        <p style={{ marginTop: "0.5rem" }}>
+          The site may have been updated since this page was opened. Reload to read the current
+          build.
+        </p>
+        <p className="muted" style={{ marginTop: "0.5rem" }}>
+          {failure.message}
+        </p>
+        <p style={{ marginTop: "0.75rem" }}>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.reload();
+            }}
+          >
+            Reload
+          </button>
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function NoInSeasonBundle(): React.JSX.Element {
   return (
     <section className="section">
@@ -656,7 +817,14 @@ function CriticalError({ error }: { readonly error: CriticalArtifactError }): Re
     <main className="app">
       <header className="masthead">
         <h1 className="masthead-brand">
-          <img className="masthead-logo" src={logoUrl} alt="Jeisey Tiers" width={434} height={145} />
+          <img
+            className="masthead-logo"
+            src={logoUrl}
+            srcSet={`${logoUrl} 2x, ${logoUrl3x} 3x`}
+            alt="Jeisey Tiers"
+            width={434}
+            height={145}
+          />
         </h1>
       </header>
       <div className="notice" data-severity="error" role="alert" style={{ marginTop: "1.5rem" }}>

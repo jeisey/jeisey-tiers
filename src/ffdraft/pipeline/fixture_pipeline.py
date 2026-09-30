@@ -46,6 +46,7 @@ from ffdraft.artifacts import (
     write_build_metadata,
 )
 from ffdraft.artifacts.serialize import write_json_artifact
+from ffdraft.artifacts.serving import MANIFEST_FILENAME, package_serving
 from ffdraft.artifacts.validate import ROS_BUILD_METADATA_FILENAME
 from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_config
 from ffdraft.contracts import (
@@ -626,7 +627,14 @@ def build_fixture_artifacts(
     result.gate.extend(checks)
     written.extend(paths)
 
-    result.gate.extend(validate_artifact_directory(out_dir).checks)
+    # Written means packaged (ADR-098): the site reads only the manifest and the files it
+    # names, so a directory of artifacts without its served layout is not a site. Packaged
+    # before the directory is validated, so the validator also proves the layout exact.
+    if result.gate.passed:
+        layout = package_serving(out_dir)
+        written.extend(out_dir / path for path in sorted(layout.files))
+        written.append(out_dir / MANIFEST_FILENAME)
+    result.gate.extend(validate_artifact_directory(out_dir, require_serving=True).checks)
     result.written = written
     return result
 
