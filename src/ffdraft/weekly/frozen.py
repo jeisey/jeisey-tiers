@@ -1,4 +1,4 @@
-"""The weekly start/sit model, frozen before any evidence about it existed (ADR-095).
+"""The weekly start/sit model, frozen before any evidence about it existed (ADR-096).
 
 Every constant a comparison could be shopped over lives here, and this module is committed
 **before** the development experiment that reads it runs, so no result can motivate a
@@ -12,9 +12,9 @@ applied to a new question: not "what is he worth from here" (the rest-of-season 
   intrinsic models and may read what they may not — here, the sportsbook game environment
   (total, spread and the implied team total) for the game being projected. The owner's
   instruction for in-season work is explicit: any data that improves a start/sit, trade or
-  waiver decision is valid to use (ADR-095).
+  waiver decision is valid to use (ADR-096).
 * It is **never** an input to the intrinsic draft model or to ``intrinsic-ros-v1``. Information
-  flows one way. ``tests/unit/test_weekly_firewall.py`` asserts that neither of those feature
+  flows one way. ``tests/leakage/test_weekly_firewall.py`` asserts that neither of those feature
   sets names a weekly quantity, and that the forbidden-feature guard still refuses sportsbook
   names on both.
 * It projects points **given that he plays**. It reads no injury report; the build prints the

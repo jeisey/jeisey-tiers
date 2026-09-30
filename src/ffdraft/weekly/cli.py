@@ -1,4 +1,4 @@
-"""``ffdraft`` commands for the weekly start/sit model (ADR-095).
+"""``ffdraft`` commands for the weekly start/sit model (ADR-096).
 
 Four commands, in the order they are run:
 
@@ -34,6 +34,7 @@ DEFAULT_WEEKLY_EXPERIMENT_DIR = Path("docs/experiments/weekly-startsit")
 DEFAULT_WEEKLY_MODEL_DIR = Path("models/production/weekly-startsit-v1")
 ROWS_FILE = "weekly_rows.parquet"
 INJURIES_FILE = "injuries.parquet"
+APPEARANCES_FILE = "appearances.parquet"
 
 
 def register(subparsers: Any, *, repo_root: Any) -> None:
@@ -72,8 +73,10 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
 def _build_dataset(args: argparse.Namespace, root: Path) -> int:
     from ffdraft.config import load_app_config
     from ffdraft.features.sources import load_historical_sources
+    from ffdraft.ros.dataset import bridged_snap_counts
     from ffdraft.sources.nflverse_http import nflverse_loaders
-    from ffdraft.weekly.dataset import build_weekly_dataset, describe
+    from ffdraft.weekly.context import scored_position_rows
+    from ffdraft.weekly.dataset import appearances, build_weekly_dataset, describe
     from ffdraft.weekly.injuries import normalize_injuries
 
     ros_dir = args.ros_data or (root / "data/ros")
@@ -84,16 +87,31 @@ def _build_dataset(args: argparse.Namespace, root: Path) -> int:
         return 2
     seasons = list(range(args.first_season, args.last_season + 1))
     loaded = load_historical_sources(target_seasons=seasons)
+    sources = loaded.sources
+    config = load_app_config()
     dataset = build_weekly_dataset(
         pl.read_parquet(snapshots),
-        loaded.sources,
-        scoring=load_app_config().league.scoring,
+        sources,
+        scoring=config.league.scoring,
         seasons=seasons,
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     dataset.frame.write_parquet(out_dir / ROWS_FILE, compression="zstd")
     injuries = normalize_injuries(nflverse_loaders().load_injuries(seasons=seasons))
     injuries.write_parquet(out_dir / INJURIES_FILE, compression="zstd")
+    # Every appearance in every scored week, not only the weeks that are model targets: the
+    # designation base rates need week 1 too, and a player outside the snapshot universe
+    # still either played or did not.
+    every = (
+        appearances(
+            scored_position_rows(sources.weekly_stats, config.league.scoring, seasons),
+            bridged_snap_counts(sources),
+            seasons,
+        )
+        .select("season", "week", "gsis_id")
+        .unique()
+    )
+    every.write_parquet(out_dir / APPEARANCES_FILE, compression="zstd")
     summary = describe(dataset)
     (out_dir / "weekly_manifest.json").write_text(
         json.dumps({**summary, "injury_rows": injuries.height}, indent=2) + "\n",
@@ -197,6 +215,7 @@ def _train(args: argparse.Namespace, root: Path) -> int:
         development_rows=pl.read_parquet(data_dir / "oof_development.parquet"),
         holdout_rows=pl.read_parquet(data_dir / "oof_final_holdout.parquet"),
         injuries=pl.read_parquet(data_dir / INJURIES_FILE),
+        appearances=pl.read_parquet(data_dir / APPEARANCES_FILE),
         development=development,
         holdout=holdout,
     )

@@ -20,6 +20,7 @@ from typing import Any
 import polars as pl
 
 from ffdraft.contracts.enums import normalize_team_code
+from ffdraft.scoring.horizon import fantasy_horizon
 
 __all__ = [
     "DESIGNATIONS",
@@ -90,12 +91,24 @@ def injury_base_rates(
     """For each designation, the share of designated players who appeared that week.
 
     ``appeared`` holds one row per ``(season, week, gsis_id)`` appearance (a stats row or an
-    offensive snap). Only skill positions a fantasy manager starts are counted, because a
-    lineman's designation is not the question.
+    offensive snap) in **every** scored week — not only the weeks a model targets, or a
+    week-1 designation would always read as a missed game. Only skill positions a fantasy
+    manager starts are counted, because a lineman's designation is not the question.
     """
     wanted = [int(season) for season in seasons]
+    # Scored weeks only: a designation for the excluded final week would be compared with an
+    # appearance table that, by construction, holds none for it.
+    in_horizon = pl.lit(False)
+    for season in wanted:
+        horizon = fantasy_horizon(season)
+        in_horizon = in_horizon | (
+            (pl.col("season") == season)
+            & (pl.col("week") >= horizon.first_week)
+            & (pl.col("week") <= horizon.last_week)
+        )
     scoped = injuries.filter(
         pl.col("season").is_in(wanted)
+        & in_horizon
         & pl.col("report_status").is_in(list(DESIGNATIONS))
         & pl.col("position").is_in(["QB", "RB", "WR", "TE"]),
     )

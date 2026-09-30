@@ -1,4 +1,4 @@
-"""The weekly start/sit model (ADR-095).
+"""The weekly start/sit model (ADR-096).
 
 A decision-layer model: it projects a player's **next game** as a distribution, from the
 rest-of-season snapshot's point-in-time features plus the game's environment and opponent.

@@ -19,6 +19,8 @@ import polars as pl
 import pytest
 
 from ffdraft.features.dictionary import FEATURE_DICTIONARY
+from ffdraft.weekly.dataset import TARGET_COLUMN
+from ffdraft.weekly.frozen import WEEKLY_FEATURES
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -593,3 +595,42 @@ def ros_fit_context(ros_dataset):
         features=features,
         seed=ROS_SEED,
     )
+
+
+def _synthetic_weekly_rows(
+    seasons: range = range(2017, 2021), per_season: int = 400
+) -> pl.DataFrame:
+    """One position and preset; points driven by a rate, a role share and the game total."""
+    rng = np.random.default_rng(20260930)
+    rows: list[dict[str, object]] = []
+    for season in seasons:
+        for index in range(per_season):
+            rate = float(rng.uniform(2, 22))
+            share = float(rng.uniform(0.05, 0.35))
+            total = float(rng.uniform(37, 54))
+            mean = 0.6 * rate + 20 * share + 0.15 * (total - 45)
+            row: dict[str, object] = dict.fromkeys(WEEKLY_FEATURES)
+            row.update(
+                {
+                    "season": season,
+                    "through_week": 1 + index % 15,
+                    "target_week": 2 + index % 15,
+                    "player_id": f"gsis:00-{index:07d}",
+                    "gsis_id": f"00-{index:07d}",
+                    "position": "WR",
+                    "scoring_preset": "PPR",
+                    "ppg_to_date": rate,
+                    "target_share_to_date": share,
+                    "game_total_line": total,
+                    "games_to_date": 1 + index % 15,
+                    TARGET_COLUMN: max(-1.0, float(rng.gamma(2.0, mean / 2.0))),
+                },
+            )
+            rows.append(row)
+    return pl.DataFrame(rows, infer_schema_length=None)
+
+
+@pytest.fixture(scope="session")
+def weekly_rows():
+    """A factory for synthetic weekly start/sit rows (``ffdraft.weekly``)."""
+    return _synthetic_weekly_rows

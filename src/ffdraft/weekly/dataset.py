@@ -161,8 +161,20 @@ def attach_game_and_opponent(
     ``frame`` must carry ``season``, ``through_week``, ``target_week``, ``position`` and
     ``scoring_preset``. A row whose team has no game in the target week drops out: a bye is
     not a start/sit question.
+
+    The attached columns are authoritative. A frame that already carries one (a caller that
+    pre-filled every feature name with null) has it replaced, never suffixed ``_right`` beside
+    a stale copy the model would then read.
     """
     games = context.rename({"week": "target_week", "team": team_column})
+    game_keys = {"season", "target_week", team_column}
+    attached = (set(games.columns) - game_keys) | {
+        *OPPONENT_COLUMNS,
+        "league_ppg",
+        "opp_allowed_rank",
+        "opp_defenses",
+    }
+    frame = frame.drop([column for column in frame.columns if column in attached])
     joined = frame.join(games, on=["season", "target_week", team_column], how="inner")
     opponent = allowed.select(
         "season",

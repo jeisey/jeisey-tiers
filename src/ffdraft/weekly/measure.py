@@ -213,16 +213,12 @@ def publishable_measurements(
     development_rows: pl.DataFrame,
     holdout_rows: pl.DataFrame,
     injuries: pl.DataFrame,
+    appearances: pl.DataFrame,
     development: Mapping[str, Any],
     holdout: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Everything the build copies into ``ros_build_metadata.weekly``, measured once."""
     out_of_fold = pl.concat([development_rows, holdout_rows], how="vertical_relaxed")
-    appeared = dataset.select(
-        "season",
-        pl.col("target_week").alias("week"),
-        "gsis_id",
-    ).unique()
     candidate = holdout["pooled"][CANDIDATE_ID]
     return {
         "margin": margin_uncertainty(out_of_fold),
@@ -230,7 +226,7 @@ def publishable_measurements(
         "startable": startable_thresholds(dataset),
         "injuries": injury_base_rates(
             injuries,
-            appeared,
+            appearances,
             seasons=sorted({int(value) for value in dataset.get_column("season").unique()}),
         ),
         "evaluation": {

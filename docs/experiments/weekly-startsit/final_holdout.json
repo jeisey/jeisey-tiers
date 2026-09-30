@@ -1,7 +1,7 @@
 {
   "report": "weekly_startsit_experiment",
   "stage": "final_holdout",
-  "generated_at_utc": "2026-09-30T11:36:20Z",
+  "generated_at_utc": "2026-09-30T12:18:55Z",
   "spec": {
     "model_version": "weekly-startsit-v1",
     "candidate_version": "wc1_quantile_gbm_conformal_v1",
@@ -129,7 +129,7 @@
   "dataset_rows": 155634,
   "authorization": {
     "authorized": true,
-    "reason": "weekly-startsit-v1 passed weekly_promotion_v1 in development (34ad4ab); the one sealed evaluation before promotion"
+    "reason": "re-scored once after the ~1e-15 group-by determinism fix to the opponent reading, so the committed report is reproducible from committed code; no rule, threshold, parameter or feature changed and no decision depends on this run"
   },
   "candidate": "wc1_quantile_gbm_conformal_v1",
   "baselines": [
@@ -154,25 +154,25 @@
   ],
   "pooled": {
     "wc1_quantile_gbm_conformal_v1": {
-      "pinball": 1.0969977580176995,
-      "mae_median": 3.35737381264047,
-      "coverage_80": 0.8037177583457076,
-      "coverage_50": 0.513446625969312,
+      "pinball": 1.0969519700140868,
+      "mae_median": 3.357210836125574,
+      "coverage_80": 0.8029478083924545,
+      "coverage_50": 0.5108067975581587,
       "level_coverage": [
-        0.0405873618214816,
-        0.10333828301160425,
-        0.27404718693284935,
-        0.5249408788428752,
-        0.7603805752626079,
-        0.8986965847219931,
-        0.9509981851179673
+        0.04124731892426992,
+        0.10520816146950449,
+        0.2728922620029698,
+        0.5254908430951988,
+        0.7602705824121432,
+        0.8983666061705989,
+        0.9506682065665731
       ],
-      "pair_accuracy": 0.6656111155007992,
-      "pair_brier": 0.20721351649676745,
+      "pair_accuracy": 0.6656354276197828,
+      "pair_brier": 0.20720991191055443,
       "pairs": 165600
     },
     "b0_season_rate": {
-      "pinball": 1.339646247828595,
+      "pinball": 1.3396462478285949,
       "mae_median": 3.779313668355452,
       "coverage_80": 0.8111422757520761,
       "coverage_50": 0.524445911015784,
@@ -222,28 +222,28 @@
         0.9504482208656437
       ],
       "pair_accuracy": 0.6454016665957564,
-      "pair_brier": 0.2278607780087787,
+      "pair_brier": 0.22786077800877866,
       "pairs": 165600
     }
   },
   "by_season": {
     "2025": {
       "wc1_quantile_gbm_conformal_v1": {
-        "pinball": 1.0969977580176995,
-        "mae_median": 3.35737381264047,
-        "coverage_80": 0.8037177583457076,
-        "coverage_50": 0.513446625969312,
+        "pinball": 1.096951970014087,
+        "mae_median": 3.357210836125574,
+        "coverage_80": 0.8029478083924545,
+        "coverage_50": 0.5108067975581587,
         "level_coverage": [
-          0.0405873618214816,
-          0.10333828301160425,
-          0.27404718693284935,
-          0.5249408788428752,
-          0.7603805752626079,
-          0.8986965847219931,
-          0.9509981851179673
+          0.04124731892426992,
+          0.10520816146950449,
+          0.2728922620029698,
+          0.5254908430951988,
+          0.7602705824121432,
+          0.8983666061705989,
+          0.9506682065665731
         ],
-        "pair_accuracy": 0.6656111155007992,
-        "pair_brier": 0.20721351649676745,
+        "pair_accuracy": 0.6656354276197828,
+        "pair_brier": 0.20720991191055443,
         "pairs": 165600
       },
       "b0_season_rate": {
@@ -297,7 +297,7 @@
           0.9504482208656437
         ],
         "pair_accuracy": 0.6454016665957564,
-        "pair_brier": 0.2278607780087787,
+        "pair_brier": 0.22786077800877866,
         "pairs": 165600
       }
     }
@@ -323,7 +323,7 @@
         "pairs": 13248
       },
       "b0_season_rate": {
-        "pinball": 2.008690556045686,
+        "pinball": 2.008690556045687,
         "mae_median": 6.927717170035353,
         "coverage_80": 0.7665544332210998,
         "coverage_50": 0.4713804713804714,
@@ -337,11 +337,11 @@
           0.9444444444444444
         ],
         "pair_accuracy": 0.5717089371980676,
-        "pair_brier": 0.24961862956007508,
+        "pair_brier": 0.2496186295600751,
         "pairs": 13248
       },
       "b1_recent_form": {
-        "pinball": 2.086435675729326,
+        "pinball": 2.0864356757293265,
         "mae_median": 7.136488367319175,
         "coverage_80": 0.77665544332211,
         "coverage_50": 0.478675645342312,
@@ -359,7 +359,7 @@
         "pairs": 13248
       },
       "b2_rate_x_vegas": {
-        "pinball": 1.9926543999192043,
+        "pinball": 1.9926543999192041,
         "mae_median": 7.022669626933023,
         "coverage_80": 0.7777777777777778,
         "coverage_50": 0.45735129068462405,
@@ -379,7 +379,7 @@
     },
     "RB": {
       "wc1_quantile_gbm_conformal_v1": {
-        "pinball": 1.073143587426437,
+        "pinball": 1.0731435874264372,
         "mae_median": 3.661095022195755,
         "coverage_80": 0.78125,
         "coverage_50": 0.4838209219858156,
@@ -397,7 +397,7 @@
         "pairs": 54144
       },
       "b0_season_rate": {
-        "pinball": 1.2899723447361695,
+        "pinball": 1.28997234473617,
         "mae_median": 3.8760221104373374,
         "coverage_80": 0.8091755319148937,
         "coverage_50": 0.5314716312056738,
@@ -415,7 +415,7 @@
         "pairs": 54144
       },
       "b1_recent_form": {
-        "pinball": 1.4003225003187245,
+        "pinball": 1.4003225003187243,
         "mae_median": 4.1856170814631595,
         "coverage_80": 0.8031914893617021,
         "coverage_50": 0.5217198581560284,
@@ -433,7 +433,7 @@
         "pairs": 54144
       },
       "b2_rate_x_vegas": {
-        "pinball": 1.2830625311350847,
+        "pinball": 1.2830625311350845,
         "mae_median": 3.884604051396368,
         "coverage_80": 0.8224734042553191,
         "coverage_50": 0.5392287234042553,
@@ -521,27 +521,27 @@
           0.9565454297779594
         ],
         "pair_accuracy": 0.6451405966000214,
-        "pair_brier": 0.22655183656068298,
+        "pair_brier": 0.22655183656068295,
         "pairs": 84960
       }
     },
     "TE": {
       "wc1_quantile_gbm_conformal_v1": {
-        "pinball": 0.6891700769229754,
-        "mae_median": 2.3027409162895016,
-        "coverage_80": 0.8120052770448549,
-        "coverage_50": 0.544415127528584,
+        "pinball": 0.688986924908526,
+        "mae_median": 2.3020893327428094,
+        "coverage_80": 0.8089270008795075,
+        "coverage_50": 0.5338610378188214,
         "level_coverage": [
-          0.027484608619173262,
-          0.11543535620052771,
-          0.29771328056288476,
-          0.5364995602462621,
-          0.7561565523306948,
-          0.8951187335092349,
-          0.9503078276165348
+          0.030123131046613898,
+          0.12291116974494283,
+          0.2930958663148637,
+          0.538698328935796,
+          0.7557167985927881,
+          0.8937994722955145,
+          0.9489885664028144
         ],
-        "pair_accuracy": 0.6375066676826945,
-        "pair_brier": 0.21481582035632735,
+        "pair_accuracy": 0.6378114760344433,
+        "pair_brier": 0.2147707630286647,
         "pairs": 13248
       },
       "b0_season_rate": {
@@ -606,32 +606,32 @@
     "stage": "final_holdout",
     "clauses": {
       "pinball_below_best_baseline": {
-        "candidate": 1.0969977580176995,
+        "candidate": 1.0969519700140868,
         "best_baseline": "b2_rate_x_vegas",
         "baseline": 1.3161266959251143,
         "passed": true
       },
       "pairwise_accuracy_above_best_baseline": {
-        "candidate": 0.6656111155007992,
+        "candidate": 0.6656354276197828,
         "best_baseline": "b2_rate_x_vegas",
         "baseline": 0.6454016665957564,
         "passed": true,
         "bootstrap": {
-          "difference": 0.02020944890504294,
-          "lower": 0.009415820562628201,
-          "upper": 0.03265001429886925,
+          "difference": 0.02023376102402645,
+          "lower": 0.00936831399352874,
+          "upper": 0.03269349495527855,
           "clusters": 16,
           "replicates": 1000
         }
       },
       "pairwise_brier_below_best_baseline": {
-        "candidate": 0.20721351649676745,
+        "candidate": 0.20720991191055443,
         "best_baseline": "b2_rate_x_vegas",
-        "baseline": 0.2278607780087787,
+        "baseline": 0.22786077800877866,
         "passed": true
       },
       "coverage_80_in_band": {
-        "candidate": 0.8037177583457076,
+        "candidate": 0.8029478083924545,
         "band": [
           0.75,
           0.85
@@ -646,72 +646,72 @@
       {
         "low": 0.5,
         "high": 0.55,
-        "pairs": 30146,
-        "predicted": 0.5249097280733762,
-        "observed": 0.5239666954156439
+        "pairs": 30133,
+        "predicted": 0.524911433893074,
+        "observed": 0.5243586765340325
       },
       {
         "low": 0.55,
         "high": 0.6,
-        "pairs": 29192,
-        "predicted": 0.5746176807858319,
-        "observed": 0.574677993970951
+        "pairs": 29208,
+        "predicted": 0.574611708692824,
+        "observed": 0.5742604765817584
       },
       {
         "low": 0.6,
         "high": 0.65,
-        "pairs": 26338,
-        "predicted": 0.6243365384615385,
-        "observed": 0.6245538765282102
+        "pairs": 26327,
+        "predicted": 0.6243455520948076,
+        "observed": 0.6248907965206821
       },
       {
         "low": 0.65,
         "high": 0.7,
-        "pairs": 22656,
-        "predicted": 0.674331779661017,
-        "observed": 0.6745895127118644
+        "pairs": 22686,
+        "predicted": 0.674342797319933,
+        "observed": 0.6747333157013136
       },
       {
         "low": 0.7,
         "high": 0.75,
-        "pairs": 19207,
-        "predicted": 0.7240067774769615,
-        "observed": 0.7275993127505597
+        "pairs": 19203,
+        "predicted": 0.7240383468728844,
+        "observed": 0.7277248346612508
       },
       {
         "low": 0.75,
         "high": 0.8,
-        "pairs": 14704,
-        "predicted": 0.7738901914445048,
-        "observed": 0.7818620783460283
+        "pairs": 14694,
+        "predicted": 0.7738982492854226,
+        "observed": 0.7819177895739757
       },
       {
         "low": 0.8,
         "high": 0.85,
-        "pairs": 11146,
-        "predicted": 0.8236307576709133,
-        "observed": 0.8428135654046295
+        "pairs": 11139,
+        "predicted": 0.8236305974503995,
+        "observed": 0.8427147858874225
       },
       {
         "low": 0.85,
         "high": 0.9,
-        "pairs": 7434,
-        "predicted": 0.8731433481302125,
-        "observed": 0.8877454936776971
+        "pairs": 7431,
+        "predicted": 0.8731183555376127,
+        "observed": 0.8875656035526847
       },
       {
         "low": 0.9,
         "high": 0.95,
-        "pairs": 3976,
-        "predicted": 0.9211324823943663,
-        "observed": 0.9368712273641852
+        "pairs": 3974,
+        "predicted": 0.921100987669854,
+        "observed": 0.9373427277302466
       },
       {
         "low": 0.95,
         "high": 1.0,
-        "pairs": 801,
-        "predicted": 0.96391588639201,
-        "observed": 0.9500624219725343
+        "pairs": 805,
+        "predicted": 0.9639047204968942,
+        "observed": 0.9503105590062112
       }
     ],
     "calibration_best_baseline": [
@@ -726,14 +726,14 @@
         "low": 0.55,
         "high": 0.6,
         "pairs": 19026,
-        "predicted": 0.5751784886471144,
+        "predicted": 0.5751784886471145,
         "observed": 0.5475139283086303
       },
       {
         "low": 0.6,
         "high": 0.65,
         "pairs": 18554,
-        "predicted": 0.6250086005713053,
+        "predicted": 0.6250086005713054,
         "observed": 0.5790395602026517
       },
       {
@@ -768,21 +768,21 @@
         "low": 0.85,
         "high": 0.9,
         "pairs": 15085,
-        "predicted": 0.8746649535962876,
+        "predicted": 0.8746649535962877,
         "observed": 0.7308916141862778
       },
       {
         "low": 0.9,
         "high": 0.95,
         "pairs": 14436,
-        "predicted": 0.9247448566084787,
+        "predicted": 0.9247448566084788,
         "observed": 0.7894153505126074
       },
       {
         "low": 0.95,
         "high": 1.0,
         "pairs": 7706,
-        "predicted": 0.9692617116532571,
+        "predicted": 0.9692617116532573,
         "observed": 0.8409680768232546
       }
     ],

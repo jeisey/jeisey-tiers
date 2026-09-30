@@ -60,6 +60,11 @@ OPPONENT_COLUMNS: tuple[str, ...] = (
 _INDOOR_ROOFS = frozenset({"dome", "closed"})
 
 
+def _hundredths(column: str) -> pl.Expr:
+    """Fantasy points as integer hundredths: exact for every preset, summable in any order."""
+    return (pl.col(column) * 100.0).round(0).cast(pl.Int64)
+
+
 def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.DataFrame:
     """One row per ``(season, week, team)`` regular-season game inside the fantasy horizon.
 
@@ -258,19 +263,25 @@ def opponent_allowed(
         .group_by("defense")
         .agg(pl.len().cast(pl.Float64).alias("opp_games_to_date"))
     )
+    # Summed in integer hundredths. Every scoring rule here awards multiples of 0.02 points, so
+    # the conversion is exact — and an integer sum, unlike Polars' parallel float sum, is the
+    # same in every order it is added in. Two builds of the same weeks used to differ by
+    # ~1e-15, enough to move a LightGBM bin edge and make two fits different bytes (ADR-096).
     allowed = current.group_by("defense", "position", "scoring_preset").agg(
-        pl.col("points").sum().alias("allowed"),
+        _hundredths("points").sum().alias("allowed_cents"),
     )
     presets = current.select("scoring_preset").unique()
     positions = pl.DataFrame({"position": list(WEEKLY_POSITIONS)})
     grid = games.join(positions, how="cross").join(presets, how="cross")
-    frame = grid.join(
-        allowed,
-        on=["defense", "position", "scoring_preset"],
-        how="left",
-    ).with_columns(pl.col("allowed").fill_null(0.0))
+    frame = (
+        grid.join(allowed, on=["defense", "position", "scoring_preset"], how="left")
+        .with_columns(pl.col("allowed_cents").fill_null(0))
+        .with_columns((pl.col("allowed_cents") / 100.0).alias("allowed"))
+    )
     league = frame.group_by("position", "scoring_preset").agg(
-        (pl.col("allowed").sum() / pl.col("opp_games_to_date").sum()).alias("league_ppg"),
+        (pl.col("allowed_cents").sum() / 100.0 / pl.col("opp_games_to_date").sum()).alias(
+            "league_ppg",
+        ),
     )
     frame = frame.join(league, on=["position", "scoring_preset"], how="left").with_columns(
         (
@@ -296,7 +307,7 @@ def opponent_allowed(
         )
         prior_allowed = (
             prior.group_by("defense", "position", "scoring_preset")
-            .agg(pl.col("points").sum().alias("prior_allowed"))
+            .agg((_hundredths("points").sum() / 100.0).alias("prior_allowed"))
             .join(prior_games, on="defense", how="left")
             .with_columns(
                 (pl.col("prior_allowed") / pl.col("prior_games")).alias("opp_allowed_prior_ppg"),
