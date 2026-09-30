@@ -208,8 +208,15 @@ jobs:
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" | tee behavior.log
 
+      # Once the season starts, ADR-094 prices the draft board from retained evidence at
+      # the draft anchor. Today's ADP is still worth retaining, but it is no longer a build
+      # input: an empty post-draft feed must not block status/behaviour or the ROS refresh.
+      # Preseason capture remains required; store integrity and every build gate remain
+      # required in both modes (ADR-095).
       - name: Capture the market snapshot
+        id: market
         if: ${{ inputs.skip_capture != true }}
+        continue-on-error: ${{ steps.season.outputs.mode == 'in_season' }}
         env:
           # ADR-017: only the registered User-Agent is transmitted. The public ADP export
           # needs no authentication, so no username, password, APIKEY or Authorization
@@ -225,6 +232,11 @@ jobs:
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" \
             --pause 1.5 | tee snapshot.log
+
+      - name: Report the in-season market capture failure
+        if: ${{ steps.season.outputs.mode == 'in_season' && steps.market.outcome == 'failure' }}
+        run: |
+          echo "::warning::Today's MFL capture failed. The draft board uses retained draft-anchor prices (ADR-094); status, behaviour and ROS refresh continue. Retained-store integrity and all build gates still apply. See snapshot.log in the capture summary."
 
       # The second ADP market. Separate from `snapshot-market` because MyFantasyLeague's
       # capture is unchanged by Phase 10 and the safest way to keep its behaviour identical
@@ -293,6 +305,8 @@ jobs:
             echo "|---|---|"
             echo "| Season | \`${{ steps.plan.outputs.season }}\` |"
             echo "| Cohorts | \`${{ steps.plan.outputs.cohorts }}\` |"
+            echo "| Product mode | \`${{ steps.season.outputs.mode }}\` |"
+            echo "| MFL capture outcome | \`${{ steps.market.outcome || 'not run' }}\` |"
             echo "| Store | \`${{ steps.store.outputs.repository }}@${{ steps.store.outputs.branch }}\` |"
             echo "| Store head before | \`${{ steps.store.outputs.commit }}\` |"
             echo "| Store head after | \`${{ steps.persist.outputs.commit || 'unchanged' }}\` |"

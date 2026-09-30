@@ -4,6 +4,24 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**In-season MFL capture failure handling, 2026-09-30 (ADR-095).** Scheduled run
+`36708638832` resolved to In-Season / completed week 3, captured Sleeper behaviour, then
+failed `market.capture_empty`: all four MFL cohorts returned zero usable prices. This stopped
+status capture, persistence and both boards. ADR-094 already reads the draft market at the
+preseason anchor; the workflow now makes only the current MFL capture nonblocking in
+In-Season mode. It still attempts the daily capture, preserves any returned evidence, prints
+an explicit warning and shows the failed raw outcome in the capture summary. Draft-mode
+capture, status, store integrity, build and deployment remain blocking. No model, source
+contract, quality-check severity, threshold or pricing formula changed.
+
+Regression coverage replays four empty MFL responses through the real CLI (exit 1), verifies
+the retained evidence, builds a valid board from pre-anchor prices, then proves a corrupted
+empty capture still fails store validation. Workflow checks reject the unfixed parent.
+Validation: **1,585 Python tests passed, 4 live deselected**; ruff lint/format and mypy clean;
+fixture build 0 critical / 5 expected warnings, artifact validation 0 critical / 0 warning.
+The live production path is still pending merge and a new refresh; the original failed run
+was not rerun and no PR or deployment was created. See the ADR-095 task entry for validation.
+
 **The draft market is read at the draft anchor, 2026-09-24 (ADR-094).** The daily refresh failed
 `arbitrage.top_board_priced` (89.3% < 95%) with no code change: MFL's post-draft feed thinned
 from 735 keeper-free drafts to 28, and the failed build job also stopped the in-season board

@@ -236,6 +236,58 @@ def test_the_refresh_does_not_retrain(workflow_dir):
         assert command not in text, f"daily-refresh.yml runs {command}"
 
 
+def test_only_in_season_mfl_capture_failure_is_nonblocking(workflows):
+    """An empty draft feed cannot freeze a ROS refresh; preseason still fails closed.
+
+    ADR-094 reads prices at the draft anchor, strictly before the first kickoff. The
+    existing season resolver flips to in_season at that kickoff, so this guard can only
+    soften a capture that is newer than the market the draft build consumes. A missing
+    mode fails closed too; no dispatch flag or calendar literal may broaden the exception.
+    """
+    capture = workflows["daily-refresh.yml"]["jobs"]["capture"]
+    steps = capture["steps"]
+    market = next(s for s in steps if s.get("name") == "Capture the market snapshot")
+    assert market["id"] == "market"
+    assert market["continue-on-error"] == "${{ steps.season.outputs.mode == 'in_season' }}"
+    assert market["if"] == "${{ inputs.skip_capture != true }}"
+    assert "set -euo pipefail" in market["run"]
+    assert "|| true" not in market["run"], "the command must still report a failure"
+    assert not capture.get("continue-on-error"), "only the ADP step can be nonblocking"
+
+    for name in (
+        "Resolve the season state",
+        "Capture current player status",
+        "Validate the retained store",
+        "Commit and push the capture",
+    ):
+        step = next(s for s in steps if s.get("name") == name)
+        assert not step.get("continue-on-error"), name
+        assert "market." not in step.get("if", ""), name
+    assert steps.index(market) < next(
+        i for i, s in enumerate(steps) if s.get("name") == "Capture current player status"
+    )
+    for name in ("build", "deploy"):
+        job = workflows["daily-refresh.yml"]["jobs"][name]
+        assert not job.get("continue-on-error"), name
+        assert all(not s.get("continue-on-error") for s in job["steps"]), name
+
+
+def test_in_season_mfl_failure_is_visible_even_when_the_step_conclusion_is_success(workflows):
+    """GitHub preserves failure in outcome, but continue-on-error changes conclusion."""
+    steps = workflows["daily-refresh.yml"]["jobs"]["capture"]["steps"]
+    warning = next(
+        s for s in steps if s.get("name") == "Report the in-season market capture failure"
+    )
+    assert warning["if"] == (
+        "${{ steps.season.outputs.mode == 'in_season' && steps.market.outcome == 'failure' }}"
+    )
+    assert "::warning::" in warning["run"]
+    summary = next(s for s in steps if s.get("name") == "Capture summary")
+    assert summary["if"] == "always()"
+    assert "steps.market.outcome" in summary["run"]
+    assert "snapshot.log" in summary["run"]
+
+
 # --- 3. Retraining cannot promote or deploy -------------------------------------------------
 
 
