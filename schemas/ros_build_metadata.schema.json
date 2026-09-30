@@ -188,7 +188,7 @@
       "required": [
         "model_version", "candidate_version", "configuration_hash", "training_seasons",
         "fitted_at_utc", "through_week", "target_week", "records", "upcoming", "kicked_off",
-        "bye", "quantile_levels", "distribution_rule", "families", "margin", "correlation",
+        "bye", "lines_pending", "quantile_levels", "distribution_rule", "families", "margin", "correlation",
         "startable", "injury_base_rates", "evaluation", "injuries_retrieved_at_utc", "statement"
       ],
       "properties": {
@@ -203,6 +203,7 @@
         "upcoming": {"type": "integer", "minimum": 0},
         "kicked_off": {"type": "integer", "minimum": 0},
         "bye": {"type": "integer", "minimum": 0},
+        "lines_pending": {"type": "integer", "minimum": 0, "description": "Players whose game has no posted total or spread yet: published without a distribution."},
         "quantile_levels": {"type": "array", "items": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "minItems": 3},
         "distribution_rule": {
           "type": "object",

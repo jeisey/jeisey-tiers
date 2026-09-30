@@ -364,6 +364,18 @@ _WEEKLY_QUANTILE_KEYS = ("q05", "q10", "q25", "q50", "q75", "q90", "q95")
 _WEEKLY_DRIVER_TOLERANCE = 0.011
 
 
+def weekly_record_checks(
+    records: Sequence[Mapping[str, Any]],
+    stage: str,
+) -> list[QualityCheck]:
+    """The weekly rules, for the build to run before it stages the artifact (ADR-096).
+
+    The same function the pre-deploy validator runs, so ``build-ros`` can withhold a weekly
+    layer that would fail it: a weekly-only defect must cost the weekly layer, not the deploy.
+    """
+    return _weekly_checks(records, stage)
+
+
 def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
     """``weekly_projection`` rules a schema cannot state (ADR-096)."""
     crossing: list[str] = []
@@ -373,15 +385,25 @@ def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qua
         label = f"{record.get('player_id')}/{record.get('scoring_preset')}"
         if int(record.get("target_week", 0)) != int(record.get("through_week", 0)) + 1:
             shape.append(f"{label}: target week is not the week after the cutoff")
-        bye = record.get("game_state") == "bye"
+        state = record.get("game_state")
         carried = [
             name
             for name in ("game", "quantiles", "drivers", "opponent")
             if record.get(name) is not None
         ]
-        if bye and carried:
+        if state == "bye" and carried:
             shape.append(f"{label}: on bye but carries {', '.join(carried)}")
-        if not bye and len(carried) != 4:
+        elif state == "lines_pending":
+            # The game and the opponent, and no distribution: the model was never trained
+            # without a posted line, so a pending game is published as a fact, not projected.
+            if carried != ["game", "opponent"]:
+                shape.append(
+                    f"{label}: lines pending but carries {', '.join(carried) or 'nothing'}"
+                )
+            game = record.get("game") or {}
+            if game.get("total_line") is not None and game.get("team_margin") is not None:
+                shape.append(f"{label}: lines pending but both lines are posted")
+        elif state != "bye" and len(carried) != 4:
             shape.append(f"{label}: playing but missing a block")
         quantiles = record.get("quantiles")
         if quantiles is None:

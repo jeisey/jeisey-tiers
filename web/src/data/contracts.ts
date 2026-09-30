@@ -1086,7 +1086,11 @@ export const WEEKLY_DRIVER_FAMILIES = [
 ] as const;
 export type WeeklyDriverFamily = (typeof WEEKLY_DRIVER_FAMILIES)[number];
 
-export type WeeklyGameState = "upcoming" | "kicked_off" | "bye";
+/**
+ * `lines_pending`: the game exists but its sportsbook total or spread is not posted. The model
+ * never trained without them, so the build publishes the game and no distribution (ADR-096).
+ */
+export type WeeklyGameState = "upcoming" | "kicked_off" | "bye" | "lines_pending";
 
 /** One player's next game as a distribution (`weekly-startsit-v1`, ADR-096). */
 export interface WeeklyProjectionRecord {
@@ -1180,6 +1184,7 @@ export interface RosWeeklyMetadata {
   readonly upcoming: number;
   readonly kicked_off: number;
   readonly bye: number;
+  readonly lines_pending: number;
   readonly quantile_levels: readonly number[];
   readonly distribution_rule: {
     readonly version: string;

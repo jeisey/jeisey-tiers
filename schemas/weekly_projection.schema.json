@@ -26,8 +26,8 @@
     "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
     "model_version": {"const": "weekly-startsit-v1"},
     "game_state": {
-      "enum": ["upcoming", "kicked_off", "bye"],
-      "description": "`upcoming`: the game had not kicked off when the build ran. `kicked_off`: it had (a Thursday game read on Friday) and the projection is kept for the record, not for a decision. `bye`: his team has no game in target_week; `game`, `quantiles`, `drivers` and `opponent` are null."
+      "enum": ["upcoming", "kicked_off", "bye", "lines_pending"],
+      "description": "`upcoming`: the game had not kicked off when the build ran. `kicked_off`: it had (a Thursday game read on Friday) and the projection is kept for the record, not for a decision. `bye`: his team has no game in target_week; `game`, `quantiles`, `drivers` and `opponent` are null. `lines_pending`: the game exists but its sportsbook total or spread is not posted, and the model was never trained without them, so `game` and `opponent` are published and `quantiles` and `drivers` are null (ADR-096)."
     },
     "game": {
       "type": ["object", "null"],

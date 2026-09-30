@@ -67,13 +67,13 @@ def test_every_opportunity_player_is_projected_or_on_bye(pipeline_result, weekly
     board = {row["player_id"] for row in pipeline_result.records["inseason_opportunity"]}
     served = {row["player_id"] for row in weekly}
     assert served <= board
-    assert {row["game_state"] for row in weekly} <= {"upcoming", "bye"}
+    assert {row["game_state"] for row in weekly} <= {"upcoming", "bye", "lines_pending"}
     assert any(row["game_state"] == "bye" for row in weekly)
     assert all(row["target_week"] == 9 for row in weekly)
 
 
 def test_a_playing_record_is_monotone_and_its_account_closes(weekly) -> None:
-    playing = [row for row in weekly if row["game_state"] != "bye"]
+    playing = [row for row in weekly if row["game_state"] in {"upcoming", "kicked_off"}]
     assert playing
     for row in playing:
         values = [row["quantiles"][key] for key in KEYS]
@@ -93,10 +93,74 @@ def test_a_bye_is_published_as_a_bye_with_nothing_projected(weekly, pipeline_res
         assert matchups[row["team"]]["week"] != 9
 
 
-def test_an_unposted_line_is_null_not_a_pickem(weekly) -> None:
-    lines = [row["game"]["total_line"] for row in weekly if row["game_state"] != "bye"]
-    assert None in lines
-    assert any(line is not None for line in lines)
+def test_a_game_without_a_posted_line_is_published_not_projected(weekly) -> None:
+    """The fixture's week-9 KC-LAC game has no line: the game is stated, nothing is projected."""
+    pending = [row for row in weekly if row["game_state"] == "lines_pending"]
+    assert pending
+    for row in pending:
+        assert row["game"] is not None and row["opponent"] is not None
+        assert row["game"]["total_line"] is None  # null, never a pick'em
+        assert row["quantiles"] is None and row["drivers"] is None
+    projected = [row for row in weekly if row["quantiles"] is not None]
+    assert projected
+    assert all(row["game"]["total_line"] is not None for row in projected)
+
+
+def test_a_lined_game_with_an_unannounced_roof_is_projected(
+    serve, pipeline_result, app_config
+) -> None:
+    """Regression (live 2026 week 4, DAL @ HOU): only a missing line withholds a projection."""
+    season = _fixture_season(pipeline_result.records["tiers"], app_config)
+    lined = season.schedule.filter(
+        (pl.col("week") == 9) & pl.col("total_line").is_not_null(),
+    ).row(0, named=True)
+    schedule = season.schedule.with_columns(
+        pl.when(pl.col("game_id") == lined["game_id"])
+        .then(pl.lit(None, dtype=pl.String))
+        .otherwise(pl.col("roof"))
+        .alias("roof"),
+    )
+    result = serve(schedule=schedule)
+    game = [
+        row for row in result.records if row["game"] and row["game"]["game_id"] == lined["game_id"]
+    ]
+    assert game
+    assert {row["game_state"] for row in game} == {"upcoming"}
+    assert all(row["game"]["roof"] is None and row["quantiles"] is not None for row in game)
+
+
+def test_the_committed_model_reads_a_missing_line_as_zero(serve, pipeline_result) -> None:
+    """Why ``lines_pending`` exists: every training row had a line, so NaN routes as 0.0.
+
+    If a refit ever learns the missing case this fails, and the rule can be revisited.
+    """
+    import numpy as np
+
+    from ffdraft.weekly.frozen import WEEKLY_FEATURES
+
+    model = WeeklyModel.load(repo_root() / DEFAULT_WEEKLY_MODEL_DIR)
+    row: dict[str, Any] = dict.fromkeys(WEEKLY_FEATURES)
+    row.update(
+        {
+            "position": "WR",
+            "scoring_preset": "PPR",
+            "ppg_to_date": 14.0,
+            "target_share_to_date": 0.22,
+            "games_to_date": 4,
+            "game_is_home": 1.0,
+            "game_rest_advantage": 0.0,
+            "game_indoors": 0.0,
+        },
+    )
+    lines = ("game_total_line", "game_team_margin", "game_team_points")
+    missing = pl.DataFrame([{**row, **dict.fromkeys(lines)}], infer_schema_length=None)
+    zero = pl.DataFrame([{**row, **dict.fromkeys(lines, 0.0)}], infer_schema_length=None)
+    posted = pl.DataFrame(
+        [{**row, "game_total_line": 47.5, "game_team_margin": 3.0, "game_team_points": 25.25}],
+        infer_schema_length=None,
+    )
+    assert np.array_equal(model.predict(missing), model.predict(zero))
+    assert model.predict(posted)[0, 3] > model.predict(missing)[0, 3]
 
 
 def test_the_fixture_injury_reports_ride_on_the_record(weekly) -> None:

@@ -60,9 +60,11 @@ export interface Contender {
   /** His game had kicked off when the build ran, or has by the reader's clock. */
   readonly locked: boolean;
   readonly bye: boolean;
+  /** His game has no posted line yet, so the build published no distribution for it. */
+  readonly pending: boolean;
   /** The official report says he will not play. */
   readonly out: boolean;
-  /** Eligible for the verdict: a distribution, not on bye, not ruled out. */
+  /** Eligible for the verdict: a distribution (not on bye, not awaiting a line), not ruled out. */
   readonly eligible: boolean;
 }
 
@@ -127,7 +129,8 @@ function contenderFor(
     context.scoring,
     record.position,
   );
-  const bye = record.game_state === "bye" || grid === null;
+  const bye = record.game_state === "bye";
+  const pending = record.game_state === "lines_pending";
   const out = record.injury?.designation === "Out";
   return {
     record,
@@ -144,8 +147,9 @@ function contenderFor(
     topOfSet: null,
     locked: isLocked(record, context.now),
     bye,
+    pending,
     out,
-    eligible: !bye && !out,
+    eligible: grid !== null && !bye && !out,
   };
 }
 
@@ -387,7 +391,7 @@ export function selectWeekBoard(
   );
 }
 
-/** His chance of a startable week in this league and scoring, or null (bye, no threshold). */
+/** His chance of a startable week in this league and scoring, or null (no distribution, no threshold). */
 export function startableFor(
   record: WeeklyProjectionRecord | null,
   weekly: RosWeeklyMetadata | null | undefined,

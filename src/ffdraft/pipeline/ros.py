@@ -1287,6 +1287,29 @@ def _weekly_layer(
         return [], None
 
     summary = result.summary
+    # The pre-deploy validator's own weekly rules, run here so that a record the validator
+    # would refuse withholds this artifact with a warning instead of failing the whole deploy
+    # at `validate-artifacts` (found on the live 2026 week-4 build, ADR-096).
+    from ffdraft.artifacts.validate import weekly_record_checks
+    from ffdraft.contracts.quality import critical_failures
+
+    refused = critical_failures(weekly_record_checks(result.records, "ros_build"))
+    if refused:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_projections_invalid",
+                stage="ros_build",
+                message=(
+                    "the weekly start/sit records fail the artifact validator's own rules, so "
+                    "weekly_projections.json is withheld; every board is unaffected"
+                ),
+                observed="; ".join(f"{check.check_id}: {check.observed}" for check in refused)[
+                    :600
+                ],
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
     if not result.records:
         gate.add(
             QualityCheck.fail(
@@ -1308,7 +1331,8 @@ def _weekly_layer(
             ),
             observed=(
                 f"{summary['records']} record(s): {summary['upcoming']} upcoming, "
-                f"{summary['kicked_off']} kicked off, {summary['bye']} on bye; "
+                f"{summary['kicked_off']} kicked off, {summary['bye']} on bye, "
+                f"{summary.get('lines_pending', 0)} awaiting a posted line; "
                 f"{summary['injury_reports_matched']} with an injury report"
             ),
         ),
@@ -1350,6 +1374,7 @@ def weekly_metadata(
         "upcoming": summary["upcoming"],
         "kicked_off": summary["kicked_off"],
         "bye": summary["bye"],
+        "lines_pending": summary.get("lines_pending", 0),
         "quantile_levels": list(WEEKLY_QUANTILE_LEVELS),
         "distribution_rule": {
             "version": WEEKLY_DISTRIBUTION_RULE_VERSION,

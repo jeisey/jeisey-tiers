@@ -543,7 +543,11 @@ function WeekBlock({
   return (
     <>
       {q === null ? (
-        <p className="cohort-note">{`His team is on bye in week ${String(record.target_week)}, so there is no start to decide.`}</p>
+        <p className="cohort-note">
+          {record.game_state === "lines_pending" && game !== null
+            ? `${game.home_away === "home" || game.neutral_site ? "vs" : "@"} ${game.opponent}: no sportsbook line is posted for this game yet, and the week-${String(record.target_week)} projection needs one. It publishes once the line does.`
+            : `His team is on bye in week ${String(record.target_week)}, so there is no start to decide.`}
+        </p>
       ) : (
         <div className="readout-grid">
           <Readout label="Median" value={formatValue(q.q50)} hint="points, given he plays" strong />
@@ -867,7 +871,7 @@ function InSeasonUsage({
       */}
       <div className="detail-subhead">
         <span>Next game</span>
-        <span className="detail-subhead-note">context · read by the weekly projection only</span>
+        <span className="detail-subhead-note">context · weekly model only</span>
       </div>
       {signal.matchup === null ? (
         <p className="cohort-note signal-absent">

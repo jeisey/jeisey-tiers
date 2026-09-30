@@ -1305,7 +1305,7 @@ export function teamMatchupRecords(): TeamMatchupRecord[] {
  * | James Cook III    | Doubtful                                                            |
  * | Rashee Kirk       | Out: listed, and left out of any verdict                            |
  * | Jalen Marsh, Deebo Gray | PHI and SF are on bye in week 9                               |
- * | Zach Ertz, Jaylin Lane  | WAS plays, and no line has been posted for the game           |
+ * | Zach Ertz, Jaylin Lane  | WAS plays, no line is posted: `lines_pending`, no distribution  |
  */
 const WEEKLY_TARGET_WEEK = FIXTURE_THROUGH_WEEK + 1;
 
@@ -1415,6 +1415,7 @@ export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
       if (plan === undefined) continue;
       const game = weeklyGame(seed.team);
       const bye = game === null;
+      const pending = game !== null && (game.total_line === null || game.team_margin === null);
       const factor = WEEKLY_PRESET_FACTOR[scoring];
       const median = round(plan.median * (seed.position === "QB" ? 1 : factor), 2);
       const shape = WEEKLY_SHAPES[plan.shape] ?? [];
@@ -1459,12 +1460,14 @@ export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
         team: seed.team,
         scoring_preset: scoring,
         model_version: "weekly-startsit-v1",
-        game_state: bye ? "bye" : "upcoming",
+        // A game with no posted line is stated, not projected (ADR-096): the WAS-ARI game.
+        game_state: bye ? "bye" : pending ? "lines_pending" : "upcoming",
         game,
-        quantiles: bye ? null : quantiles,
-        drivers: bye
-          ? null
-          : { baseline, ...families, calibration, rearrangement: round(median - sum, 2) },
+        quantiles: bye || pending ? null : quantiles,
+        drivers:
+          bye || pending
+            ? null
+            : { baseline, ...families, calibration, rearrangement: round(median - sum, 2) },
         opponent:
           opponent === null
             ? null
@@ -1498,9 +1501,10 @@ export const FIXTURE_WEEKLY: RosWeeklyMetadata = {
   through_week: FIXTURE_THROUGH_WEEK,
   target_week: WEEKLY_TARGET_WEEK,
   records: 54,
-  upcoming: 48,
+  upcoming: 39,
   kicked_off: 0,
   bye: 6,
+  lines_pending: 9,
   quantile_levels: [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95],
   distribution_rule: {
     version: "quantile_distribution_v1",

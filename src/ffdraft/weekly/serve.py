@@ -17,6 +17,14 @@ is what knows.
 
 **Kicked off.** A Thursday game read on a Friday is marked ``kicked_off`` and kept: the
 decision is gone but the projection is part of the record of what the model said.
+
+**Lines pending.** Every training row had a posted total and spread (155,634 of 155,634), so
+the boosters never learned a missing line, and LightGBM routes a missing value exactly as it
+routes 0.0: a game with no posted line would be projected as a zero-point total, about 0.7
+points low for a typical receiver, with nothing on the page to say so. Such a game is
+published as ``lines_pending`` instead: the game and the opponent reading, no distribution,
+no drivers. Imputing a line would be inventing a market number, and a projection the model
+was never validated on is not one to publish.
 """
 
 from __future__ import annotations
@@ -44,6 +52,9 @@ from ffdraft.weekly.model import WeeklyModel, quantile_columns
 __all__ = ["WeeklyServeResult", "build_weekly_projection_records"]
 
 _QUANTILE_KEYS = quantile_columns(WEEKLY_QUANTILE_LEVELS)
+
+#: The sportsbook inputs a projection cannot be made without (see the module docstring).
+LINE_COLUMNS: tuple[str, ...] = ("game_total_line", "game_team_margin", "game_team_points")
 
 
 class WeeklyServeResult:
@@ -115,11 +126,25 @@ def build_weekly_projection_records(
         how="anti",
     ).sort("scoring_preset", "position", "player_id")
 
+    # The posted lines, or no projection (see the module docstring). Only the lines: a missing
+    # total reads as a zero-point game, far outside anything trained on, while a missing rest
+    # or roof reads as equal rest or open air, which are ordinary values (an unannounced roof
+    # is first filled from the stadium's recorded state, `team_game_context`).
+    complete = pl.all_horizontal(
+        [
+            pl.col(column).cast(pl.Float64).is_not_null()
+            & pl.col(column).cast(pl.Float64).is_not_nan()
+            for column in LINE_COLUMNS
+        ],
+    )
+    pending = playing.filter(~complete)
+    playing = playing.filter(complete)
+
     quantiles = model.predict(playing)
     drivers = model.drivers(playing)
     reports = injury_reports or {}
     records: list[dict[str, Any]] = []
-    counts = {"upcoming": 0, "kicked_off": 0, "bye": 0, "unmodelled": 0}
+    counts = {"upcoming": 0, "kicked_off": 0, "bye": 0, "lines_pending": 0, "unmodelled": 0}
 
     for index, row in enumerate(playing.iter_rows(named=True)):
         values = quantiles[index]
@@ -135,28 +160,29 @@ def build_weekly_projection_records(
                 row,
                 players=players,
                 state=state,
-                game={
-                    "game_id": str(row["game_id"]),
-                    "opponent": str(row["opponent"]),
-                    "home_away": str(row["home_away"]),
-                    "neutral_site": bool(row["neutral_site"]),
-                    "kickoff_utc": isoformat_utc(kickoff) if kickoff is not None else None,
-                    "roof": row.get("roof"),
-                    "total_line": _maybe(row.get("game_total_line")),
-                    "team_margin": _maybe(row.get("game_team_margin")),
-                    "team_points": _maybe(row.get("game_team_points"), 2),
-                },
+                game=_game(row),
                 quantiles=dict(zip(_QUANTILE_KEYS, rounded, strict=True)),
                 drivers=_drivers(drivers[index], rounded[WEEKLY_QUANTILE_LEVELS.index(0.5)]),
-                opponent={
-                    "defense": str(row["opponent"]),
-                    "allowed_ppg": _maybe(row.get("opp_allowed_ppg"), 2),
-                    "league_ppg": _maybe(row.get("league_ppg"), 2),
-                    "index": _maybe(row.get("opp_allowed_index"), 3),
-                    "rank": _integer(row.get("opp_allowed_rank")),
-                    "defenses": _integer(row.get("opp_defenses")),
-                    "games": _maybe(row.get("opp_games_to_date"), 1),
-                },
+                opponent=_opponent(row),
+                injury=reports.get(str(row["gsis_id"]) if row.get("gsis_id") else ""),
+                build_id=build_id,
+                schema_version=schema_version,
+                season=season,
+                through_week=through_week,
+                target_week=target_week,
+            ),
+        )
+    for row in pending.iter_rows(named=True):
+        counts["lines_pending"] += 1
+        records.append(
+            _record(
+                row,
+                players=players,
+                state="lines_pending",
+                game=_game(row),
+                quantiles=None,
+                drivers=None,
+                opponent=_opponent(row),
                 injury=reports.get(str(row["gsis_id"]) if row.get("gsis_id") else ""),
                 build_id=build_id,
                 schema_version=schema_version,
@@ -192,10 +218,37 @@ def build_weekly_projection_records(
             "records": len(records),
             **counts,
             "rows_with_lines": lined,
-            "rows_playing": playing.height,
+            "rows_playing": playing.height + pending.height,
             "injury_reports_matched": sum(1 for record in records if record["injury"] is not None),
         },
     )
+
+
+def _game(row: Mapping[str, Any]) -> dict[str, Any]:
+    kickoff = row.get("kickoff_utc")
+    return {
+        "game_id": str(row["game_id"]),
+        "opponent": str(row["opponent"]),
+        "home_away": str(row["home_away"]),
+        "neutral_site": bool(row["neutral_site"]),
+        "kickoff_utc": isoformat_utc(kickoff) if kickoff is not None else None,
+        "roof": row.get("roof"),
+        "total_line": _maybe(row.get("game_total_line")),
+        "team_margin": _maybe(row.get("game_team_margin")),
+        "team_points": _maybe(row.get("game_team_points"), 2),
+    }
+
+
+def _opponent(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "defense": str(row["opponent"]),
+        "allowed_ppg": _maybe(row.get("opp_allowed_ppg"), 2),
+        "league_ppg": _maybe(row.get("league_ppg"), 2),
+        "index": _maybe(row.get("opp_allowed_index"), 3),
+        "rank": _integer(row.get("opp_allowed_rank")),
+        "defenses": _integer(row.get("opp_defenses")),
+        "games": _maybe(row.get("opp_games_to_date"), 1),
+    }
 
 
 def _record(

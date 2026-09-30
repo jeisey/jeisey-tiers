@@ -67,6 +67,18 @@ def test_a_bye_carrying_a_distribution_fails(weekly) -> None:
     assert "weekly.record_shape" in _failed(_weekly_checks(weekly, "test"))
 
 
+def test_a_pending_line_carrying_a_distribution_fails(weekly) -> None:
+    pending = next(record for record in weekly if record["game_state"] == "lines_pending")
+    pending["quantiles"] = copy.deepcopy(_playing(weekly)["quantiles"])
+    assert "weekly.record_shape" in _failed(_weekly_checks(weekly, "test"))
+
+
+def test_a_pending_line_whose_lines_are_posted_fails(weekly) -> None:
+    pending = next(record for record in weekly if record["game_state"] == "lines_pending")
+    pending["game"].update({"total_line": 44.5, "team_margin": -3.0})
+    assert "weekly.record_shape" in _failed(_weekly_checks(weekly, "test"))
+
+
 def test_a_projection_for_the_wrong_week_fails(weekly) -> None:
     _playing(weekly)["target_week"] += 1
     assert "weekly.record_shape" in _failed(_weekly_checks(weekly, "test"))

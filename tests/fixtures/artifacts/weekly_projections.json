@@ -37,7 +37,7 @@
       "team": "KC",
       "scoring_preset": "HALF",
       "model_version": "weekly-startsit-v1",
-      "game_state": "upcoming",
+      "game_state": "lines_pending",
       "game": {
         "game_id": "2026_09_LAC_KC",
         "opponent": "LAC",
@@ -49,27 +49,8 @@
         "team_margin": null,
         "team_points": null
       },
-      "quantiles": {
-        "q05": -1.27,
-        "q10": -0.87,
-        "q25": 0.51,
-        "q50": 4.91,
-        "q75": 11.29,
-        "q90": 12.85,
-        "q95": 18.74
-      },
-      "drivers": {
-        "baseline": 13.0,
-        "form": -0.54,
-        "role": -4.89,
-        "availability": -0.31,
-        "offense": 0.15,
-        "game": -1.6,
-        "opponent": 0.1,
-        "prior": -0.72,
-        "calibration": -0.29,
-        "rearrangement": 0.01
-      },
+      "quantiles": null,
+      "drivers": null,
       "opponent": {
         "defense": "LAC",
         "allowed_ppg": 3.69,
@@ -794,7 +775,7 @@
       "team": "LAC",
       "scoring_preset": "HALF",
       "model_version": "weekly-startsit-v1",
-      "game_state": "upcoming",
+      "game_state": "lines_pending",
       "game": {
         "game_id": "2026_09_LAC_KC",
         "opponent": "KC",
@@ -806,27 +787,8 @@
         "team_margin": null,
         "team_points": null
       },
-      "quantiles": {
-        "q05": 0.11,
-        "q10": 0.14,
-        "q25": 0.31,
-        "q50": 1.76,
-        "q75": 4.39,
-        "q90": 7.91,
-        "q95": 10.26
-      },
-      "drivers": {
-        "baseline": 4.28,
-        "form": -0.0,
-        "role": -1.5,
-        "availability": -0.17,
-        "offense": -0.03,
-        "game": -0.29,
-        "opponent": -0.06,
-        "prior": -0.49,
-        "calibration": -0.0,
-        "rearrangement": 0.02
-      },
+      "quantiles": null,
+      "drivers": null,
       "opponent": {
         "defense": "KC",
         "allowed_ppg": 6.09,
@@ -925,7 +887,7 @@
       "team": "KC",
       "scoring_preset": "PPR",
       "model_version": "weekly-startsit-v1",
-      "game_state": "upcoming",
+      "game_state": "lines_pending",
       "game": {
         "game_id": "2026_09_LAC_KC",
         "opponent": "LAC",
@@ -937,27 +899,8 @@
         "team_margin": null,
         "team_points": null
       },
-      "quantiles": {
-        "q05": -1.31,
-        "q10": -0.87,
-        "q25": 0.57,
-        "q50": 5.18,
-        "q75": 11.67,
-        "q90": 13.66,
-        "q95": 18.97
-      },
-      "drivers": {
-        "baseline": 13.02,
-        "form": -0.14,
-        "role": -4.52,
-        "availability": -0.18,
-        "offense": -0.05,
-        "game": -1.51,
-        "opponent": -0.03,
-        "prior": -1.25,
-        "calibration": -0.15,
-        "rearrangement": -0.01
-      },
+      "quantiles": null,
+      "drivers": null,
       "opponent": {
         "defense": "LAC",
         "allowed_ppg": 3.69,
@@ -1682,7 +1625,7 @@
       "team": "LAC",
       "scoring_preset": "PPR",
       "model_version": "weekly-startsit-v1",
-      "game_state": "upcoming",
+      "game_state": "lines_pending",
       "game": {
         "game_id": "2026_09_LAC_KC",
         "opponent": "KC",
@@ -1694,27 +1637,8 @@
         "team_margin": null,
         "team_points": null
       },
-      "quantiles": {
-        "q05": -0.0,
-        "q10": 0.35,
-        "q25": 0.42,
-        "q50": 2.81,
-        "q75": 5.71,
-        "q90": 9.92,
-        "q95": 13.88
-      },
-      "drivers": {
-        "baseline": 5.44,
-        "form": 0.58,
-        "role": -1.7,
-        "availability": -0.28,
-        "offense": -0.01,
-        "game": -0.39,
-        "opponent": -0.08,
-        "prior": -0.74,
-        "calibration": -0.0,
-        "rearrangement": -0.01
-      },
+      "quantiles": null,
+      "drivers": null,
       "opponent": {
         "defense": "KC",
         "allowed_ppg": 7.63,
@@ -1813,7 +1737,7 @@
       "team": "KC",
       "scoring_preset": "STD",
       "model_version": "weekly-startsit-v1",
-      "game_state": "upcoming",
+      "game_state": "lines_pending",
       "game": {
         "game_id": "2026_09_LAC_KC",
         "opponent": "LAC",
@@ -1825,27 +1749,8 @@
         "team_margin": null,
         "team_points": null
       },
-      "quantiles": {
-        "q05": -1.42,
-        "q10": -0.98,
-        "q25": 0.79,
-        "q50": 4.18,
-        "q75": 12.9,
-        "q90": 15.11,
-        "q95": 18.74
-      },
-      "drivers": {
-        "baseline": 12.99,
-        "form": -0.61,
-        "role": -4.91,
-        "availability": -0.37,
-        "offense": -0.07,
-        "game": -1.72,
-        "opponent": 0.17,
-        "prior": -0.97,
-        "calibration": -0.33,
-        "rearrangement": 0.0
-      },
+      "quantiles": null,
+      "drivers": null,
       "opponent": {
         "defense": "LAC",
         "allowed_ppg": 3.69,
@@ -2570,7 +2475,7 @@
       "team": "LAC",
       "scoring_preset": "STD",
       "model_version": "weekly-startsit-v1",
-      "game_state": "upcoming",
+      "game_state": "lines_pending",
       "game": {
         "game_id": "2026_09_LAC_KC",
         "opponent": "KC",
@@ -2582,27 +2487,8 @@
         "team_margin": null,
         "team_points": null
       },
-      "quantiles": {
-        "q05": -0.02,
-        "q10": -0.01,
-        "q25": 0.17,
-        "q50": 1.35,
-        "q75": 2.47,
-        "q90": 4.69,
-        "q95": 9.05
-      },
-      "drivers": {
-        "baseline": 3.07,
-        "form": 0.11,
-        "role": -1.07,
-        "availability": -0.15,
-        "offense": -0.02,
-        "game": -0.23,
-        "opponent": -0.04,
-        "prior": -0.31,
-        "calibration": -0.0,
-        "rearrangement": -0.01
-      },
+      "quantiles": null,
+      "drivers": null,
       "opponent": {
         "defense": "KC",
         "allowed_ppg": 4.54,

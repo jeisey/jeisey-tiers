@@ -286,7 +286,15 @@ function DeckCard({
   const q = record.quantiles;
   const injury = injuryReading(record, weekly);
   const letter = slotLetter(slot);
-  const state = contender.bye ? "bye" : contender.out ? "out" : contender.locked ? "locked" : "open";
+  const state = contender.bye
+    ? "bye"
+    : contender.pending
+      ? "pending"
+      : contender.out
+        ? "out"
+        : contender.locked
+          ? "locked"
+          : "open";
   return (
     <article
       className="deck-card chamfer"
@@ -320,7 +328,9 @@ function DeckCard({
         <p className="deck-flag" data-kind={state}>
           {state === "bye"
             ? `Bye in week ${String(record.target_week)} — he cannot fill the slot.`
-            : state === "out"
+            : state === "pending"
+              ? "No sportsbook line is posted for his game yet. The model needs one, so he is projected once it is — left out of the verdict until then."
+              : state === "out"
               ? "Ruled out on the official report — left out of the verdict."
               : "His game has kicked off; this projection is the record, not a choice."}
         </p>
@@ -704,7 +714,7 @@ function WeekBoard({
                   <td className="wb-num wb-median">{q === null ? EM_DASH : formatValue(q.q50)}</td>
                   <td className="wb-range">
                     {q === null ? (
-                      <span className="wb-bye">bye</span>
+                      <span className="wb-bye">{record.game_state === "lines_pending" ? "line pending" : "bye"}</span>
                     ) : (
                       <span className="wb-bar" aria-label={`P10 ${formatValue(q.q10)}, P25 ${formatValue(q.q25)}, median ${formatValue(q.q50)}, P75 ${formatValue(q.q75)}, P90 ${formatValue(q.q90)}`} role="img">
                         <span className="wb-bar-whisker" style={{ left: `${String(at(q.q10))}%`, width: `${String(at(q.q90) - at(q.q10))}%` }} />

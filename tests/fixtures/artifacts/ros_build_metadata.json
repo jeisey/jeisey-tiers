@@ -94,9 +94,10 @@
     "through_week": 8,
     "target_week": 9,
     "records": 51,
-    "upcoming": 45,
+    "upcoming": 39,
     "kicked_off": 0,
     "bye": 6,
+    "lines_pending": 6,
     "quantile_levels": [
       0.05,
       0.1,

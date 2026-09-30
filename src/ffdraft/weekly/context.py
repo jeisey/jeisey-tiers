@@ -71,6 +71,13 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
     Each game appears twice, once from each side, with the spread re-expressed from the
     team's own side: nflverse's ``spread_line`` is positive when the **home** team is
     favoured (probed 2026-09-22, ADR-091), so the away side is its negation.
+
+    **An unannounced roof.** A retractable roof's state is recorded after kickoff, so a future
+    game there has none (the 2026 week-4 DAL @ HOU game, observed 2026-09-30). ``roof`` stays
+    null, because that is what the schedule says, but ``game_indoors`` takes the state of the
+    home team's latest earlier non-neutral home game this season: a schedule fact already
+    recorded, never a guess. With no such game it stays null, which the model reads as open
+    air. Every training row has a recorded roof, so this never fires on history.
     """
     wanted = {int(season) for season in seasons}
     rows: list[dict[str, object]] = []
@@ -79,6 +86,15 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
     games = schedule.filter(
         pl.col("season").is_in(sorted(wanted)) & (pl.col("game_type") == "REG"),
     )
+    recorded_roofs: dict[tuple[int, str], list[tuple[int, str]]] = {}
+    for game in games.iter_rows(named=True):
+        home = normalize_team_code(game.get("home_team"))
+        known = str(game.get("roof") or "").strip().lower()
+        neutral = str(game.get("location") or "").strip().lower() == "neutral"
+        if home is not None and known and not neutral:
+            recorded_roofs.setdefault((int(game["season"]), home), []).append(
+                (int(game["week"]), known),
+            )
     for game in games.iter_rows(named=True):
         season = int(game["season"])
         week = int(game["week"])
@@ -95,6 +111,14 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
         roof = str(game.get("roof") or "").strip().lower()
         neutral = str(game.get("location") or "").strip().lower() == "neutral"
         kickoff = scheduled_kickoff_utc(game.get("gameday"), game.get("gametime"))
+        indoors_roof = roof
+        if not roof and not neutral:
+            earlier = [
+                (played, state)
+                for played, state in recorded_roofs.get((season, home), [])
+                if played < week
+            ]
+            indoors_roof = max(earlier)[1] if earlier else ""
         for team, opponent, is_home in ((home, away, True), (away, home, False)):
             margin = None if spread is None else (spread if is_home else -spread) + 0.0
             implied = None if margin is None or total is None else (total + margin) / 2.0
@@ -121,7 +145,11 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
                         if team_rest is None or opponent_rest is None
                         else team_rest - opponent_rest
                     ),
-                    "game_indoors": None if not roof else (1.0 if roof in _INDOOR_ROOFS else 0.0),
+                    "game_indoors": (
+                        None
+                        if not indoors_roof
+                        else (1.0 if indoors_roof in _INDOOR_ROOFS else 0.0)
+                    ),
                 },
             )
     if not rows:

@@ -107,6 +107,21 @@ describe("who can be in the verdict", () => {
     expect(reading.verdict).toBeNull();
   });
 
+  it("keeps a player whose game has no posted line off the verdict, and calls it that", () => {
+    const LANE = "gsis:00-0000010"; // WAS: no line posted for the week-9 game
+    const reading = duel([COOK, LANE, PUKA]);
+    const lane = required(
+      reading.contenders.find((contender) => contender.record.player_id === LANE),
+      "Jaylin Lane's contender",
+    );
+    expect(lane.pending).toBe(true);
+    expect(lane.bye).toBe(false);
+    expect(lane.eligible).toBe(false);
+    expect(lane.record.game?.opponent).toBe("ARI");
+    expect(reading.eligible.map((contender) => contender.record.player_id)).toEqual([COOK, PUKA]);
+    expect(reading.verdict).not.toBeNull();
+  });
+
   it("reports an id this build has no projection for", () => {
     const reading = duel([COOK, "gsis:00-9999999"]);
     expect(reading.missing).toEqual(["gsis:00-9999999"]);

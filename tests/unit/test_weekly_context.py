@@ -170,3 +170,41 @@ def test_attached_game_columns_replace_a_prefilled_null() -> None:
     assert row["game_total_line"] == 44.5
     assert row["opponent"] == "NYJ"
     assert row["opp_allowed_ppg"] == pytest.approx(15.0)
+
+
+def test_an_unannounced_roof_takes_the_stadiums_recorded_state() -> None:
+    """Regression: the live 2026 week-4 DAL @ HOU game had lines and no roof (retractable)."""
+    schedule = pl.concat(
+        [
+            _schedule(game_id="2024_01_NYJ_HOU", week=1, home_team="HOU", roof="closed"),
+            _schedule(
+                game_id="2024_02_HOU_KC", week=2, home_team="KC", away_team="HOU", roof="outdoors"
+            ),
+            _schedule(
+                game_id="2024_04_DAL_HOU", week=4, home_team="HOU", away_team="DAL", roof=None
+            ),
+            _schedule(game_id="2024_05_NYJ_MIA", week=5, home_team="MIA", roof=None),
+        ],
+        how="diagonal_relaxed",
+    )
+    context = team_game_context(schedule, [2024])
+    week4 = context.filter(pl.col("week") == 4)
+    # The published roof stays what the schedule says; the model input is the recorded state.
+    assert week4.get_column("roof").to_list() == [None, None]
+    assert week4.get_column("game_indoors").to_list() == [1.0, 1.0]
+    # No earlier home game at that stadium: left null (the model reads open air).
+    assert context.filter(pl.col("week") == 5).get_column("game_indoors").null_count() == 2
+
+
+def test_a_later_roof_is_never_read_back() -> None:
+    schedule = pl.concat(
+        [
+            _schedule(
+                game_id="2024_04_DAL_HOU", week=4, home_team="HOU", away_team="DAL", roof=None
+            ),
+            _schedule(game_id="2024_06_NYJ_HOU", week=6, home_team="HOU", roof="closed"),
+        ],
+        how="diagonal_relaxed",
+    )
+    week4 = team_game_context(schedule, [2024]).filter(pl.col("week") == 4)
+    assert week4.get_column("game_indoors").null_count() == 2
