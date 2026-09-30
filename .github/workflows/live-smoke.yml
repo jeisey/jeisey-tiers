@@ -23,6 +23,12 @@ on:
         description: The deployed site to smoke, without a trailing slash
         type: string
         default: https://jeisey.github.io/jeisey-tiers
+      dump_data:
+        description: >-
+          Also print the served JSON artifacts (xz, base64) into the probe log, so a
+          development sandbox that cannot reach the site can measure the exact public bytes.
+        type: boolean
+        default: false
       probe_only:
         description: >-
           Run only the hosting probe (headers, compression, conditional requests, payload
@@ -65,6 +71,16 @@ jobs:
 
       - name: Payload composition of the served data
         run: node scripts/pages_probe.mjs fields --data probe/data | tee probe/fields.json
+
+      - name: Print the served JSON (public bytes) for offline measurement
+        if: ${{ inputs.dump_data == true }}
+        run: |
+          set -euo pipefail
+          tar -C probe/data -cf - $(cd probe/data && ls *.json) | xz -9e | base64 -w 120 > probe/data.tar.xz.b64
+          echo "lines=$(wc -l < probe/data.tar.xz.b64) sha256=$(sha256sum probe/data.tar.xz.b64 | cut -c1-64)"
+          echo "----- BEGIN DATA -----"
+          cat probe/data.tar.xz.b64
+          echo "----- END DATA -----"
 
       - name: Upload the probe
         if: always()
