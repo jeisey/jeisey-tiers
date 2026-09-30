@@ -1070,3 +1070,113 @@ would hide which.
 The contributions of one row sum, with the base value, to exactly the booster's own
 prediction — asserted by a test, because a summation identity that silently stops holding is
 how an attribution becomes decorative.
+
+## 34. The weekly start/sit model (`weekly-startsit-v1`, ADR-096)
+
+A decision-layer model, not a third intrinsic model. It answers one question, "what will he
+score in his next game, given that he plays", as a distribution, so the Start/Sit tab can
+compare two to four players at the reader's own matchup margin. It reads the rest-of-season
+snapshot and the week's game, including the sportsbook total and spread. Nothing upstream reads
+it (§27.1 still binds both intrinsic models; `tests/leakage/test_weekly_firewall.py`).
+
+The model card is generated: `models/cards/weekly-startsit-v1.{md,json}`
+(`uv run ffdraft weekly-model-card`). This section states the design; the card carries the
+numbers.
+
+### 34.1 Frozen before evidence
+
+Everything a comparison could be shopped over is in `src/ffdraft/weekly/frozen.py`, committed
+(`4f62112`) before the development run that reads it: target, features, parameters (350
+rounds, learning rate 0.03, 15 leaves, minimum 200 rows per leaf, seed 20260930), quantile
+levels, tail rule, baselines, decision pools, promotion rule and the sealed season. Its
+configuration hash (`692c1886548cde7f`) is checked at artifact load, so a change to any of them
+is a new model, not a refit.
+
+### 34.2 Grain, target and features
+
+- **Grain** — `season × target_week × player_id × scoring_preset`, for QB/RB/WR/TE: one row per
+  rest-of-season snapshot whose player appeared in the next scored week (155,634 rows,
+  2017–2025).
+- **Target** (`next_game_points_given_appearance_v1`) — the next week's fantasy points for
+  players who appeared in it (a stats row or an offensive snap). A missed game is not a zero
+  here: availability is a separate question, which the page answers with the official report
+  and its measured appearance rate.
+- **Features** — the rest-of-season snapshot's features at the cutoff (form, role,
+  availability, offence, track record), plus **game** (total, this team's margin and implied
+  points, home, rest advantage, roof) and **opponent** (allowed points to the position through
+  the cutoff, shrunk toward the league over 4 games, with its prior-season value and games).
+  Opponent sums are integer hundredths, so the dataset is byte-reproducible (ADR-096).
+
+### 34.3 Evaluation (`weekly_promotion_v1`)
+
+Rolling origin: each season 2020–2024 is predicted by a model trained from 2017 to the season
+before, with conformal offsets from the last training season. Baselines, fitted on the same
+folds: **B0** season-to-date rate, **B1** last-three form, **B2** a shrunk rate scaled by the
+implied team total (B2 already reads Vegas, so the candidate has to beat the market's own
+signal, not ignore it).
+
+Primary metrics, declared before the run:
+
+- **pinball loss**, macro-averaged over position × preset cells — the distribution;
+- **pairwise start/sit accuracy** over every same-position pair in each week's decision pool
+  (top QB 24, RB 48, WR 60, TE 24 by B0), with a week-clustered bootstrap interval on the gain
+  over the best baseline — the decision the page makes;
+- **pairwise Brier** of the head-to-head probability — the number the page prints;
+- **coverage** of the P10–P90 (0.75–0.85) and P25–P75 (0.45–0.55) bands.
+
+The sealed 2025 season was scored with its own token and a recorded reason; the results, and
+why it was scored twice, are in ADR-096.
+
+### 34.4 From quantiles to a decision (`quantile_distribution_v1`)
+
+Seven quantiles become a distribution by linear interpolation of the inverse CDF, with a lower
+tail one adjacent-segment wide and an upper tail two wide (weekly points are right-skewed), read
+at 200 midpoints. Then:
+
+- P(A > B) — every grid point of A against B's grid, ties half: exact for the discretised
+  pair, and the probability the pairwise Brier scored;
+- P(win the week) — `mean Φ((μ + x) / σ)` over the player's grid, `μ` the reader's margin from
+  every other slot, `σ` the measured margin uncertainty (§34.5);
+- the **flip margin** — where two players' P(win) cross, by bisection;
+- same-game pairs through a Gaussian copula at the measured ρ; three or four players through a
+  fixed Halton point set, so P(top of the set) is the same on every reload.
+
+The Python half (`ffdraft.weekly.distribution`) scored the evaluation; the TypeScript half
+(`web/src/data/startsit.ts`) is held to a golden vector the Python half writes.
+
+### 34.5 Published measurements
+
+Each is measured, none assumed; all come from out-of-fold predictions or from outcomes, and
+travel on the build metadata:
+
+- **margin σ** — the variance of starters' actual points around the out-of-fold median, by
+  position, summed over a standard lineup (QB, 2 RB, 2 WR, TE, 2 FLEX) for both sides. Kickers
+  and defences are not modelled, so the true uncertainty is slightly larger, and the page says
+  so;
+- **same-game correlation** — Spearman correlation of teammates' (by position pair) and
+  opponents' probability-integral transforms, converted to the copula's ρ by `2 sin(πr/6)`;
+- **startable thresholds** — per league size, preset and position, the points of the last
+  starter when every roster fills its lineup from that week's actual scores, before 2025;
+- **designation appearance rates** — among QB/RB/WR/TE players the official report designated
+  for a game, the share who appeared in it, within scored weeks.
+
+### 34.6 Serving rules
+
+- A player whose team is on **bye** publishes as `bye`.
+- A game already **kicked off** stays published, marked, and is locked on the page.
+- A game **without a posted line** publishes as `lines_pending`, with no distribution. Every
+  training row had a line, so the model reads a missing line as a zero-point total; imputing a
+  line would invent a market number. `test_the_committed_model_reads_a_missing_line_as_zero`
+  pins that reason.
+- An **unannounced retractable roof** (recorded only after kickoff) takes the home stadium's
+  state from its latest earlier home game this season; with none it stays missing and reads
+  as open air. The effect is small (roof on vs off: median 0, 95th percentile 0.40 points on
+  2025 rows) and it never fires on history, where every roof is recorded.
+- The **explanation** is grouped TreeSHAP by feature family, plus baseline, calibration and
+  rearrangement terms, and it sums to the published median (`weekly.driver_account_closes`).
+
+### 34.7 Refit
+
+Once a season, after the last scored week, to add a season; never in season; never in a
+workflow (`test_the_refresh_never_fits_or_scores_the_weekly_model`). The commands are in
+`docs/OPERATIONS.md` §16.7.

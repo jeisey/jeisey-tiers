@@ -206,6 +206,12 @@ sources:
       # (player stats, snap counts) and each team's next game (schedule).
       - inseason_usage_context
       - matchup_context
+      # ADR-096. The weekly start/sit model (a decision-layer model, never the intrinsic or
+      # rest-of-season one) reads the schedule's total and spread for the game it projects.
+      # The injury report is printed beside its projections and measured for base rates;
+      # no model reads it.
+      - weekly_decision_model_input
+      - injury_report_context
     verified_loaders:
       load_players: {rows: 25040}
       load_ff_playerids: {rows: 12472, gsis_id_coverage: 0.64, mfl_id_coverage: 1.0}
@@ -241,8 +247,12 @@ sources:
           load_injuries returns weekly in-season reports, so it cannot supply current
           preseason status (ADR-011). Corrected 2026-09-22: the 2026 file is live (433 rows,
           weeks 1-2, probed through nflreadpy) - the 2026-08-31 "refuses seasons after 2025"
-          was a preseason 404 for a file not yet published. Still consumed by nothing; a
-          point-in-time probe (does a completed week's row change later?) comes first.
+          was a preseason 404 for a file not yet published. Consumed since ADR-096 as
+          context only, never as a model feature: the week's designation is printed beside
+          a weekly projection, and designation appearance rates are measured over completed
+          seasons 2017-2025. The point-in-time probe this note asked for is still owed
+          before the report can become a feature. Until then a revised row could move a
+          base rate slightly, but no projection, value, rank or tier.
       - id: current_season_helper_lags
         detail: >-
           get_current_season() returned 2025 on 2026-08-17 while
@@ -257,7 +267,11 @@ sources:
           sportsbook is not documented by nflverse (nflreadr dictionary and nfldata
           DATASETS.md both silent). ADR-091 publishes spread and total - never odds prices -
           as matchup context under nflverse attribution, and the forbidden-feature guard
-          refuses any model feature named for them.
+          refuses any intrinsic or rest-of-season feature named for them. ADR-096: the
+          weekly start/sit model reads them for the one game it projects. Every training
+          row had them (2017-2025 closing lines), so a game whose line is not posted is
+          published as `lines_pending` with no projection rather than projected with a
+          missing line the model reads as zero. No board reads that model.
       - id: ff_playerids_unlicensed_mirror
         detail: >-
           load_ff_playerids is served from the dynastyprocess mirror, which publishes no

@@ -78,15 +78,16 @@ capture ──▶ build ──▶ deploy          report (needs all three, if: a
 7. check out the store **at the exact commit `capture` pushed**, read-only (`persist-credentials: false`);
 8. `ffdraft build-current --full-board` — loads the production model, does **not** retrain, and refuses to run if the feature-set or feature-schema hash disagrees (ADR-037). It publishes at `TIER_DEPTH_RULE.depth`, which is the *publication* rule and not Phase 4's frozen `TIER_BOARD_DEPTH`, and writes the untruncated fair-ranked board to `${RUNNER_TEMP}` for the next stage. Nothing uploads that file;
 9. `ffdraft measure-market-cohorts` — re-runs the frozen selection rule against the newest snapshot (ADR-039), writing outside the checkout. Once the draft anchor binds, "newest" means newest at or before the board's `information_cutoff`, so from the anchor onward the selection stops moving (ADR-094);
-10. `ffdraft build-arbitrage --full-board` — the deterministic A0 board against that selection, priced by every retained market rather than only MFL, and surfacing market-relevant players from beyond the published depth using the untruncated board from step 7 (ADR-063, ADR-067). After the anchor every market is read at the board's cutoff, so a thinning post-draft feed cannot fail `arbitrage.top_board_priced` (ADR-094);
-11. `validate-artifacts` — the pre-deploy gate;
-12. `npm ci`, then `npm run build` at `VITE_BASE_PATH=/jeisey-tiers/`, asserting the asset URLs and that every artifact reached `web/dist/data/`;
-13. `npm run verify:board` — the rendered board cross-checked against the artifact bytes, on the real board rather than fixtures;
-14. assert the Pages artifact boundary, then `actions/upload-pages-artifact` as the **last** step.
+10. `ffdraft build-arbitrage --full-board` — the deterministic A0 board against that selection, priced by every retained market rather than only MFL, and surfacing market-relevant players from beyond the published depth using the untruncated board from step 8 (ADR-063, ADR-067). After the anchor every market is read at the board's cutoff, so a thinning post-draft feed cannot fail `arbitrage.top_board_priced` (ADR-094);
+11. `ffdraft build-ros` — only when the capture job resolved a `snapshot_week` (section 16.1.1). The in-season bundle: rest-of-season tiers, the Opportunity Board, the signal layer and the weekly start/sit projections, from the committed `intrinsic-ros-v1` and `weekly-startsit-v1` artifacts. Never trains, and not `continue-on-error`: the bundle is all-or-nothing inside the command, except that the weekly layer is withheld with a warning rather than costing a board (section 16.7, ADR-096);
+12. `validate-artifacts` — the pre-deploy gate;
+13. `npm ci`, then `npm run build` at `VITE_BASE_PATH=/jeisey-tiers/`, asserting the asset URLs and that every artifact reached `web/dist/data/`: the draft bundle always, the in-season bundle whenever `ros_tiers.json` was written, and `weekly_projections.json` whenever it was written;
+14. `npm run verify:board` — the rendered board cross-checked against the artifact bytes, on the real board rather than fixtures;
+15. assert the Pages artifact boundary, then `actions/upload-pages-artifact` as the **last** step.
 
 `deploy` — `actions/configure-pages` and `actions/deploy-pages`, nothing else.
 
-`report` — renders `scripts/workflow_summary.py` into the step summary whatever happened, so a failed refresh explains itself in the same place a successful one does.
+`report` — renders `scripts/workflow_summary.py` into the step summary whatever happened, so a failed refresh explains itself in the same place a successful one does. The run facts include the product mode, the rest-of-season board's week and rows, and the Start/Sit week and projection count, so a refresh that withheld the weekly layer on a warning says so on the page an operator reads (section 10).
 
 **Manual dispatch inputs.** `season` and `cohorts` override the defaults. `skip_capture` rebuilds and redeploys from retained history without calling a vendor — the intended way to re-run a deploy after a code fix, because MFL asks that the player database be requested at most once a day (ADR-017). `force_validation_failure` is the proof run described in section 8.
 
@@ -485,7 +486,9 @@ Pages deployment URL/status
 
 Never put secrets/raw tokens in summaries/logs.
 
-> **Phase-7 implementation.** `scripts/workflow_summary.py` renders it, so the numbers come from JSON that already exists and a mistake is a red test rather than a malformed summary. The script reads only generated artifacts and the retained store's own manifests; the workflow passes the handful of run-scoped facts it knows (trigger, run URL, code SHA, store commit before and after, whether the store was appended, deploy result, Pages URL) through `--fact`. It never reads an environment variable holding a secret.
+> **Phase-7 implementation.** `scripts/workflow_summary.py` renders it, so the numbers come from JSON that already exists and a mistake is a red test rather than a malformed summary. The script reads only generated artifacts and the retained store's own manifests; the workflow passes the handful of run-scoped facts it knows (trigger, run URL, code SHA, store commit before and after, whether the store was appended, season state, product mode, the rest-of-season board's week and row count, the Start/Sit week and projection count, deploy result, Pages URL) through `--fact`. It never reads an environment variable holding a secret.
+>
+> `RUN_FACTS` is an allow-list: a fact the workflow passes and the list does not name is parsed and dropped. Until ADR-096 the season state, product mode and both rest-of-season facts were dropped that way on every run. `tests/unit/test_workflow_summary.py` now fails if `daily-refresh.yml` passes a fact the summary does not print.
 >
 > A daily refresh summary carries: build id, generated-at, season, intrinsic model version, methodology version, arbitrage mode and method version; a per-source table with status, retrieval time, source-as-of and record count; the market snapshot key, cohort rule version and trend availability; **the cohort selected per preset with its failed clauses**; the confidence distribution and median per-player draft sample; per-cohort identity coverage read from the capture's own manifest; record counts for all four artifacts and the player-status match count; and the quality gate with its warnings in a collapsed block.
 >
@@ -939,7 +942,8 @@ capture ──▶ build ──▶ deploy
    │          │
    │          ├─ build-current      the draft board (always)
    │          ├─ build-arbitrage    the draft market comparison (always; at the anchor, ADR-094)
-   │          └─ build-ros          the in-season bundle (in_season only)
+   │          └─ build-ros          the in-season bundle (a snapshot week exists), including
+   │                                  the weekly start/sit layer (ADR-096, section 16.7)
    │
    ├─ capture-status     the full Sleeper player map, at most once a day
    └─ capture-behavior   the two trending endpoints (in_season only)
@@ -953,9 +957,16 @@ contract it was not fitted against. Retraining is a separate, gated act (ADR-078
 # The production fit. Run after a promotion, or when a completed season extends the window.
 uv run ffdraft train-ros-production   --allow-sealed   --confirm-final-eval RELEASE-ROS-FINAL-HOLDOUT-2025   --final-eval-reason "why the sealed season is inside the window"
 
-# The in-season build. Offline apart from the nflverse weekly release it reads.
+# The in-season build. Offline apart from the nflverse releases it reads (weekly stats,
+# schedule, rosters and, for the weekly layer, the week's injury report).
 uv run ffdraft build-ros --store market-data --preseason-board web/public/data/tiers.json
 ```
+
+The same holds for the weekly start/sit layer: `build-ros` loads the committed
+`models/production/weekly-startsit-v1` artifact (every booster's digest and the specification
+hash are checked at load) and never fits it. `tests/unit/test_workflows.py` fails if
+`daily-refresh.yml` ever runs `build-weekly-dataset`, `evaluate-weekly` or
+`train-weekly-production`, or if any workflow carries the weekly promotion token.
 
 ### 16.4 Sleeper cadence
 
@@ -980,6 +991,13 @@ Unchanged from ADR-038's discipline, extended to the behaviour feed:
 | behaviour capture fails or is > 48h old | Opportunity Board's behaviour columns are empty and say why; **every intrinsic value is unchanged** |
 | the opportunity artifact is absent | the ROS tab is unaffected; the Opportunity tab says the build published none |
 | the preseason board is absent | the "change in intrinsic view" column is omitted; no rest-of-season value changes |
+| the weekly model is absent, fails to load (digest or specification mismatch), or raises while serving | warning (`ros.weekly_model_absent` / `ros.weekly_projections_failed`); `weekly_projections.json` is withheld, the Start/Sit tab says none was published, **every board is unchanged**; the summary shows `Start/Sit projections 0` |
+| no game in the week after the cutoff (the season's last scored week is complete) | warning `ros.weekly_projections_empty`; same effect |
+| the league injury report cannot be read | warning `ros.injury_report_unavailable`; projections publish without designations (the model never reads the report) |
+| a game's sportsbook lines are not posted yet | its players publish as `lines_pending`: the game and opponent, null lines (never a pick'em) and **no distribution**. Every training row had a line, so the model reads a missing line as a zero-point total; projecting it would be about 0.7 points low for a typical receiver and silently wrong. The summary's gate line counts them |
+| a retractable roof is not announced yet | the projection is published; the model's roof input takes the home stadium's recorded state from its latest earlier home game this season (the published `roof` stays null) |
+| a weekly record would fail the artifact validator | warning `ros.weekly_projections_invalid`; `build-ros` runs the validator's own weekly rules before staging and withholds only `weekly_projections.json`, so a weekly defect can never reach `validate-artifacts` and block the deploy of every board |
+| a game kicks off before the next build | its projections stay published as `kicked_off`; the page locks them out of a new decision |
 | week N's upstream data is incomplete | the board is built at the last complete week, with a warning naming the blocking week |
 | no complete week at all | **critical**; nothing in-season is published |
 | any critical in-season check | **nothing in the in-season bundle is written** — it is staged to a sibling directory and moved into place only once every artifact *and* the metadata validate |
@@ -1037,3 +1055,73 @@ published no week-by-week role series" / "no schedule context". A missing *conte
 upstream (`passing_epa`, `spread_line`, …) is `source_schema.missing_context_columns`, a
 warning that nulls the fields it feeds. Neither is a reason to hold a deploy; both are a reason
 to read the source schema the next morning.
+
+The weekly layer's and ADR-097's checks:
+
+- `weekly.quantiles_monotonic`, `weekly.driver_account_closes` (the ten parts sum to the
+  median within 0.011) and `weekly.record_shape` (the target week is the week after the
+  cutoff; a bye carries no game, distribution, drivers or opponent; a `lines_pending` record
+  carries the game and opponent only, and a game with a missing line; a projected record
+  carries all four) — all blocking;
+- `cross_artifact.weekly_projection_unpublished` — every projected player is on the
+  Opportunity Board, at the board's cutoff. Blocking;
+- `artifact.placeholder_display_name` — no published row, in any artifact, carries `None`,
+  `null`, `NaN` or an empty string where a name belongs. Blocking; `artifact.id_as_display_name`
+  (the build's declared last resort) is a warning;
+- `opportunity.surfaced_row_outranks_the_board` — a surfaced Opportunity row sits below the
+  published depth on fair rank, on position rank and on median VORP. Blocking: this is the
+  check that would have caught every surfaced player being published as his position's number
+  one with 0.0 VORP.
+
+### 16.7 The weekly start/sit model (ADR-096)
+
+`weekly-startsit-v1` is served by every in-season refresh and fitted by none. Its lifecycle
+runs locally and offline against nflverse history, in this order, and each step refuses to run
+out of order:
+
+```bash
+# Prerequisites: the historical and rest-of-season datasets (section "Phase-11 commands").
+uv run ffdraft build-historical --last-season 2025
+uv run ffdraft build-ros-dataset --last-season 2025
+
+# 1. One labelled row per player, week and preset: the ROS snapshot at the cutoff joined to
+#    the next game's environment and the opponent's point-in-time allowed rate. Writes
+#    data/weekly/ (git-ignored), including the injury and appearance tables the published
+#    base rates are measured from. Byte-reproducible (integer-hundredth sums).
+uv run ffdraft build-weekly-dataset --last-season 2025
+
+# 2. Rolling-origin development evaluation, 2020-2024, against the frozen rule
+#    weekly_promotion_v1 (src/ffdraft/weekly/frozen.py). Writes
+#    docs/experiments/weekly-startsit/experiment.{json,md}. Cannot read 2025.
+uv run ffdraft evaluate-weekly
+
+# 3. The sealed 2025 holdout. Needs its own token and a written reason, and the reason is
+#    recorded in the report. It has been consumed; re-running it is a documented event, not
+#    a routine step.
+uv run ffdraft evaluate-weekly --final-eval \
+  --confirm-final-eval RELEASE-WEEKLY-FINAL-HOLDOUT-2025 --final-eval-reason "why"
+
+# 4. The production fit, 2017-2025. Refuses unless both committed reports say PASS.
+#    Deterministic: two runs give byte-identical boosters.
+uv run ffdraft train-weekly-production --confirm-final-eval RELEASE-WEEKLY-FINAL-HOLDOUT-2025
+```
+
+**Refit cadence.** Once a season, after the last scored week is complete, to extend the window
+by a season; never in season. A refit changes the artifact's `training_seasons` and its
+measurements (margin uncertainty, correlations, startable thresholds, designation base rates),
+and it is committed like any production model. A change to anything in `frozen.py` is a new
+model version with a new rule and a new sealed season, not a refit.
+
+**What the refresh reads for it.** Everything `build-ros` already loads (the season's weekly
+rows, the schedule with its posted lines, the current roster) plus nflverse's injury report
+for the target week, through the same day-keyed `NFLREADPY_CACHE_DIR` as every other nflverse
+read (section 4). The report is printed beside a projection and read by no model. A cache hit
+is the same UTC day's release, so the designation shown is at most a day old, and the
+metadata records when it was retrieved.
+
+**Triage.** A `Start/Sit projections 0` row in the refresh summary means the layer was
+withheld; `build-ros.log` in the build record names the warning. None of the causes in section
+16.5 is a reason to hold a deploy, because no board depends on the layer. A digest or
+specification mismatch at load is the one that needs a person: someone changed the committed
+artifact or `frozen.py` without refitting, and the fix is to restore the committed files or to
+run step 4.

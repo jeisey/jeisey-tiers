@@ -872,3 +872,40 @@ Week without the role and next-game blocks, which `verify:board` checks on a ded
 - **FTN charting** (CC-BY-SA), **ESPN QBR**, **FantasyPros/ECR**, and paid charting (PFF,
   Fantasy Points, SIS) — out of scope for this layer.
 - **Play-by-play** — red-zone and goal-line opportunity need it; not built for one metric.
+
+## 19. Weekly start/sit inputs — probed 2026-09-30 (ADR-096)
+
+**One new read, no new source.** Every input comes from nflverse through `nflreadpy`, already
+`production_allowed`. What changed is *role*: the schedule's total and spread become an input
+to one decision-layer model (never to the intrinsic or rest-of-season models, never a board),
+and the injury report is read for the first time, as printed context and a measured base rate,
+never as a model input. `config/source-registry.yaml` records both roles
+(`weekly_decision_model_input`, `injury_report_context`).
+
+### 19.1 What was measured
+
+| feed | rows | finding that shaped the build |
+|---|---|---|
+| `load_schedules` 2017–2025 | every REG game | every historical game carries a total and spread (the training set has them on all 155,634 rows), so the model cannot project a game without one: such a game is `lines_pending`, never projected with a missing line the model would read as zero |
+| `load_schedules` 2026, week 4 | 16 games | lines posted for every game on 2026-09-30. `roof` is **null for a future game under a retractable roof** (DAL @ HOU): it is recorded after kickoff. The model input takes the stadium's recorded state from its latest earlier home game; the published `roof` stays null |
+| `load_injuries` 2026 | 744 | weeks 1–3: 182, 251, 301 rows, of which 61, 105, 119 carry a game designation. Week 4 on a Wednesday: 10 rows, practice participation only, no designation yet (designations arrive Thursday to Friday). Weeks 1–2 total 433, identical to the 2026-09-22 probe |
+| `load_injuries` 2017–2025 | per season | the base rates: among designated QB/RB/WR/TE players in scored weeks, Questionable appeared 64.1% of 3,497 reports, Doubtful 1.25% of 400, Out 0.08% of 2,640 |
+
+All nine columns `ffdraft.weekly.injuries` reads (`INJURY_REQUIRED_COLUMNS`) are present in
+the live file; a missing one is `InjurySchemaError`, which the build turns into the warning
+`ros.injury_report_unavailable` and publishes projections without designations.
+
+### 19.2 Point in time
+
+The file carries no timestamp of its own, so a report is stamped with its retrieval time
+(`injuries_retrieved_at_utc`). Whether a completed week's rows are revised later is still
+unprobed beyond the unchanged week 1–2 count above. It matters only for the base rates, which
+no projection reads, and it must be settled before the report could ever become a feature
+(registry note `injuries_in_season_only`).
+
+### 19.3 Attribution and redistribution
+
+The lines keep ADR-091's treatment: spread and total only, no moneyline or odds price, JSON
+with no CSV companion, attributed to nflverse with a retrieval time. The designation,
+practice participation and primary injury are the league's public report as nflverse
+publishes it (CC-BY 4.0), printed per player for the week being projected.

@@ -30,6 +30,11 @@ hash, and `ProductionModel.assert_compatible` refuses to serve a frame whose con
 disagrees. A model quietly consuming a renamed feature set is the failure this exists to
 make impossible.
 
+`production/weekly-startsit-v1/` (ADR-096) is written by `ffdraft train-weekly-production`
+in the same format: 84 boosters (4 positions x 3 presets x 7 quantile levels), about 14 MB
+gzipped, a SHA-256 per booster and the frozen specification's configuration hash, both checked
+at load. It is a decision-layer model that the intrinsic and rest-of-season models never read.
+
 These artifacts are committed. They are small, they are the only way a build months from now
 can reproduce a published number, and `PRD.md` section 15 requires everything needed for
 deterministic inference to be versioned.
@@ -49,4 +54,8 @@ Regenerate after a retrain:
 
 ```bash
 uv run ffdraft model-card --git-sha "$(git rev-parse --short HEAD)"
+uv run ffdraft weekly-model-card --git-sha "$(git rev-parse --short HEAD)"   # weekly-startsit-v1
 ```
+
+`weekly-startsit-v1.{md,json}` is pinned by `tests/unit/test_weekly_card.py`: a card that no
+longer matches the committed reports and artifact fails a test.

@@ -4,6 +4,32 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Start/Sit and the weekly start/sit model, 2026-09-30 (ADR-096, ADR-097).** A decision-layer
+model, `weekly-startsit-v1`, now publishes each Opportunity Board player's next game as seven
+quantiles with an additive explanation, and a Start/Sit tab compares two to four players by the
+chance each gives the reader to win the week at their own margin. The owner's rule governs it:
+any data that improves an in-season start/sit, trade or waiver call is valid. It reads the
+week's sportsbook lines; nothing upstream reads it. The spec was frozen before evidence
+(`4f62112`). Development and the sealed 2025 season both PASS `weekly_promotion_v1`, beating
+a baseline that already reads the Vegas implied total (holdout pairwise accuracy 0.666 vs
+0.645, Brier 0.207 vs 0.228, P10–P90 coverage 0.803). Training is byte-reproducible after an
+integer-hundredths fix, and the reports were re-scored once with the reason recorded.
+ADR-097 fixes four verified in-season defects: "None" names, missing teams, invented surfaced
+values, and a mean drawn beside a median rank.
+
+Verification found three serving defects, all fixed. A missing line was read as a 0-point
+total; such a game is now `lines_pending`. An unannounced retractable roof on the live week-4
+build made a lined game pending, which the pre-deploy validator would have turned into a
+blocked deploy; the rule now keys on lines only, the roof takes the stadium's recorded state,
+and `build-ros` withholds only the weekly layer if its records would fail validation. A stale
+pre-filled column could shadow an attached one. Numbering: this branch drafted ADR-095/096 and
+renumbered after PR #52 took ADR-095; `origin/main` was merged, not rebased, and the three
+early commits keep their original numbers. **Next gate:** the first production refresh with
+the weekly layer (the private store is unreachable here); then the `load_injuries`
+point-in-time probe, and a whole-lineup optimiser that reuses these distributions. **Not done:**
+no PR (not requested), no deployment. Validation is listed under **What the start/sit work
+changed** below.
+
 **In-season MFL capture failure handling, 2026-09-30 (ADR-095).** Scheduled run
 `36708638832` resolved to In-Season / completed week 3, captured Sleeper behaviour, then
 failed `market.capture_empty`: all four MFL cohorts returned zero usable prices. This stopped
@@ -2377,3 +2403,31 @@ next game has no posted line should read "No line posted yet" on its cards, neve
 The ordinary operating loop from here is `docs/OPERATIONS.md`: the daily refresh runs at 07:17 America/New_York, a failed gate leaves the previous site serving, and `live-smoke.yml` is the dispatch-only way to check the deployed site afterwards. Two standing operational chores, neither urgent: `MARKET_DATA_REPO_TOKEN` expires and needs a calendar reminder (section 5.3), and GitHub disables scheduled workflows in public repositories after long inactivity, which the daily capture no longer prevents because it commits to the *private data* repository (section 12).
 
 **The post-V1 backlog is below, under "Post-V1 research backlog". None of it is a defect and none of it should be picked up as though it were a phase gate.** The two most valuable things a future session can do are unglamorous: keep the snapshot retention running, because a point-in-time price not captured today can never be reconstructed (ADR-010, ADR-038), and re-run `scripts/source_probe.py` before trusting any adapter after a few weeks have passed, because source-schema drift is detected rather than prevented.
+
+## What the start/sit work changed — 2026-09-30 (ADR-096, ADR-097)
+
+- **New package** `src/ffdraft/weekly/`: `frozen` (spec, rule, hash `692c1886548cde7f`),
+  `context` (game and opponent, point in time), `dataset`, `baselines`, `model`, `evaluate`,
+  `report`, `measure`, `injuries`, `distribution` (`quantile_distribution_v1`), `serve`,
+  `card`, `cli` (`build-weekly-dataset`, `evaluate-weekly`, `train-weekly-production`,
+  `weekly-model-card`).
+- **Artifacts:** `weekly_projections.json` (`weekly_projection` 1.0, JSON only),
+  `ros_build_metadata.weekly`, and `inseason_opportunity_record` 1.1 (`ros_vorp_p50`).
+- **Frontend:** `web/src/data/startsit.ts` (arithmetic, golden-vector tested),
+  `web/src/data/duel.ts` (the reading), `web/src/app/StartSitView.tsx` (lazy),
+  `web/src/charts/OutcomeRidges.tsx`; URL state `duel`, `margin`.
+- **Workflow:** `daily-refresh.yml` packages the weekly artifact when written and reports its
+  week and count; `scripts/workflow_summary.py` prints every fact the refresh passes.
+- **Data (git-ignored, reproducible):** `data/weekly/` from `build-weekly-dataset`; the
+  lifecycle is in `docs/OPERATIONS.md` §16.7.
+- **Caveats to carry forward:** the injury file's revision behaviour is unprobed (context
+  only); margin σ omits kickers and defences (disclosed on the page); a roof with no earlier
+  home game this season is read as open air.
+- **Validation on the merged result (2026-09-30):** `pytest` **1,678 passed, 4 live deselected** (main: 1,585); `ruff check .` and
+  `ruff format --check .` clean; `mypy` clean; fixture build 0 critical / 5 expected warnings
+  and `validate-artifacts tests/fixtures/artifacts` 0/0; live `build-ros --season 2026` 0
+  critical / 3 pre-existing warnings, standalone validation 0/0; `npm ci`, lint 0 errors (4
+  pre-existing warnings), typecheck clean, vitest **627 passed**, build clean with no chunk warning,
+  `npm run e2e` **197 passed** (chromium, mobile, a11y); `verify-board --dist` on the live-data
+  site 0 failures, with its new Start/Sit section checking the deck against the bytes and the
+  week board's 553 rows, and failing on a copy of the artifact with one median altered.

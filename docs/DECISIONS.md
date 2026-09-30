@@ -4926,3 +4926,196 @@ pass that gate against the correct market.
   then fails retained-store validation.
 - Existing market tests still refuse a store with only post-anchor prices. No live vendor
   was queried and no production deployment was run during this branch's validation.
+
+## ADR-096 — The weekly start/sit model and the Start/Sit tab
+
+**Status:** accepted, 2026-09-30 (the owner's request for a start/sit feature that beats other
+sites at comparing players).
+**Numbering:** drafted as ADR-095 on a branch that was not yet pushed; renumbered when
+ADR-095 (above) merged first. The branch's first three commits (`4f62112` freeze, `34ad4ab`
+development, `7c4d528` holdout) still say ADR-095 in their text and are left unrewritten,
+because the freeze commit's value is that its timestamp precedes the evidence.
+**Amends:** ADR-091's clause that no model reads a sportsbook line. The draft and
+rest-of-season models still never do; this decision-layer model does, for the one game it
+projects.
+
+### The owner's data-use clarification
+
+Several ADRs are written about what the *intrinsic* model may read, and they had been read as
+limits on every in-season feature. The owner settled it: **any data that improves an
+in-season start/sit, trade or waiver decision is valid to use.** This ADR applies that to a
+model that is not the intrinsic model and feeds nothing that is. The invariant in AGENTS.md
+section 1 still holds, because information flows one way: the weekly model reads the
+rest-of-season snapshot and the week's game, and nothing upstream reads the weekly model.
+
+### What other sites answer, and what this answers
+
+A start/sit tool elsewhere prints two projected medians and names the higher one. That
+answers "who scores more on average". The manager is asking something else: "who gives me
+the best chance to **win this week**", and the answer depends on the matchup. A manager
+projected to lose needs a ceiling; one projected to win needs a floor. Even in an even
+matchup, the right start is the higher *mean*, not the higher median, because with a margin
+uncertainty of about 31 points the chance to win is close to linear in points. A right-skewed
+receiver can be the right start while losing the head-to-head more often than not.
+
+The tab answers that question from published numbers only:
+
+- **the pick** — maximum P(win the week) at the reader's margin, using the measured margin
+  uncertainty for the slot;
+- **how sure** — the head-to-head P(A outscores B) the evaluation calibrated, with the
+  holdout calibration bin it falls in printed beside it;
+- **the flip point** — the margin at which the other player becomes the right start, in the
+  reader's words ("if you are projected to win by more than 6.5 without this slot…");
+- **both halves of a skewed call** — when the pick is not the likelier to outscore, the page
+  says both, never a sentence that reads as a contradiction. On the fixture week, at an even
+  matchup: "Jahmyr Cook outscores him 52% of the time, but his range wins more matchups: 67.0%
+  vs 66.7% chance to win the week" (Cook's mean 13.7 against Puka's 14.7, medians 13.6 and
+  12.9);
+- same-game teammates through the measured correlation (Gaussian copula), three or four
+  players through a head-to-head matrix and P(top of the set), Out and bye players listed but
+  kept off the verdict, and Questionable/Doubtful with how often that designation has meant a
+  missed game.
+
+### The model (`weekly-startsit-v1`, candidate `wc1_quantile_gbm_conformal_v1`)
+
+Frozen in `src/ffdraft/weekly/frozen.py` before any evidence existed (commit `4f62112`),
+configuration hash `692c1886548cde7f`:
+
+- **target** — next-game fantasy points given an appearance (a stats row or an offensive
+  snap), per position × scoring preset;
+- **features** — the rest-of-season snapshot's features at the cutoff, plus the game
+  (sportsbook total, team margin, implied team points, home, rest advantage, roof) and the
+  opposing defence's allowed points to the position, point-in-time and shrunk toward the
+  league over 4 games;
+- **fit** — LightGBM quantile boosters at 0.05…0.95, monotone rearrangement, and
+  split-conformal offsets from the last training season;
+- **explanation** — grouped TreeSHAP into seven feature families plus baseline, calibration
+  and rearrangement, which sum to the published median;
+- **the injury report is not an input.** The target is points given that he plays, and a
+  designation changes what a manager should do more than what a player scores once active. It
+  is printed beside the projection with its measured appearance rate.
+
+### Evidence (rule `weekly_promotion_v1`, frozen before evidence)
+
+Baselines B0 season rate, B1 last-three form, B2 shrunk rate × implied team total (the strong
+one: it already reads Vegas). Pairs are every same-position pair in each week's decision pool
+(QB 24, RB 48, WR 60, TE 24), all three presets.
+
+| | pinball | pair accuracy | pair Brier | P10–P90 cover |
+|---|---|---|---|---|
+| development 2020–2024, candidate | 1.1086 | 0.6592 | 0.2109 | 0.808 |
+| development, best baseline (B2) | 1.3086 | 0.6362 | 0.2324 | 0.810 |
+| **sealed 2025, candidate** | **1.0970** | **0.6656** | **0.2072** | **0.803** |
+| sealed 2025, best baseline (B2) | 1.3161 | 0.6454 | 0.2279 | 0.812 |
+
+Accuracy gain over B2, week-clustered bootstrap 95%: development +0.0230 [0.0189, 0.0272]
+over 79 weeks; holdout +0.0202 [0.0094, 0.0327] over 16 weeks. The candidate wins pinball in
+all five development folds. Both verdicts PASS.
+
+### The holdout was scored twice, and why
+
+It was consumed once (commit `7c4d528`). Afterwards, fitting the production model twice gave
+different boosters from identical inputs. The cause was Polars' parallel float group-by in the
+opponent reading, whose ~1e-15 order dependence moved LightGBM bin boundaries. The sums are now
+integer hundredths, exact in any order: two dataset builds compare equal, and two production
+fits give identical booster digests. The development and holdout reports were then regenerated
+once from the committed code, with that reason recorded in the holdout report's authorization
+block. No rule, threshold, parameter or feature changed; the largest moves are in the third
+decimal (holdout P10–P90 coverage 0.804 → 0.803), and the verdicts are unchanged. No decision
+depended on the second scoring.
+
+### Published measurements (production fit, 2017–2025)
+
+Margin uncertainty σ by slot (PPR) about 31.4 points: out-of-fold residual variance summed
+over a standard lineup, not assumed. Same-game correlation from PIT ranks: QB–WR ρ 0.319,
+QB–TE 0.267, RB–RB −0.098, opponents 0.029. Designation appearance rates: Questionable 64.1%
+of 3,497 reports, Doubtful 1.25% of 400, Out 0.08% of 2,640. League startable thresholds by
+league size, preset and position. All travel on the build metadata; the page computes nothing
+it could not print a source for.
+
+### Consequences
+
+- `weekly_projections.json` (record contract 1.0) joins the in-season bundle as an optional
+  artifact: withheld with a warning, never a gate, and never costing a board. `daily-refresh.yml`
+  surfaces its count in the run summary and fails a build that writes it and does not package
+  it (OPERATIONS §2.2, §16.5, §16.7).
+- The forbidden-feature guard refuses the weekly line features under their weekly names too.
+  No upstream package imports `ffdraft.weekly`, and the Opportunity and ROS records carry no
+  weekly field (`tests/leakage/test_weekly_firewall.py`).
+- The TypeScript arithmetic is held to a Python-written golden vector: P(A>B) to 1e-12, win
+  probability to 1e-6.
+- The Start/Sit view is lazy-loaded, so draft-season readers do not download it.
+- **A game without a posted line is not projected.** Found while writing the model card:
+  all 155,634 training rows carried a total and spread, so the boosters never learned the
+  missing case, and LightGBM routes a missing value exactly as 0.0. A game with no posted line
+  would have been projected as a zero-point total (receiver medians about 0.7 points low on
+  the 2025 rows, measured) with nothing on the page to say so. Such a player is published as
+  `game_state: lines_pending`: the game and the opponent reading, no distribution and no
+  drivers, and he is listed but kept off any verdict. `weekly.record_shape` enforces the
+  shape, and `test_the_committed_model_reads_a_missing_line_as_zero` pins the reason, so a
+  refit that learns the missing case fails a test and the rule can be revisited. Imputing a
+  line was rejected: it would be inventing a market number.
+- **Found on the live 2026 week-4 build (2026-09-30).** The first live run with the weekly
+  layer marked the DAL @ HOU game `lines_pending` although both lines were posted: Houston's
+  retractable roof is recorded only after kickoff, and the first version of the rule required
+  every game-context input. The build's gate passed, but the standalone validator refused the
+  records ("lines pending but both lines are posted"), which in `daily-refresh.yml` would have
+  blocked the deploy of every board. Two fixes: `lines_pending` now keys on the three line
+  inputs only (a missing roof or rest difference reads as open air or equal rest, ordinary
+  values), with an unannounced roof first taking the stadium's recorded state from its latest
+  earlier home game; and `build-ros` now runs the validator's own weekly rules before staging,
+  withholding only the weekly artifact (`ros.weekly_projections_invalid`, a warning) if they
+  fail. Neither change touches a training row: every historical roof is recorded.
+
+### Not done
+
+Weather (no forward-looking source), in-game injury risk, and a lineup optimiser across all
+slots. The last is the natural next step: it reuses these distributions and the measured
+correlations unchanged.
+
+## ADR-097 — Names, teams, surfaced values and the median on the in-season boards
+
+**Status:** accepted, 2026-09-30 (the owner's instruction for existing features: "verify
+everything, assume nothing"). Drafted as ADR-096 and renumbered with ADR-096 above.
+
+### Evidence, from the live 2026 week-3 build
+
+1. **Names.** An in-season arrival has no preseason block, so no preseason name, and the ROS
+   board printed `str(None)`: four players, 32 rows, displayed as "None" in the table, the card,
+   search and the CSV. A schema cannot see it, because "None" is a valid non-empty string.
+2. **Teams.** `team_to_date` is the last team a player *played* for, so a player who had not
+   appeared had none: 69 rows per preset, 17 of them on an active roster.
+3. **Surfaced Opportunity rows were invented.** A player surfaced from beyond the published
+   depth had `ros_position_rank` fall through `or 1` to his position's number one, and his VORP
+   and uncertainty were 0.0. That is better than every negative-VORP player the board *did*
+   publish.
+4. **The Opportunity Board drew the mean beside a median rank.** The ROS rank orders by median
+   VORP (`ranking_statistic`), but the Opportunity Board's value column and chart used expected
+   (mean) VORP, so a bar could contradict the rank order printed beside it.
+
+### Decision
+
+1. `fill_published_identity` fills a missing name from this season's latest weekly row, then
+   the current roster, then nflverse's player master, and falls back to the player id. It fills
+   a missing team only when the roster places the player on exactly one club. Annotation only:
+   the one team-derived model input stays exactly as the snapshot had it.
+2. `surfaced_values` copies a surfaced player's values from the untruncated board the model
+   valued him on, and raises `SurfacedValueMissing` rather than defaulting.
+3. The Opportunity record carries `ros_vorp_p50` (contract 1.1), and the board draws and sorts
+   by it ("ROS value · median"). The mean stays in the export.
+4. New validator checks: `artifact.placeholder_display_name` (critical, every artifact),
+   `artifact.id_as_display_name` (warning), and `opportunity.surfaced_row_outranks_the_board`
+   (critical: a surfaced row must sit below the published depth on fair rank, position rank and
+   median VORP).
+
+### Verification
+
+Negative control, re-run 2026-09-30 on the unfixed live week-3 artifacts (build
+`2026w03-intrinsic-ros-v1-20260930T105314Z`) by calling the checks directly, because the
+contract bump alone already fails those files at the schema: `artifact.placeholder_display_name`
+is critical on all three artifacts that carry names (`ros_tiers`, `inseason_opportunity`,
+`player_usage`, the same four player ids), and `opportunity.surfaced_row_outranks_the_board`
+reports all 72 surfaced rows (for example "QB1 is inside the published QB1-29"). The median
+clause cannot fire on those files because they predate `ros_vorp_p50`; the unit tests cover it.
+Unit tests also pin the fill order, the single-club rule, the untouched model column,
+fail-closed surfaced values and every placeholder spelling.

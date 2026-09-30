@@ -69,6 +69,32 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
     train.add_argument("--confirm-final-eval", default=None, help="the seal token (2025 is used)")
     train.set_defaults(handler=lambda args: _train(args, repo_root()))
 
+    card = subparsers.add_parser(
+        "weekly-model-card",
+        help="generate the weekly start/sit model card from the committed reports and artifact",
+    )
+    card.add_argument("--reports", type=Path, default=None, help="experiment directory")
+    card.add_argument("--model", type=Path, default=None, help="model artifact directory")
+    card.add_argument("--out", type=Path, default=None, help="card directory")
+    card.add_argument("--git-sha", default="unknown", help="recorded code SHA")
+    card.set_defaults(handler=lambda args: _card(args, repo_root()))
+
+
+def _card(args: argparse.Namespace, root: Path) -> int:
+    from ffdraft.weekly.card import write_weekly_card
+
+    reports = args.reports or (root / DEFAULT_WEEKLY_EXPERIMENT_DIR)
+    written = write_weekly_card(
+        development_path=reports / "experiment.json",
+        final_path=reports / "final_holdout.json",
+        model_dir=args.model or (root / DEFAULT_WEEKLY_MODEL_DIR),
+        out_dir=args.out or (root / "models/cards"),
+        git_sha=args.git_sha,
+    )
+    for path in written:
+        print(f"wrote {path}")
+    return 0
+
 
 def _build_dataset(args: argparse.Namespace, root: Path) -> int:
     from ffdraft.config import load_app_config
