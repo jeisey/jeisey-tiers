@@ -998,6 +998,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     dictionary.set_defaults(handler=_feature_dictionary)
 
+    # The weekly start/sit model (ADR-095) keeps its commands in one module of its own.
+    from ffdraft.weekly.cli import register as register_weekly
+
+    register_weekly(subparsers, repo_root=repo_root)
+
     return parser
 
 

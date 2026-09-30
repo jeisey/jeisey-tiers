@@ -26,6 +26,10 @@ data/phase4/
 # committed record is docs/experiments/phase11-ros/ plus the ROS feature dictionary in
 # docs/MODELING.md.
 data/ros/
+# The weekly start/sit dataset and its out-of-fold predictions (ADR-095). Reproducible with
+# `ffdraft build-weekly-dataset` and `ffdraft evaluate-weekly`; the committed record is
+# docs/experiments/weekly-startsit/.
+data/weekly/
 
 # Node
 node_modules/
