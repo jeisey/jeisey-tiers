@@ -22,6 +22,7 @@ import type { FilterReport } from "../src/data/candidates";
 import { DEFAULT_STATE, type AppState } from "../src/data/state";
 import { FIXTURE_GENERATED_AT, fixtureFiles, inSeasonFixtureFiles } from "./fixtures/artifacts";
 import { required } from "./required";
+import { stubSite } from "./site";
 
 const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 1000);
 
@@ -30,16 +31,7 @@ function serve(inSeason: boolean): void {
     ...fixtureFiles(),
     ...(inSeason ? inSeasonFixtureFiles() : {}),
   };
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const payload = payloads[input.split("/").pop() ?? ""];
-      if (payload === undefined) {
-        return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) } as Response);
-      }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(payload) } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 function go(query = ""): void {

@@ -712,6 +712,16 @@ export interface PlayerUsageRecord {
   readonly pass_epa_per_dropback: number | null;
 }
 
+/**
+ * The fields of a usage record a player card's cohort strip reads from every player: the
+ * served `player_usage_cohort` family (ADR-098), so a card opened from the ROS board need not
+ * download every player's weekly series to place one player among them.
+ */
+export type UsageCohortRecord = Pick<
+  PlayerUsageRecord,
+  "player_id" | "position" | "touchdown_points_share" | "pass_epa_per_dropback"
+>;
+
 export const PLAYER_USAGE_FIELDS = [
   "schema_version",
   "build_id",

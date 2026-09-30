@@ -33,30 +33,13 @@ import {
   fixtureFiles,
   inSeasonFixtureFiles,
 } from "./fixtures/artifacts";
+import { stubSite } from "./site";
 
 const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 1000);
 const POTW = "?view=potw&scoring=ppr&teams=12";
 
 function serve(payloads: Record<string, unknown>): void {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const name = input.split("/").pop() ?? "";
-      const payload = payloads[name];
-      if (payload === undefined) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          json: () => Promise.resolve(null),
-        } as Response);
-      }
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(payload),
-      } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 function go(query = ""): void {

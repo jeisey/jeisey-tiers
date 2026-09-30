@@ -37,6 +37,7 @@ import {
   tierEnvelope,
 } from "./fixtures/artifacts";
 import type { MarketCondition } from "./fixtures/artifacts";
+import { MISSING, stubSite } from "./site";
 
 const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 1000);
 
@@ -49,7 +50,6 @@ const DUAL_PRICED = "Bijan Robinson";
 const MFL_ONLY = "Joe Burrow";
 
 type Payloads = Record<string, unknown>;
-const MISSING = Symbol("missing");
 
 function serve(condition: MarketCondition = "matured", overrides: Payloads = {}): void {
   const payloads: Payloads = {
@@ -61,25 +61,7 @@ function serve(condition: MarketCondition = "matured", overrides: Payloads = {})
     "projections.json": projectionEnvelope(),
     ...overrides,
   };
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const name = input.split("/").pop() ?? "";
-      const payload = payloads[name];
-      if (payload === undefined || payload === MISSING) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          json: () => Promise.resolve(null),
-        } as Response);
-      }
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(payload),
-      } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 function go(query = ""): void {

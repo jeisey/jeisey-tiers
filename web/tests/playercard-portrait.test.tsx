@@ -36,6 +36,7 @@ import {
   projectionEnvelope,
   tierEnvelope,
 } from "./fixtures/artifacts";
+import { MISSING, stubSite } from "./site";
 
 const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 1000);
 
@@ -44,7 +45,6 @@ const WITH_PORTRAIT = "Bijan Robinson";
 const WITHOUT_PORTRAIT = "Deebo Gray";
 
 type Payloads = Record<string, unknown>;
-const MISSING = Symbol("missing");
 
 function serve(overrides: Payloads = {}): void {
   const payloads: Payloads = {
@@ -57,17 +57,7 @@ function serve(overrides: Payloads = {}): void {
     "projections.json": projectionEnvelope(),
     ...overrides,
   };
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const name = input.split("/").pop() ?? "";
-      const payload = payloads[name];
-      if (payload === undefined || payload === MISSING) {
-        return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) } as Response);
-      }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(payload) } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 function go(query = ""): void {
@@ -126,8 +116,17 @@ describe("the browser boundary", () => {
     await openBoard();
     const requested = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
     expect(requested.some((url) => url.includes("espncdn"))).toBe(false);
-    // The crosswalk itself is a generated file and is fetched; the pictures it names are not.
-    expect(requested.some((url) => url.endsWith("player_headshots.json"))).toBe(true);
+    // Since ADR-098 the board does not even fetch the crosswalk: a portrait address reaches the
+    // page inside the card shard of the player whose card is opened, and only then.
+    expect(requested.some((url) => url.includes("player_headshots"))).toBe(false);
+    expect(requested.some((url) => url.includes("/serve/card/"))).toBe(false);
+  });
+
+  it("fetches the card shard, and no picture host, when a card opens", async () => {
+    await openCard(WITH_PORTRAIT);
+    const requested = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
+    expect(requested.filter((url) => url.includes("/serve/card/"))).toHaveLength(1);
+    expect(requested.some((url) => url.includes("espncdn"))).toBe(false);
   });
 
   it("puts no portrait on the board itself, only on the card", async () => {

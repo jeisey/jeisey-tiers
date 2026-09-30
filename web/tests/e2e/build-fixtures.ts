@@ -63,6 +63,19 @@ function writeArtifacts(dataDir: string, files: Record<string, unknown>): void {
   }
 }
 
+/**
+ * Lay a data directory out the way the deployed site serves it (ADR-098): the manifest, the
+ * per-block slices and the card shards, written by the **production** packager. The page
+ * reads nothing else, so every end-to-end spec exercises the real encoder against these
+ * fixtures — the same code `daily-refresh.yml` runs on the real board.
+ */
+function packageSiteData(dataDir: string): void {
+  execFileSync("uv", ["run", "--frozen", "ffdraft", "package-site-data", dataDir], {
+    cwd: repo,
+    stdio: ["ignore", "ignore", "inherit"],
+  });
+}
+
 /** A tiny CSV so the full-download link resolves to a real file under both base paths. */
 function writeCsv(dataDir: string, name: string, header: string): void {
   writeFileSync(resolve(dataDir, name), `${header}\r\n`, "utf-8");
@@ -82,6 +95,7 @@ export async function prepare(): Promise<void> {
     writeArtifacts(dataDir, fixtures.fixtureFiles());
     writeCsv(dataDir, "tiers.csv", "fair_rank,display_name");
     writeCsv(dataDir, "arbitrage.csv", "fair_rank,display_name");
+    packageSiteData(dataDir);
   }
 
   /** A build that simply does not publish one artifact; the server then 404s it. */
@@ -169,6 +183,7 @@ export async function prepare(): Promise<void> {
     writeCsv(dataDir, "arbitrage.csv", "fair_rank,display_name");
     writeCsv(dataDir, "ros_tiers.csv", "ros_fair_rank,player");
     writeCsv(dataDir, "inseason_opportunity.csv", "ros_fair_rank,player");
+    packageSiteData(dataDir);
   }
 }
 

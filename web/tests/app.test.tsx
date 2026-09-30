@@ -8,7 +8,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { App } from "../src/app/App";
 import { setMediaQuery } from "./setup";
@@ -22,6 +22,7 @@ import {
   tierEnvelope,
   tierRecords,
 } from "./fixtures/artifacts";
+import { MISSING, stubSite } from "./site";
 
 /**
  * The clock these tests render against: three hours after the fixture board was built.
@@ -36,8 +37,6 @@ const FIXTURE_NOW = new Date(Date.parse(FIXTURE_GENERATED_AT) + 3 * 60 * 60 * 10
 
 type Payloads = Record<string, unknown>;
 
-/** Sentinel for "this build did not publish that artifact". */
-const MISSING = Symbol("missing");
 
 function serve(overrides: Payloads = {}): void {
   const payloads: Payloads = {
@@ -51,17 +50,7 @@ function serve(overrides: Payloads = {}): void {
     "projections.json": projectionEnvelope(),
     ...overrides,
   };
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const name = input.split("/").pop() ?? "";
-      const payload = payloads[name];
-      if (payload === undefined || payload === MISSING) {
-        return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) } as Response);
-      }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(payload) } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 function go(query = ""): void {

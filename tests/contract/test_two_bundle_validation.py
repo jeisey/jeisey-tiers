@@ -36,6 +36,7 @@ from pathlib import Path
 import pytest
 
 from ffdraft.artifacts import ARTIFACT_SPECS, validate_artifact_directory
+from ffdraft.artifacts.serving import package_serving
 from ffdraft.artifacts.validate import (
     _IN_SEASON_ARTIFACTS,
     ROS_BUILD_METADATA_FILENAME,
@@ -102,6 +103,9 @@ def two_bundles(tmp_path: Path) -> Iterator[Path]:
         if path.is_file():
             _restamp(path, ROS_BUILD_ID)
 
+    # Production packages the served layout after both bundles are written (ADR-098); a
+    # layout packaged before the restamp would be stale, and correctly critical.
+    package_serving(directory)
     yield directory
 
 

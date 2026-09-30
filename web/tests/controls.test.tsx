@@ -18,6 +18,7 @@ import {
   projectionEnvelope,
   tierEnvelope,
 } from "./fixtures/artifacts";
+import { stubSite } from "./site";
 
 function serve(): void {
   const payloads: Record<string, unknown> = {
@@ -27,17 +28,7 @@ function serve(): void {
     "player_status.json": playerStatusEnvelope(),
     "projections.json": projectionEnvelope(),
   };
-  vi.stubGlobal(
-    "fetch",
-    vi.fn((input: string) => {
-      const payload = payloads[input.split("/").pop() ?? ""];
-      return Promise.resolve({
-        ok: payload !== undefined,
-        status: payload === undefined ? 404 : 200,
-        json: () => Promise.resolve(payload ?? null),
-      } as Response);
-    }),
-  );
+  stubSite(payloads);
 }
 
 async function boardReady(): Promise<void> {
