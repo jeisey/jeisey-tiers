@@ -287,7 +287,7 @@ describe("what a first paint fetches (ADR-098)", () => {
     const added = card.filter((key) => !board.includes(key));
     expect(added.filter((key) => key.startsWith("card/"))).toHaveLength(1);
     expect(added.filter((key) => !key.startsWith("card/")).sort()).toEqual(
-      ["inseason_opportunity/redraft-12.PPR", "player_usage_cohort/all", "team_matchups/all"].sort(),
+      ["inseason_opportunity_cohort/redraft-12.PPR", "player_usage_cohort/all", "team_matchups/all"].sort(),
     );
   });
 

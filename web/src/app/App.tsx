@@ -19,7 +19,8 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 
-import logoUrl from "../assets/jt_logo.png";
+import logoUrl from "../assets/jt_logo-96.png";
+import logoUrl3x from "../assets/jt_logo-145.png";
 
 import { PanelToggle } from "../components/primitives";
 import { CriticalArtifactError, openSite, type Degradation } from "../data/bundle";
@@ -816,7 +817,14 @@ function CriticalError({ error }: { readonly error: CriticalArtifactError }): Re
     <main className="app">
       <header className="masthead">
         <h1 className="masthead-brand">
-          <img className="masthead-logo" src={logoUrl} alt="Jeisey Tiers" width={434} height={145} />
+          <img
+            className="masthead-logo"
+            src={logoUrl}
+            srcSet={`${logoUrl} 2x, ${logoUrl3x} 3x`}
+            alt="Jeisey Tiers"
+            width={434}
+            height={145}
+          />
         </h1>
       </header>
       <div className="notice" data-severity="error" role="alert" style={{ marginTop: "1.5rem" }}>

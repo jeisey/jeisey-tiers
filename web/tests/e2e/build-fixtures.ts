@@ -187,6 +187,21 @@ export async function prepare(): Promise<void> {
   }
 }
 
+/**
+ * The size model (ADR-098): the app with a real-sized, synthetic data set in it, for the
+ * payload budget gate (`verify-budget.mjs`). Built only when asked — it is the one build no
+ * behavioural spec reads — with `E2E_SIZE_MODEL=1` or `npm run e2e:size-model`.
+ */
+export function prepareSizeModel(): void {
+  const out = resolve(repo, "web/dist-size-model");
+  viteBuild("/jeisey-tiers/", out);
+  execFileSync(
+    "uv",
+    ["run", "--frozen", "python", "scripts/size_model.py", "--out", resolve(out, "data")],
+    { cwd: repo, stdio: ["ignore", "ignore", "inherit"] },
+  );
+}
+
 if (import.meta.url === `file://${process.argv[1] ?? ""}`) {
   await prepare();
 }

@@ -112,6 +112,23 @@ FAMILIES: tuple[Family, ...] = (
     # ROS board. A row whose copies equal the ROS row of the same block serves them once, from
     # the ROS slice; any row that differs in any of them serves its own values.
     Family("inseason_opportunity", "inseason_opportunity", "block", join="ros_tiers"),
+    # What a player card's cohort strips read from every row of the block: the share and
+    # transaction fields, and nothing a card could mistake for the board (ADR-098).
+    Family(
+        "inseason_opportunity_cohort",
+        "inseason_opportunity",
+        "block",
+        only=(
+            "league_preset_id",
+            "scoring_preset",
+            "player_id",
+            "position",
+            "add_count",
+            "drop_count",
+            "snap_share_last3",
+            "target_share_last3",
+        ),
+    ),
     Family("weekly_projections", "weekly_projections", "scoring"),
     Family("team_matchups", "team_matchups", "all"),
     Family("behavior_trend_series", "behavior_trend_series", "all"),

@@ -1,0 +1,40 @@
+{
+  "description": "Counts for the payload size model (scripts/size_model.py, ADR-098). Measured on the production week-4 artifacts served on 2026-09-30 (daily-refresh run 36753131890). Counts only: no value from the production board is recorded here.",
+  "measured_at_utc": "2026-09-30T21:12:00Z",
+  "players": 1069,
+  "leagues": [
+    "redraft-10",
+    "redraft-12",
+    "redraft-14"
+  ],
+  "scorings": [
+    "HALF",
+    "PPR",
+    "STD"
+  ],
+  "counts": {
+    "tiers_per_block": 500,
+    "ros_per_block": 500,
+    "opportunity_per_block": 510,
+    "arbitrage_per_block": 231,
+    "trend_series_per_block": 416,
+    "projections_per_scoring": 1065,
+    "weekly_per_scoring": 554,
+    "usage": 606,
+    "behavior": 171,
+    "status": 545,
+    "headshots": 522
+  },
+  "trend_points": 12,
+  "markets": 2,
+  "usage_weeks": 3,
+  "behavior_points": 8,
+  "published_decimals": {
+    "tiers": 4,
+    "projections": 4,
+    "ros_tiers": 4,
+    "inseason_opportunity": 4,
+    "arbitrage": 2
+  },
+  "_published_decimals": "The precision each artifact's model floats are published at on the real board. The golden templates carry fewer digits; the size model writes at least this many."
+}

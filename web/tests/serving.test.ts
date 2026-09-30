@@ -9,15 +9,19 @@
  * a browser ever renders a number from it.
  */
 
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  ServedFileError,
   bucketOf,
   decodeTable,
+  fetchServed,
   parseManifest,
+  pruneCache,
   type EnvelopeHeader,
   type Table,
 } from "../src/data/serving";
@@ -118,5 +122,98 @@ describe("the card bucket function", () => {
     expect(bucketOf("", 64)).toBe(0x811c9dc5 % 64);
     expect(bucketOf("gsis:00-0038542", 64)).toBe(1525704982 % 64);
     expect(bucketOf("gsis:00-0023459", 64)).toBe(3737496805 % 64);
+  });
+});
+
+// ------------------------------------------------------------------ the immutable-file cache
+
+describe("fetchServed and the Cache API (ADR-098)", () => {
+  const body = '{"format":"serving_v1","names":{}}\n';
+  const digest = createHash("sha256").update(body, "utf8").digest("hex").slice(0, 16);
+  const url = `/data/serve/players.${digest}.json`;
+
+  /**
+   * A minimal Cache API: enough of `match`, `put`, `delete` and `keys` to observe use. Like the
+   * real one it keys by absolute URL, whatever form the request was given in.
+   */
+  const absolute = (request: string | { url: string }): string =>
+    new URL(typeof request === "string" ? request : request.url, location.href).href;
+  function fakeCaches(initial: Record<string, string> = {}) {
+    const store = new Map(Object.entries(initial).map(([key, value]) => [absolute(key), value]));
+    const cache = {
+      match: vi.fn((request: string) =>
+        Promise.resolve(store.has(absolute(request)) ? new Response(store.get(absolute(request))) : undefined),
+      ),
+      put: vi.fn(async (request: string, response: Response) => {
+        store.set(absolute(request), await response.text());
+      }),
+      delete: vi.fn((request: string | { url: string }) => Promise.resolve(store.delete(absolute(request)))),
+      keys: vi.fn(() => Promise.resolve([...store.keys()].map((key) => ({ url: key })))),
+    };
+    vi.stubGlobal("caches", { open: vi.fn(() => Promise.resolve(cache)) });
+    return { store, cache };
+  }
+
+  function network(text: string | null, status = 200) {
+    const fetcher = vi.fn(() =>
+      Promise.resolve(text === null ? new Response(null, { status }) : new Response(text, { status })),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    return fetcher;
+  }
+
+  it("keeps a verified network copy, and serves the next read without the network", async () => {
+    const { store } = fakeCaches();
+    const fetcher = network(body);
+    expect(await fetchServed("players", digest)).toEqual({ format: "serving_v1", names: {} });
+    await vi.waitFor(() => {
+      expect(store.get(absolute(url))).toBe(body);
+    });
+    expect(await fetchServed("players", digest)).toEqual({ format: "serving_v1", names: {} });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("never uses a cached copy that does not match its name: it is dropped and refetched", async () => {
+    const { store, cache } = fakeCaches({ [url]: '{"format":"serving_v1","names":{"x":"stale"}}\n' });
+    const fetcher = network(body);
+    expect(await fetchServed("players", digest)).toEqual({ format: "serving_v1", names: {} });
+    expect(cache.delete).toHaveBeenCalledWith(url);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(store.get(absolute(url))).toBe(body);
+    });
+  });
+
+  it("refuses a network copy that does not match its name, and caches nothing", async () => {
+    const { store } = fakeCaches();
+    network('{"format":"serving_v1","names":{"x":"tampered"}}\n');
+    await expect(fetchServed("players", digest)).rejects.toBeInstanceOf(ServedFileError);
+    expect(store.size).toBe(0);
+  });
+
+  it("reports a missing file as a failure of that file, with its status", async () => {
+    fakeCaches();
+    network(null, 404);
+    await expect(fetchServed("players", digest)).rejects.toMatchObject({ key: "players", status: 404 });
+  });
+
+  it("works with no Cache API at all, from the network", async () => {
+    vi.stubGlobal("caches", undefined);
+    network(body);
+    expect(await fetchServed("players", digest)).toEqual({ format: "serving_v1", names: {} });
+  });
+
+  it("prunes cached files the current manifest no longer names", async () => {
+    const old = "/data/serve/players.0000000000000000.json";
+    const { store } = fakeCaches({ [old]: body, [url]: body });
+    const manifest = parseManifest({
+      format: "serving_v1",
+      version: "1.0",
+      card_buckets: 64,
+      artifacts: {},
+      files: { players: digest },
+    });
+    await pruneCache(manifest);
+    expect([...store.keys()].map((key) => new URL(key, location.href).pathname)).toEqual([url]);
   });
 });

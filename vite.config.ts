@@ -17,7 +17,10 @@ export default defineConfig({
     // Relative to `root`, so artifacts land in web/dist (gitignored).
     outDir: "dist",
     emptyOutDir: true,
-    sourcemap: true,
+    // ADR-098: no source maps in the deployed site. The repository is public, so they hide
+    // nothing, but they were 2.3 MB of every Pages upload that only an open devtools panel
+    // ever requests. `VITE_SOURCEMAP=1 npm run build` produces them for local debugging.
+    sourcemap: process.env.VITE_SOURCEMAP === "1",
   },
   test: {
     globals: true,

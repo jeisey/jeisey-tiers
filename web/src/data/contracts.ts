@@ -713,6 +713,22 @@ export interface PlayerUsageRecord {
 }
 
 /**
+ * The fields of an Opportunity Board row a player card's cohort strips read from every row of
+ * the block: the served `inseason_opportunity_cohort` family (ADR-098).
+ */
+export type OpportunityCohortRecord = Pick<
+  OpportunityRecord,
+  | "league_preset_id"
+  | "scoring_preset"
+  | "player_id"
+  | "position"
+  | "add_count"
+  | "drop_count"
+  | "snap_share_last3"
+  | "target_share_last3"
+>;
+
+/**
  * The fields of a usage record a player card's cohort strip reads from every player: the
  * served `player_usage_cohort` family (ADR-098), so a card opened from the ROS board need not
  * download every player's weekly series to place one player among them.

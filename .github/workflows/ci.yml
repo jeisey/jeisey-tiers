@@ -95,14 +95,16 @@ jobs:
       - name: Validate generated artifacts
         run: uv run python -m ffdraft.cli validate-artifacts web/public/data | tee validate.log
 
+      # `git status`, not `git diff`: the served layout names its files by content hash
+      # (ADR-098), so a stale golden shows up as a new untracked file as well as a deletion.
       - name: Confirm committed golden artifacts are current
         run: |
           set -euo pipefail
           uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000
-          if ! git diff --quiet -- tests/fixtures/artifacts; then
+          if [ -n "$(git status --porcelain -- tests/fixtures/artifacts)" ]; then
             echo "::error::Committed golden artifacts are stale. Regenerate with:"
             echo "  uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000"
-            git --no-pager diff --stat -- tests/fixtures/artifacts
+            git status --short -- tests/fixtures/artifacts | head -20
             exit 1
           fi
 
@@ -254,6 +256,24 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      # The fixture sites are laid out by the production packager (ADR-098), which is Python:
+      # the same `ffdraft package-site-data` the daily refresh runs, so no second encoder.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install locked Python dependencies
+        run: uv sync --frozen
+
       # The browser is keyed on the lockfile, which pins @playwright/test: a Playwright
       # upgrade changes the key, so a cache hit can never pair a new client with an old
       # browser build.
@@ -310,6 +330,24 @@ jobs:
           npm run verify:board -- \
             --dist web/dist-season-complete --base-path /scenario/season-complete/ --port 4184
 
+      # The payload budgets (ADR-098), on the size model: the app with a synthetic data set
+      # built to the production board's counts, packaged by the production packager, served
+      # the way GitHub Pages serves it, and measured in Chromium. A regression in any budget
+      # fails the run. The daily refresh measures the real build with the same script.
+      - name: Payload budgets on the real-sized size model
+        run: |
+          set -euo pipefail
+          npm run e2e:size-model
+          npm run verify:budget -- --dist web/dist-size-model --base-path /jeisey-tiers/ \
+            --port 4190 --json budget.json
+          {
+            echo '## Payload budgets (size model)'
+            echo
+            echo '```json'
+            cat budget.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Summarise the end-to-end run
         if: always()
         run: |
@@ -361,6 +399,24 @@ jobs:
 
       - name: Install locked dependencies
         run: npm ci
+
+      # The fixture sites are laid out by the production packager (ADR-098), which is Python:
+      # the same `ffdraft package-site-data` the daily refresh runs, so no second encoder.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install locked Python dependencies
+        run: uv sync --frozen
 
       - name: Cache the Playwright browsers
         uses: actions/cache@v4

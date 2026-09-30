@@ -491,6 +491,18 @@ jobs:
             --full-board "${RUNNER_TEMP}/ros-full-board.json" \
             --git-sha "${GITHUB_SHA::7}" | tee build-ros.log
 
+      # ---- The served layout (ADR-098) ----------------------------------------------------
+      #
+      # The site reads nothing but `data/manifest.json` and the content-addressed slices and
+      # card shards it names. They are derived from the artifacts written above — both
+      # bundles, whichever exist — so this runs after the last artifact write, every time.
+      # The validator below re-derives the layout and fails the deploy if one byte differs
+      # or any slice is not exactly its artifact's subset: written means packaged.
+      - name: Package the served layout
+        run: |
+          set -euo pipefail
+          uv run ffdraft package-site-data web/public/data | tee package.log
+
       # ---- The pre-deploy gate ------------------------------------------------------------
       #
       # `force_validation_failure` does not fake a failure. It breaks a real invariant —
@@ -524,7 +536,8 @@ jobs:
       - name: Validate the public artifacts
         run: |
           set -euo pipefail
-          uv run python -m ffdraft.cli validate-artifacts web/public/data | tee validate.log
+          uv run python -m ffdraft.cli validate-artifacts --require-serving web/public/data \
+            | tee validate.log
 
       - name: Read the build facts
         id: facts
@@ -601,6 +614,21 @@ jobs:
             test -f "web/dist/data/weekly_projections.json" \
               || { echo "::error::web/dist/data/weekly_projections.json missing from the build"; exit 1; }
           fi
+          # The served layout (ADR-098): the manifest, and every file it names. The page loads
+          # nothing else, so one missing slice is a view that cannot open.
+          python3 - <<'PY'
+          import json, pathlib, sys
+          dist = pathlib.Path("web/dist/data")
+          manifest = json.loads((dist / "manifest.json").read_text(encoding="utf-8"))
+          missing = [
+              key for key, digest in manifest["files"].items()
+              if not (dist / "serve" / f"{key}.{digest}.json").is_file()
+          ]
+          if missing:
+              print(f"::error::{len(missing)} served file(s) missing from the build: {missing[:5]}")
+              sys.exit(1)
+          print(f"manifest names {len(manifest['files'])} served files; all present in web/dist")
+          PY
 
       - name: Cache the Playwright browser
         uses: actions/cache@v4
@@ -616,6 +644,23 @@ jobs:
       # the artifact bytes the browser was served.
       - name: Verify the rendered board against the artifact bytes
         run: npm run verify:board -- --base-path "${VITE_BASE_PATH}"
+
+      # The payload budgets (ADR-098), measured on the real build in Chromium against a
+      # server that behaves like GitHub Pages. Reported, not gating: a board that is correct
+      # and a few kilobytes over a budget should still reach readers, and a size regression
+      # is blocked where it is introduced — the same script gates every pull request on the
+      # size model in ci.yml. A miss is printed as a warning and in the run summary.
+      - name: Measure the payload budgets on the real build
+        run: |
+          set -euo pipefail
+          npm run verify:budget -- --dist web/dist --base-path "${VITE_BASE_PATH}" \
+            --report-only --json budget.json | tee budget.log
+          python3 - <<'PY'
+          import json
+          report = json.load(open("budget.json", encoding="utf-8"))
+          for failure in report["failures"]:
+              print(f"::warning::payload budget: {failure}")
+          PY
 
       # ---- What actually gets published ----------------------------------------------------
       #
@@ -653,7 +698,8 @@ jobs:
           mkdir -p build-record/store
           cp -r web/public/data build-record/data 2>/dev/null || true
           cp -r "${RUNNER_TEMP}/market-cohorts" build-record/market-cohorts 2>/dev/null || true
-          for log in build-current build-arbitrage build-ros cohorts validate; do
+          cp budget.json build-record/budget.json 2>/dev/null || true
+          for log in build-current build-arbitrage build-ros cohorts package validate budget; do
             cp "${log}.log" build-record/ 2>/dev/null || true
           done
           # The store's manifests only — provenance, content hashes, per-cohort draft and
@@ -759,6 +805,7 @@ jobs:
             --artifacts "${artifacts}" \
             --store build-record/store \
             --title "Daily refresh — ${BUILD}" \
+            --budget build-record/budget.json \
             --out "$GITHUB_STEP_SUMMARY" \
             --fact "trigger=${{ github.event_name }}" \
             --fact "run_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \

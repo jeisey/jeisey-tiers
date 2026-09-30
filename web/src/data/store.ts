@@ -25,6 +25,7 @@ import {
   type BehaviorTrendSeriesRecord,
   type BuildMetadata,
   type MarketTrendSeriesRecord,
+  type OpportunityCohortRecord,
   type OpportunityRecord,
   type PlayerHeadshotRecord,
   type PlayerProjectionRecord,
@@ -112,7 +113,7 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
     // The in-season cohort strips place a player among his published block; the draft card
     // shows the rest-of-season section beside the draft one once a board exists.
     if (manifest.ros_build_metadata !== undefined) {
-      wanted.push(`ros_tiers/${block}`, `inseason_opportunity/${block}`);
+      wanted.push(`ros_tiers/${block}`, `inseason_opportunity_cohort/${block}`);
       if (!draft) wanted.push("player_usage_cohort/all", "team_matchups/all");
     }
   }
@@ -361,6 +362,7 @@ export class DataStore {
                 ? this.rows<PlayerUsageRecord>("player_usage", scope)
                 : null,
             usageCohort: this.rows<UsageCohortRecord>("player_usage_cohort", scope),
+            opportunityCohort: this.rows<OpportunityCohortRecord>("inseason_opportunity_cohort", scope),
             matchups: this.published("team_matchups")
               ? this.rows<TeamMatchupRecord>("team_matchups", scope)
               : null,

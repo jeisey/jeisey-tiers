@@ -27,6 +27,7 @@ import type {
   RosTierRecord,
   ScoringPreset,
   SeasonState,
+  OpportunityCohortRecord,
   TeamMatchupRecord,
   UsageCohortRecord,
   WeeklyProjectionRecord,
@@ -71,6 +72,8 @@ export interface InSeasonInput {
   readonly blocks?: readonly { readonly leaguePreset: string; readonly scoring: ScoringPreset }[];
   /** A usage population for card cohorts, when `usage` itself is not loaded (ADR-098). */
   readonly usageCohort?: readonly UsageCohortRecord[] | null;
+  /** The block's cohort fields, when the whole Opportunity Board is not loaded (ADR-098). */
+  readonly opportunityCohort?: readonly OpportunityCohortRecord[] | null;
 }
 
 
@@ -124,6 +127,7 @@ export class InSeasonBundle {
   private readonly rosByBlockPlayer: ReadonlyMap<string, RosTierRecord>;
   private readonly opportunityByBlock: ReadonlyMap<string, readonly OpportunityRecord[]>;
   private readonly opportunityByBlockPlayer: ReadonlyMap<string, OpportunityRecord>;
+  private readonly opportunityCohortByBlock: ReadonlyMap<string, readonly OpportunityCohortRecord[]>;
   private readonly behaviorByPlayer: ReadonlyMap<string, BehaviorTrendSeriesRecord>;
   /**
    * The newest retained snapshot the momentum series speaks for: the build's own behaviour
@@ -239,6 +243,15 @@ export class InSeasonBundle {
     }
     this.opportunityByBlock = opportunityByBlock;
     this.opportunityByBlockPlayer = opportunityByBlockPlayer;
+
+    const cohortByBlock = new Map<string, OpportunityCohortRecord[]>();
+    for (const record of input.opportunityCohort ?? []) {
+      const key = blockKey(record.league_preset_id, record.scoring_preset);
+      const bucket = cohortByBlock.get(key);
+      if (bucket === undefined) cohortByBlock.set(key, [record]);
+      else bucket.push(record);
+    }
+    this.opportunityCohortByBlock = cohortByBlock;
   }
 
   get season(): number {
@@ -271,6 +284,19 @@ export class InSeasonBundle {
 
   opportunityFor(leaguePreset: string, scoring: ScoringPreset): readonly OpportunityRecord[] {
     return this.opportunityByBlock.get(blockKey(leaguePreset, scoring)) ?? [];
+  }
+
+  /**
+   * The rows a card's cohort strips place one player among: the whole board when it is loaded,
+   * otherwise the served cohort fields of the same rows (ADR-098). Either way, every row of
+   * the published block.
+   */
+  opportunityCohortFor(
+    leaguePreset: string,
+    scoring: ScoringPreset,
+  ): readonly OpportunityCohortRecord[] {
+    const full = this.opportunityByBlock.get(blockKey(leaguePreset, scoring));
+    return full ?? this.opportunityCohortByBlock.get(blockKey(leaguePreset, scoring)) ?? [];
   }
 
   opportunityRecordFor(
@@ -687,7 +713,7 @@ export function buildRosCohortContext(
 ): RosCohortContext {
   const board = bundle.rosFor(leaguePreset, scoring);
   const cohort = board.filter((row) => row.position === record.position);
-  const opportunityRows = bundle.opportunityFor(leaguePreset, scoring);
+  const opportunityRows = bundle.opportunityCohortFor(leaguePreset, scoring);
   const opportunityCohort = opportunityRows.filter((row) => row.position === record.position);
 
   const moveCounts = finiteValues([
