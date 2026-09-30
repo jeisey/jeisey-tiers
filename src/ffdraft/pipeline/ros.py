@@ -189,6 +189,8 @@ def run_ros_build(
     preseason_board: Path | None = None,
     full_board_out: Path | None = None,
     snapshot_out: Path | None = None,
+    weekly_model_dir: Path | None = None,
+    injuries: pl.DataFrame | None = None,
     write: bool = True,
 ) -> RosBuildResult:
     """Build the current rest-of-season board and write the in-season artifacts.
@@ -326,11 +328,11 @@ def run_ros_build(
         snapshot.frame.write_parquet(snapshot_out, compression="zstd")
 
     resolved_build_id = build_id or _ros_build_id(model.spec.model_version, stamped, cutoff)
-    context = _context_columns(snapshot.frame)
-    preseason_ranks = _preseason_ranks(preseason_board, gate)
 
     # Current roster status: annotation only, exactly as it is on the draft board. It is
     # joined after every value exists and cannot reach a feature, a projection or a rank.
+    # Resolved before the annotation columns because it is also where a name and a team come
+    # from for a player the snapshot cannot name (ADR-097).
     roster = _resolve_roster(
         loaded,
         season,
@@ -340,6 +342,15 @@ def run_ros_build(
         gate=gate,
     )
     status_by_player = _status_by_player(roster)
+    context = fill_published_identity(
+        _context_columns(snapshot.frame),
+        weekly=loaded.sources.weekly_stats,
+        roster=roster,
+        player_master=loaded.sources.player_master,
+        season=season,
+        gate=gate,
+    )
+    preseason_ranks = _preseason_ranks(preseason_board, gate)
 
     records, diagnostics, full_board = build_ros_board_records(
         predictions,
@@ -414,6 +425,28 @@ def run_ros_build(
     if matchup_records:
         records["team_matchups"] = matchup_records
 
+    # The weekly start/sit layer (ADR-096): the next game as a distribution, from the same
+    # snapshot the board was valued from. A decision-layer model — it reads the sportsbook
+    # environment the boards may not — and, like every enrichment after the boards, one
+    # whose failure costs its own artifact and nothing else.
+    weekly_records, weekly_summary = _weekly_layer(
+        model_dir=weekly_model_dir,
+        snapshot_frame=snapshot.frame,
+        opportunity_records=records["inseason_opportunity"],
+        roster=roster,
+        loaded=loaded,
+        settings=settings,
+        season=season,
+        cutoff=cutoff,
+        build_id=resolved_build_id,
+        as_of=stamped,
+        gate=gate,
+        injuries=injuries,
+        allow_fetch=sources is None,
+    )
+    if weekly_records:
+        records["weekly_projections"] = weekly_records
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -432,6 +465,7 @@ def run_ros_build(
         history=history,
         surface=[universe.to_dict() for universe in surface_universes],
         signal_layer=signal_summary,
+        weekly=weekly_summary,
     )
 
     written: list[Path] = []
@@ -643,6 +677,93 @@ def _context_columns(frame: pl.DataFrame) -> pl.DataFrame:
     else:
         selected = selected.with_columns(pl.lit(None, dtype=pl.String).alias("team"))
     return selected
+
+
+def fill_published_identity(
+    context: pl.DataFrame,
+    *,
+    weekly: pl.DataFrame,
+    roster: pl.DataFrame,
+    player_master: pl.DataFrame,
+    season: int,
+    gate: QualityGate,
+) -> pl.DataFrame:
+    """Give every published row a real name and, where one is known, a team (ADR-097).
+
+    **Annotation only.** ``context`` is the frame of columns printed *beside* the model's
+    output; the model read ``snapshot.frame`` before this runs, so nothing here can reach a
+    feature, a projection, a VORP or a rank. ``team_remaining_scheduled_games`` — the one
+    team-derived model input — is untouched, and stays null for a player the snapshot could
+    not place, exactly as it was in every training season.
+
+    Two gaps, measured on the 2026 week-3 build:
+
+    * **name** — an in-season arrival has no preseason block, so no preseason name, and the
+      board printed ``str(None)``: four players, 32 rows, as ``"None"``. Filled from his own
+      weekly rows this season, then the current roster, then nflverse's player master.
+    * **team** — ``team_to_date`` is the last team he *played* for, so a player who has not
+      appeared had none: 69 rows per preset, 17 of them on an active roster. Filled from the
+      current roster when it places him on exactly one club, the same rule the usage layer
+      already uses (:func:`ffdraft.signals.usage.current_teams_from_roster`).
+    """
+    from ffdraft.signals.usage import current_teams_from_roster
+
+    if context.is_empty():
+        return context
+    names: dict[str, str] = {}
+    for frame, column in (
+        (player_master, "display_name"),
+        (roster, "display_name"),
+    ):
+        if frame.is_empty() or "gsis_id" not in frame.columns or column not in frame.columns:
+            continue
+        for row in frame.select("gsis_id", column).iter_rows():
+            if row[0] and row[1]:
+                names[f"gsis:{row[0]}"] = str(row[1])
+    if not weekly.is_empty() and "display_name" in weekly.columns:
+        latest = (
+            weekly.filter((pl.col("season") == season) & pl.col("display_name").is_not_null())
+            .sort("week")
+            .group_by("gsis_id")
+            .agg(pl.col("display_name").last())
+        )
+        for gsis, name in latest.iter_rows():
+            names[f"gsis:{gsis}"] = str(name)
+    teams = current_teams_from_roster(roster)
+
+    had_name = context.get_column("display_name").is_not_null()
+    had_team = context.get_column("team").is_not_null()
+    filled = context.with_columns(
+        pl.coalesce(
+            pl.col("display_name"),
+            pl.col("player_id").replace_strict(names, default=None, return_dtype=pl.String),
+            pl.col("player_id"),
+        ).alias("display_name"),
+        pl.coalesce(
+            pl.col("team"),
+            pl.col("player_id").replace_strict(teams, default=None, return_dtype=pl.String),
+        ).alias("team"),
+    )
+    named = int(
+        (~had_name & (filled.get_column("display_name") != filled.get_column("player_id"))).sum()
+    )
+    unnamed = int((~had_name).sum()) - named
+    placed = int((~had_team & filled.get_column("team").is_not_null()).sum())
+    gate.add(
+        QualityCheck.ok(
+            "ros.published_identity",
+            stage="ros_build",
+            message=(
+                "names and teams missing from the snapshot were filled from this season's "
+                "weekly rows, the current roster and the player master; annotation only"
+            ),
+            observed=(
+                f"{named} name(s) filled, {unnamed} left as the player id; "
+                f"{placed} team(s) filled from the roster"
+            ),
+        ),
+    )
+    return filled
 
 
 def _preseason_ranks(
@@ -1075,6 +1196,253 @@ def _signal_layer(
     )
 
 
+#: The default location of the promoted weekly artifact, relative to the repository.
+DEFAULT_WEEKLY_MODEL_DIR = Path("models/production/weekly-startsit-v1")
+
+
+def _weekly_layer(
+    *,
+    model_dir: Path | None,
+    snapshot_frame: pl.DataFrame,
+    opportunity_records: Sequence[Mapping[str, Any]],
+    roster: pl.DataFrame,
+    loaded: Any,
+    settings: AppConfig,
+    season: int,
+    cutoff: RosCutoff,
+    build_id: str,
+    as_of: datetime,
+    gate: QualityGate,
+    injuries: pl.DataFrame | None,
+    allow_fetch: bool,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Build ``weekly_projections`` (ADR-096), or explain why not. Never costs a board."""
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.paths import repo_root
+    from ffdraft.signals.usage import current_teams_from_roster
+    from ffdraft.weekly.model import WeeklyModel
+    from ffdraft.weekly.serve import build_weekly_projection_records
+
+    resolved = model_dir or (repo_root() / DEFAULT_WEEKLY_MODEL_DIR)
+    if not (resolved / "metadata.json").is_file():
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_model_absent",
+                stage="ros_build",
+                message=(
+                    "no promoted weekly start/sit model is on disk, so weekly_projections.json "
+                    "is not published; every board is unaffected"
+                ),
+                observed=str(resolved),
+                expected="models/production/weekly-startsit-v1/metadata.json",
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+    try:
+        model = WeeklyModel.load(resolved)
+        players = {
+            str(record["player_id"]): {
+                "display_name": record.get("display_name"),
+                "position": record.get("position"),
+            }
+            for record in opportunity_records
+        }
+        reports, reports_at = _injury_reports(
+            injuries,
+            season=season,
+            week=cutoff.through_week + 1,
+            allow_fetch=allow_fetch,
+            as_of=as_of,
+            gate=gate,
+        )
+        result = build_weekly_projection_records(
+            model=model,
+            snapshot=snapshot_frame,
+            players=players,
+            current_teams=current_teams_from_roster(roster),
+            weekly=loaded.sources.weekly_stats,
+            schedule=loaded.sources.schedule,
+            scoring=settings.league.scoring,
+            season=season,
+            through_week=cutoff.through_week,
+            as_of=as_of,
+            build_id=build_id,
+            schema_version=record_schema_version("weekly_projection"),
+            injury_reports=reports,
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_projections_failed",
+                stage="ros_build",
+                message=(
+                    "the weekly start/sit projections could not be built, so "
+                    "weekly_projections.json is withheld; every board is unaffected"
+                ),
+                observed=f"{type(exc).__name__}: {exc}",
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+
+    summary = result.summary
+    # The pre-deploy validator's own weekly rules, run here so that a record the validator
+    # would refuse withholds this artifact with a warning instead of failing the whole deploy
+    # at `validate-artifacts` (found on the live 2026 week-4 build, ADR-096).
+    from ffdraft.artifacts.validate import weekly_record_checks
+    from ffdraft.contracts.quality import critical_failures
+
+    refused = critical_failures(weekly_record_checks(result.records, "ros_build"))
+    if refused:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_projections_invalid",
+                stage="ros_build",
+                message=(
+                    "the weekly start/sit records fail the artifact validator's own rules, so "
+                    "weekly_projections.json is withheld; every board is unaffected"
+                ),
+                observed="; ".join(f"{check.check_id}: {check.observed}" for check in refused)[
+                    :600
+                ],
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+    if not result.records:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_projections_empty",
+                stage="ros_build",
+                message="no weekly projection could be built for the week after the cutoff",
+                observed=str(summary.get("reason")),
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+    gate.add(
+        QualityCheck.ok(
+            "ros.weekly_projections",
+            stage="ros_build",
+            message=(
+                f"{model.spec.model_version}: week {summary['target_week']} distributions "
+                "published; the model reads the game's sportsbook lines and no board reads it"
+            ),
+            observed=(
+                f"{summary['records']} record(s): {summary['upcoming']} upcoming, "
+                f"{summary['kicked_off']} kicked off, {summary['bye']} on bye, "
+                f"{summary.get('lines_pending', 0)} awaiting a posted line; "
+                f"{summary['injury_reports_matched']} with an injury report"
+            ),
+        ),
+    )
+    return result.records, weekly_metadata(
+        model,
+        summary,
+        through_week=cutoff.through_week,
+        injuries_retrieved_at=reports_at,
+    )
+
+
+def weekly_metadata(
+    model: Any,
+    summary: Mapping[str, Any],
+    *,
+    through_week: int,
+    injuries_retrieved_at: datetime | None,
+) -> dict[str, Any]:
+    """``ros_build_metadata.weekly``: one definition for the build and the fixture (ADR-096)."""
+    from ffdraft.weekly.frozen import (
+        FEATURE_FAMILY_LABELS,
+        PAIRWISE_GRID_POINTS,
+        TAIL_RULE,
+        WEEKLY_DISTRIBUTION_RULE_VERSION,
+        WEEKLY_QUANTILE_LEVELS,
+    )
+
+    measurements = dict(model.metadata.get("measurements") or {})
+    return {
+        "model_version": model.spec.model_version,
+        "candidate_version": model.spec.candidate_version,
+        "configuration_hash": model.spec.configuration_hash(),
+        "training_seasons": list(model.training_seasons),
+        "fitted_at_utc": model.metadata.get("fitted_at_utc"),
+        "through_week": through_week,
+        "target_week": summary["target_week"],
+        "records": summary["records"],
+        "upcoming": summary["upcoming"],
+        "kicked_off": summary["kicked_off"],
+        "bye": summary["bye"],
+        "lines_pending": summary.get("lines_pending", 0),
+        "quantile_levels": list(WEEKLY_QUANTILE_LEVELS),
+        "distribution_rule": {
+            "version": WEEKLY_DISTRIBUTION_RULE_VERSION,
+            "tail_lower_factor": float(TAIL_RULE["lower_factor"]),
+            "tail_upper_factor": float(TAIL_RULE["upper_factor"]),
+            "grid_points": PAIRWISE_GRID_POINTS,
+        },
+        "families": dict(FEATURE_FAMILY_LABELS),
+        "margin": measurements.get("margin", {}),
+        "correlation": measurements.get("correlation", {}),
+        "startable": measurements.get("startable", {}),
+        "injury_base_rates": measurements.get("injuries", {}),
+        "evaluation": measurements.get("evaluation", {}),
+        "injuries_retrieved_at_utc": (
+            isoformat_utc(injuries_retrieved_at) if injuries_retrieved_at else None
+        ),
+        "statement": WEEKLY_STATEMENT,
+    }
+
+
+#: Travels with every weekly projection, so the page cannot print one without saying what the
+#: model reads and what it does not (ADR-096).
+WEEKLY_STATEMENT = (
+    "Next-game fantasy points given that he plays, from weekly-startsit-v1: his role, form "
+    "and track record through the cutoff, his offence, the opposing defence's allowed "
+    "points, and the game's sportsbook total and spread. It reads no injury report; the "
+    "league's report is printed beside it instead. No draft or rest-of-season number reads "
+    "this model."
+)
+
+
+def _injury_reports(
+    injuries: pl.DataFrame | None,
+    *,
+    season: int,
+    week: int,
+    allow_fetch: bool,
+    as_of: datetime,
+    gate: QualityGate,
+) -> tuple[dict[str, dict[str, Any]], datetime | None]:
+    """The target week's official report, or nothing. Optional in every sense."""
+    from ffdraft.weekly.injuries import normalize_injuries, reports_for_week
+
+    frame = injuries
+    retrieved: datetime | None = as_of if injuries is not None else None
+    if frame is None and allow_fetch:
+        try:
+            frame = normalize_injuries(nflverse_loaders().load_injuries(seasons=[season]))
+            retrieved = utc_now()
+        except Exception as exc:  # noqa: BLE001 - a report beside a projection, never a gate
+            gate.add(
+                QualityCheck.fail(
+                    "ros.injury_report_unavailable",
+                    stage="ros_build",
+                    message=(
+                        "the league's injury report could not be read, so no designation is "
+                        "printed beside a weekly projection; every projection is unaffected"
+                    ),
+                    observed=f"{type(exc).__name__}: {exc}",
+                    severity=Severity.WARNING,
+                ),
+            )
+            return {}, None
+    if frame is None:
+        return {}, None
+    return reports_for_week(frame, season=season, week=week), retrieved
+
+
 def _opportunity_context(
     frame: pl.DataFrame,
     status_by_player: Mapping[str, str],
@@ -1208,15 +1576,25 @@ def build_ros_board_records(
                 valued.join(block.select(carried), on="player_id", how="inner"),
                 statistic=config.ranking_statistic,
             )
+            # The whole board, with the values the model gave every player on it (ADR-097). A
+            # player surfaced from beyond the published depth is copied from here, so these
+            # must be his own simulated numbers: before this block carried them, a surfaced
+            # row was published as his position's number 1 with 0.0 VORP and 0.0 uncertainty.
             full_board.extend(
                 {
                     "player_id": str(row["player_id"]),
                     "fair_rank": int(row["fair_rank"]),
+                    "position_rank": int(row["position_rank"]),
                     "display_name": row.get("display_name"),
                     "position": str(row.get("position") or ""),
                     "team": row.get("team"),
                     "scoring_preset": scoring,
                     "league_preset_id": preset_id,
+                    "expected_vorp": round(float(row["expected_vorp"]), 4),
+                    "p50_vorp": round(float(row["p50_vorp"]), 4),
+                    "uncertainty": round(float(row["uncertainty"]), 4),
+                    "expected_points": round(float(row["expected_points"]), 4),
+                    "expected_games": round(float(row.get("expected_remaining_games") or 0.0), 4),
                 }
                 for row in board.iter_rows(named=True)
             )
@@ -1320,7 +1698,8 @@ def _ros_tier_records(
                 "league_preset_id": preset.preset_id,
                 "scoring_preset": str(ScoringPreset(scoring)),
                 "player_id": player_id,
-                "display_name": str(row["display_name"]),
+                # Never `str(None)`: that is how "None" became a player's name (ADR-097).
+                "display_name": str(row.get("display_name") or player_id),
                 "team": row.get("team"),
                 "position": str(row["position"]),
                 "ros_fair_rank": ros_rank,
@@ -1419,6 +1798,7 @@ def _ros_metadata(
     history: Any | None = None,
     surface: Sequence[Mapping[str, Any]] | None = None,
     signal_layer: Mapping[str, Any] | None = None,
+    weekly: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -1477,6 +1857,7 @@ def _ros_metadata(
             else None
         ),
         "signals": None if signal_layer is None else dict(signal_layer),
+        "weekly": None if weekly is None else dict(weekly),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

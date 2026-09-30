@@ -110,6 +110,7 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     ["the rest-of-season board", "/scenario/in-season/?view=ros", ".tier-board"],
     ["the opportunity board", "/scenario/in-season/?view=opportunity", ".opp-board"],
     ["pick of the week", "/scenario/in-season/?view=potw", ".potw-grid"],
+    ["start/sit", "/scenario/in-season/?view=startsit&duel=00-0000011.00-0000012", ".verdict"],
   ] as const) {
     test(`${name} keeps its sticky chrome to one row and the tabs`, async ({ page }) => {
       await page.goto(path);
@@ -137,6 +138,7 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     ["the rest-of-season board", "/scenario/in-season/?view=ros", ".tier-board"],
     ["the opportunity board", "/scenario/in-season/?view=opportunity", ".opp-board"],
     ["pick of the week", "/scenario/in-season/?view=potw", ".potw-grid"],
+    ["start/sit", "/scenario/in-season/?view=startsit&duel=00-0000011.00-0000012", ".deck"],
   ] as const) {
     test(`${name} starts in the first screen, not under its controls`, async ({ page }) => {
       await page.goto(path);

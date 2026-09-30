@@ -308,7 +308,7 @@ test.describe("the opportunity board", () => {
     await expect(board).toBeVisible();
     // Two named tracks, each with its own zero line: the picture cannot be read as one axis.
     await expect(board.locator(".opp-track-name")).toHaveCount(2);
-    await expect(board.getByText("ROS value", { exact: true })).toBeVisible();
+    await expect(board.getByText("ROS value · median", { exact: true })).toBeVisible();
     await expect(board.getByText(/Roster moves · 24h/)).toBeVisible();
     const firstRow = board.locator(".opp-row").first();
     await expect(firstRow.locator(".opp-track")).toHaveCount(2);
@@ -367,7 +367,7 @@ test.describe("the opportunity board", () => {
     // And the intrinsic value is still there. Found by column, not by position: the table's
     // columns moved in ADR-092 and a positional lookup would have gone on passing on the
     // role cell beside it.
-    await expect(firstRow.locator('td[data-col="ros_expected_vorp"]')).not.toBeEmpty();
+    await expect(firstRow.locator('td[data-col="ros_vorp_p50"]')).not.toBeEmpty();
     // With no feed there is no momentum series, and the column says so rather than "0/day".
     await expect(firstRow.locator('td[data-col="add_momentum"] .signal-cell')).toHaveAttribute(
       "data-kind",
@@ -526,7 +526,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       expect(slack, `the opportunity table has only ${String(Math.round(slack))}px of slack at ${String(width)}px`).toBeGreaterThanOrEqual(64);
       // The density rules must actually apply: a `.opp-sheet` selector one element weaker than
       // the base `table.sheet` rules loses silently, which is how they first shipped.
-      const header = scroller.locator('th[data-col="ros_expected_vorp"]');
+      const header = scroller.locator('th[data-col="ros_vorp_p50"]');
       await expect(header).toHaveCSS("white-space", "normal");
       await expect(scroller.locator("tbody td").first()).toHaveCSS("padding-left", "8px");
       // Whatever steps aside, the three signal columns never do on a laptop.
@@ -548,7 +548,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       await expect(page.locator(".opp-row").first().locator(".opp-role")).toBeVisible();
       // The table hides what the chart already prints and pins the name.
       const table = page.locator("table.sheet");
-      await expect(table.locator('th[data-col="ros_expected_vorp"]')).toBeHidden();
+      await expect(table.locator('th[data-col="ros_vorp_p50"]')).toBeHidden();
       await expect(table.locator('th[data-col="role"]')).toBeVisible();
       const player = table.locator("tbody tr").first().locator("td.col-player");
       await expect(player).toHaveCSS("position", "sticky");

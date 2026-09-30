@@ -25,7 +25,16 @@ import type { ScoringPreset } from "./contracts";
  * because the season decides, not the link. Naming a view explicitly always wins — a link to
  * the Arbitrage Board in November still opens the Arbitrage Board.
  */
-export const VIEWS = ["auto", "tiers", "arbitrage", "ros", "opportunity", "potw", "data"] as const;
+export const VIEWS = [
+  "auto",
+  "tiers",
+  "arbitrage",
+  "ros",
+  "startsit",
+  "opportunity",
+  "potw",
+  "data",
+] as const;
 export type ViewId = (typeof VIEWS)[number];
 
 /** A concrete panel, after `auto` has been resolved against the season. */
@@ -63,7 +72,23 @@ export const OPPORTUNITY_FILTERS = ["role", "momentum", "surfaced"] as const;
 export type OpportunityFilter = (typeof OPPORTUNITY_FILTERS)[number];
 
 export const DRAFT_VIEWS: readonly ResolvedViewId[] = ["tiers", "arbitrage"];
-export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = ["ros", "opportunity", "potw"];
+export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = ["ros", "startsit", "opportunity", "potw"];
+
+/**
+ * How many players one Start/Sit comparison holds (ADR-096). Four is the most a lineup slot
+ * is ever genuinely contested between, and the most a phone can lay side by side.
+ */
+export const MAX_DUEL = 4;
+
+/**
+ * The matchup margin a URL may name, in fantasy points either way. A bound on a reader's
+ * posture, not on a model: past forty the win probability of every choice is ~0 or ~1 and
+ * the comparison has nothing left to say.
+ */
+export const MARGIN_BOUND = 40;
+
+/** A canonical GSIS id without its namespace, as the `duel` parameter writes it. */
+const GSIS_SHORT = /^\d{2}-\d{7}$/;
 
 /**
  * The deepest Pick-of-the-Week set a URL may name.
@@ -148,6 +173,18 @@ export interface AppState {
    * one another beyond sharing that depth.
    */
   readonly set: number;
+  /**
+   * The players on the Start/Sit comparison, in the order they were added, as canonical
+   * `gsis:` ids. Written as `duel=00-0036389.00-0039164`: the namespace is implied, because
+   * only GSIS players have a weekly projection, and the order is the reader's own.
+   */
+  readonly duel: readonly string[];
+  /**
+   * The reader's matchup margin from every *other* slot, in points (their team minus the
+   * opponent's). Zero is an even matchup. It is what turns "who scores more" into "who is
+   * more likely to win me the week" (ADR-096).
+   */
+  readonly margin: number;
 }
 
 /**
@@ -180,6 +217,8 @@ export const DEFAULT_STATE: AppState = {
   opportunity: "value",
   only: [],
   set: 1,
+  duel: [],
+  margin: 0,
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
@@ -197,6 +236,8 @@ const PARAM_ORDER = [
   "opportunity",
   "only",
   "set",
+  "duel",
+  "margin",
 ] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
@@ -352,6 +393,39 @@ export function parseState(search: string): ParsedState {
     if (serializeFilters(only) !== rawOnly) normalized = false;
   }
 
+  // `duel=00-0036389.00-0039164` — the Start/Sit comparison. Order is the reader's and is
+  // kept; a duplicate or a malformed id is dropped and the URL rewritten, and anything past
+  // four players is ignored rather than truncating silently in the middle.
+  const rawDuel = params.get("duel");
+  let duel: readonly string[] = DEFAULT_STATE.duel;
+  if (rawDuel !== null) {
+    const tokens = rawDuel.split(".").filter((token) => token !== "");
+    const valid: string[] = [];
+    for (const token of tokens) {
+      const id = `gsis:${token}`;
+      if (GSIS_SHORT.test(token) && !valid.includes(id) && valid.length < MAX_DUEL) {
+        valid.push(id);
+      }
+    }
+    duel = valid;
+    if (serializeDuel(duel) !== rawDuel) normalized = false;
+  }
+
+  const rawMargin = params.get("margin");
+  let margin = DEFAULT_STATE.margin;
+  if (rawMargin !== null) {
+    const parsed = Number.parseInt(rawMargin, 10);
+    if (
+      Number.isInteger(parsed) &&
+      String(parsed) === rawMargin.trim() &&
+      Math.abs(parsed) <= MARGIN_BOUND
+    ) {
+      margin = parsed;
+    } else {
+      normalized = false;
+    }
+  }
+
   // A parameter the app does not know is dropped rather than preserved: keeping it would make
   // two URLs describing the same state compare unequal.
   for (const key of params.keys()) {
@@ -373,9 +447,16 @@ export function parseState(search: string): ParsedState {
       opportunity: opportunity.value,
       only,
       set,
+      duel,
+      margin,
     },
     normalized,
   };
+}
+
+/** `["gsis:00-0036389", "gsis:00-0039164"]` -> `00-0036389.00-0039164`, order kept. */
+export function serializeDuel(duel: readonly string[]): string {
+  return duel.map((id) => id.replace(/^gsis:/, "")).join(".");
 }
 
 /** `[1, 2, 5]` -> `1.2.5`; the empty set -> `none`, which is a state and not an absence. */
@@ -399,6 +480,10 @@ export function serializeState(state: AppState): string {
     if (key === "only") {
       const filters = serializeFilters(state.only);
       if (filters !== "") params.set(key, filters);
+      continue;
+    }
+    if (key === "duel") {
+      if (state.duel.length > 0) params.set(key, serializeDuel(state.duel));
       continue;
     }
     const value = state[key];

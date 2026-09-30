@@ -27,11 +27,13 @@ export const RECORD_SCHEMA_VERSIONS = {
   market_snapshot: "1.0",
   player_status: "1.0",
   ros_tiers: "1.0",
-  inseason_opportunity: "1.0",
+  // 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
+  inseason_opportunity: "1.1",
   player_headshots: "1.0",
   behavior_trend_series: "1.0",
   player_usage: "1.0",
   team_matchups: "1.0",
+  weekly_projections: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -51,7 +53,8 @@ export type ArtifactName =
   | "player_headshots"
   | "behavior_trend_series"
   | "player_usage"
-  | "team_matchups";
+  | "team_matchups"
+  | "weekly_projections";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -978,6 +981,12 @@ export interface OpportunityRecord {
   readonly ros_fair_rank: number;
   readonly ros_position_rank: number;
   readonly ros_expected_vorp: number;
+  /**
+   * Median simulated remaining VORP — the statistic `ros_fair_rank` orders by and the number
+   * the rest-of-season board draws (ADR-097). Optional only so a 1.0 artifact still loads;
+   * every 1.1 build publishes it.
+   */
+  readonly ros_vorp_p50?: number | null;
   readonly ros_expected_points: number | null;
   readonly ros_expected_games: number | null;
   readonly ros_uncertainty: number;
@@ -1061,6 +1070,173 @@ export interface RosSignalMetadata {
   readonly expected_points_statement: string;
 }
 
+/** The seven published levels, as record keys. */
+export const WEEKLY_QUANTILE_KEYS = ["q05", "q10", "q25", "q50", "q75", "q90", "q95"] as const;
+export type WeeklyQuantileKey = (typeof WEEKLY_QUANTILE_KEYS)[number];
+
+/** The feature families a driver account groups by, in the order the page draws them. */
+export const WEEKLY_DRIVER_FAMILIES = [
+  "form",
+  "role",
+  "availability",
+  "offense",
+  "game",
+  "opponent",
+  "prior",
+] as const;
+export type WeeklyDriverFamily = (typeof WEEKLY_DRIVER_FAMILIES)[number];
+
+/**
+ * `lines_pending`: the game exists but its sportsbook total or spread is not posted. The model
+ * never trained without them, so the build publishes the game and no distribution (ADR-096).
+ */
+export type WeeklyGameState = "upcoming" | "kicked_off" | "bye" | "lines_pending";
+
+/** One player's next game as a distribution (`weekly-startsit-v1`, ADR-096). */
+export interface WeeklyProjectionRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly target_week: number;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly position: Position;
+  readonly team: string;
+  readonly scoring_preset: ScoringPreset;
+  readonly model_version: string;
+  readonly game_state: WeeklyGameState;
+  readonly game: {
+    readonly game_id: string;
+    readonly opponent: string;
+    readonly home_away: "home" | "away";
+    readonly neutral_site: boolean;
+    readonly kickoff_utc: string | null;
+    readonly roof: string | null;
+    readonly total_line: number | null;
+    readonly team_margin: number | null;
+    readonly team_points: number | null;
+  } | null;
+  readonly quantiles: Readonly<Record<WeeklyQuantileKey, number>> | null;
+  /** Ten parts that sum to `quantiles.q50`. */
+  readonly drivers:
+    | (Readonly<Record<WeeklyDriverFamily, number>> & {
+        readonly baseline: number;
+        readonly calibration: number;
+        readonly rearrangement: number;
+      })
+    | null;
+  readonly opponent: {
+    readonly defense: string;
+    readonly allowed_ppg: number | null;
+    readonly league_ppg: number | null;
+    readonly index: number | null;
+    readonly rank: number | null;
+    readonly defenses: number | null;
+    readonly games: number | null;
+  } | null;
+  readonly injury: {
+    readonly week: number;
+    readonly designation: "Out" | "Doubtful" | "Questionable" | null;
+    readonly practice_status: string | null;
+    readonly primary_injury: string | null;
+  } | null;
+}
+
+export const WEEKLY_PROJECTION_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "target_week",
+  "player_id",
+  "display_name",
+  "position",
+  "team",
+  "scoring_preset",
+  "model_version",
+  "game_state",
+  "game",
+  "quantiles",
+  "drivers",
+  "opponent",
+  "injury",
+] as const satisfies readonly (keyof WeeklyProjectionRecord)[];
+
+export interface WeeklyCalibrationRow {
+  readonly low: number;
+  readonly high: number;
+  readonly pairs: number;
+  readonly predicted: number;
+  readonly observed: number;
+}
+
+/** What the build says about the weekly layer, and every measured number the tab prints. */
+export interface RosWeeklyMetadata {
+  readonly model_version: string;
+  readonly candidate_version: string;
+  readonly configuration_hash: string;
+  readonly training_seasons: readonly number[];
+  readonly fitted_at_utc: string | null;
+  readonly through_week: number;
+  readonly target_week: number;
+  readonly records: number;
+  readonly upcoming: number;
+  readonly kicked_off: number;
+  readonly bye: number;
+  readonly lines_pending: number;
+  readonly quantile_levels: readonly number[];
+  readonly distribution_rule: {
+    readonly version: string;
+    readonly tail_lower_factor: number;
+    readonly tail_upper_factor: number;
+    readonly grid_points: number;
+  };
+  readonly families: Readonly<Record<string, string>>;
+  readonly margin: Readonly<
+    Record<
+      string,
+      {
+        readonly position_variance: Readonly<Record<string, number>>;
+        readonly lineup_variance: number;
+        readonly margin_sd_by_slot: Readonly<Record<string, number>>;
+        readonly starter_rows: number;
+      }
+    >
+  >;
+  readonly correlation: {
+    readonly method?: string;
+    readonly pairs?: Readonly<
+      Record<string, { readonly pairs: number; readonly spearman: number; readonly rho: number }>
+    >;
+  };
+  /** league preset -> scoring preset -> position -> points of the last starter. */
+  readonly startable: Readonly<
+    Record<string, Readonly<Record<string, Readonly<Record<string, number | null>>>>>
+  >;
+  readonly injury_base_rates: Readonly<
+    Record<
+      string,
+      | { readonly reports: number; readonly appeared: number; readonly appearance_rate: number | null }
+      | { readonly version: string; readonly seasons: readonly number[]; readonly definition: string }
+    >
+  >;
+  readonly evaluation: {
+    readonly development_verdict?: boolean;
+    readonly holdout_verdict?: boolean;
+    readonly holdout_season?: number;
+    readonly holdout_pairs?: number;
+    readonly holdout_pair_accuracy?: number;
+    readonly holdout_pair_brier?: number;
+    readonly holdout_coverage_80?: number;
+    readonly holdout_coverage_50?: number;
+    readonly best_baseline_pair_accuracy?: number;
+    readonly calibration?: readonly WeeklyCalibrationRow[];
+  };
+  readonly injuries_retrieved_at_utc: string | null;
+  readonly statement: string;
+}
+
 export interface RosBuildMetadata {
   readonly schema_version: string;
   readonly build_id: string;
@@ -1102,6 +1278,8 @@ export interface RosBuildMetadata {
   readonly behavior?: RosBehaviorMetadata | null;
   readonly surface?: Record<string, unknown> | null;
   readonly signals?: RosSignalMetadata | null;
+  /** The weekly start/sit layer (ADR-096). Absent or null removes the Start/Sit tab's content. */
+  readonly weekly?: RosWeeklyMetadata | null;
   readonly disclosures: RosDisclosures;
   readonly limitations: readonly string[];
   readonly supported_presets: readonly string[];
@@ -1173,6 +1351,7 @@ export const OPPORTUNITY_FIELDS = [
   "ros_fair_rank",
   "ros_position_rank",
   "ros_expected_vorp",
+  "ros_vorp_p50",
   "ros_expected_points",
   "ros_expected_games",
   "ros_uncertainty",
@@ -1214,6 +1393,10 @@ export const TEAM_MATCHUP_FIELDS_COMPLETE: NoMissingKeys<
   TeamMatchupRecord,
   typeof TEAM_MATCHUP_FIELDS
 > = true;
+export const WEEKLY_PROJECTION_FIELDS_COMPLETE: NoMissingKeys<
+  WeeklyProjectionRecord,
+  typeof WEEKLY_PROJECTION_FIELDS
+> = true;
 
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
@@ -1228,6 +1411,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   behavior_trend_series: BEHAVIOR_TREND_SERIES_FIELDS,
   player_usage: PLAYER_USAGE_FIELDS,
   team_matchups: TEAM_MATCHUP_FIELDS,
+  weekly_projections: WEEKLY_PROJECTION_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -1243,6 +1427,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   behavior_trend_series: "behavior_trend_series.json",
   player_usage: "player_usage.json",
   team_matchups: "team_matchups.json",
+  weekly_projections: "weekly_projections.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

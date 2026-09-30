@@ -236,6 +236,26 @@ def test_the_refresh_does_not_retrain(workflow_dir):
         assert command not in text, f"daily-refresh.yml runs {command}"
 
 
+def test_the_refresh_never_fits_or_scores_the_weekly_model(workflow_dir):
+    """ADR-096: the daily refresh serves the committed weekly-startsit-v1 artifact and only that.
+
+    Fitting it, rebuilding its dataset or re-scoring it would each be a different model or a
+    spent holdout, and its promotion token must never become something a workflow can hold.
+    """
+    text = _code(workflow_dir / "daily-refresh.yml")
+    for command in ("train-weekly-production", "evaluate-weekly", "build-weekly-dataset"):
+        assert command not in text, f"daily-refresh.yml runs {command}"
+    for path in sorted(workflow_dir.glob("*.yml")):
+        assert "RELEASE-WEEKLY-FINAL-HOLDOUT" not in path.read_text(encoding="utf-8"), path.name
+
+
+def test_a_written_weekly_layer_must_reach_the_package(workflow_dir):
+    """Optional inside the bundle (withheld on a warning), but never written and then dropped."""
+    text = _code(workflow_dir / "daily-refresh.yml")
+    assert 'if [ -f "web/public/data/weekly_projections.json" ]' in text
+    assert 'test -f "web/dist/data/weekly_projections.json"' in text
+
+
 def test_only_in_season_mfl_capture_failure_is_nonblocking(workflows):
     """An empty draft feed cannot freeze a ROS refresh; preseason still fails closed.
 

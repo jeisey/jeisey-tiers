@@ -72,6 +72,9 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # snaps-only week, absences, byes, one-appearance history, posted and unposted lines.
         "player_usage",
         "team_matchups",
+        # ADR-096. The weekly start/sit layer, through the production serve path and the
+        # committed model: projected, bye and lines-pending records all occur.
+        "weekly_projections",
     }
     assert all(records for records in pipeline_result.records.values())
 

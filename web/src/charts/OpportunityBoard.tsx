@@ -56,7 +56,8 @@ export interface OpportunityMark {
   readonly position: Position;
   readonly positionRank: number;
   readonly displayName: string;
-  readonly rosExpectedVorp: number;
+  /** The median remaining VORP the rank orders by (ADR-097), never the mean. */
+  readonly rosValue: number;
   readonly addCount: number | null;
   readonly dropCount: number | null;
   readonly netAddCount: number | null;
@@ -93,8 +94,8 @@ function valueScale(marks: readonly OpportunityMark[], divisions: number): Scale
   let min = 0;
   let max = 0;
   for (const mark of marks) {
-    min = Math.min(min, mark.rosExpectedVorp);
-    max = Math.max(max, mark.rosExpectedVorp);
+    min = Math.min(min, mark.rosValue);
+    max = Math.max(max, mark.rosValue);
   }
   // Zero is always on the scale: a bar grows from it, and a negative rest-of-season value is a
   // real reading rather than an artefact to hide by cropping the axis at the smallest number.
@@ -208,7 +209,7 @@ export function OpportunityBoard({
       <div className="opp-scale" aria-hidden="true">
         <span className="opp-scale-head">Player</span>
         <span className="opp-track-name" data-track="value">
-          ROS value
+          ROS value · median
         </span>
         <span className="opp-track-name" data-track="moves">
           {behaviorAvailable ? `Roster moves · ${windowLabel}` : "Roster moves · none"}
@@ -248,7 +249,7 @@ export function OpportunityBoard({
 
       <ol className="opp-rows">
         {marks.map((mark, index) => {
-          const vorpAt = pct(mark.rosExpectedVorp, value);
+          const vorpAt = pct(mark.rosValue, value);
           const adds = mark.addCount ?? 0;
           const drops = mark.dropCount ?? 0;
           const addsAt = pct(adds, moves);
@@ -283,7 +284,7 @@ export function OpportunityBoard({
                   <span
                     className="opp-value-bar"
                     data-pos={mark.position}
-                    data-sign={mark.rosExpectedVorp < 0 ? "negative" : "positive"}
+                    data-sign={mark.rosValue < 0 ? "negative" : "positive"}
                     style={{
                       left: `${String(Math.min(valueZero, vorpAt))}%`,
                       width: `${String(Math.max(Math.abs(vorpAt - valueZero), 0.5))}%`,
@@ -292,7 +293,7 @@ export function OpportunityBoard({
                   <span className="opp-value-mark" style={{ left: `${String(vorpAt)}%` }} />
                 </span>
                 <span className="opp-readout" data-track="value">
-                  {formatValue(mark.rosExpectedVorp)}
+                  {formatValue(mark.rosValue)}
                 </span>
 
                 {/* Track two: transactions, diverging from their own zero on their own scale.

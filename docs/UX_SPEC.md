@@ -257,6 +257,13 @@ an arbitrage score.
 
 The draft board stays reachable all season and keeps its own card, unchanged.
 
+**Amended 2026-09-30 (ADR-096).** A **This week** block sits under the identity rail: the
+week's median, floor–ceiling, the startable probability in the reader's league, the game with
+its implied team total, and any injury designation with its measured appearance rate, plus a
+*Compare in Start/Sit* action that adds the player to the duel (*Open Start/Sit* once he is in
+it; only when there is a distribution to compare). A bye or a game with no posted
+line says which it is instead of showing numbers.
+
 **Amended 2026-09-22 (ADR-091).** The in-season section now reads top to bottom in the order a
 waiver decision is made: roster moves headline → **Role, week by week** → **Production so far**
 → the cohort strip → **Next game** → roster moves strip → momentum. Section 6A.9 specifies the
@@ -581,6 +588,75 @@ prints both) and the player's name is pinned while the readings scroll. "Fits" m
 that fits by one pixel on one font rasteriser does not fit on another (ADR-092 correction). The
 filtered export keeps its fixed column list whatever a screen hides.
 
+### 6A.11 Start/Sit (ADR-096)
+
+**The question: of these two to four players, who gives me the best chance to win this week?**
+Not "who is projected for more": that is a different question whenever two players' ranges
+differ and the matchup is not even, and it is the only one other sites answer. The tab sits
+second, after the rest-of-season board it is read against: `ROS tiers · Start/Sit ·
+Opportunity · Pick of the Week · Data`. State is `duel=00-0036389.00-0039164` (reader's order,
+up to four, malformed or duplicate ids dropped and the URL rewritten) and `margin=-12` (an
+integer within ±40), so a call can be pasted into a league chat and reopened exactly.
+
+#### 6A.11.1 Layout, top to bottom
+
+1. **The deck** — one chamfered card per slot, lettered A–D in the slot colour: name (opens the
+   player card), position, team and game, median in large type, floor / P25–P75 / ceiling, and
+   three Halo-style **shield meters** (20 segments, the value printed beside them): *Startable
+   week* against this league's threshold, *Win the week* at the reader's margin, and, for three
+   or four players, *Top scorer of the set*. The leading card's meter is lit; the rest are
+   muted. Empty slots invite an add; a flag line replaces the numbers' meaning for a bye, a
+   game with no posted line ("left out of the verdict until then"), a player ruled Out, or a
+   game already kicked off.
+2. **The verdict** — a kicker word from the head-to-head (*Coin flip*, *Lean*, *Clear*,
+   *Strong*; never *certain*), `Start {name}`, and one line: "He outscores {other} N% of the
+   time", plus the sealed-season calibration bin it falls in ("favourites given 60–65% won 62.5%
+   of 26,327 such calls"). When the pick is the better chance to win but *not* the likelier to
+   outscore (a right-skewed range has the higher mean), the line says both halves: "{other}
+   outscores him 52% of the time, but his range wins more matchups: 67.0% vs 66.7% chance to
+   win the week". A note names the higher-median player when the margin changed the pick.
+   **Flip point**: the margin at which the answer changes, in the reader's words ("If you are
+   projected to win by more than 6.5 without this slot, start Jahmyr Cook — his floor protects
+   the lead"), or "No flip point" with the range checked.
+3. **Your matchup without this slot** — a segmented control (Down 20, Down 10, Even, Up 10, Up
+   20) and a slider for any integer from −40 to +40, with the measured margin uncertainty and
+   the sentence that kickers and defences are not counted in it.
+4. **The week, as a distribution** — outcome ridges for every contender on one shared points
+   axis, P10–P90 and P25–P75 bands, the median marked, and this league's startable threshold
+   drawn at each position.
+5. **Head to head** — for three or four players, the matrix of P(row outscores column). Each
+   cell prints its percentage; the win / even / loss tint (at 55% and 45%) only reinforces the
+   number, and the two cells of a pair always sum to 100%.
+6. **Why** — the pick's median as an additive account: the position baseline, seven labelled
+   families (Recent production, Role and volume, Availability, His offence, Game environment,
+   Opponent, Track record), calibration and rounding, summing to the median shown.
+7. **The week board** — every published projection for the reader's filters, ordered by
+   Startable (the default with all positions on screen, because it means the same thing at
+   every position), Median, Ceiling or Floor; each row has an add/remove toggle, the game and
+   implied team total, the opponent's rank against the position, the median and a range bar
+   with the league threshold marked. Byes and pending lines sort last and say which they are.
+8. **How these numbers are made** — a disclosure with the model, both verdicts, the calibration
+   table and the statement of what the model reads and what reads it.
+
+#### 6A.11.2 What the tab will not do
+
+- It never prints a player value, a rank or a tier: those are the boards'.
+- It never projects a game without a posted line or a player on bye, and never folds an Out
+  player into a verdict. It lists them and says why.
+- It never discounts a projection for an injury designation. The designation is printed with
+  how often it has meant a missed game (Questionable players have played 64% of the time),
+  and the projection says it assumes he plays.
+- It never uses colour alone: every meter prints its value, every matrix cell its percentage,
+  and the slot letter travels with the slot colour.
+
+#### 6A.11.3 Width
+
+Four deck cards across from 1100px, two from 360px, one below. The verdict, posture control,
+ridges and matrix are one column at every width; nothing scrolls sideways at 320px with four
+players in the comparison (`web/tests/e2e/startsit.spec.ts` checks 1440, 1024, 820, 390 and
+320px, and the a11y reflow check includes the four-player page). Below 768px the week board
+pins the player's name and drops rank and opponent. The view is lazy-loaded.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
@@ -778,6 +854,8 @@ Primary target too. Controls may wrap into two compact rows. Chart remains full-
   own zero, its own readout and a micro-label naming it, then its role reading and net adds
 - the Opportunity table pins the player's name and leads with Role; rank, team, value and drops
   step aside because the chart above prints them (ADR-092)
+- the Start/Sit deck is two cards across (one below 360px), and the verdict, posture control,
+  ridges and matrix stack in one column; the week board pins the name (ADR-096, §6A.11.3)
 - table uses essential columns and horizontal scroll or a compact row detail expander
 
 Do not create a completely separate mobile product.

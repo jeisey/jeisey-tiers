@@ -198,6 +198,8 @@ npm run e2e:browsers                             # 36 smoke tests on Chromium, F
 npm run verify:board                             # rendered board vs artifact bytes
 ```
 
+**Start/Sit, 2026-09-30 (ADR-096).** In season, a Start/Sit tab compares two to four players for one lineup slot by *the chance each gives you to win the week* at your own matchup margin, not by projected median. It prints the calibrated head-to-head probability, the margin at which the answer flips, same-game correlation for teammates, and how often an injury designation has meant a missed game. It is built on `weekly-startsit-v1`, a quantile model of next-game points that was frozen before any evidence and beat all three baselines on development folds and on the sealed 2025 season. That includes a baseline that already reads the Vegas implied total: pairwise start/sit accuracy 0.666 vs 0.645. It reads the week's sportsbook lines and feeds no board. Model card: `models/cards/weekly-startsit-v1.md`.
+
 Artifacts written to `web/public/data/` and the historical dataset in `data/historical/` are generated and gitignored; both are reproducible from code plus source releases, and the historical build writes a manifest of content hashes so a rebuild that disagrees is detectable. The retained capture store is a *separate private repository*, not a branch here — it holds the point-in-time captures the market path reads, and keeping it out of this repository is what makes a public application repository safe. Everything except rebuilding the production board runs without it. `ffdraft config-check` prints the loaded configuration and which MFL client secrets are present — never their values.
 
 Data attribution: player/roster/depth-chart/stat data from **nflverse** (`nflreadpy`), expected fantasy points from **ffopportunity** (CC-BY-SA-4.0), market ADP from **MyFantasyLeague.com**, current player status from the **Sleeper** API (non-commercial use only).
@@ -208,7 +210,7 @@ Data attribution: player/roster/depth-chart/stat data from **nflverse** (`nflrea
 - Core positions: QB, RB, WR, TE. K and D/ST are a non-blocking extension after the core launch.
 - Scoring: Standard, Half-PPR, PPR.
 - Default league: 12 teams, 1 QB, 2 RB, 2 WR, 1 TE, 2 FLEX, 5 bench.
-- Core model independence rule: **ADP, ECR, expert ranks, market prices, and FantasyCalc values are forbidden inputs to the intrinsic projection/tier model.**
+- Core model independence rule: **ADP, ECR, expert ranks, market prices, and FantasyCalc values are forbidden inputs to the intrinsic projection/tier model.** In-season decision tools may use any data that improves a start/sit, trade or waiver call (the owner's rule, ADR-096); they consume the intrinsic outputs and never feed them.
 - Cadence: daily public refresh; weekly/manual model retraining during active draft season.
 - Hosting: GitHub Pages.
 - Cost target: $0 recurring infrastructure cost using public/free data and standard GitHub-hosted runners in a public repository.

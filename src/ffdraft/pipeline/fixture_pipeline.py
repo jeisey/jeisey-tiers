@@ -40,6 +40,7 @@ from ffdraft.arbitrage.build import build_arbitrage_records
 from ffdraft.arbitrage.frozen import ARBITRAGE_CONFIDENCE_VERSION, ARBITRAGE_METHOD_VERSION
 from ffdraft.artifacts import (
     ARTIFACT_SCHEMA_VERSION,
+    record_schema_version,
     validate_artifact_directory,
     write_artifact,
     write_build_metadata,
@@ -94,6 +95,7 @@ from ffdraft.market.trend import (
     compute_trends,
     trend_series_records,
 )
+from ffdraft.opportunity.board import surfaced_values
 from ffdraft.pipeline.fixture_season import (
     FIXTURE_INSEASON_AS_OF,
     FixtureSeason,
@@ -143,6 +145,7 @@ __all__ = [
     "build_fixture_artifacts",
     "load_fixture_inputs",
     "run_fixture_pipeline",
+    "weekly_serve_inputs",
 ]
 
 #: Stamped into every artifact this module produces. Never promote it.
@@ -492,6 +495,13 @@ def run_fixture_pipeline(
     opportunity = _opportunity_records(ros_tiers, build_id=build_id, facts=season.facts)
     behavior_series = _behavior_series_records(opportunity, build_id=build_id)
     usage, matchups = _signal_records(opportunity, season=season, app=app, build_id=build_id)
+    weekly, weekly_block = _weekly_records(
+        opportunity,
+        usage,
+        season=season,
+        app=app,
+        build_id=build_id,
+    )
 
     records = {
         "projections": projections,
@@ -506,6 +516,7 @@ def run_fixture_pipeline(
         "behavior_trend_series": behavior_series,
         "player_usage": usage,
         "team_matchups": matchups,
+        "weekly_projections": weekly,
     }
     gate.extend(_published_identity_checks(records, market_outcomes))
 
@@ -554,6 +565,7 @@ def run_fixture_pipeline(
             opportunity=opportunity,
             usage=usage,
             matchups=matchups,
+            weekly=weekly_block,
             build_id=build_id,
             generated_at=now,
             git_sha=git_sha or _git_sha(),
@@ -872,7 +884,7 @@ def _opportunity_records(
         drops = max(0, 120 - index * 5)
         records.append(
             {
-                "schema_version": ARTIFACT_SCHEMA_VERSION,
+                "schema_version": record_schema_version("inseason_opportunity_record"),
                 "build_id": build_id,
                 "season": FIXTURE_SEASON,
                 "through_week": FIXTURE_THROUGH_WEEK,
@@ -886,6 +898,7 @@ def _opportunity_records(
                 "ros_fair_rank": row["ros_fair_rank"],
                 "ros_position_rank": row["ros_position_rank"],
                 "ros_expected_vorp": row["ros_expected_vorp"],
+                "ros_vorp_p50": row["ros_vorp_p50"],
                 "ros_expected_points": row["ros_expected_points"],
                 "ros_expected_games": row["ros_expected_games"],
                 "ros_uncertainty": row["ros_uncertainty"],
@@ -919,9 +932,24 @@ def _opportunity_records(
         anchor = min(block, key=lambda r: int(r["ros_fair_rank"]))
         deepest = max(int(r["ros_fair_rank"]) for r in block)
         surfaced = facts[f"{anchor['player_id']}-surfaced"]
+        # The surfaced row goes through the production copy rule, from a board row shaped
+        # exactly like the one `build_ros_board_records` writes: below the depth, so below
+        # every published median, with his own interval (ADR-097). Before this, the fixture
+        # hand-wrote 0.0 for his value and uncertainty — the same invention production made.
+        values = surfaced_values(
+            f"{anchor['player_id']}-surfaced",
+            {
+                "position_rank": int(anchor["ros_position_rank"]) + 40,
+                "expected_vorp": round(min(float(r["ros_expected_vorp"]) for r in block) - 6.25, 4),
+                "p50_vorp": round(min(float(r["ros_vorp_p50"]) for r in block) - 6.0, 4),
+                "expected_points": 31.5,
+                "expected_games": 4.25,
+                "uncertainty": round(float(anchor["ros_uncertainty"]), 4),
+            },
+        )
         records.append(
             {
-                "schema_version": ARTIFACT_SCHEMA_VERSION,
+                "schema_version": record_schema_version("inseason_opportunity_record"),
                 "build_id": build_id,
                 "season": FIXTURE_SEASON,
                 "through_week": FIXTURE_THROUGH_WEEK,
@@ -932,11 +960,7 @@ def _opportunity_records(
                 "team": anchor["team"],
                 "position": anchor["position"],
                 "ros_fair_rank": deepest + 40,
-                "ros_position_rank": int(anchor["ros_position_rank"]) + 40,
-                "ros_expected_vorp": 0.0,
-                "ros_expected_points": None,
-                "ros_expected_games": None,
-                "ros_uncertainty": 0.0,
+                **values,
                 # No tier: the segmentation never saw him, and inventing one is the exact
                 # thing the surface rule refuses to do (ADR-063).
                 "ros_tier": None,
@@ -1182,6 +1206,150 @@ def _signal_records(
     return usage, matchups
 
 
+#: Two designations on the week-9 report, so the golden carries the injury block in both
+#: severities the page words differently. Keyed by the fixture's own gsis ids.
+_FIXTURE_INJURIES: tuple[tuple[str, str, str, str], ...] = (
+    ("Questionable", "Limited Participation in Practice", "Hamstring", "RB"),
+    ("Out", "Did Not Participate In Practice", "Knee", "WR"),
+)
+
+
+def _weekly_records(
+    opportunity: Sequence[Mapping[str, Any]],
+    usage: Sequence[Mapping[str, Any]],
+    *,
+    season: FixtureSeason,
+    app: AppConfig,
+    build_id: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """`weekly_projections` through the **production** serve path and the committed model.
+
+    The fixture's rest-of-season rows are arithmetic, but its weekly rows go through
+    :func:`ffdraft.weekly.serve.build_weekly_projection_records` with the real artifact — the
+    lesson of ADR-097, whose surfaced-row defect lived in a production function the fixture
+    had bypassed by writing the row by hand. Only the snapshot is synthetic: the handful of
+    to-date features the fixture's weekly rows can honestly supply (games, rate, recent rate,
+    shares, volume), every other input null, which LightGBM routes like any missing value.
+    """
+    from ffdraft.artifacts import record_schema_version
+    from ffdraft.paths import repo_root
+    from ffdraft.pipeline.ros import DEFAULT_WEEKLY_MODEL_DIR, weekly_metadata
+    from ffdraft.weekly.model import WeeklyModel
+    from ffdraft.weekly.serve import build_weekly_projection_records
+
+    model_dir = repo_root() / DEFAULT_WEEKLY_MODEL_DIR
+    if not (model_dir / "metadata.json").is_file():
+        return [], None
+    model = WeeklyModel.load(model_dir)
+    snapshot, players, reports = weekly_serve_inputs(opportunity, usage, app=app)
+    as_of = parse_utc(FIXTURE_INSEASON_AS_OF)
+    result = build_weekly_projection_records(
+        model=model,
+        snapshot=snapshot,
+        players=players,
+        current_teams={},
+        weekly=season.weekly,
+        schedule=season.schedule,
+        scoring=app.league.scoring,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        as_of=as_of,
+        build_id=build_id,
+        schema_version=record_schema_version("weekly_projection"),
+        injury_reports=reports,
+    )
+    if not result.records:
+        return [], None
+    return result.records, weekly_metadata(
+        model,
+        result.summary,
+        through_week=FIXTURE_THROUGH_WEEK,
+        injuries_retrieved_at=as_of,
+    )
+
+
+def weekly_serve_inputs(
+    opportunity: Sequence[Mapping[str, Any]],
+    usage: Sequence[Mapping[str, Any]],
+    *,
+    app: AppConfig,
+) -> tuple[pl.DataFrame, dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """The synthetic snapshot, the player identities and the injury reports the serve reads."""
+    from ffdraft.weekly.frozen import WEEKLY_FEATURES
+
+    presets = [str(preset) for preset in sorted(app.league.scoring)]
+    rows: list[dict[str, Any]] = []
+    for record in usage:
+        played = [week for week in record["weeks"] if week["status"] == "played"]
+        recent = [week for week in played if week["week"] > FIXTURE_THROUGH_WEEK - 3]
+
+        def mean(values: Sequence[float | None]) -> float | None:
+            present = [float(value) for value in values if value is not None]
+            return None if not present else sum(present) / len(present)
+
+        for preset in presets:
+            points = [float((week["fantasy_points"] or {}).get(preset, 0.0)) for week in played]
+            last = max((week["week"] for week in played), default=None)
+            row: dict[str, Any] = dict.fromkeys(WEEKLY_FEATURES)
+            row.update(
+                {
+                    "player_id": record["player_id"],
+                    "gsis_id": str(record["player_id"]).split(":", 1)[1],
+                    "position": record["position"],
+                    "scoring_preset": preset,
+                    "display_name": record["display_name"],
+                    "team_to_date": record["team"],
+                    "through_week": FIXTURE_THROUGH_WEEK,
+                    "games_to_date": len(played),
+                    "games_last3": len(recent),
+                    "active_last_week": 1.0 if last == FIXTURE_THROUGH_WEEK else 0.0,
+                    "weeks_since_last_game": (
+                        None if last is None else float(FIXTURE_THROUGH_WEEK - last)
+                    ),
+                    "ppg_to_date": mean(points),
+                    "ppg_last3": mean(
+                        [float((week["fantasy_points"] or {}).get(preset, 0.0)) for week in recent],
+                    ),
+                    "snap_pct_mean_to_date": mean([week["snap_share"] for week in played]),
+                    "snap_pct_last3": mean([week["snap_share"] for week in recent]),
+                    "target_share_to_date": mean([week["target_share"] for week in played]),
+                    "target_share_last3": mean([week["target_share"] for week in recent]),
+                    "carry_share_to_date": mean([week["carry_share"] for week in played]),
+                    "targets_per_game_to_date": mean([week["targets"] for week in played]),
+                    "carries_per_game_to_date": mean([week["carries"] for week in played]),
+                    "pass_attempts_per_game_to_date": mean(
+                        [week["pass_attempts"] for week in played],
+                    ),
+                },
+            )
+            rows.append(row)
+    snapshot = pl.DataFrame(rows, infer_schema_length=None)
+    players = {
+        str(row["player_id"]): {"display_name": row["display_name"], "position": row["position"]}
+        for row in opportunity
+    }
+    reports: dict[str, dict[str, Any]] = {}
+    for designation, practice, injury, position in _FIXTURE_INJURIES:
+        match = next(
+            (
+                row
+                for row in usage
+                if row["position"] == position
+                and str(row["player_id"]).split(":", 1)[1] not in reports
+                and row["appearances"] > 0
+            ),
+            None,
+        )
+        if match is not None:
+            reports[str(match["player_id"]).split(":", 1)[1]] = {
+                "week": FIXTURE_THROUGH_WEEK + 1,
+                "designation": designation,
+                "practice_status": practice,
+                "primary_injury": injury,
+            }
+    return snapshot, players, reports
+
+
 def _ros_build_metadata(
     app: AppConfig,
     *,
@@ -1189,6 +1357,7 @@ def _ros_build_metadata(
     opportunity: Sequence[Mapping[str, Any]],
     usage: Sequence[Mapping[str, Any]],
     matchups: Sequence[Mapping[str, Any]],
+    weekly: Mapping[str, Any] | None,
     build_id: str,
     generated_at: datetime,
     git_sha: str,
@@ -1267,6 +1436,7 @@ def _ros_build_metadata(
             "sportsbook_context_statement": SPORTSBOOK_CONTEXT_STATEMENT,
             "expected_points_statement": EXPECTED_POINTS_STATEMENT,
         },
+        "weekly": None if weekly is None else dict(weekly),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

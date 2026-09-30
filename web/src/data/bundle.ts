@@ -27,6 +27,7 @@ import type {
   RosBuildMetadata,
   RosTierRecord,
   TierRecord,
+  WeeklyProjectionRecord,
 } from "./contracts";
 import {
   ArtifactVersionError,
@@ -187,9 +188,12 @@ async function loadInSeason(base: string | undefined): Promise<InSeasonBundle | 
   // The signal layer (ADR-091), softer again: observed role and next-game context beside the
   // boards. A bundle without either renders every board, card and pick, minus the evidence
   // blocks they feed — and says which one is missing rather than drawing a zero.
-  const [usage, matchups] = await Promise.all([
+  // The weekly start/sit layer (ADR-096), at the same level: a bundle without it renders
+  // every board, card and pick, and the Start/Sit tab says why it has nothing to compare.
+  const [usage, matchups, weekly] = await Promise.all([
     optional<PlayerUsageRecord>("player_usage", base),
     optional<TeamMatchupRecord>("team_matchups", base),
+    optional<WeeklyProjectionRecord>("weekly_projections", base),
   ]);
   return new InSeasonBundle({
     metadata,
@@ -199,5 +203,6 @@ async function loadInSeason(base: string | undefined): Promise<InSeasonBundle | 
     behaviorSeries: behavior.records,
     usage: usage.records,
     matchups: matchups.records,
+    weekly: weekly.records,
   });
 }

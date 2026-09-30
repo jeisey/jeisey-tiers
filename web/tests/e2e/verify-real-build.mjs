@@ -1053,8 +1053,11 @@ if (publishedInSeason && playerUsage !== null) {
       if (drawn.matchup.implied !== implied) {
         failures.push(`${who}: implied points read "${String(drawn.matchup.implied)}", artifact ${implied}`);
       }
-      if (matchup.implied_team_points !== null && !/No model reads them/.test(drawn.matchup.text)) {
-        failures.push(`${who}: sportsbook lines printed without the statement that no model reads them`);
+      if (
+        matchup.implied_team_points !== null &&
+        !/No model reads them|models never read them/.test(drawn.matchup.text)
+      ) {
+        failures.push(`${who}: sportsbook lines printed without the statement of which models read them`);
       }
     }
     // The card draws the same momentum component Pick of the Week does, from the same record.
@@ -1464,6 +1467,75 @@ if (publishedInSeason && opportunityRecords !== null) {
   }
 }
 
+/**
+ * The Start/Sit tab (ADR-096), on the real build.
+ *
+ * Optional like the signal layer: a build whose weekly layer was withheld publishes no
+ * `weekly_projections.json`, and the tab says so. A *present* artifact is checked the way the
+ * boards are: the deck's numbers are the record's own quantiles, the verdict names one of the
+ * two players compared, and the week board lists every published projection for the preset.
+ */
+let weeklyRecords = null;
+try {
+  weeklyRecords = JSON.parse(readFileSync(`${dataDir}/weekly_projections.json`, "utf-8")).records;
+} catch {
+  weeklyRecords = null;
+}
+let startsitCardsChecked = 0;
+let startsitBoardRows = 0;
+if (publishedInSeason && weeklyRecords !== null) {
+  // Exactly `formatValue`: `toFixed(1)`, whose binary rounding prints 37.65 as 37.6.
+  const one = (value) => value.toFixed(1);
+  const ppr = weeklyRecords.filter((r) => r.scoring_preset === "PPR");
+  const projected = ppr
+    .filter((r) => r.quantiles !== null)
+    .sort((a, b) => b.quantiles.q50 - a.quantiles.q50 || a.player_id.localeCompare(b.player_id));
+  const pair = projected.slice(0, 2);
+  if (pair.length === 2) {
+    const ids = pair.map((r) => r.player_id.replace(/^gsis:/, "")).join(".");
+    await page.goto(`${BASE}/?view=startsit&scoring=ppr&teams=12&duel=${ids}`, { waitUntil: "networkidle" });
+    await page.waitForSelector(".verdict-head");
+    const cards = await page.$$eval(".deck-card:not(.deck-empty)", (nodes) =>
+      nodes.map((node) => ({
+        name: node.querySelector(".deck-name")?.textContent?.trim() ?? null,
+        median: node.querySelector(".deck-median")?.textContent?.trim() ?? null,
+        range: [...node.querySelectorAll(".deck-range dd")].map((dd) => dd.textContent?.trim() ?? ""),
+      })),
+    );
+    for (const [index, record] of pair.entries()) {
+      startsitCardsChecked += 1;
+      const card = cards[index];
+      const q = record.quantiles;
+      if (card === undefined) {
+        failures.push(`start/sit: no deck card for ${record.display_name}`);
+        continue;
+      }
+      if (card.name !== record.display_name) {
+        failures.push(`start/sit: slot ${String(index + 1)} shows ${card.name}, the URL names ${record.display_name}`);
+      }
+      const expected = [one(q.q10), `${one(q.q25)}–${one(q.q75)}`, one(q.q90)];
+      if (card.median !== one(q.q50) || JSON.stringify(card.range) !== JSON.stringify(expected)) {
+        failures.push(
+          `start/sit: ${record.display_name} draws ${card.median} [${card.range.join(", ")}], ` +
+            `the artifact publishes ${one(q.q50)} [${expected.join(", ")}]`,
+        );
+      }
+    }
+    const verdict = await page.$eval(".verdict-head", (node) => node.textContent?.trim() ?? "");
+    if (!pair.some((record) => verdict === `Start ${record.display_name}`)) {
+      failures.push(`start/sit: the verdict "${verdict}" names neither player compared`);
+    }
+  }
+  await page.goto(`${BASE}/?view=startsit&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+  await page.waitForSelector(".weekboard-table tbody tr");
+  const more = page.locator(".weekboard-more");
+  if ((await more.count()) > 0 && (await more.textContent())?.startsWith("Show all")) await more.click();
+  startsitBoardRows = await page.locator(".weekboard-table tbody tr").count();
+  if (startsitBoardRows !== ppr.length) {
+    failures.push(`start/sit: the week board lists ${String(startsitBoardRows)} rows, the artifact ${String(ppr.length)}`);
+  }
+}
+
 await browser.close();
 console.log(JSON.stringify({
   tierRowsChecked: rows.length,
@@ -1482,6 +1554,9 @@ console.log(JSON.stringify({
   oppRowsChecked,
   oppChartRowsChecked,
   oppFiltersChecked,
+  weeklyRecords: weeklyRecords === null ? null : weeklyRecords.length,
+  startsitCardsChecked,
+  startsitBoardRows,
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
   trendSeriesRecords: seriesRecords.length,

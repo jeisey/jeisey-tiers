@@ -573,7 +573,8 @@ export function DataView({
             <strong>nflverse</strong> — play-by-play, rosters, depth charts, snap counts, weekly
             player statistics, schedules, draft and combine data, accessed through nflreadpy.
             The next-game spread and total on a player card are nflverse&apos;s schedule lines,
-            shown as context and read by no model. Data is broadly CC-BY 4.0 and belongs to its
+            which no draft or rest-of-season number reads; the weekly start/sit projection reads
+            them for the one game it projects (ADR-096). Data is broadly CC-BY 4.0 and belongs to its
             respective owners.{" "}
             <a href="https://github.com/nflverse/nflverse-data">nflverse-data</a>
           </li>

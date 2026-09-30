@@ -58,6 +58,8 @@ import type {
   UsageWeek,
   MarketComparison,
   MarketTrendSeriesRecord,
+  RosWeeklyMetadata,
+  WeeklyProjectionRecord,
 } from "../../src/data/contracts";
 
 /**
@@ -865,7 +867,7 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
     const adds = Math.max(0, 900 - depth * 37);
     const drops = Math.max(0, 120 - depth * 5);
     return {
-      schema_version: "1.0",
+      schema_version: "1.1",
       build_id: FIXTURE_BUILD_ID,
       season: record.season,
       through_week: record.through_week,
@@ -879,6 +881,7 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
       ros_fair_rank: record.ros_fair_rank,
       ros_position_rank: record.ros_position_rank,
       ros_expected_vorp: record.ros_expected_vorp,
+      ros_vorp_p50: record.ros_vorp_p50,
       ros_expected_points: record.ros_expected_points,
       ros_expected_games: record.ros_expected_games,
       ros_uncertainty: record.ros_uncertainty,
@@ -929,16 +932,28 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
       usageRecords()
         .find((row) => row.player_id === surfacedId)
         ?.weeks.filter((week) => week.status === "played").length ?? 0;
+    // His own simulated values, below every published row in his block — the shape the
+    // production copy rule now publishes (ADR-097). This row used to carry 0.0 for his value
+    // and his uncertainty, the same invention production made, and 0.0 VORP outranked every
+    // negative-VORP row the board did publish.
+    const block = base.filter(
+      (row) =>
+        row.league_preset_id === anchor.league_preset_id &&
+        row.scoring_preset === anchor.scoring_preset,
+    );
+    const floorVorp = Math.min(...block.map((row) => row.ros_expected_vorp));
+    const floorMedian = Math.min(...block.map((row) => row.ros_vorp_p50 ?? row.ros_expected_vorp));
     base.push({
       ...anchor,
       player_id: surfacedId,
       display_name: `${anchor.display_name} (surfaced)`,
       ros_fair_rank: 900,
       ros_position_rank: 90,
-      ros_expected_vorp: 0,
-      ros_expected_points: null,
-      ros_expected_games: null,
-      ros_uncertainty: 0,
+      ros_expected_vorp: round(floorVorp - 6.25),
+      ros_vorp_p50: round(floorMedian - 6),
+      ros_expected_points: 31.5,
+      ros_expected_games: 4.25,
+      ros_uncertainty: anchor.ros_uncertainty,
       // No tier. The segmentation never saw him, and inventing one is what ADR-063 forbids.
       ros_tier: null,
       add_count: behaviorAvailable ? 1450 : null,
@@ -1275,6 +1290,297 @@ export function teamMatchupRecords(): TeamMatchupRecord[] {
   return records.sort((a, b) => a.team.localeCompare(b.team));
 }
 
+// ------------------------------------------------------------------ the weekly layer (ADR-096)
+
+/**
+ * Week 9 as the start/sit tab sees it. Built to carry every case the tab must get right:
+ *
+ * | player            | case                                                                |
+ * |-------------------|---------------------------------------------------------------------|
+ * | Jahmyr Cook (RB)  | the steady back: a higher median and a **narrow** range             |
+ * | Puka Nightingale  | the boom-bust receiver: a lower median and a **wide** range — so    |
+ * |                   | against Cook there is a flip point, which is the tab's whole point  |
+ * | Joe Burrow + Ja'Marr Swift | CIN teammates, QB and WR: the measured same-game correlation |
+ * | Amon-Ra Bright    | Questionable on the week-9 report, with a practice line             |
+ * | James Cook III    | Doubtful                                                            |
+ * | Rashee Kirk       | Out: listed, and left out of any verdict                            |
+ * | Jalen Marsh, Deebo Gray | PHI and SF are on bye in week 9                               |
+ * | Zach Ertz, Jaylin Lane  | WAS plays, no line is posted: `lines_pending`, no distribution  |
+ */
+const WEEKLY_TARGET_WEEK = FIXTURE_THROUGH_WEEK + 1;
+
+const WEEKLY_SHAPES: Readonly<Record<string, readonly number[]>> = {
+  standard: [0.25, 0.38, 0.65, 1, 1.42, 1.85, 2.15],
+  qb: [0.45, 0.56, 0.77, 1, 1.24, 1.48, 1.64],
+  steady: [0.52, 0.62, 0.8, 1, 1.2, 1.4, 1.52],
+  boom: [0.08, 0.18, 0.48, 1, 1.62, 2.25, 2.7],
+};
+
+const WEEKLY_PLAN: Readonly<
+  Record<string, { readonly median: number; readonly shape: keyof typeof WEEKLY_SHAPES }>
+> = {
+  "gsis:00-0000001": { median: 17.8, shape: "standard" },
+  "gsis:00-0000002": { median: 16.4, shape: "standard" },
+  "gsis:00-0000003": { median: 15.1, shape: "standard" },
+  "gsis:00-0000011": { median: 13.6, shape: "steady" },
+  "gsis:00-0000012": { median: 12.9, shape: "boom" },
+  "gsis:00-0000013": { median: 11.2, shape: "standard" },
+  "gsis:00-0000004": { median: 9.4, shape: "standard" },
+  "gsis:00-0000005": { median: 10.8, shape: "standard" },
+  "gsis:00-0000014": { median: 9.9, shape: "standard" },
+  "gsis:00-0000015": { median: 8.6, shape: "boom" },
+  "gsis:00-0000006": { median: 8.2, shape: "standard" },
+  "gsis:00-0000016": { median: 7.1, shape: "standard" },
+  "gsis:00-0000007": { median: 6.3, shape: "standard" },
+  "gsis:00-0000017": { median: 7.7, shape: "standard" },
+  "gsis:00-0000008": { median: 22.6, shape: "qb" },
+  "gsis:00-0000018": { median: 15.8, shape: "qb" },
+  "gsis:00-0000009": { median: 18.1, shape: "qb" },
+  "gsis:00-0000010": { median: 3.4, shape: "boom" },
+};
+
+const WEEKLY_INJURIES: Readonly<Record<string, WeeklyProjectionRecord["injury"]>> = {
+  "gsis:00-0000002": {
+    week: WEEKLY_TARGET_WEEK,
+    designation: "Questionable",
+    practice_status: "Limited Participation in Practice",
+    primary_injury: "Hamstring",
+  },
+  "gsis:00-0000013": {
+    week: WEEKLY_TARGET_WEEK,
+    designation: "Doubtful",
+    practice_status: "Did Not Participate In Practice",
+    primary_injury: "Ankle",
+  },
+  "gsis:00-0000017": {
+    week: WEEKLY_TARGET_WEEK,
+    designation: "Out",
+    practice_status: "Did Not Participate In Practice",
+    primary_injury: "Knee",
+  },
+};
+
+const WEEKLY_BASELINES: Readonly<Record<string, number>> = { QB: 13.2, RB: 7.1, WR: 6.8, TE: 4.3 };
+const WEEKLY_PRESET_FACTOR: Readonly<Record<ScoringPreset, number>> = { STD: 0.78, HALF: 0.89, PPR: 1 };
+const WEEKLY_OPPONENT_RANK: Readonly<Record<string, number>> = {
+  ATL: 7,
+  DET: 22,
+  CIN: 3,
+  BUF: 18,
+  LAR: 12,
+  BAL: 25,
+  LAC: 30,
+  KC: 9,
+  ARI: 1,
+  WAS: 15,
+};
+
+/** The week-9 game each team plays, from the same list `teamMatchupRecords` draws. */
+function weeklyGame(team: string): WeeklyProjectionRecord["game"] {
+  const games: Readonly<Record<string, { home: string; away: string; kickoff: string; spread: number | null; total: number | null; neutral?: boolean }>> = {
+    ATL: { home: "DET", away: "ATL", kickoff: "2026-11-08T18:00:00Z", spread: 3.5, total: 51.5 },
+    DET: { home: "DET", away: "ATL", kickoff: "2026-11-08T18:00:00Z", spread: 3.5, total: 51.5 },
+    CIN: { home: "BUF", away: "CIN", kickoff: "2026-11-08T21:25:00Z", spread: -2.5, total: 48.5 },
+    BUF: { home: "BUF", away: "CIN", kickoff: "2026-11-08T21:25:00Z", spread: -2.5, total: 48.5 },
+    LAR: { home: "BAL", away: "LAR", kickoff: "2026-11-08T18:00:00Z", spread: 0, total: 44.5, neutral: true },
+    BAL: { home: "BAL", away: "LAR", kickoff: "2026-11-08T18:00:00Z", spread: 0, total: 44.5, neutral: true },
+    KC: { home: "KC", away: "LAC", kickoff: "2026-11-09T01:20:00Z", spread: 6, total: 45.5 },
+    LAC: { home: "KC", away: "LAC", kickoff: "2026-11-09T01:20:00Z", spread: 6, total: 45.5 },
+    ARI: { home: "ARI", away: "WAS", kickoff: "2026-11-08T21:05:00Z", spread: null, total: null },
+    WAS: { home: "ARI", away: "WAS", kickoff: "2026-11-08T21:05:00Z", spread: null, total: null },
+  };
+  const game = games[team];
+  if (game === undefined) return null;
+  const home = game.home === team;
+  const margin = game.spread === null ? null : home ? game.spread : -game.spread + 0;
+  const points = margin === null || game.total === null ? null : round((game.total + margin) / 2, 2);
+  return {
+    game_id: `2026_${String(WEEKLY_TARGET_WEEK).padStart(2, "0")}_${game.away}_${game.home}`,
+    opponent: home ? game.away : game.home,
+    home_away: home ? "home" : "away",
+    neutral_site: game.neutral === true,
+    kickoff_utc: game.kickoff,
+    roof: team === "DET" || team === "ATL" ? "dome" : "outdoors",
+    total_line: game.total,
+    team_margin: margin,
+    team_points: points,
+  };
+}
+
+export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
+  const records: WeeklyProjectionRecord[] = [];
+  for (const scoring of SCORING) {
+    for (const seed of SEEDS) {
+      const plan = WEEKLY_PLAN[seed.id];
+      if (plan === undefined) continue;
+      const game = weeklyGame(seed.team);
+      const bye = game === null;
+      const pending = game !== null && (game.total_line === null || game.team_margin === null);
+      const factor = WEEKLY_PRESET_FACTOR[scoring];
+      const median = round(plan.median * (seed.position === "QB" ? 1 : factor), 2);
+      const shape = WEEKLY_SHAPES[plan.shape] ?? [];
+      const values = shape.map((multiple) => round(median * multiple, 2));
+      const keys = ["q05", "q10", "q25", "q50", "q75", "q90", "q95"] as const;
+      const quantiles = Object.fromEntries(keys.map((key, index) => [key, values[index] ?? 0])) as Record<
+        (typeof keys)[number],
+        number
+      >;
+      // An additive account of the median, the way the model publishes one: a position
+      // baseline, seven family contributions, a calibration shift, and whatever rounding moved.
+      const baseline = round(WEEKLY_BASELINES[seed.position] ?? 6, 2);
+      const calibration = -0.18;
+      const rest = median - baseline - calibration;
+      const weights =
+        seed.id === "gsis:00-0000012"
+          ? { form: 0.15, role: 0.35, availability: 0.02, offense: 0.08, game: 0.3, opponent: 0.18, prior: -0.08 }
+          : seed.id === "gsis:00-0000011"
+            ? { form: 0.3, role: 0.42, availability: 0.05, offense: 0.06, game: 0.05, opponent: -0.03, prior: 0.15 }
+            : { form: 0.28, role: 0.32, availability: 0.04, offense: 0.08, game: 0.12, opponent: 0.06, prior: 0.1 };
+      const families = {
+        form: round(rest * weights.form, 2),
+        role: round(rest * weights.role, 2),
+        availability: round(rest * weights.availability, 2),
+        offense: round(rest * weights.offense, 2),
+        game: round(rest * weights.game, 2),
+        opponent: round(rest * weights.opponent, 2),
+        prior: round(rest * weights.prior, 2),
+      };
+      const sum = baseline + calibration + Object.values(families).reduce((a, b) => a + b, 0);
+      const opponent = game === null ? null : game.opponent;
+      const rank = opponent === null ? null : (WEEKLY_OPPONENT_RANK[opponent] ?? 16);
+      records.push({
+        schema_version: "1.0",
+        build_id: FIXTURE_BUILD_ID,
+        season: 2026,
+        through_week: FIXTURE_THROUGH_WEEK,
+        target_week: WEEKLY_TARGET_WEEK,
+        player_id: seed.id,
+        display_name: seed.name,
+        position: seed.position,
+        team: seed.team,
+        scoring_preset: scoring,
+        model_version: "weekly-startsit-v1",
+        // A game with no posted line is stated, not projected (ADR-096): the WAS-ARI game.
+        game_state: bye ? "bye" : pending ? "lines_pending" : "upcoming",
+        game,
+        quantiles: bye || pending ? null : quantiles,
+        drivers:
+          bye || pending
+            ? null
+            : { baseline, ...families, calibration, rearrangement: round(median - sum, 2) },
+        opponent:
+          opponent === null
+            ? null
+            : {
+                defense: opponent,
+                allowed_ppg: round(20 + (33 - (rank ?? 16)) * 0.4, 2),
+                league_ppg: 26.6,
+                index: round((20 + (33 - (rank ?? 16)) * 0.4) / 26.6, 3),
+                rank,
+                defenses: 32,
+                games: 8,
+              },
+        injury: WEEKLY_INJURIES[seed.id] ?? null,
+      });
+    }
+  }
+  return records;
+}
+
+export function weeklyProjectionEnvelope(): ArtifactEnvelope<WeeklyProjectionRecord> {
+  return envelope("weekly_projections", "weekly_projection", weeklyProjectionRecords());
+}
+
+/** The metadata block, with the measurements production published for 2017-2025. */
+export const FIXTURE_WEEKLY: RosWeeklyMetadata = {
+  model_version: "weekly-startsit-v1",
+  candidate_version: "wc1_quantile_gbm_conformal_v1",
+  configuration_hash: "692c1886548cde7f",
+  training_seasons: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+  fitted_at_utc: FIXTURE_GENERATED_AT,
+  through_week: FIXTURE_THROUGH_WEEK,
+  target_week: WEEKLY_TARGET_WEEK,
+  records: 54,
+  upcoming: 39,
+  kicked_off: 0,
+  bye: 6,
+  lines_pending: 9,
+  quantile_levels: [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95],
+  distribution_rule: {
+    version: "quantile_distribution_v1",
+    tail_lower_factor: 1,
+    tail_upper_factor: 2,
+    grid_points: 200,
+  },
+  families: {
+    form: "Recent production",
+    role: "Role and volume",
+    availability: "Availability",
+    offense: "His offence",
+    game: "Game environment",
+    opponent: "Opponent",
+    prior: "Track record",
+  },
+  margin: {
+    STD: { position_variance: { QB: 48.6, RB: 47.1, WR: 52.2, TE: 38.0 }, lineup_variance: 373.7, margin_sd_by_slot: { QB: 26.7, RB: 26.92, WR: 27.1, TE: 27.35 }, starter_rows: 7980 },
+    HALF: { position_variance: { QB: 55.8, RB: 55.4, WR: 61.9, TE: 45.3 }, lineup_variance: 448.9, margin_sd_by_slot: { QB: 29.0, RB: 29.1, WR: 28.9, TE: 29.2 }, starter_rows: 7980 },
+    PPR: { position_variance: { QB: 63.68, RB: 64.51, WR: 72.66, TE: 52.9 }, lineup_variance: 528.1, margin_sd_by_slot: { QB: 31.5, RB: 31.49, WR: 31.36, TE: 31.67 }, starter_rows: 7980 },
+  },
+  correlation: {
+    method: "spearman of PIT values -> 2 sin(pi r / 6)",
+    pairs: {
+      "opponents:any": { pairs: 11017, spearman: 0.0273, rho: 0.0286 },
+      "teammates:QB-RB": { pairs: 1214, spearman: 0.0048, rho: 0.005 },
+      "teammates:QB-TE": { pairs: 564, spearman: 0.2554, rho: 0.2667 },
+      "teammates:QB-WR": { pairs: 1337, spearman: 0.306, rho: 0.3191 },
+      "teammates:RB-RB": { pairs: 417, spearman: -0.0936, rho: -0.098 },
+      "teammates:RB-WR": { pairs: 2940, spearman: -0.0208, rho: -0.0218 },
+      "teammates:WR-WR": { pairs: 819, spearman: 0.0386, rho: 0.0405 },
+    },
+  },
+  startable: {
+    "redraft-10": { STD: { QB: 16.9, RB: 9.1, WR: 8.2, TE: 7.9 }, HALF: { QB: 18.3, RB: 10.3, WR: 9.8, TE: 9.5 }, PPR: { QB: 19.74, RB: 11.54, WR: 11.44, TE: 11.17 } },
+    "redraft-12": { STD: { QB: 15.6, RB: 7.6, WR: 7.0, TE: 6.6 }, HALF: { QB: 17.0, RB: 8.7, WR: 8.4, TE: 8.2 }, PPR: { QB: 18.36, RB: 9.88, WR: 9.87, TE: 9.79 } },
+    "redraft-14": { STD: { QB: 14.4, RB: 6.4, WR: 5.9, TE: 5.6 }, HALF: { QB: 15.7, RB: 7.5, WR: 7.1, TE: 7.0 }, PPR: { QB: 17.05, RB: 8.54, WR: 8.43, TE: 8.55 } },
+  },
+  injury_base_rates: {
+    Questionable: { reports: 3350, appeared: 2512, appearance_rate: 0.75 },
+    Doubtful: { reports: 420, appeared: 13, appearance_rate: 0.031 },
+    Out: { reports: 2700, appeared: 2, appearance_rate: 0.0007 },
+    _rule: {
+      version: "designation_appearance_rate_v1",
+      seasons: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+      definition: "Among QB/RB/WR/TE players the official report designated for a regular-season game, the share who then appeared in it.",
+    },
+  },
+  evaluation: {
+    development_verdict: true,
+    holdout_verdict: true,
+    holdout_season: 2025,
+    holdout_pairs: 165600,
+    holdout_pair_accuracy: 0.6656,
+    holdout_pair_brier: 0.2072,
+    holdout_coverage_80: 0.8037,
+    holdout_coverage_50: 0.5134,
+    best_baseline_pair_accuracy: 0.6454,
+    calibration: [
+      { low: 0.5, high: 0.55, pairs: 30146, predicted: 0.525, observed: 0.524 },
+      { low: 0.55, high: 0.6, pairs: 29192, predicted: 0.575, observed: 0.575 },
+      { low: 0.6, high: 0.65, pairs: 26338, predicted: 0.624, observed: 0.625 },
+      { low: 0.65, high: 0.7, pairs: 22656, predicted: 0.674, observed: 0.675 },
+      { low: 0.7, high: 0.75, pairs: 19207, predicted: 0.724, observed: 0.728 },
+      { low: 0.75, high: 0.8, pairs: 14704, predicted: 0.774, observed: 0.782 },
+      { low: 0.8, high: 0.85, pairs: 11146, predicted: 0.824, observed: 0.843 },
+      { low: 0.85, high: 0.9, pairs: 7434, predicted: 0.873, observed: 0.888 },
+      { low: 0.9, high: 0.95, pairs: 3976, predicted: 0.921, observed: 0.937 },
+      { low: 0.95, high: 1, pairs: 801, predicted: 0.964, observed: 0.95 },
+    ],
+  },
+  injuries_retrieved_at_utc: "2026-11-06T12:00:00Z",
+  statement:
+    "Next-game fantasy points given that he plays, from weekly-startsit-v1: his role, form and track record through the cutoff, his offence, the opposing defence's allowed points, and the game's sportsbook total and spread. It reads no injury report; the league's report is printed beside it instead. No draft or rest-of-season number reads this model.",
+};
+
 export function usageEnvelope(): ArtifactEnvelope<PlayerUsageRecord> {
   return envelope("player_usage", "player_usage", usageRecords());
 }
@@ -1298,7 +1604,7 @@ export const FIXTURE_SIGNALS: RosSignalMetadata = {
   lines_retrieved_at_utc: "2026-11-03T12:00:00Z",
   lines_posted_teams: 8,
   sportsbook_context_statement:
-    "The spread, total and implied points are sportsbook numbers read from nflverse's schedule and shown as matchup context only. No model reads them: they move no projection, VORP, rank, tier or Pick of the Week selection.",
+    "The spread, total and implied points are sportsbook numbers read from nflverse's schedule. The draft and rest-of-season models never read them: they move no draft or rest-of-season projection, VORP, rank, tier or Pick of the Week selection. The weekly start/sit projection does read them, for the one game it projects (ADR-096).",
   expected_points_statement:
     "No expected-fantasy-points reading is published. ffopportunity's expected points are licensed CC-BY-SA 4.0, and whether this site may publish a per-player figure derived from them is an open decision (ADR-086). The rest-of-season model reads them as an input; the card does not print them.",
 };
@@ -1380,6 +1686,7 @@ export function rosBuildMetadata(
     supported_presets: ["redraft-10", "redraft-12", "redraft-14"],
     sources: [],
     signals: FIXTURE_SIGNALS,
+    weekly: FIXTURE_WEEKLY,
     quality_gate: { status: "pass", critical_failures: 0, warnings: 0 },
     warnings: [],
     ...overrides,
@@ -1646,7 +1953,10 @@ export function inSeasonFixtureFiles(
         note: `the rest-of-season board is current through week ${String(FIXTURE_THROUGH_WEEK)}`,
       },
     }),
-    "ros_build_metadata.json": rosBuildMetadata({}, behaviorAvailable),
+    "ros_build_metadata.json": rosBuildMetadata(
+      signals === "present" ? {} : { weekly: null },
+      behaviorAvailable,
+    ),
     "ros_tiers.json": rosTierEnvelope(),
     "inseason_opportunity.json": opportunityEnvelope(behaviorAvailable),
     // The retained window, and its absence is a real published state rather than a fixture
@@ -1663,6 +1973,9 @@ export function inSeasonFixtureFiles(
       ? {
           "player_usage.json": usageEnvelope(),
           "team_matchups.json": teamMatchupEnvelope(),
+          // The weekly layer (ADR-096) is withheld with the signal layer in this scenario, so
+          // the Start/Sit tab's "nothing published" state has a build that draws it.
+          "weekly_projections.json": weeklyProjectionEnvelope(),
         }
       : {}),
   };

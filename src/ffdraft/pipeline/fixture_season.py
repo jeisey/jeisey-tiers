@@ -300,6 +300,16 @@ def build_fixture_season(
                 ),
             )
 
+    # Who each row played, from the schedule the rows were written against: the weekly
+    # start/sit layer reads a defence's allowed points off `opponent_team` (ADR-096), and a
+    # fixture whose every opponent is null would test only the reading's absence.
+    opponents: dict[tuple[int, str], str] = {}
+    for game in schedule.iter_rows(named=True):
+        opponents[(int(game["week"]), str(game["home_team"]))] = str(game["away_team"])
+        opponents[(int(game["week"]), str(game["away_team"]))] = str(game["home_team"])
+    for row in stat_rows:
+        row["opponent_team"] = opponents.get((int(row["week"]), str(row["team"])))
+
     weekly = WEEKLY_STATS_CONTRACT.build(stat_rows)
     snaps = SNAP_COUNTS_CONTRACT.build(
         [{key: value for key, value in row.items() if key != "gsis_id"} for row in snap_rows],

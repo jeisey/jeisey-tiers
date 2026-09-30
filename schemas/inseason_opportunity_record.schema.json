@@ -8,12 +8,12 @@
   "required": [
     "schema_version", "build_id", "season", "through_week", "league_preset_id",
     "scoring_preset", "player_id", "display_name", "team", "position",
-    "ros_fair_rank", "ros_position_rank", "ros_expected_vorp", "ros_uncertainty",
+    "ros_fair_rank", "ros_position_rank", "ros_expected_vorp", "ros_vorp_p50", "ros_uncertainty",
     "ros_tier", "long_absence", "weeks_since_last_game", "current_status",
     "behavior_available", "surface_reasons", "outside_tier_board", "quality_flags"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 2000},
     "through_week": {"type": "integer", "minimum": 1},
@@ -27,6 +27,7 @@
     "ros_fair_rank": {"type": "integer", "minimum": 1},
     "ros_position_rank": {"type": "integer", "minimum": 1},
     "ros_expected_vorp": {"type": "number"},
+    "ros_vorp_p50": {"type": ["number", "null"], "description": "Median simulated remaining VORP: the statistic `ros_fair_rank` orders by and the number the rest-of-season board draws, copied verbatim like every intrinsic column here. The Opportunity Board prints this rather than the mean, so a row's value and its rank are one account and a player carries one ROS value on every tab (ADR-097). For a surfaced row it is the value the untruncated board gave him, never a fill."},
     "ros_expected_points": {"type": ["number", "null"]},
     "ros_expected_games": {"type": ["number", "null"]},
     "ros_uncertainty": {"type": "number", "minimum": 0},

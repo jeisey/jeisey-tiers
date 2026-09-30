@@ -90,6 +90,8 @@ _IN_SEASON_ARTIFACTS = frozenset(
         # them to the pipeline, which is the lesson ADR-089's refresh paid for.
         "player_usage",
         "team_matchups",
+        # ADR-096. Written by `run_ros_build` after the signal layer.
+        "weekly_projections",
     },
 )
 
@@ -125,6 +127,7 @@ _COPIED_INTRINSIC_FIELDS = (
     "ros_fair_rank",
     "ros_position_rank",
     "ros_expected_vorp",
+    "ros_vorp_p50",
     "ros_expected_points",
     "ros_expected_games",
     "ros_uncertainty",
@@ -166,6 +169,7 @@ def validate_artifact_directory(directory: Path) -> QualityGate:
         gate.extend(validate_records(spec.schema_name, records, stage=stage))
         gate.extend(check_duplicate_keys(records, key_fields=spec.key_fields, stage=stage))
         gate.extend(_semantic_checks(artifact, records, payload, stage))
+        gate.extend(_display_name_checks(records, stage))
         if spec.csv_filename:
             gate.extend(_csv_agreement(directory / spec.csv_filename, artifact, records, stage))
 
@@ -176,6 +180,7 @@ def validate_artifact_directory(directory: Path) -> QualityGate:
     gate.extend(_in_season_cross_checks(envelopes))
     gate.extend(_behavior_series_cross_checks(envelopes))
     gate.extend(_signal_cross_checks(envelopes))
+    gate.extend(_weekly_cross_checks(envelopes))
     if not envelopes:
         gate.add(
             QualityCheck.fail(
@@ -215,6 +220,73 @@ def _load_json(path: Path, gate: QualityGate) -> Mapping[str, Any] | None:
         )
         return None
     return loaded
+
+
+#: Strings that are a missing value spelled as a name. ``str(None)`` is how the first one
+#: reached four published rows in September 2026 (ADR-097): a player with no preseason block
+#: has no preseason name, and the build stringified the null.
+_PLACEHOLDER_NAMES = frozenset({"none", "null", "nan", "undefined", ""})
+
+
+def _display_name_checks(
+    records: Sequence[Mapping[str, Any]],
+    stage: str,
+) -> list[QualityCheck]:
+    """No published row may carry a placeholder for a name (ADR-097).
+
+    A schema cannot see this: ``"None"`` is a perfectly good non-empty string. The card, the
+    board, the search box and the CSV all print it verbatim, so it is critical rather than a
+    warning. A name that is the player's own id is the build's declared last resort and is
+    reported as a warning, because it is honest but unreadable.
+    """
+    named = [record for record in records if "display_name" in record]
+    if not named:
+        return []
+    placeholders = sorted(
+        {
+            str(record.get("player_id"))
+            for record in named
+            if str(record.get("display_name") or "").strip().lower() in _PLACEHOLDER_NAMES
+        },
+    )
+    checks: list[QualityCheck] = []
+    if placeholders:
+        checks.append(
+            QualityCheck.fail(
+                "artifact.placeholder_display_name",
+                stage=stage,
+                message="a published row carries a missing value where a name belongs",
+                observed=", ".join(placeholders[:8]) + (" ..." if len(placeholders) > 8 else ""),
+                expected="a player's name, or failing that his id",
+            ),
+        )
+    id_named = sorted(
+        {
+            str(record.get("player_id"))
+            for record in named
+            if record.get("display_name") == record.get("player_id")
+        },
+    )
+    if id_named:
+        checks.append(
+            QualityCheck.fail(
+                "artifact.id_as_display_name",
+                stage=stage,
+                message="no source named these players, so their id is printed as the name",
+                observed=", ".join(id_named[:8]) + (" ..." if len(id_named) > 8 else ""),
+                severity=Severity.WARNING,
+            ),
+        )
+    if not checks:
+        checks.append(
+            QualityCheck.ok(
+                "artifact.display_names",
+                stage=stage,
+                message="every published row carries a real name",
+                observed=f"{len(named)} row(s)",
+            ),
+        )
+    return checks
 
 
 def _semantic_checks(
@@ -269,7 +341,114 @@ def _semantic_checks(
             return _matchup_checks(records, stage)
         case "player_headshots":
             return _headshot_checks(records, stage)
+        case "weekly_projections":
+            return _weekly_checks(records, stage)
     return []
+
+
+#: The ten parts of a weekly driver account, in the order they sum.
+_WEEKLY_DRIVER_PARTS = (
+    "baseline",
+    "form",
+    "role",
+    "availability",
+    "offense",
+    "game",
+    "opponent",
+    "prior",
+    "calibration",
+    "rearrangement",
+)
+_WEEKLY_QUANTILE_KEYS = ("q05", "q10", "q25", "q50", "q75", "q90", "q95")
+#: Ten parts each rounded to hundredths, closed on a rounded median.
+_WEEKLY_DRIVER_TOLERANCE = 0.011
+
+
+def weekly_record_checks(
+    records: Sequence[Mapping[str, Any]],
+    stage: str,
+) -> list[QualityCheck]:
+    """The weekly rules, for the build to run before it stages the artifact (ADR-096).
+
+    The same function the pre-deploy validator runs, so ``build-ros`` can withhold a weekly
+    layer that would fail it: a weekly-only defect must cost the weekly layer, not the deploy.
+    """
+    return _weekly_checks(records, stage)
+
+
+def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
+    """``weekly_projection`` rules a schema cannot state (ADR-096)."""
+    crossing: list[str] = []
+    unclosed: list[str] = []
+    shape: list[str] = []
+    for record in records:
+        label = f"{record.get('player_id')}/{record.get('scoring_preset')}"
+        if int(record.get("target_week", 0)) != int(record.get("through_week", 0)) + 1:
+            shape.append(f"{label}: target week is not the week after the cutoff")
+        state = record.get("game_state")
+        carried = [
+            name
+            for name in ("game", "quantiles", "drivers", "opponent")
+            if record.get(name) is not None
+        ]
+        if state == "bye" and carried:
+            shape.append(f"{label}: on bye but carries {', '.join(carried)}")
+        elif state == "lines_pending":
+            # The game and the opponent, and no distribution: the model was never trained
+            # without a posted line, so a pending game is published as a fact, not projected.
+            if carried != ["game", "opponent"]:
+                shape.append(
+                    f"{label}: lines pending but carries {', '.join(carried) or 'nothing'}"
+                )
+            game = record.get("game") or {}
+            if game.get("total_line") is not None and game.get("team_margin") is not None:
+                shape.append(f"{label}: lines pending but both lines are posted")
+        elif state != "bye" and len(carried) != 4:
+            shape.append(f"{label}: playing but missing a block")
+        quantiles = record.get("quantiles")
+        if quantiles is None:
+            continue
+        values = [float(quantiles[key]) for key in _WEEKLY_QUANTILE_KEYS]
+        if any(later < earlier for earlier, later in zip(values, values[1:], strict=False)):
+            crossing.append(label)
+        drivers = record.get("drivers")
+        if drivers is not None:
+            total = sum(float(drivers[part]) for part in _WEEKLY_DRIVER_PARTS)
+            if abs(total - float(quantiles["q50"])) > _WEEKLY_DRIVER_TOLERANCE:
+                unclosed.append(f"{label}: parts sum to {total:.2f}, median {quantiles['q50']}")
+    checks: list[QualityCheck] = []
+    for check_id, found, message in (
+        ("weekly.quantiles_monotonic", crossing, "a published distribution's quantiles cross"),
+        (
+            "weekly.driver_account_closes",
+            unclosed,
+            "a driver account does not sum to the median it explains",
+        ),
+        ("weekly.record_shape", shape, "a weekly record's blocks disagree with its state"),
+    ):
+        if found:
+            checks.append(
+                QualityCheck.fail(
+                    check_id,
+                    stage=stage,
+                    message=message,
+                    observed="; ".join(found[:10]),
+                ),
+            )
+    if not checks:
+        playing = sum(1 for record in records if record.get("game_state") != "bye")
+        checks.append(
+            QualityCheck.ok(
+                "weekly.semantics",
+                stage=stage,
+                message=(
+                    "every distribution is monotone, every driver account closes on its "
+                    "median, and bye rows carry no projection"
+                ),
+                observed=f"{len(records)} record(s), {playing} with a game",
+            ),
+        )
+    return checks
 
 
 def _usage_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
@@ -1314,7 +1493,23 @@ def _opportunity_checks(
                 expected="null add_count and drop_count",
             ),
         )
-    if not (inconsistent or tiered_exceptions or unexplained or stale_behavior):
+    misplaced = _surfaced_rank_violations(records)
+    if misplaced:
+        checks.append(
+            QualityCheck.fail(
+                "opportunity.surfaced_row_outranks_the_board",
+                stage=stage,
+                message=(
+                    "a player surfaced from beyond the tier depth must rank below every "
+                    "published player - by fair rank, by position rank and by the median VORP "
+                    "the rank orders by. A surfaced row that outranks the board carries a "
+                    "value the model did not give him (ADR-097)"
+                ),
+                observed="; ".join(misplaced[:10]),
+                expected="a surfaced row's ranks and median below the published block's",
+            ),
+        )
+    if not (inconsistent or tiered_exceptions or unexplained or stale_behavior or misplaced):
         surfaced = sum(1 for record in records if record.get("outside_tier_board"))
         checks.append(
             QualityCheck.ok(
@@ -1328,6 +1523,57 @@ def _opportunity_checks(
             ),
         )
     return checks
+
+
+def _surfaced_rank_violations(records: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Surfaced rows that claim a place on the published board they are cut from.
+
+    Per block: a surfaced player's fair rank must exceed every published row's, his position
+    rank must exceed every published row's at his position, and his median VORP (when the
+    record carries one) may not exceed the published block's lowest. All three follow from
+    one fact — he is beyond the depth the board is cut at — so any violation is a value that
+    did not come from the board. This is what would have caught every surfaced player being
+    published as his position's number one with 0.0 VORP.
+    """
+    blocks: dict[tuple[str, str], list[Mapping[str, Any]]] = {}
+    for record in records:
+        key = (str(record.get("league_preset_id")), str(record.get("scoring_preset")))
+        blocks.setdefault(key, []).append(record)
+    violations: list[str] = []
+    for block in blocks.values():
+        published = [row for row in block if not row.get("outside_tier_board")]
+        if not published:
+            continue
+        deepest = max(int(row["ros_fair_rank"]) for row in published)
+        deepest_by_position: dict[str, int] = {}
+        for row in published:
+            position = str(row.get("position"))
+            deepest_by_position[position] = max(
+                deepest_by_position.get(position, 0),
+                int(row["ros_position_rank"]),
+            )
+        medians = [
+            float(row["ros_vorp_p50"]) for row in published if row.get("ros_vorp_p50") is not None
+        ]
+        floor = min(medians) if medians else None
+        for row in block:
+            if not row.get("outside_tier_board"):
+                continue
+            label = (
+                f"{row.get('player_id')}@{row.get('league_preset_id')}/{row.get('scoring_preset')}"
+            )
+            if int(row["ros_fair_rank"]) <= deepest:
+                violations.append(f"{label}: fair rank {row['ros_fair_rank']} <= {deepest}")
+            position = str(row.get("position"))
+            if int(row["ros_position_rank"]) <= deepest_by_position.get(position, 0):
+                violations.append(
+                    f"{label}: {position}{row['ros_position_rank']} is inside the published "
+                    f"{position}1-{deepest_by_position[position]}",
+                )
+            median = row.get("ros_vorp_p50")
+            if median is not None and floor is not None and float(median) > floor + 1e-6:
+                violations.append(f"{label}: median VORP {median} above the board's {floor}")
+    return violations
 
 
 def _ros_metadata_checks(
@@ -1903,6 +2149,56 @@ def _signal_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Qua
             ),
         )
     return checks
+
+
+def _weekly_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:
+    """A projected player is a published player, at the same cutoff (ADR-096).
+
+    The weekly layer describes the Opportunity Board's players and nobody else, so a
+    projection nobody can open is bytes for nothing and one at a different cutoff describes a
+    different week.
+    """
+    weekly = envelopes.get("weekly_projections")
+    opportunity = envelopes.get("inseason_opportunity")
+    if weekly is None or opportunity is None:
+        return []
+    published = {str(record["player_id"]) for record in opportunity.get("records", ())}
+    weeks = {int(record["through_week"]) for record in opportunity.get("records", ())}
+    orphans = sorted(
+        {
+            str(record["player_id"])
+            for record in weekly.get("records", ())
+            if str(record["player_id"]) not in published
+        },
+    )
+    stale = sorted(
+        {
+            int(record["through_week"])
+            for record in weekly.get("records", ())
+            if int(record["through_week"]) not in weeks
+        },
+    )
+    if orphans or stale:
+        return [
+            QualityCheck.fail(
+                "cross_artifact.weekly_projection_unpublished",
+                stage="artifacts",
+                message=(
+                    "a weekly projection names a player the Opportunity Board does not "
+                    "publish, or a cutoff the board was not built at"
+                ),
+                observed=f"players {orphans[:8]}; cutoffs {stale}",
+                expected="projections for board players at the board's cutoff",
+            ),
+        ]
+    return [
+        QualityCheck.ok(
+            "cross_artifact.weekly_projection_unpublished",
+            stage="artifacts",
+            message="every weekly projection belongs to a published player at the same cutoff",
+            observed=f"{len(weekly.get('records', ()))} record(s)",
+        ),
+    ]
 
 
 def _cross_artifact_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:

@@ -7,7 +7,9 @@ could source it (ADR-088). ``load_schedules`` has carried the answer in every in
 build: the opponent, home or away, rest days, the roof, and — for roughly the next two weeks
 — a sportsbook spread and total.
 
-**The sportsbook numbers are context, and that is a decision, not a caveat.**
+**The sportsbook numbers are context for every board, and that is a decision, not a caveat.**
+(ADR-096 amends one clause below: the weekly start/sit model, a decision-layer model that no
+board reads, now reads the same lines for the one game it projects. The boards still never do.)
 ``docs/SIGNAL_EXPANSION_EDA.md`` §2a.3 laid out three readings of AGENTS.md section 8 for a
 game total. This module takes the third and only the third: the lines are **printed beside
 a player** and computed into nothing. No feature reads them, no model is trained on them,
@@ -58,10 +60,13 @@ MATCHUP_RULE_VERSION = "next_game_v1"
 
 #: Travels on the build metadata and is printed wherever a line is shown, so the interface
 #: cannot state a line without also stating what it is not.
+#: Amended by ADR-096: the weekly start/sit model reads the lines for the one game it
+#: projects. The boards still never do, and the sentence says both halves.
 SPORTSBOOK_CONTEXT_STATEMENT = (
     "The spread, total and implied points are sportsbook numbers read from nflverse's "
-    "schedule and shown as matchup context only. No model reads them: they move no "
-    "projection, VORP, rank, tier or Pick of the Week selection."
+    "schedule. The draft and rest-of-season models never read them: they move no draft or "
+    "rest-of-season projection, VORP, rank, tier or Pick of the Week selection. The weekly "
+    "start/sit projection does read them, for the one game it projects (ADR-096)."
 )
 
 

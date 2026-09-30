@@ -43,6 +43,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from ffdraft.artifacts.schemas import record_schema_version
 from ffdraft.behavior.capture import BehaviorCapture
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import BehaviorType, Severity, SurfaceReason
@@ -61,7 +62,9 @@ __all__ = [
     "OPPORTUNITY_METHOD_VERSION",
     "SURFACE_ADD_COUNT_MINIMUM",
     "BehaviorSignals",
+    "SurfacedValueMissing",
     "build_opportunity_records",
+    "surfaced_values",
     "resolve_behavior_signals",
 ]
 
@@ -434,8 +437,19 @@ def _opportunity_record(
     """
     add_count = signals.add_counts.get(player_id, 0) if signals.available else None
     drop_count = signals.drop_counts.get(player_id, 0) if signals.available else None
+    if published is None:
+        values = surfaced_values(player_id, board_row)
+    else:
+        values = {
+            "ros_position_rank": int(published["ros_position_rank"]),
+            "ros_expected_vorp": float(published["ros_expected_vorp"]),
+            "ros_vorp_p50": _optional_float(published.get("ros_vorp_p50")),
+            "ros_expected_points": float(published["ros_expected_points"]),
+            "ros_expected_games": float(published["ros_expected_games"]),
+            "ros_uncertainty": float(published["ros_uncertainty"]),
+        }
     return {
-        "schema_version": "1.0",
+        "schema_version": record_schema_version("inseason_opportunity_record"),
         "build_id": build_id,
         "season": season,
         "through_week": through_week,
@@ -450,13 +464,7 @@ def _opportunity_record(
         "ros_fair_rank": int((published or board_row)["ros_fair_rank"])
         if published
         else int(board_row["fair_rank"]),
-        "ros_position_rank": int(published["ros_position_rank"])
-        if published
-        else int(board_row.get("position_rank") or 0) or 1,
-        "ros_expected_vorp": float(published["ros_expected_vorp"]) if published else 0.0,
-        "ros_expected_points": float(published["ros_expected_points"]) if published else None,
-        "ros_expected_games": float(published["ros_expected_games"]) if published else None,
-        "ros_uncertainty": float(published["ros_uncertainty"]) if published else 0.0,
+        **values,
         "ros_tier": (None if outside_tier_board or published is None else published["ros_tier"]),
         "behavior_source_id": signals.source_id,
         "behavior_available": signals.available,
@@ -490,6 +498,43 @@ def _opportunity_record(
         "surface_reasons": sorted(set(entry_reasons)),
         "quality_flags": sorted(set((published or {}).get("quality_flags", ()))),
     }
+
+
+#: What a surfaced row copies from the untruncated board, and what it is called there.
+_SURFACED_FIELDS: tuple[tuple[str, str], ...] = (
+    ("ros_position_rank", "position_rank"),
+    ("ros_expected_vorp", "expected_vorp"),
+    ("ros_vorp_p50", "p50_vorp"),
+    ("ros_expected_points", "expected_points"),
+    ("ros_expected_games", "expected_games"),
+    ("ros_uncertainty", "uncertainty"),
+)
+
+
+class SurfacedValueMissing(ValueError):
+    """A surfaced player's board row does not carry the value his published row needs."""
+
+
+def surfaced_values(player_id: str, board_row: Mapping[str, Any]) -> dict[str, Any]:
+    """A surfaced player's values, copied from the board the model valued him on (ADR-097).
+
+    He is outside the published depth, not outside the simulation: the draw loop valued him
+    exactly as it valued every published player, and the untruncated board carries those
+    numbers. Before ADR-097 this function did not exist and the row was *invented* instead —
+    ``ros_position_rank`` fell through ``or 1`` to his position's number one, and the VORP and
+    uncertainty were ``0.0``, which is better than every negative-VORP player the board did
+    publish. A missing value now raises: failing closed is honest, a default is not.
+    """
+    values: dict[str, Any] = {}
+    for published_name, board_name in _SURFACED_FIELDS:
+        raw = board_row.get(board_name)
+        if raw is None:
+            raise SurfacedValueMissing(
+                f"{player_id}: the full board carries no {board_name!r}; a surfaced row copies "
+                "the model's own value and will not invent one",
+            )
+        values[published_name] = int(raw) if published_name == "ros_position_rank" else float(raw)
+    return values
 
 
 def _optional_float(value: Any) -> float | None:

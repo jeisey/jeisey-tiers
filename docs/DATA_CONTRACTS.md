@@ -760,8 +760,16 @@ The rule this record exists to make checkable:
 
 Every intrinsic column is **copied** from the `ros_tiers` row for the same player. Nothing in
 the opportunity build computes an intrinsic value, so nothing in it can modify one — and
-`cross_artifact.intrinsic_firewall` compares all seven copied fields over the published bytes.
-This is the market-firewall audit in its in-season form.
+`cross_artifact.intrinsic_firewall` compares all eight copied fields over the published bytes
+(`ros_vorp_p50` joined the seven in contract 1.1, ADR-097). This is the market-firewall audit
+in its in-season form.
+
+**Contract 1.1 (ADR-097).** `ros_vorp_p50` — the median remaining VORP, the statistic the
+rest-of-season rank orders by — is required (number, or null only where the ROS row has none),
+and the board draws and sorts by it. A **surfaced** row (`outside_tier_board: true`) copies
+every value from the untruncated board the model valued him on; the build raises rather than
+defaulting a missing one, and `opportunity.surfaced_row_outranks_the_board` fails a surfaced
+row whose fair rank, position rank or median VORP would place him inside the published depth.
 
 What the behaviour columns are, exactly:
 
@@ -1100,3 +1108,62 @@ minimums, record counts, `lines_source_id`, `lines_retrieved_at_utc`, `lines_pos
 adds `location`, `away_rest`, `home_rest`, `roof`, `spread_line`, `total_line`. All are
 **context columns** (`BaseSourceAdapter.context_source_columns`): read only into published
 context, their absence a warning rather than a critical, and never a feature input.
+
+## 20. The weekly start/sit contracts — 2026-09-30 (ADR-096, ADR-097)
+
+Optional members of the in-season bundle: `weekly_projections.json` and the
+`ros_build_metadata.weekly` block are written together or not at all, and their absence removes
+the Start/Sit tab's content and nothing else.
+
+### 20.1 `weekly_projection` 1.0 — one player's next game, as a distribution
+
+One record per Opportunity Board player × scoring preset, keyed `(build_id, scoring_preset,
+player_id)`. JSON only: a seven-quantile distribution and a ten-part account are not rows a
+spreadsheet reader can use, and the lines inside it follow ADR-091's no-CSV rule.
+
+| field | meaning |
+|---|---|
+| `through_week`, `target_week` | the snapshot cutoff, and the week projected: always `through_week + 1` |
+| `team` | the current roster club when the roster names exactly one, else the club of his latest appearance — a trade moves the game |
+| `model_version` | `weekly-startsit-v1` |
+| `game_state` | `upcoming`; `kicked_off` (kept for the record, locked on the page); `bye` (no `game`, `quantiles`, `drivers` or `opponent`); `lines_pending` (the game and `opponent`, no `quantiles` or `drivers`: the model was never trained without a posted line) |
+| `game` | `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `roof` (null while a retractable roof is unannounced), `total_line`, `team_margin` (this team's side, positive = favoured), `team_points` (implied); lines null until posted, never a pick'em |
+| `quantiles` | `q05` … `q95`: next-game points **given that he plays**, non-decreasing |
+| `drivers` | `baseline`, the seven families `form` `role` `availability` `offense` `game` `opponent` `prior`, `calibration`, `rearrangement`: points that sum to `q50` (rearrangement absorbs rounding) |
+| `opponent` | the defence's allowed points to his position through the cutoff: `allowed_ppg` (shrunk over 4 games), `league_ppg`, `index`, `rank` of `defenses`, `games` |
+| `injury` | the official report for `target_week`: `designation` (`Out`/`Doubtful`/`Questionable`/null), `practice_status`, `primary_injury`. Printed beside the projection; **no model reads it** |
+
+Validator: `weekly.quantiles_monotonic`, `weekly.driver_account_closes` (within 0.011),
+`weekly.record_shape` (the blocks agree with `game_state`) and
+`cross_artifact.weekly_projection_unpublished` (every projected player is on the Opportunity
+Board, at its cutoff) — all critical.
+
+### 20.2 `ros_build_metadata.weekly` — what the page computes with
+
+Additive and optional. Everything the Start/Sit tab needs beyond the records, each a published
+measurement rather than a constant in page code:
+
+- `model_version`, `candidate_version`, `configuration_hash`, `training_seasons`, `fitted_at_utc`;
+- `through_week`, `target_week`, and the counts `records`, `upcoming`, `kicked_off`, `bye`,
+  `lines_pending`;
+- `quantile_levels` and `distribution_rule` (`quantile_distribution_v1`: tail factors 1 and 2,
+  a 200-point grid) — the rule the evaluation scored and the page reproduces, held together by
+  a shared golden vector (`tests/fixtures/weekly/distribution_golden.json`);
+- `families` — the display label of each driver family;
+- `margin[preset].margin_sd_by_slot` — the matchup margin's measured uncertainty by slot;
+- `correlation.pairs` — same-game correlation by position pair (`teammates:QB-WR`,
+  `opponents:any`), with the pair counts;
+- `startable[league][preset][position]` — the points a startable week takes;
+- `injury_base_rates` — per designation, how many reports and how many of those players
+  appeared (`designation_appearance_rate_v1`, 2017–2025);
+- `evaluation` — both verdicts, the sealed-season accuracy, Brier and coverage, and its
+  calibration table, which the verdict line prints beside every head-to-head;
+- `injuries_retrieved_at_utc`, and `statement`: what the model reads and what reads it.
+
+### 20.3 Identity on every published row (ADR-097)
+
+Not a new field: a rule over every artifact with a `display_name`. It may never be a
+placeholder (`None`, `null`, `NaN`, empty or blank; `artifact.placeholder_display_name`,
+critical). The build fills a missing name from this season's weekly rows, then the roster, then
+the player master, and falls back to the player id, which the validator reports as a warning
+(`artifact.id_as_display_name`).

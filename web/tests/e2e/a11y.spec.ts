@@ -99,6 +99,16 @@ test.describe("automated scan", () => {
     // A set deep enough that a position has run out of candidates. The absence list is its own
     // DOM and it is the state a quiet week actually produces.
     ["pick of the week, a position with no pick", "/scenario/in-season/?view=potw&set=2", ".potw-absence"],
+    // Start/Sit (ADR-096): meters, a ridge chart, a matrix and a board of bars — every one a
+    // drawing that has to carry its number in text as well.
+    ["start/sit, empty", "/scenario/in-season/?view=startsit", ".deck"],
+    ["start/sit, a pair", "/scenario/in-season/?view=startsit&duel=00-0000011.00-0000012", ".verdict-head"],
+    [
+      "start/sit, four players and a margin",
+      "/scenario/in-season/?view=startsit&duel=00-0000011.00-0000012.00-0000003.00-0000002&margin=-10",
+      ".h2h",
+    ],
+    ["start/sit with no projections", "/scenario/in-season-no-signals/?view=startsit", ".notice"],
   ] as const) {
     test(`${name} has no WCAG A or AA violations`, async ({ page }) => {
       await page.goto(path);
@@ -361,6 +371,8 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
       // number off the edge rather than wrap it (ADR-088).
       "/scenario/in-season/?view=potw",
       "/scenario/in-season/?view=potw&position=te",
+      // Start/Sit four deep: four cards, a four-by-four matrix and the ridge chart (ADR-096).
+      "/scenario/in-season/?view=startsit&duel=00-0000011.00-0000012.00-0000003.00-0000002",
     ]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");

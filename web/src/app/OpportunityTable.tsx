@@ -58,7 +58,7 @@ import {
   type RoleOrdering,
 } from "../data/candidates";
 import { formatRank, formatValue } from "../data/format";
-import { longAbsenceLabel } from "../data/ros";
+import { longAbsenceLabel, rosValue } from "../data/ros";
 
 export const OPPORTUNITY_TABLE_CAPTION =
   "In-season opportunity board. Add and drop counts are transactions over the requested " +
@@ -68,7 +68,7 @@ export const OPPORTUNITY_TABLE_CAPTION =
   "recorded: annotation, and no input to any number here. Role is the position's leading " +
   "measure — pass attempts for a quarterback, snap share otherwise — in his latest game " +
   "against the average of his earlier games. Add momentum is the published slope of his add " +
-  "count over the retained window. Next game is sportsbook context read by no model, and no " +
+  "count over the retained window. Next game is sportsbook context no board reads, and no " +
   "column rates an opponent.";
 
 interface Scale {
@@ -84,7 +84,7 @@ export function opportunityTableScale(rows: readonly OpportunityCandidate[]): Sc
   for (const {
     row: { record },
   } of rows) {
-    widestValue = Math.max(widestValue, Math.abs(record.ros_expected_vorp));
+    widestValue = Math.max(widestValue, Math.abs(rosValue(record)));
     widestCount = Math.max(widestCount, record.add_count ?? 0, record.drop_count ?? 0);
   }
   return { widestValue: widestValue || 1, widestCount: widestCount || 1 };
@@ -194,10 +194,12 @@ function opportunityColumns(
       meta: { width: "3.5rem", className: "col-mid" },
     },
     {
-      id: "ros_expected_vorp",
-      header: "ROS Exp VORP",
-      accessorFn: (row) => row.row.record.ros_expected_vorp,
-      cell: (context) => formatValue(context.row.original.row.record.ros_expected_vorp),
+      // The median the rank orders by, and the number the rest-of-season board draws; the mean
+      // stays in the export (ADR-097).
+      id: "ros_vorp_p50",
+      header: "ROS Med VORP",
+      accessorFn: (row) => rosValue(row.row.record),
+      cell: (context) => formatValue(rosValue(context.row.original.row.record)),
       meta: {
         align: "right",
         width: "5.5rem",
@@ -206,7 +208,7 @@ function opportunityColumns(
         className: "col-low",
         track: (row: OpportunityCandidate) =>
           barGradient(
-            Math.abs(row.row.record.ros_expected_vorp) / scale.widestValue,
+            Math.abs(rosValue(row.row.record)) / scale.widestValue,
             "rgb(46 204 255 / 55%)",
             "rgb(46 204 255 / 10%)",
           ),

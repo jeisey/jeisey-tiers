@@ -1649,3 +1649,66 @@ step still required a fresh draft price although ADR-094 consumes pre-anchor pri
       inspected. Frontend checks were not repeated: no frontend or public contract changed.
 - [ ] **Production confirmation:** pending merge and a new daily refresh. No live vendor
       queried, failed run rerun, PR created or deployment attempted on this branch.
+
+## Start/Sit and the weekly start/sit model; verified in-season fixes — 2026-09-30 (ADR-096, ADR-097)
+
+The owner asked for a handful of verified improvements and one start/sit feature that beats
+other sites at comparing players, under a clarified rule: any data that improves an in-season
+start/sit, trade or waiver decision is valid to use. Numbered ADR-096/097 because ADR-095
+(PR #52) merged first; `origin/main` was merged into this branch (merge, not rebase).
+
+- [x] **Frozen before evidence** (`4f62112`): target, features, parameters, levels, baselines,
+      decision pools, `weekly_promotion_v1`, the sealed 2025 season and its own token.
+- [x] **Development PASS** (2020–2024): pinball 1.1086 vs best baseline 1.3086; pairwise
+      accuracy 0.6592 vs 0.6362, bootstrap +0.0230 [0.0189, 0.0272] over 79 weeks; Brier
+      0.2109 vs 0.2324; P10–P90 coverage 0.808; pinball won in 5 of 5 folds.
+- [x] **Sealed 2025 PASS**: pinball 1.0970 vs 1.3161; accuracy 0.6656 vs 0.6454, bootstrap
+      +0.0202 [0.0094, 0.0327]; Brier 0.2072 vs 0.2279; coverage 0.803. The best baseline
+      (B2) already reads the Vegas implied total.
+- [x] **Determinism**: Polars' parallel float group-by moved LightGBM bins by ~1e-15. Sums are
+      now integer hundredths: two dataset builds are equal, and two production fits give
+      byte-identical boosters. Reports re-scored once, with the reason recorded; verdicts
+      unchanged.
+- [x] **Production artifact** `models/production/weekly-startsit-v1` (84 boosters, digests
+      checked at load) and a generated card `models/cards/weekly-startsit-v1.{md,json}`
+      (`ffdraft weekly-model-card`, pinned by `test_weekly_card.py`).
+- [x] **Serving** in `build-ros` → `weekly_projections.json` 1.0 plus the
+      `ros_build_metadata.weekly` block (margin σ, same-game ρ, startable thresholds,
+      designation base rates, holdout calibration). States: upcoming, kicked_off, bye,
+      `lines_pending`.
+- [x] **Found and fixed while verifying**: (1) a missing line was read as a 0-point total
+      (receiver medians −0.68), so such a game is now `lines_pending`; (2) on the live
+      week-4 build an unannounced retractable roof (DAL @ HOU) made a fully lined game
+      pending, and the pre-deploy validator would have blocked every board's deploy. The
+      rule now keys on the lines only, an unannounced roof takes the stadium's recorded
+      state, and `build-ros` runs the validator's weekly rules before staging (withholds
+      the weekly layer alone); (3) `attach_game_and_opponent` could leave a stale
+      pre-filled column beside `_right`.
+- [x] **Firewall**: forbidden-feature guard refuses the weekly line names; no upstream package
+      imports `ffdraft.weekly`; ROS and Opportunity records carry no weekly field.
+- [x] **Frontend**: the Start/Sit tab (win-the-week pick at the reader's margin, calibrated
+      head-to-head, flip point, both halves of a skewed call, same-game copula, 3–4 player
+      matrix and top-of-set, injury base rates, week board); a "This week" card block;
+      lazy-loaded (entry 489.9 kB, tab chunk 7.9 kB gzip). TypeScript arithmetic held to a
+      Python-written golden vector.
+- [x] **Responsive**: 1440/1024/820/390/320 captured (`docs/visual-qa/2026-09-30-start-sit`),
+      0px overflow everywhere. Two phone defects found on the live board and fixed (clipped
+      range at 390px; a wrapping tab label once a fifth tab existed); the five tabs fit one
+      row from 360px.
+- [x] **ADR-097 (existing features, each measured on the live week-3 build first)**: "None"
+      names (4 players, 32 rows) → filled from weekly rows, roster, player master; 69
+      team-less rows per preset → filled from single-club roster rows; surfaced Opportunity
+      rows invented as position #1 with 0.0 VORP → copied from the model's board, fail
+      closed; Opportunity Board drew the mean beside a median rank → median
+      (`inseason_opportunity_record` 1.1). New critical validator checks, negative-controlled
+      on the unfixed live artifacts.
+- [x] **Workflow against the fixed `daily-refresh.yml`**: a written `weekly_projections.json`
+      must be packaged; the summary prints the Start/Sit week and count. `RUN_FACTS` silently
+      dropped season state, product mode and both ROS facts, fixed and tested. A test forbids
+      the refresh from fitting or scoring the weekly model or holding its token.
+- [x] **Live 2026 week-4 build**: gate 0 critical (3 pre-existing warnings), standalone
+      validation 0/0, 1,659 records, all projected.
+- [x] **Validation on the merged result**: see SESSION_STATE for the exact commands and counts.
+- [ ] **Owed**: a point-in-time probe of `load_injuries` before the report could ever be a
+      feature; the first production refresh with the weekly layer (the private store is
+      unreachable from the sandbox); no PR was opened (not requested).

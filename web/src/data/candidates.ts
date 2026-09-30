@@ -676,7 +676,7 @@ export function nextGameCell(signal: NextGameSignal): NextGameCell {
       const lines =
         implied !== null
           ? ` Sportsbook implied team points ${formatValue(implied)}, total ` +
-            `${formatValue(record.total_line)}: context, read by no model.`
+            `${formatValue(record.total_line)}: context, read by no board.`
           : " No line posted yet.";
       return {
         head,
