@@ -328,7 +328,7 @@ def probe_terms(fetcher: Fetcher) -> dict[str, Any]:
     """Status, headers and every sentence about use, limits, licence or archives, per page."""
     pages: dict[str, Any] = {}
     for url in TERMS_PAGES:
-        status, body, headers = fetcher.get(url, accept="text/html,application/json")
+        status, body, headers = fetcher.get(url, accept="text/html, */*")
         text = json.dumps(body) if isinstance(body, (dict, list)) else str(body or "")
         text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", text, flags=re.S | re.I)
         text = re.sub(r"<[^>]+>", " ", text)
