@@ -63,6 +63,8 @@ def normalize_injuries(raw: Any) -> pl.DataFrame:
     missing = sorted(INJURY_REQUIRED_COLUMNS - set(frame.columns))
     if missing:
         raise InjurySchemaError(f"nflverse injuries is missing {missing}")
+    if "full_name" not in frame.columns:
+        frame = frame.with_columns(pl.lit(None, dtype=pl.String).alias("full_name"))
     return (
         frame.filter((pl.col("game_type") == "REG") & pl.col("gsis_id").is_not_null())
         .select(
@@ -77,6 +79,8 @@ def normalize_injuries(raw: Any) -> pl.DataFrame:
             pl.col("report_status").cast(pl.String),
             pl.col("practice_status").cast(pl.String),
             pl.col("report_primary_injury").cast(pl.String).alias("primary_injury"),
+            # The name the report prints, for the game-day context's named absences (ADR-099).
+            pl.col("full_name").cast(pl.String),
         )
         .unique(subset=["season", "week", "gsis_id"], keep="last", maintain_order=True)
     )

@@ -320,6 +320,9 @@ class NflverseSnapCountAdapter(BaseSourceAdapter):
             "offense_pct",
         },
     )
+    #: Read only to name a defence's lagged starters for the weekly game-day context
+    #: (ADR-099); missing, they null those readings and nothing else.
+    context_source_columns = frozenset({"defense_snaps", "defense_pct"})
 
     def normalize(
         self,
@@ -348,6 +351,8 @@ class NflverseSnapCountAdapter(BaseSourceAdapter):
                     "team": _text(record.get("team")),
                     "offense_snaps": _number(record.get("offense_snaps")),
                     "offense_pct": _number(record.get("offense_pct")),
+                    "defense_snaps": _number(record.get("defense_snaps")),
+                    "defense_pct": _number(record.get("defense_pct")),
                 },
             )
         flags.note("snap_rows_without_key", dropped)
@@ -381,9 +386,11 @@ class NflverseScheduleAdapter(BaseSourceAdapter):
     no feature exists. ``context_source_columns`` makes their absence a warning rather than a
     build failure, and :mod:`ffdraft.quality.forbidden` refuses any feature named for them.
 
-    Scores, results and weather are still not read: the first two are outcomes, and the
-    live 2026 file carries no temperature or wind for any unplayed game (probed 2026-09-22),
-    so a forward-looking weather reading has no source.
+    Scores and results are still not read: they are outcomes. The recorded kickoff
+    temperature and wind are read since ADR-099, but only into the weekly v2 candidate's
+    *training* rows (through ``weather_training_parity_v1``): the live 2026 file carries none
+    for any unplayed game (probed 2026-09-22), so serving reads a forecast instead. The
+    stadium id and name resolve a game to a venue in ``config/venues.yaml``.
     """
 
     source_id = NFLVERSE_SOURCE_ID
@@ -397,7 +404,18 @@ class NflverseScheduleAdapter(BaseSourceAdapter):
         {"game_id", "season", "game_type", "week", "gameday", "gametime", "away_team", "home_team"},
     )
     context_source_columns = frozenset(
-        {"location", "away_rest", "home_rest", "roof", "spread_line", "total_line"},
+        {
+            "location",
+            "away_rest",
+            "home_rest",
+            "roof",
+            "spread_line",
+            "total_line",
+            "stadium_id",
+            "stadium",
+            "temp",
+            "wind",
+        },
     )
 
     def normalize(
@@ -434,6 +452,10 @@ class NflverseScheduleAdapter(BaseSourceAdapter):
                     "roof": _text(record.get("roof")),
                     "spread_line": _number(record.get("spread_line")),
                     "total_line": _number(record.get("total_line")),
+                    "stadium_id": _text(record.get("stadium_id")),
+                    "stadium": _text(record.get("stadium")),
+                    "temp": _number(record.get("temp")),
+                    "wind": _number(record.get("wind")),
                 },
             )
         return self.build_batch(

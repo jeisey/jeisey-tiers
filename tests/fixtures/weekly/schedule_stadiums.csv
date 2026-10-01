@@ -1,0 +1,333 @@
+season,stadium_id,stadium,games,schedule_roofs
+2017,ATL97,Mercedes-Benz Stadium,8,closed|open
+2017,BAL00,M&T Bank Stadium,8,outdoors
+2017,BOS00,Gillette Stadium,10,outdoors
+2017,BUF00,New Era Field,8,outdoors
+2017,CAR00,Bank of America Stadium,8,outdoors
+2017,CHI98,Soldier Field,8,outdoors
+2017,CIN00,Paul Brown Stadium,8,outdoors
+2017,CLE00,FirstEnergy Stadium,7,outdoors
+2017,DAL00,AT&T Stadium,8,closed
+2017,DEN00,Sports Authority Field at Mile High,8,outdoors
+2017,DET00,Ford Field,8,dome
+2017,GNB00,Lambeau Field,8,outdoors
+2017,HOU00,NRG Stadium,8,closed|open
+2017,IND00,Lucas Oil Stadium,8,closed|open
+2017,JAX00,EverBank Field,8,outdoors
+2017,KAN00,Arrowhead Stadium,9,outdoors
+2017,LAX97,StubHub Center,8,outdoors
+2017,LAX99,Los Angeles Memorial Coliseum,8,outdoors
+2017,LON00,Wembley Stadium,2,outdoors
+2017,LON01,Twickenham Stadium,2,outdoors
+2017,MEX00,Azteca Stadium,1,outdoors
+2017,MIA00,Hard Rock Stadium,7,outdoors
+2017,MIN01,U.S. Bank Stadium,10,dome
+2017,NAS00,Nissan Stadium,8,outdoors
+2017,NOR00,Mercedes-Benz Superdome,9,dome
+2017,NYC01,MetLife Stadium,16,outdoors
+2017,OAK00,Oakland-Alameda County Coliseum,7,outdoors
+2017,PHI00,Lincoln Financial Field,10,outdoors
+2017,PHO00,University of Phoenix Stadium,8,closed|open
+2017,PIT00,Heinz Field,9,outdoors
+2017,SEA00,CenturyLink Field,8,outdoors
+2017,SFO01,Levi's Stadium,8,outdoors
+2017,TAM00,Raymond James Stadium,8,outdoors
+2017,WAS00,FedExField,8,outdoors
+2018,ATL97,Mercedes-Benz Stadium,9,closed|open
+2018,BAL00,M&T Bank Stadium,9,outdoors
+2018,BOS00,Gillette Stadium,9,outdoors
+2018,BUF00,New Era Field,8,outdoors
+2018,CAR00,Bank of America Stadium,8,outdoors
+2018,CHI98,Soldier Field,9,outdoors
+2018,CIN00,Paul Brown Stadium,8,outdoors
+2018,CLE00,FirstEnergy Stadium,8,outdoors
+2018,DAL00,AT&T Stadium,9,closed
+2018,DEN00,Sports Authority Field at Mile High,8,outdoors
+2018,DET00,Ford Field,8,dome
+2018,GNB00,Lambeau Field,8,outdoors
+2018,HOU00,NRG Stadium,9,closed
+2018,IND00,Lucas Oil Stadium,8,closed
+2018,JAX00,TIAA Bank Stadium,7,outdoors
+2018,KAN00,Arrowhead Stadium,10,outdoors
+2018,LAX97,StubHub Center,7,outdoors
+2018,LAX99,Los Angeles Memorial Coliseum,9,outdoors
+2018,LON00,Wembley Stadium,3,outdoors
+2018,MIA00,Hard Rock Stadium,8,outdoors
+2018,MIN01,U.S. Bank Stadium,8,dome
+2018,NAS00,Nissan Stadium,8,outdoors
+2018,NOR00,Mercedes-Benz Superdome,10,dome
+2018,NYC01,MetLife Stadium,16,outdoors
+2018,OAK00,Oakland-Alameda County Coliseum,7,outdoors
+2018,PHI00,Lincoln Financial Field,8,outdoors
+2018,PHO00,State Farm Stadium,8,closed
+2018,PIT00,Heinz Field,8,outdoors
+2018,SEA00,CenturyLink Field,8,outdoors
+2018,SFO01,Levi's Stadium,8,outdoors
+2018,TAM00,Raymond James Stadium,8,outdoors
+2018,WAS00,FedExField,8,outdoors
+2019,ATL97,Mercedes-Benz Stadium,8,closed|open
+2019,BAL00,M&T Bank Stadium,9,outdoors
+2019,BOS00,Gillette Stadium,9,outdoors
+2019,BUF00,New Era Field,8,outdoors
+2019,CAR00,Bank of America Stadium,8,outdoors
+2019,CHI98,Soldier Field,8,outdoors
+2019,CIN00,Paul Brown Stadium,8,outdoors
+2019,CLE00,FirstEnergy Stadium,8,outdoors
+2019,DAL00,AT&T Stadium,8,closed
+2019,DEN00,Empower Field at Mile High,8,outdoors
+2019,DET00,Ford Field,8,dome
+2019,GNB00,Lambeau Field,9,outdoors
+2019,HOU00,NRG Stadium,9,closed
+2019,IND00,Lucas Oil Stadium,8,closed|open
+2019,JAX00,TIAA Bank Stadium,7,outdoors
+2019,KAN00,Arrowhead Stadium,10,outdoors
+2019,LAX97,StubHub Center,7,outdoors
+2019,LAX99,Los Angeles Memorial Coliseum,7,outdoors
+2019,LON00,Wembley Stadium,2,outdoors
+2019,LON02,Tottenham Stadium,2,outdoors
+2019,MEX00,Azteca Stadium,1,outdoors
+2019,MIA00,Hard Rock Stadium,9,outdoors
+2019,MIN01,U.S. Bank Stadium,8,dome
+2019,NAS00,Nissan Stadium,8,outdoors
+2019,NOR00,Mercedes-Benz Superdome,9,dome
+2019,NYC01,MetLife Stadium,16,outdoors
+2019,OAK00,Ring Central Coliseum,7,outdoors
+2019,PHI00,Lincoln Financial Field,9,outdoors
+2019,PHO00,State Farm Stadium,8,closed
+2019,PIT00,Heinz Field,8,outdoors
+2019,SEA00,CenturyLink Field,8,outdoors
+2019,SFO01,Levi's Stadium,10,outdoors
+2019,TAM00,Raymond James Stadium,7,outdoors
+2019,WAS00,FedExField,8,outdoors
+2020,ATL97,Mercedes-Benz Stadium,8,closed
+2020,BAL00,M&T Bank Stadium,8,outdoors
+2020,BOS00,Gillette Stadium,8,outdoors
+2020,BUF00,New Era Field,10,outdoors
+2020,CAR00,Bank of America Stadium,8,outdoors
+2020,CHI98,Soldier Field,8,outdoors
+2020,CIN00,Paul Brown Stadium,8,outdoors
+2020,CLE00,FirstEnergy Stadium,8,outdoors
+2020,DAL00,AT&T Stadium,8,closed
+2020,DEN00,Empower Field at Mile High,8,outdoors
+2020,DET00,Ford Field,8,dome
+2020,GNB00,Lambeau Field,10,outdoors
+2020,HOU00,NRG Stadium,8,closed
+2020,IND00,Lucas Oil Stadium,8,closed
+2020,JAX00,TIAA Bank Stadium,8,outdoors
+2020,KAN00,Arrowhead Stadium,10,outdoors
+2020,LAX01,SoFi Stadium,16,dome
+2020,MIA00,Hard Rock Stadium,8,outdoors
+2020,MIN01,U.S. Bank Stadium,8,dome
+2020,NAS00,Nissan Stadium,9,outdoors
+2020,NOR00,Mercedes-Benz Superdome,10,dome
+2020,NYC01,MetLife Stadium,16,outdoors
+2020,PHI00,Lincoln Financial Field,8,outdoors
+2020,PHO00,State Farm Stadium,11,closed
+2020,PIT00,Heinz Field,9,outdoors
+2020,SEA00,CenturyLink Field,4,outdoors
+2020,SEA00,Lumen Field,5,outdoors
+2020,SFO01,Levi's Stadium,5,outdoors
+2020,TAM00,Raymond James Stadium,9,outdoors
+2020,VEG00,Allegiant Stadium,8,dome
+2020,WAS00,FedExField,9,outdoors
+2021,ATL97,Mercedes-Benz Stadium,7,closed|open
+2021,BAL00,M&T Bank Stadium,9,outdoors
+2021,BOS00,Gillette Stadium,9,outdoors
+2021,BUF00,New Era Field,10,outdoors
+2021,CAR00,Bank of America Stadium,8,outdoors
+2021,CHI98,Soldier Field,8,outdoors
+2021,CIN00,Paul Brown Stadium,10,outdoors
+2021,CLE00,FirstEnergy Stadium,9,outdoors
+2021,DAL00,AT&T Stadium,9,closed|open
+2021,DEN00,Empower Field at Mile High,9,outdoors
+2021,DET00,Ford Field,8,dome
+2021,GNB00,Lambeau Field,9,outdoors
+2021,HOU00,NRG Stadium,9,closed|open
+2021,IND00,Lucas Oil Stadium,9,closed|open
+2021,JAX00,TIAA Bank Stadium,9,outdoors
+2021,KAN00,GEHA Field at Arrowhead Stadium,12,outdoors
+2021,LAX01,SoFi Stadium,20,dome
+2021,LON02,Tottenham Stadium,2,outdoors
+2021,MIA00,Hard Rock Stadium,9,outdoors
+2021,MIN01,U.S. Bank Stadium,8,dome
+2021,NAS00,Nissan Stadium,10,outdoors
+2021,NOR00,Mercedes-Benz Superdome,7,dome
+2021,NYC01,MetLife Stadium,17,outdoors
+2021,PHI00,Lincoln Financial Field,8,outdoors
+2021,PHO00,State Farm Stadium,8,closed|open
+2021,PIT00,Heinz Field,9,outdoors
+2021,SEA00,Lumen Field,8,outdoors
+2021,SFO01,Levi's Stadium,8,outdoors
+2021,TAM00,Raymond James Stadium,10,outdoors
+2021,VEG00,Allegiant Stadium,9,dome
+2021,WAS00,FedExField,8,outdoors
+2022,ATL97,Mercedes-Benz Stadium,9,closed|open
+2022,BAL00,M&T Bank Stadium,8,outdoors
+2022,BOS00,Gillette Stadium,8,outdoors
+2022,BUF00,New Era Field,9,outdoors
+2022,CAR00,Bank of America Stadium,9,outdoors
+2022,CHI98,Soldier Field,9,outdoors
+2022,CIN00,Paycor Stadium,8,outdoors
+2022,CLE00,FirstEnergy Stadium,8,outdoors
+2022,DAL00,AT&T Stadium,9,closed|open
+2022,DEN00,Empower Field at Mile High,8,outdoors
+2022,DET00,Ford Field,10,dome
+2022,GER00,Allianz Arena,1,outdoors
+2022,GNB00,Lambeau Field,8,outdoors
+2022,HOU00,NRG Stadium,8,closed
+2022,IND00,Lucas Oil Stadium,8,closed|open
+2022,JAX00,TIAA Bank Stadium,8,outdoors
+2022,KAN00,GEHA Field at Arrowhead Stadium,10,outdoors
+2022,LAX01,SoFi Stadium,17,dome
+2022,LON00,Wembley Stadium,1,outdoors
+2022,LON02,Tottenham Stadium,2,outdoors
+2022,MEX00,Azteca Stadium,1,outdoors
+2022,MIA00,Hard Rock Stadium,8,outdoors
+2022,MIN01,U.S. Bank Stadium,10,dome
+2022,NAS00,Nissan Stadium,8,outdoors
+2022,NOR00,Mercedes-Benz Superdome,8,dome
+2022,NYC01,MetLife Stadium,17,outdoors
+2022,PHI00,Lincoln Financial Field,11,outdoors
+2022,PHO00,State Farm Stadium,9,closed|open
+2022,PIT00,Acrisure Stadium,8,outdoors
+2022,SEA00,Lumen Field,9,outdoors
+2022,SFO01,Levi's Stadium,11,outdoors
+2022,TAM00,Raymond James Stadium,9,outdoors
+2022,VEG00,Allegiant Stadium,8,dome
+2022,WAS00,FedExField,9,outdoors
+2023,ATL97,Mercedes-Benz Stadium,8,closed|open
+2023,BAL00,M&T Bank Stadium,11,outdoors
+2023,BOS00,Gillette Stadium,8,outdoors
+2023,BUF00,New Era Field,10,outdoors
+2023,CAR00,Bank of America Stadium,8,outdoors
+2023,CHI98,Soldier Field,8,outdoors
+2023,CIN00,Paycor Stadium,9,outdoors
+2023,CLE00,FirstEnergy Stadium,9,outdoors
+2023,DAL00,AT&T Stadium,9,closed|open
+2023,DEN00,Empower Field at Mile High,9,outdoors
+2023,DET00,Ford Field,10,dome
+2023,FRA00,Deutsche Bank Park,2,outdoors
+2023,GNB00,Lambeau Field,8,outdoors
+2023,HOU00,NRG Stadium,10,closed|open
+2023,IND00,Lucas Oil Stadium,9,closed|open
+2023,JAX00,TIAA Bank Stadium,8,outdoors
+2023,KAN00,GEHA Field at Arrowhead Stadium,9,outdoors
+2023,LAX01,SoFi Stadium,17,dome
+2023,LON00,Wembley Stadium,1,outdoors
+2023,LON02,Tottenham Stadium,2,outdoors
+2023,MIA00,Hard Rock Stadium,9,outdoors
+2023,MIN01,U.S. Bank Stadium,8,dome
+2023,NAS00,Nissan Stadium,8,outdoors
+2023,NOR00,Mercedes-Benz Superdome,8,dome
+2023,NYC01,MetLife Stadium,17,outdoors
+2023,PHI00,Lincoln Financial Field,8,outdoors
+2023,PHO00,State Farm Stadium,8,closed|open
+2023,PIT00,Acrisure Stadium,9,outdoors
+2023,SEA00,Lumen Field,8,outdoors
+2023,SFO01,Levi's Stadium,10,outdoors
+2023,TAM00,Raymond James Stadium,9,outdoors
+2023,VEG00,Allegiant Stadium,10,dome
+2023,WAS00,FedExField,8,outdoors
+2024,ATL97,Mercedes-Benz Stadium,9,closed
+2024,BAL00,M&T Bank Stadium,9,outdoors
+2024,BOS00,Gillette Stadium,8,outdoors
+2024,BUF00,New Era Field,10,outdoors
+2024,CAR00,Bank of America Stadium,8,outdoors
+2024,CHI98,Soldier Field,8,outdoors
+2024,CIN00,Paycor Stadium,8,outdoors
+2024,CLE00,FirstEnergy Stadium,8,outdoors
+2024,DAL00,AT&T Stadium,9,closed
+2024,DEN00,Empower Field at Mile High,8,outdoors
+2024,DET00,Ford Field,10,dome
+2024,GER00,Allianz Arena,1,outdoors
+2024,GNB00,Lambeau Field,9,outdoors
+2024,HOU00,NRG Stadium,9,closed
+2024,IND00,Lucas Oil Stadium,8,closed
+2024,JAX00,TIAA Bank Stadium,7,outdoors
+2024,KAN00,GEHA Field at Arrowhead Stadium,10,outdoors
+2024,LAX01,SoFi Stadium,17,dome
+2024,LON00,Wembley Stadium,1,outdoors
+2024,LON02,Tottenham Stadium,2,outdoors
+2024,MIA00,Hard Rock Stadium,8,outdoors
+2024,MIN01,U.S. Bank Stadium,8,dome
+2024,NAS00,Nissan Stadium,8,outdoors
+2024,NOR00,Mercedes-Benz Superdome,10,dome
+2024,NYC01,MetLife Stadium,17,outdoors
+2024,PHI00,Lincoln Financial Field,11,outdoors
+2024,PHO00,State Farm Stadium,10,closed
+2024,PIT00,Acrisure Stadium,8,outdoors
+2024,SAO00,Arena Corinthians,1,outdoors
+2024,SEA00,Lumen Field,9,outdoors
+2024,SFO01,Levi's Stadium,9,outdoors
+2024,TAM00,Raymond James Stadium,10,outdoors
+2024,VEG00,Allegiant Stadium,8,dome
+2024,WAS00,FedExField,9,outdoors
+2025,ATL97,Mercedes-Benz Stadium,8,closed
+2025,BAL00,M&T Bank Stadium,9,outdoors
+2025,BOS00,Gillette Stadium,11,outdoors
+2025,BUF00,New Era Field,9,outdoors
+2025,CAR00,Bank of America Stadium,9,outdoors
+2025,CHI98,Soldier Field,10,outdoors
+2025,CIN00,Paycor Stadium,9,outdoors
+2025,CLE00,FirstEnergy Stadium,9,outdoors
+2025,DAL00,AT&T Stadium,8,closed
+2025,DEN00,Empower Field at Mile High,11,outdoors
+2025,DET00,Ford Field,8,dome
+2025,GNB00,Lambeau Field,8,outdoors
+2025,HOU00,NRG Stadium,9,closed
+2025,IND00,Lucas Oil Stadium,9,closed
+2025,JAX00,TIAA Bank Stadium,10,outdoors
+2025,KAN00,GEHA Field at Arrowhead Stadium,9,outdoors
+2025,LAX01,SoFi Stadium,17,dome
+2025,MIA00,Hard Rock Stadium,9,outdoors
+2025,MIN01,U.S. Bank Stadium,8,dome
+2025,NAS00,Nissan Stadium,9,outdoors
+2025,NOR00,Mercedes-Benz Superdome,8,dome
+2025,NYC01,MetLife Stadium,17,outdoors
+2025,PHI00,Lincoln Financial Field,9,outdoors
+2025,PHO00,State Farm Stadium,8,closed
+2025,PIT00,Acrisure Stadium,10,outdoors
+2025,SEA00,Lumen Field,10,outdoors
+2025,SFO01,Levi's Stadium,9,outdoors
+2025,TAM00,Raymond James Stadium,8,outdoors
+2025,VEG00,Allegiant Stadium,9,dome
+2025,WAS00,FedExField,8,outdoors
+2026,ATL97,Mercedes-Benz Stadium,8,closed
+2026,BAL00,M&T Bank Stadium,8,outdoors
+2026,BOS00,Gillette Stadium,8,outdoors
+2026,BUF00,Highmark Stadium,8,outdoors
+2026,CAR00,Bank of America Stadium,9,outdoors
+2026,CHI98,Soldier Field,9,outdoors
+2026,CIN00,Paycor Stadium,8,outdoors
+2026,CLE00,Huntington Bank Field,8,outdoors
+2026,DAL00,AT&T Stadium,8,closed
+2026,DEN00,Empower Field at Mile High,8,outdoors
+2026,DET00,Ford Field,8,dome
+2026,GNB00,Lambeau Field,9,outdoors
+2026,HOU00,Reliant Stadium,8,closed
+2026,IND00,Lucas Oil Stadium,8,closed|open
+2026,JAX00,EverBank Stadium,6,outdoors
+2026,JAX00,Tottenham Hotspur Stadium,1,outdoors
+2026,KAN00,GEHA Field at Arrowhead Stadium,8,outdoors
+2026,LAX01,SoFi Stadium,16,dome
+2026,LON00,Wembley Stadium,1,outdoors
+2026,LON02,Tottenham Hotspur Stadium,1,outdoors
+2026,MAD01,Bernabeu,1,""
+2026,MEL00,Melbourne Cricket Ground,1,dome
+2026,MEX00,Estadio Banorte,1,outdoors
+2026,MIA00,Hard Rock Stadium,8,outdoors
+2026,MIN01,U.S. Bank Stadium,9,dome
+2026,MUN01,FC Bayern Munich Stadium,1,dome
+2026,NAS00,Nissan Stadium,8,outdoors
+2026,NOR00,Caesars Superdome,8,dome
+2026,NYC01,MetLife Stadium,17,outdoors
+2026,PAR00,Stade de France,1,dome
+2026,PHI00,Lincoln Financial Field,9,outdoors
+2026,PHO00,State Farm Stadium,9,closed
+2026,PIT00,Acrisure Stadium,8,outdoors
+2026,RIO00,Maracana Stadium,1,open
+2026,SEA00,Lumen Field,9,outdoors
+2026,SFO01,Levi's Stadium,8,outdoors
+2026,TAM00,Raymond James Stadium,9,outdoors
+2026,VEG00,Allegiant Stadium,8,dome
+2026,WAS00,Northwest Stadium,8,outdoors

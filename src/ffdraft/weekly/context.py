@@ -119,6 +119,7 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
                 if played < week
             ]
             indoors_roof = max(earlier)[1] if earlier else ""
+        inferred = not roof and bool(indoors_roof)
         for team, opponent, is_home in ((home, away, True), (away, home, False)):
             margin = None if spread is None else (spread if is_home else -spread) + 0.0
             implied = None if margin is None or total is None else (total + margin) / 2.0
@@ -135,6 +136,8 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
                     "neutral_site": neutral,
                     "kickoff_utc": kickoff,
                     "roof": roof or None,
+                    # The unannounced-roof fill above, made visible: the page must say "assumed".
+                    "roof_inferred": inferred,
                     "game_total_line": total,
                     "game_team_margin": margin,
                     "game_team_points": implied,
@@ -167,6 +170,7 @@ _CONTEXT_SCHEMA: Mapping[str, pl.DataType] = {
     "neutral_site": pl.Boolean(),
     "kickoff_utc": pl.Datetime("us", "UTC"),
     "roof": pl.String(),
+    "roof_inferred": pl.Boolean(),
     "game_total_line": pl.Float64(),
     "game_team_margin": pl.Float64(),
     "game_team_points": pl.Float64(),

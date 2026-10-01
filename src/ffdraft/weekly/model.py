@@ -45,8 +45,6 @@ from ffdraft.weekly.frozen import (
     FEATURE_FAMILIES,
     WEEKLY_POSITIONS,
     WeeklySpec,
-    feature_family,
-    weekly_feature_set_hash,
 )
 
 __all__ = [
@@ -73,6 +71,16 @@ def quantile_columns(levels: Sequence[float]) -> list[str]:
     return [f"q{round(level * 100):02d}" for level in levels]
 
 
+def family_map(spec: Any) -> Mapping[str, tuple[str, ...]]:
+    """The spec's feature families: ``weekly-startsit-v1``'s seven unless it declares its own.
+
+    A later spec (``weekly-startsit-v2``) carries a ``families`` mapping; v1's frozen spec does
+    not, and reading it this way keeps v1's configuration hash exactly what it was.
+    """
+    families: Mapping[str, tuple[str, ...]] | None = getattr(spec, "families", None)
+    return families if families is not None else FEATURE_FAMILIES
+
+
 @dataclass
 class WeeklyGroup:
     """One position x scoring preset: a booster per level plus its conformal shifts."""
@@ -94,7 +102,7 @@ class WeeklyGroup:
 def _train(
     frame: pl.DataFrame,
     *,
-    spec: WeeklySpec,
+    spec: Any,
     level: float,
     seed: int,
 ) -> lgb.Booster:
@@ -116,7 +124,7 @@ def _train(
     return lgb.train(parameters, dataset, num_boost_round=spec.num_boost_round)
 
 
-def _group_seed(spec: WeeklySpec, position: str, scoring: str, level: float, tag: str) -> int:
+def _group_seed(spec: Any, position: str, scoring: str, level: float, tag: str) -> int:
     digest = hashlib.sha256(f"{spec.seed}|{position}|{scoring}|{level}|{tag}".encode()).digest()
     return int.from_bytes(digest[:4], "big") % 2_000_000_000
 
@@ -130,7 +138,7 @@ def _raw(boosters: Sequence[lgb.Booster], matrix: Floats) -> Floats:
 def fit_weekly_model(
     frame: pl.DataFrame,
     *,
-    spec: WeeklySpec | None = None,
+    spec: Any = None,
     calibrate: bool = True,
     positions: Sequence[str] = WEEKLY_POSITIONS,
 ) -> WeeklyModel:
@@ -209,7 +217,8 @@ def fit_weekly_model(
 
 @dataclass
 class WeeklyModel:
-    spec: WeeklySpec
+    #: ``WeeklySpec`` (v1) or ``WeeklySpecV2``: anything with the same fields and digests.
+    spec: Any
     groups: dict[str, WeeklyGroup]
     training_seasons: tuple[int, ...]
     calibration_season: int | None
@@ -256,8 +265,10 @@ class WeeklyModel:
         median_index = self.levels.index(0.5)
         predictions = self.predict(frame)
         indexed = frame.with_row_index("_row")
-        families = list(FEATURE_FAMILIES)
-        family_of = [feature_family(name) for name in self.spec.features]
+        mapping = family_map(self.spec)
+        families = list(mapping)
+        owner = {name: str(family) for family, names in mapping.items() for name in names}
+        family_of = [owner[name] for name in self.spec.features]
         for group in self.groups.values():
             block = indexed.filter(
                 (pl.col("position") == group.position)
@@ -325,7 +336,7 @@ class WeeklyModel:
             "artifact_schema": WEEKLY_ARTIFACT_SCHEMA,
             "spec": self.spec.to_dict(),
             "configuration_hash": self.spec.configuration_hash(),
-            "feature_set_hash": weekly_feature_set_hash(),
+            "feature_set_hash": self.spec.to_dict()["feature_set_hash"],
             "training_seasons": list(self.training_seasons),
             "calibration_season": self.calibration_season,
             "fitted_at_utc": isoformat_utc(utc_now()),
@@ -339,14 +350,15 @@ class WeeklyModel:
         return written
 
     @classmethod
-    def load(cls, directory: Path) -> WeeklyModel:
+    def load(cls, directory: Path, *, spec: Any = None) -> WeeklyModel:
+        """Load and verify an artifact against ``spec`` (v1's frozen spec unless given)."""
         metadata = json.loads((directory / _METADATA_FILE).read_text(encoding="utf-8"))
         if metadata.get("artifact_schema") != WEEKLY_ARTIFACT_SCHEMA:
             raise WeeklyArtifactMismatch(
                 f"{directory} is {metadata.get('artifact_schema')!r}, expected "
                 f"{WEEKLY_ARTIFACT_SCHEMA!r}",
             )
-        spec = WeeklySpec()
+        spec = spec if spec is not None else WeeklySpec()
         if metadata.get("configuration_hash") != spec.configuration_hash():
             raise WeeklyArtifactMismatch(
                 "the weekly artifact was fitted under a different specification "

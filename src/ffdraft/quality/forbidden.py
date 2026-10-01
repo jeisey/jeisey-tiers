@@ -78,6 +78,21 @@ FORBIDDEN_NAME_SUBSTRINGS = (
     # harmless "team" feature.
     "game_team_margin",
     "game_team_points",
+    # ADR-099: the weekly game-day context (weekly-startsit-v2's candidate families). Kickoff
+    # weather, this week's injury report and who is missing from a lineup are decision-layer
+    # inputs; the intrinsic and rest-of-season models never read them, and a name carried
+    # over from the weekly v2 frame must fail here.
+    "wx_",
+    "own_ol_",
+    "own_qb_out",
+    "own_vacated_",
+    "own_questionable_",
+    "opp_cb_out",
+    "opp_s_out",
+    "opp_dl_",
+    "opp_db_",
+    "report_final",
+    "kickoff_forecast",
 )
 
 #: Sources whose data may never feed the intrinsic model, whatever the column is called.
@@ -86,6 +101,9 @@ FORBIDDEN_LINEAGE_SOURCES = frozenset(
         "myfantasyleague_adp",
         "fantasycalc",
         "fantasypros_ecr_via_dynastyprocess",
+        # ADR-099: forecast providers feed the weekly game-day layer only.
+        "nws_api",
+        "open_meteo",
     },
 )
 

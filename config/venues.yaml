@@ -1,0 +1,652 @@
+# The versioned venue registry (ADR-099; docs/DATA_SOURCES.md §20).
+#
+# One entry per building. A schedule row resolves by stadium NAME first (aliases, within the
+# entry's seasons), then by nflverse stadium id (schedule_ids, within its seasons); zero or two
+# matches resolve to nothing, and that game's weather is unknown (ffdraft.weekly.venues).
+#
+# roof_type is the venue's FIXED type, never a game's roof state:
+#   open        weather reaches the field in every state
+#   retractable the state is announced on game day: weather is unknown before it
+#   dome        no weather reaches the field
+#   unverified  the evidence does not establish which; fails closed (no roof type, no weather)
+#
+# Coordinates are Wikidata P625 (CC0) of the item the English Wikipedia article links,
+# rounded to 4 decimals (about 11 m); tests/unit/test_venue_registry.py checks each against
+# the committed probe evidence. Provenance cites that evidence; nothing is from memory.
+registry_version: venues_v1
+retrieved_utc: "2026-10-01"
+evidence:
+  - docs/source-probes/2026-10-01/weather/venues.json
+  - docs/source-probes/2026-10-01/weather/venue_resolution.json
+  - tests/fixtures/weekly/schedule_stadiums.csv
+venues:
+  - venue_id: atl-mercedes-benz-stadium
+    name: "Mercedes-Benz Stadium"
+    country: US
+    latitude: 33.7553
+    longitude: -84.4008
+    roof_type: retractable
+    forecast_provider: nws
+    schedule_ids: [ATL97]
+    aliases: ["Mercedes-Benz Stadium"]
+    seasons: [2017, null]
+    wikidata: Q7007552
+    provenance:
+      coordinates: "Wikidata Q7007552 P625 via en.wikipedia 'Mercedes-Benz Stadium' rev 1377254306 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: closed/open; en.wikipedia infobox roof = Retractable (venue_resolution.json roof_evidence)"
+  - venue_id: bal-mt-bank-stadium
+    name: "M&T Bank Stadium"
+    country: US
+    latitude: 39.2781
+    longitude: -76.6228
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [BAL00]
+    aliases: ["M&T Bank Stadium"]
+    seasons: [null, null]
+    wikidata: Q1141336
+    provenance:
+      coordinates: "Wikidata Q1141336 P625 via en.wikipedia 'M&T Bank Stadium' rev 1377383293 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: ne-gillette-stadium
+    name: "Gillette Stadium"
+    country: US
+    latitude: 42.0909
+    longitude: -71.2643
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [BOS00]
+    aliases: ["Gillette Stadium"]
+    seasons: [null, null]
+    wikidata: Q373355
+    provenance:
+      coordinates: "Wikidata Q373355 P625 via en.wikipedia 'Gillette Stadium' rev 1375562531 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: buf-ralph-wilson-stadium
+    name: "Ralph Wilson Stadium (Highmark Stadium 2021-2025)"
+    country: US
+    latitude: 42.7736
+    longitude: -78.7869
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [BUF00]
+    aliases: ["New Era Field", "Bills Stadium", "Highmark Stadium", "Ralph Wilson Stadium"]
+    seasons: [null, 2025]
+    wikidata: Q1475645
+    provenance:
+      coordinates: "Wikidata Q1475645 P625 via en.wikipedia 'Ralph Wilson Stadium' rev 1377726565 (venue_resolution.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors; en.wikipedia 'Ralph Wilson Stadium' rev 1377726565: home of the Bills 1973-2025, named New Era Field 2016-2019, Bills Stadium 2020, Highmark Stadium 2021-2025"
+  - venue_id: buf-highmark-stadium
+    name: "Highmark Stadium"
+    country: US
+    latitude: 42.773
+    longitude: -78.7922
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [BUF00]
+    aliases: ["Highmark Stadium"]
+    seasons: [2026, null]
+    wikidata: Q16251517
+    provenance:
+      coordinates: "Wikidata Q16251517 P625 via en.wikipedia 'Highmark Stadium' rev 1376055436 (venues.json)"
+      roof_type: "en.wikipedia 'Highmark Stadium' rev 1376055436 (opened 2026): 'the playing field is uncovered'; 'a football-focused, open-air stadium' (venues.json, venue_resolution.json roof_evidence)"
+  - venue_id: car-bank-of-america-stadium
+    name: "Bank of America Stadium"
+    country: US
+    latitude: 35.2258
+    longitude: -80.8528
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [CAR00]
+    aliases: ["Bank of America Stadium"]
+    seasons: [null, null]
+    wikidata: Q806673
+    provenance:
+      coordinates: "Wikidata Q806673 P625 via en.wikipedia 'Bank of America Stadium' rev 1374879480 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: chi-soldier-field
+    name: "Soldier Field"
+    country: US
+    latitude: 41.8625
+    longitude: -87.6167
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [CHI98]
+    aliases: ["Soldier Field"]
+    seasons: [null, null]
+    wikidata: Q1132413
+    provenance:
+      coordinates: "Wikidata Q1132413 P625 via en.wikipedia 'Soldier Field' rev 1377258831 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: cin-paycor-stadium
+    name: "Paycor Stadium"
+    country: US
+    latitude: 39.0954
+    longitude: -84.516
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [CIN00]
+    aliases: ["Paycor Stadium", "Paul Brown Stadium"]
+    seasons: [null, null]
+    wikidata: Q1632294
+    provenance:
+      coordinates: "Wikidata Q1632294 P625 via en.wikipedia 'Paycor Stadium' rev 1372206140 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: cle-huntington-bank-field
+    name: "Huntington Bank Field"
+    country: US
+    latitude: 41.5061
+    longitude: -81.6994
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [CLE00]
+    aliases: ["Huntington Bank Field", "FirstEnergy Stadium"]
+    seasons: [null, null]
+    wikidata: Q1100756
+    provenance:
+      coordinates: "Wikidata Q1100756 P625 via en.wikipedia 'Huntington Bank Field' rev 1372204591 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: dal-att-stadium
+    name: "AT&T Stadium"
+    country: US
+    latitude: 32.7477
+    longitude: -97.0929
+    roof_type: retractable
+    forecast_provider: nws
+    schedule_ids: [DAL00]
+    aliases: ["AT&T Stadium"]
+    seasons: [null, null]
+    wikidata: Q838284
+    provenance:
+      coordinates: "Wikidata Q838284 P625 via en.wikipedia 'AT&T Stadium' rev 1377706511 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: closed/open; en.wikipedia 'AT&T Stadium': 'a retractable roof stadium' (venues.json)"
+  - venue_id: den-empower-field
+    name: "Empower Field at Mile High"
+    country: US
+    latitude: 39.7439
+    longitude: -105.02
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [DEN00]
+    aliases: ["Empower Field at Mile High", "Sports Authority Field at Mile High"]
+    seasons: [null, null]
+    wikidata: Q1046135
+    provenance:
+      coordinates: "Wikidata Q1046135 P625 via en.wikipedia 'Empower Field at Mile High' rev 1375502447 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: det-ford-field
+    name: "Ford Field"
+    country: US
+    latitude: 42.34
+    longitude: -83.0456
+    roof_type: dome
+    forecast_provider: nws
+    schedule_ids: [DET00]
+    aliases: ["Ford Field"]
+    seasons: [null, null]
+    wikidata: Q1142586
+    provenance:
+      coordinates: "Wikidata Q1142586 P625 via en.wikipedia 'Ford Field' rev 1375366384 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: dome; en.wikipedia 'Ford Field': 'an indoor stadium' (venues.json)"
+  - venue_id: gb-lambeau-field
+    name: "Lambeau Field"
+    country: US
+    latitude: 44.5014
+    longitude: -88.0622
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [GNB00]
+    aliases: ["Lambeau Field"]
+    seasons: [null, null]
+    wikidata: Q860790
+    provenance:
+      coordinates: "Wikidata Q860790 P625 via en.wikipedia 'Lambeau Field' rev 1373835701 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: hou-reliant-stadium
+    name: "Reliant Stadium (NRG Stadium 2014-2025)"
+    country: US
+    latitude: 29.6847
+    longitude: -95.4108
+    roof_type: retractable
+    forecast_provider: nws
+    schedule_ids: [HOU00]
+    aliases: ["Reliant Stadium", "NRG Stadium"]
+    seasons: [null, null]
+    wikidata: Q1058864
+    provenance:
+      coordinates: "Wikidata Q1058864 P625 via en.wikipedia 'Reliant Stadium' rev 1376433325 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: closed/open; en.wikipedia infobox roof = Retractable (venue_resolution.json roof_evidence 'Reliant Stadium')"
+  - venue_id: ind-lucas-oil-stadium
+    name: "Lucas Oil Stadium"
+    country: US
+    latitude: 39.7601
+    longitude: -86.1638
+    roof_type: retractable
+    forecast_provider: nws
+    schedule_ids: [IND00]
+    aliases: ["Lucas Oil Stadium"]
+    seasons: [null, null]
+    wikidata: Q867160
+    provenance:
+      coordinates: "Wikidata Q867160 P625 via en.wikipedia 'Lucas Oil Stadium' rev 1377522436 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: closed/open; en.wikipedia 'Lucas Oil Stadium': 'a retractable roof stadium' (venues.json)"
+  - venue_id: jax-everbank-stadium
+    name: "EverBank Stadium"
+    country: US
+    latitude: 30.3239
+    longitude: -81.6375
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [JAX00]
+    aliases: ["EverBank Stadium", "EverBank Field", "TIAA Bank Stadium"]
+    seasons: [null, null]
+    wikidata: Q635117
+    provenance:
+      coordinates: "Wikidata Q635117 P625 via en.wikipedia 'EverBank Stadium' rev 1372151265 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: kc-arrowhead-stadium
+    name: "Arrowhead Stadium"
+    country: US
+    latitude: 39.0489
+    longitude: -94.4839
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [KAN00]
+    aliases: ["Arrowhead Stadium", "GEHA Field at Arrowhead Stadium"]
+    seasons: [null, null]
+    wikidata: Q544553
+    provenance:
+      coordinates: "Wikidata Q544553 P625 via en.wikipedia 'Arrowhead Stadium' rev 1375749409 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: la-sofi-stadium
+    name: "SoFi Stadium"
+    country: US
+    latitude: 33.9504
+    longitude: -118.338
+    roof_type: dome
+    forecast_provider: nws
+    schedule_ids: [LAX01]
+    aliases: ["SoFi Stadium"]
+    seasons: [2020, null]
+    wikidata: Q19520501
+    provenance:
+      coordinates: "Wikidata Q19520501 P625 via en.wikipedia 'SoFi Stadium' rev 1377512452 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: dome; en.wikipedia 'SoFi Stadium': 'a multi-purpose indoor stadium' (venues.json)"
+  - venue_id: lac-dignity-health-sports-park
+    name: "Dignity Health Sports Park"
+    country: US
+    latitude: 33.8644
+    longitude: -118.2611
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [LAX97]
+    aliases: ["StubHub Center", "Dignity Health Sports Park"]
+    seasons: [null, 2019]
+    wikidata: Q200684
+    provenance:
+      coordinates: "Wikidata Q200684 P625 via en.wikipedia 'Dignity Health Sports Park' rev 1372080521 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: la-memorial-coliseum
+    name: "Los Angeles Memorial Coliseum"
+    country: US
+    latitude: 34.0142
+    longitude: -118.2878
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [LAX99]
+    aliases: ["Los Angeles Memorial Coliseum"]
+    seasons: [null, 2019]
+    wikidata: Q849784
+    provenance:
+      coordinates: "Wikidata Q849784 P625 via en.wikipedia 'Los Angeles Memorial Coliseum' rev 1377046026 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: mia-hard-rock-stadium
+    name: "Hard Rock Stadium"
+    country: US
+    latitude: 25.9581
+    longitude: -80.2389
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [MIA00]
+    aliases: ["Hard Rock Stadium"]
+    seasons: [null, null]
+    wikidata: Q864339
+    provenance:
+      coordinates: "Wikidata Q864339 P625 via en.wikipedia 'Hard Rock Stadium' rev 1375341705 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: min-us-bank-stadium
+    name: "U.S. Bank Stadium"
+    country: US
+    latitude: 44.9739
+    longitude: -93.2581
+    roof_type: dome
+    forecast_provider: nws
+    schedule_ids: [MIN01]
+    aliases: ["U.S. Bank Stadium"]
+    seasons: [null, null]
+    wikidata: Q7929512
+    provenance:
+      coordinates: "Wikidata Q7929512 P625 via en.wikipedia 'U.S. Bank Stadium' rev 1377621892 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: dome; en.wikipedia 'U.S. Bank Stadium': 'an indoor stadium' (venues.json)"
+  - venue_id: ten-nissan-stadium
+    name: "Nissan Stadium (Nashville)"
+    country: US
+    latitude: 36.1664
+    longitude: -86.7714
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [NAS00]
+    aliases: ["Nissan Stadium", "LP Field"]
+    seasons: [null, null]
+    wikidata: Q1142992
+    provenance:
+      coordinates: "Wikidata Q1142992 P625 via en.wikipedia 'Nissan Stadium (Nashville)' rev 1375930209 (venue_resolution.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors; en.wikipedia disambiguation 'Nissan Stadium': 'an outdoor American football stadium in Nashville' (venue_resolution.json)"
+  - venue_id: no-caesars-superdome
+    name: "Caesars Superdome"
+    country: US
+    latitude: 29.9508
+    longitude: -90.0811
+    roof_type: dome
+    forecast_provider: nws
+    schedule_ids: [NOR00]
+    aliases: ["Caesars Superdome", "Mercedes-Benz Superdome"]
+    seasons: [null, null]
+    wikidata: Q756452
+    provenance:
+      coordinates: "Wikidata Q756452 P625 via en.wikipedia 'Caesars Superdome' rev 1376765872 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: dome; en.wikipedia 'Caesars Superdome': 'an indoor stadium' (venues.json)"
+  - venue_id: nyj-nyg-metlife-stadium
+    name: "MetLife Stadium"
+    country: US
+    latitude: 40.8136
+    longitude: -74.0744
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [NYC01]
+    aliases: ["MetLife Stadium"]
+    seasons: [null, null]
+    wikidata: Q10862290
+    provenance:
+      coordinates: "Wikidata Q10862290 P625 via en.wikipedia 'MetLife Stadium' rev 1377506007 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: oak-oakland-coliseum
+    name: "Oakland Coliseum"
+    country: US
+    latitude: 37.7517
+    longitude: -122.2006
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [OAK00]
+    aliases: ["Oakland-Alameda County Coliseum", "Ring Central Coliseum", "Oakland Coliseum"]
+    seasons: [null, 2019]
+    wikidata: Q1147732
+    provenance:
+      coordinates: "Wikidata Q1147732 P625 via en.wikipedia 'Oakland Coliseum' rev 1377385400 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: phi-lincoln-financial-field
+    name: "Lincoln Financial Field"
+    country: US
+    latitude: 39.9009
+    longitude: -75.1678
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [PHI00]
+    aliases: ["Lincoln Financial Field"]
+    seasons: [null, null]
+    wikidata: Q1052370
+    provenance:
+      coordinates: "Wikidata Q1052370 P625 via en.wikipedia 'Lincoln Financial Field' rev 1376012877 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: ari-state-farm-stadium
+    name: "State Farm Stadium"
+    country: US
+    latitude: 33.5275
+    longitude: -112.2625
+    roof_type: retractable
+    forecast_provider: nws
+    schedule_ids: [PHO00]
+    aliases: ["State Farm Stadium", "University of Phoenix Stadium"]
+    seasons: [null, null]
+    wikidata: Q756433
+    provenance:
+      coordinates: "Wikidata Q756433 P625 via en.wikipedia 'State Farm Stadium' rev 1377283950 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: closed/open; en.wikipedia 'State Farm Stadium': 'a retractable roof stadium' (venues.json)"
+  - venue_id: pit-acrisure-stadium
+    name: "Acrisure Stadium"
+    country: US
+    latitude: 40.4467
+    longitude: -80.0158
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [PIT00]
+    aliases: ["Acrisure Stadium", "Heinz Field"]
+    seasons: [null, null]
+    wikidata: Q1067148
+    provenance:
+      coordinates: "Wikidata Q1067148 P625 via en.wikipedia 'Acrisure Stadium' rev 1372194646 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: sea-lumen-field
+    name: "Lumen Field"
+    country: US
+    latitude: 47.5953
+    longitude: -122.3317
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [SEA00]
+    aliases: ["Lumen Field", "CenturyLink Field"]
+    seasons: [null, null]
+    wikidata: Q612736
+    provenance:
+      coordinates: "Wikidata Q612736 P625 via en.wikipedia 'Lumen Field' rev 1373998493 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: sf-levis-stadium
+    name: "Levi's Stadium"
+    country: US
+    latitude: 37.4034
+    longitude: -121.97
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [SFO01]
+    aliases: ["Levi's Stadium"]
+    seasons: [null, null]
+    wikidata: Q7419343
+    provenance:
+      coordinates: "Wikidata Q7419343 P625 via en.wikipedia \"Levi's Stadium\" rev 1375976386 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: tb-raymond-james-stadium
+    name: "Raymond James Stadium"
+    country: US
+    latitude: 27.9758
+    longitude: -82.5033
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [TAM00]
+    aliases: ["Raymond James Stadium"]
+    seasons: [null, null]
+    wikidata: Q1141343
+    provenance:
+      coordinates: "Wikidata Q1141343 P625 via en.wikipedia 'Raymond James Stadium' rev 1372224116 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: lv-allegiant-stadium
+    name: "Allegiant Stadium"
+    country: US
+    latitude: 36.0908
+    longitude: -115.183
+    roof_type: dome
+    forecast_provider: nws
+    schedule_ids: [VEG00]
+    aliases: ["Allegiant Stadium"]
+    seasons: [2020, null]
+    wikidata: Q27768421
+    provenance:
+      coordinates: "Wikidata Q27768421 P625 via en.wikipedia 'Allegiant Stadium' rev 1376027835 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: dome; en.wikipedia 'Allegiant Stadium': 'a multi-purpose indoor stadium' (venues.json)"
+  - venue_id: was-northwest-stadium
+    name: "Northwest Stadium"
+    country: US
+    latitude: 38.9078
+    longitude: -76.8644
+    roof_type: open
+    forecast_provider: nws
+    schedule_ids: [WAS00]
+    aliases: ["Northwest Stadium", "FedExField"]
+    seasons: [null, null]
+    wikidata: Q583085
+    provenance:
+      coordinates: "Wikidata Q583085 P625 via en.wikipedia 'Northwest Stadium' rev 1374296465 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors"
+  - venue_id: fra-deutsche-bank-park
+    name: "Deutsche Bank Park (Waldstadion)"
+    country: DE
+    latitude: 50.0686
+    longitude: 8.6453
+    roof_type: retractable
+    forecast_provider: open_meteo
+    schedule_ids: [FRA00]
+    aliases: ["Deutsche Bank Park"]
+    seasons: [null, null]
+    wikidata: Q157273
+    provenance:
+      coordinates: "Wikidata Q157273 P625 via en.wikipedia 'Waldstadion (Frankfurt)' rev 1375755144 (venues.json)"
+      roof_type: "en.wikipedia 'Waldstadion (Frankfurt)' infobox roof = Retractable; 'a retractable roof sports stadium' (venue_resolution.json roof_evidence). nflverse recorded both 2023 games 'outdoors' (a roof state, not the venue type)"
+  - venue_id: mun-allianz-arena
+    name: "Allianz Arena"
+    country: DE
+    latitude: 48.2188
+    longitude: 11.6248
+    roof_type: open
+    forecast_provider: open_meteo
+    schedule_ids: [GER00, MUN01]
+    aliases: ["Allianz Arena", "FC Bayern Munich Stadium"]
+    seasons: [null, null]
+    wikidata: Q127429
+    provenance:
+      coordinates: "Wikidata Q127429 P625 via en.wikipedia 'Allianz Arena' rev 1375516115 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors (2022, 2024); en.wikipedia 'Allianz Arena': 'The partial roof covers all seats, although winds can still blow rain onto some of them' (venues.json). The 2026 schedule's pre-game 'dome' contradicts the recorded games at the same building and is not used"
+  - venue_id: lon-wembley-stadium
+    name: "Wembley Stadium"
+    country: GB
+    latitude: 51.5556
+    longitude: -0.2794
+    roof_type: open
+    forecast_provider: open_meteo
+    schedule_ids: [LON00]
+    aliases: ["Wembley Stadium"]
+    seasons: [null, null]
+    wikidata: Q128468
+    provenance:
+      coordinates: "Wikidata Q128468 P625 via en.wikipedia 'Wembley Stadium' rev 1377746005 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors (11 games); en.wikipedia infobox roof = Partially retractable and 'protected from the elements by a sliding roof that does not completely enclose it' (venue_resolution.json roof_evidence): weather reaches the field in every roof state"
+  - venue_id: lon-twickenham-stadium
+    name: "Twickenham Stadium"
+    country: GB
+    latitude: 51.4561
+    longitude: -0.3417
+    roof_type: open
+    forecast_provider: open_meteo
+    schedule_ids: [LON01]
+    aliases: ["Twickenham Stadium"]
+    seasons: [null, null]
+    wikidata: Q209725
+    provenance:
+      coordinates: "Wikidata Q209725 P625 via en.wikipedia 'Twickenham Stadium' rev 1376891621 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors (2017)"
+  - venue_id: lon-tottenham-hotspur-stadium
+    name: "Tottenham Hotspur Stadium"
+    country: GB
+    latitude: 51.6044
+    longitude: -0.0664
+    roof_type: open
+    forecast_provider: open_meteo
+    schedule_ids: [LON02]
+    aliases: ["Tottenham Hotspur Stadium", "Tottenham Stadium"]
+    seasons: [2019, null]
+    wikidata: Q55074091
+    provenance:
+      coordinates: "Wikidata Q55074091 P625 via en.wikipedia 'Tottenham Hotspur Stadium' rev 1377204343 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors (2019-2024, 10 games); en.wikipedia: the roof is a cable-net ring whose polycarbonate inner edge lets light onto the pitch (venue_resolution.json roof_evidence)"
+  - venue_id: mad-bernabeu
+    name: "Bernabéu"
+    country: ES
+    latitude: 40.4531
+    longitude: -3.6883
+    roof_type: retractable
+    forecast_provider: open_meteo
+    schedule_ids: [MAD01]
+    aliases: ["Bernabeu", "Bernabéu", "Santiago Bernabéu Stadium"]
+    seasons: [null, null]
+    wikidata: Q164027
+    provenance:
+      coordinates: "Wikidata Q164027 P625 via en.wikipedia 'Bernabéu (stadium)' rev 1376542686 (venues.json)"
+      roof_type: "en.wikipedia 'Bernabéu (stadium)' infobox roof = Retractable; 'a retractable roof football stadium' (venue_resolution.json roof_evidence)"
+  - venue_id: mel-melbourne-cricket-ground
+    name: "Melbourne Cricket Ground"
+    country: AU
+    latitude: -37.8199
+    longitude: 144.9834
+    roof_type: unverified
+    forecast_provider: open_meteo
+    schedule_ids: [MEL00]
+    aliases: ["Melbourne Cricket Ground"]
+    seasons: [null, null]
+    wikidata: Q330136
+    provenance:
+      coordinates: "Wikidata Q330136 P625 via en.wikipedia 'Melbourne Cricket Ground' rev 1376948300 (venues.json)"
+      roof_type: "Not established: the article names roofs over stands only and no infobox roof; nflverse's 2026 'dome' is a pre-game value and recorded temp/wind beside it. Fail closed: no roof type, no weather"
+  - venue_id: mex-estadio-azteca
+    name: "Estadio Azteca (Estadio Banorte)"
+    country: MX
+    latitude: 19.3031
+    longitude: -99.1506
+    roof_type: open
+    forecast_provider: open_meteo
+    schedule_ids: [MEX00]
+    aliases: ["Azteca Stadium", "Estadio Azteca", "Estadio Banorte"]
+    seasons: [null, null]
+    wikidata: Q320454
+    provenance:
+      coordinates: "Wikidata Q320454 P625 via en.wikipedia 'Estadio Azteca' rev 1374978481 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors (2017-2022, 3 games); 'Estadio Banorte' redirects to 'Estadio Azteca' (venue_resolution.json schedule_names)"
+  - venue_id: par-stade-de-france
+    name: "Stade de France"
+    country: FR
+    latitude: 48.9244
+    longitude: 2.36
+    roof_type: unverified
+    forecast_provider: open_meteo
+    schedule_ids: [PAR00]
+    aliases: ["Stade de France"]
+    seasons: [null, null]
+    wikidata: Q13205
+    provenance:
+      coordinates: "Wikidata Q13205 P625 via en.wikipedia 'Stade de France' rev 1375923585 (venues.json)"
+      roof_type: "Not established: no infobox roof; the article's 'partially retractable' refers to a movable stand, and nothing says whether the roof covers the pitch; nflverse's 2026 'dome' is a pre-game value. Fail closed: no roof type, no weather"
+  - venue_id: rio-maracana
+    name: "Maracanã Stadium"
+    country: BR
+    latitude: -22.9122
+    longitude: -43.2303
+    roof_type: open
+    forecast_provider: open_meteo
+    schedule_ids: [RIO00]
+    aliases: ["Maracana Stadium", "Maracanã Stadium"]
+    seasons: [null, null]
+    wikidata: Q155174
+    provenance:
+      coordinates: "Wikidata Q155174 P625 via en.wikipedia 'Maracanã Stadium' rev 1377290973 (venues.json)"
+      roof_type: "en.wikipedia 'Maracanã Stadium': 'The new roof covers 95% of the seats' (venues.json); nflverse recorded the 2026 game 'open' with temp/wind"
+  - venue_id: sao-arena-corinthians
+    name: "Arena Corinthians"
+    country: BR
+    latitude: -23.5456
+    longitude: -46.474
+    roof_type: open
+    forecast_provider: open_meteo
+    schedule_ids: [SAO00]
+    aliases: ["Arena Corinthians", "Neo Química Arena"]
+    seasons: [null, null]
+    wikidata: Q1362236
+    provenance:
+      coordinates: "Wikidata Q1362236 P625 via en.wikipedia 'Arena Corinthians' rev 1376729111 (venues.json)"
+      roof_type: "nflverse schedule roof, recorded after kickoff, 2017-2025: outdoors (2024)"
