@@ -1198,9 +1198,13 @@ uv run ffdraft evaluate-weekly-v2
 # a family. Writes models/shadow/weekly-startsit-v2 (never production).
 uv run ffdraft train-weekly-v2-shadow
 
-# The prospective holdout: counts until the minimum evidence is met, then at most two looks,
-# each behind PROSPECTIVE-WEEKLY-V2-2026 (MODELING 35.6).
+# The prospective holdout's progress: counts, complete weeks and the look that is due. Shows
+# no accuracy and takes no look. The looks are taken by weekly-v2-prospective.yml (16.9).
 uv run ffdraft evaluate-weekly-v2-prospective --store market-data --season 2026
+
+# Copy the recorded looks' verdicts into docs/experiments/weekly-startsit-v2/ for the model
+# card (after a promote or a closed evaluation). Takes nothing.
+uv run ffdraft evaluate-weekly-v2-prospective --store market-data --season 2026 --export
 
 # Point-in-time evidence: compare the retained injury-report captures row by row.
 uv run ffdraft injury-pit-report --store market-data --season 2026
@@ -1220,8 +1224,44 @@ gh workflow run source-probe-weather.yml -f phases=all
 **Venue registry upkeep.** A stadium name the registry does not know resolves to no venue,
 which means no weather and no roof type, and the validator lists it. To fix it, add the name as
 an alias, with provenance, in `config/venues.yaml`. A new building gets a new entry split by
-season. Re-run the venue-resolution probe (a push to the probe script runs it) for the
-evidence. Never type coordinates from memory.
+season. Dispatch the venue-resolution probe (`gh workflow run source-probe-weather.yml -f
+phases=resolve`) for the evidence; a venue whose roof the articles do not settle gets its own
+pages in `ROOF_DOCUMENTS` and the `roofs` phase, which a push to the probe script runs. Never
+type coordinates or roof types from memory. A registry `open` or `dome` overrides the
+schedule's roof label (DATA_SOURCES 20.1), so a wrong registry roof is a wrong model input:
+`weekly_context.roof_agreement` and `tests/unit/test_weekly_context.py` (history must agree)
+are the guards.
+
+### 16.9 The prospective looks of weekly-startsit-v2 (`weekly-v2-prospective.yml`)
+
+Nothing to run by hand. Every Wednesday at 10:17 New York the job:
+
+1. checks out the private store and counts what production retained before each kickoff:
+   complete weeks (`outcomes_complete_v1`), scored rows and decision-pool pairs against the
+   minimum (8 / 6,000 / 40,000);
+2. takes the look that is due, if any (`prospective_looks_v1`, MODELING 35.6): the first when
+   the minimum is first met, the final once the season's last week is complete unless the
+   first was decisive;
+3. records the look in the store (`gameday/weekly_v2_look`, the rows it judged and the
+   verdict), validates the store and pushes it;
+4. only then writes the run summary and opens an issue titled
+   "weekly-startsit-v2: <look> prospective look, <outcome>". That issue is the notification.
+
+Every run's summary shows the progress table even when no look is due. Once the evaluation is
+over (a final look, or a decisive first), runs return at once without downloading anything.
+
+| summary or issue says | meaning | action |
+|---|---|---|
+| progress only, "No look was due" | still collecting | none |
+| first look, **insufficient evidence** | not decided; not a rejection | none; the final look follows after week 18 |
+| **promote** | v2 beat v1 under the frozen rule | a reviewed change: `--export` the verdicts, regenerate the v2 card, serve v2 with v1 as challenger |
+| **reject** | v2 is worse than v1 | retire the v2 shadow; v1 stays |
+| final look, **insufficient evidence** | the season ended undecided | v1 stays; the evaluation is closed |
+| job red at "Validate and push" | the look was judged but not recorded | nobody has seen the verdict; re-run the workflow (it takes the look again and records it) |
+| job red at "Count, and take…" | outcomes or the store could not be read | re-run after nflverse recovers; nothing was recorded |
+
+The token `PROSPECTIVE-WEEKLY-V2-2026` lives only in this workflow (`tests/unit/test_workflows.py`).
+A look already in the ledger refuses to be taken again, by the job or by hand.
 
 ## 17. Serving the site under load (ADR-098)
 

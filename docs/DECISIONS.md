@@ -5324,12 +5324,12 @@ evidence under `docs/source-probes/2026-10-01/`:
   the Previous Runs API (fixed 1–7 day lead, most models from January 2024) and the
   Historical Forecast API (first hours of each run, from 2021/2022). ERA5 reanalysis is
   historical *actual* weather and is used for comparison only, never as a forecast.
-* **The venue registry** `config/venues.yaml` (`venues_v1`): 45 buildings with stable ids,
+* **The venue registry** `config/venues.yaml` (`venues_v2`): 45 buildings with stable ids,
   the schedule ids and stadium names that resolve to each (name first, then id, within the
   seasons it was in use; zero or two matches resolve to nothing), Wikidata P625 coordinates
-  and a **fixed roof type** with provenance. Two venues are `unverified` (the Melbourne
-  Cricket Ground and the Stade de France: the evidence does not establish whether their roofs
-  cover the pitch) and fail closed: no roof type, no weather. Venue type is not roof state: a
+  and a **fixed roof type** with provenance. `venues_v1` left the Melbourne Cricket Ground and
+  the Stade de France `unverified`; `venues_v2` makes both `open` on the roof documents
+  (amendment below). An `unverified` venue fails closed: no roof type, no weather. Venue type is not roof state: a
   retractable roof's state is announced only on game day, and an earlier closed-roof game is
   never taken as evidence for this one.
 * **The injury report** (nflverse `load_injuries`). The point-in-time probe that
@@ -5396,7 +5396,7 @@ at training and at serving alike; every input missing at serve time is tested
   shadow record carrying v1's and v2's quantiles and every v2 input with its retrieval time;
   never backfilled. Minimum evidence: 8 complete weeks, 6,000 scored rows, 40,000 pairs. At
   most two looks (99%, then 95% after the last scored week), unlocked by
-  `PROSPECTIVE-WEEKLY-V2-2026`. Outcomes: **promote** (pinball below v1 with the interval
+  `PROSPECTIVE-WEEKLY-V2-2026` and taken on schedule (amendment below). Outcomes: **promote** (pinball below v1 with the interval
   above zero, P10–P90 coverage 0.75–0.85, Brier and accuracy not worse), **reject** (interval
   entirely below zero, coverage outside 0.70–0.90, or Brier worse by more than 0.005), or
   **insufficient evidence** (anything else, including a minimum not met). Insufficient
@@ -5470,3 +5470,63 @@ off after that refresh are its holdout, judged by `weekly_promotion_v2` once 8 c
 6,000 rows and 40,000 pairs are retained. Until then the result is *insufficient evidence*,
 which is not a rejection.
 
+### Amendment (2026-10-01, before the first production refresh): roof labels, scheduled looks
+
+Nothing frozen changes: no family, threshold, interval level, minimum or outcome rule. Two
+things a reviewer found after the evidence commit are fixed, and one operation is automated.
+
+**1. nflverse's roof label is wrong for three open-air games abroad.** The 2026 schedule files
+the Melbourne Cricket Ground (week 1, still `dome` after the game, beside a recorded 57 °F
+and 4 mph wind), the Stade de France (week 7) and the Allianz Arena (week 10) as `dome`. v1
+reads its roof from the schedule, so it treated the first as indoors and would have treated
+the other two the same way. In Munich's case the page would also have shown an outdoor
+forecast beside v1's "Indoors (roof closed)" points, and no check caught it.
+
+* **Evidence.** A `roofs` phase of the runner probe records whole roof paragraphs
+  (`docs/source-probes/2026-10-01/weather/roof_documents.json`). The first probe's
+  300-character lines had cut the Stade de France's paragraph at "It was designed to easily
+  p…". Both venues are `open` in `venues_v2` (docs/DATA_SOURCES.md §20.1); every quotation in
+  their provenance is checked against the documents verbatim by test.
+* **The rule** (`ffdraft.weekly.venues.published_roof`). Where a game's venue has a verified
+  fixed roof (`open` or `dome`) that the schedule contradicts or omits, the venue's label is
+  what `team_matchups.roof` and the projection's `game.roof` publish and what v1 reads at
+  serving (`game_indoors`). A retractable, unverified or unresolved venue keeps the schedule's
+  value. `weekly_context`'s `roof.recorded` stays the schedule's own value, so the correction
+  is visible.
+* **Training is untouched.** v1's training passes no registry. The rule changes no 2017–2025
+  value: all 247 recorded (stadium-season, roof) values at fixed-roof venues agree, by test,
+  and a scan of every 2017–2026 regular-season game finds exactly the three games above. So
+  serving now reads what v1 was trained to read: open-air international games were recorded
+  `outdoors`. v1 and the v2 shadow get the same input, so the prospective comparison stays
+  paired.
+* **The check** `weekly_context.roof_agreement` fails a build whose projection reads a roof
+  other than the venue's verified fixed one, or whose two copies of that value differ.
+
+**2. The prospective looks are taken by a scheduled job** (`weekly-v2-prospective.yml`,
+`prospective_looks_v1`, docs/OPERATIONS.md §16.9). The first version left both looks to a
+person running a command with the token. That risked a look taken late, early or twice, and
+nothing in the code stopped a second "first" look on more data.
+
+* Every Wednesday the job counts the holdout against the minimum and writes the progress to
+  the run summary.
+* **The first look** is taken when the minimum evidence is first met and the season is not
+  over.
+* **The final look** is taken once every week of the fantasy horizon is complete, unless the
+  first look was decisive. The first look's 99% level is an interim boundary: a `promote` or
+  `reject` there ends the evaluation, and `insufficient_evidence` leaves it to the final look.
+  The frozen text said "at most two" without saying whether a decisive first look ends it;
+  this is the standard group-sequential reading, and it changes no threshold. A minimum first
+  met only after the season is over is the final look alone.
+* **A complete week** (`outcomes_complete_v1`): every game kicked off more than six hours ago,
+  **and** nflverse's weekly stats and snap counts both carry rows for every team that played.
+  An appearance is a stats row or a snap, so a week read before its snap counts land would
+  silently drop zero-point appearances.
+* **The ledger.** Every look is recorded in the private store (`gameday/weekly_v2_look`) with
+  the exact rows it judged, before its verdict is shown. A look already recorded is never
+  taken again, by the job or by hand; two records of one look refuse. The workflow sends the
+  command's output to a file, pushes the record, and only then writes the summary and opens an
+  issue. If the push fails, nobody has seen the verdict, so a later retake is not a second
+  look.
+* **Promotion is still a reviewed change.** A `promote` verdict opens an issue; serving v2,
+  its card and v1's retirement are made by a person. Only this workflow holds the look token,
+  by test; v1's final-holdout token is still held by none.

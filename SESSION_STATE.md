@@ -16,10 +16,11 @@ low — under a new model version frozen before evidence.
   * the injury report's point in time: 24 of 44,356 2017–2024 rows were modified after
     kickoff, 2025–2026 carry no timestamp, and two same-day 2026 captures were identical.
 
-  NWS and Open-Meteo are registered. `config/venues.yaml` holds 45 buildings, with Wikidata
-  coordinates checked against the evidence by test; the MCG and the Stade de France are
-  `unverified` and fail closed. `config/weather-forecast-error-v1.json` is the day-before
-  forecast error over 289 open-air games.
+  NWS and Open-Meteo are registered. `config/venues.yaml` (`venues_v2`) holds 45 buildings,
+  with Wikidata coordinates checked against the evidence by test; the MCG and the Stade de
+  France are `open` on whole roof paragraphs (`roof_documents.json`).
+  `config/weather-forecast-error-v1.json` is the day-before forecast error over 289 open-air
+  games.
 * **Freeze `f62f849`** (17:46 UTC), before any comparison: families, five variants,
   baselines, folds, 2025 as previously examined, the decision cutoff, weather parity, family
   selection, the prospective holdout and `weekly_promotion_v2`.
@@ -44,9 +45,19 @@ low — under a new model version frozen before evidence.
   `retain-shadow` job writes the private shadow record to the store, and eight run facts were
   added to the summary.
 
-**Next gate:** the first production refresh on this code. It is the first retained shadow
-record and the start of the prospective holdout: 8 complete weeks, 6,000 rows, 40,000 pairs,
-then `evaluate-weekly-v2-prospective`. **Not done:** no PR (not requested), no deployment.
+* **Amendment (owner review, same day).**
+  * **Roof labels.** nflverse files three open-air 2026 games abroad as `dome`: the MCG
+    (week 1), the Stade de France (week 7) and Munich (week 10). v1 read them as indoors.
+    A verified fixed venue roof now wins for the published labels and for v1's serving
+    input; training is untouched (history agrees, by test). `weekly_context.roof_agreement`
+    guards it.
+  * **Scheduled looks.** `weekly-v2-prospective.yml` takes the prospective looks on schedule.
+    It keeps a write-once ledger in the store and opens an issue; nobody runs a command.
+
+**Next gate:** the first production refresh on this code, which writes the first retained
+shadow record and starts the prospective holdout (8 complete weeks, 6,000 rows, 40,000
+pairs). The weekly `weekly-v2-prospective.yml` then reports progress and takes each look when
+it is due. **Not done:** no PR (not requested), no deployment.
 
 Validation of this pass (local unless noted):
 

@@ -1172,6 +1172,12 @@ travel on the build metadata:
   state from its latest earlier home game this season; with none it stays missing and reads
   as open air. The effect is small (roof on vs off: median 0, 95th percentile 0.40 points on
   2025 rows) and it never fires on history, where every roof is recorded.
+- A **verified fixed roof wins** (ADR-099 amendment). Where the game's venue in the registry is
+  `open` or `dome` and the schedule's roof contradicts or omits it, `game_indoors` follows the
+  venue. nflverse files three open-air 2026 games abroad as `dome`: the MCG, the Stade de
+  France and Munich. Training passes no registry, and the rule changes no 2017–2025 value
+  (247 recorded stadium-season roofs at fixed-roof venues agree), so serving reads what
+  training read for open-air venues abroad. `weekly_context.roof_agreement` holds it.
 - The **explanation** is grouped TreeSHAP by feature family, plus baseline, calibration and
   rearrangement terms, and it sums to the published median (`weekly.driver_account_closes`).
 
@@ -1223,7 +1229,7 @@ all-family spec hashes to `2450ff6a238cb902`. v1's hash is unchanged (`692c18865
 
 * **Venue** from the registry (`config/venues.yaml`, docs/DATA_SOURCES.md §20.1), by stadium
   name first. `wx_roof_type` is 0 open, 1 retractable, 2 dome, `null` unresolved or
-  `unverified`.
+  `unverified` (no venue is `unverified` since `venues_v2`).
 * **Weather only where it reaches the field.** Open-air games carry wind (mph), temperature
   (°F) and "precipitation expected"; dome games carry none (nothing reaches the field) and
   retractable-roof games carry none (the state is announced on game day; an earlier
@@ -1294,8 +1300,22 @@ minimum evidence is 8 complete weeks, 6,000 rows and 40,000 decision-pool pairs.
 met, the evaluation reports counts and **insufficient evidence**.
 
 There are at most two looks, each behind the token `PROSPECTIVE-WEEKLY-V2-2026`: a 99%
-interval when the minimum is first met, and a 95% interval after the last scored week. The
-outcomes:
+interval when the minimum is first met, and a 95% interval after the last scored week.
+
+The looks are taken on schedule, by the weekly job `weekly-v2-prospective.yml`
+(`prospective_looks_v1`, `ffdraft.weekly.prospective.due_look`; docs/OPERATIONS.md §16.9):
+
+* **First look:** when the minimum is first met and the season is not over.
+* **Final look:** once every horizon week is complete, unless the first look was decisive.
+  A `promote` or `reject` at the 99% interim boundary ends the evaluation;
+  `insufficient_evidence` leaves it to the final look. A minimum first met only after the
+  season is over is the final look alone.
+* **A complete week** (`outcomes_complete_v1`): every game kicked off more than six hours ago,
+  and nflverse's weekly stats and snap counts both carry every team that played.
+* **The ledger:** each look is recorded in the private store with the rows it judged before
+  its verdict is shown, and a recorded look is never taken again.
+
+The outcomes:
 
 * **promote** — v2's pinball is below v1's with the interval above zero, its P10–P90 coverage
   is in 0.75–0.85, and Brier and accuracy are not worse;

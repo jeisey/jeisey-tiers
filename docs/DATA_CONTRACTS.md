@@ -1059,7 +1059,8 @@ regular-season game in the fantasy horizon whose scheduled kickoff is after the 
 | field | meaning |
 |---|---|
 | `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `week`, `game_id` | the game |
-| `team_rest_days`, `opponent_rest_days`, `roof` | from the schedule; null where it publishes none |
+| `team_rest_days`, `opponent_rest_days` | from the schedule; null where it publishes none |
+| `roof` | the schedule's roof, except where the game's venue has a verified fixed roof (`open`/`dome`, `config/venues.yaml`) that the schedule contradicts or omits: then the venue's (`outdoors`/`dome`; ADR-099 amendment, nflverse files open-air stadiums abroad as `dome`). Null where neither has one |
 | `total_line` | posted game total; null until posted (about two weeks ahead) |
 | `team_expected_margin` | the posted spread from **this team's** side: positive = favoured. Re-expressed once from nflverse's home-oriented `spread_line`; a null is never a pick'em |
 | `implied_team_points`, `implied_opponent_points` | `(total ± margin) / 2`; null unless both lines are posted |
@@ -1127,7 +1128,7 @@ spreadsheet reader can use, and the lines inside it follow ADR-091's no-CSV rule
 | `team` | the current roster club when the roster names exactly one, else the club of his latest appearance — a trade moves the game |
 | `model_version` | `weekly-startsit-v1` |
 | `game_state` | `upcoming`; `kicked_off` (kept for the record, locked on the page); `bye` (no `game`, `quantiles`, `drivers` or `opponent`); `lines_pending` (the game and `opponent`, no `quantiles` or `drivers`: the model was never trained without a posted line) |
-| `game` | `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `roof` (null while a retractable roof is unannounced), `total_line`, `team_margin` (this team's side, positive = favoured), `team_points` (implied); lines null until posted, never a pick'em |
+| `game` | `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `roof` (null while a retractable roof is unannounced; a verified fixed venue roof replaces a contradicting schedule value, as in `team_matchups`), `total_line`, `team_margin` (this team's side, positive = favoured), `team_points` (implied); lines null until posted, never a pick'em |
 | `quantiles` | `q05` … `q95`: next-game points **given that he plays**, non-decreasing |
 | `drivers` | `baseline`, the seven families `form` `role` `availability` `offense` `game` `opponent` `prior`, `calibration`, `rearrangement`: points that sum to `q50` (rearrangement absorbs rounding) |
 | `opponent` | the defence's allowed points to his position through the cutoff: `allowed_ppg` (shrunk over 4 games), `league_ppg`, `index`, `rank` of `defenses`, `games` |
@@ -1190,7 +1191,7 @@ team)`. JSON only. Written with the weekly layer and withheld with it; its own f
 | `team`, `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc` | the game |
 | `context_rule_version` | `weekly_gameday_context_v1` |
 | `venue` | the registry venue the game resolves to (`venue_id`, `name`, `country`, `roof_type` ∈ open/retractable/dome/unverified, `latitude`, `longitude`), or null when it resolves to none or to two |
-| `roof` | `recorded` (the schedule's value, null until a retractable roof's state is recorded), `model_indoors` (what v1 reads), `assumed_from_last_home_game` (true when v1's value was carried from the stadium's last home game, ADR-096) |
+| `roof` | `recorded` (the schedule's own value, uncorrected: null until a retractable roof's state is recorded, and nflverse's `dome` for an open-air venue abroad stays visible here), `model_indoors` (what v1 reads: the venue's verified fixed roof where there is one), `assumed_from_last_home_game` (true when v1's value was carried from the stadium's last home game, ADR-096) |
 | `weather` | `status` (`ok`, `roof_unknown`, `indoors`, `unavailable`, `stale`, `out_of_range`, `implausible`, `no_venue`), `provider` (`nws`/`open_meteo`), `wind_mph`, `gust_mph`, `temp_f`, `precip_probability`, `precip_in`, `short_forecast`, `valid_from_utc`, `valid_to_utc`, `provider_updated_utc`, `retrieved_at_utc`. Numbers only when `ok` (open air) or `roof_unknown` (outside conditions at a retractable or unverified venue); otherwise null |
 | `lineup` | `report_available`, `report_final` (the team's report carries at least one game status), `listed`: each lagged starter (OL, QB, CB, S, DL) or notable skill player (≥ 10% of targets or 20% of carries over the last three games) with a game designation — `player_id`, `name`, `position`, `role` (`OL2`, …), `group`, `starter_rank`, `snap_share`, `target_share`, `carry_share`, `designation`, `practice_status`, `primary_injury` |
 | `typical` | the game half of every player's typical week on this team: `games`, `total_line`, `team_margin`, `team_points` (shrunk team means of posted lines over completed games), `home_share`, `indoors_share` |
@@ -1200,7 +1201,9 @@ Validator `weekly_context_checks` (critical): both sides of every game present a
 the game; `weather` carries numbers only in `ok`/`roof_unknown`, an `ok` reading has wind,
 temperature and a retrieval time, a dome is always `indoors`, a retractable or unverified venue
 is never `ok`; a listed player always carries a designation and is listed only on a final
-report; implied points agree with total and margin.
+report; implied points agree with total and margin; and `weekly_context.roof_agreement`:
+`roof.model_indoors` equals `this_week.indoors`, and at a venue whose roof is `open` (`dome`)
+it is 0 (1).
 
 **Source contracts and the retained store.** Two normalized contracts gain context columns
 that nothing intrinsic reads: `SCHEDULE_CONTRACT` 1.2 adds `stadium_id`, `stadium`, `temp`
@@ -1210,8 +1213,11 @@ and `wind` (the last two null until a game is played), and `SNAP_COUNTS_CONTRACT
 content-hashed like `market/` and `status/`: `weather_forecast` (one row per upcoming game,
 the kickoff-hour reading with provider, update, valid and retrieval times and status),
 `nflverse_injuries` (the season's report at the refresh, with per-week and per-row content
-digests in the manifest, `injury_report_pit_v1`) and `weekly_shadow` (the build's paired
-v1/v2 quantiles and every v2 input). `validate-market-history` re-hashes all three.
+digests in the manifest, `injury_report_pit_v1`), `weekly_shadow` (the build's paired
+v1/v2 quantiles and every v2 input) and `weekly_v2_look` (one capture per prospective look
+taken: the scored rows it judged, and `details.look`/`details.verdict`; written by
+`weekly-v2-prospective.yml` before the verdict is shown, at most one per look, and two of one
+look refuse to read). `validate-market-history` re-hashes all four.
 
 ## 21. The served layout — `serving_v1` (ADR-098)
 

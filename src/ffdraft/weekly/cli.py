@@ -21,7 +21,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+from collections.abc import Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -141,13 +144,30 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
 
     v2_prospective = subparsers.add_parser(
         "evaluate-weekly-v2-prospective",
-        help="count, or (with the token, at a declared look) judge, the prospective holdout",
+        help=(
+            "count the prospective holdout and name the look due; with --take-due-look and the "
+            "token, take that look and record it (prospective_looks_v1)"
+        ),
     )
     v2_prospective.add_argument("--season", type=int, default=2026)
     v2_prospective.add_argument("--store", type=Path, required=True)
-    v2_prospective.add_argument("--look", choices=("first", "final"), default=None)
+    v2_prospective.add_argument(
+        "--take-due-look",
+        action="store_true",
+        help="take the look that is due now, if any, and record it in the store first",
+    )
     v2_prospective.add_argument("--confirm", default=None)
-    v2_prospective.add_argument("--out", type=Path, default=None)
+    v2_prospective.add_argument(
+        "--out", type=Path, default=None, help="where a look's verdict JSON is written"
+    )
+    v2_prospective.add_argument(
+        "--export",
+        action="store_true",
+        help="write every recorded look's verdict to --out (for the model card); take none",
+    )
+    v2_prospective.add_argument(
+        "--status", type=Path, default=None, help="write this run's status JSON here"
+    )
     v2_prospective.set_defaults(handler=lambda args: _prospective(args, repo_root()))
 
     card_v2 = subparsers.add_parser(
@@ -519,13 +539,57 @@ def _train_v2(args: argparse.Namespace, root: Path) -> int:
 
 
 def _prospective(args: argparse.Namespace, root: Path) -> int:
+    """Count, name the due look, and with ``--take-due-look`` take it (``prospective_looks_v1``).
+
+    The look is written to the retained store **before** its verdict is printed or saved, so a
+    run that dies after judging still leaves the ledger saying the look was taken.
+    """
     from ffdraft.retention import SnapshotStore
     from ffdraft.timeutil import parse_utc
-    from ffdraft.weekly.capture import GAMEDAY_PREFIX, SHADOW_SOURCE_ID, read_gameday_capture
+    from ffdraft.weekly.capture import (
+        GAMEDAY_PREFIX,
+        LOOK_SOURCE_ID,
+        SHADOW_SOURCE_ID,
+        GamedayCapture,
+        read_gameday_capture,
+        recorded_looks,
+        write_gameday_capture,
+    )
     from ffdraft.weekly.frozen_v2 import WEEKLY_V2_FROZEN_AT_UTC
-    from ffdraft.weekly.prospective import eligible_rows, evidence_counts, prospective_verdict
+    from ffdraft.weekly.prospective import (
+        due_look,
+        eligible_rows,
+        evidence_counts,
+        prospective_verdict,
+    )
 
     store = SnapshotStore(root=args.store, prefix="")
+    out = args.out or (root / DEFAULT_WEEKLY_V2_EXPERIMENT_DIR)
+    recorded = recorded_looks(store, season=args.season)
+    if args.export:
+        out.mkdir(parents=True, exist_ok=True)
+        for look, verdict in sorted(recorded.items()):
+            path = out / f"prospective_{look}.json"
+            path.write_text(json.dumps(verdict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            print(f"wrote {path}")
+        return 0
+
+    now = _now()
+    if not _open(recorded):
+        # The evaluation is over: nothing is counted, downloaded or taken again.
+        return _report_status(
+            args,
+            {
+                "season": args.season,
+                "checked_at_utc": now.isoformat().replace("+00:00", "Z"),
+                "recorded_looks": {look: v.get("outcome") for look, v in recorded.items()},
+                "due": None,
+                "taken": None,
+                "outcome": None,
+                "closed": True,
+            },
+        )
+
     keys = SnapshotStore(root=args.store, prefix=GAMEDAY_PREFIX).keys(SHADOW_SOURCE_ID, args.season)
     rows: list[dict[str, Any]] = []
     for key in keys:
@@ -535,61 +599,121 @@ def _prospective(args: argparse.Namespace, root: Path) -> int:
         if capture is not None:
             rows.extend(capture.rows)
     eligible = eligible_rows(rows, frozen_at=parse_utc(WEEKLY_V2_FROZEN_AT_UTC))
-    scored = _join_outcomes(eligible, args.season)
+    scored, complete, season_complete = _join_outcomes(eligible, args.season, now=now)
     counts = evidence_counts(scored)
-    if args.look is None:
-        print(json.dumps({"captures": len(keys), "eligible": eligible.height, **counts}, indent=2))
-        return 0
-    verdict = prospective_verdict(scored, look=args.look, confirmation=args.confirm)
-    out = args.out or (root / DEFAULT_WEEKLY_V2_EXPERIMENT_DIR)
-    out.mkdir(parents=True, exist_ok=True)
-    path = out / f"prospective_{args.look}.json"
-    path.write_text(json.dumps(verdict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps(verdict, indent=2))
+    due = due_look(counts, season_complete=season_complete, recorded=recorded)
+    status: dict[str, Any] = {
+        "season": args.season,
+        "checked_at_utc": now.isoformat().replace("+00:00", "Z"),
+        "captures": len(keys),
+        "eligible": eligible.height,
+        "complete_weeks": complete,
+        "season_complete": season_complete,
+        **counts,
+        "recorded_looks": {look: verdict.get("outcome") for look, verdict in recorded.items()},
+        "due": due,
+        "taken": None,
+        "outcome": None,
+        "closed": not _open(recorded),
+    }
+    if args.take_due_look and due is not None:
+        verdict = prospective_verdict(scored, look=due, confirmation=args.confirm)
+        verdict["complete_weeks"] = complete
+        verdict["taken_at_utc"] = status["checked_at_utc"]
+        write_gameday_capture(
+            GamedayCapture(
+                source_id=LOOK_SOURCE_ID,
+                season=args.season,
+                observed_at_utc=now,
+                rows=scored.to_dicts(),
+                details={"look": due, "verdict": verdict},
+                git_sha=os.environ.get("GITHUB_SHA"),
+            ),
+            store=store,
+        )
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"prospective_{due}.json"
+        path.write_text(json.dumps(verdict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        status.update({"taken": due, "outcome": verdict["outcome"], "verdict_path": str(path)})
+        recorded = {**recorded, due: verdict}
+        status["recorded_looks"] = {look: v.get("outcome") for look, v in recorded.items()}
+        status["closed"] = not _open(recorded)
+    return _report_status(args, status)
+
+
+def _report_status(args: argparse.Namespace, status: Mapping[str, Any]) -> int:
+    if args.status is not None:
+        args.status.parent.mkdir(parents=True, exist_ok=True)
+        args.status.write_text(json.dumps(status, indent=2, default=str) + "\n", encoding="utf-8")
+    print(json.dumps(status, indent=2, default=str))
     return 0
 
 
-def _join_outcomes(eligible: pl.DataFrame, season: int) -> pl.DataFrame:
-    """Points in each eligible row's preset, for players who appeared (network: nflverse)."""
-    if eligible.is_empty():
-        return eligible
+def _now() -> datetime:
+    """The judging clock, whole seconds (a store key is a timestamp)."""
+    return datetime.now(UTC).replace(microsecond=0)
+
+
+def _open(recorded: Mapping[str, Mapping[str, Any]]) -> bool:
+    """Whether the evaluation can still take a look (no final, no decisive first)."""
+    if "final" in recorded:
+        return False
+    first = recorded.get("first")
+    return first is None or first.get("outcome") not in ("promote", "reject")
+
+
+def _join_outcomes(
+    eligible: pl.DataFrame,
+    season: int,
+    *,
+    now: datetime,
+) -> tuple[pl.DataFrame, list[int], bool]:
+    """Points in each eligible row's preset for players who appeared, in complete weeks only.
+
+    Returns ``(scored rows, complete weeks, season complete)`` under ``outcomes_complete_v1``
+    (:func:`ffdraft.weekly.prospective.complete_weeks`). Network: nflverse.
+    """
     from ffdraft.config import load_app_config
+    from ffdraft.contracts.enums import normalize_team_code
     from ffdraft.features.sources import load_historical_sources
     from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.scoring.horizon import fantasy_horizon
+    from ffdraft.season.state import scheduled_kickoff_utc
     from ffdraft.weekly.context import scored_position_rows
     from ffdraft.weekly.dataset import appearances
+    from ffdraft.weekly.prospective import complete_weeks
 
     config = load_app_config()
     sources = load_historical_sources(target_seasons=[season]).sources
+    snaps = bridged_snap_counts(sources)
+    games: list[tuple[int, datetime | None, str, str]] = []
+    for game in sources.schedule.filter(
+        (pl.col("season") == season) & (pl.col("game_type") == "REG"),
+    ).iter_rows(named=True):
+        home = normalize_team_code(game.get("home_team"))
+        away = normalize_team_code(game.get("away_team"))
+        if home is None or away is None:
+            continue
+        kickoff = scheduled_kickoff_utc(game.get("gameday"), game.get("gametime"))
+        games.append((int(game["week"]), kickoff, home, away))
+    complete, season_complete = complete_weeks(
+        games,
+        stats_teams=_teams_by_week(sources.weekly_stats, season),
+        snap_teams=_teams_by_week(snaps, season),
+        horizon_weeks=list(fantasy_horizon(season).weeks),
+        now=now,
+    )
+    if eligible.is_empty():
+        return eligible, complete, season_complete
     scored = scored_position_rows(sources.weekly_stats, config.league.scoring, [season])
-    appeared = appearances(scored, bridged_snap_counts(sources), [season]).select(
+    appeared = appearances(scored, snaps, [season]).select(
         pl.col("season").cast(pl.Int32),
         pl.col("week").cast(pl.Int32).alias("target_week"),
         "gsis_id",
         "scoring_preset",
         pl.col("target_points").alias("actual"),
     )
-    # "Complete target weeks" (PROSPECTIVE_HOLDOUT): every regular-season game of the week
-    # kicked off more than six hours ago. A week still being played contributes nothing yet.
-    from datetime import UTC, datetime, timedelta
-
-    from ffdraft.season.state import scheduled_kickoff_utc
-
-    now = datetime.now(UTC)
-    last: dict[int, datetime | None] = {}
-    for game in sources.schedule.filter(
-        (pl.col("season") == season) & (pl.col("game_type") == "REG"),
-    ).iter_rows(named=True):
-        kickoff = scheduled_kickoff_utc(game.get("gameday"), game.get("gametime"))
-        week = int(game["week"])
-        held = last.get(week, kickoff)
-        last[week] = None if kickoff is None or held is None else max(held, kickoff)
-    complete = [
-        week
-        for week, kickoff in last.items()
-        if kickoff is not None and kickoff + timedelta(hours=6) < now
-    ]
-    return (
+    joined = (
         eligible.with_columns(
             pl.col("season").cast(pl.Int32),
             pl.col("target_week").cast(pl.Int32),
@@ -597,6 +721,26 @@ def _join_outcomes(eligible: pl.DataFrame, season: int) -> pl.DataFrame:
         .filter(pl.col("target_week").is_in(complete))
         .join(appeared, on=["season", "target_week", "gsis_id", "scoring_preset"], how="inner")
     )
+    return joined, complete, season_complete
+
+
+def _teams_by_week(frame: pl.DataFrame, season: int) -> dict[int, set[str]]:
+    """``week -> teams`` with at least one row in ``frame`` for ``season``."""
+    from ffdraft.contracts.enums import normalize_team_code
+
+    if frame.is_empty() or not {"season", "week", "team"} <= set(frame.columns):
+        return {}
+    teams: dict[int, set[str]] = {}
+    for week, team in (
+        frame.filter(pl.col("season") == season)
+        .select(pl.col("week").cast(pl.Int64), "team")
+        .unique()
+        .iter_rows()
+    ):
+        code = normalize_team_code(team)
+        if code is not None and week is not None:
+            teams.setdefault(int(week), set()).add(code)
+    return teams
 
 
 def _authorization(args: argparse.Namespace) -> Any:

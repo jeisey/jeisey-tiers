@@ -15,6 +15,10 @@ discipline as the market and status captures (ADR-038):
 ``weekly_shadow``
     The build's paired v1/v2 predictions and every input v2 read, with the build time. Written
     after the build, by the job that retains it (``daily-refresh.yml``), never published.
+``weekly_v2_look``
+    One record per prospective look taken (``prospective.due_look``): the exact scored rows it
+    judged and its verdict. Written by ``weekly-v2-prospective.yml`` before the verdict is
+    reported; a look already recorded is never taken again.
 """
 
 from __future__ import annotations
@@ -40,9 +44,11 @@ __all__ = [
     "FORECAST_SOURCE_ID",
     "GAMEDAY_PREFIX",
     "INJURY_SOURCE_ID",
+    "LOOK_SOURCE_ID",
     "SHADOW_SOURCE_ID",
     "GamedayCapture",
     "read_gameday_capture",
+    "recorded_looks",
     "verify_gameday_store",
     "write_gameday_capture",
 ]
@@ -51,7 +57,13 @@ GAMEDAY_PREFIX = "gameday"
 FORECAST_SOURCE_ID = "weather_forecast"
 INJURY_SOURCE_ID = "nflverse_injuries"
 SHADOW_SOURCE_ID = "weekly_shadow"
-GAMEDAY_SOURCES: tuple[str, ...] = (FORECAST_SOURCE_ID, INJURY_SOURCE_ID, SHADOW_SOURCE_ID)
+LOOK_SOURCE_ID = "weekly_v2_look"
+GAMEDAY_SOURCES: tuple[str, ...] = (
+    FORECAST_SOURCE_ID,
+    INJURY_SOURCE_ID,
+    SHADOW_SOURCE_ID,
+    LOOK_SOURCE_ID,
+)
 
 PAYLOAD_FILENAME = "rows.json.gz"
 GAMEDAY_MANIFEST_VERSION = "1.0"
@@ -206,3 +218,24 @@ def verify_gameday_store(store: SnapshotStore, *, season: int) -> tuple[int, int
             if content_hash(payload_path.read_bytes()) != manifest.get("payload_content_hash"):
                 problems.append(f"{source_id}/{key}: payload does not match its manifest hash")
     return captures, checked, tuple(problems)
+
+
+def recorded_looks(store: SnapshotStore, *, season: int) -> dict[str, dict[str, Any]]:
+    """``look -> verdict`` for every prospective look already recorded, hash-verified.
+
+    Two records of one look would mean the ledger was bypassed; that refuses rather than
+    choosing one.
+    """
+    gameday = SnapshotStore(root=store.root, prefix=GAMEDAY_PREFIX)
+    looks: dict[str, dict[str, Any]] = {}
+    for key in gameday.keys(LOOK_SOURCE_ID, season):
+        capture = read_gameday_capture(store, source_id=LOOK_SOURCE_ID, season=season, key=key)
+        if capture is None:
+            continue
+        look = str(capture.details.get("look"))
+        if look in looks:
+            raise SnapshotConflictError(
+                f"the {look} look of {season} is recorded twice; a look is taken at most once",
+            )
+        looks[look] = dict(capture.details.get("verdict") or {})
+    return looks

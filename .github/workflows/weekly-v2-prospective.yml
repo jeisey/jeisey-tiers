@@ -1,0 +1,152 @@
+# The prospective holdout of weekly-startsit-v2, judged on schedule (ADR-099, MODELING 35.6).
+#
+# The frozen rule (src/ffdraft/weekly/frozen_v2.py) allows at most two looks at the 2026
+# games: the first when the minimum evidence is first met, the final after the season's last
+# week. This workflow is how both are taken, so neither depends on someone remembering:
+#
+#   * every Wednesday it counts what production has retained (complete weeks, scored rows,
+#     decision-pool pairs) against the minimum, and writes that progress to the run summary;
+#   * when a look is due (prospective_looks_v1), it takes it, records it in the private store
+#     with the rows it judged, pushes that record, and only then shows the verdict: in the run
+#     summary and in an issue, which is what notifies the owner;
+#   * a look already recorded is never taken again, by this workflow or by hand, and once the
+#     evaluation is over every later run returns at once without downloading anything.
+#
+# Wednesday morning, New York: Monday night's game is over and nflverse's weekly stats and
+# snap counts for the week have normally landed. A week whose outcomes have not landed does
+# not count yet (outcomes_complete_v1) and is picked up the next Wednesday.
+#
+# It reads the committed shadow captures and nflverse's published outcomes. It trains
+# nothing, serves nothing, deploys nothing and promotes nothing: a "promote" verdict opens an
+# issue, and replacing v1 is a reviewed change (docs/OPERATIONS.md 16.9).
+name: weekly-v2-prospective
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: The prospective season (the frozen rule names 2026)
+        type: string
+        default: "2026"
+  schedule:
+    - cron: "17 10 * * 3"
+      timezone: America/New_York
+
+permissions:
+  contents: read
+
+# One judgement at a time, never cancelled: a look is recorded and pushed in one job, and a
+# cancelled push would leave a look taken but not on the ledger.
+concurrency:
+  group: weekly-v2-prospective
+  cancel-in-progress: false
+
+env:
+  UV_VERSION: "0.8.17"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  look:
+    name: Count the holdout, and take the look that is due
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # The verdict is announced as an issue on this repository; nothing else is written here.
+      issues: write
+    env:
+      SEASON: ${{ inputs.season || '2026' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Check out the retained store
+        id: store
+        uses: ./.github/actions/market-data-store
+        with:
+          token: ${{ secrets.MARKET_DATA_REPO_TOKEN }}
+          path: market-data
+          persist-credentials: "true"
+
+      # The command's output goes to a file, not the log: if the record below cannot be
+      # pushed, nobody has seen the verdict, so the look taken again later is not a second
+      # look at the result.
+      - name: Count, and take the look that is due
+        id: look
+        run: |
+          set -euo pipefail
+          mkdir -p prospective
+          uv run ffdraft evaluate-weekly-v2-prospective \
+            --store market-data \
+            --season "${SEASON}" \
+            --take-due-look \
+            --confirm PROSPECTIVE-WEEKLY-V2-2026 \
+            --out prospective \
+            --status prospective/status.json \
+            > prospective/run.log
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          status = json.load(open("prospective/status.json"))
+          print(f"taken={status.get('taken') or ''}")
+          print(f"outcome={status.get('outcome') or ''}")
+          print(f"closed={'true' if status.get('closed') else 'false'}")
+          PY
+
+      - name: Validate and push the recorded look
+        if: steps.look.outputs.taken != ''
+        env:
+          LOOK: ${{ steps.look.outputs.taken }}
+          BRANCH: ${{ steps.store.outputs.branch }}
+        run: |
+          set -euo pipefail
+          uv run ffdraft validate-market-history market-data --season "${SEASON}"
+          cd market-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "data(gameday): record the ${LOOK} prospective look of weekly-startsit-v2"
+          git pull --rebase origin "${BRANCH}"
+          git push origin "HEAD:${BRANCH}"
+
+      # No `always()`: after a failed push the verdict stays unseen (see above).
+      - name: Summarise the run
+        env:
+          LOOK: ${{ steps.look.outputs.taken }}
+        run: |
+          set -euo pipefail
+          verdict=""
+          if [ -n "${LOOK}" ]; then verdict="--verdict prospective/prospective_${LOOK}.json"; fi
+          # shellcheck disable=SC2086
+          python scripts/prospective_report.py --status prospective/status.json ${verdict} \
+            --out prospective/report.md
+          cat prospective/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the verdict
+        if: steps.look.outputs.taken != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-v2-prospective-${{ steps.look.outputs.taken }}-${{ github.run_id }}
+          path: prospective
+          retention-days: 90
+
+      - name: Announce the verdict
+        if: steps.look.outputs.taken != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOOK: ${{ steps.look.outputs.taken }}
+          OUTCOME: ${{ steps.look.outputs.outcome }}
+        run: |
+          set -euo pipefail
+          gh issue create \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "weekly-startsit-v2: ${LOOK} prospective look, ${OUTCOME//_/ }" \
+            --body-file prospective/report.md

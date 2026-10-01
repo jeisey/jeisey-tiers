@@ -507,3 +507,56 @@ def test_the_shared_action_reads_the_registry_rather_than_a_literal(repo_root):
     assert "market_history_repository" in text
     assert "market_history_branch" in text
     assert "jeisey-tiers-market-data" not in text
+
+
+# --- The prospective looks of weekly-startsit-v2 (ADR-099, prospective_looks_v1) ------------
+PROSPECTIVE = "weekly-v2-prospective.yml"
+
+
+def test_only_the_prospective_job_holds_the_v2_look_token(workflow_dir):
+    """The token is how a look is taken; one scheduled job takes them, and nothing else can."""
+    holders = [
+        path.name
+        for path in sorted(workflow_dir.glob("*.yml"))
+        if "PROSPECTIVE-WEEKLY-V2-2026" in _code(path)
+    ]
+    assert holders == [PROSPECTIVE]
+
+
+def test_the_prospective_job_judges_and_does_nothing_else(workflow_dir):
+    path = workflow_dir / PROSPECTIVE
+    document, text = _load(path), _code(path)
+    assert document["permissions"] == {"contents": "read"}
+    assert set(document["jobs"]) == {"look"}
+    assert document["jobs"]["look"]["permissions"] == {"contents": "read", "issues": "write"}
+    assert document["concurrency"]["cancel-in-progress"] is False
+    assert "workflow_dispatch" in document["on"] and document["on"]["schedule"]
+    for command in (
+        "train-",
+        "build-ros",
+        "build-current",
+        "deploy-pages",
+        "upload-pages-artifact",
+        "weekly-v2-model-card",
+    ):
+        assert command not in text, command
+    assert "evaluate-weekly-v2-prospective" in text and "--take-due-look" in text
+
+
+def test_a_verdict_is_shown_only_after_its_look_is_on_the_ledger(workflow_dir):
+    """Judged to a file, pushed to the store, and only then summarised, kept and announced.
+
+    If the push fails nobody has seen the verdict, so a later retake is not a second look.
+    """
+    steps = _load(workflow_dir / PROSPECTIVE)["jobs"]["look"]["steps"]
+    names = [step.get("name") for step in steps]
+    look = names.index("Count, and take the look that is due")
+    push = names.index("Validate and push the recorded look")
+    shown = [
+        names.index(name)
+        for name in ("Summarise the run", "Keep the verdict", "Announce the verdict")
+    ]
+    assert look < push < min(shown)
+    assert "> prospective/run.log" in steps[look]["run"]
+    for index in shown:
+        assert "always()" not in str(steps[index].get("if", "")), names[index]

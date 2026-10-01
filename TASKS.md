@@ -1778,10 +1778,11 @@ under a new model version frozen before evidence, with a prospective holdout.
 - [x] **Sources registered**: `nws_api`, `open_meteo` (non-commercial, CC BY 4.0, flagged in
       `non_commercial_deployment_required_by`), `wikidata_venue_coordinates`; registry note
       `injuries_in_season_only` updated; the forecast providers are forbidden intrinsic lineage.
-- [x] **Venue registry** `config/venues.yaml` (`venues_v1`, 45 buildings): stable ids, aliases,
+- [x] **Venue registry** `config/venues.yaml` (`venues_v2`, 45 buildings): stable ids, aliases,
       Wikidata coordinates and roof provenance checked against the evidence by test; names beat
-      stale ids (London, Munich, Buffalo 2026, Houston, Azteca); `unverified` roofs (MCG, Stade de
-      France) fail closed.
+      stale ids (London, Munich, Buffalo 2026, Houston, Azteca). `venues_v1` left the MCG and
+      the Stade de France `unverified`; `venues_v2` makes both `open` on whole roof paragraphs
+      (`roof_documents.json`, quotations checked verbatim by test).
 - [x] **Forecast-error map** `config/weather-forecast-error-v1.json` (`scripts/weather_error_model.py`):
       day-before Open-Meteo vs game book, 289 open-air games; precipitation hit 0.50 / false alarm
       0.037.
@@ -1832,10 +1833,23 @@ under a new model version frozen before evidence, with a prospective holdout.
       (root and in-season fixture); `verify-real-build` on the real build 0 failures (550 board
       cells, 2 panels, 7 terms against the artifact bytes); real build `validate-artifacts
       --require-serving` 0/0.
+- [x] **Amendment, roof labels** (ADR-099): nflverse files the MCG, the Stade de France and the
+      Allianz Arena (2026, open to the sky) as `dome`. A verified fixed venue roof now wins for
+      the published labels (`team_matchups.roof`, `game.roof`) and v1's serving input
+      (`published_roof`); `roof.recorded` keeps the schedule's value; training untouched (247
+      recorded 2017–2025 roofs agree, by test; exactly 3 of 2017–2026 change);
+      `weekly_context.roof_agreement` added. Firewall unchanged: the matchup builder takes a
+      plain `game_id → roof` map.
+- [x] **Amendment, scheduled looks** (ADR-099, OPERATIONS §16.9): `weekly-v2-prospective.yml`
+      counts every Wednesday, takes the due look (`prospective_looks_v1`), records it in
+      `gameday/weekly_v2_look` before showing it, then summarises and opens an issue. Complete
+      weeks need outcomes (`outcomes_complete_v1`); a recorded look is never retaken; the token
+      lives only in that workflow.
 - [ ] **Owed**:
   - the first production refresh on this code — the first retained shadow record and the first
-    `gameday/` captures, which the sandbox cannot reach;
-  - the prospective look once the minimum evidence is met;
-  - a pass on the MCG and Stade de France roof evidence (both `unverified`).
+    `gameday/` captures, which the sandbox cannot reach. Weeks that kick off before it are lost
+    to the holdout;
+  - the first scheduled run of `weekly-v2-prospective.yml` (progress only until the minimum
+    is met; the earliest first look is after week 12 if the refresh runs before week 5).
 
   No PR (not requested).
