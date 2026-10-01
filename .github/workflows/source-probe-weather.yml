@@ -49,23 +49,29 @@ jobs:
 
       - name: Probe venues, forecasts and the forecast archive
         id: probe
+        timeout-minutes: 45
         run: |
           set -euo pipefail
           out_dir="docs/source-probes/$(date -u +%F)/weather"
           echo "out_dir=${out_dir}" >> "$GITHUB_OUTPUT"
+          mkdir -p "${out_dir}"
           python scripts/weather_probe.py \
             --out "${out_dir}" \
             --archive-seasons "${{ inputs.archive_seasons || '2022,2023,2024,2025' }}"
 
+      # Partial evidence is still evidence: every file the probe wrote before a failure or a
+      # timeout is kept, and summary.json says what is missing.
       - name: Upload the evidence
+        if: always() && steps.probe.outputs.out_dir != ''
         uses: actions/upload-artifact@v4
         with:
           name: source-probe-weather-${{ github.run_id }}
           path: ${{ steps.probe.outputs.out_dir }}
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Commit the evidence
+        if: always() && steps.probe.outputs.out_dir != ''
         env:
           OUT_DIR: ${{ steps.probe.outputs.out_dir }}
         run: |

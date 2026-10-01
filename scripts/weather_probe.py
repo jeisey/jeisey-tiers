@@ -133,10 +133,16 @@ class Fetcher:
         self.pause = pause
         self.calls: dict[str, int] = defaultdict(int)
         self.failures: list[dict[str, Any]] = []
+        #: Hosts that answered 429 twice in a row: the probe stops asking them.
+        self.exhausted: set[str] = set()
 
     def get(self, url: str, *, accept: str = "application/json") -> tuple[int, Any, dict[str, str]]:
         host = urllib.parse.urlparse(url).netloc
         last_error = ""
+        if host in self.exhausted:
+            self.failures.append({"url": url, "status": 429, "error": "host rate-limited; skipped"})
+            return 429, None, {}
+        limited = 0
         for attempt in range(4):
             self.calls[host] += 1
             request = urllib.request.Request(
@@ -153,8 +159,16 @@ class Fetcher:
             except urllib.error.HTTPError as error:
                 last_error = f"HTTP {error.code}"
                 body = error.read()[:400].decode("utf-8", "replace")
-                if error.code in (429, 500, 502, 503, 504) and attempt < 3:
-                    time.sleep(30 if error.code == 429 else 2 ** (attempt + 1))
+                if error.code == 429:
+                    limited += 1
+                    if limited >= 2:
+                        self.exhausted.add(host)
+                        self.failures.append({"url": url, "status": 429, "body": body})
+                        return 429, None, {}
+                    time.sleep(65)
+                    continue
+                if error.code in (500, 502, 503, 504) and attempt < 3:
+                    time.sleep(2 ** (attempt + 1))
                     continue
                 self.failures.append({"url": url, "status": error.code, "body": body})
                 time.sleep(self.pause)
@@ -533,12 +547,26 @@ ARCHIVE_APIS = {
 }
 
 
+def _write_archive(out: Path, rows: dict[str, dict[str, Any]]) -> None:
+    if not rows:
+        return
+    ordered = [rows[key] for key in sorted(rows)]
+    columns = sorted({key for row in ordered for key in row}, key=lambda k: (k != "game_id", k))
+    with (out / "archive_games.csv").open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(ordered)
+
+
 def probe_archive(
     fetcher: Fetcher,
     venues: dict[str, dict[str, Any]],
     games: list[dict[str, Any]],
     seasons: list[int],
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    *,
+    out: Path,
+    deadline: float,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
     dome_ids = {game["stadium_id"] for game in games if game["roof"] == "dome"}
     by_key: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     for game in games:
@@ -546,7 +574,13 @@ def probe_archive(
             by_key[(game["stadium_id"], game["season"])].append(game)
     rows: dict[str, dict[str, Any]] = {}
     calls: list[dict[str, Any]] = []
-    for (venue_id, season), venue_games in sorted(by_key.items()):
+    truncated = False
+    for (venue_id, season), venue_games in sorted(
+        by_key.items(), key=lambda item: (-item[0][1], item[0][0])
+    ):
+        if time.monotonic() > deadline:
+            truncated = True
+            break
         venue = venues.get(venue_id) or {}
         point = coordinates(venue)
         if point is None:
@@ -606,7 +640,9 @@ def probe_archive(
                     present = [value for value in window if value is not None]
                     row[f"{tag}_precipitation_3h"] = round(sum(present), 3) if present else None
             print(f"archive {tag} {venue_id} {season}: {status} {len(times)}h", flush=True)
-    return [rows[key] for key in sorted(rows)], calls
+        _write_archive(out, rows)
+        (out / "archive_calls.json").write_text(json.dumps(calls, indent=2) + "\n")
+    return [rows[key] for key in sorted(rows)], calls, truncated
 
 
 def main() -> int:
@@ -615,6 +651,7 @@ def main() -> int:
     parser.add_argument("--pause", type=float, default=0.6)
     parser.add_argument("--archive-seasons", default="2022,2023,2024,2025")
     parser.add_argument("--horizon-days", type=int, default=17)
+    parser.add_argument("--archive-budget-minutes", type=float, default=25.0)
     args = parser.parse_args()
     out: Path = args.out
     out.mkdir(parents=True, exist_ok=True)
@@ -659,17 +696,10 @@ def main() -> int:
     (out / "open_meteo_forecast.json").write_text(json.dumps(meteo, indent=2, default=str) + "\n")
 
     seasons = [int(value) for value in args.archive_seasons.split(",") if value]
-    archive, calls = probe_archive(fetcher, venues, games, seasons)
-    if archive:
-        columns = sorted(
-            {key for row in archive for key in row}, key=lambda k: (k not in ("game_id",), k)
-        )
-        with (out / "archive_games.csv").open("w", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=columns)
-            writer.writeheader()
-            writer.writerows(archive)
-    (out / "archive_calls.json").write_text(json.dumps(calls, indent=2) + "\n")
-
+    deadline = time.monotonic() + 60.0 * args.archive_budget_minutes
+    archive, calls, truncated = probe_archive(
+        fetcher, venues, games, seasons, out=out, deadline=deadline
+    )
     summary = {
         "started_at_utc": started.isoformat(),
         "finished_at_utc": datetime.now(UTC).isoformat(),
@@ -685,6 +715,8 @@ def main() -> int:
         "open_meteo_venues": len(meteo),
         "archive_games": len(archive),
         "archive_seasons": seasons,
+        "archive_truncated_by_budget": truncated,
+        "rate_limited_hosts": sorted(fetcher.exhausted),
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
