@@ -1,0 +1,733 @@
+{
+  "NAS00": {
+    "search": "Tennessee Titans stadium Nashville opened 1999",
+    "search_status": 200,
+    "search_hits": [
+      "Nissan Stadium (2027)",
+      "Nissan Stadium (Nashville)",
+      "FirstBank Stadium",
+      "2017 Tennessee Titans season",
+      "History of the Tennessee Titans",
+      "2008 Tennessee Titans season",
+      "Nashville, Tennessee",
+      "Hale Stadium"
+    ],
+    "titles": [
+      {
+        "requested_title": "Nissan Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium",
+        "wikipedia_pageid": 80204720,
+        "wikipedia_revid": 1359834080,
+        "wikipedia_rev_timestamp": "2026-06-17T14:16:41Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q21164193",
+        "disambiguation": true,
+        "lead": "Nissan Stadium may refer to: Nissan Stadium (Nashville), an outdoor American football stadium in Nashville, Tennessee, U.S. Nissan Stadium (2027), an indoor stadium currently under construction, set to replace the existing stadium in 2027 Nissan Stadium (Yokohama)",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "Wikimedia disambiguation page",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "Nissan Stadium (1999)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Nissan Stadium (Nashville)",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (Nashville)",
+        "wikipedia_pageid": 467823,
+        "wikipedia_revid": 1375930209,
+        "wikipedia_rev_timestamp": "2026-09-20T23:33:02Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16638889,
+            "lon": -86.77138889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1142992",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is a multi-purpose stadium in Nashville, Tennessee, United States. Owned by the Metropolitan Government of Nashville and Davidson County, it is primarily used for football and is the home field of the Tennessee Titans of the National Football League (NFL) and the Tigers of Tennessee State University. The stadium is the site of the Music City Bowl, a postseason college football bowl game played each December, and from 2020 until 2021 the home field of Nashville SC of Major League Soccer (MLS). It is used for concerts such as those affiliated with the CMA Music Festival each June. The stadium also has facilities to host public events, meetings, and parties. Nissan Stadium is located on the east bank of the Cumberland River, across the river from downtown Nashville and has a seating capacity of 69,143. Its first regular-season game was a 36–35 win over the Cincinnati Bengals ",
+        "hatnotes": [
+          "{{For|the new stadium under construction|Nissan Stadium (2027)}}"
+        ],
+        "infobox_coordinates": [
+          "{{Coord|36|9|59|N|86|46|17|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "<!-- Please do not add closed dates until after it has actually been officially closed. -->",
+          ""
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "home venue of Tennessee Titans and Tennessee State Tigers football team",
+        "wikidata_P625": [
+          {
+            "lat": 36.166388888889,
+            "lon": -86.771388888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "LP Field",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (Nashville)",
+        "wikipedia_pageid": 467823,
+        "wikipedia_revid": 1375930209,
+        "wikipedia_rev_timestamp": "2026-09-20T23:33:02Z",
+        "redirects": [
+          {
+            "from": "LP Field",
+            "to": "Nissan Stadium (Nashville)"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16638889,
+            "lon": -86.77138889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1142992",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is a multi-purpose stadium in Nashville, Tennessee, United States. Owned by the Metropolitan Government of Nashville and Davidson County, it is primarily used for football and is the home field of the Tennessee Titans of the National Football League (NFL) and the Tigers of Tennessee State University. The stadium is the site of the Music City Bowl, a postseason college football bowl game played each December, and from 2020 until 2021 the home field of Nashville SC of Major League Soccer (MLS). It is used for concerts such as those affiliated with the CMA Music Festival each June. The stadium also has facilities to host public events, meetings, and parties. Nissan Stadium is located on the east bank of the Cumberland River, across the river from downtown Nashville and has a seating capacity of 69,143. Its first regular-season game was a 36–35 win over the Cincinnati Bengals ",
+        "hatnotes": [
+          "{{For|the new stadium under construction|Nissan Stadium (2027)}}"
+        ],
+        "infobox_coordinates": [
+          "{{Coord|36|9|59|N|86|46|17|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "<!-- Please do not add closed dates until after it has actually been officially closed. -->",
+          ""
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "home venue of Tennessee Titans and Tennessee State Tigers football team",
+        "wikidata_P625": [
+          {
+            "lat": 36.166388888889,
+            "lon": -86.771388888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "LP Field (Nashville)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Adelphia Coliseum",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (Nashville)",
+        "wikipedia_pageid": 467823,
+        "wikipedia_revid": 1375930209,
+        "wikipedia_rev_timestamp": "2026-09-20T23:33:02Z",
+        "redirects": [
+          {
+            "from": "Adelphia Coliseum",
+            "to": "Nissan Stadium (Nashville)"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16638889,
+            "lon": -86.77138889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1142992",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is a multi-purpose stadium in Nashville, Tennessee, United States. Owned by the Metropolitan Government of Nashville and Davidson County, it is primarily used for football and is the home field of the Tennessee Titans of the National Football League (NFL) and the Tigers of Tennessee State University. The stadium is the site of the Music City Bowl, a postseason college football bowl game played each December, and from 2020 until 2021 the home field of Nashville SC of Major League Soccer (MLS). It is used for concerts such as those affiliated with the CMA Music Festival each June. The stadium also has facilities to host public events, meetings, and parties. Nissan Stadium is located on the east bank of the Cumberland River, across the river from downtown Nashville and has a seating capacity of 69,143. Its first regular-season game was a 36–35 win over the Cincinnati Bengals ",
+        "hatnotes": [
+          "{{For|the new stadium under construction|Nissan Stadium (2027)}}"
+        ],
+        "infobox_coordinates": [
+          "{{Coord|36|9|59|N|86|46|17|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "<!-- Please do not add closed dates until after it has actually been officially closed. -->",
+          ""
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "home venue of Tennessee Titans and Tennessee State Tigers football team",
+        "wikidata_P625": [
+          {
+            "lat": 36.166388888889,
+            "lon": -86.771388888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "The Coliseum (Nashville)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      }
+    ],
+    "searched": [
+      {
+        "requested_title": "Nissan Stadium (2027)",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (2027)",
+        "wikipedia_pageid": 72035145,
+        "wikipedia_revid": 1375930188,
+        "wikipedia_rev_timestamp": "2026-09-20T23:32:53Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16772222,
+            "lon": -86.76805556,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q115804542",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is an indoor stadium in Nashville, Tennessee, U.S., scheduled to open in 2027. It will replace the existing Nissan Stadium as the home venue for the Tennessee Titans of the National Football League (NFL). The 60,000-seat stadium is projected to cost $2.1 billion, including $1.26 billion of public money—the largest stadium subsidy in U.S. history. It is being built next to the existing Nissan Stadium, which will be demolished after its completion. The stadium was designed by architectural firm Manica. The stadium will host Super Bowl LXIV in 2030.",
+        "hatnotes": [
+          "{{For|the existing stadium|Nissan Stadium (Nashville)}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|36|10|03.8|N|86|46|05|W|type:landmark_scale:3000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "2027 (planned)"
+        ],
+        "infobox_closed": [
+          "",
+          ""
+        ],
+        "infobox_roof": [
+          "[[Skylight]]"
+        ],
+        "wikidata_status": 200,
+        "wikidata_label": "New Nissan Stadium",
+        "wikidata_description": "future NFL stadium",
+        "wikidata_P625": [
+          {
+            "lat": 36.16772222222222,
+            "lon": -86.76805555555555,
+            "precision": 2.777777777777778e-05,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "FirstBank Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "FirstBank Stadium",
+        "wikipedia_pageid": 771058,
+        "wikipedia_revid": 1377260350,
+        "wikipedia_rev_timestamp": "2026-09-28T15:36:36Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.14416667,
+            "lon": -86.80888889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q3554494",
+        "disambiguation": false,
+        "lead": "FirstBank Stadium (formerly Dudley Field and Vanderbilt Stadium) is a college football stadium on the campus of Vanderbilt University in Nashville, Tennessee. Opened 104 years ago in 1922 as the first stadium in the South to be used exclusively for college football, it is the home of the Vanderbilt Commodores football team. When the venue was known as Vanderbilt Stadium, it hosted the Tennessee Oilers (now Titans) during the 1998 NFL season and the first Music City Bowl in 1998 and also hosted the Tennessee state high school football championships for many years. FirstBank Stadium is the smallest stadium in the Southeastern Conference (SEC) and was the largest in Nashville until the completion of the Titans' Nissan Stadium in 1999. After the 2022–2025 renovation, its seating capacity was reduced to 35,000, down from the previous 40,350.",
+        "hatnotes": [],
+        "infobox_coordinates": [
+          "{{coord|36|8|39|N|86|48|32|W|type:landmark|display=it}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "FirstBank Stadium",
+        "wikidata_description": "stadium in Nashville, Tennessee",
+        "wikidata_P625": [
+          {
+            "lat": 36.144166666667,
+            "lon": -86.808888888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "2017 Tennessee Titans season",
+        "wikipedia_status": 200,
+        "wikipedia_title": "2017 Tennessee Titans season",
+        "wikipedia_pageid": 52195425,
+        "wikipedia_revid": 1372083171,
+        "wikipedia_rev_timestamp": "2026-08-30T05:39:39Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q28448619",
+        "disambiguation": false,
+        "lead": "The 2017 season was the Tennessee Titans' 48th in the National Football League (NFL) and the 58th overall. It also marked the franchise's 21st season in the state of Tennessee as well as the second full season under head coach Mike Mularkey. They equaled their record from a year ago, and not only that, with a 15–10 win over the Jacksonville Jaguars in Week 17, they clinched their first playoff berth since 2008. In the first round, the Titans rallied from a 21–3 halftime deficit against the Chiefs to win 22–21, winning their first playoff game since 2003. However, they were defeated by the New England Patriots in the divisional round by the score of 35–14. Despite making the playoffs and winning a playoff game, this would be Mularkey's final year coaching the Titans, as they parted ways after the season ended. This is also the last season where the Titans wore their uniform design since 1",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "2017 Tennessee Titans season",
+        "wikidata_description": "58th season in franchise history; first playoff berth since 2008",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "History of the Tennessee Titans",
+        "wikipedia_status": 200,
+        "wikipedia_title": "History of the Tennessee Titans",
+        "wikipedia_pageid": 9997305,
+        "wikipedia_revid": 1368907092,
+        "wikipedia_rev_timestamp": "2026-08-11T19:45:11Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q15732108",
+        "disambiguation": false,
+        "lead": "The Tennessee Titans are a professional American football team based in Nashville, Tennessee. They are members of the South Division of the American Football Conference (AFC) in the National Football League (NFL). Previously known as the Houston Oilers, the then Houston, Texas, team began play in 1960 as a charter member of the American Football League (AFL). The Houston Oilers won the first two AFL championships before later joining the NFL as part of the AFL–NFL merger. In 1999 , the Tennessee Titans played their most memorable season since joining the NFL, when they made it all the way to Super Bowl XXXIV, but they fell, at the 1 yard line, to the Kurt Warner-led St. Louis Rams. ( now the Los Angeles Rams)",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "history of the Tennessee Titans",
+        "wikidata_description": null,
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "2008 Tennessee Titans season",
+        "wikipedia_status": 200,
+        "wikipedia_title": "2008 Tennessee Titans season",
+        "wikipedia_pageid": 15601837,
+        "wikipedia_revid": 1341328180,
+        "wikipedia_rev_timestamp": "2026-03-02T16:19:19Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q4612042",
+        "disambiguation": false,
+        "lead": "The 2008 Tennessee Titans season was the team's 49th season and 39th in the National Football League (NFL), their 12th in Tennessee, and their tenth as the Titans. Despite making the playoffs in the 2007 season with a record of 10–6, the Titans were expected by most sportswriters to finish third or even fourth in the AFC South. They nonetheless compiled a 13–3 regular season record—the best in the NFL—and won home-field advantage for the duration of the playoffs after clinching AFC South on December 7 after a win over the Cleveland Browns and a 10–0 start. The Titans defense was ranked number two in the NFL behind the Pittsburgh Steelers, giving up only 234 points. The Titans lost two of their last three regular season games, and were eliminated by the Baltimore Ravens in the divisional round. This was the last season the Tennessee Titans qualified for the playoffs until 2017, and also t",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "2008 Tennessee Titans season",
+        "wikidata_description": "National Football League franchise in Tennessee",
+        "wikidata_P625": []
+      }
+    ]
+  },
+  "BUF00": {
+    "search": "Buffalo Bills stadium Orchard Park opened 1973",
+    "search_status": 200,
+    "search_hits": [
+      "1973 Buffalo Bills season",
+      "Ralph Wilson Stadium",
+      "Buffalo Bills",
+      "List of current NFL stadiums",
+      "Bills–Chiefs rivalry",
+      "Chronology of home stadiums for current NFL teams",
+      "1973 Miami Dolphins season",
+      "History of the Buffalo Bills"
+    ],
+    "titles": [
+      {
+        "requested_title": "Highmark Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Highmark Stadium",
+        "wikipedia_pageid": 39235022,
+        "wikipedia_revid": 1376055436,
+        "wikipedia_rev_timestamp": "2026-09-21T19:32:19Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.77305556,
+            "lon": -78.79222222,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q16251517",
+        "disambiguation": false,
+        "lead": "Highmark Stadium is an American football stadium located in Orchard Park, New York, a suburb of Buffalo. It opened in 2026, serving as the home field of the Buffalo Bills of the National Football League (NFL). The stadium was built adjacent to Erie Community College's south campus across the street from where Ralph Wilson Stadium stood. The stadium was designed by Populous. The stadium has a seating capacity of 60,108, the smallest among NFL venues. However, the 63,000 total capacity (counting standing room-only possibilities) can reach 66,000 depending on the event. The new venue has a partial roof so that 65% of seats would be protected from the elements; the playing field is uncovered as Buffalo's reputation for cold, snowy weather often makes for compelling television and has long formed a part of the team's and city's identity. The stadium cost $1.7 billion. Under an agreement with ",
+        "hatnotes": [
+          "{{About|the Buffalo Bills' sports venue that opened in 2026|their former stadium of the same name|Ralph Wilson Stadium|the venue in Pittsburgh, Pennsylvania formerly known as Highmark Stadium|F.N.B. Stadium (Pittsburgh)}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42|46|23|N|78|47|32|W|type:landmark_region:US-NY|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{Start date and age"
+        ],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Highmark Stadium",
+        "wikidata_description": "stadium in  Orchard Park, New York",
+        "wikidata_P625": [
+          {
+            "lat": 42.77297222222222,
+            "lon": -78.79219444444445,
+            "precision": 2.777777777777778e-05,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "Highmark Stadium (1973)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Highmark Stadium (Orchard Park)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Ralph Wilson Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "New Era Field",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": [
+          {
+            "from": "New Era Field",
+            "to": "Ralph Wilson Stadium"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "Rich Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": [
+          {
+            "from": "Rich Stadium",
+            "to": "Ralph Wilson Stadium"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "Bills Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": [
+          {
+            "from": "Bills Stadium",
+            "to": "Ralph Wilson Stadium"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      }
+    ],
+    "searched": [
+      {
+        "requested_title": "1973 Buffalo Bills season",
+        "wikipedia_status": 200,
+        "wikipedia_title": "1973 Buffalo Bills season",
+        "wikipedia_pageid": 16028459,
+        "wikipedia_revid": 1364152218,
+        "wikipedia_rev_timestamp": "2026-07-14T20:51:13Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q4575476",
+        "disambiguation": false,
+        "lead": "The 1973 Buffalo Bills season was the 14th season for the team and their 4th season in the National Football League (NFL). The Bills finished in 2nd place in the AFC East division and finished the 1973 NFL season with a record of 9–5, the team's first winning record since 1966. Head coach Lou Saban began the second season of his second tenure with the Bills. Saban had previously led the team to the 1964 and 1965 AFL championships. This was the first season that the team played in Rich Stadium (which changed names over a decade later) after thirteen years playing at War Memorial Stadium (\"The Rockpile\"). The Bills were returning from 1–13 and 4–9–1 records in 1971 and 1972, respectively. Incumbent starting quarterback Dennis Shaw found himself in a battle with rookie Joe Ferguson for the starting job. The season was defined by O. J. Simpson. The fifth-year running back became the first pl",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "1973 Buffalo Bills season",
+        "wikidata_description": "14th season in franchise history",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "Buffalo Bills",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Buffalo Bills",
+        "wikipedia_pageid": 4315,
+        "wikipedia_revid": 1377174851,
+        "wikipedia_rev_timestamp": "2026-09-28T04:50:53Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q221626",
+        "disambiguation": false,
+        "lead": "The Buffalo Bills are a professional American football team based in the Buffalo–Niagara Falls metropolitan area. The Bills compete in the National Football League (NFL) as a member of the American Football Conference (AFC) East division. The team plays its home games at Highmark Stadium in Orchard Park, New York. Founded in 1959 as a charter member of the American Football League (AFL), the team joined the NFL in 1970 after the AFL–NFL merger. The team's name is taken from an All-America Football Conference (AAFC) franchise from Buffalo that was named after western frontiersman Buffalo Bill. Drawing much of its fanbase from western New York and neighboring southern Ontario, the Bills are the only NFL team that plays home games in the state of New York. The franchise is owned by Terry Pegula, who purchased the Bills after the death of the original owner Ralph Wilson in 2014, and a coalit",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Buffalo Bills",
+        "wikidata_description": "National Football League franchise in Orchard Park, New York",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "List of current NFL stadiums",
+        "wikipedia_status": 200,
+        "wikipedia_title": "List of current NFL stadiums",
+        "wikipedia_pageid": 10814816,
+        "wikipedia_revid": 1376770135,
+        "wikipedia_rev_timestamp": "2026-09-26T03:25:54Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q684521",
+        "disambiguation": false,
+        "lead": "This list of current NFL stadiums includes their locations, capacities, year opened, and home teams. Although the NFL has 32 teams, there are only 30 full-time NFL stadiums, as the New York Giants and New York Jets share MetLife Stadium, and the Los Angeles Chargers and Los Angeles Rams share SoFi Stadium. The latest NFL stadium to open is Highmark Stadium, home of the Buffalo Bills, which opened for the 2026 season. Soldier Field in Chicago is the oldest, having opened in 1924; however, the Bears did not play at Soldier Field until 1971 and did not play there in 2002 while the stadium was under reconstruction, and thus the oldest continuously operating stadium in the NFL is Lambeau Field, hosting the Green Bay Packers since its opening in 1957. The NFL uses several other stadiums in addition to the teams' designated regular home sites. Two English venues – Tottenham Hotspur Stadium and ",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "list of current National Football League stadiums",
+        "wikidata_description": "Wikimedia list article",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "Bills–Chiefs rivalry",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Bills–Chiefs rivalry",
+        "wikipedia_pageid": 75586458,
+        "wikipedia_revid": 1366955160,
+        "wikipedia_rev_timestamp": "2026-07-31T01:49:18Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q124077993",
+        "disambiguation": false,
+        "lead": "The Bills–Chiefs rivalry is a National Football League (NFL) rivalry between the Buffalo Bills and Kansas City Chiefs. The series originated during the American Football League's inaugural season in 1960, as both the Chiefs, then known as the Dallas Texans, and Bills were charter teams in the league. Because they play in different intraconference divisions, the Bills in the AFC East and the Chiefs in the AFC West, they do not play each other every year. Instead, based on the NFL's scheduling formula, the two teams play each other at least once every three seasons and at least once every six seasons at each team's home stadium when their divisions are paired up, sometimes more often if the two teams meet in the playoffs or they finish in the same place in their respective divisions. Nonetheless, the Bills and Chiefs have had many notable moments in NFL postseason history, including the 19",
+        "hatnotes": [],
+        "infobox_coordinates": [
+          "{{coord|42.77377|-78.78698}}",
+          "{{coord|39.04896|-94.48406}}"
+        ],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Bills–Chiefs rivalry",
+        "wikidata_description": "NFL rivalry",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "Chronology of home stadiums for current NFL teams",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Chronology of home stadiums for current NFL teams",
+        "wikipedia_pageid": 1822030,
+        "wikipedia_revid": 1373585853,
+        "wikipedia_rev_timestamp": "2026-09-06T19:44:21Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q5114208",
+        "disambiguation": false,
+        "lead": "The following is a chronology of NFL home stadiums, that is, all home stadiums of teams currently playing in the National Football League (NFL), and their locations and capacities. It contains all past and present (in bold) home stadiums used by the current 32 members of the National Football League since 1920, along with future home stadiums presently under construction (in italics immediately above the present stadium). It is ordered by the conference and division to which the team belongs. Soldier Field in Chicago, home of the Chicago Bears is the oldest stadium in the league having opened in 1924. The stadium that has been used the longest by an NFL team is Lambeau Field, home of the Green Bay Packers since 1957. Stadiums represent a considerable expense to a community, and thus their construction, use, and funding often enters the public discourse. Also, given the perceived advantag",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Chronology of home stadiums for current National Football League teams",
+        "wikidata_description": null,
+        "wikidata_P625": []
+      }
+    ]
+  },
+  "_run": {
+    "started_at_utc": "2026-10-01T17:26:00.748871+00:00",
+    "finished_at_utc": "2026-10-01T17:26:40.969665+00:00",
+    "user_agent": "jeisey-tiers source probe (https://github.com/jeisey/jeisey-tiers)",
+    "calls_by_host": {
+      "en.wikipedia.org": 30,
+      "www.wikidata.org": 23
+    },
+    "failures": []
+  }
+}
