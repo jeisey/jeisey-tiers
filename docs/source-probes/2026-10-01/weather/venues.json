@@ -1,0 +1,1804 @@
+{
+  "ATL97": {
+    "stadium_id": "ATL97",
+    "title": "Mercedes-Benz Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Mercedes-Benz Stadium",
+    "wikipedia_pageid": 36962066,
+    "wikipedia_revid": 1377254306,
+    "wikipedia_rev_timestamp": "2026-09-28T14:55:41Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 33.75555556,
+        "lon": -84.4,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q7007552",
+    "roof_sentences": [
+      "Mercedes-Benz Stadium is a retractable roof stadium in Atlanta, Georgia, United States.",
+      "Opened in 2017 as a replacement for the Georgia Dome, it is the home to the Atlanta Falcons of the National Football League (NFL), Atlanta United FC of Major League Soccer (MLS), and Atlanta City FC of the National Women's Soccer League (NWSL) in 2028.",
+      "Several events formerly held at the Georgia Dome moved to Mercedes-Benz Stadium following its completion, including multiple college football events, such as the SEC football championship game, the Peach Bowl, and the College Football Playoff National Championship (2018, 2025).",
+      "== Design == === Roof === The stadium's signature feature is its retractable roof, which features a \"pinwheel\" consisting of eight translucent, triangular panels.",
+      "Closing the roof takes slightly less time than opening the roof, since the roof has to disengage the seals at the start of the opening procedure and slow down towards the end to prevent the panels from getting derailed.",
+      "Architect Bill Johnson explained that the circular opening in the roof was inspired by the Roman Pantheon (\"Pantheon\" was also the working name for the building design).",
+      "The roof was designed to be made of a clear, lightweight polymer material that can adjust its opacity to control light, and much of the exterior is clear polymer or glass to allow views to the outside.",
+      "Below the roof is the \"Halo\", a 58-by-1,100-foot (18 by 335 m), ring-shaped video board around its rim.",
+      "The stadium's roof can be kept open under light precipitation, as the electrical systems for all video boards in the stadium are outdoor-rated, and the field has a drainage system.",
+      "AMB Group senior executive Mike Egan went as far as describing Mercedes-Benz Stadium as \"an outdoor stadium with a roof over it\" due to these characteristics, but that other factors such as humidity and outside temperatures would be taken into consideration on whether or not the roof would be opened.",
+      "It also has a soccer-specific configuration, with retractable lower bowl seats to widen the field, and mechanized curtains that limit the capacity to about 42,500.",
+      "The former Georgia Dome site between the stadium and the Georgia World Congress Center was redeveloped as \"The Home Depot Backyard\"—an 11-acre (4."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Mercedes-Benz Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 33.75527777777778,
+        "lon": -84.40083333333334,
+        "precision": 0.000277778,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "BAL00": {
+    "stadium_id": "BAL00",
+    "title": "M&T Bank Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "M&T Bank Stadium",
+    "wikipedia_pageid": 345892,
+    "wikipedia_revid": 1377383293,
+    "wikipedia_rev_timestamp": "2026-09-29T04:00:42Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 39.27805556,
+        "lon": -76.62277778,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1141336",
+    "roof_sentences": [
+      "The stadium used for the aerial shots is the domed Olympic Stadium in Montreal, while the book used Denver as the locale for the attack."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "M&T Bank Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 39.278055555556,
+        "lon": -76.622777777778,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "BOS00": {
+    "stadium_id": "BOS00",
+    "title": "Gillette Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Gillette Stadium",
+    "wikipedia_pageid": 445102,
+    "wikipedia_revid": 1375562531,
+    "wikipedia_rev_timestamp": "2026-09-18T15:28:43Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 42.091,
+        "lon": -71.264,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q373355",
+    "roof_sentences": [
+      "The proposed 68,000-seat domed stadium would have cost $250 million, and would have been paid through income taxes, public bonds, surcharges on tickets, and private funds."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Gillette Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 42.090944444444,
+        "lon": -71.264344444444,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "BUF00": {
+    "stadium_id": "BUF00",
+    "title": "Highmark Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Highmark Stadium",
+    "wikipedia_pageid": 39235022,
+    "wikipedia_revid": 1376055436,
+    "wikipedia_rev_timestamp": "2026-09-21T19:32:19Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 42.77305556,
+        "lon": -78.79222222,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q16251517",
+    "roof_sentences": [
+      "The new venue has a partial roof so that 65% of seats would be protected from the elements; the playing field is uncovered as Buffalo's reputation for cold, snowy weather often makes for compelling television and has long formed a part of the team's and city's identity.",
+      "The design was conceived as a football-focused, open-air stadium intended to preserve the effects of Buffalo's weather while providing greater protection for spectators than the team's previous stadium.",
+      "The exterior is characterized by a continuous colonnade of vertical fins extending around the stadium from ground level to the canopy.",
+      "Perforated metal panels are positioned between the upper portions of the fins, providing protection from wind and precipitation while retaining the open-air character of the venue.",
+      "A 360-degree canopy covers the seating bowl.",
+      "Rather than enclosing the stadium, the canopy follows the shape of the bowl and exterior facade, rising toward the center of the stadium and descending toward the end zones.",
+      "The canopy and surrounding facade were also designed to mitigate the effects of Buffalo's wind and winter weather without eliminating the outdoor environment associated with Bills games.",
+      "Contemporary descriptions of the completed stadium report that the canopy covers more than 60 percent of the seating.",
+      "The open concourse design represents a change from the more enclosed circulation areas of the previous stadium.",
+      "The open-air configuration allows snow, wind and cold temperatures to remain part of the game-day environment, while the canopy, perforated facade, enclosed circulation areas and snow-mitigation systems provide protection for spectators and the playing surface.",
+      "4 billion, 72,000-seat retractable roof stadium, convention center, hotel and sports museum plan for the Buffalo Outer Harbor.",
+      "5 billion package that would also include renovations to KeyBank Center, Buffalo's indoor sports arena."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Highmark Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 42.77297222222222,
+        "lon": -78.79219444444445,
+        "precision": 2.777777777777778e-05,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "BUF00-2026": {
+    "stadium_id": "BUF00-2026",
+    "title": "New Highmark Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Highmark Stadium",
+    "wikipedia_pageid": 39235022,
+    "wikipedia_revid": 1376055436,
+    "wikipedia_rev_timestamp": "2026-09-21T19:32:19Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 42.77305556,
+        "lon": -78.79222222,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q16251517",
+    "roof_sentences": [
+      "The new venue has a partial roof so that 65% of seats would be protected from the elements; the playing field is uncovered as Buffalo's reputation for cold, snowy weather often makes for compelling television and has long formed a part of the team's and city's identity.",
+      "The design was conceived as a football-focused, open-air stadium intended to preserve the effects of Buffalo's weather while providing greater protection for spectators than the team's previous stadium.",
+      "The exterior is characterized by a continuous colonnade of vertical fins extending around the stadium from ground level to the canopy.",
+      "Perforated metal panels are positioned between the upper portions of the fins, providing protection from wind and precipitation while retaining the open-air character of the venue.",
+      "A 360-degree canopy covers the seating bowl.",
+      "Rather than enclosing the stadium, the canopy follows the shape of the bowl and exterior facade, rising toward the center of the stadium and descending toward the end zones.",
+      "The canopy and surrounding facade were also designed to mitigate the effects of Buffalo's wind and winter weather without eliminating the outdoor environment associated with Bills games.",
+      "Contemporary descriptions of the completed stadium report that the canopy covers more than 60 percent of the seating.",
+      "The open concourse design represents a change from the more enclosed circulation areas of the previous stadium.",
+      "The open-air configuration allows snow, wind and cold temperatures to remain part of the game-day environment, while the canopy, perforated facade, enclosed circulation areas and snow-mitigation systems provide protection for spectators and the playing surface.",
+      "4 billion, 72,000-seat retractable roof stadium, convention center, hotel and sports museum plan for the Buffalo Outer Harbor.",
+      "5 billion package that would also include renovations to KeyBank Center, Buffalo's indoor sports arena."
+    ],
+    "redirects": [
+      {
+        "from": "New Highmark Stadium",
+        "to": "Highmark Stadium"
+      }
+    ],
+    "wikidata_status": 200,
+    "wikidata_label": "Highmark Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 42.77297222222222,
+        "lon": -78.79219444444445,
+        "precision": 2.777777777777778e-05,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "CAR00": {
+    "stadium_id": "CAR00",
+    "title": "Bank of America Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Bank of America Stadium",
+    "wikipedia_pageid": 626674,
+    "wikipedia_revid": 1374879480,
+    "wikipedia_rev_timestamp": "2026-09-14T16:14:07Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 35.22583333,
+        "lon": -80.85277778,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q806673",
+    "roof_sentences": [
+      "=== Notable weather events === Since it is an open-air stadium, Bank of America Stadium has been subject to a number of events caused by extreme weather.",
+      "In addition, four covered open-air sections on the upper deck called \"fan plazas\" were added.",
+      "Although the stadium's design was ahead of its time, it's now considered obsolete as the design lacks open concourses (allowing fans to stand and watch games from bars and other group areas) and a retractable roof.",
+      "And while Bank of America Stadium was designed mostly for football under then-owner Jerry Richardson, Tepper has preferred that its replacement be multipurpose with a retractable roof in order to accommodate his MLS soccer team, concerts, major conventions, and NCAA Final Four basketball."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Bank of America Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 35.225833333333,
+        "lon": -80.852777777778,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "CHI98": {
+    "stadium_id": "CHI98",
+    "title": "Soldier Field",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Soldier Field",
+    "wikipedia_pageid": 509225,
+    "wikipedia_revid": 1377258831,
+    "wikipedia_rev_timestamp": "2026-09-28T15:26:16Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 41.8623,
+        "lon": -87.6167,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1132413",
+    "roof_sentences": [
+      "=== Replacement talks === In 1989, Soldier Field's future was in jeopardy after a proposal was created for a \"McDome\", which was intended to be a domed stadium for the Bears, but was rejected by the Illinois Legislature in 1990.",
+      "In April 2024, Dirk Lohan released a proposal for a roof structure over the stadium."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Soldier Field",
+    "wikidata_P625": [
+      {
+        "lat": 41.8625,
+        "lon": -87.616666666667,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "CIN00": {
+    "stadium_id": "CIN00",
+    "title": "Paycor Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Paycor Stadium",
+    "wikipedia_pageid": 626623,
+    "wikipedia_revid": 1372206140,
+    "wikipedia_rev_timestamp": "2026-08-30T21:34:51Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 39.095,
+        "lon": -84.516,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1632294",
+    "roof_sentences": [],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Paycor Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 39.095444444444,
+        "lon": -84.516038888889,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "CLE00": {
+    "stadium_id": "CLE00",
+    "title": "Huntington Bank Field",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Huntington Bank Field",
+    "wikipedia_pageid": 626700,
+    "wikipedia_revid": 1372204591,
+    "wikipedia_rev_timestamp": "2026-08-30T21:29:01Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 41.50611111,
+        "lon": -81.69944444,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1100756",
+    "roof_sentences": [
+      "Cleveland mayor Justin Bibb and the Browns announced in October 2024 that the team plans to construct a new indoor stadium in suburban Brook Park, at a site adjacent to Cleveland Hopkins International Airport, in time for the 2029 season.",
+      "They were also scheduled to host games on March 3, but the March 3 games had to be moved to an indoor facility in nearby Brooklyn, Ohio, due to rain."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Huntington Bank Field",
+    "wikidata_P625": [
+      {
+        "lat": 41.506111111111,
+        "lon": -81.699444444444,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "DAL00": {
+    "stadium_id": "DAL00",
+    "title": "AT&T Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "AT&T Stadium",
+    "wikipedia_pageid": 6549393,
+    "wikipedia_revid": 1377706511,
+    "wikipedia_rev_timestamp": "2026-09-30T18:17:42Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 32.74777778,
+        "lon": -97.09277778,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q838284",
+    "roof_sentences": [
+      "AT&T Stadium is a retractable roof stadium in Arlington, Texas, United States.",
+      "\" A pair of nearly 300 ft (91 m)-tall arches spans the length of the stadium dome (one of the tallest domes in the world), anchored to the ground at each end.",
+      "The retractable roof was designed by structural engineering firm Walter P Moore and the systems were implemented by mechanization consultants Uni-Systems.",
+      "The electrification of Cowboys Stadium's retractable roof was developed by VAHLE, Inc.",
+      "When the design was officially unveiled on December 12, 2006, it showed that from inside the stadium, the roof (membrane installed by K Post Company of Dallas) would look very similar to the Texas Stadium roof, with its trademark hole.",
+      "However, it can be covered by the retractable roof panel to protect against the elements.",
+      "== Timeline == 1994: Cowboys owner Jerry Jones proposed to expand the 65,000-seat Texas Stadium by up to 40,000 seats, add retractable roof panels and install a climate-control system to make the stadium a year-round venue for sporting events, including the Super Bowl, concerts, and conventions.",
+      "Early blueprints showed 414 luxury suites and a two-panel retractable roof.",
+      "June 2007: Work on the retractable roof, designed by Uni-Systems, started.",
+      "During a last-minute attempt to add seats, seven construction workers were injured by ice sliding off of the stadium roof during an ice storm.",
+      "=== Boxing === The stadium has hosted multiple world championship boxing fights since its opening, as the large capacity and retractable roof make it an ideal venue for boxing events throughout the year.",
+      "May 8, 2021 - Face The Fearless: Before a crowd of 73,126 people, which broke the all-time attendance record for a boxing event at an indoor venue in the United States, Canelo Álvarez unified the WBA (Super), WBC and WBO super-middleweight titles when he beat undefeated two-division world champion Billy Joe Saunders by eighth-round corner retirement."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "AT&T Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 32.74769,
+        "lon": -97.09288,
+        "precision": -1e-06,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "DEN00": {
+    "stadium_id": "DEN00",
+    "title": "Empower Field at Mile High",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Empower Field at Mile High",
+    "wikipedia_pageid": 501440,
+    "wikipedia_revid": 1375502447,
+    "wikipedia_rev_timestamp": "2026-09-18T04:40:09Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 39.74388889,
+        "lon": -105.02,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1046135",
+    "roof_sentences": [
+      "== See also == Ball Arena – Multi-purpose indoor arena in Denver Coors Field – Baseball stadium in Denver, Colorado Dick's Sporting Goods Park – Soccer stadium in Commerce City, Colorado, US Lists of stadiums McNichols Sports Arena – Demolished indoor arena in Denver, Colorado Mile High Stadium – Former stadium in Denver, Colorado, US National Sports Center for the Disabled – U."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Empower Field at Mile High",
+    "wikidata_P625": [
+      {
+        "lat": 39.743888888889,
+        "lon": -105.02,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "DET00": {
+    "stadium_id": "DET00",
+    "title": "Ford Field",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Ford Field",
+    "wikipedia_pageid": 752260,
+    "wikipedia_revid": 1375366384,
+    "wikipedia_rev_timestamp": "2026-09-17T11:10:14Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 42.34,
+        "lon": -83.04555556,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1142586",
+    "roof_sentences": [
+      "Ford Field is an indoor stadium in Detroit, Michigan, U.",
+      "Unlike most prior domed stadiums, Ford Field allows a large amount of natural light to reach the field, thanks to immense skylights and large glass windows at the open corners.",
+      "There is no NFL rule for field construction in roofed venues regarding sunlight distracting players on the field.",
+      "Humphrey Metrodome's inflatable roof collapsed due to a rip in the roofing material caused by heavy snow accumulation.",
+      "The roof failure forced the already postponed game to be moved elsewhere, and after deliberations, the NFL chose Ford Field.",
+      "In 2016, Dan Gilbert and Tom Gores announced a bid for a Major League Soccer expansion franchise, first looking at building a new open-air stadium in downtown Detroit, then focusing on playing at Ford Field, which would be retrofitted with a retractable roof.",
+      "It was the first WrestleMania held in the Detroit area since 93,173 fans set a world indoor attendance record at the Pontiac Silverdome for WrestleMania III in 1987."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Ford Field",
+    "wikidata_P625": [
+      {
+        "lat": 42.34,
+        "lon": -83.045555555556,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "FRA00": {
+    "stadium_id": "FRA00",
+    "title": "Deutsche Bank Park",
+    "country": "DE",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Waldstadion (Frankfurt)",
+    "wikipedia_pageid": 1897000,
+    "wikipedia_revid": 1375755144,
+    "wikipedia_rev_timestamp": "2026-09-19T21:36:08Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 50.068056,
+        "lon": 8.645806,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q157273",
+    "roof_sentences": [
+      "ʃtaːdi̯ɔn] , Forest Stadium), currently known as Deutsche Bank Park for sponsorship purposes, is a retractable roof sports stadium in Frankfurt, Germany."
+    ],
+    "redirects": [
+      {
+        "from": "Deutsche Bank Park",
+        "to": "Waldstadion (Frankfurt)"
+      }
+    ],
+    "wikidata_status": 200,
+    "wikidata_label": "Waldstadion",
+    "wikidata_P625": [
+      {
+        "lat": 50.068611,
+        "lon": 8.645278,
+        "precision": 1e-05,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q183"
+    ]
+  },
+  "GER00": {
+    "stadium_id": "GER00",
+    "title": "Allianz Arena",
+    "country": "DE",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Allianz Arena",
+    "wikipedia_pageid": 1363716,
+    "wikipedia_revid": 1375516115,
+    "wikipedia_rev_timestamp": "2026-09-18T07:20:45Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 48.218775,
+        "lon": 11.62475278,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q127429",
+    "roof_sentences": [
+      "The partial roof covers all seats, although winds can still blow rain onto some of them.",
+      "The roof of the stadium has built-in roller blinds which may be drawn back and forth during games to provide protection from the sun."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Allianz Arena",
+    "wikidata_P625": [
+      {
+        "lat": 48.218775,
+        "lon": 11.624752777778,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q183"
+    ]
+  },
+  "GNB00": {
+    "stadium_id": "GNB00",
+    "title": "Lambeau Field",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Lambeau Field",
+    "wikipedia_pageid": 149583,
+    "wikipedia_revid": 1373835701,
+    "wikipedia_rev_timestamp": "2026-09-08T05:44:19Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 44.50138889,
+        "lon": -88.06222222,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q860790",
+    "roof_sentences": [
+      "The bowl was increased to 42,327 in 1963, to about 50,837 in 1965 with the enclosure of the south end zone, and to 56,263 in 1970, when the north end zone was enclosed to form a continuous oval bowl.",
+      "In the early 1980s, the team considered placing a dome on the stadium.",
+      "The new seats are outdoors with the exception of one indoor row."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Lambeau Field",
+    "wikidata_P625": [
+      {
+        "lat": 44.501388888889,
+        "lon": -88.062222222222,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "HOU00": {
+    "stadium_id": "HOU00",
+    "title": "NRG Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Reliant Stadium",
+    "wikipedia_pageid": 316466,
+    "wikipedia_revid": 1376433325,
+    "wikipedia_rev_timestamp": "2026-09-24T03:21:14Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 29.68472222,
+        "lon": -95.41083333,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1058864",
+    "roof_sentences": [
+      "Reliant Stadium, previously known as NRG Stadium, is a retractable roof stadium in Houston, Texas, U.",
+      "It was the first NFL facility to have a retractable roof.",
+      "== History == The Houston NFL Holdings group came to HOK Sport (now Populous) to begin the schematic design for the first-ever NFL retractable roof football stadium in 1997.",
+      "The intention was to create a football stadium to replace the Astrodome that would operate like an open-air facility but have the intimacy and comfort of an indoor arena.",
+      "Part of the roof cladding came off, and there was wind and water damage to other sections of the stadium.",
+      "There were also large pieces of debris inside the stadium from the hurricane and the stadium authority declared that the stadium did not suffer significant structural damage except for the roof, and the Texans would be able to play all of their 8 home games at Reliant Stadium with the roof open.",
+      "The facility offers a sense of transparency, with its fabric roof and expansive areas of glazing.",
+      "The extensive use of glass provides an open-air feel to the concourses, which are open to the field of play.",
+      "One of the most notable aspects of the design is the stadium's retractable, fabric roof.",
+      "The roof mechanization consists of two large panels that split apart at the 50 yard line, lying over and above each end zone when fully retracted.",
+      "Roof operation is controlled in the stadium press box via computer, containing live images of the travel path of each roof panel; plus, furnishing live feedback from all roof components throughout the operation.",
+      "The roof panels can be opened or closed in as little as 7 minutes, moving at a speed of up to 35 feet (11 m)-per-minute."
+    ],
+    "redirects": [
+      {
+        "from": "NRG Stadium",
+        "to": "Reliant Stadium"
+      }
+    ],
+    "wikidata_status": 200,
+    "wikidata_label": "Reliant Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 29.684722222222,
+        "lon": -95.410833333333,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "IND00": {
+    "stadium_id": "IND00",
+    "title": "Lucas Oil Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Lucas Oil Stadium",
+    "wikipedia_pageid": 2746089,
+    "wikipedia_revid": 1377522436,
+    "wikipedia_rev_timestamp": "2026-09-29T21:03:19Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 39.76005556,
+        "lon": -86.16380556,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q867160",
+    "roof_sentences": [
+      "Lucas Oil Stadium is a retractable roof stadium in Indianapolis, Indiana, United States.",
+      "It replaced the RCA Dome as the home field of the Indianapolis Colts of the National Football League (NFL).",
+      "The stadium was constructed to allow the removal of the RCA Dome and expansion of the Indiana Convention Center on its site.",
+      "It is located on the south side of South Street, a block south of the former site of the RCA Dome.",
+      "In 2024, it became the first indoor NFL venue to use geofill when Hellas Matrix Turf was installed.",
+      "== Name == The home field of the Indianapolis Colts for their first 24 seasons in the city (1984–2007) was the RCA Dome (formerly the Hoosier Dome), which was part of the Indiana Convention Center.",
+      "Other features include: 183,000 square feet (17,000 m2) of exhibit space 7 locker rooms 11 indoor truck docks 14 escalators 11 passenger elevators 2 accessible pedestrian ramps === Retractable roof === The stadium's retractable roof can open or close in about 11 minutes.",
+      "The home team determines if the roof is to be opened or closed 90 minutes before kickoff.",
+      "=== Retractable window === The retractable north window offers a view of downtown Indianapolis during games, concerts and other events due to the stadium's angled position on the city block.",
+      "The crowd of 20,689 was the largest gathering ever for an indoor swim meet.",
+      "=== Budget shortfall === In August 2006, the Capital Improvement Board, which operates the stadium, estimated that operating expenses of the new stadium would be $10 million more per year than the RCA Dome.",
+      "On September 3, 2015, three fans were injured by a bolt that fell from the roof of the stadium as it was being opened during an NFL preseason game against the Cincinnati Bengals."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Lucas Oil Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 39.760056,
+        "lon": -86.163806,
+        "precision": 0.0001,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "JAX00": {
+    "stadium_id": "JAX00",
+    "title": "EverBank Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "EverBank Stadium",
+    "wikipedia_pageid": 626654,
+    "wikipedia_revid": 1372151265,
+    "wikipedia_rev_timestamp": "2026-08-30T16:34:11Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 30.32388889,
+        "lon": -81.6375,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q635117",
+    "roof_sentences": [
+      "Dubbed the \"Stadium of the Future\", the plans include a 360-degree concourse, an energy-efficient facade, and a large canopy to provide shade."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "EverBank Field",
+    "wikidata_P625": [
+      {
+        "lat": 30.323889,
+        "lon": -81.6375,
+        "precision": 0.0001,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "KAN00": {
+    "stadium_id": "KAN00",
+    "title": "Arrowhead Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Arrowhead Stadium",
+    "wikipedia_pageid": 292909,
+    "wikipedia_revid": 1375749409,
+    "wikipedia_rev_timestamp": "2026-09-19T20:42:48Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 39.04888889,
+        "lon": -94.48388889,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q544553",
+    "roof_sentences": [
+      "The original design called for construction of side-by-side baseball and football stadiums with a common roof that would roll between them.",
+      "This design proved to be more complicated and expensive than originally thought and so was scrapped in favor of a more conventional open-air configuration.",
+      "Plans to have covered stadiums were dropped, leaving two open-air stadiums.",
+      "=== 1980s–present === In 1984, the Jackson County Sports Authority re-evaluated the concept of a fabric dome.",
+      "However, a second bond issue to build the rolling roof shared with Kauffman Stadium that was part of the original 1967 stadium plan was defeated by voters, and Kansas City chose to withdraw its request to host Super Bowl XLIX in 2015; the game was played at the University of Phoenix Stadium (now State Farm Stadium) in Glendale, Arizona."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Arrowhead Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 39.048888888889,
+        "lon": -94.483888888889,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "LAX01": {
+    "stadium_id": "LAX01",
+    "title": "SoFi Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "SoFi Stadium",
+    "wikipedia_pageid": 45525802,
+    "wikipedia_revid": 1377512452,
+    "wikipedia_rev_timestamp": "2026-09-29T20:01:28Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 33.953,
+        "lon": -118.339,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q19520501",
+    "roof_sentences": [
+      "SoFi Stadium ( SOH-fy) is a multi-purpose indoor stadium in Inglewood, California, United States, a suburb of Los Angeles.",
+      "SoFi occupies the former site of the Hollywood Park Racetrack and neighbors the Kia Forum and Intuit Dome.",
+      "Opened in September 2020, the stadium has a capacity of 70,240, expandable to over 100,000 for major events, and a translucent roof made of ETFE panels allowing for sunlight and climate control.",
+      "Above the stadium is an independently supported translucent canopy which covers the stadium proper, the adjacent pedestrian plaza, and the attached performance venue.",
+      "The million-square-foot canopy is made up of 302 ETFE panels, 46 of which can be opened to provide ventilation, supported by a cable net.",
+      "The canopy has 27,000 embedded LED pucks, which can display images and video that can also be seen from airplanes flying into Los Angeles International Airport.",
+      "Despite the roof, the open sides of the stadium still make it vulnerable to lightning delays, with the first such delay in an NFL game between the Chargers and the Las Vegas Raiders on October 4, 2021.",
+      "The stadium and performance center are considered to be separate facilities under one roof.",
+      "While the stadium has a skylight roof on top, it is an open-air facility that has often been mistaken as a traditional climate-controlled domed stadium due to how its structure looks from afar and/or on television broadcasts.",
+      "Another component of the stadium's design is the Infinity Screen by Samsung, an ovular, double-sided 4K HDR video board, the first of its kind, that is suspended from the roof over the field.",
+      "In January 2020, Demoff announced that construction was 85 percent complete, with roof and oculus work, as well as seat installation, still in progress.",
+      "On June 5, 2020, construction on the facility was temporarily halted after an ironworker fell to his death through a hole in the roof created by the removal of a panel for maintenance."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "SoFi Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 33.9504,
+        "lon": -118.338,
+        "precision": 0.010829320892736,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "LAX97": {
+    "stadium_id": "LAX97",
+    "title": "Dignity Health Sports Park",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Dignity Health Sports Park",
+    "wikipedia_pageid": 529735,
+    "wikipedia_revid": 1372080521,
+    "wikipedia_rev_timestamp": "2026-08-30T05:19:05Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 33.864,
+        "lon": -118.261,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q200684",
+    "roof_sentences": [
+      "Two booths were added on each side of the press box for the NFL-mandated 20-yard-line television cameras, and a stairway allowing access to the roof of the main box was built to accommodate the 50-yard-line camera."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Dignity Health Sports Park",
+    "wikidata_P625": [
+      {
+        "lat": 33.864444444444,
+        "lon": -118.26111111111,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "LAX99": {
+    "stadium_id": "LAX99",
+    "title": "Los Angeles Memorial Coliseum",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Los Angeles Memorial Coliseum",
+    "wikipedia_pageid": 637441,
+    "wikipedia_revid": 1377046026,
+    "wikipedia_rev_timestamp": "2026-09-27T17:09:04Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 34.01416667,
+        "lon": -118.28777778,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q849784",
+    "roof_sentences": [],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Los Angeles Memorial Coliseum",
+    "wikidata_P625": [
+      {
+        "lat": 34.014167,
+        "lon": -118.287778,
+        "precision": 1e-05,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "LON00": {
+    "stadium_id": "LON00",
+    "title": "Wembley Stadium",
+    "country": "GB",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Wembley Stadium",
+    "wikipedia_pageid": 8913012,
+    "wikipedia_revid": 1377746005,
+    "wikipedia_rev_timestamp": "2026-09-30T23:24:24Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 51.5556,
+        "lon": -0.2794,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q128468",
+    "roof_sentences": [
+      "Designed by Populous and Foster and Partners, the stadium is crowned by the 134-metre-high (440 ft) Wembley Arch which serves aesthetically as a landmark across London as well as structurally, with the arch supporting over 75% of the entire roof load.",
+      "Two partially retractable roof structures over the east and west ends of the stadium can be opened to allow sunlight and aid pitch growth.",
+      "It is one of the most expensive stadia ever built at a cost of £798 million in 2007, and has the largest roof-covered seating capacity in the world.",
+      "The all-seater stadium is a bowl design with a capacity of 90,000, protected from the elements by a sliding roof that does not completely enclose it.",
+      "It supports all the weight of the north roof and 60% of the weight of the retractable roof on the southern side.",
+      "The arch is the world's longest unsupported roof structure.",
+      "On 20 March 2006, a steel rafter in the roof of the new development fell by 1+1⁄2 ft (46 cm), forcing 3,000 workers to evacuate the stadium and raising further doubts over the completion date which was already behind schedule.",
+      "=== Covering === The stadium roof has an area of 40,000 m2 (430,000 ft2), of which 13,722 m2 (147,700 ft2) is movable.",
+      "The primary reason for the sliding roof was to avoid shading the pitch, as grass demands direct sunlight to grow effectively.",
+      "The sliding roof design minimises the shadow by having the roof pulled back on the east, west and south.",
+      "The stadium roof rises to 52 metres (171 ft) above the pitch and is supported by an arch rising 133 m (436 ft) above the level of the external concourse.",
+      "With a span of 315 m (1,033 ft), the arch is the longest single-span roof structure in the world."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Wembley Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 51.55555555555556,
+        "lon": -0.27944444444444444,
+        "precision": 0.0002777777777777778,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q145"
+    ]
+  },
+  "LON01": {
+    "stadium_id": "LON01",
+    "title": "Twickenham Stadium",
+    "country": "GB",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Twickenham Stadium",
+    "wikipedia_pageid": 871456,
+    "wikipedia_revid": 1376891621,
+    "wikipedia_rev_timestamp": "2026-09-26T20:37:25Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 51.45583333,
+        "lon": -0.34138889,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q209725",
+    "roof_sentences": [
+      "Following the upgrade, the roof is now complete."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Twickenham Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 51.456111111111,
+        "lon": -0.34166666666667,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q145"
+    ]
+  },
+  "LON02": {
+    "stadium_id": "LON02",
+    "title": "Tottenham Hotspur Stadium",
+    "country": "GB",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Tottenham Hotspur Stadium",
+    "wikipedia_pageid": 57547930,
+    "wikipedia_revid": 1377204343,
+    "wikipedia_rev_timestamp": "2026-09-28T08:12:07Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 51.6044,
+        "lon": -0.0664,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q55074091",
+    "roof_sentences": [
+      "It features the world's first dividing, retractable synthetic turf pitch used for NFL games, concerts and other events.",
+      "As their matches became more popular with the public and the number of spectators increased, the club decided to move to an enclosed ground allowing it to charge an entrance fee and control the crowd.",
+      "The compression ring that holds the cable net roof structure was completed in February 2018, and the roof structure raised in March 2018.",
+      "The roof is a cable net structure, held in place by an elliptically shaped compression ring.",
+      "The roof has a circumference of 720 metres, and it is clad in standing seam aluminium panels that end with extruded polycarbonate on the inside edge to allow light through onto the pitch but reduce the contrast of the shadow of the roof on the pitch.",
+      "810 curved aluminium eave cassettes connect the roof to the wall.",
+      "The corners of the stadium are enclosed and the stands are placed close to the pitch, with fans generating a \"wall of sound\" that can reverberate around the ground.",
+      "The design extends to the shape and material of the roof and the seating, such as aluminium soffit lining to the roof, and aims to produce cleaner and quicker reverberation times that allow fans to sing in sync thereby producing chants that are louder and last longer.",
+      "These include two Sky Lounges on the top floor of the East and West Stands, with views over London and the pitch, the Sky Bridge, which is the world's first bridge to be suspended from the roof of a stadium, 65 suites of private loges and super loges, Michelin star level dining, and the Tunnel Club that allows its members to observe the players as they walk from the dressing room to the pitch thro",
+      "It offers visitor attractions such as a 'Dare Skywalk' opened on 31 August 2020; visitors may walk up the side of the stadium to the roof, then over a glass walkway around the golden cockerel above the South Stand where they may view the goal line from the roof, or abseil down to the south podium from a viewing deck.",
+      "5-m-tall and near-double-sized fibreglass replica of the spurs cockerel, originally created in 1909 to sit atop the west stand at White Hart Lane, was placed on the roof structure above the South Stand on 6 November 2018."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Tottenham Hotspur Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 51.604444444444,
+        "lon": -0.066388888888889,
+        "precision": 0.00027777777777778,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q145"
+    ]
+  },
+  "MAD01": {
+    "stadium_id": "MAD01",
+    "title": "Santiago Bernabéu Stadium",
+    "country": "ES",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Bernabéu (stadium)",
+    "wikipedia_pageid": 225760,
+    "wikipedia_revid": 1376542686,
+    "wikipedia_rev_timestamp": "2026-09-24T20:28:54Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 40.45306,
+        "lon": -3.68835,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q164027",
+    "roof_sentences": [
+      "Bernabéu, (Spanish: El Bernabéu [βeɾnaˈβew] ) formerly known as Santiago Bernabéu Stadium, is a retractable roof football stadium in the district of Chamartín, Madrid, Spain.",
+      "For this reason, Real Madrid installed a roof covering the perimeter of the first and second tiers of seating, except the east side.",
+      "24,550 of which were covered by the new roof.",
+      "A retractable protective roof was also installed to protect the fans from the elements.",
+      "The proposed plan included a new architectural envelope, roof covering for all seats, and the incorporation of bioclimatic systems with renewable energy, as well as the construction of two new public plazas, a hotel, and a large shopping centre on the side facing Paseo de la Castellana.",
+      "Thus, in 2016, it presented a new project that eliminated the hotel and shopping center, raised the height of the stadium by only 12 meters (39 ft) for the construction of the roof, reaching a total height of 60 meters (200 ft), and eliminated the possibility of increasing the capacity.",
+      "However, the event was postponed and moved to the indoor arena, Palacio de Deportes de la Comunidad de Madrid (the home of Real Madrid Baloncesto) for unknown reasons, possibly due to weather concerns, scheduling conflicts or capacity issues."
+    ],
+    "redirects": [
+      {
+        "from": "Santiago Bernabéu Stadium",
+        "to": "Bernabéu (stadium)"
+      }
+    ],
+    "wikidata_status": 200,
+    "wikidata_label": "Bernabéu",
+    "wikidata_P625": [
+      {
+        "lat": 40.45306,
+        "lon": -3.68835,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q29"
+    ]
+  },
+  "MEL00": {
+    "stadium_id": "MEL00",
+    "title": "Melbourne Cricket Ground",
+    "country": "AU",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Melbourne Cricket Ground",
+    "wikipedia_pageid": 19765,
+    "wikipedia_revid": 1376948300,
+    "wikipedia_rev_timestamp": "2026-09-27T02:54:55Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": -37.82,
+        "lon": 144.98333333,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q330136",
+    "roof_sentences": [
+      "From November 2019 until February 2020 all the playing field lights, including those in the light towers, were replaced with LED sports lighting with the lighting under the roof and in two of the light towers completed in time for the Boxing Day Test against New Zealand."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Melbourne Cricket Ground",
+    "wikidata_P625": [
+      {
+        "lat": -37.819943,
+        "lon": 144.983447,
+        "precision": 0.0001,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q408"
+    ]
+  },
+  "MEX00": {
+    "stadium_id": "MEX00",
+    "title": "Estadio Azteca",
+    "country": "MX",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Estadio Azteca",
+    "wikipedia_pageid": 1834902,
+    "wikipedia_revid": 1374978481,
+    "wikipedia_rev_timestamp": "2026-09-15T04:05:38Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 19.303,
+        "lon": -99.1505,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q320454",
+    "roof_sentences": [
+      "The roof was planned to be renovated, which has reportedly not been repaired for a long time and suffers from leaking."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Estadio Azteca",
+    "wikidata_P625": [
+      {
+        "lat": 19.303055555555556,
+        "lon": -99.15055555555556,
+        "precision": 0.0002777777777777778,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q96"
+    ]
+  },
+  "MIA00": {
+    "stadium_id": "MIA00",
+    "title": "Hard Rock Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Hard Rock Stadium",
+    "wikipedia_pageid": 362322,
+    "wikipedia_revid": 1375341705,
+    "wikipedia_rev_timestamp": "2026-09-17T06:05:46Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 25.95805556,
+        "lon": -80.23888889,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q864339",
+    "roof_sentences": [
+      "These remaining phases included adding a canopy to shield fans from the rain, which caused the relocation of the video boards to the corners of the upper deck, as well as narrowing the sidelines by bringing the seats closer to the field, ending its convertibility to baseball.",
+      "Stadium upgrades included video boards in each corner of the stadium, additional suites, and an open-air canopy over the main seating areas.",
+      "By coincidence of the roof's design, the Dolphins bench remains in the full shade of its shadow on the sideline during game days, leaving the visiting team's bench uncovered and fully bathed in sunlight, especially notable as the Dolphins usually choose to wear their white jerseys at home outside special uniforms, leaving the away team in darker jerseys in the tropical climate of Miami Gardens.",
+      "One of the upgrades desired was a roof to protect fans from the elements.",
+      "In 2012, the Dolphins scrapped plans for pitching a $200 million hotel tax proposal that would have included a partial stadium roof.",
+      "In 2016, an open-air canopy was constructed that protects the seating bowl from the elements.",
+      "The canopy, however, does have a football-field-sized hole in the middle, and thus does not protect the playing field itself from rain.",
+      "The Dolphins permanently moved to the state-of-the art facility that hosts the team headquarters including two outdoor practice fields and one indoor field."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Hard Rock Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 25.958055555556,
+        "lon": -80.238888888889,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "MIN01": {
+    "stadium_id": "MIN01",
+    "title": "U.S. Bank Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "U.S. Bank Stadium",
+    "wikipedia_pageid": 10853062,
+    "wikipedia_revid": 1377621892,
+    "wikipedia_rev_timestamp": "2026-09-30T05:55:33Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 44.974,
+        "lon": -93.258,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q7929512",
+    "roof_sentences": [
+      "Bank Stadium is an indoor stadium in Minneapolis, Minnesota, U.",
+      "Humphrey Metrodome from 1982 until its closure in 2013; during construction, the Vikings played two seasons (2014, 2015) at the open-air Huntington Bank Stadium on the campus of the University of Minnesota.",
+      "It was the first indoor stadium built in the NFL since Ford Field in Detroit, which opened in 2002.",
+      "== Design == While the Vikings' owners wanted an outdoor stadium, the state and local governments would only provide funding for an indoor stadium capable of hosting major events like the Super Bowl and the Final Four.",
+      "A retractable roof was the trend in 2010s football stadiums.",
+      "However, retractable roof facilities are not typically designed for the roof to be opened and closed in sub-freezing conditions.",
+      "When built in temperate climates, retractable roofs are generally kept closed throughout the winter months, both to reduce the stress on the roof and its components and also to reduce or eliminate the need to winterize the stadium's interior.",
+      "In contrast, to be of any competitive on-field advantage to the Vikings, a retractable roof facility would have needed to be designed to operate in a Minnesotan winter so as to allow the Vikings to play a home game outdoors during the NFL playoffs.",
+      "Architectural firm HKS designed a skylit roof made of ETFE and glazed entrances with giant pivoting doors, aiming to get as much natural light from the outside as possible.",
+      "The roof is made up of 60% Ethylene tetrafluoroethylene (ETFE), a fluorine-based clear plastic, and is the largest in North America, spanning 240,000 square feet (22,000 m2) supplied and installed by the firm Vector Foiltec.",
+      "ETFE's low R-factor and the roof's slanted design, inspired by Nordic vernacular architecture, allows the stadium to endure heavy snow loads.",
+      "Snow accumulates in areas that are more safely and easily accessible, and also moves down the slanted roof into a heated gutter, the water from which drains to the nearby Mississippi River."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "U.S. Bank Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 44.973889,
+        "lon": -93.258056,
+        "precision": 0.0001,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "MUN01": {
+    "stadium_id": "MUN01",
+    "title": "Allianz Arena",
+    "country": "DE",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Allianz Arena",
+    "wikipedia_pageid": 1363716,
+    "wikipedia_revid": 1375516115,
+    "wikipedia_rev_timestamp": "2026-09-18T07:20:45Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 48.218775,
+        "lon": 11.62475278,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q127429",
+    "roof_sentences": [
+      "The partial roof covers all seats, although winds can still blow rain onto some of them.",
+      "The roof of the stadium has built-in roller blinds which may be drawn back and forth during games to provide protection from the sun."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Allianz Arena",
+    "wikidata_P625": [
+      {
+        "lat": 48.218775,
+        "lon": 11.624752777778,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q183"
+    ]
+  },
+  "NAS00": {
+    "stadium_id": "NAS00",
+    "title": "Nissan Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Nissan Stadium",
+    "wikipedia_pageid": 80204720,
+    "wikipedia_revid": 1359834080,
+    "wikipedia_rev_timestamp": "2026-06-17T14:16:41Z",
+    "wikipedia_coordinates": [],
+    "wikidata_item": "Q21164193",
+    "roof_sentences": [],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Nissan Stadium",
+    "wikidata_P625": [],
+    "wikidata_P17": []
+  },
+  "NOR00": {
+    "stadium_id": "NOR00",
+    "title": "Caesars Superdome",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Caesars Superdome",
+    "wikipedia_pageid": 626568,
+    "wikipedia_revid": 1376765872,
+    "wikipedia_rev_timestamp": "2026-09-26T03:01:46Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 29.95083333,
+        "lon": -90.08111111,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q756452",
+    "roof_sentences": [
+      "Caesars Superdome commonly known as the Superdome, is an indoor stadium in New Orleans, Louisiana, U.",
+      "3 ha) expanse and the 273-foot (83 m) dome is made of a lamellar multi-ringed frame and has a diameter of 680 feet (207 m), making it the largest fixed domed structure in the world.",
+      "After hosting several exhibition games at Tulane Stadium during typical New Orleans summer thunderstorms, NFL Commissioner Pete Rozelle told Dixon the NFL would never expand into New Orleans without a domed stadium.",
+      "Following the evacuation, the dome remained closed until September 25, 2006.",
+      "After a National Guardsman was attacked and shot in the dark by an assailant, the National Guard inside the Superdome used barbed wire barricades to separate themselves from the other people in the dome.",
+      "\" United States Navy sniper Chris Kyle claimed that during the hurricane, he and another sniper climbed to the top of the dome and killed 30 armed looters during the chaos following the event.",
+      "The reopening of the dome was celebrated with festivities including a free outdoor concert by the Goo Goo Dolls before fans were allowed in; a pre-game performance by U2 and Green Day performing a cover of the Skids' \"The Saints Are Coming\", and a coin toss conducted by then-President George W.",
+      "Later that year, the roof-facing of the Superdome was also remodeled, restoring the roof with a solid white hue.",
+      "An innovative barrier system for drainage was also added, allowing the dome to resemble its original facade.",
+      "Crews tore down the temporary stairs that led from Champions Square to the Dome, and replaced them with permanent steps.",
+      "==== 2021 roof fire ==== On September 21, 2021, thick black smoke was seen rising from the top of the Superdome while renovations and maintenance were underway by workers on the roof.",
+      "The dome has an interior space of 125 million cubic feet (3,500,000 m3), a height of 253 feet (77."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Caesars Superdome",
+    "wikidata_P625": [
+      {
+        "lat": 29.950833333333,
+        "lon": -90.081111111111,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "NYC01": {
+    "stadium_id": "NYC01",
+    "title": "MetLife Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "MetLife Stadium",
+    "wikipedia_pageid": 5476983,
+    "wikipedia_revid": 1377506007,
+    "wikipedia_rev_timestamp": "2026-09-29T19:19:44Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 40.81361111,
+        "lon": -74.07444444,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q10862290",
+    "roof_sentences": [
+      "Unlike a number of other new NFL venues, MetLife Stadium does not have a roof, as proposals to include a roof failed over a dispute for funding.",
+      "Thus, indoor events such as the Final Four cannot be held at the facility, which runs counter to the original aims for the stadium.",
+      "=== Design === The design of MetLife Stadium has been criticized, often in part due to its lack of a roof.",
+      "This concern was raised ahead of Super Bowl XLVIII in 2014 given that the NFL does not award Super Bowls to stadiums in a cold climate that lack a roof.",
+      "=== Super Bowl XLVIII === On May 25, 2010, it was announced that Super Bowl XLVIII was awarded to the stadium, the first time a Super Bowl would be played in the New York metropolitan area, and the first time that a non-domed stadium in a cold-weather city would host it.",
+      "Normally, Super Bowls must be held in indoor climate-controlled stadiums if they are held in a city with an average temperature lower than 50 °F (10 °C).",
+      "To prepare for a match, the stadium uses retractable seating in the field level corners to fit a FIFA-sanctioned soccer field.",
+      "Syracuse University has hosted selected home games at MetLife Stadium in lieu of the Carrier Dome."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "MetLife Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 40.81361111111111,
+        "lon": -74.07444444444444,
+        "precision": 0.0002777777777777778,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "OAK00": {
+    "stadium_id": "OAK00",
+    "title": "Oakland Coliseum",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Oakland Coliseum",
+    "wikipedia_pageid": 332305,
+    "wikipedia_revid": 1377385400,
+    "wikipedia_rev_timestamp": "2026-09-29T04:11:32Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 37.75166667,
+        "lon": -122.20055556,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1147732",
+    "roof_sentences": [
+      "Plans were drawn for a stadium, an indoor arena, and an exhibition hall in between them.",
+      "In January 2016, Mark Davis met with Las Vegas Sands owner Sheldon Adelson about building a domed stadium on the UNLV campus for the Raiders and the UNLV Rebels.",
+      "In 2018, the A's created a brand new destination indoor/outdoor bar concept in the left field corner called The Treehouse."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Oakland Coliseum",
+    "wikidata_P625": [
+      {
+        "lat": 37.751666666667,
+        "lon": -122.20055555556,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "PAR00": {
+    "stadium_id": "PAR00",
+    "title": "Stade de France",
+    "country": "FR",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Stade de France",
+    "wikipedia_pageid": 758605,
+    "wikipedia_revid": 1375923585,
+    "wikipedia_rev_timestamp": "2026-09-20T22:22:14Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 48.9244,
+        "lon": 2.36,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q13205",
+    "roof_sentences": [
+      "The roof installation cost €45 million, and the mobile platform took over a year to complete.",
+      "=== Roof === Construction of the stadium's roof cost over €45 million.",
+      "It is partially retractable.",
+      "The 82,000-seat stadium, featuring a retractable roof and slide-out pitch, was to be built on a former horse racing track in Évry, about 25 km (16 mi) south of Paris."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Stade de France",
+    "wikidata_P625": [
+      {
+        "lat": 48.92444444444445,
+        "lon": 2.36,
+        "precision": 0.0002777777777777778,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q142"
+    ]
+  },
+  "PHI00": {
+    "stadium_id": "PHI00",
+    "title": "Lincoln Financial Field",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Lincoln Financial Field",
+    "wikipedia_pageid": 251756,
+    "wikipedia_revid": 1376012877,
+    "wikipedia_rev_timestamp": "2026-09-21T13:35:46Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 39.90083333,
+        "lon": -75.1675,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1052370",
+    "roof_sentences": [],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Lincoln Financial Field",
+    "wikidata_P625": [
+      {
+        "lat": 39.90089,
+        "lon": -75.16776,
+        "precision": -1e-06,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "PHO00": {
+    "stadium_id": "PHO00",
+    "title": "State Farm Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "State Farm Stadium",
+    "wikipedia_pageid": 2748329,
+    "wikipedia_revid": 1377283950,
+    "wikipedia_rev_timestamp": "2026-09-28T18:11:10Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 33.528,
+        "lon": -112.263,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q756433",
+    "roof_sentences": [
+      "State Farm Stadium is a retractable roof stadium in Glendale, Arizona, U.",
+      "The stadium is considered an architectural icon for the region and was named by Business Week as one of the ten “most impressive” sports facilities on the globe due to the combination of its retractable roof (engineering design by Walter P Moore) and roll-in natural grass field, similar to the GelreDome and the Veltins-Arena.",
+      "The roof is made out of translucent Birdair fabric and opens in 12 minutes.",
+      "It is the first retractable roof ever built on an incline.",
+      "This was the first WrestleMania since WrestleMania XI with a non-title match as a main event, the first WrestleMania to be held in the state of Arizona and the third to be held in an open-air venue, after WrestleMania IX and WrestleMania XXIV."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "State Farm Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 33.5275,
+        "lon": -112.2625,
+        "precision": 0.0001,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "PIT00": {
+    "stadium_id": "PIT00",
+    "title": "Acrisure Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Acrisure Stadium",
+    "wikipedia_pageid": 626713,
+    "wikipedia_revid": 1372194646,
+    "wikipedia_rev_timestamp": "2026-08-30T20:35:33Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 40.44666667,
+        "lon": -80.01583333,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1067148",
+    "roof_sentences": [
+      "The stadium also features 6,600 club seats that include a restaurant and an indoor bar, at prices up to $2,000 per person."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Acrisure Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 40.446666666667,
+        "lon": -80.015833333333,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "RIO00": {
+    "stadium_id": "RIO00",
+    "title": "Maracanã Stadium",
+    "country": "BR",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Maracanã Stadium",
+    "wikipedia_pageid": 292965,
+    "wikipedia_revid": 1377290973,
+    "wikipedia_rev_timestamp": "2026-09-28T18:57:20Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": -22.9122,
+        "lon": -43.2303,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q155174",
+    "roof_sentences": [
+      "The original stadium's roof in concrete was removed and replaced with a fiberglass tensioned membrane coated with polytetra-fluoroethylene.",
+      "The new roof covers 95% of the seats inside the stadium, unlike the former design, where protection was only afforded to some seats in the upper ring and the bleachers above the gate access of each sector."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Maracanã Stadium",
+    "wikidata_P625": [
+      {
+        "lat": -22.912222222222223,
+        "lon": -43.23027777777778,
+        "precision": 0.0002777777777777778,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q155"
+    ]
+  },
+  "SAO00": {
+    "stadium_id": "SAO00",
+    "title": "Neo Química Arena",
+    "country": "BR",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Arena Corinthians",
+    "wikipedia_pageid": 28625476,
+    "wikipedia_revid": 1376729111,
+    "wikipedia_rev_timestamp": "2026-09-25T22:48:00Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": -23.54527778,
+        "lon": -46.47416667,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1362236",
+    "roof_sentences": [
+      "=== Roof === Werner Sobek designed the roof, which is held in place by 48 75 metres (246 ft)-long trusses.",
+      "The total east–west roof length is 245.",
+      "The height of the roof and weight of the trusses required the use of the largest crawler crane available in Latin America.",
+      "The roof has four layers.",
+      "Finally, the entire roof is covered with 40,000 square metres (430,000 ft2) of Firestone Ultraply TPO.",
+      "The site has 1,620 covered parking spaces and 929 open air parking spaces, with another 2,214 spaces provided by a shopping mall nearby.",
+      "A crane fell while carrying a part of the roof, destroying eight columns of the LED screen and part of an internal slab."
+    ],
+    "redirects": [
+      {
+        "from": "Neo Química Arena",
+        "to": "Arena Corinthians"
+      }
+    ],
+    "wikidata_status": 200,
+    "wikidata_label": "Neo Química Arena",
+    "wikidata_P625": [
+      {
+        "lat": -23.545555555556,
+        "lon": -46.474,
+        "precision": 2.7777777777778e-05,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q155"
+    ]
+  },
+  "SEA00": {
+    "stadium_id": "SEA00",
+    "title": "Lumen Field",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Lumen Field",
+    "wikipedia_pageid": 206812,
+    "wikipedia_revid": 1373998493,
+    "wikipedia_rev_timestamp": "2026-09-09T05:12:24Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 47.5952,
+        "lon": -122.3316,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q612736",
+    "roof_sentences": [
+      "Allen was closely involved in the design process and emphasized the importance of an open-air venue with an intimate atmosphere.",
+      "The large retractable roof of T-Mobile Park along with Mount Rainier to the southeast can be seen from the partially open south end.",
+      "Allen rejected plans for a retractable roof during the early stages of the stadium's design.",
+      "The lack of a retractable roof made it open to the elements, provided better views, and reduced the total cost of the project.",
+      "The roof, at 200,000 sq ft (19,000 m2), covers 70% of the seats but leaves the field open.",
+      "The roof spans 720 ft (220 m) between concrete pylon supports at the north and south ends of the stadium.",
+      "To minimize damage in the event of an earthquake, the roof has a friction pendulum damper system.",
+      "This disconnects the roof from the support pylons so that it can move independently of the structure.",
+      "The technology had never been applied to a large-scale roof before Lumen Field.",
+      "The roof was originally painted white to aesthetically distinguish it from both T-Mobile Park and the nearby industrial area; however, the paint gradually turned ash gray despite cleanings and repaintings, prompting a blue-colored repaint of the roof from May to July 2010.",
+      "Light-emitting diodes following the outline of the stadium's logo were subsequently installed on the roof in October 2019.",
+      "Extreme's installation involved 757 wireless access points (WAPs), 162,000 feet (49,000 m) of Ethernet cable, and 6,600 feet (2,000 m) of fiber-optic cable, with the vast majority of WAPs installed under seats since the stadium's open-air design precludes installing them from above to maximize efficiency."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Lumen Field",
+    "wikidata_P625": [
+      {
+        "lat": 47.595277777778,
+        "lon": -122.33166666667,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "SFO01": {
+    "stadium_id": "SFO01",
+    "title": "Levi's Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Levi's Stadium",
+    "wikipedia_pageid": 7719913,
+    "wikipedia_revid": 1375976386,
+    "wikipedia_rev_timestamp": "2026-09-21T06:08:00Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 37.403,
+        "lon": -121.97,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q7419343",
+    "roof_sentences": [
+      "As a multi-use facility, the stadium can be configured for special touring events including concerts, motocross events, indoor/outdoor conferences, and other community events.",
+      "It is also believed to be the first stadium that will have both a green roof and solar panels.",
+      "The 49ers are exploring collaborative opportunities with the Environmental Protection Agency to explore environmentally friendly components including: Use of an outside commissioning agent to verify that energy‐related systems are installed, calibrated, and performing in compliance with the project requirements Use of public transit nearby including VTA, ACE, Amtrak, with connection to a proposed ",
+      "=== Rooftop farm === In July 2016, Levi's Stadium converted 6,500 square feet (600 m2) of the green roof to an organically maintained rooftop farm.",
+      "When the plans failed to move forward, the San Francisco 49ers presented an alternative plan on July 18, 2006, to construct a new 68,500-seat, open air stadium as part of a mixed use development featuring housing, commercial and retail space."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Levi's Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 37.4034,
+        "lon": -121.97,
+        "precision": 0.0001,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "TAM00": {
+    "stadium_id": "TAM00",
+    "title": "Raymond James Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Raymond James Stadium",
+    "wikipedia_pageid": 752288,
+    "wikipedia_revid": 1372224116,
+    "wikipedia_rev_timestamp": "2026-08-30T22:53:35Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 27.97583333,
+        "lon": -82.50333333,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q1141343",
+    "roof_sentences": [],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Raymond James Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 27.975833333333,
+        "lon": -82.503333333333,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "VEG00": {
+    "stadium_id": "VEG00",
+    "title": "Allegiant Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Allegiant Stadium",
+    "wikipedia_pageid": 52047141,
+    "wikipedia_revid": 1376027835,
+    "wikipedia_rev_timestamp": "2026-09-21T15:51:00Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 36.09055556,
+        "lon": -115.18388889,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q27768421",
+    "roof_sentences": [
+      "Allegiant Stadium is a multi-purpose indoor stadium in Paradise, Nevada, United States, southwest of adjacent Las Vegas.",
+      "Allegiant Stadium is indoors with a translucent roof made of ETFE, allowing for climate control and natural sunlight.",
+      "Allegiant Stadium is a ten-level domed stadium featuring an ETFE roof, silver and black exterior with light-up strips installed by YESCO, a 275-foot (84 m) media mesh video screen facing Interstate 15, and large retractable curtain-like side windows facing the Las Vegas Strip.",
+      "The north endzone area in front of the retractable windows contains the Al Davis memorial torch, a large 85-foot (26 m) torch that houses a flame in honor of Al Davis, the late longtime owner of the Raiders.",
+      "4-billion domed stadium."
+    ],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Allegiant Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 36.090777777778,
+        "lon": -115.183,
+        "precision": 2.7777777777778e-05,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  },
+  "WAS00": {
+    "stadium_id": "WAS00",
+    "title": "Northwest Stadium",
+    "country": "US",
+    "wikipedia_status": 200,
+    "wikipedia_title": "Northwest Stadium",
+    "wikipedia_pageid": 395592,
+    "wikipedia_revid": 1374296465,
+    "wikipedia_rev_timestamp": "2026-09-11T03:10:43Z",
+    "wikipedia_coordinates": [
+      {
+        "lat": 38.90777778,
+        "lon": -76.86444444,
+        "primary": true
+      }
+    ],
+    "wikidata_item": "Q583085",
+    "roof_sentences": [],
+    "redirects": null,
+    "wikidata_status": 200,
+    "wikidata_label": "Northwest Stadium",
+    "wikidata_P625": [
+      {
+        "lat": 38.907777777778,
+        "lon": -76.864444444444,
+        "precision": null,
+        "rank": "normal"
+      }
+    ],
+    "wikidata_P17": [
+      "Q30"
+    ]
+  }
+}

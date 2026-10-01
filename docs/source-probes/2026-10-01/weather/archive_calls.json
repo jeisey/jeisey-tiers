@@ -1,0 +1,1894 @@
+[
+  {
+    "api": "hf",
+    "venue": "ATL97",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "ATL97",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "ATL97",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "BAL00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2400,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "BAL00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2400,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "BAL00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2400,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "BOS00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "BOS00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "BOS00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "BUF00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "BUF00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "BUF00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CAR00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CAR00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CAR00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CHI98",
+    "season": 2025,
+    "status": 200,
+    "hours": 2856,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CHI98",
+    "season": 2025,
+    "status": 200,
+    "hours": 2856,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CHI98",
+    "season": 2025,
+    "status": 200,
+    "hours": 2856,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CIN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CIN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CIN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CLE00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CLE00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CLE00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "DAL00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "DAL00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "DAL00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "DEN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "DEN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "DEN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "GNB00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "GNB00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "GNB00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "HOU00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2688,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "HOU00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2688,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "HOU00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2688,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "IND00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "IND00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "IND00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "JAX00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "JAX00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "JAX00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "KAN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2496,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "KAN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2496,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "KAN00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2496,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "MIA00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "MIA00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "MIA00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "NYC01",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "NYC01",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "NYC01",
+    "season": 2025,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "PHI00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2952,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "PHI00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2952,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "PHI00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2952,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "PHO00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2400,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "PHO00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2400,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "PHO00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2400,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "PIT00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "PIT00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "PIT00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "SEA00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2496,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "SEA00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2496,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "SEA00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2496,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "SFO01",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "SFO01",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "SFO01",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "TAM00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "TAM00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "TAM00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "WAS00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2640,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "WAS00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2640,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "WAS00",
+    "season": 2025,
+    "status": 200,
+    "hours": 2640,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "ATL97",
+    "season": 2024,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "ATL97",
+    "season": 2024,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "ATL97",
+    "season": 2024,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "BAL00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "BAL00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "BAL00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "BOS00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "BOS00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "BOS00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "BUF00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "BUF00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "BUF00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CAR00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CAR00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CAR00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2376,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CHI98",
+    "season": 2024,
+    "status": 200,
+    "hours": 2664,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CHI98",
+    "season": 2024,
+    "status": 200,
+    "hours": 2664,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CHI98",
+    "season": 2024,
+    "status": 200,
+    "hours": 2664,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CIN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CIN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CIN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "CLE00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "CLE00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "CLE00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "DAL00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "DAL00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "DAL00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "DEN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "DEN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "DEN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2736,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "GNB00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "GNB00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "GNB00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2712,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "HOU00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2448,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "HOU00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2448,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "HOU00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2448,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "IND00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "IND00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "IND00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2880,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "JAX00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "JAX00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "JAX00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2544,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "KAN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2568,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "KAN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2568,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "KAN00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2568,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "LON00",
+    "season": 2024,
+    "status": 200,
+    "hours": 24,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "LON00",
+    "season": 2024,
+    "status": 200,
+    "hours": 24,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "LON00",
+    "season": 2024,
+    "status": 200,
+    "hours": 24,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "LON02",
+    "season": 2024,
+    "status": 200,
+    "hours": 192,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "LON02",
+    "season": 2024,
+    "status": 200,
+    "hours": 192,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "LON02",
+    "season": 2024,
+    "status": 200,
+    "hours": 192,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "MIA00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2568,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "MIA00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2568,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "MIA00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2568,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "NYC01",
+    "season": 2024,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "NYC01",
+    "season": 2024,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "NYC01",
+    "season": 2024,
+    "status": 200,
+    "hours": 2904,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  },
+  {
+    "api": "hf",
+    "venue": "PHI00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2664,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%"
+    }
+  },
+  {
+    "api": "pr",
+    "venue": "PHI00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2664,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_previous_day1": "\u00b0F",
+      "wind_speed_10m_previous_day1": "mp/h",
+      "precipitation_previous_day1": "inch",
+      "temperature_2m_previous_day2": "\u00b0F",
+      "wind_speed_10m_previous_day2": "mp/h",
+      "precipitation_previous_day2": "inch"
+    }
+  },
+  {
+    "api": "era5",
+    "venue": "PHI00",
+    "season": 2024,
+    "status": 200,
+    "hours": 2664,
+    "units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch"
+    }
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "started_at_utc": "2026-10-01T16:53:24.123060+00:00",
+  "finished_at_utc": "2026-10-01T17:20:55.097369+00:00",
+  "user_agent": "jeisey-tiers source probe (https://github.com/jeisey/jeisey-tiers)",
+  "calls_by_host": {
+    "raw.githubusercontent.com": 1,
+    "en.wikipedia.org": 46,
+    "www.wikidata.org": 46,
+    "api.weather.gov": 75,
+    "api.open-meteo.com": 7,
+    "historical-forecast-api.open-meteo.com": 53,
+    "previous-runs-api.open-meteo.com": 49,
+    "archive-api.open-meteo.com": 51
+  },
+  "failures": [],
+  "venues": 46,
+  "venues_without_coordinates": [
+    "NAS00"
+  ],
+  "upcoming_games": 33,
+  "nws_venues": 25,
+  "open_meteo_venues": 7,
+  "archive_games": 371,
+  "archive_seasons": [
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "archive_truncated_by_budget": true,
+  "rate_limited_hosts": []
+}
