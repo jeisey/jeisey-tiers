@@ -1,0 +1,82 @@
+# Weather and venue source probe (ADR-099).
+#
+# The weekly game-day context layer reads two forecast providers (NWS inside the U.S.,
+# Open-Meteo elsewhere) and a venue registry whose coordinates and roof types need provenance.
+# The development sandbox's egress policy denies all four hosts involved (api.weather.gov,
+# *.open-meteo.com, en.wikipedia.org, www.wikidata.org), so — exactly as for the Phase-0 probes
+# (ADR-009) — a GitHub-hosted runner is the reference environment, and the evidence it gathers
+# is committed back to the branch that asked for it.
+#
+# It gates nothing and deploys nothing. Standard library only: no dependency is installed.
+name: source-probe-weather
+
+on:
+  workflow_dispatch:
+    inputs:
+      archive_seasons:
+        description: Seasons whose games get archived-forecast and reanalysis values
+        type: string
+        default: "2022,2023,2024,2025"
+  push:
+    branches:
+      - "claude/**"
+    # Only the probe's own inputs retrigger it. The evidence it commits lives under docs/, so
+    # a results commit cannot cause a loop.
+    paths:
+      - "scripts/weather_probe.py"
+      - ".github/workflows/source-probe-weather.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-probe-weather-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      # Narrow write scope: the job commits its own evidence to the feature branch.
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Probe venues, forecasts and the forecast archive
+        id: probe
+        run: |
+          set -euo pipefail
+          out_dir="docs/source-probes/$(date -u +%F)/weather"
+          echo "out_dir=${out_dir}" >> "$GITHUB_OUTPUT"
+          python scripts/weather_probe.py \
+            --out "${out_dir}" \
+            --archive-seasons "${{ inputs.archive_seasons || '2022,2023,2024,2025' }}"
+
+      - name: Upload the evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-probe-weather-${{ github.run_id }}
+          path: ${{ steps.probe.outputs.out_dir }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Commit the evidence
+        env:
+          OUT_DIR: ${{ steps.probe.outputs.out_dir }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${OUT_DIR}"
+          if git diff --cached --quiet; then
+            echo "No probe evidence changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(probe): record weather and venue source evidence from runner [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
