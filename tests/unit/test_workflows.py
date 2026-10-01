@@ -234,7 +234,15 @@ def test_the_shadow_record_reaches_the_private_store_and_never_the_site(workflow
     workflow = workflows["daily-refresh.yml"]
     build = workflow["jobs"]["build"]
     ros = next(s for s in build["steps"] if s.get("name") == "Build the rest-of-season board")
-    assert '--shadow-out "${RUNNER_TEMP}/weekly-shadow/weekly-shadow.json"' in ros["run"]
+    assert "--shadow-out weekly-shadow/weekly-shadow.json" in ros["run"]
+    handoff = next(
+        s
+        for s in build["steps"]
+        if s.get("name") == "Hand the weekly shadow record to the retaining job"
+    )
+    # hashFiles only sees the workspace: the guard and the path must name the same file there.
+    assert handoff["if"] == "${{ hashFiles('weekly-shadow/weekly-shadow.json') != '' }}"
+    assert handoff["with"]["path"] == "weekly-shadow/weekly-shadow.json"
     assert "web/public" not in ros["run"].split("--shadow-out")[1].splitlines()[0]
     retain = workflow["jobs"]["retain-shadow"]
     assert retain["needs"] == ["capture", "build"]

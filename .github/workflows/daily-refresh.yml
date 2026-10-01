@@ -552,7 +552,7 @@ jobs:
             --store market-data \
             --preseason-board web/public/data/tiers.json \
             --full-board "${RUNNER_TEMP}/ros-full-board.json" \
-            --shadow-out "${RUNNER_TEMP}/weekly-shadow/weekly-shadow.json" \
+            --shadow-out weekly-shadow/weekly-shadow.json \
             --git-sha "${GITHUB_SHA::7}" | tee build-ros.log
 
       # ADR-099. The private weekly shadow record (v1 and the shadow v2 side by side, with
@@ -560,12 +560,15 @@ jobs:
       # store credential, so it hands the file to `retain-shadow` as a one-day workflow
       # artifact. It carries model outputs and inputs derived from public sources (nflverse,
       # NWS, Open-Meteo) only — no vendor payload — and nothing reads it but that job.
+      #
+      # The file is written inside the workspace because `hashFiles` sees nothing outside it;
+      # it sits beside, never inside, the published `web/` tree and the build record.
       - name: Hand the weekly shadow record to the retaining job
-        if: ${{ hashFiles(format('{0}/weekly-shadow/weekly-shadow.json', runner.temp)) != '' }}
+        if: ${{ hashFiles('weekly-shadow/weekly-shadow.json') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: weekly-shadow-${{ github.run_id }}
-          path: ${{ runner.temp }}/weekly-shadow/weekly-shadow.json
+          path: weekly-shadow/weekly-shadow.json
           if-no-files-found: ignore
           retention-days: 1
 
