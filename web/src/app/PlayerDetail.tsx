@@ -91,8 +91,10 @@ import {
   formatValue,
 } from "../data/format";
 import { ordinal } from "../data/cohort";
+import { WhyWeek } from "../components/WhyWeek";
 import { explainFlags, playerLevelFlags } from "../data/flags";
 import { CONFIDENCE_SHORT, describeGap, describeTrend, marketSourceLabel } from "../data/market";
+import type { WhyThisWeek } from "../data/whyweek";
 import { hasMeaningfulStatus, isNoteworthyRosterStatus, statusBadge } from "../data/model";
 import {
   longAbsenceLabel,
@@ -217,6 +219,8 @@ export interface PlayerDetailData {
    * would otherwise read as two versions of one quantity.
    */
   readonly weekly?: WeeklyProjectionRecord | null;
+  /** This week against a typical week, and the game-day context (ADR-099). */
+  readonly weeklyWhy?: WhyThisWeek | null;
   readonly weeklyMeta?: RosWeeklyMetadata | null;
   readonly weeklyStartable?: { readonly threshold: number; readonly probability: number } | null;
   /** Whether he is already on the reader's Start/Sit comparison. */
@@ -526,12 +530,14 @@ interface SignalInputs {
  */
 function WeekBlock({
   record,
+  why,
   meta,
   startable,
   inDuel,
   onCompare,
 }: {
   readonly record: WeeklyProjectionRecord;
+  readonly why: WhyThisWeek | null;
   readonly meta: RosWeeklyMetadata | null;
   readonly startable: { readonly threshold: number; readonly probability: number } | null;
   readonly inDuel: boolean;
@@ -565,6 +571,15 @@ function WeekBlock({
         </div>
       )}
       {injury !== null && <p className="cohort-note week-injury">{injury.sentence}</p>}
+      {why !== null && (
+        <div className="week-why">
+          <div className="detail-subhead">
+            <span>Why this week</span>
+            <span className="detail-subhead-note">against a typical week</span>
+          </div>
+          <WhyWeek why={why} name={record.display_name} statement={meta?.explanation?.statement} />
+        </div>
+      )}
       {onCompare !== undefined && q !== null && (
         <p className="week-compare">
           <button
@@ -1346,6 +1361,7 @@ export function PlayerDetail({
         >
           <WeekBlock
             record={data.weekly}
+            why={data.weeklyWhy ?? null}
             meta={data.weeklyMeta ?? null}
             startable={data.weeklyStartable ?? null}
             inDuel={data.inDuel === true}

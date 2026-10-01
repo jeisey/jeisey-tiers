@@ -66,8 +66,9 @@ def test_every_artifact_spec_points_at_a_real_schema(artifact):
 
 
 #: The entity id that closes each artifact's ordering. Every artifact describes players except
-#: the one that describes each team's next game (ADR-091), whose entity is the team.
-_TIE_BREAK = {"team_matchups": "team"}
+#: the ones that describe each team's next game (ADR-091) and its game-day context (ADR-099),
+#: whose entity is the team.
+_TIE_BREAK = {"team_matchups": "team", "weekly_context": "team"}
 
 
 @pytest.mark.parametrize("artifact", sorted(ARTIFACT_SPECS))

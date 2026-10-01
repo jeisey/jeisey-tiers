@@ -16,7 +16,9 @@ from ffdraft.artifacts.validate import (
     _display_name_checks,
     _surfaced_rank_violations,
     _weekly_checks,
+    _weekly_context_cross_checks,
     _weekly_cross_checks,
+    weekly_context_checks,
 )
 from ffdraft.contracts.quality import critical_failures, failures
 
@@ -162,3 +164,84 @@ def test_the_pre_adr_096_invented_row_is_caught_three_ways() -> None:
     assert any("fair rank" in line for line in violations)
     assert any("WR1" in line for line in violations)
     assert any("median VORP" in line for line in violations)
+
+
+# ---------------------------------------------------------------- ADR-099: explanation, context
+
+
+@pytest.fixture
+def context(pipeline_result) -> list[dict[str, Any]]:
+    return copy.deepcopy(pipeline_result.records["weekly_context"])
+
+
+def test_every_projected_record_carries_an_explanation_that_closes(weekly) -> None:
+    for record in weekly:
+        assert (record["explanation"] is None) == (record["quantiles"] is None)
+    assert "weekly.explanation_account_closes" not in _failed(_weekly_checks(weekly, "test"))
+
+
+def test_an_explanation_that_does_not_close_at_the_ceiling_fails(weekly) -> None:
+    _playing(weekly)["explanation"]["q90"]["terms"]["opponent"] += 0.4
+    assert "weekly.explanation_account_closes" in _failed(_weekly_checks(weekly, "test"))
+
+
+def test_a_nonzero_calibration_term_fails(weekly) -> None:
+    account = _playing(weekly)["explanation"]["q50"]
+    account["calibration"] = 0.2
+    account["rearrangement"] -= 0.2
+    assert "weekly.explanation_account_closes" in _failed(_weekly_checks(weekly, "test"))
+
+
+def test_the_fixture_context_passes_every_rule(context) -> None:
+    assert not failures(validate_records("weekly_game_context", context))
+    assert _failed(weekly_context_checks(context, "test")) == set()
+
+
+def test_a_dome_never_reads_weather(context) -> None:
+    dome = next(r for r in context if r["venue"] and r["venue"]["roof_type"] == "dome")
+    dome["weather"]["status"] = "ok"
+    assert "weekly_context.weather_status" in _failed(weekly_context_checks(context, "test"))
+
+
+def test_an_unsettled_roof_is_never_ok(context) -> None:
+    record = next(r for r in context if r["venue"] and r["venue"]["roof_type"] == "open")
+    record["venue"]["roof_type"] = "unverified"
+    record["weather"]["status"] = "ok"
+    assert "weekly_context.weather_status" in _failed(weekly_context_checks(context, "test"))
+
+
+def test_a_listed_player_needs_a_final_report(context) -> None:
+    record = next(r for r in context if r["lineup"]["listed"])
+    record["lineup"]["report_final"] = False
+    assert "weekly_context.lineup" in _failed(weekly_context_checks(context, "test"))
+
+
+def test_a_context_from_another_build_or_week_or_alone_fails(weekly, context) -> None:
+    projections = {"build_id": "b1", "records": weekly}
+    assert (
+        _failed(
+            _weekly_context_cross_checks(
+                {
+                    "weekly_projections": projections,
+                    "weekly_context": {"build_id": "b1", "records": context},
+                }
+            )
+        )
+        == set()
+    )
+    other = {"build_id": "b0", "records": context}
+    assert "cross_artifact.weekly_context_mismatch" in _failed(
+        _weekly_context_cross_checks({"weekly_projections": projections, "weekly_context": other})
+    )
+    shifted = [dict(record, target_week=record["target_week"] + 1) for record in context]
+    assert "cross_artifact.weekly_context_mismatch" in _failed(
+        _weekly_context_cross_checks(
+            {
+                "weekly_projections": projections,
+                "weekly_context": {"build_id": "b1", "records": shifted},
+            }
+        )
+    )
+    assert "cross_artifact.weekly_context_mismatch" in _failed(
+        _weekly_context_cross_checks({"weekly_context": {"build_id": "b1", "records": context}})
+    )

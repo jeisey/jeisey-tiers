@@ -130,6 +130,8 @@ FAMILIES: tuple[Family, ...] = (
         ),
     ),
     Family("weekly_projections", "weekly_projections", "scoring"),
+    # ADR-099: one small file, read with the Start/Sit tab and a card's "This week" block.
+    Family("weekly_context", "weekly_context", "all"),
     Family("team_matchups", "team_matchups", "all"),
     Family("behavior_trend_series", "behavior_trend_series", "all"),
     # Observed role. The Opportunity Board and Pick of the Week read whole records (a role

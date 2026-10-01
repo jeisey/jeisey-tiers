@@ -55,6 +55,7 @@ def roof_type_code(venue: Venue | None) -> float | None:
     """``wx_roof_type`` for a venue: ``None`` when unresolved or unverified."""
     return None if venue is None else ROOF_TYPE_CODES.get(venue.roof_type)
 
+
 DEFAULT_REGISTRY = Path("config/venues.yaml")
 
 

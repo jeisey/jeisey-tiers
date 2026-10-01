@@ -400,7 +400,40 @@
       "holdout_verdict": true
     },
     "injuries_retrieved_at_utc": "2026-11-03T12:00:00Z",
-    "statement": "Next-game fantasy points given that he plays, from weekly-startsit-v1: his role, form and track record through the cutoff, his offence, the opposing defence's allowed points, and the game's sportsbook total and spread. It reads no injury report; the league's report is printed beside it instead. No draft or rest-of-season number reads this model."
+    "statement": "Next-game fantasy points given that he plays, from weekly-startsit-v1: his role, form and track record through the cutoff, his offence, the opposing defence's allowed points, and the game's sportsbook total and spread. It reads no injury report; the league's report is printed beside it instead. No draft or rest-of-season number reads this model.",
+    "explanation": {
+      "rule": "typical_week_shapley_v1",
+      "levels": [
+        "q10",
+        "q50",
+        "q90"
+      ],
+      "groups": {
+        "lines": "Sportsbook outlook",
+        "home": "Home or away",
+        "rest": "Rest",
+        "roof": "Roof",
+        "opponent": "Opponent"
+      },
+      "reference_shrink_games": 3.0,
+      "reference": "His typical week: everything about him held at this week's values, in ordinary games for him: his team's mean posted lines over its completed games (shrunk toward the league by three games), half at home, his team's indoor share, equal rest and a league-average defence at this cutoff.",
+      "statement": "Each term is how far this model's number moved with that input, the others held (exact Shapley values over the game inputs). A model attribution, not a measured causal effect. Weather and injuries are printed as context; weekly-startsit-v1 reads neither, so they carry no points."
+    },
+    "context": {
+      "target_week": 9,
+      "records": 14,
+      "weather_status": {
+        "indoors": 4,
+        "ok": 4,
+        "roof_unknown": 2,
+        "stale": 2,
+        "unavailable": 2
+      },
+      "report_rows": 5,
+      "reports_final": 3,
+      "listed_players": 5,
+      "venues_unresolved": 0
+    }
   },
   "disclosures": {
     "uses_injury_information": false,

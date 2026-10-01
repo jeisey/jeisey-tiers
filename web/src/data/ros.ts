@@ -30,6 +30,7 @@ import type {
   OpportunityCohortRecord,
   TeamMatchupRecord,
   UsageCohortRecord,
+  WeeklyGameContextRecord,
   WeeklyProjectionRecord,
 } from "./contracts";
 import { EM_DASH } from "./format";
@@ -54,6 +55,8 @@ export interface InSeasonInput {
   readonly matchups?: readonly TeamMatchupRecord[] | null;
   /** Next-game distributions (ADR-096). Null costs the Start/Sit tab's content and nothing else. */
   readonly weekly?: readonly WeeklyProjectionRecord[] | null;
+  /** Each team's game-day context (ADR-099). Null costs the context chips and nothing else. */
+  readonly weeklyContext?: readonly WeeklyGameContextRecord[] | null;
   /**
    * What the build published, when the records above hold only what has been loaded so far
    * (ADR-098). "Published" and "loaded" are different facts on a page that fetches one block
@@ -146,6 +149,7 @@ export class InSeasonBundle {
   readonly hasWeekly: boolean;
   private readonly weeklyByScoring: ReadonlyMap<ScoringPreset, readonly WeeklyProjectionRecord[]>;
   private readonly weeklyByScoringPlayer: ReadonlyMap<string, WeeklyProjectionRecord>;
+  private readonly contextByTeam: ReadonlyMap<string, WeeklyGameContextRecord>;
 
   /** Every published usage record's cohort fields: a card cohort strip's population. */
   readonly usageCohortRecords: readonly UsageCohortRecord[];
@@ -213,6 +217,7 @@ export class InSeasonBundle {
     }
     this.weeklyByScoring = weeklyByScoring;
     this.weeklyByScoringPlayer = weeklyByScoringPlayer;
+    this.contextByTeam = new Map((input.weeklyContext ?? []).map((record) => [record.team, record]));
 
     const rosByBlock = new Map<string, RosTierRecord[]>();
     const rosByBlockPlayer = new Map<string, RosTierRecord>();
@@ -332,6 +337,12 @@ export class InSeasonBundle {
   }
 
   /** One player's next-game distribution, or null — not published for him, or no layer. */
+  /** A team's target-week game-day context, or null (not published, or no game). */
+  weeklyContextFor(team: string | null | undefined): WeeklyGameContextRecord | null {
+    if (team === null || team === undefined) return null;
+    return this.contextByTeam.get(team) ?? null;
+  }
+
   weeklyRecordFor(scoring: ScoringPreset, playerId: string): WeeklyProjectionRecord | null {
     return this.weeklyByScoringPlayer.get(`${scoring}|${playerId}`) ?? null;
   }

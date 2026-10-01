@@ -70,6 +70,9 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # ADR-096. The weekly start/sit model's next-game distributions. Additive and
     # independent: a bundle without it renders every board and card, minus the Start/Sit tab.
     "weekly_projection",
+    # ADR-099. Each team's game-day context (venue, forecast, named absences, typical week).
+    # Additive and independent: without it the Start/Sit tab prints no context chips.
+    "weekly_game_context",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -96,7 +99,9 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "behavior_trend_series": "1.0",
     "player_usage": "1.0",
     "team_matchup": "1.0",
-    "weekly_projection": "1.0",
+    # 1.1 (ADR-099): additive `explanation`, the typical-week account of P10, P50 and P90.
+    "weekly_projection": "1.1",
+    "weekly_game_context": "1.0",
 }
 
 

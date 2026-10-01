@@ -4,6 +4,93 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The game-day context layer, weekly-startsit-v2 in shadow, and "why this week", 2026-10-01
+(ADR-099).** The owner asked for weekly projections that react to weather, his offence's
+health and the opposing defence's health, and say why — including why the ceiling is high or
+low — under a new model version frozen before evidence.
+
+* **Evidence first.** Four runner probe passes, then the injury probe:
+  * venues, roof evidence and every schedule stadium name's article;
+  * NWS and Open-Meteo contracts and terms;
+  * the Open-Meteo forecast archive, 371 games of 2024–2025;
+  * the injury report's point in time: 24 of 44,356 2017–2024 rows were modified after
+    kickoff, 2025–2026 carry no timestamp, and two same-day 2026 captures were identical.
+
+  NWS and Open-Meteo are registered. `config/venues.yaml` holds 45 buildings, with Wikidata
+  coordinates checked against the evidence by test; the MCG and the Stade de France are
+  `unverified` and fail closed. `config/weather-forecast-error-v1.json` is the day-before
+  forecast error over 289 open-air games.
+* **Freeze `f62f849`** (17:46 UTC), before any comparison: families, five variants,
+  baselines, folds, 2025 as previously examined, the decision cutoff, weather parity, family
+  selection, the prospective holdout and `weekly_promotion_v2`.
+* **Development (`336fd24`).** v1 refitted per fold reproduces its committed report exactly.
+  * **His offence's health is selected:** Δ macro pinball +0.0037, 95% interval
+    [0.0030, 0.0052], 5 of 5 folds, accuracy +0.0014, Brier −0.0007, mostly running backs.
+  * **Weather and the opposing defence's health add nothing beyond noise** over a model that
+    already reads the lines. They are published as context without points.
+  * 2025 is consistent: 1.0941 vs 1.0970.
+  * v2 = v1 + lineup, fitted for **shadow** (`models/shadow/weekly-startsit-v2`, configuration
+    `24933c290a50a74c`, byte-identical refits), with a generated card.
+  * **Status: implementation complete; prospective validation pending.** v1 stays in
+    production.
+* **Explanations** (`typical_week_shapley_v1`): exact weighted Shapley over the game inputs
+  against a pregame typical week, at P10, P50 and P90, closing on each published quantile.
+  Shipped as `weekly_projection` 1.1 and `weekly_game_context` 1.0 (`weekly_context.json`).
+  The UI shows them on the Start/Sit tab, deck cards, the week board's "vs typical" column and
+  the card's "This week" block. Context chips carry no points, and Open-Meteo values carry
+  their CC BY 4.0 credit.
+* **Operations.** Forecast and injury capture run every refresh. Three news-reactive slots
+  (Thu and Fri 17:47, Sun 10:23 ET) capture only the game-day sources and re-infer offline. A
+  `retain-shadow` job writes the private shadow record to the store, and eight run facts were
+  added to the summary.
+
+**Next gate:** the first production refresh on this code. It is the first retained shadow
+record and the start of the prospective holdout: 8 complete weeks, 6,000 rows, 40,000 pairs,
+then `evaluate-weekly-v2-prospective`. **Not done:** no PR (not requested), no deployment.
+
+Validation of this pass (local unless noted):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 315 files
+uv run mypy                                          # clean, 192 source files
+uv run pytest                                        # 1,777 passed (live deselected)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing TanStack warnings); clean
+npm run test -- --run                                # 662 vitest
+npm run build ; npm run e2e                          # 199 passed (chromium, mobile, a11y)
+npm run verify:board                                 # 0 failures (root); in-season fixture: 2 why panels, 7 terms, 13 board cells
+npm run e2e:size-model && npm run verify:budget ...  # all met: Start/Sit +54.9 kB of 60, card +23.6 kB
+# Real-data build (2026 week 4, nflverse + committed models + probe-seeded forecasts, no arbitrage):
+uv run ffdraft build-current / build-ros --shadow-out ...   # gate pass; 1,650 explained records, 32 context teams, 1,650 shadow rows
+uv run ffdraft package-site-data ; validate-artifacts --require-serving   # 0 critical, 0 warning
+node web/tests/e2e/verify-real-build.mjs ... --allow-missing-arbitrage  # 0 failures; 2 why panels, 7 terms, 550 board cells
+npm run verify:budget -- --dist web/dist-real --base-path /          # Start/Sit +49.2 kB, card +20.4 kB, repeat 0 B
+node web/tests/e2e/capture-whyweek.mjs ...           # fixture and real, 1440/1024/820/390/320: no overflow, nothing clipped
+```
+
+Runner evidence: `source-probe-weather.yml` runs 3 (resolve), 4 (roof evidence), 7 (terms)
+and the full probe (run 2); `live-smoke.yml` run 36911768574 (the hosting probe; its artifact
+is not downloadable from the sandbox, so the real draft bundle was built locally). The local
+Chromium (1194) is older than Playwright 1.62's, so local browser runs set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
+
+Facts a later session should not re-derive:
+
+* The sandbox cannot reach api.weather.gov, open-meteo.com, Wikipedia or Wikidata. Evidence
+  comes from the runner probe (`source-probe-weather.yml`):
+  * a push to `scripts/weather_probe.py` runs the cheap `resolve` phase;
+  * the full probe is dispatched with `phases=all`.
+* Open-Meteo's Previous Runs archive starts in January 2024, so the forecast-error map covers
+  2024–2025 only.
+* nflverse's 2026 `roof` for international games is a pre-game guess: `dome` for the MCG,
+  Paris and Munich, against two recorded `outdoors` games at Munich's building.
+* LightGBM is pinned to 4 threads (frozen). Running pytest beside a weekly evaluation makes
+  both 5–10× slower through OpenMP oversubscription, so run them one at a time. A full v2
+  development run takes about 43 minutes on its own.
+* The real build's forecasts can be seeded from the probe's NWS and Open-Meteo kickoff
+  readings when the private store is unreachable. Rebuild `VenueForecast` objects from
+  `nws.json` and `open_meteo_forecast.json` kickoffs and run them through
+  `forecast_capture_rows` + `write_gameday_capture` into a scratch store; pass `--store`.
+
 **Serving the site under load, 2026-09-30 (ADR-098).** The owner asked for the site to survive a
 60–80k-reader burst and then ~1,000 daily readers on GitHub Pages alone, with no feature and no
 change to any number. A cold visit downloaded all fourteen artifacts — **2,816 kB in 21

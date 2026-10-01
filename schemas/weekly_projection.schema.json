@@ -2,19 +2,43 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/schemas/weekly_projection.schema.json",
   "title": "WeeklyProjection",
-  "description": "One player's next game as a distribution, from `weekly-startsit-v1` (ADR-096): seven quantiles of fantasy points in the row's scoring preset, GIVEN THAT HE PLAYS, for the game in `target_week`. A decision-layer model: it reads the rest-of-season snapshot's point-in-time features plus the game's sportsbook environment and the opponent's allowed points, and no intrinsic model reads it. The injury block is the league's official report printed beside the projection; the model never reads it. One record per player and scoring preset; league size changes nothing here, only the startable threshold the page compares against (published in `ros_build_metadata.weekly`).",
+  "description": "One player's next game as a distribution, from `weekly-startsit-v1` (ADR-096; contract 1.1 adds `explanation`, ADR-099): seven quantiles of fantasy points in the row's scoring preset, GIVEN THAT HE PLAYS, for the game in `target_week`. A decision-layer model: it reads the rest-of-season snapshot's point-in-time features plus the game's sportsbook environment and the opponent's allowed points, and no intrinsic model reads it. The injury block is the league's official report printed beside the projection; the model never reads it. One record per player and scoring preset; league size changes nothing here, only the startable threshold the page compares against (published in `ros_build_metadata.weekly`).",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version", "build_id", "season", "through_week", "target_week", "player_id",
     "display_name", "position", "team", "scoring_preset", "model_version", "game_state",
-    "game", "quantiles", "drivers", "opponent", "injury"
+    "game", "quantiles", "drivers", "explanation", "opponent", "injury"
   ],
   "$defs": {
-    "points": {"type": "number", "minimum": -20, "maximum": 100}
+    "points": {"type": "number", "minimum": -20, "maximum": 100},
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["typical", "terms", "calibration", "rearrangement"],
+      "description": "One quantile explained against his typical week (`typical_week_shapley_v1`): `typical` + every term + `calibration` + `rearrangement` equals the published quantile, exactly, at two decimals.",
+      "properties": {
+        "typical": {"$ref": "#/$defs/points", "description": "The same quantile in his typical week: everything about him held at this week's values, in a weighted set of ordinary games for him (his team's mean posted lines over its completed games, shrunk toward the league by three games; half at home; his team's indoor share; equal rest; a league-average defence at this cutoff). Pregame only."},
+        "terms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lines", "home", "rest", "roof", "opponent"],
+          "description": "Exact weighted Shapley values of each game-specific input group over the reference games: how far this model's quantile moved with that input, the others held. A model attribution, not a measured causal effect.",
+          "properties": {
+            "lines": {"type": "number", "description": "The sportsbook total, his team's side of the spread and its implied points."},
+            "home": {"type": "number", "description": "Home or away; a neutral site reads as away."},
+            "rest": {"type": "number", "description": "His team's days of rest against the opponent's."},
+            "roof": {"type": "number", "description": "Indoors or not, as v1 reads it: an unannounced retractable roof takes the stadium's state at its latest earlier home game (weekly_context says when)."},
+            "opponent": {"type": "number", "description": "The opposing defence's allowed points to his position, against a league-average defence."}
+          }
+        },
+        "calibration": {"const": 0, "description": "The split-conformal shift is the same constant this week and in his typical week, so it explains none of the difference; published so the account visibly includes it."},
+        "rearrangement": {"type": "number", "description": "What the monotone repair moved in either reading, plus rounding to two decimals. It closes the account."}
+      }
+    }
   },
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 1999},
     "through_week": {"type": "integer", "minimum": 1, "maximum": 22, "description": "The snapshot cutoff: weeks 1..through_week are the only in-season evidence."},
@@ -76,6 +100,17 @@
         "prior": {"type": "number"},
         "calibration": {"type": "number"},
         "rearrangement": {"type": "number"}
+      }
+    },
+    "explanation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["q10", "q50", "q90"],
+      "description": "Why this week differs from his typical week, at the floor (P10), the median and the ceiling (P90). Null exactly when `quantiles` is null.",
+      "properties": {
+        "q10": {"$ref": "#/$defs/account"},
+        "q50": {"$ref": "#/$defs/account"},
+        "q90": {"$ref": "#/$defs/account"}
       }
     },
     "opponent": {

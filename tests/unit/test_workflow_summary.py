@@ -23,6 +23,17 @@ def test_every_fact_the_refresh_passes_is_printed(repo_root: Path) -> None:
     named = {key for key, _ in workflow_summary.RUN_FACTS}
     passed = _passed_facts(repo_root)
     assert {"weekly_rows", "weekly_target_week", "ros_rows", "product_mode"} <= passed
+    # ADR-099's game-day facts.
+    assert {
+        "refresh_kind",
+        "forecast_capture",
+        "injury_capture",
+        "weekly_context_rows",
+        "weekly_explained",
+        "shadow_status",
+        "shadow_rows",
+        "shadow_retained",
+    } <= passed
     assert passed - named == set()
 
 

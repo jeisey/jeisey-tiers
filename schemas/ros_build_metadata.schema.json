@@ -223,7 +223,39 @@
         "injury_base_rates": {"type": "object", "description": "Per official designation: reports, appearances and the appearance rate over the training seasons."},
         "evaluation": {"type": "object", "description": "The sealed-season (2025) result the page quotes, including the start/sit calibration table."},
         "injuries_retrieved_at_utc": {"type": ["string", "null"], "format": "date-time"},
-        "statement": {"type": "string", "minLength": 40}
+        "statement": {"type": "string", "minLength": 40},
+        "explanation": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["rule", "levels", "groups", "reference_shrink_games", "reference", "statement"],
+          "description": "How every weekly record's `explanation` was made (ADR-099): the typical-week reference, the explained levels, the input groups and their labels, and the sentence that keeps an attribution from reading as a causal effect.",
+          "properties": {
+            "rule": {"const": "typical_week_shapley_v1"},
+            "levels": {"type": "array", "items": {"enum": ["q10", "q50", "q90"]}, "minItems": 1},
+            "groups": {"type": "object", "additionalProperties": {"type": "string"}},
+            "reference_shrink_games": {"type": "number", "minimum": 0},
+            "reference": {"type": "string", "minLength": 40},
+            "statement": {"type": "string", "minLength": 40}
+          }
+        },
+        "context": {
+          "type": ["object", "null"],
+          "description": "What weekly_context.json was built from (ADR-099): forecast capture key and time, weather statuses by count, report rows and teams whose report carries game statuses, listed players, unresolved venues. Null when the context was withheld."
+        },
+        "shadow": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["model_version", "status", "rows"],
+          "description": "The private weekly-startsit-v2 shadow record's summary (ADR-099): whether a shadow candidate ran beside v1 and how many pregame rows it retained. The rows themselves are never published.",
+          "properties": {
+            "model_version": {"const": "weekly-startsit-v2"},
+            "status": {"enum": ["absent", "shadow", "failed"]},
+            "rows": {"type": "integer", "minimum": 0},
+            "pregame": {"type": "integer", "minimum": 0},
+            "with_v2": {"type": "integer", "minimum": 0},
+            "configuration_hash": {"type": ["string", "null"]}
+          }
+        }
       }
     },
     "disclosures": {

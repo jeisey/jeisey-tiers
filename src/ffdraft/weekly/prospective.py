@@ -148,9 +148,15 @@ def _bootstrap(rows: pl.DataFrame, level: float) -> dict[str, float]:
 def _pairs(rows: pl.DataFrame, model: str) -> dict[str, float]:
     correct: list[float] = []
     brier: list[float] = []
-    for _, block in rows.group_by("target_week", "scoring_preset", "position"):
+    # Pools in key order and a stable sort, as in v1's evaluation: same pairs, same order,
+    # the same float sums every run.
+    groups = sorted(
+        rows.group_by("target_week", "scoring_preset", "position"),
+        key=lambda item: tuple(str(part) for part in item[0]),
+    )
+    for _, block in groups:
         depth = int(DECISION_POOL_DEPTH[str(block.get_column("position")[0])])
-        pool = block.sort("b0", descending=True).head(depth)
+        pool = block.sort("b0", descending=True, maintain_order=True).head(depth)
         if pool.height < 2:
             continue
         matrix = pool.select([f"{model}__{key}" for key in _KEYS]).to_numpy()
@@ -185,6 +191,8 @@ def prospective_verdict(
     confirmation: str | None,
 ) -> dict[str, Any]:
     """Apply ``weekly_promotion_v2`` at one declared look. ``scored`` carries ``actual``."""
+    if look not in ("first", "final"):
+        raise ValueError(f"look must be 'first' or 'final', not {look!r}")
     counts = evidence_counts(scored)
     if not counts["minimum_met"]:
         return {"outcome": "insufficient_evidence", "reason": "minimum evidence not met", **counts}

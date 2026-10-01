@@ -53,6 +53,7 @@ import { Controls, SeasonMode, SeasonModeChip, ViewTabs, settingsSummary } from 
 import { DataView } from "./DataView";
 import { Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
+import { whyThisWeek } from "../data/whyweek";
 import { PlayerDetail, type PlayerDetailData } from "./PlayerDetail";
 import { PotwView } from "./PotwView";
 import { RosView } from "./RosView";
@@ -469,6 +470,14 @@ function Board({
       inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
       // The weekly start/sit layer (ADR-096): shown on an in-season card only.
       weekly,
+      weeklyWhy:
+        weekly === null
+          ? null
+          : whyThisWeek(
+              weekly,
+              cohorts?.weeklyContextFor(weekly.team) ?? null,
+              cohorts?.weeklyContextFor(weekly.game?.opponent ?? null) ?? null,
+            ),
       weeklyMeta: inSeason?.metadata.weekly ?? null,
       weeklyStartable: startableFor(weekly, inSeason?.metadata.weekly, leaguePreset, scoring),
       inDuel: state.duel.includes(selectedPlayerId),

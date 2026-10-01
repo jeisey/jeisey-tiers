@@ -37,6 +37,7 @@ import {
   type TeamMatchupRecord,
   type TierRecord,
   type UsageCohortRecord,
+  type WeeklyGameContextRecord,
   type WeeklyProjectionRecord,
 } from "./contracts";
 import {
@@ -105,7 +106,7 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
       );
       break;
     case "startsit":
-      wanted.push(`weekly_projections/${context.scoring}`);
+      wanted.push(`weekly_projections/${context.scoring}`, "weekly_context/all");
       break;
   }
   if (context.cardPlayerId !== null) {
@@ -114,7 +115,7 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
     // shows the rest-of-season section beside the draft one once a board exists.
     if (manifest.ros_build_metadata !== undefined) {
       wanted.push(`ros_tiers/${block}`, `inseason_opportunity_cohort/${block}`);
-      if (!draft) wanted.push("player_usage_cohort/all", "team_matchups/all");
+      if (!draft) wanted.push("player_usage_cohort/all", "team_matchups/all", "weekly_context/all");
     }
   }
   // A key the build did not publish is simply not needed: the view reads it as absent, which
@@ -368,6 +369,9 @@ export class DataStore {
               : null,
             weekly: this.published("weekly_projections")
               ? this.rows<WeeklyProjectionRecord>("weekly_projections", scope)
+              : null,
+            weeklyContext: this.published("weekly_context")
+              ? this.rows<WeeklyGameContextRecord>("weekly_context", scope)
               : null,
             published: {
               opportunity: this.published("inseason_opportunity"),

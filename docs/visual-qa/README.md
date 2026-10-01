@@ -77,3 +77,27 @@ The current directories:
 | `2026-09-15-inseason-ui/` | The in-season presentation pass — both boards drawn, the status column removed, the card's draft market replaced (ADR-085) |
 | `2026-09-15-card-meters/` | The player card's micro-charts — a rank move against the board, a pace comparison in the model's own unit, a value placed among its position (ADR-086) |
 | `2026-09-22-in-season-signals/` | The signal layer — observed role week by week, the next game as context, and Pick of the Week's evidence row; fixture states plus six real week-2 cards (ADR-091) |
+
+## "Why this week" (2026-10-01, ADR-099)
+
+`web/tests/e2e/capture-whyweek.mjs` captures the Start/Sit tab with a pair compared, the week
+board's "vs typical" column and the player card's "This week" block, at 1440, 1024, 820, 390 and
+320px. For each screen it records the document's horizontal overflow, and any explanation
+element whose box leaves its section, in `measurements.json`. It exits non-zero on either. The
+images keep the widths a reviewer needs; every width is measured.
+
+- `2026-10-01/whyweek-fixture/` — the in-season fixture (`/scenario/in-season/`).
+- `2026-10-01/whyweek-real/` — a **real-data** build, committed once because the owner asked for
+  it. The previous session's phone defects showed up only on real data. The build combined:
+  - the local `build-current` and `build-ros` for 2026 week 4 (nflverse, the committed models);
+  - forecasts seeded from the runner probe's real NWS and Open-Meteo readings of that day,
+    because the private store is unreachable from the sandbox;
+  - no arbitrage, since there was no market store.
+
+  `verify-real-build.mjs --allow-missing-arbitrage` passed on the same build with 0 failures.
+
+```bash
+node web/tests/e2e/capture-whyweek.mjs docs/visual-qa/<date>/whyweek-fixture --prefix /scenario/in-season/
+E2E_BASE_URL=http://localhost:4180 node web/tests/e2e/capture-whyweek.mjs \
+  docs/visual-qa/<date>/whyweek-real --prefix / --data web/dist-real/data
+```

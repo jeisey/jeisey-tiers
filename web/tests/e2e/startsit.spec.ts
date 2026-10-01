@@ -85,6 +85,38 @@ test.describe("the tab", () => {
     await page.locator(".deck-name").first().click();
     const card = page.getByRole("dialog");
     await expect(card.getByRole("heading", { name: "This week" })).toBeVisible();
+    // ADR-099: the card's block reads this week against a typical week, with the attribution
+    // statement, and never puts points on context.
+    await expect(card.locator(".why-week-head").first()).toContainText("typical week");
+    await expect(card.getByText(/a model attribution, not a measured cause/)).toBeVisible();
+  });
+
+  test("explains the pick's week at the median and the ceiling, in words", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=startsit&${PAIR}`);
+    const open = page.locator(".why-this-week-player[open]");
+    await expect(open).toHaveCount(1);
+    await expect(open.locator(".why-this-week-gist")).toContainText(/Median [+−±]\d\.\d · ceiling [+−±]\d\.\d vs typical/);
+    await expect(open.locator(".why-week-table th[scope=col]").nth(2)).toHaveText("Ceiling");
+    // Context chips carry words, never a signed point value. The pick plays in London, so its
+    // forecast is Open-Meteo's and carries the licence credit.
+    const chips = await open.locator(".why-week-context li .why-week-context-text").allTextContents();
+    expect(chips.length).toBeGreaterThan(0);
+    expect(chips.join(" ")).toMatch(/Forecast: \d+ mph wind/);
+    await expect(open.locator(".why-week-attribution")).toHaveText("Weather data by Open-Meteo.com (CC BY 4.0)");
+    // The lines reason names the team's typical implied total from the published context.
+    await expect(open.locator(".why-week-table")).toContainText(/\(usually \d+\.\d\)/);
+    for (const text of chips) {
+      expect(text).not.toMatch(/\([+−-]\d+\.\d\)/);
+    }
+  });
+
+  test("the week board says how each median compares with a typical week", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=startsit`);
+    const cells = page.locator(".weekboard-table .wb-why-cell");
+    await expect(cells.first()).toBeVisible();
+    const label = await cells.first().getAttribute("title");
+    await expect(cells.first().locator(".visually-hidden")).toHaveText(label ?? "");
+    expect(label ?? "").toMatch(/^[+−±]\d\.\d median against a typical week/);
   });
 });
 
@@ -109,7 +141,15 @@ test.describe("layout", () => {
       // Nothing inside the section is clipped sideways either: every card, the verdict and the
       // chart sit inside the section's own box.
       const section = await page.locator("section.startsit").boundingBox();
-      for (const selector of [".deck-card", ".verdict", ".startsit-figure svg"]) {
+      for (const selector of [
+        ".deck-card",
+        ".verdict",
+        ".startsit-figure svg",
+        ".why-this-week",
+        ".why-week-heads",
+        ".why-week-table",
+        ".why-week-context li",
+      ]) {
         const boxes = await page.locator(selector).evaluateAll((nodes) =>
           nodes.map((node) => {
             const rect = node.getBoundingClientRect();

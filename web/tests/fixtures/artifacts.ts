@@ -59,6 +59,8 @@ import type {
   MarketComparison,
   MarketTrendSeriesRecord,
   RosWeeklyMetadata,
+  WeeklyAccount,
+  WeeklyGameContextRecord,
   WeeklyProjectionRecord,
 } from "../../src/data/contracts";
 
@@ -1449,7 +1451,7 @@ export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
       const opponent = game === null ? null : game.opponent;
       const rank = opponent === null ? null : (WEEKLY_OPPONENT_RANK[opponent] ?? 16);
       records.push({
-        schema_version: "1.0",
+        schema_version: "1.1",
         build_id: FIXTURE_BUILD_ID,
         season: 2026,
         through_week: FIXTURE_THROUGH_WEEK,
@@ -1480,11 +1482,161 @@ export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
                 defenses: 32,
                 games: 8,
               },
+        explanation: bye || pending ? null : weeklyExplanation(seed.id, seed.team, quantiles),
         injury: WEEKLY_INJURIES[seed.id] ?? null,
       });
     }
   }
   return records;
+}
+
+/**
+ * Typical-week accounts (ADR-099) that close exactly on the published quantiles, as the
+ * build's do: the terms are a deterministic split, `typical` is the quantile minus them, and
+ * `rearrangement` absorbs rounding. Two seeds carry a boom story — a weak, depleted defence
+ * at the ceiling — and the BUF players a windy, wet week the model does not read.
+ */
+function weeklyExplanation(
+  playerId: string,
+  team: string,
+  quantiles: Readonly<Record<"q05" | "q10" | "q25" | "q50" | "q75" | "q90" | "q95", number>>,
+): WeeklyProjectionRecord["explanation"] {
+  const boom = playerId === "gsis:00-0000012" || playerId === "gsis:00-0000015";
+  const game = weeklyGame(team);
+  const home = game?.home_away === "home" ? 0.18 : -0.16;
+  const scale = { q10: 0.45, q50: 1, q90: 1.9 } as const;
+  const account = (key: "q10" | "q50" | "q90"): WeeklyAccount => {
+    const k = scale[key];
+    const terms = {
+      lines: round((boom ? 0.9 : team === "KC" ? -0.7 : 0.35) * k, 2),
+      home: round(home * k, 2),
+      rest: round((team === "CIN" ? -0.12 : 0) * k, 2),
+      roof: round((team === "DET" || team === "ATL" ? 0.31 : 0) * k, 2),
+      opponent: round((boom ? 1.4 : team === "LAC" ? -0.9 : 0.25) * k, 2),
+    };
+    const sum = Object.values(terms).reduce((a, b) => a + b, 0);
+    const typical = round(quantiles[key] - sum - (key === "q90" && boom ? 0.04 : 0), 2);
+    return {
+      typical,
+      terms,
+      calibration: 0,
+      rearrangement: round(quantiles[key] - typical - sum, 2),
+    };
+  };
+  return { q10: account("q10"), q50: account("q50"), q90: account("q90") };
+}
+
+const CONTEXT_VENUES: Readonly<Record<string, WeeklyGameContextRecord["venue"]>> = {
+  DET: { venue_id: "det-ford-field", name: "Ford Field", country: "US", roof_type: "dome", latitude: 42.34, longitude: -83.0456 },
+  BUF: { venue_id: "buf-highmark-2026", name: "Highmark Stadium", country: "US", roof_type: "open", latitude: 42.7738, longitude: -78.787 },
+  BAL: { venue_id: "lon-tottenham", name: "Tottenham Hotspur Stadium", country: "GB", roof_type: "open", latitude: 51.6043, longitude: -0.0665 },
+  KC: { venue_id: "kc-arrowhead", name: "GEHA Field at Arrowhead Stadium", country: "US", roof_type: "open", latitude: 39.0489, longitude: -94.4839 },
+  ARI: { venue_id: "ari-state-farm", name: "State Farm Stadium", country: "US", roof_type: "retractable", latitude: 33.5276, longitude: -112.2626 },
+};
+
+function contextListed(team: string): WeeklyGameContextRecord["lineup"]["listed"] {
+  const entry = (
+    slot: string,
+    name: string,
+    position: string,
+    group: "OL" | "QB" | "CB" | "S" | "DL" | "SKILL",
+    rank: number | null,
+    designation: "Out" | "Doubtful" | "Questionable",
+    targets: number | null = null,
+  ): WeeklyGameContextRecord["lineup"]["listed"][number] => ({
+    player_id: `gsis:fx-${team}-${slot}`,
+    name,
+    position,
+    role: rank === null ? "skill" : `${group}${String(rank)}`,
+    group,
+    starter_rank: rank,
+    snap_share: rank === null ? null : 0.97,
+    target_share: targets,
+    carry_share: targets === null ? null : 0,
+    designation,
+    practice_status: "Did Not Participate In Practice",
+    primary_injury: "Ankle",
+  });
+  switch (team) {
+    case "BUF":
+      return [entry("OL2", "Ross Fixture", "G", "OL", 2, "Out"), entry("OL4", "Dane Fixture", "T", "OL", 4, "Questionable")];
+    case "CIN":
+      return [entry("CB1", "Cam Fixture", "CB", "CB", 1, "Out"), entry("S2", "Sal Fixture", "S", "S", 2, "Questionable")];
+    case "KC":
+      return [entry("WR9", "Rex Fixture", "WR", "SKILL", null, "Out", 0.21)];
+    default:
+      return [];
+  }
+}
+
+export function weeklyContextRecords(): WeeklyGameContextRecord[] {
+  const teams = ["ATL", "DET", "CIN", "BUF", "LAR", "BAL", "KC", "LAC", "ARI", "WAS"];
+  const records: WeeklyGameContextRecord[] = [];
+  for (const team of teams) {
+    const game = weeklyGame(team);
+    if (game === null) continue;
+    const host = game.home_away === "home" ? team : game.opponent;
+    const venue = CONTEXT_VENUES[host] ?? null;
+    const roofType = venue?.roof_type ?? null;
+    const windy = host === "BUF";
+    const status: WeeklyGameContextRecord["weather"]["status"] =
+      roofType === "dome" ? "indoors" : roofType === "retractable" ? "roof_unknown" : venue === null ? "no_venue" : "ok";
+    const numbers = status === "ok" || status === "roof_unknown";
+    const provider = venue === null ? null : venue.country === "US" ? "nws" : "open_meteo";
+    const listed = contextListed(team);
+    records.push({
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      season: 2026,
+      through_week: FIXTURE_THROUGH_WEEK,
+      target_week: WEEKLY_TARGET_WEEK,
+      team,
+      game_id: game.game_id,
+      opponent: game.opponent,
+      home_away: game.home_away,
+      neutral_site: game.neutral_site,
+      kickoff_utc: game.kickoff_utc,
+      context_rule_version: "weekly_gameday_context_v1",
+      venue,
+      roof: { recorded: game.roof, model_indoors: game.roof === "dome" ? 1 : 0, assumed_from_last_home_game: false },
+      weather: {
+        status,
+        provider: numbers ? provider : null,
+        wind_mph: numbers ? (windy ? 18 : 7) : null,
+        gust_mph: numbers ? (windy ? 29 : 11) : null,
+        temp_f: numbers ? (windy ? 37 : 63) : null,
+        precip_probability: numbers ? (windy ? 70 : 10) : null,
+        precip_in: numbers ? (windy ? 0.12 : 0) : null,
+        short_forecast: numbers && provider === "nws" ? (windy ? "Rain And Breezy" : "Mostly Sunny") : null,
+        valid_from_utc: numbers ? game.kickoff_utc : null,
+        valid_to_utc: numbers && game.kickoff_utc !== null ? new Date(Date.parse(game.kickoff_utc) + 3600_000).toISOString().replace(".000Z", "Z") : null,
+        provider_updated_utc: numbers ? "2026-11-03T10:14:00+00:00" : null,
+        retrieved_at_utc: venue === null ? null : "2026-11-03T11:00:00Z",
+      },
+      lineup: { report_available: true, report_final: listed.length > 0 || team !== "WAS", listed },
+      typical: {
+        games: 8,
+        total_line: 46.2,
+        team_margin: team === "KC" ? 3.1 : 0.4,
+        team_points: team === "KC" ? 24.65 : 23.3,
+        home_share: 0.5,
+        indoors_share: team === "DET" || team === "ATL" ? 0.625 : 0.25,
+      },
+      this_week: {
+        total_line: game.total_line,
+        team_margin: game.team_margin,
+        team_points: game.team_points,
+        is_home: game.neutral_site ? 0 : game.home_away === "home" ? 1 : 0,
+        rest_advantage: team === "CIN" ? -3 : team === "BUF" ? 3 : 0,
+        indoors: game.roof === "dome" ? 1 : 0,
+      },
+    });
+  }
+  return records;
+}
+
+export function weeklyContextEnvelope(): ArtifactEnvelope<WeeklyGameContextRecord> {
+  return envelope("weekly_context", "weekly_game_context", weeklyContextRecords());
 }
 
 export function weeklyProjectionEnvelope(): ArtifactEnvelope<WeeklyProjectionRecord> {
@@ -1976,6 +2128,8 @@ export function inSeasonFixtureFiles(
           // The weekly layer (ADR-096) is withheld with the signal layer in this scenario, so
           // the Start/Sit tab's "nothing published" state has a build that draws it.
           "weekly_projections.json": weeklyProjectionEnvelope(),
+          // ADR-099: the game-day context is written and withheld with the weekly layer.
+          "weekly_context.json": weeklyContextEnvelope(),
         }
       : {}),
   };

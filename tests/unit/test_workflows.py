@@ -181,18 +181,67 @@ def test_a_production_refresh_is_never_cancelled(workflows):
     assert deploy["cancel-in-progress"] is False
 
 
+#: ADR-099's news-reactive slots: Thursday and Friday after the injury report, Sunday morning.
+NEWS_CRONS = ("47 17 * * 4", "47 17 * * 5", "23 10 * * 0")
+
+
 def test_the_daily_schedule_is_off_the_hour_in_new_york(workflows):
-    """Two slots: the daily refresh, and Phase 12's post-week one. Neither on the hour."""
+    """The daily refresh, Phase 12's post-week slot and ADR-099's three news-reactive slots."""
     schedule = workflows["daily-refresh.yml"]["on"]["schedule"]
-    assert len(schedule) == 2
-    daily, post_week = schedule
+    assert len(schedule) == 5
+    daily, post_week, *news = schedule
     for entry in schedule:
         minute = entry["cron"].split()[0]
-        assert minute != "0", "an on-the-hour schedule is the one GitHub documents as delayed"
+        assert minute not in {"0", "00", "30"}, "on the hour or half hour is documented as delayed"
         assert entry["timezone"] == "America/New_York"
     assert daily["cron"].split()[:2] == ["17", "7"], daily["cron"]
     # Tuesday, after Monday night football and the release that follows it (roadmap 12.5).
     assert post_week["cron"].split()[4] == "2", post_week["cron"]
+    assert tuple(entry["cron"] for entry in news) == NEWS_CRONS
+
+
+def test_a_news_reactive_refresh_captures_only_the_game_day_sources(workflows):
+    """MFL's database once a day (ADR-017), Sleeper's status map once a day; never retrain."""
+    workflow = workflows["daily-refresh.yml"]
+    capture = workflow["jobs"]["capture"]
+    plan = next(s for s in capture["steps"] if s.get("name") == "Plan the capture")
+    for cron in NEWS_CRONS:
+        assert f'"{cron}"' in plan["run"], cron
+    once_a_day = (
+        "Capture the market snapshot",
+        "Capture the Fantasy Football Calculator market",
+        "Capture current player status",
+        "Capture Sleeper add/drop behaviour",
+    )
+    for name in once_a_day:
+        step = next(s for s in capture["steps"] if s.get("name") == name)
+        assert "steps.plan.outputs.kind != 'news'" in step["if"], name
+    for name in ("Capture the kickoff forecasts", "Capture the injury report"):
+        step = next(s for s in capture["steps"] if s.get("name") == name)
+        assert "kind" not in step["if"], f"{name} must run on a news slot too"
+        assert step["continue-on-error"] is True, f"{name} is context, never a gate"
+    commands = [
+        line.strip()
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        for line in str(step.get("run", "")).splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+    assert not [line for line in commands if re.search(r"ffdraft (train|retrain)", line)]
+
+
+def test_the_shadow_record_reaches_the_private_store_and_never_the_site(workflows):
+    workflow = workflows["daily-refresh.yml"]
+    build = workflow["jobs"]["build"]
+    ros = next(s for s in build["steps"] if s.get("name") == "Build the rest-of-season board")
+    assert '--shadow-out "${RUNNER_TEMP}/weekly-shadow/weekly-shadow.json"' in ros["run"]
+    assert "web/public" not in ros["run"].split("--shadow-out")[1].splitlines()[0]
+    retain = workflow["jobs"]["retain-shadow"]
+    assert retain["needs"] == ["capture", "build"]
+    run = next(s for s in retain["steps"] if s.get("id") == "persist")["run"]
+    assert "retain-weekly-shadow" in run and "validate-market-history" in run
+    staged = next(s for s in build["steps"] if s.get("name") == "Stage the build record")["run"]
+    assert "weekly-shadow" not in staged, "the public build record must not carry it"
 
 
 def test_the_forced_failure_flag_is_unreachable_from_the_schedule(workflow_dir):
@@ -269,7 +318,7 @@ def test_only_in_season_mfl_capture_failure_is_nonblocking(workflows):
     market = next(s for s in steps if s.get("name") == "Capture the market snapshot")
     assert market["id"] == "market"
     assert market["continue-on-error"] == "${{ steps.season.outputs.mode == 'in_season' }}"
-    assert market["if"] == "${{ inputs.skip_capture != true }}"
+    assert market["if"] == "${{ inputs.skip_capture != true && steps.plan.outputs.kind != 'news' }}"
     assert "set -euo pipefail" in market["run"]
     assert "|| true" not in market["run"], "the command must still report a failure"
     assert not capture.get("continue-on-error"), "only the ADP step can be nonblocking"

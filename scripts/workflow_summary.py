@@ -45,6 +45,16 @@ RUN_FACTS: tuple[tuple[str, str], ...] = (
     # ADR-096: a withheld weekly layer is a warning, never a gate, so it is stated here.
     ("weekly_target_week", "Start/Sit week"),
     ("weekly_rows", "Start/Sit projections"),
+    # ADR-099: the game-day layer. A news-reactive refresh captures only forecasts and the
+    # injury report and re-infers offline; the shadow record is private and only counted here.
+    ("refresh_kind", "Refresh kind"),
+    ("forecast_capture", "Forecast capture"),
+    ("injury_capture", "Injury-report capture"),
+    ("weekly_context_rows", "Game-day context rows"),
+    ("weekly_explained", "Explained projections"),
+    ("shadow_status", "Weekly v2 shadow"),
+    ("shadow_rows", "Shadow rows (pregame)"),
+    ("shadow_retained", "Shadow record retained"),
     ("deploy_result", "Pages deployment"),
     ("pages_url", "Pages URL"),
 )

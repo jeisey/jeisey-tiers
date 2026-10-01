@@ -85,3 +85,30 @@ def test_valid_weekly_records_are_published(
     assert len(published) == len(records)
     assert metadata is not None and metadata["lines_pending"] == 0
     assert not any(check.check_id == "ros.weekly_projections_invalid" for check in gate.checks)
+
+
+def test_the_weekly_metadata_the_layer_writes_is_the_published_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    app_config: Any,
+    pipeline_result: Any,
+) -> None:
+    """Every key ``_weekly_layer`` adds (explanation, context, the shadow summary) is in the
+    schema: ``ros_build_metadata.weekly`` forbids unknown keys, and the fixture build does not
+    reach the shadow path, so this is where a missing schema entry would show (ADR-099)."""
+    import json
+
+    import jsonschema
+
+    from ffdraft.paths import repo_root
+
+    records = [dict(row) for row in pipeline_result.records["weekly_projections"]]
+    _, metadata, _ = _run(monkeypatch, app_config, records)
+    assert metadata is not None
+    published = {key: value for key, value in metadata.items() if not key.startswith("_")}
+    assert published["shadow"]["model_version"] == "weekly-startsit-v2"
+    assert published["shadow"]["status"] == "absent"
+    root = json.loads(
+        (repo_root() / "schemas" / "ros_build_metadata.schema.json").read_text(encoding="utf-8")
+    )
+    schema = {"$defs": root.get("$defs", {}), **root["properties"]["weekly"]}
+    jsonschema.validate(json.loads(json.dumps(published, default=str)), schema)

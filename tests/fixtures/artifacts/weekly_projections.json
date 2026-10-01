@@ -7,7 +7,7 @@
   "record_count": 51,
   "records": [
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -22,11 +22,12 @@
       "game": null,
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": null,
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -51,6 +52,7 @@
       },
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": {
         "defense": "LAC",
         "allowed_ppg": 3.69,
@@ -63,7 +65,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -107,6 +109,44 @@
         "calibration": -0.29,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.24,
+          "terms": {
+            "lines": 0.67,
+            "home": 0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.17
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.06
+        },
+        "q50": {
+          "typical": 8.47,
+          "terms": {
+            "lines": 2.5,
+            "home": 0.05,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.55
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 21.16,
+          "terms": {
+            "lines": 1.12,
+            "home": 0.22,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.24
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "NE",
         "allowed_ppg": 8.54,
@@ -119,7 +159,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -163,6 +203,44 @@
         "calibration": -0.02,
         "rearrangement": 0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.72,
+          "terms": {
+            "lines": 0.04,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 2.06,
+          "terms": {
+            "lines": 0.07,
+            "home": -0.01,
+            "rest": -0.07,
+            "roof": 0.0,
+            "opponent": -0.15
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 13.48,
+          "terms": {
+            "lines": 1.02,
+            "home": 0.08,
+            "rest": -0.16,
+            "roof": 0.0,
+            "opponent": -0.52
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "NO",
         "allowed_ppg": 0.76,
@@ -180,7 +258,7 @@
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -224,6 +302,44 @@
         "calibration": -0.02,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.01,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 0.84,
+          "terms": {
+            "lines": 0.06,
+            "home": 0.0,
+            "rest": -0.03,
+            "roof": 0.0,
+            "opponent": -0.17
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 9.51,
+          "terms": {
+            "lines": 0.12,
+            "home": 0.05,
+            "rest": -0.16,
+            "roof": 0.0,
+            "opponent": -0.13
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "NO",
         "allowed_ppg": 0.76,
@@ -236,7 +352,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -280,6 +396,44 @@
         "calibration": -0.02,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.45,
+          "terms": {
+            "lines": 0.04,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q50": {
+          "typical": 1.39,
+          "terms": {
+            "lines": 0.42,
+            "home": 0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.03
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 8.76,
+          "terms": {
+            "lines": 0.73,
+            "home": -0.08,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.04
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "DAL",
         "allowed_ppg": 1.96,
@@ -292,7 +446,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -336,6 +490,44 @@
         "calibration": -0.02,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.69,
+          "terms": {
+            "lines": 0.04,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 1.88,
+          "terms": {
+            "lines": 0.61,
+            "home": -0.01,
+            "rest": 0.1,
+            "roof": 0.0,
+            "opponent": 0.21
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 12.64,
+          "terms": {
+            "lines": 1.59,
+            "home": 0.08,
+            "rest": 0.07,
+            "roof": 0.0,
+            "opponent": 0.53
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "HOU",
         "allowed_ppg": 2.83,
@@ -348,7 +540,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -392,6 +584,44 @@
         "calibration": -0.02,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.69,
+          "terms": {
+            "lines": 0.04,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 1.82,
+          "terms": {
+            "lines": 0.53,
+            "home": -0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.25
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q90": {
+          "typical": 12.69,
+          "terms": {
+            "lines": 0.9,
+            "home": 0.08,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.39
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "LV",
         "allowed_ppg": 4.23,
@@ -404,7 +634,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -448,6 +678,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.19,
+          "terms": {
+            "lines": 0.06,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 2.2,
+          "terms": {
+            "lines": 0.02,
+            "home": 0.0,
+            "rest": 0.04,
+            "roof": 0.0,
+            "opponent": 0.02
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        },
+        "q90": {
+          "typical": 6.56,
+          "terms": {
+            "lines": 0.06,
+            "home": 0.01,
+            "rest": 0.03,
+            "roof": 0.0,
+            "opponent": -0.22
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "IND",
         "allowed_ppg": 2.09,
@@ -460,7 +728,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -504,6 +772,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.13,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        },
+        "q50": {
+          "typical": 3.26,
+          "terms": {
+            "lines": 0.03,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.06
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 8.45,
+          "terms": {
+            "lines": 0.15,
+            "home": 0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.14
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        }
+      },
       "opponent": {
         "defense": "MIA",
         "allowed_ppg": 1.54,
@@ -516,7 +822,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -560,6 +866,44 @@
         "calibration": -0.0,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.38,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 3.57,
+          "terms": {
+            "lines": 0.11,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.15
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q90": {
+          "typical": 8.0,
+          "terms": {
+            "lines": 0.49,
+            "home": -0.01,
+            "rest": 0.12,
+            "roof": 0.0,
+            "opponent": -0.31
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "BUF",
         "allowed_ppg": 0.29,
@@ -572,7 +916,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -616,6 +960,44 @@
         "calibration": -0.0,
         "rearrangement": 0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.32,
+          "terms": {
+            "lines": 0.02,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 4.51,
+          "terms": {
+            "lines": 0.11,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.02
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q90": {
+          "typical": 11.44,
+          "terms": {
+            "lines": 3.91,
+            "home": -0.05,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.47
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.22
+        }
+      },
       "opponent": {
         "defense": "CHI",
         "allowed_ppg": 5.13,
@@ -633,7 +1015,7 @@
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -677,6 +1059,44 @@
         "calibration": -0.0,
         "rearrangement": 0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.5,
+          "terms": {
+            "lines": 0.05,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 4.58,
+          "terms": {
+            "lines": 0.22,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.13,
+            "opponent": 0.02
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 11.85,
+          "terms": {
+            "lines": 4.43,
+            "home": 0.07,
+            "rest": 0.0,
+            "roof": 0.13,
+            "opponent": -0.45
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "GB",
         "allowed_ppg": 5.76,
@@ -689,7 +1109,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -733,6 +1153,44 @@
         "calibration": -0.0,
         "rearrangement": 0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.5,
+          "terms": {
+            "lines": 0.05,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 4.53,
+          "terms": {
+            "lines": 0.13,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.13,
+            "opponent": 0.03
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 11.75,
+          "terms": {
+            "lines": 4.08,
+            "home": -0.07,
+            "rest": 0.0,
+            "roof": 0.17,
+            "opponent": -0.41
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "DEN",
         "allowed_ppg": 7.35,
@@ -745,7 +1203,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -760,11 +1218,12 @@
       "game": null,
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": null,
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -789,6 +1248,7 @@
       },
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": {
         "defense": "KC",
         "allowed_ppg": 6.09,
@@ -801,7 +1261,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -845,6 +1305,44 @@
         "calibration": -0.0,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.5,
+          "terms": {
+            "lines": 0.05,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 4.53,
+          "terms": {
+            "lines": 0.24,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.03
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q90": {
+          "typical": 11.75,
+          "terms": {
+            "lines": 4.31,
+            "home": -0.07,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.39
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "MIN",
         "allowed_ppg": 5.05,
@@ -857,7 +1355,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -872,11 +1370,12 @@
       "game": null,
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": null,
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -901,6 +1400,7 @@
       },
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": {
         "defense": "LAC",
         "allowed_ppg": 3.69,
@@ -913,7 +1413,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -957,6 +1457,44 @@
         "calibration": -0.15,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 1.13,
+          "terms": {
+            "lines": 1.05,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.06
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        },
+        "q50": {
+          "typical": 9.43,
+          "terms": {
+            "lines": 2.61,
+            "home": 0.05,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.34
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 23.12,
+          "terms": {
+            "lines": 0.6,
+            "home": 0.25,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.02
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "NE",
         "allowed_ppg": 8.54,
@@ -969,7 +1507,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1013,6 +1551,44 @@
         "calibration": -0.01,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.73,
+          "terms": {
+            "lines": 0.03,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q50": {
+          "typical": 2.9,
+          "terms": {
+            "lines": 0.19,
+            "home": -0.05,
+            "rest": -0.07,
+            "roof": 0.0,
+            "opponent": -0.09
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q90": {
+          "typical": 14.44,
+          "terms": {
+            "lines": 0.74,
+            "home": -0.01,
+            "rest": -0.13,
+            "roof": 0.0,
+            "opponent": -0.54
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        }
+      },
       "opponent": {
         "defense": "NO",
         "allowed_ppg": 0.84,
@@ -1030,7 +1606,7 @@
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1074,6 +1650,44 @@
         "calibration": -0.01,
         "rearrangement": -0.02
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.02,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 1.42,
+          "terms": {
+            "lines": 0.15,
+            "home": 0.0,
+            "rest": -0.03,
+            "roof": 0.0,
+            "opponent": -0.04
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 8.75,
+          "terms": {
+            "lines": 0.12,
+            "home": -0.0,
+            "rest": -0.19,
+            "roof": 0.0,
+            "opponent": -0.39
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "NO",
         "allowed_ppg": 0.84,
@@ -1086,7 +1700,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1130,6 +1744,44 @@
         "calibration": -0.01,
         "rearrangement": 0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.18,
+          "terms": {
+            "lines": 0.03,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 1.55,
+          "terms": {
+            "lines": 0.54,
+            "home": 0.03,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q90": {
+          "typical": 8.25,
+          "terms": {
+            "lines": -0.19,
+            "home": -0.03,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.17
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "DAL",
         "allowed_ppg": 2.21,
@@ -1142,7 +1794,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1186,6 +1838,44 @@
         "calibration": -0.01,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.62,
+          "terms": {
+            "lines": 0.03,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q50": {
+          "typical": 2.72,
+          "terms": {
+            "lines": 0.81,
+            "home": -0.07,
+            "rest": 0.08,
+            "roof": 0.0,
+            "opponent": 0.18
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 13.53,
+          "terms": {
+            "lines": 1.09,
+            "home": 0.04,
+            "rest": 0.02,
+            "roof": 0.0,
+            "opponent": 0.55
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "HOU",
         "allowed_ppg": 3.19,
@@ -1198,7 +1888,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1242,6 +1932,44 @@
         "calibration": -0.01,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.62,
+          "terms": {
+            "lines": 0.03,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q50": {
+          "typical": 2.9,
+          "terms": {
+            "lines": 0.71,
+            "home": -0.07,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.19
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 13.93,
+          "terms": {
+            "lines": 0.61,
+            "home": -0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.36
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "LV",
         "allowed_ppg": 4.64,
@@ -1254,7 +1982,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1298,6 +2026,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.11,
+          "terms": {
+            "lines": 0.05,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 2.89,
+          "terms": {
+            "lines": 0.07,
+            "home": 0.0,
+            "rest": 0.01,
+            "roof": 0.0,
+            "opponent": 0.11
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 7.65,
+          "terms": {
+            "lines": 0.2,
+            "home": 0.01,
+            "rest": -0.02,
+            "roof": 0.0,
+            "opponent": -0.06
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "IND",
         "allowed_ppg": 2.58,
@@ -1310,7 +2076,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1354,6 +2120,44 @@
         "calibration": -0.0,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.01,
+          "terms": {
+            "lines": 0.02,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 3.8,
+          "terms": {
+            "lines": -0.01,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.12
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 9.9,
+          "terms": {
+            "lines": 0.71,
+            "home": 0.03,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.13
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "MIA",
         "allowed_ppg": 2.04,
@@ -1366,7 +2170,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1410,6 +2214,44 @@
         "calibration": -0.0,
         "rearrangement": -0.02
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.4,
+          "terms": {
+            "lines": 0.01,
+            "home": 0.0,
+            "rest": -0.0,
+            "roof": 0.0,
+            "opponent": -0.02
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q50": {
+          "typical": 4.21,
+          "terms": {
+            "lines": 0.24,
+            "home": -0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.1
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q90": {
+          "typical": 9.64,
+          "terms": {
+            "lines": 1.07,
+            "home": -0.03,
+            "rest": 0.1,
+            "roof": 0.0,
+            "opponent": -0.42
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "BUF",
         "allowed_ppg": 0.37,
@@ -1422,7 +2264,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1466,6 +2308,44 @@
         "calibration": -0.0,
         "rearrangement": -0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.46,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 5.86,
+          "terms": {
+            "lines": 0.34,
+            "home": -0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 14.99,
+          "terms": {
+            "lines": 2.5,
+            "home": -0.13,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.11
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "CHI",
         "allowed_ppg": 6.26,
@@ -1483,7 +2363,7 @@
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1527,6 +2407,44 @@
         "calibration": -0.0,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.6,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 6.26,
+          "terms": {
+            "lines": 0.36,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.15,
+            "opponent": -0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 15.72,
+          "terms": {
+            "lines": 3.2,
+            "home": 0.13,
+            "rest": 0.0,
+            "roof": -0.04,
+            "opponent": -0.19
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "GB",
         "allowed_ppg": 7.03,
@@ -1539,7 +2457,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1583,6 +2501,44 @@
         "calibration": -0.0,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.6,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 6.35,
+          "terms": {
+            "lines": 0.34,
+            "home": -0.0,
+            "rest": 0.0,
+            "roof": 0.15,
+            "opponent": -0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 15.68,
+          "terms": {
+            "lines": 2.75,
+            "home": -0.12,
+            "rest": 0.0,
+            "roof": 0.03,
+            "opponent": -0.28
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "DEN",
         "allowed_ppg": 9.08,
@@ -1595,7 +2551,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1610,11 +2566,12 @@
       "game": null,
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": null,
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1639,6 +2596,7 @@
       },
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": {
         "defense": "KC",
         "allowed_ppg": 7.63,
@@ -1651,7 +2609,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1695,6 +2653,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.6,
+          "terms": {
+            "lines": 0.0,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 6.35,
+          "terms": {
+            "lines": 0.37,
+            "home": -0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 15.68,
+          "terms": {
+            "lines": 3.14,
+            "home": -0.13,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.19
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "MIN",
         "allowed_ppg": 6.28,
@@ -1707,7 +2703,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1722,11 +2718,12 @@
       "game": null,
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": null,
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1751,6 +2748,7 @@
       },
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": {
         "defense": "LAC",
         "allowed_ppg": 3.69,
@@ -1763,7 +2761,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1807,6 +2805,44 @@
         "calibration": -0.33,
         "rearrangement": 0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 1.74,
+          "terms": {
+            "lines": 0.79,
+            "home": 0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.05
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 8.53,
+          "terms": {
+            "lines": 2.83,
+            "home": -0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.49
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 21.32,
+          "terms": {
+            "lines": 0.27,
+            "home": 0.31,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.47
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "NE",
         "allowed_ppg": 8.54,
@@ -1819,7 +2855,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1863,6 +2899,44 @@
         "calibration": -0.02,
         "rearrangement": 0.44
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.28,
+          "terms": {
+            "lines": 0.02,
+            "home": -0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.05
+        },
+        "q50": {
+          "typical": 1.69,
+          "terms": {
+            "lines": -0.03,
+            "home": -0.02,
+            "rest": -0.02,
+            "roof": 0.0,
+            "opponent": -0.14
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.21
+        },
+        "q90": {
+          "typical": 12.5,
+          "terms": {
+            "lines": 1.7,
+            "home": 0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.17
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        }
+      },
       "opponent": {
         "defense": "NO",
         "allowed_ppg": 0.67,
@@ -1880,7 +2954,7 @@
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1924,6 +2998,44 @@
         "calibration": -0.02,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": -0.03,
+          "terms": {
+            "lines": 0.02,
+            "home": -0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q50": {
+          "typical": 0.6,
+          "terms": {
+            "lines": -0.04,
+            "home": 0.0,
+            "rest": -0.02,
+            "roof": 0.0,
+            "opponent": -0.08
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 9.05,
+          "terms": {
+            "lines": 0.29,
+            "home": 0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.09
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "NO",
         "allowed_ppg": 0.67,
@@ -1936,7 +3048,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1980,6 +3092,44 @@
         "calibration": -0.02,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.05,
+          "terms": {
+            "lines": 0.07,
+            "home": 0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 0.59,
+          "terms": {
+            "lines": 0.22,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.08
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 9.24,
+          "terms": {
+            "lines": 0.96,
+            "home": -0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.26
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "DAL",
         "allowed_ppg": 1.72,
@@ -1992,7 +3142,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2036,6 +3186,44 @@
         "calibration": -0.02,
         "rearrangement": -0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.2,
+          "terms": {
+            "lines": 0.07,
+            "home": -0.02,
+            "rest": -0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.2
+        },
+        "q50": {
+          "typical": 1.62,
+          "terms": {
+            "lines": 0.56,
+            "home": -0.02,
+            "rest": 0.06,
+            "roof": 0.0,
+            "opponent": 0.04
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.25
+        },
+        "q90": {
+          "typical": 12.8,
+          "terms": {
+            "lines": 3.0,
+            "home": 0.02,
+            "rest": 0.14,
+            "roof": 0.0,
+            "opponent": 0.22
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "HOU",
         "allowed_ppg": 2.47,
@@ -2048,7 +3236,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2092,6 +3280,44 @@
         "calibration": -0.02,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.22,
+          "terms": {
+            "lines": 0.07,
+            "home": -0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.13
+        },
+        "q50": {
+          "typical": 1.65,
+          "terms": {
+            "lines": 0.32,
+            "home": -0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.02
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.2
+        },
+        "q90": {
+          "typical": 12.7,
+          "terms": {
+            "lines": 2.22,
+            "home": 0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.24
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        }
+      },
       "opponent": {
         "defense": "LV",
         "allowed_ppg": 3.82,
@@ -2104,7 +3330,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2148,6 +3374,44 @@
         "calibration": -0.0,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.01,
+          "terms": {
+            "lines": 0.04,
+            "home": 0.0,
+            "rest": -0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q50": {
+          "typical": 1.44,
+          "terms": {
+            "lines": 0.01,
+            "home": -0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 4.11,
+          "terms": {
+            "lines": 0.36,
+            "home": 0.04,
+            "rest": -0.06,
+            "roof": 0.0,
+            "opponent": 0.02
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        }
+      },
       "opponent": {
         "defense": "IND",
         "allowed_ppg": 1.59,
@@ -2160,7 +3424,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2204,6 +3468,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.03,
+          "terms": {
+            "lines": 0.01,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        },
+        "q50": {
+          "typical": 1.64,
+          "terms": {
+            "lines": 0.01,
+            "home": 0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.1
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        },
+        "q90": {
+          "typical": 6.87,
+          "terms": {
+            "lines": 0.3,
+            "home": 0.02,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.05
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "MIA",
         "allowed_ppg": 1.05,
@@ -2216,7 +3518,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2260,6 +3562,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.04,
+          "terms": {
+            "lines": 0.04,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 1.96,
+          "terms": {
+            "lines": 0.2,
+            "home": -0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.01
+        },
+        "q90": {
+          "typical": 6.5,
+          "terms": {
+            "lines": 0.89,
+            "home": -0.04,
+            "rest": 0.01,
+            "roof": 0.0,
+            "opponent": -0.12
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "BUF",
         "allowed_ppg": 0.21,
@@ -2272,7 +3612,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2316,6 +3656,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.13,
+          "terms": {
+            "lines": 0.07,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 3.07,
+          "terms": {
+            "lines": 0.13,
+            "home": -0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 9.51,
+          "terms": {
+            "lines": 3.1,
+            "home": -0.17,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.49
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "CHI",
         "allowed_ppg": 4.0,
@@ -2333,7 +3711,7 @@
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2377,6 +3755,44 @@
         "calibration": -0.0,
         "rearrangement": 0.0
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.27,
+          "terms": {
+            "lines": 0.07,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.01,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q50": {
+          "typical": 3.3,
+          "terms": {
+            "lines": 0.28,
+            "home": 0.01,
+            "rest": 0.0,
+            "roof": 0.14,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 9.31,
+          "terms": {
+            "lines": 3.39,
+            "home": 0.17,
+            "rest": 0.0,
+            "roof": -0.06,
+            "opponent": -0.32
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        }
+      },
       "opponent": {
         "defense": "GB",
         "allowed_ppg": 4.48,
@@ -2389,7 +3805,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2433,6 +3849,44 @@
         "calibration": -0.0,
         "rearrangement": -0.01
       },
+      "explanation": {
+        "q10": {
+          "typical": 0.27,
+          "terms": {
+            "lines": 0.07,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.01,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.0
+        },
+        "q50": {
+          "typical": 3.3,
+          "terms": {
+            "lines": 0.05,
+            "home": -0.01,
+            "rest": 0.0,
+            "roof": 0.15,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 9.25,
+          "terms": {
+            "lines": 3.24,
+            "home": -0.17,
+            "rest": 0.0,
+            "roof": -0.04,
+            "opponent": -0.4
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        }
+      },
       "opponent": {
         "defense": "DEN",
         "allowed_ppg": 5.62,
@@ -2445,7 +3899,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2460,11 +3914,12 @@
       "game": null,
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": null,
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2489,6 +3944,7 @@
       },
       "quantiles": null,
       "drivers": null,
+      "explanation": null,
       "opponent": {
         "defense": "KC",
         "allowed_ppg": 4.54,
@@ -2501,7 +3957,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2544,6 +4000,44 @@
         "prior": -0.45,
         "calibration": -0.0,
         "rearrangement": 0.0
+      },
+      "explanation": {
+        "q10": {
+          "typical": 0.27,
+          "terms": {
+            "lines": 0.07,
+            "home": 0.0,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.0
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q50": {
+          "typical": 3.3,
+          "terms": {
+            "lines": 0.29,
+            "home": -0.01,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": 0.01
+          },
+          "calibration": 0.0,
+          "rearrangement": 0.0
+        },
+        "q90": {
+          "typical": 9.25,
+          "terms": {
+            "lines": 3.28,
+            "home": -0.16,
+            "rest": 0.0,
+            "roof": 0.0,
+            "opponent": -0.37
+          },
+          "calibration": 0.0,
+          "rearrangement": -0.01
+        }
       },
       "opponent": {
         "defense": "MIN",

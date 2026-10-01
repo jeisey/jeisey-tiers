@@ -218,6 +218,21 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "(ADR-096)."
         ),
     ),
+    "weekly_context": ArtifactSpec(
+        artifact="weekly_context",
+        schema_name="weekly_game_context",
+        json_filename="weekly_context.json",
+        # No CSV, like the weekly projections it sits beside (ADR-099).
+        csv_filename=None,
+        key_fields=("build_id", "team"),
+        sort_fields=("team",),
+        description=(
+            "Each team's target-week game as published facts: the registry venue and its "
+            "fixed roof type, the kickoff forecast with its provider, times and status, the "
+            "listed lagged starters and notable skill players, and the typical-week reference "
+            "the weekly explanations are measured against (ADR-099)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

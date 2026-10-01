@@ -130,9 +130,7 @@ def test_every_name_the_probe_resolved_points_at_the_same_item_as_its_venue() ->
     import yaml
 
     document = yaml.safe_load((repo_root() / "config/venues.yaml").read_text(encoding="utf-8"))
-    items = {
-        alias: entry["wikidata"] for entry in document["venues"] for alias in entry["aliases"]
-    }
+    items = {alias: entry["wikidata"] for entry in document["venues"] for alias in entry["aliases"]}
     resolution = json.loads((EVIDENCE / "venue_resolution.json").read_text(encoding="utf-8"))
     checked = 0
     for name, page in resolution["schedule_names"].items():

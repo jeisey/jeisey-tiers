@@ -191,6 +191,8 @@ def run_ros_build(
     snapshot_out: Path | None = None,
     weekly_model_dir: Path | None = None,
     injuries: pl.DataFrame | None = None,
+    forecast_rows: Sequence[Mapping[str, Any]] | None = None,
+    shadow_out: Path | None = None,
     write: bool = True,
 ) -> RosBuildResult:
     """Build the current rest-of-season board and write the in-season artifacts.
@@ -443,9 +445,16 @@ def run_ros_build(
         gate=gate,
         injuries=injuries,
         allow_fetch=sources is None,
+        store=store,
+        forecast_rows=forecast_rows,
+        shadow_out=shadow_out if write else None,
+        git_sha=git_sha,
     )
     if weekly_records:
         records["weekly_projections"] = weekly_records
+        context_records = weekly_summary.pop("_context_records", []) if weekly_summary else []
+        if context_records:
+            records["weekly_context"] = context_records
 
     metadata = _ros_metadata(
         settings,
@@ -1215,8 +1224,14 @@ def _weekly_layer(
     gate: QualityGate,
     injuries: pl.DataFrame | None,
     allow_fetch: bool,
+    store: Path | None = None,
+    forecast_rows: Sequence[Mapping[str, Any]] | None = None,
+    shadow_out: Path | None = None,
+    git_sha: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    """Build ``weekly_projections`` (ADR-096), or explain why not. Never costs a board."""
+    """Build ``weekly_projections`` (ADR-096) and ``weekly_context`` (ADR-099), or explain why
+    not. Never costs a board. The context records ride in the summary under
+    ``_context_records`` and are withheld together with the projections."""
     from ffdraft.artifacts.schemas import record_schema_version
     from ffdraft.paths import repo_root
     from ffdraft.signals.usage import current_teams_from_roster
@@ -1248,7 +1263,7 @@ def _weekly_layer(
             }
             for record in opportunity_records
         }
-        reports, reports_at = _injury_reports(
+        reports, reports_at, report_frame = _injury_reports(
             injuries,
             season=season,
             week=cutoff.through_week + 1,
@@ -1321,6 +1336,31 @@ def _weekly_layer(
             ),
         )
         return [], None
+    context_records, context_summary = _weekly_context_layer(
+        loaded=loaded,
+        season=season,
+        cutoff=cutoff,
+        as_of=as_of,
+        build_id=build_id,
+        gate=gate,
+        report_frame=report_frame,
+        store=store,
+        forecast_rows=forecast_rows,
+    )
+    shadow_summary = _weekly_shadow(
+        result=result,
+        loaded=loaded,
+        season=season,
+        cutoff=cutoff,
+        as_of=as_of,
+        build_id=build_id,
+        git_sha=git_sha,
+        gate=gate,
+        report_frame=report_frame,
+        store=store,
+        forecast_rows=forecast_rows,
+        shadow_out=shadow_out,
+    )
     gate.add(
         QualityCheck.ok(
             "ros.weekly_projections",
@@ -1337,12 +1377,274 @@ def _weekly_layer(
             ),
         ),
     )
-    return result.records, weekly_metadata(
+    metadata = weekly_metadata(
         model,
         summary,
         through_week=cutoff.through_week,
         injuries_retrieved_at=reports_at,
+        context=context_summary,
     )
+    metadata["_context_records"] = context_records
+    metadata["shadow"] = shadow_summary
+    return result.records, metadata
+
+
+def _weekly_shadow(
+    *,
+    result: Any,
+    loaded: Any,
+    season: int,
+    cutoff: RosCutoff,
+    as_of: datetime,
+    build_id: str,
+    git_sha: str | None,
+    gate: QualityGate,
+    report_frame: pl.DataFrame | None,
+    store: Path | None,
+    forecast_rows: Sequence[Mapping[str, Any]] | None,
+    shadow_out: Path | None,
+) -> dict[str, Any]:
+    """The private shadow record (ADR-099): written beside the build, never published.
+
+    Its summary is public (``ros_build_metadata.weekly.shadow``) so a reader can see that a
+    candidate is under prospective evaluation and how much evidence it has; the rows are not.
+    """
+    from ffdraft.paths import repo_root
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.weekly.frozen_v2 import WEEKLY_V2_MODEL_VERSION
+    from ffdraft.weekly.shadow import (
+        DEFAULT_V2_MODEL_DIR,
+        attach_serving_v2_inputs,
+        build_shadow_rows,
+        load_v2_model,
+        summarise,
+    )
+    from ffdraft.weekly.venues import load_venue_registry
+
+    summary: dict[str, Any] = {
+        "model_version": WEEKLY_V2_MODEL_VERSION,
+        "status": "absent",
+        "rows": 0,
+    }
+    if result.frame is None or result.quantiles is None or result.frame.is_empty():
+        return summary
+    try:
+        v2 = load_v2_model(repo_root() / DEFAULT_V2_MODEL_DIR)
+        forecasts, forecast_meta = _forecast_readings(
+            season=season,
+            as_of=as_of,
+            store=store,
+            forecast_rows=forecast_rows,
+            gate=QualityGate(),
+        )
+        frame, statuses = attach_serving_v2_inputs(
+            result.frame,
+            forecasts=forecasts,
+            registry=load_venue_registry(),
+            schedule=loaded.sources.schedule,
+            snaps=bridged_snap_counts(loaded.sources),
+            weekly=loaded.sources.weekly_stats,
+            injuries=report_frame,
+            season=season,
+            through_week=cutoff.through_week,
+            as_of=as_of,
+        )
+        rows = build_shadow_rows(
+            frame=frame,
+            v1_quantiles=result.quantiles,
+            v2_model=v2,
+            as_of=as_of,
+            weather_status=statuses,
+            build_id=build_id,
+            sources={"forecast": forecast_meta},
+        )
+    except Exception as exc:  # noqa: BLE001 - private evidence; its failure costs only itself
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_shadow_failed",
+                stage="ros_build",
+                message="the private weekly shadow record could not be built; nothing public moves",
+                observed=f"{type(exc).__name__}: {exc}",
+                severity=Severity.WARNING,
+            ),
+        )
+        return {**summary, "status": "failed"}
+    counts = summarise(rows)
+    summary = {
+        **summary,
+        "status": "shadow" if v2 is not None else "absent",
+        "configuration_hash": v2.spec.configuration_hash() if v2 is not None else None,
+        **counts,
+    }
+    if shadow_out is not None:
+        shadow_out.parent.mkdir(parents=True, exist_ok=True)
+        shadow_out.write_text(
+            json.dumps(
+                {
+                    "season": season,
+                    "as_of_utc": isoformat_utc(as_of),
+                    "build_id": build_id,
+                    "git_sha": git_sha,
+                    "summary": summary,
+                    "rows": rows,
+                },
+                sort_keys=True,
+                default=str,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    gate.add(
+        QualityCheck.ok(
+            "ros.weekly_shadow",
+            stage="ros_build",
+            message=(
+                "the private weekly shadow record: v1 and the shadow v2 side by side with every "
+                "pregame input (ADR-099); never published"
+            ),
+            observed=(
+                f"{counts['rows']} row(s), {counts['pregame']} before kickoff, "
+                f"{counts['with_v2']} with a v2 projection; written={shadow_out is not None}"
+            ),
+        ),
+    )
+    return summary
+
+
+def _weekly_context_layer(
+    *,
+    loaded: Any,
+    season: int,
+    cutoff: RosCutoff,
+    as_of: datetime,
+    build_id: str,
+    gate: QualityGate,
+    report_frame: pl.DataFrame | None,
+    store: Path | None,
+    forecast_rows: Sequence[Mapping[str, Any]] | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """``weekly_context`` (ADR-099): published facts beside the projections, or nothing."""
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.artifacts.validate import weekly_context_checks
+    from ffdraft.contracts.quality import critical_failures
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.weekly.gameday import build_weekly_context_records
+    from ffdraft.weekly.venues import load_venue_registry
+
+    try:
+        forecasts, forecast_meta = _forecast_readings(
+            season=season,
+            as_of=as_of,
+            store=store,
+            forecast_rows=forecast_rows,
+            gate=gate,
+        )
+        records, summary = build_weekly_context_records(
+            schedule=loaded.sources.schedule,
+            season=season,
+            through_week=cutoff.through_week,
+            as_of=as_of,
+            build_id=build_id,
+            schema_version=record_schema_version("weekly_game_context"),
+            registry=load_venue_registry(),
+            forecasts=forecasts,
+            injuries=report_frame,
+            snaps=bridged_snap_counts(loaded.sources),
+            weekly=loaded.sources.weekly_stats,
+        )
+    except Exception as exc:  # noqa: BLE001 - published context; its failure costs only itself
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_context_failed",
+                stage="ros_build",
+                message=(
+                    "the game-day context could not be built, so weekly_context.json is "
+                    "withheld; the projections and every board are unaffected"
+                ),
+                observed=f"{type(exc).__name__}: {exc}",
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+    refused = critical_failures(weekly_context_checks(records, "ros_build"))
+    if refused:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_context_invalid",
+                stage="ros_build",
+                message=(
+                    "the game-day context fails the artifact validator's own rules, so "
+                    "weekly_context.json is withheld; the projections are unaffected"
+                ),
+                observed="; ".join(f"{check.check_id}: {check.observed}" for check in refused)[
+                    :600
+                ],
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+    gate.add(
+        QualityCheck.ok(
+            "ros.weekly_context",
+            stage="ros_build",
+            message="game-day context published beside the weekly projections (ADR-099)",
+            observed=(
+                f"{summary['records']} team(s); forecasts {summary.get('weather_status')}; "
+                f"{summary.get('reports_final', 0)} report(s) with game statuses, "
+                f"{summary.get('listed_players', 0)} listed player(s)"
+            ),
+        ),
+    )
+    return records, {**summary, "forecast": forecast_meta}
+
+
+def _forecast_readings(
+    *,
+    season: int,
+    as_of: datetime,
+    store: Path | None,
+    forecast_rows: Sequence[Mapping[str, Any]] | None,
+    gate: QualityGate,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """The newest retained forecast capture at or before ``as_of``: ``game_id -> reading``."""
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.weekly.capture import FORECAST_SOURCE_ID, read_gameday_capture
+
+    rows: Sequence[Mapping[str, Any]]
+    if forecast_rows is not None:
+        rows = list(forecast_rows)
+        meta: dict[str, Any] = {"source": "given", "capture_key": None, "observed_at_utc": None}
+    elif store is not None:
+        capture = read_gameday_capture(
+            SnapshotStore(root=store, prefix=""),
+            source_id=FORECAST_SOURCE_ID,
+            season=season,
+            at_or_before=as_of,
+        )
+        if capture is None:
+            gate.add(
+                QualityCheck.fail(
+                    "ros.forecast_capture_absent",
+                    stage="ros_build",
+                    message=(
+                        "no forecast capture is retained at or before this build, so every "
+                        "game's weather reads unavailable"
+                    ),
+                    observed=str(store),
+                    severity=Severity.WARNING,
+                ),
+            )
+            return {}, {"source": "store", "capture_key": None, "observed_at_utc": None}
+        rows = capture.rows
+        meta = {
+            "source": "store",
+            "capture_key": capture.snapshot_key,
+            "observed_at_utc": isoformat_utc(capture.observed_at_utc),
+            "providers": capture.details.get("providers"),
+        }
+    else:
+        return {}, {"source": "none", "capture_key": None, "observed_at_utc": None}
+    return {str(row["game_id"]): dict(row) for row in rows}, meta
 
 
 def weekly_metadata(
@@ -1351,6 +1653,7 @@ def weekly_metadata(
     *,
     through_week: int,
     injuries_retrieved_at: datetime | None,
+    context: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """``ros_build_metadata.weekly``: one definition for the build and the fixture (ADR-096)."""
     from ffdraft.weekly.frozen import (
@@ -1392,6 +1695,37 @@ def weekly_metadata(
             isoformat_utc(injuries_retrieved_at) if injuries_retrieved_at else None
         ),
         "statement": WEEKLY_STATEMENT,
+        "explanation": explanation_metadata(),
+        "context": dict(context) if context is not None else None,
+    }
+
+
+def explanation_metadata() -> dict[str, Any]:
+    """How every record's ``explanation`` was made, printed beside it (ADR-099)."""
+    from ffdraft.weekly.explain import (
+        EXPLAINED_LEVELS,
+        EXPLANATION_RULE_VERSION,
+        REFERENCE_SHRINK_GAMES,
+        V1_EXPLANATION_GROUPS,
+    )
+
+    return {
+        "rule": EXPLANATION_RULE_VERSION,
+        "levels": [f"q{round(level * 100):02d}" for level in EXPLAINED_LEVELS],
+        "groups": {group.key: group.label for group in V1_EXPLANATION_GROUPS},
+        "reference_shrink_games": REFERENCE_SHRINK_GAMES,
+        "reference": (
+            "His typical week: everything about him held at this week's values, in ordinary "
+            "games for him: his team's mean posted lines over its completed games (shrunk "
+            "toward the league by three games), half at home, his team's indoor share, equal "
+            "rest and a league-average defence at this cutoff."
+        ),
+        "statement": (
+            "Each term is how far this model's number moved with that input, the others held "
+            "(exact Shapley values over the game inputs). A model attribution, not a measured "
+            "causal effect. Weather and injuries are printed as context; weekly-startsit-v1 "
+            "reads neither, so they carry no points."
+        ),
     }
 
 
@@ -1414,7 +1748,7 @@ def _injury_reports(
     allow_fetch: bool,
     as_of: datetime,
     gate: QualityGate,
-) -> tuple[dict[str, dict[str, Any]], datetime | None]:
+) -> tuple[dict[str, dict[str, Any]], datetime | None, pl.DataFrame | None]:
     """The target week's official report, or nothing. Optional in every sense."""
     from ffdraft.weekly.injuries import normalize_injuries, reports_for_week
 
@@ -1437,10 +1771,10 @@ def _injury_reports(
                     severity=Severity.WARNING,
                 ),
             )
-            return {}, None
+            return {}, None, None
     if frame is None:
-        return {}, None
-    return reports_for_week(frame, season=season, week=week), retrieved
+        return {}, None, None
+    return reports_for_week(frame, season=season, week=week), retrieved, frame
 
 
 def _opportunity_context(
