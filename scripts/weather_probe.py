@@ -255,6 +255,10 @@ RESOLVE: tuple[dict[str, Any], ...] = (
 #: For the venues nflverse's roof history cannot settle (international venues, a new building),
 #: every sentence of the article about the roof, the pitch or the open air is kept as well.
 SCHEDULE_NAMES: tuple[str, ...] = (
+    "Allianz Arena (Munich)",
+    "Football Arena Munich",
+    "Munich Football Arena",
+    "Tottenham Hotspur Stadium",
     "Azteca Stadium",
     "Bernabeu",
     "CenturyLink Field",
@@ -292,12 +296,34 @@ ROOF_EVIDENCE_TITLES: tuple[str, ...] = (
     "Twickenham Stadium",
     "Waldstadion (Frankfurt)",
     "Wembley Stadium",
+    "Mercedes-Benz Stadium",
+    "Reliant Stadium",
 )
 PITCH_SENTENCE = re.compile(
     r"[^.]*\b(retractable|roof\w*|dome\w*|open[- ]air|outdoor\w*|indoor\w*|enclosed|canopy|"
     r"uncovered|covers?|covered|elements|sky)\b[^.]*\.",
     re.IGNORECASE,
 )
+
+
+def _wikitext(fetcher: Fetcher, title: str) -> str:
+    """The article's full wikitext (redirects followed), for infobox fields and roof lines."""
+    query = urllib.parse.urlencode(
+        {
+            "action": "query",
+            "format": "json",
+            "formatversion": "2",
+            "redirects": "1",
+            "prop": "revisions",
+            "rvprop": "content",
+            "rvslots": "main",
+            "titles": title,
+        },
+    )
+    _, payload, _ = fetcher.get(f"https://en.wikipedia.org/w/api.php?{query}")
+    page = ((payload or {}).get("query") or {}).get("pages", [{}])[0] if payload else {}
+    revision = (page.get("revisions") or [{}])[0]
+    return str(((revision.get("slots") or {}).get("main") or {}).get("content") or "")
 
 
 def probe_roof_evidence(fetcher: Fetcher) -> dict[str, Any]:
@@ -320,7 +346,17 @@ def probe_roof_evidence(fetcher: Fetcher) -> dict[str, Any]:
         status, payload, _ = fetcher.get(f"https://en.wikipedia.org/w/api.php?{query}")
         page = ((payload or {}).get("query") or {}).get("pages", [{}])[0] if payload else {}
         text = page.get("extract") or ""
+        wikitext = _wikitext(fetcher, title)
         roofs[title] = {
+            "infobox": {
+                field: re.findall(rf"\|\s*{field}\s*=\s*([^\n]*)", wikitext)[:2]
+                for field in ("roof", "type", "surface", "acreage", "field_shape")
+            },
+            "wikitext_roof_lines": [
+                " ".join(line.split())[:300]
+                for line in wikitext.splitlines()
+                if re.search(r"\b(roof\w*|open[- ]air|retract\w*|canopy|uncovered)\b", line, re.I)
+            ][:40],
             "wikipedia_status": status,
             "wikipedia_title": page.get("title"),
             "wikipedia_revid": (page.get("revisions") or [{}])[0].get("revid"),
