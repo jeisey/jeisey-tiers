@@ -250,6 +250,89 @@ RESOLVE: tuple[dict[str, Any], ...] = (
 )
 
 
+#: Every stadium name the 2017-2026 schedule prints: each must redirect to the article (and
+#: Wikidata item) of the venue the registry files it under, which is the alias's provenance.
+#: For the venues nflverse's roof history cannot settle (international venues, a new building),
+#: every sentence of the article about the roof, the pitch or the open air is kept as well.
+SCHEDULE_NAMES: tuple[str, ...] = (
+    "Azteca Stadium",
+    "Bernabeu",
+    "CenturyLink Field",
+    "Deutsche Bank Park",
+    "Estadio Banorte",
+    "EverBank Field",
+    "FC Bayern Munich Stadium",
+    "FedExField",
+    "FirstEnergy Stadium",
+    "GEHA Field at Arrowhead Stadium",
+    "Heinz Field",
+    "Maracana Stadium",
+    "Mercedes-Benz Superdome",
+    "New Era Field",
+    "Oakland-Alameda County Coliseum",
+    "Paul Brown Stadium",
+    "Reliant Stadium",
+    "Ring Central Coliseum",
+    "Sports Authority Field at Mile High",
+    "StubHub Center",
+    "TIAA Bank Stadium",
+    "Tottenham Stadium",
+    "University of Phoenix Stadium",
+)
+ROOF_EVIDENCE_TITLES: tuple[str, ...] = (
+    "Allianz Arena",
+    "Arena Corinthians",
+    "Bernabéu (stadium)",
+    "Estadio Azteca",
+    "Highmark Stadium",
+    "Maracanã Stadium",
+    "Melbourne Cricket Ground",
+    "Stade de France",
+    "Tottenham Hotspur Stadium",
+    "Twickenham Stadium",
+    "Waldstadion (Frankfurt)",
+    "Wembley Stadium",
+)
+PITCH_SENTENCE = re.compile(
+    r"[^.]*\b(retractable|roof\w*|dome\w*|open[- ]air|outdoor\w*|indoor\w*|enclosed|canopy|"
+    r"uncovered|covers?|covered|elements|sky)\b[^.]*\.",
+    re.IGNORECASE,
+)
+
+
+def probe_roof_evidence(fetcher: Fetcher) -> dict[str, Any]:
+    """Schedule names' redirect targets, and roof/pitch sentences for unsettled venues."""
+    names = {title: _page_record(fetcher, title) for title in SCHEDULE_NAMES}
+    roofs: dict[str, Any] = {}
+    for title in ROOF_EVIDENCE_TITLES:
+        query = urllib.parse.urlencode(
+            {
+                "action": "query",
+                "format": "json",
+                "formatversion": "2",
+                "redirects": "1",
+                "prop": "extracts|revisions|pageprops",
+                "rvprop": "ids|timestamp",
+                "explaintext": "1",
+                "titles": title,
+            },
+        )
+        status, payload, _ = fetcher.get(f"https://en.wikipedia.org/w/api.php?{query}")
+        page = ((payload or {}).get("query") or {}).get("pages", [{}])[0] if payload else {}
+        text = page.get("extract") or ""
+        roofs[title] = {
+            "wikipedia_status": status,
+            "wikipedia_title": page.get("title"),
+            "wikipedia_revid": (page.get("revisions") or [{}])[0].get("revid"),
+            "wikidata_item": (page.get("pageprops") or {}).get("wikibase_item"),
+            "sentences": [
+                " ".join(match.group(0).split())[:400] for match in PITCH_SENTENCE.finditer(text)
+            ][:40],
+        }
+        print(f"roof evidence {title}: {len(roofs[title]['sentences'])} sentences", flush=True)
+    return {"schedule_names": names, "roof_evidence": roofs}
+
+
 HATNOTE = re.compile(r"\{\{(?:About|For|Other uses|Distinguish|Redirect)[^}]*\}\}")
 CLOSED = re.compile(r"\|\s*(?:closed|demolished)\s*=\s*([^\n|]*)")
 
@@ -820,6 +903,9 @@ def main() -> int:
             "calls_by_host": dict(fetcher.calls),
             "failures": fetcher.failures,
         }
+        resolution.update(probe_roof_evidence(fetcher))
+        resolution["_run"]["calls_by_host"] = dict(fetcher.calls)
+        resolution["_run"]["finished_at_utc"] = datetime.now(UTC).isoformat()
         (out / "venue_resolution.json").write_text(
             json.dumps(resolution, indent=2, ensure_ascii=False) + "\n"
         )
