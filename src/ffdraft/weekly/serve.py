@@ -54,6 +54,7 @@ from ffdraft.weekly.frozen import (
     WEEKLY_QUANTILE_LEVELS,
 )
 from ffdraft.weekly.model import WeeklyModel, quantile_columns
+from ffdraft.weekly.venues import VenueRegistry
 
 __all__ = ["WeeklyServeResult", "build_weekly_projection_records"]
 
@@ -99,6 +100,7 @@ def build_weekly_projection_records(
     build_id: str,
     schema_version: str,
     injury_reports: Mapping[str, Mapping[str, Any]] | None = None,
+    venues: VenueRegistry | None = None,
 ) -> WeeklyServeResult:
     target_week = through_week + 1
     horizon = fantasy_horizon(season)
@@ -130,7 +132,8 @@ def build_weekly_projection_records(
     if frame.is_empty():
         return WeeklyServeResult([], {"target_week": target_week, "reason": "no_players"})
 
-    season_context = team_game_context(schedule, [season])
+    # The venue registry's verified fixed roof wins over the schedule's (context.py).
+    season_context = team_game_context(schedule, [season], venues=venues)
     context = season_context.filter(pl.col("week") == target_week)
     scored = scored_position_rows(weekly, scoring, [season - 1, season])
     allowed = opponent_allowed(scored, season=season, through_week=through_week)

@@ -1397,8 +1397,8 @@
     "injury_report": "not an input; the target is points given that he plays",
     "market_ranks": "ADP, ECR and every crowd-rank proxy: audited by forbidden_reason over the weekly feature list, which may name only the three line features"
   },
-  "generated_at_utc": "2026-10-01T18:05:52Z",
-  "git_sha": "f62f849",
+  "generated_at_utc": "2026-10-01T20:53:23Z",
+  "git_sha": "3156bda",
   "grain": "season x target_week x player_id x scoring_preset",
   "limitations": [
     "Points given that he plays. A Questionable player's projection is not discounted for the chance he sits; the page prints the designation's measured appearance rate beside it instead.",
@@ -1407,7 +1407,8 @@
     "A player with no appearance this season is projected from the rest-of-season snapshot's prior and role fields alone.",
     "The margin uncertainty is one number per slot, measured over a standard lineup. A league with unusual rosters has a different one.",
     "Same-game correlation is measured by position pair and applied through a Gaussian copula; a pair with too few rows is treated as independent and the page says so.",
-    "The injury report's point-in-time record (ADR-099): 24 of 44,356 2017-2024 rows were last modified after kickoff; 2025-2026 rows carry no timestamp. The designation base rates could move slightly if nflverse revises rows; no projection reads them."
+    "The injury report's point-in-time record (ADR-099): 24 of 44,356 2017-2024 rows were last modified after kickoff; 2025-2026 rows carry no timestamp. The designation base rates could move slightly if nflverse revises rows; no projection reads them.",
+    "Its roof input is the schedule's, except where the venue registry verifies a fixed roof the schedule contradicts: nflverse files the MCG, the Stade de France and the Allianz Arena (2026, open to the sky) as dome, and those games are read as outdoors (ADR-099 amendment). Every 2017-2025 roof it was trained on already agrees."
   ],
   "measurements": {
     "correlation": {

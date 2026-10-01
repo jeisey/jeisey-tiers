@@ -919,12 +919,13 @@ denies every host involved except GitHub, so — as for Phase 0 (ADR-009) — a 
 evidence and committed it to `docs/source-probes/2026-10-01/weather/`; the injury probes ran
 locally against nflverse's GitHub release (`docs/source-probes/2026-10-01/injuries/`).
 
-### 20.1 The venue registry (`config/venues.yaml`, `venues_v1`)
+### 20.1 The venue registry (`config/venues.yaml`, `venues_v2`)
 
 | evidence file | what it holds |
 |---|---|
 | `venues.json` | for each stadium id the 2017–2026 schedule prints: the English Wikipedia article (title, revision id and time, its coordinates), the linked Wikidata item and its P625 coordinate, and every sentence of the article naming a roof |
 | `venue_resolution.json` | the two venues the first pass could not place (below), every schedule stadium *name*'s redirect target and Wikidata item, the infobox `roof` field and roof lines of the article wikitext for the venues nflverse's history cannot settle, and both providers' terms pages (§20.2) |
+| `roof_documents.json` (`--phases roofs`) | for the two venues the articles above did not settle, every roof paragraph **whole** from the English and French Wikipedia roof sections and from the architects', builders' and stadium sites' own pages, each with status, final URL and body digest |
 | `tests/fixtures/weekly/schedule_stadiums.csv` | every (season, stadium id, stadium name) the schedule prints, with the roof values nflverse recorded |
 
 * **Coordinates** are Wikidata P625 (CC0), rounded to four decimals; they agree with the
@@ -944,12 +945,35 @@ locally against nflverse's GitHub release (`docs/source-probes/2026-10-01/injuri
   written after kickoff: `outdoors`, `dome`, `open`/`closed`) where the NFL has played there,
   and the article's infobox `roof` field or roof sentences otherwise. Frankfurt and the
   Bernabéu are `retractable` (infobox); Wembley is `open` (infobox "Partially retractable",
-  "does not completely enclose it", eleven recorded `outdoors` games). The Melbourne Cricket
-  Ground and the Stade de France are **`unverified`**: their articles name roofs over stands
-  and nothing says whether the pitch is covered, and nflverse's 2026 `dome` for both is a
-  pre-game value (the same file says `dome` for the Munich game, against two recorded
-  `outdoors` games at that building). An unverified venue fails closed: no roof type, no
-  weather.
+  "does not completely enclose it", eleven recorded `outdoors` games).
+* **The Melbourne Cricket Ground and the Stade de France are `open`** (`venues_v2`). `venues_v1`
+  left both `unverified`: the first probe kept 300-character lines, which cut the Stade de
+  France's roof paragraph at "It was designed to easily p…", and the MCG article names roofs
+  over stands only. `roof_documents.json` settles both, and each quotation in the registry's
+  provenance is checked against it verbatim by test:
+  * MCG: COX Architecture, architects of the Northern Stand, "The MCG is a ‘big sky’
+    stadium … where climate and weather add interest to the idiosyncrasy and strategy of game
+    play"; AusStadiums "Arena roof No"; *The Age* (2025-09-24) "Any move to put a roof over the
+    Melbourne Cricket Ground could cost an estimated $6 billion";
+  * Stade de France: English Wikipedia (rev 1375923585) "designed to easily protect the 80,000
+    spectators without covering the playing field"; French Wikipedia (rev 239899809) "il
+    protège les spectateurs sans couvrir l’aire de jeu"; Terraplas "the pitch itself remains
+    uncovered". What is "partially retractable" is the lower stand.
+
+  `unverified` stays a registry value for the next venue the evidence cannot settle; such a
+  venue fails closed (no roof type, no weather).
+* **nflverse's roof label is wrong for three 2026 games abroad**, all open to the sky: the MCG
+  (week 1, still `dome` after the game, beside a recorded 57 °F and 4 mph wind), the Stade de
+  France (week 7) and the Allianz Arena (`MUN01`, week 10, against two recorded `outdoors`
+  games at that building). So wherever a game's venue has a **verified fixed roof** (`open` or
+  `dome`) that the schedule's value contradicts or omits, the venue's label is published
+  (`team_matchups.roof`, `weekly_projections` `game.roof`) and v1 reads it at serving
+  (`ffdraft.weekly.venues.published_roof`, ADR-099); a retractable, unverified or unresolved
+  venue keeps the schedule's value. `weekly_context`'s `roof.recorded` stays the schedule's
+  own value, so the correction is visible. Over 2017–2025 the rule changes nothing: all 247
+  recorded (stadium-season, roof) values at fixed-roof venues already agree
+  (`tests/unit/test_weekly_context.py`), and a scan of every 2017–2026 regular-season game
+  found exactly these three disagreements.
 
 ### 20.2 Forecast providers
 

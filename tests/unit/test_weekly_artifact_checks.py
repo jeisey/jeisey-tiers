@@ -210,6 +210,23 @@ def test_an_unsettled_roof_is_never_ok(context) -> None:
     assert "weekly_context.weather_status" in _failed(weekly_context_checks(context, "test"))
 
 
+@pytest.mark.parametrize(("roof_type", "wrong"), [("open", 1.0), ("dome", 0.0)])
+def test_a_projection_reading_the_wrong_roof_at_a_fixed_venue_fails(
+    context, roof_type: str, wrong: float
+) -> None:
+    """nflverse's "dome" for an open-air stadium abroad must never reach the model (ADR-099)."""
+    record = next(r for r in context if r["venue"] and r["venue"]["roof_type"] == roof_type)
+    record["roof"]["model_indoors"] = wrong
+    record["this_week"]["indoors"] = wrong
+    assert "weekly_context.roof_agreement" in _failed(weekly_context_checks(context, "test"))
+
+
+def test_the_roof_read_and_this_weeks_roof_are_one_value(context) -> None:
+    record = next(r for r in context if r["venue"] and r["venue"]["roof_type"] == "retractable")
+    record["this_week"]["indoors"] = 1.0 - float(record["roof"]["model_indoors"] or 0.0)
+    assert "weekly_context.roof_agreement" in _failed(weekly_context_checks(context, "test"))
+
+
 def test_a_listed_player_needs_a_final_report(context) -> None:
     record = next(r for r in context if r["lineup"]["listed"])
     record["lineup"]["report_final"] = False

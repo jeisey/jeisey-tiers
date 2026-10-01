@@ -1183,6 +1183,7 @@ def _signal_records(
     """`player_usage` and `team_matchups`, through the real builders (ADR-091)."""
     from ffdraft.artifacts import record_schema_version
     from ffdraft.signals import build_player_usage_records, build_team_matchup_records
+    from ffdraft.weekly.venues import load_venue_registry, published_roofs
 
     players: dict[str, dict[str, Any]] = {}
     for row in opportunity:
@@ -1211,6 +1212,10 @@ def _signal_records(
         schema_version=record_schema_version("team_matchup"),
         lines_source_id=NFLVERSE_SOURCE_ID,
         lines_retrieved_at=as_of,
+        roofs=published_roofs(
+            load_venue_registry(),
+            list(season.schedule.filter(pl.col("season") == FIXTURE_SEASON).iter_rows(named=True)),
+        ),
     )
     return usage, matchups
 
@@ -1245,6 +1250,7 @@ def _weekly_records(
     from ffdraft.pipeline.ros import DEFAULT_WEEKLY_MODEL_DIR, weekly_metadata
     from ffdraft.weekly.model import WeeklyModel
     from ffdraft.weekly.serve import build_weekly_projection_records
+    from ffdraft.weekly.venues import load_venue_registry
 
     model_dir = repo_root() / DEFAULT_WEEKLY_MODEL_DIR
     if not (model_dir / "metadata.json").is_file():
@@ -1266,6 +1272,7 @@ def _weekly_records(
         build_id=build_id,
         schema_version=record_schema_version("weekly_projection"),
         injury_reports=reports,
+        venues=load_venue_registry(),
     )
     if not result.records:
         return [], None, []

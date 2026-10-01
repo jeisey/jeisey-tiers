@@ -29,6 +29,7 @@ from ffdraft.quality.forbidden import forbidden_reason
 from ffdraft.ros.dictionary import ros_feature_selection
 from ffdraft.signals.matchup import build_team_matchup_records
 from ffdraft.sources.nflverse_history import NflverseScheduleAdapter
+from ffdraft.weekly.venues import load_venue_registry, published_roofs
 
 _SEASON = 2026
 _RETRIEVED = datetime(2026, 9, 22, 12, 0, tzinfo=UTC)
@@ -133,6 +134,32 @@ def test_a_neutral_site_is_flagged_and_keeps_the_leagues_home_designation() -> N
     assert records["BAL"]["neutral_site"] is True
     assert records["DAL"]["home_away"] == "home"
     assert records["BAL"]["team_expected_margin"] == 3.0
+
+
+def test_a_verified_venue_roof_replaces_the_schedules_wrong_label() -> None:
+    """2026 PAR00: nflverse files the Stade de France (open to the sky) as ``dome``."""
+    game = {
+        **_game(7, "PIT", "NO", day=date(2026, 10, 25), location="Neutral"),
+        "roof": "dome",
+        "stadium_id": "PAR00",
+        "stadium": "Stade de France",
+    }
+    roofs = published_roofs(load_venue_registry(), [game])
+    assert roofs == {"2026_07_PIT_NO": "outdoors"}
+    as_of = datetime(2026, 10, 20, tzinfo=UTC)
+    assert _matchups([game], as_of=as_of)["PIT"]["roof"] == "dome"
+    corrected = build_team_matchup_records(
+        schedule=SCHEDULE_CONTRACT.build([game]),
+        season=_SEASON,
+        through_week=6,
+        as_of=as_of,
+        build_id="test",
+        schema_version="1.0",
+        lines_source_id="nflreadpy",
+        lines_retrieved_at=_RETRIEVED,
+        roofs=roofs,
+    )
+    assert {record["roof"] for record in corrected} == {"outdoors"}
 
 
 def test_rest_days_are_read_from_the_teams_own_side() -> None:

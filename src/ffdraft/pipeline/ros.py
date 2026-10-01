@@ -1094,6 +1094,7 @@ def _signal_layer(
         current_teams_from_roster,
     )
     from ffdraft.sources.nflverse import NFLVERSE_SOURCE_ID
+    from ffdraft.weekly.venues import load_venue_registry, published_roofs
 
     players: dict[str, dict[str, Any]] = {}
     for record in opportunity_records:
@@ -1149,6 +1150,10 @@ def _signal_layer(
             schema_version=record_schema_version("team_matchup"),
             lines_source_id=NFLVERSE_SOURCE_ID,
             lines_retrieved_at=lines_retrieved_at,
+            roofs=published_roofs(
+                load_venue_registry(),
+                list(sources.schedule.filter(pl.col("season") == season).iter_rows(named=True)),
+            ),
         )
     except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
         matchups = []
@@ -1237,6 +1242,7 @@ def _weekly_layer(
     from ffdraft.signals.usage import current_teams_from_roster
     from ffdraft.weekly.model import WeeklyModel
     from ffdraft.weekly.serve import build_weekly_projection_records
+    from ffdraft.weekly.venues import load_venue_registry
 
     resolved = model_dir or (repo_root() / DEFAULT_WEEKLY_MODEL_DIR)
     if not (resolved / "metadata.json").is_file():
@@ -1285,6 +1291,7 @@ def _weekly_layer(
             build_id=build_id,
             schema_version=record_schema_version("weekly_projection"),
             injury_reports=reports,
+            venues=load_venue_registry(),
         )
     except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
         gate.add(

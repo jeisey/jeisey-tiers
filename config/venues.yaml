@@ -13,11 +13,15 @@
 # Coordinates are Wikidata P625 (CC0) of the item the English Wikipedia article links,
 # rounded to 4 decimals (about 11 m); tests/unit/test_venue_registry.py checks each against
 # the committed probe evidence. Provenance cites that evidence; nothing is from memory.
-registry_version: venues_v1
+#
+# venues_v2 (2026-10-01): the Melbourne Cricket Ground and the Stade de France, unverified in
+# v1, are open, on the roof documents (each quotation is checked against them verbatim).
+registry_version: venues_v2
 retrieved_utc: "2026-10-01"
 evidence:
   - docs/source-probes/2026-10-01/weather/venues.json
   - docs/source-probes/2026-10-01/weather/venue_resolution.json
+  - docs/source-probes/2026-10-01/weather/roof_documents.json
   - tests/fixtures/weekly/schedule_stadiums.csv
 venues:
   - venue_id: atl-mercedes-benz-stadium
@@ -585,7 +589,7 @@ venues:
     country: AU
     latitude: -37.8199
     longitude: 144.9834
-    roof_type: unverified
+    roof_type: open
     forecast_provider: open_meteo
     schedule_ids: [MEL00]
     aliases: ["Melbourne Cricket Ground"]
@@ -593,7 +597,7 @@ venues:
     wikidata: Q330136
     provenance:
       coordinates: "Wikidata Q330136 P625 via en.wikipedia 'Melbourne Cricket Ground' rev 1376948300 (venues.json)"
-      roof_type: "Not established: the article names roofs over stands only and no infobox roof; nflverse's 2026 'dome' is a pre-game value and recorded temp/wind beside it. Fail closed: no roof type, no weather"
+      roof_type: "Open to the sky, roofs over the stands only (roof_documents.json MEL00): COX Architecture, architects of the Northern Stand, 'The MCG is a ‘big sky’ stadium' and 'where climate and weather add interest to the idiosyncrasy and strategy of game play'; AusStadiums 'Arena roof No'; The Age, 2025-09-24, 'Any move to put a roof over the Melbourne Cricket Ground could cost an estimated $6 billion'. The 2026 nflverse value 'dome' is wrong"
   - venue_id: mex-estadio-azteca
     name: "Estadio Azteca (Estadio Banorte)"
     country: MX
@@ -613,7 +617,7 @@ venues:
     country: FR
     latitude: 48.9244
     longitude: 2.36
-    roof_type: unverified
+    roof_type: open
     forecast_provider: open_meteo
     schedule_ids: [PAR00]
     aliases: ["Stade de France"]
@@ -621,7 +625,7 @@ venues:
     wikidata: Q13205
     provenance:
       coordinates: "Wikidata Q13205 P625 via en.wikipedia 'Stade de France' rev 1375923585 (venues.json)"
-      roof_type: "Not established: no infobox roof; the article's 'partially retractable' refers to a movable stand, and nothing says whether the roof covers the pitch; nflverse's 2026 'dome' is a pre-game value. Fail closed: no roof type, no weather"
+      roof_type: "Fixed roof over the stands, field uncovered (roof_documents.json PAR00): en.wikipedia rev 1375923585, Roof, 'designed to easily protect the 80,000 spectators without covering the playing field'; fr.wikipedia rev 239899809, Le toit, 'il protège les spectateurs sans couvrir l’aire de jeu'; Terraplas 'the pitch itself remains uncovered'. What is 'partially retractable' is the lower stand. The 2026 nflverse value 'dome' is wrong"
   - venue_id: rio-maracana
     name: "Maracanã Stadium"
     country: BR

@@ -9,12 +9,20 @@ from __future__ import annotations
 
 import csv
 import json
+import re
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
+import yaml
 
 from ffdraft.paths import repo_root
-from ffdraft.weekly.venues import ROOF_TYPE_CODES, load_venue_registry, roof_type_code
+from ffdraft.weekly.venues import (
+    ROOF_TYPE_CODES,
+    load_venue_registry,
+    published_roof,
+    roof_type_code,
+)
 
 EVIDENCE = repo_root() / "docs/source-probes/2026-10-01/weather"
 STADIUMS = repo_root() / "tests/fixtures/weekly/schedule_stadiums.csv"
@@ -117,13 +125,43 @@ def test_roof_types_follow_the_recorded_history_and_fail_closed() -> None:
             assert venue.roof_type == "dome", venue_id
         else:
             assert roofs <= {"open", "closed"} and venue.roof_type == "retractable", venue_id
+    # The MCG and the Stade de France were unverified until the roof documents settled them
+    # (test below); the type stays, failing closed, for the next venue evidence cannot settle.
     unverified = [venue for venue in registry.venues if venue.roof_type == "unverified"]
-    assert {venue.venue_id for venue in unverified} == {
-        "mel-melbourne-cricket-ground",
-        "par-stade-de-france",
-    }
+    assert unverified == []
     assert all(roof_type_code(venue) is None for venue in unverified)
     assert set(ROOF_TYPE_CODES) == {"open", "retractable", "dome"}
+
+
+@pytest.mark.parametrize(
+    ("venue_id", "stadium_id"),
+    [("mel-melbourne-cricket-ground", "MEL00"), ("par-stade-de-france", "PAR00")],
+)
+def test_a_documented_roof_quotes_its_evidence_verbatim(venue_id: str, stadium_id: str) -> None:
+    """Every quotation in the roof provenance is in the probe's recorded documents, as is."""
+    documents = json.loads((EVIDENCE / "roof_documents.json").read_text(encoding="utf-8"))
+    sources = documents["venues"][stadium_id]
+    recorded = " ".join(
+        paragraph["text"]
+        for block in [*sources["wikipedia"], *sources["pages"]]
+        for paragraph in block["paragraphs"]
+    )
+    revisions = {str(page["revid"]) for page in sources["wikipedia"]}
+    venue = load_venue_registry().by_id(venue_id)
+    assert venue is not None and venue.roof_type == "open"
+    provenance = _provenance(venue_id)
+    quotes = [quote for quote in re.findall(r"'([^']+)'", provenance) if len(quote) >= 12]
+    assert len(quotes) >= 3
+    for quote in quotes:
+        assert quote in recorded, quote
+    for revision in re.findall(r"rev (\d+)", provenance):
+        assert revision in revisions
+
+
+def _provenance(venue_id: str) -> str:
+    raw = yaml.safe_load((repo_root() / "config/venues.yaml").read_text(encoding="utf-8"))
+    entry = next(entry for entry in raw["venues"] if entry["venue_id"] == venue_id)
+    return str(entry["provenance"]["roof_type"])
 
 
 def test_every_name_the_probe_resolved_points_at_the_same_item_as_its_venue() -> None:
@@ -145,3 +183,25 @@ def test_the_registry_digest_changes_with_its_bytes(tmp_path: Path) -> None:
     copy = tmp_path / "venues.yaml"
     copy.write_bytes(source.read_bytes() + b"\n# touched\n")
     assert load_venue_registry(copy).digest != load_venue_registry(source).digest
+
+
+@pytest.mark.parametrize(
+    ("roof_type", "scheduled", "published"),
+    [
+        ("open", "dome", "outdoors"),  # nflverse's 2026 label for open-air stadiums abroad
+        ("open", None, "outdoors"),
+        ("open", "outdoors", "outdoors"),
+        ("open", "open", "open"),  # agrees: the schedule's own word is kept
+        ("dome", "outdoors", "dome"),
+        ("dome", "dome", "dome"),
+        ("retractable", "closed", "closed"),  # the recorded state is the only state there is
+        ("retractable", None, None),
+        ("unverified", "dome", "dome"),  # not established: the schedule stands, flagged elsewhere
+    ],
+)
+def test_a_verified_fixed_roof_corrects_the_label_and_nothing_else(
+    roof_type: str, scheduled: str | None, published: str | None
+) -> None:
+    venue = next(iter(load_venue_registry().venues))
+    assert published_roof(replace(venue, roof_type=roof_type), scheduled) == published
+    assert published_roof(None, scheduled) == scheduled

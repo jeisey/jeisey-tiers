@@ -211,6 +211,10 @@ def _limitations() -> list[str]:
         "The injury report's point-in-time record (ADR-099): 24 of 44,356 2017-2024 rows "
         "were last modified after kickoff; 2025-2026 rows carry no timestamp. The designation "
         "base rates could move slightly if nflverse revises rows; no projection reads them.",
+        "Its roof input is the schedule's, except where the venue registry verifies a fixed "
+        "roof the schedule contradicts: nflverse files the MCG, the Stade de France and the "
+        "Allianz Arena (2026, open to the sky) as dome, and those games are read as outdoors "
+        "(ADR-099 amendment). Every 2017-2025 roof it was trained on already agrees.",
     ]
 
 

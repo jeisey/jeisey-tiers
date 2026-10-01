@@ -32,6 +32,7 @@ from ffdraft.scoring.engine import score_weekly_frame
 from ffdraft.scoring.horizon import fantasy_horizon
 from ffdraft.season.state import scheduled_kickoff_utc
 from ffdraft.weekly.frozen import OPPONENT_SHRINKAGE_GAMES, WEEKLY_POSITIONS
+from ffdraft.weekly.venues import VenueRegistry, published_roof
 
 __all__ = [
     "GAME_CONTEXT_COLUMNS",
@@ -65,7 +66,12 @@ def _hundredths(column: str) -> pl.Expr:
     return (pl.col(column) * 100.0).round(0).cast(pl.Int64)
 
 
-def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.DataFrame:
+def team_game_context(
+    schedule: pl.DataFrame,
+    seasons: Sequence[int],
+    *,
+    venues: VenueRegistry | None = None,
+) -> pl.DataFrame:
     """One row per ``(season, week, team)`` regular-season game inside the fantasy horizon.
 
     Each game appears twice, once from each side, with the spread re-expressed from the
@@ -78,6 +84,19 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
     home team's latest earlier non-neutral home game this season: a schedule fact already
     recorded, never a guess. With no such game it stays null, which the model reads as open
     air. Every training row has a recorded roof, so this never fires on history.
+
+    **A verified fixed roof wins** (``venues``, serving only; ADR-099). Before an international
+    game nflverse can file an open-air stadium as ``dome``: in 2026 the Melbourne Cricket
+    Ground (kept ``dome`` after the game, beside a recorded 57 F and 4 mph wind), the Stade de
+    France and the Allianz Arena, all open to the sky. Where the game resolves to a registry
+    venue whose roof is ``open`` or ``dome``, ``roof`` is
+    :func:`~ffdraft.weekly.venues.published_roof` (the venue's label when the schedule
+    contradicts it), ``game_indoors`` follows it, and nothing is ``roof_inferred``; a
+    retractable, unverified or unresolved venue keeps the schedule's roof as above. The
+    schedule's own value is published beside it as ``weekly_context``'s ``roof.recorded``.
+    Training passes no registry: over every 2017-2025 regular-season game the verified registry
+    roof and nflverse's recorded roof agree (DATA_SOURCES 20.1), so the rule reproduces history
+    exactly, and an edit to the registry can never move v1's frozen training rows.
     """
     wanted = {int(season) for season in seasons}
     rows: list[dict[str, object]] = []
@@ -120,6 +139,19 @@ def team_game_context(schedule: pl.DataFrame, seasons: Sequence[int]) -> pl.Data
             ]
             indoors_roof = max(earlier)[1] if earlier else ""
         inferred = not roof and bool(indoors_roof)
+        venue = (
+            venues.resolve(
+                season=season,
+                stadium_id=game.get("stadium_id"),
+                stadium=game.get("stadium"),
+            )
+            if venues is not None
+            else None
+        )
+        if venue is not None and venue.roof_type in ("open", "dome"):
+            roof = published_roof(venue, roof) or ""
+            indoors_roof = roof
+            inferred = False
         for team, opponent, is_home in ((home, away, True), (away, home, False)):
             margin = None if spread is None else (spread if is_home else -spread) + 0.0
             implied = None if margin is None or total is None else (total + margin) / 2.0

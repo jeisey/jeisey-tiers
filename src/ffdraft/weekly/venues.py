@@ -40,6 +40,8 @@ __all__ = [
     "Venue",
     "VenueRegistry",
     "load_venue_registry",
+    "published_roof",
+    "published_roofs",
     "roof_type_code",
 ]
 
@@ -54,6 +56,52 @@ ROOF_TYPE_CODES: Mapping[str, float] = {"open": 0.0, "retractable": 1.0, "dome":
 def roof_type_code(venue: Venue | None) -> float | None:
     """``wx_roof_type`` for a venue: ``None`` when unresolved or unverified."""
     return None if venue is None else ROOF_TYPE_CODES.get(venue.roof_type)
+
+
+#: A verified fixed roof written the way nflverse writes a roof, and the schedule values that
+#: already agree with it.
+_FIXED_ROOF_LABELS: Mapping[str, tuple[str, frozenset[str]]] = {
+    "open": ("outdoors", frozenset({"outdoors", "open"})),
+    "dome": ("dome", frozenset({"dome"})),
+}
+
+
+def published_roof(venue: Venue | None, scheduled: str | None) -> str | None:
+    """The roof a published label states: the schedule's, unless a verified venue contradicts it.
+
+    nflverse can file an open-air stadium as ``dome`` before an international game (2026:
+    the Melbourne Cricket Ground, the Stade de France, the Allianz Arena). Where the game's
+    venue has a verified fixed roof (``open`` or ``dome``) and the schedule's value disagrees
+    or is missing, the venue's label is published; a retractable, unverified or unresolved
+    venue keeps the schedule's value, which for a retractable roof is the recorded state.
+    Over 2017-2025 every recorded value already agrees (tests/unit/test_weekly_context.py),
+    so this changes nothing on history.
+    """
+    value = str(scheduled or "").strip().lower() or None
+    fixed = _FIXED_ROOF_LABELS.get(venue.roof_type) if venue is not None else None
+    if fixed is None:
+        return value
+    label, agreeing = fixed
+    return value if value in agreeing else label
+
+
+def published_roofs(
+    registry: VenueRegistry,
+    games: Sequence[Mapping[str, Any]],
+) -> dict[str, str | None]:
+    """``game_id -> published_roof`` for schedule rows (``season``, ``stadium_id``,
+    ``stadium``, ``roof``), for builders outside the weekly layer to take as plain data."""
+    return {
+        str(game["game_id"]): published_roof(
+            registry.resolve(
+                season=int(game["season"]),
+                stadium_id=game.get("stadium_id"),
+                stadium=game.get("stadium"),
+            ),
+            game.get("roof"),
+        )
+        for game in games
+    }
 
 
 DEFAULT_REGISTRY = Path("config/venues.yaml")

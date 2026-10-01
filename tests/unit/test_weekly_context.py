@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import csv
 import random
 
 import polars as pl
 import pytest
 
+from ffdraft.paths import repo_root
 from ffdraft.weekly.context import opponent_allowed, team_game_context
+from ffdraft.weekly.venues import VenueRegistry, load_venue_registry
 
 
 def _schedule(**overrides: object) -> pl.DataFrame:
@@ -208,3 +211,74 @@ def test_a_later_roof_is_never_read_back() -> None:
     )
     week4 = team_game_context(schedule, [2024]).filter(pl.col("week") == 4)
     assert week4.get_column("game_indoors").null_count() == 2
+
+
+def _registry() -> VenueRegistry:
+    return load_venue_registry()
+
+
+def test_a_verified_open_venue_overrides_a_dome_label() -> None:
+    """2026 MUN01: nflverse files the Allianz Arena (open to the sky) as ``dome``."""
+    game = _schedule(
+        game_id="2026_10_NE_DET",
+        season=2026,
+        week=10,
+        gameday="2026-11-15",
+        home_team="DET",
+        away_team="NE",
+        location="Neutral",
+        roof="dome",
+        stadium_id="MUN01",
+        stadium="FC Bayern Munich Stadium",
+    )
+    assert team_game_context(game, [2026]).get_column("game_indoors").to_list() == [1.0, 1.0]
+    served = team_game_context(game, [2026], venues=_registry())
+    assert served.get_column("game_indoors").to_list() == [0.0, 0.0]
+    # The label is the venue's, and nothing is marked assumed.
+    assert served.get_column("roof").to_list() == ["outdoors", "outdoors"]
+    assert served.get_column("roof_inferred").to_list() == [False, False]
+
+
+def test_a_verified_dome_fills_a_missing_roof_without_an_assumption() -> None:
+    game = _schedule(roof=None, home_team="DET", stadium_id="DET00", stadium="Ford Field")
+    served = team_game_context(game, [2024], venues=_registry())
+    assert served.get_column("game_indoors").to_list() == [1.0, 1.0]
+    assert served.get_column("roof_inferred").to_list() == [False, False]
+
+
+def test_a_retractable_or_unresolved_venue_keeps_the_schedule_roof() -> None:
+    houston = _schedule(roof="closed", home_team="HOU", stadium_id="HOU00", stadium="NRG Stadium")
+    nowhere = _schedule(roof="dome", stadium_id="XXX00", stadium="Nowhere Field")
+    for game in (houston, nowhere):
+        assert team_game_context(game, [2024], venues=_registry()).equals(
+            team_game_context(game, [2024]),
+        )
+
+
+def test_the_override_reproduces_every_recorded_roof_through_2025() -> None:
+    """Training passes no registry because, on history, the registry changes nothing.
+
+    Every 2017-2025 stadium-season the schedule prints, with every roof nflverse recorded
+    there: at a venue the registry calls ``open`` or ``dome``, each recorded roof reads the same
+    ``game_indoors`` as the venue does. A registry edit that broke this would make serving
+    disagree with what v1 was trained on, and fails here.
+    """
+    registry = _registry()
+    fixed = {"open": 0.0, "dome": 1.0}
+    checked = 0
+    with (repo_root() / "tests/fixtures/weekly/schedule_stadiums.csv").open() as handle:
+        for row in csv.DictReader(handle):
+            if int(row["season"]) > 2025:
+                continue
+            venue = registry.resolve(
+                season=int(row["season"]), stadium_id=row["stadium_id"], stadium=row["stadium"]
+            )
+            assert venue is not None, row
+            if venue.roof_type not in fixed:
+                continue
+            for recorded in filter(None, row["schedule_roofs"].split("|")):
+                indoors = 1.0 if recorded in ("dome", "closed") else 0.0
+                assert indoors == fixed[venue.roof_type], (row, venue.venue_id)
+                checked += 1
+    # Every recorded (stadium-season, roof) pair at a fixed-roof venue, 2017-2025.
+    assert checked == 247

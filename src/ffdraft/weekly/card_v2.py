@@ -169,6 +169,10 @@ def _limitations(families: tuple[str, ...]) -> list[str]:
         + (", ".join(V2_FAMILY_LABELS[family] for family in measured) or "none")
         + ". Their inputs are still published as context, without points.",
         "Game-day inactives arrive after every refresh and are not inputs.",
+        "v1's roof input, which v2 also reads, follows a verified fixed venue roof where the "
+        "schedule contradicts it (nflverse's 2026 dome for the MCG, the Stade de France and "
+        "the Allianz Arena, all open to the sky; ADR-099 amendment). v1 and v2 read the same "
+        "value, so the prospective comparison stays paired.",
     ]
     if "lineup" in families or "defense" in families:
         notes += [

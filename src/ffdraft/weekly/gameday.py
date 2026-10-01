@@ -67,7 +67,7 @@ def build_weekly_context_records(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """One record per team playing in the week after the cutoff, and a summary."""
     target_week = through_week + 1
-    season_context = team_game_context(schedule, [season])
+    season_context = team_game_context(schedule, [season], venues=registry)
     games = season_context.filter(pl.col("week") == target_week)
     if games.is_empty():
         return [], {"target_week": target_week, "records": 0}
@@ -84,10 +84,14 @@ def build_weekly_context_records(
         listed = absence_lists(starters, shares, report, teams)
 
     stadiums: dict[str, tuple[str | None, str | None]] = {}
+    #: The schedule's own roof value, published as ``roof.recorded`` even where a verified
+    #: venue corrects the label the projection reads (context.py).
+    scheduled_roofs: dict[str, str | None] = {}
     for row in schedule.filter(
         (pl.col("season") == season) & (pl.col("week") == target_week),
     ).iter_rows(named=True):
         stadiums[str(row["game_id"])] = (row.get("stadium_id"), row.get("stadium"))
+        scheduled_roofs[str(row["game_id"])] = str(row.get("roof") or "").strip().lower() or None
 
     records: list[dict[str, Any]] = []
     statuses: dict[str, int] = {}
@@ -144,7 +148,7 @@ def build_weekly_context_records(
                 "context_rule_version": GAMEDAY_CONTEXT_RULE_VERSION,
                 "venue": venue.public() if venue is not None else None,
                 "roof": {
-                    "recorded": row.get("roof"),
+                    "recorded": scheduled_roofs.get(game_id),
                     "model_indoors": _round(row.get("game_indoors"), 0),
                     "assumed_from_last_home_game": bool(row.get("roof_inferred")),
                 },

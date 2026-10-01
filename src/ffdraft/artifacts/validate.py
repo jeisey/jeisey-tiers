@@ -526,6 +526,8 @@ _WEATHER_STATUSES = frozenset(
     },
 )
 _WEATHER_WITH_NUMBERS = frozenset({"ok", "roof_unknown"})
+#: A venue's fixed roof type -> the ``game_indoors`` the projection must read there.
+_FIXED_ROOF_INDOORS: Mapping[str, float] = {"open": 0.0, "dome": 1.0}
 _WEATHER_NUMBERS = ("wind_mph", "gust_mph", "temp_f", "precip_probability", "precip_in")
 
 
@@ -538,6 +540,7 @@ def weekly_context_checks(
     weather: list[str] = []
     lineup: list[str] = []
     arithmetic: list[str] = []
+    roofs: list[str] = []
     by_game: dict[str, list[Mapping[str, Any]]] = {}
     for record in records:
         team = str(record.get("team"))
@@ -564,6 +567,16 @@ def weekly_context_checks(
         unsettled = venue is not None and venue.get("roof_type") in ("retractable", "unverified")
         if unsettled and status == "ok":
             weather.append(f"{team}: weather cannot be ok when the roof is not settled")
+        # What the projection reads must be what the venue is, where the venue is certain:
+        # nflverse files open-air stadiums abroad as "dome" (ADR-099, context.py).
+        roof_type = str((venue or {}).get("roof_type"))
+        fixed = _FIXED_ROOF_INDOORS.get(roof_type)
+        read = (record.get("roof") or {}).get("model_indoors")
+        this_week = (record.get("this_week") or {}).get("indoors")
+        if fixed is not None and (read is None or float(read) != fixed):
+            roofs.append(f"{team}: reads indoors={read} at a venue whose roof is {roof_type}")
+        if read != this_week:
+            roofs.append(f"{team}: roof.model_indoors {read} != this_week.indoors {this_week}")
         block = record.get("lineup") or {}
         listed = list(block.get("listed") or ())
         if listed and not block.get("report_final"):
@@ -614,6 +627,11 @@ def weekly_context_checks(
             arithmetic,
             "this week's implied points must be (total + margin) / 2",
         ),
+        (
+            "weekly_context.roof_agreement",
+            roofs,
+            "the roof the projection reads must be the venue's where its roof type is fixed",
+        ),
     ):
         if found:
             checks.append(
@@ -627,7 +645,8 @@ def weekly_context_checks(
                 "weekly_context.semantics",
                 stage=stage,
                 message="every game has two agreeing sides, forecasts carry numbers only when "
-                "usable, and every named absence has a designation",
+                "usable, every named absence has a designation, and the roof read is the "
+                "venue's wherever the venue's roof is fixed",
                 observed=f"{len(records)} team record(s)",
             ),
         )
