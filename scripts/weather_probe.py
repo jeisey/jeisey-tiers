@@ -22,6 +22,11 @@ What it records, each as evidence a later decision cites:
    and Previous Runs API (the forecast issued one and two days earlier), plus the ERA5
    reanalysis, each read at the kickoff hour. Joined later, offline, to the game-book weather
    nflverse records, this measures forecast-minus-recorded error at a known lead time.
+5. **Roof documents** (``--phases roofs``, ``roof_documents.json``). For a venue whose roof
+   the Wikipedia evidence above did not settle, every paragraph about a roof or the field,
+   whole, from the English and local-language articles' roof sections and from the builders',
+   architects' and operators' own pages, each with its status, final URL and body digest.
+   Phase 1 kept 300-character lines, which cut the Stade de France roof paragraph mid-sentence.
 
 Open-Meteo is used under its free non-commercial terms and attributed (CC BY 4.0); NWS data
 is a U.S. Government work; Wikidata is CC0; Wikipedia text is quoted as evidence only.
@@ -31,6 +36,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import html
 import io
 import json
 import re
@@ -409,6 +416,148 @@ def probe_roof_evidence(fetcher: Fetcher) -> dict[str, Any]:
         }
         print(f"roof evidence {title}: {len(roofs[title]['sentences'])} sentences", flush=True)
     return {"schedule_names": names, "roof_evidence": roofs}
+
+
+#: Venues the roof evidence above left unverified, with the pages that can settle them: the
+#: Wikipedia articles (English and the local language, whose roof sections are read whole)
+#: and the builders', architects' and operators' own pages. A page that fails is recorded as
+#: failed; nothing here is a fact until a paragraph in the evidence says it.
+ROOF_DOCUMENTS: dict[str, dict[str, Any]] = {
+    "MEL00": {
+        "wikipedia": (("en", "Melbourne Cricket Ground"),),
+        "pages": (
+            "https://www.mcg.org.au/the-mcg/history",
+            "https://www.coxarchitecture.com.au/project/mcg-northern-stand/",
+            "https://populous.com/showcases/melbourne-cricket-ground",
+            "https://www.austadiums.com/stadiums/mcg",
+            "https://www.theage.com.au/politics/victoria/putting-a-roof-on-the-mcg-could-cost-6-billion-a-new-stand-looks-more-likely-20250924-p5mxm8.html",
+            "https://concreteplayground.com/melbourne/arts-entertainment/a-6-billion-roof-the-mcgs-afl-grand-final-shines-a-spotlight-on-redevelopment-plans",
+        ),
+    },
+    "PAR00": {
+        "wikipedia": (("en", "Stade de France"), ("fr", "Stade de France")),
+        "pages": (
+            "https://www.stadefrance.com/en/the-stadium",
+            "https://www.vinci-construction-projets.com/en/realisations/stade-de-france/",
+            "https://www.ingerop.fr/en/project/france-stadium-paris-arena/",
+            "https://terraplas.com/case-study/stade-de-france/",
+            "https://stadiumdb.com/stadiums/fra/stade_de_france",
+        ),
+    },
+}
+ROOF_WORDS = re.compile(
+    r"\b(roof\w*|canop\w*|open[- ]air|uncovered|covers?|covered|pitch|playing (field|surface)|"
+    r"sky|retract\w*|dome\w*|toit\w*|couvert\w*|découvert\w*|pelouse|ciel|ouvert\w*)\b",
+    re.IGNORECASE,
+)
+#: A paragraph longer than this is kept to this length and marked ``clipped``.
+PARAGRAPH_LIMIT = 3000
+
+
+def _paragraphs(html_text: str) -> list[str]:
+    """Block-level paragraphs of an HTML page, tags stripped, entities decoded."""
+    text = re.sub(r"<(script|style|noscript)\b.*?</\1>", " ", html_text, flags=re.S | re.I)
+    text = re.sub(
+        r"</?(p|div|li|h[1-6]|br|tr|section|article|blockquote)\b[^>]*>", "\n\n", text, flags=re.I
+    )
+    text = re.sub(r"<[^>]+>", " ", text)
+    blocks = [" ".join(html.unescape(block).split()) for block in re.split(r"\n\s*\n", text)]
+    return [block for block in blocks if len(block) >= 40]
+
+
+def _keep(paragraphs: list[str]) -> list[dict[str, Any]]:
+    kept: list[dict[str, Any]] = []
+    for paragraph in paragraphs:
+        if not ROOF_WORDS.search(paragraph) or any(k["text"] == paragraph for k in kept):
+            continue
+        kept.append(
+            {
+                "text": paragraph[:PARAGRAPH_LIMIT],
+                "clipped": len(paragraph) > PARAGRAPH_LIMIT,
+            },
+        )
+    return kept[:60]
+
+
+def _wikipedia_roof_sections(fetcher: Fetcher, language: str, title: str) -> dict[str, Any]:
+    """The article's revision, and every paragraph of its plain text about a roof, whole."""
+    query = urllib.parse.urlencode(
+        {
+            "action": "query",
+            "format": "json",
+            "formatversion": "2",
+            "redirects": "1",
+            "prop": "extracts|revisions",
+            "rvprop": "ids|timestamp",
+            "explaintext": "1",
+            "exsectionformat": "wiki",
+            "titles": title,
+        },
+    )
+    url = f"https://{language}.wikipedia.org/w/api.php?{query}"
+    status, payload, _ = fetcher.get(url)
+    page = ((payload or {}).get("query") or {}).get("pages", [{}])[0] if payload else {}
+    revision = (page.get("revisions") or [{}])[0]
+    extract = str(page.get("extract") or "")
+    # Section headings come through as "== Roof ==" lines; a paragraph is a line of text.
+    section = ""
+    paragraphs: list[dict[str, Any]] = []
+    for line in extract.splitlines():
+        heading = re.fullmatch(r"\s*(=+)\s*(.*?)\s*\1\s*", line)
+        if heading:
+            section = heading.group(2)
+            continue
+        line = " ".join(line.split())
+        in_roof_section = bool(re.search(r"roof|toit", section, re.I))
+        if len(line) >= 40 and (in_roof_section or ROOF_WORDS.search(line)):
+            paragraphs.append(
+                {
+                    "section": section,
+                    "text": line[:PARAGRAPH_LIMIT],
+                    "clipped": len(line) > PARAGRAPH_LIMIT,
+                },
+            )
+    slug = urllib.parse.quote(title.replace(" ", "_"))
+    return {
+        "url": f"https://{language}.wikipedia.org/wiki/{slug}",
+        "status": status,
+        "title": page.get("title"),
+        "revid": revision.get("revid"),
+        "rev_timestamp": revision.get("timestamp"),
+        "paragraphs": paragraphs[:60],
+    }
+
+
+def probe_roof_documents(fetcher: Fetcher) -> dict[str, Any]:
+    """For each unsettled venue, its roof paragraphs from Wikipedia and from primary pages."""
+    venues: dict[str, Any] = {}
+    for stadium_id, sources in ROOF_DOCUMENTS.items():
+        wikipedia = [
+            _wikipedia_roof_sections(fetcher, language, title)
+            for language, title in sources["wikipedia"]
+        ]
+        pages: list[dict[str, Any]] = []
+        for url in sources["pages"]:
+            try:
+                status, body, headers = fetcher.get(url, accept="text/html, */*")
+            except (UnicodeDecodeError, ValueError, OSError) as error:
+                # A page in another encoding, or a broken body, is recorded, not fatal.
+                pages.append({"url": url, "status": None, "error": repr(error), "paragraphs": []})
+                continue
+            text = body if isinstance(body, str) else json.dumps(body or "")
+            pages.append(
+                {
+                    "url": url,
+                    "status": status,
+                    "retrieved_at_utc": datetime.now(UTC).isoformat(),
+                    "last_modified": headers.get("last-modified"),
+                    "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest() if body else None,
+                    "paragraphs": _keep(_paragraphs(text)) if body else [],
+                },
+            )
+            print(f"roof document {stadium_id} {url}: {status}", flush=True)
+        venues[stadium_id] = {"wikipedia": wikipedia, "pages": pages}
+    return venues
 
 
 HATNOTE = re.compile(r"\{\{(?:About|For|Other uses|Distinguish|Redirect)[^}]*\}\}")
@@ -962,15 +1111,32 @@ def main() -> int:
     parser.add_argument("--archive-budget-minutes", type=float, default=25.0)
     parser.add_argument(
         "--phases",
-        choices=("all", "resolve"),
+        choices=("all", "resolve", "roofs"),
         default="all",
-        help="'resolve' runs only the venue-resolution phase (venue_resolution.json)",
+        help=(
+            "'resolve' runs only the venue-resolution phase (venue_resolution.json); 'roofs' "
+            "only the roof documents of unsettled venues (roof_documents.json)"
+        ),
     )
     args = parser.parse_args()
     out: Path = args.out
     out.mkdir(parents=True, exist_ok=True)
     fetcher = Fetcher(args.pause)
     started = datetime.now(UTC)
+
+    if args.phases == "roofs":
+        documents = {"venues": probe_roof_documents(fetcher)}
+        documents["_run"] = {
+            "started_at_utc": started.isoformat(),
+            "finished_at_utc": datetime.now(UTC).isoformat(),
+            "user_agent": USER_AGENT,
+            "calls_by_host": dict(fetcher.calls),
+            "failures": fetcher.failures,
+        }
+        (out / "roof_documents.json").write_text(
+            json.dumps(documents, indent=2, ensure_ascii=False) + "\n"
+        )
+        return 0
 
     if args.phases == "resolve":
         resolution = probe_resolution(fetcher)
