@@ -306,6 +306,48 @@ PITCH_SENTENCE = re.compile(
 )
 
 
+#: The two forecast providers' published terms, read on the day the sources are registered.
+TERMS_PAGES: tuple[str, ...] = (
+    "https://www.weather.gov/documentation/services-web-api",
+    "https://api.weather.gov/openapi.json",
+    "https://open-meteo.com/en/terms",
+    "https://open-meteo.com/en/licence",
+    "https://open-meteo.com/en/pricing",
+    "https://open-meteo.com/en/docs/historical-forecast-api",
+    "https://open-meteo.com/en/docs/previous-runs-api",
+)
+TERMS_SENTENCE = re.compile(
+    r"[^.<>]*\b(user[- ]agent|rate limit\w*|limit\w*|commercial|attribution|attribute|"
+    r"licen[cs]e\w*|CC[- ]BY|public domain|open data|free|10[,.]?000|calls?|cache\w*|"
+    r"terms of (use|service)|archive\w*|initiali[sz]ed|lead time|model runs?)\b[^.<>]*[.]",
+    re.IGNORECASE,
+)
+
+
+def probe_terms(fetcher: Fetcher) -> dict[str, Any]:
+    """Status, headers and every sentence about use, limits, licence or archives, per page."""
+    pages: dict[str, Any] = {}
+    for url in TERMS_PAGES:
+        status, body, headers = fetcher.get(url, accept="text/html,application/json")
+        text = json.dumps(body) if isinstance(body, (dict, list)) else str(body or "")
+        text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", text, flags=re.S | re.I)
+        text = re.sub(r"<[^>]+>", " ", text)
+        text = " ".join(text.split())
+        sentences: list[str] = []
+        for match in TERMS_SENTENCE.finditer(text):
+            sentence = match.group(0).strip()[:500]
+            if sentence not in sentences:
+                sentences.append(sentence)
+        pages[url] = {
+            "status": status,
+            "last_modified": headers.get("last-modified"),
+            "content_length": len(text),
+            "sentences": sentences[:80],
+        }
+        print(f"terms {url}: {status} {len(sentences)} sentences", flush=True)
+    return pages
+
+
 def _wikitext(fetcher: Fetcher, title: str) -> str:
     """The article's full wikitext (redirects followed), for infobox fields and roof lines."""
     query = urllib.parse.urlencode(
@@ -940,6 +982,7 @@ def main() -> int:
             "failures": fetcher.failures,
         }
         resolution.update(probe_roof_evidence(fetcher))
+        resolution["terms"] = probe_terms(fetcher)
         resolution["_run"]["calls_by_host"] = dict(fetcher.calls)
         resolution["_run"]["finished_at_utc"] = datetime.now(UTC).isoformat()
         (out / "venue_resolution.json").write_text(
