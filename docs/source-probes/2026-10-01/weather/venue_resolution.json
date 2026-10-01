@@ -10,7 +10,7 @@
       "History of the Tennessee Titans",
       "2008 Tennessee Titans season",
       "Nashville, Tennessee",
-      "Hale Stadium"
+      "Jaguars–Titans rivalry"
     ],
     "titles": [
       {
@@ -356,8 +356,8 @@
       "Buffalo Bills",
       "List of current NFL stadiums",
       "Bills–Chiefs rivalry",
-      "Chronology of home stadiums for current NFL teams",
       "1973 Miami Dolphins season",
+      "Chronology of home stadiums for current NFL teams",
       "History of the Buffalo Bills"
     ],
     "titles": [
@@ -697,37 +697,1208 @@
         "wikidata_P625": []
       },
       {
-        "requested_title": "Chronology of home stadiums for current NFL teams",
+        "requested_title": "1973 Miami Dolphins season",
         "wikipedia_status": 200,
-        "wikipedia_title": "Chronology of home stadiums for current NFL teams",
-        "wikipedia_pageid": 1822030,
-        "wikipedia_revid": 1373585853,
-        "wikipedia_rev_timestamp": "2026-09-06T19:44:21Z",
+        "wikipedia_title": "1973 Miami Dolphins season",
+        "wikipedia_pageid": 15915981,
+        "wikipedia_revid": 1375419966,
+        "wikipedia_rev_timestamp": "2026-09-17T17:39:34Z",
         "redirects": null,
         "wikipedia_coordinates": [],
-        "wikidata_item": "Q5114208",
+        "wikidata_item": "Q4575607",
         "disambiguation": false,
-        "lead": "The following is a chronology of NFL home stadiums, that is, all home stadiums of teams currently playing in the National Football League (NFL), and their locations and capacities. It contains all past and present (in bold) home stadiums used by the current 32 members of the National Football League since 1920, along with future home stadiums presently under construction (in italics immediately above the present stadium). It is ordered by the conference and division to which the team belongs. Soldier Field in Chicago, home of the Chicago Bears is the oldest stadium in the league having opened in 1924. The stadium that has been used the longest by an NFL team is Lambeau Field, home of the Green Bay Packers since 1957. Stadiums represent a considerable expense to a community, and thus their construction, use, and funding often enters the public discourse. Also, given the perceived advantag",
+        "lead": "The 1973 Miami Dolphins season was the franchise's eighth season and fourth season in the National Football League (NFL). The team entered the 1973 season as defending Super Bowl champions following its perfect undefeated 1972 season. In week 1, the Dolphins extended their winning streak to 18 with a 21–13 win over the San Francisco 49ers. However, the following week, they were defeated 12–7 by the Oakland Raiders to end the winning streak. The streak stood as an NFL record until it was broken by the New England Patriots in 2004 whose record of 21 consecutive wins still stands. The team won the AFC East, finishing with a regular season record of 12–2, and then defeated the Cincinnati Bengals in the Divisional Round, the Raiders in the AFC Championship game, and the Minnesota Vikings in the league's eighth Super Bowl. It was the Dolphins' second consecutive (and to date last) Super Bowl v",
         "hatnotes": [],
         "infobox_coordinates": [],
         "infobox_opened": [],
         "infobox_closed": [],
         "infobox_roof": [],
         "wikidata_status": 200,
-        "wikidata_label": "Chronology of home stadiums for current National Football League teams",
-        "wikidata_description": null,
+        "wikidata_label": "1973 Miami Dolphins season",
+        "wikidata_description": "8th season in franchise history; second Super Bowl win",
         "wikidata_P625": []
       }
     ]
   },
   "_run": {
-    "started_at_utc": "2026-10-01T17:26:00.748871+00:00",
-    "finished_at_utc": "2026-10-01T17:26:40.969665+00:00",
+    "started_at_utc": "2026-10-01T17:28:55.516390+00:00",
+    "finished_at_utc": "2026-10-01T17:30:16.927997+00:00",
     "user_agent": "jeisey-tiers source probe (https://github.com/jeisey/jeisey-tiers)",
     "calls_by_host": {
-      "en.wikipedia.org": 30,
-      "www.wikidata.org": 23
+      "en.wikipedia.org": 65,
+      "www.wikidata.org": 44
     },
     "failures": []
+  },
+  "schedule_names": {
+    "Azteca Stadium": {
+      "requested_title": "Azteca Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Estadio Azteca",
+      "wikipedia_pageid": 1834902,
+      "wikipedia_revid": 1374978481,
+      "wikipedia_rev_timestamp": "2026-09-15T04:05:38Z",
+      "redirects": [
+        {
+          "from": "Azteca Stadium",
+          "to": "Estadio Azteca"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 19.303,
+          "lon": -99.1505,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q320454",
+      "disambiguation": false,
+      "lead": "Estadio Azteca (Latin American Spanish: [esˈtaðjo asˈteka]), officially known as Estadio Banorte for sponsorship reasons, is a football stadium located in Coyoacán, Mexico City. At an elevation of 2,241 meters (7,352 ft) above sea level it is the official home of Club América of Liga MX and the Mexico national team. With a capacity of 87,523, it is the largest stadium in Latin America and the eighth-largest association football stadium in the world. One of the best known football stadiums in the world, often called the \"Temple of Football\" or the \"Cathedral of Football\", it was the first to host two FIFA World Cup finals; Brazil defeated Italy 4–1 in 1970 and Argentina beat West Germany 3–2 in 1986. It also hosted the 1986 quarter-final match between Argentina and England in which Diego Maradona scored both the \"Hand of God goal\" and the \"Goal of the Century\". Both Pelé's (1970) and Dieg",
+      "hatnotes": [
+        "{{About||the adjacent light rail station|Estadio Azteca light rail station|the Andrés Calamaro song|El Cantante (Andrés Calamaro album)}}",
+        "{{Redirect|Estadio Banorte}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|19.3030|-99.1505|region:MX_type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Estadio Azteca",
+      "wikidata_description": "football stadium in Mexico City, Mexico",
+      "wikidata_P625": [
+        {
+          "lat": 19.303055555555556,
+          "lon": -99.15055555555556,
+          "precision": 0.0002777777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Bernabeu": {
+      "requested_title": "Bernabeu",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Bernabéu",
+      "wikipedia_pageid": 1257703,
+      "wikipedia_revid": 1350939770,
+      "wikipedia_rev_timestamp": "2026-04-24T23:49:42Z",
+      "redirects": [
+        {
+          "from": "Bernabeu",
+          "to": "Bernabéu"
+        }
+      ],
+      "wikipedia_coordinates": [],
+      "wikidata_item": "Q822132",
+      "disambiguation": true,
+      "lead": "Bernabéu may refer to: Bernabéu (stadium), an association football stadium in Madrid Santiago Bernabéu (1895–1978), Spanish footballer and 11th President of Real Madrid CF Bernabeu (surname), people with the surname",
+      "hatnotes": [],
+      "infobox_coordinates": [],
+      "infobox_opened": [],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Bernabéu",
+      "wikidata_description": "Wikimedia disambiguation page",
+      "wikidata_P625": []
+    },
+    "CenturyLink Field": {
+      "requested_title": "CenturyLink Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Lumen Field",
+      "wikipedia_pageid": 206812,
+      "wikipedia_revid": 1373998493,
+      "wikipedia_rev_timestamp": "2026-09-09T05:12:24Z",
+      "redirects": [
+        {
+          "from": "CenturyLink Field",
+          "to": "Lumen Field"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 47.5952,
+          "lon": -122.3316,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q612736",
+      "disambiguation": false,
+      "lead": "Lumen Field is a multi-purpose stadium in Seattle, Washington, United States. Located in the city's SoDo neighborhood, it is the home field for the Seattle Seahawks of the National Football League (NFL), Seattle Sounders FC of Major League Soccer (MLS), and Seattle Reign FC of the National Women's Soccer League (NWSL). It has a seating capacity of 68,740 spectators for NFL games and 37,722 for most MLS matches. The complex also includes the Event Center, which is home to the Washington Music Theater (WaMu Theater), a parking garage, and a public plaza. Located within a mile (1.6 km) of Downtown Seattle, the stadium is accessible by multiple freeways and forms of mass transit. The stadium was built between 2000 and 2002 on the site of the Kingdome after voters approved funding for the construction in a statewide election held in June 1997. This vote created the Washington State Public Sta",
+      "hatnotes": [
+        "{{Redirect|Seattle Stadium|other stadiums in Seattle|Category:Sports venues in Seattle{{!}}"
+      ],
+      "infobox_coordinates": [
+        "{{Coord|47.5952|N|122.3316|W|type:landmark_scale:5000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Lumen Field",
+      "wikidata_description": "multi-purpose stadium in Seattle, Washington, USA",
+      "wikidata_P625": [
+        {
+          "lat": 47.595277777778,
+          "lon": -122.33166666667,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Deutsche Bank Park": {
+      "requested_title": "Deutsche Bank Park",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Waldstadion (Frankfurt)",
+      "wikipedia_pageid": 1897000,
+      "wikipedia_revid": 1375755144,
+      "wikipedia_rev_timestamp": "2026-09-19T21:36:08Z",
+      "redirects": [
+        {
+          "from": "Deutsche Bank Park",
+          "to": "Waldstadion (Frankfurt)"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 50.068056,
+          "lon": 8.645806,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q157273",
+      "disambiguation": false,
+      "lead": "Waldstadion (German pronunciation: [ˈvalt.ʃtaːdi̯ɔn] , Forest Stadium), currently known as Deutsche Bank Park for sponsorship purposes, is a retractable roof sports stadium in Frankfurt, Germany. The home stadium of the football club Eintracht Frankfurt, it was opened in 1925. The stadium has been upgraded several times since then; the most recent remodelling was its redevelopment as a football-only stadium in preparation for the 2005 FIFA Confederations Cup and 2006 FIFA World Cup. With a capacity of 60,100 spectators for league matches, it is the sixth largest football stadium in Germany. The stadium was one of the nine venues of 2011 FIFA Women's World Cup, and hosted four matches including the final. It also hosted five matches of the UEFA Euro 2024. The 2027 UEFA Europa League final will be played at the stadium. The sports complex, which is owned by the city of Frankfurt, includes ",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|50.068056|N|8.645806|E|type:landmark|display=inline,title|format=dms}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [
+        "[[Retractable roof"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "Waldstadion",
+      "wikidata_description": "stadium in Frankfurt am Main, Germany",
+      "wikidata_P625": [
+        {
+          "lat": 50.068611,
+          "lon": 8.645278,
+          "precision": 1e-05,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Estadio Banorte": {
+      "requested_title": "Estadio Banorte",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Estadio Azteca",
+      "wikipedia_pageid": 1834902,
+      "wikipedia_revid": 1374978481,
+      "wikipedia_rev_timestamp": "2026-09-15T04:05:38Z",
+      "redirects": [
+        {
+          "from": "Estadio Banorte",
+          "to": "Estadio Azteca"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 19.303,
+          "lon": -99.1505,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q320454",
+      "disambiguation": false,
+      "lead": "Estadio Azteca (Latin American Spanish: [esˈtaðjo asˈteka]), officially known as Estadio Banorte for sponsorship reasons, is a football stadium located in Coyoacán, Mexico City. At an elevation of 2,241 meters (7,352 ft) above sea level it is the official home of Club América of Liga MX and the Mexico national team. With a capacity of 87,523, it is the largest stadium in Latin America and the eighth-largest association football stadium in the world. One of the best known football stadiums in the world, often called the \"Temple of Football\" or the \"Cathedral of Football\", it was the first to host two FIFA World Cup finals; Brazil defeated Italy 4–1 in 1970 and Argentina beat West Germany 3–2 in 1986. It also hosted the 1986 quarter-final match between Argentina and England in which Diego Maradona scored both the \"Hand of God goal\" and the \"Goal of the Century\". Both Pelé's (1970) and Dieg",
+      "hatnotes": [
+        "{{About||the adjacent light rail station|Estadio Azteca light rail station|the Andrés Calamaro song|El Cantante (Andrés Calamaro album)}}",
+        "{{Redirect|Estadio Banorte}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|19.3030|-99.1505|region:MX_type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Estadio Azteca",
+      "wikidata_description": "football stadium in Mexico City, Mexico",
+      "wikidata_P625": [
+        {
+          "lat": 19.303055555555556,
+          "lon": -99.15055555555556,
+          "precision": 0.0002777777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
+    "EverBank Field": {
+      "requested_title": "EverBank Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "EverBank Stadium",
+      "wikipedia_pageid": 626654,
+      "wikipedia_revid": 1372151265,
+      "wikipedia_rev_timestamp": "2026-08-30T16:34:11Z",
+      "redirects": [
+        {
+          "from": "EverBank Field",
+          "to": "EverBank Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 30.32388889,
+          "lon": -81.6375,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q635117",
+      "disambiguation": false,
+      "lead": "EverBank Stadium is an American football stadium in Jacksonville, Florida, United States. It is the home facility of the Jacksonville Jaguars of the National Football League (NFL), and the headquarters of the professional wrestling promotions All Elite Wrestling (AEW) and Ring of Honor (ROH). The stadium opened in 1995 as Jacksonville Municipal Stadium on the site of the old Gator Bowl Stadium (erected 1927), and included some portions of the older stadium. Located on the St. Johns River, it sits on 10 acres (4.0 ha) of land in downtown Jacksonville. In addition to hosting the Jaguars, the stadium is regularly used for college football, concerts, and other events. It is the regular site of the annual Florida–Georgia football rivalry game, a matchup between the Florida Gators of the University of Florida and the Georgia Bulldogs of the University of Georgia. The stadium is also the home o",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|30|19|26|N|81|38|15|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "EverBank Field",
+      "wikidata_description": "home venue of Jacksonville Jaguars",
+      "wikidata_P625": [
+        {
+          "lat": 30.323889,
+          "lon": -81.6375,
+          "precision": 0.0001,
+          "rank": "normal"
+        }
+      ]
+    },
+    "FC Bayern Munich Stadium": {
+      "requested_title": "FC Bayern Munich Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "FedExField": {
+      "requested_title": "FedExField",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Northwest Stadium",
+      "wikipedia_pageid": 395592,
+      "wikipedia_revid": 1374296465,
+      "wikipedia_rev_timestamp": "2026-09-11T03:10:43Z",
+      "redirects": [
+        {
+          "from": "FedExField",
+          "to": "Northwest Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 38.90777778,
+          "lon": -76.86444444,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q583085",
+      "disambiguation": false,
+      "lead": "Northwest Stadium is a stadium near Landover, Maryland, in the census-designated place of Summerfield 2.5 miles (4 km) east of Washington, D.C. It is the home venue of the Washington Commanders of the National Football League (NFL). The stadium opened in 1997 as Jack Kent Cooke Stadium and was known as FedExField from 1999 until 2024. Northwest Stadium had the NFL's largest capacity at 91,000 from 2004 until 2010 and currently seats 64,000. The stadium is owned and operated by the Commanders, with non-NFL events managed by Harris Blitzer Sports & Entertainment (HBSE). The stadium is expected to be demolished following the Commanders moving to New Stadium at RFK Campus in Washington, D.C., upon its opening in 2030.",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{coord|38|54|28|N|76|51|52|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Northwest Stadium",
+      "wikidata_description": "stadium located in Maryland, U.S.",
+      "wikidata_P625": [
+        {
+          "lat": 38.907777777778,
+          "lon": -76.864444444444,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "FirstEnergy Stadium": {
+      "requested_title": "FirstEnergy Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Huntington Bank Field",
+      "wikipedia_pageid": 626700,
+      "wikipedia_revid": 1372204591,
+      "wikipedia_rev_timestamp": "2026-08-30T21:29:01Z",
+      "redirects": [
+        {
+          "from": "FirstEnergy Stadium",
+          "to": "Huntington Bank Field"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 41.50611111,
+          "lon": -81.69944444,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1100756",
+      "disambiguation": false,
+      "lead": "Huntington Bank Field is a stadium in Cleveland, Ohio, United States. It is the home field of the Cleveland Browns of the National Football League (NFL), and serves as a venue for other events such as college and high school football, soccer, hockey, and concerts. It opened in 1999 as Cleveland Browns Stadium and was known as FirstEnergy Stadium from 2013 to 2023 before briefly reverting to its original name until 2024. The initial seating capacity was listed at 73,200 people, but following the first phase of a two-year renovation project in 2014, was reduced to the current capacity of 67,431. The stadium sits on 31 acres (13 ha) of land between Lake Erie and the Cleveland Memorial Shoreway in the North Coast Harbor area of downtown Cleveland, adjacent to the Great Lakes Science Center and Rock and Roll Hall of Fame. Cleveland Stadium stood on the site from 1931 to 1996.",
+      "hatnotes": [
+        "{{Redirect|FirstEnergy Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|41|30|22|N|81|41|58|W|region:US_type:landmark|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "September 12, 1999"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Huntington Bank Field",
+      "wikidata_description": "home venue of the Cleveland Browns",
+      "wikidata_P625": [
+        {
+          "lat": 41.506111111111,
+          "lon": -81.699444444444,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "GEHA Field at Arrowhead Stadium": {
+      "requested_title": "GEHA Field at Arrowhead Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Arrowhead Stadium",
+      "wikipedia_pageid": 292909,
+      "wikipedia_revid": 1375749409,
+      "wikipedia_rev_timestamp": "2026-09-19T20:42:48Z",
+      "redirects": [
+        {
+          "from": "GEHA Field at Arrowhead Stadium",
+          "to": "Arrowhead Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 39.04888889,
+          "lon": -94.48388889,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q544553",
+      "disambiguation": false,
+      "lead": "Arrowhead Stadium is an American football stadium in Kansas City, Missouri, United States. It primarily serves as the home venue of the Kansas City Chiefs of the National Football League (NFL), and has also hosted other soccer games and college football games for regional teams. Arrowhead Stadium hosted multiple matches during the 2026 FIFA World Cup. It was built at the same time as neighboring Kauffman Stadium, home of Major League Baseball's Kansas City Royals, which together form the Truman Sports Complex. Opened 54 years ago in 1972, Arrowhead is currently the oldest stadium in the American Football Conference (AFC). It has a seating capacity of 76,416 making it the 25th-largest stadium in the United States and the sixth-largest NFL stadium. It is also the largest sports facility by capacity in the state of Missouri. A $375 million renovation was completed in 2010.",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{coord|39|2|56|N|94|29|2|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Arrowhead Stadium",
+      "wikidata_description": "home venue of the Kansas City Chiefs",
+      "wikidata_P625": [
+        {
+          "lat": 39.048888888889,
+          "lon": -94.483888888889,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Heinz Field": {
+      "requested_title": "Heinz Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Acrisure Stadium",
+      "wikipedia_pageid": 626713,
+      "wikipedia_revid": 1372194646,
+      "wikipedia_rev_timestamp": "2026-08-30T20:35:33Z",
+      "redirects": [
+        {
+          "from": "Heinz Field",
+          "to": "Acrisure Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 40.44666667,
+          "lon": -80.01583333,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1067148",
+      "disambiguation": false,
+      "lead": "Acrisure Stadium, formerly (and still colloquially) known as Heinz Field, is a stadium located in the North Shore neighborhood of Pittsburgh, Pennsylvania, U.S. It primarily serves as the home of the Pittsburgh Steelers of the National Football League (NFL) and the Pittsburgh Panthers of the National Collegiate Athletic Association (NCAA). The stadium opened in 2001 as Heinz Field, following the controlled implosion of the teams' previous home, Three Rivers Stadium. In 2021, the owners of the Heinz name, now owned by Kraft Heinz, declined to renew the stadium's naming rights. The City of Pittsburgh approved Acrisure's bid to purchase the rights in 2022. Funded in conjunction with PNC Park and the David L. Lawrence Convention Center, the $281 million (equivalent to $510.93 million in 2025) stadium stands along the Ohio River, on the North Side of Pittsburgh in the North Shore neighborhood",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{coord|40|26|48|N|80|0|57|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Acrisure Stadium",
+      "wikidata_description": "American football stadium that is home to the Pittsburgh Steelers and Pittsburgh Panthers",
+      "wikidata_P625": [
+        {
+          "lat": 40.446666666667,
+          "lon": -80.015833333333,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Maracana Stadium": {
+      "requested_title": "Maracana Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Maracanã Stadium",
+      "wikipedia_pageid": 292965,
+      "wikipedia_revid": 1377290973,
+      "wikipedia_rev_timestamp": "2026-09-28T18:57:20Z",
+      "redirects": [
+        {
+          "from": "Maracana Stadium",
+          "to": "Maracanã Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": -22.9122,
+          "lon": -43.2303,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q155174",
+      "disambiguation": false,
+      "lead": "Estádio do Maracanã, officially known as Estádio Jornalista Mário Filho, is an association football stadium in Rio de Janeiro, Brazil. Located in the Maracanã neighborhood, it is owned by the Rio de Janeiro state government and managed by the clubs Flamengo and Fluminense. It is part of a complex that includes an arena known by the name of Maracanãzinho, which is mostly used for volleyball events. The stadium was opened in 1950 to host the FIFA World Cup, in which Brazil was beaten 2–1 by Uruguay in the deciding game, in front of a still standing record attendance of 210,850 spectators, on 16 July 1950. The venue has seen attendances of 150,000 or more at 26 occasions and has seen crowds of more than 100,000 as many as 284 times. But as terraced sections have been replaced with seats over time, and after the renovation following the 2016 Summer Olympics and Paralympics, its original capa",
+      "hatnotes": [
+        "{{Redirect|Rio Olympic Stadium|the venue of [[athletics at the 2016 Summer Olympics]]|Estádio Olímpico Nilton Santos}}",
+        "{{For|the stadium in Serbia nicknamed \"Marakana\"|Red Star Stadium}}"
+      ],
+      "infobox_coordinates": [],
+      "infobox_opened": [
+        "{{Start date"
+      ],
+      "infobox_closed": [
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Maracanã Stadium",
+      "wikidata_description": "stadium in Rio de Janeiro, Brazil",
+      "wikidata_P625": [
+        {
+          "lat": -22.912222222222223,
+          "lon": -43.23027777777778,
+          "precision": 0.0002777777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Mercedes-Benz Superdome": {
+      "requested_title": "Mercedes-Benz Superdome",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Caesars Superdome",
+      "wikipedia_pageid": 626568,
+      "wikipedia_revid": 1376765872,
+      "wikipedia_rev_timestamp": "2026-09-26T03:01:46Z",
+      "redirects": [
+        {
+          "from": "Mercedes-Benz Superdome",
+          "to": "Caesars Superdome"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 29.95083333,
+          "lon": -90.08111111,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q756452",
+      "disambiguation": false,
+      "lead": "Caesars Superdome commonly known as the Superdome, is an indoor stadium in New Orleans, Louisiana, U.S. It has served as the home venue of the New Orleans Saints of the National Football League (NFL) since its opening in 1975. Plans to build the Superdome were drawn up in 1967 by the New Orleans modernist architectural firm of Curtis and Davis and the building opened as the Louisiana Superdome in 1975. Its steel frame covers a 13-acre (5.3 ha) expanse and the 273-foot (83 m) dome is made of a lamellar multi-ringed frame and has a diameter of 680 feet (207 m), making it the largest fixed domed structure in the world. The Superdome has hosted eight Super Bowls (the most of any stadium as of 2025's Super Bowl LIX), and six NCAA championships in men's college basketball. In college football, the Sugar Bowl has been played at the Superdome since 1975, which is one of the \"New Year's Six\" bowl",
+      "hatnotes": [
+        "{{Redirect|Mercedes-Benz Superdome|the stadium in Atlanta, Georgia|Mercedes-Benz Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|29|57|3|N|90|4|52|W|region:US-LA_type:landmark|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [
+        "[[Dome]]"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "Caesars Superdome",
+      "wikidata_description": "domed stadium in New Orleans, Louisiana, USA",
+      "wikidata_P625": [
+        {
+          "lat": 29.950833333333,
+          "lon": -90.081111111111,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "New Era Field": {
+      "requested_title": "New Era Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Ralph Wilson Stadium",
+      "wikipedia_pageid": 711365,
+      "wikipedia_revid": 1377726565,
+      "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+      "redirects": [
+        {
+          "from": "New Era Field",
+          "to": "Ralph Wilson Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 42.774,
+          "lon": -78.787,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1475645",
+      "disambiguation": false,
+      "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+      "hatnotes": [
+        "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "{{End date and age",
+        "2026 (ongoing)"
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Ralph Wilson Stadium",
+      "wikidata_description": "stadium in Orchard Park, NY",
+      "wikidata_P625": [
+        {
+          "lat": 42.773611111111,
+          "lon": -78.786944444444,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Oakland-Alameda County Coliseum": {
+      "requested_title": "Oakland-Alameda County Coliseum",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Oakland Coliseum",
+      "wikipedia_pageid": 332305,
+      "wikipedia_revid": 1377385400,
+      "wikipedia_rev_timestamp": "2026-09-29T04:11:32Z",
+      "redirects": [
+        {
+          "from": "Oakland-Alameda County Coliseum",
+          "to": "Oakland Coliseum"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 37.75166667,
+          "lon": -122.20055556,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1147732",
+      "disambiguation": false,
+      "lead": "The Oakland-Alameda County Coliseum, often shortened to the Oakland Coliseum, is a multi-purpose stadium in Oakland, California, United States. It serves as part of the Oakland-Alameda County Coliseum Complex, located next to Oakland Arena. In 2017, the playing surface was dedicated as Rickey Henderson Field in honor of Major League Baseball Hall of Famer and former Oakland Athletics left fielder Rickey Henderson. The Oakland Coliseum is currently the home of the San Francisco Unicorns of Major League Cricket. The stadium was the home of the Oakland Athletics of Major League Baseball from 1968 to 2024. It was also the home of the Oakland Raiders of the National Football League from 1966 until 1981, when the team moved to Los Angeles, and again after the team's return, from 1995 until 2019, when the team moved to Las Vegas. For the last years of top-flight professional sports at the venue",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|37|45|6|N|122|12|2|W|type:landmark|display=it}}"
+      ],
+      "infobox_opened": [
+        "September 18, 1966"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Oakland Coliseum",
+      "wikidata_description": "baseball stadium in Oakland, California, United States",
+      "wikidata_P625": [
+        {
+          "lat": 37.751666666667,
+          "lon": -122.20055555556,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Paul Brown Stadium": {
+      "requested_title": "Paul Brown Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Paycor Stadium",
+      "wikipedia_pageid": 626623,
+      "wikipedia_revid": 1372206140,
+      "wikipedia_rev_timestamp": "2026-08-30T21:34:51Z",
+      "redirects": [
+        {
+          "from": "Paul Brown Stadium",
+          "to": "Paycor Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 39.095,
+          "lon": -84.516,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1632294",
+      "disambiguation": false,
+      "lead": "Paycor Stadium, previously known as Paul Brown Stadium, is an outdoor football stadium in Cincinnati, Ohio. It is the home venue of the Cincinnati Bengals of the National Football League (NFL) and opened on August 19, 2000. Originally named after the Bengals' founder, Paul Brown, the stadium is currently sponsored by Paycor, is located on approximately 22 acres (8.9 ha) of land, and has a listed seating capacity of 65,515. The stadium is nicknamed \"The Jungle\"; the Guns N' Roses song \"Welcome to the Jungle\", is the team's unofficial anthem due in part to the nickname. The construction of the stadium included $555 million of public funding, the largest public subsidy for an NFL stadium at the time. The Bengals had threatened to leave Cincinnati unless the city agreed to subsidize the stadium. In 2011, The Wall Street Journal described the stadium deal as \"unusually lopsided in favor of th",
+      "hatnotes": [
+        "{{For|the high school stadium in Massillon, Ohio|Paul Brown Tiger Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{Coord|39.095|N|84.516|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Paycor Stadium",
+      "wikidata_description": "stadium in Cincinnati, Ohio, United States",
+      "wikidata_P625": [
+        {
+          "lat": 39.095444444444,
+          "lon": -84.516038888889,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Reliant Stadium": {
+      "requested_title": "Reliant Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Reliant Stadium",
+      "wikipedia_pageid": 316466,
+      "wikipedia_revid": 1376433325,
+      "wikipedia_rev_timestamp": "2026-09-24T03:21:14Z",
+      "redirects": null,
+      "wikipedia_coordinates": [
+        {
+          "lat": 29.68472222,
+          "lon": -95.41083333,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1058864",
+      "disambiguation": false,
+      "lead": "Reliant Stadium, previously known as NRG Stadium, is a retractable roof stadium in Houston, Texas, U.S. It opened in 2002 at a cost of $352 million and has a seating capacity of 72,220. It was the first NFL facility to have a retractable roof. The stadium is the home of the National Football League's Houston Texans, the Houston Livestock Show and Rodeo, the Texas Bowl, many of the United States men's national soccer team's matches, Mexico national football team friendlies where El Tri serves as the host, and other events. The stadium served as the host facility for Super Bowls XXXVIII (2004) and LI (2017), the 2024 College Football Playoff National Championship, and WrestleMania 25 (2009). The stadium hosted multiple matches during the 2026 FIFA World Cup and was temporarily renamed Houston Stadium during the tournament. It will remain known as 'Houston Stadium' until the transition to R",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|29|41|5|N|95|24|39|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [
+        "[[Retractable roof"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "Reliant Stadium",
+      "wikidata_description": "American football and multipurpose stadium in Houston, Texas, USA",
+      "wikidata_P625": [
+        {
+          "lat": 29.684722222222,
+          "lon": -95.410833333333,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Ring Central Coliseum": {
+      "requested_title": "Ring Central Coliseum",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Oakland Coliseum",
+      "wikipedia_pageid": 332305,
+      "wikipedia_revid": 1377385400,
+      "wikipedia_rev_timestamp": "2026-09-29T04:11:32Z",
+      "redirects": [
+        {
+          "from": "Ring Central Coliseum",
+          "to": "Oakland Coliseum"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 37.75166667,
+          "lon": -122.20055556,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1147732",
+      "disambiguation": false,
+      "lead": "The Oakland-Alameda County Coliseum, often shortened to the Oakland Coliseum, is a multi-purpose stadium in Oakland, California, United States. It serves as part of the Oakland-Alameda County Coliseum Complex, located next to Oakland Arena. In 2017, the playing surface was dedicated as Rickey Henderson Field in honor of Major League Baseball Hall of Famer and former Oakland Athletics left fielder Rickey Henderson. The Oakland Coliseum is currently the home of the San Francisco Unicorns of Major League Cricket. The stadium was the home of the Oakland Athletics of Major League Baseball from 1968 to 2024. It was also the home of the Oakland Raiders of the National Football League from 1966 until 1981, when the team moved to Los Angeles, and again after the team's return, from 1995 until 2019, when the team moved to Las Vegas. For the last years of top-flight professional sports at the venue",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|37|45|6|N|122|12|2|W|type:landmark|display=it}}"
+      ],
+      "infobox_opened": [
+        "September 18, 1966"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Oakland Coliseum",
+      "wikidata_description": "baseball stadium in Oakland, California, United States",
+      "wikidata_P625": [
+        {
+          "lat": 37.751666666667,
+          "lon": -122.20055555556,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Sports Authority Field at Mile High": {
+      "requested_title": "Sports Authority Field at Mile High",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Empower Field at Mile High",
+      "wikipedia_pageid": 501440,
+      "wikipedia_revid": 1375502447,
+      "wikipedia_rev_timestamp": "2026-09-18T04:40:09Z",
+      "redirects": [
+        {
+          "from": "Sports Authority Field at Mile High",
+          "to": "Empower Field at Mile High"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 39.74388889,
+          "lon": -105.02,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1046135",
+      "disambiguation": false,
+      "lead": "Empower Field at Mile High is an American football stadium in the western United States, located in Denver, Colorado. Opened 25 years ago in 2001, its primary tenant is the Denver Broncos of the National Football League (NFL), and it replaced the Broncos' original home, Mile High Stadium. The stadium is nicknamed \"Mile High\" due to its predecessor, in reference to Denver's elevation of one mile or 5,280 feet (1,610 m) above sea level. Given the difficulty of competing at altitude, as well as the notoriously loud fans, the Broncos are known to have one of the best home-field advantages in the NFL. Former tenants include the Denver Outlaws lacrosse team and the Colorado Rapids soccer team. It has also played host to many concerts, and was the venue for Barack Obama's acceptance of the Democratic presidential nomination at the 2008 Democratic National Convention. After only three decades, t",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|39|44|38|N|105|1|12|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Empower Field at Mile High",
+      "wikidata_description": "home venue of the Denver Broncos",
+      "wikidata_P625": [
+        {
+          "lat": 39.743888888889,
+          "lon": -105.02,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "StubHub Center": {
+      "requested_title": "StubHub Center",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Dignity Health Sports Park",
+      "wikipedia_pageid": 529735,
+      "wikipedia_revid": 1372080521,
+      "wikipedia_rev_timestamp": "2026-08-30T05:19:05Z",
+      "redirects": [
+        {
+          "from": "StubHub Center",
+          "to": "Dignity Health Sports Park"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 33.864,
+          "lon": -118.261,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q200684",
+      "disambiguation": false,
+      "lead": "Dignity Health Sports Park is a multi-use sports complex located on the campus of California State University, Dominguez Hills, in Carson, California, United States. The complex consists of the 27,000-seat Dignity Health Sports Park soccer stadium, the Dignity Health Sports Park tennis stadium, a track-and-field facility, and the VELO Sports Center velodrome. It is approximately 14 miles (23 km) south of downtown Los Angeles, and its primary tenant is the LA Galaxy of Major League Soccer (MLS). The main stadium was also home to the Los Angeles Wildcats of the XFL in 2020. The LA Galaxy II of MLS Next Pro play their home matches at the complex's track and field facility. For the 2017 to 2019 seasons, the stadium served as the temporary home of the Los Angeles Chargers NFL team. For 2020 and 2021, the stadium served as the temporary home of the San Diego State Aztecs football team. Opened ",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|33.864|N|118.261|W|type:landmark|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Dignity Health Sports Park",
+      "wikidata_description": "multiple-use sports complex in Carson, California, USA",
+      "wikidata_P625": [
+        {
+          "lat": 33.864444444444,
+          "lon": -118.26111111111,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "TIAA Bank Stadium": {
+      "requested_title": "TIAA Bank Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "EverBank Stadium",
+      "wikipedia_pageid": 626654,
+      "wikipedia_revid": 1372151265,
+      "wikipedia_rev_timestamp": "2026-08-30T16:34:11Z",
+      "redirects": [
+        {
+          "from": "TIAA Bank Stadium",
+          "to": "EverBank Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 30.32388889,
+          "lon": -81.6375,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q635117",
+      "disambiguation": false,
+      "lead": "EverBank Stadium is an American football stadium in Jacksonville, Florida, United States. It is the home facility of the Jacksonville Jaguars of the National Football League (NFL), and the headquarters of the professional wrestling promotions All Elite Wrestling (AEW) and Ring of Honor (ROH). The stadium opened in 1995 as Jacksonville Municipal Stadium on the site of the old Gator Bowl Stadium (erected 1927), and included some portions of the older stadium. Located on the St. Johns River, it sits on 10 acres (4.0 ha) of land in downtown Jacksonville. In addition to hosting the Jaguars, the stadium is regularly used for college football, concerts, and other events. It is the regular site of the annual Florida–Georgia football rivalry game, a matchup between the Florida Gators of the University of Florida and the Georgia Bulldogs of the University of Georgia. The stadium is also the home o",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|30|19|26|N|81|38|15|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "EverBank Field",
+      "wikidata_description": "home venue of Jacksonville Jaguars",
+      "wikidata_P625": [
+        {
+          "lat": 30.323889,
+          "lon": -81.6375,
+          "precision": 0.0001,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Tottenham Stadium": {
+      "requested_title": "Tottenham Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "University of Phoenix Stadium": {
+      "requested_title": "University of Phoenix Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "State Farm Stadium",
+      "wikipedia_pageid": 2748329,
+      "wikipedia_revid": 1377283950,
+      "wikipedia_rev_timestamp": "2026-09-28T18:11:10Z",
+      "redirects": [
+        {
+          "from": "University of Phoenix Stadium",
+          "to": "State Farm Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 33.528,
+          "lon": -112.263,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q756433",
+      "disambiguation": false,
+      "lead": "State Farm Stadium is a retractable roof stadium in Glendale, Arizona, U.S., a suburb west of Phoenix. It is the home of the Arizona Cardinals of the National Football League (NFL) and the annual Fiesta Bowl. Opened in 2006, the venue replaced Sun Devil Stadium in Tempe as the home of the Cardinals, and is adjacent to Desert Diamond Arena, former home of the Arizona Coyotes of the National Hockey League. The stadium has been the host of the Fiesta Bowl since January 2007. It hosted two BCS National Championship games in 2007 and 2011, respectively. It hosted the College Football Playoff National Championship in 2016, three Super Bowls (2008, 2015, and 2023), as well as the Pro Bowl in 2015. It also hosted the final game of the 2025 NFL Wild Card weekend for the Los Angeles Rams against the Minnesota Vikings due to the Southern California Wildfires going on at the time. For soccer, it was",
+      "hatnotes": [
+        "{{For|similarly named sports facilities|State farm (disambiguation)}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|33.528<!--|31|30-->|N|112.263<!--|16|00-->|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [
+        "[[Retractable roof"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "State Farm Stadium",
+      "wikidata_description": "stadium in Glendale, Arizona, USA",
+      "wikidata_P625": [
+        {
+          "lat": 33.5275,
+          "lon": -112.2625,
+          "precision": 0.0001,
+          "rank": "normal"
+        }
+      ]
+    }
+  },
+  "roof_evidence": {
+    "Allianz Arena": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Allianz Arena",
+      "wikipedia_revid": 1375516115,
+      "wikidata_item": "Q127429",
+      "sentences": [
+        "Allianz Arena (German: [aˈli̯ants ʔaˌʁeːna]; known as Munich Football Arena for UEFA competitions) is a football stadium in Munich, Germany, with a 70,000 seating capacity for international matches and 75,000 for domestic matches.",
+        "The partial roof covers all seats, although winds can still blow rain onto some of them.",
+        "Prior to the 2012–13 season, Bayern Munich announced that capacity had been increased to 71,000 for domestic matches and 68,000 for UEFA matches, with the addition of 2,000 seats in the upper tier of the arena.",
+        "The roof of the stadium has built-in roller blinds which may be drawn back and forth during games to provide protection from the sun.",
+        "An esplanade rises gradually from ground level at the subway station entrance, practically building the parking garage's cover, to the entrance level of the stadium.",
+        "However, Allianz is not a sponsor for UEFA and FIFA competitions, and for this reason, the logo is covered during Champions League games, and was removed during the 2006 FIFA World Cup and UEFA Euro 2024."
+      ]
+    },
+    "Arena Corinthians": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Arena Corinthians",
+      "wikipedia_revid": 1376729111,
+      "wikidata_item": "Q1362236",
+      "sentences": [
+        "80% of the structural construction is made of precast elements, 40% manufactured on a 7,500 square metres (81,000 ft2) plant on-site.",
+        "External walls are covered by 12,000 square metres (130,000 ft2) of white Levantina Techlam ceramic tiles, A 12 metres (39 ft) Corinthians symbol, constructed from stainless steel and backlighting, will be mounted on the south wall of the east side.",
+        "The stadium has 6,000 second tier covered seating and 10,000 VIP seats.",
+        "The largest units will cover more than 470 square metres (5,100 sq ft).",
+        "=== Roof === Werner Sobek designed the roof, which is held in place by 48 75 metres (246 ft)-long trusses.",
+        "The total east–west roof length is 245.",
+        "The height of the roof and weight of the trusses required the use of the largest crawler crane available in Latin America.",
+        "The roof has four layers.",
+        "Finally, the entire roof is covered with 40,000 square metres (430,000 ft2) of Firestone Ultraply TPO.",
+        "On the underside, a flexible membrane covers the structure.",
+        "4,500 square metres (48,000 ft2) of glass will be installed on the end closest to the pitch of the west and east roofing.",
+        "The site has 1,620 covered parking spaces and 929 open air parking spaces, with another 2,214 spaces provided by a shopping mall nearby.",
+        "A crane fell while carrying a part of the roof, destroying eight columns of the LED screen and part of an internal slab."
+      ]
+    },
+    "Bernabéu (stadium)": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Bernabéu (stadium)",
+      "wikipedia_revid": 1376542686,
+      "wikidata_item": "Q164027",
+      "sentences": [
+        "Bernabéu, (Spanish: El Bernabéu [βeɾnaˈβew] ) formerly known as Santiago Bernabéu Stadium, is a retractable roof football stadium in the district of Chamartín, Madrid, Spain.",
+        "All the issues were covered on the day they were released to the Stock Market, thanks to the enthusiasm and confidence of the members, even the most modest ones.",
+        "The stadium had an initial capacity of 75,145 spectators, 27,645 of which had seats (7,125 covered) and 47,500 for standing fans.",
+        "First, FIFA forced two-thirds of the seating area to be covered.",
+        "For this reason, Real Madrid installed a roof covering the perimeter of the first and second tiers of seating, except the east side.",
+        "24,550 of which were covered by the new roof.",
+        "A retractable protective roof was also installed to protect the fans from the elements.",
+        "The proposed plan included a new architectural envelope, roof covering for all seats, and the incorporation of bioclimatic systems with renewable energy, as well as the construction of two new public plazas, a hotel, and a large shopping centre on the side facing Paseo de la Castellana.",
+        "Thus, in 2016, it presented a new project that eliminated the hotel and shopping center, raised the height of the stadium by only 12 meters (39 ft) for the construction of the roof, reaching a total height of 60 meters (200 ft), and eliminated the possibility of increasing the capacity.",
+        "Finally, on 11 November 2023, a third loan of 370 million euros for 30 years was requested to cover cost overruns due to the COVID-19 pandemic and Russian invasion of Ukraine.",
+        "However, the event was postponed and moved to the indoor arena, Palacio de Deportes de la Comunidad de Madrid (the home of Real Madrid Baloncesto) for unknown reasons, possibly due to weather concerns, scheduling conflicts or capacity issues."
+      ]
+    },
+    "Estadio Azteca": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Estadio Azteca",
+      "wikipedia_revid": 1374978481,
+      "wikidata_item": "Q320454",
+      "sentences": [
+        "The roof was planned to be renovated, which has reportedly not been repaired for a long time and suffers from leaking."
+      ]
+    },
+    "Highmark Stadium": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Highmark Stadium",
+      "wikipedia_revid": 1376055436,
+      "wikidata_item": "Q16251517",
+      "sentences": [
+        "The new venue has a partial roof so that 65% of seats would be protected from the elements; the playing field is uncovered as Buffalo's reputation for cold, snowy weather often makes for compelling television and has long formed a part of the team's and city's identity.",
+        "The design was conceived as a football-focused, open-air stadium intended to preserve the effects of Buffalo's weather while providing greater protection for spectators than the team's previous stadium.",
+        "The exterior is characterized by a continuous colonnade of vertical fins extending around the stadium from ground level to the canopy.",
+        "Perforated metal panels are positioned between the upper portions of the fins, providing protection from wind and precipitation while retaining the open-air character of the venue.",
+        "A 360-degree canopy covers the seating bowl.",
+        "Rather than enclosing the stadium, the canopy follows the shape of the bowl and exterior facade, rising toward the center of the stadium and descending toward the end zones.",
+        "The arrangement provides weather protection while leaving the field exposed to outdoor conditions.",
+        "The canopy and surrounding facade were also designed to mitigate the effects of Buffalo's wind and winter weather without eliminating the outdoor environment associated with Bills games.",
+        "Contemporary descriptions of the completed stadium report that the canopy covers more than 60 percent of the seating.",
+        "The open concourse design represents a change from the more enclosed circulation areas of the previous stadium.",
+        "The open-air configuration allows snow, wind and cold temperatures to remain part of the game-day environment, while the canopy, perforated facade, enclosed circulation areas and snow-mitigation systems provide protection for spectators and the playing surface.",
+        "The resulting design was intended to balance the demands of Buffalo's winter climate with the Bills' preference for an outdoor football environment.",
+        "4 billion, 72,000-seat retractable roof stadium, convention center, hotel and sports museum plan for the Buffalo Outer Harbor.",
+        "5 billion package that would also include renovations to KeyBank Center, Buffalo's indoor sports arena.",
+        "The new venue does not include a roof, but was designed so that about 65% of seats would be protected from the elements.",
+        "Western New York's harsh winters also played into the team's decision to make the new stadium open-air.",
+        "He was found \"covered in human excrement\" and was under the influence of drugs and alcohol before being removed from the site.",
+        "The video boards were criticized as small relative to those at other recently built NFL venues, the sound system performed poorly, and spectators in sections marketed as covered were soaked during a downpour, despite promotional material indicating the canopy would shelter about 65% of seats."
+      ]
+    },
+    "Maracanã Stadium": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Maracanã Stadium",
+      "wikipedia_revid": 1377290973,
+      "wikidata_item": "Q155174",
+      "sentences": [
+        "The stadium's popular name is derived from the Maracanã River, which originates in the jungle-covered hills to the west, crossing various bairros (neighborhoods) of Rio's Zona Norte (North Zone), such as Tijuca and São Cristóvão, via a drainage canal which features sloping sides constructed of concrete.",
+        "The stadium has also hosted numerous domestic football cup finals, most notably the Copa do Brasil and the Campeonato Carioca.",
+        "The original stadium's roof in concrete was removed and replaced with a fiberglass tensioned membrane coated with polytetra-fluoroethylene.",
+        "The new roof covers 95% of the seats inside the stadium, unlike the former design, where protection was only afforded to some seats in the upper ring and the bleachers above the gate access of each sector.",
+        "=== Disrepair after the 2016 Summer Olympics precipitates new concessionaire === The stadium lay dormant in the months after the 2016 Olympics and Paralympics, with photos surfacing in early 2017 of a dried-up playing field covered in brown spots and missing turf, ripped-out seats, and damage to windows and doors."
+      ]
+    },
+    "Melbourne Cricket Ground": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Melbourne Cricket Ground",
+      "wikipedia_revid": 1376948300,
+      "wikidata_item": "Q330136",
+      "sentences": [
+        "The Southern Stand, which spanned almost half of the field's circumference, seated 18,200 under cover and 13,000 in the open and was the main public area of the MCG.",
+        "From November 2019 until February 2020 all the playing field lights, including those in the light towers, were replaced with LED sports lighting with the lighting under the roof and in two of the light towers completed in time for the Boxing Day Test against New Zealand.",
+        "Since the introduction of the domestic Twenty20 Big Bash League (BBL) in 2011, the Melbourne Stars club played its home matches at the ground until it merged with the Melbourne Renegades in 2026.",
+        "Highest VFL/AFL attendance at a final and highest Australian sporting event attendance – 121,696 (Collingwood v Carlton, 1970) Highest soccer crowd at MCG (Clubs International Friendly) – 99,382 (International Champions Cup, Manchester City v Real Madrid, 24 July 2015) Highest soccer crowd at MCG (National Team vs National Team) – 97,103 (Australia v Greece, 2006) Highest attendance in a single Te"
+      ]
+    },
+    "Stade de France": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Stade de France",
+      "wikipedia_revid": 1375923585,
+      "wikidata_item": "Q13205",
+      "sentences": [
+        "Domestically, Stade de France serves as a secondary home facility of Parisian rugby clubs Stade Français and Racing 92, hosting a few of their regular-season fixtures.",
+        "The stadium also hosts the main French domestic cup finals, which include the Coupe de France (both football and rugby), Coupe de France Féminine, and the Coupe Gambardella, as well as the Top 14 rugby union championship match.",
+        "With the confirmation of France's choice announced on July 2, 1992, this new all-seater covered stadium was guaranteed and thus broke the country's tradition of not building any new specific structure for a sporting event, as the last one was the Stade Olympique Yves-du-Manoir.",
+        "The roof installation cost €45 million, and the mobile platform took over a year to complete.",
+        "=== Roof === Construction of the stadium's roof cost over €45 million.",
+        "It is partially retractable.",
+        "1 m, then the inner sections retract 15 m into the space created, carried by ten distinct elements of 700 tons each.",
+        "The 82,000-seat stadium, featuring a retractable roof and slide-out pitch, was to be built on a former horse racing track in Évry, about 25 km (16 mi) south of Paris."
+      ]
+    },
+    "Tottenham Hotspur Stadium": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Tottenham Hotspur Stadium",
+      "wikipedia_revid": 1377204343,
+      "wikidata_item": "Q55074091",
+      "sentences": [
+        "It features the world's first dividing, retractable synthetic turf pitch used for NFL games, concerts and other events.",
+        "The project covers the site of the now demolished ground White Hart Lane and areas adjacent to it.",
+        "As their matches became more popular with the public and the number of spectators increased, the club decided to move to an enclosed ground allowing it to charge an entrance fee and control the crowd.",
+        "The compression ring that holds the cable net roof structure was completed in February 2018, and the roof structure raised in March 2018.",
+        "The stadium covers an area of 43,000 m2, nearly twice the area of White Hart Lane (24,000 m2).",
+        "Regions of glazing not covered by the metal screen, including the main entrances and concourses, offices, Sky Lounge, as well the extensive glazed area to the south, allow for views into and out of the stadium.",
+        "The roof is a cable net structure, held in place by an elliptically shaped compression ring.",
+        "The roof has a circumference of 720 metres, and it is clad in standing seam aluminium panels that end with extruded polycarbonate on the inside edge to allow light through onto the pitch but reduce the contrast of the shadow of the roof on the pitch.",
+        "810 curved aluminium eave cassettes connect the roof to the wall.",
+        "The pitch is lit by 324 LED floodlights, arranged in 54 groups of six and attached to the columns of the roofing system.",
+        "The corners of the stadium are enclosed and the stands are placed close to the pitch, with fans generating a \"wall of sound\" that can reverberate around the ground.",
+        "The design extends to the shape and material of the roof and the seating, such as aluminium soffit lining to the roof, and aims to produce cleaner and quicker reverberation times that allow fans to sing in sync thereby producing chants that are louder and last longer.",
+        "Away fans are allocated seats in the north east corner; 3,000 seats in the lower tier for Premier League games, while for domestic cups they may be allocated up to 15% of the capacity spread over three tiers.",
+        "These include two Sky Lounges on the top floor of the East and West Stands, with views over London and the pitch, the Sky Bridge, which is the world's first bridge to be suspended from the roof of a stadium, 65 suites of private loges and super loges, Michelin star level dining, and the Tunnel Club that allows its members to observe the players as they walk from the dressing room to the pitch thro",
+        "It offers visitor attractions such as a 'Dare Skywalk' opened on 31 August 2020; visitors may walk up the side of the stadium to the roof, then over a glass walkway around the golden cockerel above the South Stand where they may view the goal line from the roof, or abseil down to the south podium from a viewing deck.",
+        "5-m-tall and near-double-sized fibreglass replica of the spurs cockerel, originally created in 1909 to sit atop the west stand at White Hart Lane, was placed on the roof structure above the South Stand on 6 November 2018."
+      ]
+    },
+    "Twickenham Stadium": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Twickenham Stadium",
+      "wikipedia_revid": 1376891621,
+      "wikidata_item": "Q209725",
+      "sentences": [
+        "Apart from its relationship with the national team, Twickenham is the venue for a number of other domestic and international rugby union matches.",
+        "It hosts the annual London leg of the World Rugby Sevens Series, the Cup (championship) final, the third-place match of the annual London leg of the World Rugby Women's Sevens Series, and the domestic Middlesex Sevens competition.",
+        "Following the upgrade, the roof is now complete.",
+        "The museum covers the whole of the global game, not just English rugby union.",
+        "The museum has a rolling programme of special exhibitions which cover topical issues and offer an opportunity to display some of the obscurer items in the collection."
+      ]
+    },
+    "Waldstadion (Frankfurt)": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Waldstadion (Frankfurt)",
+      "wikipedia_revid": 1375755144,
+      "wikidata_item": "Q157273",
+      "sentences": [
+        "ʃtaːdi̯ɔn] , Forest Stadium), currently known as Deutsche Bank Park for sponsorship purposes, is a retractable roof sports stadium in Frankfurt, Germany."
+      ]
+    },
+    "Wembley Stadium": {
+      "wikipedia_status": 200,
+      "wikipedia_title": "Wembley Stadium",
+      "wikipedia_revid": 1377746005,
+      "wikidata_item": "Q128468",
+      "sentences": [
+        "The stadium is England's national football stadium, and thus hosts the majority of the England national team home matches and the FA Cup Final – the final of England's primary domestic club football competition.",
+        "Designed by Populous and Foster and Partners, the stadium is crowned by the 134-metre-high (440 ft) Wembley Arch which serves aesthetically as a landmark across London as well as structurally, with the arch supporting over 75% of the entire roof load.",
+        "Two partially retractable roof structures over the east and west ends of the stadium can be opened to allow sunlight and aid pitch growth.",
+        "It is one of the most expensive stadia ever built at a cost of £798 million in 2007, and has the largest roof-covered seating capacity in the world.",
+        "The all-seater stadium is a bowl design with a capacity of 90,000, protected from the elements by a sliding roof that does not completely enclose it.",
+        "It supports all the weight of the north roof and 60% of the weight of the retractable roof on the southern side.",
+        "The arch is the world's longest unsupported roof structure.",
+        "On 20 March 2006, a steel rafter in the roof of the new development fell by 1+1⁄2 ft (46 cm), forcing 3,000 workers to evacuate the stadium and raising further doubts over the completion date which was already behind schedule.",
+        "=== Covering === The stadium roof has an area of 40,000 m2 (430,000 ft2), of which 13,722 m2 (147,700 ft2) is movable.",
+        "The primary reason for the sliding roof was to avoid shading the pitch, as grass demands direct sunlight to grow effectively.",
+        "The sliding roof design minimises the shadow by having the roof pulled back on the east, west and south.",
+        "The stadium roof rises to 52 metres (171 ft) above the pitch and is supported by an arch rising 133 m (436 ft) above the level of the external concourse.",
+        "With a span of 315 m (1,033 ft), the arch is the longest single-span roof structure in the world.",
+        "These events cover the sports of football, rugby league and American football.",
+        "Stations near by: === Onsite parking === The onsite parking facility is shared with Wembley Arena, essentially being the open air surface parking surrounding the eastern flank of Wembley Stadium and the multi-storey car park."
+      ]
+    }
   }
 }
