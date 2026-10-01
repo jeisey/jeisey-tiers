@@ -10,7 +10,7 @@
       "History of the Tennessee Titans",
       "2008 Tennessee Titans season",
       "Nashville, Tennessee",
-      "Jaguars–Titans rivalry"
+      "Hale Stadium"
     ],
     "titles": [
       {
@@ -357,8 +357,8 @@
       "List of current NFL stadiums",
       "Bills–Chiefs rivalry",
       "1973 Miami Dolphins season",
-      "Chronology of home stadiums for current NFL teams",
-      "History of the Buffalo Bills"
+      "History of the Buffalo Bills",
+      "Chronology of home stadiums for current NFL teams"
     ],
     "titles": [
       {
@@ -721,16 +721,68 @@
     ]
   },
   "_run": {
-    "started_at_utc": "2026-10-01T17:28:55.516390+00:00",
-    "finished_at_utc": "2026-10-01T17:30:16.927997+00:00",
+    "started_at_utc": "2026-10-01T17:31:13.341842+00:00",
+    "finished_at_utc": "2026-10-01T17:32:46.198514+00:00",
     "user_agent": "jeisey-tiers source probe (https://github.com/jeisey/jeisey-tiers)",
     "calls_by_host": {
-      "en.wikipedia.org": 65,
-      "www.wikidata.org": 44
+      "en.wikipedia.org": 85,
+      "www.wikidata.org": 45
     },
     "failures": []
   },
   "schedule_names": {
+    "Allianz Arena (Munich)": {
+      "requested_title": "Allianz Arena (Munich)",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "Football Arena Munich": {
+      "requested_title": "Football Arena Munich",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "Munich Football Arena": {
+      "requested_title": "Munich Football Arena",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "Tottenham Hotspur Stadium": {
+      "requested_title": "Tottenham Hotspur Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Tottenham Hotspur Stadium",
+      "wikipedia_pageid": 57547930,
+      "wikipedia_revid": 1377204343,
+      "wikipedia_rev_timestamp": "2026-09-28T08:12:07Z",
+      "redirects": null,
+      "wikipedia_coordinates": [
+        {
+          "lat": 51.6044,
+          "lon": -0.0664,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q55074091",
+      "disambiguation": false,
+      "lead": "Tottenham Hotspur Stadium is a multi-purpose stadium in London, England. It is owned and operated by the Premier League club Tottenham Hotspur, replacing the club's previous ground, White Hart Lane. With a seating capacity of 62,850, it is the third largest football stadium in England and the largest club ground in London. It is also used for NFL International Series games. It features the world's first dividing, retractable synthetic turf pitch used for NFL games, concerts and other events. The construction of the stadium was initiated as the centrepiece of the Northumberland Development Project, intended to be the catalyst for a 20-year regeneration plan for Tottenham. The project covers the site of the now demolished ground White Hart Lane and areas adjacent to it. It was conceived in 2007 and announced in 2008, but revised several times, and construction of the stadium, beset by disp",
+      "hatnotes": [],
+      "infobox_coordinates": [],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Tottenham Hotspur Stadium",
+      "wikidata_description": "stadium in London, England",
+      "wikidata_P625": [
+        {
+          "lat": 51.604444444444,
+          "lon": -0.066388888888889,
+          "precision": 0.00027777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
     "Azteca Stadium": {
       "requested_title": "Azteca Stadium",
       "wikipedia_status": 200,
@@ -1702,6 +1754,20 @@
   },
   "roof_evidence": {
     "Allianz Arena": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "Hybrid grass<ref>{{cite web |url=https://allianz-arena.com/de/news/2023/08/zum-saisonstart-2023-2024-neuer-hybrid-rasen-in-der-allianz-arena-verlegt |title=Neuer Hybrid-Rasen in der Allianz Arena verlegt |date=7 August 2023 |website=allianz-arena.com |language= German |access-date=29 August 2023}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "Effective with the city's approval of modifications that was granted 16 January 2006, the legal capacity of the stadium increased from 69,000 to 71,000 spectators (including standing room). The lower tier can seat up to 20,000, the middle tier up to 24,000, and the upper tier up to 22,000. 10,400 of",
+        "[[File:Allianz-Arena.ebenerdig.rang1-3.s.JPG|right|thumb|Part of Allianz Arena roof's sun-shade blinds rolled open]]",
+        "The stadium construction began on 21 October 2002 and it was officially opened on 30 May 2005. The primary designers are architects [[Herzog & de Meuron]]. The stadium is designed so that the main entrance to the stadium would be from an elevated esplanade separated from the parking space consisting"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Allianz Arena",
       "wikipedia_revid": 1375516115,
@@ -1716,6 +1782,28 @@
       ]
     },
     "Arena Corinthians": {
+      "infobox": {
+        "roof": [],
+        "type": [
+          "Stadium"
+        ],
+        "surface": [
+          "[[Lolium perenne|Perennial Ryegrass]] with Artificial Fibres ([[Desso GrassMaster]])<ref name=\"DessoGrassMaster\">{{cite web |url= http://www.prnewswire.co.uk/news-releases/2014-fifa-world-cup-brazil-kicks-off-on-hybrid-grass-232982441.html |title= 2014 FIFA World Cup Brazil Kicks Off on Hybrid Grass |date = 22 November 2013 |access-date = 27 November 2013}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": [
+          "rectangular"
+        ]
+      },
+      "wikitext_roof_lines": [
+        "=== Roof ===",
+        "[[File:080514itaquerao sp 8715pm.jpg|thumb|The underside of the roof is lined by a membrane]]",
+        "Werner Sobek designed the roof,<ref name=\"EandA\"/> which is held in place by 48 {{convert|75|m|ft}}-long trusses.<ref name=\"RoofDetail\">{{cite web| url=http://www.estadao.com.br/noticias/esportes,exclusivo-veja-em-3d-como-sera-a-cobertura-da-arena-corinthians,939698,0.htm| title=Exclusivo: veja em 3",
+        "The roof has four layers. On the underside is a layer of corrugated steel sheets. Above them, thermal and acoustic insulation is provided by [[Polyisocyanurate]] sheets. A layer of plasterboard is above it.<ref name=\"RoofLayers\">{{cite web| url=http://globoesporte.globo.com/futebol/times/corinthians",
+        "The structure was redesigned to duplicate the current noise level supporters create during games. Measurements taken on Pacaembu show that sound levels reach a peak of 113[[decibel|dB]] when goals are scored.<ref name=\"SoundLevels\">{{cite web|url=http://rodrigomattos.blogosfera.uol.com.br/2013/09/04",
+        "The site has 1,620&nbsp;covered parking spaces and 929&nbsp;open air parking spaces,<ref name=\"ProjectData\"/> with another 2,214&nbsp;spaces provided by a shopping mall nearby.<ref name=\"MallParking\">{{cite web| url=http://www.metro.sp.gov.br/pdf/estacionamentos/estacionamentos.pdf| title=Estacionam",
+        "Two people were killed in an accident on 27 November 2013, which destroyed part of the east building.<ref name=\"ConstructionAccident\">{{cite web |url= http://g1.globo.com/sao-paulo/noticia/2013/11/acidente-nas-obras-do-estadio-do-corinthians-mobiliza-bombeiros.html |title= Acidente nas obras do está"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Arena Corinthians",
       "wikipedia_revid": 1376729111,
@@ -1737,6 +1825,28 @@
       ]
     },
     "Bernabéu (stadium)": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "Mixto [[hybrid grass]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Bernabéu''', ({{langx|es|El Bernabéu}} {{IPA|es|βeɾnaˈβew||ES-pe - Estadio Santiago Bernabéu.ogg}}) formerly known as '''Santiago Bernabéu Stadium''', is a [[retractable roof]] [[association football|football]] stadium in the [[Chamartín (Madrid)|district of Chamartín]], [[Madrid]], Spain. With a",
+        "The improvements included a number of points. First, [[FIFA]] forced two-thirds of the seating area to be covered. For this reason, Real Madrid installed a roof covering the perimeter of the first and second tiers of seating, except the east side. The stadium's capacity was reduced from 120,000 to 9",
+        "Also, due to the height of the stand, it was necessary to improve and increase the lighting capability. A [[Retractable roof|retractable protective roof]] was also installed to protect the fans from the elements. After the renovation, the stadium's capacity was 106,000 spectators.<ref name=\":0\" />",
+        "This proposal was announced at the Ordinary General Assembly on 12 September 2010,<ref>{{Cite web|title=Florentino Pérez: \"Crearemos un sistema de cubrición de gradas\"|url=http://www.marca.com/2010/09/12/futbol/equipos/real_madrid/1284290041.html|website=marca.com|date=10 September 2010|language=es}",
+        "However, the project was halted in February 2015,<ref>{{Cite web|title=El TSJM suspende la reforma del Bernabéu|url=https://www.elmundo.es/madrid/2015/02/10/54da85a822601d092d8b456b.html|website=elmundo.es|date=10 February 2015|language=es}}</ref> when the Superior Court of Justice of Madrid annulle",
+        "[[File:Estadio Santiago Bernabeu (53988637843).jpg|250x250px|thumb|Interior and retractable roof of the stadium in 2024.]]",
+        "[[Category:Retractable-pitch stadiums]]",
+        "[[Category:Retractable-roof stadiums in Europe]]"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Bernabéu (stadium)",
       "wikipedia_revid": 1376542686,
@@ -1756,6 +1866,18 @@
       ]
     },
     "Estadio Azteca": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[GrassMaster]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "The stadium was planned to be structurally reinforced by building two large areas on the sides that will serve as bars. The roof was planned to be renovated, which has reportedly not been repaired for a long time and suffers from leaking.<ref name=\"stadiumworks1\" /> In addition to renovations of the"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Estadio Azteca",
       "wikipedia_revid": 1374978481,
@@ -1765,6 +1887,25 @@
       ]
     },
     "Highmark Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[Kentucky bluegrass]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "{{Cite news |last1=Wojton |first1=Nick |title=Which stadium did the Bills' architects recently design? Check it out |work=Bills Wire |publisher=[[USA Today]] |date=April 1, 2022 |url=https://billswire.usatoday.com/lists/which-stadium-did-the-bills-architects-recently-design/ |access-date=April 2, 20",
+        "Highmark Stadium was designed by the architecture firm [[Populous Holdings|Populous]] in collaboration with the [[Buffalo Bills]] and [[Legends Hospitality|Legends]]. The design was conceived as a football-focused, open-air stadium intended to preserve the effects of [[Buffalo, New York|Buffalo]]'s ",
+        "The exterior is characterized by a continuous colonnade of vertical fins extending around the stadium from ground level to the canopy. Perforated metal panels are positioned between the upper portions of the fins, providing protection from wind and precipitation while retaining the open-air characte",
+        "A 360-degree canopy covers the seating bowl. Rather than enclosing the stadium, the canopy follows the shape of the bowl and exterior facade, rising toward the center of the stadium and descending toward the end zones. The arrangement provides weather protection while leaving the field exposed to ou",
+        "Weather considerations were incorporated into both the architecture and stadium systems. The open-air configuration allows snow, wind and cold temperatures to remain part of the game-day environment, while the canopy, perforated facade, enclosed circulation areas and snow-mitigation systems provide ",
+        "The first major stadium proposal was presented in 2012. On October 23, George Hasiotis and Nicholas Stracick of Greater Buffalo Sports and Entertainment Complex, a Delaware-based [[limited liability company|LLC]], presented a rendered plan created by architect firm [[HKS, Inc.]] to the Buffalo Commo",
+        "On August 31, 2021, the Bills submitted their plans for a $1.4 billion, 60,000-seat stadium in Orchard Park to representatives of the state and Erie County to be completed by 2027. The proposed capacity was 12,000 seats less than Highmark Stadium and 1,500 seats less than [[Soldier Field]], the lowe",
+        "Several aspects of the stadium drew criticism following the event. Photographs circulated on social media showing seats with views obstructed by railings, safety glass partitions and staircases, and some personal seat license holders said the views differed from those presented during the sales proc"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Highmark Stadium",
       "wikipedia_revid": 1376055436,
@@ -1791,6 +1932,18 @@
       ]
     },
     "Maracanã Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "Grass"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "For the 2014 World Cup and 2016 Olympics and Paralympics, a major reconstruction project was initiated in 2010.<ref name=\"stadiumguide.com\">{{cite web|url=https://www.stadiumguide.com/maracana/|title=Maracana – Rio de Janeiro – The Stadium Guide|first=Wojciech|last=says|website=stadiumguide.com|date"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Maracanã Stadium",
       "wikipedia_revid": 1377290973,
@@ -1804,6 +1957,20 @@
       ]
     },
     "Melbourne Cricket Ground": {
+      "infobox": {
+        "roof": [],
+        "type": [
+          "Video |language=English |publisher=YouTube |access-date=2021-07-22 |archive-url=https://web.archive.org/web/20231008053319/https://www.youtube.com/watch?v=XA5p-gU33eA |archive-date=8 October 2023 |url-status=live |quote=Australia's two previous olympic hosts Sydney and Melbourne will also host football prelims and quarterfinals enabling australia-wide engagement |people=[[Australian Olympic Committee]]}}</ref><ref name=\"AusStadiums0721\">{{Cite news |last=<!--Staff writer(s)/no by-line.--> |date=21 July 2021 |title=Brisbane 2032 Olympic venues announced |url=https://www.austadiums.com/news/921/brisbane-2032-olympic-games-venues-revealed |url-status=live |archive-url=https://web.archive.org/web/20231008053423/https://www.austadiums.com/news/921/brisbane-2032-olympic-games-venues-revealed |archive-date=8 October 2023 |access-date=2021-07-21 |work=AusStadiums}}</ref><ref name=\"BNE32IOC\">{{Cite web |title=IOC Future Host Commission Questionnaire Response - Final Submission - May 2021 |url=https://stillmed.olympics.com/media/Documents/International-Olympic-Committee/Commissions/Future-host-commission/The-Games-of-The-Olympiad/Brisbane-2032-FHC-Questionnaire-Response.pdf |access-date=2021-07-21 |website=www.olympics.com |language=en |archive-date=14 August 2024 |archive-url=https://web.archive.org/web/20240814191327/https://stillmed.olympics.com/media/Documents/International-Olympic-Committee/Commissions/Future-host-commission/The-Games-of-The-Olympiad/Brisbane-2032-FHC-Questionnaire-Response.pdf |url-status=live }}</ref>"
+        ],
+        "surface": [
+          "Grass"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "From November 2019 until February 2020 all the playing field lights, including those in the light towers, were replaced with LED sports lighting with the lighting under the roof and in two of the light towers completed in time for the [[New Zealand cricket team in Australia in 2019–20#2nd Test|Boxin"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Melbourne Cricket Ground",
       "wikipedia_revid": 1376948300,
@@ -1816,6 +1983,25 @@
       ]
     },
     "Stade de France": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[Hybrid grass|Hybrid Grass]] by SIS Pitches"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "The stadium was officially ready for construction following the government's selection of manufacturers, [[Bouygues]], [[Vinci SA|Dumez]], and [[Vinci SA|SGE]], and the signing of building permits on 30 April 1995.<ref>[http://www.bouygues.com/us/groupe/fiches/pop_stade_france.html Bouygues website:",
+        "[[File:World championships in athletics 2003 Paris Saint-Denis stadium.jpg|thumb|Stade de France with uncovered athletics track during the [[2003 World Championships in Athletics|2003 World Championships]]]]",
+        "Stade de France has a [[movable seating|movable stand]] which can be retracted to uncover part of the [[athletics track]].<ref>{{cite web|url=http://www.stadefrance.fr/index.php?option=com_content&task=view&id=122&Itemid=257|title=Stade de France – Key figures|url-status=dead|archive-url=https://web",
+        "===Roof===",
+        "[[File:Pose du dernier troncon de la toiture du stade de france.jpg|thumb|The last part of the metallic construction of the roof, 1997]]",
+        "Construction of the stadium's roof cost over €45 million. Its elliptical shape symbolizes the universality of [[sport in France]].{{cn|date=December 2025}} Its area of six hectares and weight, 13,000 tons, is considered a technical marvel by many.{{cn|date=December 2025}} It was designed to easily p",
+        "Stade de France is the biggest modular stadium in the world. With a three modules structure, the first module has 25,000 seats. It is reached by level 1. It is partially retractable. To reveal the running track and jumping pits, the rear sections are lowered 7.1 m, then the inner sections retract 15",
+        "In June 2012, FFR announced that it had selected the site for its new ground, tentatively known as Grand Stade FFR.<ref>{{cite web|url = http://www.ffr.fr/index.php/ffr/rugby_francais/projet_stade|title = Projet Stade|publisher = [[French Rugby Federation]]|language = fr|access-date = 6 July 2012|ur"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Stade de France",
       "wikipedia_revid": 1375923585,
@@ -1832,6 +2018,31 @@
       ]
     },
     "Tottenham Hotspur Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[GrassMaster]] (football)<ref>{{cite web |url=https://www.tarkett-group.com/en/our-solutions/references/tottenham/ |title=Tarkett Sports delivers premium PlayMaster Hybrid turf system to Tottenham Hotspur football stadium|work=Tarkett Group}}</ref><br>Turf Nation (NFL)<ref>{{Cite magazine |title=Turf Nation |url=http://www.stadia-magazine.com/directory.php?CompanyID=1033 |url-status=dead |magazine=Stadia |archive-url=https://web.archive.org/web/20180807125010/http://www.stadia-magazine.com/directory.php?CompanyID=1033 |archive-date=7 August 2018 |access-date=7 August 2018}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| structural_engineer = [[Buro Happold]]<ref name=\"architects\">{{Cite web |last=Bickersteth |first=Rupert |date=4 April 2019 |title=Populous's Tottenham Hotspur Stadium – awe inspiring |url=https://www.architectsjournal.co.uk/buildings/populouss-tottenham-hotspur-stadium-awe-inspiring/10041690.artic",
+        "'''Tottenham Hotspur Stadium''' is a [[multi-purpose stadium]] in [[London]], England. It is owned and operated by the [[Premier League]] club [[Tottenham Hotspur F.C.|Tottenham Hotspur]], replacing the club's previous ground, [[White Hart Lane]]. With a seating capacity of 62,850,<ref name=\"capacit",
+        "| caption2 = '''April 2018'''<br/>Two steel \"trees\" supporting the South Stand erected and the cable net roof structure were installed and the trays or the retractable pitch are visible under the podium in the foreground.",
+        "The demolition of most of the remaining White Hart Lane ground began the day after the last home match of the [[2016–17 Tottenham Hotspur F.C. season|2016–17 season]] was played, and the demolition was completed with all visible remnants of White Hart Lane removed by early August 2017.<ref>{{Cite ne",
+        "The roof is a cable net structure, held in place by an elliptically shaped compression ring.<ref name=autogenerated1 /> The roof has a circumference of 720 metres, and it is clad in standing seam aluminium panels that end with extruded [[polycarbonate]] on the inside edge to allow light through onto",
+        "The stadium is designed like a concert hall with good acoustics in mind so as to optimise the atmosphere on match day.<ref name=\"gq\" /> The corners of the stadium are enclosed and the stands are placed close to the pitch, with fans generating a \"wall of sound\" that can reverberate around the ground.",
+        "{{wide image|Spurs stadium south stand cropped.jpg|align=center|700px|align-cap=center|View of South Stand. The Dare Skywalk and the cockerel are visible on the roof above the South Stand.}}",
+        "In order to keep the football pitch in optimum condition, there are two different surfaces – a [[GrassMaster]] hybrid grass pitch for football, and a synthetic turf [[American football field|surface]] underneath to be used for NFL games, as well as concerts and other events.<ref name=\"bowl\" /><ref n",
+        "The stadium features the world's first integrated grow lighting system over the pitch. [[Grow light]]s are suspended on six 70-metre trusses to encourage the growth of the grass in the shaded areas of the stadium, and they can be folded away under the North Stand when not in use.<ref name=\"conway\">{",
+        "The stadium provides separate facilities for football and NFL players; these include changing rooms, medical facilities, restaurants, [[hydrotherapy]] pools, warm-up areas, pre-match players' lounge, as well as lounges and creches for their families.<ref name=hayward /> It also caters for the differ",
+        "The stadium is intended to be active all year round as a sports and entertainment destination with conference and banqueting facilities. It offers visitor attractions such as a 'Dare Skywalk' opened on 31 August 2020; visitors may walk up the side of the stadium to the roof, then over a glass walkwa",
+        "A 4.5-m-tall and near-double-sized [[fibreglass]] replica of the spurs cockerel, originally created in 1909 to sit atop the west stand at White Hart Lane, was placed on the roof structure above the South Stand on 6 November 2018.<ref>{{Cite news |last=Hawkins |first=Billy |date=7 November 2018 |titl",
+        "The stadium was originally permitted to hold up to six music concerts a year<ref name=\"espn 2017\"/> but the limit was lifted in 2023<ref>{{cite web |url=https://www.thestadiumbusiness.com/2023/07/07/tottenham-given-permission-to-stage-more-concerts/|title=Tottenham given permission to stage more con",
+        "[[Category:Retractable-pitch stadiums]]"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Tottenham Hotspur Stadium",
       "wikipedia_revid": 1377204343,
@@ -1856,6 +2067,18 @@
       ]
     },
     "Twickenham Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[GrassMaster|Desso GrassMaster]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "The rugby stadium continued to be developed into 2018 with the upgrading of the east stand. The new stand offers match-day hospitality as well as six floors of event spacing.<ref>{{cite web|url=https://www.twickenhamstadium.com/news/conferences-and-venue-hire/twickenham-prepares-to-unveil-new-east-s"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Twickenham Stadium",
       "wikipedia_revid": 1376891621,
@@ -1869,6 +2092,25 @@
       ]
     },
     "Waldstadion (Frankfurt)": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "Grass"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Waldstadion''' ({{IPA|de|ˈvalt.ʃtaːdi̯ɔn|-|De-Waldstadion.ogg}}, ''Forest Stadium''), currently known as '''Deutsche Bank Park''' for sponsorship purposes, is a [[retractable roof]] sports stadium in [[Frankfurt]], Germany. The home stadium of the football club [[Eintracht Frankfurt]], it was ope",
+        "| rowspan=\"2\"| 12 Open Air Tour",
+        "| Zwischen den Welten Open Air Tour 2019",
+        "{{List of retractable-roof stadiums in Europe}}",
+        "[[Category:Retractable-roof stadiums in Europe]]"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Waldstadion (Frankfurt)",
       "wikipedia_revid": 1375755144,
@@ -1878,6 +2120,30 @@
       ]
     },
     "Wembley Stadium": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Partially retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "[[GrassMaster]]"
+        ],
+        "acreage": [
+          "| tenants = {{ubli|[[England national football team]] (2007–present)|[[Tottenham Hotspur F.C.|Tottenham Hotspur]] (2017–2019)}}"
+        ],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Partially retractable]]",
+        "Designed by [[Populous (company)|Populous]] and [[Foster and Partners]], the stadium is crowned by the {{convert|134|m|ft|adj=mid|-high}} Wembley Arch which serves aesthetically as a landmark across London as well as structurally, with the arch supporting over 75% of the entire roof load.<ref>{{cite",
+        "Wembley was designed by architects [[Foster + Partners]] and [[HOK Sport]] (now Populous) and with engineers Mott Stadium Consortium, who were a collection of three structural engineering consultants in the form of [[Mott MacDonald]], [[Sinclair Knight Merz]] and [[Aurecon]]. The design of the build",
+        "The all-seater stadium is a bowl design with a capacity of 90,000, protected from the elements by a sliding roof that does not completely enclose it.<ref>{{cite web|url=http://www.wembleystadium.com/buildingwembley/StadiumUses/ |title=Wembley Stadium Uses |publisher=Wembley National Stadium Limited ",
+        "On 20 March 2006, a steel rafter in the roof of the new development fell by {{convert|1+1/2|ft|cm|abbr=on}}, forcing 3,000 workers to evacuate the stadium and raising further doubts over the completion date which was already behind schedule.<ref>{{cite news |url=http://news.bbc.co.uk/1/hi/england/lo",
+        "The stadium roof has an area of {{convert|40000|m2|ft2|abbr=on}}, of which {{convert|13722|m2|ft2|abbr=on}} is movable.<ref name=\"CONSTRUCTIONFACTS\">{{cite web|url=http://www.wembleystadium.com/buildingwembley/statsandfacts/ |title=Building Wembley: Construction facts |publisher=Wembley National Sta",
+        "The stadium roof rises to {{convert|52|m|ft}} above the pitch and is supported by an arch rising {{convert|133|m|ft|abbr=on}} above the level of the external concourse. With a span of {{convert|315|m|ft|abbr=on}}, the arch is the longest single-span roof structure in the world.<ref name=\"Wembley Sta",
+        "The onsite parking facility is shared with Wembley Arena, essentially being the open air surface parking surrounding the eastern flank of Wembley Stadium and the [[multi-storey car park]]. These are called Green Car Park and Red Car Park, respectively. There is disabled parking available onsite, at ",
+        "[[Category:Retractable-roof stadiums in Europe]]"
+      ],
       "wikipedia_status": 200,
       "wikipedia_title": "Wembley Stadium",
       "wikipedia_revid": 1377746005,
@@ -1898,6 +2164,130 @@
         "With a span of 315 m (1,033 ft), the arch is the longest single-span roof structure in the world.",
         "These events cover the sports of football, rugby league and American football.",
         "Stations near by: === Onsite parking === The onsite parking facility is shared with Wembley Arena, essentially being the open air surface parking surrounding the eastern flank of Wembley Stadium and the multi-storey car park."
+      ]
+    },
+    "Mercedes-Benz Stadium": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "[[FieldTurf]] CORE<ref name=\"MBS_surface\">{{cite web|title=Mercedes-Benz Stadium Will Have FieldTurf|url=http://www.atlantafalcons.com/news/blog/article-1/Mercedes-Benz-Stadium-Will-Have-FieldTurf/1a4c0507-0d84-4461-9d0b-c79469a92829|publisher=Atlanta Falcons|access-date=April 4, 2017|archive-url=https://web.archive.org/web/20170406020405/http://www.atlantafalcons.com/news/blog/article-1/Mercedes-Benz-Stadium-Will-Have-FieldTurf/1a4c0507-0d84-4461-9d0b-c79469a92829|archive-date=April 6, 2017|url-status=dead}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Mercedes-Benz Stadium''' is a [[retractable roof stadium]] in [[Atlanta]], Georgia, United States.<ref name=\"mbname\">{{Cite news|url=http://www.ajc.com/news/sports/football/falcons-officially-announce-mercedes-benz-as-namin/nnP9Y/ | last=Tucker | first=Tim | title=Falcons officially announce Merc",
+        "The stadium officially opened on August 26, 2017.<ref name=\"construction delay\">{{cite news|last1=Tucker|first1=Tim|title=Mercedes-Benz Stadium opening is pushed back again|url=http://www.ajc.com/sports/football/mercedes-benz-stadium-opening-pushed-back-again/wLnfyURmUXYvGcj6iaROMM/|newspaper=The At",
+        "=== Roof ===",
+        "The stadium's signature feature is its [[retractable roof]], which features a \"pinwheel\" consisting of eight translucent, triangular panels. Each of the eight panels operates on two straight, parallel rails; one rail is responsible for moving the panel while the other rail stabilizes the panel.<ref ",
+        "Architect Bill Johnson explained that the circular opening in the roof was inspired by the Roman [[Pantheon, Rome|Pantheon]] (\"Pantheon\" was also the working name for the building design). The roof was designed to be made of a clear, lightweight polymer material that can adjust its opacity to contro",
+        "Below the roof is the \"Halo\", a {{convert|58|by|1100|ft|m|adj=on}}, ring-shaped [[Jumbotron|video board]] around its rim. Covering a total area of {{convert|62,350|sqft}}, it was described by manufacturer [[Daktronics]] as being \"three times as large as the current largest single display board in th",
+        "The stadium's roof can be kept open under light precipitation, as the electrical systems for all video boards in the stadium are outdoor-rated, and the field has a drainage system. AMB Group senior executive Mike Egan went as far as describing Mercedes-Benz Stadium as \"an outdoor stadium with a roof",
+        "The stadium also includes features specific for college football use. It opened with two oversized locker rooms, each capable of housing 100 players, reflecting the much larger size of college football rosters compared to those of the NFL. However, the stadium did not initially include another featu",
+        "In May 2010, it was reported by multiple news outlets that the Atlanta Falcons were interested in replacing the [[Georgia Dome]] with a newly constructed open-air stadium, although at the time it was planned to retain the Georgia Dome to continue hosting non-NFL events.<ref>{{cite web |title=McKay: ",
+        "In April 2012, Populous released a new price estimate of US$947.7 million, which was significantly higher than the previous proposal of US$700 million.<ref name=\"ajc2\">{{cite news |title=New Falcons Stadium Cost Could Exceed $1 billion|first1=Leon|last1=Stafford|first2=Tim |last2=Tucker|url=http://w",
+        "The stadium's projected opening date was delayed three times due to the complexity of the eight-panel retractable roof. The stadium was originally intended to open on March 1, 2017; however, the opening date was later delayed to June 1, 2017, then to July 30, 2017, and then to August 26, 2017. Steve",
+        "On July 25, 2017, stadium officials reported that the roof would be in the closed position during the Falcons' preseason games and the [[Chick-fil-A Kickoff Game|Chick-fil-A Kickoff]] games while contractors continue to fine tune the roof to allow all eight panels to work in sync. Falcons' President",
+        "On September 10, 2017, the Falcons announced that, contrary to earlier plans, the stadium roof would in fact be open during the Falcons home opener on September 17 against the [[Green Bay Packers]] if weather permitted.<ref>{{cite news|last1=Tucker|first1=Tim|title=Falcons plan to open roof for home",
+        "=== Retractable roof ===",
+        "Several reports of the roof leaking during the stadium's inaugural season caused some issues for the stadium's design team. During the [[2018 College Football Playoff National Championship|College Football National Championship Game]] in January 2018, several media outlets reported a significant lea",
+        "Stadium officials clarified after the initial leaks that were reported back in October 2017 that the issue was not a \"leak\" but rather a \"few drops of water\" that were falling from the roof around isolated parts of the stadium. Officials stated that the issue was due to the fact that the roof was st",
+        "[[File:Mercedes-Benz Stadium Roof Atlanta United 2018-10-21 - 17 14.jpg|thumb|upright|Mercedes-Benz Stadium roof in October 2018]]",
+        "Since the retractable roof was one of the major features and design points of the stadium, some of the problems with the roof were magnified in the stadium's first year of operation. The roof, which is supposed to open in as little as 12 minutes with the push of a button, was not fully operational b",
+        "Falcons president Rich McKay told the ''Atlanta Journal-Constitution'' that he expected all issues with the roof to be completely resolved before the 2018 season.<ref>{{Cite news|url=http://www.ajc.com/sports/falcons-expect-mercedes-benz-stadium-roof-open-2018/nmZV9ohkLTN3UJcr0Hpe5O/|title=Falcons e",
+        "*On October 22, 2017, Atlanta United FC played an MLS regular season match against [[Toronto FC]] at Mercedes-Benz Stadium in front of 71,874 spectators, beating the record they set for the largest crowd in a stand-alone MLS match in September against [[Orlando City SC|Orlando City]] (which also mar",
+        "[[Category:Retractable-roof stadiums in the United States]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Mercedes-Benz Stadium",
+      "wikipedia_revid": 1377254306,
+      "wikidata_item": "Q7007552",
+      "sentences": [
+        "Mercedes-Benz Stadium is a retractable roof stadium in Atlanta, Georgia, United States.",
+        "Opened in 2017 as a replacement for the Georgia Dome, it is the home to the Atlanta Falcons of the National Football League (NFL), Atlanta United FC of Major League Soccer (MLS), and Atlanta City FC of the National Women's Soccer League (NWSL) in 2028.",
+        "Several events formerly held at the Georgia Dome moved to Mercedes-Benz Stadium following its completion, including multiple college football events, such as the SEC football championship game, the Peach Bowl, and the College Football Playoff National Championship (2018, 2025).",
+        "== Design == === Roof === The stadium's signature feature is its retractable roof, which features a \"pinwheel\" consisting of eight translucent, triangular panels.",
+        "Closing the roof takes slightly less time than opening the roof, since the roof has to disengage the seals at the start of the opening procedure and slow down towards the end to prevent the panels from getting derailed.",
+        "Architect Bill Johnson explained that the circular opening in the roof was inspired by the Roman Pantheon (\"Pantheon\" was also the working name for the building design).",
+        "The roof was designed to be made of a clear, lightweight polymer material that can adjust its opacity to control light, and much of the exterior is clear polymer or glass to allow views to the outside.",
+        "Below the roof is the \"Halo\", a 58-by-1,100-foot (18 by 335 m), ring-shaped video board around its rim.",
+        "The stadium's roof can be kept open under light precipitation, as the electrical systems for all video boards in the stadium are outdoor-rated, and the field has a drainage system.",
+        "AMB Group senior executive Mike Egan went as far as describing Mercedes-Benz Stadium as \"an outdoor stadium with a roof over it\" due to these characteristics, but that other factors such as humidity and outside temperatures would be taken into consideration on whether or not the roof would be opened.",
+        "It also has a soccer-specific configuration, with retractable lower bowl seats to widen the field, and mechanized curtains that limit the capacity to about 42,500.",
+        "The former Georgia Dome site between the stadium and the Georgia World Congress Center was redeveloped as \"The Home Depot Backyard\"—an 11-acre (4.",
+        "== History == === Planning === In May 2010, it was reported by multiple news outlets that the Atlanta Falcons were interested in replacing the Georgia Dome with a newly constructed open-air stadium, although at the time it was planned to retain the Georgia Dome to continue hosting non-NFL events.",
+        "The team was pursuing a new stadium because of the team's desire to play outdoors, as well as Falcons team owner Arthur Blank's interest in hosting another Super Bowl.",
+        "The proposed location of the new stadium was a large parking lot in Atlanta's Vine City neighborhood, which was less than a mile north of the Georgia Dome's location.",
+        "Once construction was complete, the Georgia Dome would subsequently be demolished.",
+        "Stadium location, however, is yet to be worked out; proposed locations being reported are within walking distance of the Georgia Dome, with one site located one-half mile north, and the other one block directly south, at one of the stadium's existing parking lots.",
+        "The project made national headlines for the first time in 2012 on December 15, with team owner Arthur Blank stating in The New York Times that he would rather have a new stadium be constructed than a \"remodeling job\" of the Georgia Dome.",
+        "=== Construction delays, opening === The stadium's projected opening date was delayed three times due to the complexity of the eight-panel retractable roof.",
+        "Additionally, the Georgia Dome's demolition was put on hold until the new stadium's certificate of occupancy could be issued.",
+        "On June 9, 2017, stadium officials announced that they were confident that Mercedes-Benz Stadium would open as scheduled, and demolition of the Georgia Dome had resumed, and the Dome was imploded on the morning of November 20, 2017.",
+        "On July 25, 2017, stadium officials reported that the roof would be in the closed position during the Falcons' preseason games and the Chick-fil-A Kickoff games while contractors continue to fine tune the roof to allow all eight panels to work in sync.",
+        "Falcons' President Rich McKay also stated that the roof would remain closed whenever outside temperatures exceed 80 °F (27 °C).",
+        "On August 16, 2017, WXIA reported that construction of the retractable roof system was intentionally delayed by stadium and construction officials to ensure the roof's long term operability and to ensure that other parts of the stadium would be completed on time.",
+        "On September 10, 2017, the Falcons announced that, contrary to earlier plans, the stadium roof would in fact be open during the Falcons home opener on September 17 against the Green Bay Packers if weather permitted.",
+        "On October 6, 2017, stadium officials announced that the roof would be opened, weather permitting, for Atlanta United FC's regular season finale against Toronto FC on October 22; stadium officials also stated that the roof would remain closed for the remainder of the Falcons' regular season as well as for any home matches hosted by Atlanta United FC during the 2017 MLS Cup Playoffs as contractors ",
+        "It features a serpentine like structure on both ends, and a cover over the main span with customizable LEDs.",
+        "=== Retractable roof === Several reports of the roof leaking during the stadium's inaugural season caused some issues for the stadium's design team.",
+        "Bill Hancock, College Football Playoff Executive Director, said that he and his team had been made aware of the issue concerning water leaking from the roof and that he believed that the issue did not affect the field of play during the game.",
+        "Stadium officials clarified after the initial leaks that were reported back in October 2017 that the issue was not a \"leak\" but rather a \"few drops of water\" that were falling from the roof around isolated parts of the stadium.",
+        "Officials stated that the issue was due to the fact that the roof was still not fully mechanized yet, and that the issues would be fixed before the Falcons' 2018 season.",
+        "They also stated that the issues were common for newly constructed stadiums with retractable roofs.",
+        "Since the retractable roof was one of the major features and design points of the stadium, some of the problems with the roof were magnified in the stadium's first year of operation.",
+        "The roof, which is supposed to open in as little as 12 minutes with the push of a button, was not fully operational by the time the stadium's primary tenants, the Atlanta Falcons and the Atlanta United FC, began their regular seasons.",
+        "The roof was required to be mechanically opened, which was a very time-consuming process.",
+        "As such, the roof was only opened twice in its first year of use, once for an Atlanta Falcons game – a Sunday Night Football game against the Green Bay Packers on September 17, 2017, and a nationally televised MLS soccer game, when the Atlanta United FC hosted Toronto FC in a sold-out game of more than 70,000 fans on October 22, 2017.",
+        "Falcons president Rich McKay told the Atlanta Journal-Constitution that he expected all issues with the roof to be completely resolved before the 2018 season.",
+        "On May 29, 2018, the roof was opened for the first time since October 2017 for construction purposes.",
+        "Stadium officials stated that the roof would be open for 10 days, regardless of weather, to complete work on automating the roof.",
+        "After the 10-day construction period, an unspecified time frame would be required for final commissioning work, after of which, operation of the roof would be turned over to stadium officials."
+      ]
+    },
+    "Reliant Stadium": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "Hellas Matrix Helix<ref>{{Cite web|url=http://www.hellasconstruction.com/2017/sep/houston-texans-nfl-football-team-playing-on-hellas-matrix-turf-at-nrg-stadium/|title=Houston Texans NFL football team playing on Hellas Matrix Turf at NRG Stadium|website=www.hellasconstruction.com|access-date=2019-12-02}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Reliant Stadium''', previously known as '''NRG Stadium''',<ref name=chron-2026-reliant>{{cite news|last=Young|first=Matt|title= Why Houston Texans' home will be Reliant Stadium again, not NRG|url= https://www.houstonchronicle.com/sports/texans/article/reliant-stadium-name-change-nrg-22205549.php|",
+        "The Houston NFL Holdings group came to HOK Sport (now [[Populous (company)|Populous]]) to begin the schematic design for the first-ever NFL retractable roof football stadium in 1997. The intention was to create a football stadium to replace the Astrodome that would operate like an open-air facility ",
+        "On the night of September 12–13, 2008, the stadium sustained damage from [[Hurricane Ike]], forcing the [[Houston Texans]] home opener scheduled for September 14 to be postponed. Part of the roof cladding came off, and there was wind and water damage to other sections of the stadium. There were also",
+        "The stadium was designed by the architectural firms of Hermes Reed Architects and [[Lockwood, Andrews and Newnam]] who were teamed to create the Houston Stadium Consultants (HSC). The architects of [[Populous (company)|Populous]] (then HOK Sport) and the HSC worked together with engineers from [[Wal",
+        "One of the most notable aspects of the design is the stadium's retractable, fabric roof. The roof mechanization consists of two large panels that split apart at the 50&nbsp;yard line, lying over and above each end zone when fully retracted. 10 parallel, tri-chord [[truss]]es ride on two parallel rai",
+        "[[Category:Retractable-roof stadiums in the United States]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Reliant Stadium",
+      "wikipedia_revid": 1376433325,
+      "wikidata_item": "Q1058864",
+      "sentences": [
+        "Reliant Stadium, previously known as NRG Stadium, is a retractable roof stadium in Houston, Texas, U.",
+        "It was the first NFL facility to have a retractable roof.",
+        "== History == The Houston NFL Holdings group came to HOK Sport (now Populous) to begin the schematic design for the first-ever NFL retractable roof football stadium in 1997.",
+        "The intention was to create a football stadium to replace the Astrodome that would operate like an open-air facility but have the intimacy and comfort of an indoor arena.",
+        "Part of the roof cladding came off, and there was wind and water damage to other sections of the stadium.",
+        "There were also large pieces of debris inside the stadium from the hurricane and the stadium authority declared that the stadium did not suffer significant structural damage except for the roof, and the Texans would be able to play all of their 8 home games at Reliant Stadium with the roof open.",
+        "The facility offers a sense of transparency, with its fabric roof and expansive areas of glazing.",
+        "The extensive use of glass provides an open-air feel to the concourses, which are open to the field of play.",
+        "One of the most notable aspects of the design is the stadium's retractable, fabric roof.",
+        "The roof mechanization consists of two large panels that split apart at the 50 yard line, lying over and above each end zone when fully retracted.",
+        "Roof operation is controlled in the stadium press box via computer, containing live images of the travel path of each roof panel; plus, furnishing live feedback from all roof components throughout the operation.",
+        "The roof panels can be opened or closed in as little as 7 minutes, moving at a speed of up to 35 feet (11 m)-per-minute.",
+        "The fans in the Bull Pen interact directly with the action on the field, helping to create and implement fan traditions, songs, chants, and other elements of the game-day experience for spectators all over the stadium."
       ]
     }
   }
