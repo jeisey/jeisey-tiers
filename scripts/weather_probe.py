@@ -216,6 +216,153 @@ def load_games(fetcher: Fetcher) -> list[dict[str, Any]]:
     return games
 
 
+#: Venues the first run could not place, and the redirects and searches that place them. An
+#: old name redirects to the article about the building that carried it, so a former name is
+#: the strongest evidence of which article describes the 2017-2025 venue (``Highmark Stadium``
+#: now describes Buffalo's 2026 building; ``Nissan Stadium``'s article has no coordinates).
+RESOLVE: tuple[dict[str, Any], ...] = (
+    {
+        "stadium_id": "NAS00",
+        "titles": (
+            "Nissan Stadium",
+            "Nissan Stadium (1999)",
+            "Nissan Stadium (Nashville)",
+            "LP Field",
+            "LP Field (Nashville)",
+            "Adelphia Coliseum",
+            "The Coliseum (Nashville)",
+        ),
+        "search": "Tennessee Titans stadium Nashville opened 1999",
+    },
+    {
+        "stadium_id": "BUF00",
+        "titles": (
+            "Highmark Stadium",
+            "Highmark Stadium (1973)",
+            "Highmark Stadium (Orchard Park)",
+            "Ralph Wilson Stadium",
+            "New Era Field",
+            "Rich Stadium",
+            "Bills Stadium",
+        ),
+        "search": "Buffalo Bills stadium Orchard Park opened 1973",
+    },
+)
+
+
+HATNOTE = re.compile(r"\{\{(?:About|For|Other uses|Distinguish|Redirect)[^}]*\}\}")
+CLOSED = re.compile(r"\|\s*(?:closed|demolished)\s*=\s*([^\n|]*)")
+
+
+def _page_record(fetcher: Fetcher, title: str) -> dict[str, Any]:
+    """One title, redirects followed: the article, its coordinates, its lead and hatnotes."""
+    query = urllib.parse.urlencode(
+        {
+            "action": "query",
+            "format": "json",
+            "formatversion": "2",
+            "redirects": "1",
+            "prop": "pageprops|coordinates|extracts|revisions",
+            "rvprop": "ids|timestamp|content",
+            "rvslots": "main",
+            "rvsection": "0",
+            "exintro": "1",
+            "explaintext": "1",
+            "titles": title,
+        },
+    )
+    status, payload, _ = fetcher.get(f"https://en.wikipedia.org/w/api.php?{query}")
+    record: dict[str, Any] = {"requested_title": title, "wikipedia_status": status}
+    page = ((payload or {}).get("query") or {}).get("pages", [{}])[0] if payload else {}
+    if not page or page.get("missing"):
+        record["wikipedia_missing"] = True
+        return record
+    revision = (page.get("revisions") or [{}])[0]
+    wikitext = (((revision.get("slots") or {}).get("main") or {}).get("content")) or ""
+    record.update(
+        {
+            "wikipedia_title": page.get("title"),
+            "wikipedia_pageid": page.get("pageid"),
+            "wikipedia_revid": revision.get("revid"),
+            "wikipedia_rev_timestamp": revision.get("timestamp"),
+            "redirects": (payload.get("query") or {}).get("redirects"),
+            "wikipedia_coordinates": [
+                {"lat": c.get("lat"), "lon": c.get("lon"), "primary": c.get("primary")}
+                for c in page.get("coordinates") or []
+            ],
+            "wikidata_item": (page.get("pageprops") or {}).get("wikibase_item"),
+            "disambiguation": "disambiguation" in (page.get("pageprops") or {}),
+            "lead": " ".join((page.get("extract") or "").split())[:900],
+            "hatnotes": re.findall(HATNOTE, wikitext)[:6],
+            "infobox_coordinates": re.findall(r"\{\{[Cc]oord\|[^}]*\}\}", wikitext)[:3],
+            "infobox_opened": re.findall(r"\|\s*opened\s*=\s*([^\n|]*)", wikitext)[:2],
+            "infobox_closed": re.findall(CLOSED, wikitext)[:2],
+            "infobox_roof": re.findall(r"\|\s*roof\s*=\s*([^\n|]*)", wikitext)[:2],
+        },
+    )
+    qid = record.get("wikidata_item")
+    if qid:
+        status, entity, _ = fetcher.get(
+            f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
+        )
+        node = ((entity or {}).get("entities") or {}).get(qid) or {}
+        claims = node.get("claims") or {}
+        record["wikidata_status"] = status
+        record["wikidata_label"] = ((node.get("labels") or {}).get("en") or {}).get("value")
+        record["wikidata_description"] = ((node.get("descriptions") or {}).get("en") or {}).get(
+            "value"
+        )
+        record["wikidata_P625"] = [
+            {
+                "lat": value.get("latitude"),
+                "lon": value.get("longitude"),
+                "precision": value.get("precision"),
+                "rank": claim.get("rank"),
+            }
+            for claim in claims.get("P625", [])
+            for value in [((claim.get("mainsnak") or {}).get("datavalue") or {}).get("value") or {}]
+        ]
+    return record
+
+
+def probe_resolution(fetcher: Fetcher) -> dict[str, Any]:
+    """Every candidate title and the top search hits for each venue in ``RESOLVE``."""
+    resolved: dict[str, Any] = {}
+    for target in RESOLVE:
+        pages = [_page_record(fetcher, title) for title in target["titles"]]
+        query = urllib.parse.urlencode(
+            {
+                "action": "query",
+                "format": "json",
+                "formatversion": "2",
+                "list": "search",
+                "srlimit": "8",
+                "srsearch": target["search"],
+            },
+        )
+        status, payload, _ = fetcher.get(f"https://en.wikipedia.org/w/api.php?{query}")
+        hits = [hit.get("title") for hit in ((payload or {}).get("query") or {}).get("search", [])]
+        seen = {page.get("wikipedia_title") for page in pages}
+        searched = [_page_record(fetcher, title) for title in hits if title not in seen][:5]
+        resolved[target["stadium_id"]] = {
+            "search": target["search"],
+            "search_status": status,
+            "search_hits": hits,
+            "titles": pages,
+            "searched": searched,
+        }
+        print(
+            f"resolve {target['stadium_id']}: "
+            + "; ".join(
+                f"{page['requested_title']} -> {page.get('wikipedia_title')} "
+                f"{page.get('wikidata_item')} {page.get('wikipedia_coordinates')}"
+                for page in pages
+            ),
+            flush=True,
+        )
+    return resolved
+
+
 # ---------------------------------------------------------------------------- venues
 
 
@@ -652,11 +799,31 @@ def main() -> int:
     parser.add_argument("--archive-seasons", default="2022,2023,2024,2025")
     parser.add_argument("--horizon-days", type=int, default=17)
     parser.add_argument("--archive-budget-minutes", type=float, default=25.0)
+    parser.add_argument(
+        "--phases",
+        choices=("all", "resolve"),
+        default="all",
+        help="'resolve' runs only the venue-resolution phase (venue_resolution.json)",
+    )
     args = parser.parse_args()
     out: Path = args.out
     out.mkdir(parents=True, exist_ok=True)
     fetcher = Fetcher(args.pause)
     started = datetime.now(UTC)
+
+    if args.phases == "resolve":
+        resolution = probe_resolution(fetcher)
+        resolution["_run"] = {
+            "started_at_utc": started.isoformat(),
+            "finished_at_utc": datetime.now(UTC).isoformat(),
+            "user_agent": USER_AGENT,
+            "calls_by_host": dict(fetcher.calls),
+            "failures": fetcher.failures,
+        }
+        (out / "venue_resolution.json").write_text(
+            json.dumps(resolution, indent=2, ensure_ascii=False) + "\n"
+        )
+        return 0
 
     games = load_games(fetcher)
     venues = probe_venues(fetcher)

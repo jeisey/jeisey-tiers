@@ -17,11 +17,16 @@ on:
         description: Seasons whose games get archived-forecast and reanalysis values
         type: string
         default: "2022,2023,2024,2025"
+      phases:
+        description: "all, or resolve (only the venue-resolution phase)"
+        type: string
+        default: "all"
   push:
     branches:
       - "claude/**"
     # Only the probe's own inputs retrigger it. The evidence it commits lives under docs/, so
-    # a results commit cannot cause a loop.
+    # a results commit cannot cause a loop. A push runs only the cheap venue-resolution phase;
+    # the full probe (forecasts and the archive, ~45 minutes of polite calls) is dispatched.
     paths:
       - "scripts/weather_probe.py"
       - ".github/workflows/source-probe-weather.yml"
@@ -57,7 +62,8 @@ jobs:
           mkdir -p "${out_dir}"
           python scripts/weather_probe.py \
             --out "${out_dir}" \
-            --archive-seasons "${{ inputs.archive_seasons || '2022,2023,2024,2025' }}"
+            --archive-seasons "${{ inputs.archive_seasons || '2022,2023,2024,2025' }}" \
+            --phases "${{ inputs.phases || 'resolve' }}"
 
       # Partial evidence is still evidence: every file the probe wrote before a failure or a
       # timeout is kept, and summary.json says what is missing.
