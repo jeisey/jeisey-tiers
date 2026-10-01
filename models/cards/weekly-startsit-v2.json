@@ -1,0 +1,407 @@
+{
+  "card_version": "weekly_v2_model_card_v1",
+  "configuration_hash": "24933c290a50a74c",
+  "development": {
+    "development_verdict": {
+      "clauses": {
+        "coverage_50_in_band": {
+          "band": [
+            0.45,
+            0.55
+          ],
+          "candidate": 0.5074824392,
+          "passed": true
+        },
+        "coverage_80_in_band": {
+          "band": [
+            0.75,
+            0.85
+          ],
+          "candidate": 0.807865893,
+          "passed": true
+        },
+        "pairwise_accuracy_above_best_baseline": {
+          "baseline": 0.6362144885,
+          "best_baseline": "b2_rate_x_vegas",
+          "bootstrap": {
+            "clusters": 79,
+            "difference": 0.0244064031,
+            "lower": 0.0204556459,
+            "replicates": 1000,
+            "upper": 0.0287927468
+          },
+          "candidate": 0.6606208915,
+          "passed": true
+        },
+        "pairwise_brier_below_best_baseline": {
+          "baseline": 0.2324190627,
+          "best_baseline": "b2_rate_x_vegas",
+          "candidate": 0.210159837,
+          "passed": true
+        },
+        "pinball_below_best_baseline": {
+          "baseline": 1.3086159092,
+          "best_baseline": "b2_rate_x_vegas",
+          "candidate": 1.1049370058,
+          "passed": true
+        },
+        "pinball_wins_by_fold": {
+          "folds": 5,
+          "minimum": 4,
+          "passed": true,
+          "wins": 5
+        }
+      },
+      "passed": true,
+      "rule": "weekly_promotion_v1",
+      "stage": "development"
+    },
+    "folds": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "incremental_value_over_v1": {
+      "defense": {
+        "accuracy_difference": -0.0003487947999999408,
+        "brier_difference": 6.546209999999664e-05,
+        "fold_wins": 2,
+        "interval": [
+          -0.0003509166,
+          0.0004745102
+        ],
+        "label": "Opposing defence's health",
+        "pinball_difference": 2.75311e-05,
+        "selected": false
+      },
+      "lineup": {
+        "accuracy_difference": 0.0014370096000000387,
+        "brier_difference": -0.0007013407000000249,
+        "fold_wins": 5,
+        "interval": [
+          0.0030349283,
+          0.005243928
+        ],
+        "label": "His offence's health",
+        "pinball_difference": 0.0037063505,
+        "selected": true
+      },
+      "weather": {
+        "accuracy_difference": 0.00032357319999998246,
+        "brier_difference": -7.245540000000439e-05,
+        "fold_wins": 3,
+        "interval": [
+          -0.0007236206,
+          0.0007765745
+        ],
+        "label": "Weather at kickoff",
+        "pinball_difference": -1.53963e-05,
+        "selected": false
+      }
+    },
+    "outcome": "selected",
+    "pooled": {
+      "b0_season_rate": {
+        "coverage_50": 0.5175155813,
+        "coverage_80": 0.8101960252,
+        "mae_median": 3.8839171287,
+        "pair_accuracy": 0.625506429,
+        "pair_brier": 0.2350752787,
+        "pairs": 817650,
+        "pinball": 1.3247796425,
+        "pinball_rows": 1.2360104233,
+        "rows": 88407
+      },
+      "b1_recent_form": {
+        "coverage_50": 0.5135226849,
+        "coverage_80": 0.8093137421,
+        "mae_median": 4.1355642139,
+        "pair_accuracy": 0.6040048032,
+        "pair_brier": 0.2536603979,
+        "pairs": 817650,
+        "pinball": 1.4095136009,
+        "pinball_rows": 1.3239425233,
+        "rows": 88407
+      },
+      "b2_rate_x_vegas": {
+        "coverage_50": 0.5136923547,
+        "coverage_80": 0.8096191478,
+        "mae_median": 3.8232948278,
+        "pair_accuracy": 0.6362144885,
+        "pair_brier": 0.2324190627,
+        "pairs": 817650,
+        "pinball": 1.3086159092,
+        "pinball_rows": 1.2082965176,
+        "rows": 88407
+      },
+      "v1": {
+        "coverage_50": 0.5065775335,
+        "coverage_80": 0.8084088364,
+        "mae_median": 3.4771565587,
+        "pair_accuracy": 0.6591838819,
+        "pair_brier": 0.2108611777,
+        "pairs": 817650,
+        "pinball": 1.1086433563,
+        "pinball_rows": 1.02172515,
+        "rows": 88407
+      },
+      "v1+defense": {
+        "coverage_50": 0.5076747316,
+        "coverage_80": 0.8063388646,
+        "mae_median": 3.4765762666,
+        "pair_accuracy": 0.6588350871,
+        "pair_brier": 0.2109266398,
+        "pairs": 817650,
+        "pinball": 1.1086158252,
+        "pinball_rows": 1.0216659864,
+        "rows": 88407
+      },
+      "v1+lineup": {
+        "coverage_50": 0.5074824392,
+        "coverage_80": 0.807865893,
+        "mae_median": 3.4678280241,
+        "pair_accuracy": 0.6606208915,
+        "pair_brier": 0.210159837,
+        "pairs": 817650,
+        "pinball": 1.1049370058,
+        "pinball_rows": 1.01757969,
+        "rows": 88407
+      },
+      "v1+weather": {
+        "coverage_50": 0.5050052598,
+        "coverage_80": 0.8076057326,
+        "mae_median": 3.4769260244,
+        "pair_accuracy": 0.6595074551,
+        "pair_brier": 0.2107887223,
+        "pairs": 817650,
+        "pinball": 1.1086587526,
+        "pinball_rows": 1.0217301401,
+        "rows": 88407
+      },
+      "v1+weather+lineup+defense": {
+        "coverage_50": 0.5064078636,
+        "coverage_80": 0.8074247514,
+        "mae_median": 3.4683784596,
+        "pair_accuracy": 0.6608515759,
+        "pair_brier": 0.2100838241,
+        "pairs": 817650,
+        "pinball": 1.1054451669,
+        "pinball_rows": 1.0181454004,
+        "rows": 88407
+      }
+    },
+    "previously_examined": {
+      "consistent": true,
+      "pinball_interval": {
+        "clusters": 16,
+        "difference": 0.0035656203,
+        "level": 0.95,
+        "lower": 0.0012235065,
+        "replicates": 1000,
+        "upper": 0.0058560938
+      },
+      "season": 2025,
+      "status": "previously examined (v1's sealed season, consumed by ADR-096); decides nothing",
+      "summary": {
+        "b0_season_rate": {
+          "coverage_50": 0.524445911,
+          "coverage_80": 0.8111422758,
+          "mae_median": 3.7793136684,
+          "pair_accuracy": 0.6321333277,
+          "pair_brier": 0.230992708,
+          "pairs": 165600,
+          "pinball": 1.3396462478,
+          "pinball_rows": 1.2123890875,
+          "rows": 18183
+        },
+        "b1_recent_form": {
+          "coverage_50": 0.5224660397,
+          "coverage_80": 0.8083924545,
+          "mae_median": 4.0313708513,
+          "pair_accuracy": 0.6122520924,
+          "pair_brier": 0.2478924571,
+          "pairs": 165600,
+          "pinball": 1.4293418923,
+          "pinball_rows": 1.3025861596,
+          "rows": 18183
+        },
+        "b2_rate_x_vegas": {
+          "coverage_50": 0.5253808502,
+          "coverage_80": 0.8115822472,
+          "mae_median": 3.705754259,
+          "pair_accuracy": 0.6454016666,
+          "pair_brier": 0.227860778,
+          "pairs": 165600,
+          "pinball": 1.3161266959,
+          "pinball_rows": 1.1846162581,
+          "rows": 18183
+        },
+        "v1": {
+          "coverage_50": 0.5108067976,
+          "coverage_80": 0.8029478084,
+          "mae_median": 3.3572108361,
+          "pair_accuracy": 0.6656354276,
+          "pair_brier": 0.2072099119,
+          "pairs": 165600,
+          "pinball": 1.09695197,
+          "pinball_rows": 0.9824476023,
+          "rows": 18183
+        },
+        "v1+lineup": {
+          "coverage_50": 0.5113567618,
+          "coverage_80": 0.79953803,
+          "mae_median": 3.3487458315,
+          "pair_accuracy": 0.6671853252,
+          "pair_brier": 0.2064090074,
+          "pairs": 165600,
+          "pinball": 1.0940682881,
+          "pinball_rows": 0.9788819819,
+          "rows": 18183
+        }
+      }
+    },
+    "union": null
+  },
+  "frozen": {
+    "commit": "f62f849",
+    "decision_cutoff": {
+      "definition": "For each game, the last production refresh whose build finished before the game's scheduled kickoff. The prospective holdout scores the shadow record that refresh retained; a game with no such record is not eligible.",
+      "id": "last_refresh_before_kickoff_v1",
+      "injury_report": "the target week's report as nflverse publishes it at the refresh (training: the file's rows; 2017-2024 rows carry a modification time before kickoff for all but 24 of 44,356; 2025 rows carry none and are unverified; probe 2026-10-01, docs/source-probes/2026-10-01/injuries)",
+      "lines": "the total and spread posted on nflverse's schedule at the refresh (training: the schedule's lines, which are the closing lines)",
+      "not_known": "game-day inactives (published about 90 minutes before kickoff) and any roster move absent from the report",
+      "starters": "snap counts through the cutoff week only (lagged_starters_v1)",
+      "weather": "the newest forecast retained by the capture at or before the refresh, valid at the kickoff hour (training: the game book's recorded kickoff weather, mapped through weather_training_parity_v1)"
+    },
+    "families": {
+      "defense": [
+        "opp_cb_out",
+        "opp_s_out",
+        "opp_dl_out",
+        "opp_db_questionable",
+        "opp_dl_questionable"
+      ],
+      "lineup": [
+        "own_ol_out",
+        "own_ol_questionable",
+        "own_qb_out",
+        "own_vacated_targets",
+        "own_vacated_carries",
+        "own_questionable_targets"
+      ],
+      "weather": [
+        "wx_roof_type",
+        "wx_wind_mph",
+        "wx_temp_f",
+        "wx_precip"
+      ]
+    },
+    "family_selection": {
+      "accuracy_tolerance": 0.002,
+      "bootstrap_level": 0.95,
+      "bootstrap_replicates": 1000,
+      "brier_tolerance": 0.001,
+      "min_fold_wins": 4,
+      "version": "weekly_family_selection_v1"
+    },
+    "feature_set": "weekly_gameday_v1",
+    "frozen_at_utc": "2026-10-01T18:00:00Z",
+    "promotion": {
+      "accuracy_tolerance": 0.002,
+      "brier_tolerance": 0.001,
+      "coverage_80_band": [
+        0.75,
+        0.85
+      ],
+      "development": "weekly_promotion_v1 development clauses vs B0-B2, and weekly_family_selection_v1 clauses vs v1",
+      "outcomes": [
+        "promote",
+        "reject",
+        "insufficient_evidence"
+      ],
+      "previously_examined_2025": "scored and printed; decides nothing",
+      "reject_brier_margin": 0.005,
+      "reject_coverage_band": [
+        0.7,
+        0.9
+      ],
+      "version": "weekly_promotion_v2"
+    },
+    "prospective_holdout": {
+      "eligibility": "kickoff after the freeze; shadow record retained before kickoff by a production refresh; appeared in the game; never backfilled",
+      "final_look_level": 0.95,
+      "first_look_level": 0.99,
+      "min_pairs": 40000,
+      "min_rows": 6000,
+      "min_weeks": 8,
+      "season": 2026
+    },
+    "variants": [
+      "v1",
+      "v1+weather",
+      "v1+lineup",
+      "v1+defense",
+      "v1+weather+lineup+defense"
+    ],
+    "weather_parameters_digest": "d574a22a8b59a078",
+    "weather_parity": {
+      "max_forecast_age_hours": 12.0,
+      "max_lead_hours": 168.0,
+      "parameters_file": "config/weather-forecast-error-v1.json",
+      "precipitation_probability_threshold": 50.0,
+      "precipitation_text_rule": "game_book_precip_v1",
+      "temp_f_range": [
+        -30.0,
+        120.0
+      ],
+      "version": "weather_training_parity_v1",
+      "wind_mph_range": [
+        0.0,
+        60.0
+      ]
+    }
+  },
+  "generated_at_utc": "2026-10-01T18:35:05Z",
+  "git_sha": "f62f849",
+  "intended_use": "Shadow evaluation only: weekly-startsit-v1's distribution plus his offence's health, predicted beside weekly-startsit-v1 into a private record. Nothing published reads it until weekly_promotion_v2 promotes it.",
+  "limitations": [
+    "Measured but not selected (no value over v1 beyond noise by the frozen rule; v1 already reads the sportsbook lines, which may price them \u2014 not tested here): Weather at kickoff, Opposing defence's health. Their inputs are still published as context, without points.",
+    "Game-day inactives arrive after every refresh and are not inputs.",
+    "The injury report is point in time for 2017-2024 to 24 of 44,356 rows; 2025 rows carry no timestamp and are unverified (docs/DATA_SOURCES.md 20.3).",
+    "Starters are lagged snap-share leaders; a starter returning from a long absence, or a mid-week signing, is not one until he plays.",
+    "A team whose report carries no game status is unknown (null) on every health input, never healthy."
+  ],
+  "model_version": "weekly-startsit-v2",
+  "not_for": [
+    "the draft or rest-of-season boards, tiers or values (one-way flow, AGENTS.md 1)",
+    "any public number before promotion",
+    "a causal reading of a weather or injury effect"
+  ],
+  "prospective": {
+    "status": "pending \u2014 minimum evidence not yet met"
+  },
+  "selected_families": [
+    "lineup"
+  ],
+  "shadow_artifact": {
+    "boosters": 84,
+    "configuration_hash": "24933c290a50a74c",
+    "fitted_at_utc": "2026-10-01T18:32:04Z",
+    "groups": 12,
+    "metadata_sha256": "5d9145f93b4c877eace69ce5ff743c7dcf3e7ca263fe5b57fed2f68444dde5d1",
+    "training_seasons": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ]
+  },
+  "status": "SHADOW \u2014 selected at development; v1 stays in production until the prospective holdout (2026, after the freeze) promotes or rejects this model"
+}

@@ -5433,4 +5433,40 @@ records fail validation.
 
 ### Evidence
 
-Appended by the development commit.
+Development run 2026-10-01 18:29 UTC, on the frozen code (`f62f849`), 155,634 rows, folds
+2020–2024 (`docs/experiments/weekly-startsit-v2/experiment.{json,md}`):
+
+| | Δ pinball (v1 − v1+f) | week-clustered 95% interval | fold wins | Δ pair accuracy | Δ pair Brier | selected |
+|---|---|---|---|---|---|---|
+| weather at kickoff | −0.00002 | [−0.00072, 0.00078] | 3/5 | +0.00032 | −0.00007 | no |
+| **his offence's health** | **+0.00371** | **[0.00303, 0.00524]** | **5/5** | **+0.00144** | **−0.00070** | **yes** |
+| opposing defence's health | +0.00003 | [−0.00035, 0.00047] | 2/5 | −0.00035 | +0.00007 | no |
+
+* **v1 refitted per fold reproduces v1's committed development report exactly** (macro
+  pinball 1.1086, pairwise accuracy 0.6592, Brier 0.2109, P10–P90 coverage 0.808), so every
+  family is measured against the real v1.
+* **v2 is v1 + `lineup`** (one family selected, so no union test): pooled pinball 1.1049,
+  accuracy 0.6606, Brier 0.2102, coverage 0.808. It passes every `weekly_promotion_v1`
+  development clause against B0–B2. The gain is concentrated where a teammate's absence moves
+  volume: RB pinball 1.0786 → 1.0699, WR 1.0214 → 1.0180, TE 0.6992 → 0.6974, QB
+  1.6353 → 1.6344. On the 35% of rows where the family has something to say (a starting
+  lineman or the quarterback out, or ≥ 10% of targets / 20% of carries vacated), pinball is
+  1.0286 → 1.0217.
+* **Weather and the opposing defence's health show no value beyond noise** over a model that
+  already reads the sportsbook total and spread. On the 12% of rows with wind of at least
+  15 mph, a freezing kickoff or expected precipitation, pinball is unchanged (0.9877 both).
+  They are not in v2, and the page publishes them as context without points. The owner's
+  example (wind and rain lowering a receiver's week) is therefore a *published fact* on the
+  page, not a model adjustment: the evidence did not support one.
+* **2025, previously examined (decides nothing):** v1 + lineup 1.0941 vs v1 1.0970; accuracy
+  0.6672 vs 0.6656; Brier 0.2064 vs 0.2072; coverage 0.800 — consistent with development.
+* **Shadow artifact:** fitted on 2017–2025 (`models/shadow/weekly-startsit-v2`, 84 boosters,
+  configuration `24933c290a50a74c`). Two fits give byte-identical boosters. The card is
+  `models/cards/weekly-startsit-v2.{md,json}`.
+
+**Status: implementation complete; prospective validation pending.** v1 stays in production.
+v2 runs in shadow from the first production refresh on this code. The 2026 games that kick
+off after that refresh are its holdout, judged by `weekly_promotion_v2` once 8 complete weeks,
+6,000 rows and 40,000 pairs are retained. Until then the result is *insufficient evidence*,
+which is not a rejection.
+

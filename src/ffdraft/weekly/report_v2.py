@@ -82,6 +82,33 @@ def _markdown(report: Mapping[str, Any]) -> str:
             f"{_fmt(decision['brier'] - decision['brier_v1'], 5)} | "
             f"{'yes' if result['passed'] else 'no'} |",
         )
+    models = list(pooled)
+    lines += [
+        "",
+        "## Macro pinball by season (each fold trained on the seasons before it)",
+        "",
+        "| season | " + " | ".join(models) + " |",
+        "|---|" + "---|" * len(models),
+    ]
+    for season, values in sorted(report["by_season"].items()):
+        lines.append(
+            f"| {season} | "
+            + " | ".join(_fmt((values.get(model) or {}).get("pinball")) for model in models)
+            + " |",
+        )
+    lines += [
+        "",
+        "## Macro pinball by position (pooled folds)",
+        "",
+        "| position | " + " | ".join(models) + " |",
+        "|---|" + "---|" * len(models),
+    ]
+    for position, values in report["by_position"].items():
+        lines.append(
+            f"| {position} | "
+            + " | ".join(_fmt((values.get(model) or {}).get("pinball")) for model in models)
+            + " |",
+        )
     lines += [
         "",
         "## Where each family has something to say (diagnostic; decides nothing)",

@@ -150,6 +150,16 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
     v2_prospective.add_argument("--out", type=Path, default=None)
     v2_prospective.set_defaults(handler=lambda args: _prospective(args, repo_root()))
 
+    card_v2 = subparsers.add_parser(
+        "weekly-v2-model-card",
+        help="generate the weekly-startsit-v2 card from the committed v2 evidence (offline)",
+    )
+    card_v2.add_argument("--reports", type=Path, default=None)
+    card_v2.add_argument("--model", type=Path, default=None)
+    card_v2.add_argument("--out", type=Path, default=None)
+    card_v2.add_argument("--git-sha", default="unknown")
+    card_v2.set_defaults(handler=lambda args: _card_v2(args, repo_root()))
+
     card = subparsers.add_parser(
         "weekly-model-card",
         help="generate the weekly start/sit model card from the committed reports and artifact",
@@ -159,6 +169,27 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
     card.add_argument("--out", type=Path, default=None, help="card directory")
     card.add_argument("--git-sha", default="unknown", help="recorded code SHA")
     card.set_defaults(handler=lambda args: _card(args, repo_root()))
+
+
+def _card_v2(args: argparse.Namespace, root: Path) -> int:
+    from ffdraft.weekly.card_v2 import write_weekly_v2_card
+    from ffdraft.weekly.weather import load_error_model
+
+    reports = args.reports or (root / DEFAULT_WEEKLY_V2_EXPERIMENT_DIR)
+    model = args.model or (root / DEFAULT_WEEKLY_V2_MODEL_DIR)
+    prospective = reports / "prospective_final.json"
+    if not prospective.is_file():
+        prospective = reports / "prospective_first.json"
+    for path in write_weekly_v2_card(
+        report_path=reports / "experiment.json",
+        model_dir=model if model.is_dir() else None,
+        out_dir=args.out or (root / "models" / "cards"),
+        weather_parameters_digest=load_error_model().digest,
+        prospective_path=prospective if prospective.is_file() else None,
+        git_sha=args.git_sha,
+    ):
+        print(f"wrote {path}")
+    return 0
 
 
 def _card(args: argparse.Namespace, root: Path) -> int:
@@ -538,10 +569,34 @@ def _join_outcomes(eligible: pl.DataFrame, season: int) -> pl.DataFrame:
         "scoring_preset",
         pl.col("target_points").alias("actual"),
     )
-    return eligible.with_columns(
-        pl.col("season").cast(pl.Int32),
-        pl.col("target_week").cast(pl.Int32),
-    ).join(appeared, on=["season", "target_week", "gsis_id", "scoring_preset"], how="inner")
+    # "Complete target weeks" (PROSPECTIVE_HOLDOUT): every regular-season game of the week
+    # kicked off more than six hours ago. A week still being played contributes nothing yet.
+    from datetime import UTC, datetime, timedelta
+
+    from ffdraft.season.state import scheduled_kickoff_utc
+
+    now = datetime.now(UTC)
+    last: dict[int, datetime | None] = {}
+    for game in sources.schedule.filter(
+        (pl.col("season") == season) & (pl.col("game_type") == "REG"),
+    ).iter_rows(named=True):
+        kickoff = scheduled_kickoff_utc(game.get("gameday"), game.get("gametime"))
+        week = int(game["week"])
+        held = last.get(week, kickoff)
+        last[week] = None if kickoff is None or held is None else max(held, kickoff)
+    complete = [
+        week
+        for week, kickoff in last.items()
+        if kickoff is not None and kickoff + timedelta(hours=6) < now
+    ]
+    return (
+        eligible.with_columns(
+            pl.col("season").cast(pl.Int32),
+            pl.col("target_week").cast(pl.Int32),
+        )
+        .filter(pl.col("target_week").is_in(complete))
+        .join(appeared, on=["season", "target_week", "gsis_id", "scoring_preset"], how="inner")
+    )
 
 
 def _authorization(args: argparse.Namespace) -> Any:
