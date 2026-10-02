@@ -1335,6 +1335,7 @@ revalidates at once), bytes counted at the server:
 | first visit, in-season default view — everything | ≤ 450 kB |
 | first visit — data | ≤ 150 kB |
 | then opening Start/Sit adds | ≤ 60 kB |
+| then opening Trade adds (ADR-100) | ≤ 25 kB |
 | opening a player card adds | ≤ 30 kB |
 | repeat visit to the same deploy — data | ≤ 1 kB |
 | redeploy of unchanged data — served data files | 0 B |
@@ -1360,6 +1361,16 @@ and that a redeploy which renames a player is shown at once to a reader holding 
 
   The weekly slice is the one to watch: a longer explanation (more groups, a promoted v2's
   families) or more players a preset adds bytes at about 37 kB gzip per 550 players.
+* **ADR-100 added the Trade budget** rather than loosening an old one. The tab reads the ROS
+  block the default view has already loaded, so it adds only its lazily loaded code: 11.0 kB on
+  the size model (2026-10-02), 0 B of data. 25 kB leaves room for the engine and view to grow
+  without letting the tab start pulling data files. Every other measured path was unchanged
+  (Start/Sit 54.9 kB, card 23.6 kB); the entry bundle grew 2.6 kB gzip for the URL state,
+  tab row and Data method. A cold visit straight to a Trade link is reported, not budgeted
+  (305.8 kB, 61.6 kB data, on the size model).
+* **Trade interaction cost** is measured by `node web/tests/e2e/measure-trade.mjs` (Pixel 7
+  viewport, CPU throttled 4×, a production-shaped board over the size model's rows; target
+  200 ms). It is a diagnostic, not a CI gate. Re-run it when the engine changes.
 
 ### 17.4 Bandwidth arithmetic (re-do it when the numbers move)
 

@@ -18,6 +18,7 @@
  * | first visit, in-season default view — everything | ≤ 450 kB |
  * | first visit, in-season default view — data (`/data/`) | ≤ 150 kB |
  * | then opening Start/Sit adds | ≤ 60 kB |
+ * | then opening Trade adds (ADR-100) | ≤ 25 kB |
  * | opening a player card from the default view adds | ≤ 30 kB |
  * | a repeat visit to the same deploy — data | ≤ 1 kB (≈ 0) |
  * | a redeploy of unchanged data — served data files | 0 B |
@@ -49,6 +50,7 @@ export const BUDGETS = {
   firstVisitTotal: 450_000,
   firstVisitData: 150_000,
   startSitAdds: 60_000,
+  tradeAdds: 25_000,
   cardAdds: 30_000,
   repeatVisitData: 1_000,
   redeployServedData: 0,
@@ -162,6 +164,15 @@ try {
   await settle(page);
   check("startSitAdds", sum(log.since(mark)), BUDGETS.startSitAdds);
 
+  // 2b. Then Trade (ADR-100): its code only — it reads the ROS block already loaded.
+  mark = log.mark();
+  await page.getByRole("tab", { name: "Trade" }).click();
+  await page.getByRole("heading", { name: "Trade targets" }).first().waitFor();
+  await settle(page);
+  const trade = log.since(mark);
+  check("tradeAdds", sum(trade), BUDGETS.tradeAdds);
+  results.tradeAddsData = sum(trade, isData);
+
   // 3. A player card, opened from the default view in a fresh browser.
   const other = await browser.newContext();
   const cardPage = await newPage(other);
@@ -173,6 +184,18 @@ try {
   await settle(cardPage);
   check("cardAdds", sum(cardLog.since(mark)), BUDGETS.cardAdds);
   await other.close();
+
+  // 3a. Reported, not budgeted: a cold first visit straight to a shared Trade link.
+  const trader = await browser.newContext();
+  const tradePage = await newPage(trader);
+  mark = log.mark();
+  await tradePage.goto(`${site}?view=trade`, { waitUntil: "domcontentloaded" });
+  await tradePage.getByRole("heading", { name: "Trade targets" }).first().waitFor();
+  await settle(tradePage);
+  const tradeCold = log.since(mark);
+  results.tradeFirstVisitTotal = sum(tradeCold);
+  results.tradeFirstVisitData = sum(tradeCold, isData);
+  await trader.close();
 
   // 3b. Reported, not budgeted: a cold first visit to the draft board (the preseason default).
   const drafter = await browser.newContext();

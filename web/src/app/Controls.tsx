@@ -75,15 +75,25 @@ export function tabsForMode(mode: "draft" | "in_season"): readonly TabSpec[] {
 }
 
 /**
- * Bring a tab fully into a horizontally scrolled row, without animating when the reader asked
- * for reduced motion. `nearest` moves the row only as far as needed and never the page.
+ * Bring a tab fully into the horizontally scrolled row, without animating when the reader asked
+ * for reduced motion. The row is scrolled by hand rather than with `scrollIntoView`: that call
+ * would also move Chrome's sequential-focus starting point to the tab, so the first Tab key on
+ * a fresh page would skip the skip link and every control above the board. Nothing happens when
+ * the tab is already in view, which is the ordinary desktop case.
  */
-function reveal(element: HTMLElement | null): void {
-  if (element === null || typeof element.scrollIntoView !== "function") return;
+function reveal(row: HTMLElement | null, tab: HTMLElement | null): void {
+  if (row === null || tab === null || typeof row.scrollBy !== "function") return;
+  const bounds = row.getBoundingClientRect();
+  const box = tab.getBoundingClientRect();
+  const margin = 20;
+  let delta = 0;
+  if (box.left < bounds.left) delta = box.left - bounds.left - margin;
+  else if (box.right > bounds.right) delta = box.right - bounds.right + margin;
+  if (delta === 0) return;
   const reduced =
     typeof window.matchMedia === "function" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  element.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduced ? "auto" : "smooth" });
+  row.scrollBy({ left: delta, behavior: reduced ? "auto" : "smooth" });
 }
 
 /**
@@ -93,7 +103,7 @@ function reveal(element: HTMLElement | null): void {
  * rather than shrinking text or tap targets (ADR-100). Three things keep that usable: the
  * active tab is scrolled into view whenever it changes, a focused tab is scrolled into view so
  * a keyboard reader never tabs onto something off screen, and an edge marker says when there
- * is more row in either direction. On the narrowest screens "Opportunity" prints as "Opp",
+ * is more row in either direction. Below 560px "Opportunity" prints as "Opp",
  * with the full word kept in the accessible name.
  */
 export function ViewTabs({
@@ -144,7 +154,7 @@ export function ViewTabs({
   // The active tab is always on screen; after an arrow key, focus follows it (WAI-ARIA tabs).
   useEffect(() => {
     const active = list.current?.querySelector<HTMLButtonElement>(`#tab-${view}`) ?? null;
-    reveal(active);
+    reveal(list.current, active);
     if (keyboard.current) {
       keyboard.current = false;
       active?.focus();
@@ -166,7 +176,7 @@ export function ViewTabs({
             aria-controls={`panel-${tab.id}`}
             tabIndex={view === tab.id ? 0 : -1}
             onFocus={(event) => {
-              reveal(event.currentTarget);
+              reveal(list.current, event.currentTarget);
             }}
             onKeyDown={(event) => {
               const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;

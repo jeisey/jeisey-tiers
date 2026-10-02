@@ -111,6 +111,7 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     ["the opportunity board", "/scenario/in-season/?view=opportunity", ".opp-board"],
     ["pick of the week", "/scenario/in-season/?view=potw", ".potw-grid"],
     ["start/sit", "/scenario/in-season/?view=startsit&duel=00-0000011.00-0000012", ".verdict"],
+    ["trade", "/scenario/in-season/?view=trade&give=00-0000001&get=2&range=35", ".trade-results"],
   ] as const) {
     test(`${name} keeps its sticky chrome to one row and the tabs`, async ({ page }) => {
       await page.goto(path);
@@ -358,4 +359,31 @@ test("a tier can be opened and closed with a thumb", async ({ page }) => {
   const before = await page.locator(".board-row").count();
   await heads.first().click();
   expect(await page.locator(".board-row").count()).toBeLessThan(before);
+});
+
+/*
+ * Six in-season tabs (ADR-100). The row scrolls rather than shrinking anything: every tab
+ * keeps a 44px target, "Opportunity" prints as "Opp" with its full accessible name, and the
+ * active tab is scrolled fully into view whichever it is.
+ */
+test("six tabs: full tap targets, a short label with the full name, the active tab on screen", async ({
+  page,
+}) => {
+  for (const view of ["ros", "startsit", "trade", "opportunity", "potw", "data"]) {
+    await page.goto(`/scenario/in-season/?view=${view}`);
+    const tablist = page.getByRole("tablist", { name: "Board" });
+    await expect(tablist).toBeVisible();
+    const active = tablist.locator('[aria-selected="true"]');
+    await expect(active).toBeInViewport({ ratio: 1 });
+    for (const tab of await tablist.getByRole("tab").all()) {
+      expect((await tab.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
+  }
+  const opportunity = page.getByRole("tab", { name: "Opportunity" });
+  await expect(opportunity).toHaveAccessibleName("Opportunity");
+  await expect(opportunity.locator(".tab-label-short")).toBeVisible();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
 });

@@ -143,27 +143,29 @@ export function TradeView({
     [bundle, leaguePreset, scoring],
   );
 
+  // Keyed by value, not identity: every URL change parses fresh arrays, and a swap must not
+  // re-run the search (ADR-100's 200 ms target is for the search; a swap is a re-deal).
+  const giveKey = state.give.join(".");
+  const compKey = state.comp.join(".");
   const search = useMemo(
     () =>
       measuredSearch({
         records,
-        give: state.give,
+        give: giveKey === "" ? [] : giveKey.split("."),
         goal: state.goal,
         get: state.get,
         range: state.range,
-        comp: state.comp,
+        comp: compKey === "" ? [] : (compKey.split(".") as CompSlot[]),
       }),
-    [records, state.give, state.goal, state.get, state.range, state.comp],
+    [records, giveKey, state.goal, state.get, state.range, compKey],
   );
 
   const order = useMemo(
     () => (search.status === "ok" ? dealingOrder(search.pool) : []),
     [search],
   );
-  const keptKeys = useMemo(
-    () => new Set(state.keep.map((members) => [...members].sort().join("."))),
-    [state.keep],
-  );
+  const keepKey = state.keep.map((members) => [...members].sort().join(".")).join("_");
+  const keptKeys = useMemo(() => new Set(keepKey === "" ? [] : keepKey.split("_")), [keepKey]);
   const stamp = explorationStamp({
     buildId: bundle.metadata.build_id,
     leaguePreset,
@@ -186,6 +188,8 @@ export function TradeView({
     [state.keep, records, state.get, state.comp, search],
   );
   const noneLeft = search.status === "ok" && exhausted(order, exploration, keptKeys);
+  // Players on this board, not ids in the link: a stale id gives nothing and takes no spot.
+  const giveCount = search.outgoing.players.length + search.outgoing.unpriced.length;
 
   const control = (patch: Patch): void => {
     onChange({ ...patch, ...FRESH });
@@ -298,8 +302,8 @@ export function TradeView({
       </div>
 
       <p className="trade-shape">
-        <strong>{shapeLabel(Math.max(state.give.length, 1), state.get)}</strong>
-        <span>{rosterLabel(Math.max(state.give.length, 1), state.get)}</span>
+        <strong>{shapeLabel(Math.max(giveCount, 1), state.get)}</strong>
+        <span>{rosterLabel(Math.max(giveCount, 1), state.get)}</span>
         <span>{compositionLabel(state.comp, state.get)}</span>
       </p>
       <p className="trade-help">
@@ -343,7 +347,7 @@ export function TradeView({
                   entry={entry}
                   search={search}
                   goal={state.goal}
-                  give={state.give.length}
+                  give={giveCount}
                   onSelect={onSelect}
                   actions={
                     <>
@@ -412,7 +416,7 @@ export function TradeView({
           kept={kept}
           search={search}
           goal={state.goal}
-          give={state.give.length}
+          give={giveCount}
           onSelect={onSelect}
           onRemove={unkeep}
         />

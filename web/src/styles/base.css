@@ -7486,7 +7486,8 @@ table.sheet.weekboard-table thead th.wb-num {
  * The tab row's overflow (ADR-100). Six in-season tabs do not fit 320px at a legible size, so
  * the row scrolls; a marker at each edge says there is more, and `ViewTabs` scrolls the active
  * or focused tab into view. Solid markers rather than a fade: the board avoids gradients.
- * "Opportunity" prints as "Opp" below 480px, the full word kept for assistive technology.
+ * "Opportunity" prints as "Opp" below 560px, the full word kept for assistive technology; from
+ * 360px the six tabs then fit one row, and only narrower screens scroll.
  * ---------------------------------------------------------------------------------------- */
 
 .tabs-row {
@@ -7532,7 +7533,7 @@ table.sheet.weekboard-table thead th.wb-num {
   display: none;
 }
 
-@media (max-width: 479px) {
+@media (max-width: 559px) {
   .tab-label-short {
     display: inline;
   }

@@ -1276,6 +1276,13 @@ never change.
 reads them. A player's bucket is FNV-1a (32-bit) over the UTF-8 bytes of `player_id`, modulo
 `card_buckets`; the Python and TypeScript implementations share a test vector.
 
+The Trade tab (ADR-100) adds **no family and no field**: it reads `ros_tiers/<block>` — every
+value it needs (`ros_expected_vorp`, the five VORP quantiles, `ros_expected_points`,
+`remaining_horizon_weeks`, `long_absence`, `current_status`) is already in that slice. Its
+outputs are computed in the browser and never published, so they have no artifact contract;
+their method is versioned in the ADR (`trade_targets_v1`, `ros_package_quantiles_v1`) and its
+URL state in docs/UX_SPEC.md §6A.12.3.
+
 ### 21.4 A table
 
 A slice is one table; a card shard is one table per artifact under `sections`. A table is

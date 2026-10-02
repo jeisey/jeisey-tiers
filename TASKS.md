@@ -1853,3 +1853,58 @@ under a new model version frozen before evidence, with a prospective holdout.
     is met; the earliest first look is after week 12 if the refresh runs before week 5).
 
   No PR (not requested).
+
+## The Trade tab: model-based trade targets — 2026-10-02 (ADR-100)
+
+The owner asked for an in-season Trade tab: offer one to three players, choose ROS value, Highest
+ceiling or Highest floor and how many players to receive, and explore ranked incoming packages.
+A downstream decision tool over the published `ros_tiers` block: no model, no artifact, no
+source and no published number changed.
+
+- [x] **Method frozen first** (`6539fa5`, ADR-100): units, horizon, eligibility
+      (`trade_eligibility_v1`), value band (`trade_band_v1`, ±20% default), anti-padding
+      (`member_share_v1`, 15%), objectives and tie-breaks, package floor/ceiling
+      (`ros_package_quantiles_v1`), exact search (`trade_search_v1`), dealing/swap/keep
+      (`trade_explore_v1`), URL state and a new payload budget — before the engine existed.
+- [x] **Engine** `web/src/data/trade.ts`: pure, typed, deterministic; record order irrelevant;
+      single players keep published P10/P90; nonpositive outgoing value refused; unpriced and
+      missing values stay missing; outgoing, duplicate and permuted packages impossible by
+      construction.
+- [x] **Simulation evidence**: `scripts/trade_package_fixture.py` → committed
+      `web/tests/fixtures/trade-simulation.json` from `simulate_vorp` + `allocate_with_bench`
+      (reproduced byte for byte by `tests/unit/test_trade_package_fixture.py`); package P10/P90
+      mean error ≈ 1 point on a ~95–117-point range (summing P90s: 19–40); joint vs independent
+      truth nearly identical.
+- [x] **Exhaustive comparison**: > 400 small-universe queries, every shape, preset, range and
+      composition — identical qualifying counts and top 200; recall 100%.
+- [x] **UI** `web/src/app/TradeView.tsx` (lazy, 11.0 kB gzip): outgoing combobox and chips,
+      presets, receive count, value range, per-slot composition, shape and roster line, horizon
+      and floor/ceiling helper text, one disclaimer, five ranked packages with numeric
+      "why it qualifies", Keep/Swap/More targets/Reset, kept shelf with invalidation reasons,
+      excluded players with reasons, player-card integration, empty/nonpositive/no-pool states
+      with explicit broaden buttons.
+- [x] **URL state** (`state.ts`): `give goal get range comp keep shown dealt stamp`, validated
+      and canonical; Back/Forward walk swaps; stale explorations re-deal with a notice.
+- [x] **Navigation**: six in-season tabs; scrollable row with edge markers, active/focused tab
+      revealed, arrow keys move focus; "Opp" below 560px with "Opportunity" as accessible name;
+      44px targets kept; mobile Settings folding unchanged.
+- [x] **Serving**: `requiredKeys` → `ros_tiers/<block>` only; no new family; missing ROS block or
+      bundle degrades the tab alone. Data view documents the method (`tradeMethod.ts` keeps the
+      engine out of the entry chunk).
+- [x] **Budgets**: new `tradeAdds ≤ 25 kB` (measured 11.0 kB, 0 B data); every old budget
+      unchanged.
+- [x] **Interaction**: `measure-trade.mjs` (Pixel 7, 4× CPU throttle, production-shaped 500-row
+      board): search ≤ 75 ms, preset click ≤ 131 ms, swap ≤ 97 ms, More ≤ 138 ms. No worker.
+- [x] **Checks**: `verify-real-build.mjs` checks every rendered package against the artifact
+      bytes; `capture-trade.mjs` measures overflow, clipping, truncated numbers and the active
+      tab at 1440/820/390/320 (`docs/visual-qa/2026-10-02-trade/`).
+- [x] **Docs**: ADR-100 with evidence; ARCHITECTURE §14; UX_SPEC §6A.12; MODELING §36;
+      DATA_CONTRACTS §21.3; OPERATIONS §17.3.
+- [x] **Validation**: ruff/format clean (319 files); mypy clean (192); **pytest 1,817 passed**;
+      lint 0 errors; typecheck clean; **vitest 736**; build; **e2e 215** (chromium, mobile,
+      a11y); `verify:board` 0 failures (root; in-season fixture with 5 trade packages);
+      size-model budgets all met.
+- [ ] **Owed**: no historical (development-fold) evaluation of package-interval coverage — the
+      ROS out-of-fold predictions are not retained, and regenerating them would re-run model
+      evaluation this downstream feature must not do; the first real in-season build on this
+      code (the sandbox cannot reach the private store); no PR (not requested).

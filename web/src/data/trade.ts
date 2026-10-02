@@ -556,10 +556,13 @@ export function searchTrade(query: TradeQuery): TradeSearch {
   }
   const constrained = need.some((count) => count > 0);
   const counts = new Int8Array(6);
-  const matches = (indices: readonly number[]): boolean => {
+  // Members are passed as numbers, `-1` for an absent one: the inner loops allocate nothing.
+  const matches = (a: number, b: number, c: number): boolean => {
     if (!constrained) return true;
     counts.fill(0);
-    for (const index of indices) counts[pos[index] ?? 0] = (counts[pos[index] ?? 0] ?? 0) + 1;
+    counts[pos[a] ?? 0] = (counts[pos[a] ?? 0] ?? 0) + 1;
+    if (b >= 0) counts[pos[b] ?? 0] = (counts[pos[b] ?? 0] ?? 0) + 1;
+    if (c >= 0) counts[pos[c] ?? 0] = (counts[pos[c] ?? 0] ?? 0) + 1;
     for (let p = 0; p < 6; p += 1) if ((counts[p] ?? 0) < (need[p] ?? 0)) return false;
     return true;
   };
@@ -580,19 +583,24 @@ export function searchTrade(query: TradeQuery): TradeSearch {
   const goal = query.goal;
   const objectiveFast = (k1: number, k2: number, k3: number): number =>
     goal === "value" ? k1 : cornishFisher(k1, k2, k3, goal === "ceiling" ? 0.9 : 0.1);
+  let worst = Number.NEGATIVE_INFINITY;
   const trim = (): void => {
     kept.sort((a, b) => comparePackages(a, b, goal));
     kept = kept.slice(0, POOL_CAP);
     floor = kept.length >= POOL_CAP ? (kept[kept.length - 1] ?? null) : null;
+    worst = floor === null ? Number.NEGATIVE_INFINITY : objectiveOf(floor, goal);
   };
-  const offer = (indices: readonly number[], k1: number, k2: number, k3: number): void => {
+  const offer = (a: number, b: number, c: number, k1: number, k2: number, k3: number): void => {
     qualifying += 1;
     if (floor !== null) {
-      const f = indices.length === 1 ? objectiveOf(buildPackage([at(pool, indices[0] ?? 0)]), goal) : objectiveFast(k1, k2, k3);
-      const worst = objectiveOf(floor, goal);
+      // One player's floor and ceiling are published; two or three use the cumulant rule.
+      const f = b < 0 ? objectiveOf(at(pool, a), goal) : objectiveFast(k1, k2, k3);
       if (f < worst) return;
     }
-    const pkg = buildPackage(indices.map((index) => at(pool, index)));
+    const members = [at(pool, a)];
+    if (b >= 0) members.push(at(pool, b));
+    if (c >= 0) members.push(at(pool, c));
+    const pkg = buildPackage(members);
     if (floor !== null && comparePackages(pkg, floor, goal) >= 0) return;
     kept.push(pkg);
     if (kept.length >= 2 * POOL_CAP) trim();
@@ -601,7 +609,7 @@ export function searchTrade(query: TradeQuery): TradeSearch {
   if (query.get === 1) {
     for (let i = firstAtMost(v, high, 0); i < n && (v[i] ?? 0) >= low; i += 1) {
       visits += 1;
-      if (matches([i])) offer([i], v[i] ?? 0, m2[i] ?? 0, m3[i] ?? 0);
+      if (matches(i, -1, -1)) offer(i, -1, -1, v[i] ?? 0, m2[i] ?? 0, m3[i] ?? 0);
     }
   } else if (query.get === 2) {
     outer: for (let i = 0; i + 1 < n; i += 1) {
@@ -615,8 +623,8 @@ export function searchTrade(query: TradeQuery): TradeSearch {
           truncated = true;
           break outer;
         }
-        if (!shareOk(v[j] ?? 0, vi + (v[j] ?? 0)) || !matches([i, j])) continue;
-        offer([i, j], vi + (v[j] ?? 0), (m2[i] ?? 0) + (m2[j] ?? 0), (m3[i] ?? 0) + (m3[j] ?? 0));
+        if (!shareOk(v[j] ?? 0, vi + (v[j] ?? 0)) || !matches(i, j, -1)) continue;
+        offer(i, j, -1, vi + (v[j] ?? 0), (m2[i] ?? 0) + (m2[j] ?? 0), (m3[i] ?? 0) + (m3[j] ?? 0));
       }
     }
   } else {
@@ -637,9 +645,11 @@ export function searchTrade(query: TradeQuery): TradeSearch {
             truncated = true;
             break outer;
           }
-          if (!shareOk(v[k] ?? 0, vi + vj + (v[k] ?? 0)) || !matches([i, j, k])) continue;
+          if (!shareOk(v[k] ?? 0, vi + vj + (v[k] ?? 0)) || !matches(i, j, k)) continue;
           offer(
-            [i, j, k],
+            i,
+            j,
+            k,
             vi + vj + (v[k] ?? 0),
             (m2[i] ?? 0) + (m2[j] ?? 0) + (m2[k] ?? 0),
             (m3[i] ?? 0) + (m3[j] ?? 0) + (m3[k] ?? 0),

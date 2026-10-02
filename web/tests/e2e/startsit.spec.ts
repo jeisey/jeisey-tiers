@@ -202,14 +202,17 @@ test.describe("layout", () => {
     expect(clipped).toBe(0);
   });
 
-  test("the five in-season tabs fit one row from 360px, each on one line", async ({ page }) => {
-    for (const width of [360, 390, 768]) {
+  // Six tabs since ADR-100: one row from 360px ("Opportunity" prints as "Opp" below 560px),
+  // a sideways scroll below that with the active tab revealed, and never a wrapped label.
+  test("the six in-season tabs fit one row from 360px, each on one line", async ({ page }) => {
+    for (const width of [320, 360, 390, 480, 768]) {
       await page.setViewportSize({ width, height: 800 });
       await page.goto(`${IN_SEASON}?view=startsit`);
       const tabs = page.getByRole("tablist", { name: "Board" });
-      await expect(tabs.getByRole("tab")).toHaveCount(5);
+      await expect(tabs.getByRole("tab")).toHaveCount(6);
       const fit = await tabs.evaluate((node) => node.scrollWidth - node.clientWidth);
-      expect(fit, `the tabs scroll at ${String(width)}px`).toBeLessThanOrEqual(1);
+      if (width >= 360) expect(fit, `the tabs scroll at ${String(width)}px`).toBeLessThanOrEqual(1);
+      await expect(tabs.getByRole("tab", { name: "Start/Sit" })).toBeInViewport({ ratio: 1 });
       const heights = await tabs
         .getByRole("tab")
         .evaluateAll((nodes) => [...new Set(nodes.map((node) => Math.round(node.getBoundingClientRect().height)))]);

@@ -1,0 +1,958 @@
+{
+ "prefix": "/scenario/in-season/",
+ "give": "00-0000001",
+ "report": [
+  {
+   "screen": "trade-empty",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-1for2",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-kept",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-ros",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-opportunity",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-potw",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-data",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-empty",
+   "width": 820,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-1for2",
+   "width": 820,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-kept",
+   "width": 820,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-ros",
+   "width": 820,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-opportunity",
+   "width": 820,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-potw",
+   "width": 820,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-data",
+   "width": 820,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-empty",
+   "width": 390,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-1for2",
+   "width": 390,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-kept",
+   "width": 390,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-ros",
+   "width": 390,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-opportunity",
+   "width": 390,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-potw",
+   "width": 390,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-data",
+   "width": 390,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-empty",
+   "width": 320,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-1for2",
+   "width": 320,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "trade-kept",
+   "width": 320,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-ros",
+   "width": 320,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-opportunity",
+   "width": 320,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-potw",
+   "width": 320,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  },
+  {
+   "screen": "nav-data",
+   "width": 320,
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "activeTabVisible": true,
+   "tabs": [
+    {
+     "text": "ROS tiers",
+     "height": 44
+    },
+    {
+     "text": "Start/Sit",
+     "height": 44
+    },
+    {
+     "text": "Trade",
+     "height": 44
+    },
+    {
+     "text": "OpportunityOpp",
+     "height": 44
+    },
+    {
+     "text": "POTW",
+     "height": 44
+    },
+    {
+     "text": "Data",
+     "height": 44
+    }
+   ]
+  }
+ ]
+}

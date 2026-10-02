@@ -5755,3 +5755,53 @@ existing budget changes.
 * Three limitations are stated on the tab and in the Data view: results are not offers;
   multi-player floors and ceilings are approximate and assume independence; aggregate asset
   value is not lineup value.
+
+### Evidence (appended after implementation, 2026-10-02)
+
+Nothing in the rule above was changed by what follows.
+
+**Package floor and ceiling against the production draw loop.** `scripts/trade_package_fixture.py`
+draws a synthetic 300-player league (gamma-per-game scores over a binomial count of remaining
+games, independent per player) through `simulate_vorp` with `allocate_with_bench` on
+`redraft-12`, 4,000 draws, publishes each player's fields rounded as production rounds them, and
+records the true P10/P90 of 160 pairs and 160 triples from the joint draws — and from draws
+shuffled per member, to isolate independence. `web/tests/trade.test.ts` holds the engine to it;
+`tests/unit/test_trade_package_fixture.py` regenerates it byte for byte.
+
+| | mean \|err\| P10 | mean \|err\| P90 | max \|err\| | mean width | summed P90s instead |
+|---|---|---|---|---|---|
+| pairs | 0.97 | 0.71 | 4.43 | 94.8 | 18.7 |
+| triples | 1.20 | 0.98 | 5.50 | 116.7 | 40.3 |
+
+The independent-draw truth gives nearly the same errors (pairs 0.97/0.67, triples 1.21/0.90),
+so the shared replacement level costs little; P10 carries a ~−1 bias. Ceiling order agrees with
+the draws on > 97% of package pairs. Single players reproduce their published values exactly.
+This is approximation evidence on a synthetic league, not calibration of real outcomes.
+
+**Search.** On 4 seeded universes × 3 outgoing counts × 3 receive counts × 3–4 compositions ×
+3 presets × 3 ranges (> 400 queries), the pruned search returns exactly brute force's qualifying
+count and top 200, in order: recall 100%. With more than 200 qualifying, the kept 200 are brute
+force's best 200.
+
+**Interaction cost** (`web/tests/e2e/measure-trade.mjs`, Pixel 7 viewport, CPU throttled 4×,
+500 ROS rows a block with production-shaped values, 30 scenarios: five outgoing sets × receive
+1–3 × ±20/±50%): worst engine search 75 ms (88,179 qualifying triples), worst preset click to
+paint 131 ms, swap 97 ms, More targets 138 ms — all under the 200 ms target, so no worker. A
+pathological board where all 500 players are above replacement on a gentle slope yields 3.7M
+qualifying triples in about 120 ms unthrottled (≈ 0.5 s at 4×); the 4M visit cap bounds it,
+and a real board's ~170–220 positive players keep it far below.
+
+**Payload** (size model, `verify:budget`): Trade adds 11.0 kB (its chunk; 0 B data) against the
+new 25 kB budget; every older budget unchanged (first visit 294.8 kB / 61.6 kB data, Start/Sit
+54.9 kB, card 23.6 kB, repeat 0 B, redeploy 0 B). The entry bundle grew 2.6 kB gzip.
+
+**Rendered checks.** `capture-trade.mjs` at 1440/820/390/320: no horizontal overflow, no clipped
+or ellipsised number (a first version cut the 320px readout cells; fixed before commit by
+moving each difference under its number), and the active tab fully inside the row on every
+in-season tab. Two defects found by the existing suites and fixed: revealing the active tab with
+`scrollIntoView` moved Chrome's sequential-focus starting point, so a fresh page's first Tab
+skipped the skip link (the row is now scrolled by hand, only when the tab is out of view); and
+at 480–559px the six tabs overflowed by 16px with the full "Opportunity" (the short label now
+applies below 560px, so every width from 360px fits one row). `verify:board` on the in-season
+fixture checks every rendered package's value
+against the summed artifact bytes, band, count and eligibility (5 packages, 0 failures).

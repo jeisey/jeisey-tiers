@@ -1,0 +1,53 @@
+{
+ "site": "web/dist-size-model",
+ "budgets": {
+  "firstVisitTotal": 450000,
+  "firstVisitData": 150000,
+  "startSitAdds": 60000,
+  "tradeAdds": 25000,
+  "cardAdds": 30000,
+  "repeatVisitData": 1000,
+  "redeployServedData": 0
+ },
+ "results": {
+  "firstVisitTotal": {
+   "bytes": 294760,
+   "budget": 450000
+  },
+  "firstVisitData": {
+   "bytes": 61591,
+   "budget": 150000
+  },
+  "firstVisitRequests": 10,
+  "startSitAdds": {
+   "bytes": 54947,
+   "budget": 60000
+  },
+  "tradeAdds": {
+   "bytes": 10999,
+   "budget": 25000
+  },
+  "tradeAddsData": 0,
+  "cardAdds": {
+   "bytes": 23556,
+   "budget": 30000
+  },
+  "tradeFirstVisitTotal": 305759,
+  "tradeFirstVisitData": 61591,
+  "draftFirstVisitTotal": 284371,
+  "draftFirstVisitData": 51202,
+  "repeatVisitData": {
+   "bytes": 0,
+   "budget": 1000
+  },
+  "repeatVisitTotal": 0,
+  "redeployServedData": {
+   "bytes": 0,
+   "budget": 0
+  },
+  "redeployManifest": 14963,
+  "redeployTotal": 248132,
+  "freshDeployShown": true
+ },
+ "failures": []
+}
