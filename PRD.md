@@ -1,9 +1,142 @@
-# Product Requirements Document — Fantasy Draft Intelligence
+# Product Requirements — Jeisey Tiers
 
-**Status:** Build-ready specification  
-**Version:** 1.0  
-**Primary use case:** 2026+ redraft fantasy-football draft preparation  
-**Deployment target:** Public GitHub Pages site with daily GitHub Actions refreshes
+**Status:** Living document. Part A is the current product scope; Part B is the V1 launch
+specification, kept as a historical record.  
+**Last revised:** 2026-10-02  
+**Live site:** <https://jeisey.github.io/jeisey-tiers/>  
+**Deployment:** static GitHub Pages site refreshed by GitHub Actions
+
+Where Part A and Part B disagree, Part A governs. Part B's section numbers are cited by code,
+tests and ADRs, so they are kept unchanged.
+
+---
+
+# Part A — Current product scope
+
+## A1. Product summary
+
+Jeisey Tiers is a free, public, zero-backend fantasy-football site for redraft leagues with two
+modes:
+
+- **Draft mode** (before the season's first regular-season kickoff): an intrinsic Tier Board and
+  a draft-market comparison (Arbitrage board / Draft Rail) against published ADP.
+- **In-season mode** (from that kickoff): rest-of-season tiers, a weekly Start/Sit comparison, a
+  Trade explorer, the Opportunity Board and Pick of the Week.
+
+The season state is derived from the published NFL schedule (`season_state_v1`, ADR-079); the
+reader can override the mode, and the draft board stays reachable all season.
+
+## A2. Binding invariants
+
+These hold for every feature, current or future.
+
+1. **The intrinsic firewall.** The preseason intrinsic model (`intrinsic-cb-hurdle-v1`) and the
+   rest-of-season model (`intrinsic-ros-v1`) estimate football value without market or expert
+   inputs: no ADP, ECR, expert or consensus rank, FantasyCalc value, sportsbook line used as a
+   market proxy, add/drop behaviour, or output of any downstream layer. Information flows from
+   the intrinsic models to the market and decision layers, never back (`AGENTS.md` sections 1
+   and 8).
+2. **Decision layers are downstream.** In-season decision tools (Start/Sit, Trade, Pick of the
+   Week, the Opportunity Board) may use any permitted data that improves a start/sit, trade or
+   waiver call — including sportsbook lines for the weekly model (ADR-096) — and they consume
+   intrinsic outputs without feeding them.
+3. **Availability governs eligibility, never value.** Injury and roster status may decide whether
+   a player is offered by a decision surface (Start/Sit, Pick of the Week, the rest-of-season
+   actionable lists, Trade) under the availability policy (ADR-101, `docs/UX_SPEC.md`). It never enters the
+   intrinsic models and never changes a published intrinsic number.
+4. **No blended scores across units.** Behaviour counts (adds, drops) and model value are shown
+   side by side and may gate membership; they are never combined into one score (ADR-085,
+   ADR-088, ADR-092).
+5. **Tiers** are contiguous in fair-rank order, discovered rather than fixed per position, never
+   hand-edited, and drawn as bands while their boundaries fail the declared stability bar
+   (ADR-035, ADR-074).
+6. **The draft-market comparison is labelled as a baseline** (`a0_rank_gap_v1`) until a learned
+   model passes the historical-coverage and out-of-time promotion gates of Part B section 11.4.
+7. **Static runtime.** Every number shown comes from versioned, schema-validated public
+   artifacts; no backend, database, account or runtime vendor call (ADR-098 for the served
+   layout).
+8. **Identity and time.** Canonical `gsis_id` joins, fail-closed ambiguity, and leakage-tested
+   point-in-time features (`AGENTS.md` sections 6 and 7).
+
+## A3. Current requirements
+
+### Shared
+
+- **CR-001 League presets.** Standard, Half-PPR and PPR at 10, 12 and 14 teams; 1 QB, 2 RB,
+  2 WR, 1 TE, 2 FLEX, 5 bench (`config/league-defaults.yaml`). QB/RB/WR/TE only.
+- **CR-002 Refresh.** A daily scheduled refresh, a post-week refresh on Tuesdays and game-day
+  refreshes on Thursday, Friday and Sunday (`docs/OPERATIONS.md` sections 2.2 and 16). A failed
+  critical gate deploys nothing and leaves the last-known-good site serving. Models are not
+  retrained by the refresh.
+- **CR-003 URL state.** Tab, mode, preset, filters, search, open tiers, the Start/Sit comparison
+  and the Trade exploration are serialised deterministically into the query string.
+- **CR-004 Export.** Full and filtered CSV for every table board (Tiers, Arbitrage, ROS tiers,
+  Opportunity).
+- **CR-005 Provenance.** The Data view exposes build time, model versions, source status,
+  methodology, limitations and required attribution; the header shows the build time and the
+  most serious degradation.
+- **CR-006 Player card.** One accessible player-detail dialog reachable from every board, with
+  model numbers, range, market history, status and, in season, the next game.
+- **CR-007 Accessibility and performance.** Part B FR-009 and FR-010 continue to apply, with
+  payload budgets enforced by `verify:budget` (ADR-098).
+
+### Draft mode
+
+- **CR-010 Tier Board** — Part B FR-003 and section 10.
+- **CR-011 Arbitrage board and Draft Rail** — Part B FR-004 and section 11, with a market
+  selector over the published ADP sources (MyFantasyLeague and Fantasy Football Calculator) and a
+  cross-market spread view. After the draft anchor the board is priced with the last snapshot
+  captured before it (ADR-094).
+
+### In-season mode
+
+- **CR-020 ROS tiers.** Rest-of-season value above replacement and tiers from
+  `intrinsic-ros-v1`, from an explicit cutoff week, with in-season replacement defined as the best
+  unrostered player (ADR-071). It is never averaged with the preseason fair rank, and the
+  long-absence cohort's weak ordering is disclosed where those rows appear (ADR-076).
+- **CR-021 Start/Sit.** Compare two to four players for one slot by the probability each gives
+  the reader of winning the week at their matchup margin, from `weekly-startsit-v1`'s next-game
+  quantiles (points given that the player appears), with the calibrated head-to-head probability,
+  the flip margin, same-game correlation, injury-designation appearance rates, and an additive
+  "why this week" explanation (ADR-096, ADR-099). `weekly-startsit-v2` runs in shadow and drives
+  nothing until its prospective holdout passes.
+- **CR-022 Trade.** Offer one to three players; rank incoming packages of one to three players
+  whose expected rest-of-season value falls within a band around the outgoing value, by expected
+  value, approximate package ceiling or approximate package floor (ADR-100).
+- **CR-023 Opportunity Board.** Rest-of-season value beside Sleeper add/drop behaviour and the
+  observed-role signal layer, as separate orderings and single-signal filters (ADR-091, ADR-092).
+- **CR-024 Pick of the Week.** One waiver target per position: add volume gates eligibility,
+  rest-of-season value orders the eligible players, and each card prints the threshold it cleared
+  (ADR-088).
+- **CR-025 Availability.** One shared policy reads the roster code, Sleeper status, the official
+  game designation and reviewed season-ending entries, and distinguishes this week from the rest
+  of the season: a player out for the season, on a reserve list, or out or doubtful this week is
+  never a Start/Sit verdict, Pick of the Week or suggested trade target; he stays listed and
+  inspectable with the reason. Season-ending is never inferred from IR; missing, stale or
+  contradictory evidence is shown as uncertain, never healthy; no rank is renumbered and no
+  projection is rescaled (ADR-101).
+- **CR-026 Home.** The logo is a link to the season-aware default view under the configured base
+  path.
+
+## A4. Current non-goals
+
+- Live draft-room synchronisation or automated picks.
+- User accounts, authentication, cloud database or persistent server state.
+- Dynasty, keeper, best-ball, DFS, superflex, IDP or custom scoring.
+- Kicker and team-defense rankings.
+- Betting or prop recommendations.
+- A rostered percentage (no permitted source publishes one; ADR-088).
+- Natural-language news sentiment models.
+- Paid-data dependency, or scraping a source whose terms do not permit the use.
+- Marketing copy, articles, community features, ads or affiliate links.
+
+---
+
+# Part B — V1 launch requirements (historical, 2026-09-01)
+
+This is the specification V1 was built and released against (`v1.0.0`, 2026-09-01). It is kept
+for its acceptance criteria, rationale and section numbering. Where it describes scope — notably
+the section 4 non-goal of weekly start/sit, since superseded by CR-021 — Part A governs.
 
 ## 1. Executive summary
 
@@ -16,7 +149,7 @@ The product must be useful as a draft-day sheet: fast, readable, sortable, filte
 
 ## 2. Problem statement
 
-Traditional expert-consensus tier products often group players by rank or consensus dispersion. They are useful summaries of expert opinion but do not independently estimate player outcomes, positional replacement value, or market mispricing.
+A tier list built from consensus rank summarises expert opinion; it does not independently estimate player outcomes, positional replacement value, or market mispricing.
 
 This product should answer two different questions without conflating them:
 
@@ -56,6 +189,8 @@ The separation is non-negotiable. Market information entering the intrinsic mode
 - Mobile must be usable, but desktop/tablet draft use is the primary layout target.
 
 ## 4. Non-goals for V1
+
+*Historical. Weekly start/sit was a V1 non-goal and has since shipped (Part A, CR-021; ADR-096).*
 
 - Live draft-room synchronization or automated picks.
 - User accounts, authentication, cloud database, or personalized persistent server state.
@@ -396,7 +531,7 @@ At minimum:
 
 ### 12.4 Comparison to consensus
 
-Where legally permitted, use historical FantasyPros ECR as a **benchmark only**. Any public claim that this product "beats consensus" requires a reproducible out-of-time table and confidence interval. If it does not beat consensus, say so; the product can still be better on transparency, uncertainty, interactivity, and arbitrage usefulness.
+Where legally permitted, use historical FantasyPros ECR as a **benchmark only**. Any public claim that this product "beats consensus" requires a reproducible out-of-time table and confidence interval. If it does not beat consensus, say so.
 
 ## 13. Technical stack
 

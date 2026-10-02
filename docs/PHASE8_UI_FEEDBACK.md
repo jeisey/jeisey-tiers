@@ -1,5 +1,7 @@
 # Phase-8 human UI feedback backlog
 
+> **Historical record.** Phase 8 closed on 2026-08-31 and acted on this backlog (see the implementation trace below and `TASKS.md`). New feedback belongs in an issue or a new pass, not here.
+
 This file exists so that looking at the real site has somewhere to go.
 
 Phase 6 built the draft sheet and verified it against the real 2026 board; Phase 7 deployed

@@ -698,7 +698,8 @@ dictionary every slice resolves `display_name` through — comes with the first 
 | draft | Tier board (`tiers`, the preseason default) | `tiers/<block>`, `player_status/all` | fair and position rank, tier, VORP quantiles, expected points, uncertainty, flags; status badges |
 | draft | Arbitrage | `arbitrage/<block>`, `tiers/<block>`, `player_status/all` | market ADP, rank gap, score, confidence, every market and the cross-market summary, trend; the tier column and the unpriced list; badges |
 | both | Data | `arbitrage/<block>`, `tiers/<block>`, `player_status/all` | metadata, degradations, the block's market rows for its counts |
-| in-season | ROS tiers (`ros`, the in-season default) | `ros_tiers/<block>` | every ROS field, including `current_status` for the badge and `long_absence` with the manifest's disclosures |
+| in-season | every in-season view (ADR-101) | `player_availability/all` — loaded once, with the first in-season view, when a ROS bundle exists | roster code, Sleeper status and designation, body part, observation time, flags and the reviewed override: the availability policy's evidence (`data/availability.ts`) |
+| in-season | ROS tiers (`ros`, the in-season default) | `ros_tiers/<block>` | every ROS field, including `current_status` (the policy's fallback roster code) and `long_absence` with the manifest's disclosures |
 | in-season | Start/Sit | `weekly_projections/<scoring>`, `weekly_context/all` | quantiles, drivers, explanation accounts, game, opponent, injury; each team's venue, forecast, listed players, typical and this-week lines (ADR-099); the weekly block's thresholds from the manifest |
 | in-season | Trade (ADR-100) | `ros_tiers/<block>` — the slice the default view already loaded | expected VORP, the five VORP quantiles, expected points, `remaining_horizon_weeks`, `long_absence`, `current_status`, identity; the lazily loaded engine (`data/trade.ts`) does the rest in the browser |
 | in-season | Opportunity | `ros_tiers/<block>`, `inseason_opportunity/<block>`, `player_usage/all`, `behavior_trend_series/all`, `team_matchups/all` | the board's own fields (its copied ROS fields joined from the ROS slice); the leading role metric's change and weekly series; add momentum and its last point; the next game |
@@ -716,5 +717,7 @@ series outside the Opportunity tabs — are never downloaded by a board.
 Measured on the week-4 board (level-5 gzip, as Pages serves it): a first in-season visit is 285 kB
 in 10 requests, 60 kB of it data; Start/Sit adds 34 kB, a card 20 kB, the Opportunity Board
 81 kB; a repeat visit to the same deploy costs nothing (ADR-098). The Trade tab adds only its
-code — 11.0 kB on the size model, no data (ADR-100).
+code — 11.0 kB on the size model, no data (ADR-100). ADR-101 adds the compact
+`player_availability/all` slice (about 3.4 kB gzip on the 2026-10-02 board) to the first
+in-season view; every later in-season tab reuses it.
 

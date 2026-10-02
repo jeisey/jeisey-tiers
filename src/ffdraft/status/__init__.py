@@ -18,9 +18,17 @@ from ffdraft.status.capture import (
     read_status_capture,
     write_status_capture,
 )
+from ffdraft.status.overrides import (
+    AvailabilityOverride,
+    active_overrides,
+    load_availability_overrides,
+)
 
 __all__ = [
     "STATUS_SOURCE_IDS",
+    "AvailabilityOverride",
+    "active_overrides",
+    "load_availability_overrides",
     "PlayerStatusResult",
     "StatusCapture",
     "build_player_status_records",

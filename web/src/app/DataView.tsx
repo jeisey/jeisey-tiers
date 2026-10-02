@@ -209,10 +209,12 @@ export function DataView({
           <div>
             <dt>Current status</dt>
             <dd>
-              Roster, depth-chart and injury annotation as of the last capture.{" "}
-              <strong>It is annotation only</strong> — no field in it entered a projection, a
+              Roster, depth-chart and injury status as of the last capture.{" "}
+              <strong>It never enters a model</strong> — no field in it entered a projection, a
               fair rank, a tier or an arbitrage score, and the board was produced without any of
-              them. An absent injury designation is the absence of a report, not a clearance.
+              them. In season it decides what is <em>recommended</em> (the availability policy
+              below), never a number. An absent injury designation is the absence of a report, not
+              a clearance.
             </dd>
           </div>
         </dl>
@@ -551,10 +553,13 @@ export function DataView({
             is not claimed.
           </p>
           <p className="prose">
-            <strong>Not targets:</strong> players at or below replacement, players with a long
-            absence (the model orders that group poorly), and players with a reserve, inactive,
-            PUP, NFI, suspended, released or retired roster code. The rest-of-season model reads no
-            injury report, and a player listed Out for one week only is not removed. Results are
+            <strong>Not targets:</strong> players at or below replacement; players whose season a
+            reviewed report says is over, or who are released or retired; and — unless you tick
+            &ldquo;Include players expected back&rdquo; — players on a reserve list or with a long
+            absence (the model orders that group poorly). The rest-of-season model reads no injury
+            report, and a player listed Out, Doubtful or Questionable for one week only is not
+            removed. A season that is over cannot be offered as your side of a trade; a reserve or
+            questionable player on your side is priced as published, with a warning. Results are
             asset combinations to explore — the players may belong to different managers, and the
             tool cannot know whether anyone would accept. Asset value is not lineup value: two
             players need two roster spots, which every package states.
@@ -579,8 +584,9 @@ export function DataView({
             seed-invariant.
           </li>
           <li>
-            <strong>MyFantasyLeague is the only market source in V1.</strong> There is no
-            cross-platform consensus behind the ADP shown here.
+            <strong>Two draft markets are published.</strong> MyFantasyLeague, which the
+            arbitrage score is computed against, and Fantasy Football Calculator. FantasyPros is
+            retrieved but not published, so neither is a cross-platform consensus.
           </li>
           <li>
             <strong>A redraft board may only be priced by keeper-free drafts.</strong> In a
@@ -609,9 +615,15 @@ export function DataView({
             downloadable CSV or the published JSON.
           </li>
           <li>
-            <strong>Injury and roster status is annotation only.</strong> Nothing in it entered a
-            projection, a fair rank, a tier or an arbitrage score. An absent injury designation is
-            the absence of a report, not a clearance.
+            <strong>Injury and roster status never changes a number.</strong> Nothing in it
+            entered a projection, a fair rank, a tier or an arbitrage score. In season the
+            availability policy uses it to decide what is recommended: a player out for the season
+            (from a reviewed report, never inferred from IR), on a reserve list, or out or doubtful
+            this week cannot win a Start/Sit verdict, be Pick of the Week or be suggested as a
+            trade target; he stays listed and inspectable with the reason. Ranks are the
+            model&rsquo;s and are not renumbered when a player is held back. An absent injury
+            designation is the absence of a report, not a clearance; a missing, stale or
+            contradictory reading is shown as uncertain.
           </li>
           <li>
             <strong>Market trend is measured only over our own snapshots.</strong> It needs at
@@ -687,8 +699,9 @@ export function DataView({
             <a href="https://fantasyfootballcalculator.com/adp">Fantasy Football Calculator ADP</a>
           </li>
           <li>
-            <strong>Sleeper</strong> — current player status and injury designations, used for
-            annotation only, plus the add/drop trending feeds retained for the in-season
+            <strong>Sleeper</strong> — current player status and injury designations, never a
+            model input (the availability policy reads them to decide what is recommended), plus
+            the add/drop trending feeds retained for the in-season
             release. The Sleeper API is free for non-commercial use; this site is free and
             non-commercial and carries no advertising, affiliate links or paid tier.{" "}
             <a href="https://docs.sleeper.com/">Sleeper API docs</a>

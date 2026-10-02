@@ -112,6 +112,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
           TITLE: ${{ inputs.title }}
+          SHA: ${{ inputs.sha }}
           NOTES: ${{ steps.check.outputs.notes }}
         run: |
           set -euo pipefail
@@ -125,7 +126,7 @@ jobs:
             echo "| | |"
             echo "|---|---|"
             echo "| Tag | \`${TAG}\` |"
-            echo "| Commit | \`${{ inputs.sha }}\` |"
+            echo "| Commit | \`${SHA}\` |"
             echo "| Notes | \`${NOTES}\` |"
             echo "| Release | $(gh release view "${TAG}" --json url --jq .url) |"
           } >> "$GITHUB_STEP_SUMMARY"

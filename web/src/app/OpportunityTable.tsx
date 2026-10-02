@@ -142,7 +142,7 @@ function opportunityColumns(
                 surfaced
               </span>
             )}
-            <RosStatusBadge status={record.current_status} />
+            <RosStatusBadge status={record.current_status} playerId={record.player_id} />
             {record.long_absence && (
               <span
                 className="absence-badge"

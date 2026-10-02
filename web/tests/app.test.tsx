@@ -726,8 +726,8 @@ describe("data view", () => {
     for (const phrase of [
       /Exact tier edges are soft/,
       /measured convergence limitation/,
-      /only market source in V1/,
-      /Injury and roster status is annotation only/,
+      /Two draft markets are published/,
+      /Injury and roster status never changes a number/,
       /Market trend is measured only over our own snapshots/,
       /Rookie projections are lower-information/,
       /simulated independently/,

@@ -18,6 +18,7 @@
  * 7. `dealingOrder`, `dealInitial`, `swapSlot`, `moreTargets`, `keepSlot` — `trade_explore_v1`.
  */
 
+import { tradeOutgoing, tradeTargetBlock, type Availability } from "./availability";
 import type { Position, RosTierRecord } from "./contracts";
 import { COMP_SLOTS, type CompSlot, type TradeCount, type TradeGoal } from "./state";
 
@@ -242,7 +243,24 @@ export type ExclusionReason =
   | "outgoing"
   | "at_or_below_replacement"
   | "long_absence"
-  | "roster_status";
+  | "roster_status"
+  /** ADR-101: a reviewed report, corroborated by a reserve list, or retirement. */
+  | "season_over"
+  /** ADR-101: a reserve list or a release — unavailable now, return uncertain. */
+  | "unavailable_now";
+
+/**
+ * The availability policy as the engine sees it (ADR-101). Without one, the original
+ * roster-code rule of ADR-100 §2 applies, which is what the engine's own fixtures pin.
+ *
+ * `includeReturning` is the reader's labelled opt-in: players on a reserve list, or absent
+ * three weeks or more, become eligible targets again — their published value is the model's,
+ * which does not know when (or whether) they return. A season that is over never does.
+ */
+export interface TradePolicy {
+  readonly availability?: ((playerId: string) => Availability) | undefined;
+  readonly includeReturning?: boolean | undefined;
+}
 
 export function severeStatus(status: string | null | undefined): string | null {
   if (status === null || status === undefined) return null;
@@ -254,12 +272,21 @@ export function severeStatus(status: string | null | undefined): string | null {
 export function exclusionReason(
   record: RosTierRecord,
   outgoing: ReadonlySet<string>,
+  policy: TradePolicy = {},
 ): ExclusionReason | null {
   if (priceRecord(record) === null) return "unpriced";
   if (outgoing.has(record.player_id)) return "outgoing";
   if (!(record.ros_expected_vorp > 0)) return "at_or_below_replacement";
-  if (record.long_absence) return "long_absence";
-  if (severeStatus(record.current_status) !== null) return "roster_status";
+  const reading = policy.availability?.(record.player_id);
+  if (reading === undefined) {
+    if (record.long_absence) return "long_absence";
+    if (severeStatus(record.current_status) !== null) return "roster_status";
+    return null;
+  }
+  const returning = policy.includeReturning === true;
+  const block = tradeTargetBlock(reading, returning);
+  if (block !== null) return block;
+  if (record.long_absence && !returning) return "long_absence";
   return null;
 }
 
@@ -390,7 +417,7 @@ export function compositionLabel(comp: readonly CompSlot[], count: number): stri
 
 // ------------------------------------------------------------------------- the search (§6)
 
-export interface TradeQuery {
+export interface TradeQuery extends TradePolicy {
   readonly records: readonly RosTierRecord[];
   readonly give: readonly string[];
   readonly goal: TradeGoal;
@@ -428,6 +455,15 @@ export interface RankedPackage {
 
 export type TradeSearch =
   | { readonly status: "no_outgoing"; readonly outgoing: OutgoingPackage }
+  /**
+   * ADR-101: an outgoing player whose season is over. His published value predates the news,
+   * so it cannot be used as a budget; no package is searched for.
+   */
+  | {
+      readonly status: "unavailable_outgoing";
+      readonly outgoing: OutgoingPackage;
+      readonly blocked: readonly { readonly record: RosTierRecord; readonly availability: Availability }[];
+    }
   | { readonly status: "unpriced_outgoing"; readonly outgoing: OutgoingPackage }
   | { readonly status: "nonpositive"; readonly outgoing: OutgoingPackage }
   | {
@@ -445,6 +481,12 @@ export type TradeSearch =
       readonly excluded: readonly Exclusion[];
       /** Players at or below replacement in the block. */
       readonly belowReplacement: number;
+      /**
+       * ADR-101: outgoing players whose budget is the model's value but whose availability is
+       * not clean (reserve list, out or doubtful this week, uncertain). Printed beside the
+       * budget, never hidden.
+       */
+      readonly outgoingWarnings: readonly { readonly record: RosTierRecord; readonly availability: Availability }[];
     };
 
 export function outgoingPackage(
@@ -506,6 +548,14 @@ export function searchTrade(query: TradeQuery): TradeSearch {
   if (query.give.length === 0) return { status: "no_outgoing", outgoing };
   if (outgoing.unpriced.length > 0) return { status: "unpriced_outgoing", outgoing };
   if (outgoing.pkg === null) return { status: "no_outgoing", outgoing };
+  const reader = query.availability;
+  const readings =
+    reader === undefined
+      ? []
+      : outgoing.players.map((player) => ({ record: player.record, availability: reader(player.id) }));
+  const blocked = readings.filter((entry) => tradeOutgoing(entry.availability) === "blocked");
+  if (blocked.length > 0) return { status: "unavailable_outgoing", outgoing, blocked };
+  const outgoingWarnings = readings.filter((entry) => tradeOutgoing(entry.availability) === "warn");
   const band = tradeBand(outgoing.pkg.value, query.range);
   if (band === null) return { status: "nonpositive", outgoing };
 
@@ -514,7 +564,7 @@ export function searchTrade(query: TradeQuery): TradeSearch {
   const excluded: Exclusion[] = [];
   let belowReplacement = 0;
   for (const record of query.records) {
-    const reason = exclusionReason(record, outgoingIds);
+    const reason = exclusionReason(record, outgoingIds, query);
     if (reason === null) {
       const priced = priceRecord(record);
       if (priced !== null) eligible.push(priced);
@@ -679,19 +729,20 @@ export function searchTrade(query: TradeQuery): TradeSearch {
     eligible: eligible.length,
     excluded,
     belowReplacement,
+    outgoingWarnings,
   };
 }
 
 /** Does `pkg` qualify for `query` against `outgoing`? The search's predicate, written plainly. */
 export function qualifies(
   pkg: TradePackage,
-  query: Pick<TradeQuery, "get" | "comp">,
+  query: Pick<TradeQuery, "get" | "comp"> & TradePolicy,
   band: TradeBand,
   outgoingIds: ReadonlySet<string>,
 ): boolean {
   if (pkg.members.length !== query.get) return false;
   if (new Set(pkg.members.map((member) => member.id)).size !== pkg.members.length) return false;
-  if (pkg.members.some((member) => exclusionReason(member.record, outgoingIds) !== null)) return false;
+  if (pkg.members.some((member) => exclusionReason(member.record, outgoingIds, query) !== null)) return false;
   if (!inBand(pkg.value, band)) return false;
   if (!sharesHold(pkg)) return false;
   const comp = query.comp.length === query.get ? query.comp : [];
@@ -851,7 +902,7 @@ export interface KeptPackage {
 export function checkKept(
   ids: readonly string[],
   records: readonly RosTierRecord[],
-  query: Pick<TradeQuery, "get" | "comp">,
+  query: Pick<TradeQuery, "get" | "comp"> & TradePolicy,
   search: TradeSearch,
 ): KeptPackage {
   const byId = new Map(records.map((record) => [record.player_id, record]));
@@ -876,7 +927,7 @@ export function checkKept(
   const outgoingIds = new Set(search.outgoing.players.map((player) => player.id));
   if (pkg.members.some((member) => outgoingIds.has(member.id))) problems.push("includes_outgoing");
   if (pkg.members.some((member) => {
-    const reason = exclusionReason(member.record, outgoingIds);
+    const reason = exclusionReason(member.record, outgoingIds, query);
     return reason !== null && reason !== "outgoing";
   })) {
     problems.push("ineligible");
@@ -896,7 +947,7 @@ export const KEPT_PROBLEM_TEXT: Readonly<Record<KeptProblem, string>> = {
   not_on_board: "a player is not on this board",
   unpriced: "a player has no published value",
   includes_outgoing: "it includes a player you are giving",
-  ineligible: "a player is no longer a target (status, absence or value)",
+  ineligible: "a player is no longer a target (availability, absence or value)",
   wrong_count: "it is not the number of players you asked to receive",
   composition: "it does not match the positions you asked for",
   member_share: "a player carries under 15% of its value",
@@ -910,6 +961,8 @@ export const EXCLUSION_TEXT: Readonly<Record<ExclusionReason, string>> = {
   at_or_below_replacement: "At or below replacement",
   long_absence: "Long absence",
   roster_status: "Roster status",
+  season_over: "Out for the season",
+  unavailable_now: "Unavailable now",
 };
 
 // ------------------------------------------------------------------------------- stamp
@@ -935,17 +988,20 @@ export function explorationStamp(parts: {
   readonly get: number;
   readonly range: number;
   readonly comp: readonly CompSlot[];
+  /** ADR-101: the returning-players opt-in changes the pool, so it is part of the identity. */
+  readonly includeReturning?: boolean;
 }): string {
-  return fnv1a(
-    [
-      parts.buildId,
-      parts.leaguePreset,
-      parts.scoring,
-      parts.give.join(","),
-      parts.goal,
-      String(parts.get),
-      String(parts.range),
-      parts.comp.join(","),
-    ].join("|"),
-  );
+  const fields = [
+    parts.buildId,
+    parts.leaguePreset,
+    parts.scoring,
+    parts.give.join(","),
+    parts.goal,
+    String(parts.get),
+    String(parts.range),
+    parts.comp.join(","),
+  ];
+  // Appended only when on, so every stamp written before ADR-101 still verifies.
+  if (parts.includeReturning === true) fields.push("ret");
+  return fnv1a(fields.join("|"));
 }

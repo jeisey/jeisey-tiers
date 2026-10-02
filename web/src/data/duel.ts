@@ -25,6 +25,7 @@ import type {
   ScoringPreset,
   WeeklyProjectionRecord,
 } from "./contracts";
+import { startEligible, startExclusion, type Availability } from "./availability";
 import { matchesPosition, matchesSearch } from "./model";
 import type { InSeasonBundle } from "./ros";
 import type { AppState } from "./state";
@@ -62,9 +63,16 @@ export interface Contender {
   readonly bye: boolean;
   /** His game has no posted line yet, so the build published no distribution for it. */
   readonly pending: boolean;
-  /** The official report says he will not play. */
+  /** Designated out for this game (official report or Sleeper). */
   readonly out: boolean;
-  /** Eligible for the verdict: a distribution (not on bye, not awaiting a line), not ruled out. */
+  /** The availability policy's reading (ADR-101). */
+  readonly availability: Availability;
+  /** Why the policy leaves him out of the verdict (out, doubtful, reserve, season over), or null. */
+  readonly exclusion: string | null;
+  /**
+   * Eligible for the verdict: a distribution (not on bye, not awaiting a line) and available
+   * to start under the policy. Questionable and uncertain stay eligible, labelled "if active".
+   */
   readonly eligible: boolean;
 }
 
@@ -111,6 +119,7 @@ function isLocked(record: WeeklyProjectionRecord, now: Date | undefined): boolea
 
 function contenderFor(
   record: WeeklyProjectionRecord,
+  availability: Availability,
   context: {
     readonly rule: DistributionRule;
     readonly weekly: RosWeeklyMetadata | null | undefined;
@@ -131,7 +140,8 @@ function contenderFor(
   );
   const bye = record.game_state === "bye";
   const pending = record.game_state === "lines_pending";
-  const out = record.injury?.designation === "Out";
+  const out = availability.week === "out";
+  const exclusion = startExclusion(availability);
   return {
     record,
     quantiles,
@@ -149,7 +159,9 @@ function contenderFor(
     bye,
     pending,
     out,
-    eligible: grid !== null && !bye && !out,
+    availability,
+    exclusion,
+    eligible: grid !== null && !bye && startEligible(availability),
   };
 }
 
@@ -189,7 +201,9 @@ export function readDuel(
   const positions = [...new Set(records.map((record) => record.position))];
   const sigma = marginSigma(weekly, scoring, positions);
   const context = { rule, weekly, leaguePreset, scoring, margin: state.margin, sigma, now };
-  let contenders = records.map((record) => contenderFor(record, context));
+  let contenders = records.map((record) =>
+    contenderFor(record, bundle.availabilityFor(record.player_id), context),
+  );
   const eligible = contenders.filter((contender) => contender.eligible);
 
   // Each pair is computed once and its mirror is the complement, so the matrix a reader sees
@@ -310,10 +324,14 @@ export type WeekBoardOrder = "median" | "ceiling" | "floor" | "startable";
 
 export interface WeekBoardRow {
   readonly record: WeeklyProjectionRecord;
+  readonly availability: Availability;
   readonly startable: number | null;
   readonly threshold: number | null;
   readonly locked: boolean;
-  /** 1-based rank among this position's playing records on the build, by median. */
+  /**
+   * 1-based rank by median among this position's records that can play (ADR-101): a player
+   * who is out or on a reserve list has no rank this week rather than a slot he cannot fill.
+   */
   readonly positionRank: number | null;
 }
 
@@ -338,8 +356,12 @@ export function selectWeekBoard(
 
   const ranks = new Map<string, number>();
   const byPosition = new Map<string, WeeklyProjectionRecord[]>();
+  const playing = (record: WeeklyProjectionRecord): boolean => {
+    const week = bundle.availabilityFor(record.player_id).week;
+    return week !== "out" && week !== "unavailable";
+  };
   for (const record of records) {
-    if (record.quantiles === null) continue;
+    if (record.quantiles === null || !playing(record)) continue;
     const bucket = byPosition.get(record.position) ?? [];
     bucket.push(record);
     byPosition.set(record.position, bucket);
@@ -362,6 +384,7 @@ export function selectWeekBoard(
           : probAtLeast(gridFromQuantiles(quantiles, rule), threshold);
       return {
         record,
+        availability: bundle.availabilityFor(record.player_id),
         startable,
         threshold,
         locked: isLocked(record, now),
@@ -383,8 +406,13 @@ export function selectWeekBoard(
         return quantiles.q50;
     }
   };
+  // A player who cannot play this week sorts below every one who can, whatever his numbers:
+  // the board is a list of choices, and he is not one. He stays on it, muted and labelled.
+  const sidelined = (row: WeekBoardRow): number =>
+    row.availability.week === "out" || row.availability.week === "unavailable" ? 1 : 0;
   return rows.sort(
     (a, b) =>
+      sidelined(a) - sidelined(b) ||
       key(b) - key(a) ||
       (b.record.quantiles?.q50 ?? -Infinity) - (a.record.quantiles?.q50 ?? -Infinity) ||
       a.record.player_id.localeCompare(b.record.player_id),

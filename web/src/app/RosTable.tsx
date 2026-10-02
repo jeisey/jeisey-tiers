@@ -34,15 +34,18 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, type RefObject } from "react";
 
-import { PositionTag, RosStatusBadge, TierTag } from "../components/primitives";
+import { AvailabilityBadge, PositionTag, TierTag } from "../components/primitives";
+import { isMuted } from "../data/availability";
 import { formatRange, formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rankChangeLabel, type RosRow } from "../data/ros";
 
 export const ROS_TABLE_CAPTION =
   "Rest-of-season board. Every column is a rest-of-season quantity computed at the cutoff " +
   "week shown above — none of them is the preseason value of the same name. Sorting " +
-  "re-orders these rows without changing the published ROS rank. The mark beside a name is " +
-  "the roster status the build recorded: annotation, and no input to any number here.";
+  "re-orders these rows without changing the published ROS rank, which is the model's rank " +
+  "and is not adjusted for injuries. The mark beside a name is the availability reading " +
+  "(roster code, injury designation, or a reviewed season-ending report): it decides what is " +
+  "actionable, and is no input to any number here.";
 
 interface Scale {
   readonly min: number;
@@ -140,7 +143,7 @@ function rosColumns(onSelect: (playerId: string) => void, scale: Scale): ColumnD
             >
               {row.record.display_name}
             </button>
-            <RosStatusBadge status={row.record.current_status} />
+            <AvailabilityBadge availability={row.availability} />
             <LongAbsenceBadge row={row} />
           </span>
         );
@@ -363,6 +366,11 @@ export function RosTable({
               data-selected={row.original.record.player_id === selectedPlayerId}
               data-player={row.original.record.player_id}
               data-long-absence={row.original.record.long_absence ? "true" : undefined}
+              data-availability={
+                row.original.availability !== undefined && isMuted(row.original.availability)
+                  ? "muted"
+                  : undefined
+              }
             >
               {row.getVisibleCells().map((cell) => {
                 const meta = (cell.column.columnDef.meta ?? {}) as ColumnMeta;

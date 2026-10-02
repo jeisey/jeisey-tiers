@@ -1,0 +1,50 @@
+[
+ {
+  "viewport": "1440",
+  "view": "ros-table",
+  "url": "/?position=rb",
+  "horizontalOverflowPx": 0
+ },
+ {
+  "viewport": "1440",
+  "view": "startsit-achane-hall",
+  "url": "/?view=startsit&duel=00-0039040.00-0038120",
+  "horizontalOverflowPx": 0
+ },
+ {
+  "viewport": "1440",
+  "view": "trade-achane",
+  "url": "/?view=trade&give=00-0039040",
+  "horizontalOverflowPx": 0
+ },
+ {
+  "viewport": "1440",
+  "view": "trade-hall",
+  "url": "/?view=trade&give=00-0038120&get=2&range=35",
+  "horizontalOverflowPx": 0
+ },
+ {
+  "viewport": "390",
+  "view": "ros-table",
+  "url": "/?position=rb",
+  "horizontalOverflowPx": 0
+ },
+ {
+  "viewport": "390",
+  "view": "startsit-achane-hall",
+  "url": "/?view=startsit&duel=00-0039040.00-0038120",
+  "horizontalOverflowPx": 0
+ },
+ {
+  "viewport": "390",
+  "view": "trade-achane",
+  "url": "/?view=trade&give=00-0039040",
+  "horizontalOverflowPx": 0
+ },
+ {
+  "viewport": "390",
+  "view": "trade-hall",
+  "url": "/?view=trade&give=00-0038120&get=2&range=35",
+  "horizontalOverflowPx": 0
+ }
+]

@@ -156,11 +156,13 @@ jobs:
 
       - name: Summarise the smoke
         if: always()
+        env:
+          SITE: ${{ inputs.url }}
         run: |
           {
             echo '## Deployed-site smoke'
             echo
-            echo "Target: <${{ inputs.url }}>"
+            echo "Target: <${SITE}>"
             echo
             echo "| check | result |"
             echo "|---|---|"

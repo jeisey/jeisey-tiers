@@ -40,6 +40,22 @@ const FAMILIES: readonly {
   { name: "tiers", artifact: "tiers", partition: "block" },
   { name: "arbitrage", artifact: "arbitrage", partition: "block" },
   { name: "player_status", artifact: "player_status", partition: "all" },
+  {
+    name: "player_availability",
+    artifact: "player_status",
+    partition: "all",
+    only: [
+      "season",
+      "player_id",
+      "roster_status",
+      "sleeper_status",
+      "injury_status",
+      "injury_body_part",
+      "observed_at_utc",
+      "quality_flags",
+      "availability_override",
+    ],
+  },
   { name: "ros_tiers", artifact: "ros_tiers", partition: "block" },
   { name: "inseason_opportunity", artifact: "inseason_opportunity", partition: "block" },
   {

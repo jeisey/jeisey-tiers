@@ -68,9 +68,11 @@ jobs:
 
       - name: Summary
         if: always()
+        env:
+          SOURCE: ${{ inputs.source }}
         run: |
           {
-            echo '## Source probe — ${{ inputs.source }}'
+            echo "## Source probe — ${SOURCE}"
             echo
             echo 'Findings below are **not** a decision. They belong in `docs/DATA_SOURCES.md`'
             echo 'and an ADR before this source may be used for anything.'

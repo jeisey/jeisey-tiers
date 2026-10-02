@@ -46,6 +46,7 @@ import {
   parseBuildMetadata,
   parseRosBuildMetadata,
 } from "./load";
+import type { StatusEvidence } from "./availability";
 import { ArtifactIndex } from "./model";
 import { InSeasonBundle } from "./ros";
 import {
@@ -75,6 +76,12 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
   const block = blockKey(context.leaguePreset, context.scoring);
   const wanted: string[] = ["players"];
   const draft = ["tiers", "arbitrage", "data"].includes(context.view);
+  // ADR-101: every in-season view applies the availability policy, which reads the compact
+  // status slice (codes, designation, observation time, reviewed override) — ~3 kB, not the
+  // whole status artifact. Joined in the browser by canonical id, never by build id.
+  if (IN_SEASON_VIEWS.includes(context.view) && manifest.ros_build_metadata !== undefined) {
+    wanted.push("player_availability/all");
+  }
   switch (context.view) {
     case "tiers":
       wanted.push(`tiers/${block}`, "player_status/all");
@@ -378,6 +385,9 @@ export class DataStore {
             weeklyContext: this.published("weekly_context")
               ? this.rows<WeeklyGameContextRecord>("weekly_context", scope)
               : null,
+            status: this.published("player_status")
+              ? this.rows<StatusEvidence>("player_availability", scope)
+              : null,
             published: {
               opportunity: this.published("inseason_opportunity"),
               behaviorSeries: this.published("behavior_trend_series"),
@@ -445,6 +455,7 @@ export class DataStore {
             usage: section<PlayerUsageRecord>("player_usage"),
             matchups: [],
             weekly: section<WeeklyProjectionRecord>("weekly_projections"),
+            status: section<PlayerStatusRecord>("player_status"),
           });
     return { index, inSeason };
   }

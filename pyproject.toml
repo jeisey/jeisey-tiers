@@ -1,7 +1,7 @@
 [project]
 name = "ffdraft"
 version = "0.1.0"
-description = "Fantasy Draft Intelligence: intrinsic value tiers and market arbitrage from public football data"
+description = "Jeisey Tiers pipeline: intrinsic draft and rest-of-season value tiers, draft-market comparison and weekly start/sit projections from public football data"
 readme = "README.md"
 requires-python = ">=3.12"
 # The dependency set stays deliberately small (AGENTS.md section 13). Phase 1 adds only

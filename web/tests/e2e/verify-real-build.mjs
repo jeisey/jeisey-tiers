@@ -361,7 +361,8 @@ if (publishedInSeason && defaultBoard === "ros") {
       // it renders only for a code that says something. `null` therefore means two different
       // things — `ACT`, and a status the artifact did not carry — which is why the check below
       // is a contract about noteworthiness rather than a cell comparison.
-      status: tr.querySelector(".player-cell .status-badge span[aria-hidden]")?.textContent?.trim() ?? null,
+      // ADR-101: the mark is now the availability policy's reading, not the raw code.
+      status: tr.querySelector(".player-cell .availability-badge span[aria-hidden]")?.textContent?.trim() ?? null,
     })),
   );
   const rosColumn = columnLookup(defaultHeaders);
@@ -385,9 +386,28 @@ if (publishedInSeason && defaultBoard === "ros") {
   if (rosProblem !== null) failures.push(rosProblem);
   else {
     rosRowsChecked = rosRendered.length;
+    // Joined by the rendered rank, not by position: the actionable board holds back a player
+    // whose season is over (ADR-101) and leaves his rank as a gap rather than renumbering.
+    const byRank = new Map(rosBlock.map((r) => [String(r.ros_fair_rank), r]));
+    const renderedRanks = new Set(rosRendered.map((r) => r.cells[rosAt.rank]));
+    const deepest = Math.max(0, ...rosRendered.map((r) => Number(r.cells[rosAt.rank]) || 0));
+    for (const record of rosBlock) {
+      if (record.ros_fair_rank > deepest || renderedRanks.has(String(record.ros_fair_rank))) continue;
+      const evidence = statusById.get(record.player_id);
+      const reserve =
+        ["RES", "PUP", "NFI", "SUS", "EXE", "E14"].includes(String(record.current_status ?? evidence?.roster_status ?? "").toUpperCase()) ||
+        ["IR", "INJURED RESERVE", "PUP", "NFI", "SUS", "SUSPENDED"].includes(String(evidence?.injury_status ?? "").toUpperCase());
+      const retired = String(record.current_status ?? evidence?.roster_status ?? "").toUpperCase() === "RET";
+      if (!retired && !(evidence?.availability_override && reserve)) {
+        failures.push(
+          `ROS rank ${String(record.ros_fair_rank)} (${record.display_name}) is held back from the ` +
+            "default board without a corroborated season-ending reading",
+        );
+      }
+    }
     rosRendered.forEach((rendered, i) => {
       const { cells, name } = rendered;
-      const record = rosBlock[i];
+      const record = byRank.get(cells[rosAt.rank]);
       if (record === undefined) {
         failures.push(`ROS row ${i + 1}: rendered ${name ?? "?"}, artifact publishes no such row`);
         return;
@@ -407,32 +427,38 @@ if (publishedInSeason && defaultBoard === "ros") {
       expect("ros_uncertainty", cells[rosAt.uncertainty], record.ros_uncertainty.toFixed(1));
 
       /*
-       * The status badge, as a contract rather than as a list of codes.
+       * The availability mark, as a contract rather than as a list of codes (ADR-082, ADR-101).
        *
-       * ADR-082 failed this repository on a badge that was correct, because the check
-       * enumerated the roster codes an August feed happened to publish. The rule here is the
-       * one that survives a feed publishing something new: the badge exists exactly when the
-       * artifact's `current_status` is a code the product treats as noteworthy, and when it
-       * exists its text is that code verbatim. `ACT`, `A01` and `DEV` are the ordinary cases
-       * and produce nothing — which is the point of the change, not a gap in it.
+       * The mark is the availability policy's reading, so the verifier does not transcribe the
+       * policy. It asserts the two directions the artifacts decide: a noteworthy roster code is
+       * never left unmarked, and a mark on an ordinary code is always explained by the status
+       * record — a designation, a non-active Sleeper status, a reserve code, a refused or
+       * missing feed record, a reviewed override, or no record at all ("unknown").
        */
       const code = (record.current_status ?? "").trim().toUpperCase();
       const noteworthy = code !== "" && !["ACT", "A01", "DEV"].includes(code);
       if (noteworthy && rendered.status === null) {
         failures.push(
-          `ROS row ${i + 1}: artifact reports current_status "${code}" and no badge is rendered`,
+          `ROS row ${i + 1}: artifact reports current_status "${code}" and no availability mark is rendered`,
         );
       }
       if (!noteworthy && rendered.status !== null) {
-        failures.push(
-          `ROS row ${i + 1}: badge "${rendered.status}" but the artifact's current_status ` +
-            `${code === "" ? "is absent" : `is the ordinary code "${code}"`}`,
-        );
-      }
-      if (noteworthy && rendered.status !== null && rendered.status !== code) {
-        failures.push(
-          `ROS row ${i + 1} current_status: badge reads ${rendered.status}, artifact ${code}`,
-        );
+        const evidence = statusById.get(record.player_id);
+        const explained =
+          evidence === undefined ||
+          evidence.injury_status !== null ||
+          (evidence.sleeper_status ?? "").toLowerCase() !== "active" ||
+          !["ACT", "A01", "DEV"].includes(String(evidence.roster_status ?? "").toUpperCase()) ||
+          (evidence.availability_override ?? null) !== null ||
+          evidence.quality_flags.some((flag) => flag.startsWith("sleeper_")) ||
+          Date.parse(rosMetadata.generated_at_utc) - Date.parse(evidence.observed_at_utc) > 48 * 3600 * 1000 ||
+          code === "";
+        if (!explained) {
+          failures.push(
+            `ROS row ${i + 1}: mark "${rendered.status}" but neither the roster code "${code}" nor ` +
+              "the status record says anything",
+          );
+        }
       }
     });
   }
@@ -1507,8 +1533,23 @@ if (publishedInSeason && weeklyRecords !== null) {
   // Exactly `formatValue`: `toFixed(1)`, whose binary rounding prints 37.65 as 37.6.
   const one = (value) => value.toFixed(1);
   const ppr = weeklyRecords.filter((r) => r.scoring_preset === "PPR");
+  // ADR-101: the verdict check needs two players the availability policy lets play, so it
+  // takes them from players whose published evidence is clean — no designation on the report,
+  // an active roster code and an active Sleeper record with no injury status, no override.
+  const clean = (r) => {
+    const evidence = statusById.get(r.player_id);
+    return (
+      (r.injury?.designation ?? null) === null &&
+      evidence !== undefined &&
+      evidence.injury_status === null &&
+      (evidence.sleeper_status ?? "").toLowerCase() === "active" &&
+      ["ACT", "A01", "DEV"].includes(String(evidence.roster_status ?? "").toUpperCase()) &&
+      (evidence.availability_override ?? null) === null &&
+      !evidence.quality_flags.some((flag) => flag.startsWith("sleeper_"))
+    );
+  };
   const projected = ppr
-    .filter((r) => r.quantiles !== null)
+    .filter((r) => r.quantiles !== null && clean(r))
     .sort((a, b) => b.quantiles.q50 - a.quantiles.q50 || a.player_id.localeCompare(b.player_id));
   const pair = projected.slice(0, 2);
   if (pair.length === 2) {
@@ -1632,7 +1673,11 @@ if (publishedInSeason && weeklyRecords !== null) {
 // eligibility rule excludes.
 let tradePackagesChecked = 0;
 if (publishedInSeason) {
-  const severe = new Set(["RES", "INA", "PUP", "NFI", "SUS", "CUT", "RET"]);
+  // ADR-101: reserve-type and roster-less codes, a Sleeper reserve list and a reviewed
+  // season-ending override all keep a player out by default; `INA` (inactive for one game)
+  // and a one-week designation do not.
+  const severe = new Set(["RES", "PUP", "NFI", "SUS", "EXE", "E14", "CUT", "RET"]);
+  const sleeperReserve = new Set(["IR", "INJURED RESERVE", "PUP", "NFI", "SUS", "SUSPENDED", "COV"]);
   const byName = new Map(rosBlock.map((r) => [r.display_name, r]));
   const outgoing = rosBlock.find((r) => r.ros_expected_vorp > 0);
   if (outgoing !== undefined) {
@@ -1662,7 +1707,14 @@ if (publishedInSeason) {
       members.forEach((m, index) => {
         if (pkg.values[index] !== m.ros_expected_vorp.toFixed(1)) failures.push(`trade: ${m.display_name} reads ${pkg.values[index]}, the artifact ${m.ros_expected_vorp.toFixed(1)}`);
         if (m.player_id === outgoing.player_id) failures.push(`trade: ${m.display_name} is both given and received`);
-        if (!(m.ros_expected_vorp > 0) || m.long_absence || severe.has(String(m.current_status ?? "").toUpperCase())) {
+        const evidence = statusById.get(m.player_id);
+        if (
+          !(m.ros_expected_vorp > 0) ||
+          m.long_absence ||
+          severe.has(String(m.current_status ?? "").toUpperCase()) ||
+          sleeperReserve.has(String(evidence?.injury_status ?? "").toUpperCase()) ||
+          (evidence?.availability_override ?? null) !== null
+        ) {
           failures.push(`trade: ${m.display_name} is not an eligible target`);
         }
       });

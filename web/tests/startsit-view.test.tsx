@@ -97,8 +97,20 @@ describe("the verdict, as printed", () => {
 describe("what the page will not do", () => {
   it("keeps a ruled-out player off the verdict and says why", async () => {
     await open("?view=startsit&scoring=ppr&teams=12&duel=00-0000011.00-0000017");
-    expect(screen.getByText(/Ruled out on the official report — left out of the verdict\./)).toBeDefined();
+    expect(screen.getByText(/Out this week — left out of the verdict\./)).toBeDefined();
     expect(verdictText()).toContain("Only one of these players can fill the slot this week.");
+  });
+
+  it("never lets a player whose season is over win, and keeps him inspectable (ADR-101)", async () => {
+    // Derrick Hampton carries a reviewed season-ending override and is on IR in the fixture.
+    await open("?view=startsit&scoring=ppr&teams=12&duel=00-0000014.00-0000011");
+    expect(screen.getByText(/Out for the season — left out of the verdict\./)).toBeDefined();
+    expect(verdictText()).toContain("Only one of these players can fill the slot this week.");
+  });
+
+  it("labels a Questionable verdict as conditional", async () => {
+    await open("?view=startsit&scoring=ppr&teams=12&duel=00-0000002.00-0000011");
+    expect(verdictText()).toMatch(/If active: Amon-Ra Bright is questionable/);
   });
 
   it("says which boards are unaffected when no projections were published", async () => {

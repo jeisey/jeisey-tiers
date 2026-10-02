@@ -5,10 +5,11 @@
  * and an injury badge look and read the same in a table cell, a chart tooltip and a dialog.
  */
 
-import { Fragment } from "react";
+import { Fragment, createContext, useContext } from "react";
 
 import type { Confidence, Position } from "../data/contracts";
 import type { PlayerStatusRecord } from "../data/contracts";
+import type { Availability } from "../data/availability";
 import { statusBadge } from "../data/model";
 import { rosStatusBadge } from "../data/ros";
 
@@ -156,6 +157,37 @@ export function StatusBadge({
 }
 
 /**
+ * The availability mark (ADR-101): the policy's reading of a player, in words.
+ *
+ * The chip's text is the meaning — `OUT · season`, `IR`, `OUT`, `D`, `Q`, `INA`, `?` — and the
+ * accessible text is the whole sentence with its sources and time, so nothing depends on the
+ * colour. Renders nothing when the policy has nothing to say ("no designation reported" is not
+ * news, and is never drawn as a clearance). `extra` appends a sentence such as a designation's
+ * historical appearance rate.
+ */
+export function AvailabilityBadge({
+  availability,
+  extra,
+}: {
+  readonly availability: Availability | undefined;
+  readonly extra?: string | undefined;
+}): React.JSX.Element | null {
+  if (availability?.short == null) return null;
+  const sentence = `${availability.headline}. ${availability.detail}${extra === undefined ? "" : ` ${extra}`}`;
+  return (
+    <span
+      className="availability-badge"
+      data-severity={availability.severity}
+      data-kind={availability.kind}
+      title={sentence}
+    >
+      <span aria-hidden="true">{availability.short}</span>
+      <span className="visually-hidden">{`Availability: ${sentence}`}</span>
+    </span>
+  );
+}
+
+/**
  * The in-season board's status mark.
  *
  * The same glyph, the same column and the same rule as `StatusBadge` beside it — a mark on the
@@ -166,11 +198,25 @@ export function StatusBadge({
  *
  * `ACT` produces nothing, because "active" is the ordinary case and is not a report (ADR-043).
  */
+/**
+ * The open in-season view's availability reader (ADR-101), so any row that names a player can
+ * show the policy's reading without each board threading the bundle through every cell.
+ * Null outside an in-season view, where `RosStatusBadge` keeps its roster-code rendering.
+ */
+export const AvailabilityContext = createContext<((playerId: string) => Availability) | null>(null);
+
 export function RosStatusBadge({
   status,
+  playerId,
 }: {
   readonly status: string | null | undefined;
+  /** When given inside an `AvailabilityContext`, the policy's reading replaces the raw code. */
+  readonly playerId?: string;
 }): React.JSX.Element | null {
+  const reader = useContext(AvailabilityContext);
+  if (reader !== null && playerId !== undefined) {
+    return <AvailabilityBadge availability={reader(playerId)} />;
+  }
   const badge = rosStatusBadge(status);
   if (badge === null) return null;
   return (

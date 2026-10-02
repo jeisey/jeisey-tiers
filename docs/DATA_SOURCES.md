@@ -152,7 +152,7 @@ It must remain optional; MFL/another verified market source should carry the cri
 
 ## 8. FantasyPros/ECR gate
 
-The original `fftiers` repository states its data is exclusively FantasyPros and its R implementation clusters average rank using `Mclust`. Our system uses ECR only as a potential benchmark.
+This system uses ECR only as a potential benchmark.
 
 Rules:
 

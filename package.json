@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Fantasy Draft Intelligence frontend: static tier and arbitrage boards built from versioned public artifacts",
+  "description": "Jeisey Tiers frontend: static draft and in-season boards built from versioned public artifacts",
   "engines": {
     "node": ">=20"
   },

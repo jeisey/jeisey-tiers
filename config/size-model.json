@@ -22,7 +22,7 @@
     "weekly_per_scoring": 554,
     "usage": 606,
     "behavior": 171,
-    "status": 545,
+    "status": 720,
     "headshots": 522
   },
   "trend_points": 12,
@@ -36,5 +36,6 @@
     "inseason_opportunity": 4,
     "arbitrage": 2
   },
-  "_published_decimals": "The precision each artifact's model floats are published at on the real board. The golden templates carry fewer digits; the size model writes at least this many."
+  "_published_decimals": "The precision each artifact's model floats are published at on the real board. The golden templates carry fewer digits; the size model writes at least this many.",
+  "_status": "ADR-101 widened the in-season status population to every rostered QB/RB/WR/TE plus the draft board: 545 on the 2026-10-02 board before the change, 720 is the estimate for after it (about 22 rostered skill players a team). Re-measure from the first production build on this code."
 }

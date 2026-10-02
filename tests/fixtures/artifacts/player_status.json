@@ -7,7 +7,7 @@
   "record_count": 16,
   "records": [
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000001",
@@ -30,10 +30,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000002",
@@ -56,10 +57,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000003",
@@ -82,10 +84,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000004",
@@ -108,10 +111,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000005",
@@ -134,10 +138,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000006",
@@ -160,10 +165,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000007",
@@ -186,10 +192,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000008",
@@ -214,10 +221,11 @@
       ],
       "quality_flags": [
         "sleeper_record_missing"
-      ]
+      ],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000009",
@@ -240,10 +248,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000010",
@@ -266,10 +275,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000011",
@@ -292,10 +302,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000012",
@@ -318,10 +329,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000013",
@@ -344,10 +356,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000014",
@@ -372,10 +385,11 @@
       ],
       "quality_flags": [
         "sleeper_record_missing"
-      ]
+      ],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000015",
@@ -398,10 +412,11 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000016",
@@ -424,7 +439,8 @@
         "nflreadpy",
         "sleeper"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "availability_override": null
     }
   ]
 }

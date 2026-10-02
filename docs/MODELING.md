@@ -1382,7 +1382,7 @@ modelling content.
 
 A package qualifies when its value is within ±r% of the outgoing value (r ∈ {10, 20, 35, 50},
 default 20, a UX setting), each member carries ≥ 15% of its value, every member is eligible
-(positive value, no long absence, no severe roster code, fully priced), and its count and
+(positive value, fully priced, and available under the ADR-101 policy — no reserve list, release or season-ending reading, and no long absence unless the reader opts in to players expected back), and its count and
 composition match. Outgoing value ≤ 0 has no band and no search. The pool is then ranked by
 expected value, P90 or P10 (the preset); the band never moves with the preset.
 

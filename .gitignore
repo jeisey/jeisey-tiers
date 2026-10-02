@@ -54,3 +54,7 @@ web/public/data/
 .DS_Store
 .idea/
 .vscode/
+
+# Local secrets never belong in the tree (docs/SECURITY_REVIEW_2026-10-02.md, SR-11).
+.env
+.env.*

@@ -1,3 +1,5 @@
+# HISTORICAL: SHA-256 checksums of the original specification bundle (2026-08-17).
+# Not a live checksum; most of these files have changed since. See docs/HISTORY.md.
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  ./.github/workflows/.gitkeep
 ec9842a6dc0185bd239cf50d7c1db2cf4d189e1cf3acbb7eb827c83a0545afc4  ./AGENTS.md
 4b3aef6795a4473473edb1101affda50a0296a519cc7a54dbbe87beb34e607e1  ./CLAUDE.md

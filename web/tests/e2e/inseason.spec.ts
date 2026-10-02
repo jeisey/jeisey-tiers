@@ -72,6 +72,25 @@ test.describe("season mode", () => {
   });
 });
 
+test.describe("the logo goes home", () => {
+  for (const shared of [
+    "?view=startsit&duel=00-0000011.00-0000012&margin=-10",
+    "?view=trade&give=00-0000001&get=2&range=35",
+    "?view=opportunity&opportunity=adds",
+    "?view=tiers&mode=draft",
+  ]) {
+    test(`from a shared link ${shared}`, async ({ page }) => {
+      await page.goto(`${IN_SEASON}${shared}`);
+      const home = page.getByRole("link", { name: "Jeisey Tiers home" });
+      await expect(home).toHaveAttribute("href", IN_SEASON);
+      await home.click();
+      // Home is the season-aware default: no selection, no tab, no mode carried over.
+      await expect(page).toHaveURL(IN_SEASON);
+      await expect(page.getByRole("tab", { name: "ROS tiers" })).toHaveAttribute("aria-selected", "true");
+    });
+  }
+});
+
 test.describe("the lifecycle windows with no rest-of-season board", () => {
   /*
    * The two windows in which the season has started and the draft board is the only board
@@ -255,14 +274,33 @@ test.describe("the ROS tier board", () => {
     expect(headings).not.toContain("Current status");
 
     // The mark is where the draft board has always put it — beside the player's name — and it
-    // appears only for a code the artifact says something with.
-    const badge = table.locator(".player-cell .status-badge").first();
+    // is the availability policy's reading in words (ADR-101), never a number.
+    const badge = table.locator(".player-cell .availability-badge").first();
     await expect(badge).toBeVisible();
-    await expect(badge.locator(".visually-hidden")).toContainText(
-      /Current roster status: .+\. Annotation only/,
-    );
-    // And the caption still says the mark is annotation, because that is the contract.
-    await expect(table.locator("caption")).toContainText(/annotation/i);
+    await expect(badge.locator(".visually-hidden")).toContainText(/Availability: .+\./);
+    // The caption says what the mark is and that no number used it.
+    await expect(table.locator("caption")).toContainText(/availability reading/i);
+    await expect(table.locator("caption")).toContainText(/no input to any number/i);
+  });
+
+  test("holds a season that is over back from the actionable board, and shows it on request", async ({
+    page,
+  }) => {
+    await page.goto(IN_SEASON);
+    const table = page.getByRole("table", { name: /Rest-of-season board/ });
+    await expect(table.getByRole("row").filter({ hasText: "Derrick Hampton" })).toHaveCount(0);
+    const note = page.getByRole("note").filter({ hasText: /out for the season and held back/ });
+    await expect(note).toContainText(/ranks are the model's and are not renumbered/);
+    await note.getByRole("button", { name: "Show players out for the season" }).click();
+    await expect(page).toHaveURL(/unavail=1/);
+    const row = table.getByRole("row").filter({ hasText: "Derrick Hampton" });
+    await expect(row).toHaveCount(1);
+    await expect(row.locator(".availability-badge")).toContainText("OUT · season");
+    // A reserve-list player stays on the default board, muted and labelled, value unchanged.
+    await page.goto(IN_SEASON);
+    const reserve = table.getByRole("row").filter({ hasText: "Ja'Marr Swift" });
+    await expect(reserve).toHaveAttribute("data-availability", "muted");
+    await expect(reserve.locator(".availability-badge")).toContainText("IR");
   });
 
   test("shows no status mark at all for the ordinary roster code", async ({ page }) => {
@@ -271,7 +309,7 @@ test.describe("the ROS tier board", () => {
     // Bijan is `ACT` in the fixture. "Active" is the ordinary case and is not a report, so the
     // absence of a mark is the correct rendering rather than a missing one (ADR-043).
     const row = table.getByRole("row").filter({ hasText: "Bijan Robinson" }).first();
-    await expect(row.locator(".status-badge")).toHaveCount(0);
+    await expect(row.locator(".status-badge, .availability-badge")).toHaveCount(0);
   });
 
   test("names the cutoff, the model and the draw count with its verdict", async ({ page }) => {

@@ -26,7 +26,8 @@
 import { useMemo, useState } from "react";
 
 import { OutcomeRidges, slotLetter } from "../charts/OutcomeRidges";
-import { Notice, PositionTag, SectionHead, Segmented } from "../components/primitives";
+import { AvailabilityBadge, Notice, PositionTag, SectionHead, Segmented } from "../components/primitives";
+import { isMuted } from "../data/availability";
 import { SHORT_REASON, WhyWeek, WhyWeekCompact } from "../components/WhyWeek";
 import type { RosWeeklyMetadata, WeeklyProjectionRecord } from "../data/contracts";
 import { WEEKLY_DRIVER_FAMILIES } from "../data/contracts";
@@ -308,11 +309,17 @@ function DeckCard({
     ? "bye"
     : contender.pending
       ? "pending"
-      : contender.out
+      : contender.exclusion !== null
         ? "out"
         : contender.locked
           ? "locked"
           : "open";
+  // Eligible, but not on clean evidence: the comparison is conditional and says so.
+  const conditional =
+    state === "open" &&
+    (contender.availability.week === "questionable" || contender.availability.week === "uncertain")
+      ? `${contender.availability.headline} — these numbers assume he is active.`
+      : null;
   return (
     <article
       className="deck-card chamfer"
@@ -349,8 +356,13 @@ function DeckCard({
             : state === "pending"
               ? "No sportsbook line is posted for his game yet. The model needs one, so he is projected once it is — left out of the verdict until then."
               : state === "out"
-              ? "Ruled out on the official report — left out of the verdict."
+              ? contender.exclusion
               : "His game has kicked off; this projection is the record, not a choice."}
+        </p>
+      )}
+      {conditional !== null && (
+        <p className="deck-flag" data-kind="conditional">
+          {conditional}
         </p>
       )}
 
@@ -397,12 +409,7 @@ function DeckCard({
             {record.game.team_points !== null && ` · team total ${formatValue(record.game.team_points)}`}
           </span>
         )}
-        {injury !== null && (
-          <span className="deck-injury" data-designation={record.injury?.designation ?? undefined} title={injury.sentence}>
-            <span aria-hidden="true">{injury.short}</span>
-            <span className="visually-hidden">{injury.sentence}</span>
-          </span>
-        )}
+        <AvailabilityBadge availability={contender.availability} extra={injury?.sentence} />
       </footer>
     </article>
   );
@@ -433,9 +440,11 @@ function Verdict({
     <div className="verdict chamfer" aria-live="polite">
       {verdict === null ? (
         <p className="verdict-empty">
-          {duel.eligible.length === 1 && duel.contenders.length > 1
-            ? "Only one of these players can fill the slot this week."
-            : "Add a second player to get a verdict."}
+          {duel.contenders.length < 2
+            ? "Add a second player to get a verdict."
+            : duel.eligible.length === 1
+              ? "Only one of these players can fill the slot this week."
+              : "None of these players can fill the slot this week — each card says why."}
         </p>
       ) : (
         <>
@@ -457,6 +466,21 @@ function Verdict({
             {bin !== undefined &&
               ` On the sealed ${String(weekly.evaluation.holdout_season ?? "")} season, favourites given ${percent(bin.low)}–${percent(bin.high)} won ${percent(bin.observed)} of ${bin.pairs.toLocaleString("en-US")} such calls.`}
           </p>
+          {(() => {
+            // ADR-101: a verdict between players who may not suit up is conditional, and says so.
+            const conditional = [verdict.pick, verdict.runnerUp].filter(
+              (contender) =>
+                contender.availability.week === "questionable" || contender.availability.week === "uncertain",
+            );
+            if (conditional.length === 0) return null;
+            return (
+              <p className="verdict-line verdict-conditional">
+                {`If active: ${conditional
+                  .map((contender) => `${contender.record.display_name} is ${contender.availability.week === "questionable" ? "questionable" : "of uncertain status"}`)
+                  .join("; ")}. The verdict assumes both play; check the final game-day status before you lock it.`}
+              </p>
+            );
+          })()}
           {verdict.postureChangedPick && (
             <p className="verdict-line verdict-posture-note">
               {`${verdict.medianLeader.record.display_name} has the higher median, but at ${marginLabel(duel.margin).toLowerCase()} ${verdict.pick.record.display_name}'s range gives you the better chance to win the week.`}
@@ -738,7 +762,12 @@ function WeekBoard({
               const inDuel = duel.includes(record.player_id);
               const injury = injuryReading(record, weekly);
               return (
-                <tr key={record.player_id} data-in-duel={inDuel ? "true" : undefined} data-locked={row.locked ? "true" : undefined}>
+                <tr
+                  key={record.player_id}
+                  data-in-duel={inDuel ? "true" : undefined}
+                  data-locked={row.locked ? "true" : undefined}
+                  data-availability={isMuted(row.availability) ? "muted" : undefined}
+                >
                   <td className="wb-add">
                     <button
                       type="button"
@@ -757,12 +786,7 @@ function WeekBoard({
                       <button type="button" className="player-name" onClick={() => { onSelect(record.player_id); }}>
                         {record.display_name}
                       </button>
-                      {injury !== null && (
-                        <span className="deck-injury" data-designation={record.injury?.designation ?? undefined} title={injury.sentence}>
-                          <span aria-hidden="true">{injury.short}</span>
-                          <span className="visually-hidden">{injury.sentence}</span>
-                        </span>
-                      )}
+                      <AvailabilityBadge availability={row.availability} extra={injury?.sentence} />
                     </span>
                     <span className="wb-sub">{`${record.position} · ${record.team} ${gameLine(record)}`}</span>
                   </td>

@@ -15,6 +15,12 @@
  * the interface cannot drift apart, and a build that omitted them cannot render at all.
  */
 
+import {
+  readAvailability,
+  rosActionable,
+  type Availability,
+  type StatusEvidence,
+} from "./availability";
 import type { Degradation } from "./errors";
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
@@ -77,6 +83,12 @@ export interface InSeasonInput {
   readonly usageCohort?: readonly UsageCohortRecord[] | null;
   /** The block's cohort fields, when the whole Opportunity Board is not loaded (ADR-098). */
   readonly opportunityCohort?: readonly OpportunityCohortRecord[] | null;
+  /**
+   * Status evidence for the availability policy (ADR-101): the `player_availability` slice, or
+   * a card shard's full status rows. Null when the build published no status artifact, which
+   * makes every reading "uncertain" rather than "available".
+   */
+  readonly status?: readonly StatusEvidence[] | null;
 }
 
 
@@ -106,6 +118,8 @@ export interface BehaviorMomentum {
 /** A rest-of-season row. `status` is the row's own annotation string, never a model input. */
 export interface RosRow {
   readonly record: RosTierRecord;
+  /** The availability policy's reading (ADR-101); absent only in callers that do not need it. */
+  readonly availability?: Availability;
 }
 
 export interface OpportunityRow {
@@ -156,9 +170,14 @@ export class InSeasonBundle {
   private readonly publishedBlocks:
     | readonly { readonly leaguePreset: string; readonly scoring: ScoringPreset }[]
     | null;
+  private readonly statusByPlayer: ReadonlyMap<string, StatusEvidence>;
+  private readonly rosterCodeByPlayer = new Map<string, string>();
+  private readonly reportByPlayer = new Map<string, WeeklyProjectionRecord["injury"]>();
+  private readonly availabilityCache = new Map<string, Availability>();
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
+    this.statusByPlayer = new Map((input.status ?? []).map((record) => [record.player_id, record]));
     this.opportunityDegradation = input.opportunityDegradation;
     this.hasOpportunity = input.published?.opportunity ?? input.opportunity !== null;
     this.publishedBlocks = input.blocks ?? null;
@@ -214,6 +233,7 @@ export class InSeasonBundle {
       if (bucket === undefined) weeklyByScoring.set(record.scoring_preset, [record]);
       else bucket.push(record);
       weeklyByScoringPlayer.set(`${record.scoring_preset}|${record.player_id}`, record);
+      if (record.injury !== null) this.reportByPlayer.set(record.player_id, record.injury);
     }
     this.weeklyByScoring = weeklyByScoring;
     this.weeklyByScoringPlayer = weeklyByScoringPlayer;
@@ -227,6 +247,7 @@ export class InSeasonBundle {
       if (bucket === undefined) rosByBlock.set(key, [record]);
       else bucket.push(record);
       rosByBlockPlayer.set(`${key}|${record.player_id}`, record);
+      if (record.current_status !== null) this.rosterCodeByPlayer.set(record.player_id, record.current_status);
     }
     for (const rows of rosByBlock.values()) {
       rows.sort((a, b) => a.ros_fair_rank - b.ros_fair_rank);
@@ -242,6 +263,9 @@ export class InSeasonBundle {
       if (bucket === undefined) opportunityByBlock.set(key, [record]);
       else bucket.push(record);
       opportunityByBlockPlayer.set(`${key}|${record.player_id}`, record);
+      if (record.current_status !== null && !this.rosterCodeByPlayer.has(record.player_id)) {
+        this.rosterCodeByPlayer.set(record.player_id, record.current_status);
+      }
     }
     for (const rows of opportunityByBlock.values()) {
       rows.sort((a, b) => a.ros_fair_rank - b.ros_fair_rank);
@@ -353,6 +377,26 @@ export class InSeasonBundle {
     return this.matchupByTeam.get(team) ?? null;
   }
 
+  /**
+   * The availability policy's reading for one player (ADR-101), from every piece of evidence
+   * this bundle holds: his status record (joined by canonical id — the draft and ROS builds
+   * carry different build ids, and that is not a mismatch), the board's roster code, and the
+   * official report on his weekly record. Measured at this build's time, not the reader's.
+   */
+  availabilityFor(playerId: string): Availability {
+    const cached = this.availabilityCache.get(playerId);
+    if (cached !== undefined) return cached;
+    const reading = readAvailability({
+      status: this.statusByPlayer.get(playerId) ?? null,
+      rosterCode: this.rosterCodeByPlayer.get(playerId) ?? null,
+      report: this.reportByPlayer.get(playerId) ?? null,
+      referenceTime: this.metadata.generated_at_utc,
+      season: this.metadata.season,
+    });
+    this.availabilityCache.set(playerId, reading);
+    return reading;
+  }
+
   availableBlocks(): readonly { leaguePreset: string; scoring: ScoringPreset }[] {
     if (this.publishedBlocks !== null) return this.publishedBlocks;
     return [...this.rosByBlock.keys()].map((key) => {
@@ -369,9 +413,30 @@ export function selectRosRows(bundle: InSeasonBundle, state: AppState): readonly
   for (const record of bundle.rosFor(leaguePreset, scoring)) {
     if (!matchesPosition(record.position, state.position)) continue;
     if (!matchesSearch(record, state.search)) continue;
-    rows.push({ record });
+    rows.push({ record, availability: bundle.availabilityFor(record.player_id) });
   }
   return rows;
+}
+
+/**
+ * The actionable board (ADR-101): every row except those whose season is over, plus the rows
+ * held back, so the view can say how many and why. A search names a player on purpose, so a
+ * held-back row that matches it stays inspectable rather than vanishing.
+ */
+export function splitActionable(
+  rows: readonly RosRow[],
+  includeUnavailable: boolean,
+  search: string,
+): { readonly shown: readonly RosRow[]; readonly held: readonly RosRow[] } {
+  if (includeUnavailable) return { shown: rows, held: [] };
+  const shown: RosRow[] = [];
+  const held: RosRow[] = [];
+  for (const row of rows) {
+    if (row.availability === undefined || rosActionable(row.availability)) shown.push(row);
+    else if (search.trim() !== "") shown.push(row);
+    else held.push(row);
+  }
+  return { shown, held };
 }
 
 /** Contiguous runs sharing a tier ordinal. A surfaced row has no tier and forms no band. */

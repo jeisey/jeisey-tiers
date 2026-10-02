@@ -31,6 +31,8 @@ from typing import Any
 
 __all__ = [
     "ARBITRAGE_CSV_COLUMNS",
+    "PLAYER_STATUS_CSV_COLUMNS",
+    "flatten_player_status_record",
     "CSV_FLATTENERS",
     "flatten_arbitrage_record",
     "flattener_for",
@@ -184,6 +186,50 @@ def _is_derived(column: str) -> bool:
     return column in _DERIVED_EXACT or column.startswith(_DERIVED_PREFIXES)
 
 
+#: The status record's scalar fields, in schema order, then the reviewed override (ADR-101)
+#: as named scalar columns. Declared, not derived, for the same stable-header reason.
+_PLAYER_STATUS_SCALARS: tuple[str, ...] = (
+    "schema_version",
+    "build_id",
+    "season",
+    "player_id",
+    "display_name",
+    "current_team",
+    "position",
+    "roster_status",
+    "roster_depth_chart_position",
+    "sleeper_status",
+    "injury_status",
+    "injury_body_part",
+    "injury_notes",
+    "injury_start_date",
+    "practice_participation",
+    "practice_description",
+    "depth_chart_position",
+    "depth_chart_order",
+    "observed_at_utc",
+    "source_ids",
+    "quality_flags",
+)
+PLAYER_STATUS_CSV_COLUMNS: tuple[str, ...] = (
+    *_PLAYER_STATUS_SCALARS,
+    "availability_override_horizon",
+    "availability_override_summary",
+    "availability_override_source_urls",
+    "availability_override_reviewed_at",
+    "availability_override_expires_at",
+)
+
+
+def flatten_player_status_record(record: Mapping[str, Any]) -> dict[str, Any]:
+    """One status record as scalar CSV cells; the override's fields get their own columns."""
+    flat: dict[str, Any] = {column: record.get(column) for column in _PLAYER_STATUS_SCALARS}
+    override = record.get("availability_override") or {}
+    for key in ("horizon", "summary", "source_urls", "reviewed_at", "expires_at"):
+        flat[f"availability_override_{key}"] = override.get(key)
+    return flat
+
+
 #: ``artifact -> (columns, flattener)``. An artifact absent from this map keeps the default
 #: behaviour: columns from the record schema, values copied straight through.
 CSV_FLATTENERS: Mapping[
@@ -191,6 +237,7 @@ CSV_FLATTENERS: Mapping[
     tuple[Sequence[str], Callable[[Mapping[str, Any]], Mapping[str, Any]]],
 ] = {
     "arbitrage": (ARBITRAGE_CSV_COLUMNS, flatten_arbitrage_record),
+    "player_status": (PLAYER_STATUS_CSV_COLUMNS, flatten_player_status_record),
 }
 
 

@@ -67,7 +67,11 @@ State must survive reload/back-forward.
 
 Contains:
 
-- short product name/logo wordmark only
+- short product name/logo wordmark only. The logo is a real link home: `<a href>` resolved
+  from Vite's base (`/` or `/jeisey-tiers/`), no query, so it opens the season-aware default
+  view with no tab, Start/Sit or Trade selection and no card. Ordinary link behaviour (new tab,
+  copy link) is preserved; its accessible name is "Jeisey Tiers home"; it keeps the global
+  focus ring and is the masthead's first tab stop after the skip link.
 - last successful refresh, e.g. `Updated Aug 12 · 7:23 AM ET`
 - degraded/stale marker if metadata says so
 - Methodology/Data link
@@ -245,6 +249,26 @@ A mark beside the player's name, exactly as the draft board has always carried i
 when the artifact's code says something. `ACT` is the ordinary case and renders nothing
 (ADR-043). It is never a column: a column of `ACT` is the same non-report five hundred times
 and it pushes the model's own columns off the right edge.
+
+**Since ADR-101 the mark is the availability policy's reading** (`data/availability.ts`), the
+same everywhere in season — ROS board and table, Opportunity, Pick of the Week, Start/Sit deck
+and week board, Trade chips, pickers, packages and the excluded list, and the card:
+
+| Reading | Chip | Row | What the decision surfaces do |
+|---|---|---|---|
+| Out for the season (reviewed override + reserve list, or retired) | `OUT · season` / `RET` | held back from the default ROS ranking; elsewhere muted | never a verdict, a pick, or a trade target; as the reader's side of a trade, no search |
+| Reserve list or released | `IR`, `PUP`, `RES`, `CUT`… | muted | out of verdicts and picks; a Trade target only with "Include players expected back" (`ret=1`) |
+| Out this week | `OUT` | muted; sorts below choices on the week board | out of this week's verdict and picks; rest of season kept, with a warning |
+| Doubtful | `D` | normal | out of the default verdict; the card says its numbers assume he plays |
+| Questionable | `Q` | normal | comparable; the verdict says "If active" |
+| Uncertain (missing, stale, refused, contradictory) | `?` | normal | comparable and inspectable; never featured as clean; never called healthy |
+| Available | none | normal | normal |
+
+Muting is a hatched background and a left rule — never opacity, which fails contrast — and
+always comes with the chip's text; the chip's accessible text is the headline and the evidence
+with its time. The ROS board says how many players are held back, that ranks are the model's
+and are not renumbered (a held-back player leaves a gap), and offers "Show players out for the
+season" (`unavail=1`); a search that names a held-back player shows him.
 
 ### 6A.5 The player card in season
 
@@ -759,8 +783,9 @@ fairness verdict, a lineup gain or championship odds.
 
 #### 6A.12.3 URL, keyboard, width
 
-State is `give`, `goal`, `get`, `range`, `comp`, `keep`, `shown`, `dealt` and `stamp`
-(ADR-100 §8), defaults omitted; every action pushes a history entry, so Back undoes a swap.
+State is `give`, `goal`, `get`, `range`, `comp`, `keep`, `shown`, `dealt`, `stamp` and, since
+ADR-101, `ret=1` (the labelled "Include players expected back" opt-in, part of the stamp only
+when on) (ADR-100 §8), defaults omitted; every action pushes a history entry, so Back undoes a swap.
 The combobox is keyboard-complete (type, arrows, Enter, Escape); results changes are announced
 in a polite live region. Below 768px the packages' readout grid is three columns with each
 difference under its number (never cut off), and Keep/Swap span the panel at 40px. Checked at

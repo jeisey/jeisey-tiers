@@ -186,10 +186,12 @@ jobs:
       # this cannot reach the holdout even if someone asked it to. `--final-eval` needs a
       # fixed token and a written reason and is not available here on purpose.
       - name: Evaluate candidates on development folds
+        env:
+          BOOTSTRAP_REPLICATES: ${{ inputs.bootstrap_replicates || '1000' }}
         run: |
           set -euo pipefail
           uv run ffdraft evaluate-intrinsic \
-            --bootstrap-replicates "${{ inputs.bootstrap_replicates || '1000' }}" \
+            --bootstrap-replicates "${BOOTSTRAP_REPLICATES}" \
             --out "${RUNNER_TEMP}/candidate-report" \
             --git-sha "${GITHUB_SHA::7}" | tee evaluate.log
 

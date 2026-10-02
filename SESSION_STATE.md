@@ -4,7 +4,86 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-**The Trade tab: model-based trade targets, 2026-10-02 (ADR-100).** The owner asked for an
+**Public-launch housekeeping, 2026-10-02 (ADR-101).** The owner asked for a bounded hardening
+pass before sharing the site on Reddit: logo home navigation, injury-aware decision surfaces,
+public documentation, a current security review, and a check of the core experience. Branch
+`claude/nifty-cori-2ielym` from `7e646c7` (main had not moved).
+
+* **Logo → home.** `BrandLogo` (`web/src/app/Masthead.tsx`) is a real `<a href>` to
+  `homeHref()` = Vite's base with no query (`/`, `/jeisey-tiers/`, a scenario's base), named
+  "Jeisey Tiers home", inside the page's one `<h1>`; a full navigation, so an open card and
+  Trade's working state are dropped. It is the masthead's first tab stop after the skip link.
+* **Availability (ADR-101).** One policy, `web/src/data/availability.ts`, reads the status
+  record (joined by canonical id; build ids never compared), the board's roster code, the
+  official report and a reviewed override, and returns *this week* and *rest of season*
+  readings. Applied to Start/Sit (verdict eligibility, deck flags, week board sort/rank),
+  Pick of the Week (gate 5), the ROS board (season-over held back, `unavail=1`, rank gaps
+  explained), Trade (targets, `ret=1` opt-in for reserve/long-absence, season-over budgets
+  refused, warnings beside questionable budgets, kept packages re-checked by name), the
+  Opportunity board and the card. No model, projection, rank, tier or calibration changed.
+  * Evidence, from the live 2026-10-02 build (downloaded from Pages): Achane `RES` / Sleeper
+    `Inactive` + `IR` "Knee - ACL", upcoming week-4 projection with no designation (Start/Sit
+    treated him as playable); Hall Sleeper `Out` (quadriceps), official week-4 report with no
+    game status yet. Reporting verified: Achane season-ending ACL, IR (NFL.com, ESPN); Hall
+    week to week, expected to miss week 4, not on IR (NBC Sports, Washington Post).
+  * Season-ending is a reviewed entry in `config/availability-overrides.yaml` (strict loader
+    `ffdraft.status.overrides`), carried as `player_status.availability_override` (contract
+    **1.1**, additive, CSV-flattened), honoured only while a feed shows a reserve list. The one
+    entry (Achane, expires 2027-01-12) is marked for the owner to confirm.
+  * Served as `player_availability/all` (3.55 kB gzip on the real board vs 10.75 kB for the
+    full status slice), loaded with every in-season view when a ROS bundle exists. After the
+    draft anchor the status population is every rostered QB/RB/WR/TE (not DEV/CUT/RET) plus
+    override ids: 53 of 500 ROS rows had no status row on 2026-10-02.
+* **Docs.** README rewritten around the product; development history moved to
+  `docs/HISTORY.md`; PRD has a current-scope Part A (CR-025 availability, CR-026 home) with the
+  V1 spec as historical Part B; MASTER_SPEC, PROMPT_START_HERE, BUNDLE_MANIFEST, repo-tree and
+  the fftiers baseline study marked historical; competitor positioning removed; Data view,
+  footer, `index.html` and `package.json` copy corrected (two markets published; status never
+  changes a number).
+* **Security.** `docs/SECURITY_REVIEW_2026-10-02.md` (supersedes the Phase-8 report): gitleaks
+  over the full public history and PR refs, detect-secrets, pip-audit, npm audit, actionlint.
+  Fixed: script injection via `${{ inputs.* }}` in 10 workflows (SR-02), urllib3 2.8.0 (SR-03),
+  `phase10-linkage` default permissions (SR-05), `.env` ignored (SR-11); 50-case
+  `tests/unit/test_workflow_security.py`. **Owner action SR-01 (Medium):** the store token is a
+  repository secret readable by any branch's workflow run; move it to a `main`-only
+  environment and protect `main`. Accepted: SR-04 (the 1-day shadow artifact is public),
+  SR-06/07 (uv pin, dev-only npm advisories), SR-08–10.
+
+**Next gate:** the owner's review (ADR-101's override entry; SR-01); the first production
+build on this code, which publishes `player_status` 1.1 with the widened population and the
+`player_availability` slice — re-measure `config/size-model.json`'s status count from it.
+**Not done:** no PR (not requested), no deployment, no secret/repository-setting change.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 322 files
+uv run mypy                                          # clean, 193 source files
+uv run pytest                                        # 1,880 passed (4 live deselected)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing TanStack warnings); clean
+npm run test -- --run                                # 774 vitest
+npm run build ; VITE_BASE_PATH=/jeisey-tiers/ vite build   # both build
+npm run e2e                                          # 222 passed (chromium, mobile, a11y)
+npm run verify:board (6 CI fixtures)                 # 0 failures each
+npm run e2e:size-model && npm run verify:budget ...  # all met; first visit 303.1 kB (data 65.2), Start/Sit +55.2, Trade +11.8, card +23.6
+# Real data: live 2026-10-02 artifacts, player_status upgraded to 1.1 with the override:
+uv run ffdraft package-site-data ; validate-artifacts --require-serving   # 0 critical, 0 warning
+node web/tests/e2e/verify-real-build.mjs ...         # 0 failures; screenshots docs/visual-qa/2026-10-02-availability/
+```
+
+Facts a later session should not re-derive:
+
+* The live site's served files and full artifacts are reachable from the sandbox over HTTPS
+  (2026-10-02), so a real-data check no longer needs a runner log: download
+  `https://jeisey.github.io/jeisey-tiers/data/<artifact>.json`, run `package-site-data` and
+  `validate-artifacts --require-serving`, build Vite into a scratch dir and run
+  `verify-real-build.mjs` against it.
+* Production status shapes (2026-10-02): `RES`/`Inactive`/`IR` is the commonest reserve shape;
+  `ACT`/`Active`/`Out` is how a week-to-week injury looks before the official report has a game
+  status; the official report carries game designations only from Friday's report.
+* Opacity muting fails axe contrast on this palette; mute with hatching and a left rule.
+
+**Previous pass — the Trade tab: model-based trade targets, 2026-10-02 (ADR-100).** The owner asked for an
 in-season TRADE tab: offer one to three players, choose ROS value, Highest ceiling or Highest
 floor and how many players to receive (1–3), and explore ranked incoming packages. Branch
 `ccr-24dda6fb-ww1ksx` from `d47b7f9` (main had not moved).
@@ -1658,7 +1737,7 @@ Full Phase-0 detail in `docs/DATA_SOURCES.md` section 13; Phase-2 additions in s
 
 ## Repository notes
 
-- **`BUNDLE_MANIFEST.txt` is a snapshot of the original specification bundle, not a live checksum.** The specification set — `AGENTS.md`, `PRD.md`, `MASTER_SPEC.md`, `PROMPT_START_HERE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/UX_SPEC.md`, `docs/BASELINE_FFTIERS_ANALYSIS.md`, `repo-tree.txt` — is untouched. **`docs/TEST_STRATEGY.md` is the exception and always was:** it has been *appended to* since Phase 4 (sections 8.1 and 8.2 record the Phase-5 and Phase-8 invariants), because a test strategy that cannot record what a later phase decided to test is a document nobody reads. Its original sections are unmodified; a phase adds a section rather than editing one. The living records — `README.md`, `TASKS.md`, `SESSION_STATE.md`, `docs/DECISIONS.md`, `docs/DATA_SOURCES.md`, `docs/DATA_CONTRACTS.md`, `docs/MODELING.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/SECURITY_LICENSE.md`, `docs/FEATURE_DICTIONARY.md`, `config/*` — are updated as the contract requires.
+- **`BUNDLE_MANIFEST.txt` is a snapshot of the original specification bundle, not a live checksum.** Since 2026-10-02 the original specification files (`MASTER_SPEC.md`, `PROMPT_START_HERE.md`, `repo-tree.txt`, `BUNDLE_MANIFEST.txt`, `docs/BASELINE_FFTIERS_ANALYSIS.md`) are archived and marked historical, with only competitor positioning removed; `PRD.md` has a current-scope Part A with the V1 specification kept as Part B; `docs/UX_SPEC.md` is a living record. **`docs/TEST_STRATEGY.md` is the exception and always was:** it has been *appended to* since Phase 4 (sections 8.1 and 8.2 record the Phase-5 and Phase-8 invariants), because a test strategy that cannot record what a later phase decided to test is a document nobody reads. Its original sections are unmodified; a phase adds a section rather than editing one. The living records — `README.md`, `TASKS.md`, `SESSION_STATE.md`, `docs/DECISIONS.md`, `docs/DATA_SOURCES.md`, `docs/DATA_CONTRACTS.md`, `docs/MODELING.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/SECURITY_LICENSE.md`, `docs/FEATURE_DICTIONARY.md`, `config/*` — are updated as the contract requires.
 - **`ruff` 0.16 formats Python code blocks inside Markdown.** Markdown is excluded from ruff in `pyproject.toml`; do not remove that exclusion.
 - **Regenerating the golden artifacts is a deliberate act**, not a fix for a red test: `uv run ffdraft build-fixture-artifacts --out tests/fixtures/artifacts --git-sha 0000000`. Read the diff first.
 - **`docs/FEATURE_DICTIONARY.md` is generated.** Regenerate from `uv run ffdraft feature-dictionary` after changing `ffdraft.features.dictionary`; a test fails if it is stale.

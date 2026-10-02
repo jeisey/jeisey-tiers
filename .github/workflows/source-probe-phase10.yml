@@ -99,9 +99,11 @@ jobs:
           # Set in the request file. `--identity-only` spends four requests on the one
           # question run 3 ran out of budget for, instead of re-asking thirty settled ones.
           FP_PROBE_ARGS: ${{ steps.request.outputs.fp_args }}
+          FP_IDENTITY_FLAG: ${{ contains(inputs.sources, 'identity') && '--identity-only' || '' }}
         run: |
+          # shellcheck disable=SC2086 # both are deliberately word-split into arguments
           uv run python scripts/probe_fantasypros.py \
-            ${{ contains(inputs.sources, 'identity') && '--identity-only' || '' }} \
+            $FP_IDENTITY_FLAG \
             $FP_PROBE_ARGS 2>&1 | tee fantasypros.log
 
       - name: Probe Sleeper player map and trending
@@ -116,9 +118,11 @@ jobs:
 
       - name: Summary
         if: always()
+        env:
+          SOURCES: ${{ inputs.sources || 'all (push request)' }}
         run: |
           {
-            echo '## Phase-10 source probes — ${{ inputs.sources || 'all (push request)' }}'
+            echo "## Phase-10 source probes — ${SOURCES}"
             echo
             echo 'Findings below are **evidence**, not a decision. They belong in'
             echo '`docs/DATA_SOURCES.md`, `config/source-registry.yaml` and an ADR before'
