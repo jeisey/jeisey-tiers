@@ -269,6 +269,27 @@ describe("what a first paint fetches (ADR-098)", () => {
     expect(bundle?.rosFor("redraft-10", "PPR")).toEqual([]);
   });
 
+  it("the Trade tab needs exactly the ROS block the default view already loaded (ADR-100)", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles() });
+    const store = await openSite();
+    for (const scoring of ["STD", "HALF", "PPR"] as const) {
+      for (const leaguePreset of ["redraft-10", "redraft-12", "redraft-14"]) {
+        const context = { leaguePreset, scoring, cardPlayerId: null };
+        const trade = requiredKeys(store.manifest, { ...context, view: "trade" });
+        expect(trade).toEqual(["players", `ros_tiers/${leaguePreset}.${scoring}`]);
+        expect(requiredKeys(store.manifest, { ...context, view: "ros" })).toEqual(trade);
+      }
+    }
+  });
+
+  it("a Trade tab on a build with no rest-of-season board needs nothing but the names", async () => {
+    serve(everything());
+    const store = await openSite();
+    expect(
+      requiredKeys(store.manifest, { view: "trade", leaguePreset: "redraft-12", scoring: "PPR", cardPlayerId: null }),
+    ).toEqual(["players"]);
+  });
+
   it("the manifest is always revalidated, and slices are not", async () => {
     serve(everything());
     const store = await openSite();

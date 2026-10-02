@@ -101,3 +101,22 @@ node web/tests/e2e/capture-whyweek.mjs docs/visual-qa/<date>/whyweek-fixture --p
 E2E_BASE_URL=http://localhost:4180 node web/tests/e2e/capture-whyweek.mjs \
   docs/visual-qa/<date>/whyweek-real --prefix / --data web/dist-real/data
 ```
+
+## 2026-10-02 — the Trade tab and six-tab navigation (ADR-100)
+
+`2026-10-02-trade/fixture/` — the in-season fixture at 1440, 820, 390 and 320px:
+
+- the empty tab;
+- give one (Bijan Robinson), receive two;
+- the same with Highest ceiling, one package kept and one swapped;
+- the tab row on the ROS, Opportunity, Pick of the Week and Data tabs.
+
+`measurements.json` records document overflow, any Trade element outside the section, any
+ellipsised number, and whether the active tab sits fully inside the row: all clean, 28 screens.
+A first pass caught ellipsised readout cells at 320px; they were fixed before commit. No
+real-data build was made for this pass: the tab adds no artifact, and `verify-real-build.mjs`
+checks its packages against whatever build it is pointed at.
+
+```bash
+node web/tests/e2e/capture-trade.mjs docs/visual-qa/<date>/fixture --prefix /scenario/in-season/
+```

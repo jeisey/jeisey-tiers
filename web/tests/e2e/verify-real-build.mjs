@@ -1626,6 +1626,53 @@ if (publishedInSeason && weeklyRecords !== null) {
   }
 }
 
+// The Trade tab (ADR-100): every package it renders is checked against the artifact bytes —
+// its value is the sum of its members' published expected values, it is inside the printed
+// band, it has the requested count, no member is the outgoing player, and no member is one the
+// eligibility rule excludes.
+let tradePackagesChecked = 0;
+if (publishedInSeason) {
+  const severe = new Set(["RES", "INA", "PUP", "NFI", "SUS", "CUT", "RET"]);
+  const byName = new Map(rosBlock.map((r) => [r.display_name, r]));
+  const outgoing = rosBlock.find((r) => r.ros_expected_vorp > 0);
+  if (outgoing !== undefined) {
+    const range = 35;
+    const get = 2;
+    await page.goto(
+      `${BASE}/?view=trade&scoring=ppr&teams=12&give=${outgoing.player_id.replace(/^gsis:/, "")}&get=${String(get)}&range=${String(range)}`,
+      { waitUntil: "networkidle" },
+    );
+    await page.waitForSelector("section.trade");
+    const packages = await page.$$eval(".trade-results > .trade-package", (nodes) =>
+      nodes.map((node) => ({
+        names: [...node.querySelectorAll(".trade-members .player-name")].map((n) => n.textContent?.trim() ?? ""),
+        values: [...node.querySelectorAll(".trade-members .trade-member-value")].map((n) => n.textContent?.trim() ?? ""),
+        value: node.querySelector(".trade-metrics > div dd")?.firstChild?.textContent?.trim() ?? "",
+      })),
+    );
+    const low = outgoing.ros_expected_vorp * (1 - range / 100);
+    const high = outgoing.ros_expected_vorp * (1 + range / 100);
+    for (const pkg of packages) {
+      const members = pkg.names.map((name) => byName.get(name));
+      if (members.some((m) => m === undefined) || new Set(pkg.names).size !== pkg.names.length) {
+        continue; // a name the block holds twice cannot be told apart here
+      }
+      const sum = members.reduce((total, m) => total + m.ros_expected_vorp, 0);
+      if (pkg.value !== sum.toFixed(1)) failures.push(`trade: ${pkg.names.join(" + ")} reads ${pkg.value}, the artifact sums to ${sum.toFixed(1)}`);
+      members.forEach((m, index) => {
+        if (pkg.values[index] !== m.ros_expected_vorp.toFixed(1)) failures.push(`trade: ${m.display_name} reads ${pkg.values[index]}, the artifact ${m.ros_expected_vorp.toFixed(1)}`);
+        if (m.player_id === outgoing.player_id) failures.push(`trade: ${m.display_name} is both given and received`);
+        if (!(m.ros_expected_vorp > 0) || m.long_absence || severe.has(String(m.current_status ?? "").toUpperCase())) {
+          failures.push(`trade: ${m.display_name} is not an eligible target`);
+        }
+      });
+      if (members.length !== get) failures.push(`trade: ${pkg.names.join(" + ")} has ${String(members.length)} players, asked for ${String(get)}`);
+      if (sum < low - 1e-6 || sum > high + 1e-6) failures.push(`trade: ${pkg.names.join(" + ")} at ${sum.toFixed(2)} is outside ${low.toFixed(2)}–${high.toFixed(2)}`);
+      tradePackagesChecked += 1;
+    }
+  }
+}
+
 await browser.close();
 console.log(JSON.stringify({
   tierRowsChecked: rows.length,
@@ -1650,6 +1697,7 @@ console.log(JSON.stringify({
   whyPanelsChecked,
   whyTermsChecked,
   whyBoardCellsChecked,
+  tradePackagesChecked,
   arbitrage: arb === null ? "absent (--allow-missing-arbitrage)" : "checked",
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,

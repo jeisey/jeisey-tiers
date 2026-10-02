@@ -8,7 +8,7 @@
  * not in the URL.
  */
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Segmented } from "../components/primitives";
 import type {
@@ -42,29 +42,70 @@ import {
  * The other mode's boards are still *reachable* — a URL naming them opens them, and the
  * mode switch is one click — they are simply not what this mode leads with.
  */
-const DRAFT_TABS: readonly { id: ResolvedViewId; label: string }[] = [
+interface TabSpec {
+  readonly id: ResolvedViewId;
+  readonly label: string;
+  /**
+   * A narrow-screen label. The full label stays in the accessible name (visually hidden at
+   * that width), so a screen reader still hears "Opportunity" where a phone shows "Opp".
+   */
+  readonly short?: string;
+}
+
+const DRAFT_TABS: readonly TabSpec[] = [
   { id: "tiers", label: "Tiers" },
   { id: "arbitrage", label: "Arbitrage" },
   { id: "data", label: "Data" },
 ];
 
-const IN_SEASON_TABS: readonly { id: ResolvedViewId; label: string }[] = [
+const IN_SEASON_TABS: readonly TabSpec[] = [
   { id: "ros", label: "ROS tiers" },
   // Second, beside the board it is read against: this week's decision is the one a manager
   // makes most often, and the rest-of-season board is its context (ADR-096).
   { id: "startsit", label: "Start/Sit" },
-  { id: "opportunity", label: "Opportunity" },
+  // Third: the other decision read off the rest-of-season board, priced in its units (ADR-100).
+  { id: "trade", label: "Trade" },
+  { id: "opportunity", label: "Opportunity", short: "Opp" },
   { id: "potw", label: "POTW" },
   { id: "data", label: "Data" },
 ];
 
-export function tabsForMode(mode: "draft" | "in_season"): readonly {
-  id: ResolvedViewId;
-  label: string;
-}[] {
+export function tabsForMode(mode: "draft" | "in_season"): readonly TabSpec[] {
   return mode === "in_season" ? IN_SEASON_TABS : DRAFT_TABS;
 }
 
+/**
+ * Bring a tab fully into the horizontally scrolled row, without animating when the reader asked
+ * for reduced motion. The row is scrolled by hand rather than with `scrollIntoView`: that call
+ * would also move Chrome's sequential-focus starting point to the tab, so the first Tab key on
+ * a fresh page would skip the skip link and every control above the board. Nothing happens when
+ * the tab is already in view, which is the ordinary desktop case.
+ */
+function reveal(row: HTMLElement | null, tab: HTMLElement | null): void {
+  if (row === null || tab === null || typeof row.scrollBy !== "function") return;
+  const bounds = row.getBoundingClientRect();
+  const box = tab.getBoundingClientRect();
+  const margin = 20;
+  let delta = 0;
+  if (box.left < bounds.left) delta = box.left - bounds.left - margin;
+  else if (box.right > bounds.right) delta = box.right - bounds.right + margin;
+  if (delta === 0) return;
+  const reduced =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  row.scrollBy({ left: delta, behavior: reduced ? "auto" : "smooth" });
+}
+
+/**
+ * The view tabs.
+ *
+ * Six in-season tabs do not fit a 320px row at a legible size, so the row scrolls sideways
+ * rather than shrinking text or tap targets (ADR-100). Three things keep that usable: the
+ * active tab is scrolled into view whenever it changes, a focused tab is scrolled into view so
+ * a keyboard reader never tabs onto something off screen, and an edge marker says when there
+ * is more row in either direction. Below 560px "Opportunity" prints as "Opp",
+ * with the full word kept in the accessible name.
+ */
 export function ViewTabs({
   view,
   onChange,
@@ -85,9 +126,46 @@ export function ViewTabs({
   readonly rowCount?: { readonly shown: number; readonly total: number } | undefined;
 }): React.JSX.Element {
   const tabs = tabsForMode(mode);
+  const list = useRef<HTMLDivElement>(null);
+  const keyboard = useRef(false);
+  const [overflow, setOverflow] = useState<{ start: boolean; end: boolean }>({ start: false, end: false });
+
+  const measure = useCallback(() => {
+    const element = list.current;
+    if (element === null) return;
+    const start = element.scrollLeft > 1;
+    const end = element.scrollLeft + element.clientWidth < element.scrollWidth - 1;
+    setOverflow((current) => (current.start === start && current.end === end ? current : { start, end }));
+  }, []);
+
+  useEffect(() => {
+    const element = list.current;
+    if (element === null) return;
+    measure();
+    element.addEventListener("scroll", measure, { passive: true });
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    observer?.observe(element);
+    return () => {
+      element.removeEventListener("scroll", measure);
+      observer?.disconnect();
+    };
+  }, [measure, mode]);
+
+  // The active tab is always on screen; after an arrow key, focus follows it (WAI-ARIA tabs).
+  useEffect(() => {
+    const active = list.current?.querySelector<HTMLButtonElement>(`#tab-${view}`) ?? null;
+    reveal(list.current, active);
+    if (keyboard.current) {
+      keyboard.current = false;
+      active?.focus();
+    }
+    measure();
+  }, [view, measure]);
+
   return (
-    <div className="tabs-row">
-      <div className="tabs" role="tablist" aria-label="Board">
+    <div className="tabs-row" data-overflow-start={overflow.start || undefined} data-overflow-end={overflow.end || undefined}>
+      <span className="tabs-more tabs-more-start" aria-hidden="true">‹</span>
+      <div className="tabs" role="tablist" aria-label="Board" ref={list}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -97,25 +175,41 @@ export function ViewTabs({
             aria-selected={view === tab.id}
             aria-controls={`panel-${tab.id}`}
             tabIndex={view === tab.id ? 0 : -1}
+            onFocus={(event) => {
+              reveal(list.current, event.currentTarget);
+            }}
             onKeyDown={(event) => {
               const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
               if (step === 0) return;
               event.preventDefault();
               const index = tabs.findIndex((candidate) => candidate.id === view);
               const next = tabs[(index + step + tabs.length) % tabs.length];
-              if (next !== undefined) onChange(next.id);
+              if (next !== undefined) {
+                keyboard.current = true;
+                onChange(next.id);
+              }
             }}
             onClick={() => {
               onChange(tab.id);
             }}
           >
-            {tab.label}
+            {tab.short === undefined ? (
+              tab.label
+            ) : (
+              <>
+                <span className="tab-label-long">{tab.label}</span>
+                <span className="tab-label-short" aria-hidden="true">
+                  {tab.short}
+                </span>
+              </>
+            )}
             {tab.id === "arbitrage" && !arbitrageAvailable && (
               <span className="visually-hidden"> (market comparison unavailable)</span>
             )}
           </button>
         ))}
       </div>
+      <span className="tabs-more tabs-more-end" aria-hidden="true">›</span>
       {rowCount !== undefined && (
         <span className="tabs-count" role="status">
           {`${String(rowCount.shown)} of ${String(rowCount.total)} rows`}

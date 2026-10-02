@@ -33,6 +33,7 @@ export const VIEWS = [
   "startsit",
   "opportunity",
   "potw",
+  "trade",
   "data",
 ] as const;
 export type ViewId = (typeof VIEWS)[number];
@@ -72,7 +73,13 @@ export const OPPORTUNITY_FILTERS = ["role", "momentum", "surfaced"] as const;
 export type OpportunityFilter = (typeof OPPORTUNITY_FILTERS)[number];
 
 export const DRAFT_VIEWS: readonly ResolvedViewId[] = ["tiers", "arbitrage"];
-export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = ["ros", "startsit", "opportunity", "potw"];
+export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = [
+  "ros",
+  "startsit",
+  "trade",
+  "opportunity",
+  "potw",
+];
 
 /**
  * How many players one Start/Sit comparison holds (ADR-096). Four is the most a lineup slot
@@ -100,6 +107,36 @@ const GSIS_SHORT = /^\d{2}-\d{7}$/;
  * from one has to parse against the next.
  */
 export const MAX_POTW_SET = 5;
+
+/**
+ * The Trade tab's controls (ADR-100 §8). Defined here, beside the parser, so the URL contract
+ * has one home and the entry bundle never imports the engine to read a constant.
+ */
+export const TRADE_GOALS = ["value", "ceiling", "floor"] as const;
+export type TradeGoal = (typeof TRADE_GOALS)[number];
+
+/** The value range either side of the outgoing value, in percent. ±20 is a UX default. */
+export const TRADE_RANGES = [10, 20, 35, 50] as const;
+export type TradeRange = (typeof TRADE_RANGES)[number];
+export const DEFAULT_TRADE_RANGE: TradeRange = 20;
+
+export const TRADE_COUNTS = [1, 2, 3] as const;
+export type TradeCount = (typeof TRADE_COUNTS)[number];
+
+/** Composition slots, in canonical order; `any` matches every position. */
+export const COMP_SLOTS = ["qb", "rb", "wr", "te", "any"] as const;
+export type CompSlot = (typeof COMP_SLOTS)[number];
+
+export const MAX_GIVE = 3;
+export const MAX_KEEP = 3;
+/** The five suggestion slots. */
+export const MAX_SHOWN = 5;
+/**
+ * A bound on a dealt-order index a URL may name. Above the engine's 200-package pool on
+ * purpose: the real bound is the build's pool, checked where the pool is in hand, because a
+ * parser may not depend on a build.
+ */
+export const MAX_DEALT = 999;
 
 export const SCORING_VALUES = ["std", "half", "ppr"] as const;
 export type ScoringValue = (typeof SCORING_VALUES)[number];
@@ -185,6 +222,24 @@ export interface AppState {
    * more likely to win me the week" (ADR-096).
    */
   readonly margin: number;
+  /** Trade: the outgoing players, in the reader's order, as canonical `gsis:` ids (≤ 3). */
+  readonly give: readonly string[];
+  /** Trade: which preset ranks the comparable pool. */
+  readonly goal: TradeGoal;
+  /** Trade: how many players to receive. */
+  readonly get: TradeCount;
+  /** Trade: the value range, percent either side of the outgoing expected value. */
+  readonly range: TradeRange;
+  /** Trade: the incoming composition, canonical; empty means any positions. */
+  readonly comp: readonly CompSlot[];
+  /** Trade: kept packages, each its members' canonical ids sorted (≤ 3 packages). */
+  readonly keep: readonly (readonly string[])[];
+  /** Trade: dealt-order indices on the five suggestion slots; empty means the first deal. */
+  readonly shown: readonly number[];
+  /** Trade: how many packages of the dealt order have been dealt. */
+  readonly dealt: number;
+  /** Trade: the exploration's identity (build, block and inputs); empty when none. */
+  readonly stamp: string;
 }
 
 /**
@@ -219,6 +274,15 @@ export const DEFAULT_STATE: AppState = {
   set: 1,
   duel: [],
   margin: 0,
+  give: [],
+  goal: "value",
+  get: 1,
+  range: DEFAULT_TRADE_RANGE,
+  comp: [],
+  keep: [],
+  shown: [],
+  dealt: 0,
+  stamp: "",
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
@@ -238,6 +302,15 @@ const PARAM_ORDER = [
   "set",
   "duel",
   "margin",
+  "give",
+  "goal",
+  "get",
+  "range",
+  "comp",
+  "keep",
+  "shown",
+  "dealt",
+  "stamp",
 ] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
@@ -426,6 +499,81 @@ export function parseState(search: string): ParsedState {
     }
   }
 
+  // The Trade tab (ADR-100 §8). Every token is validated for shape here; whether an id is on
+  // the board, or an index inside the build's pool, is decided where the build is in hand.
+  const give = parseIdList(params.get("give"), MAX_GIVE);
+  if (!give.valid) normalized = false;
+
+  const goal = oneOf(params.get("goal"), TRADE_GOALS, DEFAULT_STATE.goal);
+  note(goal.valid);
+
+  const get = oneOfNumber(params.get("get"), TRADE_COUNTS, DEFAULT_STATE.get);
+  note(get.valid);
+  const range = oneOfNumber(params.get("range"), TRADE_RANGES, DEFAULT_STATE.range);
+  note(range.valid);
+
+  // `comp=rb.wr` — one slot per received player, canonical order. A slot count that differs
+  // from `get` cannot describe this search and is dropped; all-`any` is the default and omitted.
+  const rawComp = params.get("comp");
+  let comp: readonly CompSlot[] = DEFAULT_STATE.comp;
+  if (rawComp !== null) {
+    const tokens = rawComp.toLowerCase().split(".");
+    const slots = tokens.filter((token): token is CompSlot =>
+      (COMP_SLOTS as readonly string[]).includes(token),
+    );
+    if (slots.length === tokens.length && slots.length === get.value) {
+      comp = slots.every((slot) => slot === "any") ? [] : canonicalComp(slots);
+    }
+    if (serializeComp(comp) !== rawComp) normalized = false;
+  }
+
+  // `keep=00-0000013.00-0000002_00-0000011` — packages `_`-separated, members `.`-separated.
+  const rawKeep = params.get("keep");
+  let keep: readonly (readonly string[])[] = DEFAULT_STATE.keep;
+  if (rawKeep !== null) {
+    const packages: string[][] = [];
+    const seen = new Set<string>();
+    for (const chunk of rawKeep.split("_")) {
+      const members = parseIdList(chunk, 3);
+      if (!members.valid || members.ids.length === 0) continue;
+      const sorted = [...members.ids].sort();
+      const key = sorted.join(".");
+      if (seen.has(key) || packages.length >= MAX_KEEP) continue;
+      seen.add(key);
+      packages.push(sorted);
+    }
+    keep = packages;
+    if (serializeKeep(keep) !== rawKeep) normalized = false;
+  }
+
+  const rawShown = params.get("shown");
+  let shown: readonly number[] = DEFAULT_STATE.shown;
+  if (rawShown !== null) {
+    const tokens = rawShown.split(".");
+    const values = tokens.map((token) => Number.parseInt(token, 10));
+    const valid =
+      tokens.length <= MAX_SHOWN &&
+      values.every((value, index) => String(value) === tokens[index] && value >= 0 && value <= MAX_DEALT) &&
+      new Set(values).size === values.length;
+    if (valid) shown = values;
+    else normalized = false;
+  }
+
+  const rawDealt = params.get("dealt");
+  let dealt = DEFAULT_STATE.dealt;
+  if (rawDealt !== null) {
+    const parsed = Number.parseInt(rawDealt, 10);
+    if (String(parsed) === rawDealt && parsed >= 0 && parsed <= MAX_DEALT + 1) dealt = parsed;
+    else normalized = false;
+  }
+
+  const rawStamp = params.get("stamp");
+  let stamp = DEFAULT_STATE.stamp;
+  if (rawStamp !== null) {
+    if (/^[0-9a-f]{8}$/.test(rawStamp)) stamp = rawStamp;
+    else normalized = false;
+  }
+
   // A parameter the app does not know is dropped rather than preserved: keeping it would make
   // two URLs describing the same state compare unequal.
   for (const key of params.keys()) {
@@ -449,9 +597,58 @@ export function parseState(search: string): ParsedState {
       set,
       duel,
       margin,
+      give: give.ids,
+      goal: goal.value,
+      get: get.value,
+      range: range.value,
+      comp,
+      keep,
+      shown,
+      dealt,
+      stamp,
     },
     normalized,
   };
+}
+
+function oneOfNumber<T extends number>(
+  raw: string | null,
+  allowed: readonly T[],
+  fallback: T,
+): { value: T; valid: boolean } {
+  if (raw === null) return { value: fallback, valid: true };
+  const parsed = Number.parseInt(raw, 10);
+  const match = allowed.find((candidate) => candidate === parsed && String(parsed) === raw);
+  return match === undefined ? { value: fallback, valid: false } : { value: match, valid: true };
+}
+
+/**
+ * `00-0036389.00-0039164` → canonical ids, order kept. A malformed or repeated id is dropped
+ * and anything past `limit` ignored; `valid` is false whenever anything was dropped.
+ */
+function parseIdList(raw: string | null, limit: number): { ids: readonly string[]; valid: boolean } {
+  if (raw === null) return { ids: [], valid: true };
+  const tokens = raw.split(".").filter((token) => token !== "");
+  const ids: string[] = [];
+  for (const token of tokens) {
+    const id = `gsis:${token}`;
+    if (GSIS_SHORT.test(token) && !ids.includes(id) && ids.length < limit) ids.push(id);
+  }
+  return { ids, valid: ids.length === tokens.length && tokens.length > 0 };
+}
+
+/** Named positions in QB, RB, WR, TE order, then `any`. */
+export function canonicalComp(slots: readonly CompSlot[]): CompSlot[] {
+  return [...slots].sort((a, b) => COMP_SLOTS.indexOf(a) - COMP_SLOTS.indexOf(b));
+}
+
+export function serializeComp(comp: readonly CompSlot[]): string {
+  return canonicalComp(comp).join(".");
+}
+
+/** Kept packages in shelf order; each package's members sorted, so one package is one string. */
+export function serializeKeep(keep: readonly (readonly string[])[]): string {
+  return keep.map((members) => serializeDuel([...members].sort())).join("_");
 }
 
 /** `["gsis:00-0036389", "gsis:00-0039164"]` -> `00-0036389.00-0039164`, order kept. */
@@ -482,8 +679,20 @@ export function serializeState(state: AppState): string {
       if (filters !== "") params.set(key, filters);
       continue;
     }
-    if (key === "duel") {
-      if (state.duel.length > 0) params.set(key, serializeDuel(state.duel));
+    if (key === "duel" || key === "give") {
+      if (state[key].length > 0) params.set(key, serializeDuel(state[key]));
+      continue;
+    }
+    if (key === "comp") {
+      if (state.comp.length > 0) params.set(key, serializeComp(state.comp));
+      continue;
+    }
+    if (key === "keep") {
+      if (state.keep.length > 0) params.set(key, serializeKeep(state.keep));
+      continue;
+    }
+    if (key === "shown") {
+      if (state.shown.length > 0) params.set(key, state.shown.join("."));
       continue;
     }
     const value = state[key];

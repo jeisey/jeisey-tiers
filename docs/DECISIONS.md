@@ -5530,3 +5530,278 @@ nothing in the code stopped a second "first" look on more data.
 * **Promotion is still a reviewed change.** A `promote` verdict opens an issue; serving v2,
   its card and v1's retirement are made by a person. Only this workflow holds the look token,
   by test; v1's final-holdout token is still held by none.
+
+## ADR-100 — The Trade tab: comparable rest-of-season value first, the reader's preference second
+
+**Status:** accepted, 2026-10-02. Written and committed before the engine that implements it.
+The owner asked for an in-season trade target tool: offer one to three players, pick *ROS
+value*, *Highest ceiling* or *Highest floor*, and explore ranked incoming packages of one to
+three players. Evidence for the approximations below is appended under **Evidence** by the
+commit that measures it.
+**Relies on:** ADR-071 (rostered-depth replacement), ADR-076 (long-absence disclosure),
+ADR-088 (Pick of the Week's eligibility precedent), ADR-096 (decision-layer tools may read any
+useful published data), ADR-098 (served slices, `requiredKeys`, budgets).
+
+### What stays fixed
+
+* **Nothing upstream reads this.** The tool is a pure browser computation over the published
+  `ros_tiers` slice of one block. No model, artifact, rank, tier, value or serving file
+  changes; `intrinsic-ros-v1` and both weekly models are untouched, and v2 stays in shadow.
+* **No new source and no market.** There is no current trade-price source: FantasyCalc is
+  `disabled` (ADR-013) and draft ADP is a draft-time price, not a trade price, so neither is
+  read. Every number is model-only. If a permitted market source is ever added, a
+  market-informed comparison must be a separate, labelled mode.
+* **One build, one block, one cutoff.** Every number in one search comes from the
+  `ros_tiers/<league>.<scoring>` slice of the loaded build: one `build_id`, one
+  `through_week`, the reader's scoring and league-size presets. Players are joined by
+  canonical `player_id` only.
+* **What a result is.** A *model-based target*: a combination of assets whose published
+  rest-of-season value falls in a band around what the reader offers. Its players may belong
+  to different managers. The tool knows no rosters, no trade prices and nobody's willingness
+  to trade. It publishes no acceptance probability, no fairness verdict, no lineup gain and no
+  championship odds, and says so once beside the results.
+
+### 1. Units and the horizon
+
+* **Value** is `ros_expected_vorp`: expected fantasy points above the rostered-depth
+  replacement level (the best player nobody rosters, ADR-071), summed over the remaining
+  scored weeks. It is the cross-position currency. Raw points would systematically favour
+  quarterbacks, so **projected points** (`ros_expected_points`) are shown only as supporting
+  information and always labelled *pts*, never *value*.
+* **The horizon** is weeks `through_week + 1` to `through_week + remaining_horizon_weeks`,
+  from the record (`remaining_horizon_weeks` is written on every production row). The
+  versioned scoring contract (`fantasy_horizon`, DATA_CONTRACTS §5) fixes the last scored
+  week at 17 from 2021 and excludes NFL week 18; `season_state_v1`'s three-week fantasy
+  postseason puts weeks 15–17 inside it. The page states the horizon, that weeks 15–17 are
+  included, and that there is **no playoff-only projection**; it never scales a season total
+  to a fraction. A record whose horizon disagrees with the contract is shown with its own
+  horizon, never the contract's.
+* **Floor and ceiling** are the published `ros_vorp_p10` and `ros_vorp_p90`: the 10th and
+  90th percentiles of a player's *total* remaining value, from the same 10,000 simulated
+  seasons as the expectation. They are not weekly consistency and not a single game's upside.
+
+### 2. Eligibility (`trade_eligibility_v1`)
+
+An **incoming** candidate must:
+
+1. have a record in the block with finite `ros_expected_vorp`, `ros_expected_points` and
+   five finite, non-decreasing VORP quantiles — otherwise it is **unpriced** (missing stays
+   missing; nothing is imputed);
+2. not be one of the outgoing players;
+3. have `ros_expected_vorp > 0` — at or below zero the model says he is no better than the
+   waiver wire under `rostered_depth` (ADR-088 gate 6, same reasoning);
+4. not carry `long_absence` — the model's ordering inside that cohort is near random
+   (Spearman 0.311 against 0.797, ADR-076), so it must not lead recommendations on stale
+   optimism;
+5. carry no severe roster code: `RES`, `INA`, `PUP`, `NFI`, `SUS`, `CUT`, `RET` — the set
+   ADR-088 and the board's badge already treat as "cannot take the field".
+
+The rest-of-season model reads **no injury or practice report** (ADR-070). The tool does not
+read the weekly report either: a player listed Out *this week* is not zeroed for the remaining
+season, because a one-week designation says nothing verified about weeks after it. Status and
+long absence are used only for eligibility, are annotations everywhere else, and never change
+a value. Every positive-value player excluded by rules 4–5 (and any unpriced one) is listed
+on the tab with the reason, so a reader can see who is not a target and why.
+
+An **outgoing** player only needs a record in the block. A long-absence or reserve player can
+be offered; his card carries the same disclosure as on the board. A link naming an id the
+block does not hold is shown as *not on this board* and contributes nothing.
+
+### 3. Comparable value first (`trade_band_v1`)
+
+* `V_out = Σ ros_expected_vorp` over the outgoing players, **including** negative members — a
+  below-replacement player lowers what the package is worth, and is never clamped to zero.
+* **`V_out ≤ 0`**: there is no search. The page says the package is at or below replacement
+  and that nothing is generated from it; adding a positive-value player is the way forward.
+  No percentage of a nonpositive number is ever computed, so there is no division by zero and
+  no infinite percentage.
+* **The band** is `[V_out·(1 − r), V_out·(1 + r)]`, bounds inclusive, with `r` the reader's
+  *value range*: ±10%, ±20% (default), ±35% or ±50%. ±20% is a **UX default**, not a measured
+  trade-market rule: wide enough that a 1-for-2 can be found for most starters on a real
+  board, narrow enough that every result is plausibly the same order of value. Differences
+  are always printed signed, in value points, and a match is never called *fair*.
+* **The band is anchored on expected value under every preset.** Switching to *Highest
+  ceiling* re-ranks the same comparable pool; it never redefines what the outgoing players
+  are worth.
+* **Anti-padding (`member_share_v1`).** In a package of two or three, every member must carry
+  at least **15%** of the package's expected value (`v_i ≥ 0.15·V_in`), and every member is
+  already strictly positive (rule 3). A near-zero or negative filler can therefore never move
+  a package into the band, and the ranking objectives below never reward a member that adds
+  nothing. 15% is a UX constant: it admits a second asset worth a flex start and refuses a
+  throw-in. There is **no consolidation premium**: asset values are summed as expectations,
+  and the page shows what the sum hides — the roster spots the shape needs or frees, and each
+  side's best single asset — so "three backups for one starter" is visible as exactly that.
+  Without the reader's roster, an aggregate is labelled *asset value*, never usable lineup
+  points.
+* **The shape** is the reader's: give `g ∈ {1,2,3}`, receive `k ∈ {1,2,3}`, independently
+  (all nine shapes), printed as `Give g · Receive k`. Roster spots: `k − g` needed when
+  positive, freed when negative.
+* **Composition** is a multiset of `k` slots, each `QB`, `RB`, `WR`, `TE` or `any`
+  (default all `any`, so cross-position packages are the default). A package matches when,
+  for every position, the slots that name it are no more than its members at that position.
+
+### 4. Preference second: objectives and ranking
+
+For a package `S` of `k` players and the outgoing package `O`:
+
+| preset | objective `f(S)` | compared as |
+|---|---|---|
+| ROS value | `E[S] = Σ ros_expected_vorp` (exact: expectations add) | `f(S) − V_out` |
+| Highest ceiling | `Q90(S)`, the 90th percentile of the package's total remaining value | `Q90(S) − Q90(O)` |
+| Highest floor | `Q10(S)` | `Q10(S) − Q10(O)` |
+
+The comparable pool is ranked by `f(S)` descending, then `E[S]` descending, then the
+package's best single expected value descending, then the canonical key (member ids sorted
+and joined) ascending. Ranks, percentiles and tier numbers are never summed; projected points
+are summed only as an expectation and only as supporting text.
+
+### 5. Package floor and ceiling (`ros_package_quantiles_v1`)
+
+Individual P10s and P90s do not add. A **single** player's floor and ceiling are his published
+values, exactly. For **two or three** players, the browser reconstructs each marginal and
+combines them:
+
+1. **Marginal** (`ros_marginal_pwl_v1`): the piecewise-linear quantile function through
+   `(0.10, p10)`, `(0.25, p25)`, `(0.50, p50)`, `(0.75, p75)`, `(0.90, p90)`, with knots at
+   `u = 0` and `u = 1` placed by a **tail factor `t = 1.56`**:
+   `Q(0) = p10 − t·(p25 − p10)` and `Q(1) = p90 + t·(p90 − p75)`. 1.56 is not fitted: it is
+   the factor at which a linear tail beyond the 10th (90th) percentile has a Gaussian's
+   conditional tail mean: `(2·φ(z)/0.1 − 2z) / (z − z₀.₇₅) = 1.5597` with `z = 1.2816`,
+   `z₀.₇₅ = 0.6745`. A prototype on
+   synthetic skewed players compared 1.0, 1.5 and 2.0 before this was written; 1.56 is the
+   derivation, not the winner of that comparison.
+2. **Mean matching**: the reconstruction's mean is moved to the published
+   `ros_expected_vorp` by moving **one** tail knot — the upper one when the published mean is
+   higher, the lower one otherwise — by `Δ / 0.05`. Moving a tail outward cannot break
+   monotonicity, and it makes every reconstruction's mean exactly the published expectation,
+   so the package mean is exactly `E[S]`.
+3. **Dependence**: members are treated as **independent**. The production simulation draws
+   every player's points from his own seeded stream (`mc_quantile_sampler_v1`), so points are
+   independent by construction; the only cross-player dependence in VORP is the per-draw
+   replacement level shared by players of one position. Next-game teammate correlations
+   (ADR-096) describe one game, not a remaining season, and are **not** imported.
+4. **Combination**: cumulants of independent variables add. Each marginal's mean, variance and
+   third central moment are computed in closed form from its linear segments; the package's
+   `κ₁, κ₂, κ₃` are their sums, and the quantile is the one-term Cornish–Fisher expansion
+   `Q_p ≈ κ₁ + √κ₂ · (z_p + (z_p² − 1)·γ/6)` with `γ = κ₃/κ₂^{3/2}` clamped to `±2` (inside
+   the range where the expansion is monotone between the 10th and 90th percentiles; the clamp
+   is recorded as part of the rule). No random numbers: the result is a pure function of the
+   published fields.
+5. **Labelling**: a two- or three-player floor or ceiling is printed with `~` and described as
+   approximate. Its calibration is **not** inherited from the marginal calibration and is not
+   claimed.
+
+### 6. Search (`trade_search_v1`)
+
+Exact, not sampled. Eligible players are sorted by expected value (descending, id ascending).
+Pairs and triples are generated in that order with each member's index after the previous one
+(so each package appears once, as a set), and the next member's admissible values form a
+contiguous range found by binary search: within the band given the members so far, at most
+the previous member's value, and at least the member-share floor. A loop breaks as soon as the
+largest completion can no longer reach the band's lower bound. The cost is the number of
+**qualifying** packages plus `O(n²)` index work, never every triple. A package containing an
+outgoing player, a duplicate player, or a permutation of another cannot be generated. Every
+generated package satisfies count, composition, band and share by construction and is
+re-checked. The engine keeps the best **200** by the ranking above (`POOL_CAP`) and counts
+all qualifying packages; a safety cap of 4,000,000 visited packages marks a result
+`truncated` rather than running unbounded (never reached on a production-sized board in the
+measurements below).
+
+### 7. Exploration (`trade_explore_v1`)
+
+* **Dealing order.** The ranked pool is re-ordered so different leading assets come first:
+  each package's *lead* is its highest-value member, and packages are stable-sorted by how
+  many better-ranked packages share their lead, then by rank. The first five dealt are the
+  best package of the five best leads, not one star with five interchangeable fillers.
+* **Five suggestions** are dealt from the start of that order. **Swap** replaces one slot
+  with the next undealt package. **More targets** replaces all five. Anything swapped out has
+  been dealt and is not dealt again in this search; when the order is used up the tab says so
+  and offers the explicit ways to broaden. Fewer than five are shown when fewer qualify;
+  nothing is padded.
+* **Keep** moves a package to a shelf of at most three and deals a replacement into its slot.
+  A kept package is stored by its members' ids and stays through any control or build change
+  until it becomes invalid; it is then still shown, with the reason (not on this board, no
+  longer eligible, outside the band, wrong count or composition, includes an outgoing player).
+* **Reset** clears the dealt state and the kept shelf and returns to the first five.
+* **Changing any control** (outgoing players, preset, receive count, value range, composition)
+  re-deals from the start; the kept shelf is re-checked.
+
+### 8. URL state
+
+All shareable, defaults omitted, fixed order, normalised on parse (ADR-084 conventions):
+`give` (outgoing GSIS ids, order kept, ≤ 3, duplicates and malformed ids dropped), `goal`
+(`ceiling` | `floor`; default ROS value), `get` (2 | 3; default 1), `range` (10 | 35 | 50;
+default 20), `comp` (k slots in canonical order, `qb.rb.wr.te` before `any`; a slot count
+that differs from `get` is dropped), `keep` (≤ 3 packages, `_`-separated, members
+`.`-separated), and the exploration: `shown` (dealt-order indices of the five slots), `dealt`
+(how many have been dealt) and `stamp` (eight hex digits of FNV-1a over the build id, block and
+every search input). A stamp that does not match the current build and inputs means the
+exploration was made on another board: the tab re-deals from the start and says why. Unrelated
+parameters are kept; every user action pushes a history entry, so Back undoes a swap. Which
+panel is expanded is local, never in the URL.
+
+### 9. Serving and payload
+
+The tab needs `ros_tiers/<block>` and nothing else — the slice the default in-season view has
+already loaded — so opening it costs only its lazily loaded code. A missing or incompatible
+`ros_tiers` slice disables this tab's content alone; every other board is unaffected. A new
+budget, **Trade adds ≤ 25 kB** after the default in-season view, joins the ADR-098 gate; no
+existing budget changes.
+
+### Consequences
+
+* A manager gets ranked, explorable asset combinations in the shape and value range they
+  chose, with every number traceable to a published field or to the rule above.
+* Three limitations are stated on the tab and in the Data view: results are not offers;
+  multi-player floors and ceilings are approximate and assume independence; aggregate asset
+  value is not lineup value.
+
+### Evidence (appended after implementation, 2026-10-02)
+
+Nothing in the rule above was changed by what follows.
+
+**Package floor and ceiling against the production draw loop.** `scripts/trade_package_fixture.py`
+draws a synthetic 300-player league (gamma-per-game scores over a binomial count of remaining
+games, independent per player) through `simulate_vorp` with `allocate_with_bench` on
+`redraft-12`, 4,000 draws, publishes each player's fields rounded as production rounds them, and
+records the true P10/P90 of 160 pairs and 160 triples from the joint draws — and from draws
+shuffled per member, to isolate independence. `web/tests/trade.test.ts` holds the engine to it;
+`tests/unit/test_trade_package_fixture.py` regenerates it byte for byte.
+
+| | mean \|err\| P10 | mean \|err\| P90 | max \|err\| | mean width | summed P90s instead |
+|---|---|---|---|---|---|
+| pairs | 0.97 | 0.71 | 4.43 | 94.8 | 18.7 |
+| triples | 1.20 | 0.98 | 5.50 | 116.7 | 40.3 |
+
+The independent-draw truth gives nearly the same errors (pairs 0.97/0.67, triples 1.21/0.90),
+so the shared replacement level costs little; P10 carries a ~−1 bias. Ceiling order agrees with
+the draws on > 97% of package pairs. Single players reproduce their published values exactly.
+This is approximation evidence on a synthetic league, not calibration of real outcomes.
+
+**Search.** On 4 seeded universes × 3 outgoing counts × 3 receive counts × 3–4 compositions ×
+3 presets × 3 ranges (> 400 queries), the pruned search returns exactly brute force's qualifying
+count and top 200, in order: recall 100%. With more than 200 qualifying, the kept 200 are brute
+force's best 200.
+
+**Interaction cost** (`web/tests/e2e/measure-trade.mjs`, Pixel 7 viewport, CPU throttled 4×,
+500 ROS rows a block with production-shaped values, 30 scenarios: five outgoing sets × receive
+1–3 × ±20/±50%): worst engine search 75 ms (88,179 qualifying triples), worst preset click to
+paint 131 ms, swap 97 ms, More targets 138 ms — all under the 200 ms target, so no worker. A
+pathological board where all 500 players are above replacement on a gentle slope yields 3.7M
+qualifying triples in about 120 ms unthrottled (≈ 0.5 s at 4×); the 4M visit cap bounds it,
+and a real board's ~170–220 positive players keep it far below.
+
+**Payload** (size model, `verify:budget`): Trade adds 11.0 kB (its chunk; 0 B data) against the
+new 25 kB budget; every older budget unchanged (first visit 294.8 kB / 61.6 kB data, Start/Sit
+54.9 kB, card 23.6 kB, repeat 0 B, redeploy 0 B). The entry bundle grew 2.6 kB gzip.
+
+**Rendered checks.** `capture-trade.mjs` at 1440/820/390/320: no horizontal overflow, no clipped
+or ellipsised number (a first version cut the 320px readout cells; fixed before commit by
+moving each difference under its number), and the active tab fully inside the row on every
+in-season tab. Two defects found by the existing suites and fixed: revealing the active tab with
+`scrollIntoView` moved Chrome's sequential-focus starting point, so a fresh page's first Tab
+skipped the skip link (the row is now scrolled by hand, only when the tab is out of view); and
+at 480–559px the six tabs overflowed by 16px with the full "Opportunity" (the short label now
+applies below 560px, so every width from 360px fits one row). `verify:board` on the in-season
+fixture checks every rendered package's value
+against the summed artifact bytes, band, count and eligibility (5 packages, 0 failures).

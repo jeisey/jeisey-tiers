@@ -599,7 +599,7 @@ filtered export keeps its fixed column list whatever a screen hides.
 Not "who is projected for more": that is a different question whenever two players' ranges
 differ and the matchup is not even, and it is the only one other sites answer. The tab sits
 second, after the rest-of-season board it is read against: `ROS tiers · Start/Sit ·
-Opportunity · Pick of the Week · Data`. State is `duel=00-0036389.00-0039164` (reader's order,
+Trade · Opportunity · Pick of the Week · Data` (Trade added by ADR-100). State is `duel=00-0036389.00-0039164` (reader's order,
 up to four, malformed or duplicate ids dropped and the URL rewritten) and `margin=-12` (an
 integer within ±40), so a call can be pasted into a league chat and reopened exactly.
 
@@ -696,6 +696,81 @@ pins the player's name and drops rank and opponent. The view is lazy-loaded. Bel
 *Why this week* reading keeps the median and the ceiling and drops the floor's headline and
 column (the floor stays on the deck card's range); context chips wrap. The same five widths
 are checked on fixtures and on a real build.
+
+### 6A.12 Trade (ADR-100)
+
+**The question: if I offer these players, which packages of the size I want are worth about the
+same over the rest of the season — and, among those, which give me the most value, the highest
+ceiling or the safest floor?** The tab sits third: `ROS tiers · Start/Sit · Trade · Opportunity ·
+Pick of the Week · Data`. Results are called **model-based targets**: combinations of assets to
+explore, possibly owned by different managers. One sentence beside the results says the tool
+cannot know rosters or whether anyone would accept; nothing prints an acceptance chance, a
+fairness verdict, a lineup gain or championship odds.
+
+#### 6A.12.1 Layout, top to bottom
+
+1. **You give** — removable chips (position tag, name opening the player card, roster badge,
+   expected value) and a combobox search over the block's published rows (eight suggestions,
+   best ROS rank first, players already given excluded, disabled at three). A link naming an id
+   the board does not hold shows *Not on this board* and counts for nothing; a long-absence or
+   reserve player can be offered, with the ADR-076 sentence.
+2. **Controls** — *Prefer* (ROS value · Highest ceiling · Highest floor; ROS value default),
+   *Players to receive* (1 · 2 · 3; 1 default, independent of how many are given), *Value
+   range* (±10 · ±20 · ±35 · ±50%; ±20 default) and *Positions* (one select per received
+   player: Any, QB, RB, WR, TE; all Any by default, so cross-position packages are the
+   default).
+3. **The shape line** — `Give 1 · Receive 2`, the roster spots it needs or frees, and the
+   composition in words. Never "parity".
+4. **Helper text** — the horizon from the published records ("Weeks 9–17 (9 weeks), including
+   weeks 15–17, where most fantasy playoffs fall; NFL week 18 is not counted. There is no
+   playoff-only projection.") and that floor and ceiling are percentiles of *total*
+   remaining-season value, not weekly consistency or one game's upside.
+5. **Your side** — a readout grid: value, floor, ceiling, projected points, and the value range
+   in points. The active preset's cell carries the accent underline.
+6. **Up to five packages** — each a chamfered panel: rank, members (position tag, name opening
+   the player card, team, badge, expected value), a readout grid (Value, Floor, Ceiling,
+   Proj. pts, each with its signed difference from your side; Top asset vs yours; Roster
+   spots), and one numerical sentence of why it qualifies ("Value 75.1 is +12.2 (+19.4%)
+   against your 63.0, inside ±20%. Smallest piece carries 23% (at least 15% required). #1 of
+   13 by ROS value."). Two- and three-player floors and ceilings print with `~`. Actions:
+   **Keep** and **Swap**.
+7. **More targets · Reset**, and a count: packages that qualify, how many of the best 200 are
+   explored, how many dealt. When the dealt order is used up the tab says so and how to
+   broaden.
+8. **Kept** (up to three) — the same panel, with *Remove*; a kept package that stops
+   qualifying after a control or build change stays, marked *No longer qualifies* with every
+   reason.
+9. **Not targets** — a disclosure listing positive-value players kept out (long absence with
+   "has not appeared for N weeks"; roster code), and the count at or below replacement.
+10. **How targets are found** — a short disclosure; the full method is in Data.
+
+#### 6A.12.2 States
+
+- **Nothing given**: one line inviting one to three players.
+- **At or below replacement** (`V_out ≤ 0`): "Nothing to trade for" with the value, and no
+  search.
+- **Unpriced outgoing player**: a warning naming him.
+- **No package qualifies**: the band in points and the share rule, then explicit buttons —
+  *Widen to ±N%*, *Any positions*, *Receive k* — and nothing widened automatically.
+- **A link made on another board or other settings**: re-dealt from the start, with a one-line
+  notice.
+- **No rest-of-season block for the chosen presets**, or no in-season bundle: a notice; every
+  other board is unaffected.
+
+#### 6A.12.3 URL, keyboard, width
+
+State is `give`, `goal`, `get`, `range`, `comp`, `keep`, `shown`, `dealt` and `stamp`
+(ADR-100 §8), defaults omitted; every action pushes a history entry, so Back undoes a swap.
+The combobox is keyboard-complete (type, arrows, Enter, Escape); results changes are announced
+in a polite live region. Below 768px the packages' readout grid is three columns with each
+difference under its number (never cut off), and Keep/Swap span the panel at 40px. Checked at
+1440, 820, 390 and 320px (`web/tests/e2e/trade.spec.ts`, `capture-trade.mjs`).
+
+**The tab row** has six in-season tabs. It scrolls sideways rather than shrinking text or
+targets (every tab stays 44px tall): the active tab is scrolled into view whenever it changes, a
+focused tab is scrolled into view, an arrow key moves focus with the selection, and a solid
+`‹` / `›` marker at either edge says there is more row. Below 560px *Opportunity* prints as
+*Opp*, its accessible name still "Opportunity". Reduced motion makes the scroll instant.
 
 ## 7. Tables
 

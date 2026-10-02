@@ -700,6 +700,7 @@ dictionary every slice resolves `display_name` through — comes with the first 
 | both | Data | `arbitrage/<block>`, `tiers/<block>`, `player_status/all` | metadata, degradations, the block's market rows for its counts |
 | in-season | ROS tiers (`ros`, the in-season default) | `ros_tiers/<block>` | every ROS field, including `current_status` for the badge and `long_absence` with the manifest's disclosures |
 | in-season | Start/Sit | `weekly_projections/<scoring>`, `weekly_context/all` | quantiles, drivers, explanation accounts, game, opponent, injury; each team's venue, forecast, listed players, typical and this-week lines (ADR-099); the weekly block's thresholds from the manifest |
+| in-season | Trade (ADR-100) | `ros_tiers/<block>` — the slice the default view already loaded | expected VORP, the five VORP quantiles, expected points, `remaining_horizon_weeks`, `long_absence`, `current_status`, identity; the lazily loaded engine (`data/trade.ts`) does the rest in the browser |
 | in-season | Opportunity | `ros_tiers/<block>`, `inseason_opportunity/<block>`, `player_usage/all`, `behavior_trend_series/all`, `team_matchups/all` | the board's own fields (its copied ROS fields joined from the ROS slice); the leading role metric's change and weekly series; add momentum and its last point; the next game |
 | in-season | Pick of the Week | as Opportunity, plus `player_headshots/all` | the same readings, and the four picks' portrait addresses |
 | both | player card | `card/<block>/<bucket>` — one file | the player's own row in every per-player artifact: tier, arbitrage, market history, projection, status, portrait, ROS, Opportunity, next-game distribution, usage, momentum |
@@ -714,5 +715,6 @@ series outside the Opportunity tabs — are never downloaded by a board.
 
 Measured on the week-4 board (level-5 gzip, as Pages serves it): a first in-season visit is 285 kB
 in 10 requests, 60 kB of it data; Start/Sit adds 34 kB, a card 20 kB, the Opportunity Board
-81 kB; a repeat visit to the same deploy costs nothing (ADR-098).
+81 kB; a repeat visit to the same deploy costs nothing (ADR-098). The Trade tab adds only its
+code — 11.0 kB on the size model, no data (ADR-100).
 

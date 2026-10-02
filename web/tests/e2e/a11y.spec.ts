@@ -109,6 +109,15 @@ test.describe("automated scan", () => {
       ".h2h",
     ],
     ["start/sit with no projections", "/scenario/in-season-no-signals/?view=startsit", ".notice"],
+    // Trade (ADR-100): a combobox, segmented controls, readout grids and a kept shelf.
+    ["trade, empty", "/scenario/in-season/?view=trade", ".trade-picker"],
+    ["trade, give one receive two", "/scenario/in-season/?view=trade&give=00-0000001&get=2&range=35", ".trade-results"],
+    [
+      "trade, a kept package that no longer fits",
+      "/scenario/in-season/?view=trade&give=00-0000001&get=3&range=50&keep=00-0000012.00-0000013",
+      ".trade-kept",
+    ],
+    ["trade, nothing qualifies", "/scenario/in-season/?view=trade&give=00-0000001&get=3&range=10&comp=qb.qb.qb", ".trade-none"],
   ] as const) {
     test(`${name} has no WCAG A or AA violations`, async ({ page }) => {
       await page.goto(path);
