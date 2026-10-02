@@ -73,6 +73,19 @@ on:
     # description of the same build, and the two would drift.
     - cron: "40 12 * * 2"
       timezone: America/New_York
+    # The news-reactive slots (ADR-099, docs/OPERATIONS.md 16.8). Injury designations move on
+    # Thursday and Friday afternoons (Friday's report carries the final game statuses for
+    # Sunday) and a Sunday-morning forecast is the one nearest a 1 pm kickoff. These runs are
+    # `refresh_kind=news`: they capture ONLY the kickoff forecasts and the injury report —
+    # MFL's player database is asked for at most once a day (ADR-017) and Sleeper's status
+    # map is captured once a day — and re-infer the weekly layer offline from the committed
+    # models. Nothing is ever retrained in a workflow.
+    - cron: "47 17 * * 4"
+      timezone: America/New_York
+    - cron: "47 17 * * 5"
+      timezone: America/New_York
+    - cron: "23 10 * * 0"
+      timezone: America/New_York
 
 # Least privilege at the top; exactly two jobs elevate, and only in the direction they need
 # (docs/SECURITY_LICENSE.md section 3). Note what `capture` does NOT need: it writes to the
@@ -116,6 +129,9 @@ jobs:
       appended: ${{ steps.persist.outputs.appended }}
       repository: ${{ steps.store.outputs.repository }}
       season: ${{ steps.plan.outputs.season }}
+      kind: ${{ steps.plan.outputs.kind }}
+      forecast_capture: ${{ steps.forecasts.outcome }}
+      injury_capture: ${{ steps.injuries.outcome }}
       mode: ${{ steps.season.outputs.mode }}
       season_state: ${{ steps.season.outputs.state }}
       snapshot_week: ${{ steps.season.outputs.snapshot_week }}
@@ -164,6 +180,12 @@ jobs:
           cohorts="${{ inputs.cohorts }}"
           echo "season=${season}" >> "$GITHUB_OUTPUT"
           echo "cohorts=${cohorts:-production}" >> "$GITHUB_OUTPUT"
+          # A news-reactive slot (ADR-099) captures the game-day sources only.
+          kind=daily
+          case "${{ github.event.schedule }}" in
+            "47 17 * * 4"|"47 17 * * 5"|"23 10 * * 0") kind=news ;;
+          esac
+          echo "kind=${kind}" >> "$GITHUB_OUTPUT"
 
       # Which product the site is, decided by the schedule rather than by this file. The
       # capture job asks because the two modes want different sources: add/drop behaviour is
@@ -199,7 +221,7 @@ jobs:
       # above; this step calls only the two trending endpoints, which is two requests against
       # a documented ceiling of 1000 per minute.
       - name: Capture Sleeper add/drop behaviour
-        if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
+        if: ${{ inputs.skip_capture != true && steps.plan.outputs.kind != 'news' && steps.season.outputs.mode == 'in_season' }}
         continue-on-error: true
         run: |
           set -euo pipefail
@@ -215,7 +237,7 @@ jobs:
       # required in both modes (ADR-095).
       - name: Capture the market snapshot
         id: market
-        if: ${{ inputs.skip_capture != true }}
+        if: ${{ inputs.skip_capture != true && steps.plan.outputs.kind != 'news' }}
         continue-on-error: ${{ steps.season.outputs.mode == 'in_season' }}
         env:
           # ADR-017: only the registered User-Agent is transmitted. The public ADP export
@@ -244,7 +266,7 @@ jobs:
       # is an enrichment: FFC being down must degrade the board to one market, never fail the
       # refresh that publishes the intrinsic tiers.
       - name: Capture the Fantasy Football Calculator market
-        if: ${{ inputs.skip_capture != true }}
+        if: ${{ inputs.skip_capture != true && steps.plan.outputs.kind != 'news' }}
         continue-on-error: true
         run: |
           set -euo pipefail
@@ -255,13 +277,40 @@ jobs:
             --pause 1.5 | tee ffc.log
 
       - name: Capture current player status
-        if: ${{ inputs.skip_capture != true }}
+        if: ${{ inputs.skip_capture != true && steps.plan.outputs.kind != 'news' }}
         run: |
           set -euo pipefail
           uv run ffdraft capture-status \
             --season "${{ steps.plan.outputs.season }}" \
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" | tee status.log
+
+      # ADR-099. The kickoff forecast for every game in the next eight days, fetched once per
+      # venue (NWS inside the U.S., Open-Meteo elsewhere), and the season's injury report with
+      # per-week row digests, so a later revision of a completed week is visible. Both are
+      # context and shadow-model inputs, never a gate: a failed provider is reported, and
+      # missing values are published as unknowns.
+      - name: Capture the kickoff forecasts
+        id: forecasts
+        if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-forecasts \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee forecasts.log
+
+      - name: Capture the injury report
+        id: injuries
+        if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-injury-report \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee injuries.log
 
       # The store is re-hashed against its own manifests BEFORE anything is pushed, so a
       # corrupt or truncated write is caught in the workspace rather than committed. This is
@@ -306,13 +355,16 @@ jobs:
             echo "| Season | \`${{ steps.plan.outputs.season }}\` |"
             echo "| Cohorts | \`${{ steps.plan.outputs.cohorts }}\` |"
             echo "| Product mode | \`${{ steps.season.outputs.mode }}\` |"
+            echo "| Refresh kind | \`${{ steps.plan.outputs.kind }}\` |"
+            echo "| Forecast capture | \`${{ steps.forecasts.outcome || 'not run' }}\` |"
+            echo "| Injury-report capture | \`${{ steps.injuries.outcome || 'not run' }}\` |"
             echo "| MFL capture outcome | \`${{ steps.market.outcome || 'not run' }}\` |"
             echo "| Store | \`${{ steps.store.outputs.repository }}@${{ steps.store.outputs.branch }}\` |"
             echo "| Store head before | \`${{ steps.store.outputs.commit }}\` |"
             echo "| Store head after | \`${{ steps.persist.outputs.commit || 'unchanged' }}\` |"
             echo "| Appended | \`${{ steps.persist.outputs.appended || 'no' }}\` |"
             echo
-            for log in snapshot.log ffc.log status.log behavior.log; do
+            for log in snapshot.log ffc.log status.log behavior.log forecasts.log injuries.log; do
               if [ -f "${log}" ]; then
                 echo "<details><summary>${log}</summary>"
                 echo
@@ -347,6 +399,10 @@ jobs:
       ros_through_week: ${{ steps.facts.outputs.ros_through_week }}
       weekly_rows: ${{ steps.facts.outputs.weekly_rows }}
       weekly_target_week: ${{ steps.facts.outputs.weekly_target_week }}
+      weekly_context_rows: ${{ steps.facts.outputs.weekly_context_rows }}
+      weekly_explained: ${{ steps.facts.outputs.weekly_explained }}
+      shadow_status: ${{ steps.facts.outputs.shadow_status }}
+      shadow_rows: ${{ steps.facts.outputs.shadow_rows }}
     steps:
       - uses: actions/checkout@v4
 
@@ -384,9 +440,16 @@ jobs:
           ref: ${{ needs.capture.outputs.store_commit }}
           persist-credentials: "false"
 
+      # A news-reactive run (ADR-099) exists to read the afternoon's injury report, so its
+      # key is the UTC hour: a day key would hand it the morning's cached report.
       - name: Stamp the cache day
         id: day
-        run: echo "utc=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ needs.capture.outputs.kind }}" = "news" ]; then
+            echo "utc=$(date -u +%FT%H)" >> "$GITHUB_OUTPUT"
+          else
+            echo "utc=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+          fi
 
       # nflverse downloads are cached per UTC day, and there are deliberately NO restore-keys.
       # The date is part of the key, so a hit can only ever be the same day's release: a hit
@@ -489,7 +552,25 @@ jobs:
             --store market-data \
             --preseason-board web/public/data/tiers.json \
             --full-board "${RUNNER_TEMP}/ros-full-board.json" \
+            --shadow-out weekly-shadow/weekly-shadow.json \
             --git-sha "${GITHUB_SHA::7}" | tee build-ros.log
+
+      # ADR-099. The private weekly shadow record (v1 and the shadow v2 side by side, with
+      # every pregame input) goes to the retained store, never to the site. This job holds no
+      # store credential, so it hands the file to `retain-shadow` as a one-day workflow
+      # artifact. It carries model outputs and inputs derived from public sources (nflverse,
+      # NWS, Open-Meteo) only — no vendor payload — and nothing reads it but that job.
+      #
+      # The file is written inside the workspace because `hashFiles` sees nothing outside it;
+      # it sits beside, never inside, the published `web/` tree and the build record.
+      - name: Hand the weekly shadow record to the retaining job
+        if: ${{ hashFiles('weekly-shadow/weekly-shadow.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-shadow-${{ github.run_id }}
+          path: weekly-shadow/weekly-shadow.json
+          if-no-files-found: ignore
+          retention-days: 1
 
       # ---- The served layout (ADR-098) ----------------------------------------------------
       #
@@ -578,6 +659,23 @@ jobs:
           else:
               print("weekly_rows=0")
               print("weekly_target_week=")
+          # ADR-099: the game-day context, the explanations and the private shadow's summary.
+          context = data / "weekly_context.json"
+          print(f"weekly_context_rows={count('weekly_context.json') if context.is_file() else 0}")
+          if weekly.is_file():
+              explained = sum(
+                  1
+                  for record in json.loads(weekly.read_text(encoding="utf-8"))["records"]
+                  if record.get("explanation")
+              )
+              print(f"weekly_explained={explained}")
+          else:
+              print("weekly_explained=0")
+          shadow = {}
+          if ros_meta.is_file():
+              shadow = (json.loads(ros_meta.read_text(encoding="utf-8")).get("weekly") or {}).get("shadow") or {}
+          print(f"shadow_status={shadow.get('status', 'absent')}")
+          print(f"shadow_rows={shadow.get('pregame', 0)}")
           PY
 
       # ---- Frontend -----------------------------------------------------------------------
@@ -726,6 +824,68 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------------------
+  # 2b. Retain the weekly shadow record (ADR-099). The prospective holdout counts a game only
+  #     if a refresh retained both models' predictions BEFORE kickoff, so this runs right after
+  #     the build, whether or not the site deploys. It writes to the private store only.
+  # ---------------------------------------------------------------------------------------
+  retain-shadow:
+    name: Retain the weekly shadow record
+    needs: [capture, build]
+    if: ${{ always() && needs.build.result != 'skipped' && needs.build.outputs.shadow_status == 'shadow' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      retained: ${{ steps.persist.outputs.retained }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==${UV_VERSION}"
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Download the shadow record
+        uses: actions/download-artifact@v4
+        with:
+          name: weekly-shadow-${{ github.run_id }}
+          path: shadow
+
+      - name: Check out the retained store
+        id: store
+        uses: ./.github/actions/market-data-store
+        with:
+          token: ${{ secrets.MARKET_DATA_REPO_TOKEN }}
+          path: market-data
+          persist-credentials: "true"
+
+      - name: Append, validate and push
+        id: persist
+        run: |
+          set -euo pipefail
+          uv run ffdraft retain-weekly-shadow --file shadow/weekly-shadow.json --store market-data
+          uv run ffdraft validate-market-history market-data \
+            --season "${{ needs.capture.outputs.season }}"
+          cd market-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "retained=unchanged" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "data(gameday): retain the weekly shadow record from ${GITHUB_SHA::7}"
+          git pull --rebase origin "${{ steps.store.outputs.branch }}"
+          git push origin "HEAD:${{ steps.store.outputs.branch }}"
+          echo "retained=yes" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------------------
   # 3. Deploy. Reached only when every gate above passed. This is the whole last-known-good
   #    mechanism: there is no step anywhere that clears or replaces the live site first, so
   #    "no deploy" and "previous site stays live" are the same event.
@@ -772,7 +932,7 @@ jobs:
   # ---------------------------------------------------------------------------------------
   report:
     name: Refresh summary
-    needs: [capture, build, deploy]
+    needs: [capture, build, retain-shadow, deploy]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -821,6 +981,14 @@ jobs:
             --fact "ros_rows=${{ needs.build.outputs.ros_rows || '0' }}" \
             --fact "weekly_rows=${{ needs.build.outputs.weekly_rows || '0' }}" \
             --fact "weekly_target_week=${{ needs.build.outputs.weekly_target_week || 'not published' }}" \
+            --fact "refresh_kind=${{ needs.capture.outputs.kind }}" \
+            --fact "forecast_capture=${{ needs.capture.outputs.forecast_capture || 'not run' }}" \
+            --fact "injury_capture=${{ needs.capture.outputs.injury_capture || 'not run' }}" \
+            --fact "weekly_context_rows=${{ needs.build.outputs.weekly_context_rows || '0' }}" \
+            --fact "weekly_explained=${{ needs.build.outputs.weekly_explained || '0' }}" \
+            --fact "shadow_status=${{ needs.build.outputs.shadow_status || 'absent' }}" \
+            --fact "shadow_rows=${{ needs.build.outputs.shadow_rows || '0' }}" \
+            --fact "shadow_retained=${{ needs.retain-shadow.outputs.retained || 'no' }}" \
             --fact "deploy_result=${DEPLOY}" \
             --fact "forced_failure=${{ inputs.force_validation_failure == true && 'yes — deploy must be skipped' || '' }}" \
             --fact "pages_url=${{ needs.deploy.outputs.page_url || 'not deployed — previous production remains live' }}"

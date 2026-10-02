@@ -1,0 +1,240 @@
+[
+  {
+    "venue": "BUF00-2026",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=42.7730&longitude=-78.7922&hourly=temperature_2m%2Cwind_speed_10m%2Cprecipitation%2Cprecipitation_probability%2Cwind_gusts_10m&timezone=GMT&forecast_days=16&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
+    "status": 200,
+    "latitude": 42.764954,
+    "longitude": -78.79994,
+    "elevation": 231.0,
+    "generationtime_ms": 0.37384033203125,
+    "timezone": "GMT",
+    "hourly_units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%",
+      "wind_gusts_10m": "mp/h"
+    },
+    "first_time": "2026-10-01T00:00",
+    "last_time": "2026-10-16T23:00",
+    "hours": 384,
+    "headers": {
+      "cache-control": null,
+      "date": "Thu, 01 Oct 2026 16:54:51 GMT",
+      "last-modified": null
+    },
+    "kickoffs": [
+      {
+        "game_id": "2026_04_NE_BUF",
+        "kickoff_utc": "2026-10-04T17:00:00+00:00",
+        "hour": "2026-10-04T17:00",
+        "temperature_2m": 67.6,
+        "wind_speed_10m": 8.2,
+        "precipitation": 0.0,
+        "precipitation_probability": 2,
+        "wind_gusts_10m": 12.1
+      }
+    ]
+  },
+  {
+    "venue": "CHI98",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=41.8625&longitude=-87.6167&hourly=temperature_2m%2Cwind_speed_10m%2Cprecipitation%2Cprecipitation_probability%2Cwind_gusts_10m&timezone=GMT&forecast_days=16&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
+    "status": 200,
+    "latitude": 41.879498,
+    "longitude": -87.64974,
+    "elevation": 194.0,
+    "generationtime_ms": 0.2548694610595703,
+    "timezone": "GMT",
+    "hourly_units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%",
+      "wind_gusts_10m": "mp/h"
+    },
+    "first_time": "2026-10-01T00:00",
+    "last_time": "2026-10-16T23:00",
+    "hours": 384,
+    "headers": {
+      "cache-control": null,
+      "date": "Thu, 01 Oct 2026 16:54:57 GMT",
+      "last-modified": null
+    },
+    "kickoffs": [
+      {
+        "game_id": "2026_04_NYJ_CHI",
+        "kickoff_utc": "2026-10-04T17:00:00+00:00",
+        "hour": "2026-10-04T17:00",
+        "temperature_2m": 69.6,
+        "wind_speed_10m": 6.0,
+        "precipitation": 0.0,
+        "precipitation_probability": 0,
+        "wind_gusts_10m": 8.1
+      }
+    ]
+  },
+  {
+    "venue": "LON00",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=51.5556&longitude=-0.2794&hourly=temperature_2m%2Cwind_speed_10m%2Cprecipitation%2Cprecipitation_probability%2Cwind_gusts_10m&timezone=GMT&forecast_days=16&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
+    "status": 200,
+    "latitude": 51.550354,
+    "longitude": -0.27337646,
+    "elevation": 47.0,
+    "generationtime_ms": 0.5630254745483398,
+    "timezone": "GMT",
+    "hourly_units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%",
+      "wind_gusts_10m": "mp/h"
+    },
+    "first_time": "2026-10-01T00:00",
+    "last_time": "2026-10-16T23:00",
+    "hours": 384,
+    "headers": {
+      "cache-control": null,
+      "date": "Thu, 01 Oct 2026 16:55:14 GMT",
+      "last-modified": null
+    },
+    "kickoffs": [
+      {
+        "game_id": "2026_06_HOU_JAX",
+        "kickoff_utc": "2026-10-18T13:30:00+00:00",
+        "out_of_range": true
+      }
+    ]
+  },
+  {
+    "venue": "LON02",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=51.6044&longitude=-0.0664&hourly=temperature_2m%2Cwind_speed_10m%2Cprecipitation%2Cprecipitation_probability%2Cwind_gusts_10m&timezone=GMT&forecast_days=16&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
+    "status": 200,
+    "latitude": 51.600163,
+    "longitude": -0.06819153,
+    "elevation": 13.0,
+    "generationtime_ms": 2.1271705627441406,
+    "timezone": "GMT",
+    "hourly_units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%",
+      "wind_gusts_10m": "mp/h"
+    },
+    "first_time": "2026-10-01T00:00",
+    "last_time": "2026-10-16T23:00",
+    "hours": 384,
+    "headers": {
+      "cache-control": null,
+      "date": "Thu, 01 Oct 2026 16:55:15 GMT",
+      "last-modified": null
+    },
+    "kickoffs": [
+      {
+        "game_id": "2026_04_IND_WAS",
+        "kickoff_utc": "2026-10-04T13:30:00+00:00",
+        "hour": "2026-10-04T13:00",
+        "temperature_2m": 64.2,
+        "wind_speed_10m": 6.0,
+        "precipitation": 0.0,
+        "precipitation_probability": 1,
+        "wind_gusts_10m": 13.4
+      },
+      {
+        "game_id": "2026_05_PHI_JAX",
+        "kickoff_utc": "2026-10-11T13:30:00+00:00",
+        "hour": "2026-10-11T13:00",
+        "temperature_2m": 55.4,
+        "wind_speed_10m": 11.2,
+        "precipitation": 0.0,
+        "precipitation_probability": 7,
+        "wind_gusts_10m": 28.4
+      }
+    ]
+  },
+  {
+    "venue": "MAD01",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=40.4531&longitude=-3.6883&hourly=temperature_2m%2Cwind_speed_10m%2Cprecipitation%2Cprecipitation_probability%2Cwind_gusts_10m&timezone=GMT&forecast_days=16&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
+    "status": 200,
+    "latitude": 40.4375,
+    "longitude": -3.6875,
+    "elevation": 716.0,
+    "generationtime_ms": 0.35893917083740234,
+    "timezone": "GMT",
+    "hourly_units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%",
+      "wind_gusts_10m": "mp/h"
+    },
+    "first_time": "2026-10-01T00:00",
+    "last_time": "2026-10-16T23:00",
+    "hours": 384,
+    "headers": {
+      "cache-control": null,
+      "date": "Thu, 01 Oct 2026 16:55:42 GMT",
+      "last-modified": null
+    },
+    "kickoffs": []
+  },
+  {
+    "venue": "MEX00",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=19.3031&longitude=-99.1506&hourly=temperature_2m%2Cwind_speed_10m%2Cprecipitation%2Cprecipitation_probability%2Cwind_gusts_10m&timezone=GMT&forecast_days=16&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
+    "status": 200,
+    "latitude": 19.29701,
+    "longitude": -99.08911,
+    "elevation": 2245.0,
+    "generationtime_ms": 0.3610849380493164,
+    "timezone": "GMT",
+    "hourly_units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%",
+      "wind_gusts_10m": "mp/h"
+    },
+    "first_time": "2026-10-01T00:00",
+    "last_time": "2026-10-16T23:00",
+    "hours": 384,
+    "headers": {
+      "cache-control": null,
+      "date": "Thu, 01 Oct 2026 16:55:44 GMT",
+      "last-modified": null
+    },
+    "kickoffs": []
+  },
+  {
+    "venue": "PAR00",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=48.9244&longitude=2.3600&hourly=temperature_2m%2Cwind_speed_10m%2Cprecipitation%2Cprecipitation_probability%2Cwind_gusts_10m&timezone=GMT&forecast_days=16&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
+    "status": 200,
+    "latitude": 48.92,
+    "longitude": 2.3599997,
+    "elevation": 33.0,
+    "generationtime_ms": 0.5617141723632812,
+    "timezone": "GMT",
+    "hourly_units": {
+      "time": "iso8601",
+      "temperature_2m": "\u00b0F",
+      "wind_speed_10m": "mp/h",
+      "precipitation": "inch",
+      "precipitation_probability": "%",
+      "wind_gusts_10m": "mp/h"
+    },
+    "first_time": "2026-10-01T00:00",
+    "last_time": "2026-10-16T23:00",
+    "hours": 384,
+    "headers": {
+      "cache-control": null,
+      "date": "Thu, 01 Oct 2026 16:55:45 GMT",
+      "last-modified": null
+    },
+    "kickoffs": []
+  }
+]

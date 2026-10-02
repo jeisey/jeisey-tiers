@@ -93,6 +93,8 @@ _IN_SEASON_ARTIFACTS = frozenset(
         "team_matchups",
         # ADR-096. Written by `run_ros_build` after the signal layer.
         "weekly_projections",
+        # ADR-099. Written with the weekly layer, and withheld with it.
+        "weekly_context",
     },
 )
 
@@ -190,6 +192,7 @@ def validate_artifact_directory(
     gate.extend(_behavior_series_cross_checks(envelopes))
     gate.extend(_signal_cross_checks(envelopes))
     gate.extend(_weekly_cross_checks(envelopes))
+    gate.extend(_weekly_context_cross_checks(envelopes))
     if envelopes:
         gate.extend(validate_serving_layout(directory, envelopes, required=require_serving))
     if not envelopes:
@@ -354,6 +357,8 @@ def _semantic_checks(
             return _headshot_checks(records, stage)
         case "weekly_projections":
             return _weekly_checks(records, stage)
+        case "weekly_context":
+            return weekly_context_checks(records, stage)
     return []
 
 
@@ -392,6 +397,7 @@ def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qua
     crossing: list[str] = []
     unclosed: list[str] = []
     shape: list[str] = []
+    unexplained: list[str] = []
     for record in records:
         label = f"{record.get('player_id')}/{record.get('scoring_preset')}"
         if int(record.get("target_week", 0)) != int(record.get("through_week", 0)) + 1:
@@ -417,8 +423,12 @@ def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qua
         elif state != "bye" and len(carried) != 4:
             shape.append(f"{label}: playing but missing a block")
         quantiles = record.get("quantiles")
+        explanation = record.get("explanation")
+        if (quantiles is None) != (explanation is None):
+            shape.append(f"{label}: an explanation exactly when there is a distribution")
         if quantiles is None:
             continue
+        unexplained.extend(_explanation_problems(label, explanation, quantiles))
         values = [float(quantiles[key]) for key in _WEEKLY_QUANTILE_KEYS]
         if any(later < earlier for earlier, later in zip(values, values[1:], strict=False)):
             crossing.append(label)
@@ -436,6 +446,11 @@ def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qua
             "a driver account does not sum to the median it explains",
         ),
         ("weekly.record_shape", shape, "a weekly record's blocks disagree with its state"),
+        (
+            "weekly.explanation_account_closes",
+            unexplained,
+            "a typical-week account does not close on the quantile it explains (ADR-099)",
+        ),
     ):
         if found:
             checks.append(
@@ -460,6 +475,185 @@ def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qua
             ),
         )
     return checks
+
+
+#: The levels a typical-week account explains, and its parts (``typical_week_shapley_v1``).
+_EXPLAINED_KEYS = ("q10", "q50", "q90")
+
+
+def _explanation_problems(
+    label: str,
+    explanation: Mapping[str, Any] | None,
+    quantiles: Mapping[str, Any],
+) -> list[str]:
+    """``typical + terms + calibration + rearrangement == quantile`` at every explained level.
+
+    Two decimals each, so the parts may differ from the published quantile by rounding only.
+    The calibration term is the same conformal shift in both readings and must be exactly 0.
+    """
+    if explanation is None:
+        return []
+    problems: list[str] = []
+    for key in _EXPLAINED_KEYS:
+        account = explanation.get(key)
+        if account is None:
+            problems.append(f"{label}: no {key} account")
+            continue
+        if float(account.get("calibration", 0.0)) != 0.0:
+            problems.append(f"{label}: {key} calibration term is {account.get('calibration')}")
+        total = (
+            float(account["typical"])
+            + sum(float(value) for value in account["terms"].values())
+            + float(account["calibration"])
+            + float(account["rearrangement"])
+        )
+        if abs(total - float(quantiles[key])) > _WEEKLY_DRIVER_TOLERANCE:
+            problems.append(f"{label}: {key} parts sum to {total:.2f}, quantile {quantiles[key]}")
+    return problems
+
+
+#: What a published forecast reading may say, and which statuses carry numbers.
+_WEATHER_STATUSES = frozenset(
+    {
+        "ok",
+        "roof_unknown",
+        "indoors",
+        "unavailable",
+        "stale",
+        "out_of_range",
+        "implausible",
+        "no_venue",
+    },
+)
+_WEATHER_WITH_NUMBERS = frozenset({"ok", "roof_unknown"})
+#: A venue's fixed roof type -> the ``game_indoors`` the projection must read there.
+_FIXED_ROOF_INDOORS: Mapping[str, float] = {"open": 0.0, "dome": 1.0}
+_WEATHER_NUMBERS = ("wind_mph", "gust_mph", "temp_f", "precip_probability", "precip_in")
+
+
+def weekly_context_checks(
+    records: Sequence[Mapping[str, Any]],
+    stage: str,
+) -> list[QualityCheck]:
+    """``weekly_gameday_context_v1`` rules a schema cannot state (ADR-099)."""
+    sides: list[str] = []
+    weather: list[str] = []
+    lineup: list[str] = []
+    arithmetic: list[str] = []
+    roofs: list[str] = []
+    by_game: dict[str, list[Mapping[str, Any]]] = {}
+    for record in records:
+        team = str(record.get("team"))
+        if record.get("team") == record.get("opponent"):
+            sides.append(f"{team}: plays itself")
+        by_game.setdefault(str(record.get("game_id")), []).append(record)
+        reading = record.get("weather") or {}
+        status = reading.get("status")
+        if status not in _WEATHER_STATUSES:
+            weather.append(f"{team}: status {status!r}")
+        elif status not in _WEATHER_WITH_NUMBERS and any(
+            reading.get(key) is not None for key in _WEATHER_NUMBERS
+        ):
+            weather.append(f"{team}: {status} but carries forecast numbers")
+        elif status == "ok" and (
+            reading.get("wind_mph") is None
+            or reading.get("temp_f") is None
+            or reading.get("retrieved_at_utc") is None
+        ):
+            weather.append(f"{team}: ok without wind, temperature or retrieval time")
+        venue = record.get("venue")
+        if venue is not None and venue.get("roof_type") == "dome" and status != "indoors":
+            weather.append(f"{team}: a dome reads {status}")
+        unsettled = venue is not None and venue.get("roof_type") in ("retractable", "unverified")
+        if unsettled and status == "ok":
+            weather.append(f"{team}: weather cannot be ok when the roof is not settled")
+        # What the projection reads must be what the venue is, where the venue is certain:
+        # nflverse files open-air stadiums abroad as "dome" (ADR-099, context.py).
+        roof_type = str((venue or {}).get("roof_type"))
+        fixed = _FIXED_ROOF_INDOORS.get(roof_type)
+        read = (record.get("roof") or {}).get("model_indoors")
+        this_week = (record.get("this_week") or {}).get("indoors")
+        if fixed is not None and (read is None or float(read) != fixed):
+            roofs.append(f"{team}: reads indoors={read} at a venue whose roof is {roof_type}")
+        if read != this_week:
+            roofs.append(f"{team}: roof.model_indoors {read} != this_week.indoors {this_week}")
+        block = record.get("lineup") or {}
+        listed = list(block.get("listed") or ())
+        if listed and not block.get("report_final"):
+            lineup.append(f"{team}: lists designations on a report it calls not final")
+        if any(entry.get("designation") not in _LISTED_DESIGNATIONS for entry in listed):
+            lineup.append(f"{team}: lists a player without a game designation")
+        week = record.get("this_week") or {}
+        total, margin, points = (
+            week.get("total_line"),
+            week.get("team_margin"),
+            week.get("team_points"),
+        )
+        if (
+            total is not None
+            and margin is not None
+            and points is not None
+            and abs((float(total) + float(margin)) / 2.0 - float(points)) > _IMPLIED_TOLERANCE
+        ):
+            arithmetic.append(f"{team}: implied {points} from total {total} margin {margin}")
+    for game_id, pair in by_game.items():
+        if len(pair) != 2:
+            sides.append(f"{game_id}: {len(pair)} side(s)")
+            continue
+        first, second = pair
+        if first.get("opponent") != second.get("team") or second.get("opponent") != first.get(
+            "team",
+        ):
+            sides.append(f"{game_id}: the two sides disagree on who plays whom")
+        if (first.get("venue") or {}).get("venue_id") != (second.get("venue") or {}).get(
+            "venue_id",
+        ):
+            sides.append(f"{game_id}: the two sides name different venues")
+    checks: list[QualityCheck] = []
+    for check_id, found, message in (
+        ("weekly_context.sides", sides, "both sides of a game must name each other and one venue"),
+        (
+            "weekly_context.weather_status",
+            weather,
+            "a forecast's numbers exist exactly when its status allows them",
+        ),
+        (
+            "weekly_context.lineup",
+            lineup,
+            "named absences come from a report with game statuses, one designation each",
+        ),
+        (
+            "weekly_context.implied_points",
+            arithmetic,
+            "this week's implied points must be (total + margin) / 2",
+        ),
+        (
+            "weekly_context.roof_agreement",
+            roofs,
+            "the roof the projection reads must be the venue's where its roof type is fixed",
+        ),
+    ):
+        if found:
+            checks.append(
+                QualityCheck.fail(
+                    check_id, stage=stage, message=message, observed="; ".join(found[:10])
+                ),
+            )
+    if not checks:
+        checks.append(
+            QualityCheck.ok(
+                "weekly_context.semantics",
+                stage=stage,
+                message="every game has two agreeing sides, forecasts carry numbers only when "
+                "usable, every named absence has a designation, and the roof read is the "
+                "venue's wherever the venue's roof is fixed",
+                observed=f"{len(records)} team record(s)",
+            ),
+        )
+    return checks
+
+
+_LISTED_DESIGNATIONS = frozenset({"Out", "Doubtful", "Questionable"})
 
 
 def _usage_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
@@ -2208,6 +2402,55 @@ def _weekly_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Qua
             stage="artifacts",
             message="every weekly projection belongs to a published player at the same cutoff",
             observed=f"{len(weekly.get('records', ()))} record(s)",
+        ),
+    ]
+
+
+def _weekly_context_cross_checks(
+    envelopes: Mapping[str, Mapping[str, Any]],
+) -> list[QualityCheck]:
+    """The game-day context describes the projections' week, from the same build (ADR-099).
+
+    It is written with the weekly layer and withheld with it; a context file without
+    projections, or from another build or week, would put last week's forecast beside this
+    week's numbers.
+    """
+    context = envelopes.get("weekly_context")
+    if context is None:
+        return []
+    weekly = envelopes.get("weekly_projections")
+    problems: list[str] = []
+    if weekly is None:
+        problems.append("weekly_context.json is present without weekly_projections.json")
+    else:
+        if context.get("build_id") != weekly.get("build_id"):
+            problems.append(f"build {context.get('build_id')} != {weekly.get('build_id')}")
+        weeks = {int(record["target_week"]) for record in weekly.get("records", ())}
+        other = sorted(
+            {
+                int(record["target_week"])
+                for record in context.get("records", ())
+                if int(record["target_week"]) not in weeks
+            },
+        )
+        if other:
+            problems.append(f"context weeks {other} not in the projections' {sorted(weeks)}")
+    if problems:
+        return [
+            QualityCheck.fail(
+                "cross_artifact.weekly_context_mismatch",
+                stage="artifacts",
+                message="the game-day context must describe the published projections' week",
+                observed="; ".join(problems),
+                expected="the same build and target week as weekly_projections.json",
+            ),
+        ]
+    return [
+        QualityCheck.ok(
+            "cross_artifact.weekly_context_mismatch",
+            stage="artifacts",
+            message="the game-day context describes the published projections' week",
+            observed=f"{len(context.get('records', ()))} team(s)",
         ),
     ]
 

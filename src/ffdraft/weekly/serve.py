@@ -41,6 +41,12 @@ from ffdraft.scoring.horizon import fantasy_horizon
 from ffdraft.timeutil import isoformat_utc
 from ffdraft.weekly.context import opponent_allowed, scored_position_rows, team_game_context
 from ffdraft.weekly.dataset import attach_game_and_opponent
+from ffdraft.weekly.explain import (
+    explain_frame,
+    opponent_reference,
+    published_explanation,
+    team_line_reference,
+)
 from ffdraft.weekly.frozen import (
     FEATURE_FAMILIES,
     WEEKLY_MODEL_VERSION,
@@ -48,6 +54,7 @@ from ffdraft.weekly.frozen import (
     WEEKLY_QUANTILE_LEVELS,
 )
 from ffdraft.weekly.model import WeeklyModel, quantile_columns
+from ffdraft.weekly.venues import VenueRegistry
 
 __all__ = ["WeeklyServeResult", "build_weekly_projection_records"]
 
@@ -58,11 +65,24 @@ LINE_COLUMNS: tuple[str, ...] = ("game_total_line", "game_team_margin", "game_te
 
 
 class WeeklyServeResult:
-    """The records plus a summary the metadata and the quality gate read."""
+    """The records plus a summary the metadata and the quality gate read.
 
-    def __init__(self, records: list[dict[str, Any]], summary: dict[str, Any]) -> None:
+    ``frame`` and ``quantiles`` are the playing rows exactly as the model read them and its
+    calibrated quantiles, for the private shadow record (ADR-099); never published.
+    """
+
+    def __init__(
+        self,
+        records: list[dict[str, Any]],
+        summary: dict[str, Any],
+        *,
+        frame: pl.DataFrame | None = None,
+        quantiles: np.ndarray | None = None,
+    ) -> None:
         self.records = records
         self.summary = summary
+        self.frame = frame
+        self.quantiles = quantiles
 
 
 def build_weekly_projection_records(
@@ -80,6 +100,7 @@ def build_weekly_projection_records(
     build_id: str,
     schema_version: str,
     injury_reports: Mapping[str, Mapping[str, Any]] | None = None,
+    venues: VenueRegistry | None = None,
 ) -> WeeklyServeResult:
     target_week = through_week + 1
     horizon = fantasy_horizon(season)
@@ -111,7 +132,9 @@ def build_weekly_projection_records(
     if frame.is_empty():
         return WeeklyServeResult([], {"target_week": target_week, "reason": "no_players"})
 
-    context = team_game_context(schedule, [season]).filter(pl.col("week") == target_week)
+    # The venue registry's verified fixed roof wins over the schedule's (context.py).
+    season_context = team_game_context(schedule, [season], venues=venues)
+    context = season_context.filter(pl.col("week") == target_week)
     scored = scored_position_rows(weekly, scoring, [season - 1, season])
     allowed = opponent_allowed(scored, season=season, through_week=through_week)
     playing = attach_game_and_opponent(
@@ -142,6 +165,16 @@ def build_weekly_projection_records(
 
     quantiles = model.predict(playing)
     drivers = model.drivers(playing)
+    # His typical week (typical_week_shapley_v1): the same player in an ordinary game for him,
+    # from his team's completed games and a league-average defence at this cutoff.
+    lines = team_line_reference(season_context, season=season, through_week=through_week)
+    explanations = explain_frame(
+        model,
+        playing,
+        lines=lines,
+        opponent_typical=opponent_reference(allowed),
+        team_column="serve_team",
+    )
     reports = injury_reports or {}
     records: list[dict[str, Any]] = []
     counts = {"upcoming": 0, "kicked_off": 0, "bye": 0, "lines_pending": 0, "unmodelled": 0}
@@ -155,14 +188,16 @@ def build_weekly_projection_records(
         state = "upcoming" if kickoff is None or kickoff > as_of else "kicked_off"
         counts[state] += 1
         rounded = [round(float(value), 2) for value in values]
+        published = dict(zip(_QUANTILE_KEYS, rounded, strict=True))
         records.append(
             _record(
                 row,
                 players=players,
                 state=state,
                 game=_game(row),
-                quantiles=dict(zip(_QUANTILE_KEYS, rounded, strict=True)),
+                quantiles=published,
                 drivers=_drivers(drivers[index], rounded[WEEKLY_QUANTILE_LEVELS.index(0.5)]),
+                explanation=published_explanation(explanations[index], published),
                 opponent=_opponent(row),
                 injury=reports.get(str(row["gsis_id"]) if row.get("gsis_id") else ""),
                 build_id=build_id,
@@ -213,7 +248,9 @@ def build_weekly_projection_records(
     lined = int(playing.filter(pl.col("game_total_line").is_not_null()).height)
     return WeeklyServeResult(
         records,
-        {
+        frame=playing,
+        quantiles=quantiles,
+        summary={
             "target_week": target_week,
             "records": len(records),
             **counts,
@@ -260,6 +297,7 @@ def _record(
     quantiles: Mapping[str, float] | None,
     drivers: Mapping[str, float] | None,
     opponent: Mapping[str, Any] | None,
+    explanation: Mapping[str, Any] | None = None,
     injury: Mapping[str, Any] | None,
     build_id: str,
     schema_version: str,
@@ -285,6 +323,7 @@ def _record(
         "game": dict(game) if game is not None else None,
         "quantiles": dict(quantiles) if quantiles is not None else None,
         "drivers": dict(drivers) if drivers is not None else None,
+        "explanation": dict(explanation) if explanation is not None else None,
         "opponent": dict(opponent) if opponent is not None else None,
         "injury": dict(injury) if injury is not None else None,
     }

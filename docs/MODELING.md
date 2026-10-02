@@ -1172,6 +1172,12 @@ travel on the build metadata:
   state from its latest earlier home game this season; with none it stays missing and reads
   as open air. The effect is small (roof on vs off: median 0, 95th percentile 0.40 points on
   2025 rows) and it never fires on history, where every roof is recorded.
+- A **verified fixed roof wins** (ADR-099 amendment). Where the game's venue in the registry is
+  `open` or `dome` and the schedule's roof contradicts or omits it, `game_indoors` follows the
+  venue. nflverse files three open-air 2026 games abroad as `dome`: the MCG, the Stade de
+  France and Munich. Training passes no registry, and the rule changes no 2017–2025 value
+  (247 recorded stadium-season roofs at fixed-roof venues agree), so serving reads what
+  training read for open-air venues abroad. `weekly_context.roof_agreement` holds it.
 - The **explanation** is grouped TreeSHAP by feature family, plus baseline, calibration and
   rearrangement terms, and it sums to the published median (`weekly.driver_account_closes`).
 
@@ -1180,3 +1186,176 @@ travel on the build metadata:
 Once a season, after the last scored week, to add a season; never in season; never in a
 workflow (`test_the_refresh_never_fits_or_scores_the_weekly_model`). The commands are in
 `docs/OPERATIONS.md` §16.7.
+
+## 35. The game-day context layer and `weekly-startsit-v2` (ADR-099)
+
+v1 (§34) reads a player's role, form and track record, his offence, the opposing defence's
+allowed points and the game's sportsbook lines. v2 asks whether three more things improve the
+week: **weather at kickoff**, **his offence's health** and **the opposing defence's health**.
+Each is a candidate *family* that must earn its place over v1 by a rule frozen before the
+evidence. Vegas lines already price much of weather and of a key injury, so "no
+incremental value" is a live outcome and is reported as such. Nothing upstream reads any of
+it (§27.1; `tests/leakage/test_weekly_firewall.py`; the forbidden-feature guard refuses every
+v2 name).
+
+### 35.1 Frozen before evidence
+
+`src/ffdraft/weekly/frozen_v2.py`, committed as `f62f849` (2026-10-01 17:46 UTC) before the
+development run, with the venue registry, the measured forecast-error map and the evaluation
+code: families, five variants (`v1`, `v1+weather`, `v1+lineup`, `v1+defense`, `v1+all`),
+baselines (v1 refitted per fold, B0–B2), development folds 2020–2024, 2025 as previously
+examined evidence, the decision cutoff, `weather_training_parity_v1`,
+`weekly_family_selection_v1`, the prospective holdout and `weekly_promotion_v2`. Every
+variant's configuration hash includes the weather map's digest (`d574a22a8b59a078`); the
+all-family spec hashes to `2450ff6a238cb902`. v1's hash is unchanged (`692c1886548cde7f`).
+
+### 35.2 His offence's and the opposing defence's health (`lagged_starters_v1`)
+
+* **Starters** are lagged and snap-based: per team and group, the players with the highest
+  mean snap share over the team's last three games through the cutoff (a missed game is
+  zero), with a floor of 0.30 — OL five (T, G, C, OL, OT, OG), QB one, CB three (CB, DB), S two
+  (S, FS, SS, SAF), DL four (DE, DT, NT, DL). A player who arrives after the cutoff cannot be
+  a starter (`test_the_future_cannot_reach_a_starter`).
+* **The report** is the target week's: `Out`/`Doubtful` count as confirmed absences,
+  `Questionable` as uncertain, separately. A team whose report carries no game status at all
+  is `null` on every input — unknown, not healthy — at training and serving alike (97–99% of
+  historical team-weeks carry one).
+* **Inputs.** `lineup`: OL starters out, OL questionable, QB out, the recent (last three
+  games) share of the team's targets and carries held by ruled-out teammates, and of targets
+  by questionable ones, his own share excluded. `defense`: CB, S and DL starters out; DBs and
+  DL questionable.
+
+### 35.3 Weather, and train/serve parity (`weather_training_parity_v1`)
+
+* **Venue** from the registry (`config/venues.yaml`, docs/DATA_SOURCES.md §20.1), by stadium
+  name first. `wx_roof_type` is 0 open, 1 retractable, 2 dome, `null` unresolved or
+  `unverified` (no venue is `unverified` since `venues_v2`).
+* **Weather only where it reaches the field.** Open-air games carry wind (mph), temperature
+  (°F) and "precipitation expected"; dome games carry none (nothing reaches the field) and
+  retractable-roof games carry none (the state is announced on game day; an earlier
+  closed-roof game is not evidence about this one). Training and serving follow the same rule.
+* **Serving** reads the newest retained forecast at the kickoff hour (NWS in the U.S.,
+  Open-Meteo elsewhere). It is `null` when the capture is missing, older than 12 hours at the
+  refresh, does not cover the kickoff, is more than 168 hours out, or is implausible (wind
+  outside 0–60 mph, temperature outside −30–120 °F). Precipitation expected is a probability
+  of at least 50%.
+* **Training** cannot read a pregame forecast: none was archived for 2017–2025 at the kickoff
+  hour. It reads the game book's recorded kickoff weather, `A`, and replaces it with what a
+  forecast would have said, `a + b·A + e`. The map was measured on 289 open-air games of
+  2024–2025, using day-before forecasts against the recorded values:
+  * wind: `a = 1.96`, `b = 0.783`, residual SD 2.72 mph;
+  * temperature: `a = −1.60`, `b = 1.018`, residual SD 3.37 °F;
+  * `e` is a residual drawn from the measured pool by a hash of the game id;
+  * recorded precipitation becomes "expected" with probability 0.50 when the game book names
+    it, and 0.037 when it does not.
+
+  Historical *actual* weather would overstate how much a forecast knows; this map trains on
+  the noise serving will see. The day-before lead bounds the serving lead (at most ~14 hours)
+  from above.
+* **Coverage** (dataset build 2026-10-01): of 155,634 v1 rows, all resolve to a venue, 107,196
+  are open air and 99,765 carry weather (the rest had no recorded wind or temperature);
+  precipitation is expected on 7,017.
+
+### 35.4 Every serve-time unknown is `null`
+
+v1 had to refuse games without a line because training never saw one missing (§34.6). v2's
+inputs are missing by design at some refreshes, and training contains the same `null`s, so
+LightGBM routes them down its learned missing-value branch. `tests/unit/test_weekly_shadow.py`
+holds serving to it:
+
+* an all-`null` input row still yields a finite, ordered distribution;
+* `null` predicts exactly as NaN and differently from zero;
+* no forecast, a stale forecast, a dome, an unverified venue and a missing report each give
+  `null` with a stated reason;
+* a fresh `ok` forecast is the only path to a number.
+
+### 35.5 Development comparison (`weekly_family_selection_v1`)
+
+The variants use v1's rows, folds, decision pools, pairs and metrics. Each family is compared
+with v1 refitted on the same folds. It is selected only if all of these hold:
+
+* its pooled macro pinball is lower than v1's;
+* the week-clustered bootstrap 95% interval of the row-level difference is above zero;
+* it wins at least four of the five folds;
+* the decision is not worse than v1's by more than 0.002 pairwise accuracy or 0.001 pairwise
+  Brier.
+
+If more than one family is selected, their union must pass the same test; otherwise v2 takes
+the single best family. If none is selected, v2 is rejected at development and no artifact is
+fitted. A selected v2 must also pass `weekly_promotion_v1`'s development clauses against
+B0–B2.
+
+2025 is scored with models trained through 2024 and printed, not used for any decision. The
+report also prints a diagnostic: pinball on the rows where a family has something to say
+(wind ≥ 15 mph, a starter out, and so on). It decides nothing.
+
+The results are in `docs/experiments/weekly-startsit-v2/experiment.{json,md}` and §35.8.
+
+### 35.6 Prospective holdout and promotion (`weekly_promotion_v2`)
+
+v2's untouched holdout is the 2026 games that kick off after the freeze, scored only from
+shadow records a production refresh retained **before** kickoff, using the last record per
+player, preset and game (`ffdraft.weekly.prospective`). Records are never backfilled. The
+minimum evidence is 8 complete weeks, 6,000 rows and 40,000 decision-pool pairs. Until it is
+met, the evaluation reports counts and **insufficient evidence**.
+
+There are at most two looks, each behind the token `PROSPECTIVE-WEEKLY-V2-2026`: a 99%
+interval when the minimum is first met, and a 95% interval after the last scored week.
+
+The looks are taken on schedule, by the weekly job `weekly-v2-prospective.yml`
+(`prospective_looks_v1`, `ffdraft.weekly.prospective.due_look`; docs/OPERATIONS.md §16.9):
+
+* **First look:** when the minimum is first met and the season is not over.
+* **Final look:** once every horizon week is complete, unless the first look was decisive.
+  A `promote` or `reject` at the 99% interim boundary ends the evaluation;
+  `insufficient_evidence` leaves it to the final look. A minimum first met only after the
+  season is over is the final look alone.
+* **A complete week** (`outcomes_complete_v1`): every game kicked off more than six hours ago,
+  and nflverse's weekly stats and snap counts both carry every team that played.
+* **The ledger:** each look is recorded in the private store with the rows it judged before
+  its verdict is shown, and a recorded look is never taken again.
+
+The outcomes:
+
+* **promote** — v2's pinball is below v1's with the interval above zero, its P10–P90 coverage
+  is in 0.75–0.85, and Brier and accuracy are not worse;
+* **reject** — the interval is entirely below zero, or coverage is outside 0.70–0.90, or Brier
+  is worse by more than 0.005;
+* **insufficient evidence** — anything else, which is not a rejection.
+
+`tests/unit/test_weekly_prospective.py` exercises all three outcomes.
+
+### 35.7 "Why this week" (`typical_week_shapley_v1`)
+
+The published explanation answers "why is this week different from his usual week" at the
+floor (P10), the median (P50) and the ceiling (P90).
+
+* **The typical week** — the same model and the same player row, with the game inputs
+  replaced by a weighted background of at most four reference games:
+  * home and away at even weight;
+  * indoors weighted by his team's share of completed home games under a closed roof or dome;
+  * his team's mean total, margin and implied points over its completed games, shrunk toward
+    the league by three games (the league itself when the team has none);
+  * equal rest;
+  * a league-average opposing defence.
+
+  It uses only pregame information and is deterministic.
+* **The account** is exact weighted baseline Shapley over the game groups (lines, venue,
+  rest, roof, opponent), at every published level:
+  `typical + Σ terms + calibration + rearrangement = published quantile`. It closes to
+  7×10⁻¹⁵ in floating point and at two decimals as published
+  (`weekly.explanation_account_closes`). Calibration is zero because both sides carry the
+  same conformal offset; rearrangement is the change made by monotone sorting.
+* **The page** shows a points chip only for a group whose published term at that exact level
+  is at least 0.05. Everything v1 does not read is context without points. If v2 is promoted,
+  its families join the groups the account splits by; until then the forecast and the injury
+  report are context.
+
+### 35.8 Evidence
+
+ADR-099 carries the full table. In short: **his offence's health is selected** (Δ macro
+pinball +0.0037, 95% interval [0.0030, 0.0052], 5 of 5 folds, accuracy +0.0014, Brier
+−0.0007), mostly through running backs. **Weather and the opposing defence's health add
+nothing measurable** over v1, which already reads the lines. v1 refitted per fold reproduces
+its own committed report exactly. 2025 is consistent: 1.0941 vs 1.0970. v2 = v1 + `lineup`,
+in shadow (`24933c290a50a74c`, byte-identical refits), awaiting the prospective holdout.

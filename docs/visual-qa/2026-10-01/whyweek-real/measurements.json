@@ -1,0 +1,66 @@
+{
+ "prefix": "/",
+ "pair": "00-0039139.00-0038542",
+ "report": [
+  {
+   "screen": "startsit",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "card",
+   "width": 1440,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "startsit",
+   "width": 1024,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "card",
+   "width": 1024,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "startsit",
+   "width": 820,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "card",
+   "width": 820,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "startsit",
+   "width": 390,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "card",
+   "width": 390,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "startsit",
+   "width": 320,
+   "overflow": 0,
+   "clipped": []
+  },
+  {
+   "screen": "card",
+   "width": 320,
+   "overflow": 0,
+   "clipped": []
+  }
+ ]
+}

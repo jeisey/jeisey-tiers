@@ -4,7 +4,7 @@
  * The unit and end-to-end suites prove agreement on fixtures. This proves it on the data the
  * site will actually serve, which is the Phase-6 exit gate's own wording.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
 import { blockPortraits } from "./portrait-stub.mjs";
@@ -12,7 +12,15 @@ import { blockPortraits } from "./portrait-stub.mjs";
 const BASE = process.argv[2] ?? "http://localhost:4180";
 const dataDir = process.argv[3] ?? "web/dist-real/data";
 const tiers = JSON.parse(readFileSync(`${dataDir}/tiers.json`, "utf-8"));
-const arb = JSON.parse(readFileSync(`${dataDir}/arbitrage.json`, "utf-8"));
+/**
+ * Strict by default: the production refresh always publishes arbitrage. A local real-data build
+ * made without the private market store cannot (ADR-099's real-build screenshots), and passes
+ * `--allow-missing-arbitrage` to skip only the arbitrage checks, which the output then reports.
+ */
+const allowMissingArbitrage = process.argv.includes("--allow-missing-arbitrage");
+const arb = allowMissingArbitrage && !existsSync(`${dataDir}/arbitrage.json`)
+  ? null
+  : JSON.parse(readFileSync(`${dataDir}/arbitrage.json`, "utf-8"));
 const status = JSON.parse(readFileSync(`${dataDir}/player_status.json`, "utf-8"));
 /**
  * The retained per-market histories, if this build published any.
@@ -143,7 +151,7 @@ const OPEN_ALL = `?view=tiers&tiers=${allTiers}`;
 const rosBlock = (rosRecords ?? [])
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => a.ros_fair_rank - b.ros_fair_rank);
-const arbBlock = arb.records
+const arbBlock = (arb?.records ?? [])
   .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
   .sort((a, b) => b.arbitrage_score - a.arbitrage_score);
 const statusById = new Map(status.records.map((r) => [r.player_id, r]));
@@ -431,9 +439,11 @@ if (publishedInSeason && defaultBoard === "ros") {
 }
 
 // --- Arbitrage table and rail against the artifact -----------------------------------------
+let arbRows = [];
+if (arb !== null) {
 await page.goto(`${BASE}/?view=arbitrage`, { waitUntil: "networkidle" });
 await page.waitForSelector("table.sheet tbody tr");
-const arbRows = await page.$$eval("table.sheet tbody tr", (trs) =>
+arbRows = await page.$$eval("table.sheet tbody tr", (trs) =>
   trs.slice(0, 30).map((tr) => [...tr.querySelectorAll("td")].map((td) => td.textContent.trim())),
 );
 const arbColumn = columnLookup(await headerTexts(page));
@@ -497,6 +507,7 @@ for (const record of arbBlock.filter((r) => r.rank_gap > 0).slice(0, 20)) {
   if (railAdp !== null && !label.includes(`ADP ${railAdp.toFixed(1)}`)) {
     failures.push(`rail ${record.display_name}: market anchor`);
   }
+}
 }
 
 // --- The player card's market history against `market_trend_series.json` ---------------------
@@ -1483,6 +1494,15 @@ try {
 }
 let startsitCardsChecked = 0;
 let startsitBoardRows = 0;
+let whyPanelsChecked = 0;
+let whyTermsChecked = 0;
+let whyBoardCellsChecked = 0;
+/** Exactly `signedPoints` in web/src/data/whyweek.ts: a tenth, a true minus, ±0.0 at zero. */
+function signedPoints(value) {
+  const rounded = Math.round(value * 10) / 10;
+  if (rounded === 0) return "±0.0";
+  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)}`;
+}
 if (publishedInSeason && weeklyRecords !== null) {
   // Exactly `formatValue`: `toFixed(1)`, whose binary rounding prints 37.65 as 37.6.
   const one = (value) => value.toFixed(1);
@@ -1525,6 +1545,58 @@ if (publishedInSeason && weeklyRecords !== null) {
     if (!pair.some((record) => verdict === `Start ${record.display_name}`)) {
       failures.push(`start/sit: the verdict "${verdict}" names neither player compared`);
     }
+    // "Why this week" (ADR-099): every rendered number is the artifact's own, to the tenth.
+    const panels = await page.$$eval(".why-this-week-player", (nodes) =>
+      nodes.map((node) => ({
+        name: node.querySelector(".why-this-week-name")?.textContent?.trim() ?? null,
+        gist: node.querySelector(".why-this-week-gist")?.textContent?.trim() ?? null,
+        heads: [...node.querySelectorAll(".why-week-head")].map((head) => ({
+          level: head.querySelector(".why-week-level")?.textContent?.trim() ?? "",
+          number: head.querySelector(".why-week-number")?.textContent?.trim() ?? "",
+        })),
+        rows: [...node.querySelectorAll(".why-week-table tbody tr")].map((row) => ({
+          group: row.getAttribute("data-group"),
+          cells: [...row.querySelectorAll("td")].map((td) => (td.textContent ?? "").replace(/[▲▼●]/g, "").trim()),
+        })),
+      })),
+    );
+    for (const record of pair) {
+      if (record.explanation === null || record.explanation === undefined) continue;
+      const panel = panels.find((entry) => entry.name === record.display_name);
+      if (panel === undefined) {
+        failures.push(`why this week: no panel for ${record.display_name}`);
+        continue;
+      }
+      whyPanelsChecked += 1;
+      const q = record.quantiles;
+      const e = record.explanation;
+      const gist = `Median ${signedPoints(q.q50 - e.q50.typical)} · ceiling ${signedPoints(q.q90 - e.q90.typical)} vs typical`;
+      if (panel.gist !== gist) failures.push(`why this week: ${record.display_name} reads "${panel.gist}", the artifact "${gist}"`);
+      const heads = Object.fromEntries(panel.heads.map((head) => [head.level, head.number]));
+      for (const [level, key] of [["Median", "q50"], ["Ceiling", "q90"], ["Floor", "q10"]]) {
+        if (heads[level] !== one(q[key])) {
+          failures.push(`why this week: ${record.display_name} ${level} shows ${String(heads[level])}, the artifact ${one(q[key])}`);
+        }
+      }
+      const material = new Set(
+        ["q10", "q50", "q90"].flatMap((key) =>
+          Object.entries(e[key].terms)
+            .filter(([, value]) => Math.abs(value) >= 0.05)
+            .map(([group]) => group),
+        ),
+      );
+      const shown = new Set(panel.rows.map((row) => row.group));
+      if ([...material].sort().join() !== [...shown].sort().join()) {
+        failures.push(`why this week: ${record.display_name} shows reasons [${[...shown].join(", ")}], the artifact's material terms are [${[...material].join(", ")}]`);
+      }
+      for (const row of panel.rows) {
+        const expected = ["q50", "q90", "q10"].map((key) => signedPoints(e[key].terms[row.group] ?? 0));
+        if (JSON.stringify(row.cells) !== JSON.stringify(expected)) {
+          failures.push(`why this week: ${record.display_name} ${String(row.group)} reads [${row.cells.join(", ")}], the artifact [${expected.join(", ")}]`);
+        }
+        whyTermsChecked += 1;
+      }
+    }
   }
   await page.goto(`${BASE}/?view=startsit&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
   await page.waitForSelector(".weekboard-table tbody tr");
@@ -1533,6 +1605,24 @@ if (publishedInSeason && weeklyRecords !== null) {
   startsitBoardRows = await page.locator(".weekboard-table tbody tr").count();
   if (startsitBoardRows !== ppr.length) {
     failures.push(`start/sit: the week board lists ${String(startsitBoardRows)} rows, the artifact ${String(ppr.length)}`);
+  }
+  // The board's "vs typical" cell is the artifact's median minus its typical median.
+  const cells = await page.$$eval(".weekboard-table tbody tr", (rows) =>
+    rows.map((row) => ({
+      name: row.querySelector(".wb-player .player-name")?.textContent?.trim() ?? "",
+      why: row.querySelector(".wb-why-cell")?.getAttribute("title") ?? null,
+    })),
+  );
+  for (const record of ppr) {
+    if (record.quantiles === null || record.explanation == null) continue;
+    const named = cells.filter((entry) => entry.why !== null && entry.name === record.display_name);
+    if (named.length !== 1) continue; // two players sharing a name cannot be told apart here
+    const cell = named[0];
+    const expected = signedPoints(record.quantiles.q50 - record.explanation.q50.typical);
+    if (!cell.why.startsWith(`${expected} median`)) {
+      failures.push(`week board: ${record.display_name} reads "${cell.why}", the artifact ${expected}`);
+    }
+    whyBoardCellsChecked += 1;
   }
 }
 
@@ -1557,6 +1647,10 @@ console.log(JSON.stringify({
   weeklyRecords: weeklyRecords === null ? null : weeklyRecords.length,
   startsitCardsChecked,
   startsitBoardRows,
+  whyPanelsChecked,
+  whyTermsChecked,
+  whyBoardCellsChecked,
+  arbitrage: arb === null ? "absent (--allow-missing-arbitrage)" : "checked",
   arbRowsChecked: arbRows.length,
   arbRowsWithTrend: arbBlock.slice(0, arbRows.length).filter((r) => r.market_trend !== null).length,
   trendSeriesRecords: seriesRecords.length,

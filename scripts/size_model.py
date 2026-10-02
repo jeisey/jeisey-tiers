@@ -418,6 +418,16 @@ def build(out: Path, seed: int = 20260930) -> None:
         {**template, "team": TEAMS[index]}
         for index, template in enumerate(templates["team_matchups"] * 2)
     ][: len(TEAMS)]
+    # ADR-099: one game-day context per team, every team playing (the worst case), each a
+    # perturbed copy of a fixture team so forecasts and listed players carry real entropy.
+    context_templates = templates["weekly_context"]
+    records["weekly_context"] = [
+        {
+            **perturb.walk("weekly_context", context_templates[index % len(context_templates)]),
+            "team": team,
+        }
+        for index, team in enumerate(TEAMS)
+    ]
 
     if out.exists():
         shutil.rmtree(out)

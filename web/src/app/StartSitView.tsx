@@ -27,6 +27,7 @@ import { useMemo, useState } from "react";
 
 import { OutcomeRidges, slotLetter } from "../charts/OutcomeRidges";
 import { Notice, PositionTag, SectionHead, Segmented } from "../components/primitives";
+import { SHORT_REASON, WhyWeek, WhyWeekCompact } from "../components/WhyWeek";
 import type { RosWeeklyMetadata, WeeklyProjectionRecord } from "../data/contracts";
 import { WEEKLY_DRIVER_FAMILIES } from "../data/contracts";
 import {
@@ -43,6 +44,7 @@ import {
 import { EM_DASH, formatEastern, formatSigned, formatValue } from "../data/format";
 import type { InSeasonBundle } from "../data/ros";
 import { MARGIN_BOUND, MAX_DUEL, SCORING_LABELS, type AppState } from "../data/state";
+import { arrow, signedPoints, topReason, whyThisWeek, type WhyThisWeek } from "../data/whyweek";
 
 const POSTURES: readonly { readonly value: number; readonly label: string; readonly long: string }[] = [
   { value: -20, label: "Down 20", long: "Projected to lose by 20 without this slot" },
@@ -141,6 +143,14 @@ export function StartSitView({
     onChange({ duel: toggleDuel(state.duel, playerId) });
   };
 
+  // This week against a typical week (ADR-099), for every record on screen.
+  const whyFor = (record: WeeklyProjectionRecord): WhyThisWeek | null =>
+    whyThisWeek(
+      record,
+      bundle.weeklyContextFor(record.team),
+      bundle.weeklyContextFor(record.game?.opponent ?? null),
+    );
+
   if (!bundle.hasWeekly || weekly === null) {
     return (
       <section className="section startsit" aria-labelledby="startsit-heading">
@@ -173,7 +183,7 @@ export function StartSitView({
         </Notice>
       )}
 
-      <DuelDeck duel={duel} weekly={weekly} onRemove={toggle} onSelect={onSelect} />
+      <DuelDeck duel={duel} weekly={weekly} onRemove={toggle} onSelect={onSelect} whyFor={whyFor} />
 
       {duel.missing.length > 0 && (
         <p className="startsit-missing" role="note">
@@ -197,6 +207,8 @@ export function StartSitView({
 
       {duel.verdict !== null && <WhyPanel duel={duel} weekly={weekly} />}
 
+      {duel.eligible.length >= 1 && <WhyThisWeekPanel duel={duel} weekly={weekly} whyFor={whyFor} />}
+
       <WeekBoard
         rows={board}
         order={effectiveOrder}
@@ -208,6 +220,7 @@ export function StartSitView({
         showAll={showAll}
         onShowAll={() => { setShowAll((value) => !value); }}
         weekly={weekly}
+        whyFor={whyFor}
       />
 
       <details className="startsit-method">
@@ -225,11 +238,13 @@ function DuelDeck({
   weekly,
   onRemove,
   onSelect,
+  whyFor,
 }: {
   readonly duel: DuelReading;
   readonly weekly: RosWeeklyMetadata;
   readonly onRemove: (playerId: string) => void;
   readonly onSelect: (playerId: string) => void;
+  readonly whyFor: (record: WeeklyProjectionRecord) => WhyThisWeek | null;
 }): React.JSX.Element {
   const empty = MAX_DUEL - duel.contenders.length;
   const leader = duel.verdict?.pick.record.player_id ?? null;
@@ -245,6 +260,7 @@ function DuelDeck({
           lead={leader === contender.record.player_id}
           onRemove={onRemove}
           onSelect={onSelect}
+          why={whyFor(contender.record)}
         />
       ))}
       {Array.from({ length: empty }, (_, index) => (
@@ -273,6 +289,7 @@ function DeckCard({
   lead,
   onRemove,
   onSelect,
+  why,
 }: {
   readonly contender: Contender;
   readonly slot: number;
@@ -281,6 +298,7 @@ function DeckCard({
   readonly lead: boolean;
   readonly onRemove: (playerId: string) => void;
   readonly onSelect: (playerId: string) => void;
+  readonly why: WhyThisWeek | null;
 }): React.JSX.Element {
   const record = contender.record;
   const q = record.quantiles;
@@ -368,6 +386,7 @@ function DeckCard({
               {` chance of a startable week (≥ ${formatValue(contender.startable.threshold)} pts)`}
             </p>
           )}
+          {why !== null && <WhyWeekCompact why={why} />}
         </>
       )}
 
@@ -605,6 +624,49 @@ function WhyPanel({
   );
 }
 
+// -------------------------------------------------------------- why this week (ADR-099)
+
+function WhyThisWeekPanel({
+  duel,
+  weekly,
+  whyFor,
+}: {
+  readonly duel: DuelReading;
+  readonly weekly: RosWeeklyMetadata;
+  readonly whyFor: (record: WeeklyProjectionRecord) => WhyThisWeek | null;
+}): React.JSX.Element | null {
+  const slots = new Map(duel.contenders.map((contender, index) => [contender.record.player_id, slotLetter(index)]));
+  const readings = duel.eligible
+    .map((contender) => ({ contender, why: whyFor(contender.record) }))
+    .filter((entry): entry is { contender: Contender; why: WhyThisWeek } => entry.why !== null);
+  if (readings.length === 0) return null;
+  const pick = duel.verdict?.pick.record.player_id ?? null;
+  return (
+    <div className="why-this-week">
+      <p className="startsit-subhead">
+        <span>Why this week</span>
+        <span className="startsit-subhead-note">against each player&apos;s typical week · floor, median and ceiling</span>
+      </p>
+      {readings.map(({ contender, why }) => (
+        <details
+          key={contender.record.player_id}
+          className="why-this-week-player"
+          open={pick === null ? readings[0]?.contender === contender : contender.record.player_id === pick}
+        >
+          <summary>
+            <span className="why-this-week-slot" aria-hidden="true">{slots.get(contender.record.player_id) ?? ""}</span>
+            <span className="why-this-week-name">{contender.record.display_name}</span>
+            <span className="why-this-week-gist" data-direction={why.ceiling.delta >= 0 ? "up" : "down"}>
+              {`Median ${signedPoints(why.median.delta)} · ceiling ${signedPoints(why.ceiling.delta)} vs typical`}
+            </span>
+          </summary>
+          <WhyWeek why={why} name={lastName(contender.record.display_name)} statement={weekly.explanation?.statement} />
+        </details>
+      ))}
+    </div>
+  );
+}
+
 // --------------------------------------------------------------------------- the board
 
 function WeekBoard({
@@ -618,6 +680,7 @@ function WeekBoard({
   showAll,
   onShowAll,
   weekly,
+  whyFor,
 }: {
   readonly rows: readonly WeekBoardRow[];
   readonly order: WeekBoardOrder;
@@ -629,6 +692,7 @@ function WeekBoard({
   readonly showAll: boolean;
   readonly onShowAll: () => void;
   readonly weekly: RosWeeklyMetadata;
+  readonly whyFor: (record: WeeklyProjectionRecord) => WhyThisWeek | null;
 }): React.JSX.Element {
   const shown = showAll ? rows : rows.slice(0, BOARD_PAGE);
   const playing = rows.filter((row) => row.record.quantiles !== null);
@@ -662,6 +726,7 @@ function WeekBoard({
               <th scope="col" className="wb-num wb-implied">Team total</th>
               <th scope="col" className="wb-num wb-opp">Opp. allows</th>
               <th scope="col" className="wb-num">Median</th>
+              <th scope="col" className="wb-why">vs typical</th>
               <th scope="col" className="wb-range">P10 – P90</th>
               <th scope="col" className="wb-num wb-start">Startable</th>
             </tr>
@@ -712,6 +777,7 @@ function WeekBoard({
                       : `${ordinal(record.opponent.rank)} of ${String(record.opponent.defenses ?? 32)}`}
                   </td>
                   <td className="wb-num wb-median">{q === null ? EM_DASH : formatValue(q.q50)}</td>
+                  <td className="wb-why"><WeekBoardWhy why={q === null ? null : whyFor(record)} /></td>
                   <td className="wb-range">
                     {q === null ? (
                       <span className="wb-bye">{record.game_state === "lines_pending" ? "line pending" : "bye"}</span>
@@ -740,8 +806,25 @@ function WeekBoard({
         Range bar: whisker P10–P90, box P25–P75, tick the median, dashed line a startable week at his
         position in your league. &ldquo;Opp. allows&rdquo; ranks his opponent by fantasy points allowed to the
         position this season, shrunk toward the league rate; 1st is the most generous.
+        &ldquo;vs typical&rdquo; is the median against the player&apos;s typical week, with the input that moved it
+        most.
       </p>
     </div>
+  );
+}
+
+/** One cell: the median against a typical week and its largest reason. */
+function WeekBoardWhy({ why }: { readonly why: WhyThisWeek | null }): React.JSX.Element {
+  if (why === null) return <span className="wb-why-none">{EM_DASH}</span>;
+  const top = topReason(why.median);
+  const delta = why.median.delta;
+  const label = `${signedPoints(delta)} median against a typical week${top === null ? "" : `, mostly ${top.label} (${signedPoints(top.value)})`}`;
+  return (
+    <span className="wb-why-cell" title={label} data-direction={Math.round(delta * 10) === 0 ? "flat" : delta > 0 ? "up" : "down"}>
+      <span aria-hidden="true">{`${arrow(delta)} ${signedPoints(delta)}`}</span>
+      {top !== null && <span className="wb-why-reason" aria-hidden="true">{SHORT_REASON[top.group] ?? top.group}</span>}
+      <span className="visually-hidden">{label}</span>
+    </span>
   );
 }
 

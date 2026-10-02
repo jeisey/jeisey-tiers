@@ -7022,6 +7022,290 @@ table.sheet.weekboard-table thead th.wb-num {
   line-height: 1.5;
 }
 
+/* ------------------------------------------------- why this week (ADR-099) */
+
+/* Direction is spelled (sign, arrow, "above"/"below"); colour only repeats it. */
+[data-direction="up"] { --dir: var(--good); }
+[data-direction="down"] { --dir: var(--warn); }
+[data-direction="flat"] { --dir: var(--ink-muted); }
+
+.why-this-week {
+  margin-top: var(--space-4);
+}
+
+.why-this-week-player {
+  border: var(--hairline) solid var(--line);
+  background: var(--panel);
+  margin-top: var(--space-2);
+}
+
+.why-this-week-player > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--space-3);
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.why-this-week-slot {
+  font: 700 0.72rem/1 var(--font-mono);
+  color: var(--ink-accent);
+}
+
+.why-this-week-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-strong);
+}
+
+.why-this-week-gist {
+  font: 500 0.7rem/1.3 var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.why-this-week-player > .why-week {
+  padding: 0 12px 12px;
+}
+
+.why-week {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.why-week-heads {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.why-week-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 8px 10px;
+  min-width: 0;
+  background: var(--canvas-deep);
+  border: var(--hairline) solid var(--line-faint);
+  box-shadow: inset 2px 0 0 var(--dir, var(--line));
+}
+
+.why-week-level {
+  grid-column: 1 / -1;
+  font: 600 0.6rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.why-week-number {
+  font: 600 1.15rem/1 var(--font-mono);
+  color: var(--ink);
+}
+
+.why-week-delta {
+  min-width: 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--ink-muted);
+}
+
+.why-week-delta > span[aria-hidden="true"] {
+  color: var(--dir);
+}
+
+.why-week-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.why-week-table th,
+.why-week-table td {
+  padding: 5px 6px;
+  border-bottom: var(--hairline) solid var(--line-faint);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.why-week-table thead th {
+  font: 600 0.6rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.why-week-table th[scope="row"],
+.why-week-table thead th:first-child {
+  text-align: left;
+  white-space: normal;
+  font-weight: 400;
+  color: var(--ink-strong);
+}
+
+.why-week-value {
+  font: 500 0.74rem/1.2 var(--font-mono);
+  color: var(--ink);
+}
+
+.why-week-value > span[aria-hidden="true"] {
+  color: var(--dir);
+}
+
+.why-week-attribution {
+  margin: 4px 0 0;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}
+
+.why-week-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.why-week-context li {
+  max-width: 100%;
+  padding: 4px 8px;
+  border: var(--hairline) solid var(--line);
+  border-left-width: 3px;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--ink-muted);
+  cursor: help;
+  overflow-wrap: anywhere;
+}
+
+.why-week-context li[data-tone="concern"] {
+  border-left-color: var(--warn);
+  color: var(--ink-strong);
+}
+
+.why-week-context li[data-tone="absent"] {
+  border-left-color: var(--danger);
+  color: var(--ink-strong);
+}
+
+.why-week-note,
+.why-week-empty {
+  margin: 0;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.why-week-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 8px;
+  border-top: var(--hairline) solid var(--line-faint);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.why-week-compact p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.why-week-compact-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
+
+.why-week-compact-head > span[data-direction] {
+  color: var(--dir);
+}
+
+.why-week-compact-label {
+  font: 600 0.58rem/1.6 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.why-week-compact-reason {
+  color: var(--ink-strong);
+}
+
+.why-week-compact-context {
+  color: var(--ink-faint);
+  cursor: help;
+}
+
+.week-why {
+  margin-top: var(--space-3);
+}
+
+.weekboard-table .wb-why {
+  white-space: nowrap;
+}
+
+.wb-why-cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 500 0.7rem/1.2 var(--font-mono);
+  color: var(--dir);
+}
+
+.wb-why-reason {
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.wb-why-none {
+  color: var(--ink-faint);
+}
+
+@media (max-width: 767px) {
+  .why-week-heads {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .why-week-heads > :last-child {
+    display: none;
+  }
+
+  .why-week-table .why-week-floor-col {
+    display: none;
+  }
+
+  .why-week-table th,
+  .why-week-table td {
+    padding: 4px 3px;
+  }
+}
+
+@media (max-width: 30rem) {
+  .weekboard-table .wb-why-reason {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .why-week-heads {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ------------------------------------------------------------ the breakpoints */
 
 @media (max-width: 1099px) {

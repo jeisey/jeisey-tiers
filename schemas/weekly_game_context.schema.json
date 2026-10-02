@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/weekly_game_context.schema.json",
+  "title": "WeeklyGameContext",
+  "description": "One team's target-week game as published facts (`weekly_gameday_context_v1`, ADR-099): the venue from the versioned registry with its fixed roof type, the roof as the weekly model reads it, the kickoff forecast with its provider, update and retrieval times and a status, the players the league's report lists among the team's lagged starters and notable pass-catchers and runners, and the team's typical week (the reference every weekly explanation is measured against) beside this week's game inputs. None of it is a point adjustment: a point effect is published only where a served model reads the input, in `weekly_projections.explanation`. No draft or rest-of-season model reads anything here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "target_week", "team", "game_id",
+    "opponent", "home_away", "neutral_site", "kickoff_utc", "context_rule_version", "venue",
+    "roof", "weather", "lineup", "typical", "this_week"
+  ],
+  "$defs": {
+    "nullable_number": {"type": ["number", "null"]},
+    "listed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "player_id", "name", "position", "role", "group", "starter_rank", "snap_share",
+        "target_share", "carry_share", "designation", "practice_status", "primary_injury"
+      ],
+      "properties": {
+        "player_id": {"type": "string", "pattern": "^gsis:"},
+        "name": {"type": ["string", "null"]},
+        "position": {"type": ["string", "null"]},
+        "role": {"type": "string", "description": "`OL1`..`OL5`, `QB1`, `CB1`..`CB3`, `S1`, `S2`, `DL1`..`DL4` for a lagged starter (rank by mean snap share over the team's last three games through the cutoff), or `skill` for a notable pass-catcher or runner."},
+        "group": {"enum": ["OL", "QB", "CB", "S", "DL", "SKILL"]},
+        "starter_rank": {"type": ["integer", "null"], "minimum": 1},
+        "snap_share": {"$ref": "#/$defs/nullable_number", "description": "Mean share of the team's snaps on his side of the ball over its last three games."},
+        "target_share": {"$ref": "#/$defs/nullable_number", "description": "Share of the team's targets over its last three games (skill players)."},
+        "carry_share": {"$ref": "#/$defs/nullable_number", "description": "Share of the team's carries over its last three games (skill players)."},
+        "designation": {"enum": ["Out", "Doubtful", "Questionable"], "description": "Out and Doubtful are read as confirmed absences, Questionable as uncertain."},
+        "practice_status": {"type": ["string", "null"]},
+        "primary_injury": {"type": ["string", "null"]}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 1999},
+    "through_week": {"type": "integer", "minimum": 1, "maximum": 22},
+    "target_week": {"type": "integer", "minimum": 2, "maximum": 22},
+    "team": {"type": "string", "minLength": 2},
+    "game_id": {"type": "string", "minLength": 1},
+    "opponent": {"type": "string", "minLength": 2},
+    "home_away": {"enum": ["home", "away"]},
+    "neutral_site": {"type": "boolean"},
+    "kickoff_utc": {"type": ["string", "null"], "format": "date-time"},
+    "context_rule_version": {"const": "weekly_gameday_context_v1"},
+    "venue": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["venue_id", "name", "country", "roof_type", "latitude", "longitude"],
+      "description": "The registry venue the game resolves to (its stadium name first, because the schedule's id can be stale), or null when it resolves to none or to two. Null means no weather is read.",
+      "properties": {
+        "venue_id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "country": {"type": "string", "minLength": 2},
+        "roof_type": {"enum": ["open", "retractable", "dome", "unverified"], "description": "The venue's FIXED type. A retractable roof's state for a game is not known before it; 'unverified' means the registry's evidence does not establish whether weather reaches the field."},
+        "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+        "longitude": {"type": "number", "minimum": -180, "maximum": 180}
+      }
+    },
+    "roof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recorded", "model_indoors", "assumed_from_last_home_game"],
+      "properties": {
+        "recorded": {"type": ["string", "null"], "description": "nflverse's roof for this game; for a retractable roof, recorded only after kickoff."},
+        "model_indoors": {"type": ["number", "null"], "description": "What weekly-startsit-v1 reads (1 indoors, 0 not, null read as open air)."},
+        "assumed_from_last_home_game": {"type": "boolean", "description": "True when v1's reading is the stadium's state at its latest earlier home game because this game's state is unannounced. An assumption, and the page says so."}
+      }
+    },
+    "weather": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "provider", "wind_mph", "gust_mph", "temp_f", "precip_probability", "precip_in",
+        "short_forecast", "valid_from_utc", "valid_to_utc", "provider_updated_utc", "retrieved_at_utc"
+      ],
+      "description": "The kickoff-hour forecast from the newest retained capture at or before the build (`kickoff_forecast_v1`). Numbers are published only when usable: `ok` at an open-air venue, `roof_unknown` at a retractable one (outside conditions; the roof may close). Every other status carries none.",
+      "properties": {
+        "status": {"enum": ["ok", "roof_unknown", "indoors", "unavailable", "stale", "out_of_range", "implausible", "no_venue"]},
+        "provider": {"enum": ["nws", "open_meteo", null]},
+        "wind_mph": {"$ref": "#/$defs/nullable_number"},
+        "gust_mph": {"$ref": "#/$defs/nullable_number"},
+        "temp_f": {"$ref": "#/$defs/nullable_number"},
+        "precip_probability": {"$ref": "#/$defs/nullable_number", "description": "Percent chance of precipitation in the hour containing kickoff."},
+        "precip_in": {"$ref": "#/$defs/nullable_number", "description": "Forecast precipitation amount for the interval containing kickoff, inches."},
+        "short_forecast": {"type": ["string", "null"], "description": "NWS's hourly wording for the kickoff hour."},
+        "valid_from_utc": {"type": ["string", "null"], "format": "date-time"},
+        "valid_to_utc": {"type": ["string", "null"], "format": "date-time"},
+        "provider_updated_utc": {"type": ["string", "null"], "description": "The provider's own update time, as published."},
+        "retrieved_at_utc": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "lineup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report_available", "report_final", "listed"],
+      "properties": {
+        "report_available": {"type": "boolean", "description": "Whether the build read the league's report at all."},
+        "report_final": {"type": "boolean", "description": "Whether the team's report for the target week carries any game status yet; until it does, nobody is named and absences are unknown, not none."},
+        "listed": {"type": "array", "items": {"$ref": "#/$defs/listed"}}
+      }
+    },
+    "typical": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["games", "total_line", "team_margin", "team_points", "home_share", "indoors_share"],
+      "description": "The game half of every player's typical week on this team (`typical_week_shapley_v1`): the team's mean posted lines over its completed games, shrunk toward the league's by three games (all league when it has none), half at home, and its indoor share.",
+      "properties": {
+        "games": {"type": "integer", "minimum": 0},
+        "total_line": {"$ref": "#/$defs/nullable_number"},
+        "team_margin": {"$ref": "#/$defs/nullable_number"},
+        "team_points": {"$ref": "#/$defs/nullable_number"},
+        "home_share": {"type": "number", "minimum": 0, "maximum": 1},
+        "indoors_share": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "this_week": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_line", "team_margin", "team_points", "is_home", "rest_advantage", "indoors"],
+      "description": "The game inputs weekly-startsit-v1 reads this week.",
+      "properties": {
+        "total_line": {"$ref": "#/$defs/nullable_number"},
+        "team_margin": {"$ref": "#/$defs/nullable_number"},
+        "team_points": {"$ref": "#/$defs/nullable_number"},
+        "is_home": {"$ref": "#/$defs/nullable_number"},
+        "rest_advantage": {"$ref": "#/$defs/nullable_number"},
+        "indoors": {"$ref": "#/$defs/nullable_number"}
+      }
+    }
+  }
+}

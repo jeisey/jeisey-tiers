@@ -394,7 +394,7 @@ WEEKLY_STATS_CONTRACT = FrameContract(
 
 SNAP_COUNTS_CONTRACT = FrameContract(
     contract_id="nflverse_snap_counts",
-    version="1.0",
+    version="1.1",
     columns=(
         ColumnSpec("season", pl.Int32, nullable=False),
         ColumnSpec("week", pl.Int32, nullable=False),
@@ -405,17 +405,22 @@ SNAP_COUNTS_CONTRACT = FrameContract(
         ColumnSpec("team", pl.String),
         ColumnSpec("offense_snaps", pl.Float64),
         ColumnSpec("offense_pct", pl.Float64, description="share of team offensive snaps, 0-1"),
+        # 1.1 (ADR-099): defensive participation, read only to name a defence's lagged
+        # starters for the weekly game-day context (lagged_starters_v1).
+        ColumnSpec("defense_snaps", pl.Float64),
+        ColumnSpec("defense_pct", pl.Float64, description="share of team defensive snaps, 0-1"),
     ),
 )
 
 
 SCHEDULE_CONTRACT = FrameContract(
     contract_id="nflverse_schedule",
+    # 1.2 (ADR-099) adds the stadium and the recorded kickoff weather; see the columns.
     # 1.1 (ADR-091): the next game's context for the in-season matchup panel. Every added
     # column is *published context only*: the sportsbook lines are a market quantity that
     # AGENTS.md section 8 forbids as an intrinsic feature, and `ffdraft.quality.forbidden`
     # refuses any feature named for them. The calendar half of the contract is unchanged.
-    version="1.1",
+    version="1.2",
     primary_key=("game_id",),
     columns=(
         ColumnSpec("game_id", pl.String, nullable=False),
@@ -443,6 +448,15 @@ SCHEDULE_CONTRACT = FrameContract(
             pl.Float64,
             description="sportsbook game total. Context only, never a feature",
         ),
+        # 1.2 (ADR-099): which stadium, and the game book's recorded kickoff weather. The id
+        # and name resolve a game to a venue in config/venues.yaml; the weather is recorded
+        # AFTER kickoff (null for every unplayed game), so it is read only to build training
+        # rows for the weekly v2 candidate, through weather_training_parity_v1, and never by
+        # an intrinsic or rest-of-season model.
+        ColumnSpec("stadium_id", pl.String, description="nflverse stadium id (may be stale)"),
+        ColumnSpec("stadium", pl.String, description="stadium name as the schedule prints it"),
+        ColumnSpec("temp", pl.Float64, description="recorded kickoff temperature, deg F"),
+        ColumnSpec("wind", pl.Float64, description="recorded kickoff wind, mph"),
     ),
 )
 

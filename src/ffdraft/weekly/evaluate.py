@@ -164,10 +164,16 @@ def _pool_pairs(
         model_id: matrix[:, WEEKLY_QUANTILE_LEVELS.index(0.5)]
         for model_id, matrix in predictions.items()
     }
-    for key, block in indexed.group_by("target_week", "scoring_preset", "position"):
+    # Groups in key order and a stable sort: pair order fixes float summation order, and a
+    # tie in B0 must break the same way every run (byte-identical reports).
+    groups = sorted(
+        indexed.group_by("target_week", "scoring_preset", "position"),
+        key=lambda item: tuple(str(part) for part in item[0]),
+    )
+    for key, block in groups:
         week, _, position = key
         depth = int(DECISION_POOL_DEPTH[str(position)])
-        pool = block.sort("_b0", descending=True).head(depth)
+        pool = block.sort("_b0", descending=True, maintain_order=True).head(depth)
         if pool.height < 2:
             continue
         rows = pool.get_column("_row").to_numpy()
@@ -266,7 +272,7 @@ def evaluate_fold(
 
 
 def _macro_pinball(rows: pl.DataFrame, model_id: str) -> float:
-    cells = rows.group_by("position", "scoring_preset").agg(
+    cells = rows.group_by("position", "scoring_preset", maintain_order=True).agg(
         pl.col(f"{model_id}__pinball").mean().alias("value"),
     )
     return scalar_float(cells.get_column("value").mean(), math.nan)

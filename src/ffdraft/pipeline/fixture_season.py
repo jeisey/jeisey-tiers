@@ -112,6 +112,21 @@ def _bye_week(index: int) -> int:
     return 5 + ((index + 4) % 8)
 
 
+#: Real registry venues for the fixture's games (config/venues.yaml, ADR-099), by game slot:
+#: open air, retractable, open air, open air, a fixed dome (the slot the schedule marks
+#: ``dome``), open air, open air, open air. The game-day context resolves them by name.
+_FIXTURE_STADIUMS: tuple[str, ...] = (
+    "Lambeau Field",
+    "NRG Stadium",
+    "Soldier Field",
+    "Highmark Stadium",
+    "Ford Field",
+    "Gillette Stadium",
+    "GEHA Field at Arrowhead Stadium",
+    "Lumen Field",
+)
+
+
 def _schedule(teams: Sequence[str], season: int) -> pl.DataFrame:
     ordered = sorted(teams)
     byes = {team: _bye_week(index) for index, team in enumerate(ordered)}
@@ -143,6 +158,7 @@ def _schedule(teams: Sequence[str], season: int) -> pl.DataFrame:
                     "roof": "dome" if game == 4 else "outdoors",
                     "spread_line": spread,
                     "total_line": 43.5 + game if lined else None,
+                    "stadium": _FIXTURE_STADIUMS[game % len(_FIXTURE_STADIUMS)],
                 },
             )
     return SCHEDULE_CONTRACT.build(rows)

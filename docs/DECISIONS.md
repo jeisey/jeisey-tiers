@@ -5288,3 +5288,245 @@ limit more than bytes do.
   headroom on the real board, and the daily summary will show it shrinking before it binds.
 * The size model is only as good as its counts. `config/size-model.json` records when they were
   measured; re-measure with the probe when the board's shape changes.
+
+## ADR-099 — The game-day context layer, weekly-startsit-v2 in shadow, and "why this week"
+
+**Status:** accepted, 2026-10-01. The freeze below was committed before any model-comparison
+evidence about v2 existed; the development result is appended under **Evidence** by a later
+commit, and the prospective result by a later session. The owner asked for weekly start/sit
+projections that react to the things that move a player's week (weather, his offence's
+health, the opposing defence's health) and explain themselves in plain English, ceiling
+included.
+**Amends:** ADR-096's clause that the injury report is not a model input: it is now a
+*candidate* input of a *shadow* model (v2), never of v1, and never of anything upstream.
+
+### What stays fixed
+
+* **One-way flow.** The intrinsic and rest-of-season models never read any input named
+  here. `tests/leakage/test_weekly_firewall.py` and the forbidden-feature guard
+  (`ffdraft.features.guard`) refuse every v2 feature name upstream; only the weekly package
+  imports the game-day modules.
+* **v1 stays in production** (`weekly-startsit-v1`, hash `692c1886548cde7f`, unchanged) until
+  v2 is promoted by the rule below. Until then v2, if development selects it, is fitted and
+  served in **shadow**: predicted beside v1 into a private record the page never reads.
+
+### Sources (docs/DATA_SOURCES.md §20; `config/source-registry.yaml`)
+
+Probed on a runner on 2026-10-01 (the sandbox's egress policy denies every host involved),
+evidence under `docs/source-probes/2026-10-01/`:
+
+* **NWS** (`nws_api`, U.S. venues): `/points/{lat},{lon}` → `forecastGridData` and
+  `forecastHourly`. Grid layers carry `uom` and ISO-8601 valid intervals; `updateTime` is the
+  issue time. Open data, free for any purpose; a User-Agent is required; the rate limit is
+  unpublished.
+* **Open-Meteo** (`open_meteo`, non-U.S. venues): the free API, **non-commercial only**,
+  under 10,000 calls a day, CC BY 4.0 with attribution. It is also the forecast archive:
+  the Previous Runs API (fixed 1–7 day lead, most models from January 2024) and the
+  Historical Forecast API (first hours of each run, from 2021/2022). ERA5 reanalysis is
+  historical *actual* weather and is used for comparison only, never as a forecast.
+* **The venue registry** `config/venues.yaml` (`venues_v2`): 45 buildings with stable ids,
+  the schedule ids and stadium names that resolve to each (name first, then id, within the
+  seasons it was in use; zero or two matches resolve to nothing), Wikidata P625 coordinates
+  and a **fixed roof type** with provenance. `venues_v1` left the Melbourne Cricket Ground and
+  the Stade de France `unverified`; `venues_v2` makes both `open` on the roof documents
+  (amendment below). An `unverified` venue fails closed: no roof type, no weather. Venue type is not roof state: a
+  retractable roof's state is announced only on game day, and an earlier closed-roof game is
+  never taken as evidence for this one.
+* **The injury report** (nflverse `load_injuries`). The point-in-time probe that
+  `injuries_in_season_only` asked for: 2017–2024 rows carry `date_modified`; 24 of 44,356 were
+  last modified after their team's kickoff. 2025 and 2026 carry no timestamp, so their
+  pregame values are unverified; two captures of the 2026 file 1.5 hours apart were
+  byte-identical. From this ADR every production refresh retains a capture
+  (`gameday/nflverse_injuries`, per-week and per-row content digests) and
+  `ffdraft injury-pit-report` compares captures row by row, so a revision is detected
+  prospectively rather than assumed away.
+* **Starters** come from snap counts, not depth charts (whose schema changed in 2025,
+  ADR-015): `lagged_starters_v1` takes, per team and group, the top players by mean snap share
+  over the team's last three games through the cutoff (a missed game counts as zero), with a
+  0.30 floor. Out and Doubtful are confirmed absences; Questionable is uncertain and counted
+  apart. A team whose report carries no game status yet is unknown (`null`), not healthy.
+
+### The decision cutoff (`last_refresh_before_kickoff_v1`)
+
+Every input is aligned to one instant: the last production refresh whose build finished
+before the game kicked off. Lines are the schedule's at the refresh; the injury report is the
+file at the refresh; the forecast is the newest capture at or before the refresh, valid at the
+kickoff hour and at most 12 hours old; starters use snaps through the cutoff week. Game-day
+inactives (about 90 minutes before kickoff) are not known at any refresh and are not inputs.
+
+### Train/serve parity for weather (`weather_training_parity_v1`)
+
+Training cannot read a forecast for 2017–2025: nobody archived NWS's at kickoff. Training
+reads the game book's recorded kickoff weather and maps it to what a forecast would have said:
+`F = a + b·A + e`, fitted on the day-before Open-Meteo forecast (Previous Runs API) against
+the recorded value for 289 open-air games of 2024–2025 (`scripts/weather_error_model.py`,
+`config/weather-forecast-error-v1.json`): wind `a = 1.96, b = 0.78`, residual SD 2.7 mph;
+temperature `a = −1.60, b = 1.02`, residual SD 3.4 °F; `e` drawn from the measured residuals
+by a hash of the game id. Recorded precipitation becomes "expected" with the measured hit
+rate 0.50 (9 of 18; Wilson 95% 0.29–0.71) and false-alarm rate 0.037 (10 of 271) of a
+short-lead probability ≥ 50%. The serving forecast is at most ~14 hours old at the refresh
+before the latest kickoff, so day-before error bounds serving error from above. Differences
+from the serving provider are recorded, not hidden: the archive is Open-Meteo's model blend,
+serving in the U.S. is NWS's gridded forecast; the archive's precipitation indicator is a
+short-lead probability, serving's is NWS's PoP. Retractable and dome games carry no weather
+at training and at serving alike; every input missing at serve time is tested
+(`tests/unit/test_weekly_gameday_inputs.py`, `tests/unit/test_weekly_forecast.py`) to be
+`null`, which LightGBM routes as missing, never zero.
+
+### weekly-startsit-v2, frozen (`src/ffdraft/weekly/frozen_v2.py`)
+
+* **Families** added to v1's features unchanged: `weather` (roof type code, wind, temperature,
+  precipitation expected), `lineup` (lagged OL starters out and questionable, QB out, recent
+  target and carry shares vacated by ruled-out teammates, target share held by questionable
+  ones), `defense` (lagged starting CBs, safeties and DL out; DBs and DL questionable).
+* **Variants:** `v1` (refitted per fold), `v1+weather`, `v1+lineup`, `v1+defense`,
+  `v1+weather+lineup+defense`. **Baselines:** v1, B0, B1, B2 (ADR-096).
+* **Development folds:** 2020–2024, v1's folds, rows and decision pools. **2025** is
+  previously examined evidence (v1's sealed season, consumed by ADR-096): scored, printed,
+  decides nothing.
+* **Family selection** (`weekly_family_selection_v1`): a family is selected when, against v1,
+  its pooled macro pinball is lower, the week-clustered bootstrap 95% interval of the
+  row-level difference is above zero, it wins at least four of five folds, and the pairwise
+  decision is not worse beyond 0.002 accuracy or 0.001 Brier. Two or more selected must pass
+  as a union, else the single best. None selected: **v2 is rejected at development**, no
+  artifact is fitted, and each family's measured value is reported.
+* **Promotion** (`weekly_promotion_v2`): the development clauses of `weekly_promotion_v1`
+  against B0–B2 and the selection clauses against v1, then the **prospective holdout**: 2026
+  games kicking off after the freeze, for which a production refresh retained before kickoff a
+  shadow record carrying v1's and v2's quantiles and every v2 input with its retrieval time;
+  never backfilled. Minimum evidence: 8 complete weeks, 6,000 scored rows, 40,000 pairs. At
+  most two looks (99%, then 95% after the last scored week), unlocked by
+  `PROSPECTIVE-WEEKLY-V2-2026` and taken on schedule (amendment below). Outcomes: **promote** (pinball below v1 with the interval
+  above zero, P10–P90 coverage 0.75–0.85, Brier and accuracy not worse), **reject** (interval
+  entirely below zero, coverage outside 0.70–0.90, or Brier worse by more than 0.005), or
+  **insufficient evidence** (anything else, including a minimum not met). Insufficient
+  evidence is not a rejection. Changing anything frozen is `weekly-startsit-v3`.
+
+### "Why this week" (`typical_week_shapley_v1`, `ffdraft.weekly.explain`)
+
+* **The reference** is his *typical week*: the same model, the same player row, with the
+  game-specific inputs replaced by a deterministic, pregame-only background of at most four
+  weighted reference games — home and away at even weight (scaled by his team's indoor share
+  of completed home games), his team's mean lines over its completed games shrunk toward the
+  league by three games (the league itself when the team has none: the limited-history
+  fallback), equal rest, and a league-average opposing defence.
+* **The account** at the floor (P10), median (P50) and ceiling (P90) is exact weighted
+  baseline Shapley over the game groups (lines, venue, rest, roof, opponent):
+  `typical + Σ terms + calibration + rearrangement = published quantile`, closed at two
+  decimals, with calibration zero by construction (both sides carry the same conformal offset)
+  and rearrangement the change from monotone sorting.
+* **The page** shows a numeric chip only for a group whose published term at that exact
+  quantile is at least 0.05 points, and its words come from published fields; every other
+  fact (forecast, roof state, who is listed) is context **without points**, because v1 does
+  not read it. Direction is spelled in words and a sign, colour only repeats it, and the page
+  says that a term is a model attribution, not a measured cause.
+
+### Serving and operations
+
+The context (`weekly_context.json`, schema `weekly_game_context` 1.0) and the explanation
+(`weekly_projection` 1.1) are packaged by the ADR-098 serving layer like every other field:
+content-addressed slices, the Start/Sit requirement set, card shards, hash verification and
+lazy loading. Forecasts and the injury report are captured each refresh into the private store
+under `gameday/`; inference re-runs on new information without retraining (the news-reactive
+slots in docs/OPERATIONS.md §16.8); build-ros withholds only the weekly artifacts when their
+records fail validation.
+
+### Evidence
+
+Development run 2026-10-01 18:29 UTC, on the frozen code (`f62f849`), 155,634 rows, folds
+2020–2024 (`docs/experiments/weekly-startsit-v2/experiment.{json,md}`):
+
+| | Δ pinball (v1 − v1+f) | week-clustered 95% interval | fold wins | Δ pair accuracy | Δ pair Brier | selected |
+|---|---|---|---|---|---|---|
+| weather at kickoff | −0.00002 | [−0.00072, 0.00078] | 3/5 | +0.00032 | −0.00007 | no |
+| **his offence's health** | **+0.00371** | **[0.00303, 0.00524]** | **5/5** | **+0.00144** | **−0.00070** | **yes** |
+| opposing defence's health | +0.00003 | [−0.00035, 0.00047] | 2/5 | −0.00035 | +0.00007 | no |
+
+* **v1 refitted per fold reproduces v1's committed development report exactly** (macro
+  pinball 1.1086, pairwise accuracy 0.6592, Brier 0.2109, P10–P90 coverage 0.808), so every
+  family is measured against the real v1.
+* **v2 is v1 + `lineup`** (one family selected, so no union test): pooled pinball 1.1049,
+  accuracy 0.6606, Brier 0.2102, coverage 0.808. It passes every `weekly_promotion_v1`
+  development clause against B0–B2. The gain is concentrated where a teammate's absence moves
+  volume: RB pinball 1.0786 → 1.0699, WR 1.0214 → 1.0180, TE 0.6992 → 0.6974, QB
+  1.6353 → 1.6344. On the 35% of rows where the family has something to say (a starting
+  lineman or the quarterback out, or ≥ 10% of targets / 20% of carries vacated), pinball is
+  1.0286 → 1.0217.
+* **Weather and the opposing defence's health show no value beyond noise** over a model that
+  already reads the sportsbook total and spread. On the 12% of rows with wind of at least
+  15 mph, a freezing kickoff or expected precipitation, pinball is unchanged (0.9877 both).
+  They are not in v2, and the page publishes them as context without points. The owner's
+  example (wind and rain lowering a receiver's week) is therefore a *published fact* on the
+  page, not a model adjustment: the evidence did not support one.
+* **2025, previously examined (decides nothing):** v1 + lineup 1.0941 vs v1 1.0970; accuracy
+  0.6672 vs 0.6656; Brier 0.2064 vs 0.2072; coverage 0.800 — consistent with development.
+* **Shadow artifact:** fitted on 2017–2025 (`models/shadow/weekly-startsit-v2`, 84 boosters,
+  configuration `24933c290a50a74c`). Two fits give byte-identical boosters. The card is
+  `models/cards/weekly-startsit-v2.{md,json}`.
+
+**Status: implementation complete; prospective validation pending.** v1 stays in production.
+v2 runs in shadow from the first production refresh on this code. The 2026 games that kick
+off after that refresh are its holdout, judged by `weekly_promotion_v2` once 8 complete weeks,
+6,000 rows and 40,000 pairs are retained. Until then the result is *insufficient evidence*,
+which is not a rejection.
+
+### Amendment (2026-10-01, before the first production refresh): roof labels, scheduled looks
+
+Nothing frozen changes: no family, threshold, interval level, minimum or outcome rule. Two
+things a reviewer found after the evidence commit are fixed, and one operation is automated.
+
+**1. nflverse's roof label is wrong for three open-air games abroad.** The 2026 schedule files
+the Melbourne Cricket Ground (week 1, still `dome` after the game, beside a recorded 57 °F
+and 4 mph wind), the Stade de France (week 7) and the Allianz Arena (week 10) as `dome`. v1
+reads its roof from the schedule, so it treated the first as indoors and would have treated
+the other two the same way. In Munich's case the page would also have shown an outdoor
+forecast beside v1's "Indoors (roof closed)" points, and no check caught it.
+
+* **Evidence.** A `roofs` phase of the runner probe records whole roof paragraphs
+  (`docs/source-probes/2026-10-01/weather/roof_documents.json`). The first probe's
+  300-character lines had cut the Stade de France's paragraph at "It was designed to easily
+  p…". Both venues are `open` in `venues_v2` (docs/DATA_SOURCES.md §20.1); every quotation in
+  their provenance is checked against the documents verbatim by test.
+* **The rule** (`ffdraft.weekly.venues.published_roof`). Where a game's venue has a verified
+  fixed roof (`open` or `dome`) that the schedule contradicts or omits, the venue's label is
+  what `team_matchups.roof` and the projection's `game.roof` publish and what v1 reads at
+  serving (`game_indoors`). A retractable, unverified or unresolved venue keeps the schedule's
+  value. `weekly_context`'s `roof.recorded` stays the schedule's own value, so the correction
+  is visible.
+* **Training is untouched.** v1's training passes no registry. The rule changes no 2017–2025
+  value: all 247 recorded (stadium-season, roof) values at fixed-roof venues agree, by test,
+  and a scan of every 2017–2026 regular-season game finds exactly the three games above. So
+  serving now reads what v1 was trained to read: open-air international games were recorded
+  `outdoors`. v1 and the v2 shadow get the same input, so the prospective comparison stays
+  paired.
+* **The check** `weekly_context.roof_agreement` fails a build whose projection reads a roof
+  other than the venue's verified fixed one, or whose two copies of that value differ.
+
+**2. The prospective looks are taken by a scheduled job** (`weekly-v2-prospective.yml`,
+`prospective_looks_v1`, docs/OPERATIONS.md §16.9). The first version left both looks to a
+person running a command with the token. That risked a look taken late, early or twice, and
+nothing in the code stopped a second "first" look on more data.
+
+* Every Wednesday the job counts the holdout against the minimum and writes the progress to
+  the run summary.
+* **The first look** is taken when the minimum evidence is first met and the season is not
+  over.
+* **The final look** is taken once every week of the fantasy horizon is complete, unless the
+  first look was decisive. The first look's 99% level is an interim boundary: a `promote` or
+  `reject` there ends the evaluation, and `insufficient_evidence` leaves it to the final look.
+  The frozen text said "at most two" without saying whether a decisive first look ends it;
+  this is the standard group-sequential reading, and it changes no threshold. A minimum first
+  met only after the season is over is the final look alone.
+* **A complete week** (`outcomes_complete_v1`): every game kicked off more than six hours ago,
+  **and** nflverse's weekly stats and snap counts both carry rows for every team that played.
+  An appearance is a stats row or a snap, so a week read before its snap counts land would
+  silently drop zero-point appearances.
+* **The ledger.** Every look is recorded in the private store (`gameday/weekly_v2_look`) with
+  the exact rows it judged, before its verdict is shown. A look already recorded is never
+  taken again, by the job or by hand; two records of one look refuse. The workflow sends the
+  command's output to a file, pushes the record, and only then writes the summary and opens an
+  issue. If the push fails, nobody has seen the verdict, so a later retake is not a second
+  look.
+* **Promotion is still a reviewed change.** A `promote` verdict opens an issue; serving v2,
+  its card and v1's retirement are made by a person. Only this workflow holds the look token,
+  by test; v1's final-holdout token is still held by none.

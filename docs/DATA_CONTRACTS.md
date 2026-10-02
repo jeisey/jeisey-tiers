@@ -1059,7 +1059,8 @@ regular-season game in the fantasy horizon whose scheduled kickoff is after the 
 | field | meaning |
 |---|---|
 | `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `week`, `game_id` | the game |
-| `team_rest_days`, `opponent_rest_days`, `roof` | from the schedule; null where it publishes none |
+| `team_rest_days`, `opponent_rest_days` | from the schedule; null where it publishes none |
+| `roof` | the schedule's roof, except where the game's venue has a verified fixed roof (`open`/`dome`, `config/venues.yaml`) that the schedule contradicts or omits: then the venue's (`outdoors`/`dome`; ADR-099 amendment, nflverse files open-air stadiums abroad as `dome`). Null where neither has one |
 | `total_line` | posted game total; null until posted (about two weeks ahead) |
 | `team_expected_margin` | the posted spread from **this team's** side: positive = favoured. Re-expressed once from nflverse's home-oriented `spread_line`; a null is never a pick'em |
 | `implied_team_points`, `implied_opponent_points` | `(total ± margin) / 2`; null unless both lines are posted |
@@ -1115,7 +1116,7 @@ Optional members of the in-season bundle: `weekly_projections.json` and the
 `ros_build_metadata.weekly` block are written together or not at all, and their absence removes
 the Start/Sit tab's content and nothing else.
 
-### 20.1 `weekly_projection` 1.0 — one player's next game, as a distribution
+### 20.1 `weekly_projection` 1.1 — one player's next game, as a distribution
 
 One record per Opportunity Board player × scoring preset, keyed `(build_id, scoring_preset,
 player_id)`. JSON only: a seven-quantile distribution and a ten-part account are not rows a
@@ -1127,16 +1128,18 @@ spreadsheet reader can use, and the lines inside it follow ADR-091's no-CSV rule
 | `team` | the current roster club when the roster names exactly one, else the club of his latest appearance — a trade moves the game |
 | `model_version` | `weekly-startsit-v1` |
 | `game_state` | `upcoming`; `kicked_off` (kept for the record, locked on the page); `bye` (no `game`, `quantiles`, `drivers` or `opponent`); `lines_pending` (the game and `opponent`, no `quantiles` or `drivers`: the model was never trained without a posted line) |
-| `game` | `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `roof` (null while a retractable roof is unannounced), `total_line`, `team_margin` (this team's side, positive = favoured), `team_points` (implied); lines null until posted, never a pick'em |
+| `game` | `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `roof` (null while a retractable roof is unannounced; a verified fixed venue roof replaces a contradicting schedule value, as in `team_matchups`), `total_line`, `team_margin` (this team's side, positive = favoured), `team_points` (implied); lines null until posted, never a pick'em |
 | `quantiles` | `q05` … `q95`: next-game points **given that he plays**, non-decreasing |
 | `drivers` | `baseline`, the seven families `form` `role` `availability` `offense` `game` `opponent` `prior`, `calibration`, `rearrangement`: points that sum to `q50` (rearrangement absorbs rounding) |
 | `opponent` | the defence's allowed points to his position through the cutoff: `allowed_ppg` (shrunk over 4 games), `league_ppg`, `index`, `rank` of `defenses`, `games` |
-| `injury` | the official report for `target_week`: `designation` (`Out`/`Doubtful`/`Questionable`/null), `practice_status`, `primary_injury`. Printed beside the projection; **no model reads it** |
+| `injury` | the official report for `target_week`: `designation` (`Out`/`Doubtful`/`Questionable`/null), `practice_status`, `primary_injury`. Printed beside the projection; **the production model does not read it** (the shadow v2 may, ADR-099) |
+| `explanation` (1.1) | present exactly when `quantiles` is: for `q10`, `q50`, `q90`, an account `{typical, terms: {lines, home, rest, roof, opponent}, calibration, rearrangement}` in points, two decimals (`typical_week_shapley_v1`, docs/MODELING.md §35.7). `typical` is the same model's reading of the same player in his typical week; each term is the exact weighted Shapley share of one game input group; `typical + Σ terms + calibration + rearrangement` equals the published quantile |
 
 Validator: `weekly.quantiles_monotonic`, `weekly.driver_account_closes` (within 0.011),
-`weekly.record_shape` (the blocks agree with `game_state`) and
+`weekly.explanation_account_closes` (every level, within 0.011), `weekly.record_shape` (the
+blocks agree with `game_state`; `explanation` iff `quantiles`) and
 `cross_artifact.weekly_projection_unpublished` (every projected player is on the Opportunity
-Board, at its cutoff) — all critical.
+Board, at its cutoff) — all critical. 1.1 is additive: a 1.0 reader ignores `explanation`.
 
 ### 20.2 `ros_build_metadata.weekly` — what the page computes with
 
@@ -1158,7 +1161,16 @@ measurement rather than a constant in page code:
   appeared (`designation_appearance_rate_v1`, 2017–2025);
 - `evaluation` — both verdicts, the sealed-season accuracy, Brier and coverage, and its
   calibration table, which the verdict line prints beside every head-to-head;
-- `injuries_retrieved_at_utc`, and `statement`: what the model reads and what reads it.
+- `injuries_retrieved_at_utc`, and `statement`: what the model reads and what reads it;
+- `explanation` (ADR-099) — `rule` (`typical_week_shapley_v1`), the explained `levels`, the
+  input `groups` with their labels, `reference_shrink_games` (3), how the `reference` is
+  built, and the `statement` that keeps an attribution from reading as a measured cause;
+- `context` — what `weekly_context.json` was built from: the forecast capture used and its
+  time, weather statuses by count, report rows and teams whose report is final, listed
+  players, unresolved venues; null when the context was withheld;
+- `shadow` — the private `weekly-startsit-v2` shadow record's summary: `status`
+  (`absent`/`shadow`/`failed`), `rows`, `pregame`, `with_v2`, `configuration_hash`. The rows
+  themselves go to the private store (`gameday/weekly_shadow`), never to the site.
 
 ### 20.3 Identity on every published row (ADR-097)
 
@@ -1167,6 +1179,45 @@ placeholder (`None`, `null`, `NaN`, empty or blank; `artifact.placeholder_displa
 critical). The build fills a missing name from this season's weekly rows, then the roster, then
 the player master, and falls back to the player id, which the validator reports as a warning
 (`artifact.id_as_display_name`).
+
+### 20.4 `weekly_game_context` 1.0 — the game-day facts beside a projection (ADR-099)
+
+`weekly_context.json`: one record per team with a game in `target_week`, keyed `(build_id,
+team)`. JSON only. Written with the weekly layer and withheld with it; its own failure
+(`ros.weekly_context_failed`, a warning) withholds only it.
+
+| field | meaning |
+|---|---|
+| `team`, `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc` | the game |
+| `context_rule_version` | `weekly_gameday_context_v1` |
+| `venue` | the registry venue the game resolves to (`venue_id`, `name`, `country`, `roof_type` ∈ open/retractable/dome/unverified, `latitude`, `longitude`), or null when it resolves to none or to two |
+| `roof` | `recorded` (the schedule's own value, uncorrected: null until a retractable roof's state is recorded, and nflverse's `dome` for an open-air venue abroad stays visible here), `model_indoors` (what v1 reads: the venue's verified fixed roof where there is one), `assumed_from_last_home_game` (true when v1's value was carried from the stadium's last home game, ADR-096) |
+| `weather` | `status` (`ok`, `roof_unknown`, `indoors`, `unavailable`, `stale`, `out_of_range`, `implausible`, `no_venue`), `provider` (`nws`/`open_meteo`), `wind_mph`, `gust_mph`, `temp_f`, `precip_probability`, `precip_in`, `short_forecast`, `valid_from_utc`, `valid_to_utc`, `provider_updated_utc`, `retrieved_at_utc`. Numbers only when `ok` (open air) or `roof_unknown` (outside conditions at a retractable or unverified venue); otherwise null |
+| `lineup` | `report_available`, `report_final` (the team's report carries at least one game status), `listed`: each lagged starter (OL, QB, CB, S, DL) or notable skill player (≥ 10% of targets or 20% of carries over the last three games) with a game designation — `player_id`, `name`, `position`, `role` (`OL2`, …), `group`, `starter_rank`, `snap_share`, `target_share`, `carry_share`, `designation`, `practice_status`, `primary_injury` |
+| `typical` | the game half of every player's typical week on this team: `games`, `total_line`, `team_margin`, `team_points` (shrunk team means of posted lines over completed games), `home_share`, `indoors_share` |
+| `this_week` | the game inputs v1 reads this week: `total_line`, `team_margin`, `team_points`, `is_home`, `rest_advantage`, `indoors` |
+
+Validator `weekly_context_checks` (critical): both sides of every game present and agreeing on
+the game; `weather` carries numbers only in `ok`/`roof_unknown`, an `ok` reading has wind,
+temperature and a retrieval time, a dome is always `indoors`, a retractable or unverified venue
+is never `ok`; a listed player always carries a designation and is listed only on a final
+report; implied points agree with total and margin; and `weekly_context.roof_agreement`:
+`roof.model_indoors` equals `this_week.indoors`, and at a venue whose roof is `open` (`dome`)
+it is 0 (1).
+
+**Source contracts and the retained store.** Two normalized contracts gain context columns
+that nothing intrinsic reads: `SCHEDULE_CONTRACT` 1.2 adds `stadium_id`, `stadium`, `temp`
+and `wind` (the last two null until a game is played), and `SNAP_COUNTS_CONTRACT` 1.1 adds
+`defense_snaps` and `defense_pct` (lagged defensive starters). The private store gains a
+`gameday/<source_id>/<season>/<YYYY-MM-DDTHH-MM-SSZ>/` layout, append-only and
+content-hashed like `market/` and `status/`: `weather_forecast` (one row per upcoming game,
+the kickoff-hour reading with provider, update, valid and retrieval times and status),
+`nflverse_injuries` (the season's report at the refresh, with per-week and per-row content
+digests in the manifest, `injury_report_pit_v1`), `weekly_shadow` (the build's paired
+v1/v2 quantiles and every v2 input) and `weekly_v2_look` (one capture per prospective look
+taken: the scored rows it judged, and `details.look`/`details.verdict`; written by
+`weekly-v2-prospective.yml` before the verdict is shown, at most one per look, and two of one
+look refuse to read). `validate-market-history` re-hashes all four.
 
 ## 21. The served layout — `serving_v1` (ADR-098)
 
@@ -1215,6 +1266,7 @@ never change.
 | `inseason_opportunity` | same | block | all; copied ROS fields joined (21.4) |
 | `inseason_opportunity_cohort` | `inseason_opportunity` | block | `league_preset_id`, `scoring_preset`, `player_id`, `position`, `add_count`, `drop_count`, `snap_share_last3`, `target_share_last3` |
 | `weekly_projections` | same | scoring | all |
+| `weekly_context` | same | whole | all (ADR-099; read with the Start/Sit tab and a card's "This week" block) |
 | `player_status`, `team_matchups`, `behavior_trend_series`, `player_headshots`, `player_usage` | same | whole | all |
 | `player_usage_cohort` | `player_usage` | whole | `player_id`, `position`, `touchdown_points_share`, `pass_epa_per_dropback` |
 | `players` | every artifact with names | whole | `player_id` → `display_name` |
@@ -1265,7 +1317,8 @@ records what that precision is and what the page prints, so a future change can 
 | `ros_tiers`, `inseason_opportunity` | ROS VORP and point quantiles, expected points and games, uncertainty | ≤ 4 dp | 1 dp |
 | `ros_tiers` | points to date | ≤ 2 dp | 1 dp |
 | `inseason_opportunity` | `snap_share_last3`, `target_share_last3` | full double (≤ 19 dp) | whole percent; the view's CSV export writes the value itself |
-| `weekly_projections` | quantiles, drivers, implied points / lines, opponent index | 2 dp / 1 dp / 3 dp | 1 dp, signed 1 dp |
+| `weekly_projections` | quantiles, drivers, explanation accounts, implied points / lines, opponent index | 2 dp / 1 dp / 3 dp | 1 dp, signed 1 dp |
+| `weekly_context` | lines / implied points, shares, forecast values | 1–2 dp, ≤ 4 dp, 1 dp | 1 dp, whole percent, whole mph and °F |
 | `arbitrage` | ADP, rank gap, score / trend / regional value gap | 2 dp / 4 dp / 6 dp | 1 dp, signed 1 dp |
 | `player_usage` | shares, points, counts, touchdown share, EPA | 2–4 dp | whole percent, 1 dp, integers, 2 dp |
 | `behavior_trend_series` | span, add and net trend | 4 dp | "over N days/hours", 1 dp or whole per day |

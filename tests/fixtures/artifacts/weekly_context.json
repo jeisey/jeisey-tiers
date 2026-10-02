@@ -1,0 +1,951 @@
+{
+  "schema_version": "1.0",
+  "artifact": "weekly_context",
+  "record_schema": "weekly_game_context",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 14,
+  "records": [
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "BUF",
+      "game_id": "2026_09_BUF_NO",
+      "opponent": "NO",
+      "home_away": "away",
+      "neutral_site": true,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "chi-soldier-field",
+        "name": "Soldier Field",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 41.8625,
+        "longitude": -87.6167
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "ok",
+        "provider": "nws",
+        "wind_mph": 18.0,
+        "gust_mph": 29.0,
+        "temp_f": 38.0,
+        "precip_probability": 70.0,
+        "precip_in": 0.12,
+        "short_forecast": "Rain And Breezy",
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": true,
+        "listed": [
+          {
+            "player_id": "gsis:fx-BUF-OL1",
+            "name": "Fixture Guard",
+            "position": "G",
+            "role": "OL2",
+            "group": "OL",
+            "starter_rank": 2,
+            "snap_share": 0.98,
+            "target_share": null,
+            "carry_share": null,
+            "designation": "Out",
+            "practice_status": "Did Not Participate In Practice",
+            "primary_injury": "Ankle"
+          },
+          {
+            "player_id": "gsis:fx-BUF-OL3",
+            "name": "Fixture Tackle",
+            "position": "T",
+            "role": "OL4",
+            "group": "OL",
+            "starter_rank": 4,
+            "snap_share": 0.98,
+            "target_share": null,
+            "carry_share": null,
+            "designation": "Questionable",
+            "practice_status": "Did Not Participate In Practice",
+            "primary_injury": "Ankle"
+          },
+          {
+            "player_id": "gsis:00-0000002",
+            "name": "Dez Okonkwo",
+            "position": null,
+            "role": "skill",
+            "group": "SKILL",
+            "starter_rank": null,
+            "snap_share": null,
+            "target_share": 0.098039,
+            "carry_share": 0.602564,
+            "designation": "Questionable",
+            "practice_status": "Limited Participation in Practice",
+            "primary_injury": "Hamstring"
+          }
+        ]
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 45.5,
+        "team_margin": 0.0,
+        "team_points": 22.75,
+        "is_home": 0.0,
+        "rest_advantage": -7.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "CHI",
+      "game_id": "2026_09_DAL_CHI",
+      "opponent": "DAL",
+      "home_away": "home",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T21:25:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "buf-highmark-stadium",
+        "name": "Highmark Stadium",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 42.773,
+        "longitude": -78.7922
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "roof_unknown",
+        "provider": "nws",
+        "wind_mph": 7.0,
+        "gust_mph": 12.0,
+        "temp_f": 61.0,
+        "precip_probability": 10.0,
+        "precip_in": 0.0,
+        "short_forecast": null,
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": true,
+        "listed": [
+          {
+            "player_id": "gsis:fx-CHI-CB0",
+            "name": "Fixture Corner",
+            "position": "CB",
+            "role": "CB1",
+            "group": "CB",
+            "starter_rank": 1,
+            "snap_share": 0.95,
+            "target_share": null,
+            "carry_share": null,
+            "designation": "Out",
+            "practice_status": "Did Not Participate In Practice",
+            "primary_injury": "Ankle"
+          }
+        ]
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 46.5,
+        "team_margin": 3.5,
+        "team_points": 25.0,
+        "is_home": 1.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "DAL",
+      "game_id": "2026_09_DAL_CHI",
+      "opponent": "CHI",
+      "home_away": "away",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T21:25:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "buf-highmark-stadium",
+        "name": "Highmark Stadium",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 42.773,
+        "longitude": -78.7922
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "roof_unknown",
+        "provider": "nws",
+        "wind_mph": 7.0,
+        "gust_mph": 12.0,
+        "temp_f": 61.0,
+        "precip_probability": 10.0,
+        "precip_in": 0.0,
+        "short_forecast": null,
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": true,
+        "listed": [
+          {
+            "player_id": "gsis:00-0000004",
+            "name": "Chris Johnson",
+            "position": null,
+            "role": "skill",
+            "group": "SKILL",
+            "starter_rank": null,
+            "snap_share": null,
+            "target_share": 0.166667,
+            "carry_share": 0.0,
+            "designation": "Out",
+            "practice_status": "Did Not Participate In Practice",
+            "primary_injury": "Knee"
+          }
+        ]
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 46.5,
+        "team_margin": -3.5,
+        "team_points": 21.5,
+        "is_home": 0.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "DEN",
+      "game_id": "2026_09_GB_DEN",
+      "opponent": "GB",
+      "home_away": "home",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "det-ford-field",
+        "name": "Ford Field",
+        "country": "US",
+        "roof_type": "dome",
+        "latitude": 42.34,
+        "longitude": -83.0456
+      },
+      "roof": {
+        "recorded": "dome",
+        "model_indoors": 1.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "indoors",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": "Partly Sunny",
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 47.5,
+        "team_margin": 7.0,
+        "team_points": 27.25,
+        "is_home": 1.0,
+        "rest_advantage": 0.0,
+        "indoors": 1.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "GB",
+      "game_id": "2026_09_GB_DEN",
+      "opponent": "DEN",
+      "home_away": "away",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "det-ford-field",
+        "name": "Ford Field",
+        "country": "US",
+        "roof_type": "dome",
+        "latitude": 42.34,
+        "longitude": -83.0456
+      },
+      "roof": {
+        "recorded": "dome",
+        "model_indoors": 1.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "indoors",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": "Partly Sunny",
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 47.5,
+        "team_margin": -7.0,
+        "team_points": 20.25,
+        "is_home": 0.0,
+        "rest_advantage": 0.0,
+        "indoors": 1.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "HOU",
+      "game_id": "2026_09_IND_HOU",
+      "opponent": "IND",
+      "home_away": "home",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "ne-gillette-stadium",
+        "name": "Gillette Stadium",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 42.0909,
+        "longitude": -71.2643
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "stale",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": null,
+        "valid_from_utc": null,
+        "valid_to_utc": null,
+        "provider_updated_utc": null,
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 48.5,
+        "team_margin": -7.0,
+        "team_points": 20.75,
+        "is_home": 1.0,
+        "rest_advantage": -7.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "IND",
+      "game_id": "2026_09_IND_HOU",
+      "opponent": "HOU",
+      "home_away": "away",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "ne-gillette-stadium",
+        "name": "Gillette Stadium",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 42.0909,
+        "longitude": -71.2643
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "stale",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": null,
+        "valid_from_utc": null,
+        "valid_to_utc": null,
+        "provider_updated_utc": null,
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 48.5,
+        "team_margin": 7.0,
+        "team_points": 27.75,
+        "is_home": 0.0,
+        "rest_advantage": 7.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "KC",
+      "game_id": "2026_09_LAC_KC",
+      "opponent": "LAC",
+      "home_away": "home",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T21:25:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "kc-arrowhead-stadium",
+        "name": "Arrowhead Stadium",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 39.0489,
+        "longitude": -94.4839
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "indoors",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": null,
+        "valid_from_utc": null,
+        "valid_to_utc": null,
+        "provider_updated_utc": null,
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "is_home": 1.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "LAC",
+      "game_id": "2026_09_LAC_KC",
+      "opponent": "KC",
+      "home_away": "away",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T21:25:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "kc-arrowhead-stadium",
+        "name": "Arrowhead Stadium",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 39.0489,
+        "longitude": -94.4839
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "indoors",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": null,
+        "valid_from_utc": null,
+        "valid_to_utc": null,
+        "provider_updated_utc": null,
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "is_home": 0.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "LV",
+      "game_id": "2026_09_MIA_LV",
+      "opponent": "MIA",
+      "home_away": "home",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T21:25:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "gb-lambeau-field",
+        "name": "Lambeau Field",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 44.5014,
+        "longitude": -88.0622
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "ok",
+        "provider": "nws",
+        "wind_mph": 7.0,
+        "gust_mph": 12.0,
+        "temp_f": 61.0,
+        "precip_probability": 10.0,
+        "precip_in": 0.0,
+        "short_forecast": "Partly Sunny",
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 43.5,
+        "team_margin": -7.0,
+        "team_points": 18.25,
+        "is_home": 1.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "MIA",
+      "game_id": "2026_09_MIA_LV",
+      "opponent": "LV",
+      "home_away": "away",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T21:25:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "gb-lambeau-field",
+        "name": "Lambeau Field",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 44.5014,
+        "longitude": -88.0622
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "ok",
+        "provider": "nws",
+        "wind_mph": 7.0,
+        "gust_mph": 12.0,
+        "temp_f": 61.0,
+        "precip_probability": 10.0,
+        "precip_in": 0.0,
+        "short_forecast": "Partly Sunny",
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 43.5,
+        "team_margin": 7.0,
+        "team_points": 25.25,
+        "is_home": 0.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "MIN",
+      "game_id": "2026_09_NE_MIN",
+      "opponent": "NE",
+      "home_away": "home",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "hou-reliant-stadium",
+        "name": "Reliant Stadium (NRG Stadium 2014-2025)",
+        "country": "US",
+        "roof_type": "retractable",
+        "latitude": 29.6847,
+        "longitude": -95.4108
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "unavailable",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": null,
+        "valid_from_utc": null,
+        "valid_to_utc": null,
+        "provider_updated_utc": null,
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 44.5,
+        "team_margin": -3.5,
+        "team_points": 20.5,
+        "is_home": 1.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "NE",
+      "game_id": "2026_09_NE_MIN",
+      "opponent": "MIN",
+      "home_away": "away",
+      "neutral_site": false,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "hou-reliant-stadium",
+        "name": "Reliant Stadium (NRG Stadium 2014-2025)",
+        "country": "US",
+        "roof_type": "retractable",
+        "latitude": 29.6847,
+        "longitude": -95.4108
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "unavailable",
+        "provider": "nws",
+        "wind_mph": null,
+        "gust_mph": null,
+        "temp_f": null,
+        "precip_probability": null,
+        "precip_in": null,
+        "short_forecast": null,
+        "valid_from_utc": null,
+        "valid_to_utc": null,
+        "provider_updated_utc": null,
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 44.5,
+        "team_margin": 3.5,
+        "team_points": 24.0,
+        "is_home": 0.0,
+        "rest_advantage": 0.0,
+        "indoors": 0.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "team": "NO",
+      "game_id": "2026_09_BUF_NO",
+      "opponent": "BUF",
+      "home_away": "home",
+      "neutral_site": true,
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "context_rule_version": "weekly_gameday_context_v1",
+      "venue": {
+        "venue_id": "chi-soldier-field",
+        "name": "Soldier Field",
+        "country": "US",
+        "roof_type": "open",
+        "latitude": 41.8625,
+        "longitude": -87.6167
+      },
+      "roof": {
+        "recorded": "outdoors",
+        "model_indoors": 0.0,
+        "assumed_from_last_home_game": false
+      },
+      "weather": {
+        "status": "ok",
+        "provider": "nws",
+        "wind_mph": 18.0,
+        "gust_mph": 29.0,
+        "temp_f": 38.0,
+        "precip_probability": 70.0,
+        "precip_in": 0.12,
+        "short_forecast": "Rain And Breezy",
+        "valid_from_utc": "2026-11-08T18:00:00Z",
+        "valid_to_utc": "2026-11-08T19:00:00Z",
+        "provider_updated_utc": "2026-11-03T10:14:00+00:00",
+        "retrieved_at_utc": "2026-11-03T11:00:00Z"
+      },
+      "lineup": {
+        "report_available": true,
+        "report_final": false,
+        "listed": []
+      },
+      "typical": {
+        "games": 0,
+        "total_line": null,
+        "team_margin": null,
+        "team_points": null,
+        "home_share": 0.5,
+        "indoors_share": null
+      },
+      "this_week": {
+        "total_line": 45.5,
+        "team_margin": 0.0,
+        "team_points": 22.75,
+        "is_home": 0.0,
+        "rest_advantage": 7.0,
+        "indoors": 0.0
+      }
+    }
+  ]
+}

@@ -88,7 +88,7 @@ decisions:
     config/identity-aliases.yaml (human-reviewed) is loaded LAST and wins. A generated file
     is a machine's reading of a name; a reviewed entry is a person's decision about a
     player, usually written because the automatic path could not see him (ADR-019/054/061).
-  non_commercial_deployment_required_by: [sleeper, fantasypros_ecr_via_dynastyprocess]
+  non_commercial_deployment_required_by: [sleeper, fantasypros_ecr_via_dynastyprocess, open_meteo]
   # Sources permitted for internal comparison only. Nothing here may reach a public
   # artifact, an intrinsic feature, or any DraftValue input.
   benchmark_only_sources: [fantasypros_ecr_via_dynastyprocess]
@@ -250,9 +250,14 @@ sources:
           was a preseason 404 for a file not yet published. Consumed since ADR-096 as
           context only, never as a model feature: the week's designation is printed beside
           a weekly projection, and designation appearance rates are measured over completed
-          seasons 2017-2025. The point-in-time probe this note asked for is still owed
-          before the report can become a feature. Until then a revised row could move a
-          base rate slightly, but no projection, value, rank or tier.
+          seasons 2017-2025. The point-in-time probe was made 2026-10-01 (ADR-099,
+          docs/DATA_SOURCES.md section 20.3): 2017-2024 rows carry `date_modified`, and 24 of
+          44,356 were last modified after their team's kickoff; 2025 and 2026 carry no
+          timestamp, so their pregame values are unverified, and two same-day captures of
+          the 2026 file were byte-identical (that rules out nothing beyond those hours).
+          From ADR-099 the report is a candidate input of the shadow model
+          weekly-startsit-v2 only, and every production refresh retains a capture
+          (gameday/nflverse_injuries) so revisions are detected prospectively, by row digest.
       - id: current_season_helper_lags
         detail: >-
           get_current_season() returned 2025 on 2026-08-17 while
@@ -709,3 +714,97 @@ sources:
       - odds_optional
     value_unlock: "operational reliability, maintained current-state feeds, SLA/support"
     phase0_note: "Not probed; no V1 dependency. Free stack covered every required role."
+  # ADR-099. Kickoff weather for the weekly game-day context layer. Probed on a runner
+  # 2026-10-01 (the sandbox's egress policy denies both hosts): contract, units, update and
+  # valid times in docs/source-probes/2026-10-01/weather/nws.json, terms in
+  # venue_resolution.json `terms`. Record: docs/DATA_SOURCES.md section 20.
+  nws_api:
+    policy: production_allowed
+    verified: true
+    verified_at: "2026-10-01"
+    criticality: optional
+    cost: free
+    docs_url: "https://www.weather.gov/documentation/services-web-api"
+    openapi_url: "https://api.weather.gov/openapi.json"
+    license: "U.S. Government work"
+    data_license: >-
+      "All of the information presented via the API is intended to be open data, free to use
+      for any purpose" (services-web-api, read 2026-10-01).
+    license_evidence:
+      - "docs/source-probes/2026-10-01/weather/venue_resolution.json (terms)"
+    endpoints:
+      points: "https://api.weather.gov/points/{lat},{lon} (4 decimals)"
+      followed: [forecastGridData, forecastHourly]
+    obligations:
+      - "A User-Agent identifying the application is required (OpenAPI securitySchemes.userAgent)."
+      - "Rate limit is not published; an exceeded limit answers an error retryable after ~5 s."
+      - "The grid (office, gridX, gridY) for a coordinate may change: resolve /points every fetch."
+      - "Fetch once per venue per refresh, and only venues with a game inside the horizon."
+    contract_notes: >-
+      Grid layers carry `uom` (wmoUnit:degC, km_h-1, percent, mm) and ISO-8601
+      `validTime` intervals (start/duration); `updateTime` is the forecast's issue time and
+      differs per product (grid vs hourly). The grid horizon was about 7.5 days; a kickoff
+      outside every interval is out of range, never a number.
+    roles:
+      - weekly_kickoff_forecast_us
+    forbidden_roles:
+      - intrinsic_feature
+      - rest_of_season_feature
+    redistribution_permitted: true
+    attribution_required: false
+  open_meteo:
+    policy: production_allowed
+    verified: true
+    verified_at: "2026-10-01"
+    criticality: optional
+    cost: free_non_commercial_only
+    non_commercial_only: true
+    docs_url: "https://open-meteo.com/en/docs"
+    terms_url: "https://open-meteo.com/en/terms"
+    license_url: "https://open-meteo.com/en/licence"
+    license: "API data CC BY 4.0; server code AGPL-3.0"
+    data_license: "CC BY 4.0 (attribution required)"
+    license_evidence:
+      - "docs/source-probes/2026-10-01/weather/venue_resolution.json (terms)"
+    obligations:
+      - "Free API for non-commercial use only (ADR-016 records the deployment as non-commercial)."
+      - "Fewer than 10,000 calls per day, 5,000 per hour and 600 per minute."
+      - "Attribute Open-Meteo (CC BY 4.0) wherever its data is shown, with a link to the licence."
+      - "Fetch once per venue per refresh, and only venues with a game inside the horizon."
+    archives:
+      historical_forecast_api: >-
+        "A continuous hourly timeseries built by stitching the first hours of each successive
+        model run"; data from 2021 or 2022 depending on the model. A short-lead forecast, not
+        a forecast a reader had a day before.
+      previous_runs_api: >-
+        Each variable at a fixed lead-time offset of 1-7 days; "most models are archived from
+        January 2024". The source of the day-before forecast error
+        (config/weather-forecast-error-v1.json).
+      era5: "Reanalysis: historical actual weather, never a forecast. Recorded for comparison only."
+    roles:
+      - weekly_kickoff_forecast_international
+      - forecast_error_measurement
+    forbidden_roles:
+      - intrinsic_feature
+      - rest_of_season_feature
+    redistribution_permitted: true
+    attribution_required: true
+    revisit_if:
+      - "The deployment stops being non-commercial."
+      - "Daily calls approach 10,000 (they are about one per international venue per refresh)."
+  # ADR-099. Venue coordinates come from Wikidata P625 (CC0) of the item each English
+  # Wikipedia article links; Wikipedia text is quoted as roof evidence only. Read once, by the
+  # runner probe, into config/venues.yaml; nothing fetches either at build or serve time.
+  wikidata_venue_coordinates:
+    policy: allowed_optional
+    verified: true
+    verified_at: "2026-10-01"
+    criticality: optional
+    cost: free
+    license: "CC0 (Wikidata); Wikipedia text CC BY-SA, quoted as evidence only"
+    fetched_by_pipeline: false
+    evidence:
+      - "docs/source-probes/2026-10-01/weather/venues.json"
+      - "docs/source-probes/2026-10-01/weather/venue_resolution.json"
+    roles:
+      - venue_registry_provenance

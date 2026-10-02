@@ -1,0 +1,2468 @@
+{
+  "NAS00": {
+    "search": "Tennessee Titans stadium Nashville opened 1999",
+    "search_status": 200,
+    "search_hits": [
+      "Nissan Stadium (2027)",
+      "Nissan Stadium (Nashville)",
+      "FirstBank Stadium",
+      "2017 Tennessee Titans season",
+      "History of the Tennessee Titans",
+      "2008 Tennessee Titans season",
+      "Jaguars–Titans rivalry",
+      "Nashville, Tennessee"
+    ],
+    "titles": [
+      {
+        "requested_title": "Nissan Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium",
+        "wikipedia_pageid": 80204720,
+        "wikipedia_revid": 1359834080,
+        "wikipedia_rev_timestamp": "2026-06-17T14:16:41Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q21164193",
+        "disambiguation": true,
+        "lead": "Nissan Stadium may refer to: Nissan Stadium (Nashville), an outdoor American football stadium in Nashville, Tennessee, U.S. Nissan Stadium (2027), an indoor stadium currently under construction, set to replace the existing stadium in 2027 Nissan Stadium (Yokohama)",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "Wikimedia disambiguation page",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "Nissan Stadium (1999)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Nissan Stadium (Nashville)",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (Nashville)",
+        "wikipedia_pageid": 467823,
+        "wikipedia_revid": 1375930209,
+        "wikipedia_rev_timestamp": "2026-09-20T23:33:02Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16638889,
+            "lon": -86.77138889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1142992",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is a multi-purpose stadium in Nashville, Tennessee, United States. Owned by the Metropolitan Government of Nashville and Davidson County, it is primarily used for football and is the home field of the Tennessee Titans of the National Football League (NFL) and the Tigers of Tennessee State University. The stadium is the site of the Music City Bowl, a postseason college football bowl game played each December, and from 2020 until 2021 the home field of Nashville SC of Major League Soccer (MLS). It is used for concerts such as those affiliated with the CMA Music Festival each June. The stadium also has facilities to host public events, meetings, and parties. Nissan Stadium is located on the east bank of the Cumberland River, across the river from downtown Nashville and has a seating capacity of 69,143. Its first regular-season game was a 36–35 win over the Cincinnati Bengals ",
+        "hatnotes": [
+          "{{For|the new stadium under construction|Nissan Stadium (2027)}}"
+        ],
+        "infobox_coordinates": [
+          "{{Coord|36|9|59|N|86|46|17|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "<!-- Please do not add closed dates until after it has actually been officially closed. -->",
+          ""
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "home venue of Tennessee Titans and Tennessee State Tigers football team",
+        "wikidata_P625": [
+          {
+            "lat": 36.166388888889,
+            "lon": -86.771388888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "LP Field",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (Nashville)",
+        "wikipedia_pageid": 467823,
+        "wikipedia_revid": 1375930209,
+        "wikipedia_rev_timestamp": "2026-09-20T23:33:02Z",
+        "redirects": [
+          {
+            "from": "LP Field",
+            "to": "Nissan Stadium (Nashville)"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16638889,
+            "lon": -86.77138889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1142992",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is a multi-purpose stadium in Nashville, Tennessee, United States. Owned by the Metropolitan Government of Nashville and Davidson County, it is primarily used for football and is the home field of the Tennessee Titans of the National Football League (NFL) and the Tigers of Tennessee State University. The stadium is the site of the Music City Bowl, a postseason college football bowl game played each December, and from 2020 until 2021 the home field of Nashville SC of Major League Soccer (MLS). It is used for concerts such as those affiliated with the CMA Music Festival each June. The stadium also has facilities to host public events, meetings, and parties. Nissan Stadium is located on the east bank of the Cumberland River, across the river from downtown Nashville and has a seating capacity of 69,143. Its first regular-season game was a 36–35 win over the Cincinnati Bengals ",
+        "hatnotes": [
+          "{{For|the new stadium under construction|Nissan Stadium (2027)}}"
+        ],
+        "infobox_coordinates": [
+          "{{Coord|36|9|59|N|86|46|17|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "<!-- Please do not add closed dates until after it has actually been officially closed. -->",
+          ""
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "home venue of Tennessee Titans and Tennessee State Tigers football team",
+        "wikidata_P625": [
+          {
+            "lat": 36.166388888889,
+            "lon": -86.771388888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "LP Field (Nashville)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Adelphia Coliseum",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (Nashville)",
+        "wikipedia_pageid": 467823,
+        "wikipedia_revid": 1375930209,
+        "wikipedia_rev_timestamp": "2026-09-20T23:33:02Z",
+        "redirects": [
+          {
+            "from": "Adelphia Coliseum",
+            "to": "Nissan Stadium (Nashville)"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16638889,
+            "lon": -86.77138889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1142992",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is a multi-purpose stadium in Nashville, Tennessee, United States. Owned by the Metropolitan Government of Nashville and Davidson County, it is primarily used for football and is the home field of the Tennessee Titans of the National Football League (NFL) and the Tigers of Tennessee State University. The stadium is the site of the Music City Bowl, a postseason college football bowl game played each December, and from 2020 until 2021 the home field of Nashville SC of Major League Soccer (MLS). It is used for concerts such as those affiliated with the CMA Music Festival each June. The stadium also has facilities to host public events, meetings, and parties. Nissan Stadium is located on the east bank of the Cumberland River, across the river from downtown Nashville and has a seating capacity of 69,143. Its first regular-season game was a 36–35 win over the Cincinnati Bengals ",
+        "hatnotes": [
+          "{{For|the new stadium under construction|Nissan Stadium (2027)}}"
+        ],
+        "infobox_coordinates": [
+          "{{Coord|36|9|59|N|86|46|17|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "<!-- Please do not add closed dates until after it has actually been officially closed. -->",
+          ""
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Nissan Stadium",
+        "wikidata_description": "home venue of Tennessee Titans and Tennessee State Tigers football team",
+        "wikidata_P625": [
+          {
+            "lat": 36.166388888889,
+            "lon": -86.771388888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "The Coliseum (Nashville)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      }
+    ],
+    "searched": [
+      {
+        "requested_title": "Nissan Stadium (2027)",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Nissan Stadium (2027)",
+        "wikipedia_pageid": 72035145,
+        "wikipedia_revid": 1375930188,
+        "wikipedia_rev_timestamp": "2026-09-20T23:32:53Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.16772222,
+            "lon": -86.76805556,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q115804542",
+        "disambiguation": false,
+        "lead": "Nissan Stadium is an indoor stadium in Nashville, Tennessee, U.S., scheduled to open in 2027. It will replace the existing Nissan Stadium as the home venue for the Tennessee Titans of the National Football League (NFL). The 60,000-seat stadium is projected to cost $2.1 billion, including $1.26 billion of public money—the largest stadium subsidy in U.S. history. It is being built next to the existing Nissan Stadium, which will be demolished after its completion. The stadium was designed by architectural firm Manica. The stadium will host Super Bowl LXIV in 2030.",
+        "hatnotes": [
+          "{{For|the existing stadium|Nissan Stadium (Nashville)}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|36|10|03.8|N|86|46|05|W|type:landmark_scale:3000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "2027 (planned)"
+        ],
+        "infobox_closed": [
+          "",
+          ""
+        ],
+        "infobox_roof": [
+          "[[Skylight]]"
+        ],
+        "wikidata_status": 200,
+        "wikidata_label": "New Nissan Stadium",
+        "wikidata_description": "future NFL stadium",
+        "wikidata_P625": [
+          {
+            "lat": 36.16772222222222,
+            "lon": -86.76805555555555,
+            "precision": 2.777777777777778e-05,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "FirstBank Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "FirstBank Stadium",
+        "wikipedia_pageid": 771058,
+        "wikipedia_revid": 1377260350,
+        "wikipedia_rev_timestamp": "2026-09-28T15:36:36Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 36.14416667,
+            "lon": -86.80888889,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q3554494",
+        "disambiguation": false,
+        "lead": "FirstBank Stadium (formerly Dudley Field and Vanderbilt Stadium) is a college football stadium on the campus of Vanderbilt University in Nashville, Tennessee. Opened 104 years ago in 1922 as the first stadium in the South to be used exclusively for college football, it is the home of the Vanderbilt Commodores football team. When the venue was known as Vanderbilt Stadium, it hosted the Tennessee Oilers (now Titans) during the 1998 NFL season and the first Music City Bowl in 1998 and also hosted the Tennessee state high school football championships for many years. FirstBank Stadium is the smallest stadium in the Southeastern Conference (SEC) and was the largest in Nashville until the completion of the Titans' Nissan Stadium in 1999. After the 2022–2025 renovation, its seating capacity was reduced to 35,000, down from the previous 40,350.",
+        "hatnotes": [],
+        "infobox_coordinates": [
+          "{{coord|36|8|39|N|86|48|32|W|type:landmark|display=it}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "FirstBank Stadium",
+        "wikidata_description": "stadium in Nashville, Tennessee",
+        "wikidata_P625": [
+          {
+            "lat": 36.144166666667,
+            "lon": -86.808888888889,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "2017 Tennessee Titans season",
+        "wikipedia_status": 200,
+        "wikipedia_title": "2017 Tennessee Titans season",
+        "wikipedia_pageid": 52195425,
+        "wikipedia_revid": 1372083171,
+        "wikipedia_rev_timestamp": "2026-08-30T05:39:39Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q28448619",
+        "disambiguation": false,
+        "lead": "The 2017 season was the Tennessee Titans' 48th in the National Football League (NFL) and the 58th overall. It also marked the franchise's 21st season in the state of Tennessee as well as the second full season under head coach Mike Mularkey. They equaled their record from a year ago, and not only that, with a 15–10 win over the Jacksonville Jaguars in Week 17, they clinched their first playoff berth since 2008. In the first round, the Titans rallied from a 21–3 halftime deficit against the Chiefs to win 22–21, winning their first playoff game since 2003. However, they were defeated by the New England Patriots in the divisional round by the score of 35–14. Despite making the playoffs and winning a playoff game, this would be Mularkey's final year coaching the Titans, as they parted ways after the season ended. This is also the last season where the Titans wore their uniform design since 1",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "2017 Tennessee Titans season",
+        "wikidata_description": "58th season in franchise history; first playoff berth since 2008",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "History of the Tennessee Titans",
+        "wikipedia_status": 200,
+        "wikipedia_title": "History of the Tennessee Titans",
+        "wikipedia_pageid": 9997305,
+        "wikipedia_revid": 1368907092,
+        "wikipedia_rev_timestamp": "2026-08-11T19:45:11Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q15732108",
+        "disambiguation": false,
+        "lead": "The Tennessee Titans are a professional American football team based in Nashville, Tennessee. They are members of the South Division of the American Football Conference (AFC) in the National Football League (NFL). Previously known as the Houston Oilers, the then Houston, Texas, team began play in 1960 as a charter member of the American Football League (AFL). The Houston Oilers won the first two AFL championships before later joining the NFL as part of the AFL–NFL merger. In 1999 , the Tennessee Titans played their most memorable season since joining the NFL, when they made it all the way to Super Bowl XXXIV, but they fell, at the 1 yard line, to the Kurt Warner-led St. Louis Rams. ( now the Los Angeles Rams)",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "history of the Tennessee Titans",
+        "wikidata_description": null,
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "2008 Tennessee Titans season",
+        "wikipedia_status": 200,
+        "wikipedia_title": "2008 Tennessee Titans season",
+        "wikipedia_pageid": 15601837,
+        "wikipedia_revid": 1341328180,
+        "wikipedia_rev_timestamp": "2026-03-02T16:19:19Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q4612042",
+        "disambiguation": false,
+        "lead": "The 2008 Tennessee Titans season was the team's 49th season and 39th in the National Football League (NFL), their 12th in Tennessee, and their tenth as the Titans. Despite making the playoffs in the 2007 season with a record of 10–6, the Titans were expected by most sportswriters to finish third or even fourth in the AFC South. They nonetheless compiled a 13–3 regular season record—the best in the NFL—and won home-field advantage for the duration of the playoffs after clinching AFC South on December 7 after a win over the Cleveland Browns and a 10–0 start. The Titans defense was ranked number two in the NFL behind the Pittsburgh Steelers, giving up only 234 points. The Titans lost two of their last three regular season games, and were eliminated by the Baltimore Ravens in the divisional round. This was the last season the Tennessee Titans qualified for the playoffs until 2017, and also t",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "2008 Tennessee Titans season",
+        "wikidata_description": "National Football League franchise in Tennessee",
+        "wikidata_P625": []
+      }
+    ]
+  },
+  "BUF00": {
+    "search": "Buffalo Bills stadium Orchard Park opened 1973",
+    "search_status": 200,
+    "search_hits": [
+      "1973 Buffalo Bills season",
+      "Ralph Wilson Stadium",
+      "Buffalo Bills",
+      "List of current NFL stadiums",
+      "Bills–Chiefs rivalry",
+      "1973 Miami Dolphins season",
+      "History of the Buffalo Bills",
+      "Chronology of home stadiums for current NFL teams"
+    ],
+    "titles": [
+      {
+        "requested_title": "Highmark Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Highmark Stadium",
+        "wikipedia_pageid": 39235022,
+        "wikipedia_revid": 1376055436,
+        "wikipedia_rev_timestamp": "2026-09-21T19:32:19Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.77305556,
+            "lon": -78.79222222,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q16251517",
+        "disambiguation": false,
+        "lead": "Highmark Stadium is an American football stadium located in Orchard Park, New York, a suburb of Buffalo. It opened in 2026, serving as the home field of the Buffalo Bills of the National Football League (NFL). The stadium was built adjacent to Erie Community College's south campus across the street from where Ralph Wilson Stadium stood. The stadium was designed by Populous. The stadium has a seating capacity of 60,108, the smallest among NFL venues. However, the 63,000 total capacity (counting standing room-only possibilities) can reach 66,000 depending on the event. The new venue has a partial roof so that 65% of seats would be protected from the elements; the playing field is uncovered as Buffalo's reputation for cold, snowy weather often makes for compelling television and has long formed a part of the team's and city's identity. The stadium cost $1.7 billion. Under an agreement with ",
+        "hatnotes": [
+          "{{About|the Buffalo Bills' sports venue that opened in 2026|their former stadium of the same name|Ralph Wilson Stadium|the venue in Pittsburgh, Pennsylvania formerly known as Highmark Stadium|F.N.B. Stadium (Pittsburgh)}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42|46|23|N|78|47|32|W|type:landmark_region:US-NY|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{Start date and age"
+        ],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Highmark Stadium",
+        "wikidata_description": "stadium in  Orchard Park, New York",
+        "wikidata_P625": [
+          {
+            "lat": 42.77297222222222,
+            "lon": -78.79219444444445,
+            "precision": 2.777777777777778e-05,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "Highmark Stadium (1973)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Highmark Stadium (Orchard Park)",
+        "wikipedia_status": 200,
+        "wikipedia_missing": true
+      },
+      {
+        "requested_title": "Ralph Wilson Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": null,
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "New Era Field",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": [
+          {
+            "from": "New Era Field",
+            "to": "Ralph Wilson Stadium"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "Rich Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": [
+          {
+            "from": "Rich Stadium",
+            "to": "Ralph Wilson Stadium"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      },
+      {
+        "requested_title": "Bills Stadium",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Ralph Wilson Stadium",
+        "wikipedia_pageid": 711365,
+        "wikipedia_revid": 1377726565,
+        "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+        "redirects": [
+          {
+            "from": "Bills Stadium",
+            "to": "Ralph Wilson Stadium"
+          }
+        ],
+        "wikipedia_coordinates": [
+          {
+            "lat": 42.774,
+            "lon": -78.787,
+            "primary": true
+          }
+        ],
+        "wikidata_item": "Q1475645",
+        "disambiguation": false,
+        "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+        "hatnotes": [
+          "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+        ],
+        "infobox_coordinates": [
+          "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+        ],
+        "infobox_opened": [
+          "{{start date and age"
+        ],
+        "infobox_closed": [
+          "{{End date and age",
+          "2026 (ongoing)"
+        ],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Ralph Wilson Stadium",
+        "wikidata_description": "stadium in Orchard Park, NY",
+        "wikidata_P625": [
+          {
+            "lat": 42.773611111111,
+            "lon": -78.786944444444,
+            "precision": null,
+            "rank": "normal"
+          }
+        ]
+      }
+    ],
+    "searched": [
+      {
+        "requested_title": "1973 Buffalo Bills season",
+        "wikipedia_status": 200,
+        "wikipedia_title": "1973 Buffalo Bills season",
+        "wikipedia_pageid": 16028459,
+        "wikipedia_revid": 1364152218,
+        "wikipedia_rev_timestamp": "2026-07-14T20:51:13Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q4575476",
+        "disambiguation": false,
+        "lead": "The 1973 Buffalo Bills season was the 14th season for the team and their 4th season in the National Football League (NFL). The Bills finished in 2nd place in the AFC East division and finished the 1973 NFL season with a record of 9–5, the team's first winning record since 1966. Head coach Lou Saban began the second season of his second tenure with the Bills. Saban had previously led the team to the 1964 and 1965 AFL championships. This was the first season that the team played in Rich Stadium (which changed names over a decade later) after thirteen years playing at War Memorial Stadium (\"The Rockpile\"). The Bills were returning from 1–13 and 4–9–1 records in 1971 and 1972, respectively. Incumbent starting quarterback Dennis Shaw found himself in a battle with rookie Joe Ferguson for the starting job. The season was defined by O. J. Simpson. The fifth-year running back became the first pl",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "1973 Buffalo Bills season",
+        "wikidata_description": "14th season in franchise history",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "Buffalo Bills",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Buffalo Bills",
+        "wikipedia_pageid": 4315,
+        "wikipedia_revid": 1377174851,
+        "wikipedia_rev_timestamp": "2026-09-28T04:50:53Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q221626",
+        "disambiguation": false,
+        "lead": "The Buffalo Bills are a professional American football team based in the Buffalo–Niagara Falls metropolitan area. The Bills compete in the National Football League (NFL) as a member of the American Football Conference (AFC) East division. The team plays its home games at Highmark Stadium in Orchard Park, New York. Founded in 1959 as a charter member of the American Football League (AFL), the team joined the NFL in 1970 after the AFL–NFL merger. The team's name is taken from an All-America Football Conference (AAFC) franchise from Buffalo that was named after western frontiersman Buffalo Bill. Drawing much of its fanbase from western New York and neighboring southern Ontario, the Bills are the only NFL team that plays home games in the state of New York. The franchise is owned by Terry Pegula, who purchased the Bills after the death of the original owner Ralph Wilson in 2014, and a coalit",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Buffalo Bills",
+        "wikidata_description": "National Football League franchise in Orchard Park, New York",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "List of current NFL stadiums",
+        "wikipedia_status": 200,
+        "wikipedia_title": "List of current NFL stadiums",
+        "wikipedia_pageid": 10814816,
+        "wikipedia_revid": 1376770135,
+        "wikipedia_rev_timestamp": "2026-09-26T03:25:54Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q684521",
+        "disambiguation": false,
+        "lead": "This list of current NFL stadiums includes their locations, capacities, year opened, and home teams. Although the NFL has 32 teams, there are only 30 full-time NFL stadiums, as the New York Giants and New York Jets share MetLife Stadium, and the Los Angeles Chargers and Los Angeles Rams share SoFi Stadium. The latest NFL stadium to open is Highmark Stadium, home of the Buffalo Bills, which opened for the 2026 season. Soldier Field in Chicago is the oldest, having opened in 1924; however, the Bears did not play at Soldier Field until 1971 and did not play there in 2002 while the stadium was under reconstruction, and thus the oldest continuously operating stadium in the NFL is Lambeau Field, hosting the Green Bay Packers since its opening in 1957. The NFL uses several other stadiums in addition to the teams' designated regular home sites. Two English venues – Tottenham Hotspur Stadium and ",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "list of current National Football League stadiums",
+        "wikidata_description": "Wikimedia list article",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "Bills–Chiefs rivalry",
+        "wikipedia_status": 200,
+        "wikipedia_title": "Bills–Chiefs rivalry",
+        "wikipedia_pageid": 75586458,
+        "wikipedia_revid": 1366955160,
+        "wikipedia_rev_timestamp": "2026-07-31T01:49:18Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q124077993",
+        "disambiguation": false,
+        "lead": "The Bills–Chiefs rivalry is a National Football League (NFL) rivalry between the Buffalo Bills and Kansas City Chiefs. The series originated during the American Football League's inaugural season in 1960, as both the Chiefs, then known as the Dallas Texans, and Bills were charter teams in the league. Because they play in different intraconference divisions, the Bills in the AFC East and the Chiefs in the AFC West, they do not play each other every year. Instead, based on the NFL's scheduling formula, the two teams play each other at least once every three seasons and at least once every six seasons at each team's home stadium when their divisions are paired up, sometimes more often if the two teams meet in the playoffs or they finish in the same place in their respective divisions. Nonetheless, the Bills and Chiefs have had many notable moments in NFL postseason history, including the 19",
+        "hatnotes": [],
+        "infobox_coordinates": [
+          "{{coord|42.77377|-78.78698}}",
+          "{{coord|39.04896|-94.48406}}"
+        ],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "Bills–Chiefs rivalry",
+        "wikidata_description": "NFL rivalry",
+        "wikidata_P625": []
+      },
+      {
+        "requested_title": "1973 Miami Dolphins season",
+        "wikipedia_status": 200,
+        "wikipedia_title": "1973 Miami Dolphins season",
+        "wikipedia_pageid": 15915981,
+        "wikipedia_revid": 1375419966,
+        "wikipedia_rev_timestamp": "2026-09-17T17:39:34Z",
+        "redirects": null,
+        "wikipedia_coordinates": [],
+        "wikidata_item": "Q4575607",
+        "disambiguation": false,
+        "lead": "The 1973 Miami Dolphins season was the franchise's eighth season and fourth season in the National Football League (NFL). The team entered the 1973 season as defending Super Bowl champions following its perfect undefeated 1972 season. In week 1, the Dolphins extended their winning streak to 18 with a 21–13 win over the San Francisco 49ers. However, the following week, they were defeated 12–7 by the Oakland Raiders to end the winning streak. The streak stood as an NFL record until it was broken by the New England Patriots in 2004 whose record of 21 consecutive wins still stands. The team won the AFC East, finishing with a regular season record of 12–2, and then defeated the Cincinnati Bengals in the Divisional Round, the Raiders in the AFC Championship game, and the Minnesota Vikings in the league's eighth Super Bowl. It was the Dolphins' second consecutive (and to date last) Super Bowl v",
+        "hatnotes": [],
+        "infobox_coordinates": [],
+        "infobox_opened": [],
+        "infobox_closed": [],
+        "infobox_roof": [],
+        "wikidata_status": 200,
+        "wikidata_label": "1973 Miami Dolphins season",
+        "wikidata_description": "8th season in franchise history; second Super Bowl win",
+        "wikidata_P625": []
+      }
+    ]
+  },
+  "_run": {
+    "started_at_utc": "2026-10-01T17:40:33.702588+00:00",
+    "finished_at_utc": "2026-10-01T17:42:36.514307+00:00",
+    "user_agent": "jeisey-tiers source probe (https://github.com/jeisey/jeisey-tiers)",
+    "calls_by_host": {
+      "en.wikipedia.org": 85,
+      "www.wikidata.org": 45,
+      "www.weather.gov": 1,
+      "api.weather.gov": 1,
+      "open-meteo.com": 5
+    },
+    "failures": []
+  },
+  "schedule_names": {
+    "Allianz Arena (Munich)": {
+      "requested_title": "Allianz Arena (Munich)",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "Football Arena Munich": {
+      "requested_title": "Football Arena Munich",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "Munich Football Arena": {
+      "requested_title": "Munich Football Arena",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "Tottenham Hotspur Stadium": {
+      "requested_title": "Tottenham Hotspur Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Tottenham Hotspur Stadium",
+      "wikipedia_pageid": 57547930,
+      "wikipedia_revid": 1377204343,
+      "wikipedia_rev_timestamp": "2026-09-28T08:12:07Z",
+      "redirects": null,
+      "wikipedia_coordinates": [
+        {
+          "lat": 51.6044,
+          "lon": -0.0664,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q55074091",
+      "disambiguation": false,
+      "lead": "Tottenham Hotspur Stadium is a multi-purpose stadium in London, England. It is owned and operated by the Premier League club Tottenham Hotspur, replacing the club's previous ground, White Hart Lane. With a seating capacity of 62,850, it is the third largest football stadium in England and the largest club ground in London. It is also used for NFL International Series games. It features the world's first dividing, retractable synthetic turf pitch used for NFL games, concerts and other events. The construction of the stadium was initiated as the centrepiece of the Northumberland Development Project, intended to be the catalyst for a 20-year regeneration plan for Tottenham. The project covers the site of the now demolished ground White Hart Lane and areas adjacent to it. It was conceived in 2007 and announced in 2008, but revised several times, and construction of the stadium, beset by disp",
+      "hatnotes": [],
+      "infobox_coordinates": [],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Tottenham Hotspur Stadium",
+      "wikidata_description": "stadium in London, England",
+      "wikidata_P625": [
+        {
+          "lat": 51.604444444444,
+          "lon": -0.066388888888889,
+          "precision": 0.00027777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Azteca Stadium": {
+      "requested_title": "Azteca Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Estadio Azteca",
+      "wikipedia_pageid": 1834902,
+      "wikipedia_revid": 1374978481,
+      "wikipedia_rev_timestamp": "2026-09-15T04:05:38Z",
+      "redirects": [
+        {
+          "from": "Azteca Stadium",
+          "to": "Estadio Azteca"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 19.303,
+          "lon": -99.1505,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q320454",
+      "disambiguation": false,
+      "lead": "Estadio Azteca (Latin American Spanish: [esˈtaðjo asˈteka]), officially known as Estadio Banorte for sponsorship reasons, is a football stadium located in Coyoacán, Mexico City. At an elevation of 2,241 meters (7,352 ft) above sea level it is the official home of Club América of Liga MX and the Mexico national team. With a capacity of 87,523, it is the largest stadium in Latin America and the eighth-largest association football stadium in the world. One of the best known football stadiums in the world, often called the \"Temple of Football\" or the \"Cathedral of Football\", it was the first to host two FIFA World Cup finals; Brazil defeated Italy 4–1 in 1970 and Argentina beat West Germany 3–2 in 1986. It also hosted the 1986 quarter-final match between Argentina and England in which Diego Maradona scored both the \"Hand of God goal\" and the \"Goal of the Century\". Both Pelé's (1970) and Dieg",
+      "hatnotes": [
+        "{{About||the adjacent light rail station|Estadio Azteca light rail station|the Andrés Calamaro song|El Cantante (Andrés Calamaro album)}}",
+        "{{Redirect|Estadio Banorte}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|19.3030|-99.1505|region:MX_type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Estadio Azteca",
+      "wikidata_description": "football stadium in Mexico City, Mexico",
+      "wikidata_P625": [
+        {
+          "lat": 19.303055555555556,
+          "lon": -99.15055555555556,
+          "precision": 0.0002777777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Bernabeu": {
+      "requested_title": "Bernabeu",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Bernabéu",
+      "wikipedia_pageid": 1257703,
+      "wikipedia_revid": 1350939770,
+      "wikipedia_rev_timestamp": "2026-04-24T23:49:42Z",
+      "redirects": [
+        {
+          "from": "Bernabeu",
+          "to": "Bernabéu"
+        }
+      ],
+      "wikipedia_coordinates": [],
+      "wikidata_item": "Q822132",
+      "disambiguation": true,
+      "lead": "Bernabéu may refer to: Bernabéu (stadium), an association football stadium in Madrid Santiago Bernabéu (1895–1978), Spanish footballer and 11th President of Real Madrid CF Bernabeu (surname), people with the surname",
+      "hatnotes": [],
+      "infobox_coordinates": [],
+      "infobox_opened": [],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Bernabéu",
+      "wikidata_description": "Wikimedia disambiguation page",
+      "wikidata_P625": []
+    },
+    "CenturyLink Field": {
+      "requested_title": "CenturyLink Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Lumen Field",
+      "wikipedia_pageid": 206812,
+      "wikipedia_revid": 1373998493,
+      "wikipedia_rev_timestamp": "2026-09-09T05:12:24Z",
+      "redirects": [
+        {
+          "from": "CenturyLink Field",
+          "to": "Lumen Field"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 47.5952,
+          "lon": -122.3316,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q612736",
+      "disambiguation": false,
+      "lead": "Lumen Field is a multi-purpose stadium in Seattle, Washington, United States. Located in the city's SoDo neighborhood, it is the home field for the Seattle Seahawks of the National Football League (NFL), Seattle Sounders FC of Major League Soccer (MLS), and Seattle Reign FC of the National Women's Soccer League (NWSL). It has a seating capacity of 68,740 spectators for NFL games and 37,722 for most MLS matches. The complex also includes the Event Center, which is home to the Washington Music Theater (WaMu Theater), a parking garage, and a public plaza. Located within a mile (1.6 km) of Downtown Seattle, the stadium is accessible by multiple freeways and forms of mass transit. The stadium was built between 2000 and 2002 on the site of the Kingdome after voters approved funding for the construction in a statewide election held in June 1997. This vote created the Washington State Public Sta",
+      "hatnotes": [
+        "{{Redirect|Seattle Stadium|other stadiums in Seattle|Category:Sports venues in Seattle{{!}}"
+      ],
+      "infobox_coordinates": [
+        "{{Coord|47.5952|N|122.3316|W|type:landmark_scale:5000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Lumen Field",
+      "wikidata_description": "multi-purpose stadium in Seattle, Washington, USA",
+      "wikidata_P625": [
+        {
+          "lat": 47.595277777778,
+          "lon": -122.33166666667,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Deutsche Bank Park": {
+      "requested_title": "Deutsche Bank Park",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Waldstadion (Frankfurt)",
+      "wikipedia_pageid": 1897000,
+      "wikipedia_revid": 1375755144,
+      "wikipedia_rev_timestamp": "2026-09-19T21:36:08Z",
+      "redirects": [
+        {
+          "from": "Deutsche Bank Park",
+          "to": "Waldstadion (Frankfurt)"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 50.068056,
+          "lon": 8.645806,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q157273",
+      "disambiguation": false,
+      "lead": "Waldstadion (German pronunciation: [ˈvalt.ʃtaːdi̯ɔn] , Forest Stadium), currently known as Deutsche Bank Park for sponsorship purposes, is a retractable roof sports stadium in Frankfurt, Germany. The home stadium of the football club Eintracht Frankfurt, it was opened in 1925. The stadium has been upgraded several times since then; the most recent remodelling was its redevelopment as a football-only stadium in preparation for the 2005 FIFA Confederations Cup and 2006 FIFA World Cup. With a capacity of 60,100 spectators for league matches, it is the sixth largest football stadium in Germany. The stadium was one of the nine venues of 2011 FIFA Women's World Cup, and hosted four matches including the final. It also hosted five matches of the UEFA Euro 2024. The 2027 UEFA Europa League final will be played at the stadium. The sports complex, which is owned by the city of Frankfurt, includes ",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|50.068056|N|8.645806|E|type:landmark|display=inline,title|format=dms}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [
+        "[[Retractable roof"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "Waldstadion",
+      "wikidata_description": "stadium in Frankfurt am Main, Germany",
+      "wikidata_P625": [
+        {
+          "lat": 50.068611,
+          "lon": 8.645278,
+          "precision": 1e-05,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Estadio Banorte": {
+      "requested_title": "Estadio Banorte",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Estadio Azteca",
+      "wikipedia_pageid": 1834902,
+      "wikipedia_revid": 1374978481,
+      "wikipedia_rev_timestamp": "2026-09-15T04:05:38Z",
+      "redirects": [
+        {
+          "from": "Estadio Banorte",
+          "to": "Estadio Azteca"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 19.303,
+          "lon": -99.1505,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q320454",
+      "disambiguation": false,
+      "lead": "Estadio Azteca (Latin American Spanish: [esˈtaðjo asˈteka]), officially known as Estadio Banorte for sponsorship reasons, is a football stadium located in Coyoacán, Mexico City. At an elevation of 2,241 meters (7,352 ft) above sea level it is the official home of Club América of Liga MX and the Mexico national team. With a capacity of 87,523, it is the largest stadium in Latin America and the eighth-largest association football stadium in the world. One of the best known football stadiums in the world, often called the \"Temple of Football\" or the \"Cathedral of Football\", it was the first to host two FIFA World Cup finals; Brazil defeated Italy 4–1 in 1970 and Argentina beat West Germany 3–2 in 1986. It also hosted the 1986 quarter-final match between Argentina and England in which Diego Maradona scored both the \"Hand of God goal\" and the \"Goal of the Century\". Both Pelé's (1970) and Dieg",
+      "hatnotes": [
+        "{{About||the adjacent light rail station|Estadio Azteca light rail station|the Andrés Calamaro song|El Cantante (Andrés Calamaro album)}}",
+        "{{Redirect|Estadio Banorte}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|19.3030|-99.1505|region:MX_type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Estadio Azteca",
+      "wikidata_description": "football stadium in Mexico City, Mexico",
+      "wikidata_P625": [
+        {
+          "lat": 19.303055555555556,
+          "lon": -99.15055555555556,
+          "precision": 0.0002777777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
+    "EverBank Field": {
+      "requested_title": "EverBank Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "EverBank Stadium",
+      "wikipedia_pageid": 626654,
+      "wikipedia_revid": 1372151265,
+      "wikipedia_rev_timestamp": "2026-08-30T16:34:11Z",
+      "redirects": [
+        {
+          "from": "EverBank Field",
+          "to": "EverBank Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 30.32388889,
+          "lon": -81.6375,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q635117",
+      "disambiguation": false,
+      "lead": "EverBank Stadium is an American football stadium in Jacksonville, Florida, United States. It is the home facility of the Jacksonville Jaguars of the National Football League (NFL), and the headquarters of the professional wrestling promotions All Elite Wrestling (AEW) and Ring of Honor (ROH). The stadium opened in 1995 as Jacksonville Municipal Stadium on the site of the old Gator Bowl Stadium (erected 1927), and included some portions of the older stadium. Located on the St. Johns River, it sits on 10 acres (4.0 ha) of land in downtown Jacksonville. In addition to hosting the Jaguars, the stadium is regularly used for college football, concerts, and other events. It is the regular site of the annual Florida–Georgia football rivalry game, a matchup between the Florida Gators of the University of Florida and the Georgia Bulldogs of the University of Georgia. The stadium is also the home o",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|30|19|26|N|81|38|15|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "EverBank Field",
+      "wikidata_description": "home venue of Jacksonville Jaguars",
+      "wikidata_P625": [
+        {
+          "lat": 30.323889,
+          "lon": -81.6375,
+          "precision": 0.0001,
+          "rank": "normal"
+        }
+      ]
+    },
+    "FC Bayern Munich Stadium": {
+      "requested_title": "FC Bayern Munich Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "FedExField": {
+      "requested_title": "FedExField",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Northwest Stadium",
+      "wikipedia_pageid": 395592,
+      "wikipedia_revid": 1374296465,
+      "wikipedia_rev_timestamp": "2026-09-11T03:10:43Z",
+      "redirects": [
+        {
+          "from": "FedExField",
+          "to": "Northwest Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 38.90777778,
+          "lon": -76.86444444,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q583085",
+      "disambiguation": false,
+      "lead": "Northwest Stadium is a stadium near Landover, Maryland, in the census-designated place of Summerfield 2.5 miles (4 km) east of Washington, D.C. It is the home venue of the Washington Commanders of the National Football League (NFL). The stadium opened in 1997 as Jack Kent Cooke Stadium and was known as FedExField from 1999 until 2024. Northwest Stadium had the NFL's largest capacity at 91,000 from 2004 until 2010 and currently seats 64,000. The stadium is owned and operated by the Commanders, with non-NFL events managed by Harris Blitzer Sports & Entertainment (HBSE). The stadium is expected to be demolished following the Commanders moving to New Stadium at RFK Campus in Washington, D.C., upon its opening in 2030.",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{coord|38|54|28|N|76|51|52|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Northwest Stadium",
+      "wikidata_description": "stadium located in Maryland, U.S.",
+      "wikidata_P625": [
+        {
+          "lat": 38.907777777778,
+          "lon": -76.864444444444,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "FirstEnergy Stadium": {
+      "requested_title": "FirstEnergy Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Huntington Bank Field",
+      "wikipedia_pageid": 626700,
+      "wikipedia_revid": 1372204591,
+      "wikipedia_rev_timestamp": "2026-08-30T21:29:01Z",
+      "redirects": [
+        {
+          "from": "FirstEnergy Stadium",
+          "to": "Huntington Bank Field"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 41.50611111,
+          "lon": -81.69944444,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1100756",
+      "disambiguation": false,
+      "lead": "Huntington Bank Field is a stadium in Cleveland, Ohio, United States. It is the home field of the Cleveland Browns of the National Football League (NFL), and serves as a venue for other events such as college and high school football, soccer, hockey, and concerts. It opened in 1999 as Cleveland Browns Stadium and was known as FirstEnergy Stadium from 2013 to 2023 before briefly reverting to its original name until 2024. The initial seating capacity was listed at 73,200 people, but following the first phase of a two-year renovation project in 2014, was reduced to the current capacity of 67,431. The stadium sits on 31 acres (13 ha) of land between Lake Erie and the Cleveland Memorial Shoreway in the North Coast Harbor area of downtown Cleveland, adjacent to the Great Lakes Science Center and Rock and Roll Hall of Fame. Cleveland Stadium stood on the site from 1931 to 1996.",
+      "hatnotes": [
+        "{{Redirect|FirstEnergy Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|41|30|22|N|81|41|58|W|region:US_type:landmark|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "September 12, 1999"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Huntington Bank Field",
+      "wikidata_description": "home venue of the Cleveland Browns",
+      "wikidata_P625": [
+        {
+          "lat": 41.506111111111,
+          "lon": -81.699444444444,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "GEHA Field at Arrowhead Stadium": {
+      "requested_title": "GEHA Field at Arrowhead Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Arrowhead Stadium",
+      "wikipedia_pageid": 292909,
+      "wikipedia_revid": 1375749409,
+      "wikipedia_rev_timestamp": "2026-09-19T20:42:48Z",
+      "redirects": [
+        {
+          "from": "GEHA Field at Arrowhead Stadium",
+          "to": "Arrowhead Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 39.04888889,
+          "lon": -94.48388889,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q544553",
+      "disambiguation": false,
+      "lead": "Arrowhead Stadium is an American football stadium in Kansas City, Missouri, United States. It primarily serves as the home venue of the Kansas City Chiefs of the National Football League (NFL), and has also hosted other soccer games and college football games for regional teams. Arrowhead Stadium hosted multiple matches during the 2026 FIFA World Cup. It was built at the same time as neighboring Kauffman Stadium, home of Major League Baseball's Kansas City Royals, which together form the Truman Sports Complex. Opened 54 years ago in 1972, Arrowhead is currently the oldest stadium in the American Football Conference (AFC). It has a seating capacity of 76,416 making it the 25th-largest stadium in the United States and the sixth-largest NFL stadium. It is also the largest sports facility by capacity in the state of Missouri. A $375 million renovation was completed in 2010.",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{coord|39|2|56|N|94|29|2|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Arrowhead Stadium",
+      "wikidata_description": "home venue of the Kansas City Chiefs",
+      "wikidata_P625": [
+        {
+          "lat": 39.048888888889,
+          "lon": -94.483888888889,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Heinz Field": {
+      "requested_title": "Heinz Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Acrisure Stadium",
+      "wikipedia_pageid": 626713,
+      "wikipedia_revid": 1372194646,
+      "wikipedia_rev_timestamp": "2026-08-30T20:35:33Z",
+      "redirects": [
+        {
+          "from": "Heinz Field",
+          "to": "Acrisure Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 40.44666667,
+          "lon": -80.01583333,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1067148",
+      "disambiguation": false,
+      "lead": "Acrisure Stadium, formerly (and still colloquially) known as Heinz Field, is a stadium located in the North Shore neighborhood of Pittsburgh, Pennsylvania, U.S. It primarily serves as the home of the Pittsburgh Steelers of the National Football League (NFL) and the Pittsburgh Panthers of the National Collegiate Athletic Association (NCAA). The stadium opened in 2001 as Heinz Field, following the controlled implosion of the teams' previous home, Three Rivers Stadium. In 2021, the owners of the Heinz name, now owned by Kraft Heinz, declined to renew the stadium's naming rights. The City of Pittsburgh approved Acrisure's bid to purchase the rights in 2022. Funded in conjunction with PNC Park and the David L. Lawrence Convention Center, the $281 million (equivalent to $510.93 million in 2025) stadium stands along the Ohio River, on the North Side of Pittsburgh in the North Shore neighborhood",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{coord|40|26|48|N|80|0|57|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Acrisure Stadium",
+      "wikidata_description": "American football stadium that is home to the Pittsburgh Steelers and Pittsburgh Panthers",
+      "wikidata_P625": [
+        {
+          "lat": 40.446666666667,
+          "lon": -80.015833333333,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Maracana Stadium": {
+      "requested_title": "Maracana Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Maracanã Stadium",
+      "wikipedia_pageid": 292965,
+      "wikipedia_revid": 1377290973,
+      "wikipedia_rev_timestamp": "2026-09-28T18:57:20Z",
+      "redirects": [
+        {
+          "from": "Maracana Stadium",
+          "to": "Maracanã Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": -22.9122,
+          "lon": -43.2303,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q155174",
+      "disambiguation": false,
+      "lead": "Estádio do Maracanã, officially known as Estádio Jornalista Mário Filho, is an association football stadium in Rio de Janeiro, Brazil. Located in the Maracanã neighborhood, it is owned by the Rio de Janeiro state government and managed by the clubs Flamengo and Fluminense. It is part of a complex that includes an arena known by the name of Maracanãzinho, which is mostly used for volleyball events. The stadium was opened in 1950 to host the FIFA World Cup, in which Brazil was beaten 2–1 by Uruguay in the deciding game, in front of a still standing record attendance of 210,850 spectators, on 16 July 1950. The venue has seen attendances of 150,000 or more at 26 occasions and has seen crowds of more than 100,000 as many as 284 times. But as terraced sections have been replaced with seats over time, and after the renovation following the 2016 Summer Olympics and Paralympics, its original capa",
+      "hatnotes": [
+        "{{Redirect|Rio Olympic Stadium|the venue of [[athletics at the 2016 Summer Olympics]]|Estádio Olímpico Nilton Santos}}",
+        "{{For|the stadium in Serbia nicknamed \"Marakana\"|Red Star Stadium}}"
+      ],
+      "infobox_coordinates": [],
+      "infobox_opened": [
+        "{{Start date"
+      ],
+      "infobox_closed": [
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Maracanã Stadium",
+      "wikidata_description": "stadium in Rio de Janeiro, Brazil",
+      "wikidata_P625": [
+        {
+          "lat": -22.912222222222223,
+          "lon": -43.23027777777778,
+          "precision": 0.0002777777777777778,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Mercedes-Benz Superdome": {
+      "requested_title": "Mercedes-Benz Superdome",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Caesars Superdome",
+      "wikipedia_pageid": 626568,
+      "wikipedia_revid": 1376765872,
+      "wikipedia_rev_timestamp": "2026-09-26T03:01:46Z",
+      "redirects": [
+        {
+          "from": "Mercedes-Benz Superdome",
+          "to": "Caesars Superdome"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 29.95083333,
+          "lon": -90.08111111,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q756452",
+      "disambiguation": false,
+      "lead": "Caesars Superdome commonly known as the Superdome, is an indoor stadium in New Orleans, Louisiana, U.S. It has served as the home venue of the New Orleans Saints of the National Football League (NFL) since its opening in 1975. Plans to build the Superdome were drawn up in 1967 by the New Orleans modernist architectural firm of Curtis and Davis and the building opened as the Louisiana Superdome in 1975. Its steel frame covers a 13-acre (5.3 ha) expanse and the 273-foot (83 m) dome is made of a lamellar multi-ringed frame and has a diameter of 680 feet (207 m), making it the largest fixed domed structure in the world. The Superdome has hosted eight Super Bowls (the most of any stadium as of 2025's Super Bowl LIX), and six NCAA championships in men's college basketball. In college football, the Sugar Bowl has been played at the Superdome since 1975, which is one of the \"New Year's Six\" bowl",
+      "hatnotes": [
+        "{{Redirect|Mercedes-Benz Superdome|the stadium in Atlanta, Georgia|Mercedes-Benz Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|29|57|3|N|90|4|52|W|region:US-LA_type:landmark|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [
+        "[[Dome]]"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "Caesars Superdome",
+      "wikidata_description": "domed stadium in New Orleans, Louisiana, USA",
+      "wikidata_P625": [
+        {
+          "lat": 29.950833333333,
+          "lon": -90.081111111111,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "New Era Field": {
+      "requested_title": "New Era Field",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Ralph Wilson Stadium",
+      "wikipedia_pageid": 711365,
+      "wikipedia_revid": 1377726565,
+      "wikipedia_rev_timestamp": "2026-09-30T20:32:04Z",
+      "redirects": [
+        {
+          "from": "New Era Field",
+          "to": "Ralph Wilson Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 42.774,
+          "lon": -78.787,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1475645",
+      "disambiguation": false,
+      "lead": "Ralph Wilson Stadium, colloquially known as The Ralph, was a stadium in Orchard Park, New York, in the Southtowns of the Buffalo metropolitan area. It served as the home venue of the Buffalo Bills of the National Football League (NFL) from 1973 to 2025. The stadium opened in 1973 as Rich Stadium and remained that until 1998. It was known as Ralph Wilson Stadium from 1998 to 2015, New Era Field from 2016 to 2019, Bills Stadium in 2020, and Highmark Stadium from 2021 until its closure following the 2025 season. The stadium was demolished over the course of spring and summer 2026 upon the completion of its replacement, also named Highmark Stadium.",
+      "hatnotes": [
+        "{{Redirect|Bills Stadium|the Bills' current stadium currently known as Highmark Stadium|Highmark Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|42.774|N|78.787|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "{{End date and age",
+        "2026 (ongoing)"
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Ralph Wilson Stadium",
+      "wikidata_description": "stadium in Orchard Park, NY",
+      "wikidata_P625": [
+        {
+          "lat": 42.773611111111,
+          "lon": -78.786944444444,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Oakland-Alameda County Coliseum": {
+      "requested_title": "Oakland-Alameda County Coliseum",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Oakland Coliseum",
+      "wikipedia_pageid": 332305,
+      "wikipedia_revid": 1377385400,
+      "wikipedia_rev_timestamp": "2026-09-29T04:11:32Z",
+      "redirects": [
+        {
+          "from": "Oakland-Alameda County Coliseum",
+          "to": "Oakland Coliseum"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 37.75166667,
+          "lon": -122.20055556,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1147732",
+      "disambiguation": false,
+      "lead": "The Oakland-Alameda County Coliseum, often shortened to the Oakland Coliseum, is a multi-purpose stadium in Oakland, California, United States. It serves as part of the Oakland-Alameda County Coliseum Complex, located next to Oakland Arena. In 2017, the playing surface was dedicated as Rickey Henderson Field in honor of Major League Baseball Hall of Famer and former Oakland Athletics left fielder Rickey Henderson. The Oakland Coliseum is currently the home of the San Francisco Unicorns of Major League Cricket. The stadium was the home of the Oakland Athletics of Major League Baseball from 1968 to 2024. It was also the home of the Oakland Raiders of the National Football League from 1966 until 1981, when the team moved to Los Angeles, and again after the team's return, from 1995 until 2019, when the team moved to Las Vegas. For the last years of top-flight professional sports at the venue",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|37|45|6|N|122|12|2|W|type:landmark|display=it}}"
+      ],
+      "infobox_opened": [
+        "September 18, 1966"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Oakland Coliseum",
+      "wikidata_description": "baseball stadium in Oakland, California, United States",
+      "wikidata_P625": [
+        {
+          "lat": 37.751666666667,
+          "lon": -122.20055555556,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Paul Brown Stadium": {
+      "requested_title": "Paul Brown Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Paycor Stadium",
+      "wikipedia_pageid": 626623,
+      "wikipedia_revid": 1372206140,
+      "wikipedia_rev_timestamp": "2026-08-30T21:34:51Z",
+      "redirects": [
+        {
+          "from": "Paul Brown Stadium",
+          "to": "Paycor Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 39.095,
+          "lon": -84.516,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1632294",
+      "disambiguation": false,
+      "lead": "Paycor Stadium, previously known as Paul Brown Stadium, is an outdoor football stadium in Cincinnati, Ohio. It is the home venue of the Cincinnati Bengals of the National Football League (NFL) and opened on August 19, 2000. Originally named after the Bengals' founder, Paul Brown, the stadium is currently sponsored by Paycor, is located on approximately 22 acres (8.9 ha) of land, and has a listed seating capacity of 65,515. The stadium is nicknamed \"The Jungle\"; the Guns N' Roses song \"Welcome to the Jungle\", is the team's unofficial anthem due in part to the nickname. The construction of the stadium included $555 million of public funding, the largest public subsidy for an NFL stadium at the time. The Bengals had threatened to leave Cincinnati unless the city agreed to subsidize the stadium. In 2011, The Wall Street Journal described the stadium deal as \"unusually lopsided in favor of th",
+      "hatnotes": [
+        "{{For|the high school stadium in Massillon, Ohio|Paul Brown Tiger Stadium}}"
+      ],
+      "infobox_coordinates": [
+        "{{Coord|39.095|N|84.516|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Paycor Stadium",
+      "wikidata_description": "stadium in Cincinnati, Ohio, United States",
+      "wikidata_P625": [
+        {
+          "lat": 39.095444444444,
+          "lon": -84.516038888889,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Reliant Stadium": {
+      "requested_title": "Reliant Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Reliant Stadium",
+      "wikipedia_pageid": 316466,
+      "wikipedia_revid": 1376433325,
+      "wikipedia_rev_timestamp": "2026-09-24T03:21:14Z",
+      "redirects": null,
+      "wikipedia_coordinates": [
+        {
+          "lat": 29.68472222,
+          "lon": -95.41083333,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1058864",
+      "disambiguation": false,
+      "lead": "Reliant Stadium, previously known as NRG Stadium, is a retractable roof stadium in Houston, Texas, U.S. It opened in 2002 at a cost of $352 million and has a seating capacity of 72,220. It was the first NFL facility to have a retractable roof. The stadium is the home of the National Football League's Houston Texans, the Houston Livestock Show and Rodeo, the Texas Bowl, many of the United States men's national soccer team's matches, Mexico national football team friendlies where El Tri serves as the host, and other events. The stadium served as the host facility for Super Bowls XXXVIII (2004) and LI (2017), the 2024 College Football Playoff National Championship, and WrestleMania 25 (2009). The stadium hosted multiple matches during the 2026 FIFA World Cup and was temporarily renamed Houston Stadium during the tournament. It will remain known as 'Houston Stadium' until the transition to R",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|29|41|5|N|95|24|39|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [
+        "[[Retractable roof"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "Reliant Stadium",
+      "wikidata_description": "American football and multipurpose stadium in Houston, Texas, USA",
+      "wikidata_P625": [
+        {
+          "lat": 29.684722222222,
+          "lon": -95.410833333333,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Ring Central Coliseum": {
+      "requested_title": "Ring Central Coliseum",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Oakland Coliseum",
+      "wikipedia_pageid": 332305,
+      "wikipedia_revid": 1377385400,
+      "wikipedia_rev_timestamp": "2026-09-29T04:11:32Z",
+      "redirects": [
+        {
+          "from": "Ring Central Coliseum",
+          "to": "Oakland Coliseum"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 37.75166667,
+          "lon": -122.20055556,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1147732",
+      "disambiguation": false,
+      "lead": "The Oakland-Alameda County Coliseum, often shortened to the Oakland Coliseum, is a multi-purpose stadium in Oakland, California, United States. It serves as part of the Oakland-Alameda County Coliseum Complex, located next to Oakland Arena. In 2017, the playing surface was dedicated as Rickey Henderson Field in honor of Major League Baseball Hall of Famer and former Oakland Athletics left fielder Rickey Henderson. The Oakland Coliseum is currently the home of the San Francisco Unicorns of Major League Cricket. The stadium was the home of the Oakland Athletics of Major League Baseball from 1968 to 2024. It was also the home of the Oakland Raiders of the National Football League from 1966 until 1981, when the team moved to Los Angeles, and again after the team's return, from 1995 until 2019, when the team moved to Las Vegas. For the last years of top-flight professional sports at the venue",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|37|45|6|N|122|12|2|W|type:landmark|display=it}}"
+      ],
+      "infobox_opened": [
+        "September 18, 1966"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Oakland Coliseum",
+      "wikidata_description": "baseball stadium in Oakland, California, United States",
+      "wikidata_P625": [
+        {
+          "lat": 37.751666666667,
+          "lon": -122.20055555556,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Sports Authority Field at Mile High": {
+      "requested_title": "Sports Authority Field at Mile High",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Empower Field at Mile High",
+      "wikipedia_pageid": 501440,
+      "wikipedia_revid": 1375502447,
+      "wikipedia_rev_timestamp": "2026-09-18T04:40:09Z",
+      "redirects": [
+        {
+          "from": "Sports Authority Field at Mile High",
+          "to": "Empower Field at Mile High"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 39.74388889,
+          "lon": -105.02,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q1046135",
+      "disambiguation": false,
+      "lead": "Empower Field at Mile High is an American football stadium in the western United States, located in Denver, Colorado. Opened 25 years ago in 2001, its primary tenant is the Denver Broncos of the National Football League (NFL), and it replaced the Broncos' original home, Mile High Stadium. The stadium is nicknamed \"Mile High\" due to its predecessor, in reference to Denver's elevation of one mile or 5,280 feet (1,610 m) above sea level. Given the difficulty of competing at altitude, as well as the notoriously loud fans, the Broncos are known to have one of the best home-field advantages in the NFL. Former tenants include the Denver Outlaws lacrosse team and the Colorado Rapids soccer team. It has also played host to many concerts, and was the venue for Barack Obama's acceptance of the Democratic presidential nomination at the 2008 Democratic National Convention. After only three decades, t",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|39|44|38|N|105|1|12|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Empower Field at Mile High",
+      "wikidata_description": "home venue of the Denver Broncos",
+      "wikidata_P625": [
+        {
+          "lat": 39.743888888889,
+          "lon": -105.02,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "StubHub Center": {
+      "requested_title": "StubHub Center",
+      "wikipedia_status": 200,
+      "wikipedia_title": "Dignity Health Sports Park",
+      "wikipedia_pageid": 529735,
+      "wikipedia_revid": 1372080521,
+      "wikipedia_rev_timestamp": "2026-08-30T05:19:05Z",
+      "redirects": [
+        {
+          "from": "StubHub Center",
+          "to": "Dignity Health Sports Park"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 33.864,
+          "lon": -118.261,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q200684",
+      "disambiguation": false,
+      "lead": "Dignity Health Sports Park is a multi-use sports complex located on the campus of California State University, Dominguez Hills, in Carson, California, United States. The complex consists of the 27,000-seat Dignity Health Sports Park soccer stadium, the Dignity Health Sports Park tennis stadium, a track-and-field facility, and the VELO Sports Center velodrome. It is approximately 14 miles (23 km) south of downtown Los Angeles, and its primary tenant is the LA Galaxy of Major League Soccer (MLS). The main stadium was also home to the Los Angeles Wildcats of the XFL in 2020. The LA Galaxy II of MLS Next Pro play their home matches at the complex's track and field facility. For the 2017 to 2019 seasons, the stadium served as the temporary home of the Los Angeles Chargers NFL team. For 2020 and 2021, the stadium served as the temporary home of the San Diego State Aztecs football team. Opened ",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|33.864|N|118.261|W|type:landmark|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{Start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "Dignity Health Sports Park",
+      "wikidata_description": "multiple-use sports complex in Carson, California, USA",
+      "wikidata_P625": [
+        {
+          "lat": 33.864444444444,
+          "lon": -118.26111111111,
+          "precision": null,
+          "rank": "normal"
+        }
+      ]
+    },
+    "TIAA Bank Stadium": {
+      "requested_title": "TIAA Bank Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "EverBank Stadium",
+      "wikipedia_pageid": 626654,
+      "wikipedia_revid": 1372151265,
+      "wikipedia_rev_timestamp": "2026-08-30T16:34:11Z",
+      "redirects": [
+        {
+          "from": "TIAA Bank Stadium",
+          "to": "EverBank Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 30.32388889,
+          "lon": -81.6375,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q635117",
+      "disambiguation": false,
+      "lead": "EverBank Stadium is an American football stadium in Jacksonville, Florida, United States. It is the home facility of the Jacksonville Jaguars of the National Football League (NFL), and the headquarters of the professional wrestling promotions All Elite Wrestling (AEW) and Ring of Honor (ROH). The stadium opened in 1995 as Jacksonville Municipal Stadium on the site of the old Gator Bowl Stadium (erected 1927), and included some portions of the older stadium. Located on the St. Johns River, it sits on 10 acres (4.0 ha) of land in downtown Jacksonville. In addition to hosting the Jaguars, the stadium is regularly used for college football, concerts, and other events. It is the regular site of the annual Florida–Georgia football rivalry game, a matchup between the Florida Gators of the University of Florida and the Georgia Bulldogs of the University of Georgia. The stadium is also the home o",
+      "hatnotes": [],
+      "infobox_coordinates": [
+        "{{Coord|30|19|26|N|81|38|15|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [
+        "",
+        ""
+      ],
+      "infobox_roof": [],
+      "wikidata_status": 200,
+      "wikidata_label": "EverBank Field",
+      "wikidata_description": "home venue of Jacksonville Jaguars",
+      "wikidata_P625": [
+        {
+          "lat": 30.323889,
+          "lon": -81.6375,
+          "precision": 0.0001,
+          "rank": "normal"
+        }
+      ]
+    },
+    "Tottenham Stadium": {
+      "requested_title": "Tottenham Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_missing": true
+    },
+    "University of Phoenix Stadium": {
+      "requested_title": "University of Phoenix Stadium",
+      "wikipedia_status": 200,
+      "wikipedia_title": "State Farm Stadium",
+      "wikipedia_pageid": 2748329,
+      "wikipedia_revid": 1377283950,
+      "wikipedia_rev_timestamp": "2026-09-28T18:11:10Z",
+      "redirects": [
+        {
+          "from": "University of Phoenix Stadium",
+          "to": "State Farm Stadium"
+        }
+      ],
+      "wikipedia_coordinates": [
+        {
+          "lat": 33.528,
+          "lon": -112.263,
+          "primary": true
+        }
+      ],
+      "wikidata_item": "Q756433",
+      "disambiguation": false,
+      "lead": "State Farm Stadium is a retractable roof stadium in Glendale, Arizona, U.S., a suburb west of Phoenix. It is the home of the Arizona Cardinals of the National Football League (NFL) and the annual Fiesta Bowl. Opened in 2006, the venue replaced Sun Devil Stadium in Tempe as the home of the Cardinals, and is adjacent to Desert Diamond Arena, former home of the Arizona Coyotes of the National Hockey League. The stadium has been the host of the Fiesta Bowl since January 2007. It hosted two BCS National Championship games in 2007 and 2011, respectively. It hosted the College Football Playoff National Championship in 2016, three Super Bowls (2008, 2015, and 2023), as well as the Pro Bowl in 2015. It also hosted the final game of the 2025 NFL Wild Card weekend for the Los Angeles Rams against the Minnesota Vikings due to the Southern California Wildfires going on at the time. For soccer, it was",
+      "hatnotes": [
+        "{{For|similarly named sports facilities|State farm (disambiguation)}}"
+      ],
+      "infobox_coordinates": [
+        "{{coord|33.528<!--|31|30-->|N|112.263<!--|16|00-->|W|type:landmark_scale:2000|display=inline,title}}"
+      ],
+      "infobox_opened": [
+        "{{start date and age"
+      ],
+      "infobox_closed": [],
+      "infobox_roof": [
+        "[[Retractable roof"
+      ],
+      "wikidata_status": 200,
+      "wikidata_label": "State Farm Stadium",
+      "wikidata_description": "stadium in Glendale, Arizona, USA",
+      "wikidata_P625": [
+        {
+          "lat": 33.5275,
+          "lon": -112.2625,
+          "precision": 0.0001,
+          "rank": "normal"
+        }
+      ]
+    }
+  },
+  "roof_evidence": {
+    "Allianz Arena": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "Hybrid grass<ref>{{cite web |url=https://allianz-arena.com/de/news/2023/08/zum-saisonstart-2023-2024-neuer-hybrid-rasen-in-der-allianz-arena-verlegt |title=Neuer Hybrid-Rasen in der Allianz Arena verlegt |date=7 August 2023 |website=allianz-arena.com |language= German |access-date=29 August 2023}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "Effective with the city's approval of modifications that was granted 16 January 2006, the legal capacity of the stadium increased from 69,000 to 71,000 spectators (including standing room). The lower tier can seat up to 20,000, the middle tier up to 24,000, and the upper tier up to 22,000. 10,400 of",
+        "[[File:Allianz-Arena.ebenerdig.rang1-3.s.JPG|right|thumb|Part of Allianz Arena roof's sun-shade blinds rolled open]]",
+        "The stadium construction began on 21 October 2002 and it was officially opened on 30 May 2005. The primary designers are architects [[Herzog & de Meuron]]. The stadium is designed so that the main entrance to the stadium would be from an elevated esplanade separated from the parking space consisting"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Allianz Arena",
+      "wikipedia_revid": 1375516115,
+      "wikidata_item": "Q127429",
+      "sentences": [
+        "Allianz Arena (German: [aˈli̯ants ʔaˌʁeːna]; known as Munich Football Arena for UEFA competitions) is a football stadium in Munich, Germany, with a 70,000 seating capacity for international matches and 75,000 for domestic matches.",
+        "The partial roof covers all seats, although winds can still blow rain onto some of them.",
+        "Prior to the 2012–13 season, Bayern Munich announced that capacity had been increased to 71,000 for domestic matches and 68,000 for UEFA matches, with the addition of 2,000 seats in the upper tier of the arena.",
+        "The roof of the stadium has built-in roller blinds which may be drawn back and forth during games to provide protection from the sun.",
+        "An esplanade rises gradually from ground level at the subway station entrance, practically building the parking garage's cover, to the entrance level of the stadium.",
+        "However, Allianz is not a sponsor for UEFA and FIFA competitions, and for this reason, the logo is covered during Champions League games, and was removed during the 2006 FIFA World Cup and UEFA Euro 2024."
+      ]
+    },
+    "Arena Corinthians": {
+      "infobox": {
+        "roof": [],
+        "type": [
+          "Stadium"
+        ],
+        "surface": [
+          "[[Lolium perenne|Perennial Ryegrass]] with Artificial Fibres ([[Desso GrassMaster]])<ref name=\"DessoGrassMaster\">{{cite web |url= http://www.prnewswire.co.uk/news-releases/2014-fifa-world-cup-brazil-kicks-off-on-hybrid-grass-232982441.html |title= 2014 FIFA World Cup Brazil Kicks Off on Hybrid Grass |date = 22 November 2013 |access-date = 27 November 2013}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": [
+          "rectangular"
+        ]
+      },
+      "wikitext_roof_lines": [
+        "=== Roof ===",
+        "[[File:080514itaquerao sp 8715pm.jpg|thumb|The underside of the roof is lined by a membrane]]",
+        "Werner Sobek designed the roof,<ref name=\"EandA\"/> which is held in place by 48 {{convert|75|m|ft}}-long trusses.<ref name=\"RoofDetail\">{{cite web| url=http://www.estadao.com.br/noticias/esportes,exclusivo-veja-em-3d-como-sera-a-cobertura-da-arena-corinthians,939698,0.htm| title=Exclusivo: veja em 3",
+        "The roof has four layers. On the underside is a layer of corrugated steel sheets. Above them, thermal and acoustic insulation is provided by [[Polyisocyanurate]] sheets. A layer of plasterboard is above it.<ref name=\"RoofLayers\">{{cite web| url=http://globoesporte.globo.com/futebol/times/corinthians",
+        "The structure was redesigned to duplicate the current noise level supporters create during games. Measurements taken on Pacaembu show that sound levels reach a peak of 113[[decibel|dB]] when goals are scored.<ref name=\"SoundLevels\">{{cite web|url=http://rodrigomattos.blogosfera.uol.com.br/2013/09/04",
+        "The site has 1,620&nbsp;covered parking spaces and 929&nbsp;open air parking spaces,<ref name=\"ProjectData\"/> with another 2,214&nbsp;spaces provided by a shopping mall nearby.<ref name=\"MallParking\">{{cite web| url=http://www.metro.sp.gov.br/pdf/estacionamentos/estacionamentos.pdf| title=Estacionam",
+        "Two people were killed in an accident on 27 November 2013, which destroyed part of the east building.<ref name=\"ConstructionAccident\">{{cite web |url= http://g1.globo.com/sao-paulo/noticia/2013/11/acidente-nas-obras-do-estadio-do-corinthians-mobiliza-bombeiros.html |title= Acidente nas obras do está"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Arena Corinthians",
+      "wikipedia_revid": 1376729111,
+      "wikidata_item": "Q1362236",
+      "sentences": [
+        "80% of the structural construction is made of precast elements, 40% manufactured on a 7,500 square metres (81,000 ft2) plant on-site.",
+        "External walls are covered by 12,000 square metres (130,000 ft2) of white Levantina Techlam ceramic tiles, A 12 metres (39 ft) Corinthians symbol, constructed from stainless steel and backlighting, will be mounted on the south wall of the east side.",
+        "The stadium has 6,000 second tier covered seating and 10,000 VIP seats.",
+        "The largest units will cover more than 470 square metres (5,100 sq ft).",
+        "=== Roof === Werner Sobek designed the roof, which is held in place by 48 75 metres (246 ft)-long trusses.",
+        "The total east–west roof length is 245.",
+        "The height of the roof and weight of the trusses required the use of the largest crawler crane available in Latin America.",
+        "The roof has four layers.",
+        "Finally, the entire roof is covered with 40,000 square metres (430,000 ft2) of Firestone Ultraply TPO.",
+        "On the underside, a flexible membrane covers the structure.",
+        "4,500 square metres (48,000 ft2) of glass will be installed on the end closest to the pitch of the west and east roofing.",
+        "The site has 1,620 covered parking spaces and 929 open air parking spaces, with another 2,214 spaces provided by a shopping mall nearby.",
+        "A crane fell while carrying a part of the roof, destroying eight columns of the LED screen and part of an internal slab."
+      ]
+    },
+    "Bernabéu (stadium)": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "Mixto [[hybrid grass]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Bernabéu''', ({{langx|es|El Bernabéu}} {{IPA|es|βeɾnaˈβew||ES-pe - Estadio Santiago Bernabéu.ogg}}) formerly known as '''Santiago Bernabéu Stadium''', is a [[retractable roof]] [[association football|football]] stadium in the [[Chamartín (Madrid)|district of Chamartín]], [[Madrid]], Spain. With a",
+        "The improvements included a number of points. First, [[FIFA]] forced two-thirds of the seating area to be covered. For this reason, Real Madrid installed a roof covering the perimeter of the first and second tiers of seating, except the east side. The stadium's capacity was reduced from 120,000 to 9",
+        "Also, due to the height of the stand, it was necessary to improve and increase the lighting capability. A [[Retractable roof|retractable protective roof]] was also installed to protect the fans from the elements. After the renovation, the stadium's capacity was 106,000 spectators.<ref name=\":0\" />",
+        "This proposal was announced at the Ordinary General Assembly on 12 September 2010,<ref>{{Cite web|title=Florentino Pérez: \"Crearemos un sistema de cubrición de gradas\"|url=http://www.marca.com/2010/09/12/futbol/equipos/real_madrid/1284290041.html|website=marca.com|date=10 September 2010|language=es}",
+        "However, the project was halted in February 2015,<ref>{{Cite web|title=El TSJM suspende la reforma del Bernabéu|url=https://www.elmundo.es/madrid/2015/02/10/54da85a822601d092d8b456b.html|website=elmundo.es|date=10 February 2015|language=es}}</ref> when the Superior Court of Justice of Madrid annulle",
+        "[[File:Estadio Santiago Bernabeu (53988637843).jpg|250x250px|thumb|Interior and retractable roof of the stadium in 2024.]]",
+        "[[Category:Retractable-pitch stadiums]]",
+        "[[Category:Retractable-roof stadiums in Europe]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Bernabéu (stadium)",
+      "wikipedia_revid": 1376542686,
+      "wikidata_item": "Q164027",
+      "sentences": [
+        "Bernabéu, (Spanish: El Bernabéu [βeɾnaˈβew] ) formerly known as Santiago Bernabéu Stadium, is a retractable roof football stadium in the district of Chamartín, Madrid, Spain.",
+        "All the issues were covered on the day they were released to the Stock Market, thanks to the enthusiasm and confidence of the members, even the most modest ones.",
+        "The stadium had an initial capacity of 75,145 spectators, 27,645 of which had seats (7,125 covered) and 47,500 for standing fans.",
+        "First, FIFA forced two-thirds of the seating area to be covered.",
+        "For this reason, Real Madrid installed a roof covering the perimeter of the first and second tiers of seating, except the east side.",
+        "24,550 of which were covered by the new roof.",
+        "A retractable protective roof was also installed to protect the fans from the elements.",
+        "The proposed plan included a new architectural envelope, roof covering for all seats, and the incorporation of bioclimatic systems with renewable energy, as well as the construction of two new public plazas, a hotel, and a large shopping centre on the side facing Paseo de la Castellana.",
+        "Thus, in 2016, it presented a new project that eliminated the hotel and shopping center, raised the height of the stadium by only 12 meters (39 ft) for the construction of the roof, reaching a total height of 60 meters (200 ft), and eliminated the possibility of increasing the capacity.",
+        "Finally, on 11 November 2023, a third loan of 370 million euros for 30 years was requested to cover cost overruns due to the COVID-19 pandemic and Russian invasion of Ukraine.",
+        "However, the event was postponed and moved to the indoor arena, Palacio de Deportes de la Comunidad de Madrid (the home of Real Madrid Baloncesto) for unknown reasons, possibly due to weather concerns, scheduling conflicts or capacity issues."
+      ]
+    },
+    "Estadio Azteca": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[GrassMaster]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "The stadium was planned to be structurally reinforced by building two large areas on the sides that will serve as bars. The roof was planned to be renovated, which has reportedly not been repaired for a long time and suffers from leaking.<ref name=\"stadiumworks1\" /> In addition to renovations of the"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Estadio Azteca",
+      "wikipedia_revid": 1374978481,
+      "wikidata_item": "Q320454",
+      "sentences": [
+        "The roof was planned to be renovated, which has reportedly not been repaired for a long time and suffers from leaking."
+      ]
+    },
+    "Highmark Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[Kentucky bluegrass]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "{{Cite news |last1=Wojton |first1=Nick |title=Which stadium did the Bills' architects recently design? Check it out |work=Bills Wire |publisher=[[USA Today]] |date=April 1, 2022 |url=https://billswire.usatoday.com/lists/which-stadium-did-the-bills-architects-recently-design/ |access-date=April 2, 20",
+        "Highmark Stadium was designed by the architecture firm [[Populous Holdings|Populous]] in collaboration with the [[Buffalo Bills]] and [[Legends Hospitality|Legends]]. The design was conceived as a football-focused, open-air stadium intended to preserve the effects of [[Buffalo, New York|Buffalo]]'s ",
+        "The exterior is characterized by a continuous colonnade of vertical fins extending around the stadium from ground level to the canopy. Perforated metal panels are positioned between the upper portions of the fins, providing protection from wind and precipitation while retaining the open-air characte",
+        "A 360-degree canopy covers the seating bowl. Rather than enclosing the stadium, the canopy follows the shape of the bowl and exterior facade, rising toward the center of the stadium and descending toward the end zones. The arrangement provides weather protection while leaving the field exposed to ou",
+        "Weather considerations were incorporated into both the architecture and stadium systems. The open-air configuration allows snow, wind and cold temperatures to remain part of the game-day environment, while the canopy, perforated facade, enclosed circulation areas and snow-mitigation systems provide ",
+        "The first major stadium proposal was presented in 2012. On October 23, George Hasiotis and Nicholas Stracick of Greater Buffalo Sports and Entertainment Complex, a Delaware-based [[limited liability company|LLC]], presented a rendered plan created by architect firm [[HKS, Inc.]] to the Buffalo Commo",
+        "On August 31, 2021, the Bills submitted their plans for a $1.4 billion, 60,000-seat stadium in Orchard Park to representatives of the state and Erie County to be completed by 2027. The proposed capacity was 12,000 seats less than Highmark Stadium and 1,500 seats less than [[Soldier Field]], the lowe",
+        "Several aspects of the stadium drew criticism following the event. Photographs circulated on social media showing seats with views obstructed by railings, safety glass partitions and staircases, and some personal seat license holders said the views differed from those presented during the sales proc"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Highmark Stadium",
+      "wikipedia_revid": 1376055436,
+      "wikidata_item": "Q16251517",
+      "sentences": [
+        "The new venue has a partial roof so that 65% of seats would be protected from the elements; the playing field is uncovered as Buffalo's reputation for cold, snowy weather often makes for compelling television and has long formed a part of the team's and city's identity.",
+        "The design was conceived as a football-focused, open-air stadium intended to preserve the effects of Buffalo's weather while providing greater protection for spectators than the team's previous stadium.",
+        "The exterior is characterized by a continuous colonnade of vertical fins extending around the stadium from ground level to the canopy.",
+        "Perforated metal panels are positioned between the upper portions of the fins, providing protection from wind and precipitation while retaining the open-air character of the venue.",
+        "A 360-degree canopy covers the seating bowl.",
+        "Rather than enclosing the stadium, the canopy follows the shape of the bowl and exterior facade, rising toward the center of the stadium and descending toward the end zones.",
+        "The arrangement provides weather protection while leaving the field exposed to outdoor conditions.",
+        "The canopy and surrounding facade were also designed to mitigate the effects of Buffalo's wind and winter weather without eliminating the outdoor environment associated with Bills games.",
+        "Contemporary descriptions of the completed stadium report that the canopy covers more than 60 percent of the seating.",
+        "The open concourse design represents a change from the more enclosed circulation areas of the previous stadium.",
+        "The open-air configuration allows snow, wind and cold temperatures to remain part of the game-day environment, while the canopy, perforated facade, enclosed circulation areas and snow-mitigation systems provide protection for spectators and the playing surface.",
+        "The resulting design was intended to balance the demands of Buffalo's winter climate with the Bills' preference for an outdoor football environment.",
+        "4 billion, 72,000-seat retractable roof stadium, convention center, hotel and sports museum plan for the Buffalo Outer Harbor.",
+        "5 billion package that would also include renovations to KeyBank Center, Buffalo's indoor sports arena.",
+        "The new venue does not include a roof, but was designed so that about 65% of seats would be protected from the elements.",
+        "Western New York's harsh winters also played into the team's decision to make the new stadium open-air.",
+        "He was found \"covered in human excrement\" and was under the influence of drugs and alcohol before being removed from the site.",
+        "The video boards were criticized as small relative to those at other recently built NFL venues, the sound system performed poorly, and spectators in sections marketed as covered were soaked during a downpour, despite promotional material indicating the canopy would shelter about 65% of seats."
+      ]
+    },
+    "Maracanã Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "Grass"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "For the 2014 World Cup and 2016 Olympics and Paralympics, a major reconstruction project was initiated in 2010.<ref name=\"stadiumguide.com\">{{cite web|url=https://www.stadiumguide.com/maracana/|title=Maracana – Rio de Janeiro – The Stadium Guide|first=Wojciech|last=says|website=stadiumguide.com|date"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Maracanã Stadium",
+      "wikipedia_revid": 1377290973,
+      "wikidata_item": "Q155174",
+      "sentences": [
+        "The stadium's popular name is derived from the Maracanã River, which originates in the jungle-covered hills to the west, crossing various bairros (neighborhoods) of Rio's Zona Norte (North Zone), such as Tijuca and São Cristóvão, via a drainage canal which features sloping sides constructed of concrete.",
+        "The stadium has also hosted numerous domestic football cup finals, most notably the Copa do Brasil and the Campeonato Carioca.",
+        "The original stadium's roof in concrete was removed and replaced with a fiberglass tensioned membrane coated with polytetra-fluoroethylene.",
+        "The new roof covers 95% of the seats inside the stadium, unlike the former design, where protection was only afforded to some seats in the upper ring and the bleachers above the gate access of each sector.",
+        "=== Disrepair after the 2016 Summer Olympics precipitates new concessionaire === The stadium lay dormant in the months after the 2016 Olympics and Paralympics, with photos surfacing in early 2017 of a dried-up playing field covered in brown spots and missing turf, ripped-out seats, and damage to windows and doors."
+      ]
+    },
+    "Melbourne Cricket Ground": {
+      "infobox": {
+        "roof": [],
+        "type": [
+          "Video |language=English |publisher=YouTube |access-date=2021-07-22 |archive-url=https://web.archive.org/web/20231008053319/https://www.youtube.com/watch?v=XA5p-gU33eA |archive-date=8 October 2023 |url-status=live |quote=Australia's two previous olympic hosts Sydney and Melbourne will also host football prelims and quarterfinals enabling australia-wide engagement |people=[[Australian Olympic Committee]]}}</ref><ref name=\"AusStadiums0721\">{{Cite news |last=<!--Staff writer(s)/no by-line.--> |date=21 July 2021 |title=Brisbane 2032 Olympic venues announced |url=https://www.austadiums.com/news/921/brisbane-2032-olympic-games-venues-revealed |url-status=live |archive-url=https://web.archive.org/web/20231008053423/https://www.austadiums.com/news/921/brisbane-2032-olympic-games-venues-revealed |archive-date=8 October 2023 |access-date=2021-07-21 |work=AusStadiums}}</ref><ref name=\"BNE32IOC\">{{Cite web |title=IOC Future Host Commission Questionnaire Response - Final Submission - May 2021 |url=https://stillmed.olympics.com/media/Documents/International-Olympic-Committee/Commissions/Future-host-commission/The-Games-of-The-Olympiad/Brisbane-2032-FHC-Questionnaire-Response.pdf |access-date=2021-07-21 |website=www.olympics.com |language=en |archive-date=14 August 2024 |archive-url=https://web.archive.org/web/20240814191327/https://stillmed.olympics.com/media/Documents/International-Olympic-Committee/Commissions/Future-host-commission/The-Games-of-The-Olympiad/Brisbane-2032-FHC-Questionnaire-Response.pdf |url-status=live }}</ref>"
+        ],
+        "surface": [
+          "Grass"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "From November 2019 until February 2020 all the playing field lights, including those in the light towers, were replaced with LED sports lighting with the lighting under the roof and in two of the light towers completed in time for the [[New Zealand cricket team in Australia in 2019–20#2nd Test|Boxin"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Melbourne Cricket Ground",
+      "wikipedia_revid": 1376948300,
+      "wikidata_item": "Q330136",
+      "sentences": [
+        "The Southern Stand, which spanned almost half of the field's circumference, seated 18,200 under cover and 13,000 in the open and was the main public area of the MCG.",
+        "From November 2019 until February 2020 all the playing field lights, including those in the light towers, were replaced with LED sports lighting with the lighting under the roof and in two of the light towers completed in time for the Boxing Day Test against New Zealand.",
+        "Since the introduction of the domestic Twenty20 Big Bash League (BBL) in 2011, the Melbourne Stars club played its home matches at the ground until it merged with the Melbourne Renegades in 2026.",
+        "Highest VFL/AFL attendance at a final and highest Australian sporting event attendance – 121,696 (Collingwood v Carlton, 1970) Highest soccer crowd at MCG (Clubs International Friendly) – 99,382 (International Champions Cup, Manchester City v Real Madrid, 24 July 2015) Highest soccer crowd at MCG (National Team vs National Team) – 97,103 (Australia v Greece, 2006) Highest attendance in a single Te"
+      ]
+    },
+    "Stade de France": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[Hybrid grass|Hybrid Grass]] by SIS Pitches"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "The stadium was officially ready for construction following the government's selection of manufacturers, [[Bouygues]], [[Vinci SA|Dumez]], and [[Vinci SA|SGE]], and the signing of building permits on 30 April 1995.<ref>[http://www.bouygues.com/us/groupe/fiches/pop_stade_france.html Bouygues website:",
+        "[[File:World championships in athletics 2003 Paris Saint-Denis stadium.jpg|thumb|Stade de France with uncovered athletics track during the [[2003 World Championships in Athletics|2003 World Championships]]]]",
+        "Stade de France has a [[movable seating|movable stand]] which can be retracted to uncover part of the [[athletics track]].<ref>{{cite web|url=http://www.stadefrance.fr/index.php?option=com_content&task=view&id=122&Itemid=257|title=Stade de France – Key figures|url-status=dead|archive-url=https://web",
+        "===Roof===",
+        "[[File:Pose du dernier troncon de la toiture du stade de france.jpg|thumb|The last part of the metallic construction of the roof, 1997]]",
+        "Construction of the stadium's roof cost over €45 million. Its elliptical shape symbolizes the universality of [[sport in France]].{{cn|date=December 2025}} Its area of six hectares and weight, 13,000 tons, is considered a technical marvel by many.{{cn|date=December 2025}} It was designed to easily p",
+        "Stade de France is the biggest modular stadium in the world. With a three modules structure, the first module has 25,000 seats. It is reached by level 1. It is partially retractable. To reveal the running track and jumping pits, the rear sections are lowered 7.1 m, then the inner sections retract 15",
+        "In June 2012, FFR announced that it had selected the site for its new ground, tentatively known as Grand Stade FFR.<ref>{{cite web|url = http://www.ffr.fr/index.php/ffr/rugby_francais/projet_stade|title = Projet Stade|publisher = [[French Rugby Federation]]|language = fr|access-date = 6 July 2012|ur"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Stade de France",
+      "wikipedia_revid": 1375923585,
+      "wikidata_item": "Q13205",
+      "sentences": [
+        "Domestically, Stade de France serves as a secondary home facility of Parisian rugby clubs Stade Français and Racing 92, hosting a few of their regular-season fixtures.",
+        "The stadium also hosts the main French domestic cup finals, which include the Coupe de France (both football and rugby), Coupe de France Féminine, and the Coupe Gambardella, as well as the Top 14 rugby union championship match.",
+        "With the confirmation of France's choice announced on July 2, 1992, this new all-seater covered stadium was guaranteed and thus broke the country's tradition of not building any new specific structure for a sporting event, as the last one was the Stade Olympique Yves-du-Manoir.",
+        "The roof installation cost €45 million, and the mobile platform took over a year to complete.",
+        "=== Roof === Construction of the stadium's roof cost over €45 million.",
+        "It is partially retractable.",
+        "1 m, then the inner sections retract 15 m into the space created, carried by ten distinct elements of 700 tons each.",
+        "The 82,000-seat stadium, featuring a retractable roof and slide-out pitch, was to be built on a former horse racing track in Évry, about 25 km (16 mi) south of Paris."
+      ]
+    },
+    "Tottenham Hotspur Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[GrassMaster]] (football)<ref>{{cite web |url=https://www.tarkett-group.com/en/our-solutions/references/tottenham/ |title=Tarkett Sports delivers premium PlayMaster Hybrid turf system to Tottenham Hotspur football stadium|work=Tarkett Group}}</ref><br>Turf Nation (NFL)<ref>{{Cite magazine |title=Turf Nation |url=http://www.stadia-magazine.com/directory.php?CompanyID=1033 |url-status=dead |magazine=Stadia |archive-url=https://web.archive.org/web/20180807125010/http://www.stadia-magazine.com/directory.php?CompanyID=1033 |archive-date=7 August 2018 |access-date=7 August 2018}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| structural_engineer = [[Buro Happold]]<ref name=\"architects\">{{Cite web |last=Bickersteth |first=Rupert |date=4 April 2019 |title=Populous's Tottenham Hotspur Stadium – awe inspiring |url=https://www.architectsjournal.co.uk/buildings/populouss-tottenham-hotspur-stadium-awe-inspiring/10041690.artic",
+        "'''Tottenham Hotspur Stadium''' is a [[multi-purpose stadium]] in [[London]], England. It is owned and operated by the [[Premier League]] club [[Tottenham Hotspur F.C.|Tottenham Hotspur]], replacing the club's previous ground, [[White Hart Lane]]. With a seating capacity of 62,850,<ref name=\"capacit",
+        "| caption2 = '''April 2018'''<br/>Two steel \"trees\" supporting the South Stand erected and the cable net roof structure were installed and the trays or the retractable pitch are visible under the podium in the foreground.",
+        "The demolition of most of the remaining White Hart Lane ground began the day after the last home match of the [[2016–17 Tottenham Hotspur F.C. season|2016–17 season]] was played, and the demolition was completed with all visible remnants of White Hart Lane removed by early August 2017.<ref>{{Cite ne",
+        "The roof is a cable net structure, held in place by an elliptically shaped compression ring.<ref name=autogenerated1 /> The roof has a circumference of 720 metres, and it is clad in standing seam aluminium panels that end with extruded [[polycarbonate]] on the inside edge to allow light through onto",
+        "The stadium is designed like a concert hall with good acoustics in mind so as to optimise the atmosphere on match day.<ref name=\"gq\" /> The corners of the stadium are enclosed and the stands are placed close to the pitch, with fans generating a \"wall of sound\" that can reverberate around the ground.",
+        "{{wide image|Spurs stadium south stand cropped.jpg|align=center|700px|align-cap=center|View of South Stand. The Dare Skywalk and the cockerel are visible on the roof above the South Stand.}}",
+        "In order to keep the football pitch in optimum condition, there are two different surfaces – a [[GrassMaster]] hybrid grass pitch for football, and a synthetic turf [[American football field|surface]] underneath to be used for NFL games, as well as concerts and other events.<ref name=\"bowl\" /><ref n",
+        "The stadium features the world's first integrated grow lighting system over the pitch. [[Grow light]]s are suspended on six 70-metre trusses to encourage the growth of the grass in the shaded areas of the stadium, and they can be folded away under the North Stand when not in use.<ref name=\"conway\">{",
+        "The stadium provides separate facilities for football and NFL players; these include changing rooms, medical facilities, restaurants, [[hydrotherapy]] pools, warm-up areas, pre-match players' lounge, as well as lounges and creches for their families.<ref name=hayward /> It also caters for the differ",
+        "The stadium is intended to be active all year round as a sports and entertainment destination with conference and banqueting facilities. It offers visitor attractions such as a 'Dare Skywalk' opened on 31 August 2020; visitors may walk up the side of the stadium to the roof, then over a glass walkwa",
+        "A 4.5-m-tall and near-double-sized [[fibreglass]] replica of the spurs cockerel, originally created in 1909 to sit atop the west stand at White Hart Lane, was placed on the roof structure above the South Stand on 6 November 2018.<ref>{{Cite news |last=Hawkins |first=Billy |date=7 November 2018 |titl",
+        "The stadium was originally permitted to hold up to six music concerts a year<ref name=\"espn 2017\"/> but the limit was lifted in 2023<ref>{{cite web |url=https://www.thestadiumbusiness.com/2023/07/07/tottenham-given-permission-to-stage-more-concerts/|title=Tottenham given permission to stage more con",
+        "[[Category:Retractable-pitch stadiums]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Tottenham Hotspur Stadium",
+      "wikipedia_revid": 1377204343,
+      "wikidata_item": "Q55074091",
+      "sentences": [
+        "It features the world's first dividing, retractable synthetic turf pitch used for NFL games, concerts and other events.",
+        "The project covers the site of the now demolished ground White Hart Lane and areas adjacent to it.",
+        "As their matches became more popular with the public and the number of spectators increased, the club decided to move to an enclosed ground allowing it to charge an entrance fee and control the crowd.",
+        "The compression ring that holds the cable net roof structure was completed in February 2018, and the roof structure raised in March 2018.",
+        "The stadium covers an area of 43,000 m2, nearly twice the area of White Hart Lane (24,000 m2).",
+        "Regions of glazing not covered by the metal screen, including the main entrances and concourses, offices, Sky Lounge, as well the extensive glazed area to the south, allow for views into and out of the stadium.",
+        "The roof is a cable net structure, held in place by an elliptically shaped compression ring.",
+        "The roof has a circumference of 720 metres, and it is clad in standing seam aluminium panels that end with extruded polycarbonate on the inside edge to allow light through onto the pitch but reduce the contrast of the shadow of the roof on the pitch.",
+        "810 curved aluminium eave cassettes connect the roof to the wall.",
+        "The pitch is lit by 324 LED floodlights, arranged in 54 groups of six and attached to the columns of the roofing system.",
+        "The corners of the stadium are enclosed and the stands are placed close to the pitch, with fans generating a \"wall of sound\" that can reverberate around the ground.",
+        "The design extends to the shape and material of the roof and the seating, such as aluminium soffit lining to the roof, and aims to produce cleaner and quicker reverberation times that allow fans to sing in sync thereby producing chants that are louder and last longer.",
+        "Away fans are allocated seats in the north east corner; 3,000 seats in the lower tier for Premier League games, while for domestic cups they may be allocated up to 15% of the capacity spread over three tiers.",
+        "These include two Sky Lounges on the top floor of the East and West Stands, with views over London and the pitch, the Sky Bridge, which is the world's first bridge to be suspended from the roof of a stadium, 65 suites of private loges and super loges, Michelin star level dining, and the Tunnel Club that allows its members to observe the players as they walk from the dressing room to the pitch thro",
+        "It offers visitor attractions such as a 'Dare Skywalk' opened on 31 August 2020; visitors may walk up the side of the stadium to the roof, then over a glass walkway around the golden cockerel above the South Stand where they may view the goal line from the roof, or abseil down to the south podium from a viewing deck.",
+        "5-m-tall and near-double-sized fibreglass replica of the spurs cockerel, originally created in 1909 to sit atop the west stand at White Hart Lane, was placed on the roof structure above the South Stand on 6 November 2018."
+      ]
+    },
+    "Twickenham Stadium": {
+      "infobox": {
+        "roof": [],
+        "type": [],
+        "surface": [
+          "[[GrassMaster|Desso GrassMaster]]"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "The rugby stadium continued to be developed into 2018 with the upgrading of the east stand. The new stand offers match-day hospitality as well as six floors of event spacing.<ref>{{cite web|url=https://www.twickenhamstadium.com/news/conferences-and-venue-hire/twickenham-prepares-to-unveil-new-east-s"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Twickenham Stadium",
+      "wikipedia_revid": 1376891621,
+      "wikidata_item": "Q209725",
+      "sentences": [
+        "Apart from its relationship with the national team, Twickenham is the venue for a number of other domestic and international rugby union matches.",
+        "It hosts the annual London leg of the World Rugby Sevens Series, the Cup (championship) final, the third-place match of the annual London leg of the World Rugby Women's Sevens Series, and the domestic Middlesex Sevens competition.",
+        "Following the upgrade, the roof is now complete.",
+        "The museum covers the whole of the global game, not just English rugby union.",
+        "The museum has a rolling programme of special exhibitions which cover topical issues and offer an opportunity to display some of the obscurer items in the collection."
+      ]
+    },
+    "Waldstadion (Frankfurt)": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "Grass"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Waldstadion''' ({{IPA|de|ˈvalt.ʃtaːdi̯ɔn|-|De-Waldstadion.ogg}}, ''Forest Stadium''), currently known as '''Deutsche Bank Park''' for sponsorship purposes, is a [[retractable roof]] sports stadium in [[Frankfurt]], Germany. The home stadium of the football club [[Eintracht Frankfurt]], it was ope",
+        "| rowspan=\"2\"| 12 Open Air Tour",
+        "| Zwischen den Welten Open Air Tour 2019",
+        "{{List of retractable-roof stadiums in Europe}}",
+        "[[Category:Retractable-roof stadiums in Europe]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Waldstadion (Frankfurt)",
+      "wikipedia_revid": 1375755144,
+      "wikidata_item": "Q157273",
+      "sentences": [
+        "ʃtaːdi̯ɔn] , Forest Stadium), currently known as Deutsche Bank Park for sponsorship purposes, is a retractable roof sports stadium in Frankfurt, Germany."
+      ]
+    },
+    "Wembley Stadium": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Partially retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "[[GrassMaster]]"
+        ],
+        "acreage": [
+          "| tenants = {{ubli|[[England national football team]] (2007–present)|[[Tottenham Hotspur F.C.|Tottenham Hotspur]] (2017–2019)}}"
+        ],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Partially retractable]]",
+        "Designed by [[Populous (company)|Populous]] and [[Foster and Partners]], the stadium is crowned by the {{convert|134|m|ft|adj=mid|-high}} Wembley Arch which serves aesthetically as a landmark across London as well as structurally, with the arch supporting over 75% of the entire roof load.<ref>{{cite",
+        "Wembley was designed by architects [[Foster + Partners]] and [[HOK Sport]] (now Populous) and with engineers Mott Stadium Consortium, who were a collection of three structural engineering consultants in the form of [[Mott MacDonald]], [[Sinclair Knight Merz]] and [[Aurecon]]. The design of the build",
+        "The all-seater stadium is a bowl design with a capacity of 90,000, protected from the elements by a sliding roof that does not completely enclose it.<ref>{{cite web|url=http://www.wembleystadium.com/buildingwembley/StadiumUses/ |title=Wembley Stadium Uses |publisher=Wembley National Stadium Limited ",
+        "On 20 March 2006, a steel rafter in the roof of the new development fell by {{convert|1+1/2|ft|cm|abbr=on}}, forcing 3,000 workers to evacuate the stadium and raising further doubts over the completion date which was already behind schedule.<ref>{{cite news |url=http://news.bbc.co.uk/1/hi/england/lo",
+        "The stadium roof has an area of {{convert|40000|m2|ft2|abbr=on}}, of which {{convert|13722|m2|ft2|abbr=on}} is movable.<ref name=\"CONSTRUCTIONFACTS\">{{cite web|url=http://www.wembleystadium.com/buildingwembley/statsandfacts/ |title=Building Wembley: Construction facts |publisher=Wembley National Sta",
+        "The stadium roof rises to {{convert|52|m|ft}} above the pitch and is supported by an arch rising {{convert|133|m|ft|abbr=on}} above the level of the external concourse. With a span of {{convert|315|m|ft|abbr=on}}, the arch is the longest single-span roof structure in the world.<ref name=\"Wembley Sta",
+        "The onsite parking facility is shared with Wembley Arena, essentially being the open air surface parking surrounding the eastern flank of Wembley Stadium and the [[multi-storey car park]]. These are called Green Car Park and Red Car Park, respectively. There is disabled parking available onsite, at ",
+        "[[Category:Retractable-roof stadiums in Europe]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Wembley Stadium",
+      "wikipedia_revid": 1377746005,
+      "wikidata_item": "Q128468",
+      "sentences": [
+        "The stadium is England's national football stadium, and thus hosts the majority of the England national team home matches and the FA Cup Final – the final of England's primary domestic club football competition.",
+        "Designed by Populous and Foster and Partners, the stadium is crowned by the 134-metre-high (440 ft) Wembley Arch which serves aesthetically as a landmark across London as well as structurally, with the arch supporting over 75% of the entire roof load.",
+        "Two partially retractable roof structures over the east and west ends of the stadium can be opened to allow sunlight and aid pitch growth.",
+        "It is one of the most expensive stadia ever built at a cost of £798 million in 2007, and has the largest roof-covered seating capacity in the world.",
+        "The all-seater stadium is a bowl design with a capacity of 90,000, protected from the elements by a sliding roof that does not completely enclose it.",
+        "It supports all the weight of the north roof and 60% of the weight of the retractable roof on the southern side.",
+        "The arch is the world's longest unsupported roof structure.",
+        "On 20 March 2006, a steel rafter in the roof of the new development fell by 1+1⁄2 ft (46 cm), forcing 3,000 workers to evacuate the stadium and raising further doubts over the completion date which was already behind schedule.",
+        "=== Covering === The stadium roof has an area of 40,000 m2 (430,000 ft2), of which 13,722 m2 (147,700 ft2) is movable.",
+        "The primary reason for the sliding roof was to avoid shading the pitch, as grass demands direct sunlight to grow effectively.",
+        "The sliding roof design minimises the shadow by having the roof pulled back on the east, west and south.",
+        "The stadium roof rises to 52 metres (171 ft) above the pitch and is supported by an arch rising 133 m (436 ft) above the level of the external concourse.",
+        "With a span of 315 m (1,033 ft), the arch is the longest single-span roof structure in the world.",
+        "These events cover the sports of football, rugby league and American football.",
+        "Stations near by: === Onsite parking === The onsite parking facility is shared with Wembley Arena, essentially being the open air surface parking surrounding the eastern flank of Wembley Stadium and the multi-storey car park."
+      ]
+    },
+    "Mercedes-Benz Stadium": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "[[FieldTurf]] CORE<ref name=\"MBS_surface\">{{cite web|title=Mercedes-Benz Stadium Will Have FieldTurf|url=http://www.atlantafalcons.com/news/blog/article-1/Mercedes-Benz-Stadium-Will-Have-FieldTurf/1a4c0507-0d84-4461-9d0b-c79469a92829|publisher=Atlanta Falcons|access-date=April 4, 2017|archive-url=https://web.archive.org/web/20170406020405/http://www.atlantafalcons.com/news/blog/article-1/Mercedes-Benz-Stadium-Will-Have-FieldTurf/1a4c0507-0d84-4461-9d0b-c79469a92829|archive-date=April 6, 2017|url-status=dead}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Mercedes-Benz Stadium''' is a [[retractable roof stadium]] in [[Atlanta]], Georgia, United States.<ref name=\"mbname\">{{Cite news|url=http://www.ajc.com/news/sports/football/falcons-officially-announce-mercedes-benz-as-namin/nnP9Y/ | last=Tucker | first=Tim | title=Falcons officially announce Merc",
+        "The stadium officially opened on August 26, 2017.<ref name=\"construction delay\">{{cite news|last1=Tucker|first1=Tim|title=Mercedes-Benz Stadium opening is pushed back again|url=http://www.ajc.com/sports/football/mercedes-benz-stadium-opening-pushed-back-again/wLnfyURmUXYvGcj6iaROMM/|newspaper=The At",
+        "=== Roof ===",
+        "The stadium's signature feature is its [[retractable roof]], which features a \"pinwheel\" consisting of eight translucent, triangular panels. Each of the eight panels operates on two straight, parallel rails; one rail is responsible for moving the panel while the other rail stabilizes the panel.<ref ",
+        "Architect Bill Johnson explained that the circular opening in the roof was inspired by the Roman [[Pantheon, Rome|Pantheon]] (\"Pantheon\" was also the working name for the building design). The roof was designed to be made of a clear, lightweight polymer material that can adjust its opacity to contro",
+        "Below the roof is the \"Halo\", a {{convert|58|by|1100|ft|m|adj=on}}, ring-shaped [[Jumbotron|video board]] around its rim. Covering a total area of {{convert|62,350|sqft}}, it was described by manufacturer [[Daktronics]] as being \"three times as large as the current largest single display board in th",
+        "The stadium's roof can be kept open under light precipitation, as the electrical systems for all video boards in the stadium are outdoor-rated, and the field has a drainage system. AMB Group senior executive Mike Egan went as far as describing Mercedes-Benz Stadium as \"an outdoor stadium with a roof",
+        "The stadium also includes features specific for college football use. It opened with two oversized locker rooms, each capable of housing 100 players, reflecting the much larger size of college football rosters compared to those of the NFL. However, the stadium did not initially include another featu",
+        "In May 2010, it was reported by multiple news outlets that the Atlanta Falcons were interested in replacing the [[Georgia Dome]] with a newly constructed open-air stadium, although at the time it was planned to retain the Georgia Dome to continue hosting non-NFL events.<ref>{{cite web |title=McKay: ",
+        "In April 2012, Populous released a new price estimate of US$947.7 million, which was significantly higher than the previous proposal of US$700 million.<ref name=\"ajc2\">{{cite news |title=New Falcons Stadium Cost Could Exceed $1 billion|first1=Leon|last1=Stafford|first2=Tim |last2=Tucker|url=http://w",
+        "The stadium's projected opening date was delayed three times due to the complexity of the eight-panel retractable roof. The stadium was originally intended to open on March 1, 2017; however, the opening date was later delayed to June 1, 2017, then to July 30, 2017, and then to August 26, 2017. Steve",
+        "On July 25, 2017, stadium officials reported that the roof would be in the closed position during the Falcons' preseason games and the [[Chick-fil-A Kickoff Game|Chick-fil-A Kickoff]] games while contractors continue to fine tune the roof to allow all eight panels to work in sync. Falcons' President",
+        "On September 10, 2017, the Falcons announced that, contrary to earlier plans, the stadium roof would in fact be open during the Falcons home opener on September 17 against the [[Green Bay Packers]] if weather permitted.<ref>{{cite news|last1=Tucker|first1=Tim|title=Falcons plan to open roof for home",
+        "=== Retractable roof ===",
+        "Several reports of the roof leaking during the stadium's inaugural season caused some issues for the stadium's design team. During the [[2018 College Football Playoff National Championship|College Football National Championship Game]] in January 2018, several media outlets reported a significant lea",
+        "Stadium officials clarified after the initial leaks that were reported back in October 2017 that the issue was not a \"leak\" but rather a \"few drops of water\" that were falling from the roof around isolated parts of the stadium. Officials stated that the issue was due to the fact that the roof was st",
+        "[[File:Mercedes-Benz Stadium Roof Atlanta United 2018-10-21 - 17 14.jpg|thumb|upright|Mercedes-Benz Stadium roof in October 2018]]",
+        "Since the retractable roof was one of the major features and design points of the stadium, some of the problems with the roof were magnified in the stadium's first year of operation. The roof, which is supposed to open in as little as 12 minutes with the push of a button, was not fully operational b",
+        "Falcons president Rich McKay told the ''Atlanta Journal-Constitution'' that he expected all issues with the roof to be completely resolved before the 2018 season.<ref>{{Cite news|url=http://www.ajc.com/sports/falcons-expect-mercedes-benz-stadium-roof-open-2018/nmZV9ohkLTN3UJcr0Hpe5O/|title=Falcons e",
+        "*On October 22, 2017, Atlanta United FC played an MLS regular season match against [[Toronto FC]] at Mercedes-Benz Stadium in front of 71,874 spectators, beating the record they set for the largest crowd in a stand-alone MLS match in September against [[Orlando City SC|Orlando City]] (which also mar",
+        "[[Category:Retractable-roof stadiums in the United States]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Mercedes-Benz Stadium",
+      "wikipedia_revid": 1377254306,
+      "wikidata_item": "Q7007552",
+      "sentences": [
+        "Mercedes-Benz Stadium is a retractable roof stadium in Atlanta, Georgia, United States.",
+        "Opened in 2017 as a replacement for the Georgia Dome, it is the home to the Atlanta Falcons of the National Football League (NFL), Atlanta United FC of Major League Soccer (MLS), and Atlanta City FC of the National Women's Soccer League (NWSL) in 2028.",
+        "Several events formerly held at the Georgia Dome moved to Mercedes-Benz Stadium following its completion, including multiple college football events, such as the SEC football championship game, the Peach Bowl, and the College Football Playoff National Championship (2018, 2025).",
+        "== Design == === Roof === The stadium's signature feature is its retractable roof, which features a \"pinwheel\" consisting of eight translucent, triangular panels.",
+        "Closing the roof takes slightly less time than opening the roof, since the roof has to disengage the seals at the start of the opening procedure and slow down towards the end to prevent the panels from getting derailed.",
+        "Architect Bill Johnson explained that the circular opening in the roof was inspired by the Roman Pantheon (\"Pantheon\" was also the working name for the building design).",
+        "The roof was designed to be made of a clear, lightweight polymer material that can adjust its opacity to control light, and much of the exterior is clear polymer or glass to allow views to the outside.",
+        "Below the roof is the \"Halo\", a 58-by-1,100-foot (18 by 335 m), ring-shaped video board around its rim.",
+        "The stadium's roof can be kept open under light precipitation, as the electrical systems for all video boards in the stadium are outdoor-rated, and the field has a drainage system.",
+        "AMB Group senior executive Mike Egan went as far as describing Mercedes-Benz Stadium as \"an outdoor stadium with a roof over it\" due to these characteristics, but that other factors such as humidity and outside temperatures would be taken into consideration on whether or not the roof would be opened.",
+        "It also has a soccer-specific configuration, with retractable lower bowl seats to widen the field, and mechanized curtains that limit the capacity to about 42,500.",
+        "The former Georgia Dome site between the stadium and the Georgia World Congress Center was redeveloped as \"The Home Depot Backyard\"—an 11-acre (4.",
+        "== History == === Planning === In May 2010, it was reported by multiple news outlets that the Atlanta Falcons were interested in replacing the Georgia Dome with a newly constructed open-air stadium, although at the time it was planned to retain the Georgia Dome to continue hosting non-NFL events.",
+        "The team was pursuing a new stadium because of the team's desire to play outdoors, as well as Falcons team owner Arthur Blank's interest in hosting another Super Bowl.",
+        "The proposed location of the new stadium was a large parking lot in Atlanta's Vine City neighborhood, which was less than a mile north of the Georgia Dome's location.",
+        "Once construction was complete, the Georgia Dome would subsequently be demolished.",
+        "Stadium location, however, is yet to be worked out; proposed locations being reported are within walking distance of the Georgia Dome, with one site located one-half mile north, and the other one block directly south, at one of the stadium's existing parking lots.",
+        "The project made national headlines for the first time in 2012 on December 15, with team owner Arthur Blank stating in The New York Times that he would rather have a new stadium be constructed than a \"remodeling job\" of the Georgia Dome.",
+        "=== Construction delays, opening === The stadium's projected opening date was delayed three times due to the complexity of the eight-panel retractable roof.",
+        "Additionally, the Georgia Dome's demolition was put on hold until the new stadium's certificate of occupancy could be issued.",
+        "On June 9, 2017, stadium officials announced that they were confident that Mercedes-Benz Stadium would open as scheduled, and demolition of the Georgia Dome had resumed, and the Dome was imploded on the morning of November 20, 2017.",
+        "On July 25, 2017, stadium officials reported that the roof would be in the closed position during the Falcons' preseason games and the Chick-fil-A Kickoff games while contractors continue to fine tune the roof to allow all eight panels to work in sync.",
+        "Falcons' President Rich McKay also stated that the roof would remain closed whenever outside temperatures exceed 80 °F (27 °C).",
+        "On August 16, 2017, WXIA reported that construction of the retractable roof system was intentionally delayed by stadium and construction officials to ensure the roof's long term operability and to ensure that other parts of the stadium would be completed on time.",
+        "On September 10, 2017, the Falcons announced that, contrary to earlier plans, the stadium roof would in fact be open during the Falcons home opener on September 17 against the Green Bay Packers if weather permitted.",
+        "On October 6, 2017, stadium officials announced that the roof would be opened, weather permitting, for Atlanta United FC's regular season finale against Toronto FC on October 22; stadium officials also stated that the roof would remain closed for the remainder of the Falcons' regular season as well as for any home matches hosted by Atlanta United FC during the 2017 MLS Cup Playoffs as contractors ",
+        "It features a serpentine like structure on both ends, and a cover over the main span with customizable LEDs.",
+        "=== Retractable roof === Several reports of the roof leaking during the stadium's inaugural season caused some issues for the stadium's design team.",
+        "Bill Hancock, College Football Playoff Executive Director, said that he and his team had been made aware of the issue concerning water leaking from the roof and that he believed that the issue did not affect the field of play during the game.",
+        "Stadium officials clarified after the initial leaks that were reported back in October 2017 that the issue was not a \"leak\" but rather a \"few drops of water\" that were falling from the roof around isolated parts of the stadium.",
+        "Officials stated that the issue was due to the fact that the roof was still not fully mechanized yet, and that the issues would be fixed before the Falcons' 2018 season.",
+        "They also stated that the issues were common for newly constructed stadiums with retractable roofs.",
+        "Since the retractable roof was one of the major features and design points of the stadium, some of the problems with the roof were magnified in the stadium's first year of operation.",
+        "The roof, which is supposed to open in as little as 12 minutes with the push of a button, was not fully operational by the time the stadium's primary tenants, the Atlanta Falcons and the Atlanta United FC, began their regular seasons.",
+        "The roof was required to be mechanically opened, which was a very time-consuming process.",
+        "As such, the roof was only opened twice in its first year of use, once for an Atlanta Falcons game – a Sunday Night Football game against the Green Bay Packers on September 17, 2017, and a nationally televised MLS soccer game, when the Atlanta United FC hosted Toronto FC in a sold-out game of more than 70,000 fans on October 22, 2017.",
+        "Falcons president Rich McKay told the Atlanta Journal-Constitution that he expected all issues with the roof to be completely resolved before the 2018 season.",
+        "On May 29, 2018, the roof was opened for the first time since October 2017 for construction purposes.",
+        "Stadium officials stated that the roof would be open for 10 days, regardless of weather, to complete work on automating the roof.",
+        "After the 10-day construction period, an unspecified time frame would be required for final commissioning work, after of which, operation of the roof would be turned over to stadium officials."
+      ]
+    },
+    "Reliant Stadium": {
+      "infobox": {
+        "roof": [
+          "[[Retractable roof|Retractable]]"
+        ],
+        "type": [],
+        "surface": [
+          "Hellas Matrix Helix<ref>{{Cite web|url=http://www.hellasconstruction.com/2017/sep/houston-texans-nfl-football-team-playing-on-hellas-matrix-turf-at-nrg-stadium/|title=Houston Texans NFL football team playing on Hellas Matrix Turf at NRG Stadium|website=www.hellasconstruction.com|access-date=2019-12-02}}</ref>"
+        ],
+        "acreage": [],
+        "field_shape": []
+      },
+      "wikitext_roof_lines": [
+        "| roof = [[Retractable roof|Retractable]]",
+        "'''Reliant Stadium''', previously known as '''NRG Stadium''',<ref name=chron-2026-reliant>{{cite news|last=Young|first=Matt|title= Why Houston Texans' home will be Reliant Stadium again, not NRG|url= https://www.houstonchronicle.com/sports/texans/article/reliant-stadium-name-change-nrg-22205549.php|",
+        "The Houston NFL Holdings group came to HOK Sport (now [[Populous (company)|Populous]]) to begin the schematic design for the first-ever NFL retractable roof football stadium in 1997. The intention was to create a football stadium to replace the Astrodome that would operate like an open-air facility ",
+        "On the night of September 12–13, 2008, the stadium sustained damage from [[Hurricane Ike]], forcing the [[Houston Texans]] home opener scheduled for September 14 to be postponed. Part of the roof cladding came off, and there was wind and water damage to other sections of the stadium. There were also",
+        "The stadium was designed by the architectural firms of Hermes Reed Architects and [[Lockwood, Andrews and Newnam]] who were teamed to create the Houston Stadium Consultants (HSC). The architects of [[Populous (company)|Populous]] (then HOK Sport) and the HSC worked together with engineers from [[Wal",
+        "One of the most notable aspects of the design is the stadium's retractable, fabric roof. The roof mechanization consists of two large panels that split apart at the 50&nbsp;yard line, lying over and above each end zone when fully retracted. 10 parallel, tri-chord [[truss]]es ride on two parallel rai",
+        "[[Category:Retractable-roof stadiums in the United States]]"
+      ],
+      "wikipedia_status": 200,
+      "wikipedia_title": "Reliant Stadium",
+      "wikipedia_revid": 1376433325,
+      "wikidata_item": "Q1058864",
+      "sentences": [
+        "Reliant Stadium, previously known as NRG Stadium, is a retractable roof stadium in Houston, Texas, U.",
+        "It was the first NFL facility to have a retractable roof.",
+        "== History == The Houston NFL Holdings group came to HOK Sport (now Populous) to begin the schematic design for the first-ever NFL retractable roof football stadium in 1997.",
+        "The intention was to create a football stadium to replace the Astrodome that would operate like an open-air facility but have the intimacy and comfort of an indoor arena.",
+        "Part of the roof cladding came off, and there was wind and water damage to other sections of the stadium.",
+        "There were also large pieces of debris inside the stadium from the hurricane and the stadium authority declared that the stadium did not suffer significant structural damage except for the roof, and the Texans would be able to play all of their 8 home games at Reliant Stadium with the roof open.",
+        "The facility offers a sense of transparency, with its fabric roof and expansive areas of glazing.",
+        "The extensive use of glass provides an open-air feel to the concourses, which are open to the field of play.",
+        "One of the most notable aspects of the design is the stadium's retractable, fabric roof.",
+        "The roof mechanization consists of two large panels that split apart at the 50 yard line, lying over and above each end zone when fully retracted.",
+        "Roof operation is controlled in the stadium press box via computer, containing live images of the travel path of each roof panel; plus, furnishing live feedback from all roof components throughout the operation.",
+        "The roof panels can be opened or closed in as little as 7 minutes, moving at a speed of up to 35 feet (11 m)-per-minute.",
+        "The fans in the Bull Pen interact directly with the action on the field, helping to create and implement fan traditions, songs, chants, and other elements of the game-day experience for spectators all over the stadium."
+      ]
+    }
+  },
+  "terms": {
+    "https://www.weather.gov/documentation/services-web-api": {
+      "status": 200,
+      "last_modified": null,
+      "content_length": 14241,
+      "sentences": [
+        "The API was designed with a cache-friendly approach that expires content based upon the information life cycle.",
+        "Pricing All of the information presented via the API is intended to be open data, free to use for any purpose.",
+        "As a public service of the United States Government, we do not charge any fees for the usage of this service, although there are reasonable rate limits in place to prevent abuse and help ensure that everyone has access.",
+        "The rate limit is not public information, but allows a generous amount for typical use.",
+        "If the rate limit is execeed a request will return with an error, and may be retried after the limit clears (typically within 5 seconds).",
+        "Proxies are more likely to reach the limit, whereas requests directly from clients are not likely.",
+        "Authentication Format the response Request new features Authentication A User Agent is required to identify your application.",
+        "User-Agent: (myweatherapp.",
+        "Applications may cache the grid for a location to improve latency and reduce the additional lookup request; however, it is important to note that while it generally does not occur often, the gridX and gridY values (and even the office) for a given coordinate may occasionally change.",
+        "For an official archive of NWS CAP alerts, please reach out to the National Centers for Environmental Information (NCEI) .",
+        "For radar display data, consider these options: RIDGE2 NWS Radar Display RIDGE2 NWS Radar Data as OGC Web Services Other NWS OGC Web Services MRMS Data NODD MRMS Archive Data Updates The information on this page is updated regularly.",
+        "Resolutions The following issues have been recently resolved: 17 Mar 2026: The /radar/queues/rds and /radar/queues/tds endpoints are limited by default so that they no longer return a 503 error from too many results."
+      ]
+    },
+    "https://api.weather.gov/openapi.json": {
+      "status": 200,
+      "last_modified": null,
+      "content_length": 128794,
+      "sentences": [
+        "gov\", \"description\": \"Production server\"}], \"paths\": {\"/alerts\": {\"get\": {\"description\": \"Returns all alerts\", \"operationId\": \"alerts_query\", \"parameters\": [{\"name\": \"active\", \"in\": \"query\", \"description\": \"List only active alerts (use /alerts/active endpoints instead)\", \"deprecated\": true, \"schema\": {\"type\": \"boolean\"}}, {\"$ref\": \"#/components/parameters/QueryStartTime\"}, {\"$ref\": \"#/components/parameters/QueryEndTime\"}, {\"$ref\": \"#/components/parameters/AlertStatus\"}, {\"$ref\": \"#/components/pa",
+        "5km grid area\", \"operationId\": \"gridpoint_stations\", \"responses\": {\"200\": {\"$ref\": \"#/components/responses/ObservationStationCollection\"}, \"default\": {\"$ref\": \"#/components/responses/Error\"}}, \"parameters\": []}, \"parameters\": [{\"$ref\": \"#/components/parameters/GridpointWFO\"}, {\"$ref\": \"#/components/parameters/GridpointX\"}, {\"$ref\": \"#/components/parameters/GridpointY\"}, {\"$ref\": \"#/components/parameters/Limit\"}]}, \"/icons/{set}/{timeOfDay}/{first}\": {\"get\": {\"description\": \"Returns a forecast ic",
+        "\", \"required\": true, \"schema\": {\"enum\": [\"a\", \"e\", \"g\", \"h\", \"p\", \"s\", \"w\"], \"type\": \"string\"}}]}, \"/stations/{stationId}/observations\": {\"get\": {\"description\": \"Returns a list of observations for a given station\", \"operationId\": \"station_observation_list\", \"parameters\": [{\"$ref\": \"#/components/parameters/QueryStartTime\"}, {\"$ref\": \"#/components/parameters/QueryEndTime\"}, {\"$ref\": \"#/components/parameters/PaginationCursor\"}, {\"name\": \"limit\", \"in\": \"query\", \"description\": \"Limit\", \"schema\": {\"ma",
+        "\", \"operationId\": \"obs_stations\", \"parameters\": [{\"name\": \"id\", \"in\": \"query\", \"description\": \"Filter by observation station ID\", \"style\": \"form\", \"explode\": false, \"schema\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}}, {\"name\": \"state\", \"in\": \"query\", \"description\": \"Filter by state/marine area code\", \"style\": \"form\", \"explode\": false, \"schema\": {\"type\": \"array\", \"items\": {\"$ref\": \"#/components/schemas/AreaCode\"}}}, {\"$ref\": \"#/components/parameters/Limit\"}, {\"$ref\": \"#/components/parameter",
+        "org/TR/speech-synthesis/\"}, \"operationId\": \"point_radio\", \"responses\": {\"200\": {\"description\": \"success\", \"headers\": {\"X-Correlation-Id\": {\"$ref\": \"#/components/headers/CorrelationId\"}, \"X-Request-Id\": {\"$ref\": \"#/components/headers/RequestId\"}, \"X-Server-Id\": {\"$ref\": \"#/components/headers/ServerId\"}}, \"content\": {\"application/ssml+xml\": {\"schema\": {}}}}, \"default\": {\"$ref\": \"#/components/responses/Error\"}}, \"parameters\": []}, \"parameters\": [{\"$ref\": \"#/components/parameters/Latitude\"}, {\"$ref\"",
+        "org/TR/speech-synthesis/\"}, \"operationId\": \"area_radio\", \"responses\": {\"200\": {\"description\": \"success\", \"headers\": {\"X-Correlation-Id\": {\"$ref\": \"#/components/headers/CorrelationId\"}, \"X-Request-Id\": {\"$ref\": \"#/components/headers/RequestId\"}, \"X-Server-Id\": {\"$ref\": \"#/components/headers/ServerId\"}}, \"content\": {\"application/ssml+xml\": {\"schema\": {}}}}, \"default\": {\"$ref\": \"#/components/responses/Error\"}}, \"parameters\": []}, \"parameters\": [{\"$ref\": \"#/components/parameters/CallSign\"}]}, \"/prod",
+        "\", \"required\": true, \"schema\": {\"type\": \"string\"}}]}, \"/zones\": {\"get\": {\"description\": \"Returns a list of zones\", \"operationId\": \"zone_list\", \"parameters\": [{\"name\": \"id\", \"in\": \"query\", \"description\": \"Zone ID (forecast or county)\", \"style\": \"form\", \"explode\": false, \"schema\": {\"type\": \"array\", \"items\": {\"$ref\": \"#/components/schemas/NWSZoneID\"}}}, {\"name\": \"area\", \"in\": \"query\", \"description\": \"State/marine area code\", \"style\": \"form\", \"explode\": false, \"schema\": {\"type\": \"array\", \"items\": {\"",
+        "\", \"required\": true, \"schema\": {\"enum\": [\"county\"], \"type\": \"string\"}}, {\"$ref\": \"#/components/parameters/NWSZoneId\"}]}, \"/zones/forecast/{zoneId}/observations\": {\"get\": {\"description\": \"Returns a list of observations for a given zone\", \"operationId\": \"zone_obs\", \"parameters\": [{\"name\": \"start\", \"in\": \"query\", \"description\": \"Start date/time\", \"schema\": {\"type\": \"string\", \"format\": \"date-time\"}}, {\"name\": \"end\", \"in\": \"query\", \"description\": \"End date/time\", \"schema\": {\"type\": \"string\", \"format\"",
+        "\", \"headers\": {\"X-Correlation-Id\": {\"$ref\": \"#/components/headers/CorrelationId\"}, \"X-Request-Id\": {\"$ref\": \"#/components/headers/RequestId\"}, \"X-Server-Id\": {\"$ref\": \"#/components/headers/ServerId\"}}, \"content\": {\"application/geo+json\": {\"schema\": {\"$ref\": \"#/components/schemas/ObservationStationCollectionGeoJson\"}}, \"application/ld+json\": {\"schema\": {\"$ref\": \"#/components/schemas/ObservationStationCollectionJsonLd\"}}}}}, \"parameters\": {\"AlertArea\": {\"name\": \"area\", \"in\": \"query\", \"description\"",
+        "0001, \"maximum\": 180, \"minimum\": -180, \"type\": \"number\"}}, \"Limit\": {\"name\": \"limit\", \"in\": \"query\", \"description\": \"Limit\", \"schema\": {\"maximum\": 500, \"minimum\": 1, \"type\": \"integer\", \"default\": 500}}, \"NWSCenterWeatherServiceUnitId\": {\"name\": \"cwsuId\", \"in\": \"path\", \"description\": \"NWS CWSU ID\", \"required\": true, \"schema\": {\"$ref\": \"#/components/schemas/NWSCenterWeatherServiceUnitId\"}}, \"NWSOfficeId\": {\"name\": \"officeId\", \"in\": \"path\", \"description\": \"NWS office ID\", \"required\": true, \"schema\"",
+        "\\n\", \"schema\": {\"type\": \"string\"}}, \"X-Api-Key\": {\"description\": \"A token that a client provides when making API calls.",
+        "\\n\", \"schema\": {\"type\": \"string\"}}}, \"securitySchemes\": {\"userAgent\": {\"type\": \"apiKey\", \"description\": \"We require that all consumers of the API include a User-Agent header in requests.",
+        "\\nThe API remains open and free to use and there are no limits imposed based on the User-Agent string.",
+        "\\n\", \"name\": \"User-Agent\", \"in\": \"header\"}, \"apiKeyAuth\": {\"type\": \"apiKey\", \"description\": \"We are testing including a more traditional API Key system on certain endpoints.",
+        "\\nThe API remains open and free to use and there are no limits imposed based on the X-Api-Key string."
+      ]
+    },
+    "https://open-meteo.com/en/terms": {
+      "status": 200,
+      "last_modified": "Thu, 01 Oct 2026 17:42:32 GMT",
+      "content_length": 9523,
+      "sentences": [
+        "com Open-Meteo Home Features Pricing API Docs Animations GitHub X Toggle theme Terms &amp; Privacy Terms of Use Open-Meteo assumes no responsibility for any inaccuracies or omissions in the data, their availability, or any losses or damages resulting from their usage.",
+        "In any event, Open-Meteo disclaims all liability under these Terms of Use, whether arising from contract, tort, or any other cause.",
+        "Non-Commercial Use By using the Free API for non-commercial use you agree to following terms: Less than 10'000 API calls per day, 5'000 per hour and 600 per minute.",
+        "You may only use the free API services for non-commercial purposes.",
+        "You accept to the CC-BY 4.",
+        "0 licence, as specified in the licence conditions .",
+        "Non-commercial use is defined as elaborated by creative commons .",
+        "To make it easier to understand, here are some examples that qualify as non-commercial use: Using our service for private or non-profit websites or apps that do not have subscriptions or advertising.",
+        "On the other hand, the following examples are considered commercial use: Operating websites or apps that have subscriptions or display advertisements.",
+        "Integrating our service into commercial products or promotional activities.",
+        "Conducting undisclosed research at commercial entities.",
+        "If you plan to use our service for commercial purposes or require additional API calls, we kindly request you to consider subscribing to our API plans as explained in detail on the pricing page.",
+        "Intellectual Property: All intellectual property rights in our SaaS service, including but not limited to software, content, and trademarks, belong to us.",
+        "You are granted a limited, non-exclusive, and non-transferable licence to use our service for the duration of your subscription.",
+        "The data obtained through the API is provided under the terms of the CC-BY 4.",
+        "Limitation of Liability: Our service is provided on an \"as is\" and \"as available\" basis without any warranties, express or implied.",
+        "This limit doesn’t apply if the problem was caused by serious misconduct, fraud, or breaking the law.",
+        "We reserve the right to modify these terms of use at any time.",
+        "Governing Law: These terms of use shall be governed by and construed in accordance with the laws of Switzerland.",
+        "Please read these terms of use carefully before using our paid API subscription.",
+        "Free / Open-Access API Standard API Professional API Enterprise Commercial use ❌ ✅ ✅ ✅ Minutely Limit ⚠️ 600 calls / min ✅ Unlimited ✅ Unlimited ✅ Unlimited Hourly Limit ⚠️ 5.",
+        "000 calls / hour ✅ Unlimited ✅ Unlimited ✅ Unlimited Daily Limit ⚠️ 10.000 calls / day ✅ Unlimited ✅ Unlimited ✅ Unlimited Monthly Limit ⚠️ 300.",
+        "50M calls / month Privacy By using our service, you consent to the terms of our privacy policy and agree that we may collect non-personal information as outlined below.",
+        "Free Non-Commercial API Service We may collect non-personal information, such as IP addresses, for technical reasons such as server maintenance or prevent misuse, but this information is not linked to user identities in any way.",
+        "However, after a period of 90 days, all individual log files will be removed, and only aggregated usage data will be retained, such as the number of API calls per day.",
+        "com Open-Meteo Features Pricing About us &amp; Contact Licence Terms &amp; Privacy Weather APIs Weather Forecast API Historical Weather API ECMWF API GFS &amp; HRRR Forecast API Météo-France API DWD ICON API GEM API JMA API Met Norway API Other APIs Ensemble API Climate Change API Marine Weather API Air Quality API Geocoding API Elevation API Flood API External X Blog GitHub Mastodon Service status and uptime Model Updates Overview Animations © 2022-2026 Copyright: Open-Meteo."
+      ]
+    },
+    "https://open-meteo.com/en/licence": {
+      "status": 200,
+      "last_modified": "Thu, 01 Oct 2026 17:42:32 GMT",
+      "content_length": 3724,
+      "sentences": [
+        "🧑‍⚖️ Licence | Open-Meteo.",
+        "com Open-Meteo Home Features Pricing API Docs Animations GitHub X Toggle theme Licence Data Sources Open-Meteo utilises open-data from various national weather services including: Atmospheric, ensemble and wave forecasts from Deutscher Wetterdienst DWD ( CC-BY Licence ) Atmospheric, ensemble and wave forecasts from European Centre for Medium-Range Weather Forecasts ECMWF ( CC-BY Licence ) Atmospheric, ensemble and wave forecasts from NOAA NCEP ( Licence ) Atmospheric and ensemble forecasts from ",
+        "1 ) Licence API data are offered under Attribution 4.",
+        "0 International (CC BY 4.",
+        "0) You are free to share: copy and redistribute the material in any medium or format and adapt: remix, transform, and build upon the material.",
+        "Attribution: You must give appropriate credit, provide a link to the licence, and indicate if changes were made.",
+        "Open-Meteo is open-source Source code is available on GitHub under the GNU Affero General Public Licence Version 3 AGPLv3 or any later version.",
+        "You can find the licence here .",
+        "7970649 Open-Meteo Features Pricing About us &amp; Contact Licence Terms &amp; Privacy Weather APIs Weather Forecast API Historical Weather API ECMWF API GFS &amp; HRRR Forecast API Météo-France API DWD ICON API GEM API JMA API Met Norway API Other APIs Ensemble API Climate Change API Marine Weather API Air Quality API Geocoding API Elevation API Flood API External X Blog GitHub Mastodon Service status and uptime Model Updates Overview Animations © 2022-2026 Copyright: Open-Meteo."
+      ]
+    },
+    "https://open-meteo.com/en/pricing": {
+      "status": 200,
+      "last_modified": "Thu, 01 Oct 2026 17:42:33 GMT",
+      "content_length": 6415,
+      "sentences": [
+        "com Open-Meteo Home Features Pricing API Docs Animations GitHub X Toggle theme Pricing Commercial use licence, support and dedicated API capacity API Plans API Docs 30+ Weather Models Weather models from ECMWF, DWD, NOAA, Météo-France, JMA, KMA, KNMI, DMI, MeteoSwiss, UK Met Office, BOM, CMA, GeoSphere Austria, and more.",
+        "Commercial Use Licence A subscription grants a commercial use licence and an API key for the dedicated customer endpoint at customer-api.",
+        "The API syntax is identical to the free tier — only the domain and key parameter differ.",
+        "Use the free tier for evaluation and prototyping.",
+        "High-Volume Usage Plans are priced on a monthly call budget, not per individual request.",
+        "Standard: 1M calls/month.",
+        "Professional: 5M calls/month.",
+        "Enterprise: 50M+ calls/month.",
+        "Predictable Pricing Fixed monthly price — no per-call overages or surprise charges.",
+        "Free / Open-Access API Standard API Professional API Enterprise Commercial use ❌ ✅ ✅ ✅ Minutely Limit ⚠️ 600 calls / min ✅ Unlimited ✅ Unlimited ✅ Unlimited Hourly Limit ⚠️ 5.",
+        "000 calls / hour ✅ Unlimited ✅ Unlimited ✅ Unlimited Daily Limit ⚠️ 10.000 calls / day ✅ Unlimited ✅ Unlimited ✅ Unlimited Monthly Limit ⚠️ 300.",
+        "50M calls / month Air Quality API Elevation API Flood API Geocoding API Marine API ✅ ✅ ✅ ✅ Satellite Radiation API Climate API Seasonal Forecast API Ensemble Weather API Historical Weather API Historical Forecast API Previous Model Runs API Single Runs API ✅ ❌ ✅ ✅ Reserved Servers With Higher Reliability ❌ ✅ ✅ ✅ Custom Solutions ❌ ❌ ❌ ✅ Priority Support ❌ ❌ ❌ ✅ Frequently Asked Questions How does the subscription process work? Click a plan above to subscribe via Stripe.",
+        "What happens if I exceed my monthly call volume? Email alerts are sent at 80%, 90%, and 100% of your monthly budget.",
+        "Until it is available, monthly limits are not enforced.",
+        "What sets apart the free API from the customer API? The free API is for non-commercial use, rate-limited to 10,000 calls/day, and carries no uptime guarantee.",
+        "The customer API runs on dedicated servers, has no daily rate limit, and includes a commercial use licence.",
+        "All parameters and response formats are otherwise identical to the free API.",
+        "How is one API call defined? Typically, one API call corresponds to one HTTP API request.",
+        "However, if you select 200 weather variables simultaneously and make extensive use of the API, the number of API calls can increase.",
+        "Requests for data covering more than 10 weather variables or extending over a period of more than 2 weeks for a single location are considered multiple API calls.",
+        "To calculate the number of API calls accurately, fractional counts are used.",
+        "5 API calls, while 4 weeks of data equals 3.",
+        "0 API calls.",
+        "0 API call Variables 14 days Time length Models Locations Is it necessary to provide attribution to Open-Meteo? Open-Meteo relies on open data that is licenced under Attribution 4.",
+        "0 International (CC BY 4.",
+        "This licence mandates giving appropriate credit and indicating any modifications made to the data.",
+        "While you are permitted to utilise and distribute the data, including for commercial purposes, attribution is a requirement under this licence.",
+        "For more information, please refer to the licence page .",
+        "The server code is open-source under AGPLv3; the weather data is CC BY 4.",
+        "Commercial plans add a dedicated endpoint, an API key, and a 99.",
+        "API Plans Email us Open-Meteo Features Pricing About us &amp; Contact Licence Terms &amp; Privacy Weather APIs Weather Forecast API Historical Weather API ECMWF API GFS &amp; HRRR Forecast API Météo-France API DWD ICON API GEM API JMA API Met Norway API Other APIs Ensemble API Climate Change API Marine Weather API Air Quality API Geocoding API Elevation API Flood API External X Blog GitHub Mastodon Service status and uptime Model Updates Overview Animations © 2022-2026 Copyright: Open-Meteo."
+      ]
+    },
+    "https://open-meteo.com/en/docs/historical-forecast-api": {
+      "status": 200,
+      "last_modified": "Thu, 01 Oct 2026 17:42:34 GMT",
+      "content_length": 17649,
+      "sentences": [
+        "com Open-Meteo Home Features Pricing API Docs Animations GitHub X Toggle theme Historical Forecast API Archived High-Resolution Weather Forecasts Historical Forecast Weather Forecast DWD Germany NOAA U.",
+        "Historical forecasts archived from the Weather Forecast API — same models, same parameters, same response format.",
+        "Additional Daily Variables Mean Temperature (2 m) Minimum Temperature (2 m) Mean Apparent Temperature (2 m) Mean CAPE Maximum CAPE Minimum CAPE Mean Cloud Cover Maximum Cloud Cover Minimum Cloud Cover Mean Dewpoint (2 m) Maximum Dewpoint (2 m) Minimum Dewpoint (2 m) Reference Evapotranspiration Sum (ET₀) Growing Degree Days Base 0 Limit 50 Mean Leaf Wetness Probability Mean Precipitation Probability Minimum Precipitation Probability Mean Relative Humidity (2 m) Maximum Relative Humidity (2 m) Mi",
+        "2026-09-29) Timeformat Usage licence: Non-Commercial Commercial Self-Hosted API Response Preview: Chart &amp; URL Python TypeScript Swift Other Loading.",
+        "Weather models are initialized using data from weather stations, satellites, radar, airplanes, soundings, and buoys.",
+        "The Historical Forecast API archives comprehensive data, including atmospheric pressure levels, from all accessible weather forecast models.",
+        "Depending on the model and public archive availability, data is available starting from 2021 or 2022.",
+        "Historical Forecast API: A continuous hourly timeseries built by stitching the first hours of each successive model run.",
+        "Closely tracks actual conditions because each run is initialised from real measurements.",
+        "Previous Runs API: Archives the same high-resolution models as the Historical Forecast API, but provides each variable at a fixed lead-time offset: 1, 2, 3, up to 7 days ahead.",
+        "Single Runs API: Retrieves the complete forecast horizon of any individual model run, selected by initialisation time using the run= parameter (e.",
+        "ECMWF IFS HRES at 9 km is archived from March 2024; all other models from 2nd of April 2026.",
+        "To retrieve the full output of a specific model run — for example to reproduce a forecast issued on a given date — use the Single Runs API .",
+        "For training machine learning models on consistent weather model output, the Historical Forecast API and Single Runs API both provide data directly from the operational model runs.",
+        "Open-Meteo Features Pricing About us &amp; Contact Licence Terms &amp; Privacy Weather APIs Weather Forecast API Historical Weather API ECMWF API GFS &amp; HRRR Forecast API Météo-France API DWD ICON API GEM API JMA API Met Norway API Other APIs Ensemble API Climate Change API Marine Weather API Air Quality API Geocoding API Elevation API Flood API External X Blog GitHub Mastodon Service status and uptime Model Updates Overview Animations © 2022-2026 Copyright: Open-Meteo."
+      ]
+    },
+    "https://open-meteo.com/en/docs/previous-runs-api": {
+      "status": 200,
+      "last_modified": "Thu, 01 Oct 2026 17:42:35 GMT",
+      "content_length": 9823,
+      "sentences": [
+        "com Open-Meteo Home Features Pricing API Docs Animations GitHub X Toggle theme Previous Model Runs API Weather Forecasts from Previous Days to Compare Run-To-Run Performance Previous Model Runs Weather Forecast DWD Germany NOAA U.",
+        "Data from past model runs is aligned to fixed lead-time offsets of 1–7 days.",
+        "Comparing these offsets against observations or reanalysis makes it straightforward to measure how forecast skill degrades with lead time and to train bias-correction models.",
+        "Most models are archived from January 2024 .",
+        "If you're interested in past weather data, you can use the Past Days feature to access archived forecasts.",
+        "2026-09-29) Timeformat Usage licence: Non-Commercial Commercial Self-Hosted API Response Preview: Chart &amp; URL Python TypeScript Swift Other Loading.",
+        "Download XLSX Download CSV API URL ( Open in new tab , copy this URL into your application, or paste an API URL to restore its settings) Data Availability Most models are archived from January 2024 .",
+        "Some models were added to the archive later in 2024 or 2025 and have correspondingly shorter coverage.",
+        "_previous_day0 is the current model run (equivalent to the live Forecast API).",
+        "For workflows that need the complete output of a specific model run (initialisation datetime, all forecast hours, multiple variables), use the Single Runs API instead, which stores each run independently and is queryable by its UTC initialisation time via the &amp;run= parameter.",
+        "The available lead-time window for each model is limited to its forecast horizon, so a model with a 3-day horizon will have at most _previous_day3 populated.",
+        "Open-Meteo Features Pricing About us &amp; Contact Licence Terms &amp; Privacy Weather APIs Weather Forecast API Historical Weather API ECMWF API GFS &amp; HRRR Forecast API Météo-France API DWD ICON API GEM API JMA API Met Norway API Other APIs Ensemble API Climate Change API Marine Weather API Air Quality API Geocoding API Elevation API Flood API External X Blog GitHub Mastodon Service status and uptime Model Updates Overview Animations © 2022-2026 Copyright: Open-Meteo."
+      ]
+    }
+  }
+}

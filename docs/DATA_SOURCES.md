@@ -898,10 +898,9 @@ the live file; a missing one is `InjurySchemaError`, which the build turns into 
 ### 19.2 Point in time
 
 The file carries no timestamp of its own, so a report is stamped with its retrieval time
-(`injuries_retrieved_at_utc`). Whether a completed week's rows are revised later is still
-unprobed beyond the unchanged week 1–2 count above. It matters only for the base rates, which
-no projection reads, and it must be settled before the report could ever become a feature
-(registry note `injuries_in_season_only`).
+(`injuries_retrieved_at_utc`). Whether a completed week's rows are revised later was unprobed
+here beyond the unchanged week 1–2 count above; §20.3 records the probe ADR-099 made before
+the report became a (shadow) model input.
 
 ### 19.3 Attribution and redistribution
 
@@ -909,3 +908,132 @@ The lines keep ADR-091's treatment: spread and total only, no moneyline or odds 
 with no CSV companion, attributed to nflverse with a retrieval time. The designation,
 practice participation and primary injury are the league's public report as nflverse
 publishes it (CC-BY 4.0), printed per player for the week being projected.
+
+## 20. Game-day context sources — probed 2026-10-01 (ADR-099)
+
+Three questions had to be answered from evidence before the weekly v2 freeze: where each game
+is played and whether weather reaches its field, what the two forecast providers publish and
+on what terms, and whether the injury report is point in time. The sandbox's egress policy
+denies every host involved except GitHub, so — as for Phase 0 (ADR-009) — a runner probe
+(`scripts/weather_probe.py`, `.github/workflows/source-probe-weather.yml`) gathered the
+evidence and committed it to `docs/source-probes/2026-10-01/weather/`; the injury probes ran
+locally against nflverse's GitHub release (`docs/source-probes/2026-10-01/injuries/`).
+
+### 20.1 The venue registry (`config/venues.yaml`, `venues_v2`)
+
+| evidence file | what it holds |
+|---|---|
+| `venues.json` | for each stadium id the 2017–2026 schedule prints: the English Wikipedia article (title, revision id and time, its coordinates), the linked Wikidata item and its P625 coordinate, and every sentence of the article naming a roof |
+| `venue_resolution.json` | the two venues the first pass could not place (below), every schedule stadium *name*'s redirect target and Wikidata item, the infobox `roof` field and roof lines of the article wikitext for the venues nflverse's history cannot settle, and both providers' terms pages (§20.2) |
+| `roof_documents.json` (`--phases roofs`) | for the two venues the articles above did not settle, every roof paragraph **whole** from the English and French Wikipedia roof sections and from the architects', builders' and stadium sites' own pages, each with status, final URL and body digest |
+| `tests/fixtures/weekly/schedule_stadiums.csv` | every (season, stadium id, stadium name) the schedule prints, with the roof values nflverse recorded |
+
+* **Coordinates** are Wikidata P625 (CC0), rounded to four decimals; they agree with the
+  article's own coordinates within 0.3 km everywhere. `tests/unit/test_venue_registry.py`
+  checks every entry against the evidence files.
+* **Two venues needed resolving.** "Nissan Stadium" is now a disambiguation page (the Titans'
+  2027 building has its own article); the 1999 stadium is "Nissan Stadium (Nashville)",
+  which "LP Field" and "Adelphia Coliseum" redirect to. "Highmark Stadium" now describes
+  Buffalo's 2026 building; the 2017–2025 stadium is "Ralph Wilson Stadium", which "New Era
+  Field", "Bills Stadium" and "Rich Stadium" redirect to, and whose lead records it was named
+  Highmark Stadium 2021–2025. The registry therefore has two Buffalo entries split by season.
+* **Names beat ids.** The 2026 file files Jacksonville's London game under `JAX00` and names
+  "Tottenham Hotspur Stadium"; Munich appears as `GER00` (2022, 2024) and `MUN01` ("FC Bayern
+  Munich Stadium", 2026) for one building; Houston is "Reliant Stadium" again in 2026; Azteca
+  is "Estadio Banorte". Every one of these resolves to exactly one entry, by test.
+* **Roof type is the venue's fixed type**, from nflverse's recorded roof history (2017–2025,
+  written after kickoff: `outdoors`, `dome`, `open`/`closed`) where the NFL has played there,
+  and the article's infobox `roof` field or roof sentences otherwise. Frankfurt and the
+  Bernabéu are `retractable` (infobox); Wembley is `open` (infobox "Partially retractable",
+  "does not completely enclose it", eleven recorded `outdoors` games).
+* **The Melbourne Cricket Ground and the Stade de France are `open`** (`venues_v2`). `venues_v1`
+  left both `unverified`: the first probe kept 300-character lines, which cut the Stade de
+  France's roof paragraph at "It was designed to easily p…", and the MCG article names roofs
+  over stands only. `roof_documents.json` settles both, and each quotation in the registry's
+  provenance is checked against it verbatim by test:
+  * MCG: COX Architecture, architects of the Northern Stand, "The MCG is a ‘big sky’
+    stadium … where climate and weather add interest to the idiosyncrasy and strategy of game
+    play"; AusStadiums "Arena roof No"; *The Age* (2025-09-24) "Any move to put a roof over the
+    Melbourne Cricket Ground could cost an estimated $6 billion";
+  * Stade de France: English Wikipedia (rev 1375923585) "designed to easily protect the 80,000
+    spectators without covering the playing field"; French Wikipedia (rev 239899809) "il
+    protège les spectateurs sans couvrir l’aire de jeu"; Terraplas "the pitch itself remains
+    uncovered". What is "partially retractable" is the lower stand.
+
+  `unverified` stays a registry value for the next venue the evidence cannot settle; such a
+  venue fails closed (no roof type, no weather).
+* **nflverse's roof label is wrong for three 2026 games abroad**, all open to the sky: the MCG
+  (week 1, still `dome` after the game, beside a recorded 57 °F and 4 mph wind), the Stade de
+  France (week 7) and the Allianz Arena (`MUN01`, week 10, against two recorded `outdoors`
+  games at that building). So wherever a game's venue has a **verified fixed roof** (`open` or
+  `dome`) that the schedule's value contradicts or omits, the venue's label is published
+  (`team_matchups.roof`, `weekly_projections` `game.roof`) and v1 reads it at serving
+  (`ffdraft.weekly.venues.published_roof`, ADR-099); a retractable, unverified or unresolved
+  venue keeps the schedule's value. `weekly_context`'s `roof.recorded` stays the schedule's
+  own value, so the correction is visible. Over 2017–2025 the rule changes nothing: all 247
+  recorded (stadium-season, roof) values at fixed-roof venues already agree
+  (`tests/unit/test_weekly_context.py`), and a scan of every 2017–2026 regular-season game
+  found exactly these three disagreements.
+
+### 20.2 Forecast providers
+
+| | NWS (`nws_api`) | Open-Meteo (`open_meteo`) |
+|---|---|---|
+| used for | U.S. venues | every other venue; the forecast archive |
+| request | `/points/{lat},{lon}` → `forecastGridData` + `forecastHourly`, resolved every fetch (the grid for a point can change) | `/v1/forecast?hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation,precipitation_probability&timezone=GMT&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch` |
+| units | per layer `uom`: `wmoUnit:degC`, `km_h-1`, `percent`, `mm`; converted, and an unknown unit refuses | as requested (°F, mph, inch, %) |
+| time | ISO-8601 `validTime` intervals (start/duration); `updateTime` per product (grid and hourly differ by hours) | hourly instants in GMT |
+| horizon observed | about 7.5 days (grid); a kickoff past it is `out_of_range` | 16 days |
+| terms (read 2026-10-01) | "open data, free to use for any purpose"; a User-Agent identifying the application is required; the rate limit is unpublished | free API **non-commercial only**, under 10,000 calls a day, 5,000 an hour, 600 a minute; data CC BY 4.0, **attribution required** |
+
+The capture (`ffdraft capture-forecasts`) fetches once per venue per refresh, only venues with
+a game in the next eight days and not under a fixed dome — three NWS requests per U.S. venue
+(about 30 a refresh) and one Open-Meteo request per international venue (rarely more than
+two), far inside both providers' limits even with the news-reactive slots. Open-Meteo values carry
+"Weather data by Open-Meteo.com (CC BY 4.0)" wherever the page shows them, and the Data
+view lists both providers.
+
+**The forecast archive is not the serving forecast.** Open-Meteo's Historical Forecast API
+stitches "the first hours of each successive model run" (from 2021/2022; it "closely tracks
+actual conditions"); its Previous Runs API gives each variable "at a fixed lead-time offset"
+of 1–7 days, "most models archived from January 2024"; ERA5 is a reanalysis — historical
+actual weather, never a forecast. Serving in the U.S. reads NWS's gridded forecast, which
+blends different models. The probe reached 371 games of 2024–2025 (newest first, a
+25-minute budget) and recorded all three at the kickoff hour; `scripts/weather_error_model.py`
+measures the forecast-versus-recorded error from it (289 open-air games with recorded
+weather), which `weather_training_parity_v1` uses (docs/MODELING.md §35.3).
+
+| forecast vs game book | wind (mph) | temperature (°F) |
+|---|---|---|
+| short lead (Historical Forecast) | corr 0.774, MAE 2.31 | corr 0.992, MAE 1.77 |
+| day before (Previous Runs, **used**) | corr 0.781, MAE 2.15, residual SD 2.72 | corr 0.983, MAE 2.52, residual SD 3.37 |
+| two days before | corr 0.709, MAE 2.37 | corr 0.980, MAE 2.73 |
+| ERA5 reanalysis | corr 0.757, MAE 2.25 | corr 0.988, MAE 1.95 |
+
+Precipitation: the game book named precipitation for 18 of 289 open-air games; a short-lead
+probability of at least 50% hit 9 of them (0.50, Wilson 95% 0.29–0.71) and flagged 10 of the
+271 others (0.037, 0.020–0.067). Eighteen positives is a small sample, and the report says so.
+
+### 20.3 The injury report, point in time (`injury_report_pit_v1`)
+
+| evidence | finding |
+|---|---|
+| `archive_pit.json` (`scripts/injury_archive_pit.py`) | 2017–2024 files carry `date_modified` per row: **24 of 44,356** rows were last modified after their team's kickoff that week (2018: 2, 2019: 5, 2020: 13, 2021: 3, 2024: 1; at most 38 hours after). 2025 and 2026 files carry **no timestamp** |
+| `injuries_2026_T0.json`, `_T1.json`, `_T0_vs_T1.json` (`scripts/injury_pit_probe.py`) | two captures of the 2026 file 1.5 hours apart: byte-identical (same SHA-256 and `Last-Modified`); weeks 1–4 identical by row digest |
+
+What this establishes: for 2017–2024 the archived rows are, with 24 exceptions, the rows as
+they stood before kickoff, so training on them is point in time to that tolerance. What it
+does not: 2025 and 2026 have no archival evidence, and two same-day captures say nothing
+about revisions days later. So the report is a **shadow** input (weekly-startsit-v2's
+`lineup` and `defense` families) and published context, never a production model input, and
+every refresh now retains a capture (`gameday/nflverse_injuries`, rows plus per-week and
+per-row content digests) so that `ffdraft injury-pit-report` can show, row by row, whether a
+completed week was ever revised.
+
+### 20.4 Starters, from snap counts
+
+Depth charts changed schema in 2025 and have no pre-2025 draft-time history (ADR-015), so a
+"starter" is defined from snap counts, which exist with the same meaning for every season:
+`lagged_starters_v1` (docs/MODELING.md §35.2). nflverse's snap-count file gains two context
+columns for it, `defense_snaps` and `defense_pct` (`SNAP_COUNTS_CONTRACT` 1.1), and the
+schedule contract gains `stadium_id`, `stadium`, `temp` and `wind` (`SCHEDULE_CONTRACT` 1.2).

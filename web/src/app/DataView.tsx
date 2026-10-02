@@ -579,6 +579,22 @@ export function DataView({
             <a href="https://github.com/nflverse/nflverse-data">nflverse-data</a>
           </li>
           <li>
+            <strong>National Weather Service</strong> — the kickoff-hour forecast for U.S.
+            venues on the Start/Sit tab, read from the public api.weather.gov gridded forecast
+            once per venue per refresh. Open data from the U.S. Government. Shown as context
+            beside the weekly projection; no draft, rest-of-season or weekly number reads it.{" "}
+            <a href="https://www.weather.gov/documentation/services-web-api">NWS API</a>
+          </li>
+          <li>
+            <strong>Open-Meteo</strong> — the kickoff-hour forecast for venues outside the U.S.,
+            through the free non-commercial API. Weather data by{" "}
+            <a href="https://open-meteo.com/">Open-Meteo.com</a>, licensed{" "}
+            <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; values are
+            converted to mph and °F and read at the kickoff hour. Its archived forecasts were
+            also used once to measure how far a day-before forecast misses the weather recorded
+            at kickoff.
+          </li>
+          <li>
             <strong>ffopportunity</strong> — expected fantasy points, CC-BY-SA 4.0, used as a
             model input; no per-player expected-points figure is published.{" "}
             <a href="https://ffopportunity.ffverse.com/">ffopportunity</a>

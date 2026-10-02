@@ -1,0 +1,126 @@
+{
+ "rule": "injury_report_pit_v1",
+ "question": "Was each row of the archived report last modified before its team's kickoff that week?",
+ "seasons": [
+  {
+   "season": 2017,
+   "rows": 5104,
+   "date_modified": "present",
+   "rows_with_kickoff": 5104,
+   "rows_without_kickoff": 0,
+   "modified_after_kickoff": 0,
+   "modified_after_kickoff_with_game_status": 0,
+   "max_hours_after_kickoff": null,
+   "weeks_affected": [],
+   "latest_date_modified": "2018-02-02 13:03:18+00:00"
+  },
+  {
+   "season": 2018,
+   "rows": 5133,
+   "date_modified": "present",
+   "rows_with_kickoff": 5133,
+   "rows_without_kickoff": 0,
+   "modified_after_kickoff": 2,
+   "modified_after_kickoff_with_game_status": 2,
+   "max_hours_after_kickoff": 33,
+   "weeks_affected": [
+    1,
+    4
+   ],
+   "latest_date_modified": "2019-02-01 13:02:39+00:00"
+  },
+  {
+   "season": 2019,
+   "rows": 5392,
+   "date_modified": "present",
+   "rows_with_kickoff": 5392,
+   "rows_without_kickoff": 0,
+   "modified_after_kickoff": 5,
+   "modified_after_kickoff_with_game_status": 4,
+   "max_hours_after_kickoff": 12,
+   "weeks_affected": [
+    13
+   ],
+   "latest_date_modified": "2020-01-31 11:33:37+00:00"
+  },
+  {
+   "season": 2020,
+   "rows": 5661,
+   "date_modified": "present",
+   "rows_with_kickoff": 5661,
+   "rows_without_kickoff": 0,
+   "modified_after_kickoff": 13,
+   "modified_after_kickoff_with_game_status": 3,
+   "max_hours_after_kickoff": 38,
+   "weeks_affected": [
+    6
+   ],
+   "latest_date_modified": "2021-02-05 11:05:15+00:00"
+  },
+  {
+   "season": 2021,
+   "rows": 5587,
+   "date_modified": "present",
+   "rows_with_kickoff": 5587,
+   "rows_without_kickoff": 0,
+   "modified_after_kickoff": 3,
+   "modified_after_kickoff_with_game_status": 0,
+   "max_hours_after_kickoff": 9,
+   "weeks_affected": [
+    1
+   ],
+   "latest_date_modified": "2022-02-12 00:47:53+00:00"
+  },
+  {
+   "season": 2022,
+   "rows": 5682,
+   "date_modified": "present",
+   "rows_with_kickoff": 5665,
+   "rows_without_kickoff": 17,
+   "modified_after_kickoff": 0,
+   "modified_after_kickoff_with_game_status": 0,
+   "max_hours_after_kickoff": null,
+   "weeks_affected": [],
+   "latest_date_modified": "2023-02-10 21:33:17+00:00"
+  },
+  {
+   "season": 2023,
+   "rows": 5599,
+   "date_modified": "present",
+   "rows_with_kickoff": 5599,
+   "rows_without_kickoff": 0,
+   "modified_after_kickoff": 0,
+   "modified_after_kickoff_with_game_status": 0,
+   "max_hours_after_kickoff": null,
+   "weeks_affected": [],
+   "latest_date_modified": "2024-01-13 20:46:35+00:00"
+  },
+  {
+   "season": 2024,
+   "rows": 6215,
+   "date_modified": "present",
+   "rows_with_kickoff": 6215,
+   "rows_without_kickoff": 0,
+   "modified_after_kickoff": 1,
+   "modified_after_kickoff_with_game_status": 1,
+   "max_hours_after_kickoff": 2,
+   "weeks_affected": [
+    1
+   ],
+   "latest_date_modified": "2025-02-07 20:32:07+00:00"
+  },
+  {
+   "season": 2025,
+   "rows": 6068,
+   "date_modified": "absent"
+  },
+  {
+   "season": 2026,
+   "rows": 991,
+   "date_modified": "absent"
+  }
+ ],
+ "with_timestamps": 8,
+ "modified_after_kickoff_total": 24,
+ "rows_with_timestamps_total": 44356
+}

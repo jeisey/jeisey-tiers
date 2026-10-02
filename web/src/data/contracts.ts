@@ -33,7 +33,9 @@ export const RECORD_SCHEMA_VERSIONS = {
   behavior_trend_series: "1.0",
   player_usage: "1.0",
   team_matchups: "1.0",
-  weekly_projections: "1.0",
+  // 1.1 (ADR-099): additive `explanation`.
+  weekly_projections: "1.1",
+  weekly_context: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -54,7 +56,8 @@ export type ArtifactName =
   | "behavior_trend_series"
   | "player_usage"
   | "team_matchups"
-  | "weekly_projections";
+  | "weekly_projections"
+  | "weekly_context";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -1118,6 +1121,26 @@ export type WeeklyDriverFamily = (typeof WEEKLY_DRIVER_FAMILIES)[number];
  */
 export type WeeklyGameState = "upcoming" | "kicked_off" | "bye" | "lines_pending";
 
+/** The game-specific input groups a typical-week account splits a difference into (ADR-099). */
+export const WEEKLY_EXPLANATION_GROUPS = ["lines", "home", "rest", "roof", "opponent"] as const;
+export type WeeklyExplanationGroup = (typeof WEEKLY_EXPLANATION_GROUPS)[number];
+
+/** The levels explained: floor, median, ceiling. */
+export const WEEKLY_EXPLAINED_LEVELS = ["q10", "q50", "q90"] as const;
+export type WeeklyExplainedLevel = (typeof WEEKLY_EXPLAINED_LEVELS)[number];
+
+/**
+ * One quantile against his typical week (`typical_week_shapley_v1`):
+ * `typical + Σ terms + calibration + rearrangement` is the published quantile, exactly.
+ */
+export interface WeeklyAccount {
+  readonly typical: number;
+  readonly terms: Readonly<Record<WeeklyExplanationGroup, number>>;
+  /** Always 0: the conformal shift is in both readings. */
+  readonly calibration: number;
+  readonly rearrangement: number;
+}
+
 /** One player's next game as a distribution (`weekly-startsit-v1`, ADR-096). */
 export interface WeeklyProjectionRecord {
   readonly schema_version: string;
@@ -1152,6 +1175,8 @@ export interface WeeklyProjectionRecord {
         readonly rearrangement: number;
       })
     | null;
+  /** Why this week differs from his typical week, at P10, P50 and P90 (contract 1.1, ADR-099). */
+  readonly explanation: Readonly<Record<WeeklyExplainedLevel, WeeklyAccount>> | null;
   readonly opponent: {
     readonly defense: string;
     readonly allowed_ppg: number | null;
@@ -1185,9 +1210,100 @@ export const WEEKLY_PROJECTION_FIELDS = [
   "game",
   "quantiles",
   "drivers",
+  "explanation",
   "opponent",
   "injury",
 ] as const satisfies readonly (keyof WeeklyProjectionRecord)[];
+
+export type WeatherStatus =
+  | "ok"
+  | "roof_unknown"
+  | "indoors"
+  | "unavailable"
+  | "stale"
+  | "out_of_range"
+  | "implausible"
+  | "no_venue";
+
+/** A listed player on a team's report: a lagged starter or a notable skill player. */
+export interface ListedPlayer {
+  readonly player_id: string;
+  readonly name: string | null;
+  readonly position: string | null;
+  readonly role: string;
+  readonly group: "OL" | "QB" | "CB" | "S" | "DL" | "SKILL";
+  readonly starter_rank: number | null;
+  readonly snap_share: number | null;
+  readonly target_share: number | null;
+  readonly carry_share: number | null;
+  readonly designation: "Out" | "Doubtful" | "Questionable";
+  readonly practice_status: string | null;
+  readonly primary_injury: string | null;
+}
+
+/** One team's target-week game as published facts (`weekly_gameday_context_v1`, ADR-099). */
+export interface WeeklyGameContextRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly target_week: number;
+  readonly team: string;
+  readonly game_id: string;
+  readonly opponent: string;
+  readonly home_away: "home" | "away";
+  readonly neutral_site: boolean;
+  readonly kickoff_utc: string | null;
+  readonly context_rule_version: string;
+  readonly venue: {
+    readonly venue_id: string;
+    readonly name: string;
+    readonly country: string;
+    readonly roof_type: "open" | "retractable" | "dome" | "unverified";
+    readonly latitude: number;
+    readonly longitude: number;
+  } | null;
+  readonly roof: {
+    readonly recorded: string | null;
+    readonly model_indoors: number | null;
+    readonly assumed_from_last_home_game: boolean;
+  };
+  readonly weather: {
+    readonly status: WeatherStatus;
+    readonly provider: "nws" | "open_meteo" | null;
+    readonly wind_mph: number | null;
+    readonly gust_mph: number | null;
+    readonly temp_f: number | null;
+    readonly precip_probability: number | null;
+    readonly precip_in: number | null;
+    readonly short_forecast: string | null;
+    readonly valid_from_utc: string | null;
+    readonly valid_to_utc: string | null;
+    readonly provider_updated_utc: string | null;
+    readonly retrieved_at_utc: string | null;
+  };
+  readonly lineup: {
+    readonly report_available: boolean;
+    readonly report_final: boolean;
+    readonly listed: readonly ListedPlayer[];
+  };
+  readonly typical: {
+    readonly games: number;
+    readonly total_line: number | null;
+    readonly team_margin: number | null;
+    readonly team_points: number | null;
+    readonly home_share: number;
+    readonly indoors_share: number | null;
+  };
+  readonly this_week: {
+    readonly total_line: number | null;
+    readonly team_margin: number | null;
+    readonly team_points: number | null;
+    readonly is_home: number | null;
+    readonly rest_advantage: number | null;
+    readonly indoors: number | null;
+  };
+}
 
 export interface WeeklyCalibrationRow {
   readonly low: number;
@@ -1261,6 +1377,26 @@ export interface RosWeeklyMetadata {
   };
   readonly injuries_retrieved_at_utc: string | null;
   readonly statement: string;
+  /** How every record's `explanation` was made (ADR-099); absent on an older build. */
+  readonly explanation?: {
+    readonly rule: string;
+    readonly levels: readonly string[];
+    readonly groups: Readonly<Record<string, string>>;
+    readonly reference_shrink_games: number;
+    readonly reference: string;
+    readonly statement: string;
+  } | null;
+  /** What weekly_context.json was built from (ADR-099). */
+  readonly context?: Readonly<Record<string, unknown>> | null;
+  /** The private weekly-startsit-v2 shadow record's summary; its rows are never published. */
+  readonly shadow?: {
+    readonly model_version: "weekly-startsit-v2";
+    readonly status: "absent" | "shadow" | "failed";
+    readonly rows: number;
+    readonly pregame?: number;
+    readonly with_v2?: number;
+    readonly configuration_hash?: string | null;
+  } | null;
 }
 
 export interface RosBuildMetadata {
@@ -1424,6 +1560,31 @@ export const WEEKLY_PROJECTION_FIELDS_COMPLETE: NoMissingKeys<
   typeof WEEKLY_PROJECTION_FIELDS
 > = true;
 
+export const WEEKLY_CONTEXT_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "target_week",
+  "team",
+  "game_id",
+  "opponent",
+  "home_away",
+  "neutral_site",
+  "kickoff_utc",
+  "context_rule_version",
+  "venue",
+  "roof",
+  "weather",
+  "lineup",
+  "typical",
+  "this_week",
+] as const satisfies readonly (keyof WeeklyGameContextRecord)[];
+export const WEEKLY_CONTEXT_FIELDS_COMPLETE: NoMissingKeys<
+  WeeklyGameContextRecord,
+  typeof WEEKLY_CONTEXT_FIELDS
+> = true;
+
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
@@ -1438,6 +1599,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   player_usage: PLAYER_USAGE_FIELDS,
   team_matchups: TEAM_MATCHUP_FIELDS,
   weekly_projections: WEEKLY_PROJECTION_FIELDS,
+  weekly_context: WEEKLY_CONTEXT_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -1454,6 +1616,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   player_usage: "player_usage.json",
   team_matchups: "team_matchups.json",
   weekly_projections: "weekly_projections.json",
+  weekly_context: "weekly_context.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

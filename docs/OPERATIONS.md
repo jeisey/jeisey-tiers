@@ -1137,6 +1137,132 @@ specification mismatch at load is the one that needs a person: someone changed t
 artifact or `frozen.py` without refitting, and the fix is to restore the committed files or to
 run step 4.
 
+### 16.8 The game-day context layer and the weekly v2 shadow (ADR-099)
+
+**What every in-season refresh adds.** The capture job retains two more sources in the private
+store under `gameday/`. Both are context, and both feed the shadow model. Neither is a gate:
+each step is `continue-on-error`, and a failure shows up in the summary as `Forecast capture`
+or `Injury-report capture`.
+
+- `ffdraft capture-forecasts` fetches the kickoff-hour forecast for every game in the next
+  eight days, once per venue: NWS for U.S. venues, Open-Meteo for the rest. Fixed domes are
+  skipped.
+- `ffdraft capture-injury-report` retains the season's nflverse report with per-week and
+  per-row content digests.
+
+`validate-market-history` re-hashes the `gameday/` prefix along with `market/`, `status/` and
+`behavior/`, before anything is pushed.
+
+**What the build adds.** `build-ros` publishes `weekly_context.json`: the venue, the roof,
+the forecast with its status, the lagged starters listed on either team's report, and the
+typical-week reference. Every projection also carries its `explanation`. `ros.weekly_context_failed`
+withholds only the context; `ros.weekly_projections_invalid` withholds only the weekly layer.
+
+When `models/shadow/weekly-startsit-v2` exists, the build also writes the private shadow
+record (`--shadow-out`): v1's and v2's quantiles side by side, with every v2 input. The
+`retain-shadow` job appends it to `gameday/weekly_shadow` and pushes. That job holds the store
+token; the build does not, so the build hands the file over as a one-day workflow artifact.
+The artifact carries model outputs and inputs derived from public sources only, and the public
+build record never contains it. The prospective holdout scores only records retained before
+kickoff (docs/MODELING.md §35.6). A refresh that is late, or has failed, for a game simply
+leaves that game out of the holdout; nothing is backfilled.
+
+**The news-reactive cadence.** Three extra schedule slots (America/New_York):
+
+| slot | why |
+|---|---|
+| Thursday 17:47 | after Thursday's practice report; before Thursday night's kickoff |
+| Friday 17:47 | after Friday's report, which carries the final game statuses for Sunday |
+| Sunday 10:23 | the freshest forecast before the 1 pm kickoffs |
+
+These runs are `refresh_kind=news`. They capture only forecasts and the injury report. MFL's
+player database is asked for at most once a day (ADR-017), and Sleeper's status map and
+trending feeds once a day, so the news runs skip all of those. The build rebuilds from the
+retained store and the committed models: inference only, never a fit. Its nflverse cache key
+is the UTC hour rather than the day, so it reads the afternoon's report, not the morning's.
+Game-day inactives, published about 90 minutes before kickoff, arrive after every slot and are
+not inputs.
+
+**Commands that are not part of the refresh.** All offline except the last.
+
+```bash
+# The v2 development dataset: v1's rows plus the three candidate families. Needs the weekly
+# dataset (16.7 step 1); downloads play-by-play for the game-book weather text.
+uv run ffdraft build-weekly-v2-dataset --last-season 2025
+
+# The frozen development comparison (frozen_v2.py): each family's value over v1, the
+# selection, and the 2025 re-examination. Writes docs/experiments/weekly-startsit-v2/.
+uv run ffdraft evaluate-weekly-v2
+
+# Fit the selected v2 on 2017-2025 for shadow serving. Refuses unless development selected
+# a family. Writes models/shadow/weekly-startsit-v2 (never production).
+uv run ffdraft train-weekly-v2-shadow
+
+# The prospective holdout's progress: counts, complete weeks and the look that is due. Shows
+# no accuracy and takes no look. The looks are taken by weekly-v2-prospective.yml (16.9).
+uv run ffdraft evaluate-weekly-v2-prospective --store market-data --season 2026
+
+# Copy the recorded looks' verdicts into docs/experiments/weekly-startsit-v2/ for the model
+# card (after a promote or a closed evaluation). Takes nothing.
+uv run ffdraft evaluate-weekly-v2-prospective --store market-data --season 2026 --export
+
+# Point-in-time evidence: compare the retained injury-report captures row by row.
+uv run ffdraft injury-pit-report --store market-data --season 2026
+
+# The runner probe for venues, forecasts and the archive (network; normally dispatched).
+gh workflow run source-probe-weather.yml -f phases=all
+```
+
+**Triage.**
+
+| symptom | meaning | action |
+|---|---|---|
+| `Forecast capture: failure` | a provider failed | weather reads `unavailable` until the next refresh; nothing else changes |
+| `Shadow record retained: no` with status `shadow` | the retaining job failed | the games of that refresh are missing from the holdout |
+| Status `failed` | the shadow could not be built | `build-ros.log` names `ros.weekly_shadow_failed`; nothing public moved |
+
+**Venue registry upkeep.** A stadium name the registry does not know resolves to no venue,
+which means no weather and no roof type, and the validator lists it. To fix it, add the name as
+an alias, with provenance, in `config/venues.yaml`. A new building gets a new entry split by
+season. Dispatch the venue-resolution probe (`gh workflow run source-probe-weather.yml -f
+phases=resolve`) for the evidence; a venue whose roof the articles do not settle gets its own
+pages in `ROOF_DOCUMENTS` and the `roofs` phase, which a push to the probe script runs. Never
+type coordinates or roof types from memory. A registry `open` or `dome` overrides the
+schedule's roof label (DATA_SOURCES 20.1), so a wrong registry roof is a wrong model input:
+`weekly_context.roof_agreement` and `tests/unit/test_weekly_context.py` (history must agree)
+are the guards.
+
+### 16.9 The prospective looks of weekly-startsit-v2 (`weekly-v2-prospective.yml`)
+
+Nothing to run by hand. Every Wednesday at 10:17 New York the job:
+
+1. checks out the private store and counts what production retained before each kickoff:
+   complete weeks (`outcomes_complete_v1`), scored rows and decision-pool pairs against the
+   minimum (8 / 6,000 / 40,000);
+2. takes the look that is due, if any (`prospective_looks_v1`, MODELING 35.6): the first when
+   the minimum is first met, the final once the season's last week is complete unless the
+   first was decisive;
+3. records the look in the store (`gameday/weekly_v2_look`, the rows it judged and the
+   verdict), validates the store and pushes it;
+4. only then writes the run summary and opens an issue titled
+   "weekly-startsit-v2: <look> prospective look, <outcome>". That issue is the notification.
+
+Every run's summary shows the progress table even when no look is due. Once the evaluation is
+over (a final look, or a decisive first), runs return at once without downloading anything.
+
+| summary or issue says | meaning | action |
+|---|---|---|
+| progress only, "No look was due" | still collecting | none |
+| first look, **insufficient evidence** | not decided; not a rejection | none; the final look follows after week 18 |
+| **promote** | v2 beat v1 under the frozen rule | a reviewed change: `--export` the verdicts, regenerate the v2 card, serve v2 with v1 as challenger |
+| **reject** | v2 is worse than v1 | retire the v2 shadow; v1 stays |
+| final look, **insufficient evidence** | the season ended undecided | v1 stays; the evaluation is closed |
+| job red at "Validate and push" | the look was judged but not recorded | nobody has seen the verdict; re-run the workflow (it takes the look again and records it) |
+| job red at "Count, and take…" | outcomes or the store could not be read | re-run after nflverse recovers; nothing was recorded |
+
+The token `PROSPECTIVE-WEEKLY-V2-2026` lives only in this workflow (`tests/unit/test_workflows.py`).
+A look already in the ledger refuses to be taken again, by the job or by hand.
+
 ## 17. Serving the site under load (ADR-098)
 
 ### 17.1 How GitHub Pages serves this site — verified 2026-09-30
@@ -1223,6 +1349,17 @@ and that a redeploy which renames a player is shown at once to a reader holding 
   introduced.
 * When the board's shape changes (a new block, a longer series), re-measure the counts with the
   probe and update `config/size-model.json`.
+* **ADR-099 moved the Start/Sit path.** Every weekly record now carries three explanation
+  accounts, and the tab and the card read `weekly_context` (one file, 3.3 kB gzip). Measured
+  2026-10-01, with every other path unchanged:
+
+  | build | Start/Sit adds | card adds | headroom on Start/Sit |
+  |---|---:|---:|---:|
+  | size model, 32 teams of context (worst case) | 54.9 kB | 23.6 kB | ≈ 5 kB |
+  | real 2026 week-4 build, 550 players a preset | 49.2 kB (was 34 kB) | 20.4 kB | ≈ 11 kB |
+
+  The weekly slice is the one to watch: a longer explanation (more groups, a promoted v2's
+  families) or more players a preset adds bytes at about 37 kB gzip per 550 players.
 
 ### 17.4 Bandwidth arithmetic (re-do it when the numbers move)
 

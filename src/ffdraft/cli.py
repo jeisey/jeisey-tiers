@@ -794,6 +794,15 @@ def _build_parser() -> argparse.ArgumentParser:
             "is published and every board is unaffected (ADR-096)"
         ),
     )
+    ros_build.add_argument(
+        "--shadow-out",
+        type=Path,
+        default=None,
+        help=(
+            "write the private weekly shadow record (v1 and the shadow v2 side by side, with "
+            "every pregame input) here; never into the public data directory (ADR-099)"
+        ),
+    )
     ros_build.add_argument("--no-write", action="store_true", help="build without writing files")
     ros_build.set_defaults(handler=_build_ros)
 
@@ -1890,6 +1899,7 @@ def _build_ros(args: argparse.Namespace) -> int:
         full_board_out=args.full_board,
         snapshot_out=args.snapshot,
         weekly_model_dir=args.weekly_model,
+        shadow_out=args.shadow_out,
         write=not args.no_write,
     )
     print(f"season state  : {result.state.state} ({result.state.mode})")
@@ -2318,27 +2328,31 @@ def _capture_behavior(args: argparse.Namespace) -> int:
 def _validate_market_history(args: argparse.Namespace) -> int:
     """Re-hash every retained capture and check the store's append-only invariants.
 
-    Both prefixes are checked, not just the one a ``--source`` happens to name. A
+    Every prefix is checked, not just the one a ``--source`` happens to name. A
     validator that reports "pass" for a prefix it never opened is worse than no validator.
     """
     from ffdraft.behavior.capture import verify_behavior_store
     from ffdraft.modeling.frozen import PRODUCTION_SEASON
     from ffdraft.sources.market import MFL_SOURCE_ID
     from ffdraft.status.capture import verify_status_store
+    from ffdraft.weekly.capture import verify_gameday_store
 
     store = _market_store(args.store)
     season = args.season or PRODUCTION_SEASON
     market = verify_store(store, source_id=args.source or MFL_SOURCE_ID, season=season)
     captures, status_files, status_problems = verify_status_store(store, season=season)
     behaviors, behavior_files, behavior_problems = verify_behavior_store(store, season=season)
+    # ADR-099: forecasts, the injury report and the private weekly shadow record.
+    gameday, gameday_files, gameday_problems = verify_gameday_store(store, season=season)
 
     print(f"store          : {store.root}")
     print(f"market         : {market.snapshots} snapshot(s), {market.files_checked} file(s)")
     print(f"status         : {captures} capture(s), {status_files} file(s)")
     print(f"behaviour      : {behaviors} capture(s), {behavior_files} file(s)")
-    for problem in (*market.problems, *status_problems, *behavior_problems):
+    print(f"game day       : {gameday} capture(s), {gameday_files} file(s)")
+    for problem in (*market.problems, *status_problems, *behavior_problems, *gameday_problems):
         print(f"  [critical] {problem}")
-    ok = market.ok and not status_problems and not behavior_problems
+    ok = market.ok and not status_problems and not behavior_problems and not gameday_problems
     if not (market.snapshots or captures or behaviors):
         print("  [warning] the store holds nothing for this source and season")
     print(f"retained history: {'pass' if ok else 'fail'}")

@@ -81,12 +81,15 @@ def build_team_matchup_records(
     lines_source_id: str,
     lines_retrieved_at: datetime | None,
     teams: Sequence[str] | None = None,
+    roofs: Mapping[str, str | None] | None = None,
 ) -> list[dict[str, Any]]:
     """One record per team that still has a game inside the horizon after ``as_of``.
 
     ``teams`` narrows the output; by default every club in the season's schedule gets a
     record, because a card may open any player and the frontend joins on the team code
-    the player's usage record names.
+    the player's usage record names. ``roofs`` (``game_id -> roof``) replaces the schedule's
+    roof label where the build's venue registry verifies a fixed roof the schedule
+    contradicts (ADR-099); the build computes it, so this module imports no venue code.
     """
     if schedule.is_empty():
         return []
@@ -112,7 +115,14 @@ def build_team_matchup_records(
             weeks_by_team.setdefault(team, set()).add(int(row["week"]))
         if kickoff is None or kickoff <= as_of:
             continue
-        entry = {**row, "_home": home, "_away": away, "_kickoff": kickoff}
+        game_id = str(row.get("game_id"))
+        entry = {
+            **row,
+            "roof": roofs[game_id] if roofs is not None and game_id in roofs else row.get("roof"),
+            "_home": home,
+            "_away": away,
+            "_kickoff": kickoff,
+        }
         by_team.setdefault(home, []).append(entry)
         by_team.setdefault(away, []).append(entry)
 

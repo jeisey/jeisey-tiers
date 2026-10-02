@@ -31,7 +31,8 @@
         "behavior_trend_series",
         "player_usage",
         "team_matchups",
-        "weekly_projections"
+        "weekly_projections",
+        "weekly_context"
       ]
     },
     "record_schema": {

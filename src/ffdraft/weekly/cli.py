@@ -21,7 +21,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+from collections.abc import Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +38,9 @@ DEFAULT_WEEKLY_MODEL_DIR = Path("models/production/weekly-startsit-v1")
 ROWS_FILE = "weekly_rows.parquet"
 INJURIES_FILE = "injuries.parquet"
 APPEARANCES_FILE = "appearances.parquet"
+V2_ROWS_FILE = "weekly_rows_v2.parquet"
+DEFAULT_WEEKLY_V2_EXPERIMENT_DIR = Path("docs/experiments/weekly-startsit-v2")
+DEFAULT_WEEKLY_V2_MODEL_DIR = Path("models/shadow/weekly-startsit-v2")
 
 
 def register(subparsers: Any, *, repo_root: Any) -> None:
@@ -69,6 +75,111 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
     train.add_argument("--confirm-final-eval", default=None, help="the seal token (2025 is used)")
     train.set_defaults(handler=lambda args: _train(args, repo_root()))
 
+    v2_dataset = subparsers.add_parser(
+        "build-weekly-v2-dataset",
+        help=(
+            "join the weekly v2 candidate families (weather, his offence's health, the "
+            "opposing defence's health) to v1's rows (performs network I/O)"
+        ),
+    )
+    v2_dataset.add_argument("--data", type=Path, default=None, help="weekly dataset directory")
+    v2_dataset.add_argument("--first-season", type=int, default=2017)
+    v2_dataset.add_argument("--last-season", type=int, required=True)
+    v2_dataset.set_defaults(handler=lambda args: _build_v2_dataset(args, repo_root()))
+
+    forecasts = subparsers.add_parser(
+        "capture-forecasts",
+        help=(
+            "fetch the kickoff forecast for every upcoming game, once per venue, and retain it "
+            "in the store (performs network I/O; NWS and Open-Meteo)"
+        ),
+    )
+    forecasts.add_argument("--season", type=int, required=True)
+    forecasts.add_argument("--store", type=Path, required=True, help="retained store checkout")
+    forecasts.add_argument("--horizon-days", type=float, default=8.0)
+    forecasts.add_argument("--git-sha", default=None)
+    forecasts.set_defaults(handler=lambda args: _capture_forecasts(args))
+
+    injury = subparsers.add_parser(
+        "capture-injury-report",
+        help="retain the season's nflverse injury report with per-week row digests (network)",
+    )
+    injury.add_argument("--season", type=int, required=True)
+    injury.add_argument("--store", type=Path, required=True)
+    injury.add_argument("--git-sha", default=None)
+    injury.set_defaults(handler=lambda args: _capture_injuries(args))
+
+    pit = subparsers.add_parser(
+        "injury-pit-report",
+        help="compare retained injury-report captures week by week (row contents, not counts)",
+    )
+    pit.add_argument("--season", type=int, required=True)
+    pit.add_argument("--store", type=Path, required=True)
+    pit.set_defaults(handler=lambda args: _injury_pit(args))
+
+    shadow = subparsers.add_parser(
+        "retain-weekly-shadow",
+        help="append a build's private shadow record (v1 and v2 side by side) to the store",
+    )
+    shadow.add_argument("--file", type=Path, required=True)
+    shadow.add_argument("--store", type=Path, required=True)
+    shadow.set_defaults(handler=lambda args: _retain_shadow(args))
+
+    v2_eval = subparsers.add_parser(
+        "evaluate-weekly-v2",
+        help="the frozen v2 development comparison: each family's value over v1 (offline)",
+    )
+    v2_eval.add_argument("--data", type=Path, default=None)
+    v2_eval.add_argument("--out", type=Path, default=None)
+    v2_eval.set_defaults(handler=lambda args: _evaluate_v2(args, repo_root()))
+
+    v2_train = subparsers.add_parser(
+        "train-weekly-v2-shadow",
+        help="fit the selected v2 on 2017-2025 for shadow serving; refuses unless selected",
+    )
+    v2_train.add_argument("--data", type=Path, default=None)
+    v2_train.add_argument("--reports", type=Path, default=None)
+    v2_train.add_argument("--out", type=Path, default=None)
+    v2_train.set_defaults(handler=lambda args: _train_v2(args, repo_root()))
+
+    v2_prospective = subparsers.add_parser(
+        "evaluate-weekly-v2-prospective",
+        help=(
+            "count the prospective holdout and name the look due; with --take-due-look and the "
+            "token, take that look and record it (prospective_looks_v1)"
+        ),
+    )
+    v2_prospective.add_argument("--season", type=int, default=2026)
+    v2_prospective.add_argument("--store", type=Path, required=True)
+    v2_prospective.add_argument(
+        "--take-due-look",
+        action="store_true",
+        help="take the look that is due now, if any, and record it in the store first",
+    )
+    v2_prospective.add_argument("--confirm", default=None)
+    v2_prospective.add_argument(
+        "--out", type=Path, default=None, help="where a look's verdict JSON is written"
+    )
+    v2_prospective.add_argument(
+        "--export",
+        action="store_true",
+        help="write every recorded look's verdict to --out (for the model card); take none",
+    )
+    v2_prospective.add_argument(
+        "--status", type=Path, default=None, help="write this run's status JSON here"
+    )
+    v2_prospective.set_defaults(handler=lambda args: _prospective(args, repo_root()))
+
+    card_v2 = subparsers.add_parser(
+        "weekly-v2-model-card",
+        help="generate the weekly-startsit-v2 card from the committed v2 evidence (offline)",
+    )
+    card_v2.add_argument("--reports", type=Path, default=None)
+    card_v2.add_argument("--model", type=Path, default=None)
+    card_v2.add_argument("--out", type=Path, default=None)
+    card_v2.add_argument("--git-sha", default="unknown")
+    card_v2.set_defaults(handler=lambda args: _card_v2(args, repo_root()))
+
     card = subparsers.add_parser(
         "weekly-model-card",
         help="generate the weekly start/sit model card from the committed reports and artifact",
@@ -78,6 +189,27 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
     card.add_argument("--out", type=Path, default=None, help="card directory")
     card.add_argument("--git-sha", default="unknown", help="recorded code SHA")
     card.set_defaults(handler=lambda args: _card(args, repo_root()))
+
+
+def _card_v2(args: argparse.Namespace, root: Path) -> int:
+    from ffdraft.weekly.card_v2 import write_weekly_v2_card
+    from ffdraft.weekly.weather import load_error_model
+
+    reports = args.reports or (root / DEFAULT_WEEKLY_V2_EXPERIMENT_DIR)
+    model = args.model or (root / DEFAULT_WEEKLY_V2_MODEL_DIR)
+    prospective = reports / "prospective_final.json"
+    if not prospective.is_file():
+        prospective = reports / "prospective_first.json"
+    for path in write_weekly_v2_card(
+        report_path=reports / "experiment.json",
+        model_dir=model if model.is_dir() else None,
+        out_dir=args.out or (root / "models" / "cards"),
+        weather_parameters_digest=load_error_model().digest,
+        prospective_path=prospective if prospective.is_file() else None,
+        git_sha=args.git_sha,
+    ):
+        print(f"wrote {path}")
+    return 0
 
 
 def _card(args: argparse.Namespace, root: Path) -> int:
@@ -148,6 +280,467 @@ def _build_dataset(args: argparse.Namespace, root: Path) -> int:
     for check in dataset.checks:
         print(f"  [{check.severity}] {check.check_id}: {check.observed}")
     return 1 if failed else 0
+
+
+def _build_v2_dataset(args: argparse.Namespace, root: Path) -> int:
+    from ffdraft.features.sources import load_historical_sources
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.weekly.dataset_v2 import attach_v2_families, game_weather_inputs
+    from ffdraft.weekly.venues import load_venue_registry
+    from ffdraft.weekly.weather import load_error_model
+
+    data_dir = args.data or (root / DEFAULT_WEEKLY_DATA_DIR)
+    rows_path = data_dir / ROWS_FILE
+    injuries_path = data_dir / INJURIES_FILE
+    if not rows_path.is_file() or not injuries_path.is_file():
+        print(f"{rows_path} not found; run `ffdraft build-weekly-dataset` first", file=sys.stderr)
+        return 2
+    seasons = list(range(args.first_season, args.last_season + 1))
+    loaded = load_historical_sources(target_seasons=seasons)
+    sources = loaded.sources
+    text = _game_weather_text(seasons)
+    dataset = attach_v2_families(
+        pl.read_parquet(rows_path),
+        snaps=bridged_snap_counts(sources),
+        weekly=sources.weekly_stats,
+        injuries=pl.read_parquet(injuries_path),
+        games=game_weather_inputs(sources.schedule, text),
+        registry=load_venue_registry(),
+        error_model=load_error_model(),
+    )
+    dataset.frame.write_parquet(data_dir / V2_ROWS_FILE, compression="zstd")
+    text.write_parquet(data_dir / "game_weather_text.parquet", compression="zstd")
+    (data_dir / "weekly_v2_manifest.json").write_text(
+        json.dumps(dataset.coverage, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(dataset.coverage, indent=2))
+    for check in dataset.checks:
+        print(f"  [{check.severity}] {check.check_id}: {check.observed}")
+    return 1 if any(check.blocking for check in dataset.checks) else 0
+
+
+def _game_weather_text(seasons: list[int]) -> pl.DataFrame:
+    """The game book's kickoff conditions, one row per game, from nflverse play-by-play."""
+    from ffdraft.sources.nflverse_http import nflverse_loaders
+
+    nflreadpy = nflverse_loaders()
+    frames = []
+    for season in seasons:
+        pbp = nflreadpy.load_pbp(seasons=[season])
+        frame = pbp if isinstance(pbp, pl.DataFrame) else pl.DataFrame(pbp)
+        frames.append(
+            frame.select("game_id", pl.col("weather").cast(pl.String)).unique(
+                "game_id",
+                keep="first",
+                maintain_order=True,
+            ),
+        )
+    return pl.concat(frames, how="vertical_relaxed").sort("game_id")
+
+
+def _capture_forecasts(args: argparse.Namespace) -> int:
+    from datetime import UTC, datetime, timedelta
+
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.season.state import scheduled_kickoff_utc
+    from ffdraft.sources.nflverse_history import NflverseScheduleAdapter
+    from ffdraft.sources.nflverse_http import nflverse_loaders
+    from ffdraft.weekly.capture import FORECAST_SOURCE_ID, GamedayCapture, write_gameday_capture
+    from ffdraft.weekly.forecast import fetch_venue_forecast, forecast_capture_rows
+    from ffdraft.weekly.venues import load_venue_registry
+
+    now = datetime.now(UTC).replace(microsecond=0)
+    schedule = NflverseScheduleAdapter().normalize(nflverse_loaders().load_schedules()).frame
+    registry = load_venue_registry()
+    games = []
+    for row in schedule.filter(
+        (pl.col("season") == args.season) & (pl.col("game_type") == "REG"),
+    ).iter_rows(named=True):
+        kickoff = scheduled_kickoff_utc(row.get("gameday"), row.get("gametime"))
+        if kickoff is None or not (now <= kickoff <= now + timedelta(days=args.horizon_days)):
+            continue
+        venue = registry.resolve(
+            season=args.season,
+            stadium_id=row.get("stadium_id"),
+            stadium=row.get("stadium"),
+        )
+        games.append(
+            {
+                "game_id": row["game_id"],
+                "season": row["season"],
+                "week": row["week"],
+                "kickoff_utc": kickoff,
+                "venue_id": venue.venue_id if venue else None,
+            },
+        )
+    venues = [
+        venue
+        for venue in registry.venues
+        if venue.venue_id in {game["venue_id"] for game in games} and venue.roof_type != "dome"
+    ]
+    fetched = {venue.venue_id: fetch_venue_forecast(venue) for venue in venues}
+    rows = forecast_capture_rows(registry.venues, games, fetched)
+    statuses: dict[str, int] = {}
+    for row in rows:
+        statuses[str(row["status"])] = statuses.get(str(row["status"]), 0) + 1
+    capture = GamedayCapture(
+        source_id=FORECAST_SOURCE_ID,
+        season=args.season,
+        observed_at_utc=now,
+        rows=rows,
+        details={
+            "registry_version": registry.version,
+            "registry_digest": registry.digest,
+            "venues_fetched": len(fetched),
+            "providers": {
+                provider: sum(1 for item in fetched.values() if item.provider == provider)
+                for provider in ("nws", "open_meteo")
+            },
+            "fetch_failures": sorted(key for key, item in fetched.items() if item.error),
+            "statuses": statuses,
+            "horizon_days": args.horizon_days,
+        },
+        git_sha=args.git_sha,
+    )
+    for path in write_gameday_capture(capture, store=SnapshotStore(root=args.store, prefix="")):
+        print(f"wrote {path}")
+    print(json.dumps({"games": len(rows), **capture.details}, indent=2))
+    # A forecast is context and a shadow input, never a gate: a failed provider is reported.
+    return 0
+
+
+def _capture_injuries(args: argparse.Namespace) -> int:
+    from datetime import UTC, datetime
+
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.sources.nflverse_http import nflverse_loaders
+    from ffdraft.weekly.capture import INJURY_SOURCE_ID, GamedayCapture, write_gameday_capture
+    from ffdraft.weekly.pit import PIT_COLUMNS, week_digests
+
+    now = datetime.now(UTC).replace(microsecond=0)
+    raw = nflverse_loaders().load_injuries(seasons=[args.season])
+    frame = raw if isinstance(raw, pl.DataFrame) else pl.DataFrame(raw)
+    digests = week_digests(frame)
+    present = [column for column in PIT_COLUMNS if column in frame.columns]
+    capture = GamedayCapture(
+        source_id=INJURY_SOURCE_ID,
+        season=args.season,
+        observed_at_utc=now,
+        rows=[dict(row) for row in frame.select(present).iter_rows(named=True)],
+        details={
+            "rule": digests["rule"],
+            "weeks": {
+                key: {name: value for name, value in week.items() if name != "row_digests"}
+                for key, week in digests["weeks"].items()
+            },
+            "columns": present,
+        },
+        git_sha=args.git_sha,
+    )
+    for path in write_gameday_capture(capture, store=SnapshotStore(root=args.store, prefix="")):
+        print(f"wrote {path}")
+    print(json.dumps(capture.details["weeks"], indent=2))
+    return 0
+
+
+def _injury_pit(args: argparse.Namespace) -> int:
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.weekly.capture import GAMEDAY_PREFIX, INJURY_SOURCE_ID, read_gameday_capture
+    from ffdraft.weekly.pit import compare_captures, week_digests
+
+    store = SnapshotStore(root=args.store, prefix="")
+    keys = SnapshotStore(root=args.store, prefix=GAMEDAY_PREFIX).keys(INJURY_SOURCE_ID, args.season)
+    if len(keys) < 2:
+        print(f"{len(keys)} retained capture(s); a comparison needs two", file=sys.stderr)
+        return 0
+    first = read_gameday_capture(store, source_id=INJURY_SOURCE_ID, season=args.season, key=keys[0])
+    last = read_gameday_capture(store, source_id=INJURY_SOURCE_ID, season=args.season, key=keys[-1])
+    assert first is not None and last is not None
+    report = compare_captures(
+        week_digests(pl.DataFrame(first.rows)),
+        week_digests(pl.DataFrame(last.rows)),
+    )
+    print(json.dumps({"earliest": keys[0], "latest": keys[-1], **report}, indent=2))
+    return 0
+
+
+def _retain_shadow(args: argparse.Namespace) -> int:
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.timeutil import parse_utc
+    from ffdraft.weekly.capture import SHADOW_SOURCE_ID, GamedayCapture, write_gameday_capture
+
+    document = json.loads(args.file.read_text(encoding="utf-8"))
+    rows = list(document.get("rows") or [])
+    if not rows:
+        print("the shadow record holds no rows; nothing to retain")
+        return 0
+    capture = GamedayCapture(
+        source_id=SHADOW_SOURCE_ID,
+        season=int(document["season"]),
+        observed_at_utc=parse_utc(str(document["as_of_utc"])),
+        rows=rows,
+        details={key: value for key, value in document.items() if key != "rows"},
+        git_sha=document.get("git_sha"),
+    )
+    for path in write_gameday_capture(capture, store=SnapshotStore(root=args.store, prefix="")):
+        print(f"wrote {path}")
+    return 0
+
+
+def _evaluate_v2(args: argparse.Namespace, root: Path) -> int:
+    from ffdraft.weekly.evaluate_v2 import run_v2_development
+    from ffdraft.weekly.report_v2 import write_v2_report
+    from ffdraft.weekly.weather import load_error_model
+
+    data_dir = args.data or (root / DEFAULT_WEEKLY_DATA_DIR)
+    out_dir = args.out or (root / DEFAULT_WEEKLY_V2_EXPERIMENT_DIR)
+    frame = pl.read_parquet(data_dir / V2_ROWS_FILE)
+    result = run_v2_development(
+        frame,
+        weather_parameters_digest=load_error_model().digest,
+        progress=lambda message: print(message, flush=True),
+    )
+    for path in write_v2_report(result, out_dir):
+        print(f"wrote {path}")
+    result["_rows"].write_parquet(data_dir / "oof_v2_development.parquet", compression="zstd")
+    print(f"outcome: {result['outcome']}; families: {result['v2_families']}")
+    return 0
+
+
+def _train_v2(args: argparse.Namespace, root: Path) -> int:
+    from ffdraft.weekly.frozen import WEEKLY_TRAIN_START_SEASON
+    from ffdraft.weekly.frozen_v2 import WEEKLY_V2_PREVIOUSLY_EXAMINED_SEASON, v2_spec
+    from ffdraft.weekly.model import fit_weekly_model
+    from ffdraft.weekly.weather import load_error_model
+
+    data_dir = args.data or (root / DEFAULT_WEEKLY_DATA_DIR)
+    reports = args.reports or (root / DEFAULT_WEEKLY_V2_EXPERIMENT_DIR)
+    out_dir = args.out or (root / DEFAULT_WEEKLY_V2_MODEL_DIR)
+    report = json.loads((reports / "experiment.json").read_text(encoding="utf-8"))
+    if report.get("outcome") != "selected" or not report.get("v2_families"):
+        print("v2 was not selected at development; no shadow model is fitted", file=sys.stderr)
+        return 1
+    spec = v2_spec(
+        tuple(report["v2_families"]),
+        weather_parameters_digest=load_error_model().digest,
+    )
+    frame = pl.read_parquet(data_dir / V2_ROWS_FILE).filter(
+        (pl.col("season") >= WEEKLY_TRAIN_START_SEASON)
+        & (pl.col("season") <= WEEKLY_V2_PREVIOUSLY_EXAMINED_SEASON),
+    )
+    model = fit_weekly_model(frame, spec=spec)
+    written = model.save(
+        out_dir,
+        extra={"refit_reason": "shadow_fit_after_development_selection", "status": "shadow"},
+    )
+    print(f"wrote {written[-1]} ({len(written)} files); configuration {spec.configuration_hash()}")
+    return 0
+
+
+def _prospective(args: argparse.Namespace, root: Path) -> int:
+    """Count, name the due look, and with ``--take-due-look`` take it (``prospective_looks_v1``).
+
+    The look is written to the retained store **before** its verdict is printed or saved, so a
+    run that dies after judging still leaves the ledger saying the look was taken.
+    """
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.timeutil import parse_utc
+    from ffdraft.weekly.capture import (
+        GAMEDAY_PREFIX,
+        LOOK_SOURCE_ID,
+        SHADOW_SOURCE_ID,
+        GamedayCapture,
+        read_gameday_capture,
+        recorded_looks,
+        write_gameday_capture,
+    )
+    from ffdraft.weekly.frozen_v2 import WEEKLY_V2_FROZEN_AT_UTC
+    from ffdraft.weekly.prospective import (
+        due_look,
+        eligible_rows,
+        evidence_counts,
+        prospective_verdict,
+    )
+
+    store = SnapshotStore(root=args.store, prefix="")
+    out = args.out or (root / DEFAULT_WEEKLY_V2_EXPERIMENT_DIR)
+    recorded = recorded_looks(store, season=args.season)
+    if args.export:
+        out.mkdir(parents=True, exist_ok=True)
+        for look, verdict in sorted(recorded.items()):
+            path = out / f"prospective_{look}.json"
+            path.write_text(json.dumps(verdict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            print(f"wrote {path}")
+        return 0
+
+    now = _now()
+    if not _open(recorded):
+        # The evaluation is over: nothing is counted, downloaded or taken again.
+        return _report_status(
+            args,
+            {
+                "season": args.season,
+                "checked_at_utc": now.isoformat().replace("+00:00", "Z"),
+                "recorded_looks": {look: v.get("outcome") for look, v in recorded.items()},
+                "due": None,
+                "taken": None,
+                "outcome": None,
+                "closed": True,
+            },
+        )
+
+    keys = SnapshotStore(root=args.store, prefix=GAMEDAY_PREFIX).keys(SHADOW_SOURCE_ID, args.season)
+    rows: list[dict[str, Any]] = []
+    for key in keys:
+        capture = read_gameday_capture(
+            store, source_id=SHADOW_SOURCE_ID, season=args.season, key=key
+        )
+        if capture is not None:
+            rows.extend(capture.rows)
+    eligible = eligible_rows(rows, frozen_at=parse_utc(WEEKLY_V2_FROZEN_AT_UTC))
+    scored, complete, season_complete = _join_outcomes(eligible, args.season, now=now)
+    counts = evidence_counts(scored)
+    due = due_look(counts, season_complete=season_complete, recorded=recorded)
+    status: dict[str, Any] = {
+        "season": args.season,
+        "checked_at_utc": now.isoformat().replace("+00:00", "Z"),
+        "captures": len(keys),
+        "eligible": eligible.height,
+        "complete_weeks": complete,
+        "season_complete": season_complete,
+        **counts,
+        "recorded_looks": {look: verdict.get("outcome") for look, verdict in recorded.items()},
+        "due": due,
+        "taken": None,
+        "outcome": None,
+        "closed": not _open(recorded),
+    }
+    if args.take_due_look and due is not None:
+        verdict = prospective_verdict(scored, look=due, confirmation=args.confirm)
+        verdict["complete_weeks"] = complete
+        verdict["taken_at_utc"] = status["checked_at_utc"]
+        write_gameday_capture(
+            GamedayCapture(
+                source_id=LOOK_SOURCE_ID,
+                season=args.season,
+                observed_at_utc=now,
+                rows=scored.to_dicts(),
+                details={"look": due, "verdict": verdict},
+                git_sha=os.environ.get("GITHUB_SHA"),
+            ),
+            store=store,
+        )
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"prospective_{due}.json"
+        path.write_text(json.dumps(verdict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        status.update({"taken": due, "outcome": verdict["outcome"], "verdict_path": str(path)})
+        recorded = {**recorded, due: verdict}
+        status["recorded_looks"] = {look: v.get("outcome") for look, v in recorded.items()}
+        status["closed"] = not _open(recorded)
+    return _report_status(args, status)
+
+
+def _report_status(args: argparse.Namespace, status: Mapping[str, Any]) -> int:
+    if args.status is not None:
+        args.status.parent.mkdir(parents=True, exist_ok=True)
+        args.status.write_text(json.dumps(status, indent=2, default=str) + "\n", encoding="utf-8")
+    print(json.dumps(status, indent=2, default=str))
+    return 0
+
+
+def _now() -> datetime:
+    """The judging clock, whole seconds (a store key is a timestamp)."""
+    return datetime.now(UTC).replace(microsecond=0)
+
+
+def _open(recorded: Mapping[str, Mapping[str, Any]]) -> bool:
+    """Whether the evaluation can still take a look (no final, no decisive first)."""
+    if "final" in recorded:
+        return False
+    first = recorded.get("first")
+    return first is None or first.get("outcome") not in ("promote", "reject")
+
+
+def _join_outcomes(
+    eligible: pl.DataFrame,
+    season: int,
+    *,
+    now: datetime,
+) -> tuple[pl.DataFrame, list[int], bool]:
+    """Points in each eligible row's preset for players who appeared, in complete weeks only.
+
+    Returns ``(scored rows, complete weeks, season complete)`` under ``outcomes_complete_v1``
+    (:func:`ffdraft.weekly.prospective.complete_weeks`). Network: nflverse.
+    """
+    from ffdraft.config import load_app_config
+    from ffdraft.contracts.enums import normalize_team_code
+    from ffdraft.features.sources import load_historical_sources
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.scoring.horizon import fantasy_horizon
+    from ffdraft.season.state import scheduled_kickoff_utc
+    from ffdraft.weekly.context import scored_position_rows
+    from ffdraft.weekly.dataset import appearances
+    from ffdraft.weekly.prospective import complete_weeks
+
+    config = load_app_config()
+    sources = load_historical_sources(target_seasons=[season]).sources
+    snaps = bridged_snap_counts(sources)
+    games: list[tuple[int, datetime | None, str, str]] = []
+    for game in sources.schedule.filter(
+        (pl.col("season") == season) & (pl.col("game_type") == "REG"),
+    ).iter_rows(named=True):
+        home = normalize_team_code(game.get("home_team"))
+        away = normalize_team_code(game.get("away_team"))
+        if home is None or away is None:
+            continue
+        kickoff = scheduled_kickoff_utc(game.get("gameday"), game.get("gametime"))
+        games.append((int(game["week"]), kickoff, home, away))
+    complete, season_complete = complete_weeks(
+        games,
+        stats_teams=_teams_by_week(sources.weekly_stats, season),
+        snap_teams=_teams_by_week(snaps, season),
+        horizon_weeks=list(fantasy_horizon(season).weeks),
+        now=now,
+    )
+    if eligible.is_empty():
+        return eligible, complete, season_complete
+    scored = scored_position_rows(sources.weekly_stats, config.league.scoring, [season])
+    appeared = appearances(scored, snaps, [season]).select(
+        pl.col("season").cast(pl.Int32),
+        pl.col("week").cast(pl.Int32).alias("target_week"),
+        "gsis_id",
+        "scoring_preset",
+        pl.col("target_points").alias("actual"),
+    )
+    joined = (
+        eligible.with_columns(
+            pl.col("season").cast(pl.Int32),
+            pl.col("target_week").cast(pl.Int32),
+        )
+        .filter(pl.col("target_week").is_in(complete))
+        .join(appeared, on=["season", "target_week", "gsis_id", "scoring_preset"], how="inner")
+    )
+    return joined, complete, season_complete
+
+
+def _teams_by_week(frame: pl.DataFrame, season: int) -> dict[int, set[str]]:
+    """``week -> teams`` with at least one row in ``frame`` for ``season``."""
+    from ffdraft.contracts.enums import normalize_team_code
+
+    if frame.is_empty() or not {"season", "week", "team"} <= set(frame.columns):
+        return {}
+    teams: dict[int, set[str]] = {}
+    for week, team in (
+        frame.filter(pl.col("season") == season)
+        .select(pl.col("week").cast(pl.Int64), "team")
+        .unique()
+        .iter_rows()
+    ):
+        code = normalize_team_code(team)
+        if code is not None and week is not None:
+            teams.setdefault(int(week), set()).add(code)
+    return teams
 
 
 def _authorization(args: argparse.Namespace) -> Any:

@@ -264,6 +264,11 @@ its implied team total, and any injury designation with its measured appearance 
 it; only when there is a distribution to compare). A bye or a game with no posted
 line says which it is instead of showing numbers.
 
+**Amended 2026-10-01 (ADR-099).** The **This week** block adds the full *Why this week*
+reading of section 6A.11.1 item 6b — median, ceiling and floor against a typical week, the
+points table and the context chips — fetched with the card (the context is one small file
+named in the card's requirement set).
+
 **Amended 2026-09-22 (ADR-091).** The in-season section now reads top to bottom in the order a
 waiver decision is made: roster moves headline → **Role, week by week** → **Production so far**
 → the cohort strip → **Next game** → roster moves strip → momentum. Section 6A.9 specifies the
@@ -638,6 +643,32 @@ integer within ±40), so a call can be pasted into a league chat and reopened ex
 8. **How these numbers are made** — a disclosure with the model, both verdicts, the calibration
    table and the statement of what the model reads and what reads it.
 
+6b. **Why this week** (ADR-099) — after the account of the median, one disclosure per
+   contender (the pick open), each answering "why is this week different from his typical
+   week":
+   * three headlines — **Median**, **Ceiling**, **Floor** — each this week's number with its
+     difference from the typical week in words ("3.1 above a typical week (12.0)"), an arrow
+     and a sign;
+   * a points table, one row per game input that moved any of the three by at least 0.05
+     (lines, venue, rest, roof, opponent), with its median, ceiling and floor terms. Each
+     row's label is built from published fields: "Team implied for 27.3 pts (usually 23.4)",
+     "MIA allows the 5th-most points to WRs", "3 fewer days of rest than the opponent",
+     "Indoors (dome)";
+   * **context chips without points**: the kickoff forecast ("Forecast: 18 mph wind, gusts 29,
+     37°F, 70% chance of precipitation"), a retractable roof ("announced on game day; outside:
+     …"), an unverified roof, a dome, a stale or missing forecast, and every lagged starter or
+     notable teammate on either report ("BUF offence: OL2 Ross Fixture out", "CIN defence: CB1
+     … out"). A team whose report carries no game status yet says so ("no game statuses yet"),
+     because unknown is not healthy. Open-Meteo values print their CC BY 4.0 credit beside the
+     chips;
+   * the sentence that every number is a model attribution against a typical week, not a
+     measured cause.
+
+   The deck card carries the compact form (median and ceiling against typical, the largest
+   reason with its two values, the first context chip and a count of the rest). The week board
+   gains a **vs typical** column: the median's difference with an arrow and the largest
+   reason's short name, its full sentence in the accessible label.
+
 #### 6A.11.2 What the tab will not do
 
 - It never prints a player value, a rank or a tier: those are the boards'.
@@ -648,6 +679,12 @@ integer within ±40), so a call can be pasted into a league chat and reopened ex
   and the projection says it assumes he plays.
 - It never uses colour alone: every meter prints its value, every matrix cell its percentage,
   and the slot letter travels with the slot colour.
+- It never puts a point value on something the served model does not read. Until a weekly
+  model that reads weather or the injury report is promoted (ADR-099), the forecast and the
+  report are context chips, and an explanation's numbers are only the published terms of
+  inputs the model does read, at the exact level shown.
+- It never invents an explanation: a record without a published `explanation` (a bye, a
+  pending line, an older build) shows none.
 
 #### 6A.11.3 Width
 
@@ -655,7 +692,10 @@ Four deck cards across from 1100px, two from 360px, one below. The verdict, post
 ridges and matrix are one column at every width; nothing scrolls sideways at 320px with four
 players in the comparison (`web/tests/e2e/startsit.spec.ts` checks 1440, 1024, 820, 390 and
 320px, and the a11y reflow check includes the four-player page). Below 768px the week board
-pins the player's name and drops rank and opponent. The view is lazy-loaded.
+pins the player's name and drops rank and opponent. The view is lazy-loaded. Below 768px the
+*Why this week* reading keeps the median and the ceiling and drops the floor's headline and
+column (the floor stays on the deck card's range); context chips wrap. The same five widths
+are checked on fixtures and on a real build.
 
 ## 7. Tables
 

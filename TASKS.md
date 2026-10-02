@@ -1760,3 +1760,96 @@ feature and without changing any model, value, rank, tier or displayed number.
 - [ ] **Owed**: the first production refresh on this code (the live proof; the private store is
       unreachable from the sandbox); the weekly usage series grow through the season and the card
       path has ~6 kB of headroom — watch the summary. No PR opened (not requested).
+
+## The game-day context layer, weekly-startsit-v2 in shadow, and "why this week" — 2026-10-01 (ADR-099)
+
+The owner asked for weekly projections that react to weather, his offence's health and the
+opposing defence's health, explained in plain English — the ceiling as well as the median —
+under a new model version frozen before evidence, with a prospective holdout.
+
+- [x] **Source probes before the freeze** (runner, `scripts/weather_probe.py`, four passes):
+      venue coordinates and roof evidence (Wikipedia/Wikidata, 46 schedule ids, every schedule
+      stadium name's redirect target), NWS and Open-Meteo live contracts and terms, the
+      Open-Meteo forecast archive for 371 games of 2024–2025. DATA_SOURCES §20.
+- [x] **Injury report point in time** (`scripts/injury_archive_pit.py`,
+      `scripts/injury_pit_probe.py`): 24 of 44,356 2017–2024 rows modified after kickoff;
+      2025–2026 carry no timestamp; two same-day 2026 captures byte-identical. Prospective
+      capture every refresh (`gameday/nflverse_injuries`) with row digests; `injury-pit-report`.
+- [x] **Sources registered**: `nws_api`, `open_meteo` (non-commercial, CC BY 4.0, flagged in
+      `non_commercial_deployment_required_by`), `wikidata_venue_coordinates`; registry note
+      `injuries_in_season_only` updated; the forecast providers are forbidden intrinsic lineage.
+- [x] **Venue registry** `config/venues.yaml` (`venues_v2`, 45 buildings): stable ids, aliases,
+      Wikidata coordinates and roof provenance checked against the evidence by test; names beat
+      stale ids (London, Munich, Buffalo 2026, Houston, Azteca). `venues_v1` left the MCG and
+      the Stade de France `unverified`; `venues_v2` makes both `open` on whole roof paragraphs
+      (`roof_documents.json`, quotations checked verbatim by test).
+- [x] **Forecast-error map** `config/weather-forecast-error-v1.json` (`scripts/weather_error_model.py`):
+      day-before Open-Meteo vs game book, 289 open-air games; precipitation hit 0.50 / false alarm
+      0.037.
+- [x] **Freeze committed first**: `f62f849` (17:46 UTC) — `frozen_v2.py` (families, five variants,
+      baselines, folds, 2025 previously examined, decision cutoff, parity rule, family selection,
+      prospective holdout, promotion v2), the evaluation code, the dataset join, the registry and
+      the error map — before `evaluate-weekly-v2` ran.
+- [x] **Context layer**: lagged snap-count starters (`lagged_starters_v1`), confirmed vs uncertain
+      designations, null when a report has no game status; weather only where it reaches the
+      field; serve-time unknowns are `null` (LightGBM's missing branch), tested input by input.
+- [x] **Firewall**: every v2 name fails the forbidden-feature guard; no ROS/intrinsic/v1 feature is
+      a v2 input; only the weekly package and the build import the game-day modules; ROS records
+      carry no game-day field.
+- [x] **Development evaluation and per-family value over v1** (`336fd24`,
+      `docs/experiments/weekly-startsit-v2/`): v1 refitted per fold reproduces its committed
+      report exactly; **his offence's health selected** (Δ pinball +0.0037, 95% [0.0030, 0.0052],
+      5/5 folds, accuracy +0.0014, Brier −0.0007); **weather and the opposing defence's health
+      not selected** (no value beyond noise over a model that reads the lines); 2025 consistent
+      (1.0941 vs 1.0970); every `weekly_promotion_v1` development clause passes vs B0–B2.
+- [x] **Shadow v2** = v1 + lineup, fitted 2017–2025 (`models/shadow/weekly-startsit-v2`,
+      `24933c290a50a74c`, byte-identical refits, digest-checked at load, tamper refused), the
+      generated card `models/cards/weekly-startsit-v2.{md,json}` with its test; the v1 card
+      regenerated for ADR-099's explanation and limitations.
+- [ ] **Prospective holdout** (2026 games after the first production refresh on this code):
+      pending by design — 8 complete weeks, 6,000 rows, 40,000 pairs; v1 stays in production.
+- [x] **Explanations** (`typical_week_shapley_v1`): typical-week reference with a league fallback;
+      P10/P50/P90 accounts closing on each published quantile; `weekly_projection` 1.1;
+      `weekly_game_context` 1.0 (`weekly_context.json`); validator checks for closure, record shape,
+      weather status, lineup, and context ↔ projections agreement.
+- [x] **UI**: Start/Sit "Why this week" (median, ceiling, floor; points table; context chips without
+      points; attribution statement), deck card compact form, week board "vs typical" column, the
+      card's "This week" block; Open-Meteo credit; NWS and Open-Meteo in the Data view's sources;
+      neutral copy.
+- [x] **Operations**: forecast and injury capture in the refresh; news-reactive slots (Thu/Fri
+      17:47, Sun 10:23 ET) capturing only game-day sources and re-inferring offline; hour-keyed
+      nflverse cache on news runs; shadow record → `retain-shadow` job → private store; store
+      validation covers `gameday/`; eight new run facts in the summary allow-list.
+- [x] **verify-real-build** checks every rendered explanation number (headlines, terms, gist, board
+      cell) against the artifact bytes.
+- [x] **Screenshots**, fixture and real data, at 1440/1024/820/390/320 with overflow and clipping
+      measured (`docs/visual-qa/2026-10-01/whyweek-{fixture,real}/`). The real-data build:
+      2026 week 4, nflverse and the committed models, forecasts seeded from the runner probe's
+      real NWS and Open-Meteo readings, no arbitrage.
+- [x] **Budgets**: the size model passes every budget, Start/Sit +54.9 kB of 60 (≈ 5 kB headroom,
+      OPERATIONS §17.3); the real build passes too, Start/Sit +49.2 kB (was 34) and card +20.4 kB.
+- [x] **Validation**: ruff/format clean (315 files); mypy clean (192); **pytest 1,777 passed**;
+      lint 0 errors; typecheck clean; **vitest 662**; build; **e2e 199**; `verify:board` 0 failures
+      (root and in-season fixture); `verify-real-build` on the real build 0 failures (550 board
+      cells, 2 panels, 7 terms against the artifact bytes); real build `validate-artifacts
+      --require-serving` 0/0.
+- [x] **Amendment, roof labels** (ADR-099): nflverse files the MCG, the Stade de France and the
+      Allianz Arena (2026, open to the sky) as `dome`. A verified fixed venue roof now wins for
+      the published labels (`team_matchups.roof`, `game.roof`) and v1's serving input
+      (`published_roof`); `roof.recorded` keeps the schedule's value; training untouched (247
+      recorded 2017–2025 roofs agree, by test; exactly 3 of 2017–2026 change);
+      `weekly_context.roof_agreement` added. Firewall unchanged: the matchup builder takes a
+      plain `game_id → roof` map.
+- [x] **Amendment, scheduled looks** (ADR-099, OPERATIONS §16.9): `weekly-v2-prospective.yml`
+      counts every Wednesday, takes the due look (`prospective_looks_v1`), records it in
+      `gameday/weekly_v2_look` before showing it, then summarises and opens an issue. Complete
+      weeks need outcomes (`outcomes_complete_v1`); a recorded look is never retaken; the token
+      lives only in that workflow.
+- [ ] **Owed**:
+  - the first production refresh on this code — the first retained shadow record and the first
+    `gameday/` captures, which the sandbox cannot reach. Weeks that kick off before it are lost
+    to the holdout;
+  - the first scheduled run of `weekly-v2-prospective.yml` (progress only until the minimum
+    is met; the earliest first look is after week 12 if the refresh runs before week 5).
+
+  No PR (not requested).

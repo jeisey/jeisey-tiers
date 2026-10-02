@@ -148,7 +148,10 @@ def build_weekly_card(
             "tuning": "none; the configuration was frozen before any evidence (commit 4f62112)",
             "explanation": (
                 "grouped TreeSHAP by feature family, plus baseline, calibration and "
-                "rearrangement terms, summing to the published median"
+                "rearrangement terms, summing to the published median; and, from ADR-099, "
+                "typical_week_shapley_v1: exact weighted baseline Shapley over the game inputs "
+                "(lines, venue, rest, roof, opponent) against a pregame typical-week reference, "
+                "at P10, P50 and P90, closing on each published quantile"
             ),
         },
         "promotion": {
@@ -193,7 +196,9 @@ def _limitations() -> list[str]:
         "Points given that he plays. A Questionable player's projection is not discounted for "
         "the chance he sits; the page prints the designation's measured appearance rate beside "
         "it instead.",
-        "No weather: nflverse records temperature and wind only after kickoff.",
+        "No weather and no injury report among its inputs. Both are evaluated as candidate "
+        "families of weekly-startsit-v2 (ADR-099), which runs in shadow and is judged "
+        "prospectively; until it is promoted they are published as context without points.",
         "Every training row had a posted total and spread, so the model cannot project a game "
         "without them (it would read a missing line as zero). Such a game is published as "
         "lines_pending with no distribution until the line is posted.",
@@ -203,9 +208,13 @@ def _limitations() -> list[str]:
         "league with unusual rosters has a different one.",
         "Same-game correlation is measured by position pair and applied through a Gaussian "
         "copula; a pair with too few rows is treated as independent and the page says so.",
-        "The injury file's point-in-time behaviour is unprobed (config/source-registry.yaml), "
-        "so the designation base rates could move slightly if nflverse revises rows. No "
-        "projection reads them.",
+        "The injury report's point-in-time record (ADR-099): 24 of 44,356 2017-2024 rows "
+        "were last modified after kickoff; 2025-2026 rows carry no timestamp. The designation "
+        "base rates could move slightly if nflverse revises rows; no projection reads them.",
+        "Its roof input is the schedule's, except where the venue registry verifies a fixed "
+        "roof the schedule contradicts: nflverse files the MCG, the Stade de France and the "
+        "Allianz Arena (2026, open to the sky) as dome, and those games are read as outdoors "
+        "(ADR-099 amendment). Every 2017-2025 roof it was trained on already agrees.",
     ]
 
 

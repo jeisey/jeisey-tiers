@@ -496,7 +496,7 @@ def run_fixture_pipeline(
     opportunity = _opportunity_records(ros_tiers, build_id=build_id, facts=season.facts)
     behavior_series = _behavior_series_records(opportunity, build_id=build_id)
     usage, matchups = _signal_records(opportunity, season=season, app=app, build_id=build_id)
-    weekly, weekly_block = _weekly_records(
+    weekly, weekly_block, weekly_context = _weekly_records(
         opportunity,
         usage,
         season=season,
@@ -518,6 +518,7 @@ def run_fixture_pipeline(
         "player_usage": usage,
         "team_matchups": matchups,
         "weekly_projections": weekly,
+        "weekly_context": weekly_context,
     }
     gate.extend(_published_identity_checks(records, market_outcomes))
 
@@ -1182,6 +1183,7 @@ def _signal_records(
     """`player_usage` and `team_matchups`, through the real builders (ADR-091)."""
     from ffdraft.artifacts import record_schema_version
     from ffdraft.signals import build_player_usage_records, build_team_matchup_records
+    from ffdraft.weekly.venues import load_venue_registry, published_roofs
 
     players: dict[str, dict[str, Any]] = {}
     for row in opportunity:
@@ -1210,6 +1212,10 @@ def _signal_records(
         schema_version=record_schema_version("team_matchup"),
         lines_source_id=NFLVERSE_SOURCE_ID,
         lines_retrieved_at=as_of,
+        roofs=published_roofs(
+            load_venue_registry(),
+            list(season.schedule.filter(pl.col("season") == FIXTURE_SEASON).iter_rows(named=True)),
+        ),
     )
     return usage, matchups
 
@@ -1229,7 +1235,7 @@ def _weekly_records(
     season: FixtureSeason,
     app: AppConfig,
     build_id: str,
-) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None, list[dict[str, Any]]]:
     """`weekly_projections` through the **production** serve path and the committed model.
 
     The fixture's rest-of-season rows are arithmetic, but its weekly rows go through
@@ -1244,10 +1250,11 @@ def _weekly_records(
     from ffdraft.pipeline.ros import DEFAULT_WEEKLY_MODEL_DIR, weekly_metadata
     from ffdraft.weekly.model import WeeklyModel
     from ffdraft.weekly.serve import build_weekly_projection_records
+    from ffdraft.weekly.venues import load_venue_registry
 
     model_dir = repo_root() / DEFAULT_WEEKLY_MODEL_DIR
     if not (model_dir / "metadata.json").is_file():
-        return [], None
+        return [], None, []
     model = WeeklyModel.load(model_dir)
     snapshot, players, reports = weekly_serve_inputs(opportunity, usage, app=app)
     as_of = parse_utc(FIXTURE_INSEASON_AS_OF)
@@ -1265,15 +1272,203 @@ def _weekly_records(
         build_id=build_id,
         schema_version=record_schema_version("weekly_projection"),
         injury_reports=reports,
+        venues=load_venue_registry(),
     )
     if not result.records:
-        return [], None
-    return result.records, weekly_metadata(
-        model,
-        result.summary,
-        through_week=FIXTURE_THROUGH_WEEK,
-        injuries_retrieved_at=as_of,
+        return [], None, []
+    context, context_summary = _weekly_context_records(
+        season=season,
+        usage=usage,
+        reports=reports,
+        as_of=as_of,
+        build_id=build_id,
     )
+    return (
+        result.records,
+        weekly_metadata(
+            model,
+            result.summary,
+            through_week=FIXTURE_THROUGH_WEEK,
+            injuries_retrieved_at=as_of,
+            context=context_summary,
+        ),
+        context,
+    )
+
+
+def _weekly_context_records(
+    *,
+    season: FixtureSeason,
+    usage: Sequence[Mapping[str, Any]],
+    reports: Mapping[str, Mapping[str, Any]],
+    as_of: datetime,
+    build_id: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """`weekly_context` through the production builder, with synthetic game-day inputs.
+
+    The schedule names real registry venues; the forecasts cover every published status
+    (a windy, wet open-air game; a retractable roof; a dome; a stale and an unavailable
+    reading); and two teams' lines and secondaries carry designations, so every chip the
+    page can draw has a fixture case.
+    """
+    from ffdraft.artifacts import record_schema_version
+    from ffdraft.weekly.gameday import build_weekly_context_records
+    from ffdraft.weekly.venues import load_venue_registry
+
+    target = FIXTURE_THROUGH_WEEK + 1
+    games = season.schedule.filter(pl.col("week") == target).sort("game_id")
+    retrieved = as_of - timedelta(hours=1)
+    forecasts: dict[str, dict[str, Any]] = {}
+    for index, game in enumerate(games.iter_rows(named=True)):
+        status = ("ok", "roof_unknown", "ok", "stale", "indoors", "ok", "unavailable", "ok")[
+            index % 8
+        ]
+        windy = index == 0
+        forecasts[str(game["game_id"])] = {
+            "provider": "nws",
+            "status": status,
+            "wind_mph": None
+            if status in ("stale", "indoors", "unavailable")
+            else (18.0 if windy else 7.0),
+            "gust_mph": None
+            if status in ("stale", "indoors", "unavailable")
+            else (29.0 if windy else 12.0),
+            "temp_f": None
+            if status in ("stale", "indoors", "unavailable")
+            else (38.0 if windy else 61.0),
+            "precip_probability": None
+            if status in ("stale", "indoors", "unavailable")
+            else (70.0 if windy else 10.0),
+            "precip_in": None
+            if status in ("stale", "indoors", "unavailable")
+            else (0.12 if windy else 0.0),
+            "short_forecast": "Rain And Breezy"
+            if windy
+            else ("Partly Sunny" if status == "ok" else None),
+            "valid_from_utc": "2026-11-08T18:00:00Z" if status in ("ok", "roof_unknown") else None,
+            "valid_to_utc": "2026-11-08T19:00:00Z" if status in ("ok", "roof_unknown") else None,
+            "provider_updated_utc": "2026-11-03T10:14:00+00:00"
+            if status in ("ok", "roof_unknown")
+            else None,
+            "retrieved_at_utc": isoformat_utc(retrieved),
+        }
+    teams = sorted(
+        {str(team) for team in games.get_column("home_team")}
+        | {str(team) for team in games.get_column("away_team")}
+    )
+    lined_teams = teams[:2]
+    snaps = season.snap_counts.with_columns(
+        pl.lit(None, dtype=pl.Float64).alias("defense_snaps")
+        if "defense_snaps" not in season.snap_counts.columns
+        else pl.col("defense_snaps"),
+        pl.lit(None, dtype=pl.Float64).alias("defense_pct")
+        if "defense_pct" not in season.snap_counts.columns
+        else pl.col("defense_pct"),
+    )
+    extra: list[dict[str, Any]] = []
+    for team in lined_teams:
+        for week in range(FIXTURE_THROUGH_WEEK - 2, FIXTURE_THROUGH_WEEK + 1):
+            for slot, position in enumerate(("T", "G", "C", "G", "T")):
+                extra.append(_fixture_snap(team, week, f"OL{slot}", position, offense=0.98))
+            for slot in range(3):
+                extra.append(
+                    _fixture_snap(team, week, f"CB{slot}", "CB", defense=0.95 - 0.1 * slot)
+                )
+    if extra:
+        snaps = pl.concat(
+            [snaps, pl.DataFrame(extra).select(snaps.columns).cast(snaps.schema)],
+            how="vertical_relaxed",
+        )
+    report_rows = [
+        {
+            "season": FIXTURE_SEASON,
+            "week": target,
+            "gsis_id": gsis,
+            "team": next(
+                (str(row["team"]) for row in usage if str(row["player_id"]).endswith(gsis)), None
+            ),
+            "position": None,
+            "report_status": report["designation"],
+            "practice_status": report["practice_status"],
+            "primary_injury": report["primary_injury"],
+            "full_name": next(
+                (str(row["display_name"]) for row in usage if str(row["player_id"]).endswith(gsis)),
+                None,
+            ),
+        }
+        for gsis, report in reports.items()
+    ]
+    for team, gsis, position, designation, name in (
+        (lined_teams[0], f"fx-{lined_teams[0]}-OL1", "G", "Out", "Fixture Guard"),
+        (lined_teams[0], f"fx-{lined_teams[0]}-OL3", "T", "Questionable", "Fixture Tackle"),
+        (lined_teams[1], f"fx-{lined_teams[1]}-CB0", "CB", "Out", "Fixture Corner"),
+    ):
+        report_rows.append(
+            {
+                "season": FIXTURE_SEASON,
+                "week": target,
+                "gsis_id": gsis,
+                "team": team,
+                "position": position,
+                "report_status": designation,
+                "practice_status": "Did Not Participate In Practice",
+                "primary_injury": "Ankle",
+                "full_name": name,
+            },
+        )
+    injuries = pl.DataFrame(
+        report_rows,
+        schema={
+            "season": pl.Int32,
+            "week": pl.Int32,
+            "gsis_id": pl.String,
+            "team": pl.String,
+            "position": pl.String,
+            "report_status": pl.String,
+            "practice_status": pl.String,
+            "primary_injury": pl.String,
+            "full_name": pl.String,
+        },
+    )
+    return build_weekly_context_records(
+        schedule=season.schedule,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        as_of=as_of,
+        build_id=build_id,
+        schema_version=record_schema_version("weekly_game_context"),
+        registry=load_venue_registry(),
+        forecasts=forecasts,
+        injuries=injuries,
+        snaps=snaps,
+        weekly=season.weekly,
+    )
+
+
+def _fixture_snap(
+    team: str,
+    week: int,
+    slot: str,
+    position: str,
+    *,
+    offense: float = 0.0,
+    defense: float = 0.0,
+) -> dict[str, Any]:
+    gsis = f"fx-{team}-{slot}"
+    return {
+        "season": FIXTURE_SEASON,
+        "week": week,
+        "game_type": "REG",
+        "pfr_player_id": gsis,
+        "player_name": f"Fixture {slot}",
+        "position": position,
+        "team": team,
+        "offense_snaps": round(offense * 64),
+        "offense_pct": offense,
+        "defense_snaps": round(defense * 64),
+        "defense_pct": defense,
+        "gsis_id": gsis,
+    }
 
 
 def weekly_serve_inputs(

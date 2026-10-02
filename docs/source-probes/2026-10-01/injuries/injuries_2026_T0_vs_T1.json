@@ -1,0 +1,41 @@
+{
+ "comparison": {
+  "identical": 4,
+  "revised": 0,
+  "rule": "injury_report_pit_v1",
+  "weeks": {
+   "2026-01": {
+    "rows": 182,
+    "status": "identical"
+   },
+   "2026-02": {
+    "rows": 251,
+    "status": "identical"
+   },
+   "2026-03": {
+    "rows": 301,
+    "status": "identical"
+   },
+   "2026-04": {
+    "rows": 257,
+    "status": "identical"
+   }
+  }
+ },
+ "earlier": {
+  "file_sha256": "7293f23f2495c428ba087613bda8161a68c1a0e53b27cf9c696617d6e2a166c5",
+  "http_last_modified": "Thu, 01 Oct 2026 14:25:26 GMT",
+  "label": "T0",
+  "retrieved_at_utc": "2026-10-01T16:00:27Z",
+  "source_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.parquet"
+ },
+ "later": {
+  "file_sha256": "7293f23f2495c428ba087613bda8161a68c1a0e53b27cf9c696617d6e2a166c5",
+  "http_last_modified": "Thu, 01 Oct 2026 14:25:26 GMT",
+  "label": "T1",
+  "retrieved_at_utc": "2026-10-01T17:37:23Z",
+  "rows": 991,
+  "source_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.parquet"
+ },
+ "rule": "injury_report_pit_v1"
+}
