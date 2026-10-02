@@ -57,6 +57,9 @@ jobs:
       - name: Probe venues, forecasts and the forecast archive
         id: probe
         timeout-minutes: 45
+        env:
+          ARCHIVE_SEASONS: ${{ inputs.archive_seasons || '2022,2023,2024,2025' }}
+          PHASES: ${{ inputs.phases || 'roofs' }}
         run: |
           set -euo pipefail
           out_dir="docs/source-probes/$(date -u +%F)/weather"
@@ -64,8 +67,8 @@ jobs:
           mkdir -p "${out_dir}"
           python scripts/weather_probe.py \
             --out "${out_dir}" \
-            --archive-seasons "${{ inputs.archive_seasons || '2022,2023,2024,2025' }}" \
-            --phases "${{ inputs.phases || 'roofs' }}"
+            --archive-seasons "${ARCHIVE_SEASONS}" \
+            --phases "${PHASES}"
 
       # Partial evidence is still evidence: every file the probe wrote before a failure or a
       # timeout is kept, and summary.json says what is missing.

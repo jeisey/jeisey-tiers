@@ -52,6 +52,16 @@ The data-writer clause above became *unnecessary* rather than merely satisfied. 
 
 Do not use `pull_request_target` with untrusted code execution.
 
+**Recorded 2026-10-02 (`docs/SECURITY_REVIEW_2026-10-02.md`).** Every workflow, including
+`phase10-linkage.yml` (previously `contents: write` at the top), now declares `contents: read`
+at the top level; write scopes exist only on the allow-listed jobs. A dispatch input, event
+payload or ref name is never expanded inline into a `run:` block — it reaches the shell through
+`env:` — and season/cohort inputs are validated before becoming step outputs in the jobs that
+hold `MARKET_DATA_REPO_TOKEN`. Repository-level secrets remain readable by any workflow run on
+any branch a writer can push, so the store token's real boundary is "who can push here"; moving
+it to an environment restricted to `main` is the recommended owner action in that report.
+`tests/unit/test_workflow_security.py` asserts these properties across all of `.github/`.
+
 ## 4. Third-party Actions
 
 Prefer official GitHub actions for checkout, setup, Pages artifact/upload/deploy.

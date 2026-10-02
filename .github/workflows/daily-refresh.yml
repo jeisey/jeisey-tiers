@@ -167,22 +167,38 @@ jobs:
           # block here ever builds an authenticated remote URL or echoes one.
           persist-credentials: "true"
 
+      # Dispatch inputs reach the shell through `env:` and are validated before they become
+      # step outputs, because every later `run:` block (here and in the build job) expands
+      # those outputs inline, in a job that holds the store credential
+      # (docs/SECURITY_REVIEW_2026-10-02.md, SR-02).
       - name: Plan the capture
         id: plan
+        env:
+          INPUT_SEASON: ${{ inputs.season }}
+          INPUT_COHORTS: ${{ inputs.cohorts }}
+          SCHEDULE: ${{ github.event.schedule }}
         run: |
           set -euo pipefail
-          season="${{ inputs.season }}"
+          season="${INPUT_SEASON}"
           if [ -z "${season}" ]; then
             # `nflreadpy.get_current_season()` returns the PRIOR season in August, so the
             # draft-target season comes from config, never from the clock.
             season="$(uv run python -c 'from ffdraft.modeling.frozen import PRODUCTION_SEASON; print(PRODUCTION_SEASON)')"
           fi
-          cohorts="${{ inputs.cohorts }}"
+          cohorts="${INPUT_COHORTS:-production}"
+          if ! [[ "${season}" =~ ^[0-9]{4}$ ]]; then
+            echo "::error::season must be a four-digit year"
+            exit 1
+          fi
+          if ! [[ "${cohorts}" =~ ^[A-Za-z0-9_,.\ -]+$ ]]; then
+            echo "::error::cohorts must be 'production', 'study' or a comma-separated id list"
+            exit 1
+          fi
           echo "season=${season}" >> "$GITHUB_OUTPUT"
-          echo "cohorts=${cohorts:-production}" >> "$GITHUB_OUTPUT"
+          echo "cohorts=${cohorts}" >> "$GITHUB_OUTPUT"
           # A news-reactive slot (ADR-099) captures the game-day sources only.
           kind=daily
-          case "${{ github.event.schedule }}" in
+          case "${SCHEDULE}" in
             "47 17 * * 4"|"47 17 * * 5"|"23 10 * * 0") kind=news ;;
           esac
           echo "kind=${kind}" >> "$GITHUB_OUTPUT"
@@ -958,6 +974,7 @@ jobs:
           CAPTURE: ${{ needs.capture.result }}
           BUILD: ${{ needs.build.result }}
           DEPLOY: ${{ needs.deploy.result }}
+          FORCED: ${{ inputs.force_validation_failure == true && 'yes — deploy must be skipped' || '' }}
         run: |
           set -euo pipefail
           artifacts="build-record/data"
@@ -990,7 +1007,7 @@ jobs:
             --fact "shadow_rows=${{ needs.build.outputs.shadow_rows || '0' }}" \
             --fact "shadow_retained=${{ needs.retain-shadow.outputs.retained || 'no' }}" \
             --fact "deploy_result=${DEPLOY}" \
-            --fact "forced_failure=${{ inputs.force_validation_failure == true && 'yes — deploy must be skipped' || '' }}" \
+            --fact "forced_failure=${FORCED}" \
             --fact "pages_url=${{ needs.deploy.outputs.page_url || 'not deployed — previous production remains live' }}"
 
       - name: Restate the deployment outcome

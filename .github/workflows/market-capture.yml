@@ -88,20 +88,36 @@ jobs:
           path: market-data
           persist-credentials: "true"
 
+      # Inputs reach the shell through `env:` and are validated before they become step
+      # outputs, which later `run:` blocks in this credentialed job expand inline
+      # (docs/SECURITY_REVIEW_2026-10-02.md, SR-02).
       - name: Read the capture request
         id: request
+        env:
+          INPUT_SEASON: ${{ inputs.season }}
+          INPUT_COHORTS: ${{ inputs.cohorts }}
         run: |
           set -euo pipefail
-          season="${{ inputs.season }}"
-          cohorts="${{ inputs.cohorts }}"
+          season="${INPUT_SEASON}"
+          cohorts="${INPUT_COHORTS}"
           if [ -z "${season}" ]; then
             season="$(awk '/^season:/ {print $2}' .github/market-capture.request)"
           fi
           if [ -z "${cohorts}" ]; then
             cohorts="$(awk '/^cohorts:/ {print $2}' .github/market-capture.request)"
           fi
-          echo "season=${season:-2026}" >> "$GITHUB_OUTPUT"
-          echo "cohorts=${cohorts:-production}" >> "$GITHUB_OUTPUT"
+          season="${season:-2026}"
+          cohorts="${cohorts:-production}"
+          if ! [[ "${season}" =~ ^[0-9]{4}$ ]]; then
+            echo "::error::season must be a four-digit year"
+            exit 1
+          fi
+          if ! [[ "${cohorts}" =~ ^[A-Za-z0-9_,.\ -]+$ ]]; then
+            echo "::error::cohorts must be 'production', 'study' or a comma-separated id list"
+            exit 1
+          fi
+          echo "season=${season}" >> "$GITHUB_OUTPUT"
+          echo "cohorts=${cohorts}" >> "$GITHUB_OUTPUT"
 
       - name: Capture the market snapshot
         env:

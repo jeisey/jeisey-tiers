@@ -1,5 +1,10 @@
 # Phase-8 security and dependency review
 
+> **Historical.** This is the Phase-8 review as it stood then. The current review is
+> [`docs/SECURITY_REVIEW_2026-10-02.md`](SECURITY_REVIEW_2026-10-02.md), which supersedes it
+> wherever they differ (more workflows now hold the store token, and the dependency findings
+> below are out of date).
+
 Three questions, asked of the whole repository rather than of the diff: can a credential reach
 somewhere it should not, can a private payload reach somewhere public, and is anything the
 build depends on known to be vulnerable.
