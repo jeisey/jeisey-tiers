@@ -1,5 +1,7 @@
 # Methodical Implementation Plan
 
+> **Scope note (2026-10-02).** This is the phase plan for V1 (Phases 0–9), and its exit criteria remain the reference `AGENTS.md` section 4 points to for those phases. Release 2 (Phases 10–12) was planned in [`RELEASE2_ROADMAP.md`](RELEASE2_ROADMAP.md); later in-season work is tracked per pass in [`TASKS.md`](../TASKS.md) with an ADR each. Development history: [`HISTORY.md`](HISTORY.md).
+
 This plan is deliberately phase-gated so a frontier coding agent can work autonomously without turning the repo into a half-finished mix of data science, frontend prototypes, and brittle API calls.
 
 ## Phase 0 — Source, legal, and feasibility proof

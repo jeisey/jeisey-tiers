@@ -1,6 +1,8 @@
 # Frontier Coding-Agent Notes (researched 2026-08-17)
 
-This file explains why the repository handoff is structured the way it is. It is not a requirement to use a specific model vendor.
+> **Historical.** Written for the original specification bundle and not updated since. Model names, context sizes and tool behaviour below describe 2026-08-17; `AGENTS.md` section 17 says to inspect the active harness rather than rely on them.
+
+This file explains why the repository was structured the way it was for coding agents. It is not a requirement to use a specific model vendor.
 
 ## 1. GPT-5.6 Sol
 
@@ -126,7 +128,7 @@ For long-horizon agents:
 - after major phase completion, start a fresh session if accumulated context is noisy;
 - fresh agent should be able to resume from repo alone.
 
-That last point is a core quality test of this handoff bundle.
+That last point is a core quality test of this repository's documentation.
 
 ## 7. Sources used for these notes
 

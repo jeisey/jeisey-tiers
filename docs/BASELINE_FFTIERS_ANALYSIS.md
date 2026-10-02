@@ -1,12 +1,14 @@
-# Baseline Analysis — `borisachen/fftiers`
+# Baseline Analysis — `borisachen/fftiers` (historical study)
+
+> **Historical.** An archived research note from the original specification bundle. It records how one existing open-source tier generator worked on 2026-08-12 and which requirements that analysis informed. It is not a product comparison and is not maintained; the external repository may have changed since.
 
 Research snapshot: 2026-08-12.
 
-Repository: https://github.com/borisachen/fftiers
+Repository studied: https://github.com/borisachen/fftiers
 
-## Why this matters
+## Purpose
 
-The project goal is not merely to reproduce the existing output in a new frontend. This baseline defines what must be surpassed methodologically and operationally.
+The study recorded how an established consensus-based tier generator works, so that this project's requirements for independent modelling, tier discovery and operations could be stated against a concrete reference.
 
 ## Repository observations
 
@@ -59,9 +61,9 @@ The baseline code currently contains:
 - source dependency on FantasyPros;
 - output files geared around static images/text/CSV rather than an interactive data application.
 
-## Explicit improvement targets
+## Requirements this study informed
 
-Our implementation must surpass the baseline on:
+The analysis fed these requirements into the V1 specification (`PRD.md`, Part B):
 
 ### Method
 
@@ -97,6 +99,6 @@ Our implementation must surpass the baseline on:
 - fail-safe deployment;
 - model/artifact versioning.
 
-## Fair comparison rule
+## Scope of the comparison
 
-Do not criticize Boris Chen's product for solving a different problem. It is primarily a consensus-ranking tier visualization. Our claim to be "better" should be based on added independent modeling, validation, market separation, interactivity, reproducibility, and demonstrable predictive/draft utility — not merely aesthetics.
+The studied project is primarily a consensus-ranking tier visualization and solves a different problem. This note describes its method; it does not evaluate it as a product.

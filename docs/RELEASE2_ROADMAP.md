@@ -1,6 +1,6 @@
 # Release 2 Roadmap — Multi-Market Draft Intelligence + In-Season Mode
 
-**Status:** Planned  
+**Status:** Historical plan — delivered as `v2.0.0` on 2026-09-04 ([release notes](releases/v2.0.0.md)); outcomes and deviations are in `TASKS.md` and [`HISTORY.md`](HISTORY.md)  
 **Release target:** `v2.0.0`  
 **Planning baseline:** `v1.0.0` / commit `e9c73d1`  
 **Planning date:** 2026-09-01  

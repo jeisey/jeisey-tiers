@@ -1,5 +1,7 @@
 # Bootstrap Prompt for the Coding Agent
 
+> **Historical — archived bootstrap prompt (2026-08-17).** This is the prompt that started Phase 0 when the repository was only a specification bundle. The project is well past Phase 0 (status in `TASKS.md`); do not use this prompt to start work. A new session starts from [`AGENTS.md`](AGENTS.md), then [`PRD.md`](PRD.md), [`TASKS.md`](TASKS.md) and [`SESSION_STATE.md`](SESSION_STATE.md). History: [`docs/HISTORY.md`](docs/HISTORY.md).
+
 You are the lead engineer/data scientist responsible for building this repository end to end.
 
 Read `AGENTS.md`, `PRD.md`, `TASKS.md`, `SESSION_STATE.md`, and the relevant files under `docs/` before making changes. Treat them as binding unless you discover a concrete conflict or impossibility; if so, document the proposed deviation in `docs/DECISIONS.md` before implementing it.

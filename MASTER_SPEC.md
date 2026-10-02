@@ -1,5 +1,7 @@
 # Fantasy Draft Intelligence — Master Build Specification
 
+> **Historical — archived original specification (2026-08-17).** This is the bootstrap specification the project was built from. It is superseded by [`PRD.md`](PRD.md), [`AGENTS.md`](AGENTS.md) and the documents under [`docs/`](docs/), and it is not maintained: statements about status, scope, phases or file contents describe the starting point, not the current product. Only competitor-positioning lines have been removed since it was archived. Development history: [`docs/HISTORY.md`](docs/HISTORY.md).
+
 > Generated coding-agent handoff. This is the single-file representation of the full multi-file specification bundle.
 > The multi-file bundle remains canonical for implementation because `AGENTS.md`, configs, and schemas are intended to live at their repository paths.
 
@@ -13,7 +15,7 @@ A capable coding agent can use this file as its initial context when file-bundle
 
 # Fantasy Draft Intelligence — Coding-Agent Handoff Bundle
 
-This bundle is the source-of-truth specification for building a public, daily-refreshed fantasy-football draft intelligence website that materially improves on the product pattern popularized by `borisachen/fftiers`.
+This bundle is the source-of-truth specification for building a public, daily-refreshed fantasy-football draft intelligence website.
 
 The product has two analytically separate outputs:
 
@@ -69,11 +71,11 @@ The intended production architecture is static and GitHub-native: Python data/mo
 - Hosting: GitHub Pages.
 - Cost target: $0 recurring infrastructure cost using public/free data and standard GitHub-hosted runners in a public repository.
 
-## Definition of “better than fftiers”
+## Definition of success
 
-The product is not considered successful merely because it looks newer. It must improve along four measurable dimensions:
+The product is judged on four measurable dimensions:
 
-1. **Method:** intrinsic projections and uncertainty, rather than clustering average expert rank alone.
+1. **Method:** intrinsic projections and uncertainty.
 2. **Validation:** rolling out-of-time model evaluation with baselines, calibration, leakage tests, and published metrics.
 3. **Actionability:** explicit market-vs-model arbitrage and expected-surplus ranking.
 4. **Product utility:** interactive tier/arbitrage visualizations, sortable/filterable tables, exports, freshness/quality indicators, and reproducible daily updates.
@@ -102,7 +104,7 @@ The product must be useful as a draft-day sheet: fast, readable, sortable, filte
 
 ## 2. Problem statement
 
-Traditional expert-consensus tier products often group players by rank or consensus dispersion. They are useful summaries of expert opinion but do not independently estimate player outcomes, positional replacement value, or market mispricing.
+A tier list built from consensus rank summarises expert opinion; it does not independently estimate player outcomes, positional replacement value, or market mispricing.
 
 This product should answer two different questions without conflating them:
 
@@ -482,7 +484,7 @@ At minimum:
 
 ### 12.4 Comparison to consensus
 
-Where legally permitted, use historical FantasyPros ECR as a **benchmark only**. Any public claim that this product "beats consensus" requires a reproducible out-of-time table and confidence interval. If it does not beat consensus, say so; the product can still be better on transparency, uncertainty, interactivity, and arbitrage usefulness.
+Where legally permitted, use historical FantasyPros ECR as a **benchmark only**. Any public claim that this product "beats consensus" requires a reproducible out-of-time table and confidence interval. If it does not beat consensus, say so.
 
 ## 13. Technical stack
 
@@ -1872,7 +1874,7 @@ It must remain optional; MFL/another verified market source should carry the cri
 
 ## 8. FantasyPros/ECR gate
 
-The original `fftiers` repository states its data is exclusively FantasyPros and its R implementation clusters average rank using `Mclust`. Our system uses ECR only as a potential benchmark.
+This system uses ECR only as a potential benchmark.
 
 Rules:
 
@@ -4427,15 +4429,17 @@ Re-check official docs when a materially newer agent/model is used.
 
 # Bundled file: `docs/BASELINE_FFTIERS_ANALYSIS.md`
 
-# Baseline Analysis — `borisachen/fftiers`
+# Baseline Analysis — `borisachen/fftiers` (historical study)
+
+> **Historical.** An archived research note from the original specification bundle. It records how one existing open-source tier generator worked on 2026-08-12 and which requirements that analysis informed. It is not a product comparison and is not maintained; the external repository may have changed since.
 
 Research snapshot: 2026-08-12.
 
-Repository: https://github.com/borisachen/fftiers
+Repository studied: https://github.com/borisachen/fftiers
 
-## Why this matters
+## Purpose
 
-The project goal is not merely to reproduce the existing output in a new frontend. This baseline defines what must be surpassed methodologically and operationally.
+The study recorded how an established consensus-based tier generator works, so that this project's requirements for independent modelling, tier discovery and operations could be stated against a concrete reference.
 
 ## Repository observations
 
@@ -4488,9 +4492,9 @@ The baseline code currently contains:
 - source dependency on FantasyPros;
 - output files geared around static images/text/CSV rather than an interactive data application.
 
-## Explicit improvement targets
+## Requirements this study informed
 
-Our implementation must surpass the baseline on:
+The analysis fed these requirements into the V1 specification (`PRD.md`, Part B):
 
 ### Method
 
@@ -4526,9 +4530,9 @@ Our implementation must surpass the baseline on:
 - fail-safe deployment;
 - model/artifact versioning.
 
-## Fair comparison rule
+## Scope of the comparison
 
-Do not criticize Boris Chen's product for solving a different problem. It is primarily a consensus-ranking tier visualization. Our claim to be "better" should be based on added independent modeling, validation, market separation, interactivity, reproducibility, and demonstrable predictive/draft utility — not merely aesthetics.
+The studied project is primarily a consensus-ranking tier visualization and solves a different problem. This note describes its method; it does not evaluate it as a product.
 
 ---
 

@@ -1,3 +1,6 @@
+HISTORICAL: the target tree from the original specification bundle (2026-08-17).
+It is not the current layout; see README.md and docs/ARCHITECTURE.md.
+
 TARGET IMPLEMENTATION TREE
 
 .
