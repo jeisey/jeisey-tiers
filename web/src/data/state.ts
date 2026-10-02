@@ -240,6 +240,16 @@ export interface AppState {
   readonly dealt: number;
   /** Trade: the exploration's identity (build, block and inputs); empty when none. */
   readonly stamp: string;
+  /**
+   * Trade (ADR-101): the labelled opt-in that makes players on a reserve list, or absent three
+   * weeks or more, eligible targets again. `ret=1`. Never admits a season that is over.
+   */
+  readonly returning: boolean;
+  /**
+   * ROS board (ADR-101): also list the players the availability policy holds back from the
+   * actionable ranking (out for the season, retired). `unavail=1`. Inspection, not advice.
+   */
+  readonly unavailable: boolean;
 }
 
 /**
@@ -283,6 +293,8 @@ export const DEFAULT_STATE: AppState = {
   shown: [],
   dealt: 0,
   stamp: "",
+  returning: false,
+  unavailable: false,
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
@@ -311,6 +323,8 @@ const PARAM_ORDER = [
   "shown",
   "dealt",
   "stamp",
+  "ret",
+  "unavail",
 ] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
@@ -574,6 +588,16 @@ export function parseState(search: string): ParsedState {
     else normalized = false;
   }
 
+  // ADR-101 flags: present means on, written as `1`; anything else normalizes away.
+  const flag = (name: string): boolean => {
+    const raw = params.get(name);
+    if (raw === null) return false;
+    if (raw !== "1") normalized = false;
+    return raw === "1";
+  };
+  const returning = flag("ret");
+  const unavailable = flag("unavail");
+
   // A parameter the app does not know is dropped rather than preserved: keeping it would make
   // two URLs describing the same state compare unequal.
   for (const key of params.keys()) {
@@ -606,6 +630,8 @@ export function parseState(search: string): ParsedState {
       shown,
       dealt,
       stamp,
+      returning,
+      unavailable,
     },
     normalized,
   };
@@ -693,6 +719,10 @@ export function serializeState(state: AppState): string {
     }
     if (key === "shown") {
       if (state.shown.length > 0) params.set(key, state.shown.join("."));
+      continue;
+    }
+    if (key === "ret" || key === "unavail") {
+      if (state[key === "ret" ? "returning" : "unavailable"]) params.set(key, "1");
       continue;
     }
     const value = state[key];

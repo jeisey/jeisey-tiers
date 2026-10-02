@@ -258,10 +258,13 @@ describe("what a first paint fetches (ADR-098)", () => {
       }),
     );
     const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(4);
     expect(calls[0]).toBe("/data/manifest.json");
     expect(calls.some((url) => url.includes("/serve/players."))).toBe(true);
     expect(calls.some((url) => url.includes("/serve/ros_tiers/redraft-12.PPR."))).toBe(true);
+    // ADR-101: the compact status slice the availability policy reads, and not the full one.
+    expect(calls.some((url) => url.includes("/serve/player_availability/all."))).toBe(true);
+    expect(calls.some((url) => url.includes("/serve/player_status/"))).toBe(false);
     // Nothing from the draft bundle, and nothing for any other block.
     expect(calls.some((url) => /tiers\/|arbitrage|projections|market_trend/.test(url.replace("ros_tiers", "")))).toBe(false);
     const bundle = store.inSeason(Object.keys(store.manifest.files));
@@ -269,14 +272,14 @@ describe("what a first paint fetches (ADR-098)", () => {
     expect(bundle?.rosFor("redraft-10", "PPR")).toEqual([]);
   });
 
-  it("the Trade tab needs exactly the ROS block the default view already loaded (ADR-100)", async () => {
+  it("the Trade tab needs exactly the ROS block and status slice the default view already loaded (ADR-100, ADR-101)", async () => {
     serve({ ...everything(), ...inSeasonFixtureFiles() });
     const store = await openSite();
     for (const scoring of ["STD", "HALF", "PPR"] as const) {
       for (const leaguePreset of ["redraft-10", "redraft-12", "redraft-14"]) {
         const context = { leaguePreset, scoring, cardPlayerId: null };
         const trade = requiredKeys(store.manifest, { ...context, view: "trade" });
-        expect(trade).toEqual(["players", `ros_tiers/${leaguePreset}.${scoring}`]);
+        expect(trade).toEqual(["players", "player_availability/all", `ros_tiers/${leaguePreset}.${scoring}`]);
         expect(requiredKeys(store.manifest, { ...context, view: "ros" })).toEqual(trade);
       }
     }

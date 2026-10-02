@@ -415,6 +415,19 @@ plus Pages environment.
 > | `daily-refresh.yml` | `report` | `contents: read` |
 > | `retrain.yml` | both | `contents: read` |
 > | `market-capture.yml` | `capture` | `contents: read` |
+> | `daily-refresh.yml` | `retain-shadow` | `contents: read` (pushes to the store through `MARKET_DATA_REPO_TOKEN`) |
+> | `weekly-v2-prospective.yml` | `look` | `contents: read`, `issues: write` (store token, persisted, pushes the look) |
+> | `release.yml` | `release` | `contents: write` (creates a tag and a release) |
+> | `phase10-linkage.yml`, `source-probe.yml`, `source-probe-weather.yml` | their one job | `contents: write` at job level only (commit evidence to the dispatching branch) |
+> | `live-smoke.yml`, `source-probe-ffc.yml`, `source-probe-phase10.yml` | all | `contents: read` |
+>
+> **Updated 2026-10-02 (`docs/SECURITY_REVIEW_2026-10-02.md`).** `phase10-linkage.yml` was the one
+> workflow whose top-level default was `contents: write`; it is now `contents: read` like every
+> other, and its job elevates itself. No workflow expands a dispatch input, event payload or ref
+> name inline into a `run:` block any more: such values reach the shell through `env:`, and a
+> season/cohort input is validated before it becomes a step output that later blocks expand.
+> `tests/unit/test_workflow_security.py` asserts both, the job write allow-list above, and the
+> store-token boundaries, over every file in `.github/`.
 >
 > **The capture jobs got narrower, not wider.** They used to need `contents: write` on this repository to push to a branch here; they now need `contents: read` here plus a token scoped to one other repository. Separating the data from the code made this repository's own permissions strictly smaller.
 >
@@ -1263,6 +1276,33 @@ over (a final look, or a decisive first), runs return at once without downloadin
 The token `PROSPECTIVE-WEEKLY-V2-2026` lives only in this workflow (`tests/unit/test_workflows.py`).
 A look already in the ledger refuses to be taken again, by the job or by hand.
 
+### 16.10 Availability: reviewing a season-ending report (ADR-101)
+
+The decision tabs read player status through one policy (`web/src/data/availability.ts`).
+Nothing in it needs a workflow change: status is captured once a day by `capture-status`, the
+official report at every refresh including the news-reactive slots, and both reach the page
+through the `player_status` artifact (`player_availability/all` in the served layout) and the
+weekly records.
+
+Neither feed can say "out for the season". When reliable reporting says a player's season is
+over:
+
+1. Confirm it in at least one primary or major outlet (the team, the league's news service, a
+   national reporter) and that a feed shows a reserve list (`RES`, or Sleeper `IR`/`PUP`/…).
+2. Add an entry to `config/availability-overrides.yaml`: canonical `player_id` (from
+   `player_status.json`, never matched by name), `season`, `horizon: season`, a neutral
+   summary that states only what the sources state, https `sources` with publishers,
+   `reviewed_by`, `reviewed_at`, and `expires_at` no later than the end of that season's
+   fantasy weeks.
+3. `uv run pytest tests/unit/test_availability_overrides.py` (the loader is strict) and commit.
+   The next refresh carries it.
+
+An entry fails safe: it is ignored once both feeds list the player active (the page says the
+sources disagree — remove the entry), and ignored after `expires_at`. Remove expired entries
+at season end. A missing, stale (> 48 h at build time) or refused status reading is shown as
+uncertain, never as healthy; a Sleeper outage therefore turns marks to "?" rather than
+clearing them.
+
 ## 17. Serving the site under load (ADR-098)
 
 ### 17.1 How GitHub Pages serves this site — verified 2026-09-30
@@ -1361,6 +1401,10 @@ and that a redeploy which renames a player is shown at once to a reader holding 
 
   The weekly slice is the one to watch: a longer explanation (more groups, a promoted v2's
   families) or more players a preset adds bytes at about 37 kB gzip per 550 players.
+* **ADR-101 adds one small file to the first in-season view**: `player_availability/all`, the
+  status fields the availability policy reads (≈ 3.4 kB gzip on the 2026-10-02 board; the size
+  model's status count moved 545 → 720 for the in-season population). Start/Sit, Trade and the
+  Opportunity tabs reuse it, so their "adds" budgets are unchanged.
 * **ADR-100 added the Trade budget** rather than loosening an old one. The tab reads the ROS
   block the default view has already loaded, so it adds only its lazily loaded code: 11.0 kB on
   the size model (2026-10-02), 0 B of data. 25 kB leaves room for the engine and view to grow

@@ -32,13 +32,14 @@ import { useCallback, useMemo, useRef } from "react";
 
 import { TierBoard, defaultOpenTiers } from "../charts/TierBoard";
 import type { BoardAxis, BoardGroup } from "../charts/boardModel";
-import { Notice, RosStatusBadge, SectionHead } from "../components/primitives";
+import { AvailabilityBadge, Notice, SectionHead } from "../components/primitives";
 import { rosRowsToCsv } from "../data/csv";
 import { formatRank, formatValue } from "../data/format";
 import {
   groupRosByTier,
   longAbsenceLabel,
   selectRosRows,
+  splitActionable,
   type InSeasonBundle,
   type RosRow,
   type RosTierGroup,
@@ -71,7 +72,8 @@ function markLabel(row: RosRow, tierLabel: string): string {
     `VORP ${formatValue(record.ros_vorp_p50)}, P25 to P75 ${formatValue(record.ros_vorp_p25)} ` +
     `to ${formatValue(record.ros_vorp_p75)}, P10 to P90 ${formatValue(record.ros_vorp_p10)} ` +
     `to ${formatValue(record.ros_vorp_p90)}` +
-    (record.long_absence ? `. ${longAbsenceLabel(record)}` : "")
+    (record.long_absence ? `. ${longAbsenceLabel(record)}` : "") +
+    (row.availability?.short != null ? `. ${row.availability.headline}` : "")
   );
 }
 
@@ -93,7 +95,7 @@ function toBoardGroups(groups: readonly RosTierGroup[]): readonly BoardGroup[] {
       p90: row.record.ros_vorp_p90,
       badges: (
         <>
-          <RosStatusBadge status={row.record.current_status} />
+          <AvailabilityBadge availability={row.availability} />
           <LongAbsenceBadge row={row} />
         </>
       ),
@@ -115,7 +117,21 @@ export function RosView({
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
 }): React.JSX.Element {
-  const rows = useMemo(() => selectRosRows(bundle, state), [bundle, state]);
+  const all = useMemo(() => selectRosRows(bundle, state), [bundle, state]);
+  // ADR-101: the default ranking is actionable — a player whose season is over is held back
+  // (and searchable, and one click away). Nothing is renumbered: ranks are the model's.
+  const { shown: rows, held } = useMemo(
+    () => splitActionable(all, state.unavailable, state.search),
+    [all, state.unavailable, state.search],
+  );
+  const unavailableNow = useMemo(
+    () => rows.filter((row) => row.availability?.horizon === "unavailable_now").length,
+    [rows],
+  );
+  const seasonOverShown = useMemo(
+    () => rows.filter((row) => row.availability?.horizon === "season_over").length,
+    [rows],
+  );
   const visibleRows = useRef<readonly RosRow[]>(rows);
   const metadata = bundle.metadata;
   const disclosures = metadata.disclosures;
@@ -316,8 +332,9 @@ export function RosView({
           id="ros-table-heading"
           title="Rest-of-season table"
           note={
-            "ROS rank is the published order — sorting re-orders these rows without changing " +
-            "it. The mark beside a name is annotation and reached no model input."
+            "ROS rank is the model's published order — sorting re-orders these rows without " +
+            "changing it, and it is not adjusted for injuries. The mark beside a name is the " +
+            "availability reading (ADR-101), which reached no model input."
           }
         >
           <ExportControls
@@ -330,6 +347,16 @@ export function RosView({
             buildFilteredCsv={() => rosRowsToCsv(visibleRows.current)}
           />
         </SectionHead>
+
+        <AvailabilityNote
+          held={held.length}
+          seasonOverShown={seasonOverShown}
+          unavailableNow={unavailableNow}
+          showing={state.unavailable}
+          onToggle={() => {
+            onChange({ unavailable: !state.unavailable });
+          }}
+        />
 
         {rows.length === 0 ? (
           <Notice title="No players match.">
@@ -347,5 +374,55 @@ export function RosView({
         )}
       </section>
     </>
+  );
+}
+
+/**
+ * What the availability policy did to this board (ADR-101), in one line with its switch.
+ *
+ * Ranks are the model's and are never renumbered, so a held-back player leaves a gap in the
+ * ROS rank column; this line is where that gap is explained.
+ */
+function AvailabilityNote({
+  held,
+  seasonOverShown,
+  unavailableNow,
+  showing,
+  onToggle,
+}: {
+  readonly held: number;
+  readonly seasonOverShown: number;
+  readonly unavailableNow: number;
+  readonly showing: boolean;
+  readonly onToggle: () => void;
+}): React.JSX.Element | null {
+  const hidden = held;
+  const over = showing ? seasonOverShown : 0;
+  if (hidden === 0 && over === 0 && unavailableNow === 0) return null;
+  const parts: string[] = [];
+  if (hidden > 0) {
+    parts.push(
+      `${String(hidden)} player${hidden === 1 ? " is" : "s are"} out for the season and held back from this ranking; ranks are the model's and are not renumbered, so ${hidden === 1 ? "his" : "their"} rank${hidden === 1 ? " is" : "s are"} skipped.`,
+    );
+  }
+  if (over > 0) {
+    parts.push(
+      `${String(over)} player${over === 1 ? " is" : "s are"} out for the season and listed for inspection only — ${over === 1 ? "his value is" : "their values are"} the model's, which predates the news.`,
+    );
+  }
+  if (unavailableNow > 0) {
+    parts.push(
+      `${String(unavailableNow)} on a reserve list or released stay listed and marked: unavailable now, return uncertain, value unchanged.`,
+    );
+  }
+  return (
+    <p className="availability-note" role="note">
+      {parts.join(" ")}{" "}
+      {(hidden > 0 || showing) && (
+        <button type="button" className="button" aria-pressed={showing} onClick={onToggle}>
+          {showing ? "Hide players out for the season" : "Show players out for the season"}
+        </button>
+      )}
+    </p>
   );
 }

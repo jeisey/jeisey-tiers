@@ -12,7 +12,8 @@
 
 import { useId, useMemo, useRef, useState } from "react";
 
-import { Notice, PositionTag, RosStatusBadge, SectionHead, Segmented } from "../components/primitives";
+import { AvailabilityBadge, Notice, PositionTag, SectionHead, Segmented } from "../components/primitives";
+import type { Availability } from "../data/availability";
 import type { RosTierRecord } from "../data/contracts";
 import { EM_DASH, formatSigned, formatValue } from "../data/format";
 import { longAbsenceLabel, type InSeasonBundle } from "../data/ros";
@@ -47,7 +48,6 @@ import {
   objectiveOf,
   resolveExploration,
   searchTrade,
-  severeStatus,
   swapSlot,
   tradeHorizon,
   type Exclusion,
@@ -147,6 +147,9 @@ export function TradeView({
   // re-run the search (ADR-100's 200 ms target is for the search; a swap is a re-deal).
   const giveKey = state.give.join(".");
   const compKey = state.comp.join(".");
+  // ADR-101: the availability policy decides who may be a target and whether an outgoing
+  // value may be used as a budget; the reader's opt-in admits players expected back.
+  const availabilityOf = useMemo(() => (id: string) => bundle.availabilityFor(id), [bundle]);
   const search = useMemo(
     () =>
       measuredSearch({
@@ -156,8 +159,10 @@ export function TradeView({
         get: state.get,
         range: state.range,
         comp: compKey === "" ? [] : (compKey.split(".") as CompSlot[]),
+        availability: availabilityOf,
+        includeReturning: state.returning,
       }),
-    [records, giveKey, state.goal, state.get, state.range, compKey],
+    [records, giveKey, state.goal, state.get, state.range, compKey, availabilityOf, state.returning],
   );
 
   const order = useMemo(
@@ -175,6 +180,7 @@ export function TradeView({
     get: state.get,
     range: state.range,
     comp: state.comp,
+    includeReturning: state.returning,
   });
   const { exploration, redealt } = useMemo(
     () => resolveExploration(order, { shown: state.shown, dealt: state.dealt }, state.stamp === stamp, keptKeys),
@@ -184,8 +190,16 @@ export function TradeView({
     .map((index) => order[index])
     .filter((entry): entry is RankedPackage => entry !== undefined);
   const kept = useMemo(
-    () => state.keep.map((ids) => checkKept(ids, records, { get: state.get, comp: state.comp }, search)),
-    [state.keep, records, state.get, state.comp, search],
+    () =>
+      state.keep.map((ids) =>
+        checkKept(
+          ids,
+          records,
+          { get: state.get, comp: state.comp, availability: availabilityOf, includeReturning: state.returning },
+          search,
+        ),
+      ),
+    [state.keep, records, state.get, state.comp, search, availabilityOf, state.returning],
   );
   const noneLeft = search.status === "ok" && exhausted(order, exploration, keptKeys);
   // Players on this board, not ids in the link: a stale id gives nothing and takes no spot.
@@ -251,6 +265,7 @@ export function TradeView({
         }}
         onSelect={onSelect}
         disclosure={bundle.metadata.disclosures.long_absence_statement}
+        availabilityOf={availabilityOf}
       />
 
       <div className="trade-controls">
@@ -299,6 +314,23 @@ export function TradeView({
             control({ comp });
           }}
         />
+        <label className="control trade-returning">
+          <input
+            type="checkbox"
+            checked={state.returning}
+            onChange={(event) => {
+              control({ returning: event.target.checked });
+            }}
+          />
+          <span>
+            Include players expected back
+            <span className="trade-returning-note">
+              {" "}
+              — on a reserve list or absent 3+ weeks. Their value is the model&rsquo;s, which does not
+              know when they return. Never players out for the season.
+            </span>
+          </span>
+        </label>
       </div>
 
       <p className="trade-shape">
@@ -317,6 +349,13 @@ export function TradeView({
       {search.status === "ok" && (
         <>
           <OutgoingLine search={search} goal={state.goal} />
+          {search.outgoingWarnings.length > 0 && (
+            <Notice severity="warning" title="Your value assumes availability the feeds now question.">
+              {`${search.outgoingWarnings
+                .map((entry) => `${entry.record.display_name}: ${entry.availability.headline.toLowerCase()}.`)
+                .join(" ")} The budget above is the model's rest-of-season value, which does not read injury reports; a partner will price him lower.`}
+            </Notice>
+          )}
           <p className="trade-disclaimer" role="note">
             <strong>Model-based targets.</strong> Each is a combination of players whose
             rest-of-season value is close to yours. They may be on different teams in your league,
@@ -349,6 +388,7 @@ export function TradeView({
                   goal={state.goal}
                   give={giveCount}
                   onSelect={onSelect}
+                  availabilityOf={availabilityOf}
                   actions={
                     <>
                       <button
@@ -419,11 +459,18 @@ export function TradeView({
           give={giveCount}
           onSelect={onSelect}
           onRemove={unkeep}
+          availabilityOf={availabilityOf}
         />
       )}
 
       {search.status === "ok" && (search.excluded.length > 0 || search.belowReplacement > 0) && (
-        <ExcludedList excluded={search.excluded} belowReplacement={search.belowReplacement} onSelect={onSelect} />
+        <ExcludedList
+          excluded={search.excluded}
+          belowReplacement={search.belowReplacement}
+          onSelect={onSelect}
+          availabilityOf={availabilityOf}
+          returning={state.returning}
+        />
       )}
 
       <details className="trade-method">
@@ -464,6 +511,7 @@ function GiveBox({
   onRemove,
   onSelect,
   disclosure,
+  availabilityOf,
 }: {
   readonly records: readonly RosTierRecord[];
   readonly search: TradeSearch;
@@ -472,11 +520,13 @@ function GiveBox({
   readonly onRemove: (id: string) => void;
   readonly onSelect: (id: string) => void;
   readonly disclosure: string;
+  readonly availabilityOf: (id: string) => Availability;
 }): React.JSX.Element {
   const byId = useMemo(() => new Map(records.map((record) => [record.player_id, record])), [records]);
+  // Long absence is the model's own disclosure; availability warnings are printed by the search.
   const flagged = give
     .map((id) => byId.get(id))
-    .filter((record): record is RosTierRecord => record !== undefined && (record.long_absence || severeStatus(record.current_status) !== null));
+    .filter((record): record is RosTierRecord => record?.long_absence === true);
   return (
     <div className="trade-give">
       <div className="trade-give-row">
@@ -496,7 +546,7 @@ function GiveBox({
                     <button type="button" className="player-name trade-chip-name" onClick={() => { onSelect(id); }}>
                       {record.display_name}
                     </button>
-                    <RosStatusBadge status={record.current_status} />
+                    <AvailabilityBadge availability={availabilityOf(id)} />
                     <span className="trade-chip-value" title="Expected rest-of-season value over replacement">
                       {formatValue(record.ros_expected_vorp)}
                     </span>
@@ -514,7 +564,13 @@ function GiveBox({
             );
           })}
         </ul>
-        <PlayerPicker records={records} exclude={give} full={give.length >= MAX_GIVE} onPick={onAdd} />
+        <PlayerPicker
+          records={records}
+          exclude={give}
+          full={give.length >= MAX_GIVE}
+          onPick={onAdd}
+          availabilityOf={availabilityOf}
+        />
       </div>
       {search.outgoing.missing.length > 0 && (
         <p className="trade-note" role="note">
@@ -524,11 +580,7 @@ function GiveBox({
       {flagged.length > 0 && (
         <p className="trade-note" role="note">
           {flagged
-            .map((record) =>
-              record.long_absence
-                ? `${record.display_name}: ${longAbsenceLabel(record).toLowerCase()}.`
-                : `${record.display_name}: roster status ${record.current_status ?? ""}.`,
-            )
+            .map((record) => `${record.display_name}: ${longAbsenceLabel(record).toLowerCase()}.`)
             .join(" ")}{" "}
           {disclosure} His value is offered as published.
         </p>
@@ -546,11 +598,13 @@ function PlayerPicker({
   exclude,
   full,
   onPick,
+  availabilityOf,
 }: {
   readonly records: readonly RosTierRecord[];
   readonly exclude: readonly string[];
   readonly full: boolean;
   readonly onPick: (id: string) => void;
+  readonly availabilityOf: (id: string) => Availability;
 }): React.JSX.Element {
   const id = useId();
   const [query, setQuery] = useState("");
@@ -646,6 +700,7 @@ function PlayerPicker({
           >
             <PositionTag position={record.position} />
             <span className="trade-option-name">{record.display_name}</span>
+            <AvailabilityBadge availability={availabilityOf(record.player_id)} />
             <span className="trade-option-meta">{`${record.team ?? "FA"} · ${formatValue(record.ros_expected_vorp)}`}</span>
           </li>
         ))}
@@ -711,6 +766,13 @@ function SearchStatus({
         size you choose whose expected rest-of-season value is within your value range of
         theirs.
       </p>
+    );
+  }
+  if (search.status === "unavailable_outgoing") {
+    return (
+      <Notice severity="warning" title="No trade value to match.">
+        {`${search.blocked.map((entry) => `${entry.record.display_name}: ${entry.availability.headline.toLowerCase()} (${entry.availability.detail})`).join(" ")} His published rest-of-season value predates that, so it cannot finance a package. Remove him to search.`}
+      </Notice>
     );
   }
   if (search.status === "unpriced_outgoing") {
@@ -810,9 +872,11 @@ function OutgoingLine({
 function PackageMembers({
   pkg,
   onSelect,
+  availabilityOf,
 }: {
   readonly pkg: TradePackage;
   readonly onSelect: (id: string) => void;
+  readonly availabilityOf: (id: string) => Availability;
 }): React.JSX.Element {
   return (
     <ul className="trade-members">
@@ -825,7 +889,7 @@ function PackageMembers({
             </button>
             <span className="trade-member-team">{member.record.team ?? "FA"}</span>
           </span>
-          <RosStatusBadge status={member.record.current_status} />
+          <AvailabilityBadge availability={availabilityOf(member.id)} />
           <span className="trade-member-value" title="Expected rest-of-season value over replacement">
             {formatValue(member.value)}
           </span>
@@ -919,6 +983,7 @@ function PackageCard({
   give,
   onSelect,
   actions,
+  availabilityOf,
 }: {
   readonly entry: RankedPackage;
   readonly search: Extract<TradeSearch, { status: "ok" }>;
@@ -926,13 +991,14 @@ function PackageCard({
   readonly give: number;
   readonly onSelect: (id: string) => void;
   readonly actions: React.ReactNode;
+  readonly availabilityOf: (id: string) => Availability;
 }): React.JSX.Element {
   const names = entry.pkg.members.map((member) => member.record.display_name).join(" + ");
   return (
     <li className="trade-package chamfer" aria-label={`${names}, rank ${String(entry.rank)}`}>
       <div className="trade-package-head">
         <span className="trade-rank" aria-hidden="true">{`#${String(entry.rank)}`}</span>
-        <PackageMembers pkg={entry.pkg} onSelect={onSelect} />
+        <PackageMembers pkg={entry.pkg} onSelect={onSelect} availabilityOf={availabilityOf} />
         <div className="trade-package-actions">{actions}</div>
       </div>
       <PackageMetrics pkg={entry.pkg} out={search.outgoingPkg} goal={goal} give={give} />
@@ -948,6 +1014,7 @@ function KeptShelf({
   give,
   onSelect,
   onRemove,
+  availabilityOf,
 }: {
   readonly kept: readonly KeptPackage[];
   readonly search: TradeSearch;
@@ -955,6 +1022,7 @@ function KeptShelf({
   readonly give: number;
   readonly onSelect: (id: string) => void;
   readonly onRemove: (key: string) => void;
+  readonly availabilityOf: (id: string) => Availability;
 }): React.JSX.Element {
   return (
     <div className="trade-kept">
@@ -966,7 +1034,7 @@ function KeptShelf({
               {item.pkg === null ? (
                 <p className="trade-members-missing">{`${plural(item.ids.length, "player")} — not all on this board`}</p>
               ) : (
-                <PackageMembers pkg={item.pkg} onSelect={onSelect} />
+                <PackageMembers pkg={item.pkg} onSelect={onSelect} availabilityOf={availabilityOf} />
               )}
               <div className="trade-package-actions">
                 <button type="button" className="button" onClick={() => { onRemove(item.key); }}>
@@ -980,6 +1048,13 @@ function KeptShelf({
             {item.problems.length > 0 && (
               <p className="trade-invalid" role="note">
                 {`No longer qualifies: ${item.problems.map((problem) => KEPT_PROBLEM_TEXT[problem]).join("; ")}.`}
+                {item.pkg !== null &&
+                  item.problems.includes("ineligible") &&
+                  ` ${item.pkg.members
+                    .map((member) => ({ member, reading: availabilityOf(member.id) }))
+                    .filter(({ reading }) => reading.horizon === "season_over" || reading.horizon === "unavailable_now")
+                    .map(({ member, reading }) => `${member.record.display_name}: ${reading.headline.toLowerCase()}.`)
+                    .join(" ")}`}
               </p>
             )}
           </li>
@@ -993,18 +1068,26 @@ function ExcludedList({
   excluded,
   belowReplacement,
   onSelect,
+  availabilityOf,
+  returning,
 }: {
   readonly excluded: readonly Exclusion[];
   readonly belowReplacement: number;
   readonly onSelect: (id: string) => void;
+  readonly availabilityOf: (id: string) => Availability;
+  readonly returning: boolean;
 }): React.JSX.Element {
   return (
     <details className="trade-excluded">
       <summary>{`Not targets: ${plural(excluded.length, "player")} with value, plus ${String(belowReplacement)} at or below replacement`}</summary>
       <p className="trade-help">
-        Players with positive value who are left out, and why. Status and absence never change a
-        value; they only keep a player from leading suggestions on an estimate that does not read
-        injury news. A player listed Out for this week only is still a target.
+        Players with positive value who are left out, and why. Availability and absence never
+        change a value; they only keep a player from leading suggestions on an estimate that does
+        not read injury news. A player listed Out, Doubtful or Questionable for this week only is
+        still a target, with the warning beside his name.
+        {returning
+          ? " Players expected back are included (your setting); a season that is over never is."
+          : " Players on a reserve list or absent three weeks or more can be included with “Include players expected back”."}
       </p>
       {excluded.length > 0 && (
         <ul className="trade-excluded-list">
@@ -1015,7 +1098,8 @@ function ExcludedList({
                 {row.record.display_name}
               </button>
               <span className="trade-member-value">{formatValue(row.record.ros_expected_vorp)}</span>
-              <span className="trade-excluded-reason">{exclusionDetail(row)}</span>
+              <AvailabilityBadge availability={availabilityOf(row.record.player_id)} />
+              <span className="trade-excluded-reason">{exclusionDetail(row, availabilityOf(row.record.player_id))}</span>
             </li>
           ))}
         </ul>
@@ -1024,9 +1108,12 @@ function ExcludedList({
   );
 }
 
-function exclusionDetail(row: Exclusion): string {
+function exclusionDetail(row: Exclusion, availability: Availability): string {
   if (row.reason === "long_absence") return `${EXCLUSION_TEXT.long_absence}: ${longAbsenceLabel(row.record).toLowerCase()}`;
   if (row.reason === "roster_status") return `${EXCLUSION_TEXT.roster_status}: ${row.record.current_status ?? EM_DASH}`;
+  if (row.reason === "season_over" || row.reason === "unavailable_now") {
+    return `${EXCLUSION_TEXT[row.reason]}: ${availability.detail}`;
+  }
   return EXCLUSION_TEXT[row.reason];
 }
 

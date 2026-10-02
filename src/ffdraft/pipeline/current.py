@@ -53,7 +53,7 @@ from ffdraft.artifacts import (
     write_build_metadata,
 )
 from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_config
-from ffdraft.contracts import QualityCheck
+from ffdraft.contracts import CORE_POSITIONS, QualityCheck
 from ffdraft.contracts.enums import Severity
 from ffdraft.features.build import build_feature_table
 from ffdraft.features.dictionary import feature_schema_hash
@@ -78,6 +78,7 @@ from ffdraft.simulation.vorp import (
 from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.status.build import build_player_status_records
 from ffdraft.status.capture import StatusCapture, read_status_capture
+from ffdraft.status.overrides import AvailabilityOverride, active_overrides
 from ffdraft.tiers.algorithms import segment_with
 from ffdraft.tiers.labels import tier_label
 from ffdraft.timeutil import isoformat_utc, utc_now
@@ -221,6 +222,7 @@ def run_current_build(
     current_roster: pl.DataFrame | None = None,
     status_capture: StatusCapture | None = None,
     status_store: Any | None = None,
+    availability_overrides: Sequence[AvailabilityOverride] = (),
     board_out: Path | None = None,
     write: bool = True,
 ) -> CurrentBuildResult:
@@ -383,6 +385,11 @@ def run_current_build(
     # deliberately restricted to players the board actually names: a status row nobody
     # references is payload the browser downloads for nothing (ADR-043).
     published_players = [str(row["player_id"]) for row in records.get("tiers", ())]
+    if stamped >= anchor.anchor_at_utc:
+        # ADR-101: after the draft anchor the in-season views (Start/Sit, Trade, the ROS and
+        # Opportunity boards) name players the draft board never did, and their availability
+        # needs the same evidence. Every rostered player at a core position gets a row.
+        published_players = [*published_players, *_rostered_core_players(roster)]
     annotation_registry = _annotation_registry(roster)
     status = _player_status(
         registry=annotation_registry,
@@ -393,6 +400,7 @@ def run_current_build(
         as_of=stamped,
         published=published_players,
         gate=gate,
+        overrides=active_overrides(availability_overrides, season=season, as_of=stamped),
     )
     records["player_status"] = status.records
 
@@ -566,8 +574,9 @@ def _player_status(
     as_of: datetime,
     published: Sequence[str],
     gate: QualityGate,
+    overrides: Mapping[str, AvailabilityOverride] | None = None,
 ) -> Any:
-    """Build the annotation artifact (ADR-043)."""
+    """Build the annotation artifact (ADR-043; ADR-101 for the overrides)."""
     return build_player_status_records(
         registry=registry,
         roster=roster,
@@ -577,7 +586,27 @@ def _player_status(
         generated_at=as_of,
         player_ids=sorted(dict.fromkeys(published)),
         gate=gate,
+        overrides=overrides,
     )
+
+
+#: Roster codes whose players get no in-season status row: practice squad, released, retired.
+#: None of them can be started or traded for, and a released player's ROS row still carries
+#: his roster code (`current_status`), which is the evidence the policy needs.
+_NO_INSEASON_STATUS_ROW = frozenset({"DEV", "CUT", "RET"})
+
+
+def _rostered_core_players(roster: pl.DataFrame) -> list[str]:
+    """Canonical ids of rostered QB/RB/WR/TE players, for the in-season status population."""
+    if roster.is_empty() or not {"gsis_id", "position", "status"} <= set(roster.columns):
+        return []
+    core = [str(position) for position in CORE_POSITIONS]
+    frame = roster.filter(
+        pl.col("gsis_id").is_not_null()
+        & pl.col("position").is_in(core)
+        & ~pl.col("status").fill_null("").is_in(sorted(_NO_INSEASON_STATUS_ROW)),
+    )
+    return sorted({f"gsis:{value}" for value in frame.get_column("gsis_id").to_list()})
 
 
 def build_board_records(

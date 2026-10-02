@@ -107,6 +107,25 @@ FAMILIES: tuple[Family, ...] = (
     Family("arbitrage", "arbitrage", "block"),
     # Draft boards badge every row, so the whole (small) status artifact is one slice.
     Family("player_status", "player_status", "all"),
+    # ADR-101: what the availability policy reads, and nothing else, for every in-season view.
+    # About a third of the full status slice: the decision tabs need the codes, the
+    # designation, its timestamp and the reviewed override, not the injury prose.
+    Family(
+        "player_availability",
+        "player_status",
+        "all",
+        only=(
+            "season",
+            "player_id",
+            "roster_status",
+            "sleeper_status",
+            "injury_status",
+            "injury_body_part",
+            "observed_at_utc",
+            "quality_flags",
+            "availability_override",
+        ),
+    ),
     Family("ros_tiers", "ros_tiers", "block"),
     # The opportunity board copies eight intrinsic fields and a few identity fields from the
     # ROS board. A row whose copies equal the ROS row of the same block serves them once, from

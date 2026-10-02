@@ -41,6 +41,7 @@ from ffdraft.identity.resolver import (
 )
 from ffdraft.quality import QualityGate
 from ffdraft.status.capture import StatusCapture
+from ffdraft.status.overrides import AvailabilityOverride
 from ffdraft.timeutil import isoformat_utc
 
 __all__ = [
@@ -117,6 +118,7 @@ def build_player_status_records(
     player_ids: Sequence[str] | None = None,
     positions: Sequence[Position] | None = None,
     gate: QualityGate | None = None,
+    overrides: Mapping[str, AvailabilityOverride] | None = None,
 ) -> PlayerStatusResult:
     """Assemble the status artifact.
 
@@ -124,6 +126,11 @@ def build_player_status_records(
     what a production build does: a status row for a player no artifact references is dead
     weight in a payload the browser downloads. Passing ``None`` emits every eligible player,
     which is what the coverage diagnostics want.
+
+    ``overrides`` are the reviewed availability entries in force for this build (ADR-101). A
+    player with one is always given a status row, so the entry can reach the page, and the
+    entry is copied verbatim into ``availability_override``. Nothing here decides whether it
+    is honoured — the downstream availability policy does, from this same record.
     """
     checks = gate or QualityGate()
     wanted_positions = tuple(positions) if positions is not None else tuple(CORE_POSITIONS)
@@ -203,8 +210,9 @@ def build_player_status_records(
             ),
         )
 
+    in_force = dict(overrides or {})
     candidates = (
-        list(player_ids)
+        [*player_ids, *in_force]
         if player_ids is not None
         else list(registry.eligible_players(wanted_positions))
     )
@@ -250,6 +258,9 @@ def build_player_status_records(
                 "observed_at_utc": observed_at or isoformat_utc(generated_at),
                 "source_ids": list(STATUS_SOURCE_IDS if available else ("nflreadpy",)),
                 "quality_flags": sorted(set(flags)),
+                "availability_override": (
+                    in_force[player_id].to_record() if player_id in in_force else None
+                ),
             },
         )
 
@@ -261,6 +272,19 @@ def build_player_status_records(
             observed=f"{len(records)} row(s), {matched} with Sleeper data",
         ),
     )
+    if in_force:
+        carried = sum(1 for record in records if record["availability_override"] is not None)
+        checks.add(
+            QualityCheck.ok(
+                "status.availability_overrides",
+                stage="status.build",
+                message=(
+                    "reviewed availability overrides in force (ADR-101); evidence for the "
+                    "downstream policy, never a model input"
+                ),
+                observed=f"{carried} of {len(in_force)} carried on a status row",
+            ),
+        )
     return PlayerStatusResult(
         build_id=build_id,
         season=season,

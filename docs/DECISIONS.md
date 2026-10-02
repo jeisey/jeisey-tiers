@@ -908,6 +908,8 @@ so that **positive means the player is moving earlier — getting more expensive
 
 **Consequences:** Sleeper's non-commercial obligation (ADR-013 note, `docs/SECURITY_LICENSE.md` 10) now binds a published artifact, so the attribution and source metadata travel with the build for Phase 6's methodology panel. `player_status` joins the artifact envelope's `artifact` vocabulary, which is an additive change to a 1.0 contract.
 
+**Amendment (2026-10-02, ADR-101).** "Annotation only" is narrowed to what it always protected: **no status field may enter a model, a projection, a VORP, a fair rank, a tier, an arbitrage score or a calibration figure** — that firewall, and the byte-identical test that proves it, are unchanged. What changes is that the in-season decision surfaces may now *read* status to decide eligibility and presentation (who can win a Start/Sit verdict, be Pick of the Week, lead the actionable ROS ranking, or be suggested as a trade target). See ADR-101.
+
 ## ADR-044 — Richer lagged historical injury features are a 2027 intrinsic-refresh candidate, not a Phase-5 addition
 
 **Date:** 2026-08-20 (Phase 5)
@@ -5805,3 +5807,95 @@ at 480–559px the six tabs overflowed by 16px with the full "Opportunity" (the 
 applies below 560px, so every width from 360px fits one row). `verify:board` on the in-season
 fixture checks every rendered package's value
 against the summed artifact bytes, band, count and eligibility (5 packages, 0 failures).
+
+## ADR-101 — Availability governs what is recommended, never a number
+
+**Status:** accepted, 2026-10-02 (housekeeping and public-launch readiness pass).
+**Amends:** ADR-043 ("annotation only" → "never a model input"), ADR-088 gate 5 and ADR-100 §2
+(the roster-code lists are replaced by one policy). **Relies on:** ADR-070/076 (the ROS model
+reads no injury information), ADR-096 (decision layers may read any useful published data),
+ADR-098 (served slices, `requiredKeys`).
+
+### Context
+
+A reader in October would see De'Von Achane — placed on injured reserve after a reported
+season-ending ACL tear (NFL.com, ESPN) — as a playable Start/Sit choice with an upcoming
+median of 10.8 points and no designation, and as ROS rank 35 with his full pre-injury value.
+The production build of 2026-10-02 carried the evidence: nflverse `RES`, Sleeper `Inactive` /
+`IR` / "Knee - ACL" / "Surgery". Nothing read it: Start/Sit honoured only the official report's
+`Out` (and players on IR are not on the report), and Trade and Pick of the Week each kept their
+own roster-code list. Breece Hall, ruled out week to week with a quadriceps injury, was `Out` in
+Sleeper while the week-4 official report had no game status yet; Start/Sit treated him as
+playable. Neither feed can say "season-ending": `RES` and `IR` are the same for two weeks and
+for the year.
+
+### Decision
+
+1. **One policy module**, `web/src/data/availability.ts`, reads every piece of evidence the
+   open view holds — the status record (`player_status`, joined by canonical `player_id`), the
+   board's roster code, the official report on the weekly record, and a reviewed override — and
+   returns two readings: **this week** (`available | questionable | doubtful | out |
+   unavailable | uncertain`) and **the remaining season** (`available | caution |
+   unavailable_now | season_over | uncertain`), with a chip, a headline and the evidence in
+   words. Roster codes and injury designations stay distinct; only verified aliases are
+   normalised (`IR`/`Injured Reserve`, `PUP`/`Physically Unable to Perform`, `NFI`/`Non Football
+   Injury`, `Sus`/`Suspended`, `Q`, `D`, `O`).
+2. **Precedence.** Retired, or a reviewed season-ending override corroborated by a reserve-list
+   reading → season over. A reserve list in either feed → unavailable now, return uncertain,
+   unless the other feed affirmatively clears him (a conflict). Released → unavailable now.
+   Otherwise the worst game designation across the official report and Sleeper governs, both
+   are shown when they disagree. `INA` alone → uncertain this week. No designation, a current
+   Sleeper record and an active code → available. A missing record, a feed refusal, a record
+   more than 48 hours older than the build, or another season's record → **uncertain, never
+   healthy**. The status record's roster code is preferred over the board's (it carries an
+   observation time); the board's is the fallback. Build ids are not compared: the draft and
+   ROS builds differ by minutes, and freshness is measured by `observed_at_utc` against the
+   decision build's time.
+3. **Season-ending is recorded, not inferred.** `config/availability-overrides.yaml` holds
+   reviewed entries — canonical id, season, `horizon: season`, a neutral summary, https sources,
+   reviewer, review date and expiry — loaded strictly (`ffdraft.status.overrides`). An entry
+   rides the player's status record as `availability_override` (contract 1.1, additive) and is
+   honoured only while a feed still shows a reserve list; if both feeds clear him, the page says
+   the sources disagree. No news scraping, no diagnosis, no inference from IR.
+4. **What each surface does.**
+
+   | Reading | Start/Sit | Pick of the Week | ROS board | Trade |
+   |---|---|---|---|---|
+   | Season over | unavailable; excluded from the verdict | never | held back from the default ranking; `unavail=1` or a search shows him, labelled | never a target; as your side, no search ("no trade value to match") |
+   | Reserve / released | unavailable; excluded; muted | never | listed, muted, "unavailable now — return date unknown" | excluded unless "Include players expected back" (`ret=1`); as your side, searched with a warning |
+   | Out this week | excluded; "OUT"; muted, sorted below choices | never | listed with a warning | still a target, marked; your side warns |
+   | Doubtful | excluded from the default verdict; numbers shown "assume he plays" | never | warning | target, marked; your side warns |
+   | Questionable | comparable; verdict says "If active" | allowed | caution chip | target, marked |
+   | Uncertain | comparable, "?" with the reason | allowed (not inactive/conflict) | "?" chip | target; your side warns |
+   | Available | normal | normal | normal | normal |
+
+   `long_absence` stays a Trade exclusion except under the opt-in. The opt-in and `unavail` are
+   URL state; the opt-in is part of the Trade exploration stamp (appended only when on, so
+   every earlier stamp still verifies), and kept or shared packages are re-checked and name the
+   member and reason when they no longer qualify.
+5. **Nothing is renumbered or rescaled.** Ranks, projections, VORP quantiles, tiers and
+   calibration figures are published as the models computed them; the ROS column is described
+   as the model's rank and a held-back player leaves a gap the board explains. No conditional
+   score is multiplied by an appearance rate, and no ROS total is scaled by a guessed recovery
+   fraction. The Start/Sit week-board position rank is a display rank among players who can
+   play; a sidelined player shows "—".
+6. **Delivery.** A compact served family, `player_availability/all` (season, id, codes,
+   designation, body part, observation time, flags, override — about 3.4 kB gzip on the
+   2026-10-02 board, against 10.3 kB for the whole status slice), is loaded with every
+   in-season view when a ROS bundle exists. After the draft anchor the status population is
+   every rostered QB/RB/WR/TE (practice squad, released and retired excepted) plus any override
+   id, because in-season views name players the draft board never did (53 of 500 ROS rows had
+   no status row on 2026-10-02).
+
+### Consequences
+
+* No model, artifact number, holdout or calibration changes; weekly v2 stays in shadow. The
+  status artifact moves to 1.1 (additive) and gains a CSV projection for the override.
+* A reviewed entry is owner-maintained data with an expiry; a stale one fails safe (ignored once
+  either feed clears the player, ignored after expiry). The first entry (Achane, 2026) was
+  verified against NFL.com and ESPN on 2026-10-02 and is marked for the owner to confirm.
+* Limitations stay published: Sleeper may lead or lag the official report; a status captured
+  once a day can be up to a day old at a news-reactive refresh; a reserve list says nothing
+  about when a player returns, and the ROS value of a returning player is the model's, which
+  does not know either.
+

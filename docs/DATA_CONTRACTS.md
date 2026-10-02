@@ -1269,12 +1269,23 @@ never change.
 | `weekly_context` | same | whole | all (ADR-099; read with the Start/Sit tab and a card's "This week" block) |
 | `player_status`, `team_matchups`, `behavior_trend_series`, `player_headshots`, `player_usage` | same | whole | all |
 | `player_usage_cohort` | `player_usage` | whole | `player_id`, `position`, `touchdown_points_share`, `pass_epa_per_dropback` |
+| `player_availability` (ADR-101) | `player_status` | whole | `season`, `player_id`, `roster_status`, `sleeper_status`, `injury_status`, `injury_body_part`, `observed_at_utc`, `quality_flags`, `availability_override` |
 | `players` | every artifact with names | whole | `player_id` → `display_name` |
 | `card` | tiers, arbitrage, market trend series (block); projections, weekly projections (scoring); player status, headshots, usage, behaviour series (whole); ROS, Opportunity (block) | block × bucket | every field of every row of those artifacts whose player falls in the bucket |
 
 `projections` and `market_trend_series` are served only inside card shards: nothing but a card
 reads them. A player's bucket is FNV-1a (32-bit) over the UTF-8 bytes of `player_id`, modulo
 `card_buckets`; the Python and TypeScript implementations share a test vector.
+
+**`player_status` 1.1 (ADR-101).** Additive `availability_override`: null, or the reviewed
+season-ending entry from `config/availability-overrides.yaml` in force for the build —
+`{horizon: "season", summary, source_urls[], reviewed_at, expires_at}`. Its CSV columns are
+`availability_override_horizon`, `_summary`, `_source_urls`, `_reviewed_at` and `_expires_at`
+(`PLAYER_STATUS_CSV_COLUMNS`). The field is evidence for the browser's availability policy and
+never a model input; after the draft anchor the artifact's population is every rostered
+QB/RB/WR/TE (practice squad, released and retired excepted), plus the draft board, plus any
+override id. Status joins every other artifact by canonical `player_id`; the draft and ROS
+builds' `build_id`s legitimately differ and are never compared.
 
 The Trade tab (ADR-100) adds **no family and no field**: it reads `ros_tiers/<block>` — every
 value it needs (`ros_expected_vorp`, the five VORP quantiles, `ros_expected_points`,

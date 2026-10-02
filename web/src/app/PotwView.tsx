@@ -356,7 +356,7 @@ function PickCard({
               {record.team ?? EM_DASH} · {record.position}
               {String(record.ros_position_rank)} rest-of-season
             </span>
-            <RosStatusBadge status={record.current_status} />
+            <RosStatusBadge status={record.current_status} playerId={record.player_id} />
             {record.long_absence && (
               <span className="absence-badge" data-flag="long-absence">
                 <span aria-hidden="true">◷</span>

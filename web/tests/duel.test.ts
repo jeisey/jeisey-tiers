@@ -20,6 +20,8 @@ import { DEFAULT_STATE, MAX_DUEL, parseState, serializeState } from "../src/data
 import {
   opportunityRecords,
   rosBuildMetadata,
+  inSeasonPlayerStatusRecords,
+  playerStatusRecords,
   rosTierRecords,
   weeklyProjectionRecords,
 } from "./fixtures/artifacts";
@@ -33,13 +35,18 @@ const KIRK = "gsis:00-0000017"; // Out on the week-9 report
 const MARSH = "gsis:00-0000018"; // PHI, on bye
 const BRIGHT = "gsis:00-0000002"; // Questionable
 
-function bundle(): InSeasonBundle {
+/**
+ * The draft-time status records: everyone active except the fixture's Questionable, IR and
+ * inactive players. `inSeason` swaps in the in-season shapes (ADR-101).
+ */
+function bundle(status: "draft" | "inSeason" = "draft"): InSeasonBundle {
   return new InSeasonBundle({
     metadata: rosBuildMetadata(),
     rosTiers: rosTierRecords(),
     opportunity: opportunityRecords(),
     opportunityDegradation: null,
     weekly: weeklyProjectionRecords(),
+    status: status === "draft" ? playerStatusRecords() : inSeasonPlayerStatusRecords(),
   });
 }
 
@@ -166,11 +173,21 @@ describe("three or four players", () => {
 });
 
 describe("the week board", () => {
-  it("orders by ceiling when asked, and leaves byes last", () => {
+  it("orders by ceiling when asked, leaves byes after the players, and sinks the sidelined", () => {
     const rows = selectWeekBoard(bundle(), DEFAULT_STATE, "ceiling");
-    const ceilings = rows.map((row) => row.record.quantiles?.q90 ?? -Infinity);
+    const sidelined = (row: (typeof rows)[number]): boolean =>
+      row.availability.week === "out" || row.availability.week === "unavailable";
+    const playing = rows.filter((row) => !sidelined(row));
+    const ceilings = playing.map((row) => row.record.quantiles?.q90 ?? -Infinity);
     expect(ceilings).toEqual([...ceilings].sort((a, b) => b - a));
-    expect(rows.at(-1)?.record.game_state).toBe("bye");
+    expect(playing.at(-1)?.record.game_state).toBe("bye");
+    // ADR-101: a player who cannot play this week is listed, labelled, and below every choice.
+    const firstSidelined = rows.findIndex(sidelined);
+    expect(firstSidelined).toBeGreaterThan(0);
+    expect(rows.slice(firstSidelined).every(sidelined)).toBe(true);
+    const kirk = required(rows.find((row) => row.record.player_id === KIRK), "Kirk on the board");
+    expect(kirk.availability.short).toBe("OUT");
+    expect(kirk.positionRank).toBeNull();
   });
 
   it("reads a startable probability against this league's threshold", () => {
@@ -178,6 +195,56 @@ describe("the week board", () => {
     expect(cook.threshold).toBe(9.88);
     expect(cook.startable).toBeGreaterThan(0.5);
     expect(cook.startable).toBeLessThan(1);
+  });
+});
+
+describe("availability (ADR-101)", () => {
+  const SEASON_OVER = "gsis:00-0000014";
+  const OUT_SLEEPER_ONLY = "gsis:00-0000004";
+  const DOUBTFUL_SLEEPER_ONLY = "gsis:00-0000015";
+
+  function inSeasonDuel(ids: readonly string[]) {
+    return readDuel(bundle("inSeason"), { ...DEFAULT_STATE, duel: ids, margin: 0 });
+  }
+
+  it("never lets a player whose season is over win, whatever his projection", () => {
+    const reading = inSeasonDuel([SEASON_OVER, PUKA]);
+    const over = required(reading.contenders.find((c) => c.record.player_id === SEASON_OVER), "contender");
+    expect(over.eligible).toBe(false);
+    expect(over.exclusion).toMatch(/Out for the season/);
+    expect(reading.verdict).toBeNull();
+    expect(reading.eligible.map((c) => c.record.player_id)).toEqual([PUKA]);
+  });
+
+  it("excludes a player ruled out by Sleeper before the official report lists him", () => {
+    const reading = inSeasonDuel([OUT_SLEEPER_ONLY, COOK, PUKA]);
+    expect(reading.eligible.map((c) => c.record.player_id).sort()).toEqual([COOK, PUKA].sort());
+    expect(reading.verdict?.pick.record.player_id).not.toBe(OUT_SLEEPER_ONLY);
+  });
+
+  it("keeps a Doubtful player off the default verdict but leaves his numbers visible", () => {
+    const reading = inSeasonDuel([DOUBTFUL_SLEEPER_ONLY, COOK]);
+    const doubtful = required(reading.contenders.find((c) => c.record.player_id === DOUBTFUL_SLEEPER_ONLY), "contender");
+    expect(doubtful.eligible).toBe(false);
+    expect(doubtful.quantiles).not.toBeNull();
+    expect(doubtful.exclusion).toMatch(/Doubtful/);
+  });
+
+  it("keeps a Questionable player comparable", () => {
+    const reading = inSeasonDuel([BRIGHT, COOK]);
+    expect(reading.verdict).not.toBeNull();
+    expect(reading.eligible).toHaveLength(2);
+  });
+
+  it("leaves every published quantile untouched", () => {
+    const reading = inSeasonDuel([SEASON_OVER, OUT_SLEEPER_ONLY, BRIGHT, COOK]);
+    expect(reading.contenders).toHaveLength(4);
+    for (const contender of reading.contenders) {
+      const original = weeklyProjectionRecords().find(
+        (r) => r.player_id === contender.record.player_id && r.scoring_preset === contender.record.scoring_preset,
+      );
+      expect(contender.record.quantiles).toEqual(original?.quantiles);
+    }
   });
 });
 

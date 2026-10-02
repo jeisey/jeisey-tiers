@@ -447,7 +447,7 @@ function secondMarket(
 
 export function playerStatusRecords(): PlayerStatusRecord[] {
   const base = {
-    schema_version: "1.0",
+    schema_version: "1.1",
     build_id: FIXTURE_BUILD_ID,
     season: 2026,
     injury_start_date: null,
@@ -493,8 +493,76 @@ export function playerStatusRecords(): PlayerStatusRecord[] {
         // `INA` carries no `current_status_*` flag because the build publishes none for it
         // (`FLAGGED_STATUSES` names `RES`, `CUT` and `E14`); the badge is the whole signal.
         quality_flags: out ? ["current_status_reserve"] : [],
+        availability_override: null,
       } satisfies PlayerStatusRecord;
     });
+}
+
+/** The player whose season a reviewed override ends in the in-season fixture (ADR-101). */
+export const FIXTURE_SEASON_OVER_ID = "gsis:00-0000014";
+/** Out for the target week only (Sleeper), not on a reserve list. */
+export const FIXTURE_OUT_WEEK_ID = "gsis:00-0000004";
+/** Doubtful for the target week (Sleeper only; the official report has not listed him). */
+export const FIXTURE_DOUBTFUL_ID = "gsis:00-0000015";
+/** Out on the official week report, and in Sleeper. */
+const FIXTURE_OFFICIAL_OUT_ID = "gsis:00-0000017";
+
+/**
+ * The in-season status artifact (ADR-101): the shapes the 2026-10-02 production build
+ * actually published, on fixture players.
+ *
+ * - every row the rest-of-season board marks `RES` is on injured reserve in Sleeper too
+ *   (`RES` / `Inactive` / `IR`, the commonest production shape for a reserve list);
+ * - one of them also carries a reviewed season-ending override;
+ * - one player is `Out` and one `Doubtful` in Sleeper only, with an active roster code (the
+ *   official report has not listed them yet — the 2026-10-02 shape of a week-to-week injury);
+ * - the player the official report rules out is `Out` in Sleeper too;
+ * - Amon-Ra Bright stays `Questionable` and Deebo Gray keeps no record at all, which the
+ *   policy must read as "unknown", never as "healthy".
+ */
+export function inSeasonPlayerStatusRecords(): PlayerStatusRecord[] {
+  const reserve = new Set(
+    rosTierRecords()
+      .filter((record) => record.current_status === "RES")
+      .map((record) => record.player_id),
+  );
+  return playerStatusRecords().map((record) => {
+    if (reserve.has(record.player_id)) {
+      return {
+        ...record,
+        roster_status: "RES",
+        sleeper_status: "Inactive",
+        injury_status: "IR",
+        injury_body_part: record.player_id === FIXTURE_SEASON_OVER_ID ? "Knee - ACL" : "Ankle",
+        injury_notes: null,
+        quality_flags: ["current_status_reserve"],
+        availability_override:
+          record.player_id === FIXTURE_SEASON_OVER_ID
+            ? {
+                horizon: "season",
+                summary: "Placed on injured reserve; the team reports he will miss the rest of the season.",
+                source_urls: ["https://example.invalid/fixture-report"],
+                reviewed_at: "2026-08-20",
+                expires_at: "2027-01-12",
+              }
+            : null,
+      } satisfies PlayerStatusRecord;
+    }
+    if (record.player_id === FIXTURE_OUT_WEEK_ID) {
+      return { ...record, injury_status: "Out", injury_body_part: "Quadriceps" };
+    }
+    if (record.player_id === FIXTURE_DOUBTFUL_ID) {
+      return { ...record, injury_status: "Doubtful", injury_body_part: "Ankle" };
+    }
+    if (record.player_id === FIXTURE_OFFICIAL_OUT_ID) {
+      return { ...record, injury_status: "Out", injury_body_part: "Knee" };
+    }
+    return record;
+  });
+}
+
+export function inSeasonPlayerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {
+  return envelope("player_status", "player_status", inSeasonPlayerStatusRecords());
 }
 
 export function projectionRecords(): PlayerProjectionRecord[] {
@@ -2111,6 +2179,9 @@ export function inSeasonFixtureFiles(
     ),
     "ros_tiers.json": rosTierEnvelope(),
     "inseason_opportunity.json": opportunityEnvelope(behaviorAvailable),
+    // ADR-101: in season the status artifact carries the reserve, week and season-ending
+    // shapes the availability policy reads.
+    "player_status.json": inSeasonPlayerStatusEnvelope(),
     // The retained window, and its absence is a real published state rather than a fixture
     // convenience: a build whose behaviour feed is down publishes no series at all, and the
     // card has to say which of the three absences it is in (ADR-089).

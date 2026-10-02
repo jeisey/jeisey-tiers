@@ -29,6 +29,34 @@ import type { Degradation } from "../data/bundle";
 import { formatAge, formatEastern } from "../data/format";
 import { buildAgeHours } from "../data/load";
 import { STALE_WARNING_HOURS } from "../data/freshness";
+import { homeHref } from "./useAppState";
+
+/**
+ * The logo, as the link home (the default, season-aware landing view).
+ *
+ * A real `<a href>` so keyboard, middle-click, "open in new tab" and "copy link" behave as a
+ * reader expects, resolved from Vite's base so `/` and `/jeisey-tiers/` both land on the right
+ * page. The `<h1>` stays the document's one top-level heading; the link's accessible name says
+ * where it goes as well as what the picture is.
+ */
+export function BrandLogo(): React.JSX.Element {
+  return (
+    <h1 className="masthead-brand">
+      <a className="masthead-home" href={homeHref()} aria-label="Jeisey Tiers home">
+        {/* Intrinsic dimensions are the artwork's own, so the row reserves the right box
+            before the image decodes rather than reflowing the freshness stamp into it. */}
+        <img
+          className="masthead-logo"
+          src={logoUrl}
+          srcSet={`${logoUrl} 2x, ${logoUrl3x} 3x`}
+          alt="Jeisey Tiers"
+          width={434}
+          height={145}
+        />
+      </a>
+    </h1>
+  );
+}
 
 export interface MastheadStatus {
   readonly tone: "ok" | "warning";
@@ -87,18 +115,7 @@ export function Masthead({
   const status = mastheadStatus(metadata, degradations, ageHours);
   return (
     <header className="masthead">
-      <h1 className="masthead-brand">
-        {/* Intrinsic dimensions are the artwork's own, so the row reserves the right box
-            before the image decodes rather than reflowing the freshness stamp into it. */}
-        <img
-          className="masthead-logo"
-          src={logoUrl}
-          srcSet={`${logoUrl} 2x, ${logoUrl3x} 3x`}
-          alt="Jeisey Tiers"
-          width={434}
-          height={145}
-        />
-      </h1>
+      <BrandLogo />
       <div className="masthead-meta">
         {seasonMode}
         <span className="freshness">

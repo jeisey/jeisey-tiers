@@ -19,10 +19,8 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 
-import logoUrl from "../assets/jt_logo-96.png";
-import logoUrl3x from "../assets/jt_logo-145.png";
 
-import { PanelToggle } from "../components/primitives";
+import { AvailabilityContext, PanelToggle } from "../components/primitives";
 import { CriticalArtifactError, openSite, type Degradation } from "../data/bundle";
 import { selectOpportunityCandidates, signalTeam } from "../data/candidates";
 import { easternIsoDate } from "../data/format";
@@ -33,6 +31,7 @@ import {
   behaviorMomentum,
   buildRosCohortContext,
   selectRosRows,
+  splitActionable,
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
@@ -51,7 +50,7 @@ import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
 import { Controls, SeasonMode, SeasonModeChip, ViewTabs, settingsSummary } from "./Controls";
 import { DataView } from "./DataView";
-import { Masthead } from "./Masthead";
+import { BrandLogo, Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
 import { whyThisWeek } from "../data/whyweek";
 import { PlayerDetail, type PlayerDetailData } from "./PlayerDetail";
@@ -295,6 +294,11 @@ function Board({
   // unless the reader has overridden it, in which case the override wins and is in the URL.
   const mode = resolveMode(state.mode, inSeason?.derivedMode ?? null);
   const view = resolveView(state.view, mode);
+  // ADR-101: the availability policy's reader for every in-season panel's rows.
+  const availabilityReader = useMemo(
+    () => (inSeason === null ? null : (playerId: string) => inSeason.availabilityFor(playerId)),
+    [inSeason],
+  );
 
   // The season, as distinct from the boards this build holds. The draft build records it
   // because the draft build always runs, which is the only way the page can know the season
@@ -384,7 +388,8 @@ function Board({
     }
     if (view === "ros" && inSeason !== null) {
       return {
-        shown: selectRosRows(inSeason, state).length,
+        // The actionable board's rows (ADR-101): a held-back player is not "shown".
+        shown: splitActionable(selectRosRows(inSeason, state), state.unavailable, state.search).shown.length,
         total: inSeason.rosFor(leaguePreset, scoring).length,
       };
     }
@@ -474,6 +479,8 @@ function Board({
       momentum: own === null ? null : behaviorMomentum(own, selectedPlayerId),
       seriesPublished: inSeason?.hasBehaviorSeries ?? false,
       inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
+      // ADR-101: the policy's reading from the card's own shard (status, ROS row, report).
+      availability: own?.availabilityFor(selectedPlayerId) ?? null,
       // The weekly start/sit layer (ADR-096): shown on an in-season card only.
       weekly,
       weeklyWhy:
@@ -606,6 +613,9 @@ function Board({
             aria-labelledby={`tab-${view}`}
             tabIndex={-1}
           >
+            <AvailabilityContext.Provider
+              value={inSeason !== null && IN_SEASON_VIEWS.includes(view) ? availabilityReader : null}
+            >
             {!panelReady && <PanelLoading failure={failure} />}
             {panelReady && view === "tiers" && (
               <TiersView
@@ -708,6 +718,7 @@ function Board({
                 degradations={degradations}
               />
             )}
+            </AvailabilityContext.Provider>
           </div>
         </main>
 
@@ -722,10 +733,12 @@ function Board({
             · build {metadata.build_id}
           </span>
           <span>
-            Intrinsic tiers use no market or expert-rank input. Injury status is annotation only.
+            Intrinsic tiers use no market or expert-rank input. Injury status decides what is
+            recommended, never a model number.
           </span>
           <span>
-            Data: nflverse, ffopportunity, MyFantasyLeague, Sleeper (non-commercial). Free, no ads.
+            Data: nflverse, ffopportunity, MyFantasyLeague, Fantasy Football Calculator, Sleeper
+            (non-commercial), NWS, Open-Meteo (CC BY 4.0). Free, no ads.
           </span>
         </footer>
       </div>
@@ -845,16 +858,7 @@ function CriticalError({ error }: { readonly error: CriticalArtifactError }): Re
   return (
     <main className="app">
       <header className="masthead">
-        <h1 className="masthead-brand">
-          <img
-            className="masthead-logo"
-            src={logoUrl}
-            srcSet={`${logoUrl} 2x, ${logoUrl3x} 3x`}
-            alt="Jeisey Tiers"
-            width={434}
-            height={145}
-          />
-        </h1>
+        <BrandLogo />
       </header>
       <div className="notice" data-severity="error" role="alert" style={{ marginTop: "1.5rem" }}>
         <strong>

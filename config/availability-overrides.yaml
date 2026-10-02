@@ -1,0 +1,54 @@
+# Reviewed availability overrides (ADR-101).
+#
+# Neither status feed this product reads can say "out for the season". nflverse publishes a
+# roster code (`RES` covers every reserve list, short and long) and Sleeper an injury status
+# (`IR` is the same for a two-week and a season-long stay). Inferring season-ending from either
+# would be a guess, and the availability policy never makes one. A player whose season is over
+# is recorded here instead, by a person, from reliable public reporting.
+#
+# An entry is evidence, not a model input. It rides the player's `player_status` record as
+# `availability_override` and only the downstream availability policy reads it: actionable ROS
+# lists, Trade targets and budgets, Start/Sit verdicts and Pick of the Week. No projection,
+# VORP, rank, tier or calibration figure changes (tests/integration/test_status_annotation_only.py).
+#
+# Safety rules, enforced by `ffdraft.status.overrides` and by the browser's policy:
+#   - joins use `player_id` (canonical gsis) only; `display_name` is for the reviewer;
+#   - an entry applies only to its `season`, and only before `expires_at`;
+#   - an entry is honoured only while a feed still shows the player on a reserve list or
+#     injured reserve. If both feeds clear him (roster ACT and Sleeper Active with no injury
+#     status), the entry is ignored and the page says the sources disagree — so a stale entry
+#     cannot keep a returning player off the board;
+#   - `horizon` has exactly one value, `season`. Shorter absences are what the feeds describe.
+#
+# Format:
+#   - player_id: "gsis:00-0000000"
+#     display_name: "Name, for the reviewer"
+#     season: 2026
+#     horizon: season
+#     summary: one neutral sentence; no diagnosis beyond what the sources state
+#     sources:
+#       - url: https://...
+#         publisher: Name
+#     reviewed_by: name-or-handle
+#     reviewed_at: "YYYY-MM-DD"
+#     expires_at: "YYYY-MM-DD"   # the end of that season's fantasy horizon, at the latest
+schema_version: "1.0"
+overrides:
+  # Feeds on 2026-10-02 (production build 2026-intrinsic-cb-hurdle-v1-20261002T153926Z):
+  #   nflverse roster_status=RES; Sleeper status=Inactive, injury_status=IR,
+  #   injury_body_part="Knee - ACL", injury_notes="Surgery". Neither says "season".
+  - player_id: "gsis:00-0039040"
+    display_name: "De'Von Achane"
+    season: 2026
+    horizon: season
+    summary: >-
+      Placed on injured reserve by the Dolphins; the league's own news service and ESPN report
+      he will miss the rest of the 2026 season.
+    sources:
+      - url: https://www.nfl.com/news/dolphins-rb-devon-achane-miss-2026-season-acl-tear
+        publisher: NFL.com
+      - url: https://www.espn.com/nfl/story/_/id/50052064/sources-dolphins-rb-devon-achane-suffered-torn-acl-vs-chiefs
+        publisher: ESPN
+    reviewed_by: claude-code (housekeeping pass; owner to confirm)
+    reviewed_at: "2026-10-02"
+    expires_at: "2027-01-12"

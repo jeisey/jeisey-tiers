@@ -204,7 +204,46 @@ describe("the results", () => {
     await open(`?view=trade&give=${BIJAN}`);
     const details = document.querySelector("details.trade-excluded");
     expect(details).not.toBeNull();
-    expect(details?.textContent).toMatch(/Long absence: has not appeared for 3 weeks/);
+    // ADR-101: availability first — a reserve list is "unavailable now", a reviewed
+    // season-ending report is "out for the season" — each with its evidence in words.
+    expect(details?.textContent).toMatch(/Unavailable now: Sleeper lists him on injured reserve/);
+    expect(details?.textContent).toMatch(/Derrick Hampton.*Out for the season: Placed on injured reserve/);
+  });
+
+  it("admits players expected back only on the labelled opt-in, and never a season that is over", async () => {
+    await open(`?view=trade&give=${BIJAN}&get=2&range=50`);
+    const without = packageNames().join(" ");
+    expect(without).not.toMatch(/Ja'Marr Swift|James Cook III|Derrick Hampton/);
+    const toggle = screen.getByRole("checkbox", { name: /Include players expected back/ });
+    expect(toggle).toHaveProperty("checked", false);
+  });
+
+  it("with the opt-in on, lists returning players as targets but keeps the season-over one out", async () => {
+    await open(`?view=trade&give=${BIJAN}&get=2&range=50&ret=1`);
+    expect(screen.getByRole("checkbox", { name: /Include players expected back/ })).toHaveProperty("checked", true);
+    const details = document.querySelector("details.trade-excluded");
+    // Hampton stays excluded; the returning players leave the excluded list.
+    expect(details?.textContent).toMatch(/Derrick Hampton/);
+    expect(details?.textContent).not.toMatch(/Ja'Marr Swift/);
+  });
+
+  it("refuses to use a season that is over as a trade budget", async () => {
+    await open("?view=trade&give=00-0000014");
+    expect(screen.getByText(/No trade value to match\./)).toBeDefined();
+    expect(packages()).toHaveLength(0);
+  });
+
+  it("prints a warning beside a budget whose availability is in question", async () => {
+    // Kyle Pitts Sr. is Out this week (Sleeper): the search runs, and says what it assumed.
+    await open("?view=trade&give=00-0000004&range=50");
+    expect(screen.getByText(/Your value assumes availability the feeds now question\./)).toBeDefined();
+  });
+
+  it("flags a shared kept package whose member's season has since ended", async () => {
+    await open(`?view=trade&give=${BIJAN}&get=2&range=50&keep=00-0000014.00-0000012`);
+    const shelf = document.querySelector(".trade-kept");
+    expect(shelf?.textContent).toMatch(/No longer qualifies: .*a player is no longer a target/);
+    expect(shelf?.textContent).toMatch(/Derrick Hampton: out for the season\./);
   });
 
   it("a player's name opens his card", async () => {

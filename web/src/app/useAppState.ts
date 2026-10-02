@@ -55,6 +55,22 @@ function writeLocation(query: string, mode: "push" | "replace"): void {
   notify();
 }
 
+/**
+ * The application's home: Vite's configured base with no query, which `parseState` reads as
+ * the season-aware default (`view=auto`, `mode=auto`). It names no tab, no Start/Sit or Trade
+ * selection and no player card, so it is the same landing page a first visit gets — at `/` in
+ * development and at `/jeisey-tiers/` on Pages.
+ *
+ * The logo follows it as an ordinary link — a full navigation, not a `pushState` — because
+ * "home" must also drop state that is not in the URL (an open player card, Trade's working
+ * selection) and a reload is the one path that cannot forget a piece of it. Served data is
+ * content-addressed in the Cache API (ADR-098), so the reload re-downloads nothing that has
+ * not changed.
+ */
+export function homeHref(base: string = import.meta.env.BASE_URL): string {
+  return base.endsWith("/") ? base : `${base}/`;
+}
+
 export interface AppStateController {
   readonly state: AppState;
   readonly setState: (next: Partial<AppState>) => void;

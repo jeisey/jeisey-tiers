@@ -254,7 +254,7 @@ export function OpportunityView({
                   surfaced
                 </span>
               )}
-              <RosStatusBadge status={row.record.current_status} />
+              <RosStatusBadge status={row.record.current_status} playerId={row.record.player_id} />
               {row.record.long_absence && (
                 <span
                   className="absence-badge"

@@ -423,6 +423,18 @@ code {
 }
 
 /*
+ * The logo is the link home. The anchor takes the image's box exactly (no underline, no
+ * padding that would move the mark) and keeps the global focus ring.
+ */
+.masthead-home {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+/*
  * The logo is sized by height, with `width: auto`, so its aspect ratio comes from the file
  * rather than from a pair of numbers here that a re-export could falsify. `--masthead-logo`
  * is the one value each breakpoint moves.
@@ -1341,6 +1353,65 @@ table.sheet tbody tr[data-selected="true"] td {
   color: var(--danger);
   border-color: var(--danger-line);
   background: var(--danger-wash);
+}
+
+/*
+ * The availability mark (ADR-101). Text first; colour is the second channel. `info` is the
+ * uncertain reading ("?"), drawn in the muted ink so it never reads as an alarm or a clearance.
+ */
+.availability-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  font: 600 0.55rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warn);
+  border: var(--hairline) solid var(--warn-line);
+  background: var(--warn-wash);
+  padding: 3px 4px;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.availability-badge[data-severity="warn"] {
+  color: var(--danger);
+  border-color: var(--danger-line);
+  background: var(--danger-wash);
+}
+
+.availability-badge[data-severity="info"] {
+  color: var(--ink-muted);
+  border-color: var(--line-strong);
+  background: transparent;
+}
+
+/*
+ * A row the policy says cannot be acted on now: still readable, still inspectable, visibly
+ * set back. Hatching and a left rule rather than opacity, so every text colour keeps its AA
+ * contrast; the badge beside the name carries the reason in words.
+ */
+[data-availability="muted"] > td {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(255 138 128 / 6%) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+[data-availability="muted"] > td:first-child {
+  box-shadow: inset 3px 0 0 var(--danger-line);
+}
+
+.availability-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--ink-muted);
 }
 
 .dir {
@@ -6222,10 +6293,18 @@ table.sheet.opp-sheet thead th button {
     var(--glow-soft);
 }
 
+/*
+ * A card that cannot fill the slot. Hatched, never faded: a card the policy leaves out of the
+ * verdict still shows its numbers (ADR-101), and opacity would take them below AA contrast.
+ */
 .deck-card[data-state="bye"],
 .deck-card[data-state="pending"],
 .deck-card[data-state="out"] {
-  opacity: 0.78;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(255 179 71 / 5%) 0 6px,
+    transparent 6px 12px
+  );
 }
 
 .deck-empty {
@@ -7691,6 +7770,30 @@ table.sheet.weekboard-table thead th.wb-num {
   padding: var(--space-3) 0;
   border-top: var(--hairline) solid var(--line);
   border-bottom: var(--hairline) solid var(--line);
+}
+
+/* ADR-101: the returning-players opt-in. A full-width row of its own, checkbox beside text. */
+.control.trade-returning {
+  flex: 1 1 100%;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.trade-returning input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+.trade-returning-note {
+  color: var(--ink-muted);
 }
 
 .trade-comp {

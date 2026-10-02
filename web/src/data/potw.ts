@@ -65,9 +65,11 @@
  * 4. **He is playable.** Not `long_absence` — the model's ordering inside that cohort is
  *    measurably near-random (Spearman 0.311 against 0.797, ADR-076), so presenting one as a
  *    confident number-one pick would be an overclaim the published limitations contradict.
- * 5. **His roster status does not say otherwise.** A severe code (`RES`, `INA`, `PUP`, `NFI`,
- *    `SUS`, `CUT`, `RET`) is annotation the reader can see, and featuring such a player as
- *    this week's pick would be the one place annotation has to bite.
+ * 5. **He can play.** The availability policy (ADR-101, `data/availability.ts`) must allow
+ *    featuring him: not out or doubtful this week, not on a reserve list, released, retired or
+ *    out for the season, and not inactive or contradicted. Without a policy reading (a caller
+ *    that passes none) the old roster-code rule stands: no `RES`, `INA`, `PUP`, `NFI`, `SUS`,
+ *    `CUT` or `RET`.
  * 6. **He is worth more than replacement.** `ros_expected_vorp > 0`. This gate is not a
  *    threshold somebody chose: the in-season replacement rule is `rostered_depth` (ADR-071),
  *    which defines replacement as *the best unrostered player*, so a remaining VORP at or
@@ -80,6 +82,7 @@
  */
 
 import { quantileAt } from "./cohort";
+import { featureable, type Availability } from "./availability";
 import type {
   OpportunityRecord,
   PlayerUsageRecord,
@@ -246,7 +249,11 @@ function playableStatus(status: string | null | undefined): boolean {
  * Exported so a test can drive one row at a time, and so the view can explain a near-miss
  * without re-deriving the rule.
  */
-export function isPotwCandidate(record: OpportunityRecord, floor: PotwFloor): boolean {
+export function isPotwCandidate(
+  record: OpportunityRecord,
+  floor: PotwFloor,
+  availability?: Availability,
+): boolean {
   if (!record.behavior_available) return false;
   const adds = record.add_count;
   const net = record.net_add_count;
@@ -254,7 +261,9 @@ export function isPotwCandidate(record: OpportunityRecord, floor: PotwFloor): bo
   if (adds < floor.value) return false;
   if (typeof net !== "number" || !Number.isFinite(net) || net <= 0) return false;
   if (record.long_absence) return false;
-  if (!playableStatus(record.current_status)) return false;
+  if (availability !== undefined ? !featureable(availability) : !playableStatus(record.current_status)) {
+    return false;
+  }
   // Gate 6. `>` and not `>=`: the replacement baseline *is* the best unrostered player, so a
   // VORP of exactly zero is the model declining to prefer him to the wire he would come off.
   return Number.isFinite(record.ros_expected_vorp) && record.ros_expected_vorp > 0;
@@ -371,7 +380,9 @@ export function buildPotwBoard(
     floors.set(position, floor);
 
     const eligible = rows.filter(
-      (record) => record.position === position && isPotwCandidate(record, floor),
+      (record) =>
+        record.position === position &&
+        isPotwCandidate(record, floor, bundle.availabilityFor(record.player_id)),
     );
     // One published quantity decides the order, and it is the model's own rest-of-season
     // value. The add count decided membership and has no say from here on — which is the

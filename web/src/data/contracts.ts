@@ -25,7 +25,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   market_trend_series: "1.0",
   projections: "1.0",
   market_snapshot: "1.0",
-  player_status: "1.0",
+  // 1.1 (ADR-101): additive `availability_override`.
+  player_status: "1.1",
   ros_tiers: "1.0",
   // 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
   inseason_opportunity: "1.1",
@@ -279,6 +280,20 @@ export interface PlayerStatusRecord {
   readonly observed_at_utc: string;
   readonly source_ids: readonly string[];
   readonly quality_flags: readonly string[];
+  /**
+   * Contract 1.1 (ADR-101): a reviewed entry recording reliable reporting that his season is
+   * over, which neither feed can say. Absent on a 1.0 build, null when none is in force.
+   * Evidence for the availability policy (`data/availability.ts`), never a model input.
+   */
+  readonly availability_override?: AvailabilityOverrideRecord | null;
+}
+
+export interface AvailabilityOverrideRecord {
+  readonly horizon: "season";
+  readonly summary: string;
+  readonly source_urls: readonly string[];
+  readonly reviewed_at: string;
+  readonly expires_at: string;
 }
 
 /**
@@ -840,6 +855,7 @@ export const PLAYER_STATUS_FIELDS = [
   "observed_at_utc",
   "source_ids",
   "quality_flags",
+  "availability_override",
 ] as const satisfies readonly (keyof PlayerStatusRecord)[];
 
 export const PLAYER_HEADSHOT_FIELDS = [

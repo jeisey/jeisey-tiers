@@ -576,7 +576,7 @@ test.describe("data and methodology", () => {
     await expect(page.getByRole("heading", { name: "Freshness and source status" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Current limitations" })).toBeVisible();
     await expect(page.getByText(/Exact tier edges are soft/)).toBeVisible();
-    await expect(page.getByText(/Injury and roster status is annotation only/)).toBeVisible();
+    await expect(page.getByText(/Injury and roster status never changes a number/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Sources and attribution" })).toBeVisible();
     // Phase 10 attributes FantasyPros: the build reads their API server-side with the
     // owner's key, and their terms ask for attribution whether or not a number is shown.
@@ -682,8 +682,9 @@ test.describe("release brand and export treatment", () => {
     await expect(logo).toBeVisible();
     await expect(logo).toHaveAttribute("alt", "Jeisey Tiers");
     // The image is the document's h1, so the page has one top-level heading and its
-    // accessible name is the product.
-    await expect(page.getByRole("heading", { level: 1, name: "Jeisey Tiers" })).toBeVisible();
+    // accessible name is the product; the link inside it says where it goes.
+    await expect(page.getByRole("heading", { level: 1, name: /Jeisey Tiers/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Jeisey Tiers home" })).toBeVisible();
 
     // The Phase-9A wordmark is gone, not merely hidden behind the picture.
     await expect(page.locator("header.masthead")).not.toContainText("jeisey-tiers");
@@ -730,6 +731,36 @@ test.describe("release brand and export treatment", () => {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
       expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
+
+  for (const base of ["/", "/jeisey-tiers/"]) {
+    test(`the logo is a keyboard link home under ${base}`, async ({ page }) => {
+      // Start somewhere that is not home: another tab with filters, then a player card.
+      await page.goto(`${base}?view=arbitrage&position=qb&scoring=std`);
+      await expect(page.getByRole("heading", { name: "Arbitrage table" })).toBeVisible();
+      const home = page.getByRole("link", { name: "Jeisey Tiers home" });
+      await expect(home).toHaveAttribute("href", base);
+
+      // Keyboard: the link is the first stop after the skip link, and Enter follows it.
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+      await expect(home).toBeFocused();
+      const ring = await home.evaluate((node) => getComputedStyle(node).outlineStyle);
+      expect(ring).not.toBe("none");
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(base);
+      await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
+
+      // A pointer click after a player card was opened lands on the same default view.
+      await page.goto(`${base}?view=tiers&position=rb`);
+      await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await home.click();
+      await expect(page).toHaveURL(base);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
     });
   }
 
@@ -806,6 +837,9 @@ test.describe("accessibility", () => {
     await openBoard(page);
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: /Skip to the board/ })).toBeFocused();
+    await page.keyboard.press("Tab");
+    // The logo is the link home, the masthead's first stop.
+    await expect(page.getByRole("link", { name: "Jeisey Tiers home" })).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(statusChip(page)).toBeFocused();
     await page.keyboard.press("Tab");

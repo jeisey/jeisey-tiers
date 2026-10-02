@@ -181,6 +181,7 @@ from ffdraft.simulation.study import (
 from ffdraft.sources.fantasypros import FANTASYPROS_SOURCE_ID
 from ffdraft.sources.ffc import FFC_SOURCE_ID
 from ffdraft.sources.nflverse_http import nflverse_loaders
+from ffdraft.status.overrides import load_availability_overrides
 from ffdraft.tiers.study import TierStudyConfig, run_tier_study, write_tier_report
 from ffdraft.timeutil import isoformat_utc, parse_utc, utc_now
 
@@ -1858,6 +1859,8 @@ def _build_current(args: argparse.Namespace) -> int:
         build_id=args.build_id,
         git_sha=args.git_sha,
         status_store=_market_store(args.store) if args.store is not None else None,
+        # ADR-101: reviewed season-ending entries, evidence for the availability policy only.
+        availability_overrides=load_availability_overrides(),
         board_out=args.full_board,
         write=not args.no_write,
     )

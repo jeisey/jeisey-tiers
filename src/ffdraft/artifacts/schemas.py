@@ -90,7 +90,8 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "player_projection": "1.0",
     "market_snapshot": "1.0",
     "market_trend_series": "1.0",
-    "player_status": "1.0",
+    # 1.1 (ADR-101): additive `availability_override`, the reviewed season-ending evidence.
+    "player_status": "1.1",
     "build_metadata": "1.0",
     "ros_tier_record": "1.0",
     # 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.

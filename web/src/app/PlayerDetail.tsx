@@ -41,7 +41,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
+import { AvailabilityBadge, ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
+import type { Availability } from "../data/availability";
 import { PlayerPortrait } from "../components/PlayerPortrait";
 import { useMediaQuery } from "../components/useMediaQuery";
 import { BehaviorSparkline } from "../charts/BehaviorSparkline";
@@ -118,6 +119,11 @@ const SHEET_QUERY = "(max-width: 767px)";
 
 export interface PlayerDetailData {
   readonly playerId: string;
+  /**
+   * The availability policy's reading (ADR-101), on an in-season card. It says what the
+   * decision tabs do with him — never a number, which the model computed without it.
+   */
+  readonly availability?: Availability | null;
   readonly tier: TierRecord | null;
   readonly arbitrage: ArbitrageRecord | null;
   readonly status: PlayerStatusRecord | null;
@@ -1600,6 +1606,19 @@ export function PlayerDetail({
         badge="Not in model"
         tabbed={sheet}
       >
+        {data.inSeason && data.availability != null && (
+          <div className="availability-reading" data-kind={data.availability.kind}>
+            <p className="status-headline">
+              <AvailabilityBadge availability={data.availability} /> {data.availability.headline}
+            </p>
+            <p className="status-annotation">
+              {data.availability.detail}{" "}
+              {data.availability.override !== null &&
+                `Sources: ${data.availability.override.source_urls.join(", ")}. `}
+              {decisionSentence(data.availability)}
+            </p>
+          </div>
+        )}
         {status === null ? (
           <>
             <p className="status-headline" data-known="false">
@@ -1957,4 +1976,22 @@ function FlagList({
       ))}
     </ul>
   );
+}
+
+/** What the decision tabs do with this reading (ADR-101), in one sentence. */
+function decisionSentence(availability: Availability): string {
+  switch (availability.horizon) {
+    case "season_over":
+      return "He is held back from the actionable rest-of-season ranking, from Trade targets and budgets, and from Start/Sit verdicts; his published numbers are unchanged.";
+    case "unavailable_now":
+      return "Start/Sit leaves him out of verdicts; Trade suggests him only when you include players expected back; his rest-of-season value is unchanged and does not know when he returns.";
+    case "caution":
+      return availability.week === "out" || availability.week === "doubtful"
+        ? "Start/Sit leaves him out of this week's verdict; his rest of season is not zeroed."
+        : "He stays comparable on Start/Sit, labelled; nothing else changes.";
+    case "uncertain":
+      return "Nothing removes him on this evidence, and nothing confirms he is healthy.";
+    default:
+      return "Nothing in the decision tabs is changed by his status.";
+  }
 }
