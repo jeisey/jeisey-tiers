@@ -70,6 +70,12 @@ const StartSitView = lazy(() =>
   import("./StartSitView").then((module) => ({ default: module.StartSitView })),
 );
 
+/**
+ * The Trade tab and its engine (ADR-100), loaded the same way: only a reader who opens the tab
+ * downloads the search. It reads the rest-of-season block the default view already loaded.
+ */
+const TradeView = lazy(() => import("./TradeView").then((module) => ({ default: module.TradeView })));
+
 type LoadState =
   | { readonly status: "loading" }
   | { readonly status: "ready"; readonly store: DataStore }
@@ -665,6 +671,20 @@ function Board({
                     onSelect={onSelect}
                     now={now}
                   />
+                </Suspense>
+              ))}
+            {panelReady && view === "trade" &&
+              (inSeason === null ? (
+                <NoInSeasonBundle />
+              ) : (
+                <Suspense
+                  fallback={
+                    <section className="section trade" aria-busy="true">
+                      <p className="startsit-loading">Loading Trade…</p>
+                    </section>
+                  }
+                >
+                  <TradeView bundle={inSeason} state={state} onChange={setState} onSelect={onSelect} />
                 </Suspense>
               ))}
             {panelReady && view === "potw" &&

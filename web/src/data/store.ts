@@ -108,6 +108,11 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
     case "startsit":
       wanted.push(`weekly_projections/${context.scoring}`, "weekly_context/all");
       break;
+    case "trade":
+      // ADR-100 §9: one block of the rest-of-season board — the slice the default in-season
+      // view has already loaded — and nothing else.
+      wanted.push(`ros_tiers/${block}`);
+      break;
   }
   if (context.cardPlayerId !== null) {
     wanted.push(cardKey(context.leaguePreset, context.scoring, context.cardPlayerId, manifest.card_buckets));

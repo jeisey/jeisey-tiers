@@ -7481,3 +7481,528 @@ table.sheet.weekboard-table thead th.wb-num {
     letter-spacing: 0.04em;
   }
 }
+
+/* ----------------------------------------------------------------------------------------
+ * The tab row's overflow (ADR-100). Six in-season tabs do not fit 320px at a legible size, so
+ * the row scrolls; a marker at each edge says there is more, and `ViewTabs` scrolls the active
+ * or focused tab into view. Solid markers rather than a fade: the board avoids gradients.
+ * "Opportunity" prints as "Opp" below 480px, the full word kept for assistive technology.
+ * ---------------------------------------------------------------------------------------- */
+
+.tabs-row {
+  position: relative;
+}
+
+.tabs {
+  min-width: 0;
+  scroll-padding-inline: var(--space-4);
+}
+
+.tabs-more {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: var(--hairline);
+  z-index: 1;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  background: var(--canvas);
+  color: var(--accent-bright);
+  font: 600 0.9rem/1 var(--font-sans);
+  pointer-events: none;
+}
+
+.tabs-more-start {
+  left: 0;
+  border-right: var(--hairline) solid var(--line-strong);
+}
+
+.tabs-more-end {
+  right: 0;
+  border-left: var(--hairline) solid var(--line-strong);
+}
+
+.tabs-row[data-overflow-start] .tabs-more-start,
+.tabs-row[data-overflow-end] .tabs-more-end {
+  display: flex;
+}
+
+.tab-label-short {
+  display: none;
+}
+
+@media (max-width: 479px) {
+  .tab-label-short {
+    display: inline;
+  }
+
+  .tab-label-long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* ----------------------------------------------------------------------------------------
+ * Trade (ADR-100). The command board's own vocabulary: control labels, segmented controls,
+ * hairline readout grids, chamfered panels and the mono numerals of every other board. The
+ * preset's own statistic is marked by an inset accent rule and its label, never colour alone.
+ * ---------------------------------------------------------------------------------------- */
+
+.trade-give {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.trade-give-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.trade-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trade-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  max-width: 100%;
+  padding: 0 0 0 8px;
+  border: var(--hairline) solid var(--line-bright);
+  background: var(--panel);
+}
+
+.trade-chip[data-missing] {
+  border-style: dashed;
+  color: var(--ink-faint);
+}
+
+.trade-chip-name {
+  min-width: 0;
+  font-size: 0.8rem;
+}
+
+.trade-chip-value,
+.trade-member-value {
+  font: 500 0.72rem/1 var(--font-mono);
+  color: var(--ink-accent);
+}
+
+.trade-chip-remove {
+  appearance: none;
+  min-width: 36px;
+  min-height: 36px;
+  border: none;
+  border-left: var(--hairline) solid var(--line);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.trade-chip-remove:hover {
+  color: var(--accent-bright);
+}
+
+.trade-picker {
+  position: relative;
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+
+.trade-picker input {
+  width: 100%;
+  height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--canvas-deep);
+  color: var(--ink);
+  font: 500 0.8rem/1 var(--font-sans);
+}
+
+.trade-picker input:disabled {
+  color: var(--ink-faint);
+  border-color: var(--line);
+}
+
+.trade-options {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: var(--hairline) solid var(--line-bright);
+  background: var(--panel-raised);
+  box-shadow: var(--shadow-pop);
+}
+
+.trade-options li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.trade-options li[aria-selected="true"],
+.trade-options li:hover {
+  background: var(--surface-selected);
+}
+
+.trade-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.trade-option-meta {
+  font: 500 0.7rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.trade-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-3) 0;
+  border-top: var(--hairline) solid var(--line);
+  border-bottom: var(--hairline) solid var(--line);
+}
+
+.trade-comp {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.trade-comp legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+}
+
+.trade-comp-slots {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.trade-comp select {
+  height: 30px;
+  min-width: 3.6rem;
+  padding: 0 6px;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--canvas-deep);
+  color: var(--ink-strong);
+  font: 600 0.66rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trade-shape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-3) 0 var(--space-1);
+  font: 600 0.66rem/1.3 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.trade-shape strong {
+  color: var(--accent-bright);
+}
+
+.trade-help,
+.trade-note,
+.trade-disclaimer,
+.trade-empty,
+.trade-exhausted,
+.trade-why,
+.trade-invalid {
+  max-width: 96ch;
+  margin: var(--space-1) 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.trade-empty {
+  margin: var(--space-4) 0;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.trade-disclaimer strong,
+.trade-note,
+.trade-invalid {
+  color: var(--ink-muted);
+}
+
+.trade-invalid {
+  border-left: 2px solid var(--warn);
+  padding-left: var(--space-2);
+}
+
+.trade-outgoing,
+.trade-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: var(--hairline);
+  margin: var(--space-3) 0;
+  background: var(--line-faint);
+  border: var(--hairline) solid var(--line);
+}
+
+.trade-outgoing > div,
+.trade-metrics > div {
+  padding: 6px 8px;
+  background: var(--panel);
+  min-width: 0;
+}
+
+.trade-outgoing > div[data-active],
+.trade-metrics > div[data-active] {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.trade-outgoing dt,
+.trade-metrics dt {
+  font: 600 0.56rem/1.2 var(--font-sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.trade-outgoing dd,
+.trade-metrics dd {
+  margin: 4px 0 0;
+  font: 500 0.82rem/1.25 var(--font-mono);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.trade-delta {
+  margin-left: 4px;
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+}
+
+.trade-results,
+.trade-kept ul {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trade-package {
+  --notch: 12px;
+
+  padding: var(--space-3) var(--space-3) var(--space-2) var(--space-4);
+  background: var(--panel);
+  border-left: 2px solid var(--line-bright);
+}
+
+.trade-package[data-invalid] {
+  border-left-color: var(--warn);
+}
+
+.trade-package-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-3);
+}
+
+.trade-rank {
+  font: 600 0.8rem/1.8 var(--font-mono);
+  color: var(--accent-bright);
+  min-width: 2.2rem;
+}
+
+.trade-members {
+  flex: 1 1 18rem;
+  max-width: 30rem;
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.trade-members li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  min-width: 0;
+}
+
+.trade-member-id {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.trade-member-team {
+  font: 500 0.66rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.trade-package-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.trade-package-actions .button {
+  height: 36px;
+  min-width: 64px;
+}
+
+.trade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.trade-count {
+  font: 500 0.66rem/1.3 var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.trade-none {
+  margin-top: var(--space-3);
+}
+
+.trade-broaden {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.trade-subhead {
+  margin: var(--space-5) 0 0;
+  font: 600 0.66rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-header);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+}
+
+.trade-excluded,
+.trade-method {
+  margin-top: var(--space-4);
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+}
+
+.trade-excluded summary,
+.trade-method summary {
+  cursor: pointer;
+  min-height: 32px;
+  color: var(--ink-accent);
+  font: 600 0.66rem/1.4 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.trade-excluded-list {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trade-excluded-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 30px;
+}
+
+.trade-excluded-reason {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+
+.trade-method-body {
+  margin-top: var(--space-2);
+  max-width: 96ch;
+  line-height: 1.5;
+}
+
+.trade-members-missing {
+  margin: 0;
+  flex: 1;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 767px) {
+  .trade-controls {
+    gap: var(--space-3);
+  }
+
+  .trade-picker {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .trade-package {
+    padding-left: var(--space-3);
+  }
+
+  .trade-package-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .trade-package-actions .button {
+    flex: 1;
+    height: 40px;
+  }
+
+  .trade-outgoing,
+  .trade-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* The comparison drops under its number rather than being cut off: a hidden digit is a
+     wrong number. */
+  .trade-delta {
+    display: block;
+    margin-left: 0;
+  }
+}

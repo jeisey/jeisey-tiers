@@ -23,6 +23,14 @@
  */
 
 import { SectionHead } from "../components/primitives";
+import { DEFAULT_TRADE_RANGE } from "../data/state";
+import {
+  MEMBER_SHARE_MIN,
+  POOL_CAP,
+  TAIL_FACTOR,
+  TRADE_DISTRIBUTION_VERSION,
+  TRADE_METHOD_VERSION,
+} from "../data/tradeMethod";
 import type { Degradation } from "../data/bundle";
 import { formatEastern, formatInteger } from "../data/format";
 import {
@@ -484,6 +492,73 @@ export function DataView({
               <li key={limitation}>{limitation}</li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {inSeason != null && (
+        <section className="section" aria-labelledby="trade-method-heading">
+          <SectionHead index="05c" id="trade-method-heading" title="Trade targets — method" />
+          <dl className="facts">
+            <div>
+              <dt>Method</dt>
+              <dd>{TRADE_METHOD_VERSION}</dd>
+            </div>
+            <div>
+              <dt>Package floor and ceiling</dt>
+              <dd>{TRADE_DISTRIBUTION_VERSION}</dd>
+            </div>
+            <div>
+              <dt>Default value range</dt>
+              <dd>{`±${String(DEFAULT_TRADE_RANGE)}% of expected value`}</dd>
+            </div>
+            <div>
+              <dt>Smallest piece</dt>
+              <dd>{`${String(MEMBER_SHARE_MIN * 100)}% of a package's value`}</dd>
+            </div>
+            <div>
+              <dt>Packages explored</dt>
+              <dd>{`best ${String(POOL_CAP)} of every qualifying one`}</dd>
+            </div>
+            <div>
+              <dt>Inputs</dt>
+              <dd>this build&rsquo;s rest-of-season board only</dd>
+            </div>
+          </dl>
+          <p className="prose">
+            The Trade tab (ADR-100) reads one block of the rest-of-season board — the scoring and
+            league size you chose, at this build&rsquo;s cutoff — and nothing else: no market,
+            no expert rank, no trade price, no league roster. <strong>Value</strong> is expected
+            points above the best player nobody rosters, summed over the remaining weeks through
+            week 17 (NFL week 18 is not counted); weeks 15–17 are included and there is no
+            playoff-only projection. A package qualifies when its summed expected value is within
+            your value range of what you give, every player in it carries at least{" "}
+            {String(MEMBER_SHARE_MIN * 100)}% of that value and is a target. Packages are then
+            ranked by expected value, the 90th percentile (ceiling) or the 10th (floor); the range
+            stays anchored on expected value under every preset. Ties break on expected value,
+            then the best single asset, then player ids.
+          </p>
+          <p className="prose">
+            <strong>Package floors and ceilings are approximate.</strong> One player&rsquo;s are his
+            published percentiles. For two or three, each player&rsquo;s distribution is rebuilt
+            from his five published percentiles with linear tails ({String(TAIL_FACTOR)}× the
+            neighbouring segment, the factor at which a linear tail has a normal tail&rsquo;s mean)
+            and one tail moved so its mean is exactly his published expectation; players are
+            treated as independent, which is how the simulation draws their points (only the
+            shared replacement level links them); and the sum&rsquo;s percentile comes from its
+            first three cumulants (Cornish–Fisher, skewness capped at ±2). Against the production
+            draw loop on a synthetic 300-player league, the error is about one point on a P10–P90
+            range near 100 points; summing individual P90s would be off by 19–40. Its calibration
+            is not claimed.
+          </p>
+          <p className="prose">
+            <strong>Not targets:</strong> players at or below replacement, players with a long
+            absence (the model orders that group poorly), and players with a reserve, inactive,
+            PUP, NFI, suspended, released or retired roster code. The rest-of-season model reads no
+            injury report, and a player listed Out for one week only is not removed. Results are
+            asset combinations to explore — the players may belong to different managers, and the
+            tool cannot know whether anyone would accept. Asset value is not lineup value: two
+            players need two roster spots, which every package states.
+          </p>
         </section>
       )}
 

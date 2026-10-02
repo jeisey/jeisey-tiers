@@ -19,37 +19,35 @@
  */
 
 import type { Position, RosTierRecord } from "./contracts";
+import { COMP_SLOTS, type CompSlot, type TradeCount, type TradeGoal } from "./state";
+
+export { canonicalComp } from "./state";
+import { MEMBER_SHARE_MIN, POOL_CAP, TAIL_FACTOR } from "./tradeMethod";
+export {
+  MEMBER_SHARE_MIN,
+  POOL_CAP,
+  TAIL_FACTOR,
+  TRADE_DISTRIBUTION_VERSION,
+  TRADE_METHOD_VERSION,
+} from "./tradeMethod";
 
 // ------------------------------------------------------------------------------- constants
 
-export const TRADE_METHOD_VERSION = "trade_targets_v1";
-export const TRADE_DISTRIBUTION_VERSION = "ros_package_quantiles_v1";
 
-export const TRADE_GOALS = ["value", "ceiling", "floor"] as const;
-export type TradeGoal = (typeof TRADE_GOALS)[number];
+export {
+  COMP_SLOTS,
+  DEFAULT_TRADE_RANGE,
+  MAX_GIVE,
+  MAX_KEEP,
+  TRADE_COUNTS,
+  TRADE_GOALS,
+  TRADE_RANGES,
+} from "./state";
+export type { CompSlot, TradeCount, TradeGoal, TradeRange } from "./state";
 
-/** The value range a reader may choose, in percent either side of the outgoing value. */
-export const TRADE_RANGES = [10, 20, 35, 50] as const;
-export type TradeRange = (typeof TRADE_RANGES)[number];
-/** A UX default, not a measured trade-market rule (ADR-100 §3). */
-export const DEFAULT_TRADE_RANGE: TradeRange = 20;
-
-export const TRADE_COUNTS = [1, 2, 3] as const;
-export type TradeCount = (typeof TRADE_COUNTS)[number];
-
-/** Composition slots; `any` matches every position. */
-export const COMP_SLOTS = ["qb", "rb", "wr", "te", "any"] as const;
-export type CompSlot = (typeof COMP_SLOTS)[number];
-
-export const MAX_GIVE = 3;
-export const MAX_KEEP = 3;
 export const VISIBLE_PACKAGES = 5;
 
-/** `member_share_v1`: every member of a 2- or 3-player package carries at least this share. */
-export const MEMBER_SHARE_MIN = 0.15;
 
-/** Packages kept after ranking; the dealing order walks these (ADR-100 §6). */
-export const POOL_CAP = 200;
 /** A search that would visit more packages than this stops and says so. */
 export const MAX_VISITS = 4_000_000;
 
@@ -64,8 +62,6 @@ export const SEVERE_ROSTER_CODES: ReadonlySet<string> = new Set([
   "RET",
 ]);
 
-/** Tail factor: a linear tail with a Gaussian's conditional tail mean (ADR-100 §5). */
-export const TAIL_FACTOR = 1.56;
 /** The Cornish–Fisher skewness clamp, inside the expansion's monotone range. */
 export const SKEW_CLAMP = 2;
 /** Φ⁻¹(0.9). */
@@ -371,11 +367,6 @@ export function sharesHold(pkg: Pick<TradePackage, "members" | "value">): boolea
 /** The share predicate itself, shared by `sharesHold` and the search's inner loops. */
 function shareOk(smallest: number, total: number): boolean {
   return smallest > 0 && smallest >= MEMBER_SHARE_MIN * total - 1e-9 * Math.max(1, Math.abs(total));
-}
-
-/** Canonical composition: named positions in QB, RB, WR, TE order, then `any`. */
-export function canonicalComp(slots: readonly CompSlot[]): CompSlot[] {
-  return [...slots].sort((a, b) => COMP_SLOTS.indexOf(a) - COMP_SLOTS.indexOf(b));
 }
 
 /** Every named slot is covered by a distinct member at that position. */

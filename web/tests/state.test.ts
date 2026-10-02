@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_STATE,
+  IN_SEASON_VIEWS,
   leaguePresetId,
   parseState,
   resolveMode,
@@ -53,7 +54,8 @@ describe("parseState", () => {
 
   it("reads every supported parameter", () => {
     const parsed = parseState(
-      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&set=3&duel=00-0036389.00-0039164&margin=-12",
+      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&set=3&duel=00-0036389.00-0039164&margin=-12" +
+        "&give=00-0000001.00-0000013&goal=ceiling&get=2&range=35&comp=rb.wr&keep=00-0000002.00-0000011&shown=0.1.6.3.4&dealt=7&stamp=0a1b2c3d",
     );
     expect(parsed.state).toEqual({
       view: "arbitrage",
@@ -71,6 +73,15 @@ describe("parseState", () => {
       set: 3,
       duel: ["gsis:00-0036389", "gsis:00-0039164"],
       margin: -12,
+      give: ["gsis:00-0000001", "gsis:00-0000013"],
+      goal: "ceiling",
+      get: 2,
+      range: 35,
+      comp: ["rb", "wr"],
+      keep: [["gsis:00-0000002", "gsis:00-0000011"]],
+      shown: [0, 1, 6, 3, 4],
+      dealt: 7,
+      stamp: "0a1b2c3d",
     });
     expect(parsed.normalized).toBe(true);
   });
@@ -254,5 +265,90 @@ describe("open tier state", () => {
 
   it("bounds the list so a pathological URL cannot drive the board", () => {
     expect(parseState("?tiers=0.1.10000").state.tiers).toEqual([0, 1]);
+  });
+});
+
+describe("trade state (ADR-100 §8)", () => {
+  it("defaults are omitted, so the empty Trade tab is a short link", () => {
+    expect(serializeState({ ...DEFAULT_STATE, view: "trade" })).toBe("?view=trade");
+    expect(DEFAULT_STATE.goal).toBe("value");
+    expect(DEFAULT_STATE.get).toBe(1);
+    expect(DEFAULT_STATE.range).toBe(20);
+  });
+
+  it("round-trips every trade parameter in a fixed order", () => {
+    const state = {
+      ...DEFAULT_STATE,
+      view: "trade" as const,
+      give: ["gsis:00-0000001", "gsis:00-0000013"],
+      goal: "floor" as const,
+      get: 3 as const,
+      range: 50 as const,
+      comp: ["rb", "wr", "any"] as const,
+      keep: [["gsis:00-0000002", "gsis:00-0000011", "gsis:00-0000015"]],
+      shown: [0, 5, 2],
+      dealt: 6,
+      stamp: "deadbeef",
+    };
+    const query = serializeState(state);
+    expect(query).toBe(
+      "?view=trade&give=00-0000001.00-0000013&goal=floor&get=3&range=50&comp=rb.wr.any&keep=00-0000002.00-0000011.00-0000015&shown=0.5.2&dealt=6&stamp=deadbeef",
+    );
+    const parsed = parseState(query);
+    expect(parsed.state).toEqual(state);
+    expect(parsed.normalized).toBe(true);
+  });
+
+  it("keeps the reader's outgoing order but drops malformed, repeated and excess ids", () => {
+    const parsed = parseState("?give=00-0000013.bogus.00-0000013.00-0000001.00-0000002.00-0000003");
+    expect(parsed.state.give).toEqual(["gsis:00-0000013", "gsis:00-0000001", "gsis:00-0000002"]);
+    expect(parsed.normalized).toBe(false);
+  });
+
+  it.each([
+    ["?goal=moon", { goal: "value" }],
+    ["?get=4", { get: 1 }],
+    ["?get=2.0", { get: 1 }],
+    ["?range=25", { range: 20 }],
+    ["?shown=1.1", { shown: [] }],
+    ["?shown=1.2.3.4.5.6", { shown: [] }],
+    ["?shown=-1", { shown: [] }],
+    ["?dealt=x", { dealt: 0 }],
+    ["?stamp=XYZ", { stamp: "" }],
+  ])("normalizes %s", (query, expected) => {
+    const parsed = parseState(query);
+    expect(parsed.state).toMatchObject(expected);
+    expect(parsed.normalized).toBe(false);
+  });
+
+  it("puts a composition in canonical order and drops one that does not fit the count", () => {
+    expect(parseState("?get=2&comp=wr.rb").state.comp).toEqual(["rb", "wr"]);
+    expect(parseState("?get=2&comp=wr.rb").normalized).toBe(false);
+    expect(parseState("?get=2&comp=any.rb").state.comp).toEqual(["rb", "any"]);
+    expect(parseState("?get=3&comp=rb.wr").state.comp).toEqual([]);
+    expect(parseState("?get=2&comp=any.any").state.comp).toEqual([]);
+    expect(parseState("?get=2&comp=rb.k").state.comp).toEqual([]);
+  });
+
+  it("canonicalizes kept packages: members sorted, duplicates and excess dropped", () => {
+    const parsed = parseState(
+      "?keep=00-0000011.00-0000002_00-0000002.00-0000011_00-0000005_00-0000006_00-0000007_junk",
+    );
+    expect(parsed.state.keep).toEqual([
+      ["gsis:00-0000002", "gsis:00-0000011"],
+      ["gsis:00-0000005"],
+      ["gsis:00-0000006"],
+    ]);
+    expect(parsed.normalized).toBe(false);
+  });
+
+  it("keeps unrelated parameters beside the trade ones", () => {
+    const parsed = parseState("?scoring=half&teams=10&duel=00-0036389&view=trade&give=00-0000001");
+    expect(parsed.state).toMatchObject({ scoring: "half", teams: 10, duel: ["gsis:00-0036389"], give: ["gsis:00-0000001"] });
+    expect(serializeState(parsed.state)).toBe("?view=trade&scoring=half&teams=10&duel=00-0036389&give=00-0000001");
+  });
+
+  it("trade is an in-season view", () => {
+    expect(IN_SEASON_VIEWS).toContain("trade");
   });
 });
