@@ -1908,3 +1908,65 @@ source and no published number changed.
       ROS out-of-fold predictions are not retained, and regenerating them would re-run model
       evaluation this downstream feature must not do; the first real in-season build on this
       code (the sandbox cannot reach the private store); no PR (not requested).
+
+## Public-launch housekeeping — 2026-10-02 (ADR-101)
+
+The owner's bounded hardening pass before sharing the site publicly. No model, artifact number,
+holdout or calibration figure changed; weekly v2 stays in shadow.
+
+- [x] **Logo → home.** `BrandLogo` is an `<a href>` to Vite's base with no query, named
+      "Jeisey Tiers home", inside the one `<h1>`, first masthead tab stop; full navigation drops
+      an open card and Trade state. Tests: `web/tests/masthead.test.tsx`; e2e under `/` and
+      `/jeisey-tiers/` (keyboard + pointer, after a card) and from four shared in-season links.
+- [x] **Availability policy (ADR-101).** `web/src/data/availability.ts`: this-week and
+      rest-of-season readings from the status record, the board's roster code, the official
+      report and a reviewed override; verified aliases; precedence, conflict, stale (> 48 h at
+      build time), other-season and missing evidence → uncertain, never healthy; recovery when a
+      status clears. 15 policy tests (`availability.test.ts`) on the production status shapes.
+- [x] **Applied, decisions not only styling.** Start/Sit verdict eligibility, conditional
+      "If active" note, deck flags, week-board sort and display rank; Pick of the Week gate 5;
+      ROS board actionable split (`unavail=1`, rank gaps explained, header count); Trade
+      targets, `ret=1` opt-in, season-over budgets refused, budget warnings, kept/shared
+      packages re-checked by name, stamp includes the opt-in (old stamps still verify);
+      Opportunity, POTW and card marks via `AvailabilityContext`; card status section.
+      Tests: `availability-surfaces.test.ts`, `duel.test.ts`, `startsit-view.test.tsx`,
+      `trade-view.test.tsx`, `state.test.ts`, `bundle.test.ts`, e2e `inseason.spec.ts`.
+- [x] **Evidence route for season-ending.** `config/availability-overrides.yaml` (strict loader,
+      `tests/unit/test_availability_overrides.py`), `player_status` 1.1 `availability_override`
+      + CSV projection, honoured only with a reserve-list reading. One entry (Achane 2026,
+      verified NFL.com/ESPN), **owner to confirm**.
+- [x] **Delivery.** `player_availability/all` served family (3.55 kB gzip real); loaded once with
+      the first in-season view when a ROS bundle exists; status population widened after the
+      draft anchor to rostered QB/RB/WR/TE + override ids; size model status 545 → 720.
+- [x] **Docs.** ADR-101 (+ ADR-043 amendment); UX_SPEC §4 and §6A.4, §6A.12.3; ARCHITECTURE §14;
+      DATA_CONTRACTS §21; OPERATIONS §16.10 (reviewing an override) and §17.3; MODELING §36;
+      PRD Part A (CR-025, CR-026); README; Data view copy.
+- [x] **Public docs.** README rewritten around the product (live link, tools, presets, usage,
+      method, limitations, attribution, verified commands); `docs/HISTORY.md`; PRD current
+      scope vs historical V1; bootstrap/spec bundle files and the baseline study marked
+      historical; fftiers/borisachen positioning removed (citation kept in the historical study).
+- [x] **Security review.** `docs/SECURITY_REVIEW_2026-10-02.md`; workflow script-injection fixes
+      (10 files), urllib3 2.8.0, `phase10-linkage` read-only default, `.env` ignored;
+      `tests/unit/test_workflow_security.py` (50 cases).
+- [x] **Core experience pass** on today's production artifacts rebuilt under this code
+      (`verify-real-build.mjs` 0 failures; screenshots `docs/visual-qa/2026-10-02-availability/`).
+      Fixed: Start/Sit treated an IR player and a Sleeper-`Out` player as playable; "Add a
+      second player" shown when two players were both ruled out; ROS row counter counted
+      held-back rows; opacity muting failing contrast on out deck cards; Data view said MFL was
+      the only market.
+- [x] **Validation (local).** ruff/format clean (322 files); mypy clean (193); **pytest 1,880
+      passed** (4 live deselected); lint 0 errors (4 pre-existing TanStack warnings); typecheck
+      clean; **vitest 774**; `npm run build` and the `/jeisey-tiers/` build; **e2e 222**
+      (chromium, mobile, a11y); `verify:board` 0 failures on all six CI fixtures (in-season: 17
+      ROS rows with one held back, 2 Start/Sit cards, 5 trade packages); size-model budgets all
+      met (first visit 303.1/450 kB, data 65.2/150, Start/Sit +55.2/60, Trade +11.8/25, card
+      +23.6/30, repeat 0); real 2026-10-02 production artifacts repackaged under this code:
+      `validate-artifacts --require-serving` 0 critical/0 warning, `verify-real-build.mjs` 0
+      failures (40 ROS rows, 553 week-board rows, 5 trade packages, 115 badges).
+- [ ] **Owner actions.** SR-01 (move the store token into a `main`-only environment; protect
+      `main`; confirm token scope/expiry; confirm the store repository is private); confirm the
+      Achane override; decide SR-04 and SR-10; schedule SR-06/SR-07.
+- [ ] **Follow-ups (low impact, not launch blockers).** The masthead chip reads "12 build notes"
+      in amber on a passing build (draft-board notes, honest but alarming-looking); uv toolchain
+      pin bump; `npm audit fix` for dev-only advisories; consider `npm ci --ignore-scripts` in
+      the build job; re-measure the size model's status count from the first production build.
