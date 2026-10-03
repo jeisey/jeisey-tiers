@@ -385,11 +385,17 @@ def run_current_build(
     # deliberately restricted to players the board actually names: a status row nobody
     # references is payload the browser downloads for nothing (ADR-043).
     published_players = [str(row["player_id"]) for row in records.get("tiers", ())]
-    if stamped >= anchor.anchor_at_utc:
-        # ADR-101: after the draft anchor the in-season views (Start/Sit, Trade, the ROS and
-        # Opportunity boards) name players the draft board never did, and their availability
-        # needs the same evidence. Every rostered player at a core position gets a row.
-        published_players = [*published_players, *_rostered_core_players(roster)]
+    # ADR-101: after the draft anchor the in-season views (Start/Sit, Trade, the ROS and
+    # Opportunity boards) name players the draft board never did, and their availability needs
+    # the same evidence, so every rostered player at a core position gets a *status* row. Only
+    # the status artifact widens: portraits stay the board's players, which is what
+    # `cross_artifact.headshot_player_not_in_tiers` requires (the 2026-10-02 refresh failed on
+    # exactly this when the two shared one list).
+    status_players = (
+        [*published_players, *_rostered_core_players(roster)]
+        if stamped >= anchor.anchor_at_utc
+        else published_players
+    )
     annotation_registry = _annotation_registry(roster)
     status = _player_status(
         registry=annotation_registry,
@@ -398,7 +404,7 @@ def run_current_build(
         build_id=resolved_build_id,
         season=season,
         as_of=stamped,
-        published=published_players,
+        published=status_players,
         gate=gate,
         overrides=active_overrides(availability_overrides, season=season, as_of=stamped),
     )

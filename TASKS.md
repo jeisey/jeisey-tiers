@@ -1970,3 +1970,8 @@ holdout or calibration figure changed; weekly v2 stays in shadow.
       in amber on a passing build (draft-board notes, honest but alarming-looking); uv toolchain
       pin bump; `npm audit fix` for dev-only advisories; consider `npm ci --ignore-scripts` in
       the build job; re-measure the size model's status count from the first production build.
+- [x] **Refresh fix (2026-10-03).** Run 37069228948 failed closed at validation: portraits
+      followed the widened status population. Separate populations in `run_current_build`;
+      post-anchor regression test in `tests/integration/test_current_build.py`; the run's
+      artifacts, with the fix applied, pass validation, `verify:board` and the budget report.
+      Size model status count set to the measured 675.

@@ -4,6 +4,17 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Refresh fix, 2026-10-03.** The first production refresh after PR #57 (daily-refresh run
+37069228948) failed closed at `validate-artifacts --require-serving` with
+`cross_artifact.headshot_player_not_in_tiers`: the ADR-101 post-anchor status population was
+also handed to the portrait builder. Fixed in `src/ffdraft/pipeline/current.py` (separate
+`status_players`), with a post-anchor regression test that fails on the old code. Checked on
+that run's own build record with portraits restricted as the fix does: validate 0 critical /
+0 warning; `verify:board` 0 failures (40 ROS rows, 4 picks, 2 Start/Sit cards, 5 trade
+packages); budgets met (first visit 303.2 kB, data 65.3 kB; Start/Sit +50.3 kB; Trade +11.8 kB;
+card +24.3 kB). Real status count is 675 rows (size model updated). The production site kept
+serving the 2026-10-02 build throughout.
+
 **Public-launch housekeeping, 2026-10-02 (ADR-101).** The owner asked for a bounded hardening
 pass before sharing the site on Reddit: logo home navigation, injury-aware decision surfaces,
 public documentation, a current security review, and a check of the core experience. Branch
