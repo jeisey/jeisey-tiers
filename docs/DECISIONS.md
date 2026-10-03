@@ -5885,7 +5885,18 @@ for the year.
    in-season view when a ROS bundle exists. After the draft anchor the status population is
    every rostered QB/RB/WR/TE (practice squad, released and retired excepted) plus any override
    id, because in-season views name players the draft board never did (53 of 500 ROS rows had
-   no status row on 2026-10-02).
+   no status row on 2026-10-02). **Only the status artifact widens**: portraits
+   (`player_headshots`) stay the tier board's players, which the cross-artifact gate requires.
+
+**Amendment (2026-10-03).** The first production refresh on this code (daily-refresh run
+37069228948) failed closed at `validate-artifacts`: `run_current_build` fed the widened list to
+both the status and the portrait builders, so 122 portraits named players off the tier board
+(`cross_artifact.headshot_player_not_in_tiers`) and the previous site kept serving. The two
+populations are now separate variables, and `tests/integration/test_current_build.py` runs a
+post-anchor build with a rostered off-board player (it failed on the old code). The fixture
+builds had all been timestamped before the anchor, so no local gate had exercised the widened
+path. The run's own artifacts, with portraits restricted as the fix does, pass
+`validate-artifacts --require-serving`, `verify:board` and the payload report.
 
 ### Consequences
 

@@ -503,3 +503,94 @@ def test_the_current_build_never_loads_the_target_seasons_statistics() -> None:
 
     historical = season_windows([2026])
     assert 2026 in historical.statistics
+
+
+# ---------------------------------------------------------------------------------------
+# The in-season status population (ADR-101) and the artifacts that must not follow it
+# ---------------------------------------------------------------------------------------
+
+AFTER_THE_ANCHOR = datetime(2025, 10, 1, 12, 0, 0, tzinfo=UTC)
+OFF_BOARD_ID = "00-0099999"
+
+
+def _roster_with_an_off_board_player(fixture_sources) -> pl.DataFrame:
+    """The fixture roster, everyone active, plus a rostered receiver the board never names."""
+    universe = fixture_sources.sources.rosters[FIXTURE_SEASON - 1].with_columns(
+        pl.lit(FIXTURE_SEASON).cast(pl.Int32).alias("season"),
+        pl.lit("ACT").alias("status"),
+    )
+    extra = universe.head(1).with_columns(
+        pl.lit(OFF_BOARD_ID).alias("gsis_id"),
+        pl.lit("Offboard Receiver").alias("display_name"),
+        pl.lit("WR").alias("position"),
+        pl.lit("9999999").alias("espn_id"),
+        pl.lit(None).cast(pl.String).alias("sleeper_id"),
+    )
+    return pl.concat([universe, extra], how="vertical_relaxed")
+
+
+def test_after_the_anchor_status_widens_and_portraits_stay_on_the_board(
+    fixture_sources,
+    production_model,
+    app_config,
+    tmp_path,
+) -> None:
+    """The 2026-10-02 refresh failure: the in-season status population leaked into portraits.
+
+    ADR-101 gives every rostered core player a status row once the draft anchor passes, so
+    the in-season views can read their availability. Portraits are published only for the
+    tier board's players (`cross_artifact.headshot_player_not_in_tiers` fails closed
+    otherwise), so the two populations must stay separate.
+    """
+    _, model_dir = production_model
+    out_dir = tmp_path / "artifacts"
+    result = run_current_build(
+        season=FIXTURE_SEASON,
+        model_dir=model_dir,
+        out_dir=out_dir,
+        config=_config(),
+        as_of=AFTER_THE_ANCHOR,
+        sources=fixture_sources,
+        current_roster=_roster_with_an_off_board_player(fixture_sources),
+        app=app_config,
+        write=True,
+    )
+    tiers = {row["player_id"] for row in result.records["tiers"]}
+    status = {row["player_id"] for row in result.records["player_status"]}
+    portraits = {row["player_id"] for row in result.records["player_headshots"]}
+
+    off_board = f"gsis:{OFF_BOARD_ID}"
+    assert off_board not in tiers
+    assert off_board in status, "the in-season status population covers rostered players"
+    assert portraits <= tiers, sorted(portraits - tiers)
+
+    # The production gate itself, on the written artifacts. (The whole directory is not
+    # asserted here: this thirty-player fixture model publishes a non-finite tier value of its
+    # own, which `test_the_artifacts_validate` covers on a pool built for the purpose.)
+    from ffdraft.artifacts.validate import _headshot_cross_checks
+
+    envelopes = {
+        name: json.loads((out_dir / f"{name}.json").read_text(encoding="utf-8"))
+        for name in ("tiers", "player_headshots")
+    }
+    failures = [check.check_id for check in _headshot_cross_checks(envelopes) if check.blocking]
+    assert failures == []
+
+
+def test_before_the_anchor_status_is_the_board(
+    fixture_sources, production_model, app_config, tmp_path
+) -> None:
+    _, model_dir = production_model
+    result = run_current_build(
+        season=FIXTURE_SEASON,
+        model_dir=model_dir,
+        out_dir=tmp_path / "artifacts",
+        config=_config(),
+        as_of=BEFORE_THE_ANCHOR,
+        sources=fixture_sources,
+        current_roster=_roster_with_an_off_board_player(fixture_sources),
+        app=app_config,
+        write=False,
+    )
+    tiers = {row["player_id"] for row in result.records["tiers"]}
+    assert {row["player_id"] for row in result.records["player_status"]} <= tiers
