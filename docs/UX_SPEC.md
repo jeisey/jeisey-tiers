@@ -72,9 +72,16 @@ Contains:
   view with no tab, Start/Sit or Trade selection and no card. Ordinary link behaviour (new tab,
   copy link) is preserved; its accessible name is "Jeisey Tiers home"; it keeps the global
   focus ring and is the masthead's first tab stop after the skip link.
-- last successful refresh, e.g. `Updated Aug 12 · 7:23 AM ET`
-- degraded/stale marker if metadata says so
-- Methodology/Data link
+- last successful refresh, e.g. `Updated Aug 12 · 7:23 AM ET`, in Eastern from
+  `build_metadata.generated_at_utc`, with the build's age as visually hidden text for
+  assistive technology.
+
+Nothing else sits beside the logo (revised 2026-10-06). The header carries no build-status
+button and no season-mode label or dot: degraded artifacts, a stale build (older than the
+48-hour refresh window), the quality gate and build notes are reported in the **Data** tab,
+which is always one tab away; the season mode is the switch among the controls and the tabs
+it changes. On phones the stamp shares the logo's line (the mark is 34px tall below 360px so
+320px fits), vertically centred on it.
 
 Avoid navigation beyond what the app needs.
 

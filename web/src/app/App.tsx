@@ -48,7 +48,7 @@ import {
 } from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
-import { Controls, SeasonMode, SeasonModeChip, ViewTabs, settingsSummary } from "./Controls";
+import { Controls, SeasonMode, ViewTabs, settingsSummary } from "./Controls";
 import { DataView } from "./DataView";
 import { BrandLogo, Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
@@ -534,21 +534,7 @@ function Board({
         Skip to the board
       </a>
       <div className="app">
-        <Masthead
-          metadata={metadata}
-          degradations={degradations}
-          now={now}
-          onOpenData={openData}
-          seasonMode={
-            <SeasonModeChip
-              resolved={mode}
-              seasonState={inSeason?.seasonState ?? buildSeason?.state ?? null}
-              throughWeek={inSeason?.throughWeek ?? null}
-              note={buildSeason?.note}
-              awaiting={awaitingFirstRos}
-            />
-          }
-        />
+        <Masthead metadata={metadata} now={now} />
 
         {/*
           One sticky block. On a phone it is the summary row and the tabs, with every control
@@ -716,6 +702,7 @@ function Board({
                 inSeason={inSeason}
                 state={state}
                 degradations={degradations}
+                now={now}
               />
             )}
             </AvailabilityContext.Provider>

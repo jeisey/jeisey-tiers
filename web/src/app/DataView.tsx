@@ -32,7 +32,9 @@ import {
   TRADE_METHOD_VERSION,
 } from "../data/tradeMethod";
 import type { Degradation } from "../data/bundle";
-import { formatEastern, formatInteger } from "../data/format";
+import { formatAge, formatEastern, formatInteger } from "../data/format";
+import { STALE_WARNING_HOURS } from "../data/freshness";
+import { buildAgeHours } from "../data/load";
 import {
   CONFIDENCE_MEANING,
   CONFIDENCE_SHORT,
@@ -61,14 +63,18 @@ export function DataView({
   inSeason,
   state,
   degradations,
+  now,
 }: {
   readonly index: ArtifactIndex;
   /** The in-season bundle, or null before kickoff. Its provenance is reported separately. */
   readonly inSeason?: InSeasonBundle | null;
   readonly state: AppState;
   readonly degradations: readonly Degradation[];
+  /** The clock the build age is measured against; tests pin it. */
+  readonly now?: Date | undefined;
 }): React.JSX.Element {
   const metadata = index.metadata;
+  const ageHours = buildAgeHours(metadata, now);
   const assignment = cohortAssignment(metadata, SCORING_TO_PRESET[state.scoring], state.teams);
   const market = metadata.market;
 
@@ -228,6 +234,14 @@ export function DataView({
             <tbody>
               <BuildRow label="Build id" value={metadata.build_id} />
               <BuildRow label="Generated" value={formatEastern(metadata.generated_at_utc)} />
+              <BuildRow
+                label="Build age"
+                value={
+                  ageHours > STALE_WARNING_HOURS
+                    ? `${formatAge(ageHours)} — stale: beyond the ${String(STALE_WARNING_HOURS)}-hour refresh window`
+                    : formatAge(ageHours)
+                }
+              />
               <BuildRow label="Season" value={String(metadata.season)} />
               <BuildRow label="Intrinsic model" value={metadata.intrinsic_model_version} />
               <BuildRow label="Methodology version" value={metadata.methodology_version} />

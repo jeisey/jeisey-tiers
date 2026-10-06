@@ -38,8 +38,9 @@ test.describe("season mode", () => {
     await page.goto(IN_SEASON);
     // The URL names no view. The season decides, which is the whole point of `view=auto`.
     await expect(page.getByRole("heading", { name: /Rest of season/ })).toBeVisible();
-    await expect(page.getByText("In-Season mode")).toBeVisible();
+    // The mode is read from the tabs and the switch's cutoff, not a masthead label.
     await expect(page.locator(".season-mode-detail")).toHaveText("through week 8");
+    await expect(page.getByRole("radio", { name: "Follow the NFL schedule" })).toBeChecked();
     await expect(page.getByRole("tab", { name: "ROS tiers" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -52,7 +53,8 @@ test.describe("season mode", () => {
   }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
-    await expect(page.getByText("Draft mode")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Arbitrage" })).toBeVisible();
+    await expect(page.getByText("Draft mode")).toHaveCount(0);
     // Nothing to switch to before kickoff, so no switch is offered.
     await expect(page.locator(".season-mode").getByRole("radio")).toHaveCount(0);
   });
@@ -61,9 +63,9 @@ test.describe("season mode", () => {
     await page.goto(`${IN_SEASON}?mode=draft`);
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Arbitrage" })).toBeVisible();
-    // The masthead's indicator. Scoped because the phone's folded settings row names an
-    // overridden mode too (ADR-093) — not rendered at this width, but still in the DOM.
-    await expect(page.locator("header.masthead").getByText("Draft mode")).toBeVisible();
+    // The switch says which board was chosen; the masthead names no mode (2026-10-06).
+    await expect(page.getByRole("radio", { name: "Preseason board" })).toBeChecked();
+    await expect(page.locator("header.masthead")).not.toContainText(/mode/i);
   });
 
   test("an explicit view wins over the season's default", async ({ page }) => {
@@ -103,11 +105,10 @@ test.describe("the lifecycle windows with no rest-of-season board", () => {
     await page.goto(AWAITING);
     // The draft board, because it is the only board this build published.
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
-    // But not "Draft mode": the season is under way and the indicator says so.
-    await expect(page.locator(".season-mode-label")).toHaveText("Season under way");
+    // But not "Draft mode": the season is under way and the banner says so. The masthead no
+    // longer carries a season-mode label (2026-10-06); the banner is the one statement.
+    await expect(page.locator(".season-mode-label, .season-mode-chip")).toHaveCount(0);
     await expect(page.getByText("Draft mode")).toHaveCount(0);
-    // Scoped to the banner: the chip carries the same sentence for assistive technology,
-    // which is deliberate and would otherwise make every one of these a strict-mode violation.
     const banner = page.locator(".season-notice");
     await expect(banner).toContainText("The regular season has started.");
     await expect(banner).toContainText(/first rest-of-season board is published once week 1/i);
@@ -129,7 +130,7 @@ test.describe("the lifecycle windows with no rest-of-season board", () => {
   test("says the season is over rather than showing a board of zeros", async ({ page }) => {
     await page.goto(SEASON_COMPLETE);
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
-    await expect(page.locator(".season-mode-label")).toHaveText("Season complete");
+    await expect(page.locator(".season-mode-label, .season-mode-chip")).toHaveCount(0);
     const banner = page.locator(".season-notice");
     // Not "the regular season has started": at this end of the season that is the wrong
     // sentence beside the right note.

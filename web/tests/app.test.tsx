@@ -108,21 +108,33 @@ describe("shell", () => {
     expect(screen.getByText("Aug 21 · 10:38 AM ET")).toBeDefined();
   });
 
-  it("shows a compact status chip rather than a full-width alarm", async () => {
+  it("puts only the Updated stamp beside the logo: no status button, no season-mode label", async () => {
     render(<App now={FIXTURE_NOW} />);
     await boardReady();
-    const chip = screen.getByRole("button", { name: /build note/i });
-    expect(chip.className).toContain("status-chip");
+    const masthead = document.querySelector("header.masthead");
+    expect(masthead).not.toBeNull();
+    const header = masthead as HTMLElement;
+    // The logo link is the header's only control.
+    expect(within(header).queryAllByRole("button")).toHaveLength(0);
+    expect(within(header).getAllByRole("link")).toHaveLength(1);
+    expect(header.querySelector(".status-chip, .season-mode-chip, .season-mode-dot")).toBeNull();
+    const meta = header.querySelector(".masthead-meta");
+    expect(meta?.children).toHaveLength(1);
+    expect(meta?.querySelector(".freshness")?.textContent).toMatch(/^Updated Aug 21 · 10:38 AM ET, /);
+    expect(header.textContent).not.toMatch(/build note|checks passed|Draft mode|In-Season mode/i);
   });
 
-  it("escalates the same chip to a stale warning once the build ages out", async () => {
-    // The other half of the contract, and the branch that had quietly been swallowing the
-    // test above: past STALE_WARNING_HOURS the chip says so. Still a chip, never an alarm.
+  it("reports a stale build in the Data view, where the header chip used to", async () => {
     const stale = new Date(Date.parse(FIXTURE_GENERATED_AT) + 49 * 60 * 60 * 1000);
+    go("?view=data");
     render(<App now={stale} />);
-    await boardReady();
-    const chip = screen.getByRole("button", { name: /build is stale/i });
-    expect(chip.className).toContain("status-chip");
+    await waitFor(() => {
+      expect(screen.getByText("Build age")).toBeDefined();
+    });
+    expect(screen.getByText(/stale: beyond the 48-hour refresh window/)).toBeDefined();
+    // The masthead is unchanged by age: the stamp still carries the age for assistive tech.
+    const freshness = document.querySelector("header.masthead .freshness");
+    expect(freshness?.textContent).toMatch(/2 days ago/);
   });
 
   it("labels the arbitrage method as deterministic, never as ML", async () => {

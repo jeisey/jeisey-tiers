@@ -287,7 +287,7 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
 
   test("a visible focus indicator exists on every custom control", async ({ page }) => {
     await page.goto("/?tiers=0.1.2");
-    for (const selector of [".board-row", ".tier-head", ".player-name", ".status-chip"]) {
+    for (const selector of [".board-row", ".tier-head", ".player-name", ".masthead-home"]) {
       const node = page.locator(selector).first();
       await expect(node).toBeVisible();
       await node.focus();

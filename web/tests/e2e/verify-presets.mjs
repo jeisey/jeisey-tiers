@@ -392,7 +392,7 @@ try {
             tierLanes: document.querySelectorAll(".tier-lane").length,
             logo: box("img.masthead-logo"),
             freshness: box(".freshness"),
-            status: box(".status-chip"),
+            statusChips: document.querySelectorAll(".status-chip, .season-mode-chip").length,
             csv: buttons.map((n) => ({ text: (n.textContent ?? "").trim(), ...centring(n) })),
             overflow:
               document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -414,10 +414,9 @@ try {
         check_review(name, label, "the logo keeps the artwork ratio", 
           seen.logo !== null && Math.abs(seen.logo.w / seen.logo.h - 434 / 145) < 0.05,
           JSON.stringify(seen.logo));
-        check_review(name, label, "freshness and status stay on screen",
-          seen.freshness !== null && seen.status !== null &&
-            seen.freshness.x >= 0 && seen.status.x >= 0,
-          JSON.stringify({ freshness: seen.freshness, status: seen.status }));
+        check_review(name, label, "the Updated stamp stays on screen, alone beside the logo",
+          seen.freshness !== null && seen.freshness.x >= 0 && seen.statusChips === 0,
+          JSON.stringify({ freshness: seen.freshness, statusChips: seen.statusChips }));
         check_review(name, label, "both CSV labels are centred in a real control box",
           seen.csv.length === 2 && seen.csv.every((c) => Math.abs(c.dx) <= 1.5 && Math.abs(c.dy) <= 1.5 && c.h >= 36),
           JSON.stringify(seen.csv));
