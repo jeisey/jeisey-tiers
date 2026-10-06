@@ -811,11 +811,12 @@ def _usage_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qual
                 stage=stage,
                 message=(
                     "a drive-breadth block disagrees with its own counts or its display rule; "
-                    "the published gap must be 100 x (reached - expected) / eligible drives "
-                    "(ADR-103)"
+                    "the published gap must be 100 x (reached - expected) / eligible drives, "
+                    "each week's share reached / eligible drives, and the change the "
+                    "difference of its own halves (ADR-103, ADR-104)"
                 ),
                 observed="; ".join(breadth[:10]),
-                expected="drive_breadth_v1 arithmetic",
+                expected="drive_breadth_v2 arithmetic",
             ),
         )
     return checks
@@ -824,6 +825,9 @@ def _usage_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qual
 #: ADR-103's provisional display minimums, restated here so the validator checks the rule the
 #: card applies rather than trusting the flag the build wrote.
 _BREADTH_MINIMUMS = {"appearances": 3, "eligible_drives": 20, "opportunities": 6}
+
+#: ADR-104: the variants whose comparison with random passed the publication rule (QB's did not).
+_BREADTH_COMPARED = frozenset({"backfield", "targets", "open_field_targets"})
 
 
 def _breadth_problems(records: Sequence[Mapping[str, Any]]) -> list[str]:
@@ -858,6 +862,52 @@ def _breadth_problems(records: Sequence[Mapping[str, Any]]) -> list[str]:
             )
         if bool(block["displayable"]) == (block.get("withheld_reason") is not None):
             problems.append(f"{label}: displayable and withheld_reason disagree")
+        if bool(block.get("compares_with_random")) != (block.get("metric") in _BREADTH_COMPARED):
+            problems.append(f"{label}: compares_with_random disagrees with ADR-104 for its metric")
+        problems.extend(_breadth_rail_problems(label, block, record))
+    return problems
+
+
+def _breadth_rail_problems(
+    label: str, block: Mapping[str, Any], record: Mapping[str, Any]
+) -> list[str]:
+    """ADR-104's rail: every week's share is its own counts, and only on a played week."""
+    problems: list[str] = []
+    weeks = block.get("weeks") or []
+    played = {
+        int(week["week"]) for week in record.get("weeks") or () if week.get("status") == "played"
+    }
+    numbers = [int(week["week"]) for week in weeks]
+    if numbers != sorted(set(numbers)):
+        problems.append(f"{label}: breadth weeks out of order or repeated")
+    for week in weeks:
+        number = int(week["week"])
+        drives = int(week["eligible_drives"])
+        reached = int(week["reached_drives"])
+        if number not in played:
+            problems.append(f"{label}: breadth week {number} is not a played week")
+        if reached > drives:
+            problems.append(f"{label}: week {number} reaches more drives than it has")
+        share = week.get("drive_share")
+        expected = week.get("expected_share")
+        if drives == 0:
+            if share is not None or expected is not None:
+                problems.append(f"{label}: week {number} has a share with no eligible drive")
+            continue
+        if share is None or abs(float(share) - reached / drives) > 0.0006:
+            problems.append(f"{label}: week {number} share {share} != {reached}/{drives}")
+        if expected is None or not 0.0 <= float(expected) <= 1.0:
+            problems.append(f"{label}: week {number} expected share {expected} out of range")
+    change = block.get("change")
+    if change is not None:
+        by_week = {int(week["week"]): week for week in weeks}
+        latest = by_week.get(int(change["latest_week"]))
+        if latest is None or latest.get("drive_share") != change.get("latest"):
+            problems.append(f"{label}: breadth change does not start from its own latest week")
+        if change.get("earlier") is not None and change.get("change") is not None:
+            difference = round(float(change["latest"]) - float(change["earlier"]), 3)
+            if abs(difference - float(change["change"])) > 1e-9:
+                problems.append(f"{label}: breadth change is not latest - earlier")
     return problems
 
 

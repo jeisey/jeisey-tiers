@@ -399,6 +399,11 @@ def build(out: Path, seed: int = 20260930) -> None:
             row = clone(artifact, index, player)
             if artifact == "player_usage":
                 row["weeks"] = perturb.series(row["weeks"], profile["usage_weeks"])
+                # ADR-104: the drive rail carries one entry per played week, so it grows with
+                # the season exactly as the role series does.
+                breadth = row.get("drive_breadth")
+                if breadth:
+                    breadth["weeks"] = perturb.series(breadth["weeks"], profile["usage_weeks"])
                 # The real board repeats these heavily (164 distinct shares, 39 EPA values on
                 # 606 rows): a share of touchdown points over a few games takes few values.
                 share = perturb.pool("touchdown_share", 160, 4)

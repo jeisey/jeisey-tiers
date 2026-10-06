@@ -1,11 +1,11 @@
 """nflverse play-by-play, reduced to the drive-level opportunities drive breadth reads (ADR-103).
 
-**What is kept.** Thirteen columns of ``load_pbp`` (``DRIVE_PLAY_COLUMNS``), for regular-season
+**What is kept.** Twenty columns of ``load_pbp`` (``DRIVE_PLAY_COLUMNS``), for regular-season
 offensive scrimmage plays only. Raw play-by-play never reaches the browser or an ordinary
 source commit: it is read through the cached nflverse loader, reduced here, and only per-player
 aggregates are published.
 
-**One definition of an eligible team slot, applied to every position** (``drive_breadth_v1``):
+**One definition of an eligible team slot, applied to every position** (``drive_breadth_v2``):
 
 * a regular-season (``season_type == "REG"``) ``pass`` or ``run`` play with a possession team
   and a drive number (``fixed_drive``);
@@ -15,14 +15,16 @@ aggregates are published.
 * ``no_play`` rows — a penalty that wiped out the snap, a timeout — are not plays. A play that
   stands with a penalty on it (declined, offsetting, after the whistle) is a play;
 * a **sack** is a pass play with no receiver: a QB slot, never a target;
-* a **scramble** is a run with the quarterback as the rusher (``rush_attempt == 1``);
+* a **scramble** is a run with the quarterback as the rusher (``rush_attempt == 1``), flagged by
+  ``qb_scramble``; a quarterback rush without that flag is a **designed run**;
 * a **lateral** credits the original rusher or targeted receiver, as nflverse records it; the
   player who received the lateral gets no opportunity;
 * a pass with **no identified receiver** (thrown away, batted) is not a target slot for anyone.
 
 **The four positional variants** (player opportunity → the team slots it is one of):
 
-* QB: his rush attempts, scrambles included → every eligible scrimmage play;
+* QB: his designed runs — rush attempts with ``qb_scramble == 0`` (ADR-104; ADR-103 counted
+  scrambles too) → every eligible scrimmage play;
 * RB: his carries plus targets → every carry and target that went to a running back;
 * WR: his targets → every identified target;
 * TE: his targets snapped outside the red zone (``yardline_100 > 20``) → every identified
@@ -48,6 +50,7 @@ __all__ = [
     "RED_ZONE_YARDLINE",
     "Appearance",
     "drive_plays",
+    "drive_share_change",
     "game_breadths",
     "position_map",
 ]
@@ -73,6 +76,7 @@ DRIVE_PLAY_COLUMNS: tuple[str, ...] = (
     "rusher_player_id",
     "receiver_player_id",
     "yardline_100",
+    "qb_scramble",
 )
 
 #: Yards from the opponent's goal line at or inside which a snap is in the red zone.
@@ -90,7 +94,8 @@ def drive_plays(pbp: pl.DataFrame) -> pl.DataFrame:
 
     ``kind`` is ``rush`` (a carry or scramble, with its rusher), ``target`` (a non-sack pass
     attempt with an identified receiver) or ``other`` (any other eligible play — a sack, a
-    pass with no receiver — which is a QB slot and nothing else).
+    pass with no receiver — which is a QB slot and nothing else). ``scramble`` marks a rush
+    nflverse flags as a quarterback scramble.
     """
     missing = [name for name in DRIVE_PLAY_COLUMNS if name not in pbp.columns]
     if missing:
@@ -129,6 +134,7 @@ def drive_plays(pbp: pl.DataFrame) -> pl.DataFrame:
         .cast(pl.String)
         .alias("player"),
         pl.col("yardline_100").cast(pl.Float64).alias("yardline_100"),
+        (rush & _flag("qb_scramble")).alias("scramble"),
     )
 
 
@@ -195,7 +201,7 @@ def _slot_flags(frame: pl.DataFrame, positions: Mapping[tuple[int, str], str]) -
 def _opportunity(position: str) -> pl.Expr:
     """Which of a player's own plays are his opportunities under his position's variant."""
     if position == "QB":
-        return pl.col("kind") == "rush"
+        return (pl.col("kind") == "rush") & ~pl.col("scramble")
     if position == "RB":
         return pl.col("slot_RB")
     if position == "WR":
@@ -292,7 +298,7 @@ def game_breadths(
 
 #: What each position's reading counts, as the card names it.
 BREADTH_METRIC_BY_POSITION: Mapping[str, str] = {
-    "QB": "rushing",
+    "QB": "designed_runs",
     "RB": "backfield",
     "WR": "targets",
     "TE": "open_field_targets",
@@ -317,6 +323,7 @@ def usage_breadth_blocks(
     from ffdraft.signals.breadth import (
         BREADTH_METHOD_VERSION,
         BREADTH_WINDOW_APPEARANCES,
+        RANDOM_COMPARISON_POSITIONS,
         window_breadth,
     )
 
@@ -342,7 +349,13 @@ def usage_breadth_blocks(
         position = str(record.get("position") or "")
         if position not in BREADTH_POSITIONS:
             continue
-        reading = window_breadth(games.get(player_id, []))
+        mine = games.get(player_id, [])
+        reading = window_breadth(mine)
+        played = [
+            int(week["week"])
+            for week in record.get("weeks") or ()
+            if week.get("status") == "played" and int(week["week"]) <= through_week
+        ]
         blocks[player_id] = {
             "method_version": BREADTH_METHOD_VERSION,
             "metric": BREADTH_METRIC_BY_POSITION[position],
@@ -357,8 +370,76 @@ def usage_breadth_blocks(
             "breadth_gap_pp": reading.breadth_gap_pp,
             "displayable": reading.displayable,
             "withheld_reason": reading.withheld_reason,
+            "compares_with_random": position in RANDOM_COMPARISON_POSITIONS,
+            "weeks": [_week_entry(game) for game in mine],
+            "change": drive_share_change(mine, played),
         }
     return blocks, diagnostics
+
+
+def _share(numerator: float, denominator: int) -> float | None:
+    return None if denominator <= 0 else round(numerator / denominator, 3)
+
+
+def _week_entry(game: GameBreadth) -> dict[str, Any]:
+    """One game of the rail (ADR-104): his drive share and the random-allocation share."""
+    return {
+        "week": game.week,
+        "eligible_drives": game.eligible_drives,
+        "reached_drives": game.reached_drives,
+        "drive_share": _share(game.reached_drives, game.eligible_drives),
+        "expected_share": _share(game.expected_drives, game.eligible_drives),
+    }
+
+
+def drive_share_change(
+    games: Sequence[GameBreadth], played_weeks: Sequence[int]
+) -> dict[str, Any] | None:
+    """``role_change_v1`` for the drive share, in the rails' own shape (ADR-091, ADR-104).
+
+    "Latest" is his latest appearance — the record's own last played week, not the latest
+    game that happens to have play-by-play: a latest that silently moves back is a window
+    nobody can read, so a latest game without play-by-play (or without an eligible drive)
+    yields no change. "Earlier" is pooled, as every share counted in team units is:
+    ``Σ reached / Σ eligible drives`` over earlier appearances with a denominator. The change
+    is the difference of the two published, rounded halves.
+    """
+    if not played_weeks:
+        return None
+    latest_week = max(played_weeks)
+    by_week = {game.week: game for game in games}
+    latest = by_week.get(latest_week)
+    if latest is None or latest.eligible_drives == 0:
+        return None
+    latest_share = _share(latest.reached_drives, latest.eligible_drives)
+    earlier = [
+        by_week[week]
+        for week in sorted(played_weeks)
+        if week < latest_week and week in by_week and by_week[week].eligible_drives > 0
+    ]
+    earlier_share = (
+        _share(
+            sum(game.reached_drives for game in earlier),
+            sum(game.eligible_drives for game in earlier),
+        )
+        if len(earlier) >= _MIN_EARLIER_GAMES
+        else None
+    )
+    return {
+        "latest_week": latest_week,
+        "latest": latest_share,
+        "earlier": earlier_share,
+        "earlier_games": len(earlier),
+        "change": (
+            None
+            if earlier_share is None or latest_share is None
+            else round(latest_share - earlier_share, 3)
+        ),
+    }
+
+
+#: ``role_change_v1``'s minimum: one earlier appearance with the metric defined.
+_MIN_EARLIER_GAMES = 1
 
 
 def position_reference(

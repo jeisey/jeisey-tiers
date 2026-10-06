@@ -459,8 +459,9 @@ def fixture_drive_plays(weekly: pl.DataFrame, *, through_week: int) -> pl.DataFr
     rule: players whose id characters sum to an even number spread one opportunity per
     drive, the rest take them in bunches of three — so the fixture holds both signs of the
     gap. Every third
-    target is snapped inside the red zone, so the tight-end variant has slots to exclude. One
-    week beyond the cutoff is written too, and the build must ignore it.
+    target is snapped inside the red zone, so the tight-end variant has slots to exclude, and
+    every other quarterback rush is a scramble, so the designed-run variant (ADR-104) has
+    plays to exclude. One week beyond the cutoff is written too, and the build must ignore it.
     """
     rows: list[dict[str, object]] = []
     frame = weekly.filter(pl.col("week") <= through_week + _FIXTURE_FUTURE_WEEKS)
@@ -475,6 +476,7 @@ def fixture_drive_plays(weekly: pl.DataFrame, *, through_week: int) -> pl.DataFr
             kind: str,
             player: str | None,
             yardline: float,
+            scramble: bool = False,
             week: int = int(week),
             game: str = game,
             team: str = str(team),
@@ -500,6 +502,7 @@ def fixture_drive_plays(weekly: pl.DataFrame, *, through_week: int) -> pl.DataFr
                     "rusher_player_id": player if kind == "rush" else None,
                     "receiver_player_id": player if kind == "target" else None,
                     "yardline_100": yardline,
+                    "qb_scramble": 1.0 if scramble else 0.0,
                 },
             )
 
@@ -524,6 +527,7 @@ def fixture_drive_plays(weekly: pl.DataFrame, *, through_week: int) -> pl.DataFr
                         else 1 + (slot + placed // 3) % _FIXTURE_DRIVES
                     )
                     yardline = 12.0 if kind == "target" and placed % 3 == 2 else 48.0
-                    play(drive, kind, gsis, yardline)
+                    scramble = kind == "rush" and row.get("position") == "QB" and placed % 2 == 1
+                    play(drive, kind, gsis, yardline, scramble)
                     placed += 1
     return pl.DataFrame(rows)

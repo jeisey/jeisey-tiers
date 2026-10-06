@@ -48,6 +48,7 @@ __all__ = [
     "StudyInputs",
     "appearances_from",
     "coverage_report",
+    "drive_share_redundancy_report",
     "evaluation_report",
     "load_study_inputs",
 ]
@@ -228,6 +229,51 @@ def coverage_report(inputs: Sequence[StudyInputs]) -> dict[str, Any]:
         report["seasons"][str(season_inputs.season)] = {
             "diagnostics": diagnostics,
             "positions": by_position,
+        }
+    return report
+
+
+def drive_share_redundancy_report(inputs: Sequence[StudyInputs]) -> dict[str, Any]:
+    """ADR-104's descriptive check: how much a game's drive share repeats the share rails.
+
+    Per position, pooled over the development seasons: the Spearman correlation of a game's
+    drive share (``A / D``) with that game's opportunity share (``K / N``) and volume (``K``),
+    and of the drive share's distance from its random-allocation reference (``(A − E) / D``)
+    with the same two. No rule is attached; it says what the new headline adds.
+    """
+    report: dict[str, Any] = {"method_version": BREADTH_METHOD_VERSION, "positions": {}}
+    pooled: dict[str, dict[str, list[float]]] = {
+        position: {"drive_share": [], "gap": [], "share": [], "volume": []}
+        for position in BREADTH_POSITIONS
+    }
+    for season_inputs in inputs:
+        games, _ = game_breadths(
+            season_inputs.plays,
+            season_inputs.appearances,
+            season_inputs.positions,
+        )
+        position_of = {f"gsis:{a.player_id}": a.position for a in season_inputs.appearances}
+        for player_id, player_games in games.items():
+            position = position_of.get(player_id)
+            if position not in pooled:
+                continue
+            for game in player_games:
+                if game.eligible_drives == 0 or game.eligible_slots == 0:
+                    continue
+                bucket = pooled[position]
+                bucket["drive_share"].append(game.reached_drives / game.eligible_drives)
+                bucket["gap"].append(game.gap / game.eligible_drives)
+                bucket["share"].append(game.opportunities / game.eligible_slots)
+                bucket["volume"].append(float(game.opportunities))
+    for position, bucket in pooled.items():
+        shares = bucket["drive_share"]
+        report["positions"][position] = {
+            "games": len(shares),
+            "drive_share_quantiles": _quantiles(shares),
+            "rho_drive_share_vs_share": _spearman(shares, bucket["share"]),
+            "rho_drive_share_vs_volume": _spearman(shares, bucket["volume"]),
+            "rho_gap_vs_share": _spearman(bucket["gap"], bucket["share"]),
+            "rho_gap_vs_volume": _spearman(bucket["gap"], bucket["volume"]),
         }
     return report
 

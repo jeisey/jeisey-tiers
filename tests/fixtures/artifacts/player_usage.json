@@ -7,7 +7,7 @@
   "record_count": 19,
   "records": [
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -220,23 +220,89 @@
       "dropbacks": 290.0,
       "pass_epa_per_dropback": 0.132,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
-        "metric": "rushing",
+        "method_version": "drive_breadth_v2",
+        "metric": "designed_runs",
         "window_rule": 4,
         "appearances": 4,
         "first_week": 5,
         "last_week": 8,
         "eligible_drives": 44,
-        "reached_drives": 12,
-        "expected_drives": 11.016,
-        "opportunities": 12,
-        "breadth_gap_pp": 2.2,
+        "reached_drives": 8,
+        "expected_drives": 7.663,
+        "opportunities": 8,
+        "breadth_gap_pp": 0.8,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": false,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 6,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 7,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.182,
+          "earlier": 0.182,
+          "earlier_games": 7,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -449,7 +515,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "backfield",
         "window_rule": 4,
         "appearances": 4,
@@ -461,11 +527,77 @@
         "opportunities": 68,
         "breadth_gap_pp": -2.5,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 4,
+            "reached_drives": 4,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 2,
+            "eligible_drives": 4,
+            "reached_drives": 4,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 3,
+            "eligible_drives": 4,
+            "reached_drives": 4,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 4,
+            "eligible_drives": 4,
+            "reached_drives": 4,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 5,
+            "eligible_drives": 4,
+            "reached_drives": 4,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 6,
+            "eligible_drives": 6,
+            "reached_drives": 6,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 7,
+            "eligible_drives": 7,
+            "reached_drives": 7,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 8,
+            "eligible_drives": 9,
+            "reached_drives": 8,
+            "drive_share": 0.889,
+            "expected_share": 0.961
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.889,
+          "earlier": 1.0,
+          "earlier_games": 7,
+          "change": -0.111
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -650,7 +782,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "backfield",
         "window_rule": 4,
         "appearances": 1,
@@ -662,11 +794,28 @@
         "opportunities": 8,
         "breadth_gap_pp": -29.8,
         "displayable": false,
-        "withheld_reason": "too_few_appearances"
+        "withheld_reason": "too_few_appearances",
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 8,
+            "eligible_drives": 9,
+            "reached_drives": 3,
+            "drive_share": 0.333,
+            "expected_share": 0.631
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.333,
+          "earlier": null,
+          "earlier_games": 0,
+          "change": null
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -867,7 +1016,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "backfield",
         "window_rule": 4,
         "appearances": 4,
@@ -879,11 +1028,56 @@
         "opportunities": 56,
         "breadth_gap_pp": 0.0,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 11,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 11,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 11,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 11,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 11,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          }
+        ],
+        "change": {
+          "latest_week": 5,
+          "latest": 1.0,
+          "earlier": 1.0,
+          "earlier_games": 4,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1096,7 +1290,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 4,
@@ -1108,11 +1302,77 @@
         "opportunities": 26,
         "breadth_gap_pp": -23.5,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.583
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.583
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.583
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.583
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.583
+          },
+          {
+            "week": 6,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 7,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.444
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.325
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.182,
+          "earlier": 0.26,
+          "earlier_games": 7,
+          "change": -0.078
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1321,7 +1581,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 4,
@@ -1333,11 +1593,70 @@
         "opportunities": 28,
         "breadth_gap_pp": 12.5,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 6,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 7,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.636,
+          "earlier": 0.636,
+          "earlier_games": 6,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1540,7 +1859,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 4,
@@ -1552,11 +1871,70 @@
         "opportunities": 28,
         "breadth_gap_pp": -22.3,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 7,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.273,
+          "earlier": 0.273,
+          "earlier_games": 6,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1757,7 +2135,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "open_field_targets",
         "window_rule": 4,
         "appearances": 4,
@@ -1769,11 +2147,56 @@
         "opportunities": 16,
         "breadth_gap_pp": 3.2,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          }
+        ],
+        "change": {
+          "latest_week": 5,
+          "latest": 0.364,
+          "earlier": 0.364,
+          "earlier_games": 4,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1982,7 +2405,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "backfield",
         "window_rule": 4,
         "appearances": 4,
@@ -1994,11 +2417,70 @@
         "opportunities": 56,
         "breadth_gap_pp": 0.0,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 2,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 3,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 4,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 5,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 6,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 7,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          }
+        ],
+        "change": {
+          "latest_week": 7,
+          "latest": 1.0,
+          "earlier": 1.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2211,7 +2693,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 4,
@@ -2223,11 +2705,77 @@
         "opportunities": 28,
         "breadth_gap_pp": 12.5,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 6,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 7,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.511
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.636,
+          "earlier": 0.636,
+          "earlier_games": 7,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2428,23 +2976,68 @@
       "dropbacks": 182.0,
       "pass_epa_per_dropback": 0.132,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
-        "metric": "rushing",
+        "method_version": "drive_breadth_v2",
+        "metric": "designed_runs",
         "window_rule": 4,
         "appearances": 4,
         "first_week": 2,
         "last_week": 5,
         "eligible_drives": 44,
-        "reached_drives": 12,
-        "expected_drives": 11.047,
-        "opportunities": 12,
-        "breadth_gap_pp": 2.2,
+        "reached_drives": 8,
+        "expected_drives": 7.675,
+        "opportunities": 8,
+        "breadth_gap_pp": 0.7,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": false,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 2,
+            "drive_share": 0.182,
+            "expected_share": 0.174
+          }
+        ],
+        "change": {
+          "latest_week": 5,
+          "latest": 0.182,
+          "earlier": 0.182,
+          "earlier_games": 4,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2657,7 +3250,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "open_field_targets",
         "window_rule": 4,
         "appearances": 4,
@@ -2669,11 +3262,77 @@
         "opportunities": 12,
         "breadth_gap_pp": -11.5,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 10,
+            "reached_drives": 2,
+            "drive_share": 0.2,
+            "expected_share": 0.357
+          },
+          {
+            "week": 2,
+            "eligible_drives": 10,
+            "reached_drives": 2,
+            "drive_share": 0.2,
+            "expected_share": 0.357
+          },
+          {
+            "week": 3,
+            "eligible_drives": 10,
+            "reached_drives": 2,
+            "drive_share": 0.2,
+            "expected_share": 0.357
+          },
+          {
+            "week": 4,
+            "eligible_drives": 10,
+            "reached_drives": 2,
+            "drive_share": 0.2,
+            "expected_share": 0.357
+          },
+          {
+            "week": 5,
+            "eligible_drives": 10,
+            "reached_drives": 2,
+            "drive_share": 0.2,
+            "expected_share": 0.357
+          },
+          {
+            "week": 6,
+            "eligible_drives": 10,
+            "reached_drives": 2,
+            "drive_share": 0.2,
+            "expected_share": 0.357
+          },
+          {
+            "week": 7,
+            "eligible_drives": 10,
+            "reached_drives": 2,
+            "drive_share": 0.2,
+            "expected_share": 0.357
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 0,
+            "drive_share": 0.0,
+            "expected_share": 0.0
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.0,
+          "earlier": 0.2,
+          "earlier_games": 7,
+          "change": -0.2
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2874,7 +3533,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 4,
@@ -2886,11 +3545,56 @@
         "opportunities": 28,
         "breadth_gap_pp": 12.0,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.516
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.516
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.516
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.516
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 7,
+            "drive_share": 0.636,
+            "expected_share": 0.516
+          }
+        ],
+        "change": {
+          "latest_week": 5,
+          "latest": 0.636,
+          "earlier": 0.636,
+          "earlier_games": 4,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3099,7 +3803,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "backfield",
         "window_rule": 4,
         "appearances": 4,
@@ -3111,11 +3815,70 @@
         "opportunities": 56,
         "breadth_gap_pp": 0.0,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 2,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 3,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 4,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 6,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 7,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          },
+          {
+            "week": 8,
+            "eligible_drives": 5,
+            "reached_drives": 5,
+            "drive_share": 1.0,
+            "expected_share": 1.0
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 1.0,
+          "earlier": 1.0,
+          "earlier_games": 6,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3324,23 +4087,82 @@
       "dropbacks": 256.0,
       "pass_epa_per_dropback": -0.038,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
-        "metric": "rushing",
+        "method_version": "drive_breadth_v2",
+        "metric": "designed_runs",
         "window_rule": 4,
         "appearances": 4,
         "first_week": 4,
         "last_week": 8,
         "eligible_drives": 44,
-        "reached_drives": 32,
-        "expected_drives": 23.989,
-        "opportunities": 32,
-        "breadth_gap_pp": 18.2,
+        "reached_drives": 16,
+        "expected_drives": 14.106,
+        "opportunities": 16,
+        "breadth_gap_pp": 4.3,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": false,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.321
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.321
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.321
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.321
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.321
+          },
+          {
+            "week": 7,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.321
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.321
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.364,
+          "earlier": 0.364,
+          "earlier_games": 6,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3549,7 +4371,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 4,
@@ -3561,11 +4383,70 @@
         "opportunities": 28,
         "breadth_gap_pp": -22.3,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 6,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          },
+          {
+            "week": 8,
+            "eligible_drives": 11,
+            "reached_drives": 3,
+            "drive_share": 0.273,
+            "expected_share": 0.495
+          }
+        ],
+        "change": {
+          "latest_week": 8,
+          "latest": 0.273,
+          "earlier": 0.273,
+          "earlier_games": 6,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3774,7 +4655,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "open_field_targets",
         "window_rule": 4,
         "appearances": 4,
@@ -3786,11 +4667,70 @@
         "opportunities": 16,
         "breadth_gap_pp": 3.2,
         "displayable": true,
-        "withheld_reason": null
+        "withheld_reason": null,
+        "compares_with_random": true,
+        "weeks": [
+          {
+            "week": 1,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 2,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 3,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 4,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 5,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 6,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          },
+          {
+            "week": 7,
+            "eligible_drives": 11,
+            "reached_drives": 4,
+            "drive_share": 0.364,
+            "expected_share": 0.332
+          }
+        ],
+        "change": {
+          "latest_week": 7,
+          "latest": 0.364,
+          "earlier": 0.364,
+          "earlier_games": 6,
+          "change": 0.0
+        }
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3935,7 +4875,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 0,
@@ -3947,11 +4887,14 @@
         "opportunities": 0,
         "breadth_gap_pp": null,
         "displayable": false,
-        "withheld_reason": "too_few_appearances"
+        "withheld_reason": "too_few_appearances",
+        "compares_with_random": true,
+        "weeks": [],
+        "change": null
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -4096,7 +5039,7 @@
       "dropbacks": 0,
       "pass_epa_per_dropback": null,
       "drive_breadth": {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "backfield",
         "window_rule": 4,
         "appearances": 0,
@@ -4108,7 +5051,10 @@
         "opportunities": 0,
         "breadth_gap_pp": null,
         "displayable": false,
-        "withheld_reason": "too_few_appearances"
+        "withheld_reason": "too_few_appearances",
+        "compares_with_random": true,
+        "weeks": [],
+        "change": null
       }
     }
   ]
