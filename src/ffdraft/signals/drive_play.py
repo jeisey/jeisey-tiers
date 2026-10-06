@@ -166,6 +166,9 @@ class Appearance:
     player_id: str  # bare GSIS id
     team: str
     position: str
+    #: His share of the team's offensive snaps that game, when the snap file has it. Study
+    #: diagnostics only (partial games); the published reading never reads it.
+    offense_pct: float | None = None
 
 
 def _slot_flags(frame: pl.DataFrame, positions: Mapping[tuple[int, str], str]) -> pl.DataFrame:
@@ -285,3 +288,109 @@ def game_breadths(
         "rush_or_target_without_verified_position": unclassified,
     }
     return result, diagnostics
+
+
+#: What each position's reading counts, as the card names it.
+BREADTH_METRIC_BY_POSITION: Mapping[str, str] = {
+    "QB": "rushing",
+    "RB": "backfield",
+    "WR": "targets",
+    "TE": "open_field_targets",
+}
+
+
+def usage_breadth_blocks(
+    usage_records: Sequence[Mapping[str, Any]],
+    plays: pl.DataFrame,
+    positions: Mapping[tuple[int, str], str],
+    *,
+    season: int,
+    through_week: int,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """``player_id -> drive_breadth`` block for each published usage record (ADR-103).
+
+    Appearances are the record's own played weeks with the club he played for — the same
+    appearance rule the rails use — and nothing after ``through_week``: a Thursday game of the
+    next week, already in the play-by-play, is not part of a board cut before it. A player
+    whose position has no variant gets no block.
+    """
+    from ffdraft.signals.breadth import (
+        BREADTH_METHOD_VERSION,
+        BREADTH_WINDOW_APPEARANCES,
+        window_breadth,
+    )
+
+    current = plays.filter((pl.col("season") == season) & (pl.col("week") <= through_week))
+    appearances: list[Appearance] = []
+    for record in usage_records:
+        position = str(record.get("position") or "")
+        player_id = str(record.get("player_id") or "")
+        if position not in BREADTH_POSITIONS or not player_id.startswith("gsis:"):
+            continue
+        for week in record.get("weeks") or ():
+            if week.get("status") != "played" or week.get("team") is None:
+                continue
+            if int(week["week"]) > through_week:
+                continue
+            appearances.append(
+                Appearance(season, int(week["week"]), player_id[5:], str(week["team"]), position),
+            )
+    games, diagnostics = game_breadths(current, appearances, positions)
+    blocks: dict[str, dict[str, Any]] = {}
+    for record in usage_records:
+        player_id = str(record.get("player_id") or "")
+        position = str(record.get("position") or "")
+        if position not in BREADTH_POSITIONS:
+            continue
+        reading = window_breadth(games.get(player_id, []))
+        blocks[player_id] = {
+            "method_version": BREADTH_METHOD_VERSION,
+            "metric": BREADTH_METRIC_BY_POSITION[position],
+            "window_rule": BREADTH_WINDOW_APPEARANCES,
+            "appearances": reading.appearances,
+            "first_week": reading.first_week,
+            "last_week": reading.last_week,
+            "eligible_drives": reading.eligible_drives,
+            "reached_drives": reading.reached_drives,
+            "expected_drives": reading.expected_drives,
+            "opportunities": reading.opportunities,
+            "breadth_gap_pp": reading.breadth_gap_pp,
+            "displayable": reading.displayable,
+            "withheld_reason": reading.withheld_reason,
+        }
+    return blocks, diagnostics
+
+
+def position_reference(
+    blocks: Mapping[str, Mapping[str, Any]], usage_records: Sequence[Mapping[str, Any]]
+) -> dict[str, Any]:
+    """Each position's displayed distribution on this build: what "typical" is (ADR-103).
+
+    The RB variant centres well below zero (backs rotate by series), so a reading is printed
+    beside its own position's median, never against zero alone. Quartiles of the displayed
+    values only; a position with fewer than five displayed readings publishes none.
+    """
+    position_of = {str(r.get("player_id")): str(r.get("position")) for r in usage_records}
+    values: dict[str, list[float]] = {}
+    for player_id, block in blocks.items():
+        if block.get("displayable") and block.get("breadth_gap_pp") is not None:
+            values.setdefault(position_of.get(player_id, ""), []).append(
+                float(block["breadth_gap_pp"])
+            )
+    reference: dict[str, Any] = {}
+    for position in BREADTH_POSITIONS:
+        ordered = sorted(values.get(position, []))
+        if len(ordered) < 5:
+            reference[position] = None
+            continue
+
+        def at(q: float, data: list[float] = ordered) -> float:
+            return round(data[min(len(data) - 1, int(q * (len(data) - 1) + 0.5))], 1)
+
+        reference[position] = {
+            "players": len(ordered),
+            "p25": at(0.25),
+            "p50": at(0.5),
+            "p75": at(0.75),
+        }
+    return reference

@@ -101,8 +101,8 @@ def game_breadth(
     *,
     season: int,
     week: int,
-    slots_by_drive: Mapping[object, int],
-    opportunities_by_drive: Mapping[object, int],
+    slots_by_drive: Mapping[int, int],
+    opportunities_by_drive: Mapping[int, int],
 ) -> GameBreadth:
     """One appearance from its per-drive counts. A drive with no eligible slot is not a drive.
 

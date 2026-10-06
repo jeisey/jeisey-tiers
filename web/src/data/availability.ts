@@ -384,8 +384,8 @@ export function readAvailability(evidence: AvailabilityEvidence): Availability {
       headline: "Signing reported — not yet on the official roster",
       detail:
         `Sleeper lists him with ${status.current_team ?? "a club"}; the official roster file does not ` +
-        `list him there yet.${asOf} Treated as uncertain until it does: no next game is projected ` +
-        "for him and he is not featured.",
+        `list him there yet.${asOf} Treated as uncertain until it does: no weekly projection is ` +
+        "made for him and he is not featured.",
       severity: "caution",
       stale,
       observedAt,

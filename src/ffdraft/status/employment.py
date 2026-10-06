@@ -434,7 +434,11 @@ def employment_catalog(employment: EmploymentResult) -> list[str]:
     )
 
 
-def employment_overlay(employment: EmploymentResult | None) -> dict[str, str | None]:
+def employment_overlay(
+    employment: EmploymentResult | None,
+    *,
+    sleeper_signings: bool = True,
+) -> dict[str, str | None]:
     """The clubs the employment reading settles for players *off* the current roster.
 
     ``None`` for verified unsigned and retired players (no current club), the new club for a
@@ -449,7 +453,8 @@ def employment_overlay(employment: EmploymentResult | None) -> dict[str, str | N
         if reading.status in (EmploymentStatus.UNSIGNED, EmploymentStatus.RETIRED):
             overlay[player_id] = None
         elif (
-            reading.status is EmploymentStatus.SIGNED
+            sleeper_signings
+            and reading.status is EmploymentStatus.SIGNED
             and reading.source is EmploymentSource.SLEEPER
             and reading.team is not None
         ):
@@ -460,13 +465,19 @@ def employment_overlay(employment: EmploymentResult | None) -> dict[str, str | N
 def current_teams_with_employment(
     roster_teams: Mapping[str, str],
     employment: EmploymentResult | None,
+    *,
+    sleeper_signings: bool = True,
 ) -> dict[str, str | None]:
     """``player_id -> current club``: the roster's answer with :func:`employment_overlay` on top.
 
     A verified-unsigned player maps to ``None`` *explicitly*, which callers must read as "no
     current club" rather than "unknown, fall back to the last club he played for".
+
+    ``sleeper_signings=False`` leaves a signing only Sleeper reports out: the weekly start/sit
+    layer projects a game only for a club the official roster file lists him on (ADR-102), so
+    a practice-squad signing pending a physical is not projected into his new team's game.
     """
-    return {**roster_teams, **employment_overlay(employment)}
+    return {**roster_teams, **employment_overlay(employment, sleeper_signings=sleeper_signings)}
 
 
 def build_identity_registry(

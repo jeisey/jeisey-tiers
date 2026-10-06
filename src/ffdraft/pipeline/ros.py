@@ -200,6 +200,7 @@ def run_ros_build(
     forecast_rows: Sequence[Mapping[str, Any]] | None = None,
     shadow_out: Path | None = None,
     status_capture: Any | None = None,
+    pbp: pl.DataFrame | None = None,
     write: bool = True,
 ) -> RosBuildResult:
     """Build the current rest-of-season board and write the in-season artifacts.
@@ -437,6 +438,8 @@ def run_ros_build(
         loaded=loaded,
         roster=roster,
         employment=employment,
+        pbp=pbp,
+        allow_fetch=sources is None,
         settings=settings,
         season=season,
         cutoff=cutoff,
@@ -1185,6 +1188,8 @@ def _signal_layer(
     roster: pl.DataFrame,
     settings: AppConfig,
     employment: Any | None = None,
+    pbp: pl.DataFrame | None = None,
+    allow_fetch: bool = False,
     season: int,
     cutoff: RosCutoff,
     build_id: str,
@@ -1263,6 +1268,15 @@ def _signal_layer(
                 severity=Severity.WARNING,
             ),
         )
+    breadth_summary = _drive_breadth(
+        usage,
+        roster=roster,
+        season=season,
+        through_week=cutoff.through_week,
+        pbp=pbp,
+        allow_fetch=allow_fetch,
+        gate=gate,
+    )
     try:
         matchups = build_team_matchup_records(
             schedule=sources.schedule,
@@ -1329,8 +1343,121 @@ def _signal_layer(
             "lines_posted_teams": len(lined),
             "sportsbook_context_statement": SPORTSBOOK_CONTEXT_STATEMENT,
             "expected_points_statement": EXPECTED_POINTS_STATEMENT,
+            "drive_breadth": breadth_summary,
         },
     )
+
+
+def _drive_breadth(
+    usage: list[dict[str, Any]],
+    *,
+    roster: pl.DataFrame,
+    season: int,
+    through_week: int,
+    pbp: pl.DataFrame | None,
+    allow_fetch: bool,
+    gate: QualityGate,
+) -> dict[str, Any]:
+    """Attach ADR-103's drive-breadth block to every usage record, in place, or explain why not.
+
+    **An enrichment of an enrichment.** Play-by-play is read through the cached nflverse
+    loader and reduced at once; only per-player aggregates are published. Any failure — the
+    file absent, a column renamed, a game not yet posted — sets every block to null with a
+    warning, and the rails, the boards and every count publish exactly as before.
+    """
+    from ffdraft.signals.breadth import (
+        BREADTH_METHOD_VERSION,
+        BREADTH_WINDOW_APPEARANCES,
+        DISPLAY_MIN_APPEARANCES,
+        DISPLAY_MIN_ELIGIBLE_DRIVES,
+        DISPLAY_MIN_OPPORTUNITIES,
+    )
+    from ffdraft.signals.drive_play import (
+        drive_plays,
+        position_map,
+        position_reference,
+        usage_breadth_blocks,
+    )
+
+    summary: dict[str, Any] = {
+        "method_version": BREADTH_METHOD_VERSION,
+        "status": "unavailable",
+        "source_id": "nflreadpy.load_pbp",
+        "window_appearances": BREADTH_WINDOW_APPEARANCES,
+        "display_minimums": {
+            "appearances": DISPLAY_MIN_APPEARANCES,
+            "eligible_drives": DISPLAY_MIN_ELIGIBLE_DRIVES,
+            "opportunities": DISPLAY_MIN_OPPORTUNITIES,
+        },
+        "records": 0,
+        "displayable": 0,
+        "position_reference": None,
+        "statement": (
+            "Descriptive context only. Over 2020-2024 development seasons, adding it to volume "
+            "and share did not measurably improve anticipating a next-game opportunity drought "
+            "at any position (ADR-103). No model, ranking or pick reads it."
+        ),
+    }
+    for record in usage:
+        record["drive_breadth"] = None
+    if not usage:
+        return summary
+    try:
+        frame = pbp
+        if frame is None:
+            if not allow_fetch:
+                summary["reason"] = "no play-by-play supplied"
+                return summary
+            loaded = nflverse_loaders().load_pbp(seasons=[season])
+            frame = loaded if isinstance(loaded, pl.DataFrame) else pl.DataFrame(loaded)
+        plays = drive_plays(frame)
+        blocks, diagnostics = usage_breadth_blocks(
+            usage,
+            plays,
+            position_map([roster]),
+            season=season,
+            through_week=through_week,
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        summary["reason"] = f"{type(exc).__name__}: {exc}"
+        gate.add(
+            QualityCheck.fail(
+                "ros.drive_breadth_failed",
+                stage="ros_build",
+                message=(
+                    "play-by-play could not be read or reduced, so no drive-breadth reading is "
+                    "published; the role rails, every board and every count are unaffected"
+                ),
+                observed=summary["reason"],
+                expected="a drive-breadth block per usage record",
+                severity=Severity.WARNING,
+            ),
+        )
+        return summary
+    for record in usage:
+        record["drive_breadth"] = blocks.get(str(record["player_id"]))
+    shown = sum(1 for block in blocks.values() if block.get("displayable"))
+    summary.update(
+        {
+            "status": "published",
+            "records": len(blocks),
+            "displayable": shown,
+            "position_reference": position_reference(blocks, usage),
+            "diagnostics": diagnostics,
+        },
+    )
+    gate.add(
+        QualityCheck.ok(
+            "ros.drive_breadth",
+            stage="ros_build",
+            message=(
+                f"{BREADTH_METHOD_VERSION}: descriptive context beside the rails, read by no "
+                "model; play-by-play reduced to per-player aggregates (ADR-103)"
+            ),
+            observed=f"{len(blocks)} block(s), {shown} above the display minimums",
+        ),
+    )
+    return summary
 
 
 #: The default location of the promoted weekly artifact, relative to the repository.
@@ -1408,6 +1535,8 @@ def _weekly_layer(
             current_teams=current_teams_with_employment(
                 current_teams_from_roster(roster),
                 employment,
+                # No weekly game for a signing the official roster has not listed (ADR-102).
+                sleeper_signings=False,
             ),
             weekly=loaded.sources.weekly_stats,
             schedule=loaded.sources.schedule,

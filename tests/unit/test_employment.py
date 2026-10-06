@@ -457,3 +457,15 @@ def test_the_status_row_prints_fa_from_evidence_and_add_history_joins() -> None:
 
     before = resolve_behavior_signals(capture, registry=build_registry(roster), as_of=NOW)
     assert "gsis:00-0000002" not in before.add_counts and before.unresolved_rows == 2
+
+
+def test_the_weekly_layer_never_projects_a_sleeper_only_signing() -> None:
+    _, roster, employment = _employment(
+        [ROSTERED],
+        [SIGNED_LATE_PRIOR],
+        [_sleeper("5000003", team="SEA")],
+    )
+    roster_teams = current_teams_from_roster(roster)
+    assert current_teams_with_employment(roster_teams, employment)["gsis:00-0000003"] == "SEA"
+    weekly = current_teams_with_employment(roster_teams, employment, sleeper_signings=False)
+    assert "gsis:00-0000003" not in weekly

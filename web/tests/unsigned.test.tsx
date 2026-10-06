@@ -152,7 +152,10 @@ describe("the in-season bundle keeps unprojected rows apart", () => {
   it("applies the policy to a projected unsigned player without moving a number", () => {
     // A rest-of-season row whose status says he is now unsigned: his value is the model's,
     // unchanged; the page lists him as a stash and the decision tabs leave him out.
-    const target = required(rosTierRecords().find((row) => row.league_preset_id === "redraft-12"));
+    const target = required(
+      rosTierRecords().find((row) => row.league_preset_id === "redraft-12"),
+      "a redraft-12 ROS row",
+    );
     const status = inSeasonPlayerStatusRecords().map((record) =>
       record.player_id === target.player_id
         ? { ...record, roster_status: null, current_team: null, employment_status: "unsigned" as const, employment_source: "sleeper" as const }
@@ -165,7 +168,10 @@ describe("the in-season bundle keeps unprojected rows apart", () => {
       opportunityDegradation: null,
       status,
     });
-    const row = required(selectRosRows(own, DEFAULT_STATE).find((entry) => entry.record.player_id === target.player_id));
+    const row = required(
+      selectRosRows(own, DEFAULT_STATE).find((entry) => entry.record.player_id === target.player_id),
+      "his ROS row",
+    );
     expect(row.availability?.kind).toBe("unsigned");
     expect(row.record).toEqual(
       rosTierRecords().find(
@@ -226,6 +232,11 @@ describe("add activity reaches the FA card (end to end, rendered)", () => {
     const text = dialog.textContent ?? "";
     expect(text).toContain("FA");
     expect(text).toContain("Unsigned free agent — speculative stash");
+    // The rail's status line itself, not just some element in the dialog: before the fix it
+    // printed "No designation reported" beside a free agent.
+    expect(dialog.querySelector(".rail-status")?.textContent).toBe(
+      "Unsigned free agent — speculative stash",
+    );
     expect(text).toContain("No rest-of-season projection.");
     expect(text).toContain("2,400");
     // No invented value: no tier, no rank, no next game for a club he does not have.

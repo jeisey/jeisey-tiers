@@ -178,6 +178,18 @@
           "type": "string",
           "minLength": 1,
           "description": "Why no expected-points reading is published (the open CC-BY-SA decision, ADR-086)."
+        },
+        "drive_breadth": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "required": ["method_version", "status", "statement"],
+          "description": "ADR-103: whether the drive-breadth blocks on player_usage were published, the window and provisional display minimums, each position's displayed quartiles on this build (what 'typical' is), and the statement that travels with every reading. Optional and additive.",
+          "properties": {
+            "method_version": {"const": "drive_breadth_v1"},
+            "status": {"enum": ["published", "unavailable"]},
+            "statement": {"type": "string", "minLength": 1},
+            "position_reference": {"type": ["object", "null"]}
+          }
         }
       }
     },

@@ -803,7 +803,62 @@ def _usage_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qual
                 observed=f"{len(records)} player(s), {with_change} with a role change",
             ),
         )
+    breadth = _breadth_problems(records)
+    if breadth:
+        checks.append(
+            QualityCheck.fail(
+                "player_usage.drive_breadth_arithmetic",
+                stage=stage,
+                message=(
+                    "a drive-breadth block disagrees with its own counts or its display rule; "
+                    "the published gap must be 100 x (reached - expected) / eligible drives "
+                    "(ADR-103)"
+                ),
+                observed="; ".join(breadth[:10]),
+                expected="drive_breadth_v1 arithmetic",
+            ),
+        )
     return checks
+
+
+#: ADR-103's provisional display minimums, restated here so the validator checks the rule the
+#: card applies rather than trusting the flag the build wrote.
+_BREADTH_MINIMUMS = {"appearances": 3, "eligible_drives": 20, "opportunities": 6}
+
+
+def _breadth_problems(records: Sequence[Mapping[str, Any]]) -> list[str]:
+    problems: list[str] = []
+    for record in records:
+        block = record.get("drive_breadth")
+        if not block:
+            continue
+        label = str(record.get("player_id"))
+        drives = int(block["eligible_drives"])
+        reached = int(block["reached_drives"])
+        expected = float(block["expected_drives"])
+        opportunities = int(block["opportunities"])
+        if reached > drives or expected > drives + 1e-6 or reached > opportunities:
+            problems.append(f"{label}: counts out of range")
+        if int(block["appearances"]) > int(block["window_rule"]):
+            problems.append(f"{label}: more appearances than the window")
+        gap = block.get("breadth_gap_pp")
+        if drives == 0:
+            if gap is not None:
+                problems.append(f"{label}: a gap with no eligible drive")
+        elif gap is None or abs(float(gap) - 100.0 * (reached - expected) / drives) > 0.06:
+            problems.append(f"{label}: gap {gap} != 100*({reached}-{expected})/{drives}")
+        clears = (
+            int(block["appearances"]) >= _BREADTH_MINIMUMS["appearances"]
+            and drives >= _BREADTH_MINIMUMS["eligible_drives"]
+            and opportunities >= _BREADTH_MINIMUMS["opportunities"]
+        )
+        if bool(block["displayable"]) != clears:
+            problems.append(
+                f"{label}: displayable={block['displayable']} but minimums say {clears}"
+            )
+        if bool(block["displayable"]) == (block.get("withheld_reason") is not None):
+            problems.append(f"{label}: displayable and withheld_reason disagree")
+    return problems
 
 
 def _matchup_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:

@@ -18,7 +18,7 @@ from typing import Any
 import polars as pl
 import pytest
 
-from ffdraft.artifacts.schemas import validate_records
+from ffdraft.artifacts.schemas import record_schema_version, validate_records
 from ffdraft.artifacts.validate import _usage_checks
 from ffdraft.config import load_app_config
 from ffdraft.contracts.normalized import (
@@ -135,7 +135,7 @@ def _build(
         season=_SEASON,
         through_week=through_week,
         build_id="test",
-        schema_version="1.0",
+        schema_version=record_schema_version("player_usage"),
         current_teams=current_teams,
     )
     assert len(records) == 1

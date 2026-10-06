@@ -5899,6 +5899,47 @@ table.sheet.opp-sheet thead th button {
   border-bottom: var(--hairline) dashed var(--line-strong);
 }
 
+/*
+ * ADR-103's drive-breadth row: one reading, so a scale in the bars' column rather than bars.
+ * The same 30px band and hairlines as a rail; a centre line at zero (the random-allocation
+ * reference), a hollow tick at the position's median on this build, a solid mark at his value.
+ * The signed number and the sentence carry the meaning; the scale is the second channel.
+ */
+.breadth-scale {
+  position: relative;
+  height: 30px;
+  min-width: 0;
+  border-bottom: var(--hairline) solid var(--line-strong);
+}
+
+.breadth-zero,
+.breadth-median,
+.breadth-mark {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+.breadth-zero {
+  left: 50%;
+  width: 1px;
+  height: 100%;
+  background: var(--line-strong);
+}
+
+.breadth-median {
+  width: 7px;
+  height: 12px;
+  border: var(--hairline) solid var(--ink-muted);
+  background: transparent;
+}
+
+.breadth-mark {
+  width: 7px;
+  height: 20px;
+  background: rgb(46 204 255 / 80%);
+}
+
 .usage-axis-weeks > span {
   text-align: center;
   font: 500 0.52rem/1 var(--font-mono);
@@ -8036,5 +8077,17 @@ table.sheet.weekboard-table thead th.wb-num {
 
   .freshness {
     letter-spacing: 0.03em;
+  }
+}
+
+/*
+ * ADR-102's Not projected table on a phone: the chip beside the name (FA / NEW) and the
+ * section note already say why each player is listed, so the sentence column folds away
+ * rather than squeezing the counts.
+ */
+@media (max-width: 767px) {
+  .unprojected-sheet th:nth-child(6),
+  .unprojected-sheet td:nth-child(6) {
+    display: none;
   }
 }

@@ -101,7 +101,8 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "inseason_opportunity_record": "1.2",
     "player_headshot_record": "1.0",
     "behavior_trend_series": "1.0",
-    "player_usage": "1.0",
+    # 1.1 (ADR-103): additive optional `drive_breadth`.
+    "player_usage": "1.1",
     "team_matchup": "1.0",
     # 1.1 (ADR-099): additive `explanation`, the typical-week account of P10, P50 and P90.
     "weekly_projection": "1.1",

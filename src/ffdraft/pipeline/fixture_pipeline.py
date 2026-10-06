@@ -1312,6 +1312,25 @@ def _signal_records(
         build_id=build_id,
         schema_version=record_schema_version("player_usage"),
     )
+    # ADR-103 through the production reduction and aggregation, on synthetic play-by-play
+    # built from the same weekly rows (one week past the cutoff, which must be ignored).
+    from ffdraft.pipeline.fixture_season import fixture_drive_plays
+    from ffdraft.signals.drive_play import drive_plays, position_map, usage_breadth_blocks
+
+    roster = season.weekly.select(
+        pl.col("season"),
+        pl.col("gsis_id"),
+        pl.col("position"),
+    ).unique()
+    blocks, _ = usage_breadth_blocks(
+        usage,
+        drive_plays(fixture_drive_plays(season.weekly, through_week=FIXTURE_THROUGH_WEEK)),
+        position_map([roster]),
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+    )
+    for record in usage:
+        record["drive_breadth"] = blocks.get(str(record["player_id"]))
     as_of = parse_utc(FIXTURE_INSEASON_AS_OF)
     matchups = build_team_matchup_records(
         schedule=season.schedule,

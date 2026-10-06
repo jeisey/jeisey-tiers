@@ -172,7 +172,8 @@ describe("the in-season card's role block", () => {
     const metrics = [...rails.querySelectorAll<HTMLElement>(".usage-rail")].map(
       (rail) => rail.dataset.metric,
     );
-    expect(metrics).toEqual(["pass_attempts", "carries", "fantasy_points"]);
+    // ADR-103: the drive-breadth row sits after the role rails and before production.
+    expect(metrics).toEqual(["pass_attempts", "carries", "drive_breadth", "fantasy_points"]);
     expect(within(dialog).queryByText("Snap share")).toBeNull();
     // Once as the record's tile and once as its cohort reading (ADR-086: the tile stays).
     expect(within(dialog).getAllByText("EPA per dropback").length).toBeGreaterThan(0);

@@ -41,6 +41,7 @@ import type {
   ArtifactEnvelope,
   BehaviorTrendSeriesRecord,
   BuildMetadata,
+  DriveBreadth,
   OpportunityRecord,
   UnprojectedRecord,
   PlayerHeadshotRecord,
@@ -1385,7 +1386,7 @@ export function usageRecords(): PlayerUsageRecord[] {
       sum(preset) < 10 ? null : round(Math.min(0.62, 0.14 + (player.name.length % 7) * 0.05), 4);
     const dropbacks = player.position === "QB" ? playedWeeks.length * 35 : 0;
     records.push({
-      schema_version: "1.0",
+      schema_version: "1.1",
       build_id: FIXTURE_BUILD_ID,
       season: 2026,
       through_week: FIXTURE_THROUGH_WEEK,
@@ -1406,7 +1407,72 @@ export function usageRecords(): PlayerUsageRecord[] {
         dropbacks >= 20 ? round(player.team === "BUF" ? 0.21 : player.team === "CIN" ? -0.06 : 0.08, 3) : null,
     });
   }
-  return records;
+  // ADR-103: a drive-breadth block per record, arithmetically consistent (the validator and
+  // `verify:board` recompute the gap from the counts). Most clear the display minimums; the
+  // surfaced row's single game does not, so the card's "too few" wording is drawn too.
+  return records.map((record, index) => ({ ...record, drive_breadth: fixtureBreadth(record, index) }));
+}
+
+const BREADTH_METRIC: Readonly<Record<string, DriveBreadth["metric"]>> = {
+  QB: "rushing",
+  RB: "backfield",
+  WR: "targets",
+  TE: "open_field_targets",
+};
+
+export function fixtureBreadth(record: PlayerUsageRecord, index: number): DriveBreadth | null {
+  const metric = BREADTH_METRIC[record.position];
+  if (metric === undefined) return null;
+  const played = record.weeks.filter((week) => week.status === "played").slice(-4);
+  const appearances = played.length;
+  const drives = appearances * 11;
+  const opportunities = appearances * (record.position === "QB" ? 3 : record.position === "TE" ? 4 : 6);
+  const expected = Math.round(Math.min(drives, opportunities * 0.82) * 1000) / 1000;
+  const reached = Math.min(drives, opportunities, Math.max(0, Math.round(expected + ((index % 7) - 3) * 1.5)));
+  const displayable = appearances >= 3 && drives >= 20 && opportunities >= 6;
+  return {
+    method_version: "drive_breadth_v1",
+    metric,
+    window_rule: 4,
+    appearances,
+    first_week: played[0]?.week ?? null,
+    last_week: played.at(-1)?.week ?? null,
+    eligible_drives: drives,
+    reached_drives: reached,
+    expected_drives: expected,
+    opportunities,
+    breadth_gap_pp: drives === 0 ? null : Math.round((1000 * (reached - expected)) / drives) / 10,
+    displayable,
+    withheld_reason: displayable
+      ? null
+      : appearances < 3
+        ? "too_few_appearances"
+        : drives < 20
+          ? "too_few_eligible_drives"
+          : "too_few_opportunities",
+  };
+}
+
+/** Each position's displayed quartiles in the fixture, as the build publishes them. */
+export function fixtureBreadthReference(): NonNullable<NonNullable<RosSignalMetadata["drive_breadth"]>["position_reference"]> {
+  const byPosition = new Map<string, number[]>();
+  for (const record of usageRecords()) {
+    const block = record.drive_breadth;
+    if (block?.displayable === true && block.breadth_gap_pp !== null) {
+      byPosition.set(record.position, [...(byPosition.get(record.position) ?? []), block.breadth_gap_pp]);
+    }
+  }
+  const at = (values: number[], q: number): number => {
+    const sorted = [...values].sort((a, b) => a - b);
+    return Math.round(10 * (sorted[Math.min(sorted.length - 1, Math.floor(q * (sorted.length - 1) + 0.5))] ?? 0)) / 10;
+  };
+  const reference: Record<string, { players: number; p25: number; p50: number; p75: number } | null> = {};
+  for (const position of ["QB", "RB", "WR", "TE"]) {
+    const values = byPosition.get(position) ?? [];
+    reference[position] = values.length < 2 ? null : { players: values.length, p25: at(values, 0.25), p50: at(values, 0.5), p75: at(values, 0.75) };
+  }
+  return reference;
+
 }
 
 /** Week-9 opponents, so each usage week names someone and the next game agrees. */
@@ -1953,6 +2019,17 @@ export const FIXTURE_SIGNALS: RosSignalMetadata = {
     "The spread, total and implied points are sportsbook numbers read from nflverse's schedule. The draft and rest-of-season models never read them: they move no draft or rest-of-season projection, VORP, rank, tier or Pick of the Week selection. The weekly start/sit projection does read them, for the one game it projects (ADR-096).",
   expected_points_statement:
     "No expected-fantasy-points reading is published. ffopportunity's expected points are licensed CC-BY-SA 4.0, and whether this site may publish a per-player figure derived from them is an open decision (ADR-086). The rest-of-season model reads them as an input; the card does not print them.",
+  get drive_breadth() {
+    return {
+      method_version: "drive_breadth_v1",
+      status: "published" as const,
+      statement:
+        "Descriptive context only. Over 2020-2024 development seasons, adding it to volume and share did not measurably improve anticipating a next-game opportunity drought at any position (ADR-103). No model, ranking or pick reads it.",
+      window_appearances: 4,
+      display_minimums: { appearances: 3, eligible_drives: 20, opportunities: 6 },
+      position_reference: fixtureBreadthReference(),
+    };
+  },
 };
 
 export function rosBuildMetadata(

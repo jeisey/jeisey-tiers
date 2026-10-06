@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from statistics import median
 from typing import Any
 
@@ -72,6 +72,8 @@ class StudyInputs:
     plays: pl.DataFrame
     appearances: list[Appearance]
     positions: Mapping[tuple[int, str], str]
+    #: ``(week, team) -> (opponent, team margin)`` from the schedule, for the diagnostics.
+    games: Mapping[tuple[int, str], tuple[str, float]] = field(default_factory=dict)
 
 
 def appearances_from(
@@ -93,6 +95,7 @@ def appearances_from(
         for pfr, gsis in roster.select("pfr_id", "gsis_id").drop_nulls().unique().iter_rows()
     }
     seen: dict[tuple[int, str], str] = {}
+    pct: dict[tuple[int, str], float] = {}
     for week, gsis, team in (
         stats.filter((pl.col("season_type") == "REG") & pl.col("team").is_not_null())
         .select("week", "player_id", "team")
@@ -100,17 +103,19 @@ def appearances_from(
         .iter_rows()
     ):
         seen.setdefault((int(week), str(gsis)), str(team))
-    for week, pfr, team, offense in (
+    for week, pfr, team, offense, share in (
         snaps.filter(pl.col("game_type") == "REG")
-        .select("week", "pfr_player_id", "team", "offense_snaps")
-        .drop_nulls()
+        .select("week", "pfr_player_id", "team", "offense_snaps", "offense_pct")
+        .drop_nulls(["week", "pfr_player_id", "team", "offense_snaps"])
         .iter_rows()
     ):
         gsis = pfr_to_gsis.get(str(pfr))
         if gsis is not None and float(offense) > 0:
             seen.setdefault((int(week), gsis), str(team))
+            if share is not None:
+                pct[(int(week), gsis)] = float(share)
     return [
-        Appearance(season, week, gsis, team, positions[(season, gsis)])
+        Appearance(season, week, gsis, team, positions[(season, gsis)], pct.get((week, gsis)))
         for (week, gsis), team in sorted(seen.items())
         if (season, gsis) in positions
     ]
@@ -128,7 +133,19 @@ def load_study_inputs(season: int, loaders: Any) -> StudyInputs:
         snaps=loaders.load_snap_counts(seasons=[season]),
         roster=roster,
     )
-    return StudyInputs(season, plays, appearances, position_map([roster]))
+    schedule = loaders.load_schedules()
+    schedule = schedule if isinstance(schedule, pl.DataFrame) else pl.DataFrame(schedule)
+    games: dict[tuple[int, str], tuple[str, float]] = {}
+    for week, home, away, home_score, away_score in (
+        schedule.filter((pl.col("season") == season) & (pl.col("game_type") == "REG"))
+        .select("week", "home_team", "away_team", "home_score", "away_score")
+        .drop_nulls()
+        .iter_rows()
+    ):
+        margin = float(home_score) - float(away_score)
+        games[(int(week), str(home))] = (str(away), margin)
+        games[(int(week), str(away))] = (str(home), -margin)
+    return StudyInputs(season, plays, appearances, position_map([roster]), games)
 
 
 def _quantiles(values: Sequence[float]) -> dict[str, float] | None:
@@ -274,16 +291,34 @@ def _fit_predict(
     test: list[dict[str, Any]],
     features: Sequence[str],
 ) -> list[float]:
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.preprocessing import StandardScaler
+    """L2-penalised logistic regression, standardised features, C = 1 (ADR-103).
 
-    x_train = [[row[name] for name in features] for row in train]
-    y_train = [row["drought"] for row in train]
-    scaler = StandardScaler().fit(x_train)
-    model = LogisticRegression(C=1.0, max_iter=1000)
-    model.fit(scaler.transform(x_train), y_train)
-    x_test = scaler.transform([[row[name] for name in features] for row in test])
-    return [float(p) for p in model.predict_proba(x_test)[:, 1]]
+    Newton–Raphson on the penalised log-likelihood (the intercept unpenalised), written against
+    NumPy for the same reason the repository's ridge is: one closed, deterministic estimator
+    does not justify a scikit-learn dependency.
+    """
+    import numpy as np
+
+    x_train = np.array([[row[name] for name in features] for row in train], dtype=float)
+    y = np.array([row["drought"] for row in train], dtype=float)
+    mean = x_train.mean(axis=0)
+    scale = x_train.std(axis=0)
+    scale[scale == 0] = 1.0
+    design = np.column_stack([np.ones(len(x_train)), (x_train - mean) / scale])
+    penalty = np.eye(design.shape[1])
+    penalty[0, 0] = 0.0  # C = 1: lambda = 1 on the standardised slopes, none on the intercept
+    beta = np.zeros(design.shape[1])
+    for _ in range(100):
+        p = 1.0 / (1.0 + np.exp(-(design @ beta)))
+        gradient = design.T @ (p - y) + penalty @ beta
+        hessian = design.T @ (design * (p * (1 - p))[:, None]) + penalty
+        step = np.linalg.solve(hessian, gradient)
+        beta -= step
+        if float(np.max(np.abs(step))) < 1e-10:
+            break
+    x_test = np.array([[row[name] for name in features] for row in test], dtype=float)
+    test_design = np.column_stack([np.ones(len(x_test)), (x_test - mean) / scale])
+    return [float(v) for v in 1.0 / (1.0 + np.exp(-(test_design @ beta)))]
 
 
 def _log_loss(y: Sequence[int], p: Sequence[float]) -> list[float]:
@@ -417,3 +452,158 @@ def evaluation_report(inputs: Sequence[StudyInputs]) -> dict[str, Any]:
             "pooled": verdict,
         }
     return report
+
+
+def _eta_squared(groups: Mapping[str, Sequence[float]]) -> float | None:
+    """Share of variance explained by group membership (one-way ANOVA's eta squared)."""
+    values = [value for group in groups.values() for value in group]
+    if len(values) < 3:
+        return None
+    grand = sum(values) / len(values)
+    total = sum((value - grand) ** 2 for value in values)
+    if total == 0:
+        return None
+    between = sum(
+        len(group) * ((sum(group) / len(group)) - grand) ** 2 for group in groups.values() if group
+    )
+    return round(between / total, 3)
+
+
+def confounding_report(inputs: Sequence[StudyInputs]) -> dict[str, Any]:
+    """ADR-103 rule 3: what else moves a game's breadth gap. Reported, never corrected.
+
+    Per game with at least two opportunities (a single opportunity's gap is identically zero):
+    the per-game gap ``100 · (A − E) / D`` against his offensive snap share (substitution and
+    injury-shortened games), the team's final margin (score and clock state), and the opponent
+    and the player (how much of the variance each explains). Per window: the gap against the
+    team's eligible drives per game.
+    """
+    report: dict[str, Any] = {}
+    for position in BREADTH_POSITIONS:
+        game_rows: list[dict[str, Any]] = []
+        window_rows: list[tuple[float, float]] = []
+        for season_inputs in inputs:
+            games, _ = game_breadths(
+                season_inputs.plays,
+                season_inputs.appearances,
+                season_inputs.positions,
+            )
+            meta = {
+                (f"gsis:{a.player_id}", a.week): a
+                for a in season_inputs.appearances
+                if a.position == position
+            }
+            for player_id, player_games in games.items():
+                if not any(key[0] == player_id for key in meta):
+                    continue
+                for game in player_games:
+                    appearance = meta.get((player_id, game.week))
+                    if appearance is None or game.opportunities < 2 or not game.eligible_drives:
+                        continue
+                    opponent, margin = season_inputs.games.get(
+                        (game.week, appearance.team),
+                        (None, None),
+                    )
+                    game_rows.append(
+                        {
+                            "gap": 100 * game.gap / game.eligible_drives,
+                            "offense_pct": appearance.offense_pct,
+                            "margin": margin,
+                            "opponent": f"{season_inputs.season}-{opponent}",
+                            "player": player_id,
+                        },
+                    )
+                for _, window, _ in _windows(player_games):
+                    if window.displayable and window.appearances:
+                        window_rows.append(
+                            (
+                                float(window.breadth_gap_pp or 0.0),
+                                window.eligible_drives / window.appearances,
+                            ),
+                        )
+        with_pct = [r for r in game_rows if r["offense_pct"] is not None]
+        partial = [r["gap"] for r in with_pct if r["offense_pct"] < 0.5]
+        full = [r["gap"] for r in with_pct if r["offense_pct"] >= 0.5]
+        with_margin = [r for r in game_rows if r["margin"] is not None]
+        by_opponent: dict[str, list[float]] = {}
+        by_player: dict[str, list[float]] = {}
+        for row in game_rows:
+            by_opponent.setdefault(str(row["opponent"]), []).append(row["gap"])
+            by_player.setdefault(str(row["player"]), []).append(row["gap"])
+        report[position] = {
+            "games": len(game_rows),
+            "spearman_gap_vs_offense_snap_share": _spearman(
+                [r["gap"] for r in with_pct],
+                [r["offense_pct"] for r in with_pct],
+            ),
+            "mean_gap_partial_games": round(sum(partial) / len(partial), 2) if partial else None,
+            "mean_gap_half_or_more_snaps": round(sum(full) / len(full), 2) if full else None,
+            "partial_game_share": round(len(partial) / len(with_pct), 3) if with_pct else None,
+            "spearman_gap_vs_team_margin": _spearman(
+                [r["gap"] for r in with_margin],
+                [r["margin"] for r in with_margin],
+            ),
+            "spearman_gap_vs_abs_margin": _spearman(
+                [r["gap"] for r in with_margin],
+                [abs(r["margin"]) for r in with_margin],
+            ),
+            "eta_squared_opponent": _eta_squared(by_opponent),
+            "eta_squared_player": _eta_squared(by_player),
+            "spearman_window_gap_vs_drives_per_game": _spearman(
+                [a for a, _ in window_rows],
+                [b for _, b in window_rows],
+            ),
+        }
+    return report
+
+
+def same_volume_examples(
+    inputs: Sequence[StudyInputs],
+    names: Mapping[str, str],
+    *,
+    season: int = 2024,
+    min_week: int = 6,
+) -> dict[str, dict[str, Any]]:
+    """Per position, the 2024 pair with identical window volume and share (to 0.5 pp) whose
+    breadth gaps differ most: what the existing shares cannot tell apart, and what happened
+    next. Descriptive; two examples prove nothing about a population.
+    """
+    rows = [
+        row for row in _rows([i for i in inputs if i.season == season]) if row["week"] >= min_week
+    ]
+    examples: dict[str, dict[str, Any]] = {}
+    for position in BREADTH_POSITIONS:
+        mine = [row for row in rows if row["position"] == position]
+        best: tuple[float, dict[str, Any], dict[str, Any]] | None = None
+        by_volume: dict[float, list[dict[str, Any]]] = {}
+        for row in mine:
+            by_volume.setdefault(round(row["volume"], 2), []).append(row)
+        for group in by_volume.values():
+            for left in group:
+                for right in group:
+                    if left["player_id"] >= right["player_id"]:
+                        continue
+                    if abs(left["share"] - right["share"]) > 0.005:
+                        continue
+                    spread = abs(left["breadth_gap_pp"] - right["breadth_gap_pp"])
+                    if best is None or spread > best[0]:
+                        best = (spread, left, right)
+        if best is None:
+            continue
+        _, left, right = best
+        examples[position] = {
+            "players": [
+                {
+                    "player_id": row["player_id"],
+                    "name": names.get(row["player_id"], row["player_id"]),
+                    "through_week": row["week"],
+                    "opportunities_per_appearance": round(row["volume"], 2),
+                    "share": round(row["share"], 3),
+                    "breadth_gap_pp": row["breadth_gap_pp"],
+                    "next_appearance_opportunities": row["next_opportunities"],
+                    "drought": bool(row["drought"]),
+                }
+                for row in sorted((left, right), key=lambda r: -r["breadth_gap_pp"])
+            ],
+        }
+    return examples

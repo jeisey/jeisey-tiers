@@ -7,7 +7,7 @@
   "record_count": 19,
   "records": [
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -218,10 +218,25 @@
         "STD": 0.3559
       },
       "dropbacks": 290.0,
-      "pass_epa_per_dropback": 0.132
+      "pass_epa_per_dropback": 0.132,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "rushing",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 5,
+        "last_week": 8,
+        "eligible_drives": 44,
+        "reached_drives": 12,
+        "expected_drives": 11.016,
+        "opportunities": 12,
+        "breadth_gap_pp": 2.2,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -432,10 +447,25 @@
         "STD": 0.1887
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "backfield",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 5,
+        "last_week": 8,
+        "eligible_drives": 26,
+        "reached_drives": 25,
+        "expected_drives": 25.65,
+        "opportunities": 68,
+        "breadth_gap_pp": -2.5,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -618,10 +648,25 @@
         "STD": null
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "backfield",
+        "window_rule": 4,
+        "appearances": 1,
+        "first_week": 8,
+        "last_week": 8,
+        "eligible_drives": 9,
+        "reached_drives": 3,
+        "expected_drives": 5.68,
+        "opportunities": 8,
+        "breadth_gap_pp": -29.8,
+        "displayable": false,
+        "withheld_reason": "too_few_appearances"
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -820,10 +865,25 @@
         "STD": 0.1538
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "backfield",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 2,
+        "last_week": 5,
+        "eligible_drives": 44,
+        "reached_drives": 44,
+        "expected_drives": 44.0,
+        "opportunities": 56,
+        "breadth_gap_pp": 0.0,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1034,10 +1094,25 @@
         "STD": 0.186
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 5,
+        "last_week": 8,
+        "eligible_drives": 44,
+        "reached_drives": 10,
+        "expected_drives": 20.319,
+        "opportunities": 26,
+        "breadth_gap_pp": -23.5,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1244,10 +1319,25 @@
         "STD": 0.2152
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 4,
+        "last_week": 8,
+        "eligible_drives": 44,
+        "reached_drives": 28,
+        "expected_drives": 22.49,
+        "opportunities": 28,
+        "breadth_gap_pp": 12.5,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1448,10 +1538,25 @@
         "STD": 0.2152
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 4,
+        "last_week": 8,
+        "eligible_drives": 44,
+        "reached_drives": 12,
+        "expected_drives": 21.799,
+        "opportunities": 28,
+        "breadth_gap_pp": -22.3,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1650,10 +1755,25 @@
         "STD": 0.2857
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "open_field_targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 2,
+        "last_week": 5,
+        "eligible_drives": 44,
+        "reached_drives": 16,
+        "expected_drives": 14.604,
+        "opportunities": 16,
+        "breadth_gap_pp": 3.2,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1860,10 +1980,25 @@
         "STD": 0.2062
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "backfield",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 4,
+        "last_week": 7,
+        "eligible_drives": 20,
+        "reached_drives": 20,
+        "expected_drives": 20.0,
+        "opportunities": 56,
+        "breadth_gap_pp": 0.0,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2074,10 +2209,25 @@
         "STD": 0.1935
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 5,
+        "last_week": 8,
+        "eligible_drives": 44,
+        "reached_drives": 28,
+        "expected_drives": 22.49,
+        "opportunities": 28,
+        "breadth_gap_pp": 12.5,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2276,10 +2426,25 @@
         "STD": 0.3456
       },
       "dropbacks": 182.0,
-      "pass_epa_per_dropback": 0.132
+      "pass_epa_per_dropback": 0.132,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "rushing",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 2,
+        "last_week": 5,
+        "eligible_drives": 44,
+        "reached_drives": 12,
+        "expected_drives": 11.047,
+        "opportunities": 12,
+        "breadth_gap_pp": 2.2,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2490,10 +2655,25 @@
         "STD": 0.2222
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "open_field_targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 5,
+        "last_week": 8,
+        "eligible_drives": 41,
+        "reached_drives": 6,
+        "expected_drives": 10.702,
+        "opportunities": 12,
+        "breadth_gap_pp": -11.5,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2692,10 +2872,25 @@
         "STD": 0.1611
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 2,
+        "last_week": 5,
+        "eligible_drives": 44,
+        "reached_drives": 28,
+        "expected_drives": 22.722,
+        "opportunities": 28,
+        "breadth_gap_pp": 12.0,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2902,10 +3097,25 @@
         "STD": 0.2062
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "backfield",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 4,
+        "last_week": 8,
+        "eligible_drives": 20,
+        "reached_drives": 20,
+        "expected_drives": 20.0,
+        "opportunities": 56,
+        "breadth_gap_pp": 0.0,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3112,10 +3322,25 @@
         "STD": 0.3824
       },
       "dropbacks": 256.0,
-      "pass_epa_per_dropback": -0.038
+      "pass_epa_per_dropback": -0.038,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "rushing",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 4,
+        "last_week": 8,
+        "eligible_drives": 44,
+        "reached_drives": 32,
+        "expected_drives": 23.989,
+        "opportunities": 32,
+        "breadth_gap_pp": 18.2,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3322,10 +3547,25 @@
         "STD": 0.2152
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 4,
+        "last_week": 8,
+        "eligible_drives": 44,
+        "reached_drives": 12,
+        "expected_drives": 21.799,
+        "opportunities": 28,
+        "breadth_gap_pp": -22.3,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3532,10 +3772,25 @@
         "STD": 0.2222
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "open_field_targets",
+        "window_rule": 4,
+        "appearances": 4,
+        "first_week": 4,
+        "last_week": 7,
+        "eligible_drives": 44,
+        "reached_drives": 16,
+        "expected_drives": 14.604,
+        "opportunities": 16,
+        "breadth_gap_pp": 3.2,
+        "displayable": true,
+        "withheld_reason": null
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3678,10 +3933,25 @@
         "STD": null
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "targets",
+        "window_rule": 4,
+        "appearances": 0,
+        "first_week": null,
+        "last_week": null,
+        "eligible_drives": 0,
+        "reached_drives": 0,
+        "expected_drives": 0,
+        "opportunities": 0,
+        "breadth_gap_pp": null,
+        "displayable": false,
+        "withheld_reason": "too_few_appearances"
+      }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3824,7 +4094,22 @@
         "STD": null
       },
       "dropbacks": 0,
-      "pass_epa_per_dropback": null
+      "pass_epa_per_dropback": null,
+      "drive_breadth": {
+        "method_version": "drive_breadth_v1",
+        "metric": "backfield",
+        "window_rule": 4,
+        "appearances": 0,
+        "first_week": null,
+        "last_week": null,
+        "eligible_drives": 0,
+        "reached_drives": 0,
+        "expected_drives": 0,
+        "opportunities": 0,
+        "breadth_gap_pp": null,
+        "displayable": false,
+        "withheld_reason": "too_few_appearances"
+      }
     }
   ]
 }

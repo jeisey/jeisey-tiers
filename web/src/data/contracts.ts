@@ -34,7 +34,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   inseason_opportunity: "1.2",
   player_headshots: "1.0",
   behavior_trend_series: "1.0",
-  player_usage: "1.0",
+  // 1.1 (ADR-103): additive optional `drive_breadth`.
+  player_usage: "1.1",
   team_matchups: "1.0",
   // 1.1 (ADR-099): additive `explanation`.
   weekly_projections: "1.1",
@@ -740,6 +741,46 @@ export interface PlayerUsageRecord {
   readonly dropbacks: number;
   /** Null below 20 dropbacks. */
   readonly pass_epa_per_dropback: number | null;
+  /**
+   * Contract 1.1 (ADR-103): did his involvement recur across his team's drives or cluster
+   * into a few, against a uniform allocation of the same count. Descriptive; no model reads
+   * it. Absent on a 1.0 build, null when play-by-play was unavailable.
+   */
+  readonly drive_breadth?: DriveBreadth | null;
+}
+
+export type DriveBreadthMetric = "rushing" | "backfield" | "targets" | "open_field_targets";
+
+export interface DriveBreadth {
+  readonly method_version: string;
+  readonly metric: DriveBreadthMetric;
+  /** The window rule: his latest this-many completed appearances. */
+  readonly window_rule: number;
+  readonly appearances: number;
+  readonly first_week: number | null;
+  readonly last_week: number | null;
+  readonly eligible_drives: number;
+  readonly reached_drives: number;
+  /** Drives a uniform allocation of his opportunities among the slots would reach. */
+  readonly expected_drives: number;
+  readonly opportunities: number;
+  /** 100 × (reached − expected) / eligible drives; null with no eligible drive. */
+  readonly breadth_gap_pp: number | null;
+  /** Clears the provisional display minimums. A display rule, not reliability. */
+  readonly displayable: boolean;
+  readonly withheld_reason:
+    | "too_few_appearances"
+    | "too_few_eligible_drives"
+    | "too_few_opportunities"
+    | null;
+}
+
+/** Each position's displayed quartiles on this build: what "typical" is (ADR-103). */
+export interface DriveBreadthReference {
+  readonly players: number;
+  readonly p25: number;
+  readonly p50: number;
+  readonly p75: number;
 }
 
 /**
@@ -785,6 +826,7 @@ export const PLAYER_USAGE_FIELDS = [
   "touchdown_points_share",
   "dropbacks",
   "pass_epa_per_dropback",
+  "drive_breadth",
 ] as const satisfies readonly (keyof PlayerUsageRecord)[];
 
 /**
@@ -1162,6 +1204,19 @@ export interface RosSignalMetadata {
   readonly sportsbook_context_statement: string;
   /** Why no expected-points reading is published. */
   readonly expected_points_statement: string;
+  /** ADR-103: the drive-breadth layer's status, minimums and positional references. */
+  readonly drive_breadth?: {
+    readonly method_version: string;
+    readonly status: "published" | "unavailable";
+    readonly statement: string;
+    readonly window_appearances?: number;
+    readonly display_minimums?: {
+      readonly appearances: number;
+      readonly eligible_drives: number;
+      readonly opportunities: number;
+    };
+    readonly position_reference?: Partial<Record<Position, DriveBreadthReference | null>> | null;
+  } | null;
 }
 
 /** The seven published levels, as record keys. */

@@ -819,7 +819,10 @@ if (publishedInSeason && opportunityRecords !== null) {
   await page.goto(`${BASE}/?view=potw&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
 
   const oppBlock = opportunityRecords.filter(
-    (r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR",
+    (r) =>
+      r.league_preset_id === "redraft-12" &&
+      r.scoring_preset === "PPR" &&
+      r.model_coverage !== "unprojected",
   );
   // Names published twice are skipped rather than guessed at — the same rule the badge check
   // uses, and for the same reason: a duplicate name would make a card be compared against a
@@ -978,6 +981,13 @@ if (publishedInSeason && opportunityRecords !== null) {
   rendered string can only be compared with a rendered string.
 */
 const shareText = (value) => `${String(Math.round(value * 100))}%`;
+/** The card's breadth format (`formatBreadth` in data/signals.ts): signed, real minus, pp. */
+function breadthText(value) {
+  const rounded = Math.round(value * 10) / 10;
+  if (rounded === 0) return "0.0 pp";
+  return `${rounded > 0 ? "+" : "\u2212"}${Math.abs(rounded).toFixed(1)} pp`;
+}
+
 const metricText = (metric, value) =>
   value === null || value === undefined
     ? "\u2014"
@@ -993,6 +1003,7 @@ const changeText = (metric, change) => {
 const LEADS_WITH_A_SHARE = new Set(["snap_share", "target_share"]);
 
 let signalCardsChecked = 0;
+let breadthRowsChecked = 0;
 let signalPicksChecked = 0;
 let signalMomentumChecked = 0;
 if (publishedInSeason && playerUsage !== null) {
@@ -1028,6 +1039,7 @@ if (publishedInSeason && playerUsage !== null) {
         value: rail.querySelector(".usage-rail-value")?.textContent?.trim() ?? "",
         change: rail.querySelector(".usage-rail-change")?.textContent?.trim() ?? null,
         bars: rail.querySelectorAll(".usage-bar").length,
+        window: rail.querySelector(".usage-rail-window")?.textContent?.trim() ?? "",
       })),
       momentum: (() => {
         const panel = dialog.querySelector(".momentum");
@@ -1057,7 +1069,28 @@ if (publishedInSeason && playerUsage !== null) {
     if (row.position === "QB" && drawn.rails.some((rail) => LEADS_WITH_A_SHARE.has(rail.metric))) {
       failures.push(`${who}: a quarterback's role block leads with a snap or target share`);
     }
-    const roleRails = drawn.rails.filter((rail) => rail.metric !== "fantasy_points");
+    const roleRails = drawn.rails.filter(
+      (rail) => rail.metric !== "fantasy_points" && rail.metric !== "drive_breadth",
+    );
+    // ADR-103: the breadth row draws the artifact's own gap and counts, or says why not.
+    const breadthRow = drawn.rails.find((rail) => rail.metric === "drive_breadth") ?? null;
+    const block = usage.drive_breadth ?? null;
+    if ((block === null) !== (breadthRow === null)) {
+      failures.push(`${who}: breadth row ${breadthRow === null ? "missing" : "drawn"} while the artifact ${block === null ? "publishes none" : "publishes one"}`);
+    } else if (block !== null) {
+      breadthRowsChecked += 1;
+      const want = block.displayable && block.breadth_gap_pp !== null ? breadthText(block.breadth_gap_pp) : "\u2014";
+      if (breadthRow.value !== want) failures.push(`${who}: breadth reads "${breadthRow.value}", artifact ${want}`);
+      if (block.displayable && !breadthRow.window.includes(`${String(block.reached_drives)} of ${String(block.eligible_drives)} drives`)) {
+        failures.push(`${who}: breadth window "${breadthRow.window}" does not carry the artifact's counts`);
+      }
+      if (block.eligible_drives > 0 && block.breadth_gap_pp !== null) {
+        const recomputed = (100 * (block.reached_drives - block.expected_drives)) / block.eligible_drives;
+        if (Math.abs(recomputed - block.breadth_gap_pp) > 0.06) {
+          failures.push(`${who}: published breadth ${String(block.breadth_gap_pp)} is not 100*(A-E)/D = ${recomputed.toFixed(2)}`);
+        }
+      }
+    }
     if (roleRails.length === 0) failures.push(`${who}: the build published a usage record and the card drew no role rail`);
     for (const rail of roleRails) {
       const change = usage.role_changes[rail.metric];
@@ -1202,11 +1235,25 @@ const spanText = (days) => {
 };
 
 let oppRowsChecked = 0;
+let faCellsChecked = 0;
+let unprojectedRowsChecked = 0;
 let oppChartRowsChecked = 0;
 let oppFiltersChecked = 0;
 if (publishedInSeason && opportunityRecords !== null) {
+  // ADR-102: unprojected off-roster rows have no rank and are listed in their own section.
+  const unprojectedBlock = opportunityRecords.filter(
+    (r) =>
+      r.league_preset_id === "redraft-12" &&
+      r.scoring_preset === "PPR" &&
+      r.model_coverage === "unprojected",
+  );
   const oppBlock = opportunityRecords
-    .filter((r) => r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR")
+    .filter(
+      (r) =>
+        r.league_preset_id === "redraft-12" &&
+        r.scoring_preset === "PPR" &&
+        r.model_coverage !== "unprojected",
+    )
     .sort((a, b) => a.ros_fair_rank - b.ros_fair_rank || a.player_id.localeCompare(b.player_id));
   const oppById = new Map(oppBlock.map((record) => [record.player_id, record]));
   const usageById = new Map((playerUsage ?? []).map((record) => [record.player_id, record]));
@@ -1324,6 +1371,45 @@ if (publishedInSeason && opportunityRecords !== null) {
   await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
   await page.waitForSelector("table.sheet tbody tr[data-player]");
   const table = await readTable();
+
+  // ADR-102: a verified free agent's team cell reads FA (never his last club), and the
+  // unprojected section lists exactly the block's unprojected rows with their own counts.
+  const teamCells = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) =>
+    rows.map((tr) => ({
+      id: tr.getAttribute("data-player"),
+      fa: tr.querySelector(".team-fa") !== null,
+    })),
+  );
+  for (const cell of teamCells) {
+    const unsigned = statusById.get(cell.id)?.employment_status === "unsigned";
+    if (unsigned !== cell.fa) {
+      failures.push(`opportunity row ${String(cell.id)}: team cell ${cell.fa ? "reads FA" : "does not read FA"} while player_status says ${unsigned ? "unsigned" : "not unsigned"}`);
+    }
+    if (unsigned) faCellsChecked += 1;
+  }
+  const unprojectedRows = await page.$$eval(".unprojected-sheet tbody tr", (rows) =>
+    rows.map((tr) => ({
+      id: tr.getAttribute("data-player-id"),
+      cells: [...tr.querySelectorAll("td")].map((td) => (td.textContent ?? "").trim()),
+    })),
+  );
+  if (unprojectedRows.length !== unprojectedBlock.length) {
+    failures.push(`not-projected section: ${String(unprojectedRows.length)} rows rendered, artifact publishes ${String(unprojectedBlock.length)}`);
+  }
+  for (const row of unprojectedRows) {
+    const record = unprojectedBlock.find((candidate) => candidate.player_id === row.id);
+    if (record === undefined) {
+      failures.push(`not-projected row ${String(row.id)}: rendered, artifact publishes no such row`);
+      continue;
+    }
+    unprojectedRowsChecked += 1;
+    const adds = record.add_count === null ? "\u2014" : record.add_count.toLocaleString("en-US");
+    if (row.cells[2] !== adds) failures.push(`not-projected ${record.display_name}: adds "${row.cells[2]}", artifact ${adds}`);
+    const wantTeam = record.employment_status === "unsigned" ? "FA \u2014 unsigned free agent" : (record.team ?? "\u2014");
+    if (row.cells[1] !== wantTeam && !(record.employment_status === "unsigned" && row.cells[1].startsWith("FA"))) {
+      failures.push(`not-projected ${record.display_name}: team "${row.cells[1]}", artifact ${String(record.team)} / ${String(record.employment_status)}`);
+    }
+  }
 
   if (table.length !== oppBlock.length) {
     failures.push(`opportunity table: ${String(table.length)} rows rendered, artifact block publishes ${String(oppBlock.length)}`);
@@ -1741,6 +1827,9 @@ console.log(JSON.stringify({
   signalMomentumChecked,
   signalPicksChecked,
   oppRowsChecked,
+  faCellsChecked,
+  unprojectedRowsChecked,
+  breadthRowsChecked,
   oppChartRowsChecked,
   oppFiltersChecked,
   weeklyRecords: weeklyRecords === null ? null : weeklyRecords.length,

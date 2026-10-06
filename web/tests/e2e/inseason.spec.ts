@@ -488,7 +488,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       "aria-pressed",
       "true",
     );
-    const cells = page.locator('table.sheet tbody td[data-col="role"] .signal-cell');
+    const cells = page.locator('table.sheet.opp-sheet tbody td[data-col="role"] .signal-cell');
     const count = await cells.count();
     expect(count).toBeGreaterThan(0);
     for (let index = 0; index < count; index += 1) {
@@ -499,24 +499,24 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
 
     await page.getByRole("radiogroup", { name: "Position" }).getByRole("radio", { name: "RB" }).click();
     await expect(page).toHaveURL(/position=rb.*only=role|only=role.*position=rb/);
-    await expect(page.locator("table.sheet tbody tr")).toHaveCount(1);
-    await expect(page.locator("table.sheet tbody tr")).toContainText("Jahmyr Cook");
+    await expect(page.locator("table.sheet.opp-sheet tbody tr")).toHaveCount(1);
+    await expect(page.locator("table.sheet.opp-sheet tbody tr")).toContainText("Jahmyr Cook");
   });
 
   test("names a filter the build cannot apply instead of emptying the board", async ({ page }) => {
     await page.goto("/scenario/in-season-no-signals/?view=opportunity&only=role");
     await expect(page.getByText(/A filter in this link cannot be applied/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Role rising" })).toBeDisabled();
-    await expect(page.locator("table.sheet tbody tr")).toHaveCount(19);
+    await expect(page.locator("table.sheet.opp-sheet tbody tr")).toHaveCount(19);
     await expect(
-      page.locator('table.sheet tbody td[data-col="role"] .signal-cell').first(),
+      page.locator('table.sheet.opp-sheet tbody td[data-col="role"] .signal-cell').first(),
     ).toHaveAttribute("data-kind", "unpublished");
   });
 
   test("orders role by direction, and by size only inside one position", async ({ page }) => {
     await page.goto(`${IN_SEASON}?view=opportunity&opportunity=role`);
     await expect(page.locator(".opp-order-note")).toContainText(/sizes are compared only within one position/);
-    const names = await page.locator("table.sheet tbody .player-name").allTextContents();
+    const names = await page.locator("table.sheet.opp-sheet tbody .player-name").allTextContents();
     // Rising, by ROS rank: the QB's +20 attempts does not jump the backs and receivers.
     expect(names.slice(0, 3)).toEqual(["Jahmyr Cook", "Puka Nightingale", "Jalen Marsh"]);
     await page.goto(`${IN_SEASON}?view=opportunity&opportunity=role&position=wr`);
@@ -536,7 +536,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
     const header = (lines[0] ?? "").split(",");
     expect(header).toEqual(expect.arrayContaining(["role_reading", "role_change", "add_trend_per_day", "next_game_opponent"]));
     expect(header.join(",")).not.toMatch(/implied|spread|total_line/);
-    const shown = await page.locator("table.sheet tbody tr").count();
+    const shown = await page.locator("table.sheet.opp-sheet tbody tr").count();
     expect(lines).toHaveLength(shown + 1);
   });
 
@@ -544,7 +544,8 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
     test(`fits the table without a sideways scroll at ${String(width)}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`${IN_SEASON}?view=opportunity`);
-      const scroller = page.locator(".table-scroll").last();
+      // The Opportunity table's own scroller: ADR-102's Not projected table follows it.
+      const scroller = page.locator(".table-scroll", { has: page.locator("table.opp-sheet") });
       await expect(scroller.locator("table.sheet")).toBeVisible();
       const overflow = await scroller.evaluate((node) => node.scrollWidth - node.clientWidth);
       expect(overflow, `the opportunity table scrolls sideways at ${String(width)}px`).toBeLessThanOrEqual(1);
@@ -586,7 +587,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       // The chart row carries the role line on a phone.
       await expect(page.locator(".opp-row").first().locator(".opp-role")).toBeVisible();
       // The table hides what the chart already prints and pins the name.
-      const table = page.locator("table.sheet");
+      const table = page.locator("table.sheet.opp-sheet");
       await expect(table.locator('th[data-col="ros_vorp_p50"]')).toBeHidden();
       await expect(table.locator('th[data-col="role"]')).toBeVisible();
       const player = table.locator("tbody tr").first().locator("td.col-player");
