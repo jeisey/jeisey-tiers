@@ -4,6 +4,50 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Drive breadth revised as a rail — 2026-10-06 (ADR-104).** Follow-up on
+`claude/affectionate-clarke-q7u2jj`, restarted from `main` at `056bfcd` after PR #59 merged.
+Owner review of the production card: the breadth row's scale did not read as a chart, the
+headline (+2.5 pp) buried the fact (36 of 36 drives), and QB rushing breadth made no sense at
+quarterback. No model, ranking, pick or trade search reads any of it, before or after.
+
+* **ADR-104 frozen first** (`85e46e6`), then re-run. QB variant → designed runs
+  (`qb_scramble = 0`; split-half r 0.92 on 2024, chosen with no outcome read). RB/WR/TE
+  unchanged and reproduced ADR-103 exactly. The QB comparison with random fails publication rule
+  1 (19.4% of 2024 windows displayable, need 25%) → QB rail has no notch and no gap line
+  (`compares_with_random: false`). Records: `docs/experiments/drive-breadth-v2-2026-10-06/`.
+* **Card:** the drive row is a rail (shared `Rail` component in `UsageRails.tsx`): a bar per week
+  for the drive share on the 0–100% axis, a notch at the random share (RB/WR/TE), the rails' own
+  value / change / window, and "wks a–b: ±N pts vs random". Position median no longer printed.
+* **Contract:** `player_usage` 1.2 (`drive_breadth_v2`: `weeks`, `change`,
+  `compares_with_random`, metric `designed_runs`); `ros_build_metadata` pins `drive_breadth_v2`
+  (the real build caught the stale pin; a drift test now guards both schemas).
+* **Real data (2026-10-06):** Montgomery 56% of backfield drives in week 4, short of his notch
+  every week (−20 pts vs random over weeks 1–4: a series rotation); Gibbs 100%, +3; Goff 0%
+  designed-run drives; Hurts 31% (+17 pts); Wilson 62%, level; McBride 54%, +2. Screens in
+  `docs/visual-qa/2026-10-06-drive-rail/` (1440, 390, 320).
+
+**Next gate:** owner review of the revised rail; the next production refresh publishes
+`player_usage` 1.2.
+
+Validation of the ADR-104 pass (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 329 files
+uv run mypy                                          # clean, 197 source files
+uv run pytest                                        # 1,928 passed (4 live deselected)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 792 vitest
+npm run e2e                                          # 222 passed (chromium, mobile, a11y)
+npm run verify:board (6 CI fixtures)                 # 0 failures each; in-season: 4 drive rails
+npm run e2e:size-model && npm run verify:budget      # all met: first visit 309.9/450 kB, data 68.5/150, Start/Sit +55.1/60, Trade +11.8/25, card +23.8/30
+# Real data: build-ros on live nflverse 2026-10-06 + the retained status capture, assembled with
+# the live draft artifacts (status re-stamped to the live build id for assembly only):
+validate-artifacts --require-serving                 # 0 critical, 0 warning
+verify-real-build (verify:board --dist realsite)     # 0 failures: 513 opp rows, 9 FA cells, 4 drive rails, 4 signal cards
+```
+
+---
+
 **Unsigned players, masthead, drive breadth — 2026-10-06 (ADR-102, ADR-103).** The owner's
 three items on `claude/affectionate-clarke-q7u2jj` from `15ca355` (main had not moved). No model,
 feature, training population, projection, VORP, rank, tier, calibration figure or POTW rule

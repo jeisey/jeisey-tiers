@@ -823,21 +823,27 @@ focused tab is scrolled into view, an arrow key moves focus with the selection, 
   not (there is nothing of his to read) and the note says what the section is. The card for
   such a player states "No rest-of-season projection" and leaves rank, tier and value blank.
 
-### 6A.14 Drive breadth, one bonus row in the role block (ADR-103)
+### 6A.14 Drive breadth, a rail in the role block (ADR-103, ADR-104)
 
-* Sits after the role rails and before the points rail, in the same three-column grid: label
-  and question in the player's positional terms (Rushing / Backfield / Target / Open-field
-  breadth), a scale where the bars would be, and the reading.
-* **Scale:** a centre line at zero (random allocation), a hollow tick at his position's median
-  on this build, a solid mark at his value, ±25 pp, pinned at the edges. `aria-hidden`; the
-  sentence carries everything for assistive technology.
-* **Reading:** the signed value in percentage points with a real minus sign, then "A of D drives
-  · wks a–b · RB median −5.4 pp". Withheld: "—" and "too few for a reading: fewer than 6
-  targets (5)" — never a zero that reads as average.
+* Sits after the role rails and before the points rail, and **is a rail**: the same grid, the
+  same classes, one bar slot per week on the shared week axis, the same absence marks.
+* **Label and question, per position:** QB "Designed-run drives — Are runs called for him?";
+  RB "Drives with a touch — Every series, or a rotation?"; WR "Drives targeted — A target on
+  every drive?"; TE "Drives targeted — Between the 20s, every drive?".
+* **Bars:** each game's drive share (drives with one of his opportunities over the team's
+  eligible drives) on the shares' absolute 0–100% axis; the latest bar is tinted by direction
+  as on every rail.
+* **Notch** (RB, WR, TE only — `compares_with_random`): a 2px ink line across each bar at the
+  share the same count would reach placed at random. Short of it: bunched into fewer drives;
+  above it: spread across more. QB draws no notch.
+* **Reading:** the latest drive share, the `role_change_v1` change in points with its glyph,
+  and "from X% · week N vs M earlier games" — word for word the share rails' form. One more
+  line, RB/WR/TE only: "wks a–b: −23 pts vs random" (whole points, real minus, "level" at
+  zero) once the window clears the display minimums, else "vs random: too few targets (5)".
 * **Words never used:** better/worse as a verdict, trust, safety, script, coach, predict. The
-  role block's note says it is descriptive and not a forecast. No badge, tile, filter, sort or
-  column anywhere else; Pick of the Week does not show it.
-* Missing play-by-play draws no row; the rails are unchanged.
+  role block's note explains the notch and says it is descriptive, not a forecast. No badge,
+  tile, filter, sort or column anywhere else; Pick of the Week does not show it.
+* Missing play-by-play draws no row; a played game without play-by-play draws "·".
 
 ## 7. Tables
 

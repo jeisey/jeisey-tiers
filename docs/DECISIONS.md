@@ -6243,3 +6243,31 @@ rather than a role.
 
 Unchanged from ADR-103: no model, ranking, blended score, Pick of the Week or Trade search reads
 any part of it.
+
+### Results (appended after the revised evaluation ran; nothing above was changed)
+
+`docs/experiments/drive-breadth-v2-2026-10-06/` holds the re-run. **Regression check: passed** —
+every RB, WR and TE figure reproduces ADR-103's exactly; every difference is under `QB`.
+
+**QB, designed-run variant:**
+
+| Check | Result | Rule |
+|---|---|---|
+| Windows clearing the display minimums, 2024 | 19.4% (2020–2024: 17.9–25.4%) | rule 1 needs ≥ 25%: **fails** |
+| Displayed IQR, 2024 | 3.9 pts | passes |
+| Spearman with window share / volume | −0.22 / −0.22 | passes |
+| Pooled Δ log loss (cand − base), 371 rows | +0.0014, 95% CI [−0.0021, +0.0052] | no incremental evidence |
+| Opponent vs player η² of the per-game gap | 0.184 vs 0.084 | reported |
+
+**Consequence, by the rule fixed above:** a quarterback's rail publishes his designed-run drive
+share and its change, with **no notch and no gap line** — the notch is the same comparison drawn
+per game. The block carries `compares_with_random: false` for QB, `true` for RB, WR and TE, and
+the validator holds it to this. The designed-run share itself is a stable trait (split-half
+r = 0.92) the card did not otherwise show.
+
+**What the new headline repeats.** A game's drive share correlates 0.95–0.99 (Spearman) with
+that game's opportunity share and volume at every position: the bar mostly restates volume. The
+information the share rails do not carry is the bar's distance from its notch — the per-game
+gap correlates at most 0.18 with share or volume. The card therefore keeps the notch and the
+four-game line for RB, WR and TE; the bar is there so the row reads like its neighbours and
+states a count a reader can check ("5 of 9 drives").

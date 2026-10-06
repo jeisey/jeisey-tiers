@@ -1,0 +1,61 @@
+{
+  "method_version": "drive_breadth_v2",
+  "positions": {
+    "QB": {
+      "drive_share_quantiles": {
+        "p10": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 0.1,
+        "p90": 0.3
+      },
+      "games": 3349,
+      "rho_drive_share_vs_share": 0.983,
+      "rho_drive_share_vs_volume": 0.986,
+      "rho_gap_vs_share": 0.119,
+      "rho_gap_vs_volume": 0.12
+    },
+    "RB": {
+      "drive_share_quantiles": {
+        "p10": 0.0,
+        "p25": 0.1,
+        "p50": 0.4,
+        "p75": 0.8,
+        "p90": 0.9
+      },
+      "games": 8503,
+      "rho_drive_share_vs_share": 0.957,
+      "rho_drive_share_vs_volume": 0.951,
+      "rho_gap_vs_share": -0.159,
+      "rho_gap_vs_volume": -0.182
+    },
+    "TE": {
+      "drive_share_quantiles": {
+        "p10": 0.0,
+        "p25": 0.0,
+        "p50": 0.1,
+        "p75": 0.3,
+        "p90": 0.5
+      },
+      "games": 7604,
+      "rho_drive_share_vs_share": 0.977,
+      "rho_drive_share_vs_volume": 0.977,
+      "rho_gap_vs_share": 0.184,
+      "rho_gap_vs_volume": 0.176
+    },
+    "WR": {
+      "drive_share_quantiles": {
+        "p10": 0.0,
+        "p25": 0.1,
+        "p50": 0.3,
+        "p75": 0.5,
+        "p90": 0.6
+      },
+      "games": 13329,
+      "rho_drive_share_vs_share": 0.957,
+      "rho_drive_share_vs_volume": 0.961,
+      "rho_gap_vs_share": 0.074,
+      "rho_gap_vs_volume": 0.063
+    }
+  }
+}

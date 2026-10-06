@@ -2034,3 +2034,35 @@ figure or Pick-of-the-Week rule changed; weekly v2 stays in shadow.
       add-trending ones reach a board) and of ADR-103's provisional display minimums; a second
       source for current employment when one is permitted; identity for veterans off every
       roster for a full season (out of scope by design).
+
+## Drive breadth, revised as a rail — 2026-10-06 (ADR-104)
+
+Owner review of the production card after PR #59: the breadth row's scale did not read as a
+chart, its headline was an abstraction beside the striking count, and the QB variant made no
+sense at quarterback.
+
+- [x] **ADR-104 frozen before the re-run** (commit `85e46e6`): QB variant → designed runs
+      (`qb_scramble = 0`), chosen on a 2024 reliability inventory with no outcome read
+      (split-half r 0.92 vs any-run 0.85 vs red-zone drives 0.26); the card row becomes a
+      week-by-week rail; RB/WR/TE definitions, window, minimums and evaluation unchanged.
+- [x] **Re-run** (`docs/experiments/drive-breadth-v2-2026-10-06/`): RB/WR/TE reproduce ADR-103
+      exactly (regression check); QB designed-run comparison fails publication rule 1 (19.4% of
+      2024 windows clear the minimums, against 25%), no incremental value (Δ log loss +0.0014,
+      95% CI [−0.0021, +0.0052]), opponent η² 0.18 vs player 0.08 → QB rail shows his
+      designed-run drive share only (`compares_with_random: false`). A game's drive share
+      repeats volume (ρ 0.95–0.99); the bar-to-notch distance does not (|ρ| ≤ 0.18).
+- [x] **Contract** `player_usage` 1.2: `drive_breadth_v2`, `designed_runs`, `weeks`, `change`,
+      `compares_with_random`; validator checks every week's share, the change and the flag.
+- [x] **Card**: one shared `Rail` component for every row; the drive rail draws a bar per week
+      (drive share, 0–100%), a notch at the random share (RB/WR/TE), the rails' own value /
+      change / window line, and "wks a–b: ±N pts vs random"; the old scale and the position
+      median are gone. Data method (05d), UX_SPEC §6A.14, DATA_CONTRACTS §22.3, DATA_SOURCES
+      §21 and the source registry updated; size model scales the rail with the season.
+- [x] **Real data** (2026-10-06 live nflverse, `build-ros` gate pass): Montgomery's drive rail
+      sits under its notch every week (−20 pts vs random, a series rotation); Gibbs 100%; Goff 0%
+      designed-run drives; Hurts 31%. Screens `docs/visual-qa/2026-10-06-drive-rail/`.
+- [x] **Validation (local).** ruff/format clean (329 files); mypy clean (197); **pytest 1,928
+      passed** (4 live deselected); 792 Vitest; 222 E2E; `verify:board` 0 failures on all six
+      CI fixtures; budgets met (card +23.8/30 kB); real-data `validate-artifacts
+      --require-serving` 0/0 and `verify-real-build` 0 failures (4 drive rails checked).
+- [ ] **Follow-up.** Owner review of the revised rail.

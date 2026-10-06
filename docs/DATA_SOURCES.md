@@ -1062,7 +1062,10 @@ number"), `play_type` (`pass` includes sacks, `run` includes scrambles, `qb_knee
 2024: 49,492 rows; 20,007 pass and 15,043 run plays; 148 two-point and 114 aborted plays among
 them; 1,133 scrambles (all `run`, QB as rusher); 1,392 sacks (all `pass`, no receiver); 767
 non-sack passes with no identified receiver; no special-teams fakes; `play_deleted` 0
-throughout; posteam and `fixed_drive` never null on scrimmage plays. Thirteen columns are read
+throughout; posteam and `fixed_drive` never null on scrimmage plays. Twenty columns are read
 through the cached, retrying loader (`nflverse_loaders`) and reduced at once; raw play-by-play
 is never committed or served. A missing column is a refusal (`drive_plays`), and any failure
-withholds the drive-breadth blocks only.
+withholds the drive-breadth blocks only. ADR-104 reads `qb_scramble` as well, to count a
+quarterback's designed runs (a rush it does not flag). Measured 2026-10-06: never null on a
+regular-season rush attempt in 2020–2024 or 2026; scrambles 863 / 910 / 905 / 1,035 / 1,062
+(2020–2024) and 243 of 3,421 rush attempts in 2026 weeks 1–4.

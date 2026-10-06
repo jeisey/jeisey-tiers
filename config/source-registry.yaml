@@ -206,8 +206,9 @@ sources:
       # (player stats, snap counts) and each team's next game (schedule).
       - inseason_usage_context
       - matchup_context
-      # ADR-103. Play-by-play reduced to per-player drive aggregates (drive breadth): published
-      # descriptive context, read by no model; raw rows are never committed or served.
+      # ADR-103/104. Play-by-play reduced to per-player drive aggregates (drive breadth, with
+      # `qb_scramble` separating a quarterback's designed runs): published descriptive context,
+      # read by no model; raw rows are never committed or served.
       - inseason_drive_breadth_context
       # ADR-102. The previous season's roster verifies identity (ids only, never a club) for
       # players the current roster omits; employment comes from the current roster, then Sleeper.
