@@ -6155,3 +6155,91 @@ its failure costs that block only.
 * **What it is not.** Not route participation or proof he was on the field, not script
   independence, coach trust or safety, and not a forecast. It is not in any model, ranking,
   blended score, Pick of the Week or the Trade search.
+
+## ADR-104 — Drive breadth, revised: a week-by-week rail like its neighbours, and a quarterback variant about the quarterback
+
+**Status:** accepted, 2026-10-06. Frozen **before** the revised evaluation below was run.
+**Amends** ADR-103: replaces its QB variant and its card presentation. ADR-103's RB, WR and TE
+definitions, exclusions, four-appearance window, display minimums and evaluation plan stand
+unchanged. **Relies on:** ADR-091 (the rails, `role_change_v1`), ADR-098 (served slices).
+
+### Context — what the owner saw on the production card
+
+1. **The row did not read as a chart.** Every other rail in "Role, week by week" is a bar per
+   week on one shared axis. The breadth row's middle column was a one-off scale — a zero line,
+   a hollow median tick and a solid mark — that a reader could not identify, and the hollow tick
+   rendered like a missing glyph.
+2. **The headline was the abstraction, the fact was small print.** Jahmyr Gibbs read
+   "+2.5 pp" with "36 of 36 drives" underneath: the striking fact (the ball on every drive) was
+   the footnote, and the number was a difference from a random allocation.
+3. **The QB variant made no sense at quarterback.** Rushing breadth is withheld for most pocket
+   passers (Jared Goff: "fewer than 6 rush attempts (5)") and, where shown, ADR-103 measured it
+   as weakly a property of the quarterback (opponent η² 0.078 vs player 0.075).
+
+### Reliability inventory for the QB replacement (2024 development season, no outcome read)
+
+Split-half reliability (odd vs even weeks) of per-quarterback drive rates, 33 quarterbacks with
+at least four games in each half:
+
+| Candidate (share of his team's drives …) | split-half r | spread across QBs (sd) |
+|---|---|---|
+| with a **designed run** by him (rush attempt, `qb_scramble = 0`) | **0.92** | 12.4 pts (Mahomes 0.7%, Love 3.7%, Hurts 47.2%) |
+| with any run by him, scrambles included (ADR-103's variant, as a rate) | 0.85 | 14.4 pts |
+| reaching the red zone | 0.26 | 5.8 pts |
+
+Designed-run drives is chosen: it is the most stable trait, it separates a running quarterback
+from a pocket passer at a glance, and the card's "Rush attempts" rail (scrambles included) does
+not already say it. Red-zone drives is rejected: mostly game and offense noise, and an outcome
+rather than a role.
+
+### Decision — `drive_breadth_v2`
+
+1. **QB:** player opportunities are his **designed runs** — rush attempts with `qb_scramble = 0`
+   (kneels were already excluded). Eligible team slots are unchanged (every eligible scrimmage
+   play); a scramble stays a slot and is nobody's opportunity under this variant. One column,
+   `qb_scramble`, is added to what is read from `load_pbp`. Metric id `designed_runs` replaces
+   `rushing`.
+2. **RB, WR, TE:** unchanged (`backfield`, `targets`, `open_field_targets`).
+3. **The card row is a rail like its neighbours** (UX_SPEC §6A.14):
+   * one bar per week on the shared week axis: his **drive share** that game, `A / D` — the
+     drives he got an opportunity on over the team's eligible drives — on the absolute 0–100%
+     axis the share rails use; a bye, a missed game and a played game without play-by-play keep
+     the rails' three absence marks;
+   * a **notch** on each bar at `E / D`, the share the same count would reach placed at random
+     — ADR-103's reference, per game, drawn where the bar can be compared with it;
+   * the reading beside it is the rails' own: the latest appearance's drive share, the change
+     under `role_change_v1`'s pooled rule (`Σ A / Σ D` over earlier appearances with `D > 0`,
+     latest minus earlier, both at three decimals), and "from X · week N vs M earlier games";
+   * one more line carries ADR-103's windowed gap in the card's change unit — "wks 1–4:
+     −23 pts vs random" — only when the window clears the unchanged display minimums;
+     otherwise it says which count is too small;
+   * the position median is no longer printed on the card (it stays in the build metadata):
+     it was needed only while the headline was the gap.
+4. **Labels, per position, in the rails' form** (a noun and the reader's question): QB
+   "Designed-run drives — Are runs called for him?"; RB "Drives with a touch — Every series, or
+   a rotation?"; WR "Drives targeted — A target on every drive?"; TE "Drives targeted — Between
+   the 20s, every drive?".
+5. **Contract:** `player_usage` 1.2. `drive_breadth.method_version` is `drive_breadth_v2`; the
+   block gains `weeks` (every played week at or before the cutoff with play-by-play: `week`,
+   `eligible_drives`, `reached_drives`, `drive_share`, `expected_share`) and `change` (the
+   `role_change_v1` shape). The validator checks every week's arithmetic and that the change is
+   the difference of its own published halves.
+
+### The revised evaluation, predeclared
+
+* ADR-103's evaluation is re-run **unchanged in every rule** for the QB variant under v2: same
+  seasons (2020–2024), same outcome (next-appearance drought of his designed runs), baseline,
+  candidate, rolling origin, bootstrap and seed, and the same publication rules 1–3.
+* RB, WR and TE are re-run as a regression check: their definitions did not change, so their
+  coverage and evaluation must reproduce ADR-103's figures exactly.
+* Rule 1 now governs **the windowed-gap line** only. A position failing it shows no gap line;
+  its drive-share bars still publish, because a game's drive share is an exact count of drives
+  and needs no minimum to be a fact.
+* Reported beside it, with no rule attached: the Spearman correlation of a game's drive share
+  with that game's opportunity share and volume, per position — how much the new headline
+  repeats the share rails already on the card.
+
+### Not used for anything else
+
+Unchanged from ADR-103: no model, ranking, blended score, Pick of the Week or Trade search reads
+any part of it.
