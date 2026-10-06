@@ -5910,3 +5910,105 @@ path. The run's own artifacts, with portraits restricted as the fix does, pass
   about when a player returns, and the ROS value of a returning player is the model's, which
   does not know either.
 
+
+## ADR-103 — Drive breadth above expectation: one descriptive row per position, frozen before its evaluation
+
+**Status:** accepted, 2026-10-06. Definition, window, exclusions, display minimums and the
+evaluation plan below were frozen **after** the coverage inventory
+(`docs/experiments/drive-breadth-2026-10-06/coverage.json`, which reads no outcome) and
+**before** any outcome was computed. **Relies on:** ADR-091 (the signal layer is published
+context, read by no model), ADR-025/ADR-069 (2025 is spent), ADR-098 (served slices).
+
+### Context
+
+The role rails say how much of the offense a player gets (snap, target, carry and air-yards
+shares). They do not say whether that involvement recurs across possessions or clusters into a
+few drives — a back who takes every snap of alternate series, a receiver whose targets come in
+bunches, a tight end whose looks are all inside the 20. The owner asked for one position-aware
+bonus reading that answers that, as a custom candidate rather than a claim of a proven or
+unprecedented statistic.
+
+### Decision — the definition (`drive_breadth_v1`)
+
+For a completed appearance `g`: `n_d` eligible team slots in drive `d`, `N = Σ n_d`, `D` drives
+with at least one slot, `K` the player's eligible opportunities, `A` drives holding at least one
+of them, and `E = Σ_d [1 − C(N − n_d, K) / C(N, K)]` — the drives `K` opportunities would reach
+placed uniformly at random among the game's `N` slots (an impossible combination is zero). This
+is the rarefaction/occupancy expectation; Chao et al. and its binomial-coefficient correction
+(*Diversity and Distributions*, 10.1111/ddi.13954 and 10.1111/ddi.70165) support the
+mathematical structure only, not this football application.
+
+Over the latest **four** completed appearances: `breadth_gap_pp = 100 · Σ(A − E) / Σ D`, with
+the reference computed per game before summing. Positive: involvement reached more drives than
+the reference; negative: it clustered. Neither sign is good or bad fantasy value.
+
+**Positional variants** (player opportunity → the team slots it is one of):
+
+| Position | Player opportunities | Eligible team slots |
+|---|---|---|
+| QB | rush attempts, scrambles included | every eligible offensive scrimmage play |
+| RB | carries + targets | every carry and target that went to a running back (season-roster position) |
+| WR | targets | every identified target |
+| TE | targets snapped outside the red zone (`yardline_100 > 20`) | every identified target snapped outside the red zone |
+
+**Eligible play:** regular season, `play_type` `pass` or `run`, with a possession team and a
+`fixed_drive`. Excluded: kneels, spikes, two-point attempts, aborted snaps, special-teams plays,
+deleted plays; `no_play` rows (a penalty that wiped out the snap) are not plays, while a play
+that stands with a penalty on it is. A sack is a QB slot and never a target; a scramble is a
+run by the quarterback; a lateral credits the original rusher or targeted receiver; a pass with
+no identified receiver is a target slot for nobody. A player the season roster does not place
+at a position is never an RB slot (25 plays a season in 2020–2024).
+
+**Appearances:** a stats row or an offensive snap (ADR-091), snaps bridged by the roster's own
+`pfr_id`. Every drive of his team's game with an eligible slot is in his denominator, including
+drives he never touched: this is team-opportunity breadth, not route participation and not
+proof he was on the field. A bye or a missed game is a missing observation, never a zero-role
+game. Zero opportunities in a game he played contribute `D` drives and nothing reached.
+
+**Edges:** `K = 0` gives `E = A = 0`; `K = 1` gives `E = A = 1` (a gap of exactly zero —
+uninformative, and why the opportunity minimum exists); saturation (`E = D`) is measured and
+almost never occurs (RB: 4–16 games a season, none elsewhere).
+
+**Display minimums (provisional display rule, not established reliability):** at least three
+appearances, twenty eligible drives and six player opportunities in the window. Below them the
+row says which minimum is missing and shows no number — never a zero that reads as average.
+Coverage under the rule, 2020–2024: QB 47–54%, RB 66–68%, WR 59–62%, TE 40–43% of windows.
+
+**The reference is not zero for every position.** Coverage showed the RB variant centred near
+−5 pp (2024 median −5.8): backs rotate by series, so a back's carries and targets cluster by
+construction. The published record therefore carries each position's distribution on the
+current build (p25/p50/p75 of displayed values), and the card prints the player's reading
+beside his position's median rather than against zero.
+
+### Decision — the evaluation, predeclared
+
+* **Seasons:** development 2020–2024 only. 2025 (spent sealed season) and 2026 (the season
+  shown) are not read.
+* **Rows:** every displayable window with a next appearance in the same season.
+* **Outcome:** a *next-appearance opportunity drought* — his next appearance's opportunities
+  below half the window's per-appearance mean (same positional definition).
+* **Baseline:** logistic regression (standardised, L2, C = 1) on window volume (opportunities
+  per appearance), window share (`ΣK / ΣN`) and the latest game's share minus the window's.
+  **Candidate:** the same plus `breadth_gap_pp`. Fitted per position.
+* **Chronology:** rolling origin — 2022 predicted from 2020–2021, 2023 from 2020–2022, 2024
+  from 2020–2023. No tuning on any test season.
+* **Primary metric:** pooled out-of-time log loss, candidate minus baseline, with a 95%
+  player-season cluster bootstrap interval (1,000 replicates, seed 20261006). Brier and AUC per
+  season are reported beside it, not decided on.
+* **Rules, fixed now:**
+  1. A variant is *published as descriptive context* only if, in the latest development season,
+     at least 25% of windows meet the display minimums, its displayed interquartile range is at
+     least 2 pp, and its Spearman correlation with window share and with window volume (pooled
+     2020–2024) is below 0.8 in absolute value. A variant failing any of these is omitted, and
+     the omission documented.
+  2. **No predictive wording anywhere** unless that position's pooled interval lies entirely
+     below zero. Even then the card stays descriptive; the Data view reports the measured result
+     with its interval.
+  3. Confounding is reported, not corrected: sensitivity to partial games, and correlation with
+     the team's drives per game.
+
+### Not used for anything else
+
+No model reads it (`intrinsic`, `ros`, `weekly`), no ranking or blended score includes it, Pick
+of the Week and the Trade search do not see it. It rides `player_usage` as an optional block and
+its failure costs that block only.

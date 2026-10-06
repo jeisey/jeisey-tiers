@@ -1,0 +1,501 @@
+{
+ "method_version": "drive_breadth_v1",
+ "window_appearances": 4,
+ "display_minimums": {
+  "appearances": 3,
+  "eligible_drives": 20,
+  "opportunities": 6
+ },
+ "seasons": {
+  "2020": {
+   "diagnostics": {
+    "eligible_plays": 32354,
+    "appearances": 6319,
+    "appearances_without_play_by_play": 0,
+    "rush_or_target_without_verified_position": 29
+   },
+   "positions": {
+    "QB": {
+     "players": 84,
+     "appearances": 648,
+     "appearances_with_zero_opportunities": 181,
+     "median_eligible_drives_per_game": 10.0,
+     "median_opportunities_per_game": 2.0,
+     "saturated_games": 0,
+     "windows": 648,
+     "windows_displayable": 301,
+     "displayable_share": 0.465,
+     "withheld": {
+      "too_few_appearances": 152,
+      "too_few_opportunities": 195
+     },
+     "gap_pp_displayed": {
+      "p10": -6.0,
+      "p25": -2.9,
+      "p50": -0.7,
+      "p75": 1.0,
+      "p90": 2.1
+     }
+    },
+    "RB": {
+     "players": 171,
+     "appearances": 1691,
+     "appearances_with_zero_opportunities": 263,
+     "median_eligible_drives_per_game": 9,
+     "median_opportunities_per_game": 6,
+     "saturated_games": 16,
+     "windows": 1691,
+     "windows_displayable": 1107,
+     "displayable_share": 0.655,
+     "withheld": {
+      "too_few_appearances": 331,
+      "too_few_opportunities": 253
+     },
+     "gap_pp_displayed": {
+      "p10": -15.6,
+      "p25": -10.7,
+      "p50": -6.2,
+      "p75": -2.2,
+      "p90": 0.7
+     }
+    },
+    "WR": {
+     "players": 241,
+     "appearances": 2557,
+     "appearances_with_zero_opportunities": 520,
+     "median_eligible_drives_per_game": 10,
+     "median_opportunities_per_game": 3,
+     "saturated_games": 0,
+     "windows": 2557,
+     "windows_displayable": 1571,
+     "displayable_share": 0.614,
+     "withheld": {
+      "too_few_appearances": 466,
+      "too_few_opportunities": 520
+     },
+     "gap_pp_displayed": {
+      "p10": -4.9,
+      "p25": -2.4,
+      "p50": 0.1,
+      "p75": 2.1,
+      "p90": 4.2
+     }
+    },
+    "TE": {
+     "players": 132,
+     "appearances": 1423,
+     "appearances_with_zero_opportunities": 482,
+     "median_eligible_drives_per_game": 9,
+     "median_opportunities_per_game": 1,
+     "saturated_games": 0,
+     "windows": 1423,
+     "windows_displayable": 602,
+     "displayable_share": 0.423,
+     "withheld": {
+      "too_few_appearances": 253,
+      "too_few_opportunities": 568
+     },
+     "gap_pp_displayed": {
+      "p10": -3.4,
+      "p25": -1.7,
+      "p50": 0.1,
+      "p75": 1.5,
+      "p90": 3.0
+     }
+    }
+   }
+  },
+  "2021": {
+   "diagnostics": {
+    "eligible_plays": 33881,
+    "appearances": 6654,
+    "appearances_without_play_by_play": 0,
+    "rush_or_target_without_verified_position": 26
+   },
+   "positions": {
+    "QB": {
+     "players": 84,
+     "appearances": 681,
+     "appearances_with_zero_opportunities": 172,
+     "median_eligible_drives_per_game": 10,
+     "median_opportunities_per_game": 2,
+     "saturated_games": 0,
+     "windows": 681,
+     "windows_displayable": 334,
+     "displayable_share": 0.49,
+     "withheld": {
+      "too_few_appearances": 153,
+      "too_few_opportunities": 194
+     },
+     "gap_pp_displayed": {
+      "p10": -4.8,
+      "p25": -2.9,
+      "p50": -0.9,
+      "p75": 1.1,
+      "p90": 2.0
+     }
+    },
+    "RB": {
+     "players": 178,
+     "appearances": 1734,
+     "appearances_with_zero_opportunities": 263,
+     "median_eligible_drives_per_game": 9.0,
+     "median_opportunities_per_game": 7.0,
+     "saturated_games": 11,
+     "windows": 1734,
+     "windows_displayable": 1171,
+     "displayable_share": 0.675,
+     "withheld": {
+      "too_few_appearances": 338,
+      "too_few_opportunities": 225
+     },
+     "gap_pp_displayed": {
+      "p10": -14.6,
+      "p25": -9.8,
+      "p50": -5.3,
+      "p75": -1.5,
+      "p90": 1.6
+     }
+    },
+    "WR": {
+     "players": 260,
+     "appearances": 2727,
+     "appearances_with_zero_opportunities": 549,
+     "median_eligible_drives_per_game": 10,
+     "median_opportunities_per_game": 3,
+     "saturated_games": 0,
+     "windows": 2727,
+     "windows_displayable": 1658,
+     "displayable_share": 0.608,
+     "withheld": {
+      "too_few_appearances": 498,
+      "too_few_opportunities": 571
+     },
+     "gap_pp_displayed": {
+      "p10": -4.8,
+      "p25": -2.3,
+      "p50": 0.1,
+      "p75": 2.2,
+      "p90": 4.6
+     }
+    },
+    "TE": {
+     "players": 134,
+     "appearances": 1512,
+     "appearances_with_zero_opportunities": 534,
+     "median_eligible_drives_per_game": 10.0,
+     "median_opportunities_per_game": 1.0,
+     "saturated_games": 0,
+     "windows": 1512,
+     "windows_displayable": 650,
+     "displayable_share": 0.43,
+     "withheld": {
+      "too_few_appearances": 259,
+      "too_few_opportunities": 603
+     },
+     "gap_pp_displayed": {
+      "p10": -4.0,
+      "p25": -1.8,
+      "p50": 0.2,
+      "p75": 1.8,
+      "p90": 3.6
+     }
+    }
+   }
+  },
+  "2022": {
+   "diagnostics": {
+    "eligible_plays": 33544,
+    "appearances": 6440,
+    "appearances_without_play_by_play": 0,
+    "rush_or_target_without_verified_position": 23
+   },
+   "positions": {
+    "QB": {
+     "players": 84,
+     "appearances": 642,
+     "appearances_with_zero_opportunities": 148,
+     "median_eligible_drives_per_game": 10.0,
+     "median_opportunities_per_game": 2.0,
+     "saturated_games": 0,
+     "windows": 642,
+     "windows_displayable": 318,
+     "displayable_share": 0.495,
+     "withheld": {
+      "too_few_appearances": 158,
+      "too_few_opportunities": 166
+     },
+     "gap_pp_displayed": {
+      "p10": -5.0,
+      "p25": -2.8,
+      "p50": -0.8,
+      "p75": 0.9,
+      "p90": 2.3
+     }
+    },
+    "RB": {
+     "players": 169,
+     "appearances": 1730,
+     "appearances_with_zero_opportunities": 260,
+     "median_eligible_drives_per_game": 9.0,
+     "median_opportunities_per_game": 7.0,
+     "saturated_games": 4,
+     "windows": 1730,
+     "windows_displayable": 1168,
+     "displayable_share": 0.675,
+     "withheld": {
+      "too_few_appearances": 327,
+      "too_few_opportunities": 235
+     },
+     "gap_pp_displayed": {
+      "p10": -13.3,
+      "p25": -9.0,
+      "p50": -4.7,
+      "p75": -1.0,
+      "p90": 1.6
+     }
+    },
+    "WR": {
+     "players": 247,
+     "appearances": 2572,
+     "appearances_with_zero_opportunities": 468,
+     "median_eligible_drives_per_game": 10.0,
+     "median_opportunities_per_game": 3.0,
+     "saturated_games": 0,
+     "windows": 2572,
+     "windows_displayable": 1600,
+     "displayable_share": 0.622,
+     "withheld": {
+      "too_few_appearances": 475,
+      "too_few_opportunities": 497
+     },
+     "gap_pp_displayed": {
+      "p10": -5.1,
+      "p25": -2.6,
+      "p50": -0.3,
+      "p75": 1.8,
+      "p90": 4.0
+     }
+    },
+    "TE": {
+     "players": 132,
+     "appearances": 1496,
+     "appearances_with_zero_opportunities": 475,
+     "median_eligible_drives_per_game": 9.0,
+     "median_opportunities_per_game": 1.0,
+     "saturated_games": 0,
+     "windows": 1496,
+     "windows_displayable": 649,
+     "displayable_share": 0.434,
+     "withheld": {
+      "too_few_appearances": 255,
+      "too_few_opportunities": 592
+     },
+     "gap_pp_displayed": {
+      "p10": -4.2,
+      "p25": -1.9,
+      "p50": 0.2,
+      "p75": 1.6,
+      "p90": 3.3
+     }
+    }
+   }
+  },
+  "2023": {
+   "diagnostics": {
+    "eligible_plays": 33742,
+    "appearances": 6688,
+    "appearances_without_play_by_play": 0,
+    "rush_or_target_without_verified_position": 18
+   },
+   "positions": {
+    "QB": {
+     "players": 84,
+     "appearances": 697,
+     "appearances_with_zero_opportunities": 173,
+     "median_eligible_drives_per_game": 11,
+     "median_opportunities_per_game": 2,
+     "saturated_games": 0,
+     "windows": 697,
+     "windows_displayable": 374,
+     "displayable_share": 0.537,
+     "withheld": {
+      "too_few_appearances": 162,
+      "too_few_opportunities": 161
+     },
+     "gap_pp_displayed": {
+      "p10": -4.6,
+      "p25": -2.8,
+      "p50": -0.9,
+      "p75": 0.6,
+      "p90": 2.2
+     }
+    },
+    "RB": {
+     "players": 157,
+     "appearances": 1664,
+     "appearances_with_zero_opportunities": 255,
+     "median_eligible_drives_per_game": 9.0,
+     "median_opportunities_per_game": 7.0,
+     "saturated_games": 8,
+     "windows": 1664,
+     "windows_displayable": 1136,
+     "displayable_share": 0.683,
+     "withheld": {
+      "too_few_appearances": 304,
+      "too_few_opportunities": 224
+     },
+     "gap_pp_displayed": {
+      "p10": -14.7,
+      "p25": -10.0,
+      "p50": -5.4,
+      "p75": -1.3,
+      "p90": 1.6
+     }
+    },
+    "WR": {
+     "players": 234,
+     "appearances": 2766,
+     "appearances_with_zero_opportunities": 592,
+     "median_eligible_drives_per_game": 10.0,
+     "median_opportunities_per_game": 3.0,
+     "saturated_games": 0,
+     "windows": 2766,
+     "windows_displayable": 1656,
+     "displayable_share": 0.599,
+     "withheld": {
+      "too_few_appearances": 454,
+      "too_few_opportunities": 656
+     },
+     "gap_pp_displayed": {
+      "p10": -4.6,
+      "p25": -2.3,
+      "p50": 0.0,
+      "p75": 2.0,
+      "p90": 4.5
+     }
+    },
+    "TE": {
+     "players": 132,
+     "appearances": 1561,
+     "appearances_with_zero_opportunities": 563,
+     "median_eligible_drives_per_game": 10,
+     "median_opportunities_per_game": 1,
+     "saturated_games": 0,
+     "windows": 1561,
+     "windows_displayable": 625,
+     "displayable_share": 0.4,
+     "withheld": {
+      "too_few_appearances": 251,
+      "too_few_opportunities": 685
+     },
+     "gap_pp_displayed": {
+      "p10": -3.8,
+      "p25": -2.2,
+      "p50": -0.1,
+      "p75": 1.7,
+      "p90": 3.4
+     }
+    }
+   }
+  },
+  "2024": {
+   "diagnostics": {
+    "eligible_plays": 33224,
+    "appearances": 6684,
+    "appearances_without_play_by_play": 0,
+    "rush_or_target_without_verified_position": 25
+   },
+   "positions": {
+    "QB": {
+     "players": 79,
+     "appearances": 681,
+     "appearances_with_zero_opportunities": 163,
+     "median_eligible_drives_per_game": 10,
+     "median_opportunities_per_game": 2,
+     "saturated_games": 0,
+     "windows": 681,
+     "windows_displayable": 361,
+     "displayable_share": 0.53,
+     "withheld": {
+      "too_few_appearances": 151,
+      "too_few_opportunities": 169
+     },
+     "gap_pp_displayed": {
+      "p10": -4.5,
+      "p25": -2.6,
+      "p50": -0.4,
+      "p75": 1.3,
+      "p90": 3.3
+     }
+    },
+    "RB": {
+     "players": 158,
+     "appearances": 1684,
+     "appearances_with_zero_opportunities": 274,
+     "median_eligible_drives_per_game": 9.0,
+     "median_opportunities_per_game": 6.0,
+     "saturated_games": 15,
+     "windows": 1684,
+     "windows_displayable": 1150,
+     "displayable_share": 0.683,
+     "withheld": {
+      "too_few_appearances": 302,
+      "too_few_opportunities": 232
+     },
+     "gap_pp_displayed": {
+      "p10": -14.7,
+      "p25": -10.1,
+      "p50": -5.8,
+      "p75": -1.8,
+      "p90": 1.1
+     }
+    },
+    "WR": {
+     "players": 244,
+     "appearances": 2707,
+     "appearances_with_zero_opportunities": 610,
+     "median_eligible_drives_per_game": 10,
+     "median_opportunities_per_game": 3,
+     "saturated_games": 0,
+     "windows": 2707,
+     "windows_displayable": 1601,
+     "displayable_share": 0.591,
+     "withheld": {
+      "too_few_appearances": 475,
+      "too_few_opportunities": 631
+     },
+     "gap_pp_displayed": {
+      "p10": -4.6,
+      "p25": -2.3,
+      "p50": -0.1,
+      "p75": 2.3,
+      "p90": 4.6
+     }
+    },
+    "TE": {
+     "players": 134,
+     "appearances": 1612,
+     "appearances_with_zero_opportunities": 589,
+     "median_eligible_drives_per_game": 9.0,
+     "median_opportunities_per_game": 1.0,
+     "saturated_games": 0,
+     "windows": 1612,
+     "windows_displayable": 651,
+     "displayable_share": 0.404,
+     "withheld": {
+      "too_few_appearances": 261,
+      "too_few_opportunities": 700
+     },
+     "gap_pp_displayed": {
+      "p10": -4.3,
+      "p25": -2.2,
+      "p50": -0.0,
+      "p75": 1.8,
+      "p90": 3.7
+     }
+    }
+   }
+  }
+ }
+}
