@@ -77,6 +77,12 @@ from ffdraft.simulation.vorp import (
     simulate_vorp,
 )
 from ffdraft.sources.nflverse_http import nflverse_loaders
+from ffdraft.status.employment import (
+    build_identity_registry,
+    current_teams_with_employment,
+    employment_overlay,
+    resolve_employment,
+)
 from ffdraft.tiers.algorithms import segment_with
 from ffdraft.tiers.labels import tier_label
 from ffdraft.timeutil import isoformat_utc, utc_now
@@ -193,6 +199,7 @@ def run_ros_build(
     injuries: pl.DataFrame | None = None,
     forecast_rows: Sequence[Mapping[str, Any]] | None = None,
     shadow_out: Path | None = None,
+    status_capture: Any | None = None,
     write: bool = True,
 ) -> RosBuildResult:
     """Build the current rest-of-season board and write the in-season artifacts.
@@ -344,6 +351,18 @@ def run_ros_build(
         gate=gate,
     )
     status_by_player = _status_by_player(roster)
+    # ADR-102: identity from this season's roster and last season's (identity only), and
+    # current employment from one evidence rule — the roster, then a fresh Sleeper record.
+    # Annotation and eligibility only: the model read `snapshot.frame` above.
+    identity, employment = _identity_and_employment(
+        loaded,
+        roster,
+        season=season,
+        capture=status_capture,
+        store=store,
+        as_of=stamped,
+        gate=gate,
+    )
     context = fill_published_identity(
         _context_columns(snapshot.frame),
         weekly=loaded.sources.weekly_stats,
@@ -351,6 +370,7 @@ def run_ros_build(
         player_master=loaded.sources.player_master,
         season=season,
         gate=gate,
+        employment=employment,
     )
     preseason_ranks = _preseason_ranks(preseason_board, gate)
 
@@ -377,7 +397,8 @@ def run_ros_build(
         full_board=full_board,
         snapshot_frame=snapshot.frame,
         status_by_player=status_by_player,
-        roster=roster,
+        registry=identity,
+        employment=employment,
         capture=behavior_capture,
         store=store,
         season=season,
@@ -396,7 +417,7 @@ def run_ros_build(
     # below touches that object.
     history, series_records = _behavior_series(
         opportunity_records=records["inseason_opportunity"],
-        roster=roster,
+        registry=identity,
         store=store,
         season=season,
         cutoff=cutoff,
@@ -415,6 +436,7 @@ def run_ros_build(
         opportunity_records=records["inseason_opportunity"],
         loaded=loaded,
         roster=roster,
+        employment=employment,
         settings=settings,
         season=season,
         cutoff=cutoff,
@@ -436,6 +458,7 @@ def run_ros_build(
         snapshot_frame=snapshot.frame,
         opportunity_records=records["inseason_opportunity"],
         roster=roster,
+        employment=employment,
         loaded=loaded,
         settings=settings,
         season=season,
@@ -472,6 +495,8 @@ def run_ros_build(
         leagues=leagues,
         signals=signals,
         history=history,
+        employment=employment,
+        unprojected_rows=int(opportunity_diagnostics.get("unprojected_rows", 0)),
         surface=[universe.to_dict() for universe in surface_universes],
         signal_layer=signal_summary,
         weekly=weekly_summary,
@@ -696,6 +721,7 @@ def fill_published_identity(
     player_master: pl.DataFrame,
     season: int,
     gate: QualityGate,
+    employment: Any | None = None,
 ) -> pl.DataFrame:
     """Give every published row a real name and, where one is known, a team (ADR-097).
 
@@ -714,6 +740,11 @@ def fill_published_identity(
       appeared had none: 69 rows per preset, 17 of them on an active roster. Filled from the
       current roster when it places him on exactly one club, the same rule the usage layer
       already uses (:func:`ffdraft.signals.usage.current_teams_from_roster`).
+
+    ``employment`` (ADR-102) then has the last word for the players it settles off the
+    current roster: a verified-unsigned or retired player's team is null — his last club stays
+    in his usage history, never on his row — and a signing only Sleeper has reported names his
+    new club. Players on the roster keep the rule above, unchanged.
     """
     from ffdraft.signals.usage import current_teams_from_roster
 
@@ -739,6 +770,7 @@ def fill_published_identity(
         for gsis, name in latest.iter_rows():
             names[f"gsis:{gsis}"] = str(name)
     teams = current_teams_from_roster(roster)
+    overlay = employment_overlay(employment)
 
     had_name = context.get_column("display_name").is_not_null()
     had_team = context.get_column("team").is_not_null()
@@ -753,11 +785,25 @@ def fill_published_identity(
             pl.col("player_id").replace_strict(teams, default=None, return_dtype=pl.String),
         ).alias("team"),
     )
+    if overlay:
+        filled = filled.with_columns(
+            pl.when(pl.col("player_id").is_in(sorted(overlay)))
+            .then(
+                pl.col("player_id").replace_strict(
+                    {key: value for key, value in overlay.items()},
+                    default=None,
+                    return_dtype=pl.String,
+                ),
+            )
+            .otherwise(pl.col("team"))
+            .alias("team"),
+        )
     named = int(
         (~had_name & (filled.get_column("display_name") != filled.get_column("player_id"))).sum()
     )
     unnamed = int((~had_name).sum()) - named
     placed = int((~had_team & filled.get_column("team").is_not_null()).sum())
+    settled = int(filled.get_column("player_id").is_in(sorted(overlay)).sum()) if overlay else 0
     gate.add(
         QualityCheck.ok(
             "ros.published_identity",
@@ -768,11 +814,78 @@ def fill_published_identity(
             ),
             observed=(
                 f"{named} name(s) filled, {unnamed} left as the player id; "
-                f"{placed} team(s) filled from the roster"
+                f"{placed} team(s) filled from the roster; {settled} row(s) whose club the "
+                "employment reading settled (ADR-102)"
             ),
         ),
     )
     return filled
+
+
+def _identity_and_employment(
+    loaded: Any,
+    roster: pl.DataFrame,
+    *,
+    season: int,
+    capture: Any | None,
+    store: Path | None,
+    as_of: datetime,
+    gate: QualityGate,
+) -> tuple[Any, Any | None]:
+    """The identity registry and the employment reading (ADR-102). Never a model input.
+
+    Identity: this season's roster plus last season's as identity only. Employment: the
+    roster, then the newest retained Sleeper status capture when it is fresh. Any failure
+    reading the capture degrades employment to "unknown" for off-roster players — they keep
+    whatever the board printed before — and costs no board.
+    """
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.status.capture import STATUS_PREFIX, read_status_capture
+
+    prior = loaded.sources.rosters.get(season - 1)
+    registry = build_identity_registry(roster, [prior])
+    resolved = capture
+    if resolved is None and store is not None:
+        try:
+            resolved = read_status_capture(
+                SnapshotStore(root=store, prefix=STATUS_PREFIX),
+                season=season,
+            )
+        except (OSError, ValueError) as exc:
+            gate.add(
+                QualityCheck.fail(
+                    "ros.status_capture_unreadable",
+                    stage="ros_build",
+                    message=(
+                        "the retained Sleeper status capture could not be read; employment "
+                        "off the current roster reads as unknown and every board is unaffected"
+                    ),
+                    observed=str(exc),
+                    expected="a readable capture",
+                    severity=Severity.WARNING,
+                ),
+            )
+            resolved = None
+    if roster.is_empty() and prior is None:
+        return registry, None
+    employment = resolve_employment(
+        registry=registry,
+        current_roster=roster,
+        capture=resolved,
+        as_of=as_of,
+    )
+    gate.add(employment.check(stage="ros_build"))
+    return registry, employment
+
+
+def _catalog(registry: Any) -> dict[str, dict[str, Any]]:
+    """``player_id -> {display_name, position}`` for every identified core player."""
+    if registry is None:
+        return {}
+    return {
+        player_id: {"display_name": player.display_name, "position": str(player.position)}
+        for player_id, player in registry.players.items()
+    }
 
 
 def _preseason_ranks(
@@ -905,7 +1018,8 @@ def _opportunity(
     full_board: Sequence[Mapping[str, Any]],
     snapshot_frame: pl.DataFrame,
     status_by_player: Mapping[str, str],
-    roster: pl.DataFrame,
+    registry: Any,
+    employment: Any | None,
     capture: Any | None,
     store: Path | None,
     season: int,
@@ -916,7 +1030,6 @@ def _opportunity(
 ) -> tuple[Any, list[Any], dict[str, Any]]:
     """Assemble the Opportunity Board. Every failure here degrades a column, not the board."""
     from ffdraft.behavior.capture import BEHAVIOR_PREFIX, read_behavior_capture
-    from ffdraft.identity.registry import build_registry
     from ffdraft.opportunity.board import build_opportunity_records, resolve_behavior_signals
     from ffdraft.retention import SnapshotStore
 
@@ -944,8 +1057,13 @@ def _opportunity(
             )
             resolved_capture = None
 
-    registry = build_registry(roster) if not roster.is_empty() else None
-    signals = resolve_behavior_signals(resolved_capture, registry=registry, as_of=as_of)
+    # The identity spine, not the season roster alone: an unsigned player, or one signed after
+    # the file was cut, is still a canonical player whose adds must reach him (ADR-102).
+    signals = resolve_behavior_signals(
+        resolved_capture,
+        registry=registry if registry is not None and len(registry) else None,
+        as_of=as_of,
+    )
     context = _opportunity_context(snapshot_frame, status_by_player)
     rows, universes, diagnostics = build_opportunity_records(
         ros_records=records,
@@ -956,6 +1074,8 @@ def _opportunity(
         season=season,
         through_week=cutoff.through_week,
         gate=gate,
+        employment=None if employment is None else employment.readings,
+        catalog=_catalog(registry),
     )
     return signals, universes, {**diagnostics, "records": rows}
 
@@ -963,7 +1083,7 @@ def _opportunity(
 def _behavior_series(
     *,
     opportunity_records: Sequence[Mapping[str, Any]],
-    roster: pl.DataFrame,
+    registry: Any,
     store: Path | None,
     season: int,
     cutoff: RosCutoff,
@@ -986,9 +1106,8 @@ def _behavior_series(
     from ffdraft.artifacts.schemas import record_schema_version
     from ffdraft.behavior.history import build_behavior_history, load_behavior_window
     from ffdraft.behavior.trend import BEHAVIOR_TREND_RULE, behavior_series_records
-    from ffdraft.identity.registry import build_registry
 
-    if store is None or roster.is_empty():
+    if store is None or registry is None or not len(registry):
         return None, []
 
     try:
@@ -1009,7 +1128,7 @@ def _behavior_series(
         )
         return None, []
 
-    history = build_behavior_history(captures, registry=build_registry(roster), now=as_of)
+    history = build_behavior_history(captures, registry=registry, now=as_of)
     if history.is_empty:
         gate.add(
             QualityCheck.fail(
@@ -1065,6 +1184,7 @@ def _signal_layer(
     loaded: Any,
     roster: pl.DataFrame,
     settings: AppConfig,
+    employment: Any | None = None,
     season: int,
     cutoff: RosCutoff,
     build_id: str,
@@ -1123,7 +1243,10 @@ def _signal_layer(
             through_week=cutoff.through_week,
             build_id=build_id,
             schema_version=record_schema_version("player_usage"),
-            current_teams=current_teams_from_roster(roster),
+            current_teams=current_teams_with_employment(
+                current_teams_from_roster(roster),
+                employment,
+            ),
         )
     except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
         usage = []
@@ -1228,6 +1351,7 @@ def _weekly_layer(
     as_of: datetime,
     gate: QualityGate,
     injuries: pl.DataFrame | None,
+    employment: Any | None = None,
     allow_fetch: bool,
     store: Path | None = None,
     forecast_rows: Sequence[Mapping[str, Any]] | None = None,
@@ -1281,7 +1405,10 @@ def _weekly_layer(
             model=model,
             snapshot=snapshot_frame,
             players=players,
-            current_teams=current_teams_from_roster(roster),
+            current_teams=current_teams_with_employment(
+                current_teams_from_roster(roster),
+                employment,
+            ),
             weekly=loaded.sources.weekly_stats,
             schedule=loaded.sources.schedule,
             scoring=settings.league.scoring,
@@ -2140,6 +2267,8 @@ def _ros_metadata(
     surface: Sequence[Mapping[str, Any]] | None = None,
     signal_layer: Mapping[str, Any] | None = None,
     weekly: Mapping[str, Any] | None = None,
+    employment: Any | None = None,
+    unprojected_rows: int = 0,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2186,6 +2315,10 @@ def _ros_metadata(
                 # them: `snapshot_at_utc` above is the instant the board's numbers came
                 # from, and this is every instant the sparkline draws (ADR-089).
                 "history": None if history is None or history.is_empty else history.summary(),
+                # ADR-102: whose employment the evidence settled, and how many Opportunity
+                # rows had no validated model output to show.
+                "employment": None if employment is None else employment.to_dict(),
+                "unprojected_rows": unprojected_rows,
             }
         ),
         "surface": (

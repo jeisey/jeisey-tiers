@@ -57,6 +57,15 @@ from ffdraft.market.surface import (
 )
 from ffdraft.quality import QualityGate
 
+#: The employment reading (``ffdraft.status.employment``, ADR-102) is read *by value*: this
+#: module may not import the status package (`tests/unit/test_availability_overrides.py`), and
+#: it needs nothing from the reading but its status, source, club and roster code. Any
+#: object with those four attributes will do; their values are the contract's strings.
+Employment = Any
+_UNSIGNED = "unsigned"
+_SIGNED = "signed"
+_SLEEPER_SOURCE = "sleeper"
+
 __all__ = [
     "BEHAVIOR_MAX_AGE_HOURS",
     "OPPORTUNITY_METHOD_VERSION",
@@ -65,6 +74,8 @@ __all__ = [
     "SurfacedValueMissing",
     "build_opportunity_records",
     "surfaced_values",
+    "unprojected_candidates",
+    "unprojected_record",
     "resolve_behavior_signals",
 ]
 
@@ -208,11 +219,11 @@ def resolve_behavior_signals(
             degraded_reason="no canonical registry, so no feed row can be resolved",
         )
 
-    sleeper_to_canonical: dict[str, str] = {}
-    for player_id in sorted(registry.players):
-        sleeper_id = registry.players[player_id].crosswalk.sleeper_id
-        if sleeper_id:
-            sleeper_to_canonical[str(sleeper_id)] = player_id
+    # The one fail-closed mapping the momentum series uses too: a poisoned sleeper_id
+    # reaches nobody (ADR-019, ADR-102).
+    from ffdraft.behavior.history import sleeper_to_canonical as crosswalk
+
+    sleeper_to_canonical = crosswalk(registry)
 
     def project(source: Mapping[str, int]) -> tuple[dict[str, int], int]:
         mapped: dict[str, int] = {}
@@ -257,6 +268,8 @@ def build_opportunity_records(
     through_week: int,
     gate: QualityGate,
     tier_depth: int | None = None,
+    employment: Mapping[str, Employment] | None = None,
+    catalog: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], list[SurfaceUniverse], dict[str, Any]]:
     """Assemble the Opportunity Board for every published block.
 
@@ -264,6 +277,14 @@ def build_opportunity_records(
     below is copied from them. ``full_board`` is the untruncated fair-ranked board, which is
     what makes a rescue possible: a player cut at the publication depth is still in it, with
     the fair rank the model gave him.
+
+    ``employment`` (ADR-102) labels every row with its ``employment_evidence_v1`` reading.
+    It also admits one more kind of row: a verified off-roster player — unsigned, or signed
+    on Sleeper evidence the roster file has not caught up with — who clears the same
+    trending-add bar a surfaced player does but is on no board, because no validated model
+    output exists for him. Such a row is ``model_coverage: unprojected``: identity, team,
+    employment and behaviour, with every intrinsic column null rather than invented.
+    ``catalog`` supplies his name and position (``player_id -> {display_name, position}``).
     """
     depth = tier_depth if tier_depth is not None else TIER_DEPTH_RULE.depth
     published: dict[tuple[str, str, str], Mapping[str, Any]] = {
@@ -282,6 +303,7 @@ def build_opportunity_records(
     records: list[dict[str, Any]] = []
     universes: list[SurfaceUniverse] = []
     surfaced_total = 0
+    unprojected_total = 0
 
     for (league_preset_id, scoring_preset), board in sorted(blocks.items()):
         memberships = _memberships(
@@ -326,6 +348,27 @@ def build_opportunity_records(
                     through_week=through_week,
                     league_preset_id=league_preset_id,
                     scoring_preset=scoring_preset,
+                    employment=(employment or {}).get(player_id),
+                ),
+            )
+        for player_id in unprojected_candidates(
+            employment=employment,
+            catalog=catalog,
+            signals=signals,
+            on_board=set(by_player),
+        ):
+            unprojected_total += 1
+            records.append(
+                unprojected_record(
+                    player_id=player_id,
+                    entry=(catalog or {})[player_id],
+                    reading=(employment or {})[player_id],
+                    signals=signals,
+                    build_id=build_id,
+                    season=season,
+                    through_week=through_week,
+                    league_preset_id=league_preset_id,
+                    scoring_preset=scoring_preset,
                 ),
             )
 
@@ -340,7 +383,8 @@ def build_opportunity_records(
             ),
             observed=(
                 f"{len(records)} row(s) across {len(universes)} block(s); "
-                f"{surfaced_total} surfaced from beyond tier depth {depth}"
+                f"{surfaced_total} surfaced from beyond tier depth {depth}; "
+                f"{unprojected_total} unprojected off-roster row(s)"
             ),
         ),
     )
@@ -350,6 +394,7 @@ def build_opportunity_records(
         "tier_depth": depth,
         "rows": len(records),
         "surfaced_beyond_depth": surfaced_total,
+        "unprojected_rows": unprojected_total,
         "behavior": signals.to_dict(),
         "surface_add_count_minimum": SURFACE_ADD_COUNT_MINIMUM,
         "surface_snap_share_minimum": SURFACE_SNAP_SHARE_MINIMUM,
@@ -426,6 +471,7 @@ def _opportunity_record(
     through_week: int,
     league_preset_id: str,
     scoring_preset: str,
+    employment: Employment | None = None,
 ) -> dict[str, Any]:
     """One row. Every intrinsic field is copied, never recomputed.
 
@@ -497,6 +543,100 @@ def _opportunity_record(
         "outside_tier_board": outside_tier_board,
         "surface_reasons": sorted(set(entry_reasons)),
         "quality_flags": sorted(set((published or {}).get("quality_flags", ()))),
+        "employment_status": None if employment is None else str(employment.status),
+        "model_coverage": "projected",
+    }
+
+
+def unprojected_candidates(
+    *,
+    employment: Mapping[str, Employment] | None,
+    catalog: Mapping[str, Mapping[str, Any]] | None,
+    signals: BehaviorSignals,
+    on_board: set[str],
+) -> list[str]:
+    """Off-roster players with no board row whom managers are adding (ADR-102).
+
+    The bar is the surface rule's own (:data:`SURFACE_ADD_COUNT_MINIMUM` adds in the
+    window), so the population is bounded by the feed — at most its request limit — and no
+    looser for an unprojected player than for a projected one. Retired and unknown readings
+    never qualify; neither does a player whose identity the catalog cannot name.
+    """
+    if not employment or not catalog or not signals.available:
+        return []
+    chosen: list[str] = []
+    for player_id, reading in sorted(employment.items()):
+        if player_id in on_board or player_id not in catalog:
+            continue
+        off_roster = str(reading.status) == _UNSIGNED or (
+            str(reading.status) == _SIGNED and str(reading.source) == _SLEEPER_SOURCE
+        )
+        if not off_roster:
+            continue
+        if signals.add_counts.get(player_id, 0) >= SURFACE_ADD_COUNT_MINIMUM:
+            chosen.append(player_id)
+    return chosen
+
+
+def unprojected_record(
+    *,
+    player_id: str,
+    entry: Mapping[str, Any],
+    reading: Employment,
+    signals: BehaviorSignals,
+    build_id: str,
+    season: int,
+    through_week: int,
+    league_preset_id: str,
+    scoring_preset: str,
+) -> dict[str, Any]:
+    """A row for a player the model never valued: identity, club and behaviour, no numbers."""
+    add_count = signals.add_counts.get(player_id, 0)
+    drop_count = signals.drop_counts.get(player_id, 0)
+    return {
+        "schema_version": record_schema_version("inseason_opportunity_record"),
+        "build_id": build_id,
+        "season": season,
+        "through_week": through_week,
+        "league_preset_id": league_preset_id,
+        "scoring_preset": scoring_preset,
+        "player_id": player_id,
+        "display_name": str(entry.get("display_name") or player_id),
+        "team": reading.team,
+        "position": str(entry.get("position") or ""),
+        "ros_fair_rank": None,
+        "ros_position_rank": None,
+        "ros_expected_vorp": None,
+        "ros_vorp_p50": None,
+        "ros_expected_points": None,
+        "ros_expected_games": None,
+        "ros_uncertainty": None,
+        "ros_tier": None,
+        "behavior_source_id": signals.source_id,
+        "behavior_available": signals.available,
+        "behavior_snapshot_at_utc": (
+            signals.snapshot_at_utc.isoformat().replace("+00:00", "Z")
+            if signals.snapshot_at_utc
+            else None
+        ),
+        "behavior_lookback_hours": signals.lookback_hours,
+        "behavior_request_limit": signals.request_limit,
+        "add_count": add_count,
+        "drop_count": drop_count,
+        "net_add_count": add_count - drop_count,
+        "add_rank": signals.add_ranks.get(player_id),
+        "drop_rank": signals.drop_ranks.get(player_id),
+        "long_absence": False,
+        "weeks_since_last_game": 0.0,
+        "games_played_to_date": None,
+        "snap_share_last3": None,
+        "target_share_last3": None,
+        "current_status": reading.roster_status,
+        "outside_tier_board": True,
+        "surface_reasons": [str(SurfaceReason.SLEEPER_TRENDING_ADD)],
+        "quality_flags": ["no_model_output"],
+        "employment_status": str(reading.status),
+        "model_coverage": "unprojected",
     }
 
 

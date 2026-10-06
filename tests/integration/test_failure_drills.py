@@ -464,16 +464,20 @@ def test_no_workflow_echoes_a_secret() -> None:
 
 
 def test_a_stale_build_is_named_stale_by_the_frontend_rather_than_hidden() -> None:
-    """The masthead derives staleness from the build's own timestamp against a clock.
+    """The Data view derives staleness from the build's own timestamp against a clock.
 
     Checked as a contract because the alternative failure is invisible: a site that served a
-    week-old board without saying so would look exactly like a working one.
+    week-old board without saying so would look exactly like a working one. Since the
+    2026-10-06 masthead simplification the header shows only the Updated stamp (with its age
+    for assistive technology) and the stale verdict lives in the Data view's build table.
     """
     freshness = Path("web/src/data/freshness.ts").read_text(encoding="utf-8")
     assert "STALE_WARNING_HOURS" in freshness
+    data_view = Path("web/src/app/DataView.tsx").read_text(encoding="utf-8")
+    assert "STALE_WARNING_HOURS" in data_view
+    assert "stale: beyond the" in data_view
     masthead = Path("web/src/app/Masthead.tsx").read_text(encoding="utf-8")
-    assert "STALE_WARNING_HOURS" in masthead
-    assert "Build is stale" in masthead
+    assert "formatAge(ageHours)" in masthead
     # Nothing hardcodes a date; the stamp comes from metadata.
     assert "generated_at_utc" in masthead
 

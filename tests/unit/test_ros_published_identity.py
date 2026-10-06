@@ -112,5 +112,58 @@ def test_the_gate_records_what_was_filled() -> None:
     check = next(check for check in gate.checks if check.check_id == "ros.published_identity")
     assert (
         check.observed
-        == "3 name(s) filled, 1 left as the player id; 1 team(s) filled from the roster"
+        == "3 name(s) filled, 1 left as the player id; 1 team(s) filled from the roster; "
+        "0 row(s) whose club the employment reading settled (ADR-102)"
+    )
+
+
+def test_employment_settles_the_club_for_off_roster_players_only() -> None:
+    """ADR-102: a released, unsigned player's last club (`team_to_date`) is not his current
+    one; a signing only Sleeper has reported names the new club; rostered rows are untouched.
+    """
+    from ffdraft.status.employment import (
+        Employment,
+        EmploymentResult,
+        EmploymentSource,
+        EmploymentStatus,
+    )
+
+    context = pl.DataFrame(
+        {
+            "player_id": ["gsis:00-A", "gsis:00-F", "gsis:00-G"],
+            "display_name": ["Kept Name", "Released Unsigned", "Signed Late"],
+            "team": ["BUF", "MIA", None],
+            "team_remaining_scheduled_games": [9.0, 9.0, None],
+        },
+    )
+    employment = EmploymentResult(
+        readings={
+            "gsis:00-A": Employment(
+                "gsis:00-A", EmploymentStatus.SIGNED, "MIA", EmploymentSource.NFLVERSE_ROSTER, None
+            ),
+            "gsis:00-F": Employment(
+                "gsis:00-F", EmploymentStatus.UNSIGNED, None, EmploymentSource.SLEEPER, None
+            ),
+            "gsis:00-G": Employment(
+                "gsis:00-G", EmploymentStatus.SIGNED, "SEA", EmploymentSource.SLEEPER, None
+            ),
+        },
+        sleeper_fresh=True,
+    )
+    frame = fill_published_identity(
+        context,
+        weekly=_weekly(),
+        roster=_roster(),
+        player_master=_master(),
+        season=2026,
+        gate=QualityGate(),
+        employment=employment,
+    )
+    rows = {row["player_id"]: row for row in frame.iter_rows(named=True)}
+    assert rows["gsis:00-A"]["team"] == "BUF"  # roster-signed: the existing rule, unchanged
+    assert rows["gsis:00-F"]["team"] is None
+    assert rows["gsis:00-G"]["team"] == "SEA"
+    # Annotation only: the model input column is exactly the snapshot's.
+    assert frame.get_column("team_remaining_scheduled_games").equals(
+        context.get_column("team_remaining_scheduled_games"),
     )

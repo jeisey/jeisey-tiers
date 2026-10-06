@@ -25,11 +25,13 @@ export const RECORD_SCHEMA_VERSIONS = {
   market_trend_series: "1.0",
   projections: "1.0",
   market_snapshot: "1.0",
-  // 1.1 (ADR-101): additive `availability_override`.
-  player_status: "1.1",
+  // 1.1 (ADR-101): additive `availability_override`. 1.2 (ADR-102): additive employment.
+  player_status: "1.2",
   ros_tiers: "1.0",
   // 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
-  inseason_opportunity: "1.1",
+  // 1.2 (ADR-102): additive `employment_status` and `model_coverage`; an unprojected row's
+  // ranks and values are null, and the bundle keeps such rows apart (`UnprojectedRecord`).
+  inseason_opportunity: "1.2",
   player_headshots: "1.0",
   behavior_trend_series: "1.0",
   player_usage: "1.0",
@@ -286,7 +288,17 @@ export interface PlayerStatusRecord {
    * Evidence for the availability policy (`data/availability.ts`), never a model input.
    */
   readonly availability_override?: AvailabilityOverrideRecord | null;
+  /**
+   * Contract 1.2 (ADR-102), `employment_evidence_v1`: who employs him now. `unsigned` is a
+   * verified free agent (shown as "FA"); `unknown` is never shown as FA. Absent on older
+   * builds, null when the build computed no reading.
+   */
+  readonly employment_status?: EmploymentStatus | null;
+  readonly employment_source?: "nflverse_roster" | "sleeper" | null;
+  readonly employment_observed_at_utc?: string | null;
 }
+
+export type EmploymentStatus = "signed" | "unsigned" | "retired" | "unknown";
 
 export interface AvailabilityOverrideRecord {
   readonly horizon: "season";
@@ -856,6 +868,9 @@ export const PLAYER_STATUS_FIELDS = [
   "source_ids",
   "quality_flags",
   "availability_override",
+  "employment_status",
+  "employment_source",
+  "employment_observed_at_utc",
 ] as const satisfies readonly (keyof PlayerStatusRecord)[];
 
 export const PLAYER_HEADSHOT_FIELDS = [
@@ -1057,7 +1072,41 @@ export interface OpportunityRecord {
   readonly outside_tier_board: boolean;
   readonly surface_reasons: readonly SurfaceReason[];
   readonly quality_flags: readonly string[];
+  /** Contract 1.2 (ADR-102): the employment reading, also on `player_status`. */
+  readonly employment_status?: EmploymentStatus | null;
+  /** Contract 1.2: always `projected` here — unprojected rows are `UnprojectedRecord`s. */
+  readonly model_coverage?: "projected" | "unprojected";
 }
+
+/**
+ * An Opportunity row for a verified off-roster player with no validated model output
+ * (contract 1.2, ADR-102): unsigned, or signed only on Sleeper evidence, and added widely
+ * enough to clear the surface rule. Identity, club, employment and behaviour; every ROS
+ * number null, never zero. The bundle keeps these apart from `OpportunityRecord`, so no
+ * ranking, chart or filter that orders by value can meet one.
+ */
+export type UnprojectedRecord = Omit<
+  OpportunityRecord,
+  | "ros_fair_rank"
+  | "ros_position_rank"
+  | "ros_expected_vorp"
+  | "ros_vorp_p50"
+  | "ros_expected_points"
+  | "ros_expected_games"
+  | "ros_uncertainty"
+  | "ros_tier"
+  | "model_coverage"
+> & {
+  readonly ros_fair_rank: null;
+  readonly ros_position_rank: null;
+  readonly ros_expected_vorp: null;
+  readonly ros_vorp_p50?: null;
+  readonly ros_expected_points: null;
+  readonly ros_expected_games: null;
+  readonly ros_uncertainty: null;
+  readonly ros_tier: null;
+  readonly model_coverage: "unprojected";
+};
 
 /** ADR-076's disclosure contract, carried on the artifact rather than written in the UI. */
 export interface RosDisclosures {
@@ -1553,6 +1602,8 @@ export const OPPORTUNITY_FIELDS = [
   "outside_tier_board",
   "surface_reasons",
   "quality_flags",
+  "employment_status",
+  "model_coverage",
 ] as const satisfies readonly (keyof OpportunityRecord)[];
 
 export const ROS_TIER_FIELDS_COMPLETE: NoMissingKeys<

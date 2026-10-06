@@ -594,3 +594,88 @@ def test_before_the_anchor_status_is_the_board(
     )
     tiers = {row["player_id"] for row in result.records["tiers"]}
     assert {row["player_id"] for row in result.records["player_status"]} <= tiers
+
+
+def test_after_the_anchor_an_unsigned_player_keeps_a_status_row_and_no_portrait(
+    fixture_sources,
+    production_model,
+    app_config,
+    tmp_path,
+) -> None:
+    """ADR-102 on the real current-build path.
+
+    A player on last season's roster, absent from this season's, whose fresh Sleeper record
+    names no club, is a verified free agent: he gets a status row with no current club and an
+    `unsigned` reading — not a silent omission (the 2026-10-06 Hill/Mixon trace) — and still
+    no portrait unless the tier board names him (PR #58).
+    """
+    import dataclasses
+
+    from ffdraft.status.capture import StatusCapture
+
+    # The historical fixture's rosters carry no Sleeper ids, so the departing receiver is
+    # given one on a copy: the crosswalk the previous season's roster supplies in production.
+    original = fixture_sources.sources.rosters[FIXTURE_SEASON - 1]
+    gone_id = original.filter(pl.col("position") == "WR").get_column("gsis_id")[0]
+    prior = original.with_columns(
+        pl.when(pl.col("gsis_id") == gone_id)
+        .then(pl.lit("5999001"))
+        .otherwise(pl.col("sleeper_id"))
+        .alias("sleeper_id"),
+    )
+    sources = dataclasses.replace(
+        fixture_sources,
+        sources=dataclasses.replace(
+            fixture_sources.sources,
+            rosters={**fixture_sources.sources.rosters, FIXTURE_SEASON - 1: prior},
+        ),
+    )
+    gone = prior.filter(pl.col("gsis_id") == gone_id).row(0, named=True)
+    current = prior.filter(pl.col("gsis_id") != gone["gsis_id"]).with_columns(
+        pl.lit(FIXTURE_SEASON).cast(pl.Int32).alias("season"),
+        pl.lit("ACT").alias("status"),
+    )
+    capture = StatusCapture(
+        source_id="sleeper",
+        season=FIXTURE_SEASON,
+        snapshot_key="k",
+        observed_at_utc=AFTER_THE_ANCHOR,
+        adapter_version="1.1",
+        source_policy_version="test",
+        rows=[
+            {
+                "source_id": "sleeper",
+                "external_player_id": gone["sleeper_id"],
+                "observed_at_utc": AFTER_THE_ANCHOR.isoformat(),
+                "team": None,
+                "status": "Active",
+                "reported_gsis_id": gone["gsis_id"],
+            },
+        ],
+    )
+    _, model_dir = production_model
+    result = run_current_build(
+        season=FIXTURE_SEASON,
+        model_dir=model_dir,
+        out_dir=tmp_path / "artifacts",
+        config=_config(),
+        as_of=AFTER_THE_ANCHOR,
+        sources=sources,
+        current_roster=current,
+        status_capture=capture,
+        app=app_config,
+        write=False,
+    )
+    status = {row["player_id"]: row for row in result.records["player_status"]}
+    player_id = f"gsis:{gone['gsis_id']}"
+    assert player_id in status
+    record = status[player_id]
+    assert record["employment_status"] == "unsigned"
+    assert record["employment_source"] == "sleeper"
+    assert record["current_team"] is None
+    tiers = {row["player_id"] for row in result.records["tiers"]}
+    portraits = {row["player_id"] for row in result.records["player_headshots"]}
+    assert portraits <= tiers
+    summary = result.metadata["player_status"]["employment"]
+    assert summary["rule_version"] == "employment_evidence_v1"
+    assert summary["counts"]["unsigned"] >= 1

@@ -39,9 +39,25 @@
     "coverage": 0.9375
   },
   "player_status": {
-    "players": 16,
+    "employment": {
+      "rule_version": "employment_evidence_v1",
+      "sleeper_observed_at_utc": "2026-08-18T12:00:00Z",
+      "sleeper_fresh": true,
+      "max_age_hours": 48.0,
+      "identity_refusals": 1,
+      "ambiguous_ids": 0,
+      "counts": {
+        "signed": 17,
+        "unsigned": 1,
+        "retired": 0,
+        "unknown": 1,
+        "signed_by_sleeper_only": 1,
+        "sources_disagree": 0
+      }
+    },
+    "players": 18,
     "sleeper_available": true,
-    "sleeper_matched": 14,
+    "sleeper_matched": 16,
     "sleeper_identity_conflicts": 1,
     "observed_at_utc": "2026-08-18T12:00:00Z",
     "source_ids": [
@@ -80,7 +96,7 @@
       "status": "warning",
       "retrieved_at_utc": "2026-08-18T12:00:00Z",
       "source_as_of_utc": null,
-      "record_count": 16,
+      "record_count": 19,
       "warnings": [
         "whitespace_trimmed_gsis_id"
       ]

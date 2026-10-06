@@ -42,6 +42,7 @@ import type {
   BehaviorTrendSeriesRecord,
   BuildMetadata,
   OpportunityRecord,
+  UnprojectedRecord,
   PlayerHeadshotRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
@@ -447,7 +448,7 @@ function secondMarket(
 
 export function playerStatusRecords(): PlayerStatusRecord[] {
   const base = {
-    schema_version: "1.1",
+    schema_version: "1.2",
     build_id: FIXTURE_BUILD_ID,
     season: 2026,
     injury_start_date: null,
@@ -494,6 +495,10 @@ export function playerStatusRecords(): PlayerStatusRecord[] {
         // (`FLAGGED_STATUSES` names `RES`, `CUT` and `E14`); the badge is the whole signal.
         quality_flags: out ? ["current_status_reserve"] : [],
         availability_override: null,
+        // ADR-102: every fixture player is on the current roster file.
+        employment_status: "signed",
+        employment_source: "nflverse_roster",
+        employment_observed_at_utc: "2026-08-21T14:38:00Z",
       } satisfies PlayerStatusRecord;
     });
 }
@@ -558,7 +563,128 @@ export function inSeasonPlayerStatusRecords(): PlayerStatusRecord[] {
       return { ...record, injury_status: "Out", injury_body_part: "Knee" };
     }
     return record;
-  });
+  }).concat(offRosterStatusRecords());
+}
+
+/**
+ * ADR-102's two off-roster states, on players no board publishes a value for: a verified
+ * unsigned receiver (the shape Tyreek Hill had on 2026-10-06 — last season's roster, no club
+ * in Sleeper, hundreds of thousands of adds) and a back whose signing only Sleeper reports
+ * (Joe Mixon's shape the same day).
+ */
+export const FIXTURE_UNSIGNED_ID = "gsis:00-0000020";
+export const FIXTURE_SIGNING_ID = "gsis:00-0000021";
+
+function offRosterStatusRecords(): PlayerStatusRecord[] {
+  const base = {
+    schema_version: "1.2",
+    build_id: FIXTURE_BUILD_ID,
+    season: 2026,
+    roster_status: null,
+    roster_depth_chart_position: null,
+    sleeper_status: "Active",
+    injury_status: null,
+    injury_body_part: null,
+    injury_notes: null,
+    injury_start_date: null,
+    practice_participation: null,
+    practice_description: null,
+    depth_chart_position: null,
+    depth_chart_order: null,
+    observed_at_utc: "2026-08-21T14:00:00Z",
+    source_ids: ["nflreadpy", "sleeper"] as readonly string[],
+    quality_flags: ["no_current_roster_entry"] as readonly string[],
+    availability_override: null,
+    employment_source: "sleeper" as const,
+    employment_observed_at_utc: "2026-08-21T14:00:00Z",
+  };
+  return [
+    {
+      ...base,
+      player_id: FIXTURE_UNSIGNED_ID,
+      display_name: "Darnell Ashby",
+      current_team: null,
+      position: "WR",
+      employment_status: "unsigned",
+    },
+    {
+      ...base,
+      player_id: FIXTURE_SIGNING_ID,
+      display_name: "Corey Halvorsen",
+      current_team: "SEA",
+      position: "RB",
+      employment_status: "signed",
+    },
+  ];
+}
+
+/** Their adds and drops in the fixture feed: well past the surface rule's 500-add bar. */
+const OFF_ROSTER_COUNTS: Readonly<Record<string, readonly [number, number]>> = {
+  [FIXTURE_UNSIGNED_ID]: [2400, 35],
+  [FIXTURE_SIGNING_ID]: [950, 0],
+};
+
+/**
+ * The unprojected Opportunity rows (contract 1.2, ADR-102): one per off-roster player per
+ * block, identity, club and behaviour, every ROS number null. Only when the feed is up —
+ * the rows exist because managers are adding them.
+ */
+export function unprojectedRecords(behaviorAvailable = true): UnprojectedRecord[] {
+  if (!behaviorAvailable) return [];
+  const blocks = [
+    ...new Map(
+      rosTierRecords().map((record) => [
+        `${record.league_preset_id}|${record.scoring_preset}`,
+        record,
+      ]),
+    ).values(),
+  ];
+  return blocks.flatMap((block) =>
+    offRosterStatusRecords().map((status, index): UnprojectedRecord => {
+      const [adds, drops] = OFF_ROSTER_COUNTS[status.player_id] ?? [0, 0];
+      return {
+        schema_version: "1.2",
+        build_id: FIXTURE_BUILD_ID,
+        season: block.season,
+        through_week: block.through_week,
+        league_preset_id: block.league_preset_id,
+        scoring_preset: block.scoring_preset,
+        player_id: status.player_id,
+        display_name: status.display_name,
+        team: status.current_team,
+        position: status.position,
+        ros_fair_rank: null,
+        ros_position_rank: null,
+        ros_expected_vorp: null,
+        ros_vorp_p50: null,
+        ros_expected_points: null,
+        ros_expected_games: null,
+        ros_uncertainty: null,
+        ros_tier: null,
+        behavior_source_id: "sleeper",
+        behavior_available: true,
+        behavior_snapshot_at_utc: FIXTURE_GENERATED_AT,
+        behavior_lookback_hours: FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
+        behavior_request_limit: 100,
+        add_count: adds,
+        drop_count: drops,
+        net_add_count: adds - drops,
+        add_rank: index + 1,
+        drop_rank: null,
+        long_absence: false,
+        weeks_since_last_game: 0,
+        games_played_to_date: null,
+        snap_share_last3: null,
+        target_share_last3: null,
+        current_status: null,
+        outside_tier_board: true,
+        surface_reasons: ["sleeper_trending_add"],
+        quality_flags: ["no_model_output"],
+        employment_status: status.employment_status ?? null,
+        model_coverage: "unprojected",
+      };
+    }),
+  );
 }
 
 export function inSeasonPlayerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {
@@ -937,7 +1063,7 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
     const adds = Math.max(0, 900 - depth * 37);
     const drops = Math.max(0, 120 - depth * 5);
     return {
-      schema_version: "1.1",
+      schema_version: "1.2",
       build_id: FIXTURE_BUILD_ID,
       season: record.season,
       through_week: record.through_week,
@@ -1919,12 +2045,11 @@ export function rosTierEnvelope(schemaVersion?: string): ArtifactEnvelope<RosTie
 
 export function opportunityEnvelope(
   behaviorAvailable = true,
-): ArtifactEnvelope<OpportunityRecord> {
-  return envelope(
-    "inseason_opportunity",
-    "inseason_opportunity_record",
-    opportunityRecords(behaviorAvailable),
-  );
+): ArtifactEnvelope<OpportunityRecord | UnprojectedRecord> {
+  return envelope("inseason_opportunity", "inseason_opportunity_record", [
+    ...opportunityRecords(behaviorAvailable),
+    ...unprojectedRecords(behaviorAvailable),
+  ]);
 }
 
 export function playerStatusEnvelope(): ArtifactEnvelope<PlayerStatusRecord> {

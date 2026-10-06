@@ -46,7 +46,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, type RefObject } from "react";
 
-import { RosStatusBadge } from "../components/primitives";
+import { RosStatusBadge, TeamCell } from "../components/primitives";
 import {
   compareMomentum,
   compareRole,
@@ -189,7 +189,10 @@ function opportunityColumns(
       header: "Team",
       accessorFn: (row) => row.row.record.team ?? "",
       cell: (context) => (
-        <span className="muted">{context.row.original.row.record.team ?? "—"}</span>
+        <TeamCell
+          team={context.row.original.row.record.team}
+          playerId={context.row.original.row.record.player_id}
+        />
       ),
       meta: { width: "3.5rem", className: "col-mid" },
     },

@@ -96,7 +96,12 @@ from ffdraft.market.trend import (
     compute_trends,
     trend_series_records,
 )
-from ffdraft.opportunity.board import surfaced_values
+from ffdraft.opportunity.board import (
+    BehaviorSignals,
+    surfaced_values,
+    unprojected_candidates,
+    unprojected_record,
+)
 from ffdraft.pipeline.fixture_season import (
     FIXTURE_INSEASON_AS_OF,
     FixtureSeason,
@@ -135,6 +140,12 @@ from ffdraft.sources.market import (
 from ffdraft.sources.nflverse import NFLVERSE_SOURCE_ID
 from ffdraft.status.build import PlayerStatusResult, build_player_status_records
 from ffdraft.status.capture import StatusCapture
+from ffdraft.status.employment import (
+    EmploymentResult,
+    build_identity_registry,
+    employment_catalog,
+    resolve_employment,
+)
 from ffdraft.timeutil import isoformat_utc, parse_utc
 
 __all__ = [
@@ -256,6 +267,9 @@ class FixtureInputs:
     depth_snapshot: list[dict[str, Any]]
     depth_weekly: list[dict[str, Any]]
     projection_inputs: dict[str, Any]
+    #: The previous season's roster, identity only (ADR-102): it carries the fixture's
+    #: unsigned and Sleeper-only-signed players, whom the current roster does not list.
+    prior_roster: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -293,6 +307,11 @@ def load_fixture_inputs(directory: Path) -> FixtureInputs:
         depth_snapshot=read("nflverse_depth_charts_2026.json"),
         depth_weekly=read("nflverse_depth_charts_2024.json"),
         projection_inputs=read("expected_points.json"),
+        prior_roster=(
+            read("nflverse_rosters_2025.json")
+            if (directory / "nflverse_rosters_2025.json").is_file()
+            else []
+        ),
     )
 
 
@@ -468,14 +487,33 @@ def run_fixture_pipeline(
     trend_series = _trend_series_records(arbitrage, build_id=build_id, snapshot_at=now)
 
     published_players = [str(row["player_id"]) for row in tiers]
+    # ADR-102: the annotation side identifies players from this season's roster and last
+    # season's (identity only), and reads current employment from the roster, then Sleeper.
+    prior_frame = (
+        NflverseRosterAdapter()
+        .normalize(inputs.prior_roster, season=FIXTURE_SEASON - 1, retrieved_at=now)
+        .frame
+        if inputs.prior_roster
+        else None
+    )
+    identity = build_identity_registry(roster_batch.frame, [prior_frame])
+    status_capture = _status_capture(sleeper_batch, generated_at=now)
+    employment = resolve_employment(
+        registry=identity,
+        current_roster=roster_batch.frame,
+        capture=status_capture,
+        as_of=now,
+    )
+    gate.add(employment.check(stage="fixture.employment"))
     status = _player_status_records(
-        registry=registry,
+        registry=identity,
         roster=roster_batch.frame,
-        sleeper_batch=sleeper_batch,
+        capture=status_capture,
         build_id=build_id,
         generated_at=now,
-        published=published_players,
+        published=[*published_players, *employment_catalog(employment)],
         gate=gate,
+        employment=employment,
     )
     # The fixture registry deliberately holds a player the crosswalk cannot bridge, so the
     # artifact ships with a hole in it and the card's no-portrait path is exercised by the
@@ -493,7 +531,13 @@ def run_fixture_pipeline(
     # to date printed beside them.
     season = _fixture_season(tiers, app)
     ros_tiers = _ros_tier_records(tiers, build_id=build_id, facts=season.facts)
-    opportunity = _opportunity_records(ros_tiers, build_id=build_id, facts=season.facts)
+    opportunity = _opportunity_records(
+        ros_tiers,
+        build_id=build_id,
+        facts=season.facts,
+        employment=employment,
+        identity=identity,
+    )
     behavior_series = _behavior_series_records(opportunity, build_id=build_id)
     usage, matchups = _signal_records(opportunity, season=season, app=app, build_id=build_id)
     weekly, weekly_block, weekly_context = _weekly_records(
@@ -878,6 +922,8 @@ def _opportunity_records(
     *,
     build_id: str,
     facts: Mapping[str, PlayerFacts],
+    employment: EmploymentResult | None = None,
+    identity: CanonicalRegistry | None = None,
 ) -> list[dict[str, Any]]:
     """The opportunity rows, with every intrinsic column copied rather than recomputed.
 
@@ -931,6 +977,7 @@ def _opportunity_records(
                 "outside_tier_board": False,
                 "surface_reasons": [str(SurfaceReason.INTRINSIC_TOP_TIER_DEPTH)],
                 "quality_flags": list(row["quality_flags"]),
+                **_employment_fields(employment, str(row["player_id"])),
             },
         )
 
@@ -992,9 +1039,72 @@ def _opportunity_records(
                 "outside_tier_board": True,
                 "surface_reasons": [str(SurfaceReason.SLEEPER_TRENDING_ADD)],
                 "quality_flags": [],
+                "employment_status": None,
+                "model_coverage": "projected",
             },
         )
+
+    # ADR-102: the fixture's off-roster players, through the production rule and record
+    # builder. Darnell Ashby is verified unsigned and Corey Halvorsen signed on Sleeper
+    # evidence only; neither has a model output, both clear the trending-add bar, so each
+    # block gets one unprojected row per player — identity, club, behaviour, no numbers.
+    if employment is not None and identity is not None:
+        signals = BehaviorSignals(
+            available=True,
+            source_id=SLEEPER_SOURCE_ID,
+            snapshot_at_utc=parse_utc(FIXTURE_GENERATED_AT),
+            lookback_hours=FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
+            request_limit=100,
+            add_counts=FIXTURE_OFF_ROSTER_ADDS,
+            drop_counts=FIXTURE_OFF_ROSTER_DROPS,
+            add_ranks={
+                player_id: rank for rank, player_id in enumerate(FIXTURE_OFF_ROSTER_ADDS, 1)
+            },
+        )
+        catalog = {
+            player_id: {"display_name": player.display_name, "position": str(player.position)}
+            for player_id, player in identity.players.items()
+        }
+        for preset_id, scoring in blocks:
+            on_board = {
+                str(r["player_id"])
+                for r in records
+                if r["league_preset_id"] == preset_id and r["scoring_preset"] == scoring
+            }
+            for player_id in unprojected_candidates(
+                employment=employment.readings,
+                catalog=catalog,
+                signals=signals,
+                on_board=on_board,
+            ):
+                records.append(
+                    unprojected_record(
+                        player_id=player_id,
+                        entry=catalog[player_id],
+                        reading=employment.readings[player_id],
+                        signals=signals,
+                        build_id=build_id,
+                        season=FIXTURE_SEASON,
+                        through_week=FIXTURE_THROUGH_WEEK,
+                        league_preset_id=preset_id,
+                        scoring_preset=scoring,
+                    ),
+                )
     return records
+
+
+#: The fixture feed's add and drop counts for its off-roster players (ADR-102). Both clear
+#: `SURFACE_ADD_COUNT_MINIMUM`; Ashby's are on the scale of a released star's real ones.
+FIXTURE_OFF_ROSTER_ADDS: Mapping[str, int] = {"gsis:00-0000020": 2400, "gsis:00-0000021": 950}
+FIXTURE_OFF_ROSTER_DROPS: Mapping[str, int] = {"gsis:00-0000020": 35, "gsis:00-0000021": 0}
+
+
+def _employment_fields(employment: EmploymentResult | None, player_id: str) -> dict[str, Any]:
+    reading = employment.get(player_id) if employment is not None else None
+    return {
+        "employment_status": None if reading is None else str(reading.status),
+        "model_coverage": "projected",
+    }
 
 
 #: Hours before the fixture's anchor at which the window retained a snapshot, oldest first.
@@ -2063,23 +2173,9 @@ def _fixture_price(
     )
 
 
-def _player_status_records(
-    *,
-    registry: CanonicalRegistry,
-    roster: pl.DataFrame,
-    sleeper_batch: SourceBatch,
-    build_id: str,
-    generated_at: datetime,
-    published: Sequence[str],
-    gate: QualityGate,
-) -> PlayerStatusResult:
-    """The fixture's status artifact, built by the production Phase-5 code.
-
-    The fixture's Sleeper payload deliberately includes an id whose reported ``gsis_id``
-    contradicts the canonical one, so this exercises the fail-closed cross-check as well as
-    the happy path (ADR-019).
-    """
-    capture = StatusCapture(
+def _status_capture(sleeper_batch: SourceBatch, *, generated_at: datetime) -> StatusCapture:
+    """The fixture's Sleeper rows as a retained capture, observed at the build."""
+    return StatusCapture(
         source_id=sleeper_batch.source_id,
         season=FIXTURE_SEASON,
         snapshot_key=snapshot_key(generated_at),
@@ -2094,6 +2190,25 @@ def _player_status_records(
             for row in sleeper_batch.frame.iter_rows(named=True)
         ],
     )
+
+
+def _player_status_records(
+    *,
+    registry: CanonicalRegistry,
+    roster: pl.DataFrame,
+    capture: StatusCapture,
+    build_id: str,
+    generated_at: datetime,
+    published: Sequence[str],
+    gate: QualityGate,
+    employment: EmploymentResult | None = None,
+) -> PlayerStatusResult:
+    """The fixture's status artifact, built by the production Phase-5 code.
+
+    The fixture's Sleeper payload deliberately includes an id whose reported ``gsis_id``
+    contradicts the canonical one, so this exercises the fail-closed cross-check as well as
+    the happy path (ADR-019).
+    """
     return build_player_status_records(
         registry=registry,
         roster=roster,
@@ -2103,6 +2218,7 @@ def _player_status_records(
         generated_at=generated_at,
         player_ids=sorted(dict.fromkeys(published)),
         gate=gate,
+        employment=employment,
     )
 
 

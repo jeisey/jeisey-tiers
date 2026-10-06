@@ -13,7 +13,7 @@
     "behavior_available", "surface_reasons", "outside_tier_board", "quality_flags"
   ],
   "properties": {
-    "schema_version": {"const": "1.1"},
+    "schema_version": {"const": "1.2"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 2000},
     "through_week": {"type": "integer", "minimum": 1},
@@ -24,13 +24,13 @@
     "team": {"type": ["string", "null"]},
     "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
 
-    "ros_fair_rank": {"type": "integer", "minimum": 1},
-    "ros_position_rank": {"type": "integer", "minimum": 1},
-    "ros_expected_vorp": {"type": "number"},
+    "ros_fair_rank": {"type": ["integer", "null"], "minimum": 1, "description": "The model's rest-of-season fair rank. Null only on an unprojected row (model_coverage = unprojected, contract 1.2, ADR-102): no validated output exists for him, and none is invented."},
+    "ros_position_rank": {"type": ["integer", "null"], "minimum": 1},
+    "ros_expected_vorp": {"type": ["number", "null"]},
     "ros_vorp_p50": {"type": ["number", "null"], "description": "Median simulated remaining VORP: the statistic `ros_fair_rank` orders by and the number the rest-of-season board draws, copied verbatim like every intrinsic column here. The Opportunity Board prints this rather than the mean, so a row's value and its rank are one account and a player carries one ROS value on every tab (ADR-097). For a surfaced row it is the value the untruncated board gave him, never a fill."},
     "ros_expected_points": {"type": ["number", "null"]},
     "ros_expected_games": {"type": ["number", "null"]},
-    "ros_uncertainty": {"type": "number", "minimum": 0},
+    "ros_uncertainty": {"type": ["number", "null"], "minimum": 0},
     "ros_tier": {"type": ["integer", "null"], "minimum": 0},
 
     "behavior_source_id": {
@@ -93,6 +93,14 @@
       "uniqueItems": true,
       "description": "Why this player is visible: inside the intrinsic depth, or surfaced by current role/behaviour evidence. A surfaced player carries a fair rank the model computed and no tier."
     },
-    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+    "quality_flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "employment_status": {
+      "enum": ["signed", "unsigned", "retired", "unknown", null],
+      "description": "Contract 1.2 (ADR-102): the employment_evidence_v1 reading also published on player_status. unsigned = a verified free agent (FA): no current club, so no next game and never a current-week Start/Sit choice; any value on the row is the model's and assumes nothing about a destination. Null when the build computed no reading."
+    },
+    "model_coverage": {
+      "enum": ["projected", "unprojected"],
+      "description": "Contract 1.2 (ADR-102). projected: every intrinsic column is the model's, copied from ros_tiers or the untruncated board. unprojected: a verified off-roster player (unsigned, or signed only on Sleeper evidence) surfaced by add volume with no validated rest-of-season output; both ranks, the tier and every ros_* value are null, never zero."
+    }
   }
 }

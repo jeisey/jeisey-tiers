@@ -4,10 +4,10 @@
   "record_schema": "inseason_opportunity_record",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 34,
+  "record_count": 38,
   "records": [
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -45,10 +45,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -88,10 +90,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -129,10 +133,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -170,10 +176,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -213,10 +221,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -254,10 +264,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -295,10 +307,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -338,10 +352,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -379,10 +395,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -420,10 +438,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -461,10 +481,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -502,10 +524,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -543,10 +567,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -586,10 +612,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -627,10 +655,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -668,10 +698,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -709,10 +741,102 @@
       "surface_reasons": [
         "sleeper_trending_add"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": null,
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "league_preset_id": "redraft-10",
+      "scoring_preset": "PPR",
+      "player_id": "gsis:00-0000020",
+      "display_name": "Darnell Ashby",
+      "team": null,
+      "position": "WR",
+      "ros_fair_rank": null,
+      "ros_position_rank": null,
+      "ros_expected_vorp": null,
+      "ros_vorp_p50": null,
+      "ros_expected_points": null,
+      "ros_expected_games": null,
+      "ros_uncertainty": null,
+      "ros_tier": null,
+      "behavior_source_id": "sleeper",
+      "behavior_available": true,
+      "behavior_snapshot_at_utc": "2026-08-18T12:00:00Z",
+      "behavior_lookback_hours": 24,
+      "behavior_request_limit": 100,
+      "add_count": 2400,
+      "drop_count": 35,
+      "net_add_count": 2365,
+      "add_rank": 1,
+      "drop_rank": null,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": null,
+      "snap_share_last3": null,
+      "target_share_last3": null,
+      "current_status": null,
+      "outside_tier_board": true,
+      "surface_reasons": [
+        "sleeper_trending_add"
+      ],
+      "quality_flags": [
+        "no_model_output"
+      ],
+      "employment_status": "unsigned",
+      "model_coverage": "unprojected"
+    },
+    {
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "league_preset_id": "redraft-10",
+      "scoring_preset": "PPR",
+      "player_id": "gsis:00-0000021",
+      "display_name": "Corey Halvorsen",
+      "team": "SEA",
+      "position": "RB",
+      "ros_fair_rank": null,
+      "ros_position_rank": null,
+      "ros_expected_vorp": null,
+      "ros_vorp_p50": null,
+      "ros_expected_points": null,
+      "ros_expected_games": null,
+      "ros_uncertainty": null,
+      "ros_tier": null,
+      "behavior_source_id": "sleeper",
+      "behavior_available": true,
+      "behavior_snapshot_at_utc": "2026-08-18T12:00:00Z",
+      "behavior_lookback_hours": 24,
+      "behavior_request_limit": 100,
+      "add_count": 950,
+      "drop_count": 0,
+      "net_add_count": 950,
+      "add_rank": 2,
+      "drop_rank": null,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": null,
+      "snap_share_last3": null,
+      "target_share_last3": null,
+      "current_status": null,
+      "outside_tier_board": true,
+      "surface_reasons": [
+        "sleeper_trending_add"
+      ],
+      "quality_flags": [
+        "no_model_output"
+      ],
+      "employment_status": "signed",
+      "model_coverage": "unprojected"
+    },
+    {
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -750,10 +874,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -793,10 +919,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -834,10 +962,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -875,10 +1005,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -918,10 +1050,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -959,10 +1093,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1000,10 +1136,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1043,10 +1181,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1084,10 +1224,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1125,10 +1267,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1166,10 +1310,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1207,10 +1353,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1248,10 +1396,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1291,10 +1441,12 @@
       ],
       "quality_flags": [
         "long_absence"
-      ]
+      ],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1332,10 +1484,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1373,10 +1527,12 @@
       "surface_reasons": [
         "intrinsic_top_tier_depth"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": "signed",
+      "model_coverage": "projected"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1414,7 +1570,99 @@
       "surface_reasons": [
         "sleeper_trending_add"
       ],
-      "quality_flags": []
+      "quality_flags": [],
+      "employment_status": null,
+      "model_coverage": "projected"
+    },
+    {
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "league_preset_id": "redraft-12",
+      "scoring_preset": "PPR",
+      "player_id": "gsis:00-0000020",
+      "display_name": "Darnell Ashby",
+      "team": null,
+      "position": "WR",
+      "ros_fair_rank": null,
+      "ros_position_rank": null,
+      "ros_expected_vorp": null,
+      "ros_vorp_p50": null,
+      "ros_expected_points": null,
+      "ros_expected_games": null,
+      "ros_uncertainty": null,
+      "ros_tier": null,
+      "behavior_source_id": "sleeper",
+      "behavior_available": true,
+      "behavior_snapshot_at_utc": "2026-08-18T12:00:00Z",
+      "behavior_lookback_hours": 24,
+      "behavior_request_limit": 100,
+      "add_count": 2400,
+      "drop_count": 35,
+      "net_add_count": 2365,
+      "add_rank": 1,
+      "drop_rank": null,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": null,
+      "snap_share_last3": null,
+      "target_share_last3": null,
+      "current_status": null,
+      "outside_tier_board": true,
+      "surface_reasons": [
+        "sleeper_trending_add"
+      ],
+      "quality_flags": [
+        "no_model_output"
+      ],
+      "employment_status": "unsigned",
+      "model_coverage": "unprojected"
+    },
+    {
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "league_preset_id": "redraft-12",
+      "scoring_preset": "PPR",
+      "player_id": "gsis:00-0000021",
+      "display_name": "Corey Halvorsen",
+      "team": "SEA",
+      "position": "RB",
+      "ros_fair_rank": null,
+      "ros_position_rank": null,
+      "ros_expected_vorp": null,
+      "ros_vorp_p50": null,
+      "ros_expected_points": null,
+      "ros_expected_games": null,
+      "ros_uncertainty": null,
+      "ros_tier": null,
+      "behavior_source_id": "sleeper",
+      "behavior_available": true,
+      "behavior_snapshot_at_utc": "2026-08-18T12:00:00Z",
+      "behavior_lookback_hours": 24,
+      "behavior_request_limit": 100,
+      "add_count": 950,
+      "drop_count": 0,
+      "net_add_count": 950,
+      "add_rank": 2,
+      "drop_rank": null,
+      "long_absence": false,
+      "weeks_since_last_game": 0.0,
+      "games_played_to_date": null,
+      "snap_share_last3": null,
+      "target_share_last3": null,
+      "current_status": null,
+      "outside_tier_board": true,
+      "surface_reasons": [
+        "sleeper_trending_add"
+      ],
+      "quality_flags": [
+        "no_model_output"
+      ],
+      "employment_status": "signed",
+      "model_coverage": "unprojected"
     }
   ]
 }

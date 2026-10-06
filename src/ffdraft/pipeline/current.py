@@ -78,6 +78,11 @@ from ffdraft.simulation.vorp import (
 from ffdraft.sources.nflverse_http import nflverse_loaders
 from ffdraft.status.build import build_player_status_records
 from ffdraft.status.capture import StatusCapture, read_status_capture
+from ffdraft.status.employment import (
+    EmploymentResult,
+    employment_catalog,
+    resolve_employment,
+)
 from ffdraft.status.overrides import AvailabilityOverride, active_overrides
 from ffdraft.tiers.algorithms import segment_with
 from ffdraft.tiers.labels import tier_label
@@ -391,22 +396,38 @@ def run_current_build(
     # the status artifact widens: portraits stay the board's players, which is what
     # `cross_artifact.headshot_player_not_in_tiers` requires (the 2026-10-02 refresh failed on
     # exactly this when the two shared one list).
+    # ADR-102: identity from the current roster *and* the previous season's, so a player the
+    # current file omits — unsigned, or signed after it was cut — can still be identified;
+    # employment from one evidence-precedence rule, never from a previous club.
+    annotation_registry = _annotation_registry(roster, loaded.sources.rosters.get(season - 1))
+    capture = status_capture or _retained_status(status_store, season, gate)
+    employment = resolve_employment(
+        registry=annotation_registry,
+        current_roster=roster,
+        capture=capture,
+        as_of=stamped,
+    )
+    gate.add(employment.check(stage="current_build"))
     status_players = (
-        [*published_players, *_rostered_core_players(roster)]
+        [
+            *published_players,
+            *_rostered_core_players(roster),
+            *employment_catalog(employment),
+        ]
         if stamped >= anchor.anchor_at_utc
         else published_players
     )
-    annotation_registry = _annotation_registry(roster)
     status = _player_status(
         registry=annotation_registry,
         roster=roster,
-        capture=status_capture or _retained_status(status_store, season, gate),
+        capture=capture,
         build_id=resolved_build_id,
         season=season,
         as_of=stamped,
         published=status_players,
         gate=gate,
         overrides=active_overrides(availability_overrides, season=season, as_of=stamped),
+        employment=employment,
     )
     records["player_status"] = status.records
 
@@ -558,16 +579,20 @@ def _retained_status(store: Any, season: int, gate: QualityGate) -> StatusCaptur
         return None
 
 
-def _annotation_registry(roster: pl.DataFrame) -> Any:
+def _annotation_registry(roster: pl.DataFrame, prior_roster: pl.DataFrame | None = None) -> Any:
     """The registry the annotation artifacts are built from.
 
     Rebuilt here rather than shared with the feature build, which is not duplication for its
     own sake: it makes the status and portrait paths structurally incapable of handing
     anything to the model path, because the two never touch the same object.
-    """
-    from ffdraft.identity.registry import build_registry
 
-    return build_registry(roster) if not roster.is_empty() else build_registry(pl.DataFrame())
+    Its spine is the current roster plus the previous season's roster as identity only
+    (ADR-102): a prior row verifies a crosswalk id and carries no team or status, so it can
+    name an unsigned player without placing him on his old club.
+    """
+    from ffdraft.status.employment import build_identity_registry
+
+    return build_identity_registry(roster, [prior_roster])
 
 
 def _player_status(
@@ -581,8 +606,9 @@ def _player_status(
     published: Sequence[str],
     gate: QualityGate,
     overrides: Mapping[str, AvailabilityOverride] | None = None,
+    employment: EmploymentResult | None = None,
 ) -> Any:
-    """Build the annotation artifact (ADR-043; ADR-101 for the overrides)."""
+    """Build the annotation artifact (ADR-043; ADR-101 overrides; ADR-102 employment)."""
     return build_player_status_records(
         registry=registry,
         roster=roster,
@@ -593,6 +619,7 @@ def _player_status(
         player_ids=sorted(dict.fromkeys(published)),
         gate=gate,
         overrides=overrides,
+        employment=employment,
     )
 
 

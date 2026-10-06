@@ -109,7 +109,8 @@ FAMILIES: tuple[Family, ...] = (
     Family("player_status", "player_status", "all"),
     # ADR-101: what the availability policy reads, and nothing else, for every in-season view.
     # About a third of the full status slice: the decision tabs need the codes, the
-    # designation, its timestamp and the reviewed override, not the injury prose.
+    # designation, its timestamp, the reviewed override and (ADR-102) the employment
+    # reading, not the injury prose.
     Family(
         "player_availability",
         "player_status",
@@ -124,6 +125,11 @@ FAMILIES: tuple[Family, ...] = (
             "observed_at_utc",
             "quality_flags",
             "availability_override",
+            # ADR-102: whose club the evidence settles. The policy reads `unsigned` to keep a
+            # free agent out of every current-week decision; the views print "FA" from it.
+            "current_team",
+            "employment_status",
+            "employment_source",
         ),
     ),
     Family("ros_tiers", "ros_tiers", "block"),

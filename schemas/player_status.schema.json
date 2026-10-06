@@ -14,12 +14,12 @@
     "quality_flags"
   ],
   "properties": {
-    "schema_version": {"const": "1.1"},
+    "schema_version": {"const": "1.2"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 2000},
     "player_id": {"type": "string", "minLength": 1},
     "display_name": {"type": "string", "minLength": 1},
-    "current_team": {"type": ["string", "null"]},
+    "current_team": {"type": ["string", "null"], "description": "The club that employs him now under employment_evidence_v1 (ADR-102): the current-season roster, then a fresh Sleeper record. Null when he is verified unsigned, retired, or his employment is unknown; never a previous club."},
     "position": {"enum": ["QB", "RB", "WR", "TE", "K", "DST"]},
     "roster_status": {"type": ["string", "null"], "description": "nflverse roster status, as published (ACT/RES/CUT/...)"},
     "roster_depth_chart_position": {"type": ["string", "null"]},
@@ -47,6 +47,19 @@
         "reviewed_at": {"type": "string", "format": "date"},
         "expires_at": {"type": "string", "format": "date"}
       }
+    },
+    "employment_status": {
+      "enum": ["signed", "unsigned", "retired", "unknown", null],
+      "description": "Contract 1.2 (ADR-102), employment_evidence_v1. signed: the current-season nflverse roster lists him with a code other than CUT/RET, or (off that roster) a Sleeper record no older than 48 hours names a club. unsigned: off the current roster (or CUT) and a fresh Sleeper record names no club with status Active — a free agent. retired: the current roster says RET. unknown: no current evidence settles it; never shown as FA. Null when the build computed no reading. Eligibility and presentation only, never a model input."
+    },
+    "employment_source": {
+      "enum": ["nflverse_roster", "sleeper", null],
+      "description": "Which source decided employment_status; null when unknown."
+    },
+    "employment_observed_at_utc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the deciding source was observed: the build time for the roster file (fetched by the build), the capture time for Sleeper."
     }
   }
 }

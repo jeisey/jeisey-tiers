@@ -91,11 +91,14 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "market_snapshot": "1.0",
     "market_trend_series": "1.0",
     # 1.1 (ADR-101): additive `availability_override`, the reviewed season-ending evidence.
-    "player_status": "1.1",
+    # 1.2 (ADR-102): additive employment reading — status, source, observation time.
+    "player_status": "1.2",
     "build_metadata": "1.0",
     "ros_tier_record": "1.0",
     # 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
-    "inseason_opportunity_record": "1.1",
+    # 1.2 (ADR-102): additive `employment_status` and `model_coverage`; an unprojected row's
+    # ranks and values are null.
+    "inseason_opportunity_record": "1.2",
     "player_headshot_record": "1.0",
     "behavior_trend_series": "1.0",
     "player_usage": "1.0",

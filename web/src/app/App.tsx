@@ -430,6 +430,9 @@ function Board({
     const own = card.inSeason;
     const ros = own?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
     const opportunity = own?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
+    // ADR-102: an off-roster player with no model output has an Opportunity row of his own —
+    // identity, club and behaviour — and no value anywhere; the card says so rather than zero.
+    const unprojected = own?.unprojectedRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
     const usage = own?.usageFor(selectedPlayerId) ?? null;
     const weekly = own?.weeklyRecordFor(scoring, selectedPlayerId) ?? null;
     return {
@@ -463,7 +466,7 @@ function Board({
       // comparison is the draft market, whatever month it is. Keying it off the mode instead
       // gave the draft board an in-season card in November — which is also how ADR-079's two
       // lifecycle windows, in-season with no board at all, end up correct here for free.
-      opportunity,
+      opportunity: opportunity ?? unprojected,
       behavior: inSeason?.metadata.behavior ?? null,
       // The signal layer (ADR-091). The usage record names the team whose next game is read;
       // the rest-of-season row's team is the fallback for a player with no usage record.

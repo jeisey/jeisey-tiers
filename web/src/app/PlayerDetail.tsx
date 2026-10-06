@@ -57,6 +57,7 @@ import type {
   MarketComparison,
   MarketTrendSeriesRecord,
   OpportunityRecord,
+  UnprojectedRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   PlayerUsageRecord,
@@ -175,7 +176,7 @@ export interface PlayerDetailData {
    * the usage shares the board already carries. Never differenced against a rank, never
    * converted into a price.
    */
-  readonly opportunity?: OpportunityRecord | null;
+  readonly opportunity?: OpportunityRecord | UnprojectedRecord | null;
   /** The behaviour feed's own account of itself — source, window, snapshot time. */
   readonly behavior?: RosBehaviorMetadata | null;
   /**
@@ -623,7 +624,7 @@ function InSeasonUsage({
    * production tiles, which are rest-of-season fields, are withheld (ADR-091).
    */
   readonly ros: RosTierRecord | null;
-  readonly opportunity: OpportunityRecord | null;
+  readonly opportunity: OpportunityRecord | UnprojectedRecord | null;
   readonly behavior: RosBehaviorMetadata | null;
   readonly cohort: RosCohortContext | null;
   readonly signal: SignalInputs;
@@ -1112,7 +1113,13 @@ export function PlayerDetail({
     "Player";
   const position =
     tier?.position ?? arbitrage?.position ?? status?.position ?? ros?.position ?? null;
-  const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? ros?.team ?? null;
+  // A verified free agent is "FA" whichever board the card was opened from: his last club is
+  // history (ADR-102). Anything short of that evidence keeps the rows' own team.
+  const team =
+    data.availability?.kind === "unsigned"
+      ? "FA"
+      : (tier?.team ?? arbitrage?.team ?? status?.current_team ?? ros?.team ?? null);
+  const unprojected = opportunity?.model_coverage === "unprojected";
   const gap = selected === null ? null : describeGap(selected.rank_gap);
   // Null under `cross` by construction, and null when the selected market genuinely has no
   // slope yet. Both read as "collecting"; neither borrows another market's number.
@@ -1397,6 +1404,16 @@ export function PlayerDetail({
           }
           tabbed={sheet}
         >
+          {unprojected && (
+            <p className="section-note" data-kind="unprojected">
+              <strong>No rest-of-season projection.</strong>{" "}
+              {data.availability?.kind === "unsigned"
+                ? "An unsigned free agent the model has no validated output for: "
+                : "A signing the model has no validated output for: "}
+              rank, tier and value are left blank rather than set to zero, and no destination
+              team is projected. He is listed because managers are adding him.
+            </p>
+          )}
           <InSeasonUsage
             ros={ros ?? null}
             opportunity={opportunity ?? null}
