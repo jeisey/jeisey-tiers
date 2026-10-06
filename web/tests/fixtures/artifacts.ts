@@ -1407,36 +1407,66 @@ export function usageRecords(): PlayerUsageRecord[] {
         dropbacks >= 20 ? round(player.team === "BUF" ? 0.21 : player.team === "CIN" ? -0.06 : 0.08, 3) : null,
     });
   }
-  // ADR-103: a drive-breadth block per record, arithmetically consistent (the validator and
-  // `verify:board` recompute the gap from the counts). Most clear the display minimums; the
+  // ADR-103/104: a drive-breadth block per record, arithmetically consistent (the validator and
+  // `verify:board` recompute it from the counts). Most clear the display minimums; the
   // surfaced row's single game does not, so the card's "too few" wording is drawn too.
   return records.map((record, index) => ({ ...record, drive_breadth: fixtureBreadth(record, index) }));
 }
 
 const BREADTH_METRIC: Readonly<Record<string, DriveBreadth["metric"]>> = {
-  QB: "rushing",
+  QB: "designed_runs",
   RB: "backfield",
   WR: "targets",
   TE: "open_field_targets",
 };
 
+const FIXTURE_DRIVES_PER_GAME = 11;
+
+/**
+ * ADR-104's block for one record: a rail entry per played week and the window over the latest
+ * four, every number consistent with its own counts the way the build's are (the validator and
+ * `verify:board` recompute them). Shares vary by player and week so the rail has a shape.
+ */
 export function fixtureBreadth(record: PlayerUsageRecord, index: number): DriveBreadth | null {
   const metric = BREADTH_METRIC[record.position];
   if (metric === undefined) return null;
-  const played = record.weeks.filter((week) => week.status === "played").slice(-4);
-  const appearances = played.length;
-  const drives = appearances * 11;
-  const opportunities = appearances * (record.position === "QB" ? 3 : record.position === "TE" ? 4 : 6);
-  const expected = Math.round(Math.min(drives, opportunities * 0.82) * 1000) / 1000;
-  const reached = Math.min(drives, opportunities, Math.max(0, Math.round(expected + ((index % 7) - 3) * 1.5)));
+  const perGame = record.position === "QB" ? 3 : record.position === "TE" ? 4 : 6;
+  const games = record.weeks
+    .filter((week) => week.status === "played")
+    .map((week) => {
+      const reached = Math.min(perGame, FIXTURE_DRIVES_PER_GAME, perGame - ((index + week.week) % 3));
+      const expected = Math.max(
+        1,
+        Math.min(perGame, Math.round((perGame * 0.9 - ((index % 5) - 2) * 0.4) * 1000) / 1000),
+      );
+      return { week: week.week, reached, expected };
+    });
+  const share = (numerator: number, denominator: number): number | null =>
+    denominator === 0 ? null : Math.round((1000 * numerator) / denominator) / 1000;
+  const window = games.slice(-4);
+  const appearances = window.length;
+  const drives = appearances * FIXTURE_DRIVES_PER_GAME;
+  const opportunities = appearances * perGame;
+  const reached = window.reduce((sum, game) => sum + game.reached, 0);
+  const expected = Math.round(window.reduce((sum, game) => sum + game.expected, 0) * 1000) / 1000;
   const displayable = appearances >= 3 && drives >= 20 && opportunities >= 6;
+  const latest = games.at(-1);
+  const earlier = games.slice(0, -1);
+  const latestShare = latest === undefined ? null : share(latest.reached, FIXTURE_DRIVES_PER_GAME);
+  const earlierShare =
+    earlier.length === 0
+      ? null
+      : share(
+          earlier.reduce((sum, game) => sum + game.reached, 0),
+          earlier.length * FIXTURE_DRIVES_PER_GAME,
+        );
   return {
-    method_version: "drive_breadth_v1",
+    method_version: "drive_breadth_v2",
     metric,
     window_rule: 4,
     appearances,
-    first_week: played[0]?.week ?? null,
-    last_week: played.at(-1)?.week ?? null,
+    first_week: window[0]?.week ?? null,
+    last_week: window.at(-1)?.week ?? null,
     eligible_drives: drives,
     reached_drives: reached,
     expected_drives: expected,
@@ -1450,6 +1480,24 @@ export function fixtureBreadth(record: PlayerUsageRecord, index: number): DriveB
         : drives < 20
           ? "too_few_eligible_drives"
           : "too_few_opportunities",
+    compares_with_random: record.position !== "QB",
+    weeks: games.map((game) => ({
+      week: game.week,
+      eligible_drives: FIXTURE_DRIVES_PER_GAME,
+      reached_drives: game.reached,
+      drive_share: share(game.reached, FIXTURE_DRIVES_PER_GAME),
+      expected_share: share(game.expected, FIXTURE_DRIVES_PER_GAME),
+    })),
+    change:
+      latest === undefined || latestShare === null
+        ? null
+        : {
+            latest_week: latest.week,
+            latest: latestShare,
+            earlier: earlierShare,
+            earlier_games: earlier.length,
+            change: earlierShare === null ? null : Math.round(1000 * (latestShare - earlierShare)) / 1000,
+          },
   };
 }
 
@@ -2021,10 +2069,10 @@ export const FIXTURE_SIGNALS: RosSignalMetadata = {
     "No expected-fantasy-points reading is published. ffopportunity's expected points are licensed CC-BY-SA 4.0, and whether this site may publish a per-player figure derived from them is an open decision (ADR-086). The rest-of-season model reads them as an input; the card does not print them.",
   get drive_breadth() {
     return {
-      method_version: "drive_breadth_v1",
+      method_version: "drive_breadth_v2",
       status: "published" as const,
       statement:
-        "Descriptive context only. Over 2020-2024 development seasons, adding it to volume and share did not measurably improve anticipating a next-game opportunity drought at any position (ADR-103). No model, ranking or pick reads it.",
+        "Descriptive context only. Over 2020-2024 development seasons, adding the four-game gap to volume and share did not measurably improve anticipating a next-game opportunity drought at any position (ADR-103, ADR-104). No model, ranking or pick reads it.",
       window_appearances: 4,
       display_minimums: { appearances: 3, eligible_drives: 20, opportunities: 6 },
       position_reference: fixtureBreadthReference(),

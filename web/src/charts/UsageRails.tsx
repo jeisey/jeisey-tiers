@@ -31,6 +31,7 @@ import { formatValue } from "../data/format";
 import {
   DIRECTION_GLYPH,
   type BreadthReading,
+  type ChangeDirection,
   changeWindow,
   formatChange,
   formatMetric,
@@ -47,9 +48,12 @@ const ABSENCE_MARK: Readonly<Record<Exclude<UsageWeekStatus, "played">, string>>
 export function Bars({
   bars,
   axisMax,
+  notches,
 }: {
   readonly bars: readonly RoleBar[];
   readonly axisMax: number;
+  /** ADR-104: week → a reference value drawn as a notch across that week's bar. */
+  readonly notches?: ReadonlyMap<number, number | null> | undefined;
 }): React.JSX.Element {
   return (
     <div className="usage-bars" aria-hidden="true">
@@ -69,6 +73,7 @@ export function Bars({
           );
         }
         const height = Math.max(4, Math.min(100, Math.round((bar.value / axisMax) * 100)));
+        const notch = notches?.get(bar.week) ?? null;
         return (
           <span
             key={bar.week}
@@ -77,6 +82,14 @@ export function Bars({
             data-latest={bar.latest ? "true" : undefined}
           >
             <span className="usage-bar-fill" style={{ height: `${String(height)}%` }} />
+            {notch !== null && (
+              <span
+                className="usage-bar-notch"
+                style={{
+                  bottom: `${String(Math.max(0, Math.min(100, Math.round((notch / axisMax) * 100))))}%`,
+                }}
+              />
+            )}
           </span>
         );
       })}
@@ -84,87 +97,112 @@ export function Bars({
   );
 }
 
-function RoleRail({ reading }: { readonly reading: RoleReading }): React.JSX.Element {
+/**
+ * One rail: the label and its question, the bars, and the reading — the same grid and the
+ * same classes for every row, so a row added to the block reads as one more of the same kind.
+ */
+function Rail({
+  metric,
+  label,
+  question,
+  direction,
+  bars,
+  axisMax,
+  notches,
+  value,
+  change,
+  window,
+  note,
+  sentence,
+}: {
+  readonly metric: string;
+  readonly label: string;
+  readonly question: string;
+  readonly direction: ChangeDirection | null;
+  readonly bars: readonly RoleBar[];
+  readonly axisMax: number;
+  readonly notches?: ReadonlyMap<number, number | null> | undefined;
+  readonly value: string;
+  readonly change: string | null;
+  readonly window: string;
+  readonly note?: string | undefined;
+  readonly sentence: string;
+}): React.JSX.Element {
   const sentenceId = useId();
-  const { spec, change, direction } = reading;
   return (
     <div
       className="usage-rail"
-      data-metric={spec.metric}
+      data-metric={metric}
       data-direction={direction ?? "none"}
       aria-describedby={sentenceId}
     >
       <span className="usage-rail-label">
-        {spec.label}
-        <span className="usage-rail-question">{spec.question}</span>
+        {label}
+        <span className="usage-rail-question">{question}</span>
       </span>
-      <Bars bars={reading.bars} axisMax={reading.axisMax} />
+      <Bars bars={bars} axisMax={axisMax} notches={notches} />
       <p className="usage-rail-reading">
-        <span className="usage-rail-value">{change === null ? "—" : formatMetric(spec, change.latest)}</span>
-        {change?.change !== null && change?.change !== undefined && direction !== null ? (
+        <span className="usage-rail-value">{value}</span>
+        {change !== null && direction !== null ? (
           <span className="usage-rail-change" data-direction={direction}>
-            <span aria-hidden="true">{DIRECTION_GLYPH[direction]}</span>{" "}
-            {formatChange(spec, change.change)}
+            <span aria-hidden="true">{DIRECTION_GLYPH[direction]}</span> {change}
           </span>
         ) : null}
-        <span className="usage-rail-window">
-          {change === null
-            ? "no value in his latest game"
-            : change.earlier === null
-              ? changeWindow(change)
-              : `from ${formatMetric(spec, change.earlier)} · ${changeWindow(change)}`}
-        </span>
+        <span className="usage-rail-window">{window}</span>
+        {note !== undefined && <span className="usage-rail-note">{note}</span>}
       </p>
       <span className="visually-hidden" id={sentenceId}>
-        {roleSentence(reading)}
+        {sentence}
       </span>
     </div>
   );
 }
 
-/** The breadth scale's half-width, in percentage points; a reading beyond it pins to the edge. */
-const BREADTH_SCALE_PP = 25;
-
-function breadthOffset(value: number): number {
-  const clamped = Math.max(-BREADTH_SCALE_PP, Math.min(BREADTH_SCALE_PP, value));
-  return 50 + (clamped / BREADTH_SCALE_PP) * 50;
+function RoleRail({ reading }: { readonly reading: RoleReading }): React.JSX.Element {
+  const { spec, change, direction } = reading;
+  return (
+    <Rail
+      metric={spec.metric}
+      label={spec.label}
+      question={spec.question}
+      direction={direction}
+      bars={reading.bars}
+      axisMax={reading.axisMax}
+      value={change === null ? "—" : formatMetric(spec, change.latest)}
+      change={change?.change !== null && change?.change !== undefined ? formatChange(spec, change.change) : null}
+      window={
+        change === null
+          ? "no value in his latest game"
+          : change.earlier === null
+            ? changeWindow(change)
+            : `from ${formatMetric(spec, change.earlier)} · ${changeWindow(change)}`
+      }
+      sentence={roleSentence(reading)}
+    />
+  );
 }
 
 /**
- * ADR-103's bonus row: drive breadth above a uniform allocation, in the rails' own grid.
- *
- * Not a week-by-week rail — it is one reading over his latest four games — so its middle
- * column is a scale, not bars: a centre line at zero (the random-allocation reference), a hollow
- * tick at his position's median on this build, and a solid mark at his value. Text carries the
- * meaning; the scale is the second channel. Withheld readings draw no mark and say why.
+ * ADR-104's drive rail: a rail like the others — one bar per game, his drive share on the
+ * shares' absolute axis, the latest against the earlier games — plus a notch on each bar where
+ * the same count placed at random would reach, and one line with the four-game comparison.
  */
 function BreadthRail({ reading }: { readonly reading: BreadthReading }): React.JSX.Element {
-  const sentenceId = useId();
   return (
-    <div className="usage-rail" data-metric="drive_breadth" data-direction="none" aria-describedby={sentenceId}>
-      <span className="usage-rail-label">
-        {reading.label}
-        <span className="usage-rail-question">{reading.question}</span>
-      </span>
-      <span className="breadth-scale" aria-hidden="true">
-        <span className="breadth-zero" />
-        {reading.reference !== null && (
-          <span className="breadth-median" style={{ left: `${String(breadthOffset(reading.reference.p50))}%` }} />
-        )}
-        {reading.value !== null && (
-          <span className="breadth-mark" style={{ left: `${String(breadthOffset(reading.value))}%` }} />
-        )}
-      </span>
-      <p className="usage-rail-reading">
-        <span className="usage-rail-value" data-breadth-value={reading.value ?? undefined}>
-          {reading.valueText}
-        </span>
-        <span className="usage-rail-window">{reading.window}</span>
-      </p>
-      <span className="visually-hidden" id={sentenceId}>
-        {reading.sentence}
-      </span>
-    </div>
+    <Rail
+      metric="drive_breadth"
+      label={reading.label}
+      question={reading.question}
+      direction={reading.direction}
+      bars={reading.bars}
+      axisMax={1}
+      notches={reading.expected}
+      value={reading.valueText}
+      change={reading.changeText}
+      window={reading.window}
+      note={reading.vsRandom ?? undefined}
+      sentence={reading.sentence}
+    />
   );
 }
 
@@ -176,7 +214,7 @@ export function UsageRails({
   breadth = null,
 }: {
   readonly readings: readonly RoleReading[];
-  /** ADR-103: one drive-breadth reading, drawn after the role rails; null draws nothing. */
+  /** ADR-104: the drive rail, drawn after the role rails; null draws nothing. */
   readonly breadth?: BreadthReading | null;
   /** Fantasy points per week in the reader's preset, on the same week axis. */
   readonly production: { readonly bars: readonly RoleBar[]; readonly axisMax: number } | null;

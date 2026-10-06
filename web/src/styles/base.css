@@ -5900,44 +5900,19 @@ table.sheet.opp-sheet thead th button {
 }
 
 /*
- * ADR-103's drive-breadth row: one reading, so a scale in the bars' column rather than bars.
- * The same 30px band and hairlines as a rail; a centre line at zero (the random-allocation
- * reference), a hollow tick at the position's median on this build, a solid mark at his value.
- * The signed number and the sentence carry the meaning; the scale is the second channel.
+ * ADR-104's drive rail: a notch across a bar marks the share the same count would reach placed
+ * at random. A bar that stops short of its notch is a player whose touches came bunched into
+ * fewer drives; one that clears it, spread across more. Drawn in ink over the fill, 2px, so it
+ * reads against a pale bar, a tinted latest bar and the empty slot above a short one.
  */
-.breadth-scale {
-  position: relative;
-  height: 30px;
-  min-width: 0;
-  border-bottom: var(--hairline) solid var(--line-strong);
-}
-
-.breadth-zero,
-.breadth-median,
-.breadth-mark {
+.usage-bar-notch {
   position: absolute;
-  bottom: 0;
-  transform: translateX(-50%);
-}
-
-.breadth-zero {
-  left: 50%;
-  width: 1px;
-  height: 100%;
-  background: var(--line-strong);
-}
-
-.breadth-median {
-  width: 7px;
-  height: 12px;
-  border: var(--hairline) solid var(--ink-muted);
-  background: transparent;
-}
-
-.breadth-mark {
-  width: 7px;
-  height: 20px;
-  background: rgb(46 204 255 / 80%);
+  left: -1px;
+  right: -1px;
+  height: 2px;
+  margin-bottom: -1px;
+  background: var(--ink);
+  pointer-events: none;
 }
 
 .usage-axis-weeks > span {
@@ -5980,6 +5955,13 @@ table.sheet.opp-sheet thead th button {
   flex-basis: 100%;
   font: 400 0.62rem/1.3 var(--font-mono);
   color: var(--ink-muted);
+}
+
+/* A rail's one extra line (the drive rail's four-game comparison with random). */
+.usage-rail-note {
+  flex-basis: 100%;
+  font: 400 0.62rem/1.3 var(--font-mono);
+  color: var(--ink-faint);
 }
 
 .signal-absent {
@@ -6151,7 +6133,8 @@ table.sheet.opp-sheet thead th button {
     display: none;
   }
 
-  .usage-rail-window {
+  .usage-rail-window,
+  .usage-rail-note {
     flex-basis: auto;
   }
 }

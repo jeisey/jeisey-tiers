@@ -603,20 +603,26 @@ export function DataView({
             Opportunity row says &ldquo;no projection&rdquo; and every value is blank, never zero.
           </p>
           <p className="prose">
-            <strong>Drive breadth (ADR-103).</strong> Over a player&rsquo;s latest four completed
-            games: how many of his team&rsquo;s drives his opportunities reached, against how
-            many the same number placed at random among the team&rsquo;s eligible plays would
-            reach — computed game by game, then summed, and printed in percentage points of the
-            drives. Quarterbacks: rush attempts (scrambles included) among all scrimmage plays.
-            Running backs: carries and targets among all running-back carries and targets.
-            Receivers: targets among all identified targets. Tight ends: targets snapped outside
-            the red zone among targets snapped there. Kneels, spikes, two-point tries, aborted
-            snaps, special-teams plays and plays wiped out by a penalty are not counted; a sack
-            is a quarterback play and never a target. A reading needs three games, twenty team
-            drives and six opportunities — a display rule, not an established reliability bar.
-            Positive is broader than random, negative more bunched; neither is better, and a
-            back&rsquo;s reading sits below zero by construction (backs rotate by series), so
-            it is printed beside his position&rsquo;s median on this build.
+            <strong>Drive breadth (ADR-103, ADR-104).</strong> A row in the card&rsquo;s role
+            block, drawn like the rails beside it: for each game, the share of his team&rsquo;s
+            drives on which he got an opportunity, latest game against his earlier games.
+            Quarterbacks: drives with a designed run (a run nflverse does not mark as a
+            scramble). Running backs: drives with a carry or target, among drives on which a
+            back got one. Receivers: drives with a target. Tight ends: drives with a target
+            snapped outside the red zone. Kneels, spikes, two-point tries, aborted snaps,
+            special-teams plays and plays wiped out by a penalty are not counted.
+          </p>
+          <p className="prose">
+            For backs, receivers and tight ends, a notch on each bar marks where the same number
+            of opportunities would land if placed at random among the team&rsquo;s eligible
+            plays that game: a bar short of its notch means his opportunities came bunched
+            into fewer drives (a back in a series rotation), above it spread across more. The
+            line under the reading sums that comparison over his latest four games, in points
+            of the drives, once he has three games, twenty drives and six opportunities there
+            &mdash; a display rule, not an established reliability bar. Neither direction is
+            better. The bar alone mostly restates volume; the distance from the notch is what
+            the other rails do not show. Quarterbacks get no notch: too few designed runs reach
+            a four-game reading for the comparison to be published.
           </p>
           {inSeason.metadata.signals?.drive_breadth != null && (
             <p className="prose">{inSeason.metadata.signals.drive_breadth.statement}</p>

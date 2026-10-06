@@ -25,7 +25,6 @@ import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   DriveBreadth,
   DriveBreadthMetric,
-  DriveBreadthReference,
   PlayerUsageRecord,
   UsageCohortRecord,
   Position,
@@ -41,13 +40,17 @@ import { EM_DASH, formatValue } from "./format";
 /** Bump when which facts a position leads with, or how one is stated, changes. */
 export const SIGNAL_PRESENTATION_VERSION = "signal_presentation_v1";
 
-export interface RoleMetricSpec {
+/** What formatting and direction need from a rail's metric: its unit. */
+export interface RailUnit {
+  /** A share is 0–1 on an absolute axis; a count is scaled to the player's own peak. */
+  readonly unit: "share" | "count";
+}
+
+export interface RoleMetricSpec extends RailUnit {
   readonly metric: RoleMetric;
   readonly label: string;
   /** The label a board cell has room for (ADR-092). The card prints `label`. */
   readonly short: string;
-  /** A share is 0–1 on an absolute axis; a count is scaled to the player's own peak. */
-  readonly unit: "share" | "count";
   /** The question the reading answers, in the reader's words. */
   readonly question: string;
   readonly weekValue: (week: UsageWeek) => number | null;
@@ -148,7 +151,7 @@ export interface RoleReading {
  * by 0.3 points is printed as "no change" and marked flat.
  */
 function directionOf(
-  spec: RoleMetricSpec,
+  spec: RailUnit,
   change: number | null | undefined,
 ): ChangeDirection | null {
   if (change === null || change === undefined || !Number.isFinite(change)) return null;
@@ -156,7 +159,7 @@ function directionOf(
   return change > 0 ? "up" : "down";
 }
 
-function printedMagnitude(spec: RoleMetricSpec, change: number): number {
+function printedMagnitude(spec: RailUnit, change: number): number {
   return spec.unit === "share" ? Math.round(Math.abs(change) * 100) : Math.round(Math.abs(change));
 }
 
@@ -210,7 +213,7 @@ export function formatShare(value: number | null | undefined): string {
 }
 
 /** The value of one metric in its own unit: `72%` for a share, `31` for a count. */
-export function formatMetric(spec: RoleMetricSpec, value: number | null | undefined): string {
+export function formatMetric(spec: RailUnit, value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return EM_DASH;
   return spec.unit === "share" ? formatShare(value) : String(Math.round(value));
 }
@@ -222,7 +225,7 @@ export function formatMetric(spec: RoleMetricSpec, value: number | null | undefi
  * U+2212 for a minus, as `formatSigned` does. A change that rounds to nothing says `no change`
  * rather than `+0 pts`, which would read as a direction.
  */
-export function formatChange(spec: RoleMetricSpec, change: number | null | undefined): string {
+export function formatChange(spec: RailUnit, change: number | null | undefined): string {
   if (change === null || change === undefined || !Number.isFinite(change)) return EM_DASH;
   const magnitude = printedMagnitude(spec, change);
   if (magnitude === 0) return "no change";
@@ -356,120 +359,181 @@ export function impliedSplit(
   return { team: mine / total, opponent: theirs / total };
 }
 
-// ------------------------------------------------------------------- drive breadth (ADR-103)
+// --------------------------------------------------------- drive breadth (ADR-103, ADR-104)
 
-/** The card's words for each position's variant, in the player's own positional terms. */
+/**
+ * The card's words for each position's drive rail, in the rails' own form: a noun and the
+ * reader's question. `one` is a single opportunity and `drives` the denominator — which of the
+ * team's drives count — for the sentence; `noun` is his opportunities, for the "too few" line.
+ */
 export const BREADTH_LABELS: Readonly<
-  Record<DriveBreadthMetric, { readonly label: string; readonly question: string; readonly noun: string; readonly slots: string }>
+  Record<
+    DriveBreadthMetric,
+    {
+      readonly label: string;
+      readonly question: string;
+      readonly noun: string;
+      readonly one: string;
+      readonly drives: string;
+    }
+  >
 > = {
-  rushing: {
-    label: "Rushing breadth",
-    question: "Runs across drives, or bunched?",
-    noun: "rush attempts",
-    slots: "scrimmage plays",
+  designed_runs: {
+    label: "Designed-run drives",
+    question: "Are runs called for him?",
+    noun: "designed runs",
+    one: "a designed run",
+    drives: "team drives",
   },
   backfield: {
-    label: "Backfield breadth",
-    question: "Touches across drives, or by series?",
+    label: "Drives with a touch",
+    question: "Every series, or a rotation?",
     noun: "carries and targets",
-    slots: "running-back carries and targets",
+    one: "a carry or target",
+    drives: "drives on which a back got the ball",
   },
   targets: {
-    label: "Target breadth",
-    question: "Targets across drives, or bunched?",
+    label: "Drives targeted",
+    question: "A target on every drive?",
     noun: "targets",
-    slots: "team targets",
+    one: "a target",
+    drives: "drives with a target",
   },
   open_field_targets: {
-    label: "Open-field breadth",
-    question: "Looks beyond the red zone, across drives?",
+    label: "Drives targeted",
+    question: "Between the 20s, every drive?",
     noun: "targets outside the red zone",
-    slots: "team targets outside the red zone",
+    one: "a target outside the red zone",
+    drives: "drives with one",
   },
 };
+
+const SHARE: RailUnit = { unit: "share" };
 
 const WITHHELD_TEXT: Readonly<Record<NonNullable<DriveBreadth["withheld_reason"]>, string>> = {
   too_few_appearances: "fewer than 3 games",
-  too_few_eligible_drives: "fewer than 20 team drives",
-  too_few_opportunities: "fewer than 6",
+  too_few_eligible_drives: "fewer than 20 drives",
+  too_few_opportunities: "too few",
 };
 
-/** "+4.2 pp" / "−9.0 pp" / "0.0 pp", with a real minus sign. */
+/** "+4 pts" / "−9 pts" / "level": ADR-103's gap in the card's change unit (percentage points). */
 export function formatBreadth(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
-  if (rounded === 0) return "0.0 pp";
-  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)} pp`;
+  const rounded = Math.round(value);
+  if (rounded === 0) return "level";
+  return `${rounded > 0 ? "+" : "−"}${String(Math.abs(rounded))} pts`;
 }
 
 export interface BreadthReading {
+  readonly metric: DriveBreadthMetric;
   readonly label: string;
   readonly question: string;
-  /** The number, or null when withheld. */
-  readonly value: number | null;
-  /** The printed value, "—" when withheld. */
+  /** One bar per week on the rails' axis; the value is that game's drive share. */
+  readonly bars: readonly RoleBar[];
+  /** Week → the share the same count would reach at random: the notch on each bar. */
+  readonly expected: ReadonlyMap<number, number | null>;
+  /** The artifact's own `role_change_v1` on the drive share, or null. */
+  readonly change: RoleChange | null;
+  readonly direction: ChangeDirection | null;
   readonly valueText: string;
-  /** The window and denominator, or why there is no number. */
+  readonly changeText: string | null;
+  /** The rails' window line: "from 62% · week 4 vs 3 earlier games". */
   readonly window: string;
-  /** Position median on this build, when published. */
-  readonly reference: DriveBreadthReference | null;
+  /**
+   * ADR-103's four-game comparison with random, or why there is none; null where the build
+   * does not compare the position with random at all (QB, ADR-104).
+   */
+  readonly vsRandom: string | null;
+  /** The four-game gap when it clears the display minimums, else null. */
+  readonly gap: number | null;
   /** The whole reading in words, for assistive technology. */
   readonly sentence: string;
 }
 
+function weeksLabel(block: DriveBreadth): string {
+  if (block.first_week === null || block.last_week === null) return "no games";
+  return block.first_week === block.last_week
+    ? `wk ${String(block.first_week)}`
+    : `wks ${String(block.first_week)}–${String(block.last_week)}`;
+}
+
 /**
- * One drive-breadth reading from the published block. Nothing is recomputed: the value, the
- * counts and the window are the artifact's; the words name the denominator and say it is
- * description, not a forecast.
+ * The drive rail from the published block. Nothing is recomputed: every bar, notch, change and
+ * gap is the artifact's own number, placed on the record's week axis; weeks the block does not
+ * carry keep the rails' absence marks (a played game without play-by-play reads "no value").
  */
-export function breadthReading(
-  block: DriveBreadth,
-  reference: DriveBreadthReference | null,
-  position: string,
-): BreadthReading {
+export function breadthReading(record: PlayerUsageRecord, block: DriveBreadth): BreadthReading {
   const words = BREADTH_LABELS[block.metric];
-  const weeks =
-    block.first_week === null || block.last_week === null
-      ? "no completed games"
-      : block.first_week === block.last_week
-        ? `week ${String(block.first_week)}`
-        : `wks ${String(block.first_week)}–${String(block.last_week)}`;
-  const median =
-    reference === null ? "" : ` · ${position} median ${formatBreadth(reference.p50)}`;
-  if (!block.displayable || block.breadth_gap_pp === null) {
-    const why =
-      block.withheld_reason === null
-        ? "no reading"
-        : block.withheld_reason === "too_few_opportunities"
-          ? `${WITHHELD_TEXT.too_few_opportunities} ${words.noun} (${String(block.opportunities)})`
-          : WITHHELD_TEXT[block.withheld_reason];
-    return {
-      label: words.label,
-      question: words.question,
-      value: null,
-      valueText: "—",
-      window: `too few for a reading: ${why}`,
-      reference,
-      sentence:
-        `${words.label}: no reading. Over ${weeks} he has ${String(block.opportunities)} ${words.noun} ` +
-        `across ${String(block.eligible_drives)} team drives, below the display minimum (${why}). ` +
-        "That is not the same as average.",
-    };
-  }
-  const gap = block.breadth_gap_pp;
+  const byWeek = new Map(block.weeks.map((week) => [week.week, week]));
+  const change = block.change;
+  const bars = record.weeks.map((week) => ({
+    week: week.week,
+    status: week.status,
+    value: week.status === "played" ? (byWeek.get(week.week)?.drive_share ?? null) : null,
+    latest: change !== null && week.week === change.latest_week,
+  }));
+  const compared = block.compares_with_random;
+  const expected = new Map(
+    compared ? block.weeks.map((week) => [week.week, week.expected_share] as const) : [],
+  );
+  const direction = directionOf(SHARE, change?.change);
+  const window =
+    change === null
+      ? "no drive count for his latest game"
+      : change.earlier === null
+        ? changeWindow(change)
+        : `from ${formatShare(change.earlier)} · ${changeWindow(change)}`;
+  const span = weeksLabel(block);
+  const gap = compared && block.displayable && block.breadth_gap_pp !== null ? block.breadth_gap_pp : null;
+  const why =
+    block.withheld_reason === null
+      ? "no reading"
+      : block.withheld_reason === "too_few_opportunities"
+        ? `too few ${words.noun} (${String(block.opportunities)})`
+        : WITHHELD_TEXT[block.withheld_reason];
+  const vsRandom = !compared
+    ? null
+    : gap === null
+      ? `vs random: ${why}`
+      : `${span}: ${formatBreadth(gap)} vs random`;
+
+  const latestWeek = change === null ? null : byWeek.get(change.latest_week);
+  const opening =
+    change === null || latestWeek === undefined || latestWeek === null
+      ? `${words.label}: no drive count for his latest game.`
+      : `${words.label}: in week ${String(change.latest_week)} he had ${words.one} on ` +
+        `${String(latestWeek.reached_drives)} of ${String(latestWeek.eligible_drives)} ${words.drives} ` +
+        `(${formatShare(change.latest)})` +
+        (change.earlier === null || change.change === null
+          ? "; no earlier game to compare."
+          : `, ${formatChange(SHARE, change.change)} against ${formatShare(change.earlier)} over his ` +
+            `${String(change.earlier_games)} earlier game${change.earlier_games === 1 ? "" : "s"}.`);
+  const closing = !compared
+    ? ""
+    : gap === null
+      ? ` Over ${span} there are too few ${words.noun} to compare with random (${why}).`
+      : ` Over ${span} his ${String(block.opportunities)} ${words.noun} reached ` +
+        `${String(block.reached_drives)} of ${String(block.eligible_drives)} drives; placed at random ` +
+        `they would reach about ${block.expected_drives.toFixed(1)}, so he is ` +
+        (Math.round(gap) === 0
+          ? "level with random"
+          : `${String(Math.abs(Math.round(gap)))} points ${gap > 0 ? "more spread out" : "more bunched"} than random`) +
+        ".";
   return {
+    metric: block.metric,
     label: words.label,
     question: words.question,
-    value: gap,
-    valueText: formatBreadth(gap),
-    window: `${String(block.reached_drives)} of ${String(block.eligible_drives)} drives · ${weeks}${median}`,
-    reference,
-    sentence:
-      `${words.label}, ${weeks}: his ${String(block.opportunities)} ${words.noun} reached ` +
-      `${String(block.reached_drives)} of ${String(block.eligible_drives)} team drives with ${words.slots}; ` +
-      `the same number placed at random among those ${words.slots} would reach about ` +
-      `${block.expected_drives.toFixed(1)}. That is ${Math.abs(gap).toFixed(1)} percentage points ` +
-      `${gap >= 0 ? "broader" : "more bunched"} than random` +
-      (reference === null ? "." : `; the ${position} median on this build is ${formatBreadth(reference.p50)}.`) +
-      " Descriptive only: not a forecast, and neither sign is better.",
+    bars,
+    expected,
+    change,
+    direction,
+    valueText: change === null ? EM_DASH : formatShare(change.latest),
+    changeText:
+      change?.change !== null && change?.change !== undefined && direction !== null
+        ? formatChange(SHARE, change.change)
+        : null,
+    window,
+    vsRandom,
+    gap,
+    sentence: `${opening}${closing} Descriptive only: not a forecast.`,
   };
 }
