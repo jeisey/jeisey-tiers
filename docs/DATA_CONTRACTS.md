@@ -1269,7 +1269,7 @@ never change.
 | `weekly_context` | same | whole | all (ADR-099; read with the Start/Sit tab and a card's "This week" block) |
 | `player_status`, `team_matchups`, `behavior_trend_series`, `player_headshots`, `player_usage` | same | whole | all |
 | `player_usage_cohort` | `player_usage` | whole | `player_id`, `position`, `touchdown_points_share`, `pass_epa_per_dropback` |
-| `player_availability` (ADR-101) | `player_status` | whole | `season`, `player_id`, `roster_status`, `sleeper_status`, `injury_status`, `injury_body_part`, `observed_at_utc`, `quality_flags`, `availability_override` |
+| `player_availability` (ADR-101) | `player_status` | whole | `season`, `player_id`, `roster_status`, `sleeper_status`, `injury_status`, `injury_body_part`, `observed_at_utc`, `quality_flags`, `availability_override`, and (ADR-102) `current_team`, `employment_status`, `employment_source` |
 | `players` | every artifact with names | whole | `player_id` → `display_name` |
 | `card` | tiers, arbitrage, market trend series (block); projections, weekly projections (scoring); player status, headshots, usage, behaviour series (whole); ROS, Opportunity (block) | block × bucket | every field of every row of those artifacts whose player falls in the bucket |
 
@@ -1338,7 +1338,7 @@ records what that precision is and what the page prints, so a future change can 
 | `weekly_projections` | quantiles, drivers, explanation accounts, implied points / lines, opponent index | 2 dp / 1 dp / 3 dp | 1 dp, signed 1 dp |
 | `weekly_context` | lines / implied points, shares, forecast values | 1–2 dp, ≤ 4 dp, 1 dp | 1 dp, whole percent, whole mph and °F |
 | `arbitrage` | ADP, rank gap, score / trend / regional value gap | 2 dp / 4 dp / 6 dp | 1 dp, signed 1 dp |
-| `player_usage` | shares, points, counts, touchdown share, EPA | 2–4 dp | whole percent, 1 dp, integers, 2 dp |
+| `player_usage` | shares, points, counts, touchdown share, EPA; `drive_breadth` gap / expected drives | 2–4 dp; 1 dp / 3 dp | whole percent, 1 dp, integers, 2 dp; signed 1 dp pp / 1 dp in the sentence |
 | `behavior_trend_series` | span, add and net trend | 4 dp | "over N days/hours", 1 dp or whole per day |
 | `market_trend_series` | point ADP, trend | 2 dp, 4 dp | 1 dp |
 | `team_matchups` | lines, implied points | 1 dp, 2 dp | 1 dp |
@@ -1346,3 +1346,60 @@ records what that precision is and what the page prints, so a future change can 
 Rounding the two full-precision shares was measured and declined: every budget is met without it,
 and rounding would change the Opportunity view's CSV export and could create ties inside a card's
 cohort percentile — both changes to what a reader sees.
+
+
+## 22. Employment and drive breadth — 2026-10-06 (ADR-102, ADR-103)
+
+### 22.1 `player_status` 1.2 — who employs him now
+
+Additive. `employment_status` is `signed | unsigned | retired | unknown` (null when the build
+computed no reading), `employment_source` is `nflverse_roster | sleeper` (null when unknown),
+`employment_observed_at_utc` is when the deciding source was observed (the build time for the
+roster file, the capture time for Sleeper). Rule `employment_evidence_v1`: the current-season
+roster with a code other than `CUT`/`RET`; then `RET`; then, off the roster or `CUT`, a Sleeper
+record ≤ 48 h old joined nflverse-first (a club → signed, no club and `Active` → unsigned);
+otherwise unknown. **`current_team` is the employing club or null — never a previous club.**
+The CSV appends the three columns. Validator `player_status.employment_inconsistent`: unsigned
+or retired with a club, signed without one, a reading without a source (or a source without a
+reading), unsigned on anything but Sleeper evidence.
+
+After the draft anchor the status population adds verified off-roster players (unsigned, and
+signings only Sleeper reports). Identity for them comes from the previous season's roster as
+identity only (`identity_spine`); portraits remain the tier board's players.
+
+### 22.2 `inseason_opportunity_record` 1.2 — model coverage
+
+Additive `employment_status` (as above) and `model_coverage`: `projected` — every intrinsic
+column the model's, copied as before — or `unprojected`: a verified off-roster player who clears
+the 500-add surface bar and has no board row. On an unprojected row `ros_fair_rank`,
+`ros_position_rank`, `ros_expected_vorp`, `ros_vorp_p50`, `ros_expected_points`,
+`ros_expected_games`, `ros_uncertainty` and `ros_tier` are null (the schema now admits null
+for the first four; nothing else may be null). Validator
+`opportunity.unprojected_row_carries_a_value`: an unprojected row carries any value, is not a
+declared surfaced row, has no verified employment, or is unsigned with a team; a projected row
+lacks a value. The surfaced-rank check skips unprojected rows; the cross-artifact firewall
+check is unchanged (an unprojected row is an absent-from-`ros_tiers` surfaced row). The browser
+keeps unprojected rows apart (`UnprojectedRecord`): no ordering, chart or filter meets one.
+
+### 22.3 `player_usage` 1.1 — `drive_breadth`
+
+Additive optional block, null when play-by-play was unavailable or the position has no variant:
+
+| field | meaning |
+|---|---|
+| `method_version` | `drive_breadth_v1` |
+| `metric` | `rushing` (QB) · `backfield` (RB) · `targets` (WR) · `open_field_targets` (TE) |
+| `window_rule` | 4 — his latest completed appearances |
+| `appearances`, `first_week`, `last_week` | the window actually used (played weeks ≤ the cutoff) |
+| `eligible_drives` | Σ D — team drives with an eligible slot in those games |
+| `reached_drives` | Σ A — drives holding at least one of his opportunities |
+| `expected_drives` | Σ E — the uniform-allocation reference, computed per game (3 dp) |
+| `opportunities` | Σ K |
+| `breadth_gap_pp` | `100 × (Σ A − Σ E) / Σ D`, 1 dp; null when Σ D = 0 |
+| `displayable`, `withheld_reason` | the provisional display rule (≥ 3 appearances, ≥ 20 drives, ≥ 6 opportunities) and the first minimum missed |
+
+Validator `player_usage.drive_breadth_arithmetic` recomputes the gap from the counts (±0.06),
+re-applies the minimums, and refuses counts out of range. `ros_build_metadata.signals.drive_breadth`
+carries `method_version`, `status` (`published | unavailable`), the window and minimums, each
+position's displayed quartiles on this build (`position_reference`) and the statement printed
+with every reading. Play-by-play itself never reaches the browser.

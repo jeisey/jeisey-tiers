@@ -1,0 +1,50 @@
+{
+ "QB": {
+  "games": 1838,
+  "spearman_gap_vs_offense_snap_share": 0.094,
+  "mean_gap_partial_games": -3.78,
+  "mean_gap_half_or_more_snaps": -1.25,
+  "partial_game_share": 0.064,
+  "spearman_gap_vs_team_margin": 0.043,
+  "spearman_gap_vs_abs_margin": -0.043,
+  "eta_squared_opponent": 0.078,
+  "eta_squared_player": 0.075,
+  "spearman_window_gap_vs_drives_per_game": -0.022
+ },
+ "RB": {
+  "games": 6436,
+  "spearman_gap_vs_offense_snap_share": 0.193,
+  "mean_gap_partial_games": -8.71,
+  "mean_gap_half_or_more_snaps": -3.99,
+  "partial_game_share": 0.608,
+  "spearman_gap_vs_team_margin": -0.051,
+  "spearman_gap_vs_abs_margin": -0.148,
+  "eta_squared_opponent": 0.031,
+  "eta_squared_player": 0.131,
+  "spearman_window_gap_vs_drives_per_game": -0.03
+ },
+ "WR": {
+  "games": 8754,
+  "spearman_gap_vs_offense_snap_share": 0.043,
+  "mean_gap_partial_games": -0.98,
+  "mean_gap_half_or_more_snaps": -0.02,
+  "partial_game_share": 0.21,
+  "spearman_gap_vs_team_margin": 0.015,
+  "spearman_gap_vs_abs_margin": -0.008,
+  "eta_squared_opponent": 0.015,
+  "eta_squared_player": 0.04,
+  "spearman_window_gap_vs_drives_per_game": 0.019
+ },
+ "TE": {
+  "games": 3407,
+  "spearman_gap_vs_offense_snap_share": 0.064,
+  "mean_gap_partial_games": -0.76,
+  "mean_gap_half_or_more_snaps": -0.02,
+  "partial_game_share": 0.253,
+  "spearman_gap_vs_team_margin": 0.033,
+  "spearman_gap_vs_abs_margin": -0.001,
+  "eta_squared_opponent": 0.046,
+  "eta_squared_player": 0.051,
+  "spearman_window_gap_vs_drives_per_game": -0.05
+ }
+}

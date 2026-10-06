@@ -1,0 +1,98 @@
+{
+ "QB": {
+  "players": [
+   {
+    "player_id": "gsis:00-0036389",
+    "name": "Jalen Hurts",
+    "through_week": 13,
+    "opportunities_per_appearance": 8.25,
+    "share": 0.132,
+    "breadth_gap_pp": 4.7,
+    "next_appearance_opportunities": 7,
+    "drought": false
+   },
+   {
+    "player_id": "gsis:00-0034857",
+    "name": "Josh Allen",
+    "through_week": 15,
+    "opportunities_per_appearance": 8.25,
+    "share": 0.136,
+    "breadth_gap_pp": -9.6,
+    "next_appearance_opportunities": 6,
+    "drought": false
+   }
+  ]
+ },
+ "RB": {
+  "players": [
+   {
+    "player_id": "gsis:00-0031687",
+    "name": "Raheem Mostert",
+    "through_week": 15,
+    "opportunities_per_appearance": 5.75,
+    "share": 0.209,
+    "breadth_gap_pp": 2.0,
+    "next_appearance_opportunities": 10,
+    "drought": false
+   },
+   {
+    "player_id": "gsis:00-0038611",
+    "name": "Chris Rodriguez Jr.",
+    "through_week": 17,
+    "opportunities_per_appearance": 5.75,
+    "share": 0.205,
+    "breadth_gap_pp": -21.0,
+    "next_appearance_opportunities": 0,
+    "drought": true
+   }
+  ]
+ },
+ "WR": {
+  "players": [
+   {
+    "player_id": "gsis:00-0031381",
+    "name": "Davante Adams",
+    "through_week": 9,
+    "opportunities_per_appearance": 8.75,
+    "share": 0.259,
+    "breadth_gap_pp": 11.7,
+    "next_appearance_opportunities": 13,
+    "drought": false
+   },
+   {
+    "player_id": "gsis:00-0038543",
+    "name": "Jaxon Smith-Njigba",
+    "through_week": 9,
+    "opportunities_per_appearance": 8.75,
+    "share": 0.255,
+    "breadth_gap_pp": -9.0,
+    "next_appearance_opportunities": 11,
+    "drought": false
+   }
+  ]
+ },
+ "TE": {
+  "players": [
+   {
+    "player_id": "gsis:00-0033288",
+    "name": "George Kittle",
+    "through_week": 17,
+    "opportunities_per_appearance": 6.5,
+    "share": 0.23,
+    "breadth_gap_pp": 5.1,
+    "next_appearance_opportunities": 3,
+    "drought": true
+   },
+   {
+    "player_id": "gsis:00-0038933",
+    "name": "Dalton Kincaid",
+    "through_week": 16,
+    "opportunities_per_appearance": 6.5,
+    "share": 0.23,
+    "breadth_gap_pp": -7.6,
+    "next_appearance_opportunities": 1,
+    "drought": true
+   }
+  ]
+ }
+}

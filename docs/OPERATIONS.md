@@ -1303,6 +1303,23 @@ at season end. A missing, stale (> 48 h at build time) or refused status reading
 uncertain, never as healthy; a Sleeper outage therefore turns marks to "?" rather than
 clearing them.
 
+### 16.11 Unsigned players and drive breadth (ADR-102, ADR-103)
+
+No workflow changed. `build-ros` now also reads the day's `capture-status` snapshot from the
+store (for the employment reading) and the season's play-by-play through the cached nflverse
+loader (for drive breadth); both are inputs it already had access to.
+
+- `employment.sleeper_not_current` (build warning): the status capture is older than 48 h at
+  build time, so no player can be called unsigned or signed on Sleeper evidence; every
+  off-roster player reads `unknown` and nobody is shown as FA. Fix the `capture-status` run;
+  the next refresh recovers on its own.
+- `ros.drive_breadth_failed` (build warning): play-by-play could not be read or parsed. The
+  breadth row is omitted from every card for that build and nothing else changes — it is
+  descriptive and feeds no model, verdict or ranking. Re-run after nflverse recovers.
+- A player the page lists as FA is never corrected by hand. If a signing is real but missing,
+  check that Sleeper reports the club (`player_status.json`: `employment_source`); the
+  official roster file catches up on its own and the same canonical player is updated.
+
 ## 17. Serving the site under load (ADR-098)
 
 ### 17.1 How GitHub Pages serves this site — verified 2026-09-30
