@@ -57,6 +57,7 @@ import type {
   MarketComparison,
   MarketTrendSeriesRecord,
   OpportunityRecord,
+  UnprojectedRecord,
   PlayerProjectionRecord,
   PlayerStatusRecord,
   PlayerUsageRecord,
@@ -111,6 +112,7 @@ import {
   formatShare,
   productionBars,
   roleReadingsFor,
+  breadthReading,
   type UsageCohort,
 } from "../data/signals";
 
@@ -175,7 +177,7 @@ export interface PlayerDetailData {
    * the usage shares the board already carries. Never differenced against a rank, never
    * converted into a price.
    */
-  readonly opportunity?: OpportunityRecord | null;
+  readonly opportunity?: OpportunityRecord | UnprojectedRecord | null;
   /** The behaviour feed's own account of itself — source, window, snapshot time. */
   readonly behavior?: RosBehaviorMetadata | null;
   /**
@@ -623,7 +625,7 @@ function InSeasonUsage({
    * production tiles, which are rest-of-season fields, are withheld (ADR-091).
    */
   readonly ros: RosTierRecord | null;
-  readonly opportunity: OpportunityRecord | null;
+  readonly opportunity: OpportunityRecord | UnprojectedRecord | null;
   readonly behavior: RosBehaviorMetadata | null;
   readonly cohort: RosCohortContext | null;
   readonly signal: SignalInputs;
@@ -707,6 +709,17 @@ function InSeasonUsage({
     },
   ];
   const readings = usage === null ? [] : roleReadingsFor(usage, position);
+  // ADR-103's bonus row. The block and the positional median are the build's; nothing here
+  // recomputes a count. No block (no play-by-play, or a 1.0 build) draws no row.
+  const breadthBlock = usage?.drive_breadth ?? null;
+  const breadth =
+    breadthBlock === null
+      ? null
+      : breadthReading(
+          breadthBlock,
+          signal.signals?.drive_breadth?.position_reference?.[position] ?? null,
+          position,
+        );
 
   return (
     <>
@@ -765,11 +778,16 @@ function InSeasonUsage({
             production={productionBars(usage, scoring)}
             productionLabel={`Fantasy points (${scoring})`}
             weeks={usage.weeks.map((week) => week.week)}
+            breadth={breadth}
           />
           <p className="cohort-note">
             {"Each reading is his latest game against the average of his earlier games. " +
               "Shares are drawn on a 0–100% scale; attempts and points against his own peak. " +
               "B is a bye, × a week he did not play, · a week with no value for that measure."}
+            {breadth !== null &&
+              " Breadth is his latest four games against the same count placed at random among " +
+                "his team's eligible plays: + spread across more drives, − bunched into fewer. " +
+                "The hollow tick is his position's median here. Descriptive, not a forecast."}
           </p>
         </>
       )}
@@ -1112,7 +1130,19 @@ export function PlayerDetail({
     "Player";
   const position =
     tier?.position ?? arbitrage?.position ?? status?.position ?? ros?.position ?? null;
-  const team = tier?.team ?? arbitrage?.team ?? status?.current_team ?? ros?.team ?? null;
+  // A verified free agent is "FA" whichever board the card was opened from: his last club is
+  // history (ADR-102). Anything short of that evidence keeps the rows' own team.
+  const team =
+    data.availability?.kind === "unsigned"
+      ? "FA"
+      : (tier?.team ?? arbitrage?.team ?? status?.current_team ?? ros?.team ?? null);
+  const unprojected = opportunity?.model_coverage === "unprojected";
+  // ADR-102: employment outranks the roster-code badge in the rail — "No designation reported"
+  // beside a free agent would read as healthy and available.
+  const employmentHeadline =
+    data.availability?.kind === "unsigned" || data.availability?.kind === "signing"
+      ? data.availability.headline
+      : null;
   const gap = selected === null ? null : describeGap(selected.rank_gap);
   // Null under `cross` by construction, and null when the selected market genuinely has no
   // slope yet. Both read as "collecting"; neither borrows another market's number.
@@ -1397,6 +1427,16 @@ export function PlayerDetail({
           }
           tabbed={sheet}
         >
+          {unprojected && (
+            <p className="section-note" data-kind="unprojected">
+              <strong>No rest-of-season projection.</strong>{" "}
+              {data.availability?.kind === "unsigned"
+                ? "An unsigned free agent the model has no validated output for: "
+                : "A signing the model has no validated output for: "}
+              rank, tier and value are left blank rather than set to zero, and no destination
+              team is projected. He is listed because managers are adding him.
+            </p>
+          )}
           <InSeasonUsage
             ros={ros ?? null}
             opportunity={opportunity ?? null}
@@ -1810,12 +1850,16 @@ export function PlayerDetail({
               )}
               <div>
                 <span className="rail-verdict-label">Status</span>
-                <span className="rail-status" data-meaningful={meaningful}>
-                  {badge === null
-                    ? status === null
-                      ? "No record published"
-                      : "No designation reported"
-                    : badge.full}
+                <span
+                  className="rail-status"
+                  data-meaningful={meaningful || employmentHeadline !== null}
+                >
+                  {employmentHeadline ??
+                    (badge === null
+                      ? status === null
+                        ? "No record published"
+                        : "No designation reported"
+                      : badge.full)}
                 </span>
               </div>
             </div>

@@ -337,6 +337,8 @@ def _semantic_checks(
             return _ros_tier_checks(records, stage)
         case "inseason_opportunity":
             return _opportunity_checks(records, stage)
+        case "player_status":
+            return _status_checks(records, stage)
         case "arbitrage":
             return _arbitrage_checks(records, envelope, stage)
         case "market_snapshot":
@@ -801,7 +803,62 @@ def _usage_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qual
                 observed=f"{len(records)} player(s), {with_change} with a role change",
             ),
         )
+    breadth = _breadth_problems(records)
+    if breadth:
+        checks.append(
+            QualityCheck.fail(
+                "player_usage.drive_breadth_arithmetic",
+                stage=stage,
+                message=(
+                    "a drive-breadth block disagrees with its own counts or its display rule; "
+                    "the published gap must be 100 x (reached - expected) / eligible drives "
+                    "(ADR-103)"
+                ),
+                observed="; ".join(breadth[:10]),
+                expected="drive_breadth_v1 arithmetic",
+            ),
+        )
     return checks
+
+
+#: ADR-103's provisional display minimums, restated here so the validator checks the rule the
+#: card applies rather than trusting the flag the build wrote.
+_BREADTH_MINIMUMS = {"appearances": 3, "eligible_drives": 20, "opportunities": 6}
+
+
+def _breadth_problems(records: Sequence[Mapping[str, Any]]) -> list[str]:
+    problems: list[str] = []
+    for record in records:
+        block = record.get("drive_breadth")
+        if not block:
+            continue
+        label = str(record.get("player_id"))
+        drives = int(block["eligible_drives"])
+        reached = int(block["reached_drives"])
+        expected = float(block["expected_drives"])
+        opportunities = int(block["opportunities"])
+        if reached > drives or expected > drives + 1e-6 or reached > opportunities:
+            problems.append(f"{label}: counts out of range")
+        if int(block["appearances"]) > int(block["window_rule"]):
+            problems.append(f"{label}: more appearances than the window")
+        gap = block.get("breadth_gap_pp")
+        if drives == 0:
+            if gap is not None:
+                problems.append(f"{label}: a gap with no eligible drive")
+        elif gap is None or abs(float(gap) - 100.0 * (reached - expected) / drives) > 0.06:
+            problems.append(f"{label}: gap {gap} != 100*({reached}-{expected})/{drives}")
+        clears = (
+            int(block["appearances"]) >= _BREADTH_MINIMUMS["appearances"]
+            and drives >= _BREADTH_MINIMUMS["eligible_drives"]
+            and opportunities >= _BREADTH_MINIMUMS["opportunities"]
+        )
+        if bool(block["displayable"]) != clears:
+            problems.append(
+                f"{label}: displayable={block['displayable']} but minimums say {clears}"
+            )
+        if bool(block["displayable"]) == (block.get("withheld_reason") is not None):
+            problems.append(f"{label}: displayable and withheld_reason disagree")
+    return problems
 
 
 def _matchup_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
@@ -1698,6 +1755,21 @@ def _opportunity_checks(
                 expected="null add_count and drop_count",
             ),
         )
+    coverage = _coverage_violations(records)
+    if coverage:
+        checks.append(
+            QualityCheck.fail(
+                "opportunity.unprojected_row_carries_a_value",
+                stage=stage,
+                message=(
+                    "an unprojected row (no validated model output) must carry no rank, tier "
+                    "or value, must be a surfaced off-roster player with a verified employment "
+                    "reading, and a projected row must carry the model's numbers (ADR-102)"
+                ),
+                observed="; ".join(coverage[:10]),
+                expected="null ros_* values exactly on model_coverage = unprojected rows",
+            ),
+        )
     misplaced = _surfaced_rank_violations(records)
     if misplaced:
         checks.append(
@@ -1714,7 +1786,9 @@ def _opportunity_checks(
                 expected="a surfaced row's ranks and median below the published block's",
             ),
         )
-    if not (inconsistent or tiered_exceptions or unexplained or stale_behavior or misplaced):
+    if not (
+        inconsistent or tiered_exceptions or unexplained or stale_behavior or misplaced or coverage
+    ):
         surfaced = sum(1 for record in records if record.get("outside_tier_board"))
         checks.append(
             QualityCheck.ok(
@@ -1728,6 +1802,92 @@ def _opportunity_checks(
             ),
         )
     return checks
+
+
+#: The values an unprojected row may not carry and a projected row must (ADR-102).
+_COVERAGE_VALUE_FIELDS = (
+    "ros_fair_rank",
+    "ros_position_rank",
+    "ros_expected_vorp",
+    "ros_uncertainty",
+)
+_UNPROJECTED_NULL_FIELDS = (
+    *_COVERAGE_VALUE_FIELDS,
+    "ros_vorp_p50",
+    "ros_expected_points",
+    "ros_expected_games",
+    "ros_tier",
+)
+
+
+def _coverage_violations(records: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Rows whose numbers disagree with their declared model coverage (contract 1.2)."""
+    violations: list[str] = []
+    for record in records:
+        label = (
+            f"{record.get('player_id')}@{record.get('league_preset_id')}/"
+            f"{record.get('scoring_preset')}"
+        )
+        coverage = record.get("model_coverage", "projected")
+        if coverage == "unprojected":
+            carried = [name for name in _UNPROJECTED_NULL_FIELDS if record.get(name) is not None]
+            if carried:
+                violations.append(f"{label}: unprojected but carries {', '.join(carried)}")
+            if not record.get("outside_tier_board") or not record.get("surface_reasons"):
+                violations.append(f"{label}: unprojected but not a declared surfaced row")
+            if record.get("employment_status") not in ("unsigned", "signed"):
+                violations.append(
+                    f"{label}: unprojected with employment {record.get('employment_status')!r}",
+                )
+            if record.get("employment_status") == "unsigned" and record.get("team") is not None:
+                violations.append(f"{label}: unsigned but placed on {record.get('team')}")
+        else:
+            missing = [name for name in _COVERAGE_VALUE_FIELDS if record.get(name) is None]
+            if missing:
+                violations.append(f"{label}: projected but missing {', '.join(missing)}")
+    return violations
+
+
+def _status_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[QualityCheck]:
+    """The employment reading and the club it prints must say the same thing (ADR-102)."""
+    problems: list[str] = []
+    for record in records:
+        employment = record.get("employment_status")
+        team = record.get("current_team")
+        source = record.get("employment_source")
+        label = str(record.get("player_id"))
+        if employment in ("unsigned", "retired") and team is not None:
+            problems.append(f"{label}: {employment} but current_team {team}")
+        if employment == "signed" and team is None:
+            problems.append(f"{label}: signed with no club")
+        if employment in ("signed", "unsigned", "retired") and source is None:
+            problems.append(f"{label}: {employment} with no deciding source")
+        if employment in (None, "unknown") and source is not None:
+            problems.append(f"{label}: {employment!r} but a source decided it")
+        if employment == "unsigned" and source != "sleeper":
+            problems.append(f"{label}: unsigned on {source} evidence")
+    if problems:
+        return [
+            QualityCheck.fail(
+                "player_status.employment_inconsistent",
+                stage=stage,
+                message=(
+                    "an employment reading disagrees with the club the row prints or with its "
+                    "own source; a previous club must never read as a current one (ADR-102)"
+                ),
+                observed="; ".join(problems[:10]),
+                expected="employment_evidence_v1",
+            ),
+        ]
+    unsigned = sum(1 for record in records if record.get("employment_status") == "unsigned")
+    return [
+        QualityCheck.ok(
+            "player_status.employment",
+            stage=stage,
+            message="every employment reading agrees with its club and its source (ADR-102)",
+            observed=f"{len(records)} row(s), {unsigned} verified unsigned",
+        ),
+    ]
 
 
 def _surfaced_rank_violations(records: Sequence[Mapping[str, Any]]) -> list[str]:
@@ -1762,7 +1922,7 @@ def _surfaced_rank_violations(records: Sequence[Mapping[str, Any]]) -> list[str]
         ]
         floor = min(medians) if medians else None
         for row in block:
-            if not row.get("outside_tier_board"):
+            if not row.get("outside_tier_board") or row.get("model_coverage") == "unprojected":
                 continue
             label = (
                 f"{row.get('player_id')}@{row.get('league_preset_id')}/{row.get('scoring_preset')}"

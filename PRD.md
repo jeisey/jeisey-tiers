@@ -2,7 +2,7 @@
 
 **Status:** Living document. Part A is the current product scope; Part B is the V1 launch
 specification, kept as a historical record.  
-**Last revised:** 2026-10-02  
+**Last revised:** 2026-10-06  
 **Live site:** <https://jeisey.github.io/jeisey-tiers/>  
 **Deployment:** static GitHub Pages site refreshed by GitHub Actions
 
@@ -72,9 +72,12 @@ These hold for every feature, current or future.
   and the Trade exploration are serialised deterministically into the query string.
 - **CR-004 Export.** Full and filtered CSV for every table board (Tiers, Arbitrage, ROS tiers,
   Opportunity).
-- **CR-005 Provenance.** The Data view exposes build time, model versions, source status,
-  methodology, limitations and required attribution; the header shows the build time and the
-  most serious degradation.
+- **CR-005 Provenance.** The Data view exposes build time and age (flagged stale past 48
+  hours), model versions, source status, degraded artifacts, build notes, methodology,
+  limitations and required attribution; the header shows the build time beside the logo and
+  nothing else (revised 2026-10-06: the header's status chip and season-mode label were removed;
+  Part B section 18's "site header must display last successful production refresh" still
+  holds).
 - **CR-006 Player card.** One accessible player-detail dialog reachable from every board, with
   model numbers, range, market history, status and, in season, the next game.
 - **CR-007 Accessibility and performance.** Part B FR-009 and FR-010 continue to apply, with

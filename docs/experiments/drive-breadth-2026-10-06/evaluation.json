@@ -1,0 +1,232 @@
+{
+ "method_version": "drive_breadth_v1",
+ "outcome": "drought: next appearance's opportunities < 0.5 x the window's per-appearance mean",
+ "baseline_features": [
+  "volume",
+  "share",
+  "share_change"
+ ],
+ "candidate_features": [
+  "volume",
+  "share",
+  "share_change",
+  "breadth_gap_pp"
+ ],
+ "test_seasons": [
+  2022,
+  2023,
+  2024
+ ],
+ "seed": 20261006,
+ "bootstrap_replicates": 1000,
+ "positions": {
+  "QB": {
+   "rows": 1502,
+   "redundancy": {
+    "spearman_with_share": -0.237,
+    "spearman_with_volume": -0.24,
+    "spearman_with_share_change": 0.018
+   },
+   "seasons": [
+    {
+     "season": 2022,
+     "rows": 280,
+     "drought_rate": 0.236,
+     "baseline_log_loss": 0.5434,
+     "candidate_log_loss": 0.5491,
+     "baseline_brier": 0.1787,
+     "candidate_brier": 0.1813,
+     "baseline_auc": 0.5726,
+     "candidate_auc": 0.5388
+    },
+    {
+     "season": 2023,
+     "rows": 331,
+     "drought_rate": 0.248,
+     "baseline_log_loss": 0.5543,
+     "candidate_log_loss": 0.5563,
+     "baseline_brier": 0.1844,
+     "candidate_brier": 0.185,
+     "baseline_auc": 0.5648,
+     "candidate_auc": 0.5583
+    },
+    {
+     "season": 2024,
+     "rows": 324,
+     "drought_rate": 0.222,
+     "baseline_log_loss": 0.5231,
+     "candidate_log_loss": 0.5227,
+     "baseline_brier": 0.1705,
+     "candidate_brier": 0.1704,
+     "baseline_auc": 0.5841,
+     "candidate_auc": 0.5847
+    }
+   ],
+   "pooled": {
+    "rows": 935,
+    "delta_log_loss": 0.00227,
+    "delta_log_loss_ci95": [
+     -0.00015,
+     0.00501
+    ],
+    "incremental_evidence": false
+   }
+  },
+  "RB": {
+   "rows": 5141,
+   "redundancy": {
+    "spearman_with_share": 0.036,
+    "spearman_with_volume": 0.012,
+    "spearman_with_share_change": -0.018
+   },
+   "seasons": [
+    {
+     "season": 2022,
+     "rows": 1045,
+     "drought_rate": 0.197,
+     "baseline_log_loss": 0.4624,
+     "candidate_log_loss": 0.462,
+     "baseline_brier": 0.1474,
+     "candidate_brier": 0.1473,
+     "baseline_auc": 0.6895,
+     "candidate_auc": 0.6907
+    },
+    {
+     "season": 2023,
+     "rows": 1026,
+     "drought_rate": 0.177,
+     "baseline_log_loss": 0.4273,
+     "candidate_log_loss": 0.4265,
+     "baseline_brier": 0.1342,
+     "candidate_brier": 0.1339,
+     "baseline_auc": 0.7164,
+     "candidate_auc": 0.7196
+    },
+    {
+     "season": 2024,
+     "rows": 1038,
+     "drought_rate": 0.214,
+     "baseline_log_loss": 0.4737,
+     "candidate_log_loss": 0.4729,
+     "baseline_brier": 0.1536,
+     "candidate_brier": 0.1534,
+     "baseline_auc": 0.7093,
+     "candidate_auc": 0.7116
+    }
+   ],
+   "pooled": {
+    "rows": 3109,
+    "delta_log_loss": -0.00064,
+    "delta_log_loss_ci95": [
+     -0.00151,
+     0.00021
+    ],
+    "incremental_evidence": false
+   }
+  },
+  "WR": {
+   "rows": 7349,
+   "redundancy": {
+    "spearman_with_share": 0.07,
+    "spearman_with_volume": 0.059,
+    "spearman_with_share_change": -0.005
+   },
+   "seasons": [
+    {
+     "season": 2022,
+     "rows": 1453,
+     "drought_rate": 0.211,
+     "baseline_log_loss": 0.5027,
+     "candidate_log_loss": 0.5025,
+     "baseline_brier": 0.1619,
+     "candidate_brier": 0.1617,
+     "baseline_auc": 0.6132,
+     "candidate_auc": 0.6153
+    },
+    {
+     "season": 2023,
+     "rows": 1514,
+     "drought_rate": 0.221,
+     "baseline_log_loss": 0.5122,
+     "candidate_log_loss": 0.5122,
+     "baseline_brier": 0.1664,
+     "candidate_brier": 0.1664,
+     "baseline_auc": 0.6289,
+     "candidate_auc": 0.6287
+    },
+    {
+     "season": 2024,
+     "rows": 1461,
+     "drought_rate": 0.192,
+     "baseline_log_loss": 0.4726,
+     "candidate_log_loss": 0.4718,
+     "baseline_brier": 0.15,
+     "candidate_brier": 0.1497,
+     "baseline_auc": 0.6367,
+     "candidate_auc": 0.6403
+    }
+   ],
+   "pooled": {
+    "rows": 4428,
+    "delta_log_loss": -0.00032,
+    "delta_log_loss_ci95": [
+     -0.00137,
+     0.00064
+    ],
+    "incremental_evidence": false
+   }
+  },
+  "TE": {
+   "rows": 2895,
+   "redundancy": {
+    "spearman_with_share": 0.014,
+    "spearman_with_volume": -0.001,
+    "spearman_with_share_change": 0.002
+   },
+   "seasons": [
+    {
+     "season": 2022,
+     "rows": 591,
+     "drought_rate": 0.242,
+     "baseline_log_loss": 0.561,
+     "candidate_log_loss": 0.5622,
+     "baseline_brier": 0.1859,
+     "candidate_brier": 0.1863,
+     "baseline_auc": 0.4945,
+     "candidate_auc": 0.4891
+    },
+    {
+     "season": 2023,
+     "rows": 568,
+     "drought_rate": 0.194,
+     "baseline_log_loss": 0.489,
+     "candidate_log_loss": 0.4891,
+     "baseline_brier": 0.1554,
+     "candidate_brier": 0.1554,
+     "baseline_auc": 0.6047,
+     "candidate_auc": 0.605
+    },
+    {
+     "season": 2024,
+     "rows": 597,
+     "drought_rate": 0.265,
+     "baseline_log_loss": 0.574,
+     "candidate_log_loss": 0.5738,
+     "baseline_brier": 0.1931,
+     "candidate_brier": 0.1931,
+     "baseline_auc": 0.5948,
+     "candidate_auc": 0.596
+    }
+   ],
+   "pooled": {
+    "rows": 1756,
+    "delta_log_loss": 0.00037,
+    "delta_log_loss_ci95": [
+     -5e-05,
+     0.00082
+    ],
+    "incremental_evidence": false
+   }
+  }
+ }
+}

@@ -220,82 +220,12 @@ export function ViewTabs({
 }
 
 /**
- * What the indicator says, which is a question about the **season** and not only the board.
- *
- * Three of the four answers are the ordinary two modes. The fourth is the window ADR-079
- * exists for: the season has kicked off and no rest-of-season board can exist yet, because
- * week 1 is not finished or not published. Calling that "Draft mode" would be true about the
- * board on screen and false about the season, and the season is what this control names.
- */
-function seasonModeLabel(
-  resolved: "draft" | "in_season",
-  seasonState: string | null,
-  awaiting: boolean,
-): string {
-  if (resolved === "in_season") return "In-Season mode";
-  // "Draft mode" is the right name for a *choice*: a reader who switched back to the draft
-  // board mid-season is in draft mode, and the switch beside this says so. It is the wrong
-  // name when there is nothing to switch to, because then it describes the season rather than
-  // a choice — and the season has started.
-  if (!awaiting) return "Draft mode";
-  return seasonState === "season_complete" ? "Season complete" : "Season under way";
-}
-
-/**
- * The season-mode indicator: which product a reader is looking at (roadmap 12.4).
- *
- * It lives in the masthead beside the build stamp because that is what it is — status, not a
- * control — and because a phone has no vertical space to spare for a band that says one word.
- * The board itself has to stay above the fold on a 412px screen, which it does not if every
- * page grows a strip. The switch is a separate thing and is rendered separately, by
- * :func:`SeasonMode`, where the other controls are.
- *
- * It says *why* it is what it is, so a reader who wonders why the site changed in September
- * gets the answer without opening the Data panel. That sentence is visually hidden only
- * because there is no room for it here; it is on the page, in text, for anyone reading with
- * assistive technology, and the same fact is in the Data panel in full.
- */
-export function SeasonModeChip({
-  resolved,
-  seasonState,
-  throughWeek,
-  note,
-  awaiting = false,
-}: {
-  readonly resolved: "draft" | "in_season";
-  readonly seasonState: string | null;
-  readonly throughWeek: number | null;
-  /** The build's own sentence about why this is the state. Rendered for assistive tech. */
-  readonly note?: string | undefined;
-  /** The season has started and this build published no rest-of-season board (ADR-079). */
-  readonly awaiting?: boolean;
-}): React.JSX.Element {
-  const detail =
-    resolved === "in_season" && throughWeek !== null
-      ? `through week ${String(throughWeek)}`
-      : (seasonState ?? "preseason draft").replace(/_/g, " ");
-  return (
-    <span className="season-mode-chip" data-mode={resolved} data-season={seasonState ?? undefined}>
-      <span className="season-mode-label">
-        <span className="season-mode-dot" aria-hidden="true" />
-        {seasonModeLabel(resolved, seasonState, awaiting)}
-      </span>
-      <span className="visually-hidden">
-        {note !== undefined && note !== ""
-          ? `, ${detail}. ${note}.`
-          : `, ${detail}, set from the NFL schedule.`}
-      </span>
-    </span>
-  );
-}
-
-/**
  * The season-mode switch, and the cutoff it is switching between.
  *
  * Rendered only when there is something to switch to. Before kickoff there is no in-season
  * bundle, so a two-state control would offer an empty board — and a band whose only content
- * would be a word the masthead chip already carries is worse than no band, because it costs
- * the top of every phone screen for a repetition.
+ * is a mode the tabs beneath it already show is worse than no band, because it costs the top
+ * of every phone screen for a repetition.
  */
 export function SeasonMode({
   mode,
@@ -338,8 +268,8 @@ export function SeasonMode({
  * Every folded control's value, so a reader can tell which board is on screen without opening
  * the panel — a folded control whose value you cannot see is a filter you can forget is on.
  * Two items appear only when they say something: the search term, when there is one, and the
- * season mode, when a reader has overridden `auto` — the masthead chip already names the mode
- * the schedule chose. The mode goes last although its switch is first in the panel: at 320px
+ * season mode, when a reader has overridden `auto` — the tabs already show which board the
+ * schedule chose. The mode goes last although its switch is first in the panel: at 320px
  * the row ellipsises, and a rare override should be what is cut, not the scoring.
  *
  * Every value is the URL's, so the summary is the applied state: a search still inside its

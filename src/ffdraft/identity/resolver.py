@@ -312,6 +312,21 @@ def resolve_sleeper_status(
         if not sleeper_id:
             continue
 
+        if registry.lookup(IdNamespace.SLEEPER, sleeper_id).status is LookupStatus.AMBIGUOUS:
+            # Two canonical players claim this sleeper_id — within one roster, or across the
+            # current and previous seasons' rosters of an identity spine (ADR-102). Neither
+            # may take the record (ADR-019).
+            outcomes.append(
+                ResolutionOutcome(
+                    source_id=source_id,
+                    external_player_id=sleeper_id,
+                    status=ResolutionStatus.AMBIGUOUS,
+                    reason=REASON_COLLIDING_INDEX,
+                    bridges_disagreed=("sleeper_id_claimed_by_two_canonical_players",),
+                ),
+            )
+            continue
+
         record = by_external.get(sleeper_id)
         if record is None:
             outcomes.append(

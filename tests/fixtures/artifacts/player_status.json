@@ -4,10 +4,10 @@
   "record_schema": "player_status",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 16,
+  "record_count": 18,
   "records": [
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000001",
@@ -31,10 +31,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000002",
@@ -58,10 +61,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000003",
@@ -85,10 +91,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000004",
@@ -112,10 +121,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000005",
@@ -139,10 +151,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000006",
@@ -166,10 +181,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000007",
@@ -193,10 +211,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000008",
@@ -222,10 +243,13 @@
       "quality_flags": [
         "sleeper_record_missing"
       ],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000009",
@@ -249,10 +273,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000010",
@@ -276,10 +303,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000011",
@@ -303,10 +333,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000012",
@@ -330,10 +363,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000013",
@@ -357,10 +393,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000014",
@@ -386,10 +425,13 @@
       "quality_flags": [
         "sleeper_record_missing"
       ],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000015",
@@ -413,10 +455,13 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "player_id": "gsis:00-0000016",
@@ -440,7 +485,74 @@
         "sleeper"
       ],
       "quality_flags": [],
-      "availability_override": null
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "nflverse_roster",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
+    },
+    {
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "player_id": "gsis:00-0000020",
+      "display_name": "Darnell Ashby",
+      "current_team": null,
+      "position": "WR",
+      "roster_status": null,
+      "roster_depth_chart_position": null,
+      "sleeper_status": "Active",
+      "injury_status": null,
+      "injury_body_part": null,
+      "injury_notes": null,
+      "injury_start_date": null,
+      "practice_participation": null,
+      "practice_description": null,
+      "depth_chart_position": null,
+      "depth_chart_order": null,
+      "observed_at_utc": "2026-08-18T12:00:00Z",
+      "source_ids": [
+        "nflreadpy",
+        "sleeper"
+      ],
+      "quality_flags": [
+        "no_current_roster_entry"
+      ],
+      "availability_override": null,
+      "employment_status": "unsigned",
+      "employment_source": "sleeper",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
+    },
+    {
+      "schema_version": "1.2",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "player_id": "gsis:00-0000021",
+      "display_name": "Corey Halvorsen",
+      "current_team": "SEA",
+      "position": "RB",
+      "roster_status": null,
+      "roster_depth_chart_position": null,
+      "sleeper_status": "Active",
+      "injury_status": null,
+      "injury_body_part": null,
+      "injury_notes": null,
+      "injury_start_date": null,
+      "practice_participation": null,
+      "practice_description": null,
+      "depth_chart_position": null,
+      "depth_chart_order": null,
+      "observed_at_utc": "2026-08-18T12:00:00Z",
+      "source_ids": [
+        "nflreadpy",
+        "sleeper"
+      ],
+      "quality_flags": [
+        "no_current_roster_entry"
+      ],
+      "availability_override": null,
+      "employment_status": "signed",
+      "employment_source": "sleeper",
+      "employment_observed_at_utc": "2026-08-18T12:00:00Z"
     }
   ]
 }

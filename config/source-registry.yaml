@@ -206,6 +206,12 @@ sources:
       # (player stats, snap counts) and each team's next game (schedule).
       - inseason_usage_context
       - matchup_context
+      # ADR-103. Play-by-play reduced to per-player drive aggregates (drive breadth): published
+      # descriptive context, read by no model; raw rows are never committed or served.
+      - inseason_drive_breadth_context
+      # ADR-102. The previous season's roster verifies identity (ids only, never a club) for
+      # players the current roster omits; employment comes from the current roster, then Sleeper.
+      - prior_season_identity_only
       # ADR-096. The weekly start/sit model (a decision-layer model, never the intrinsic or
       # rest-of-season one) reads the schedule's total and spread for the game it projects.
       # The injury report is printed beside its projections and measured for base rates;
@@ -232,6 +238,8 @@ sources:
       # Probed live 2026-09-22 for ADR-091, weeks 1-2 complete.
       load_player_stats_week_2026: {"weeks_1_2": 2225}
       load_snap_counts_2026: {"weeks_1_2": 2994}
+      # Probed live 2026-10-06 for ADR-103 (dictionary: nflreadr data-raw/dictionary_pbp.csv).
+      load_pbp: {"2024": 49492, "2026_weeks_1_4_eligible_plays": 7770}
     known_issues:
       - id: depth_chart_schema_break_2025
         detail: >-

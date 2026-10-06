@@ -50,7 +50,8 @@ from ffdraft.behavior.trend import (
     compute_behavior_trends,
 )
 from ffdraft.contracts.enums import BehaviorType
-from ffdraft.identity.registry import CanonicalRegistry
+from ffdraft.identity.ids import IdNamespace
+from ffdraft.identity.registry import CanonicalRegistry, LookupStatus
 from ffdraft.retention import SnapshotStore, parse_snapshot_key
 from ffdraft.sources.sleeper import SLEEPER_SOURCE_ID
 
@@ -117,13 +118,19 @@ def sleeper_to_canonical(registry: CanonicalRegistry) -> dict[str, str]:
     """``sleeper_id -> canonical player_id``, built nflverse-first (ADR-011).
 
     Sleeper's own ``gsis_id`` is present on about 32% of its records, so the crosswalk is
-    read off the canonical player and never off the feed.
+    read off the canonical player and never off the feed. A ``sleeper_id`` two canonical
+    players claim is poisoned in the registry and maps to nobody (ADR-019): before the identity
+    spine reached the previous season's roster (ADR-102) that could only happen inside one
+    roster file, and the last player iterated silently won.
     """
     mapping: dict[str, str] = {}
     for player_id in sorted(registry.players):
         sleeper_id = registry.players[player_id].crosswalk.sleeper_id
-        if sleeper_id:
-            mapping[str(sleeper_id)] = player_id
+        if not sleeper_id:
+            continue
+        if registry.lookup(IdNamespace.SLEEPER, sleeper_id).status is LookupStatus.AMBIGUOUS:
+            continue
+        mapping[str(sleeper_id)] = player_id
     return mapping
 
 

@@ -25,7 +25,9 @@ import type { Degradation } from "./errors";
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   BehaviorTrendSeriesRecord,
+  EmploymentStatus,
   OpportunityRecord,
+  UnprojectedRecord,
   PlayerUsageRecord,
   Position,
   ProductMode,
@@ -51,7 +53,7 @@ function blockKey(leaguePreset: string, scoring: ScoringPreset): string {
 export interface InSeasonInput {
   readonly metadata: RosBuildMetadata;
   readonly rosTiers: readonly RosTierRecord[];
-  readonly opportunity: readonly OpportunityRecord[] | null;
+  readonly opportunity: readonly (OpportunityRecord | UnprojectedRecord)[] | null;
   readonly opportunityDegradation: Degradation | null;
   /** The retained add/drop window (ADR-089). Null or empty costs a sparkline and nothing else. */
   readonly behaviorSeries?: readonly BehaviorTrendSeriesRecord[] | null;
@@ -144,6 +146,9 @@ export class InSeasonBundle {
   private readonly rosByBlockPlayer: ReadonlyMap<string, RosTierRecord>;
   private readonly opportunityByBlock: ReadonlyMap<string, readonly OpportunityRecord[]>;
   private readonly opportunityByBlockPlayer: ReadonlyMap<string, OpportunityRecord>;
+  /** ADR-102: off-roster players with no model output, kept out of every value ordering. */
+  private readonly unprojectedByBlock: ReadonlyMap<string, readonly UnprojectedRecord[]>;
+  private readonly unprojectedByBlockPlayer: ReadonlyMap<string, UnprojectedRecord>;
   private readonly opportunityCohortByBlock: ReadonlyMap<string, readonly OpportunityCohortRecord[]>;
   private readonly behaviorByPlayer: ReadonlyMap<string, BehaviorTrendSeriesRecord>;
   /**
@@ -257,8 +262,18 @@ export class InSeasonBundle {
 
     const opportunityByBlock = new Map<string, OpportunityRecord[]>();
     const opportunityByBlockPlayer = new Map<string, OpportunityRecord>();
-    for (const record of input.opportunity ?? []) {
-      const key = blockKey(record.league_preset_id, record.scoring_preset);
+    const unprojectedByBlock = new Map<string, UnprojectedRecord[]>();
+    const unprojectedByBlockPlayer = new Map<string, UnprojectedRecord>();
+    for (const row of input.opportunity ?? []) {
+      const key = blockKey(row.league_preset_id, row.scoring_preset);
+      if (isUnprojected(row)) {
+        const bucket = unprojectedByBlock.get(key);
+        if (bucket === undefined) unprojectedByBlock.set(key, [row]);
+        else bucket.push(row);
+        unprojectedByBlockPlayer.set(`${key}|${row.player_id}`, row);
+        continue;
+      }
+      const record = row;
       const bucket = opportunityByBlock.get(key);
       if (bucket === undefined) opportunityByBlock.set(key, [record]);
       else bucket.push(record);
@@ -272,6 +287,15 @@ export class InSeasonBundle {
     }
     this.opportunityByBlock = opportunityByBlock;
     this.opportunityByBlockPlayer = opportunityByBlockPlayer;
+    for (const rows of unprojectedByBlock.values()) {
+      // Most added first, then by name: there is no value to order them by.
+      rows.sort(
+        (a, b) =>
+          (b.add_count ?? 0) - (a.add_count ?? 0) || a.display_name.localeCompare(b.display_name),
+      );
+    }
+    this.unprojectedByBlock = unprojectedByBlock;
+    this.unprojectedByBlockPlayer = unprojectedByBlockPlayer;
 
     const cohortByBlock = new Map<string, OpportunityCohortRecord[]>();
     for (const record of input.opportunityCohort ?? []) {
@@ -326,6 +350,35 @@ export class InSeasonBundle {
   ): readonly OpportunityCohortRecord[] {
     const full = this.opportunityByBlock.get(blockKey(leaguePreset, scoring));
     return full ?? this.opportunityCohortByBlock.get(blockKey(leaguePreset, scoring)) ?? [];
+  }
+
+  /** Off-roster players with no model output, for this block (ADR-102). */
+  unprojectedFor(leaguePreset: string, scoring: ScoringPreset): readonly UnprojectedRecord[] {
+    return this.unprojectedByBlock.get(blockKey(leaguePreset, scoring)) ?? [];
+  }
+
+  unprojectedRecordFor(
+    leaguePreset: string,
+    scoring: ScoringPreset,
+    playerId: string,
+  ): UnprojectedRecord | null {
+    return (
+      this.unprojectedByBlockPlayer.get(`${blockKey(leaguePreset, scoring)}|${playerId}`) ?? null
+    );
+  }
+
+  /**
+   * His employment reading (ADR-102), from his status record, or null when none was
+   * published. `unsigned` is a verified free agent; every other value — including a missing
+   * record — is not, and the page never prints "FA" for it.
+   */
+  employmentFor(playerId: string): EmploymentStatus | null {
+    return this.statusByPlayer.get(playerId)?.employment_status ?? null;
+  }
+
+  /** The club to print for him: "FA" only on verified evidence, else the row's own team. */
+  teamLabel(playerId: string, team: string | null): string | null {
+    return displayTeam(team, this.employmentFor(playerId));
   }
 
   opportunityRecordFor(
@@ -404,6 +457,21 @@ export class InSeasonBundle {
       return { leaguePreset, scoring: scoring as ScoringPreset };
     });
   }
+}
+
+/** Whether an Opportunity row is an unprojected off-roster player (contract 1.2, ADR-102). */
+export function isUnprojected(row: OpportunityRecord | UnprojectedRecord): row is UnprojectedRecord {
+  return row.model_coverage === "unprojected";
+}
+
+/**
+ * The club a row prints. A verified-unsigned player is "FA" (ADR-102): his last club is
+ * history, not employment. A signed player prints his club; anything unverified prints the
+ * row's own team, which may be null ("—") but is never turned into "FA" by guesswork.
+ */
+export function displayTeam(team: string | null, employment: EmploymentStatus | null): string | null {
+  if (employment === "unsigned") return "FA";
+  return team;
 }
 
 export function selectRosRows(bundle: InSeasonBundle, state: AppState): readonly RosRow[] {

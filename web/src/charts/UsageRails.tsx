@@ -30,6 +30,7 @@ import type { UsageWeekStatus } from "../data/contracts";
 import { formatValue } from "../data/format";
 import {
   DIRECTION_GLYPH,
+  type BreadthReading,
   changeWindow,
   formatChange,
   formatMetric,
@@ -121,13 +122,62 @@ function RoleRail({ reading }: { readonly reading: RoleReading }): React.JSX.Ele
   );
 }
 
+/** The breadth scale's half-width, in percentage points; a reading beyond it pins to the edge. */
+const BREADTH_SCALE_PP = 25;
+
+function breadthOffset(value: number): number {
+  const clamped = Math.max(-BREADTH_SCALE_PP, Math.min(BREADTH_SCALE_PP, value));
+  return 50 + (clamped / BREADTH_SCALE_PP) * 50;
+}
+
+/**
+ * ADR-103's bonus row: drive breadth above a uniform allocation, in the rails' own grid.
+ *
+ * Not a week-by-week rail — it is one reading over his latest four games — so its middle
+ * column is a scale, not bars: a centre line at zero (the random-allocation reference), a hollow
+ * tick at his position's median on this build, and a solid mark at his value. Text carries the
+ * meaning; the scale is the second channel. Withheld readings draw no mark and say why.
+ */
+function BreadthRail({ reading }: { readonly reading: BreadthReading }): React.JSX.Element {
+  const sentenceId = useId();
+  return (
+    <div className="usage-rail" data-metric="drive_breadth" data-direction="none" aria-describedby={sentenceId}>
+      <span className="usage-rail-label">
+        {reading.label}
+        <span className="usage-rail-question">{reading.question}</span>
+      </span>
+      <span className="breadth-scale" aria-hidden="true">
+        <span className="breadth-zero" />
+        {reading.reference !== null && (
+          <span className="breadth-median" style={{ left: `${String(breadthOffset(reading.reference.p50))}%` }} />
+        )}
+        {reading.value !== null && (
+          <span className="breadth-mark" style={{ left: `${String(breadthOffset(reading.value))}%` }} />
+        )}
+      </span>
+      <p className="usage-rail-reading">
+        <span className="usage-rail-value" data-breadth-value={reading.value ?? undefined}>
+          {reading.valueText}
+        </span>
+        <span className="usage-rail-window">{reading.window}</span>
+      </p>
+      <span className="visually-hidden" id={sentenceId}>
+        {reading.sentence}
+      </span>
+    </div>
+  );
+}
+
 export function UsageRails({
   readings,
   production,
   productionLabel,
   weeks,
+  breadth = null,
 }: {
   readonly readings: readonly RoleReading[];
+  /** ADR-103: one drive-breadth reading, drawn after the role rails; null draws nothing. */
+  readonly breadth?: BreadthReading | null;
   /** Fantasy points per week in the reader's preset, on the same week axis. */
   readonly production: { readonly bars: readonly RoleBar[]; readonly axisMax: number } | null;
   readonly productionLabel: string;
@@ -139,6 +189,7 @@ export function UsageRails({
       {readings.map((reading) => (
         <RoleRail key={reading.spec.metric} reading={reading} />
       ))}
+      {breadth !== null && <BreadthRail reading={breadth} />}
       {production !== null && (
         <div className="usage-rail" data-metric="fantasy_points" data-direction="none">
           <span className="usage-rail-label">

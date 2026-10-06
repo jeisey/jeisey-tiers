@@ -25,14 +25,17 @@ export const RECORD_SCHEMA_VERSIONS = {
   market_trend_series: "1.0",
   projections: "1.0",
   market_snapshot: "1.0",
-  // 1.1 (ADR-101): additive `availability_override`.
-  player_status: "1.1",
+  // 1.1 (ADR-101): additive `availability_override`. 1.2 (ADR-102): additive employment.
+  player_status: "1.2",
   ros_tiers: "1.0",
   // 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
-  inseason_opportunity: "1.1",
+  // 1.2 (ADR-102): additive `employment_status` and `model_coverage`; an unprojected row's
+  // ranks and values are null, and the bundle keeps such rows apart (`UnprojectedRecord`).
+  inseason_opportunity: "1.2",
   player_headshots: "1.0",
   behavior_trend_series: "1.0",
-  player_usage: "1.0",
+  // 1.1 (ADR-103): additive optional `drive_breadth`.
+  player_usage: "1.1",
   team_matchups: "1.0",
   // 1.1 (ADR-099): additive `explanation`.
   weekly_projections: "1.1",
@@ -286,7 +289,17 @@ export interface PlayerStatusRecord {
    * Evidence for the availability policy (`data/availability.ts`), never a model input.
    */
   readonly availability_override?: AvailabilityOverrideRecord | null;
+  /**
+   * Contract 1.2 (ADR-102), `employment_evidence_v1`: who employs him now. `unsigned` is a
+   * verified free agent (shown as "FA"); `unknown` is never shown as FA. Absent on older
+   * builds, null when the build computed no reading.
+   */
+  readonly employment_status?: EmploymentStatus | null;
+  readonly employment_source?: "nflverse_roster" | "sleeper" | null;
+  readonly employment_observed_at_utc?: string | null;
 }
+
+export type EmploymentStatus = "signed" | "unsigned" | "retired" | "unknown";
 
 export interface AvailabilityOverrideRecord {
   readonly horizon: "season";
@@ -728,6 +741,46 @@ export interface PlayerUsageRecord {
   readonly dropbacks: number;
   /** Null below 20 dropbacks. */
   readonly pass_epa_per_dropback: number | null;
+  /**
+   * Contract 1.1 (ADR-103): did his involvement recur across his team's drives or cluster
+   * into a few, against a uniform allocation of the same count. Descriptive; no model reads
+   * it. Absent on a 1.0 build, null when play-by-play was unavailable.
+   */
+  readonly drive_breadth?: DriveBreadth | null;
+}
+
+export type DriveBreadthMetric = "rushing" | "backfield" | "targets" | "open_field_targets";
+
+export interface DriveBreadth {
+  readonly method_version: string;
+  readonly metric: DriveBreadthMetric;
+  /** The window rule: his latest this-many completed appearances. */
+  readonly window_rule: number;
+  readonly appearances: number;
+  readonly first_week: number | null;
+  readonly last_week: number | null;
+  readonly eligible_drives: number;
+  readonly reached_drives: number;
+  /** Drives a uniform allocation of his opportunities among the slots would reach. */
+  readonly expected_drives: number;
+  readonly opportunities: number;
+  /** 100 × (reached − expected) / eligible drives; null with no eligible drive. */
+  readonly breadth_gap_pp: number | null;
+  /** Clears the provisional display minimums. A display rule, not reliability. */
+  readonly displayable: boolean;
+  readonly withheld_reason:
+    | "too_few_appearances"
+    | "too_few_eligible_drives"
+    | "too_few_opportunities"
+    | null;
+}
+
+/** Each position's displayed quartiles on this build: what "typical" is (ADR-103). */
+export interface DriveBreadthReference {
+  readonly players: number;
+  readonly p25: number;
+  readonly p50: number;
+  readonly p75: number;
 }
 
 /**
@@ -773,6 +826,7 @@ export const PLAYER_USAGE_FIELDS = [
   "touchdown_points_share",
   "dropbacks",
   "pass_epa_per_dropback",
+  "drive_breadth",
 ] as const satisfies readonly (keyof PlayerUsageRecord)[];
 
 /**
@@ -856,6 +910,9 @@ export const PLAYER_STATUS_FIELDS = [
   "source_ids",
   "quality_flags",
   "availability_override",
+  "employment_status",
+  "employment_source",
+  "employment_observed_at_utc",
 ] as const satisfies readonly (keyof PlayerStatusRecord)[];
 
 export const PLAYER_HEADSHOT_FIELDS = [
@@ -1057,7 +1114,41 @@ export interface OpportunityRecord {
   readonly outside_tier_board: boolean;
   readonly surface_reasons: readonly SurfaceReason[];
   readonly quality_flags: readonly string[];
+  /** Contract 1.2 (ADR-102): the employment reading, also on `player_status`. */
+  readonly employment_status?: EmploymentStatus | null;
+  /** Contract 1.2: always `projected` here — unprojected rows are `UnprojectedRecord`s. */
+  readonly model_coverage?: "projected" | "unprojected";
 }
+
+/**
+ * An Opportunity row for a verified off-roster player with no validated model output
+ * (contract 1.2, ADR-102): unsigned, or signed only on Sleeper evidence, and added widely
+ * enough to clear the surface rule. Identity, club, employment and behaviour; every ROS
+ * number null, never zero. The bundle keeps these apart from `OpportunityRecord`, so no
+ * ranking, chart or filter that orders by value can meet one.
+ */
+export type UnprojectedRecord = Omit<
+  OpportunityRecord,
+  | "ros_fair_rank"
+  | "ros_position_rank"
+  | "ros_expected_vorp"
+  | "ros_vorp_p50"
+  | "ros_expected_points"
+  | "ros_expected_games"
+  | "ros_uncertainty"
+  | "ros_tier"
+  | "model_coverage"
+> & {
+  readonly ros_fair_rank: null;
+  readonly ros_position_rank: null;
+  readonly ros_expected_vorp: null;
+  readonly ros_vorp_p50?: null;
+  readonly ros_expected_points: null;
+  readonly ros_expected_games: null;
+  readonly ros_uncertainty: null;
+  readonly ros_tier: null;
+  readonly model_coverage: "unprojected";
+};
 
 /** ADR-076's disclosure contract, carried on the artifact rather than written in the UI. */
 export interface RosDisclosures {
@@ -1113,6 +1204,19 @@ export interface RosSignalMetadata {
   readonly sportsbook_context_statement: string;
   /** Why no expected-points reading is published. */
   readonly expected_points_statement: string;
+  /** ADR-103: the drive-breadth layer's status, minimums and positional references. */
+  readonly drive_breadth?: {
+    readonly method_version: string;
+    readonly status: "published" | "unavailable";
+    readonly statement: string;
+    readonly window_appearances?: number;
+    readonly display_minimums?: {
+      readonly appearances: number;
+      readonly eligible_drives: number;
+      readonly opportunities: number;
+    };
+    readonly position_reference?: Partial<Record<Position, DriveBreadthReference | null>> | null;
+  } | null;
 }
 
 /** The seven published levels, as record keys. */
@@ -1553,6 +1657,8 @@ export const OPPORTUNITY_FIELDS = [
   "outside_tier_board",
   "surface_reasons",
   "quality_flags",
+  "employment_status",
+  "model_coverage",
 ] as const satisfies readonly (keyof OpportunityRecord)[];
 
 export const ROS_TIER_FIELDS_COMPLETE: NoMissingKeys<

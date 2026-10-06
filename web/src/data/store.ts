@@ -27,6 +27,7 @@ import {
   type MarketTrendSeriesRecord,
   type OpportunityCohortRecord,
   type OpportunityRecord,
+  type UnprojectedRecord,
   type PlayerHeadshotRecord,
   type PlayerProjectionRecord,
   type PlayerStatusRecord,
@@ -364,7 +365,7 @@ export class DataStore {
             metadata,
             rosTiers: this.rows<RosTierRecord>("ros_tiers", scope),
             opportunity: this.published("inseason_opportunity")
-              ? this.rows<OpportunityRecord>("inseason_opportunity", scope)
+              ? this.rows<OpportunityRecord | UnprojectedRecord>("inseason_opportunity", scope)
               : null,
             opportunityDegradation: this.opportunityDegradation(),
             behaviorSeries: this.published("behavior_trend_series")
@@ -449,7 +450,7 @@ export class DataStore {
         : new InSeasonBundle({
             metadata,
             rosTiers: section<RosTierRecord>("ros_tiers"),
-            opportunity: section<OpportunityRecord>("inseason_opportunity"),
+            opportunity: section<OpportunityRecord | UnprojectedRecord>("inseason_opportunity"),
             opportunityDegradation: null,
             behaviorSeries: section<BehaviorTrendSeriesRecord>("behavior_trend_series"),
             usage: section<PlayerUsageRecord>("player_usage"),

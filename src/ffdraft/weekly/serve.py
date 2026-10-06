@@ -90,7 +90,7 @@ def build_weekly_projection_records(
     model: WeeklyModel,
     snapshot: pl.DataFrame,
     players: Mapping[str, Mapping[str, Any]],
-    current_teams: Mapping[str, str],
+    current_teams: Mapping[str, str | None],
     weekly: pl.DataFrame,
     schedule: pl.DataFrame,
     scoring: Mapping[ScoringPreset, ScoringRules],
@@ -107,10 +107,16 @@ def build_weekly_projection_records(
     if not horizon.contains(target_week):
         return WeeklyServeResult([], {"target_week": None, "reason": "season_complete"})
 
+    # ADR-102: a player the employment reading settles as having no club (verified unsigned,
+    # retired) maps to an explicit None. He has no next game, and the last club he played
+    # for — `team_to_date` — must not stand in for one.
+    no_club = sorted(player_id for player_id, team in current_teams.items() if team is None)
+    known_clubs = {player_id: team for player_id, team in current_teams.items() if team is not None}
     frame = (
         snapshot.filter(
             pl.col("player_id").is_in(list(players))
-            & pl.col("position").is_in(list(WEEKLY_POSITIONS)),
+            & pl.col("position").is_in(list(WEEKLY_POSITIONS))
+            & ~pl.col("player_id").is_in(no_club),
         )
         .with_columns(
             pl.lit(season, dtype=pl.Int32).alias("season"),
@@ -120,7 +126,7 @@ def build_weekly_projection_records(
         .with_columns(
             pl.coalesce(
                 pl.col("player_id").replace_strict(
-                    dict(current_teams),
+                    known_clubs,
                     default=None,
                     return_dtype=pl.String,
                 ),

@@ -72,9 +72,16 @@ Contains:
   view with no tab, Start/Sit or Trade selection and no card. Ordinary link behaviour (new tab,
   copy link) is preserved; its accessible name is "Jeisey Tiers home"; it keeps the global
   focus ring and is the masthead's first tab stop after the skip link.
-- last successful refresh, e.g. `Updated Aug 12 · 7:23 AM ET`
-- degraded/stale marker if metadata says so
-- Methodology/Data link
+- last successful refresh, e.g. `Updated Aug 12 · 7:23 AM ET`, in Eastern from
+  `build_metadata.generated_at_utc`, with the build's age as visually hidden text for
+  assistive technology.
+
+Nothing else sits beside the logo (revised 2026-10-06). The header carries no build-status
+button and no season-mode label or dot: degraded artifacts, a stale build (older than the
+48-hour refresh window), the quality gate and build notes are reported in the **Data** tab,
+which is always one tab away; the season mode is the switch among the controls and the tabs
+it changes. On phones the stamp shares the logo's line (the mark is 34px tall below 360px so
+320px fits), vertically centred on it.
 
 Avoid navigation beyond what the app needs.
 
@@ -796,6 +803,41 @@ targets (every tab stays 44px tall): the active tab is scrolled into view whenev
 focused tab is scrolled into view, an arrow key moves focus with the selection, and a solid
 `‹` / `›` marker at either edge says there is more row. Below 560px *Opportunity* prints as
 *Opp*, its accessible name still "Opportunity". Reduced motion makes the scroll instant.
+
+### 6A.13 Free agents and signings the roster file has not caught up with (ADR-102)
+
+* **"FA" means verified.** The team cell, the card header and the Not projected list print
+  **FA** only when the build's employment reading says *unsigned* (no current-roster club, a
+  fresh Sleeper record with no club and status Active). A null team with no such evidence
+  prints "—", never "FA". FA carries a visually hidden "— unsigned free agent".
+* **A free agent is discoverable, not playable.** He is a row on the Opportunity Board (when
+  the model has a value for him and managers are adding him) or in **Not projected** (when it
+  has none), searchable by name and by "FA", and his card opens. The availability chip reads
+  **FA** with the headline "Unsigned free agent — speculative stash": never a Start/Sit
+  verdict, Pick of the Week or trade target, muted with text.
+* **A signing only Sleeper reports** prints the new club, reads "Signing reported — not yet on
+  the official roster" (uncertain), gets no weekly projection and is never featured.
+* **Not projected** (Opportunity view, section 03, only when the block has such rows): a plain
+  table — player (button to the card) with his chip, position, team, adds, drops, "why listed"
+  — most added first. Position and search apply; the ROS value, role and momentum controls do
+  not (there is nothing of his to read) and the note says what the section is. The card for
+  such a player states "No rest-of-season projection" and leaves rank, tier and value blank.
+
+### 6A.14 Drive breadth, one bonus row in the role block (ADR-103)
+
+* Sits after the role rails and before the points rail, in the same three-column grid: label
+  and question in the player's positional terms (Rushing / Backfield / Target / Open-field
+  breadth), a scale where the bars would be, and the reading.
+* **Scale:** a centre line at zero (random allocation), a hollow tick at his position's median
+  on this build, a solid mark at his value, ±25 pp, pinned at the edges. `aria-hidden`; the
+  sentence carries everything for assistive technology.
+* **Reading:** the signed value in percentage points with a real minus sign, then "A of D drives
+  · wks a–b · RB median −5.4 pp". Withheld: "—" and "too few for a reading: fewer than 6
+  targets (5)" — never a zero that reads as average.
+* **Words never used:** better/worse as a verdict, trust, safety, script, coach, predict. The
+  role block's note says it is descriptive and not a forecast. No badge, tile, filter, sort or
+  column anywhere else; Pick of the Week does not show it.
+* Missing play-by-play draws no row; the rails are unchanged.
 
 ## 7. Tables
 

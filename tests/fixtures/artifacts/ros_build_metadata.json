@@ -50,9 +50,9 @@
     "snapshot_at_utc": "2026-08-18T12:00:00Z",
     "lookback_hours": 24,
     "request_limit": 100,
-    "add_rows": 34,
-    "drop_rows": 34,
-    "matched_players": 34,
+    "add_rows": 38,
+    "drop_rows": 38,
+    "matched_players": 38,
     "age_hours": 0.0,
     "degraded_reason": null,
     "signal_semantics": "add and drop COUNTS over the requested lookback window; never an ADP, never a rank, never differenced against one"
@@ -66,7 +66,7 @@
       "min_touchdown_share_points": 10.0,
       "min_epa_dropbacks": 20.0
     },
-    "usage_records": 17,
+    "usage_records": 19,
     "matchup_rule_version": "next_game_v1",
     "matchup_records": 16,
     "lines_source_id": "nflreadpy",

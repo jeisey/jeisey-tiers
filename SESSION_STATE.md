@@ -4,7 +4,64 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-**Refresh fix, 2026-10-03.** The first production refresh after PR #57 (daily-refresh run
+**Unsigned players, masthead, drive breadth — 2026-10-06 (ADR-102, ADR-103).** The owner's
+three items on `claude/affectionate-clarke-q7u2jj` from `15ca355` (main had not moved). No model,
+feature, training population, projection, VORP, rank, tier, calibration figure or POTW rule
+changed; weekly v2 stays in shadow.
+
+* **Unsigned players (ADR-102).** Root cause, verified on 2026-10-06 sources: Hill and Mixon were
+  present at source and on the draft board; the in-season first exclusion is the ROS publication
+  depth (value), and the trending-add rescue that should have applied failed because every
+  annotation-side registry (behaviour, history, status) was built from `load_rosters(2026)`
+  alone. Fix: `src/ffdraft/status/employment.py` — identity spine (current + previous roster,
+  identity only), `employment_evidence_v1` (roster, then Sleeper ≤ 48 h; never `latest_team`,
+  a prior club or `last_season`), poisoned Sleeper ids fail closed everywhere.
+  `player_status` 1.2, `inseason_opportunity` 1.2 (`model_coverage`; unprojected rows with null
+  values). Policy readings `unsigned` (FA, speculative stash) and `signing` (uncertain, no
+  weekly projection). Real `build-ros` + `build-current` on live sources: Hill FA in all 9
+  Opportunity blocks with 601,816 adds; Mixon SEA (Sleeper) in all 9 with 333,414 adds and no
+  weekly projection; status 911 rows (211 unsigned); portraits all on the tier board.
+* **Masthead.** Only the Updated stamp beside the logo; build age / stale in Data; PRD CR-005
+  and UX_SPEC §4 revised.
+* **Drive breadth (ADR-103).** Frozen before outcomes (commit `102d045`), evaluated on
+  2020–2024: distinct from share/volume, **no** incremental predictive value at any position →
+  published as descriptive context only (`player_usage` 1.1 `drive_breadth`, one card row).
+
+**Next gate:** owner review of ADR-102's FA population and ADR-103's provisional minimums; the
+first production refresh on this code (it reads play-by-play through the cached loader, and
+`build-ros` now also reads the retained Sleeper status capture from the store).
+**Not done:** no PR (not requested), no deployment, no secret or repository-setting change.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 329 files
+uv run mypy                                          # clean, 197 source files
+uv run pytest                                        # 1,925 passed (4 live deselected)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 789 vitest
+npm run build ; VITE_BASE_PATH=/jeisey-tiers/ vite build   # both build
+npm run e2e                                          # 222 passed (chromium, mobile, a11y)
+npm run verify:board (6 CI fixtures)                 # 0 failures each; in-season: 4 breadth rows, 2 unprojected rows
+npm run e2e:size-model && npm run verify:budget      # all met: first visit 309.5/450 kB, data 68.6/150, Start/Sit +55.1/60, Trade +11.8/25, card +23.6/30
+# Real data (2026-10-06): build-current + build-ros on live nflverse + same-day Sleeper captures,
+# live draft artifacts; status re-stamped to the live draft build id for assembly only:
+validate-artifacts --require-serving                 # 0 critical, 0 warning
+verify-real-build (verify:board --dist realsite)     # 0 failures: 513 opp rows, 9 FA cells, 4 breadth rows, 4 picks, 2 Start/Sit cards
+verify:budget (real)                                 # all met: first visit 310.9 kB, data 70.1, Start/Sit +57.0, Trade +11.8, card +23.9
+```
+
+Facts a later session should not re-derive:
+
+* Playwright here needs `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`
+  (the pinned headless shell is not installed); `npm run build` clears fixture data from
+  `web/dist` — run `npm run e2e:build` before serving it.
+* `nflreadpy.load_pbp` 2024: 49,492 rows, 13 columns read; 2026 weeks 1–4: 7,770 eligible plays.
+  The study harness reproduces every ADR-103 number (`ffdraft.signals.breadth_study`).
+* On 2026-10-06 Sleeper listed 213 core players from the 2025/2026 rosters with no club and
+  `Active`; only add-trending ones reach a board.
+
+**Previous pass — refresh fix, 2026-10-03.** The first production refresh after PR #57 (daily-refresh run
 37069228948) failed closed at `validate-artifacts --require-serving` with
 `cross_artifact.headshot_player_not_in_tiers`: the ADR-101 post-anchor status population was
 also handed to the portrait builder. Fixed in `src/ffdraft/pipeline/current.py` (separate

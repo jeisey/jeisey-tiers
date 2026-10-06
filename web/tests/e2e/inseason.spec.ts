@@ -38,8 +38,9 @@ test.describe("season mode", () => {
     await page.goto(IN_SEASON);
     // The URL names no view. The season decides, which is the whole point of `view=auto`.
     await expect(page.getByRole("heading", { name: /Rest of season/ })).toBeVisible();
-    await expect(page.getByText("In-Season mode")).toBeVisible();
+    // The mode is read from the tabs and the switch's cutoff, not a masthead label.
     await expect(page.locator(".season-mode-detail")).toHaveText("through week 8");
+    await expect(page.getByRole("radio", { name: "Follow the NFL schedule" })).toBeChecked();
     await expect(page.getByRole("tab", { name: "ROS tiers" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -52,7 +53,8 @@ test.describe("season mode", () => {
   }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
-    await expect(page.getByText("Draft mode")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Arbitrage" })).toBeVisible();
+    await expect(page.getByText("Draft mode")).toHaveCount(0);
     // Nothing to switch to before kickoff, so no switch is offered.
     await expect(page.locator(".season-mode").getByRole("radio")).toHaveCount(0);
   });
@@ -61,9 +63,9 @@ test.describe("season mode", () => {
     await page.goto(`${IN_SEASON}?mode=draft`);
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Arbitrage" })).toBeVisible();
-    // The masthead's indicator. Scoped because the phone's folded settings row names an
-    // overridden mode too (ADR-093) — not rendered at this width, but still in the DOM.
-    await expect(page.locator("header.masthead").getByText("Draft mode")).toBeVisible();
+    // The switch says which board was chosen; the masthead names no mode (2026-10-06).
+    await expect(page.getByRole("radio", { name: "Preseason board" })).toBeChecked();
+    await expect(page.locator("header.masthead")).not.toContainText(/mode/i);
   });
 
   test("an explicit view wins over the season's default", async ({ page }) => {
@@ -103,11 +105,10 @@ test.describe("the lifecycle windows with no rest-of-season board", () => {
     await page.goto(AWAITING);
     // The draft board, because it is the only board this build published.
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
-    // But not "Draft mode": the season is under way and the indicator says so.
-    await expect(page.locator(".season-mode-label")).toHaveText("Season under way");
+    // But not "Draft mode": the season is under way and the banner says so. The masthead no
+    // longer carries a season-mode label (2026-10-06); the banner is the one statement.
+    await expect(page.locator(".season-mode-label, .season-mode-chip")).toHaveCount(0);
     await expect(page.getByText("Draft mode")).toHaveCount(0);
-    // Scoped to the banner: the chip carries the same sentence for assistive technology,
-    // which is deliberate and would otherwise make every one of these a strict-mode violation.
     const banner = page.locator(".season-notice");
     await expect(banner).toContainText("The regular season has started.");
     await expect(banner).toContainText(/first rest-of-season board is published once week 1/i);
@@ -129,7 +130,7 @@ test.describe("the lifecycle windows with no rest-of-season board", () => {
   test("says the season is over rather than showing a board of zeros", async ({ page }) => {
     await page.goto(SEASON_COMPLETE);
     await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
-    await expect(page.locator(".season-mode-label")).toHaveText("Season complete");
+    await expect(page.locator(".season-mode-label, .season-mode-chip")).toHaveCount(0);
     const banner = page.locator(".season-notice");
     // Not "the regular season has started": at this end of the season that is the wrong
     // sentence beside the right note.
@@ -487,7 +488,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       "aria-pressed",
       "true",
     );
-    const cells = page.locator('table.sheet tbody td[data-col="role"] .signal-cell');
+    const cells = page.locator('table.sheet.opp-sheet tbody td[data-col="role"] .signal-cell');
     const count = await cells.count();
     expect(count).toBeGreaterThan(0);
     for (let index = 0; index < count; index += 1) {
@@ -498,24 +499,24 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
 
     await page.getByRole("radiogroup", { name: "Position" }).getByRole("radio", { name: "RB" }).click();
     await expect(page).toHaveURL(/position=rb.*only=role|only=role.*position=rb/);
-    await expect(page.locator("table.sheet tbody tr")).toHaveCount(1);
-    await expect(page.locator("table.sheet tbody tr")).toContainText("Jahmyr Cook");
+    await expect(page.locator("table.sheet.opp-sheet tbody tr")).toHaveCount(1);
+    await expect(page.locator("table.sheet.opp-sheet tbody tr")).toContainText("Jahmyr Cook");
   });
 
   test("names a filter the build cannot apply instead of emptying the board", async ({ page }) => {
     await page.goto("/scenario/in-season-no-signals/?view=opportunity&only=role");
     await expect(page.getByText(/A filter in this link cannot be applied/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Role rising" })).toBeDisabled();
-    await expect(page.locator("table.sheet tbody tr")).toHaveCount(19);
+    await expect(page.locator("table.sheet.opp-sheet tbody tr")).toHaveCount(19);
     await expect(
-      page.locator('table.sheet tbody td[data-col="role"] .signal-cell').first(),
+      page.locator('table.sheet.opp-sheet tbody td[data-col="role"] .signal-cell').first(),
     ).toHaveAttribute("data-kind", "unpublished");
   });
 
   test("orders role by direction, and by size only inside one position", async ({ page }) => {
     await page.goto(`${IN_SEASON}?view=opportunity&opportunity=role`);
     await expect(page.locator(".opp-order-note")).toContainText(/sizes are compared only within one position/);
-    const names = await page.locator("table.sheet tbody .player-name").allTextContents();
+    const names = await page.locator("table.sheet.opp-sheet tbody .player-name").allTextContents();
     // Rising, by ROS rank: the QB's +20 attempts does not jump the backs and receivers.
     expect(names.slice(0, 3)).toEqual(["Jahmyr Cook", "Puka Nightingale", "Jalen Marsh"]);
     await page.goto(`${IN_SEASON}?view=opportunity&opportunity=role&position=wr`);
@@ -535,7 +536,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
     const header = (lines[0] ?? "").split(",");
     expect(header).toEqual(expect.arrayContaining(["role_reading", "role_change", "add_trend_per_day", "next_game_opponent"]));
     expect(header.join(",")).not.toMatch(/implied|spread|total_line/);
-    const shown = await page.locator("table.sheet tbody tr").count();
+    const shown = await page.locator("table.sheet.opp-sheet tbody tr").count();
     expect(lines).toHaveLength(shown + 1);
   });
 
@@ -543,7 +544,8 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
     test(`fits the table without a sideways scroll at ${String(width)}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`${IN_SEASON}?view=opportunity`);
-      const scroller = page.locator(".table-scroll").last();
+      // The Opportunity table's own scroller: ADR-102's Not projected table follows it.
+      const scroller = page.locator(".table-scroll", { has: page.locator("table.opp-sheet") });
       await expect(scroller.locator("table.sheet")).toBeVisible();
       const overflow = await scroller.evaluate((node) => node.scrollWidth - node.clientWidth);
       expect(overflow, `the opportunity table scrolls sideways at ${String(width)}px`).toBeLessThanOrEqual(1);
@@ -585,7 +587,7 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       // The chart row carries the role line on a phone.
       await expect(page.locator(".opp-row").first().locator(".opp-role")).toBeVisible();
       // The table hides what the chart already prints and pins the name.
-      const table = page.locator("table.sheet");
+      const table = page.locator("table.sheet.opp-sheet");
       await expect(table.locator('th[data-col="ros_vorp_p50"]')).toBeHidden();
       await expect(table.locator('th[data-col="role"]')).toBeVisible();
       const player = table.locator("tbody tr").first().locator("td.col-player");

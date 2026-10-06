@@ -1037,3 +1037,32 @@ Depth charts changed schema in 2025 and have no pre-2025 draft-time history (ADR
 `lagged_starters_v1` (docs/MODELING.md §35.2). nflverse's snap-count file gains two context
 columns for it, `defense_snaps` and `defense_pct` (`SNAP_COUNTS_CONTRACT` 1.1), and the
 schedule contract gains `stadium_id`, `stadium`, `temp` and `wind` (`SCHEDULE_CONTRACT` 1.2).
+
+
+## 21. Employment evidence and play-by-play — 2026-10-06 (ADR-102, ADR-103)
+
+**Sleeper `team` as current employment evidence.** Already captured daily by `capture-status`
+(`/v1/players/nfl`, non-commercial terms, attribution unchanged). ADR-102 reads its `team` and
+`status` fields for players the current-season nflverse roster does not list (or lists `CUT`),
+only when the capture is at most 48 hours older than the build, and only through an
+nflverse-first `sleeper_id` join with Sleeper's own `gsis_id` cross-checked. The previous
+season's nflverse roster (already loaded for the preseason universe) supplies identity only. On
+2026-10-06: 213 core players on the 2025/2026 rosters had no Sleeper club with status `Active`;
+6 had a Sleeper club and no active 2026 roster row (Mixon `SEA` among them, one day after the
+reported signing). The nflverse player master's `latest_team`/`last_season` are not employment
+evidence.
+
+**`load_pbp` (nflverse play-by-play, CC-BY-4.0 like the rest of nflverse-data; the FTN subsets
+are not read).** Field meanings verified against nflreadr's dictionary source
+(`data-raw/dictionary_pbp.csv`, retrieved 2026-10-06): `fixed_drive` ("manually created drive
+number"), `play_type` (`pass` includes sacks, `run` includes scrambles, `qb_kneel`, `qb_spike`,
+`no_play` for timeouts and penalties), `rush_attempt`, `pass_attempt` (includes sacks), `sack`,
+`qb_scramble`, `two_point_attempt`, `aborted_play`, `special_teams_play`, `play_deleted`,
+`rusher_player_id`, `receiver_player_id` (GSIS ids), `yardline_100`, `season_type`. Measured on
+2024: 49,492 rows; 20,007 pass and 15,043 run plays; 148 two-point and 114 aborted plays among
+them; 1,133 scrambles (all `run`, QB as rusher); 1,392 sacks (all `pass`, no receiver); 767
+non-sack passes with no identified receiver; no special-teams fakes; `play_deleted` 0
+throughout; posteam and `fixed_drive` never null on scrimmage plays. Thirteen columns are read
+through the cached, retrying loader (`nflverse_loaders`) and reduced at once; raw play-by-play
+is never committed or served. A missing column is a refusal (`drive_plays`), and any failure
+withholds the drive-breadth blocks only.

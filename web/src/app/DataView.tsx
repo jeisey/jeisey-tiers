@@ -32,7 +32,9 @@ import {
   TRADE_METHOD_VERSION,
 } from "../data/tradeMethod";
 import type { Degradation } from "../data/bundle";
-import { formatEastern, formatInteger } from "../data/format";
+import { formatAge, formatEastern, formatInteger } from "../data/format";
+import { STALE_WARNING_HOURS } from "../data/freshness";
+import { buildAgeHours } from "../data/load";
 import {
   CONFIDENCE_MEANING,
   CONFIDENCE_SHORT,
@@ -61,14 +63,18 @@ export function DataView({
   inSeason,
   state,
   degradations,
+  now,
 }: {
   readonly index: ArtifactIndex;
   /** The in-season bundle, or null before kickoff. Its provenance is reported separately. */
   readonly inSeason?: InSeasonBundle | null;
   readonly state: AppState;
   readonly degradations: readonly Degradation[];
+  /** The clock the build age is measured against; tests pin it. */
+  readonly now?: Date | undefined;
 }): React.JSX.Element {
   const metadata = index.metadata;
+  const ageHours = buildAgeHours(metadata, now);
   const assignment = cohortAssignment(metadata, SCORING_TO_PRESET[state.scoring], state.teams);
   const market = metadata.market;
 
@@ -228,6 +234,14 @@ export function DataView({
             <tbody>
               <BuildRow label="Build id" value={metadata.build_id} />
               <BuildRow label="Generated" value={formatEastern(metadata.generated_at_utc)} />
+              <BuildRow
+                label="Build age"
+                value={
+                  ageHours > STALE_WARNING_HOURS
+                    ? `${formatAge(ageHours)} — stale: beyond the ${String(STALE_WARNING_HOURS)}-hour refresh window`
+                    : formatAge(ageHours)
+                }
+              />
               <BuildRow label="Season" value={String(metadata.season)} />
               <BuildRow label="Intrinsic model" value={metadata.intrinsic_model_version} />
               <BuildRow label="Methodology version" value={metadata.methodology_version} />
@@ -564,6 +578,49 @@ export function DataView({
             tool cannot know whether anyone would accept. Asset value is not lineup value: two
             players need two roster spots, which every package states.
           </p>
+        </section>
+      )}
+
+      {inSeason != null && (
+        <section className="section" aria-labelledby="inseason-readings-heading">
+          <SectionHead
+            index="05d"
+            id="inseason-readings-heading"
+            title="Free agents and drive breadth — method"
+          />
+          <p className="prose">
+            <strong>Free agents (ADR-102).</strong> A player is shown as <strong>FA</strong> only
+            on current evidence: this season&rsquo;s nflverse roster does not list him on a club
+            (or lists him released) and a Sleeper record no older than 48 hours names no club
+            and lists him active. His identity is verified through last season&rsquo;s roster,
+            which can say who he is but never where he plays; a previous club, the player
+            master&rsquo;s latest team and a past last season are never read as current
+            employment. A free agent can be found, searched and inspected, and his add and drop
+            counts are kept, but he is never a Start/Sit choice, Pick of the Week or trade
+            target: he is a speculative stash until he signs. A signing only Sleeper reports is
+            shown with the new club and read as uncertain, with no weekly projection, until the
+            official roster lists him. Where the model has no output for such a player, his
+            Opportunity row says &ldquo;no projection&rdquo; and every value is blank, never zero.
+          </p>
+          <p className="prose">
+            <strong>Drive breadth (ADR-103).</strong> Over a player&rsquo;s latest four completed
+            games: how many of his team&rsquo;s drives his opportunities reached, against how
+            many the same number placed at random among the team&rsquo;s eligible plays would
+            reach — computed game by game, then summed, and printed in percentage points of the
+            drives. Quarterbacks: rush attempts (scrambles included) among all scrimmage plays.
+            Running backs: carries and targets among all running-back carries and targets.
+            Receivers: targets among all identified targets. Tight ends: targets snapped outside
+            the red zone among targets snapped there. Kneels, spikes, two-point tries, aborted
+            snaps, special-teams plays and plays wiped out by a penalty are not counted; a sack
+            is a quarterback play and never a target. A reading needs three games, twenty team
+            drives and six opportunities — a display rule, not an established reliability bar.
+            Positive is broader than random, negative more bunched; neither is better, and a
+            back&rsquo;s reading sits below zero by construction (backs rotate by series), so
+            it is printed beside his position&rsquo;s median on this build.
+          </p>
+          {inSeason.metadata.signals?.drive_breadth != null && (
+            <p className="prose">{inSeason.metadata.signals.drive_breadth.statement}</p>
+          )}
         </section>
       )}
 

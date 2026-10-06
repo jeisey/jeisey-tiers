@@ -34,7 +34,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, type RefObject } from "react";
 
-import { AvailabilityBadge, PositionTag, TierTag } from "../components/primitives";
+import { AvailabilityBadge, PositionTag, TeamCell, TierTag } from "../components/primitives";
 import { isMuted } from "../data/availability";
 import { formatRange, formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rankChangeLabel, type RosRow } from "../data/ros";
@@ -173,7 +173,9 @@ function rosColumns(onSelect: (playerId: string) => void, scale: Scale): ColumnD
       id: "team",
       header: "Team",
       accessorFn: (row) => row.record.team ?? "",
-      cell: (context) => <span className="muted">{context.row.original.record.team ?? "—"}</span>,
+      cell: (context) => (
+        <TeamCell team={context.row.original.record.team} playerId={context.row.original.record.player_id} />
+      ),
       meta: { width: "3.5rem" },
     },
     {

@@ -391,8 +391,9 @@ code {
 /*
  * The masthead. The source's command-board header, with the owner's logo where Phase 9A had
  * a notched glyph, a wordmark and a mono sub-label: the artwork carries the brand and nothing
- * repeats it. The gradient wash from the left is the source's own; the right-hand timestamp
- * and status chip are unchanged.
+ * repeats it. The gradient wash from the left is the source's own. Beside the logo there is
+ * one thing, the build's Updated stamp (the status chip and season-mode label were removed in
+ * the 2026-10-06 housekeeping pass; their readings live in the Data view and the tabs).
  */
 .masthead {
   display: flex;
@@ -472,60 +473,6 @@ code {
 .freshness strong {
   font-weight: 500;
   color: var(--ink-muted);
-}
-
-/*
- * The status chip. The source's build-notes chip: a glowing square, a widely tracked label,
- * a 1px tinted frame. Tone is carried by the word as well as the hue.
- */
-.status-chip {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  border: var(--hairline) solid var(--line-strong);
-  background: var(--accent-wash);
-  color: var(--ink-accent);
-  font: 600 0.62rem/1 var(--font-sans);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  padding: 6px 9px;
-  cursor: pointer;
-  transition: var(--t-control);
-}
-
-.status-chip::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  flex: none;
-  background: currentcolor;
-  box-shadow: 0 0 6px currentcolor;
-}
-
-.status-chip:hover {
-  border-color: var(--accent-bright);
-  color: var(--accent-bright);
-}
-
-.status-chip[data-tone="warning"] {
-  border-color: var(--warn-line);
-  background: var(--warn-wash);
-  color: var(--warn);
-}
-
-.status-chip[data-tone="warning"]:hover {
-  border-color: var(--warn);
-}
-
-.status-chip[data-tone="ok"] {
-  border-color: var(--good-line);
-  background: var(--good-wash);
-  color: var(--good);
-}
-
-.status-chip[data-tone="ok"]:hover {
-  border-color: var(--good);
 }
 
 /* --------------------------------------------------------------- controls */
@@ -3790,15 +3737,15 @@ dl.facts dd {
     padding-bottom: var(--space-2);
   }
 
-  /* The meta row already wraps to a line of its own below, so the mark keeps a usable size
-     on a phone instead of shrinking to share one line with the timestamp. */
+  /* The mark keeps a usable size on a phone, and the Updated stamp shares its line: 390px
+     fits as is, and below 360px the mark and the stamp's tracking tighten so 320px does too
+     (measured in docs/visual-qa/2026-10-06-masthead). */
   .masthead-logo {
     --masthead-logo: 38px;
   }
 
-  .masthead-meta {
-    margin-left: 0;
-    flex-basis: 100%;
+  .masthead {
+    gap: var(--space-1) var(--space-3);
   }
 
   /*
@@ -4569,26 +4516,9 @@ dl.facts dd {
 /* ------------------------------------------------------- in-season mode */
 
 /*
- * The season-mode indicator.
- *
- * One row above the controls, because roadmap 12.4 asks for one obvious indicator and this
- * is a property of the whole page rather than of a board. The dot is decorative and the
- * word beside it carries the meaning, so the strip reads correctly with no colour at all.
+ * The season-mode switch's band. It exists only when there is a second board to switch to; the
+ * tabs beneath it show which board is on screen, so nothing else names the mode.
  */
-/*
- * The season-mode indicator, in the masthead beside the build stamp.
- *
- * It is status, so it sits with the other status. The switch is a control and lives in
- * `.season-mode` below, which exists only when there is a second board to switch to — a band
- * whose only content is a word the chip already carries would cost the top of a phone screen
- * for a repetition, and `web/tests/e2e/mobile.spec.ts` measures exactly that.
- */
-.season-mode-chip {
-  display: inline-flex;
-  align-items: center;
-  flex: none;
-}
-
 .season-mode {
   display: flex;
   align-items: center;
@@ -4597,27 +4527,6 @@ dl.facts dd {
   border-bottom: var(--hairline) solid var(--line-strong);
   padding: var(--space-2) 0;
   margin: 0 0 var(--space-2);
-}
-
-.season-mode-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font: 600 0.7rem/1 var(--font-sans);
-  letter-spacing: var(--track-nav);
-  text-transform: uppercase;
-  color: var(--ink-strong);
-}
-
-.season-mode-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--ink-faint);
-}
-
-.season-mode-chip[data-mode="in_season"] .season-mode-dot {
-  background: var(--good);
 }
 
 .season-mode-detail {
@@ -5988,6 +5897,47 @@ table.sheet.opp-sheet thead th button {
 .usage-bar[data-status="no_value"] {
   align-items: center;
   border-bottom: var(--hairline) dashed var(--line-strong);
+}
+
+/*
+ * ADR-103's drive-breadth row: one reading, so a scale in the bars' column rather than bars.
+ * The same 30px band and hairlines as a rail; a centre line at zero (the random-allocation
+ * reference), a hollow tick at the position's median on this build, a solid mark at his value.
+ * The signed number and the sentence carry the meaning; the scale is the second channel.
+ */
+.breadth-scale {
+  position: relative;
+  height: 30px;
+  min-width: 0;
+  border-bottom: var(--hairline) solid var(--line-strong);
+}
+
+.breadth-zero,
+.breadth-median,
+.breadth-mark {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+.breadth-zero {
+  left: 50%;
+  width: 1px;
+  height: 100%;
+  background: var(--line-strong);
+}
+
+.breadth-median {
+  width: 7px;
+  height: 12px;
+  border: var(--hairline) solid var(--ink-muted);
+  background: transparent;
+}
+
+.breadth-mark {
+  width: 7px;
+  height: 20px;
+  background: rgb(46 204 255 / 80%);
 }
 
 .usage-axis-weeks > span {
@@ -8108,5 +8058,36 @@ table.sheet.weekboard-table thead th.wb-num {
   .trade-delta {
     display: block;
     margin-left: 0;
+  }
+}
+
+/*
+ * The narrowest phones (320px): the logo and the Updated stamp stay on one line rather than the
+ * stamp wrapping under the mark. A slightly smaller mark (34px, ~102px wide) and tighter
+ * tracking leave ~10px of slack; the stamp's text and format are unchanged.
+ */
+@media (max-width: 359px) {
+  .masthead-logo {
+    --masthead-logo: 34px;
+  }
+
+  .masthead {
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .freshness {
+    letter-spacing: 0.03em;
+  }
+}
+
+/*
+ * ADR-102's Not projected table on a phone: the chip beside the name (FA / NEW) and the
+ * section note already say why each player is listed, so the sentence column folds away
+ * rather than squeezing the counts.
+ */
+@media (max-width: 767px) {
+  .unprojected-sheet th:nth-child(6),
+  .unprojected-sheet td:nth-child(6) {
+    display: none;
   }
 }

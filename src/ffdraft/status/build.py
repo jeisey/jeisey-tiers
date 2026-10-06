@@ -41,10 +41,12 @@ from ffdraft.identity.resolver import (
 )
 from ffdraft.quality import QualityGate
 from ffdraft.status.capture import StatusCapture
+from ffdraft.status.employment import EmploymentResult
 from ffdraft.status.overrides import AvailabilityOverride
 from ffdraft.timeutil import isoformat_utc
 
 __all__ = [
+    "EMPLOYMENT_SOURCES_DISAGREE",
     "NO_CURRENT_ROSTER_ENTRY",
     "SLEEPER_UNAVAILABLE",
     "STATUS_SOURCE_IDS",
@@ -59,6 +61,9 @@ SLEEPER_UNAVAILABLE = "sleeper_unavailable"
 SLEEPER_RECORD_MISSING = "sleeper_record_missing"
 SLEEPER_IDENTITY_CONFLICT = "sleeper_identity_conflict"
 NO_CURRENT_ROSTER_ENTRY = "no_current_roster_entry"
+#: The official roster decided the employment reading while a fresh Sleeper record named
+#: another club, or none (ADR-102). Recorded, not acted on.
+EMPLOYMENT_SOURCES_DISAGREE = "employment_sources_disagree"
 
 STATUS_SOURCE_IDS = ("nflreadpy", "sleeper")
 
@@ -75,9 +80,12 @@ class PlayerStatusResult:
     sleeper_conflicts: int = 0
     observed_at_utc: str | None = None
     gate: QualityGate = field(default_factory=QualityGate)
+    #: The employment reading's diagnostics (ADR-102), or None when none was computed.
+    employment: dict[str, Any] | None = None
 
     def summary(self) -> dict[str, Any]:
         return {
+            "employment": self.employment,
             "players": len(self.records),
             "sleeper_available": self.sleeper_available,
             "sleeper_matched": self.sleeper_matched,
@@ -119,6 +127,7 @@ def build_player_status_records(
     positions: Sequence[Position] | None = None,
     gate: QualityGate | None = None,
     overrides: Mapping[str, AvailabilityOverride] | None = None,
+    employment: EmploymentResult | None = None,
 ) -> PlayerStatusResult:
     """Assemble the status artifact.
 
@@ -131,6 +140,11 @@ def build_player_status_records(
     player with one is always given a status row, so the entry can reach the page, and the
     entry is copied verbatim into ``availability_override``. Nothing here decides whether it
     is honoured — the downstream availability policy does, from this same record.
+
+    ``employment`` is the ``employment_evidence_v1`` reading (ADR-102). When supplied, each
+    row's ``current_team`` is the employing club it found — never a previous club — and the
+    reading, its source and its observation time ride the row (contract 1.2). A player with
+    no reading keeps the roster's team and null employment fields.
     """
     checks = gate or QualityGate()
     wanted_positions = tuple(positions) if positions is not None else tuple(CORE_POSITIONS)
@@ -227,9 +241,12 @@ def build_player_status_records(
         if sleeper is not None:
             matched += 1
 
+        reading = employment.get(player_id) if employment is not None else None
         flags: list[str] = []
         if not roster_row:
             flags.append(NO_CURRENT_ROSTER_ENTRY)
+        if reading is not None and reading.sources_disagree:
+            flags.append(EMPLOYMENT_SOURCES_DISAGREE)
         if not available:
             flags.append(SLEEPER_UNAVAILABLE)
         elif sleeper is None:
@@ -242,7 +259,9 @@ def build_player_status_records(
                 "season": season,
                 "player_id": player_id,
                 "display_name": player.display_name,
-                "current_team": roster_row.get("team") or player.team,
+                "current_team": (
+                    reading.team if reading is not None else roster_row.get("team") or player.team
+                ),
                 "position": str(player.position),
                 "roster_status": roster_row.get("status"),
                 "roster_depth_chart_position": roster_row.get("depth_chart_position"),
@@ -260,6 +279,15 @@ def build_player_status_records(
                 "quality_flags": sorted(set(flags)),
                 "availability_override": (
                     in_force[player_id].to_record() if player_id in in_force else None
+                ),
+                **(
+                    reading.to_record()
+                    if reading is not None
+                    else {
+                        "employment_status": None,
+                        "employment_source": None,
+                        "employment_observed_at_utc": None,
+                    }
                 ),
             },
         )
@@ -294,6 +322,7 @@ def build_player_status_records(
         sleeper_conflicts=conflicts,
         observed_at_utc=observed_at,
         gate=checks,
+        employment=None if employment is None else employment.to_dict(),
     )
 
 

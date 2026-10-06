@@ -218,6 +218,10 @@ PLAYER_STATUS_CSV_COLUMNS: tuple[str, ...] = (
     "availability_override_source_urls",
     "availability_override_reviewed_at",
     "availability_override_expires_at",
+    # Contract 1.2 (ADR-102): the employment reading, scalar already.
+    "employment_status",
+    "employment_source",
+    "employment_observed_at_utc",
 )
 
 
@@ -227,6 +231,8 @@ def flatten_player_status_record(record: Mapping[str, Any]) -> dict[str, Any]:
     override = record.get("availability_override") or {}
     for key in ("horizon", "summary", "source_urls", "reviewed_at", "expires_at"):
         flat[f"availability_override_{key}"] = override.get(key)
+    for key in ("employment_status", "employment_source", "employment_observed_at_utc"):
+        flat[key] = record.get(key)
     return flat
 
 

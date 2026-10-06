@@ -1975,3 +1975,62 @@ holdout or calibration figure changed; weekly v2 stays in shadow.
       post-anchor regression test in `tests/integration/test_current_build.py`; the run's
       artifacts, with the fix applied, pass validation, `verify:board` and the budget report.
       Size model status count set to the measured 675.
+
+## Unsigned players, masthead simplification, drive breadth — 2026-10-06 (ADR-102, ADR-103)
+
+The owner's three items on `claude/affectionate-clarke-q7u2jj` from `15ca355` (main had not
+moved). No model, feature, training population, projection, VORP, rank, tier, calibration
+figure or Pick-of-the-Week rule changed; weekly v2 stays in shadow.
+
+- [x] **Trace (Hill, Mixon).** Present at source (2025 roster with Sleeper ids; Sleeper map),
+      in the preseason universe and on the draft `tiers` board. First in-season exclusion: the
+      ROS publication depth (value). The trending-add rescue failed at the behaviour join
+      (registry from `load_rosters(2026)` only); status rows were silently skipped for the same
+      reason; Mixon's Sleeper signing reached nothing. Recorded in ADR-102.
+- [x] **Employment (ADR-102).** `src/ffdraft/status/employment.py`: identity spine (current +
+      previous roster, identity only), `employment_evidence_v1` (roster, then Sleeper ≤ 48 h),
+      poisoned Sleeper ids fail closed in the resolver and both behaviour joins.
+- [x] **Contracts.** `player_status` 1.2 (employment fields; `current_team` never a previous
+      club; CSV columns; `player_availability` slice fields), `inseason_opportunity` 1.2
+      (`employment_status`, `model_coverage`, null values only on unprojected rows), validators
+      both ways, goldens regenerated, TS contracts and field lists.
+- [x] **Pipelines.** Current build: annotation registry over the spine, employment reading,
+      post-anchor status population + verified off-roster players, portraits unchanged. ROS
+      build: spine registry for behaviour and history, employment overlay on published teams,
+      usage and weekly read an explicit "no club"; the weekly layer never projects a
+      Sleeper-only signing.
+- [x] **UI.** Policy readings `unsigned` (FA, speculative stash) and `signing` (uncertain);
+      `TeamCell` FA on Opportunity and ROS tables and the card header; Opportunity "Not
+      projected" section; card "No rest-of-season projection".
+- [x] **Regressions.** `tests/unit/test_employment.py` (14: unsigned veteran with
+      `last_season` = previous, null team/unknown, stale `latest_team`, crosswalk from the prior
+      roster, unprojected row, FA→signed→rostered, roster wins + disagreement, retired and
+      Inactive, ambiguous id, missing/stale/future feed, end-to-end status + add join, weekly
+      exclusion of Sleeper-only signings); `test_current_build.py` post-anchor unsigned test;
+      usage and weekly "no club" tests; `web/tests/unsigned.test.tsx` (10, incl. the rendered
+      Opportunity → Not projected → FA card path with 2,400 adds); `verify:board` checks FA
+      cells and unprojected rows against bytes (negative control fails as it must).
+- [x] **Real data (2026-10-06 sources).** `build-ros` on live nflverse + the day's Sleeper
+      captures: Hill in all 9 blocks, FA, 601,816 adds; Mixon in all 9, SEA (Sleeper), 333,414
+      adds, no weekly projection; gate 0 critical.
+- [x] **Masthead.** Build-status chip and season-mode label/dot removed; the stamp alone
+      beside the logo; Data prints build age and "stale" past 48 h; 34px mark below 360px keeps
+      one line at 320px; PRD CR-005 and UX_SPEC §4 revised; screens
+      `docs/visual-qa/2026-10-06-masthead/`.
+- [x] **Drive breadth (ADR-103).** Definition, window, exclusions, minimums and evaluation frozen
+      after a coverage-only inventory and before any outcome; four positional variants;
+      `player_usage` 1.1 `drive_breadth` + `signals.drive_breadth` metadata; card row; Data
+      method; validator; fixture synthetic play-by-play through the production path;
+      `verify:board` breadth checks; math tests (exhaustive enumeration, permutation, the
+      brief's 6.065 / +19.3 / −30.7, saturation, zero/one) and play-classification tests.
+- [x] **Evaluation result.** Distinct from share and volume at every position (|ρ| ≤ 0.07, QB
+      0.24); no measurable incremental value for next-appearance droughts at any position (all
+      pooled 95% intervals include 0). Published as descriptive context only.
+- [x] **Validation (local).** ruff/format clean (329 files); mypy clean (197); **pytest 1,925
+      passed** (4 live deselected); 789 Vitest; 222 E2E; `verify:board` 0 failures on all six
+      CI fixtures; budgets met; real-data build `validate-artifacts --require-serving` 0/0 and
+      `verify-real-build` 0 failures. Full commands in SESSION_STATE.
+- [ ] **Follow-ups.** Owner review of ADR-102's FA population (211 unsigned on 2026-10-06; only
+      add-trending ones reach a board) and of ADR-103's provisional display minimums; a second
+      source for current employment when one is permitted; identity for veterans off every
+      roster for a full season (out of scope by design).

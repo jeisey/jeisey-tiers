@@ -73,7 +73,7 @@
     }
   },
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 1999},
     "through_week": {"type": "integer", "minimum": 1, "maximum": 22},
@@ -116,6 +116,31 @@
     "pass_epa_per_dropback": {
       "type": ["number", "null"],
       "description": "nflverse passing EPA (attempts and sacks) divided by `dropbacks`. Null below 20 dropbacks. Scrambles are in neither half."
+    },
+    "drive_breadth": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "Contract 1.1 (ADR-103), drive_breadth_v1: did his involvement recur across his team's drives or cluster into a few, against a uniform allocation of the same count among the game's eligible slots, over his latest four completed appearances. breadth_gap_pp = 100 x (reached_drives - expected_drives) / eligible_drives, the reference computed per game. Descriptive context only; no model reads it. Null when play-by-play was unavailable or his position has no variant.",
+      "required": [
+        "method_version", "metric", "window_rule", "appearances", "first_week", "last_week",
+        "eligible_drives", "reached_drives", "expected_drives", "opportunities",
+        "breadth_gap_pp", "displayable", "withheld_reason"
+      ],
+      "properties": {
+        "method_version": {"const": "drive_breadth_v1"},
+        "metric": {"enum": ["rushing", "backfield", "targets", "open_field_targets"], "description": "QB rush attempts (scrambles included) over all scrimmage plays; RB carries + targets over all RB carries + targets; WR targets over identified targets; TE targets snapped outside the red zone over identified targets snapped there."},
+        "window_rule": {"type": "integer", "minimum": 1},
+        "appearances": {"type": "integer", "minimum": 0},
+        "first_week": {"type": ["integer", "null"], "minimum": 1},
+        "last_week": {"type": ["integer", "null"], "minimum": 1},
+        "eligible_drives": {"type": "integer", "minimum": 0},
+        "reached_drives": {"type": "integer", "minimum": 0},
+        "expected_drives": {"type": "number", "minimum": 0},
+        "opportunities": {"type": "integer", "minimum": 0},
+        "breadth_gap_pp": {"type": ["number", "null"]},
+        "displayable": {"type": "boolean", "description": "Clears the provisional display minimums (3 appearances, 20 eligible drives, 6 opportunities) — a display rule, not an established reliability bar."},
+        "withheld_reason": {"enum": ["too_few_appearances", "too_few_eligible_drives", "too_few_opportunities", null]}
+      }
     }
   }
 }

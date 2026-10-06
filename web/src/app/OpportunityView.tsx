@@ -38,6 +38,7 @@ import {
   RosStatusBadge,
   SectionHead,
   Segmented,
+  TeamCell,
 } from "../components/primitives";
 import {
   filterAvailable,
@@ -49,11 +50,15 @@ import {
 } from "../data/candidates";
 import { opportunityRowsToCsv } from "../data/csv";
 import { formatRank, formatValue } from "../data/format";
+import type { UnprojectedRecord } from "../data/contracts";
+import { matchesPosition, matchesSearch } from "../data/model";
 import { longAbsenceLabel, rosValue, type InSeasonBundle } from "../data/ros";
 import {
   OPPORTUNITY_FILTERS,
   OPPORTUNITY_SORTS,
   SCORING_LABELS,
+  SCORING_TO_PRESET,
+  leaguePresetId,
   type AppState,
   type OpportunityFilter,
   type OpportunitySort,
@@ -197,6 +202,22 @@ export function OpportunityView({
 }): React.JSX.Element {
   const selection = useMemo(() => selectOpportunityCandidates(bundle, state), [bundle, state]);
   const rows = selection.candidates;
+  // ADR-102: off-roster players with no model output. Position and search apply; the value,
+  // role and momentum controls cannot, because there is nothing of his for them to read.
+  const unprojected = useMemo(
+    () =>
+      bundle
+        .unprojectedFor(leaguePresetId(state.teams), SCORING_TO_PRESET[state.scoring])
+        .filter(
+          (record) =>
+            matchesPosition(record.position, state.position) &&
+            matchesSearch(
+              { ...record, team: bundle.teamLabel(record.player_id, record.team) },
+              state.search,
+            ),
+        ),
+    [bundle, state.teams, state.scoring, state.position, state.search],
+  );
   const visibleRows = useRef<readonly OpportunityCandidate[]>(rows);
   useEffect(() => {
     visibleRows.current = rows;
@@ -556,6 +577,113 @@ export function OpportunityView({
           />
         )}
       </section>
+
+      {unprojected.length > 0 && (
+        <UnprojectedSection
+          bundle={bundle}
+          records={unprojected}
+          onSelect={onSelect}
+          selectedPlayerId={selectedPlayerId}
+        />
+      )}
     </>
   );
+}
+
+/**
+ * Off-roster players the model has no output for, whom managers are adding (ADR-102).
+ *
+ * A separate, plain table because nothing on the board above can order them: they have no
+ * rank, tier or value, and a blank in a sorted value column would read as a zero or as last.
+ * Each row says why he is here and what he is not — playable this week — and opens his card.
+ */
+function UnprojectedSection({
+  bundle,
+  records,
+  onSelect,
+  selectedPlayerId,
+}: {
+  readonly bundle: InSeasonBundle;
+  readonly records: readonly UnprojectedRecord[];
+  readonly onSelect: (playerId: string) => void;
+  readonly selectedPlayerId: string | null;
+}): React.JSX.Element {
+  return (
+    <section className="section" aria-labelledby="opportunity-unprojected-heading">
+      <SectionHead
+        index="03"
+        id="opportunity-unprojected-heading"
+        title="Not projected"
+        note={
+          "Verified off-roster players with heavy add volume and no validated rest-of-season " +
+          "output. Speculative stashes: none can play until he signs or appears on a roster."
+        }
+      />
+      <div className="table-scroll">
+        <table className="sheet unprojected-sheet">
+          <caption className="visually-hidden">
+            Off-roster players without a projection, most added first
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" className="plain">
+                Player
+              </th>
+              <th scope="col" className="plain">
+                Pos
+              </th>
+              <th scope="col" className="plain">
+                Team
+              </th>
+              <th scope="col">Adds</th>
+              <th scope="col">Drops</th>
+              <th scope="col" className="plain">
+                Why listed
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.map((record) => {
+              const reading = bundle.availabilityFor(record.player_id);
+              return (
+                <tr
+                  key={record.player_id}
+                  data-selected={record.player_id === selectedPlayerId}
+                  data-player-id={record.player_id}
+                >
+                  <th scope="row">
+                    <button
+                      type="button"
+                      className="player-name"
+                      onClick={() => {
+                        onSelect(record.player_id);
+                      }}
+                    >
+                      {record.display_name}
+                    </button>{" "}
+                    <RosStatusBadge status={record.current_status} playerId={record.player_id} />
+                  </th>
+                  <td>{record.position}</td>
+                  <td>
+                    <TeamCell team={record.team} playerId={record.player_id} />
+                  </td>
+                  <td className="num">{formatCount(record.add_count)}</td>
+                  <td className="num">{formatCount(record.drop_count)}</td>
+                  <td className="muted">
+                    {reading.kind === "unsigned"
+                      ? "Unsigned free agent · no projection"
+                      : `${reading.headline} · no projection`}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function formatCount(value: number | null | undefined): string {
+  return value === null || value === undefined ? "—" : value.toLocaleString("en-US");
 }

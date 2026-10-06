@@ -31,6 +31,12 @@
  * 2. A reserve-list reading from either feed is "unavailable now, return uncertain", unless
  *    the other feed affirmatively clears him, which is a conflict.
  * 3. Released (`CUT`): unavailable now, not on an NFL roster.
+ *
+ * ADR-102 adds the employment reading (`player_status.employment_status`, from the season
+ * roster, then a fresh Sleeper record): a verified **unsigned** player is unavailable now —
+ * "FA", a speculative stash, never a current-week choice — right after retirement and ahead
+ * of every injury reading; a **signing** only Sleeper reports is uncertain, ahead of a stale
+ * `CUT`, until the official roster lists him.
  * 4. The worst game designation across the official report and Sleeper. Two sources that
  *    disagree are both shown, and the more severe one governs the decision.
  * 5. `INA` with no designation: uncertain for this game.
@@ -78,6 +84,10 @@ export type AvailabilityKind =
   | "retired"
   | "reserve"
   | "released"
+  /** ADR-102: verified free agent — no NFL club, so not playable until he signs. */
+  | "unsigned"
+  /** ADR-102: a signing Sleeper reports that the official roster file does not list yet. */
+  | "signing"
   | "out"
   | "doubtful"
   | "questionable"
@@ -92,7 +102,17 @@ export type StatusEvidence = Pick<
   PlayerStatusRecord,
   "player_id" | "roster_status" | "sleeper_status" | "injury_status" | "observed_at_utc" | "quality_flags"
 > &
-  Partial<Pick<PlayerStatusRecord, "season" | "injury_body_part" | "availability_override">>;
+  Partial<
+    Pick<
+      PlayerStatusRecord,
+      | "season"
+      | "injury_body_part"
+      | "availability_override"
+      | "current_team"
+      | "employment_status"
+      | "employment_source"
+    >
+  >;
 
 export interface AvailabilityEvidence {
   readonly status: StatusEvidence | null;
@@ -235,8 +255,10 @@ export function readAvailability(evidence: AvailabilityEvidence): Availability {
     (status.sleeper_status ?? "").trim().toLowerCase() === "active" &&
     sleeperInjury === null;
 
+  const employment = status?.employment_status ?? null;
+
   // --- 1. the season is over
-  if (roster === "retired") {
+  if (roster === "retired" || employment === "retired") {
     return result({
       week: "unavailable",
       horizon: "season_over",
@@ -245,6 +267,24 @@ export function readAvailability(evidence: AvailabilityEvidence): Availability {
       headline: "Retired",
       detail: `The current roster records him as retired.${asOf}`,
       severity: "warn",
+      observedAt,
+    });
+  }
+
+  // --- 1b. a verified free agent (ADR-102)
+  if (employment === "unsigned") {
+    return result({
+      week: "unavailable",
+      horizon: "unavailable_now",
+      kind: "unsigned",
+      short: "FA",
+      headline: "Unsigned free agent — speculative stash",
+      detail:
+        `Not on an NFL roster: the current roster does not list him and Sleeper shows no club.${asOf} ` +
+        "He cannot play until he signs. Any rest-of-season value shown is the model's own, from " +
+        "before any signing, and assumes nothing about where he goes.",
+      severity: "warn",
+      stale,
       observedAt,
     });
   }
@@ -329,6 +369,24 @@ export function readAvailability(evidence: AvailabilityEvidence): Availability {
         `${source.charAt(0).toUpperCase()}${source.slice(1)}${status?.injury_body_part ? ` (${status.injury_body_part})` : ""}. ` +
         `A reserve list says he cannot play now; it does not say when he returns, or that his season is over.${asOf}`,
       severity: "warn",
+      stale,
+      observedAt,
+    });
+  }
+
+  // --- 2b. a signing the official roster has not caught up with (ADR-102)
+  if (employment === "signed" && status?.employment_source === "sleeper") {
+    return result({
+      week: "uncertain",
+      horizon: "uncertain",
+      kind: "signing",
+      short: "NEW",
+      headline: "Signing reported — not yet on the official roster",
+      detail:
+        `Sleeper lists him with ${status.current_team ?? "a club"}; the official roster file does not ` +
+        `list him there yet.${asOf} Treated as uncertain until it does: no weekly projection is ` +
+        "made for him and he is not featured.",
+      severity: "caution",
       stale,
       observedAt,
     });
@@ -529,7 +587,10 @@ export function featureable(availability: Availability): boolean {
   return (
     (availability.week === "available" ||
       availability.week === "questionable" ||
-      (availability.week === "uncertain" && availability.kind !== "inactive" && availability.kind !== "conflict")) &&
+      (availability.week === "uncertain" &&
+        availability.kind !== "inactive" &&
+        availability.kind !== "conflict" &&
+        availability.kind !== "signing")) &&
     (availability.horizon === "available" ||
       availability.horizon === "caution" ||
       availability.horizon === "uncertain")

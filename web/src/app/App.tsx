@@ -48,7 +48,7 @@ import {
 } from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
-import { Controls, SeasonMode, SeasonModeChip, ViewTabs, settingsSummary } from "./Controls";
+import { Controls, SeasonMode, ViewTabs, settingsSummary } from "./Controls";
 import { DataView } from "./DataView";
 import { BrandLogo, Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
@@ -430,6 +430,9 @@ function Board({
     const own = card.inSeason;
     const ros = own?.rosRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
     const opportunity = own?.opportunityRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
+    // ADR-102: an off-roster player with no model output has an Opportunity row of his own —
+    // identity, club and behaviour — and no value anywhere; the card says so rather than zero.
+    const unprojected = own?.unprojectedRecordFor(leaguePreset, scoring, selectedPlayerId) ?? null;
     const usage = own?.usageFor(selectedPlayerId) ?? null;
     const weekly = own?.weeklyRecordFor(scoring, selectedPlayerId) ?? null;
     return {
@@ -463,7 +466,7 @@ function Board({
       // comparison is the draft market, whatever month it is. Keying it off the mode instead
       // gave the draft board an in-season card in November — which is also how ADR-079's two
       // lifecycle windows, in-season with no board at all, end up correct here for free.
-      opportunity,
+      opportunity: opportunity ?? unprojected,
       behavior: inSeason?.metadata.behavior ?? null,
       // The signal layer (ADR-091). The usage record names the team whose next game is read;
       // the rest-of-season row's team is the fallback for a player with no usage record.
@@ -534,21 +537,7 @@ function Board({
         Skip to the board
       </a>
       <div className="app">
-        <Masthead
-          metadata={metadata}
-          degradations={degradations}
-          now={now}
-          onOpenData={openData}
-          seasonMode={
-            <SeasonModeChip
-              resolved={mode}
-              seasonState={inSeason?.seasonState ?? buildSeason?.state ?? null}
-              throughWeek={inSeason?.throughWeek ?? null}
-              note={buildSeason?.note}
-              awaiting={awaitingFirstRos}
-            />
-          }
-        />
+        <Masthead metadata={metadata} now={now} />
 
         {/*
           One sticky block. On a phone it is the summary row and the tabs, with every control
@@ -716,6 +705,7 @@ function Board({
                 inSeason={inSeason}
                 state={state}
                 degradations={degradations}
+                now={now}
               />
             )}
             </AvailabilityContext.Provider>

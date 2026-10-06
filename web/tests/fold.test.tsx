@@ -84,7 +84,7 @@ describe("the settings row's summary", () => {
   });
 
   it("names the season mode only when a reader overrode it, and last", () => {
-    // `auto` is what the masthead chip already names; repeating it costs the row its width.
+    // `auto` is what the tabs already show; repeating it costs the row its width.
     expect(settingsSummary(state({ mode: "auto" }), true)).not.toContain("Draft mode");
     expect(settingsSummary(state({ mode: "draft", search: "x" }), true)).toEqual([
       "PPR",

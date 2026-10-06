@@ -441,3 +441,89 @@ def _facts(
             target_share_last3=(round(targets / team_targets, 4) if team_targets > 0 else None),
         )
     return facts
+
+
+#: Drives per team-game in the synthetic play-by-play, and the plays each holds that are
+#: nobody's opportunity (an incompletion with no receiver, a sack): QB slots only.
+_FIXTURE_DRIVES = 11
+_FIXTURE_FILLER_PER_DRIVE = 3
+#: Weeks after the cutoff the synthetic file also carries, so the truncation is exercised:
+#: a Thursday game of the next week is in a real file before the board is cut.
+_FIXTURE_FUTURE_WEEKS = 1
+
+
+def fixture_drive_plays(weekly: pl.DataFrame, *, through_week: int) -> pl.DataFrame:
+    """A play-by-play-shaped frame from the fixture's weekly rows (ADR-103). Synthetic.
+
+    Each player's carries and targets in a week are placed on his team's drives by a fixed
+    rule: players whose id characters sum to an even number spread one opportunity per
+    drive, the rest take them in bunches of three — so the fixture holds both signs of the
+    gap. Every third
+    target is snapped inside the red zone, so the tight-end variant has slots to exclude. One
+    week beyond the cutoff is written too, and the build must ignore it.
+    """
+    rows: list[dict[str, object]] = []
+    frame = weekly.filter(pl.col("week") <= through_week + _FIXTURE_FUTURE_WEEKS)
+    for (week, team), group in sorted(
+        frame.filter(pl.col("team").is_not_null()).group_by("week", "team"),
+        key=lambda item: (int(item[0][0]), str(item[0][1])),
+    ):
+        game = f"2026_{int(week):02d}_{team}"
+
+        def play(
+            drive: int,
+            kind: str,
+            player: str | None,
+            yardline: float,
+            week: int = int(week),
+            game: str = game,
+            team: str = str(team),
+        ) -> None:
+            rows.append(
+                {
+                    "season": 2026,
+                    "week": week,
+                    "season_type": "REG",
+                    "game_id": game,
+                    "posteam": team,
+                    "fixed_drive": drive,
+                    "play_type": "run" if kind == "rush" else "pass",
+                    "rush_attempt": 1.0 if kind == "rush" else 0.0,
+                    "pass_attempt": 0.0 if kind == "rush" else 1.0,
+                    "sack": 1.0 if kind == "sack" else 0.0,
+                    "qb_kneel": 0.0,
+                    "qb_spike": 0.0,
+                    "two_point_attempt": 0.0,
+                    "aborted_play": 0.0,
+                    "special_teams_play": 0.0,
+                    "play_deleted": 0.0,
+                    "rusher_player_id": player if kind == "rush" else None,
+                    "receiver_player_id": player if kind == "target" else None,
+                    "yardline_100": yardline,
+                },
+            )
+
+        for drive in range(1, _FIXTURE_DRIVES + 1):
+            for filler in range(_FIXTURE_FILLER_PER_DRIVE):
+                play(drive, "sack" if filler == 0 else "throwaway", None, 55.0)
+        for row in group.sort("gsis_id").iter_rows(named=True):
+            gsis = str(row["gsis_id"])
+            code = sum(ord(char) for char in gsis)
+            spread = code % 2 == 0
+            chances = [
+                ("rush", int(row.get("carries") or 0)),
+                ("target", int(row.get("targets") or 0)),
+            ]
+            slot = code % _FIXTURE_DRIVES
+            placed = 0
+            for kind, count in chances:
+                for _ in range(count):
+                    drive = (
+                        1 + (slot + placed) % _FIXTURE_DRIVES
+                        if spread
+                        else 1 + (slot + placed // 3) % _FIXTURE_DRIVES
+                    )
+                    yardline = 12.0 if kind == "target" and placed % 3 == 2 else 48.0
+                    play(drive, kind, gsis, yardline)
+                    placed += 1
+    return pl.DataFrame(rows)

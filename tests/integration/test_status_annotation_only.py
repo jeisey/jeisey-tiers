@@ -158,7 +158,17 @@ def test_the_status_artifact_is_keyed_once_per_player(app_config, pipeline_fixtu
     assert len(ids) == len(set(ids))
 
     tier_ids = {record["player_id"] for record in result.records["tiers"]}
-    assert set(ids) == tier_ids
+    # ADR-102: besides the board's players, exactly the verified off-roster players — the
+    # fixture's unsigned WR and the RB whose signing only Sleeper reports — get a row, so an
+    # in-season view can say "FA" rather than "status unknown". Nobody else is added.
+    off_roster = {
+        record["player_id"]
+        for record in status
+        if record["employment_status"] == "unsigned"
+        or (record["employment_status"] == "signed" and record["employment_source"] == "sleeper")
+    }
+    assert off_roster == {"gsis:00-0000020", "gsis:00-0000021"}
+    assert set(ids) == tier_ids | off_roster
     assert len(result.records["tiers"]) > len(status)
 
 

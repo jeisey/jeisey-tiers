@@ -60,18 +60,9 @@ async function openBoard(page: Page, path = "/"): Promise<void> {
   await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();
 }
 
-/**
- * The masthead's freshness chip, selected by the invariant half of its accessible name.
- *
- * Its visible label is the freshness *state* — "build note", "build is a day old", "build is
- * stale" — which depends on the wall clock at the moment the browser runs, so a test that
- * matches on it starts failing on a date nobody chose. Which label each age produces is
- * asserted directly, against an injected clock, in `tests/app.test.tsx`; a build served from
- * disk cannot be handed one. The tests below are about where the chip goes and where it sits
- * in the tab order, so they select the part of the name that never changes.
- */
-function statusChip(page: Page) {
-  return page.getByRole("button", { name: /Open the data and methodology view/ });
+/** The Data tab: where the build status, warnings and methodology live (the header chip is gone). */
+function dataTab(page: Page) {
+  return page.getByRole("tab", { name: /^Data/ });
 }
 
 test.describe("default tier experience", () => {
@@ -587,10 +578,12 @@ test.describe("data and methodology", () => {
     await expect(page.locator("body")).not.toContainText(/fantasycalc/i);
   });
 
-  test("is reachable from the header status chip", async ({ page }) => {
+  test("is reachable from its tab, now the header carries no status chip", async ({ page }) => {
     await openBoard(page);
-    await statusChip(page).click();
+    await expect(page.locator("header.masthead").getByRole("button")).toHaveCount(0);
+    await dataTab(page).click();
     await expect(page).toHaveURL(/view=data/);
+    await expect(page.getByRole("heading", { name: "What this is" })).toBeVisible();
   });
 });
 
@@ -674,7 +667,7 @@ test.describe("release brand and export treatment", () => {
     { name: "mobile", width: 390, height: 844 },
   ] as const;
 
-  test("shows the logo as the only masthead brand, beside freshness and status", async ({
+  test("shows the logo as the only masthead brand, beside the Updated stamp alone", async ({
     page,
   }) => {
     await openBoard(page);
@@ -691,16 +684,18 @@ test.describe("release brand and export treatment", () => {
     await expect(page.locator("header.masthead")).not.toContainText("Tiers & arbitrage");
     await expect(page.locator(".wordmark, .wordmark-sub, .masthead-glyph")).toHaveCount(0);
 
-    // Everything the masthead carried besides the brand still does.
+    // Beside the brand: the Updated stamp and nothing else — no status button, no season-mode
+    // label or dot (2026-10-06; their readings are in the Data tab and the tabs).
     await expect(page.getByText("Aug 21 · 10:38 AM ET")).toBeVisible();
-    await expect(statusChip(page)).toBeVisible();
-    await statusChip(page).click();
-    await expect(page).toHaveURL(/view=data/);
-    await expect(page.getByRole("heading", { name: "What this is" })).toBeVisible();
+    const meta = page.locator("header.masthead .masthead-meta");
+    await expect(meta.locator(":scope > *")).toHaveCount(1);
+    await expect(meta.locator(".freshness")).toHaveText(/^Updated Aug 21 · 10:38 AM ET, /);
+    await expect(page.locator("header.masthead").getByRole("button")).toHaveCount(0);
+    await expect(page.locator(".status-chip, .season-mode-chip, .season-mode-dot")).toHaveCount(0);
   });
 
   for (const viewport of VIEWPORTS) {
-    test(`keeps the logo, freshness and status on one masthead at ${viewport.name}`, async ({
+    test(`keeps the logo and the Updated stamp cleanly aligned at ${viewport.name}`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -717,13 +712,18 @@ test.describe("release brand and export treatment", () => {
       expect(box.height).toBeGreaterThanOrEqual(32);
       expect(box.width).toBeLessThanOrEqual(viewport.width * 0.6);
 
-      // Freshness and status stay on screen rather than being pushed out by the mark.
-      for (const target of [page.getByText("Aug 21 · 10:38 AM ET"), statusChip(page)]) {
-        const meta = await target.boundingBox();
-        expect(meta).not.toBeNull();
-        if (meta === null) continue;
-        expect(meta.x).toBeGreaterThanOrEqual(0);
-        expect(meta.x + meta.width).toBeLessThanOrEqual(viewport.width + 1);
+      // The stamp stays on screen rather than being pushed out by the mark, on one line, and
+      // when it shares the logo's row its text is vertically centred on the mark.
+      const stamp = await page.locator("header.masthead .freshness").boundingBox();
+      expect(stamp).not.toBeNull();
+      if (stamp === null) return;
+      expect(stamp.x).toBeGreaterThanOrEqual(0);
+      expect(stamp.x + stamp.width).toBeLessThanOrEqual(viewport.width + 1);
+      expect(stamp.height).toBeLessThanOrEqual(16);
+      if (stamp.y < box.y + box.height) {
+        const logoMid = box.y + box.height / 2;
+        const stampMid = stamp.y + stamp.height / 2;
+        expect(Math.abs(logoMid - stampMid)).toBeLessThanOrEqual(2);
       }
 
       // The masthead may not be what makes the document scroll sideways.
@@ -840,8 +840,7 @@ test.describe("accessibility", () => {
     await page.keyboard.press("Tab");
     // The logo is the link home, the masthead's first stop.
     await expect(page.getByRole("link", { name: "Jeisey Tiers home" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(statusChip(page)).toBeFocused();
+    // The masthead has no other control: the next stop is the first setting.
     await page.keyboard.press("Tab");
     // The group's one tab stop is the *selected* option, per the roving-tabindex pattern.
     await expect(page.getByRole("radio", { name: "PPR", exact: true })).toBeFocused();

@@ -5910,3 +5910,248 @@ path. The run's own artifacts, with portraits restricted as the fix does, pass
   about when a player returns, and the ROS value of a returning player is the model's, which
   does not know either.
 
+
+## ADR-102 — Unsigned and newly signed players stay identifiable: employment is evidence, not a roster file
+
+**Status:** accepted, 2026-10-06. **Amends:** ADR-101 (status population; the availability
+policy gains two readings), ADR-055 (the player-master supplement's `last_season` filter is
+documented as a draft-market scope rule, not evidence of retirement). **Relies on:** ADR-011
+and ADR-019 (nflverse-first Sleeper join, fail-closed identity), ADR-063/ADR-097 (surfacing
+beyond the depth copies the model's own values), PR #58 (portraits stay the tier board's).
+
+### Context — the trace
+
+The owner reported Tyreek Hill and Joe Mixon missing in season. Their records on 2026-10-06:
+
+| | Hill (`00-0033040`, Sleeper 3321) | Mixon (`00-0033897`, Sleeper 4018) |
+|---|---|---|
+| nflverse player master | MIA, `RES`, `last_season` 2025 | HOU, `RSN`, `last_season` 2025 |
+| 2025 roster | MIA `RES` (week 18), with `sleeper_id` | HOU `RES` (week 20), with `sleeper_id` |
+| 2026 roster (file modified 2026-10-06 14:11 UTC) | absent | absent |
+| Sleeper player map (fetched 2026-10-06) | team null, `Active` | team `SEA`, `Active` (news 2026-10-05) |
+| Reporting | released by Miami in February; unsigned (CBS, NFL.com) | agreed to join Seattle's practice squad 2026-10-05, pending a physical (CBS, PFT, Yahoo) |
+| Sleeper 24h adds (2026-10-06) | 660,496 (5th), drops 52,880 | 323,459 (10th) |
+
+Neither was absent at source or dropped by a normalization in the in-season path. Both were in
+the preseason universe (prior-season roster basis) and on the draft `tiers` board (flag
+`no_current_roster_entry`). In season:
+
+1. **First exclusion — the ROS publication depth** (value-based, legitimate). Hill's
+   rest-of-season value is beyond the published depth in all nine blocks; Mixon's in eight
+   (published once, redraft-14 PPR, rank 496, team null).
+2. **The rescue that should have applied failed at a join.** Both clear the trending-add
+   surface rule by three orders of magnitude, but every annotation-side registry —
+   behaviour (`_opportunity`, `_behavior_series`), status (`_annotation_registry`) — was built
+   from `load_rosters(2026)` alone, which omits both. Their Sleeper ids resolved to nobody:
+   Hill never surfaced; Mixon's one row printed `add_count: 0`.
+3. **Status:** both were in ADR-101's `status_players` (they are on the tier board), but
+   `registry.get()` returned `None` for each and the builder skipped them silently.
+4. **Team:** Mixon's Seattle signing reached nothing; and for a player released *during* a
+   season, `team_to_date` (his last club) was the published team and the weekly layer's
+   `coalesce(current_team, team_to_date)` would have handed him that club's next game.
+5. `NflversePlayersAdapter`'s `last_season < season` filter only scopes the draft-market
+   supplement; its comment equating it with retirement was wrong and is corrected. ADR-101's
+   DEV/CUT/RET exclusion did not apply (neither had a 2026 roster row at all).
+
+### Decision
+
+Four questions, answered separately (`src/ffdraft/status/employment.py`):
+
+* **Catalog membership / identity** — `identity_spine`: this season's roster plus last
+  season's roster for players the current one omits, with `team`, `status` and depth nulled.
+  A historical crosswalk verifies *who* a Sleeper record is; it never places him. A GSIS id
+  naming two players in a prior roster is left out; a `sleeper_id` two canonical players claim
+  is poisoned (ADR-019) — and the Sleeper status resolver and both behaviour joins now consult
+  that poison (before, the last player iterated silently won).
+* **Current employment** — `employment_evidence_v1`, in order: (1) the current-season roster
+  with a code other than `CUT`/`RET` → signed, that club (a fresh Sleeper record naming another
+  club or none is recorded as `employment_sources_disagree`, not acted on); (2) `RET` →
+  retired; (3) off the roster or `CUT`: a Sleeper record no older than 48 hours at the build,
+  joined nflverse-first and cross-checked → a club means *signed (Sleeper)*, no club with status
+  `Active` means **unsigned**; (4) anything else — no record, a stale feed, `Inactive` with no
+  club, an identity refusal — is **unknown**, never "FA". Never employment evidence: the
+  player master's `latest_team`/`last_season`, a previous season's roster, the team at the
+  anchor, the last club he appeared for.
+* **Model coverage** — unchanged in meaning. A player with a model output keeps it, copied as
+  ADR-097 requires. A verified off-roster player (unsigned, or signed on Sleeper evidence only)
+  who clears the existing 500-add surface bar and has no board row gets an
+  `inseason_opportunity` row with `model_coverage: "unprojected"` — identity, club, employment
+  and behaviour, every `ros_*` value, both ranks and the tier null. The population is bounded by
+  the feed's own request limit.
+* **Decision eligibility** — the availability policy reads the employment reading: *unsigned*
+  is "Unsigned free agent — speculative stash" (this week unavailable, rest of season
+  unavailable now): never a Start/Sit verdict, Pick of the Week or trade target, even with the
+  "expected back" opt-in; still listed, searchable, inspectable. A *Sleeper-only signing* is
+  uncertain ("not yet on the official roster"), shows the new club, gets no weekly projection
+  and is never featured. Nothing is renumbered or rescaled.
+
+**Contracts.** `player_status` 1.2: `employment_status`, `employment_source`,
+`employment_observed_at_utc`; `current_team` is the employing club or null, never a previous
+club; the `player_availability` slice carries `current_team` and the employment fields.
+`inseason_opportunity` 1.2: `employment_status`, `model_coverage`, nullable values on
+unprojected rows only (validated both ways). The UI prints **FA** only on a verified-unsigned
+reading; the Opportunity view lists unprojected rows in a separate "Not projected" table
+(position and search apply; value filters cannot) whose names open the card, which says "No
+rest-of-season projection" rather than showing a number.
+
+**Populations.** After the draft anchor the status population adds the verified off-roster
+players (211 unsigned and 5 Sleeper-only signings on 2026-10-06's sources). Portraits stay the
+tier board's players (PR #58; `cross_artifact.headshot_player_not_in_tiers` untouched).
+
+**Evidence precedence on refresh.** The same canonical id throughout: an unsigned player who
+signs is "signed (Sleeper)" the first day Sleeper names a club, and "signed (roster)" once the
+roster file lists him; the FA label and any previous club disappear by construction, and his
+retained add/drop history is keyed by the same id.
+
+### Verification on real data (2026-10-06 sources, this code)
+
+A full `build-ros` on the live nflverse files and the day's Sleeper captures: Hill on the
+Opportunity Board in all nine blocks, team null (FA), `unsigned`, 601,816 adds / 54,928 drops,
+surfaced by `sleeper_trending_add` with the model's own beyond-depth values; Mixon in all nine,
+team SEA, `signed` (Sleeper), 333,414 adds; 149 behaviour players matched. Employment over the
+spine: 800 signed (5 on Sleeper only), 211 unsigned, 9 retired, 178 unknown, 35 roster/Sleeper
+disagreements, 1 identity refusal.
+
+### Consequences and limits
+
+* No model, feature, training population, projection, VORP, rank, tier or calibration figure
+  changes; the intrinsic firewall is untouched (employment is annotation and eligibility only;
+  the structural import test still forbids `opportunity/` from importing `ffdraft.status`).
+* Identity reaches back one season only. A veteran who spent all of the previous season off
+  every roster cannot be identified and stays out (documented, not inferred by name).
+* Sleeper is the only current source for a player off the roster file; when it is stale or
+  missing, nobody off the roster is called unsigned, and they read as unknown.
+* A Sleeper-only signing is shown with the new club before the official file confirms it; the
+  policy keeps him out of every current-week decision until it does.
+
+## ADR-103 — Drive breadth above expectation: one descriptive row per position, frozen before its evaluation
+
+**Status:** accepted, 2026-10-06. Definition, window, exclusions, display minimums and the
+evaluation plan below were frozen **after** the coverage inventory
+(`docs/experiments/drive-breadth-2026-10-06/coverage.json`, which reads no outcome) and
+**before** any outcome was computed. **Relies on:** ADR-091 (the signal layer is published
+context, read by no model), ADR-025/ADR-069 (2025 is spent), ADR-098 (served slices).
+
+### Context
+
+The role rails say how much of the offense a player gets (snap, target, carry and air-yards
+shares). They do not say whether that involvement recurs across possessions or clusters into a
+few drives — a back who takes every snap of alternate series, a receiver whose targets come in
+bunches, a tight end whose looks are all inside the 20. The owner asked for one position-aware
+bonus reading that answers that, as a custom candidate rather than a claim of a proven or
+unprecedented statistic.
+
+### Decision — the definition (`drive_breadth_v1`)
+
+For a completed appearance `g`: `n_d` eligible team slots in drive `d`, `N = Σ n_d`, `D` drives
+with at least one slot, `K` the player's eligible opportunities, `A` drives holding at least one
+of them, and `E = Σ_d [1 − C(N − n_d, K) / C(N, K)]` — the drives `K` opportunities would reach
+placed uniformly at random among the game's `N` slots (an impossible combination is zero). This
+is the rarefaction/occupancy expectation; Chao et al. and its binomial-coefficient correction
+(*Diversity and Distributions*, 10.1111/ddi.13954 and 10.1111/ddi.70165) support the
+mathematical structure only, not this football application.
+
+Over the latest **four** completed appearances: `breadth_gap_pp = 100 · Σ(A − E) / Σ D`, with
+the reference computed per game before summing. Positive: involvement reached more drives than
+the reference; negative: it clustered. Neither sign is good or bad fantasy value.
+
+**Positional variants** (player opportunity → the team slots it is one of):
+
+| Position | Player opportunities | Eligible team slots |
+|---|---|---|
+| QB | rush attempts, scrambles included | every eligible offensive scrimmage play |
+| RB | carries + targets | every carry and target that went to a running back (season-roster position) |
+| WR | targets | every identified target |
+| TE | targets snapped outside the red zone (`yardline_100 > 20`) | every identified target snapped outside the red zone |
+
+**Eligible play:** regular season, `play_type` `pass` or `run`, with a possession team and a
+`fixed_drive`. Excluded: kneels, spikes, two-point attempts, aborted snaps, special-teams plays,
+deleted plays; `no_play` rows (a penalty that wiped out the snap) are not plays, while a play
+that stands with a penalty on it is. A sack is a QB slot and never a target; a scramble is a
+run by the quarterback; a lateral credits the original rusher or targeted receiver; a pass with
+no identified receiver is a target slot for nobody. A player the season roster does not place
+at a position is never an RB slot (25 plays a season in 2020–2024).
+
+**Appearances:** a stats row or an offensive snap (ADR-091), snaps bridged by the roster's own
+`pfr_id`. Every drive of his team's game with an eligible slot is in his denominator, including
+drives he never touched: this is team-opportunity breadth, not route participation and not
+proof he was on the field. A bye or a missed game is a missing observation, never a zero-role
+game. Zero opportunities in a game he played contribute `D` drives and nothing reached.
+
+**Edges:** `K = 0` gives `E = A = 0`; `K = 1` gives `E = A = 1` (a gap of exactly zero —
+uninformative, and why the opportunity minimum exists); saturation (`E = D`) is measured and
+almost never occurs (RB: 4–16 games a season, none elsewhere).
+
+**Display minimums (provisional display rule, not established reliability):** at least three
+appearances, twenty eligible drives and six player opportunities in the window. Below them the
+row says which minimum is missing and shows no number — never a zero that reads as average.
+Coverage under the rule, 2020–2024: QB 47–54%, RB 66–68%, WR 59–62%, TE 40–43% of windows.
+
+**The reference is not zero for every position.** Coverage showed the RB variant centred near
+−5 pp (2024 median −5.8): backs rotate by series, so a back's carries and targets cluster by
+construction. The published record therefore carries each position's distribution on the
+current build (p25/p50/p75 of displayed values), and the card prints the player's reading
+beside his position's median rather than against zero.
+
+### Decision — the evaluation, predeclared
+
+* **Seasons:** development 2020–2024 only. 2025 (spent sealed season) and 2026 (the season
+  shown) are not read.
+* **Rows:** every displayable window with a next appearance in the same season.
+* **Outcome:** a *next-appearance opportunity drought* — his next appearance's opportunities
+  below half the window's per-appearance mean (same positional definition).
+* **Baseline:** logistic regression (standardised, L2, C = 1) on window volume (opportunities
+  per appearance), window share (`ΣK / ΣN`) and the latest game's share minus the window's.
+  **Candidate:** the same plus `breadth_gap_pp`. Fitted per position.
+* **Chronology:** rolling origin — 2022 predicted from 2020–2021, 2023 from 2020–2022, 2024
+  from 2020–2023. No tuning on any test season.
+* **Primary metric:** pooled out-of-time log loss, candidate minus baseline, with a 95%
+  player-season cluster bootstrap interval (1,000 replicates, seed 20261006). Brier and AUC per
+  season are reported beside it, not decided on.
+* **Rules, fixed now:**
+  1. A variant is *published as descriptive context* only if, in the latest development season,
+     at least 25% of windows meet the display minimums, its displayed interquartile range is at
+     least 2 pp, and its Spearman correlation with window share and with window volume (pooled
+     2020–2024) is below 0.8 in absolute value. A variant failing any of these is omitted, and
+     the omission documented.
+  2. **No predictive wording anywhere** unless that position's pooled interval lies entirely
+     below zero. Even then the card stays descriptive; the Data view reports the measured result
+     with its interval.
+  3. Confounding is reported, not corrected: sensitivity to partial games, and correlation with
+     the team's drives per game.
+
+### Not used for anything else
+
+No model reads it (`intrinsic`, `ros`, `weekly`), no ranking or blended score includes it, Pick
+of the Week and the Trade search do not see it. It rides `player_usage` as an optional block and
+its failure costs that block only.
+
+### Results (appended after the evaluation ran; nothing above was changed)
+
+`docs/experiments/drive-breadth-2026-10-06/` holds `coverage.json`, `evaluation.json`,
+`confounding.json` and `examples.json`, regenerated by `ffdraft.signals.breadth_study`.
+
+| Position | Windows (rows) | ρ with share / volume | Pooled Δ log loss (cand − base) | 95% CI | Rule 1 | Rule 2 |
+|---|---|---|---|---|---|---|
+| QB | 1,502 (935 tested) | −0.24 / −0.24 | +0.0023 | [−0.0002, +0.0050] | publish | no predictive wording |
+| RB | 5,141 (3,109) | 0.04 / 0.01 | −0.0006 | [−0.0015, +0.0002] | publish | no predictive wording |
+| WR | 7,349 (4,428) | 0.07 / 0.06 | −0.0003 | [−0.0014, +0.0006] | publish | no predictive wording |
+| TE | 2,895 (1,756) | 0.01 / −0.00 | +0.0004 | [−0.0001, +0.0008] | publish | no predictive wording |
+
+* **Distinct information: yes.** The gap is nearly uncorrelated with window share and volume
+  (|ρ| ≤ 0.07 outside QB). Same-volume, same-share 2024 pairs differ by 13–23 pp: Davante
+  Adams +11.7 vs Jaxon Smith-Njigba −9.0 (8.75 targets a game, 26% share, through week 9);
+  Raheem Mostert +2.0 vs Chris Rodriguez Jr. −21.0 (5.75 RB opportunities, 21% share).
+* **Incremental predictive value: none shown.** No position's interval lies below zero; QB and
+  TE lean slightly worse, RB and WR slightly better, all within noise. Per-season AUC moves by
+  at most 0.03. The reading is therefore published as description only, and the Data view
+  prints this result.
+* **Confounding (reported, not corrected).** RB: 61% of games are under half the snaps, and
+  those cluster harder (mean per-game gap −8.7 vs −4.0 pp); lopsided scores cluster more
+  (ρ = −0.15 with |margin|); the player explains 13% of per-game variance, the opponent 3%.
+  QB: the opponent explains as much as the player (η² 0.078 vs 0.075) — rushing breadth is
+  weakly a property of the quarterback. WR/TE: little confounding, but little stable player
+  signal per game either (η² 4–5%). Drives per game do not move the windowed gap (|ρ| ≤ 0.05).
+* **What it is not.** Not route participation or proof he was on the field, not script
+  independence, coach trust or safety, and not a forecast. It is not in any model, ranking,
+  blended score, Pick of the Week or the Trade search.

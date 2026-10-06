@@ -23,6 +23,9 @@
 
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
+  DriveBreadth,
+  DriveBreadthMetric,
+  DriveBreadthReference,
   PlayerUsageRecord,
   UsageCohortRecord,
   Position,
@@ -351,4 +354,122 @@ export function impliedSplit(
   const total = mine + theirs;
   if (!(total > 0)) return null;
   return { team: mine / total, opponent: theirs / total };
+}
+
+// ------------------------------------------------------------------- drive breadth (ADR-103)
+
+/** The card's words for each position's variant, in the player's own positional terms. */
+export const BREADTH_LABELS: Readonly<
+  Record<DriveBreadthMetric, { readonly label: string; readonly question: string; readonly noun: string; readonly slots: string }>
+> = {
+  rushing: {
+    label: "Rushing breadth",
+    question: "Runs across drives, or bunched?",
+    noun: "rush attempts",
+    slots: "scrimmage plays",
+  },
+  backfield: {
+    label: "Backfield breadth",
+    question: "Touches across drives, or by series?",
+    noun: "carries and targets",
+    slots: "running-back carries and targets",
+  },
+  targets: {
+    label: "Target breadth",
+    question: "Targets across drives, or bunched?",
+    noun: "targets",
+    slots: "team targets",
+  },
+  open_field_targets: {
+    label: "Open-field breadth",
+    question: "Looks beyond the red zone, across drives?",
+    noun: "targets outside the red zone",
+    slots: "team targets outside the red zone",
+  },
+};
+
+const WITHHELD_TEXT: Readonly<Record<NonNullable<DriveBreadth["withheld_reason"]>, string>> = {
+  too_few_appearances: "fewer than 3 games",
+  too_few_eligible_drives: "fewer than 20 team drives",
+  too_few_opportunities: "fewer than 6",
+};
+
+/** "+4.2 pp" / "−9.0 pp" / "0.0 pp", with a real minus sign. */
+export function formatBreadth(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  if (rounded === 0) return "0.0 pp";
+  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)} pp`;
+}
+
+export interface BreadthReading {
+  readonly label: string;
+  readonly question: string;
+  /** The number, or null when withheld. */
+  readonly value: number | null;
+  /** The printed value, "—" when withheld. */
+  readonly valueText: string;
+  /** The window and denominator, or why there is no number. */
+  readonly window: string;
+  /** Position median on this build, when published. */
+  readonly reference: DriveBreadthReference | null;
+  /** The whole reading in words, for assistive technology. */
+  readonly sentence: string;
+}
+
+/**
+ * One drive-breadth reading from the published block. Nothing is recomputed: the value, the
+ * counts and the window are the artifact's; the words name the denominator and say it is
+ * description, not a forecast.
+ */
+export function breadthReading(
+  block: DriveBreadth,
+  reference: DriveBreadthReference | null,
+  position: string,
+): BreadthReading {
+  const words = BREADTH_LABELS[block.metric];
+  const weeks =
+    block.first_week === null || block.last_week === null
+      ? "no completed games"
+      : block.first_week === block.last_week
+        ? `week ${String(block.first_week)}`
+        : `wks ${String(block.first_week)}–${String(block.last_week)}`;
+  const median =
+    reference === null ? "" : ` · ${position} median ${formatBreadth(reference.p50)}`;
+  if (!block.displayable || block.breadth_gap_pp === null) {
+    const why =
+      block.withheld_reason === null
+        ? "no reading"
+        : block.withheld_reason === "too_few_opportunities"
+          ? `${WITHHELD_TEXT.too_few_opportunities} ${words.noun} (${String(block.opportunities)})`
+          : WITHHELD_TEXT[block.withheld_reason];
+    return {
+      label: words.label,
+      question: words.question,
+      value: null,
+      valueText: "—",
+      window: `too few for a reading: ${why}`,
+      reference,
+      sentence:
+        `${words.label}: no reading. Over ${weeks} he has ${String(block.opportunities)} ${words.noun} ` +
+        `across ${String(block.eligible_drives)} team drives, below the display minimum (${why}). ` +
+        "That is not the same as average.",
+    };
+  }
+  const gap = block.breadth_gap_pp;
+  return {
+    label: words.label,
+    question: words.question,
+    value: gap,
+    valueText: formatBreadth(gap),
+    window: `${String(block.reached_drives)} of ${String(block.eligible_drives)} drives · ${weeks}${median}`,
+    reference,
+    sentence:
+      `${words.label}, ${weeks}: his ${String(block.opportunities)} ${words.noun} reached ` +
+      `${String(block.reached_drives)} of ${String(block.eligible_drives)} team drives with ${words.slots}; ` +
+      `the same number placed at random among those ${words.slots} would reach about ` +
+      `${block.expected_drives.toFixed(1)}. That is ${Math.abs(gap).toFixed(1)} percentage points ` +
+      `${gap >= 0 ? "broader" : "more bunched"} than random` +
+      (reference === null ? "." : `; the ${position} median on this build is ${formatBreadth(reference.p50)}.`) +
+      " Descriptive only: not a forecast, and neither sign is better.",
+  };
 }

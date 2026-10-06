@@ -234,6 +234,29 @@ export function RosStatusBadge({
 }
 
 /**
+ * The club a row prints (ADR-102). Inside an in-season view a verified free agent reads "FA",
+ * with the reason for assistive technology; any other player prints his row's own team, and
+ * a null team prints an em dash — never "FA", which needs current evidence.
+ */
+export function TeamCell({
+  team,
+  playerId,
+}: {
+  readonly team: string | null | undefined;
+  readonly playerId: string;
+}): React.JSX.Element {
+  const reader = useContext(AvailabilityContext);
+  if (reader !== null && reader(playerId).kind === "unsigned") {
+    return (
+      <span className="muted team-fa" title="Unsigned free agent: not on an NFL roster">
+        FA<span className="visually-hidden"> — unsigned free agent</span>
+      </span>
+    );
+  }
+  return <span className="muted">{team ?? "—"}</span>;
+}
+
+/**
  * The market-data confidence meter, from artboard 1b.
  *
  * Three bars filled to the level, with the word beside them — the design's own component. The

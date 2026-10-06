@@ -270,6 +270,10 @@ class NflversePlayersAdapter(BaseSourceAdapter):
     ``sportradar_id``/``yahoo_id``. A supplemented player therefore carries no Sleeper join
     and picks up no status annotation. That is a real and accepted cost — status is
     annotation-only (ADR-030), while a missing *price* silently distorts the arbitrage board.
+
+    ``team`` here is the master's ``latest_team``: the last club the master recorded, which
+    is **not** evidence of current employment. It serves the draft-market join only; the
+    in-season views read employment from ``ffdraft.status.employment`` (ADR-102).
     """
 
     source_id = NFLVERSE_SOURCE_ID
@@ -298,9 +302,13 @@ class NflversePlayersAdapter(BaseSourceAdapter):
         for record in as_rows(records):
             last_season = _int(record.get("last_season"))
             if last_season is None or last_season < season:
-                # A player whose last recorded season predates the target has retired or
-                # left the league. Adding him would expand the canonical set with people
-                # nobody can draft, which is the opposite of the point.
+                # This supplement exists to add players the target season's roster file
+                # omits *while they are on a club* (ADR-055), so it admits only rows the
+                # master records for the target season. A past `last_season` is NOT evidence
+                # of retirement: it is exactly how a released, unsigned veteran looks (Tyreek
+                # Hill, 2026). Such players are identified elsewhere, from last season's
+                # roster as identity only, and their employment is read from current evidence
+                # (`ffdraft.status.employment`, ADR-102) — never from `latest_team` below.
                 dropped_before_season += 1
                 continue
             gsis = flags.take(normalize_id(IdNamespace.GSIS, record.get("gsis_id")))

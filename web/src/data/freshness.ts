@@ -3,7 +3,7 @@
  *
  * `docs/OPERATIONS.md` section 9 puts operational freshness thresholds in config, where the
  * build gate reads them. These two are a different thing and are deliberately separate: they
- * only decide whether the header shows a "stale" chip, they never block a render, and they
+ * only decide whether the Data view calls a build or a market "stale", they never block a render, and they
  * never contradict the build's own verdict.
  *
  * They live here rather than as literals inside components so there is one place to change

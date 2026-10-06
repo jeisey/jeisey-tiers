@@ -200,7 +200,7 @@ def build_player_usage_records(
     through_week: int,
     build_id: str,
     schema_version: str,
-    current_teams: Mapping[str, str] | None = None,
+    current_teams: Mapping[str, str | None] | None = None,
     rule: UsageRule = USAGE_RULE,
 ) -> list[dict[str, Any]]:
     """One published usage record per player in ``players``.
@@ -246,7 +246,10 @@ def build_player_usage_records(
         stat_weeks = by_player_rows.get(gsis, {})
         snap_weeks = by_player_snaps.get(gsis, {})
         observed_team = _last_observed_team(stat_weeks, snap_weeks)
-        team = (current_teams or {}).get(player_id) or observed_team
+        # An explicit None is the employment reading saying "no current club" (ADR-102): his
+        # history keeps the clubs he played for, and none of them becomes his current one.
+        current = current_teams or {}
+        team = current.get(player_id, observed_team)
 
         series: list[_Week] = []
         carried_team: str | None = None

@@ -196,6 +196,19 @@ def test_the_current_roster_moves_the_game(serve, weekly) -> None:
     assert record["game"]["game_id"] == other["game"]["game_id"]
 
 
+def test_a_player_with_no_current_club_gets_no_next_game(serve, weekly) -> None:
+    """ADR-102: an explicit None (verified unsigned) means no club, not "use the last one".
+
+    Before, `coalesce(current_team, team_to_date)` handed a released, unsigned player the
+    next game of the club he last appeared for.
+    """
+    player = next(row for row in weekly if row["game_state"] == "upcoming")
+    unsigned = serve(current_teams={player["player_id"]: None})
+    assert all(row["player_id"] != player["player_id"] for row in unsigned.records)
+    others = {row["player_id"] for row in weekly} - {player["player_id"]}
+    assert others <= {row["player_id"] for row in unsigned.records}
+
+
 def test_there_is_nothing_to_project_after_the_last_scored_week(serve) -> None:
     done = serve(through_week=17)
     assert done.records == []

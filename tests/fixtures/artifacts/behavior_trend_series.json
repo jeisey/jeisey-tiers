@@ -4,7 +4,7 @@
   "record_schema": "behavior_trend_series",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 16,
+  "record_count": 18,
   "records": [
     {
       "schema_version": "1.0",
@@ -1554,6 +1554,226 @@
           "add_count": 493,
           "drop_count": 65,
           "net_add_count": 428
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000016",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 15,
+      "observations": 15,
+      "observation_days": 8,
+      "span_days": 6.9583,
+      "add_trend": 52.6051,
+      "net_trend": 55.6071,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-11T13:00:00Z",
+          "add_count": 0,
+          "drop_count": 66,
+          "net_add_count": -66
+        },
+        {
+          "observed_at": "2026-08-12T05:00:00Z",
+          "add_count": 0,
+          "drop_count": 64,
+          "net_add_count": -64
+        },
+        {
+          "observed_at": "2026-08-13T05:00:00Z",
+          "add_count": 54,
+          "drop_count": 61,
+          "net_add_count": -7
+        },
+        {
+          "observed_at": "2026-08-14T08:00:00Z",
+          "add_count": 116,
+          "drop_count": 57,
+          "net_add_count": 59
+        },
+        {
+          "observed_at": "2026-08-14T09:00:00Z",
+          "add_count": 118,
+          "drop_count": 57,
+          "net_add_count": 61
+        },
+        {
+          "observed_at": "2026-08-14T11:00:00Z",
+          "add_count": 123,
+          "drop_count": 57,
+          "net_add_count": 66
+        },
+        {
+          "observed_at": "2026-08-14T13:00:00Z",
+          "add_count": 127,
+          "drop_count": 57,
+          "net_add_count": 70
+        },
+        {
+          "observed_at": "2026-08-14T19:00:00Z",
+          "add_count": 141,
+          "drop_count": 56,
+          "net_add_count": 85
+        },
+        {
+          "observed_at": "2026-08-15T05:00:00Z",
+          "add_count": 164,
+          "drop_count": 55,
+          "net_add_count": 109
+        },
+        {
+          "observed_at": "2026-08-15T11:00:00Z",
+          "add_count": 178,
+          "drop_count": 54,
+          "net_add_count": 124
+        },
+        {
+          "observed_at": "2026-08-16T05:00:00Z",
+          "add_count": 219,
+          "drop_count": 52,
+          "net_add_count": 167
+        },
+        {
+          "observed_at": "2026-08-17T05:00:00Z",
+          "add_count": 274,
+          "drop_count": 49,
+          "net_add_count": 225
+        },
+        {
+          "observed_at": "2026-08-17T10:00:00Z",
+          "add_count": 285,
+          "drop_count": 48,
+          "net_add_count": 237
+        },
+        {
+          "observed_at": "2026-08-18T05:00:00Z",
+          "add_count": 329,
+          "drop_count": 46,
+          "net_add_count": 283
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 345,
+          "drop_count": 45,
+          "net_add_count": 300
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "behavior_source_id": "sleeper",
+      "player_id": "gsis:00-0000020",
+      "lookback_hours": 24,
+      "request_limit": 100,
+      "window_days": 7.0,
+      "snapshots_in_window": 15,
+      "observations": 15,
+      "observation_days": 8,
+      "span_days": 6.9583,
+      "add_trend": 70.0075,
+      "net_trend": 73.0096,
+      "quality_flags": [],
+      "points": [
+        {
+          "observed_at": "2026-08-11T13:00:00Z",
+          "add_count": 1913,
+          "drop_count": 56,
+          "net_add_count": 1857
+        },
+        {
+          "observed_at": "2026-08-12T05:00:00Z",
+          "add_count": 1960,
+          "drop_count": 54,
+          "net_add_count": 1906
+        },
+        {
+          "observed_at": "2026-08-13T05:00:00Z",
+          "add_count": 2030,
+          "drop_count": 51,
+          "net_add_count": 1979
+        },
+        {
+          "observed_at": "2026-08-14T08:00:00Z",
+          "add_count": 2108,
+          "drop_count": 47,
+          "net_add_count": 2061
+        },
+        {
+          "observed_at": "2026-08-14T09:00:00Z",
+          "add_count": 2111,
+          "drop_count": 47,
+          "net_add_count": 2064
+        },
+        {
+          "observed_at": "2026-08-14T11:00:00Z",
+          "add_count": 2117,
+          "drop_count": 47,
+          "net_add_count": 2070
+        },
+        {
+          "observed_at": "2026-08-14T13:00:00Z",
+          "add_count": 2123,
+          "drop_count": 47,
+          "net_add_count": 2076
+        },
+        {
+          "observed_at": "2026-08-14T19:00:00Z",
+          "add_count": 2140,
+          "drop_count": 46,
+          "net_add_count": 2094
+        },
+        {
+          "observed_at": "2026-08-15T05:00:00Z",
+          "add_count": 2170,
+          "drop_count": 45,
+          "net_add_count": 2125
+        },
+        {
+          "observed_at": "2026-08-15T11:00:00Z",
+          "add_count": 2187,
+          "drop_count": 44,
+          "net_add_count": 2143
+        },
+        {
+          "observed_at": "2026-08-16T05:00:00Z",
+          "add_count": 2240,
+          "drop_count": 42,
+          "net_add_count": 2198
+        },
+        {
+          "observed_at": "2026-08-17T05:00:00Z",
+          "add_count": 2310,
+          "drop_count": 39,
+          "net_add_count": 2271
+        },
+        {
+          "observed_at": "2026-08-17T10:00:00Z",
+          "add_count": 2324,
+          "drop_count": 38,
+          "net_add_count": 2286
+        },
+        {
+          "observed_at": "2026-08-18T05:00:00Z",
+          "add_count": 2380,
+          "drop_count": 36,
+          "net_add_count": 2344
+        },
+        {
+          "observed_at": "2026-08-18T12:00:00Z",
+          "add_count": 2400,
+          "drop_count": 35,
+          "net_add_count": 2365
         }
       ]
     }

@@ -18,7 +18,7 @@ from typing import Any
 import polars as pl
 import pytest
 
-from ffdraft.artifacts.schemas import validate_records
+from ffdraft.artifacts.schemas import record_schema_version, validate_records
 from ffdraft.artifacts.validate import _usage_checks
 from ffdraft.config import load_app_config
 from ffdraft.contracts.normalized import (
@@ -120,6 +120,7 @@ def _build(
     through_week: int,
     schedule: pl.DataFrame | None = None,
     players: dict[str, dict[str, Any]] | None = None,
+    current_teams: dict[str, str | None] | None = None,
 ) -> dict[str, Any]:
     weekly = WEEKLY_STATS_CONTRACT.build(stats)
     snap_frame = SNAP_COUNTS_CONTRACT.build(
@@ -134,7 +135,8 @@ def _build(
         season=_SEASON,
         through_week=through_week,
         build_id="test",
-        schema_version="1.0",
+        schema_version=record_schema_version("player_usage"),
+        current_teams=current_teams,
     )
     assert len(records) == 1
     return records[0]
@@ -416,3 +418,13 @@ def test_the_rule_declares_its_minimums() -> None:
     declared = USAGE_RULE.to_dict()
     assert declared["change_rule_version"] == "role_change_v1"
     assert declared["min_earlier_games"] == 1
+
+
+def test_no_current_club_is_not_the_last_club_he_played_for() -> None:
+    """ADR-102: the history keeps MIN week by week; the record's current club is None."""
+    stats = [_stat(1, targets=4.0), _stat(2, targets=5.0)]
+    snaps = [_snap(1, 0.6), _snap(2, 0.7)]
+    assert _build(stats, snaps, through_week=2)["team"] == "MIN"
+    record = _build(stats, snaps, through_week=2, current_teams={_PLAYER: None})
+    assert record["team"] is None
+    assert [week["team"] for week in record["weeks"]] == ["MIN", "MIN"]
