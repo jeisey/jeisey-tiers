@@ -981,11 +981,11 @@ if (publishedInSeason && opportunityRecords !== null) {
   rendered string can only be compared with a rendered string.
 */
 const shareText = (value) => `${String(Math.round(value * 100))}%`;
-/** The card's breadth format (`formatBreadth` in data/signals.ts): signed, real minus, pp. */
+/** The card's four-game gap format (`formatBreadth` in data/signals.ts): whole points, real minus. */
 function breadthText(value) {
-  const rounded = Math.round(value * 10) / 10;
-  if (rounded === 0) return "0.0 pp";
-  return `${rounded > 0 ? "+" : "\u2212"}${Math.abs(rounded).toFixed(1)} pp`;
+  const rounded = Math.round(value);
+  if (rounded === 0) return "level";
+  return `${rounded > 0 ? "+" : "\u2212"}${String(Math.abs(rounded))} pts`;
 }
 
 const metricText = (metric, value) =>
@@ -1039,7 +1039,9 @@ if (publishedInSeason && playerUsage !== null) {
         value: rail.querySelector(".usage-rail-value")?.textContent?.trim() ?? "",
         change: rail.querySelector(".usage-rail-change")?.textContent?.trim() ?? null,
         bars: rail.querySelectorAll(".usage-bar").length,
+        notches: rail.querySelectorAll(".usage-bar-notch").length,
         window: rail.querySelector(".usage-rail-window")?.textContent?.trim() ?? "",
+        note: rail.querySelector(".usage-rail-note")?.textContent?.trim() ?? null,
       })),
       momentum: (() => {
         const panel = dialog.querySelector(".momentum");
@@ -1072,17 +1074,46 @@ if (publishedInSeason && playerUsage !== null) {
     const roleRails = drawn.rails.filter(
       (rail) => rail.metric !== "fantasy_points" && rail.metric !== "drive_breadth",
     );
-    // ADR-103: the breadth row draws the artifact's own gap and counts, or says why not.
+    // ADR-104: the drive rail is a rail — one slot per published week, the latest drive share
+    // and its change as the artifact states them, a notch per game only where the build
+    // compares with random, and the four-game gap (or why there is none) on its own line.
     const breadthRow = drawn.rails.find((rail) => rail.metric === "drive_breadth") ?? null;
     const block = usage.drive_breadth ?? null;
     if ((block === null) !== (breadthRow === null)) {
-      failures.push(`${who}: breadth row ${breadthRow === null ? "missing" : "drawn"} while the artifact ${block === null ? "publishes none" : "publishes one"}`);
+      failures.push(`${who}: drive rail ${breadthRow === null ? "missing" : "drawn"} while the artifact ${block === null ? "publishes none" : "publishes one"}`);
     } else if (block !== null) {
       breadthRowsChecked += 1;
-      const want = block.displayable && block.breadth_gap_pp !== null ? breadthText(block.breadth_gap_pp) : "\u2014";
-      if (breadthRow.value !== want) failures.push(`${who}: breadth reads "${breadthRow.value}", artifact ${want}`);
-      if (block.displayable && !breadthRow.window.includes(`${String(block.reached_drives)} of ${String(block.eligible_drives)} drives`)) {
-        failures.push(`${who}: breadth window "${breadthRow.window}" does not carry the artifact's counts`);
+      if (breadthRow.bars !== usage.weeks.length) {
+        failures.push(`${who} drive rail: ${String(breadthRow.bars)} bar slot(s), artifact publishes ${String(usage.weeks.length)} week(s)`);
+      }
+      const wantValue = block.change === null ? "\u2014" : shareText(block.change.latest);
+      if (breadthRow.value !== wantValue) failures.push(`${who}: drive rail reads "${breadthRow.value}", artifact ${wantValue}`);
+      const latestEntry = block.change === null ? null : block.weeks.find((entry) => entry.week === block.change.latest_week);
+      if (block.change !== null && (latestEntry === undefined || latestEntry.drive_share !== block.change.latest)) {
+        failures.push(`${who}: drive rail change does not start from its own latest week`);
+      }
+      if (block.change?.change != null && breadthRow.change !== null && !breadthRow.change.endsWith(changeText("drive_share", block.change.change))) {
+        failures.push(`${who}: drive rail change "${breadthRow.change}" is not the artifact's ${String(block.change.change)}`);
+      }
+      const notched = block.compares_with_random
+        ? block.weeks.filter((entry) => entry.expected_share !== null && entry.drive_share !== null).length
+        : 0;
+      if (breadthRow.notches !== notched) {
+        failures.push(`${who}: drive rail draws ${String(breadthRow.notches)} notch(es), artifact implies ${String(notched)}`);
+      }
+      if (!block.compares_with_random) {
+        if (breadthRow.note !== null) failures.push(`${who}: drive rail compares a ${row.position} with random`);
+      } else if (block.displayable && block.breadth_gap_pp !== null) {
+        if (breadthRow.note === null || !breadthRow.note.includes(`${breadthText(block.breadth_gap_pp)} vs random`)) {
+          failures.push(`${who}: drive rail note "${String(breadthRow.note)}" does not carry the artifact's gap`);
+        }
+      } else if (breadthRow.note === null || !breadthRow.note.startsWith("vs random:")) {
+        failures.push(`${who}: drive rail does not say why there is no comparison with random`);
+      }
+      for (const entry of block.weeks) {
+        if (entry.eligible_drives > 0 && Math.abs(entry.drive_share - entry.reached_drives / entry.eligible_drives) > 0.0006) {
+          failures.push(`${who}: week ${String(entry.week)} drive share ${String(entry.drive_share)} is not ${String(entry.reached_drives)}/${String(entry.eligible_drives)}`);
+        }
       }
       if (block.eligible_drives > 0 && block.breadth_gap_pp !== null) {
         const recomputed = (100 * (block.reached_drives - block.expected_drives)) / block.eligible_drives;

@@ -709,17 +709,13 @@ function InSeasonUsage({
     },
   ];
   const readings = usage === null ? [] : roleReadingsFor(usage, position);
-  // ADR-103's bonus row. The block and the positional median are the build's; nothing here
-  // recomputes a count. No block (no play-by-play, or a 1.0 build) draws no row.
+  // ADR-104's drive rail. Every bar, notch and change is the block's own; nothing here
+  // recomputes a count. No block (no play-by-play, or an older build) draws no row.
   const breadthBlock = usage?.drive_breadth ?? null;
   const breadth =
-    breadthBlock === null
+    usage === null || breadthBlock === null || !Array.isArray(breadthBlock.weeks)
       ? null
-      : breadthReading(
-          breadthBlock,
-          signal.signals?.drive_breadth?.position_reference?.[position] ?? null,
-          position,
-        );
+      : breadthReading(usage, breadthBlock);
 
   return (
     <>
@@ -785,9 +781,9 @@ function InSeasonUsage({
               "Shares are drawn on a 0–100% scale; attempts and points against his own peak. " +
               "B is a bye, × a week he did not play, · a week with no value for that measure."}
             {breadth !== null &&
-              " Breadth is his latest four games against the same count placed at random among " +
-                "his team's eligible plays: + spread across more drives, − bunched into fewer. " +
-                "The hollow tick is his position's median here. Descriptive, not a forecast."}
+              " On the drive row, each bar is the share of drives he got the ball on, and the " +
+                "notch is where the same number would land if spread at random: short of it, " +
+                "bunched into fewer drives; above it, spread across more. Descriptive, not a forecast."}
           </p>
         </>
       )}

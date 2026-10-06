@@ -1,0 +1,232 @@
+{
+  "baseline_features": [
+    "volume",
+    "share",
+    "share_change"
+  ],
+  "bootstrap_replicates": 1000,
+  "candidate_features": [
+    "volume",
+    "share",
+    "share_change",
+    "breadth_gap_pp"
+  ],
+  "method_version": "drive_breadth_v2",
+  "outcome": "drought: next appearance's opportunities < 0.5 x the window's per-appearance mean",
+  "positions": {
+    "QB": {
+      "pooled": {
+        "delta_log_loss": 0.00141,
+        "delta_log_loss_ci95": [
+          -0.00213,
+          0.00516
+        ],
+        "incremental_evidence": false,
+        "rows": 371
+      },
+      "redundancy": {
+        "spearman_with_share": -0.219,
+        "spearman_with_share_change": -0.005,
+        "spearman_with_volume": -0.216
+      },
+      "rows": 590,
+      "seasons": [
+        {
+          "baseline_auc": 0.5404,
+          "baseline_brier": 0.1988,
+          "baseline_log_loss": 0.5874,
+          "candidate_auc": 0.5382,
+          "candidate_brier": 0.1982,
+          "candidate_log_loss": 0.586,
+          "drought_rate": 0.273,
+          "rows": 143,
+          "season": 2022
+        },
+        {
+          "baseline_auc": 0.5979,
+          "baseline_brier": 0.1952,
+          "baseline_log_loss": 0.5792,
+          "candidate_auc": 0.4984,
+          "candidate_brier": 0.198,
+          "candidate_log_loss": 0.5847,
+          "drought_rate": 0.27,
+          "rows": 111,
+          "season": 2023
+        },
+        {
+          "baseline_auc": 0.5253,
+          "baseline_brier": 0.2023,
+          "baseline_log_loss": 0.5944,
+          "candidate_auc": 0.5216,
+          "candidate_brier": 0.2026,
+          "candidate_log_loss": 0.5952,
+          "drought_rate": 0.282,
+          "rows": 117,
+          "season": 2024
+        }
+      ]
+    },
+    "RB": {
+      "pooled": {
+        "delta_log_loss": -0.00064,
+        "delta_log_loss_ci95": [
+          -0.00151,
+          0.00021
+        ],
+        "incremental_evidence": false,
+        "rows": 3109
+      },
+      "redundancy": {
+        "spearman_with_share": 0.036,
+        "spearman_with_share_change": -0.018,
+        "spearman_with_volume": 0.012
+      },
+      "rows": 5141,
+      "seasons": [
+        {
+          "baseline_auc": 0.6895,
+          "baseline_brier": 0.1474,
+          "baseline_log_loss": 0.4624,
+          "candidate_auc": 0.6907,
+          "candidate_brier": 0.1473,
+          "candidate_log_loss": 0.462,
+          "drought_rate": 0.197,
+          "rows": 1045,
+          "season": 2022
+        },
+        {
+          "baseline_auc": 0.7164,
+          "baseline_brier": 0.1342,
+          "baseline_log_loss": 0.4273,
+          "candidate_auc": 0.7196,
+          "candidate_brier": 0.1339,
+          "candidate_log_loss": 0.4265,
+          "drought_rate": 0.177,
+          "rows": 1026,
+          "season": 2023
+        },
+        {
+          "baseline_auc": 0.7093,
+          "baseline_brier": 0.1536,
+          "baseline_log_loss": 0.4737,
+          "candidate_auc": 0.7116,
+          "candidate_brier": 0.1534,
+          "candidate_log_loss": 0.4729,
+          "drought_rate": 0.214,
+          "rows": 1038,
+          "season": 2024
+        }
+      ]
+    },
+    "TE": {
+      "pooled": {
+        "delta_log_loss": 0.00037,
+        "delta_log_loss_ci95": [
+          -5e-05,
+          0.00082
+        ],
+        "incremental_evidence": false,
+        "rows": 1756
+      },
+      "redundancy": {
+        "spearman_with_share": 0.014,
+        "spearman_with_share_change": 0.002,
+        "spearman_with_volume": -0.001
+      },
+      "rows": 2895,
+      "seasons": [
+        {
+          "baseline_auc": 0.4945,
+          "baseline_brier": 0.1859,
+          "baseline_log_loss": 0.561,
+          "candidate_auc": 0.4891,
+          "candidate_brier": 0.1863,
+          "candidate_log_loss": 0.5622,
+          "drought_rate": 0.242,
+          "rows": 591,
+          "season": 2022
+        },
+        {
+          "baseline_auc": 0.6047,
+          "baseline_brier": 0.1554,
+          "baseline_log_loss": 0.489,
+          "candidate_auc": 0.605,
+          "candidate_brier": 0.1554,
+          "candidate_log_loss": 0.4891,
+          "drought_rate": 0.194,
+          "rows": 568,
+          "season": 2023
+        },
+        {
+          "baseline_auc": 0.5948,
+          "baseline_brier": 0.1931,
+          "baseline_log_loss": 0.574,
+          "candidate_auc": 0.596,
+          "candidate_brier": 0.1931,
+          "candidate_log_loss": 0.5738,
+          "drought_rate": 0.265,
+          "rows": 597,
+          "season": 2024
+        }
+      ]
+    },
+    "WR": {
+      "pooled": {
+        "delta_log_loss": -0.00032,
+        "delta_log_loss_ci95": [
+          -0.00137,
+          0.00064
+        ],
+        "incremental_evidence": false,
+        "rows": 4428
+      },
+      "redundancy": {
+        "spearman_with_share": 0.07,
+        "spearman_with_share_change": -0.005,
+        "spearman_with_volume": 0.059
+      },
+      "rows": 7349,
+      "seasons": [
+        {
+          "baseline_auc": 0.6132,
+          "baseline_brier": 0.1619,
+          "baseline_log_loss": 0.5027,
+          "candidate_auc": 0.6153,
+          "candidate_brier": 0.1617,
+          "candidate_log_loss": 0.5025,
+          "drought_rate": 0.211,
+          "rows": 1453,
+          "season": 2022
+        },
+        {
+          "baseline_auc": 0.6289,
+          "baseline_brier": 0.1664,
+          "baseline_log_loss": 0.5122,
+          "candidate_auc": 0.6287,
+          "candidate_brier": 0.1664,
+          "candidate_log_loss": 0.5122,
+          "drought_rate": 0.221,
+          "rows": 1514,
+          "season": 2023
+        },
+        {
+          "baseline_auc": 0.6367,
+          "baseline_brier": 0.15,
+          "baseline_log_loss": 0.4726,
+          "candidate_auc": 0.6403,
+          "candidate_brier": 0.1497,
+          "candidate_log_loss": 0.4718,
+          "drought_rate": 0.192,
+          "rows": 1461,
+          "season": 2024
+        }
+      ]
+    }
+  },
+  "seed": 20261006,
+  "test_seasons": [
+    2022,
+    2023,
+    2024
+  ]
+}

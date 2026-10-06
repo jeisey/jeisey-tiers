@@ -35,7 +35,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   player_headshots: "1.0",
   behavior_trend_series: "1.0",
   // 1.1 (ADR-103): additive optional `drive_breadth`.
-  player_usage: "1.1",
+  // 1.2 (ADR-104): `drive_breadth` v2 — `weeks` and `change`, QB metric `designed_runs`.
+  player_usage: "1.2",
   team_matchups: "1.0",
   // 1.1 (ADR-099): additive `explanation`.
   weekly_projections: "1.1",
@@ -742,14 +743,25 @@ export interface PlayerUsageRecord {
   /** Null below 20 dropbacks. */
   readonly pass_epa_per_dropback: number | null;
   /**
-   * Contract 1.1 (ADR-103): did his involvement recur across his team's drives or cluster
-   * into a few, against a uniform allocation of the same count. Descriptive; no model reads
-   * it. Absent on a 1.0 build, null when play-by-play was unavailable.
+   * Contract 1.2 (ADR-103, ADR-104): did his involvement recur across his team's drives or
+   * cluster into a few, against a uniform allocation of the same count. Descriptive; no model
+   * reads it. Absent on a 1.0 build, null when play-by-play was unavailable.
    */
   readonly drive_breadth?: DriveBreadth | null;
 }
 
-export type DriveBreadthMetric = "rushing" | "backfield" | "targets" | "open_field_targets";
+export type DriveBreadthMetric = "designed_runs" | "backfield" | "targets" | "open_field_targets";
+
+/** One played game of the drive rail (ADR-104). */
+export interface DriveBreadthWeek {
+  readonly week: number;
+  readonly eligible_drives: number;
+  readonly reached_drives: number;
+  /** reached / eligible drives; null with no eligible drive. */
+  readonly drive_share: number | null;
+  /** The share the same count would reach placed at random among the game's slots. */
+  readonly expected_share: number | null;
+}
 
 export interface DriveBreadth {
   readonly method_version: string;
@@ -773,6 +785,15 @@ export interface DriveBreadth {
     | "too_few_eligible_drives"
     | "too_few_opportunities"
     | null;
+  /**
+   * Whether the card compares him with the random allocation — the notch and the four-game
+   * line. False at QB: the designed-run variant failed the publication rule (ADR-104).
+   */
+  readonly compares_with_random: boolean;
+  /** Every played game with play-by-play, in week order (ADR-104). */
+  readonly weeks: readonly DriveBreadthWeek[];
+  /** `role_change_v1` on the drive share, pooled; null when the latest game has none. */
+  readonly change: RoleChange | null;
 }
 
 /** Each position's displayed quartiles on this build: what "typical" is (ADR-103). */

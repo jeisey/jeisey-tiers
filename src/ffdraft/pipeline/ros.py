@@ -1358,7 +1358,7 @@ def _drive_breadth(
     allow_fetch: bool,
     gate: QualityGate,
 ) -> dict[str, Any]:
-    """Attach ADR-103's drive-breadth block to every usage record, in place, or explain why not.
+    """Attach the drive-breadth block (ADR-103, ADR-104) to every usage record, in place.
 
     **An enrichment of an enrichment.** Play-by-play is read through the cached nflverse
     loader and reduced at once; only per-player aggregates are published. Any failure — the
@@ -1393,9 +1393,10 @@ def _drive_breadth(
         "displayable": 0,
         "position_reference": None,
         "statement": (
-            "Descriptive context only. Over 2020-2024 development seasons, adding it to volume "
-            "and share did not measurably improve anticipating a next-game opportunity drought "
-            "at any position (ADR-103). No model, ranking or pick reads it."
+            "Descriptive context only. Over 2020-2024 development seasons, adding the four-game "
+            "gap to volume and share did not measurably improve anticipating a next-game "
+            "opportunity drought at any position (ADR-103, ADR-104). No model, ranking or pick "
+            "reads it."
         ),
     }
     for record in usage:

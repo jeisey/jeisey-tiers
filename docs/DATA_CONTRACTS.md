@@ -1338,7 +1338,7 @@ records what that precision is and what the page prints, so a future change can 
 | `weekly_projections` | quantiles, drivers, explanation accounts, implied points / lines, opponent index | 2 dp / 1 dp / 3 dp | 1 dp, signed 1 dp |
 | `weekly_context` | lines / implied points, shares, forecast values | 1–2 dp, ≤ 4 dp, 1 dp | 1 dp, whole percent, whole mph and °F |
 | `arbitrage` | ADP, rank gap, score / trend / regional value gap | 2 dp / 4 dp / 6 dp | 1 dp, signed 1 dp |
-| `player_usage` | shares, points, counts, touchdown share, EPA; `drive_breadth` gap / expected drives | 2–4 dp; 1 dp / 3 dp | whole percent, 1 dp, integers, 2 dp; signed 1 dp pp / 1 dp in the sentence |
+| `player_usage` | shares, points, counts, touchdown share, EPA; `drive_breadth` gap / expected drives / weekly and change shares | 2–4 dp; 1 dp / 3 dp / 3 dp | whole percent, 1 dp, integers, 2 dp; whole percent and signed whole points (`+4 pts`, `level`) / 1 dp in the sentence |
 | `behavior_trend_series` | span, add and net trend | 4 dp | "over N days/hours", 1 dp or whole per day |
 | `market_trend_series` | point ADP, trend | 2 dp, 4 dp | 1 dp |
 | `team_matchups` | lines, implied points | 1 dp, 2 dp | 1 dp |
@@ -1348,7 +1348,7 @@ and rounding would change the Opportunity view's CSV export and could create tie
 cohort percentile — both changes to what a reader sees.
 
 
-## 22. Employment and drive breadth — 2026-10-06 (ADR-102, ADR-103)
+## 22. Employment and drive breadth — 2026-10-06 (ADR-102, ADR-103, ADR-104)
 
 ### 22.1 `player_status` 1.2 — who employs him now
 
@@ -1381,14 +1381,15 @@ lacks a value. The surfaced-rank check skips unprojected rows; the cross-artifac
 check is unchanged (an unprojected row is an absent-from-`ros_tiers` surfaced row). The browser
 keeps unprojected rows apart (`UnprojectedRecord`): no ordering, chart or filter meets one.
 
-### 22.3 `player_usage` 1.1 — `drive_breadth`
+### 22.3 `player_usage` 1.2 — `drive_breadth`
 
-Additive optional block, null when play-by-play was unavailable or the position has no variant:
+Optional block (1.1 added it, ADR-103; 1.2 is `drive_breadth_v2`, ADR-104), null when
+play-by-play was unavailable or the position has no variant:
 
 | field | meaning |
 |---|---|
-| `method_version` | `drive_breadth_v1` |
-| `metric` | `rushing` (QB) · `backfield` (RB) · `targets` (WR) · `open_field_targets` (TE) |
+| `method_version` | `drive_breadth_v2` |
+| `metric` | `designed_runs` (QB) · `backfield` (RB) · `targets` (WR) · `open_field_targets` (TE) |
 | `window_rule` | 4 — his latest completed appearances |
 | `appearances`, `first_week`, `last_week` | the window actually used (played weeks ≤ the cutoff) |
 | `eligible_drives` | Σ D — team drives with an eligible slot in those games |
@@ -1397,9 +1398,15 @@ Additive optional block, null when play-by-play was unavailable or the position 
 | `opportunities` | Σ K |
 | `breadth_gap_pp` | `100 × (Σ A − Σ E) / Σ D`, 1 dp; null when Σ D = 0 |
 | `displayable`, `withheld_reason` | the provisional display rule (≥ 3 appearances, ≥ 20 drives, ≥ 6 opportunities) and the first minimum missed |
+| `compares_with_random` | whether the card compares him with random (notch and gap line): false for QB, whose designed-run comparison failed the publication rule (ADR-104) |
+| `weeks` | the rail: one entry per played week ≤ the cutoff with play-by-play — `week`, `eligible_drives` (D), `reached_drives` (A), `drive_share` (A / D, 3 dp), `expected_share` (E / D, 3 dp); shares null when D = 0 |
+| `change` | `role_change_v1` on `drive_share` (the rails' shape): latest appearance against every earlier one, pooled (Σ A / Σ D), 3 dp; null when his latest appearance has no play-by-play or no eligible drive |
 
 Validator `player_usage.drive_breadth_arithmetic` recomputes the gap from the counts (±0.06),
-re-applies the minimums, and refuses counts out of range. `ros_build_metadata.signals.drive_breadth`
-carries `method_version`, `status` (`published | unavailable`), the window and minimums, each
-position's displayed quartiles on this build (`position_reference`) and the statement printed
-with every reading. Play-by-play itself never reaches the browser.
+re-applies the minimums, refuses counts out of range, checks every week's share against its own
+counts and that only played weeks appear, that the change starts from its own latest week and
+is the difference of its own halves, and that `compares_with_random` matches the metric.
+`ros_build_metadata.signals.drive_breadth` carries `method_version`, `status`
+(`published | unavailable`), the window and minimums, each position's displayed quartiles on
+this build (`position_reference`, no longer printed on the card) and the statement printed in
+the Data view. Play-by-play itself never reaches the browser.

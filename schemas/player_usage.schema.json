@@ -73,7 +73,7 @@
     }
   },
   "properties": {
-    "schema_version": {"const": "1.1"},
+    "schema_version": {"const": "1.2"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 1999},
     "through_week": {"type": "integer", "minimum": 1, "maximum": 22},
@@ -120,15 +120,16 @@
     "drive_breadth": {
       "type": ["object", "null"],
       "additionalProperties": false,
-      "description": "Contract 1.1 (ADR-103), drive_breadth_v1: did his involvement recur across his team's drives or cluster into a few, against a uniform allocation of the same count among the game's eligible slots, over his latest four completed appearances. breadth_gap_pp = 100 x (reached_drives - expected_drives) / eligible_drives, the reference computed per game. Descriptive context only; no model reads it. Null when play-by-play was unavailable or his position has no variant.",
+      "description": "Contract 1.2 (ADR-103, ADR-104), drive_breadth_v2: did his involvement recur across his team's drives or cluster into a few, against a uniform allocation of the same count among the game's eligible slots. `weeks` is the rail: each played game's drive share (reached / eligible drives) and the share the same count would reach at random; `change` is role_change_v1 on that share, pooled. The window fields are the latest four completed appearances: breadth_gap_pp = 100 x (reached_drives - expected_drives) / eligible_drives, the reference computed per game. Descriptive context only; no model reads it. Null when play-by-play was unavailable or his position has no variant.",
       "required": [
         "method_version", "metric", "window_rule", "appearances", "first_week", "last_week",
         "eligible_drives", "reached_drives", "expected_drives", "opportunities",
-        "breadth_gap_pp", "displayable", "withheld_reason"
+        "breadth_gap_pp", "displayable", "withheld_reason", "compares_with_random", "weeks",
+        "change"
       ],
       "properties": {
-        "method_version": {"const": "drive_breadth_v1"},
-        "metric": {"enum": ["rushing", "backfield", "targets", "open_field_targets"], "description": "QB rush attempts (scrambles included) over all scrimmage plays; RB carries + targets over all RB carries + targets; WR targets over identified targets; TE targets snapped outside the red zone over identified targets snapped there."},
+        "method_version": {"const": "drive_breadth_v2"},
+        "metric": {"enum": ["designed_runs", "backfield", "targets", "open_field_targets"], "description": "QB designed runs (rush attempts nflverse does not flag as a scramble) over all scrimmage plays; RB carries + targets over all RB carries + targets; WR targets over identified targets; TE targets snapped outside the red zone over identified targets snapped there."},
         "window_rule": {"type": "integer", "minimum": 1},
         "appearances": {"type": "integer", "minimum": 0},
         "first_week": {"type": ["integer", "null"], "minimum": 1},
@@ -139,7 +140,25 @@
         "opportunities": {"type": "integer", "minimum": 0},
         "breadth_gap_pp": {"type": ["number", "null"]},
         "displayable": {"type": "boolean", "description": "Clears the provisional display minimums (3 appearances, 20 eligible drives, 6 opportunities) — a display rule, not an established reliability bar."},
-        "withheld_reason": {"enum": ["too_few_appearances", "too_few_eligible_drives", "too_few_opportunities", null]}
+        "withheld_reason": {"enum": ["too_few_appearances", "too_few_eligible_drives", "too_few_opportunities", null]},
+        "compares_with_random": {"type": "boolean", "description": "Whether the card compares this position with the random allocation (the per-game notch and the four-game gap line). False for QB: the designed-run variant failed ADR-103's publication rule 1 under ADR-104 (19.4% of 2024 windows clear the display minimums, against 25%)."},
+        "weeks": {
+          "type": "array",
+          "description": "Every played week at or before the cutoff whose game has play-by-play, in week order. A week absent here is drawn with the rails' own absence marks.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["week", "eligible_drives", "reached_drives", "drive_share", "expected_share"],
+            "properties": {
+              "week": {"type": "integer", "minimum": 1, "maximum": 22},
+              "eligible_drives": {"type": "integer", "minimum": 0},
+              "reached_drives": {"type": "integer", "minimum": 0},
+              "drive_share": {"type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "reached_drives / eligible_drives at three decimals; null with no eligible drive."},
+              "expected_share": {"type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "The drives the same count would reach placed uniformly at random among the game's eligible slots, over eligible_drives, at three decimals."}
+            }
+          }
+        },
+        "change": {"$ref": "#/$defs/role_change", "description": "role_change_v1 on drive_share: his latest appearance against every earlier one, pooled (sum reached / sum eligible drives). Null when his latest appearance has no play-by-play or no eligible drive."}
       }
     }
   }

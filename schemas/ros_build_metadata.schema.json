@@ -183,9 +183,9 @@
           "type": ["object", "null"],
           "additionalProperties": true,
           "required": ["method_version", "status", "statement"],
-          "description": "ADR-103: whether the drive-breadth blocks on player_usage were published, the window and provisional display minimums, each position's displayed quartiles on this build (what 'typical' is), and the statement that travels with every reading. Optional and additive.",
+          "description": "ADR-103/ADR-104: whether the drive-breadth blocks on player_usage were published, the window and provisional display minimums, each position's displayed quartiles on this build (no longer printed on the card), and the statement the Data view prints. Optional and additive.",
           "properties": {
-            "method_version": {"const": "drive_breadth_v1"},
+            "method_version": {"const": "drive_breadth_v2"},
             "status": {"enum": ["published", "unavailable"]},
             "statement": {"type": "string", "minLength": 1},
             "position_reference": {"type": ["object", "null"]}

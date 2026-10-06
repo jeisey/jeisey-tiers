@@ -1,4 +1,4 @@
-"""Which plays are slots, whose opportunities they are, and what is never counted (ADR-103)."""
+"""Which plays are slots, whose opportunities they are, and what is never counted (ADR-103/104)."""
 
 from __future__ import annotations
 
@@ -8,10 +8,12 @@ import polars as pl
 import pytest
 
 from ffdraft.artifacts.validate import _breadth_problems
+from ffdraft.signals.breadth import GameBreadth
 from ffdraft.signals.drive_play import (
     DRIVE_PLAY_COLUMNS,
     Appearance,
     drive_plays,
+    drive_share_change,
     game_breadths,
     usage_breadth_blocks,
 )
@@ -47,6 +49,7 @@ def _play(drive: int, **values: Any) -> dict[str, Any]:
         "rusher_player_id": None,
         "receiver_player_id": None,
         "yardline_100": 50.0,
+        "qb_scramble": 0.0,
     }
     base.update(values)
     return base
@@ -91,15 +94,19 @@ def test_a_sack_is_a_qb_slot_and_never_a_target_and_a_scramble_is_a_run() -> Non
     plays = _frame(
         [
             _play(1, sack=1.0),
-            _run(1, QB),  # a scramble: a run by the quarterback
+            _run(1, QB),  # a designed run by the quarterback
             _play(2),  # thrown away: no identified receiver
             _target(2, WR, lateral_reception=1.0),  # lateral: the original target keeps it
+            _run(3, QB, qb_scramble=1.0),  # a scramble: a run, and a slot, but not designed
         ],
     )
-    assert plays.get_column("kind").to_list() == ["other", "rush", "other", "target"]
+    assert plays.get_column("kind").to_list() == ["other", "rush", "other", "target", "rush"]
+    assert plays.get_column("scramble").to_list() == [False, False, False, False, True]
     games, _ = game_breadths(plays, [Appearance(2024, 1, QB, "AAA", "QB")], POSITIONS)
     (qb,) = games[f"gsis:{QB}"]
-    assert (qb.eligible_slots, qb.eligible_drives, qb.opportunities) == (4, 2, 1)
+    # ADR-104: five slots on three drives; his one designed run is his only opportunity.
+    assert (qb.eligible_slots, qb.eligible_drives, qb.opportunities) == (5, 3, 1)
+    assert qb.reached_drives == 1
     games, _ = game_breadths(plays, [Appearance(2024, 1, WR, "AAA", "WR")], POSITIONS)
     (wr,) = games[f"gsis:{WR}"]
     assert (wr.eligible_slots, wr.eligible_drives, wr.opportunities) == (1, 1, 1)
@@ -190,12 +197,58 @@ def test_published_blocks_ignore_byes_and_every_week_after_the_cutoff() -> None:
     assert (block["appearances"], block["first_week"], block["last_week"]) == (3, 1, 4)
     assert block["eligible_drives"] == 24 and block["opportunities"] == 24
     assert block["displayable"] and block["metric"] == "targets"
-    assert _breadth_problems([{"player_id": record["player_id"], "drive_breadth": block}]) == []
+    assert block["compares_with_random"] is True
+    # ADR-104's rail: one entry per played game with play-by-play, none for the bye or week 5.
+    assert [week["week"] for week in block["weeks"]] == [1, 2, 4]
+    assert all(week["drive_share"] == 1.0 for week in block["weeks"])
+    assert block["change"] == {
+        "latest_week": 4,
+        "latest": 1.0,
+        "earlier": 1.0,
+        "earlier_games": 2,
+        "change": 0.0,
+    }
+    assert _breadth_problems([{**record, "drive_breadth": block}]) == []
+
+
+def _game(week: int, drives: int, reached: int, expected: float = 0.0) -> GameBreadth:
+    return GameBreadth(2024, week, drives, drives * 3, reached, reached, expected)
+
+
+def test_the_drive_share_change_is_role_change_v1_pooled() -> None:
+    games = [_game(1, 10, 5), _game(2, 6, 6), _game(4, 8, 2)]
+    change = drive_share_change(games, [1, 2, 4])
+    # Earlier pooled: 11 of 16 drives = 0.6875 -> 0.688; latest 2 of 8 = 0.25.
+    assert change == {
+        "latest_week": 4,
+        "latest": 0.25,
+        "earlier": 0.688,
+        "earlier_games": 2,
+        "change": -0.438,
+    }
+    # One game: a reading, not a trend.
+    assert drive_share_change([_game(1, 10, 5)], [1]) == {
+        "latest_week": 1,
+        "latest": 0.5,
+        "earlier": None,
+        "earlier_games": 0,
+        "change": None,
+    }
+
+
+def test_a_latest_game_without_play_by_play_is_no_change_never_an_older_game() -> None:
+    # He played week 5; its play-by-play is not posted. The latest never moves back to week 4.
+    assert drive_share_change([_game(1, 10, 5), _game(4, 8, 2)], [1, 4, 5]) is None
+    assert drive_share_change([], []) is None
 
 
 def test_the_validator_refuses_a_gap_that_is_not_its_own_arithmetic() -> None:
+    record = {
+        "player_id": "p",
+        "weeks": [{"week": week, "status": "played"} for week in (1, 2, 3, 4)],
+    }
     block = {
-        "method_version": "drive_breadth_v1",
+        "method_version": "drive_breadth_v2",
         "metric": "targets",
         "window_rule": 4,
         "appearances": 4,
@@ -208,11 +261,54 @@ def test_the_validator_refuses_a_gap_that_is_not_its_own_arithmetic() -> None:
         "breadth_gap_pp": 12.5,
         "displayable": True,
         "withheld_reason": None,
+        "compares_with_random": True,
+        "weeks": [
+            {
+                "week": week,
+                "eligible_drives": 10,
+                "reached_drives": 9 if week == 4 else 6,
+                "drive_share": 0.9 if week == 4 else 0.6,
+                "expected_share": 0.625,
+            }
+            for week in (1, 2, 3, 4)
+        ],
+        "change": {
+            "latest_week": 4,
+            "latest": 0.9,
+            "earlier": 0.6,
+            "earlier_games": 3,
+            "change": 0.3,
+        },
     }
-    assert _breadth_problems([{"player_id": "p", "drive_breadth": block}]) == []
+    assert _breadth_problems([{**record, "drive_breadth": block}]) == []
+    bad_week = {**block["weeks"][0], "drive_share": 0.7}
     for patch in (
         {"breadth_gap_pp": 0.0},
         {"displayable": False, "withheld_reason": "too_few_opportunities"},
         {"reached_drives": 41},
+        {"weeks": [bad_week, *block["weeks"][1:]]},
+        {"weeks": [*block["weeks"], {**block["weeks"][0], "week": 5}]},
+        {"change": {**block["change"], "change": 0.2}},
+        {"change": {**block["change"], "latest": 0.8, "change": 0.2}},
+        {"compares_with_random": False},
+        {"metric": "designed_runs"},
     ):
-        assert _breadth_problems([{"player_id": "p", "drive_breadth": {**block, **patch}}])
+        assert _breadth_problems([{**record, "drive_breadth": {**block, **patch}}]), patch
+
+
+def test_every_schema_pins_the_method_the_build_writes() -> None:
+    # The real build is the first to write the metadata block; a schema left on an older
+    # method would refuse it there and nowhere earlier (found on 2026-10-06, ADR-104).
+    import json
+    from pathlib import Path
+
+    from ffdraft.signals.breadth import BREADTH_METHOD_VERSION
+
+    root = Path(__file__).resolve().parents[2] / "schemas"
+    usage = json.loads((root / "player_usage.schema.json").read_text())
+    metadata = json.loads((root / "ros_build_metadata.schema.json").read_text())
+    usage_pin = usage["properties"]["drive_breadth"]["properties"]["method_version"]["const"]
+    metadata_pin = metadata["properties"]["signals"]["properties"]["drive_breadth"]["properties"][
+        "method_version"
+    ]["const"]
+    assert usage_pin == metadata_pin == BREADTH_METHOD_VERSION

@@ -39,6 +39,7 @@ __all__ = [
     "DISPLAY_MIN_APPEARANCES",
     "DISPLAY_MIN_ELIGIBLE_DRIVES",
     "DISPLAY_MIN_OPPORTUNITIES",
+    "RANDOM_COMPARISON_POSITIONS",
     "BreadthWindow",
     "GameBreadth",
     "expected_reach",
@@ -46,11 +47,17 @@ __all__ = [
     "window_breadth",
 ]
 
-#: Bump when a definition, an exclusion or the window changes meaning (ADR-103).
-BREADTH_METHOD_VERSION = "drive_breadth_v1"
+#: Bump when a definition, an exclusion or the window changes meaning (ADR-103, ADR-104).
+BREADTH_METHOD_VERSION = "drive_breadth_v2"
 
 #: The latest completed appearances the published reading spans.
 BREADTH_WINDOW_APPEARANCES = 4
+
+#: Positions whose four-game comparison with random passed the publication rule (ADR-103 rule
+#: 1, re-run under ADR-104). The quarterback's designed-run variant failed it — 19.4% of 2024
+#: windows clear the minimums, against 25% — so a quarterback's rail draws his drive share
+#: alone: no notch, no gap line.
+RANDOM_COMPARISON_POSITIONS: tuple[str, ...] = ("RB", "WR", "TE")
 
 #: Provisional display minimums (ADR-103): a display rule, not an established reliability bar.
 DISPLAY_MIN_APPEARANCES = 3
