@@ -62,6 +62,10 @@ test.describe("automated scan", () => {
     ["arbitrage", "/?view=arbitrage", ".rail-row"],
     ["arbitrage premiums", "/?view=arbitrage&rail=premiums", ".rail-row"],
     ["data", "/?view=data", "h2#definitions-heading"],
+    // The in-season build's Data page: more sources, more sections. Its narrow-width failure is
+    // covered by the phone scan below, since a table only overflows (and only then needs to be
+    // focusable) when the page is narrow.
+    ["data, in season", "/scenario/in-season/?view=data", "h2#definitions-heading"],
     ["a degraded market", "/scenario/no-market/?view=arbitrage", '.notice[data-severity="warning"]'],
     ["a refused contract", "/scenario/bad-schema/", '.notice[data-severity="error"]'],
     // The in-season product, on its own builds. Both boards are charts this suite had never
@@ -158,6 +162,25 @@ test.describe("automated scan", () => {
       if ((await options.count()) > 0) await options.click();
       await expect(page.getByRole("radiogroup", { name: "Scoring" })).toBeVisible();
       expect(describe(await scan(page)), "open").toEqual([]);
+    });
+  }
+
+  /*
+   * The Data page at phone widths. Its build and freshness tables contain no control, so when
+   * they overflow their scroll box is the only way a keyboard can reach the hidden columns:
+   * axe's scrollable-region-focusable found the in-season freshness table unreachable at 320px
+   * before the box became a tab stop. At desktop width nothing overflows and the rule is silent,
+   * which is why the desktop scan above could not see it.
+   */
+  for (const path of ["/?view=data", "/scenario/in-season/?view=data"]) {
+    test(`the Data page on a phone scans clean (${path})`, async ({ page }) => {
+      for (const width of [390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        await page.goto(path);
+        await page.waitForLoadState("networkidle");
+        await expect(page.locator("h2#freshness-heading")).toBeVisible();
+        expect(describe(await scan(page)), `${String(width)}px`).toEqual([]);
+      }
     });
   }
 
@@ -360,6 +383,37 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
     // The row is a real touch target, not a line of text.
     const box = await settings.boundingBox();
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
+  });
+
+  test("every How it works board scans clean and reflows at 320 pixels", async ({ page }) => {
+    // The Data page renders one board at a time, so the scan above only ever sees the first.
+    // This walks all of them with the Next button, on the in-season build (the start/sit board
+    // prints its measured accuracy there), at desktop width and at the 320px Reflow width. The
+    // scan is scoped to the carousel: the rest of this page is covered by the "data" scan.
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/scenario/in-season/?view=data");
+      await page.waitForLoadState("networkidle");
+      const carousel = page.getByRole("region", { name: "How the models work" });
+      await expect(carousel).toBeVisible();
+      // Read from the slide's "n of N" label: below 380px the per-board buttons are hidden.
+      const label = (await carousel.locator("article").getAttribute("aria-label")) ?? "";
+      const boards = Number(/ of (\d+):/.exec(label)?.[1] ?? 0);
+      expect(boards).toBeGreaterThan(1);
+      for (let board = 0; board < boards; board += 1) {
+        await expect(carousel.locator("article")).toHaveAttribute(
+          "aria-label",
+          new RegExp(`^${String(board + 1)} of `),
+        );
+        const results = await new AxeBuilder({ page }).include(".hiw").withTags(TAGS).analyze();
+        expect(describe(results), `board ${String(board + 1)} at ${String(width)}px`).toEqual([]);
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(overflow, `board ${String(board + 1)} reflows badly at ${String(width)}px`).toBeLessThanOrEqual(1);
+        await carousel.getByRole("button", { name: "Next board" }).click();
+      }
+    }
   });
 
   test("the page reflows at 320 CSS pixels without a horizontal scrollbar", async ({ page }) => {

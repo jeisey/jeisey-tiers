@@ -4,6 +4,16 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**"How it works" on the Data tab — 2026-10-09.** On `claude/laughing-thompson-wl3e0z` from
+`main` at `3f0f8f3`. A UI-only change: a nine-board plain-English carousel explaining every model
+(`web/src/app/HowItWorks.tsx`, `.hiw-*` styles), first section of the Data page and nowhere
+else. No model, artifact or contract changed. No metric typed into the UI (AGENTS.md §11): boards
+link to the model cards; the start/sit accuracy is read from `weekly.evaluation`. Also fixed a
+pre-existing a11y defect: the Data page's build/freshness table scroll boxes were not
+keyboard-reachable at phone widths (axe `scrollable-region-focusable`); now focusable regions,
+with phone-width Data scans added to the a11y E2E. Phones get a second Previous/Next pair under
+each board. Validation: 799 Vitest, 226 E2E. Next gate: owner review.
+
 **Drive breadth revised as a rail — 2026-10-06 (ADR-104).** Follow-up on
 `claude/affectionate-clarke-q7u2jj`, restarted from `main` at `056bfcd` after PR #59 merged.
 Owner review of the production card: the breadth row's scale did not read as a chart, the
