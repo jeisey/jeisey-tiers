@@ -1036,9 +1036,15 @@ function WeekBoard({
                   </td>
                   <td className="wb-num wb-implied">{formatValue(record.game?.team_points ?? null)}</td>
                   <td className="wb-num wb-opp">
-                    {record.opponent?.rank === null || record.opponent?.rank === undefined
-                      ? EM_DASH
-                      : `${ordinal(record.opponent.rank)} of ${String(record.opponent.defenses ?? 32)}`}
+                    {record.opponent?.rank === null || record.opponent?.rank === undefined ? (
+                      EM_DASH
+                    ) : (
+                      <>
+                        {ordinal(record.opponent.rank)}
+                        {/* The same on every row, so it steps aside on a laptop to make room. */}
+                        <span className="wb-opp-of">{` of ${String(record.opponent.defenses ?? 32)}`}</span>
+                      </>
+                    )}
                   </td>
                   <td className="wb-num wb-median">{q === null ? EM_DASH : formatValue(q.q50)}</td>
                   <td className="wb-why"><WeekBoardWhy why={q === null ? null : whyFor(record)} /></td>

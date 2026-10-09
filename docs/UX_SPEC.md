@@ -899,7 +899,9 @@ rank and rate) and **unavailable** ("—" with the reason; never a model or pres
     order". Any "Order by" choice also clears the column sort.
   * With no column sorted, the Startable or Median heading carries the mark when it is the
     order, and clicking it reverses that order.
-  * Headings may wrap to two lines.
+  * Headings may wrap to two lines. From 1100 to 1439px, the range bar's floor is 7rem and
+    "Opp. allows" prints `7th` (the "of 32" stays for screen readers), so the board fits at
+    1280px with ≥32px to spare.
 * **Card:** two tags in the identity row, after the position tag and in the same style as it.
   * **`■ ROS QB15`** (or "Not projected", titled "No RoS projection") and **`▲ SZN QB5`** (or
     "No appearances" / "Unavailable") replace the bare RoS rank tag. A screen reader hears "RoS rank" and

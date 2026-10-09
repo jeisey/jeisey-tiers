@@ -64,6 +64,11 @@ Facts a later session should not re-derive:
   1280×720, and axe flags `scrollable-region-focusable` on `.detail-rail`.
 * An overflow container must be `position: relative`, or `.visually-hidden` spans escape it.
   The week board had this bug. `.table-scroll` already documented it.
+* CI's Chromium lays tables out about 18px wider than this container's. The week board's
+  first 1280px fit had 12px of slack locally and overflowed by 6px on CI (PR #63). Its fit
+  test now requires ≥32px min-content slack, the same check as the Opportunity table. On
+  laptops (1100–1439px), the range floor is 7rem and "of 32" is screen-reader text, giving
+  67px of slack locally.
 
 **Season to date beside rest of season — 2026-10-09 (ADR-105).** On `claude/funny-planck-1pm5lj`
 from `main` at `6f84ce3`. Descriptive data and presentation only: no model, feature, training

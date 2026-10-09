@@ -7297,6 +7297,28 @@ table.sheet.weekboard-table thead th.wb-num {
   min-width: 9rem;
 }
 
+/*
+ * A laptop (1100-1439px) is where all fifteen columns are on screen and the room is
+ * shortest. Two things give way there: the range bar's floor (7rem still draws a whisker,
+ * box and median apart), and the "of 32" after the opponent's rank, which is the same on
+ * every row and stays in the cell for a screen reader. Measured: 12px of slack at 1280px
+ * became 6px of overflow on CI's Chromium; a fit must leave room no rasteriser eats.
+ */
+@media (max-width: 1439px) {
+  .weekboard-table .wb-range {
+    min-width: 7rem;
+  }
+
+  .weekboard-table .wb-opp-of {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
 .wb-bar {
   position: relative;
   display: block;

@@ -194,6 +194,20 @@ for (const width of [1280, 1440]) {
     await expect(scroller.locator("tbody tr").first()).toBeVisible();
     const overflow = await scroller.evaluate((node) => node.scrollWidth - node.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
+    /*
+      With room to spare, measured as the Opportunity table's fit is: the table's minimum
+      width against the box. The first version fitted with 12px of slack on the machine it
+      was built on and overflowed by 6px on CI's Chromium — fonts rasterise differently.
+    */
+    const slack = await scroller.evaluate((node) => {
+      const table = node.querySelector("table");
+      if (table === null) return -1;
+      table.style.width = "min-content";
+      const minimum = table.getBoundingClientRect().width;
+      table.style.width = "";
+      return node.clientWidth - minimum;
+    });
+    expect(slack, `the week board has only ${String(Math.round(slack))}px of slack`).toBeGreaterThanOrEqual(32);
   });
 }
 

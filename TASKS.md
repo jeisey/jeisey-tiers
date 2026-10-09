@@ -2165,7 +2165,9 @@ Owner review of the merged change (PR #62) on the live site found four problems:
       - `aria-sort`, sorted before paging, blanks last;
       - P10–P90 sorts by width;
       - a status line plus "Back to … order", and Order by also restores;
-      - headings wrap, and the board now fits at 1280px;
+      - headings wrap, and on laptops the range floor is 7rem and "of 32" is screen-reader
+        text, so the board fits at 1280px with ≥32px of slack (CI caught a 12px-slack first
+        version overflowing by 6px);
       - the scroll box is positioned, so hidden cell text no longer widens a phone page by
         210px.
 - [x] **Tests.**

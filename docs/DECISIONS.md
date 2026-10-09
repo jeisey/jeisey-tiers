@@ -6440,7 +6440,11 @@ Reviewed live after merge. Four corrections; no artifact, model or ordering chan
      order. With no column clicked, the Startable or Median heading carries the mark when
      that is the order, and a click on it reverses that order.
    * Headings may wrap to two lines and cells pad 8px, as on the Opportunity Board. The range
-     column takes a fifth of the width rather than a third. The board therefore fits at
-     1280px with the new column and the sort marks; it scrolled at 1280px before.
+     column takes a fifth of the width rather than a third.
+   * From 1100 to 1439px, the range bar's floor is 7rem and the "of 32" after the opponent's
+     rank (the same on every row) moves to screen-reader text.
+   * The board therefore fits at 1280px with the new column and the sort marks, with at least
+     32px of slack (it scrolled at 1280px before). A first version fitted with 12px of slack
+     locally and overflowed by 6px on CI's Chromium.
    * The board's scroll box is now positioned, as `.table-scroll` already was. Its cells'
      screen-reader-only spans had escaped it and widened a phone page by 210px.
