@@ -59,11 +59,14 @@ import {
 } from "../data/candidates";
 import { formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rosValue } from "../data/ros";
+import { positionalRankAccessor, seasonColumns } from "./SeasonColumns";
 
 export const OPPORTUNITY_TABLE_CAPTION =
   "In-season opportunity board. Add and drop counts are transactions over the requested " +
   "window; they are never converted into a draft position and never differenced against the " +
-  "rest-of-season rank. A row marked “surfaced” is published because current evidence made " +
+  "rest-of-season rank. ROS columns are the model's; Szn rank, Total pts and Avg pts/g are " +
+  "actual results so far. Positional ranks sort within each position. A row marked " +
+  "“surfaced” is published because current evidence made " +
   "him relevant, and carries no tier. The mark beside a name is the roster status the build " +
   "recorded: annotation, and no input to any number here. Role is the position's leading " +
   "measure — pass attempts for a quarterback, snap share otherwise — in his latest game " +
@@ -173,7 +176,8 @@ function opportunityColumns(
       id: "ros_position_rank",
       header: "ROS PosRk",
       accessorFn: (row) =>
-        `${row.row.record.position}|${String(row.row.record.ros_position_rank).padStart(4, "0")}`,
+        positionalRankAccessor(row.row.record.position, row.row.record.ros_position_rank),
+      sortDescFirst: false,
       cell: (context) => {
         const record = context.row.original.row.record;
         return (
@@ -184,6 +188,14 @@ function opportunityColumns(
         );
       },
     },
+    // ADR-105: the season-to-date cluster, Szn rank immediately beside ROS PosRk.
+    // Below 1280px the two totals step aside with the team and drops (the card and the CSV
+    // carry them); Szn rank stays beside ROS PosRk at every width.
+    ...seasonColumns<OpportunityCandidate>(
+      (row) => row.season,
+      (row) => row.row.record.position,
+      "col-mid",
+    ),
     {
       id: "team",
       header: "Team",
@@ -406,6 +418,7 @@ export function OpportunityTable({
   onSelect,
   selectedPlayerId,
   visibleRowsRef,
+  seasonNote,
 }: {
   readonly rows: readonly OpportunityCandidate[];
   /** The declared window, e.g. ` (24h)`, appended to the two count headings. */
@@ -415,6 +428,8 @@ export function OpportunityTable({
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
   readonly visibleRowsRef?: RefObject<readonly OpportunityCandidate[]>;
+  /** What the season columns are, for the caption (ADR-105). */
+  readonly seasonNote?: string;
 }): React.JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([]);
   const scale = useMemo(() => opportunityTableScale(rows), [rows]);
@@ -445,6 +460,7 @@ export function OpportunityTable({
       <table className="sheet opp-sheet">
         <caption>
           {OPPORTUNITY_TABLE_CAPTION}{" "}
+          {seasonNote === undefined ? "" : `${seasonNote} `}
           {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}. `}
           Add and drop bars are scaled against the largest count on the rows shown; the value
           bar against the largest rest-of-season value.

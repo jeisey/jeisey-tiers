@@ -22,7 +22,7 @@ import {
 } from "../src/data/ros";
 import type { RosTierRecord } from "../src/data/contracts";
 import { required } from "./required";
-import { opportunityRecords, rosBuildMetadata, rosTierRecords } from "./fixtures/artifacts";
+import { opportunityRecords, rosBuildMetadata, rosTierRecords, seasonActualsRecords } from "./fixtures/artifacts";
 
 describe("rosStatusBadge", () => {
   it("says nothing for the ordinary roster codes", () => {
@@ -253,6 +253,7 @@ describe("buildRosCohortContext", () => {
     rosTiers: rosTierRecords(),
     opportunity: opportunityRecords(),
     opportunityDegradation: null,
+    actuals: seasonActualsRecords(),
   });
   const block = { leaguePreset: "redraft-12", scoring: "PPR" } as const;
   const rows = bundle.rosFor(block.leaguePreset, block.scoring);
@@ -297,8 +298,28 @@ describe("buildRosCohortContext", () => {
 
   it("leaves rows that have not appeared out of the scoring-rate cohort", () => {
     const context = contextFor(subject);
-    const played = rows.filter((row) => row.position === "WR" && row.games_played_to_date > 0);
+    const played = rows.filter(
+      (row) =>
+        row.position === "WR" &&
+        (bundle.actualsFor(block.scoring, row.player_id)?.games_played ?? 0) > 0,
+    );
     expect(context.scoredRate?.count).toBe(played.length);
+  });
+
+  it("reads the scoring rate from the season actuals, the number the card prints (ADR-105)", () => {
+    const actual = required(bundle.actualsFor(block.scoring, subject.player_id), "his actuals");
+    expect(contextFor(subject).scoredRate?.value).toBe(actual.points_per_game);
+  });
+
+  it("has no scoring rate at all when the build published no actuals", () => {
+    const bare = new InSeasonBundle({
+      metadata: rosBuildMetadata({ season_actuals: null }),
+      rosTiers: rosTierRecords(),
+      opportunity: opportunityRecords(),
+      opportunityDegradation: null,
+    });
+    const context = buildRosCohortContext(bare, block.leaguePreset, block.scoring, subject, null);
+    expect(context.scoredRate).toBeNull();
   });
 
   it("bounds the moves axis from the whole block, the way the board does", () => {

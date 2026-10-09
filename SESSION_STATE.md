@@ -4,6 +4,65 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Season to date beside rest of season — 2026-10-09 (ADR-105).** On `claude/funny-planck-1pm5lj`
+from `main` at `6f84ce3`. Descriptive data and presentation only: no model, feature, training
+row, projection, VORP, rank, tier, calibration, POTW, trade or availability rule changed.
+
+* **`season_actuals_v1`** (`src/ffdraft/signals/actuals.py`, built in `run_ros_build` after every
+  board): points (scoring engine, REG weeks `1..through_week`), games (stats row **or**
+  offensive snap — the usage layer's definition; the model's stats-row `games_to_date` is
+  untouched and the difference is stated), points per game, competition rank within the
+  board's position over every appearing QB/RB/WR/TE per preset (0.01 precision first). Board
+  players with no appearance get a known-zero record. Any scheduled team-week missing from the
+  weekly stats or snap counts → withheld (warning), surfaces say "unavailable".
+* **Contract:** `season_actuals_record` 1.0 + CSV; `ros_build_metadata.season_actuals`;
+  `ros_tiers.csv`/`inseason_opportunity.csv` append `season_position_rank`, `season_points`,
+  `season_games_played`, `season_points_per_game`; validator in `artifacts/actuals_checks.py`;
+  served `season_actuals/<scoring>` (no names), required by RoS, Opportunity, Start/Sit (which
+  now also loads `ros_tiers/<block>`) and every in-season card.
+* **UI:** RoS-only rank lane in `TierBoard` (`rankLane` prop; log scale from the whole block;
+  square = RoS, triangle = season; median becomes a tick only there); three columns in the RoS,
+  Opportunity and Start/Sit tables (`app/SeasonColumns.tsx`, `data/actuals.ts`); card rank pair,
+  context box, actuals-based Production so far / PaceRail / PPG cohort; hero now "ROS overall
+  rank"; Start/Sit "Pos rk" → "Week rank".
+* **Real data (live nflverse 2026-10-09, cutoff week 4):** Shough 85.32 pts / 4 g / 21.33 =
+  Season **QB5** (every preset); RoS **QB15** Half-PPR (QB13–14 PPR, QB14 STD). The owner's
+  "QB4 vs QB15" is QB5 vs QB15 at this cutoff.
+
+**Next gate:** owner review; the next production refresh publishes `season_actuals`.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 332 files
+uv run mypy                                          # clean, 199 source files
+uv run pytest                                        # 1,956 passed (4 live deselected)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 828 vitest
+npm run e2e                                          # 237 passed (chromium, mobile, a11y)
+npm run verify:board (6 CI fixtures)                 # 0 failures each; in-season: 57 actuals cells, 17 chart rows
+npm run e2e:size-model && npm run verify:budget      # all met: first visit 322.3/450 kB, data 74.5/150, Start/Sit +55.5/60, Trade +11.8/25, card +23.8/30
+# Real data: build-ros on live nflverse 2026-10-09 (cutoff week 4) + the live draft artifacts:
+validate-artifacts --require-serving                 # 0 critical, 0 warning; 4 actuals checks pass
+verify-real-build (verify:board --dist realsite)     # 0 failures: 120 actuals cells, 60 chart rows, 506 opp rows
+verify:budget (real, report-only)                    # first visit 323.1 kB, data 75.3, Start/Sit +58.6 (of 60), Trade +11.8, card +23.4
+verify:csv (real)                                    # 32 checks pass
+verify:presets (real AND the live production site)   # fails identically on both: 3–9 arbitrage rows per block name a
+                                                     # player the block's tiers do not rank — pre-existing, draft artifacts,
+                                                     # untouched here; suggested as a separate task
+```
+
+Facts a later session should not re-derive:
+
+* vite's `--outDir` is relative to `web/` (`root: "web"`): build a real site with
+  `npx vite build --outDir dist-realsite`, not `web/dist-realsite`.
+* A `static-server.mjs` root must be an absolute path, and a server left running while
+  `npm run e2e:build` rewrites the dists crashes and turns a later e2e run into
+  `ERR_CONNECTION_REFUSED` failures.
+* pytest's `addopts` already has `-q`; adding `-q` again suppresses the summary line.
+* On the week-4 live build: 183 snaps-only appearances among ranked players; 4 unbridged snap
+  rows; 641 actuals records per preset.
+
 **"How it works" on the Data tab — 2026-10-09.** On `claude/laughing-thompson-wl3e0z` from
 `main` at `3f0f8f3`. A UI-only change: a nine-board plain-English carousel explaining every model
 (`web/src/app/HowItWorks.tsx`, `.hiw-*` styles), first section of the Data page and nowhere

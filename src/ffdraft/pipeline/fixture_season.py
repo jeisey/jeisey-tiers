@@ -315,6 +315,24 @@ def build_fixture_season(
                     rest,
                 ),
             )
+            # The rest of the roster took snaps too, so every team that played a week has a
+            # snap-count row for it, as a real release does — the season-actuals coverage
+            # check refuses a week a club is missing from (ADR-105). Below every starter
+            # threshold, so no game-day reading moves.
+            snap_rows.append(
+                {
+                    "season": season,
+                    "week": week,
+                    "game_type": "REG",
+                    "pfr_player_id": f"pfr-00-99{index:05d}",
+                    "player_name": f"{team} depth",
+                    "position": "WR",
+                    "team": team,
+                    "offense_snaps": 8,
+                    "offense_pct": 0.12,
+                    "gsis_id": f"00-99{index:05d}",
+                },
+            )
 
     # Who each row played, from the schedule the rows were written against: the weekly
     # start/sit layer reads a defence's allowed points off `opponent_team` (ADR-096), and a

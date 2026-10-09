@@ -41,6 +41,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   // 1.1 (ADR-099): additive `explanation`.
   weekly_projections: "1.1",
   weekly_context: "1.0",
+  // ADR-105: season-to-date actuals and positional ranks over the whole population.
+  season_actuals: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -62,7 +64,8 @@ export type ArtifactName =
   | "player_usage"
   | "team_matchups"
   | "weekly_projections"
-  | "weekly_context";
+  | "weekly_context"
+  | "season_actuals";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -1540,6 +1543,92 @@ export interface RosWeeklyMetadata {
   } | null;
 }
 
+/**
+ * One player's season to date in one scoring preset, `season_actuals_v1` (ADR-105).
+ *
+ * Observed facts, ranked at build time over every player at the position who has appeared —
+ * never over the rows a page happens to hold. A record with `games_played` 0 is a known
+ * zero (no rate, no rank); a missing record is a missing value, and the two are never merged.
+ */
+export interface SeasonActualsRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly scoring_preset: ScoringPreset;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly position: Position;
+  readonly games_played: number;
+  readonly points: number;
+  readonly points_per_game: number | null;
+  readonly season_position_rank: number | null;
+}
+
+/** What a served season-actuals slice carries (no names; see `serving.py`). */
+export type SeasonActualsRow = Pick<
+  SeasonActualsRecord,
+  | "season"
+  | "through_week"
+  | "scoring_preset"
+  | "player_id"
+  | "position"
+  | "games_played"
+  | "points"
+  | "points_per_game"
+  | "season_position_rank"
+>;
+
+export const SEASON_ACTUALS_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "scoring_preset",
+  "player_id",
+  "display_name",
+  "position",
+  "games_played",
+  "points",
+  "points_per_game",
+  "season_position_rank",
+] as const satisfies readonly (keyof SeasonActualsRecord)[];
+
+/** The build's account of its actuals: definitions, cutoff, population, coverage. */
+export interface SeasonActualsMetadata {
+  readonly rule: {
+    readonly version: string;
+    readonly points_decimals: number;
+    readonly rank_method: "competition";
+    readonly scoring_engine_version: string;
+  };
+  readonly status: "published" | "withheld";
+  readonly withheld_reason: string | null;
+  readonly season: number;
+  readonly through_week: number;
+  readonly weeks: readonly number[];
+  readonly horizon: string;
+  readonly scoring_presets: readonly ScoringPreset[];
+  readonly definitions: {
+    readonly appearance: string;
+    readonly points: string;
+    readonly points_per_game: string;
+    readonly season_rank: string;
+    readonly comparison: string;
+    readonly model_difference: string;
+  };
+  readonly records: number;
+  readonly population: Readonly<Record<"QB" | "RB" | "WR" | "TE", number>>;
+  readonly coverage: {
+    readonly weeks_checked: number;
+    readonly scheduled_team_weeks: number;
+    readonly weekly_stats_missing_team_weeks: number;
+    readonly snap_counts_missing_team_weeks: number;
+    readonly snap_only_appearances: number;
+    readonly unbridged_snap_rows: number;
+  };
+}
+
 export interface RosBuildMetadata {
   readonly schema_version: string;
   readonly build_id: string;
@@ -1583,6 +1672,8 @@ export interface RosBuildMetadata {
   readonly signals?: RosSignalMetadata | null;
   /** The weekly start/sit layer (ADR-096). Absent or null removes the Start/Sit tab's content. */
   readonly weekly?: RosWeeklyMetadata | null;
+  /** Season-to-date actuals (ADR-105). Absent, null or withheld: actuals are unavailable. */
+  readonly season_actuals?: SeasonActualsMetadata | null;
   readonly disclosures: RosDisclosures;
   readonly limitations: readonly string[];
   readonly supported_presets: readonly string[];
@@ -1728,6 +1819,11 @@ export const WEEKLY_CONTEXT_FIELDS_COMPLETE: NoMissingKeys<
   typeof WEEKLY_CONTEXT_FIELDS
 > = true;
 
+export const SEASON_ACTUALS_FIELDS_COMPLETE: NoMissingKeys<
+  SeasonActualsRecord,
+  typeof SEASON_ACTUALS_FIELDS
+> = true;
+
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
@@ -1743,6 +1839,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   team_matchups: TEAM_MATCHUP_FIELDS,
   weekly_projections: WEEKLY_PROJECTION_FIELDS,
   weekly_context: WEEKLY_CONTEXT_FIELDS,
+  season_actuals: SEASON_ACTUALS_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -1760,6 +1857,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   team_matchups: "team_matchups.json",
   weekly_projections: "weekly_projections.json",
   weekly_context: "weekly_context.json",
+  season_actuals: "season_actuals.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

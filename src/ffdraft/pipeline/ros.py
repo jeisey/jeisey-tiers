@@ -45,6 +45,7 @@ import polars as pl
 
 from ffdraft.anchors import build_season_anchors
 from ffdraft.artifacts import ARTIFACT_SCHEMA_VERSION, write_artifact
+from ffdraft.artifacts.csv_flatten import actuals_index
 from ffdraft.artifacts.serialize import write_json_artifact
 from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_config
 from ffdraft.contracts import QualityCheck
@@ -482,6 +483,23 @@ def run_ros_build(
         if context_records:
             records["weekly_context"] = context_records
 
+    # Season-to-date actuals (ADR-105): points, games and a positional rank over every player
+    # who has appeared, published beside the boards and read by no model. After every board,
+    # because the boards decide only which players with no appearance still get a record.
+    actuals_records, actuals_summary = _season_actuals(
+        records=records,
+        snapshot_frame=snapshot.frame,
+        registry=identity,
+        loaded=loaded,
+        settings=settings,
+        season=season,
+        cutoff=cutoff,
+        build_id=resolved_build_id,
+        gate=gate,
+    )
+    if actuals_records:
+        records["season_actuals"] = actuals_records
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -503,6 +521,7 @@ def run_ros_build(
         surface=[universe.to_dict() for universe in surface_universes],
         signal_layer=signal_summary,
         weekly=weekly_summary,
+        season_actuals=actuals_summary,
     )
 
     written: list[Path] = []
@@ -554,6 +573,8 @@ def _publish(
     Each move is a single ``os.replace``, so a reader never sees a half-written file.
     """
     staging = Path(mkdtemp(prefix=".ros-staging-", dir=str(out_dir.parent)))
+    # The in-season boards' CSVs carry the season actuals beside their own columns (ADR-105).
+    actuals = actuals_index(records.get("season_actuals", ()))
     try:
         staged: list[Path] = []
         for artifact, rows in sorted(records.items()):
@@ -563,6 +584,7 @@ def _publish(
                 out_dir=staging,
                 build_id=build_id,
                 generated_at=as_of,
+                actuals=actuals,
             )
             gate.extend(checks)
             staged.extend(paths)
@@ -1462,6 +1484,103 @@ def _drive_breadth(
 
 
 #: The default location of the promoted weekly artifact, relative to the repository.
+def season_actuals_inputs(
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    snapshot_frame: pl.DataFrame,
+    catalog: Mapping[str, Mapping[str, Any]],
+) -> tuple[dict[str, str], dict[str, str], list[str]]:
+    """Positions, names and the board players an actuals record must exist for (ADR-105).
+
+    A position comes from the rest-of-season snapshot first — the position every board
+    prints for him — then the identity registry, which places the Opportunity Board's
+    unprojected players. A name comes from the boards first, so the artifact agrees with them.
+    """
+    positions: dict[str, str] = {}
+    if not snapshot_frame.is_empty() and {"player_id", "position"} <= set(snapshot_frame.columns):
+        for player_id, position in (
+            snapshot_frame.select("player_id", "position").unique().iter_rows()
+        ):
+            if player_id and position:
+                positions.setdefault(str(player_id), str(position))
+    names: dict[str, str] = {}
+    include: list[str] = []
+    for artifact in ("ros_tiers", "inseason_opportunity", "weekly_projections"):
+        for record in records.get(artifact, ()):
+            player_id = str(record["player_id"])
+            include.append(player_id)
+            if record.get("display_name"):
+                names.setdefault(player_id, str(record["display_name"]))
+            if record.get("position"):
+                positions.setdefault(player_id, str(record["position"]))
+    for player_id, entry in catalog.items():
+        if entry.get("position"):
+            positions.setdefault(player_id, str(entry["position"]))
+        if entry.get("display_name"):
+            names.setdefault(player_id, str(entry["display_name"]))
+    return positions, names, sorted(set(include))
+
+
+def _season_actuals(
+    *,
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    snapshot_frame: pl.DataFrame,
+    registry: Any,
+    loaded: Any,
+    settings: AppConfig,
+    season: int,
+    cutoff: RosCutoff,
+    build_id: str,
+    gate: QualityGate,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Build ``season_actuals`` (ADR-105), or explain why not.
+
+    An enrichment: a failure withholds the actuals and nothing else, and the metadata block
+    says so, which every surface reads as "unavailable" rather than as a smaller population.
+    """
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.signals.actuals import build_season_actuals
+
+    positions, names, include = season_actuals_inputs(
+        records,
+        snapshot_frame=snapshot_frame,
+        catalog=_catalog(registry),
+    )
+    sources = loaded.sources
+    try:
+        result = build_season_actuals(
+            weekly=sources.weekly_stats,
+            snap_counts=bridged_snap_counts(sources),
+            schedule=sources.schedule,
+            scoring=settings.league.scoring,
+            season=season,
+            through_week=cutoff.through_week,
+            positions=positions,
+            names=names,
+            include=include,
+            build_id=build_id,
+            schema_version=record_schema_version("season_actuals_record"),
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        gate.add(
+            QualityCheck.fail(
+                "ros.season_actuals_failed",
+                stage="ros_build",
+                message=(
+                    "season-to-date actuals could not be built, so season_actuals.json is "
+                    "withheld; every board, value and rank is unaffected"
+                ),
+                observed=f"{type(exc).__name__}: {exc}",
+                expected="a season-actuals record per appearing player",
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+    gate.extend(result.checks)
+    return result.records, result.metadata
+
+
 DEFAULT_WEEKLY_MODEL_DIR = Path("models/production/weekly-startsit-v1")
 
 
@@ -2399,6 +2518,7 @@ def _ros_metadata(
     weekly: Mapping[str, Any] | None = None,
     employment: Any | None = None,
     unprojected_rows: int = 0,
+    season_actuals: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2462,6 +2582,7 @@ def _ros_metadata(
         ),
         "signals": None if signal_layer is None else dict(signal_layer),
         "weekly": None if weekly is None else dict(weekly),
+        "season_actuals": None if season_actuals is None else dict(season_actuals),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

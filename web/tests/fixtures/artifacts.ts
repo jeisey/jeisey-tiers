@@ -55,6 +55,8 @@ import type {
   RosSignalMetadata,
   RosTierRecord,
   ScoringPreset,
+  SeasonActualsMetadata,
+  SeasonActualsRecord,
   TeamMatchupRecord,
   TierRecord,
   UsageWeek,
@@ -1031,6 +1033,163 @@ export function rosTierRecords(): RosTierRecord[] {
       quality_flags: absent ? ["long_absence"] : [],
     };
   });
+}
+
+/**
+ * Season-to-date actuals (ADR-105), built the way `season_actuals_v1` is: one record per
+ * appearing player per scoring preset, ranked over the **whole** population, plus a record
+ * for a board player who has not appeared.
+ *
+ * Board players take the default league's `points_to_date` and games, so the card, the tables
+ * and the RoS row describe one season. The population is wider than any board, in the states
+ * a real one holds: a quarterback no board publishes outscores every board quarterback (so a
+ * board QB's season rank starts at 2), a negative total, a zero-point appearance, a tie, a
+ * signing with genuine actuals and no projection, and an unsigned player with no appearances.
+ */
+export const FIXTURE_OFF_BOARD_QB_ID = "gsis:00-0000090";
+export const FIXTURE_TIED_WR_ID = "gsis:00-0000093";
+
+const OFF_BOARD_ACTUALS: readonly {
+  readonly id: string;
+  readonly name: string;
+  readonly position: Position;
+  readonly games: number;
+  readonly points: Readonly<Record<ScoringPreset, number>> | "tie";
+}[] = [
+  // A high scorer outside every published board: he occupies QB1 all the same.
+  { id: FIXTURE_OFF_BOARD_QB_ID, name: "Off-board Passer", position: "QB", games: 8, points: { STD: 196.4, HALF: 198.9, PPR: 201.4 } },
+  // Negative and zero totals are legitimate, and both rank.
+  { id: "gsis:00-0000091", name: "Kneel Down", position: "QB", games: 1, points: { STD: -1.5, HALF: -1.5, PPR: -1.5 } },
+  { id: "gsis:00-0000092", name: "Blocking End", position: "TE", games: 2, points: { STD: 0, HALF: 0, PPR: 0 } },
+  // Exactly level with a board receiver: the two share a rank (1, 2, 2, 4).
+  { id: FIXTURE_TIED_WR_ID, name: "Level Pegging", position: "WR", games: 8, points: "tie" },
+  // The ADR-102 signing: off the board, no projection, real games.
+  { id: FIXTURE_SIGNING_ID, name: "", position: "WR", games: 3, points: { STD: 18.4, HALF: 24.9, PPR: 31.4 } },
+];
+
+function competitionRanks(points: ReadonlyMap<string, number>): Map<string, number> {
+  const ordered = [...points.values()].map((value) => Math.round(value * 100)).sort((a, b) => b - a);
+  const ranks = new Map<string, number>();
+  for (const [id, value] of points) {
+    ranks.set(id, ordered.indexOf(Math.round(value * 100)) + 1);
+  }
+  return ranks;
+}
+
+export function seasonActualsRecords(): SeasonActualsRecord[] {
+  const board = rosTierRecords().filter((record) => record.league_preset_id === "redraft-12");
+  const records: SeasonActualsRecord[] = [];
+  for (const scoring of SCORING) {
+    const rows = new Map<string, { name: string; position: Position; games: number; points: number }>();
+    for (const record of board.filter((row) => row.scoring_preset === scoring)) {
+      rows.set(record.player_id, {
+        name: record.display_name,
+        position: record.position,
+        games: record.games_played_to_date,
+        points: round(record.points_to_date, 2),
+      });
+    }
+    const tieWith = [...rows.values()].find((row) => row.position === "WR");
+    for (const extra of OFF_BOARD_ACTUALS) {
+      const status = offRosterStatusRecords().find((row) => row.player_id === extra.id);
+      rows.set(extra.id, {
+        name: extra.name === "" ? (status?.display_name ?? extra.id) : extra.name,
+        position: extra.position,
+        games: extra.games,
+        points: extra.points === "tie" ? (tieWith?.points ?? 0) : extra.points[scoring],
+      });
+    }
+    const ranks = new Map<string, number>();
+    for (const position of ["QB", "RB", "WR", "TE"] as const) {
+      const members = new Map(
+        [...rows].filter(([, row]) => row.position === position).map(([id, row]) => [id, row.points]),
+      );
+      for (const [id, rank] of competitionRanks(members)) ranks.set(id, rank);
+    }
+    for (const [id, row] of rows) {
+      records.push({
+        schema_version: "1.0",
+        build_id: FIXTURE_BUILD_ID,
+        season: 2026,
+        through_week: FIXTURE_THROUGH_WEEK,
+        scoring_preset: scoring,
+        player_id: id,
+        display_name: row.name,
+        position: row.position,
+        games_played: row.games,
+        points: row.points,
+        points_per_game: round(row.points / row.games, 2),
+        season_position_rank: ranks.get(id) ?? null,
+      });
+    }
+    // A board player with no appearance: a known zero, never a missing record.
+    records.push({
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      season: 2026,
+      through_week: FIXTURE_THROUGH_WEEK,
+      scoring_preset: scoring,
+      player_id: FIXTURE_UNSIGNED_ID,
+      display_name: offRosterStatusRecords().find((row) => row.player_id === FIXTURE_UNSIGNED_ID)?.display_name ?? FIXTURE_UNSIGNED_ID,
+      position: "WR",
+      games_played: 0,
+      points: 0,
+      points_per_game: null,
+      season_position_rank: null,
+    });
+  }
+  return records;
+}
+
+export function seasonActualsEnvelope(): ArtifactEnvelope<SeasonActualsRecord> {
+  return envelope("season_actuals", "season_actuals_record", seasonActualsRecords());
+}
+
+export function seasonActualsMetadata(
+  overrides: Partial<SeasonActualsMetadata> = {},
+): SeasonActualsMetadata {
+  const ppr = seasonActualsRecords().filter(
+    (record) => record.scoring_preset === "PPR" && record.games_played > 0,
+  );
+  const count = (position: Position): number => ppr.filter((row) => row.position === position).length;
+  return {
+    rule: {
+      version: "season_actuals_v1",
+      points_decimals: 2,
+      rank_method: "competition",
+      scoring_engine_version: "scoring_v1",
+    },
+    status: "published",
+    withheld_reason: null,
+    season: 2026,
+    through_week: FIXTURE_THROUGH_WEEK,
+    weeks: Array.from({ length: FIXTURE_THROUGH_WEEK }, (_, index) => index + 1),
+    horizon: "weeks 1-17 (excluding NFL week 18)",
+    scoring_presets: ["HALF", "PPR", "STD"],
+    definitions: {
+      appearance:
+        "A game played is a regular-season week with a weekly stats row or at least one offensive snap. Byes and weeks he did not appear are not games.",
+      points: "Total fantasy points scored in weeks 1 through the cutoff, in the selected scoring preset.",
+      points_per_game: "Total points divided by games played. Blank for a player with no appearances.",
+      season_rank:
+        "Rank by total points among every player at the position who has appeared this season, whatever board publishes him. Ties share a rank (1, 2, 2, 4).",
+      comparison:
+        "Season rank measures points already scored. Rest-of-season rank orders the model's value from here on.",
+      model_difference:
+        "The rest-of-season model counts appearances by weekly stats rows only. A week with snaps and no statistic counts as a game here and not in the model's own inputs.",
+    },
+    records: seasonActualsRecords().length,
+    population: { QB: count("QB"), RB: count("RB"), WR: count("WR"), TE: count("TE") },
+    coverage: {
+      weeks_checked: FIXTURE_THROUGH_WEEK,
+      scheduled_team_weeks: 240,
+      weekly_stats_missing_team_weeks: 0,
+      snap_counts_missing_team_weeks: 0,
+      snap_only_appearances: 0,
+      unbridged_snap_rows: 0,
+    },
+    ...overrides,
+  };
 }
 
 /**
@@ -2158,6 +2317,7 @@ export function rosBuildMetadata(
     sources: [],
     signals: FIXTURE_SIGNALS,
     weekly: FIXTURE_WEEKLY,
+    season_actuals: seasonActualsMetadata(),
     quality_gate: { status: "pass", critical_failures: 0, warnings: 0 },
     warnings: [],
     ...overrides,
@@ -2428,6 +2588,8 @@ export function inSeasonFixtureFiles(
       behaviorAvailable,
     ),
     "ros_tiers.json": rosTierEnvelope(),
+    // ADR-105: season actuals, published with every in-season bundle.
+    "season_actuals.json": seasonActualsEnvelope(),
     "inseason_opportunity.json": opportunityEnvelope(behaviorAvailable),
     // ADR-101: in season the status artifact carries the reserve, week and season-ending
     // shapes the availability policy reads.

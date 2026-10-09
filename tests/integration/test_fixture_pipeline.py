@@ -78,6 +78,9 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # ADR-099. The game-day context beside it: every weather status, listed starters on
         # both sides, a report with no game status yet.
         "weekly_context",
+        # ADR-105. Season-to-date actuals by the production builder over the same weekly
+        # rows: ties, a snaps-only appearance, byes and absences all occur.
+        "season_actuals",
     }
     assert all(records for records in pipeline_result.records.values())
 

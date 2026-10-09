@@ -233,6 +233,21 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "the weekly explanations are measured against (ADR-099)."
         ),
     ),
+    "season_actuals": ArtifactSpec(
+        artifact="season_actuals",
+        schema_name="season_actuals_record",
+        json_filename="season_actuals.json",
+        # A CSV, because these are the plainest numbers on the site and a spreadsheet is
+        # where a reader checks them (ADR-105).
+        csv_filename="season_actuals.csv",
+        key_fields=("build_id", "scoring_preset", "player_id"),
+        sort_fields=("scoring_preset", "position", "season_position_rank", "player_id"),
+        description=(
+            "Season-to-date actual fantasy points, games played, points per game and the "
+            "positional rank by points over every appearing player, per scoring preset, "
+            "through the in-season cutoff. Observed facts; no model reads them (ADR-105)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

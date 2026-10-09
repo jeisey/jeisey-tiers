@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/season_actuals_record.schema.json",
+  "title": "SeasonActualsRecord",
+  "description": "One player's season to date in one scoring preset under `season_actuals_v1` (ADR-105): actual fantasy points, games played, points per game and his rank by points among every player at his position who has appeared. OBSERVED FACTS, never a model input or output: arithmetic over nflverse's weekly player rows and snap counts (CC-BY 4.0) through the build's cutoff week, scored by the project's scoring engine. Ranks are computed at build time over the whole positional population, before any board's publication depth, model eligibility, availability, filter or page, and do not depend on league size. Every appearing QB/RB/WR/TE is published, plus any board player with no appearance (games_played 0, points 0, no rate, no rank) so a known zero is distinguishable from a missing record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "scoring_preset", "player_id",
+    "display_name", "position", "games_played", "points", "points_per_game",
+    "season_position_rank"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 2000},
+    "through_week": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The cutoff, identical to ros_tiers.through_week: only weeks 1..through_week of the regular season are counted, so a Thursday game of the next week is never mixed in."
+    },
+    "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
+    "player_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "position": {
+      "enum": ["QB", "RB", "WR", "TE"],
+      "description": "The position the site shows for him (rest-of-season snapshot, then identity registry, then box score) and the standing he is ranked in."
+    },
+    "games_played": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Weeks with a weekly stats row or at least one offensive snap. Byes and weeks he did not appear are not games. The rest-of-season model's own `games_to_date` counts stats rows only; the difference is a snaps-only week, which scores zero."
+    },
+    "points": {
+      "type": "number",
+      "description": "Total fantasy points through the cutoff in this preset, rounded to 0.01 (exact for every declared rule). Zero and negative totals are legitimate. 0 with games_played 0 means he has not appeared."
+    },
+    "points_per_game": {
+      "type": ["number", "null"],
+      "description": "points / games_played, rounded to 0.01. Null exactly when games_played is 0."
+    },
+    "season_position_rank": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Competition rank (1, 2, 2, 4) of `points`, descending, among every player at this position with games_played >= 1 in this preset. Null exactly when games_played is 0."
+    }
+  }
+}

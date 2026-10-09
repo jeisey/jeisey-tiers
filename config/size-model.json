@@ -20,6 +20,7 @@
     "trend_series_per_block": 416,
     "projections_per_scoring": 1065,
     "weekly_per_scoring": 554,
+    "actuals_per_scoring": 641,
     "usage": 606,
     "behavior": 171,
     "status": 911,
@@ -37,5 +38,6 @@
     "arbitrage": 2
   },
   "_published_decimals": "The precision each artifact's model floats are published at on the real board. The golden templates carry fewer digits; the size model writes at least this many.",
-  "_status": "ADR-101 widened the in-season status population to every rostered QB/RB/WR/TE plus the draft board: 545 rows on 2026-10-02 before the change, 675 measured in daily-refresh run 37069228948 (2026-10-02) after it; 911 measured on 2026-10-06 sources after ADR-102 added verified off-roster players (211 unsigned, 5 Sleeper-only signings)."
+  "_status": "ADR-101 widened the in-season status population to every rostered QB/RB/WR/TE plus the draft board: 545 rows on 2026-10-02 before the change, 675 measured in daily-refresh run 37069228948 (2026-10-02) after it; 911 measured on 2026-10-06 sources after ADR-102 added verified off-roster players (211 unsigned, 5 Sleeper-only signings).",
+  "_actuals": "ADR-105: season_actuals records per scoring preset measured on a live build-ros of 2026-10-09 (cutoff week 4): 498 appearing QB/RB/WR/TE plus 143 board players with no appearance. Grows slowly with the season as more players appear."
 }

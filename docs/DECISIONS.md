@@ -6271,3 +6271,117 @@ information the share rails do not carry is the bar's distance from its notch �
 gap correlates at most 0.18 with share or volume. The card therefore keeps the notch and the
 four-game line for RB, WR and TE; the bar is there so the row reads like its neighbours and
 states a count a reader can check ("5 of 9 drives").
+
+## ADR-105 — Season-to-date actuals beside rest-of-season value: one definition, one artifact, its own lane
+
+**Status:** accepted, 2026-10-09. **Relies on:** ADR-071 (the RoS board's quantity), ADR-091
+(the usage layer's appearance definition), ADR-098 (served slices and card shards), ADR-101
+(availability governs eligibility, never a number), ADR-102 (unprojected players).
+
+### Context
+
+A manager reading the RoS board asks two questions the site answered only one of: *what is he
+worth from here* (the model) and *what has he actually done* (the box score). The motivating
+case, verified on a live `build-ros` of 2026-10-09 (cutoff week 4): Tyler Shough has 85.32
+points in 4 games (21.33 per game) — **QB5** by season points in every preset, behind Allen,
+Purdy, Young and Goff — and is **QB15** by rest-of-season value in Half-PPR (every league size),
+QB13–QB14 in PPR and QB14 in Standard. The owner's "QB4 vs QB15" was approximately this. The board published `points_to_date` for its own rows and no rank;
+any rank computed in the browser would have been a rank over the published depth, the search
+box and the page — not over the league. A gap between the two orderings, unexplained, reads as
+either a model error or a decline.
+
+Two appearance definitions already existed: the RoS panel counts a game when nflverse writes a
+weekly stats row (`games_to_date`, a model input), and the usage layer counts a stats row **or**
+an offensive snap (`usage_signals_v1`). They differ on a snaps-only week — on the field, no
+statistic, zero points.
+
+### Decision — `season_actuals_v1`
+
+1. **One computation, at build time** (`src/ffdraft/signals/actuals.py`), consumed by every
+   surface: total points, games played, points per game and a positional season rank, per
+   scoring preset.
+   * **Points**: the scoring engine (`scoring_v1`) over nflverse weekly player rows, regular
+     season, inside the fantasy horizon, weeks `1..through_week` — the board's own cutoff, so a
+     Thursday game of the next week already in the upstream file is never mixed in.
+   * **Games played**: a week with a weekly stats row **or** at least one offensive snap — the
+     usage layer's definition, so the card's week strip and its games count agree. Byes and
+     missed weeks are not games. The model's `games_to_date` (stats rows only) is **not
+     changed**; the build metadata states the difference and the card prints it when it applies.
+   * **Points per game**: points ÷ games; null with no appearances.
+   * **Season rank**: competition rank (1, 2, 2, 4) of points, descending, among every player at
+     the position with an appearance, per scoring preset. Points are rounded to 0.01 — exact for
+     every declared rule — **before** ranking. League size is not an input.
+2. **The population is the league.** Every QB/RB/WR/TE who appeared is ranked — and published —
+   before any board's depth, model eligibility, availability, search, filter or page. An
+   injured or unprojected player's points count. Position is the board's (RoS snapshot, then
+   identity registry, then box score, then snap row), so QB4 and RB4 are separate standings on
+   the basis the site prints. Ids are canonical `gsis:`; a traded player is one season; a snap
+   row with no canonical id is excluded (fail closed) and counted.
+3. **Three states, never merged.** Ranked; *no appearances* (a record with 0 games, 0 points,
+   null rate and rank, published for every board player who has not played); *unavailable* (no
+   record, or no artifact). A missing value never falls back to the model's to-date fields or to
+   preseason numbers.
+4. **Incomplete data withholds; it never shrinks.** Every scheduled team-week through the cutoff
+   must appear in both the weekly rows and the snap counts. Otherwise no record is published,
+   `ros_build_metadata.season_actuals.status` is `withheld` with the reason, and every surface
+   prints actuals as unavailable — never ranks over a smaller population. A warning, not a
+   critical: the boards are unaffected.
+5. **Contract.** New artifact `season_actuals` (`season_actuals_record` 1.0, JSON + CSV), one
+   record per player per scoring preset. New optional `ros_build_metadata.season_actuals` block:
+   rule, status, cutoff and weeks, the definition sentences, the ranked population per position
+   and source coverage. The validator re-derives every rank and rate from the artifact's own
+   rows, checks the block against the artifact, and holds the boards to it: same points as
+   `ros_tiers.points_to_date` (±0.0051), same position, games ≥ the model's stats-row games and
+   equal to the usage layer's appearances, and a record for every board player.
+6. **Exports.** `ros_tiers.csv` and `inseason_opportunity.csv` append four columns after their
+   schema columns — `season_position_rank`, `season_points`, `season_games_played`,
+   `season_points_per_game` — joined from `season_actuals.json` (empty when unpublished); one row
+   per record, existing columns unchanged. The filtered exports append the same four names.
+7. **Serving.** One `season_actuals/<scoring>` slice (no names; season ranks do not depend on
+   league size). Required by the RoS, Opportunity and Start/Sit views and by every in-season
+   card, so a direct link to any of them, or a card opened from one, has complete standings.
+   Start/Sit additionally reads the league's `ros_tiers` block for the RoS positional rank.
+
+### Decision — presentation
+
+1. **RoS chart: a comparison lane, not the VORP axis.** Each RoS row gains a lane on its own
+   labelled, logarithmic positional-rank scale (1 at the left; the end is the next round number
+   past the deepest rank on the **whole published block**, so a mark never moves when the reader
+   searches, filters or collapses). Square = RoS positional rank on the upper track, triangle =
+   season rank on the lower track, a hairline between them; equal ranks stack, large gaps draw
+   whole. Words beside it: `■ RoS QB15` / `▲ Szn QB4`. **In this variant only**, the value lane's
+   median is a vertical tick, so the square means one thing; the draft board's glowing-square
+   median is unchanged (the lane is opt-in on `TierBoard`). Tiers and ordering stay the model's.
+2. **Tables.** `Szn rank`, `Total pts`, `Avg pts/g`, beside the RoS positional rank, identical
+   in the RoS table, the Opportunity table (and its "Not projected" list, which shows genuine
+   actuals beside "No RoS projection") and the Start/Sit week board. Positional ranks sort
+   grouped by position; missing values sort last; default orderings are unchanged. Start/Sit's
+   existing weekly rank is relabelled **Week rank** and kept; **RoS rank** is added beside the
+   season columns, and on phones both ranks also print under the name.
+3. **Card.** In the identity block — visible on a phone without opening a tab — two equal
+   readouts, **RoS rank QB15** and **Season rank QB5**, with the scoring preset, the cutoff,
+   the population ("of 53 QBs") and a neutral sentence: "RoS is 10 places below his
+   season-to-date rank." (Shough, Half-PPR, week 4.) The hero overall rank is relabelled **ROS overall rank**. "Production
+   so far" reads the actuals (games, total, rate, season rank) and the PaceRail's scored side is
+   the actuals' rate; a short context box says what each rank measures, that different pace,
+   expected remaining appearances and the model's wider history can make them differ, that the
+   gap is not a fall over time or by itself a model error, and prints his two published rates.
+   No player-specific cause is asserted, and the weekly "why this week" is not reused.
+
+### Consequences
+
+* No model, feature, training row, projection, VORP, rank, tier, calibration figure, Pick of
+  the Week rule, trade search or availability decision changes. The rest-of-season model reads
+  none of this.
+* The card's cohort "Points per game" strip now places the actuals' rate among the board's
+  same-position rows; with actuals unavailable it is absent rather than borrowed.
+* A Tuesday refresh whose snap counts lag the weekly stats publishes no actuals for that build
+  (stated on every surface) rather than a rank over fewer players.
+* Measured on the live week-4 build: 53 QB, 123 RB, 200 WR and 122 TE ranked; 641 records per
+  preset (143 of them board players with no appearance); 183 snaps-only appearances among the
+  ranked players (the whole difference from the model's games count); 4 unbridged snap rows;
+  `season_actuals/<scoring>` 4.7 kB gzip. Every board player's points equal
+  `ros_tiers.points_to_date`, and every validator and `verify-real-build` check passed.
+* On real data the lane's scale ends at 200 (the deepest WR season rank), so a quarterback-only
+  view uses the left part of the lane; that is the price of coordinates that do not move with a
+  filter, and every row prints both ranks in words.

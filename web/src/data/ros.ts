@@ -22,6 +22,12 @@ import {
   type StatusEvidence,
 } from "./availability";
 import type { Degradation } from "./errors";
+import {
+  actualsAvailability,
+  seasonStanding,
+  type ActualsAvailability,
+  type SeasonStanding,
+} from "./actuals";
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   BehaviorTrendSeriesRecord,
@@ -34,6 +40,7 @@ import type {
   RosBuildMetadata,
   RosTierRecord,
   ScoringPreset,
+  SeasonActualsRow,
   SeasonState,
   OpportunityCohortRecord,
   TeamMatchupRecord,
@@ -91,6 +98,13 @@ export interface InSeasonInput {
    * makes every reading "uncertain" rather than "available".
    */
   readonly status?: readonly StatusEvidence[] | null;
+  /**
+   * Season-to-date actuals (ADR-105): the `season_actuals` slice for the scoring presets the
+   * caller loaded. Ranked at build time over the whole population; read, never re-ranked.
+   */
+  readonly actuals?: readonly SeasonActualsRow[] | null;
+  /** Whether the build published `season_actuals.json` at all (ADR-098's published/loaded). */
+  readonly actualsPublished?: boolean;
 }
 
 
@@ -122,6 +136,8 @@ export interface RosRow {
   readonly record: RosTierRecord;
   /** The availability policy's reading (ADR-101); absent only in callers that do not need it. */
   readonly availability?: Availability;
+  /** His season-to-date standing (ADR-105); absent only in callers that do not need it. */
+  readonly season?: SeasonStanding;
 }
 
 export interface OpportunityRow {
@@ -179,9 +195,19 @@ export class InSeasonBundle {
   private readonly rosterCodeByPlayer = new Map<string, string>();
   private readonly reportByPlayer = new Map<string, WeeklyProjectionRecord["injury"]>();
   private readonly availabilityCache = new Map<string, Availability>();
+  /** Whether season actuals can be read for this build, and why not (ADR-105). */
+  readonly actualsAvailability: ActualsAvailability;
+  private readonly actualsByScoringPlayer: ReadonlyMap<string, SeasonActualsRow>;
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
+    this.actualsAvailability = actualsAvailability(
+      input.metadata.season_actuals,
+      input.actualsPublished ?? (input.actuals !== null && input.actuals !== undefined),
+    );
+    this.actualsByScoringPlayer = new Map(
+      (input.actuals ?? []).map((row) => [`${row.scoring_preset}|${row.player_id}`, row]),
+    );
     this.statusByPlayer = new Map((input.status ?? []).map((record) => [record.player_id, record]));
     this.opportunityDegradation = input.opportunityDegradation;
     this.hasOpportunity = input.published?.opportunity ?? input.opportunity !== null;
@@ -321,6 +347,16 @@ export class InSeasonBundle {
 
   get derivedMode(): ProductMode {
     return this.metadata.season_state.product_mode;
+  }
+
+  /** One player's season-actuals record in one scoring preset, or null. */
+  actualsFor(scoring: ScoringPreset, playerId: string): SeasonActualsRow | null {
+    return this.actualsByScoringPlayer.get(`${scoring}|${playerId}`) ?? null;
+  }
+
+  /** One player's season standing, in the three states `data/actuals` defines. */
+  seasonStandingFor(scoring: ScoringPreset, playerId: string): SeasonStanding {
+    return seasonStanding(this.actualsFor(scoring, playerId), this.actualsAvailability);
   }
 
   rosFor(leaguePreset: string, scoring: ScoringPreset): readonly RosTierRecord[] {
@@ -481,9 +517,32 @@ export function selectRosRows(bundle: InSeasonBundle, state: AppState): readonly
   for (const record of bundle.rosFor(leaguePreset, scoring)) {
     if (!matchesPosition(record.position, state.position)) continue;
     if (!matchesSearch(record, state.search)) continue;
-    rows.push({ record, availability: bundle.availabilityFor(record.player_id) });
+    rows.push({
+      record,
+      availability: bundle.availabilityFor(record.player_id),
+      season: bundle.seasonStandingFor(scoring, record.player_id),
+    });
   }
   return rows;
+}
+
+/**
+ * The positional-rank scale the RoS chart's comparison lane draws on (ADR-105).
+ *
+ * From the **whole published block** — every row's RoS positional rank and every one of
+ * those players' season ranks — never from the filtered, searched or collapsed view, so a
+ * mark's coordinate is the same whatever the reader has narrowed the board to.
+ */
+export function rosRankDomain(bundle: InSeasonBundle, state: AppState): number {
+  const leaguePreset = leaguePresetId(state.teams);
+  const scoring = SCORING_TO_PRESET[state.scoring];
+  let deepest = 1;
+  for (const record of bundle.rosFor(leaguePreset, scoring)) {
+    deepest = Math.max(deepest, record.ros_position_rank);
+    const season = bundle.seasonStandingFor(scoring, record.player_id);
+    if (season.kind === "ranked") deepest = Math.max(deepest, season.rank);
+  }
+  return deepest;
 }
 
 /**
@@ -776,6 +835,11 @@ export function scoredRate(record: RosTierRecord): number | null {
   return null;
 }
 
+/** Points per appearance from a season standing; null without appearances or actuals. */
+function seasonRate(standing: SeasonStanding): number | null {
+  return standing.kind === "ranked" ? standing.perGame : null;
+}
+
 /** A player's place inside his own rest-of-season tier. A band has an order; it has no edge. */
 export interface TierPlacement {
   readonly label: string;
@@ -887,9 +951,10 @@ export function buildRosCohortContext(
     ),
     // Only the players who have appeared. A rate over nobody is not a low rate, and letting a
     // zero-appearance row into the denominator would flatter every player who has played.
+    // The season actuals' rate (ADR-105), so the strip and the card's readout are one number.
     scoredRate: cohortStat(
-      finiteValues(cohort.filter((row) => row.games_played_to_date > 0).map(scoredRate)),
-      scoredRate(record),
+      finiteValues(cohort.map((row) => seasonRate(bundle.seasonStandingFor(scoring, row.player_id)))),
+      seasonRate(bundle.seasonStandingFor(scoring, record.player_id)),
       "desc",
     ),
     // A share has an absolute scale, so the axis is 0 to 1 rather than the cohort's own range:

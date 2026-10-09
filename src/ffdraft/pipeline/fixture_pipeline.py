@@ -45,6 +45,7 @@ from ffdraft.artifacts import (
     write_artifact,
     write_build_metadata,
 )
+from ffdraft.artifacts.csv_flatten import actuals_index
 from ffdraft.artifacts.serialize import write_json_artifact
 from ffdraft.artifacts.serving import MANIFEST_FILENAME, package_serving
 from ffdraft.artifacts.validate import ROS_BUILD_METADATA_FILENAME
@@ -123,6 +124,7 @@ from ffdraft.signals import (
     SPORTSBOOK_CONTEXT_STATEMENT,
     USAGE_RULE,
 )
+from ffdraft.signals.actuals import SeasonActualsResult, build_season_actuals
 from ffdraft.sources import (
     SLEEPER_SOURCE_ID,
     NflverseDepthChartAdapter,
@@ -564,6 +566,12 @@ def run_fixture_pipeline(
         "weekly_projections": weekly,
         "weekly_context": weekly_context,
     }
+    # ADR-105: the real builder over the same synthetic rows, so the actuals agree with the
+    # points to date the boards print and with every week the card draws.
+    actuals = _season_actuals(records, season=season, app=app, identity=identity, build_id=build_id)
+    gate.extend(actuals.checks)
+    if actuals.records:
+        records["season_actuals"] = actuals.records
     gate.extend(_published_identity_checks(records, market_outcomes))
 
     metadata = _build_metadata(
@@ -612,6 +620,7 @@ def run_fixture_pipeline(
             usage=usage,
             matchups=matchups,
             weekly=weekly_block,
+            season_actuals=actuals.metadata,
             build_id=build_id,
             generated_at=now,
             git_sha=git_sha or _git_sha(),
@@ -641,6 +650,7 @@ def build_fixture_artifacts(
     now = generated_at or parse_utc(FIXTURE_GENERATED_AT)
 
     written: list[Path] = []
+    actuals = actuals_index(result.records.get("season_actuals", ()))
     for artifact, records in result.records.items():
         paths, checks = write_artifact(
             artifact,
@@ -651,6 +661,7 @@ def build_fixture_artifacts(
             arbitrage_mode=(
                 result.build_metadata["arbitrage_mode"] if artifact == "arbitrage" else None
             ),
+            actuals=actuals,
         )
         result.gate.extend(checks)
         written.extend(paths)
@@ -1283,6 +1294,41 @@ def _fixture_season(tiers: Sequence[Mapping[str, Any]], app: AppConfig) -> Fixtu
     )
 
 
+def _season_actuals(
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    season: FixtureSeason,
+    app: AppConfig,
+    identity: Any,
+    build_id: str,
+) -> SeasonActualsResult:
+    """``season_actuals`` from the fixture season's rows, by the production builder (ADR-105)."""
+    from ffdraft.pipeline.ros import season_actuals_inputs
+
+    catalog = {
+        player_id: {"display_name": player.display_name, "position": str(player.position)}
+        for player_id, player in (identity.players.items() if identity is not None else ())
+    }
+    positions, names, include = season_actuals_inputs(
+        records,
+        snapshot_frame=pl.DataFrame(),
+        catalog=catalog,
+    )
+    return build_season_actuals(
+        weekly=season.weekly,
+        snap_counts=season.snap_counts,
+        schedule=season.schedule,
+        scoring=app.league.scoring,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        positions=positions,
+        names=names,
+        include=include,
+        build_id=build_id,
+        schema_version=record_schema_version("season_actuals_record"),
+    )
+
+
 def _signal_records(
     opportunity: Sequence[Mapping[str, Any]],
     *,
@@ -1693,6 +1739,7 @@ def _ros_build_metadata(
     build_id: str,
     generated_at: datetime,
     git_sha: str,
+    season_actuals: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The in-season bundle's metadata, carrying the disclosures the UI renders from."""
     from ffdraft.pipeline.ros import (
@@ -1769,6 +1816,7 @@ def _ros_build_metadata(
             "expected_points_statement": EXPECTED_POINTS_STATEMENT,
         },
         "weekly": None if weekly is None else dict(weekly),
+        "season_actuals": None if season_actuals is None else dict(season_actuals),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

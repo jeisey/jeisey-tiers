@@ -32,6 +32,37 @@ export interface BoardMark {
   readonly badges?: React.ReactNode;
   /** The whole accessible label for the mark. Built by the board that owns the quantity. */
   readonly label: string;
+  /**
+   * RoS board only (ADR-105): his two positional ranks, drawn in their own lane on their own
+   * scale — never on the value axis above, whose unit is VORP. Absent on the draft board.
+   */
+  readonly ranks?: BoardRankPair;
+}
+
+/** A rest-of-season positional rank beside a season-to-date positional rank (ADR-105). */
+export interface BoardRankPair {
+  /** RoS positional rank: the square. */
+  readonly ros: number;
+  /** Season-to-date positional rank by points: the triangle. Null when he has none. */
+  readonly season: number | null;
+  /** Why `season` is null, in words — "No appearances", "Unavailable". Null when ranked. */
+  readonly seasonAbsence: string | null;
+}
+
+/**
+ * The comparison lane's scale and words. Its presence is what turns the lane on, and only the
+ * rest-of-season board passes one: the draft board's square keeps meaning median VORP.
+ */
+export interface BoardRankLane {
+  /**
+   * The deepest positional rank on the whole published block — never the filtered view — so a
+   * mark's coordinate is the same whatever is searched, filtered or collapsed.
+   */
+  readonly domain: number;
+  /** The lane's short header, e.g. `Pos rank`. */
+  readonly unit: string;
+  /** The lane's note under the board, in full words. */
+  readonly note: string;
 }
 
 /** A contiguous run of marks sharing a tier ordinal. A band, never a cut position. */

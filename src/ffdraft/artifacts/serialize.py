@@ -24,7 +24,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ffdraft.artifacts.csv_flatten import flattener_for
+from ffdraft.artifacts.csv_flatten import (
+    ActualsIndex,
+    companion_columns,
+    companion_values,
+    flattener_for,
+)
 from ffdraft.artifacts.schemas import (
     ARTIFACT_SCHEMA_VERSION,
     record_field_order,
@@ -91,13 +96,21 @@ def _ordered_record(schema_name: str, record: Mapping[str, Any]) -> dict[str, An
     return {**ordered, **extras}
 
 
-def records_to_csv(artifact: str, records: Sequence[Mapping[str, Any]]) -> str:
+def records_to_csv(
+    artifact: str,
+    records: Sequence[Mapping[str, Any]],
+    *,
+    actuals: ActualsIndex | None = None,
+) -> str:
     """Render records as CSV with declared columns and stable row order.
 
     An artifact whose JSON record nests declares a flattener (Phase 10, ADR-065): a CSV cell
     holds a scalar, and rendering an array of per-source comparisons with ``str()`` would
     produce a cell containing a Python repr. Everything else keeps the previous behaviour -
     columns from the record schema, values copied through.
+
+    The in-season boards append the four season-actuals columns after their own (ADR-105),
+    joined from ``actuals``; one row per record, exactly as before.
     """
 
     def identity(record: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -111,12 +124,17 @@ def records_to_csv(artifact: str, records: Sequence[Mapping[str, Any]]) -> str:
         columns, project = record_field_order(spec.schema_name), identity
     else:
         columns, project = flattener
+    appended = companion_columns(artifact)
     buffer = io.StringIO(newline="")
     writer = csv.writer(buffer, lineterminator="\n")
-    writer.writerow(list(columns))
+    writer.writerow([*columns, *appended])
     for record in spec.sorted_records(records):
         row = project(record)
-        writer.writerow([_csv_cell(row.get(column)) for column in columns])
+        cells = [_csv_cell(row.get(column)) for column in columns]
+        if appended:
+            extra = companion_values(record, actuals)
+            cells.extend(_csv_cell(extra[column]) for column in appended)
+        writer.writerow(cells)
     return buffer.getvalue()
 
 
@@ -138,8 +156,11 @@ def write_artifact(
     build_id: str,
     generated_at: datetime,
     arbitrage_mode: str | None = None,
+    actuals: ActualsIndex | None = None,
 ) -> tuple[list[Path], list[QualityCheck]]:
     """Validate then write one artifact's JSON (and CSV where the spec declares one).
+
+    ``actuals`` fills the season-actuals columns of an in-season board's CSV (ADR-105).
 
     Returns the paths written and the validation record. Nothing is written when a critical
     check fails, so a failed build leaves the previous artifacts untouched.
@@ -164,7 +185,10 @@ def write_artifact(
     written = [_write_json(out_dir / spec.json_filename, envelope)]
     if spec.csv_filename:
         csv_path = out_dir / spec.csv_filename
-        csv_path.write_text(records_to_csv(artifact, envelope["records"]), encoding="utf-8")
+        csv_path.write_text(
+            records_to_csv(artifact, envelope["records"], actuals=actuals),
+            encoding="utf-8",
+        )
         written.append(csv_path)
     return written, checks
 

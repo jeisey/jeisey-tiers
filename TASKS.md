@@ -2091,3 +2091,51 @@ cyclable section that lives only on the Data tab.
 - [x] Validation: lint 0 errors (4 pre-existing warnings), typecheck clean, 799 Vitest,
       226 E2E (chromium, mobile, a11y).
 - [ ] Owner review of the section.
+
+## Season to date beside rest of season — 2026-10-09 (ADR-105)
+
+Owner request: show what a player has actually produced beside what the model expects for the
+rest of the season (motivating case: Tyler Shough), on the RoS chart, the three tables and the
+card, with honest definitions and no change to any model.
+
+- [x] **One computation** `season_actuals_v1` (`src/ffdraft/signals/actuals.py`): scoring-engine
+      points over REG weeks `1..through_week`; games = stats row **or** offensive snap (usage
+      layer's definition; the model's stats-row `games_to_date` untouched); points per game;
+      competition rank within the board's position over **every** appearing QB/RB/WR/TE, per
+      preset, at 0.01 precision; known-zero records for board players with no appearance;
+      withheld (warning) when any scheduled team-week is missing from stats or snaps.
+- [x] **Contract** `season_actuals_record` 1.0 (JSON + CSV), `ros_build_metadata.season_actuals`;
+      `ros_tiers.csv` / `inseason_opportunity.csv` append four season columns; validator
+      re-derives ranks and rates and holds the boards, usage layer and CSVs to the artifact
+      (`src/ffdraft/artifacts/actuals_checks.py`); served as `season_actuals/<scoring>`.
+- [x] **Fixtures**: production builder over the fixture season (snap rows for the synthetic
+      depth rows so coverage is complete); goldens regenerated; TS fixtures carry an off-board
+      QB1, a tie, a negative total, a zero-point appearance, an unprojected signing with real
+      actuals and an unsigned player with none; size model `actuals_per_scoring` 641 (measured).
+- [x] **RoS chart**: RoS-only comparison lane on its own log positional-rank scale (square RoS,
+      triangle season, two tracks, stable under filters), words beside it; the value lane's
+      median becomes a tick in this variant only; draft board unchanged.
+- [x] **Tables**: `Szn rank` · `Total pts` · `Avg pts/g` beside the RoS positional rank in the
+      RoS table, the Opportunity table (totals step aside below 1280px like team/drops) and its
+      Not projected list, and the Start/Sit week board (weekly rank relabelled **Week rank**,
+      **RoS rank** added, phone sub-line); grouped positional sorting, missing last; filtered
+      CSVs carry the four columns.
+- [x] **Card**: RoS rank / Season rank pair in the identity block with preset, cutoff,
+      population and a neutral gap sentence; hero relabelled ROS overall rank; Production so
+      far, PaceRail and the PPG cohort read the actuals; plain-language context box.
+- [x] **Real data** (live nflverse, 2026-10-09, cutoff week 4): Shough 85.32 pts, 4 games,
+      21.33/g = **Season QB5**; **RoS QB15** Half-PPR (QB13–14 PPR, QB14 STD) → "RoS is 10 places
+      below his season-to-date rank". Population QB 53 / RB 123 / WR 200 / TE 122; 183
+      snaps-only appearances; validate-artifacts `--require-serving` 0/0; `verify-real-build`
+      0 failures (120 actuals cells, 60 chart rows). Screens `docs/visual-qa/2026-10-09-season-actuals/`.
+- [x] **Docs**: ADR-105, DATA_CONTRACTS §21.3/§23, UX_SPEC §6A.15, ARCHITECTURE §14,
+      OPERATIONS failure table, PRD CR-027.
+- [x] **Validation (local).** ruff/format clean (332 files); mypy clean (199); **pytest 1,956
+      passed**; 828 Vitest; **237 E2E** (new `actuals.spec.ts`: lane geometry at 1440/390/320,
+      keyboard, direct links from every tab, preset, axe on board/card/week board/unprojected);
+      `verify:board` 0 failures on all six CI fixtures and the real build; budgets met.
+- [ ] **Pre-existing, not this change:** `verify:presets` fails identically on the live site
+      (arbitrage rows a block's tiers do not rank) — draft artifacts; separate investigation.
+- [ ] **Follow-up.** Owner review of the lane's log scale (on real data it ends at 200, so a
+      QB-only view uses the left part of the lane) and of the Start/Sit budget headroom
+      (real build +58.6 / 60 kB).

@@ -33,6 +33,7 @@
  * predicate over one reading; each sort orders by one published quantity.
  */
 
+import type { SeasonStanding } from "./actuals";
 import type { OpportunityRecord, PlayerUsageRecord, Position, RoleMetric } from "./contracts";
 import { EM_DASH, formatEasternDay, formatValue } from "./format";
 import { matchesPosition, matchesSearch } from "./model";
@@ -155,6 +156,8 @@ export interface OpportunityCandidate {
   readonly role: RoleSignal;
   readonly momentum: MomentumSignal;
   readonly nextGame: NextGameSignal;
+  /** His season-to-date standing (ADR-105): context beside the board, never an ordering. */
+  readonly season?: SeasonStanding;
 }
 
 /**
@@ -231,6 +234,7 @@ export function opportunityCandidate(
     role: roleSignal(bundle, record),
     momentum: momentumSignal(bundle, record.player_id),
     nextGame: nextGameSignal(bundle, signalTeam(usage, record.team)),
+    season: bundle.seasonStandingFor(record.scoring_preset, record.player_id),
   };
 }
 

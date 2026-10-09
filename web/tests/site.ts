@@ -87,6 +87,22 @@ const FAMILIES: readonly {
     only: ["player_id", "position", "touchdown_points_share", "pass_epa_per_dropback"],
   },
   { name: "player_headshots", artifact: "player_headshots", partition: "all" },
+  {
+    name: "season_actuals",
+    artifact: "season_actuals",
+    partition: "scoring",
+    only: [
+      "season",
+      "through_week",
+      "scoring_preset",
+      "player_id",
+      "position",
+      "games_played",
+      "points",
+      "points_per_game",
+      "season_position_rank",
+    ],
+  },
 ];
 
 const CARD_SECTIONS: readonly (readonly [string, "block" | "scoring" | "all"])[] = [
@@ -116,6 +132,7 @@ const FILENAMES: Readonly<Record<string, string>> = {
   player_usage: "player_usage.json",
   team_matchups: "team_matchups.json",
   weekly_projections: "weekly_projections.json",
+  season_actuals: "season_actuals.json",
 };
 
 function partitionKey(record: Record<string, unknown>, partition: "block" | "scoring" | "all"): string | null {

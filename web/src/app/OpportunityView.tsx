@@ -50,7 +50,7 @@ import {
 } from "../data/candidates";
 import { opportunityRowsToCsv } from "../data/csv";
 import { formatRank, formatValue } from "../data/format";
-import type { UnprojectedRecord } from "../data/contracts";
+import type { ScoringPreset, UnprojectedRecord } from "../data/contracts";
 import { matchesPosition, matchesSearch } from "../data/model";
 import { longAbsenceLabel, rosValue, type InSeasonBundle } from "../data/ros";
 import {
@@ -65,6 +65,13 @@ import {
 } from "../data/state";
 import { ExportControls } from "./ExportControls";
 import { OpportunityTable } from "./OpportunityTable";
+import {
+  SeasonPerGameCell,
+  SeasonPointsCell,
+  SeasonRankCell,
+  seasonCaption,
+} from "./SeasonColumns";
+import { SEASON_COLUMN_LABELS } from "../data/actuals";
 
 const SORT_LABELS: Readonly<Record<OpportunitySort, string>> = {
   value: "ROS value",
@@ -574,6 +581,11 @@ export function OpportunityView({
             onSelect={onSelect}
             selectedPlayerId={selectedPlayerId}
             visibleRowsRef={visibleRows}
+            seasonNote={seasonCaption(
+              metadata.through_week,
+              SCORING_LABELS[state.scoring],
+              bundle.actualsAvailability.published ? null : bundle.actualsAvailability.reason,
+            )}
           />
         )}
       </section>
@@ -582,6 +594,7 @@ export function OpportunityView({
         <UnprojectedSection
           bundle={bundle}
           records={unprojected}
+          scoring={SCORING_TO_PRESET[state.scoring]}
           onSelect={onSelect}
           selectedPlayerId={selectedPlayerId}
         />
@@ -600,11 +613,13 @@ export function OpportunityView({
 function UnprojectedSection({
   bundle,
   records,
+  scoring,
   onSelect,
   selectedPlayerId,
 }: {
   readonly bundle: InSeasonBundle;
   readonly records: readonly UnprojectedRecord[];
+  readonly scoring: ScoringPreset;
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
 }): React.JSX.Element {
@@ -619,7 +634,12 @@ function UnprojectedSection({
           "output. Speculative stashes: none can play until he signs or appears on a roster."
         }
       />
-      <div className="table-scroll">
+      <div
+        className="table-scroll"
+        role="region"
+        aria-labelledby="opportunity-unprojected-heading"
+        tabIndex={0}
+      >
         <table className="sheet unprojected-sheet">
           <caption className="visually-hidden">
             Off-roster players without a projection, most added first
@@ -635,6 +655,19 @@ function UnprojectedSection({
               <th scope="col" className="plain">
                 Team
               </th>
+              {/* ADR-105: genuine actuals, with no RoS projection manufactured beside them. */}
+              <th scope="col" className="plain">
+                ROS PosRk
+              </th>
+              <th scope="col" className="plain">
+                {SEASON_COLUMN_LABELS.rank}
+              </th>
+              <th scope="col" className="plain">
+                {SEASON_COLUMN_LABELS.points}
+              </th>
+              <th scope="col" className="plain">
+                {SEASON_COLUMN_LABELS.perGame}
+              </th>
               <th scope="col">Adds</th>
               <th scope="col">Drops</th>
               <th scope="col" className="plain">
@@ -645,6 +678,7 @@ function UnprojectedSection({
           <tbody>
             {records.map((record) => {
               const reading = bundle.availabilityFor(record.player_id);
+              const season = bundle.seasonStandingFor(scoring, record.player_id);
               return (
                 <tr
                   key={record.player_id}
@@ -666,6 +700,16 @@ function UnprojectedSection({
                   <td>{record.position}</td>
                   <td>
                     <TeamCell team={record.team} playerId={record.player_id} />
+                  </td>
+                  <td className="muted">No RoS projection</td>
+                  <td className="num">
+                    <SeasonRankCell standing={season} />
+                  </td>
+                  <td className="num">
+                    <SeasonPointsCell standing={season} />
+                  </td>
+                  <td className="num">
+                    <SeasonPerGameCell standing={season} />
                   </td>
                   <td className="num">{formatCount(record.add_count)}</td>
                   <td className="num">{formatCount(record.drop_count)}</td>

@@ -31,13 +31,15 @@
 import { useCallback, useMemo, useRef } from "react";
 
 import { TierBoard, defaultOpenTiers } from "../charts/TierBoard";
-import type { BoardAxis, BoardGroup } from "../charts/boardModel";
+import type { BoardAxis, BoardGroup, BoardRankLane } from "../charts/boardModel";
+import { formatSeasonRank, seasonAbsence } from "../data/actuals";
 import { AvailabilityBadge, Notice, SectionHead } from "../components/primitives";
 import { rosRowsToCsv } from "../data/csv";
 import { formatRank, formatValue } from "../data/format";
 import {
   groupRosByTier,
   longAbsenceLabel,
+  rosRankDomain,
   selectRosRows,
   splitActionable,
   type InSeasonBundle,
@@ -48,6 +50,7 @@ import { SCORING_LABELS, type AppState } from "../data/state";
 import { ExportControls } from "./ExportControls";
 import { LongAbsenceBadge } from "./RosTable";
 import { RosTable } from "./RosTable";
+import { seasonCaption } from "./SeasonColumns";
 
 export const ROS_BAND_NOTE =
   "Rest-of-season tiers are bands, not lines. Membership reproduces across resamples; the " +
@@ -72,9 +75,22 @@ function markLabel(row: RosRow, tierLabel: string): string {
     `VORP ${formatValue(record.ros_vorp_p50)}, P25 to P75 ${formatValue(record.ros_vorp_p25)} ` +
     `to ${formatValue(record.ros_vorp_p75)}, P10 to P90 ${formatValue(record.ros_vorp_p10)} ` +
     `to ${formatValue(record.ros_vorp_p90)}` +
+    seasonLabel(row) +
     (record.long_absence ? `. ${longAbsenceLabel(record)}` : "") +
     (row.availability?.short != null ? `. ${row.availability.headline}` : "")
   );
+}
+
+/** The rank comparison in words, for the mark's accessible label (ADR-105). */
+function seasonLabel(row: RosRow): string {
+  const record = row.record;
+  const season = row.season;
+  const ros = `. Rest-of-season ${record.position}${String(record.ros_position_rank)}`;
+  if (season === undefined) return ros;
+  if (season.kind === "ranked") {
+    return `${ros}, season to date ${formatSeasonRank(season)} by points scored`;
+  }
+  return `${ros}, no season rank: ${(seasonAbsence(season) ?? "").toLowerCase()}`;
 }
 
 /** The rest-of-season tier groups, as marks the board can draw. Nothing is recomputed. */
@@ -100,6 +116,11 @@ function toBoardGroups(groups: readonly RosTierGroup[]): readonly BoardGroup[] {
         </>
       ),
       label: markLabel(row, group.label),
+      ranks: {
+        ros: row.record.ros_position_rank,
+        season: row.season?.kind === "ranked" ? row.season.rank : null,
+        seasonAbsence: row.season === undefined ? null : seasonAbsence(row.season),
+      },
     })),
   }));
 }
@@ -179,6 +200,19 @@ export function RosView({
    */
   const banded = groups.reduce((total, group) => total + group.rows.length, 0);
 
+  // ADR-105: the comparison lane's scale comes from the whole published block, so filtering,
+  // searching or collapsing never moves a mark.
+  const rankDomain = useMemo(() => rosRankDomain(bundle, state), [bundle, state]);
+  const actualsUp = bundle.actualsAvailability.published;
+  const rankLane: BoardRankLane = {
+    domain: rankDomain,
+    unit: "Pos rank",
+    note:
+      "Positional rank, log scale, 1 at the left: ■ rest of season, ▲ season to date by " +
+      "points. Each player is ranked within his own position" +
+      (state.position === "all" ? " — QB4 and RB4 are separate standings." : "."),
+  };
+
   const axis: BoardAxis = {
     title: "Median simulated remaining VORP",
     unit: "Median",
@@ -190,7 +224,9 @@ export function RosView({
       "P75 interval around it on a shared scale. Tier bands overlap because exact tier edges " +
       "are not statistically stable. This is what is left of the season from a different " +
       "model with a different replacement baseline, never the preseason value of the same " +
-      "shape. The table below carries the same values.",
+      "shape. A second lane compares two positional ranks on their own scale: the square is " +
+      "the rest-of-season rank and the triangle the season-to-date rank by points scored. " +
+      "The table below carries the same values.",
   };
 
   return (
@@ -268,6 +304,7 @@ export function RosView({
             selectedPlayerId={selectedPlayerId}
             openTiers={openTiers}
             onToggleTier={onToggleTier}
+            rankLane={rankLane}
           />
         )}
 
@@ -281,7 +318,17 @@ export function RosView({
           <span className="legend-sep" aria-hidden="true" />
           <span className="legend-item">
             <span className="legend-rule" />
-            P25–P75 simulated remaining VORP; the mark is the median
+            <span className="legend-tick" aria-hidden="true" />
+            P25–P75 simulated remaining VORP; the tick is the median
+          </span>
+          <span className="legend-item" data-legend="rank-ros">
+            <span className="rank-glyph" data-kind="ros" aria-hidden="true" />
+            RoS positional rank
+          </span>
+          <span className="legend-item" data-legend="rank-season">
+            <span className="rank-glyph" data-kind="season" aria-hidden="true" />
+            {`Season positional rank by points, weeks 1–${String(metadata.through_week)}`}
+            {!actualsUp && " (unavailable for this build)"}
           </span>
           <span className="legend-item">{ROS_BAND_NOTE}</span>
           <span className="legend-item muted">
@@ -333,8 +380,9 @@ export function RosView({
           title="Rest-of-season table"
           note={
             "ROS rank is the model's published order — sorting re-orders these rows without " +
-            "changing it, and it is not adjusted for injuries. The mark beside a name is the " +
-            "availability reading (ADR-101), which reached no model input."
+            "changing it, and it is not adjusted for injuries. Szn rank, Total pts and Avg " +
+            "pts/g are what each player has actually scored so far. The mark beside a name is " +
+            "the availability reading (ADR-101), which reached no model input."
           }
         >
           <ExportControls
@@ -370,6 +418,11 @@ export function RosView({
             onSelect={onSelect}
             selectedPlayerId={selectedPlayerId}
             visibleRowsRef={visibleRows}
+            seasonNote={seasonCaption(
+              metadata.through_week,
+              SCORING_LABELS[state.scoring],
+              actualsUp ? null : bundle.actualsAvailability.reason,
+            )}
           />
         )}
       </section>
