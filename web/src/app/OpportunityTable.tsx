@@ -194,6 +194,7 @@ function opportunityColumns(
     ...seasonColumns<OpportunityCandidate>(
       (row) => row.season,
       (row) => row.row.record.position,
+      (row) => row.row.record.ros_position_rank,
       "col-mid",
     ),
     {

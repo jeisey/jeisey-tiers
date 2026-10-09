@@ -14,16 +14,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
 import {
   actualsAvailability,
+  describeRosVsSeason,
+  formatRosVsSeason,
   formatSeasonPerGame,
   formatSeasonPoints,
   formatSeasonRank,
   positionalSortKey,
   rankGap,
   rankGapSentence,
+  rosVsSeasonPlaces,
   seasonCsvCells,
   seasonStanding,
 } from "../src/data/actuals";
 import { rosRowsToCsv } from "../src/data/csv";
+import { sortWeekBoard } from "../src/data/duel";
 import { rankPercent, rankScaleEnd, rankTicks } from "../src/charts/rankScale";
 import {
   FIXTURE_GENERATED_AT,
@@ -115,6 +119,40 @@ describe("the reading model", () => {
     );
     expect(rankGapSentence({ places: 0, direction: "same" })).toMatch(/same/);
     expect(rankGap(15, seasonStanding(null, published))).toBeNull();
+  });
+
+  it("signs the tables' gap the way the card words it, and has none without both ranks", () => {
+    const allen = seasonStanding(ppr(ALLEN), published);
+    // RoS QB1, season QB4: RoS is 3 places above, so +3.
+    expect(rosVsSeasonPlaces(1, allen)).toBe(3);
+    expect(formatRosVsSeason(rosVsSeasonPlaces(1, allen))).toBe("+3");
+    expect(describeRosVsSeason(3)).toBe("RoS rank is 3 places above season rank");
+    // RoS QB15, season QB5 (the motivating case): 10 places below, with a real minus sign.
+    expect(rosVsSeasonPlaces(15, { kind: "ranked", position: "QB", rank: 5, points: 85.32, games: 4, perGame: 21.33 })).toBe(-10);
+    expect(formatRosVsSeason(-10)).toBe("−10");
+    expect(describeRosVsSeason(-1)).toBe("RoS rank is 1 place below season rank");
+    expect(formatRosVsSeason(0)).toBe("0");
+    // Missing either rank is no gap, never a zero.
+    expect(rosVsSeasonPlaces(null, allen)).toBeNull();
+    expect(rosVsSeasonPlaces(4, seasonStanding(ppr(FIXTURE_UNSIGNED_ID), published))).toBeNull();
+    expect(rosVsSeasonPlaces(4, seasonStanding(null, published))).toBeNull();
+    expect(formatRosVsSeason(null)).toBe("—");
+  });
+
+  it("sorts a board column with blanks last either way and ties in the arriving order", () => {
+    const rows = [
+      { id: "a", v: 2 },
+      { id: "b", v: null },
+      { id: "c", v: 5 },
+      { id: "d", v: 2 },
+      { id: "e", v: Number.NEGATIVE_INFINITY },
+      { id: "f", v: -3 },
+    ];
+    const ids = (desc: boolean) => sortWeekBoard(rows, (row) => row.v, desc).map((row) => row.id);
+    expect(ids(true)).toEqual(["c", "a", "d", "f", "b", "e"]);
+    expect(ids(false)).toEqual(["f", "a", "d", "c", "b", "e"]);
+    const names = sortWeekBoard([{ n: "Zay" }, { n: "amon" }, { n: "Bijan" }], (row) => row.n, false);
+    expect(names.map((row) => row.n)).toEqual(["amon", "Bijan", "Zay"]);
   });
 
   it("sorts positional ranks within their position", () => {
@@ -221,21 +259,51 @@ describe("the RoS chart's comparison lane", () => {
 function headers(table: HTMLElement): string[] {
   return within(table)
     .getAllByRole("columnheader")
-    .map((cell) => (cell.textContent ?? "").replace(/[▲▼]/g, "").trim());
+    .map((cell) => (cell.textContent ?? "").replace(/[▲▼]/g, "").replace(/\s+/g, " ").trim());
+}
+
+/** A cell as it is seen: the signed gap's hidden words left out. */
+function seen(cell: Element): string {
+  const signed = cell.querySelector(".ros-vs-season > [aria-hidden='true']");
+  return signed === null ? (cell.textContent ?? "") : (signed.textContent ?? "");
 }
 
 describe("the RoS table", () => {
-  it("puts Szn rank beside ROS PosRk, then the season totals", async () => {
+  it("puts Szn rank beside ROS PosRk, the signed gap between them, then the season totals", async () => {
     serve();
     await openRos();
     const table = required(document.querySelector<HTMLElement>("table.sheet"), "the RoS table");
     const names = headers(table);
     const at = names.indexOf("ROS PosRk");
-    expect(names.slice(at, at + 4)).toEqual(["ROS PosRk", "Szn rank", "Total pts", "Avg pts/g"]);
+    expect(names.slice(at, at + 5)).toEqual(["ROS PosRk", "Szn rank", "RoS vs Szn", "Total pts", "Avg pts/g"]);
     const row = required(table.querySelector<HTMLElement>(`tr[data-player="${ALLEN}"]`), "Allen's row");
-    const cells = [...row.querySelectorAll("td")].map((cell) => cell.textContent);
-    expect(cells.slice(at, at + 4)).toEqual(["QB1", "QB4", "36.6", "7.3"]);
+    const cells = [...row.querySelectorAll("td")].map(seen);
+    expect(cells.slice(at, at + 5)).toEqual(["QB1", "QB4", "+3", "36.6", "7.3"]);
+    // The sign is never the only carrier: the words are in the cell for a screen reader.
+    expect(row.querySelectorAll("td")[at + 2]?.textContent).toContain("RoS rank is 3 places above season rank");
     expect(table.querySelector("caption")?.textContent).toMatch(/actual results through week 8/);
+    expect(table.querySelector("caption")?.textContent).toMatch(/RoS vs Szn is Szn rank minus RoS rank/);
+  });
+
+  it("sorts the signed gap widest-first, blanks last, and reverses on a second click", async () => {
+    serve();
+    await openRos();
+    const table = required(document.querySelector<HTMLElement>("table.sheet"), "the RoS table");
+    const column = headers(table).indexOf("RoS vs Szn");
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const gaps = (): number[] =>
+      [...table.querySelectorAll("tbody tr")]
+        .map((row) => seen(required(row.querySelectorAll("td")[column], "a gap cell")))
+        .map((text) => (text === "—" ? Number.NaN : Number(text.replace("−", "-"))));
+    await user.click(within(table).getByRole("button", { name: /RoS vs Szn/ }));
+    const down = gaps();
+    const known = down.filter((value) => !Number.isNaN(value));
+    expect(known[0]).toBe(Math.max(...known));
+    expect(known).toEqual([...known].sort((a, b) => b - a));
+    expect(down.slice(0, known.length).every((value) => !Number.isNaN(value))).toBe(true);
+    await user.click(within(table).getByRole("button", { name: /RoS vs Szn/ }));
+    const up = gaps().filter((value) => !Number.isNaN(value));
+    expect(up).toEqual([...up].sort((a, b) => a - b));
   });
 
   it("sorts season ranks within position, missing last", async () => {
@@ -255,7 +323,7 @@ describe("the RoS table", () => {
     expect(sequence).toEqual([...sequence].sort((a, b) => a - b));
   });
 
-  it("exports the four season columns with the record's values", () => {
+  it("exports the four season columns with the record's values, then the signed gap", () => {
     const record = required(
       rosTierRecords().find(
         (r) => r.player_id === ALLEN && r.league_preset_id === "redraft-12" && r.scoring_preset === "PPR",
@@ -266,13 +334,14 @@ describe("the RoS table", () => {
       { record, season: seasonStanding(ppr(ALLEN), actualsAvailability(seasonActualsMetadata(), true)) },
     ]);
     const [header, line] = csv.trim().split("\r\n");
-    expect(header?.split(",").slice(-4)).toEqual([
+    expect(header?.split(",").slice(-5)).toEqual([
       "season_position_rank",
       "season_points",
       "season_games_played",
       "season_points_per_game",
+      "ros_vs_season_places",
     ]);
-    expect(line?.split(",").slice(-4)).toEqual(["4", "36.62", "5", "7.32"]);
+    expect(line?.split(",").slice(-5)).toEqual(["4", "36.62", "5", "7.32", "3"]);
   });
 });
 
@@ -292,18 +361,29 @@ describe("the player card", () => {
     return screen.getByRole("dialog");
   }
 
-  it("puts both ranks side by side, with the preset, the cutoff and a neutral gap", async () => {
+  it("puts both ranks side by side as identity tags, with the preset, the cutoff and a neutral gap", async () => {
     serve();
     const dialog = await openCard("?view=ros&scoring=ppr&teams=12", ALLEN_NAME);
     const pair = within(dialog).getByTestId("rank-pair");
+    // Two tags in the identity row, styled as its other tags, each with its words for a
+    // screen reader and its chart glyph.
+    expect(pair.closest(".detail-subtitle")).not.toBeNull();
+    const chips = [...pair.querySelectorAll(".rank-chip")];
+    expect(chips.map((chip) => chip.getAttribute("data-kind"))).toEqual(["ros", "season"]);
+    expect(chips.every((chip) => chip.classList.contains("detail-posrank"))).toBe(true);
     expect(within(pair).getByText("RoS rank")).toBeDefined();
     expect(within(pair).getByText("QB1")).toBeDefined();
     expect(within(pair).getByText("Season rank")).toBeDefined();
     expect(within(pair).getByText("QB4")).toBeDefined();
-    expect(pair.textContent).toContain("PPR · through week 8");
-    expect(pair.textContent).toContain("RoS is 3 places above his season-to-date rank.");
-    // The population the season rank is out of, from the build.
-    expect(pair.textContent).toContain(`of ${String(seasonActualsMetadata().population.QB)} QBs`);
+    // The bare RoS tag is gone: the labelled one says the same number once.
+    const subtitle = required(pair.closest<HTMLElement>(".detail-subtitle"), "the identity row");
+    expect([...subtitle.querySelectorAll(":scope > .detail-posrank")].map((tag) => tag.textContent)).not.toContain("QB1");
+    const meta = within(dialog).getByTestId("rank-pair-meta");
+    expect(meta.textContent).toContain("PPR · through week 8");
+    expect(meta.textContent).toContain("RoS is 3 places above his season-to-date rank.");
+    // The population the season rank is out of, from the build, on the tag and in the section.
+    const population = `of ${String(seasonActualsMetadata().population.QB)} QBs`;
+    expect(chips[1]?.getAttribute("title")).toContain(population);
   });
 
   it("explains the two rankings in plain words with his own rates", async () => {
@@ -311,6 +391,9 @@ describe("the player card", () => {
     const dialog = await openCard("?view=ros&scoring=ppr&teams=12", ALLEN_NAME);
     const context = within(dialog).getByTestId("season-context");
     expect(context.textContent).toMatch(/Season rank measures points already scored/);
+    expect(context.textContent).toContain(
+      `among the ${String(seasonActualsMetadata().population.QB)} QBs who have appeared`,
+    );
     expect(context.textContent).toMatch(/RoS rank orders the model.s value from here on/);
     expect(context.textContent).toMatch(/3-place gap above is a difference between two orderings, not a fall over time/);
     expect(context.textContent).toMatch(/scored 7\.3 points per game over 5 appearances/);
@@ -327,13 +410,15 @@ describe("the player card", () => {
     const signing = ppr(FIXTURE_SIGNING_ID);
     const dialog = await openCard("?view=opportunity&scoring=ppr&teams=12", signing.display_name);
     const pair = within(dialog).getByTestId("rank-pair");
-    expect(within(pair).getByText("No RoS projection")).toBeDefined();
+    // "RoS rank: Not projected" to a screen reader; the tag's title says it in full.
+    expect(within(pair).getByText("Not projected")).toBeDefined();
+    expect(pair.querySelector(".rank-chip[data-kind='ros']")?.getAttribute("title")).toBe("No RoS projection");
     expect(within(pair).getByText(`WR${String(signing.season_position_rank)}`)).toBeDefined();
   });
 });
 
 describe("the other tables", () => {
-  it("the Opportunity board carries the same three columns, and the unprojected list too", async () => {
+  it("the Opportunity board carries the same columns, and the unprojected list its three", async () => {
     serve();
     go("?view=opportunity&scoring=ppr&teams=12");
     render(<App />);
@@ -343,7 +428,9 @@ describe("the other tables", () => {
     const table = required(document.querySelector<HTMLElement>("table.opp-sheet"), "the table");
     const names = headers(table);
     const at = names.indexOf("ROS PosRk");
-    expect(names.slice(at, at + 4)).toEqual(["ROS PosRk", "Szn rank", "Total pts", "Avg pts/g"]);
+    expect(names.slice(at, at + 5)).toEqual(["ROS PosRk", "Szn rank", "RoS vs Szn", "Total pts", "Avg pts/g"]);
+    const allen = required(table.querySelector<HTMLElement>(`tr[data-player-id="${ALLEN}"], tr[data-player="${ALLEN}"]`), "Allen's row");
+    expect(seen(required(allen.querySelectorAll("td")[at + 2], "his gap"))).toBe("+3");
     const unprojected = required(document.querySelector<HTMLElement>("table.unprojected-sheet"), "the list");
     const signing = ppr(FIXTURE_SIGNING_ID);
     const row = required(
@@ -370,7 +457,61 @@ describe("the other tables", () => {
     const names = headers(table);
     expect(names).toContain("Week rank");
     const at = names.indexOf("RoS rank");
-    expect(names.slice(at, at + 4)).toEqual(["RoS rank", "Szn rank", "Total pts", "Avg pts/g"]);
+    expect(names.slice(at, at + 5)).toEqual(["RoS rank", "Szn rank", "RoS vs Szn", "Total pts", "Avg pts/g"]);
+  });
+
+  it("Start/Sit sorts by any column a reader selects, before paging, and an Order by restores it", async () => {
+    serve();
+    go("?view=startsit&scoring=ppr&teams=12");
+    render(<App />);
+    await waitFor(() => {
+      expect(document.querySelector("table.weekboard-table tbody tr")).not.toBeNull();
+    });
+    const table = required(document.querySelector<HTMLElement>("table.weekboard-table"), "the board");
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const names = headers(table);
+    // Every heading but the compare column's is a sort button.
+    const sortable = within(table).getAllByRole("columnheader").filter((cell) => cell.querySelector("button") !== null);
+    expect(sortable).toHaveLength(names.length - 1);
+    const column = (label: string): string[] =>
+      [...table.querySelectorAll("tbody tr")].map((row) =>
+        seen(required(row.querySelectorAll("td")[names.indexOf(label)], `a ${label} cell`)),
+      );
+    const players = (): string[] =>
+      [...table.querySelectorAll("tbody tr .player-name")].map((name) => name.textContent ?? "");
+    const before = players();
+
+    await user.click(within(table).getByRole("button", { name: /RoS vs\s+Szn/ }));
+    const header = required(within(table).getByRole("button", { name: /RoS vs\s+Szn/ }).closest("th"), "its heading");
+    expect(header.getAttribute("aria-sort")).toBe("descending");
+    const gaps = column("RoS vs Szn").filter((text) => text !== "—").map((text) => Number(text.replace("−", "-")));
+    expect(gaps).toEqual([...gaps].sort((a, b) => b - a));
+    expect(players()[0]).toBe("Ja'Marr Swift");
+    const sortedBy = required(document.querySelector(".weekboard-sorted"), "the sorted-by line");
+    expect(sortedBy.getAttribute("role")).toBe("status");
+    expect(sortedBy.textContent).toMatch(/Sorted by RoS vs Szn, descending/);
+
+    // A rank reads best-first on the first click, grouped by position.
+    await user.click(within(table).getByRole("button", { name: /^Szn rank/ }));
+    const seasonRanks = column("Szn rank").filter((text) => text !== "—");
+    const order = ["QB", "RB", "WR", "TE"];
+    const keys = seasonRanks.map((rank) => order.indexOf(rank.replace(/\d+/, "")) * 1000 + Number(rank.replace(/\D+/, "")));
+    expect(keys).toEqual([...keys].sort((a, b) => a - b));
+
+    // A name sorts A to Z.
+    await user.click(within(table).getByRole("button", { name: /^Player/ }));
+    const sortedNames = players();
+    expect(sortedNames).toEqual([...sortedNames].sort((a, b) => a.localeCompare(b)));
+
+    // An Order by choice is the board's own order again, and its column carries the mark.
+    await user.click(screen.getByRole("radio", { name: /Chance of a startable week/ }));
+    expect(players()).toEqual(before);
+    expect(sortedBy.textContent).toBe("");
+    const startable = required(within(table).getByRole("button", { name: /^Startable/ }).closest("th"), "Startable");
+    expect(startable.getAttribute("aria-sort")).toBe("descending");
+    // A click on the marked column reverses it rather than re-applying the same order.
+    await user.click(within(table).getByRole("button", { name: /^Startable/ }));
+    expect(startable.getAttribute("aria-sort")).toBe("ascending");
   });
 
   it("never lists the off-board leader, but every board player ranks behind him", () => {

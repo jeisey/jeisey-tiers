@@ -152,6 +152,36 @@ export function rankGapSentence(gap: RankGap): string {
   );
 }
 
+/**
+ * The tables' signed form of the same distance: season rank minus RoS positional rank, in
+ * places. Positive when RoS ranks him higher (a smaller number) than his production so far —
+ * the card's "RoS is 7 places above" is `+7` — and negative when lower. Null when either rank
+ * is missing: no projection, no appearances or no published actuals is not a gap of zero.
+ */
+export function rosVsSeasonPlaces(
+  rosPositionRank: number | null | undefined,
+  standing: SeasonStanding | undefined,
+): number | null {
+  if (rosPositionRank === null || rosPositionRank === undefined) return null;
+  if (standing?.kind !== "ranked") return null;
+  return standing.rank - rosPositionRank;
+}
+
+/** `+7`, `−10` with a real minus sign, `0`, or an em dash when there is no gap to state. */
+export function formatRosVsSeason(places: number | null): string {
+  if (places === null) return EM_DASH;
+  if (places === 0) return "0";
+  return places > 0 ? `+${String(places)}` : `−${String(Math.abs(places))}`;
+}
+
+/** The cell's words, for a screen reader and a tooltip: never a sign alone. */
+export function describeRosVsSeason(places: number | null): string {
+  if (places === null) return "No gap: one of the two ranks is missing";
+  if (places === 0) return "RoS rank and season rank are the same";
+  const count = Math.abs(places);
+  return `RoS rank is ${String(count)} place${count === 1 ? "" : "s"} ${places > 0 ? "above" : "below"} season rank`;
+}
+
 /** Sort order of the four positions, for grouping positional ranks in mixed views. */
 const POSITION_ORDER: Readonly<Record<string, number>> = { QB: 0, RB: 1, WR: 2, TE: 3, K: 4, DST: 5 };
 
@@ -197,9 +227,17 @@ export const SEASON_CSV_COLUMNS = [
   "season_points_per_game",
 ] as const;
 
+/**
+ * The filtered exports' one derived column, after the four above: season rank minus RoS
+ * positional rank, empty when either is missing. The full CSVs carry both ranks and leave the
+ * subtraction to the reader; the browser's exports mirror the table, which shows it.
+ */
+export const ROS_VS_SEASON_CSV_COLUMN = "ros_vs_season_places";
+
 /** Short column labels and their definitions, shared by every table. */
 export const SEASON_COLUMN_LABELS = {
   rank: "Szn rank",
   points: "Total pts",
   perGame: "Avg pts/g",
+  rosVsSeason: "RoS vs Szn",
 } as const;

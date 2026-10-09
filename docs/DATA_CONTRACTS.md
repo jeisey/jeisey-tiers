@@ -1464,4 +1464,7 @@ named: a rank over a silently smaller population is the failure this contract ex
 joined from `season_actuals.json` by `(scoring_preset, player_id)` — empty when the build
 published none for him. The JSON records are unchanged. `artifact.csv_header_mismatch` expects
 the appended header and `artifact.csv_actuals_agree` proves the cells copy the artifact. The
-browser's filtered RoS and Opportunity exports append the same four names with the same values.
+browser's filtered RoS and Opportunity exports append the same four names with the same values,
+then `ros_vs_season_places`: `season_position_rank` minus the row's `ros_position_rank`
+(positive when the RoS rank is the better place), empty when either is missing. It is the
+tables' `RoS vs Szn` column. The full CSVs do not repeat it, since they carry both ranks.

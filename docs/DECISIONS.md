@@ -6385,3 +6385,66 @@ statistic, zero points.
 * On real data the lane's scale ends at 200 (the deepest WR season rank), so a quarterback-only
   view uses the left part of the lane; that is the price of coordinates that do not move with a
   filter, and every row prints both ranks in words.
+
+### Amendment — 2026-10-09: card fit, a signed gap column, a sortable week board
+
+Reviewed live after merge. Four corrections; no artifact, model or ordering changes.
+
+1. **The headshot never gives way.** The wide rail is a fixed-height scrolling flex column,
+   and flex items shrink by default. The portrait is the only one whose box is set by
+   `aspect-ratio` rather than by text, so when the season readouts made an in-season rail
+   overflow the 48rem dialog, the portrait absorbed it. On the live card, which also carries
+   *Net adds*, it shrank to a ~50px strip. On the wide variant, the portrait is now the only
+   item that yields, and only down to a 9rem floor, where `cover` still shows the whole face.
+   Past the floor, the rail scrolls.
+   * An in-season rail that carries the season tags has a **square** portrait and the tighter
+     gaps of the narrow variants (wide variant only). At the dialog's full 48rem, the whole
+     rail fits with the headshot square and the status line on screen; it does on the fixture
+     with *Net adds*.
+   * At 1280×720, both rails fit, with the headshot between its floor and its full size.
+   * The draft rail keeps its 5:6 portrait.
+2. **The phone sheet caps in `dvh`.** The sheet is anchored to the bottom edge with a `96vh`
+   cap. On a phone, `vh` is the viewport with its toolbars hidden. Once the season readouts
+   made the sheet reach its cap, its top (name, close control) sat under the address bar. The
+   cap is now `96dvh`, with `vh` kept as the fallback; the desktop dialog's cap is the same.
+3. **The two ranks are tags.** `■ ROS QB15` and `▲ SZN QB5` sit in the identity row in the
+   `.detail-posrank` style (0.6rem, hairline, uppercase), replacing the row's bare RoS tag.
+   * A screen reader hears "RoS rank QB15" and "Season rank QB5".
+   * Under the row, one small line keeps the preset, the cutoff and the neutral sentence.
+   * The population ("of 53 QBs who have appeared") moves to the season tag's title and to
+     the context box.
+4. **`RoS vs Szn`, a signed gap column**, sits between `Szn rank` and `Total pts` in the RoS
+   table, the Opportunity table and the Start/Sit week board.
+   * Its value is season rank minus RoS positional rank, in places. `+7` means RoS ranks him
+     7 places higher than his production so far, the card's "7 places above"; Shough is `−10`.
+   * The value is a dash when either rank is missing (no projection, no appearances, no
+     actuals), never 0.
+   * It sorts as one number across positions, largest first on the first click, with blanks
+     last both ways. The sign and hidden words carry the meaning, not colour.
+   * The filtered RoS and Opportunity exports append `ros_vs_season_places` after the four
+     season columns. The full CSVs are unchanged: they carry both ranks.
+   * The "Not projected" list has no RoS rank, so it has no gap column.
+5. **Every Start/Sit week board column sorts**, the compare toggle aside.
+   * Each heading is a button with `aria-sort` and the other tables' ▲/▼ mark.
+   * Numbers read largest first. Ranks, names, kickoff time and "Opp. allows" (1st = most
+     generous) read from the top.
+   * P10–P90 sorts by the range's width, as the RoS table's interval column does.
+   * Blanks (byes, missing ranks) sort last in either direction, and ties keep the
+     "Order by" order.
+   * On this-week columns, a player who cannot play this week (out, reserve list) sorts with
+     the blanks, keeping the board's rule that he is not one of the choices. Season and RoS
+     columns sort everyone by value.
+   * The board is sorted **before** it is paged, so the first 40 rows of a sort are the top
+     of the whole board.
+   * An "Order by" choice, or the status line's "Back to … order", restores the board's own
+     order. With no column clicked, the Startable or Median heading carries the mark when
+     that is the order, and a click on it reverses that order.
+   * Headings may wrap to two lines and cells pad 8px, as on the Opportunity Board. The range
+     column takes a fifth of the width rather than a third.
+   * From 1100 to 1439px, the range bar's floor is 7rem and the "of 32" after the opponent's
+     rank (the same on every row) moves to screen-reader text.
+   * The board therefore fits at 1280px with the new column and the sort marks, with at least
+     32px of slack (it scrolled at 1280px before). A first version fitted with 12px of slack
+     locally and overflowed by 6px on CI's Chromium.
+   * The board's scroll box is now positioned, as `.table-scroll` already was. Its cells'
+     screen-reader-only spans had escaped it and widened a phone page by 210px.

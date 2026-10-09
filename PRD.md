@@ -123,8 +123,9 @@ These hold for every feature, current or future.
   per game and the positional rank by points over every player at the position who has
   appeared, per scoring preset, through the board's cutoff (`season_actuals_v1`, ADR-105). The
   RoS chart draws the two ranks on their own labelled lane (square RoS, triangle season), never
-  on the value axis; the card states the gap neutrally and says what each rank measures.
-  Descriptive only: no model, value, tier or decision reads it, and incomplete source data
+  on the value axis; the card states the gap neutrally and says what each rank measures. The
+  tables also print that gap as a signed number of places (`RoS vs Szn`), so a reader can sort
+  by it, and the Start/Sit week board sorts by any column. Descriptive only: no model, value, tier or decision reads it, and incomplete source data
   withholds it rather than ranking a smaller population.
 - **CR-026 Home.** The logo is a link to the season-aware default view under the configured base
   path.
