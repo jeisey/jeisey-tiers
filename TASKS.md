@@ -2066,3 +2066,21 @@ sense at quarterback.
       CI fixtures; budgets met (card +23.8/30 kB); real-data `validate-artifacts
       --require-serving` 0/0 and `verify-real-build` 0 failures (4 drive rails checked).
 - [ ] **Follow-up.** Owner review of the revised rail.
+
+## "How it works" on the Data tab — 2026-10-09
+
+Owner request: the plain-English model boards ("Model Field Briefing" canvas) as a built-in,
+cyclable section that lives only on the Data tab.
+
+- [x] `web/src/app/HowItWorks.tsx`: nine boards, previous/next (wrapping), a button per board,
+      arrow keys inside the carousel, polite live announcement. Lazy chunk (7.6 kB gzip); entry
+      bundle +0.2 kB gzip.
+- [x] No hardcoded metric: model-card links; start/sit accuracy read from
+      `weekly.evaluation` with a worded fallback.
+- [x] Tests: `web/tests/how-it-works.test.tsx` (cycle/wrap, keys, direct reach, metric source,
+      Data-only); a11y E2E scans every board at 1280 and 320 px, with no horizontal overflow.
+- [x] Docs: UX_SPEC §9, screens `docs/visual-qa/2026-10-09-how-it-works/`.
+- [ ] **Follow-up (pre-existing, not this change):** axe `scrollable-region-focusable` on the
+      Freshness table (`section[aria-labelledby="freshness-heading"] > .table-scroll`) on the
+      *in-season* Data page; the existing "data" scan only covers the preseason build.
+- [ ] Owner review of the section.

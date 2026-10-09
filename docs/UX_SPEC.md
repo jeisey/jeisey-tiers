@@ -953,6 +953,25 @@ This is not a long blog post.
 
 Show concise sections:
 
+### How it works (2026-10-09)
+
+The first section of the tab, and only of this tab: a carousel of nine boards that explains
+every model in plain English for a reader with no statistics background — mission map, draft
+model, simulation/value/tiers, bargain finder (A0), rest of season, Start/Sit v1, Start/Sit v2
+(shadow), the tools built on top, and the rules every model follows. Design source: the owner's
+"Model Field Briefing" canvas, translated into this stylesheet's tokens (`.hiw-*` in
+`base.css`) and its vendored fonts.
+
+- Previous/next buttons wrap; one button per board; arrow keys while focus is inside the
+  carousel (never a global handler); the board name is announced politely.
+- Status is a word plus a shape (square, diamond, triangle), never colour alone.
+- No metric is typed in. Boards describe and link to the generated model cards; the one number
+  printed — the start/sit holdout pair accuracy against the best simple rule — is read from
+  `ros_build_metadata.weekly.evaluation` and falls back to words when absent.
+- Figures are labelled illustrations, `aria-hidden`, each with a sentence saying what it shows.
+- Loaded as its own chunk with the Data page, so no other view's first visit pays for it.
+- Screens: `docs/visual-qa/2026-10-09-how-it-works/`.
+
 ### What the two models do
 
 - Tier = intrinsic football value, no ADP/ECR input

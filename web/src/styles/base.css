@@ -8074,3 +8074,619 @@ table.sheet.weekboard-table thead th.wb-num {
     display: none;
   }
 }
+
+/* ------------------------------------------------------------ how it works
+ *
+ * The Data page's plain-English model boards (`app/HowItWorks.tsx`). One board shows at a
+ * time; the frame, the cut corners and the hairlines are the HUD's own. Everything is scoped
+ * under `.hiw` so nothing here can reach another view.
+ *
+ * Status is never colour alone: each tag prints its word, and its mark differs in shape
+ * (square, diamond, triangle). The shadow model's violet is `--pos-qb`, which already clears
+ * AA on these surfaces. The illustrations are `aria-hidden`; their sentences say what they
+ * show. Nothing animates.
+ */
+
+.hiw {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hiw-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.hiw-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--tile);
+  border: var(--hairline) solid var(--line-bright);
+  color: var(--accent-bright);
+  cursor: pointer;
+  transition: var(--t-control);
+}
+
+.hiw-arrow:hover {
+  background: var(--surface-hover-strong);
+}
+
+.hiw-arrow:focus-visible,
+.hiw-dot:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.hiw-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A 44px target around a small bar: the bar is the mark, the button is the target. */
+.hiw-dot {
+  position: relative;
+  width: 28px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.hiw-dot::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  background: var(--line-bright);
+  transition: var(--t-control);
+}
+
+.hiw-dot:hover::before {
+  background: var(--ink-faint);
+}
+
+/* The current board is longer as well as brighter, so it does not rest on colour. */
+.hiw-dot[aria-current="true"]::before {
+  left: 0;
+  right: 0;
+  height: 6px;
+  margin-top: -3px;
+  background: var(--accent-bright);
+}
+
+.hiw-count {
+  font: 500 0.75rem/1 var(--font-mono);
+  color: var(--ink-muted);
+  letter-spacing: var(--track-label);
+}
+
+.hiw-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--panel);
+  border-top: 2px solid var(--accent);
+}
+
+.hiw-board-shadow {
+  border-top-color: var(--pos-qb);
+}
+
+.hiw-board-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--hairline) solid var(--line-strong);
+}
+
+.hiw-title {
+  margin: var(--space-1) 0 0;
+  font-size: clamp(1.4rem, 3.4vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.hiw-codename {
+  margin: var(--space-1) 0 0;
+  font: 400 0.75rem/1.4 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.hiw-label {
+  margin: 0;
+  font: 600 0.68rem/1.3 var(--font-mono);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hiw-board-shadow .hiw-board-head .hiw-label {
+  color: var(--pos-qb);
+}
+
+.hiw-good {
+  color: var(--good);
+}
+
+.hiw-bad {
+  color: var(--danger);
+}
+
+.hiw-warn {
+  color: var(--warn);
+}
+
+.hiw-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font: 600 0.7rem/1 var(--font-mono);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  border: var(--hairline) solid currentcolor;
+}
+
+.hiw-status::before,
+.hiw-mark {
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: currentcolor;
+}
+
+.hiw-status-active {
+  color: var(--good);
+}
+
+.hiw-status-shadow {
+  color: var(--pos-qb);
+  border-style: dashed;
+}
+
+.hiw-status-shadow::before,
+.hiw-mark-shadow {
+  transform: rotate(45deg);
+}
+
+.hiw-status-rule {
+  color: var(--ink-muted);
+}
+
+.hiw-status-rule::before,
+.hiw-mark-rule {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.hiw-mark {
+  margin-right: var(--space-2);
+  vertical-align: 1px;
+}
+
+.hiw-mark-active {
+  color: var(--good);
+}
+
+.hiw-mark-shadow {
+  color: var(--pos-qb);
+}
+
+.hiw-mark-rule {
+  color: var(--ink-muted);
+}
+
+.hiw-question {
+  margin: 0;
+  max-width: 60ch;
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--warn);
+}
+
+.hiw-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hiw-grid-3,
+.hiw-grid-2 {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.hiw-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+}
+
+.hiw-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+}
+
+.hiw-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--tile);
+  border: var(--hairline) solid var(--line-strong);
+}
+
+.hiw-panel-warn {
+  border-color: var(--warn-line);
+}
+
+.hiw-panel p,
+.hiw-node p,
+.hiw-tryout p,
+.hiw-callout p,
+.hiw-steps {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.hiw-panel strong,
+.hiw-steps strong {
+  color: var(--ink-strong);
+}
+
+.hiw-panel-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.hiw-panel p.hiw-label {
+  color: var(--accent);
+  font-size: 0.68rem;
+}
+
+.hiw-panel p.hiw-good {
+  color: var(--good);
+}
+
+.hiw-panel p.hiw-bad {
+  color: var(--danger);
+}
+
+.hiw-panel p.hiw-warn {
+  color: var(--warn);
+}
+
+.hiw-panel p.hiw-card-link {
+  margin-top: auto;
+  padding-top: var(--space-2);
+}
+
+.hiw-quote {
+  font-weight: 600;
+}
+
+.hiw-panel p.hiw-quote {
+  color: var(--warn);
+  font-size: 0.95rem;
+}
+
+.hiw-allow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  gap: var(--space-3);
+}
+
+/* Mission map: two rows of nodes; a chevron joins neighbours where they share a row. */
+.hiw-row-label {
+  margin: var(--space-2) 0 0;
+  font: 600 0.75rem/1.3 var(--font-mono);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--accent-bright);
+}
+
+.hiw-flow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hiw-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--tile);
+  border: var(--hairline) solid var(--line-strong);
+}
+
+.hiw-node-shadow {
+  border: var(--hairline) dashed var(--pos-qb);
+}
+
+.hiw-node-shadow .hiw-label {
+  color: var(--pos-qb);
+}
+
+.hiw-flow > li + li::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--space-5) / 2 - 5px);
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-top: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+  transform: rotate(45deg);
+}
+
+/* The chamfer's clip-path would cut the chevron off, so it lives outside the clip. */
+.hiw-flow > .hiw-node {
+  clip-path: none;
+}
+
+@media (max-width: 1023px) {
+  .hiw-flow {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: var(--space-2);
+  }
+
+  .hiw-flow > li + li::before {
+    display: none;
+  }
+}
+
+.hiw-callout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--tile-warn);
+  border: var(--hairline) solid var(--warn-line);
+}
+
+.hiw-callout .hiw-label {
+  color: var(--warn);
+}
+
+.hiw-callout p:not(.hiw-label) {
+  color: var(--ink-strong);
+}
+
+/* Illustrations. */
+.hiw-tierbars {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-4);
+  height: 9rem;
+  padding-top: var(--space-2);
+}
+
+.hiw-tier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-right: 2px solid var(--warn);
+  padding-right: var(--space-4);
+}
+
+.hiw-tier:last-child {
+  border-right: 0;
+}
+
+.hiw-tier-cols {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.hiw-tier-cols span {
+  width: clamp(8px, 2vw, 22px);
+  background: var(--accent);
+}
+
+.hiw-tier-letter {
+  font: 700 0.9rem/1 var(--font-mono);
+  color: var(--warn);
+}
+
+.hiw-gaps {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  font: 500 0.75rem/1 var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.hiw-gap-bar {
+  display: block;
+  height: 14px;
+  min-width: 4px;
+  background: var(--warn);
+}
+
+.hiw-weeks {
+  display: grid;
+  grid-template-columns: repeat(17, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.hiw-weeks span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  font: 600 0.7rem/1 var(--font-mono);
+}
+
+.hiw-week-seen {
+  background: var(--surface-selected);
+  color: var(--ink);
+}
+
+.hiw-week-ahead {
+  border: var(--hairline) dashed var(--accent);
+  color: var(--accent-bright);
+}
+
+.hiw-week-seen:nth-child(6) {
+  box-shadow: 3px 0 0 var(--warn);
+}
+
+.hiw-ranges {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  font-size: 0.8rem;
+  color: var(--ink-strong);
+}
+
+.hiw-track {
+  position: relative;
+  display: block;
+  height: 26px;
+  background: var(--canvas-deep);
+  border: var(--hairline) solid var(--line-strong);
+}
+
+.hiw-range {
+  position: absolute;
+  top: 6px;
+  height: 12px;
+  background: var(--accent);
+}
+
+/* The second player's range is hatched as well as darker, so the pair never rests on hue. */
+.hiw-range-alt {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--accent-fill) 0 4px,
+    var(--surface-selected) 4px 7px
+  );
+}
+
+.hiw-notch {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 24px;
+  background: var(--ink);
+}
+
+.hiw-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hiw-chips li {
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.78rem;
+  color: var(--ink-strong);
+  border: var(--hairline) solid var(--line-bright);
+}
+
+.hiw-tryout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: var(--hairline) solid var(--line-strong);
+}
+
+.hiw-tryout .hiw-label {
+  color: var(--ink-muted);
+}
+
+.hiw-tryout-in {
+  border-color: var(--good-line);
+}
+
+.hiw-tryout-in .hiw-label {
+  color: var(--good);
+}
+
+.hiw-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: 1.2rem;
+}
+
+.hiw-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hiw-rules > li {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.hiw-rule-num {
+  flex: none;
+  font: 700 1.8rem/1 var(--font-mono);
+  color: var(--warn);
+}
+
+@media (max-width: 767px) {
+  .hiw-board {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .hiw-weeks span {
+    height: 24px;
+    font-size: 0.6rem;
+  }
+}
+
+.hiw-loading {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}

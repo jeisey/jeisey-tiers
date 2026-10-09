@@ -362,6 +362,35 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
   });
 
+  test("every How it works board scans clean and reflows at 320 pixels", async ({ page }) => {
+    // The Data page renders one board at a time, so the scan above only ever sees the first.
+    // This walks all of them with the Next button, on the in-season build (the start/sit board
+    // prints its measured accuracy there), at desktop width and at the 320px Reflow width. The
+    // scan is scoped to the carousel: the rest of this page is covered by the "data" scan.
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/scenario/in-season/?view=data");
+      await page.waitForLoadState("networkidle");
+      const carousel = page.getByRole("region", { name: "How the models work" });
+      await expect(carousel).toBeVisible();
+      const boards = await carousel.getByRole("button", { name: /^Board \d+:/ }).count();
+      expect(boards).toBeGreaterThan(1);
+      for (let board = 0; board < boards; board += 1) {
+        await expect(carousel.locator("article")).toHaveAttribute(
+          "aria-label",
+          new RegExp(`^${String(board + 1)} of `),
+        );
+        const results = await new AxeBuilder({ page }).include(".hiw").withTags(TAGS).analyze();
+        expect(describe(results), `board ${String(board + 1)} at ${String(width)}px`).toEqual([]);
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(overflow, `board ${String(board + 1)} reflows badly at ${String(width)}px`).toBeLessThanOrEqual(1);
+        await carousel.getByRole("button", { name: "Next board" }).click();
+      }
+    }
+  });
+
   test("the page reflows at 320 CSS pixels without a horizontal scrollbar", async ({ page }) => {
     // WCAG 2.1 "Reflow": 320 CSS pixels wide is what 400% zoom of a 1280px viewport reduces
     // to, and it is the width the spec actually names.

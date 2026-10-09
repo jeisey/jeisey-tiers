@@ -22,6 +22,8 @@
  * finding this product chose not to hide.
  */
 
+import { Suspense, lazy } from "react";
+
 import { SectionHead } from "../components/primitives";
 import { DEFAULT_TRADE_RANGE } from "../data/state";
 import {
@@ -50,6 +52,13 @@ import type { InSeasonBundle } from "../data/ros";
 import { SCORING_TO_PRESET, type AppState } from "../data/state";
 
 const REPO = "https://github.com/jeisey/jeisey-tiers";
+
+/**
+ * The plain-English model boards, loaded with the Data page rather than with the entry
+ * bundle: they are reading material, and every other view's first visit should not pay for
+ * them (the same split as Start/Sit and Trade in `App.tsx`).
+ */
+const HowItWorks = lazy(() => import("./HowItWorks").then((module) => ({ default: module.HowItWorks })));
 
 const SOURCE_LABELS: Readonly<Record<string, string>> = {
   nflreadpy: "nflverse (via nflreadpy)",
@@ -80,6 +89,18 @@ export function DataView({
 
   return (
     <div className="section">
+      <section className="section" aria-labelledby="how-heading">
+        <SectionHead
+          index="00"
+          id="how-heading"
+          title="How it works"
+          note="Every model on this site, in plain English, one board at a time. Use the arrows, or the arrow keys once a board control has focus."
+        />
+        <Suspense fallback={<p className="hiw-loading" aria-busy="true">Loading the boards…</p>}>
+          <HowItWorks inSeason={inSeason} />
+        </Suspense>
+      </section>
+
       <section className="section" aria-labelledby="what-heading">
         <SectionHead index="01" id="what-heading" title="What this is" />
         <div className="prose">
