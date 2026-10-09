@@ -861,7 +861,7 @@ test.describe("the player card in season", () => {
     await page.goto(IN_SEASON);
     await page.locator("table.sheet .player-name").first().click();
     const rail = page.getByRole("dialog").locator(".detail-rail");
-    await expect(rail.getByText("ROS rank")).toBeVisible();
+    await expect(rail.getByText("ROS overall rank")).toBeVisible();
     await expect(rail.getByText("median simulated remaining VORP")).toBeVisible();
     await expect(rail.getByText("Fair rank")).toHaveCount(0);
     await expect(rail.getByText("Since preseason")).toBeVisible();

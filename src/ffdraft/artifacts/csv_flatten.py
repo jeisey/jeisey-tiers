@@ -31,6 +31,11 @@ from typing import Any
 
 __all__ = [
     "ARBITRAGE_CSV_COLUMNS",
+    "CSV_COMPANION_ARTIFACTS",
+    "SEASON_ACTUALS_CSV_COLUMNS",
+    "actuals_index",
+    "companion_columns",
+    "companion_values",
     "PLAYER_STATUS_CSV_COLUMNS",
     "flatten_player_status_record",
     "CSV_FLATTENERS",
@@ -251,3 +256,48 @@ def flattener_for(
     artifact: str,
 ) -> tuple[Sequence[str], Callable[[Mapping[str, Any]], Mapping[str, Any]]] | None:
     return CSV_FLATTENERS.get(artifact)
+
+
+#: ADR-105. The season-actuals columns appended to the in-season boards' full CSVs, in order,
+#: and the ``season_actuals`` field each one is copied from. Appended after every schema
+#: column, so a reader of the existing columns by name or by position is unaffected; joined by
+#: ``(scoring_preset, player_id)`` from the build's one actuals artifact, so the numbers are
+#: the ones every surface shows. Empty when the build published no actuals for the player.
+SEASON_ACTUALS_CSV_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("season_position_rank", "season_position_rank"),
+    ("season_points", "points"),
+    ("season_games_played", "games_played"),
+    ("season_points_per_game", "points_per_game"),
+)
+
+#: The artifacts whose full CSV carries those columns.
+CSV_COMPANION_ARTIFACTS: frozenset[str] = frozenset({"ros_tiers", "inseason_opportunity"})
+
+#: ``(scoring_preset, player_id) -> season_actuals record``.
+ActualsIndex = Mapping[tuple[str, str], Mapping[str, Any]]
+
+
+def actuals_index(records: Sequence[Mapping[str, Any]]) -> dict[tuple[str, str], Mapping[str, Any]]:
+    """Index ``season_actuals`` records for the CSV join."""
+    return {(str(record["scoring_preset"]), str(record["player_id"])): record for record in records}
+
+
+def companion_columns(artifact: str) -> tuple[str, ...]:
+    """The columns appended to ``artifact``'s CSV after its declared ones (often none)."""
+    if artifact not in CSV_COMPANION_ARTIFACTS:
+        return ()
+    return tuple(column for column, _ in SEASON_ACTUALS_CSV_COLUMNS)
+
+
+def companion_values(
+    record: Mapping[str, Any],
+    actuals: ActualsIndex | None,
+) -> dict[str, Any]:
+    """The appended cells for one board record: its actuals, or nothing."""
+    found = None
+    if actuals is not None:
+        found = actuals.get((str(record.get("scoring_preset")), str(record.get("player_id"))))
+    return {
+        column: (None if found is None else found.get(source))
+        for column, source in SEASON_ACTUALS_CSV_COLUMNS
+    }

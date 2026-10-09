@@ -120,3 +120,21 @@ checks its packages against whatever build it is pointed at.
 ```bash
 node web/tests/e2e/capture-trade.mjs docs/visual-qa/<date>/fixture --prefix /scenario/in-season/
 ```
+
+## 2026-10-09 — season to date beside rest of season (ADR-105)
+
+`2026-10-09-season-actuals/`. `real-*` screens are a live `build-ros` of 2026-10-09 (nflverse
+through week 4, Half PPR, 12 teams, QB filter) assembled with the live draft artifacts:
+
+- `real-ros-qb-half-{1440,390,320}` — the RoS chart's comparison lane: square = RoS positional
+  rank, triangle = season rank by points, words beside it; the value lane's median is a tick.
+  Tyler Shough reads `ROS QB15 · SZN QB5`; Bryce Young `ROS QB13 · SZN QB3`.
+- `real-card-shough-{1440,390,320}` and `-1440-production` — the rank pair in the identity block
+  ("Half PPR · through week 4 · RoS is 10 places below his season-to-date rank."), the context
+  box, Production so far (QB5, 4 games, 85.3, 21.3) and the PaceRail (21.3 scored, 15.8 ahead).
+- `real-ros-table-half-1440`, `real-opportunity-1440`, `real-startsit-390` — the three columns.
+
+`fixture-*` screens are the in-season fixture build: ties (RB1/RB1), a wide gap (WR2/WR7), the
+week board and the unprojected list with genuine actuals beside "No RoS projection".
+`web/tests/e2e/actuals.spec.ts` measures the lane at 1440, 390 and 320 px (marks inside the lane,
+triangle below square, words inside the row, no page overflow) and scans the board and card.

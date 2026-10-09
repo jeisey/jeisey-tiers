@@ -1877,6 +1877,174 @@ table.sheet tbody tr[data-selected="true"] td {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * ADR-105 — the RoS board's positional-rank comparison lane. Present only when the board is
+ * handed a rank lane (`data-rank-lane`), which only the rest-of-season view does; the draft
+ * board's columns and its glowing-square median are untouched.
+ *
+ * Two more columns on the same grid: the lane (its own log scale, ticks in the header) and the
+ * two ranks in words. In this variant the square means a RoS rank, so the value lane's median
+ * becomes a vertical tick — one symbol, one meaning.
+ */
+.tier-board[data-rank-lane="true"] {
+  --board-cols: 2.5rem 3.6rem minmax(0, 1fr) minmax(0, 1.5fr) 4.2rem minmax(0, 1fr) 6.8rem;
+}
+
+.interval-median[data-shape="tick"] {
+  width: 2px;
+  height: 13px;
+}
+
+.board-scale-ranktrack {
+  grid-column: 6;
+  position: relative;
+  height: 14px;
+}
+
+.board-scale-rankunit {
+  grid-column: 7;
+  text-align: left;
+}
+
+.row-ranklane {
+  position: relative;
+  height: 100%;
+  min-height: 24px;
+}
+
+/* Inset by half a mark on each side, in the header and in every row alike, so rank 1 and the
+   scale's end draw whole marks and a tick label sits over the mark it labels. */
+.ranklane-track {
+  position: absolute;
+  inset: 0 6px;
+}
+
+.row-ranklane .ranklane-track {
+  background-image: var(--rank-grid, none);
+}
+
+.ranklane-gap {
+  position: absolute;
+  top: 50%;
+  height: 1px;
+  background: var(--line-bright);
+}
+
+.rank-mark {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/* The square: RoS positional rank, on the upper track. */
+.rank-mark[data-kind="ros"] {
+  top: 28%;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 0 1px var(--canvas);
+}
+
+/* The triangle: season-to-date positional rank, on the lower track. */
+.rank-mark[data-kind="season"] {
+  top: 72%;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid var(--ink);
+}
+
+.row-rankvalues {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font: 500 0.68rem/1 var(--font-mono);
+  color: var(--ink-strong);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rank-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rank-value[data-absent="true"] {
+  color: var(--ink-faint);
+}
+
+.rank-word {
+  font: 600 0.55rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rank-glyph {
+  display: inline-block;
+  flex: none;
+}
+
+.rank-glyph[data-kind="ros"] {
+  width: 7px;
+  height: 7px;
+  background: var(--accent-bright);
+}
+
+.rank-glyph[data-kind="season"] {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 7px solid var(--ink);
+}
+
+/* The legend's value-lane glyph in the RoS variant: the median tick. */
+.legend-tick {
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  background: var(--accent-bright);
+}
+
+@media (max-width: 1023px) {
+  .tier-board[data-rank-lane="true"] {
+    --board-cols: 2.2rem 3.2rem minmax(0, 1fr) minmax(0, 1.1fr) 3.4rem minmax(0, 0.9fr) 6.2rem;
+  }
+}
+
+/*
+ * The stack (artboard 2b): a third line per player — the lane across the row, the two ranks
+ * in words at its end — so both ranks stay on screen at 390 and 320 without a hover. The third
+ * column widens from 3.6rem to 4.6rem in this variant so `RoS WR104` fits, and the tier strip
+ * takes the same columns so its band still shares the rows' track.
+ */
+@media (max-width: 767px) {
+  .tier-board[data-rank-lane="true"] .board-row {
+    grid-template-columns: 2.4rem minmax(0, 1fr) 4.6rem;
+    grid-template-areas:
+      "rank name pos"
+      "interval interval value"
+      "ranklane ranklane ranks";
+  }
+
+  .tier-board[data-rank-lane="true"] .tier-strip {
+    grid-template-columns: 2.4rem minmax(0, 1fr) 4.6rem;
+  }
+
+  .tier-board[data-rank-lane="true"] .row-ranklane {
+    grid-area: ranklane;
+    min-height: 22px;
+  }
+
+  .tier-board[data-rank-lane="true"] .row-rankvalues {
+    grid-area: ranks;
+    font-size: 0.64rem;
+  }
+}
+
 .board-axis {
   display: flex;
   justify-content: space-between;
@@ -2540,6 +2708,91 @@ dialog.player-detail::backdrop {
   color: var(--ink-accent);
   border: var(--hairline) solid var(--line-bright);
   padding: 4px 7px;
+}
+
+/*
+ * ADR-105 — the card's two ranks, side by side and equal in weight, in the identity block so
+ * they stay together and on screen at every width, including the phone sheet.
+ */
+.rank-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--space-1);
+}
+
+.rank-pair-cells {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.rank-pair-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--tile);
+}
+
+.rank-pair-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 0.58rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rank-pair-value {
+  font: 500 1.35rem/1.05 var(--font-mono);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.rank-pair-value[data-absent="true"] {
+  font: 500 0.82rem/1.2 var(--font-sans);
+  color: var(--ink-muted);
+}
+
+.rank-pair-note {
+  font: 400 0.66rem/1.3 var(--font-sans);
+  color: var(--ink-faint);
+}
+
+.rank-pair-meta {
+  margin: 0;
+  font: 400 0.7rem/1.45 var(--font-sans);
+  color: var(--ink-muted);
+}
+
+.rank-pair-gap {
+  color: var(--ink-strong);
+}
+
+.season-context {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: var(--space-3) 0;
+  padding: 10px 12px;
+  border-left: 2px solid var(--line-bright);
+  background: var(--accent-wash);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.season-context p {
+  margin: 0;
+}
+
+.season-context strong {
+  color: var(--ink-strong);
+  font-weight: 600;
 }
 
 /* The one number the whole card is organised around. */

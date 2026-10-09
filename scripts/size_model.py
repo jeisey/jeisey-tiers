@@ -388,6 +388,20 @@ def build(out: Path, seed: int = 20260930) -> None:
                 row["scoring_preset"] = scoring
                 records[artifact].append(row)
 
+    # ADR-105: every appearing player per scoring preset, ranked within his position.
+    for scoring in profile["scorings"]:
+        rows = []
+        for index in range(counts["actuals_per_scoring"]):
+            row = clone("season_actuals", index, players[index % len(players)])
+            row["scoring_preset"] = scoring
+            rows.append(row)
+        for position in ("QB", "RB", "WR", "TE"):
+            ranked(
+                [row for row in rows if row["position"] == position and row["games_played"] > 0],
+                "season_position_rank",
+            )
+        records["season_actuals"].extend(rows)
+
     for artifact, key in (
         ("player_usage", "usage"),
         ("behavior_trend_series", "behavior"),

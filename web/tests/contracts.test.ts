@@ -40,6 +40,7 @@ const SCHEMA_BY_ARTIFACT: Readonly<Record<ArtifactName, string>> = {
   team_matchups: "team_matchup",
   weekly_projections: "weekly_projection",
   weekly_context: "weekly_game_context",
+  season_actuals: "season_actuals_record",
 };
 
 function readJson(path: string): Record<string, unknown> {

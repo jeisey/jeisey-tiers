@@ -170,6 +170,26 @@ FAMILIES: tuple[Family, ...] = (
         only=("player_id", "position", "touchdown_points_share", "pass_epa_per_dropback"),
     ),
     Family("player_headshots", "player_headshots", "all"),
+    # ADR-105: season-to-date actuals, one slice per scoring preset — a season rank does not
+    # depend on league size, so nine blocks would be three copies each. Every in-season view
+    # and the in-season card read it. No names: every player a page can show is already in
+    # the dictionary from his board row, and the artifact also names players no board does.
+    Family(
+        "season_actuals",
+        "season_actuals",
+        "scoring",
+        only=(
+            "season",
+            "through_week",
+            "scoring_preset",
+            "player_id",
+            "position",
+            "games_played",
+            "points",
+            "points_per_game",
+            "season_position_rank",
+        ),
+    ),
 )
 
 #: What one card shard carries: every per-player record a card reads, per artifact, with the

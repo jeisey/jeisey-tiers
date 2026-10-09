@@ -32,7 +32,8 @@
         "player_usage",
         "team_matchups",
         "weekly_projections",
-        "weekly_context"
+        "weekly_context",
+        "season_actuals"
       ]
     },
     "record_schema": {

@@ -270,6 +270,88 @@
         }
       }
     },
+    "season_actuals": {
+      "type": ["object", "null"],
+      "description": "ADR-105: how season_actuals.json was built — the rule, the cutoff and the weeks it covers, the sentences every surface prints beside the numbers, the population ranked at each position, and the source coverage that decided whether it was published. `withheld` means a scheduled team-week was missing upstream and no actuals were published, so every surface prints them as unavailable rather than as ranks over a smaller population. Optional and additive: absent or null is the same unavailable state.",
+      "additionalProperties": false,
+      "required": [
+        "rule", "status", "withheld_reason", "season", "through_week", "weeks", "horizon",
+        "scoring_presets", "definitions", "records", "population", "coverage"
+      ],
+      "properties": {
+        "rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version", "points_decimals", "rank_method", "scoring_engine_version"],
+          "properties": {
+            "version": {"const": "season_actuals_v1"},
+            "points_decimals": {"type": "integer", "minimum": 0},
+            "rank_method": {"const": "competition"},
+            "scoring_engine_version": {"type": "string", "minLength": 1}
+          }
+        },
+        "status": {"enum": ["published", "withheld"]},
+        "withheld_reason": {"type": ["string", "null"]},
+        "season": {"type": "integer", "minimum": 2000},
+        "through_week": {"type": "integer", "minimum": 1},
+        "weeks": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+        "horizon": {"type": "string", "minLength": 1},
+        "scoring_presets": {"type": "array", "items": {"enum": ["STD", "HALF", "PPR"]}},
+        "definitions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "appearance", "points", "points_per_game", "season_rank", "comparison",
+            "model_difference"
+          ],
+          "properties": {
+            "appearance": {"type": "string", "minLength": 1},
+            "points": {"type": "string", "minLength": 1},
+            "points_per_game": {"type": "string", "minLength": 1},
+            "season_rank": {"type": "string", "minLength": 1},
+            "comparison": {"type": "string", "minLength": 1},
+            "model_difference": {"type": "string", "minLength": 1}
+          }
+        },
+        "records": {"type": "integer", "minimum": 0},
+        "population": {
+          "type": "object",
+          "description": "Players ranked at each position: everyone who has appeared, whichever board publishes him. The denominator of a season rank.",
+          "additionalProperties": false,
+          "required": ["QB", "RB", "WR", "TE"],
+          "properties": {
+            "QB": {"type": "integer", "minimum": 0},
+            "RB": {"type": "integer", "minimum": 0},
+            "WR": {"type": "integer", "minimum": 0},
+            "TE": {"type": "integer", "minimum": 0}
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weeks_checked", "scheduled_team_weeks", "weekly_stats_missing_team_weeks",
+            "snap_counts_missing_team_weeks", "snap_only_appearances", "unbridged_snap_rows"
+          ],
+          "properties": {
+            "weeks_checked": {"type": "integer", "minimum": 0},
+            "scheduled_team_weeks": {"type": "integer", "minimum": 0},
+            "weekly_stats_missing_team_weeks": {"type": "integer", "minimum": 0},
+            "snap_counts_missing_team_weeks": {"type": "integer", "minimum": 0},
+            "snap_only_appearances": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Weeks counted as games from snaps alone (no statistic): the whole difference between this games count and the model's own."
+            },
+            "unbridged_snap_rows": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Core-position snap rows with no canonical id. Excluded (fail closed) and counted."
+            }
+          }
+        }
+      }
+    },
     "disclosures": {
       "type": "object",
       "description": "ADR-076's disclosure contract, carried on the artifact so the frontend cannot publish the flag without the sentences that make it honest.",

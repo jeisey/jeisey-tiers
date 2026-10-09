@@ -39,6 +39,7 @@ import { requiredKeys, type DataStore } from "../data/store";
 import { selectWeekBoard, startableFor, toggleDuel } from "../data/duel";
 import {
   IN_SEASON_VIEWS,
+  SCORING_LABELS,
   SCORING_TO_PRESET,
   leaguePresetId,
   resolveMode,
@@ -446,6 +447,19 @@ function Board({
       projection: card.index.projectionFor(scoring, selectedPlayerId),
       ros,
       rosDisclosures: inSeason?.metadata.disclosures ?? null,
+      // ADR-105: his season to date, from the season-actuals slice the card's keys load — the
+      // same records every table and the RoS chart read, so the numbers cannot differ.
+      season: cohorts === null ? null : cohorts.seasonStandingFor(scoring, selectedPlayerId),
+      seasonMeta:
+        cohorts === null
+          ? null
+          : {
+              scoringLabel: SCORING_LABELS[state.scoring],
+              throughWeek: cohorts.metadata.season_actuals?.through_week ?? cohorts.throughWeek,
+              population: cohorts.metadata.season_actuals?.population ?? null,
+              comparison: cohorts.metadata.season_actuals?.definitions.comparison ?? null,
+              modelDifference: cohorts.metadata.season_actuals?.definitions.model_difference ?? null,
+            },
       /*
         What a published number means, against the rows it was published beside.
 

@@ -1270,6 +1270,7 @@ never change.
 | `player_status`, `team_matchups`, `behavior_trend_series`, `player_headshots`, `player_usage` | same | whole | all |
 | `player_usage_cohort` | `player_usage` | whole | `player_id`, `position`, `touchdown_points_share`, `pass_epa_per_dropback` |
 | `player_availability` (ADR-101) | `player_status` | whole | `season`, `player_id`, `roster_status`, `sleeper_status`, `injury_status`, `injury_body_part`, `observed_at_utc`, `quality_flags`, `availability_override`, and (ADR-102) `current_team`, `employment_status`, `employment_source` |
+| `season_actuals` (ADR-105) | same | scoring | `season`, `through_week`, `scoring_preset`, `player_id`, `position`, `games_played`, `points`, `points_per_game`, `season_position_rank` (no names: every player a page shows already has one from his board row) |
 | `players` | every artifact with names | whole | `player_id` → `display_name` |
 | `card` | tiers, arbitrage, market trend series (block); projections, weekly projections (scoring); player status, headshots, usage, behaviour series (whole); ROS, Opportunity (block) | block × bucket | every field of every row of those artifacts whose player falls in the bucket |
 
@@ -1410,3 +1411,57 @@ is the difference of its own halves, and that `compares_with_random` matches the
 (`published | unavailable`), the window and minimums, each position's displayed quartiles on
 this build (`position_reference`, no longer printed on the card) and the statement printed in
 the Data view. Play-by-play itself never reaches the browser.
+
+## 23. Season-to-date actuals — 2026-10-09 (ADR-105)
+
+### 23.1 `season_actuals_record` 1.0 — `season_actuals.json` / `.csv`
+
+One record per player per scoring preset, `season_actuals_v1`. Sorted by `scoring_preset`,
+`position`, `season_position_rank` (nulls last), `player_id`. Observed facts, read by no model.
+
+| field | meaning |
+|---|---|
+| `through_week` | the board's cutoff; only REG weeks `1..through_week` inside the fantasy horizon count |
+| `scoring_preset` | STD / HALF / PPR; a rank can change with the preset, never with league size |
+| `player_id`, `display_name` | canonical `gsis:` id; a traded player is one record |
+| `position` | the standing he is ranked in: the RoS snapshot's position, then the identity registry's, then box score, then snap row |
+| `games_played` | weeks with a weekly stats row **or** ≥ 1 offensive snap (the usage layer's appearance). Byes and missed weeks are not games. The model's `games_to_date` counts stats rows only |
+| `points` | scoring-engine total, rounded to 0.01 (exact for every declared rule); zero and negative totals are legitimate; 0 with 0 games = no appearance |
+| `points_per_game` | `round(points / games_played, 2)`; null exactly when `games_played` is 0 |
+| `season_position_rank` | competition rank (1, 2, 2, 4) of `points` among every player at the position with `games_played ≥ 1`; null exactly when `games_played` is 0 |
+
+**Population.** Every QB/RB/WR/TE with an appearance through the cutoff, whichever board
+publishes him (or none), plus every RoS/Opportunity/weekly board player with no appearance (a
+known zero). Snap rows without a canonical id are excluded and counted.
+
+**Validator.** `season_actuals.records_consistent` re-derives every rate and every rank from the
+artifact's own rows and requires one position and one games count per player across presets;
+`season_actuals.agrees_with_boards` requires a record for every board player, the board's
+position, `points` within 0.0051 of `ros_tiers.points_to_date` and of the usage layer's
+`fantasy_points_to_date`, `games_played` equal to the usage layer's `appearances` and at least
+the model's stats-row games; `ros_build_metadata.season_actuals` must describe the artifact
+(status, record count, cutoff, per-position population).
+
+### 23.2 `ros_build_metadata.season_actuals`
+
+`rule` (`version`, `points_decimals`, `rank_method`, `scoring_engine_version`), `status`
+(`published | withheld`), `withheld_reason`, `season`, `through_week`, `weeks`, `horizon`,
+`scoring_presets`, `definitions` (the sentences every surface prints: `appearance`, `points`,
+`points_per_game`, `season_rank`, `comparison`, `model_difference`), `records`, `population`
+(ranked players per position — the denominator of a season rank) and `coverage`
+(`weeks_checked`, `scheduled_team_weeks`, `weekly_stats_missing_team_weeks`,
+`snap_counts_missing_team_weeks`, `snap_only_appearances`, `unbridged_snap_rows`). Optional and
+additive; absent, null or `withheld` all mean "actuals unavailable" to the page.
+
+**Withholding.** If any scheduled team-week through the cutoff is missing from the weekly rows
+or the snap counts, no record is published and `status` is `withheld` with the missing clubs
+named: a rank over a silently smaller population is the failure this contract exists to refuse.
+
+### 23.3 The in-season CSVs
+
+`ros_tiers.csv` and `inseason_opportunity.csv` append, after every schema column,
+`season_position_rank`, `season_points`, `season_games_played`, `season_points_per_game`,
+joined from `season_actuals.json` by `(scoring_preset, player_id)` — empty when the build
+published none for him. The JSON records are unchanged. `artifact.csv_header_mismatch` expects
+the appended header and `artifact.csv_actuals_agree` proves the cells copy the artifact. The
+browser's filtered RoS and Opportunity exports append the same four names with the same values.

@@ -64,6 +64,7 @@ import type {
   RosBehaviorMetadata,
   RosDisclosures,
   RosSignalMetadata,
+  Position,
   RosTierRecord,
   RosWeeklyMetadata,
   TeamMatchupRecord,
@@ -99,11 +100,21 @@ import { CONFIDENCE_SHORT, describeGap, describeTrend, marketSourceLabel } from 
 import type { WhyThisWeek } from "../data/whyweek";
 import { hasMeaningfulStatus, isNoteworthyRosterStatus, statusBadge } from "../data/model";
 import {
+  formatRosPositionRank,
+  formatSeasonGames,
+  formatSeasonPerGame,
+  formatSeasonPoints,
+  formatSeasonRank,
+  rankGap,
+  rankGapSentence,
+  seasonAbsence,
+  type SeasonStanding,
+} from "../data/actuals";
+import {
   longAbsenceLabel,
   projectedRemainingRate,
   rankChangeLabel,
   POSITION_NOUN,
-  scoredRate,
   type BehaviorMomentum,
   type RosCohortContext,
 } from "../data/ros";
@@ -118,6 +129,81 @@ import {
 
 /** The stylesheet's sheet breakpoint. Keep in step with `base.css`. */
 const SHEET_QUERY = "(max-width: 767px)";
+
+/** What the card prints beside a season standing (ADR-105). */
+export interface SeasonMeta {
+  readonly scoringLabel: string;
+  readonly throughWeek: number;
+  readonly population: Readonly<Record<"QB" | "RB" | "WR" | "TE", number>> | null;
+  readonly comparison: string | null;
+  readonly modelDifference: string | null;
+}
+
+/**
+ * The two ranks, side by side and equally clear (ADR-105), in the identity block so a phone
+ * shows both without opening another tab. A RoS positional rank orders modelled remaining
+ * value; a season rank orders points already scored. The sentence beneath states the distance
+ * between the two orderings and nothing more — not a decline over time, not a model error.
+ */
+function RankPair({
+  position,
+  ros,
+  season,
+  meta,
+}: {
+  readonly position: Position;
+  readonly ros: RosTierRecord | null;
+  readonly season: SeasonStanding;
+  readonly meta: SeasonMeta | null;
+}): React.JSX.Element {
+  const gap = rankGap(ros?.ros_position_rank, season);
+  const absence = seasonAbsence(season);
+  const population =
+    meta?.population != null && season.kind === "ranked"
+      ? meta.population[season.position as "QB" | "RB" | "WR" | "TE"]
+      : undefined;
+  return (
+    <div className="rank-pair" data-testid="rank-pair">
+      <div className="rank-pair-cells">
+        <div className="rank-pair-cell" data-kind="ros">
+          <span className="rank-pair-label">
+            <span className="rank-glyph" data-kind="ros" aria-hidden="true" />
+            RoS rank
+          </span>
+          <span className="rank-pair-value">
+            {ros === null ? "No RoS projection" : formatRosPositionRank(position, ros.ros_position_rank)}
+          </span>
+          <span className="rank-pair-note">modelled value from here</span>
+        </div>
+        <div className="rank-pair-cell" data-kind="season">
+          <span className="rank-pair-label">
+            <span className="rank-glyph" data-kind="season" aria-hidden="true" />
+            Season rank
+          </span>
+          <span className="rank-pair-value" data-absent={absence === null ? undefined : "true"}>
+            {absence ?? formatSeasonRank(season)}
+          </span>
+          <span className="rank-pair-note">
+            {population === undefined
+              ? "points scored so far"
+              : `points scored, of ${String(population)} ${position}s`}
+          </span>
+        </div>
+      </div>
+      <p className="rank-pair-meta">
+        {meta === null
+          ? "Season to date"
+          : `${meta.scoringLabel} · through week ${String(meta.throughWeek)}`}
+        {gap !== null && (
+          <>
+            {" · "}
+            <span className="rank-pair-gap">{rankGapSentence(gap)}</span>
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
 
 export interface PlayerDetailData {
   readonly playerId: string;
@@ -190,6 +276,13 @@ export interface PlayerDetailData {
    * absence rather than as a zero.
    */
   readonly rosCohort?: RosCohortContext | null;
+  /**
+   * His season to date (ADR-105): actual points, games and positional rank by points over
+   * every player at the position, from the build's one actuals artifact. Null before kickoff.
+   */
+  readonly season?: SeasonStanding | null;
+  /** The scoring preset and cutoff the actuals are in, and the build's own definitions. */
+  readonly seasonMeta?: SeasonMeta | null;
   /**
    * The signal layer for this player (ADR-091): his observed role week by week, where his
    * touchdown share and pass EPA sit among his position's published rows, his team's next
@@ -611,13 +704,70 @@ function WeekBlock({
   );
 }
 
+/**
+ * What the two ranks measure, in plain words, with his own published rates (ADR-105).
+ *
+ * Descriptive only. It names the general reasons two orderings of two different quantities
+ * differ and prints the two rates the card already has; it never names a cause for this player,
+ * and it does not borrow the weekly explanation, which is about next week.
+ */
+function SeasonContext({
+  ros,
+  season,
+  meta,
+  projected,
+}: {
+  readonly ros: RosTierRecord | null;
+  readonly season: SeasonStanding;
+  readonly meta: SeasonMeta | null;
+  readonly projected: number | null;
+}): React.JSX.Element {
+  const gap = ros === null ? null : rankGap(ros.ros_position_rank, season);
+  const games = season.kind === "ranked" ? season.games : 0;
+  const modelGames = ros?.games_played_to_date ?? null;
+  return (
+    <div className="season-context" data-testid="season-context">
+      <p>
+        <strong>Season rank</strong> measures points already scored
+        {meta === null ? "" : ` through week ${String(meta.throughWeek)} (${meta.scoringLabel})`}.{" "}
+        <strong>RoS rank</strong> orders the model&rsquo;s value from here on. Scoring pace,
+        expected remaining appearances and the model&rsquo;s wider football history can make the
+        two orderings differ{gap === null ? "." : "; "}
+        {gap !== null &&
+          (gap.direction === "same"
+            ? "here they agree."
+            : `the ${String(gap.places)}-place gap above is a difference between two orderings, not a fall over time and not by itself a model error.`)}
+      </p>
+      {season.kind === "ranked" && ros !== null && projected !== null && (
+        <p className="muted">
+          {`He has scored ${formatValue(season.perGame)} points per game over ${String(games)} ` +
+            `appearance${games === 1 ? "" : "s"}; the model's remaining points per expected ` +
+            `appearance are ${formatValue(projected)}, over about ${ros.ros_expected_games.toFixed(1)} ` +
+            "expected remaining appearances."}
+        </p>
+      )}
+      {modelGames !== null && season.kind === "ranked" && games !== Math.round(modelGames) && (
+        <p className="muted">
+          {meta?.modelDifference ??
+            "The model counts appearances by weekly stats rows only; a week with snaps and no statistic counts here and not there."}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function InSeasonUsage({
   ros,
   opportunity,
   behavior,
   cohort,
   signal,
+  season,
+  seasonMeta,
 }: {
+  /** His season to date (ADR-105); null only on a card with no in-season bundle. */
+  readonly season: SeasonStanding | null;
+  readonly seasonMeta: SeasonMeta | null;
   /**
    * Null for a player the Opportunity Board surfaced from beyond the rest-of-season board's
    * published depth — a waiver candidate by construction, with no projection published. His
@@ -652,7 +802,9 @@ function InSeasonUsage({
   const addsWidth = Math.min(50, ((adds ?? 0) / bound) * 50);
   const dropsWidth = Math.min(50, ((drops ?? 0) / bound) * 50);
 
-  const perGame = ros === null ? null : scoredRate(ros);
+  // ADR-105: the scored side is the season actuals' — the same games and rate every table
+  // prints — never the model's own to-date fields, and never a preseason number.
+  const perGame = season?.kind === "ranked" ? season.perGame : null;
   const projected = ros === null ? null : projectedRemainingRate(ros);
   // Identity for the panel: the rest-of-season row when there is one, else the Opportunity
   // Board row the card was opened from. The caller guarantees one of the two.
@@ -795,39 +947,45 @@ function InSeasonUsage({
 
       {ros === null ? (
         <p className="cohort-note signal-absent">
-          Surfaced from beyond the rest-of-season board&rsquo;s published depth, so no
-          projection or pace is published for him; the role above and the readings below are
-          observed.
+          <strong>No RoS projection.</strong> No projection or pace is published for him; the
+          season to date below is what he has actually scored, and the role above and the
+          readings below are observed.
         </p>
       ) : (
         /*
           Pace: what he has scored per appearance, against what the model projects per remaining
           appearance. The card's answer to the question a hot start actually raises — one the
           artifact can answer in its own units, because `ros_label_v1` is built on points per
-          appearance and `points_per_game_to_date` is the same quantity before the cutoff.
+          appearance. The scored side is the season actuals' rate (ADR-105).
         */
         <PaceRail
           scored={perGame}
           projected={projected}
-          appearances={ros.games_played_to_date}
+          appearances={season?.kind === "ranked" ? season.games : 0}
           position={ros.position}
+          scoredAbsence={season?.kind === "unavailable" ? "Season actuals are unavailable for this build, so there is no scored rate to compare." : null}
         />
       )}
 
+      {season !== null && (
+        <SeasonContext ros={ros} season={season} meta={seasonMeta} projected={projected} />
+      )}
+
       <div className="readout-grid">
-        {ros !== null && (
+        {season !== null && (
           <>
-            <Readout
-              label="Games played"
-              value={ros.has_played_this_season ? formatValue(ros.games_played_to_date) : "None"}
-              strong
-            />
-            <Readout label="Fantasy points" value={formatValue(ros.points_to_date)} hint="to date" />
+            <Readout label="Season rank" value={formatSeasonRank(season)} hint={seasonAbsence(season) ?? "by points"} strong />
+            <Readout label="Games played" value={formatSeasonGames(season)} hint="appearances" />
+            <Readout label="Total points" value={formatSeasonPoints(season)} hint="to date" />
             <Readout
               label="Points per game"
-              value={perGame === null ? EM_DASH : formatValue(perGame)}
-              hint={perGame === null ? "no appearances" : "per appearance"}
+              value={formatSeasonPerGame(season)}
+              hint={season.kind === "ranked" ? "per appearance" : (seasonAbsence(season) ?? "")}
             />
+          </>
+        )}
+        {ros !== null && (
+          <>
             <Readout
               label="Weeks since last game"
               value={
@@ -1306,7 +1464,10 @@ export function PlayerDetail({
                 from the draft board. There it has nowhere else to be, so it stays here. */}
             {!inSeasonCard && (
               <>
-                <Readout label="Games played to date" value={formatValue(ros.games_played_to_date)} />
+                <Readout
+                  label="Games played to date"
+                  value={data.season == null ? formatValue(ros.games_played_to_date) : formatSeasonGames(data.season)}
+                />
                 <Readout
                   label="Weeks since last game"
                   value={
@@ -1434,6 +1595,8 @@ export function PlayerDetail({
             </p>
           )}
           <InSeasonUsage
+            season={data.season ?? null}
+            seasonMeta={data.seasonMeta ?? null}
             ros={ros ?? null}
             opportunity={opportunity ?? null}
             behavior={data.behavior ?? null}
@@ -1733,6 +1896,14 @@ export function PlayerDetail({
                   <StatusBadge status={status} />
                 </div>
               </div>
+              {inSeasonCard && data.season != null && position !== null && (
+                <RankPair
+                  position={position}
+                  ros={ros ?? null}
+                  season={data.season}
+                  meta={data.seasonMeta ?? null}
+                />
+              )}
             </div>
 
             {/*
@@ -1743,7 +1914,8 @@ export function PlayerDetail({
             */}
             {inSeasonCard && ros != null ? (
               <div className="rail-hero">
-                <span className="rail-hero-label">ROS rank</span>
+                {/* "Overall", because the rank pair above is positional (ADR-105). */}
+                <span className="rail-hero-label">ROS overall rank</span>
                 <span className="rail-hero-value">{formatRank(ros.ros_fair_rank)}</span>
                 <span className="rail-hero-note">median simulated remaining VORP</span>
               </div>

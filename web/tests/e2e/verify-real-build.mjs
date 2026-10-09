@@ -56,6 +56,39 @@ try {
 const publishedInSeason = rosRecords !== null;
 
 /**
+ * Season-to-date actuals (ADR-105), if this build published them. Present, every rendered
+ * `Szn rank`, `Total pts` and `Avg pts/g` cell, and every chart row's season rank in words,
+ * must be this artifact's own value for the row's player — never a number the page computed.
+ */
+let actualsRecords = null;
+try {
+  actualsRecords = JSON.parse(readFileSync(`${dataDir}/season_actuals.json`, "utf-8")).records;
+} catch {
+  actualsRecords = null;
+}
+const actualsPPR = new Map(
+  (actualsRecords ?? []).filter((r) => r.scoring_preset === "PPR").map((r) => [r.player_id, r]),
+);
+/** The cell text the tables print for one actuals record (one decimal, real minus sign). */
+function actualsCells(record) {
+  const fixed = (value) => {
+    const text = Math.abs(value).toFixed(1);
+    return value < 0 && Number(text) !== 0 ? `\u2212${text}` : text;
+  };
+  if (record === undefined) return { rank: "\u2014 Unavailable", points: "\u2014 Unavailable", perGame: "\u2014 Unavailable" };
+  if (record.games_played === 0) {
+    return { rank: "\u2014 No appearances", points: "0.0", perGame: "\u2014 No appearances" };
+  }
+  return {
+    rank: `${record.position}${String(record.season_position_rank)}`,
+    points: fixed(record.points),
+    perGame: fixed(record.points_per_game),
+  };
+}
+let actualsCellsChecked = 0;
+let actualsChartRowsChecked = 0;
+
+/**
  * The opportunity artifact, which is where a Pick-of-the-Week card's numbers come from.
  *
  * Optional for the same reason the two above are: a build with no behaviour capture publishes
@@ -382,6 +415,14 @@ if (publishedInSeason && defaultBoard === "ros") {
     expectedGames: rosColumn.at("Rem G"),
     uncertainty: rosColumn.at("Uncertainty"),
   };
+  const actualsAt =
+    actualsRecords === null
+      ? null
+      : {
+          rank: rosColumn.at("Szn rank"),
+          points: rosColumn.at("Total pts"),
+          perGame: rosColumn.at("Avg pts/g"),
+        };
   const rosProblem = rosColumn.problem("ROS");
   if (rosProblem !== null) failures.push(rosProblem);
   else {
@@ -425,6 +466,13 @@ if (publishedInSeason && defaultBoard === "ros") {
       expect("ros_expected_points", cells[rosAt.expectedPoints], record.ros_expected_points.toFixed(1));
       expect("ros_expected_games", cells[rosAt.expectedGames], record.ros_expected_games.toFixed(1));
       expect("ros_uncertainty", cells[rosAt.uncertainty], record.ros_uncertainty.toFixed(1));
+      if (actualsAt !== null) {
+        const want = actualsCells(actualsPPR.get(record.player_id));
+        expect("season_position_rank", cells[actualsAt.rank], want.rank);
+        expect("season_points", cells[actualsAt.points], want.points);
+        expect("season_points_per_game", cells[actualsAt.perGame], want.perGame);
+        actualsCellsChecked += 3;
+      }
 
       /*
        * The availability mark, as a contract rather than as a list of codes (ADR-082, ADR-101).
@@ -461,6 +509,38 @@ if (publishedInSeason && defaultBoard === "ros") {
         }
       }
     });
+  }
+}
+
+// --- The RoS chart's comparison lane against the artifacts (ADR-105) ----------------------
+if (publishedInSeason && defaultBoard === "ros") {
+  const lanes = await page.$$eval(".tier-board[data-rank-lane='true'] .board-row", (rows) =>
+    rows.slice(0, 60).map((row) => ({
+      player: row.getAttribute("data-player"),
+      ros: row.querySelector('.rank-value[data-kind="ros"]')?.textContent?.replace(/^RoS/, "").trim() ?? null,
+      season: row.querySelector('.rank-value[data-kind="season"]')?.textContent?.replace(/^Szn/, "").trim() ?? null,
+      triangle: row.querySelector('.rank-mark[data-kind="season"]') !== null,
+      square: row.querySelector('.rank-mark[data-kind="ros"]') !== null,
+    })),
+  );
+  if (lanes.length === 0) failures.push("RoS chart: no comparison lane rendered");
+  const rosById = new Map(rosBlock.map((r) => [r.player_id, r]));
+  for (const lane of lanes) {
+    const record = rosById.get(lane.player);
+    if (record === undefined) continue;
+    const wantRos = `${record.position}${String(record.ros_position_rank)}`;
+    if (lane.ros !== wantRos || !lane.square) failures.push(`RoS chart ${record.display_name}: square ${String(lane.ros)}, artifact ${wantRos}`);
+    if (actualsRecords !== null) {
+      const actual = actualsPPR.get(lane.player);
+      const wantSeason =
+        actual === undefined || actual.season_position_rank === null
+          ? "\u2014"
+          : `${actual.position}${String(actual.season_position_rank)}`;
+      if (lane.season !== wantSeason) failures.push(`RoS chart ${record.display_name}: season ${String(lane.season)}, artifact ${wantSeason}`);
+      if (lane.triangle !== (wantSeason !== "\u2014")) failures.push(`RoS chart ${record.display_name}: triangle ${lane.triangle ? "drawn" : "missing"}`);
+      if (actual !== undefined && actual.position !== record.position) failures.push(`RoS chart ${record.display_name}: ranked as ${actual.position}, board says ${record.position}`);
+    }
+    actualsChartRowsChecked += 1;
   }
 }
 
@@ -1424,6 +1504,15 @@ if (publishedInSeason && opportunityRecords !== null) {
       cells: [...tr.querySelectorAll("td")].map((td) => (td.textContent ?? "").trim()),
     })),
   );
+  // By heading, not by position: the season columns (ADR-105) sit between team and adds. The
+  // name is the row's own <th>, so the <td> headings start after "Player".
+  const unprojectedHeads = await page.$$eval(".unprojected-sheet thead th", (ths) =>
+    ths.slice(1).map((th) => (th.textContent ?? "").trim()),
+  );
+  const unAt = (label) => unprojectedHeads.indexOf(label);
+  for (const label of ["Team", "Adds", "Szn rank", "Total pts", "Avg pts/g"]) {
+    if (unprojectedRows.length > 0 && unAt(label) < 0) failures.push(`not-projected section: no column headed ${label}`);
+  }
   if (unprojectedRows.length !== unprojectedBlock.length) {
     failures.push(`not-projected section: ${String(unprojectedRows.length)} rows rendered, artifact publishes ${String(unprojectedBlock.length)}`);
   }
@@ -1435,10 +1524,21 @@ if (publishedInSeason && opportunityRecords !== null) {
     }
     unprojectedRowsChecked += 1;
     const adds = record.add_count === null ? "\u2014" : record.add_count.toLocaleString("en-US");
-    if (row.cells[2] !== adds) failures.push(`not-projected ${record.display_name}: adds "${row.cells[2]}", artifact ${adds}`);
+    const addsCell = row.cells[unAt("Adds")];
+    if (addsCell !== adds) failures.push(`not-projected ${record.display_name}: adds "${addsCell}", artifact ${adds}`);
+    const teamCell = row.cells[unAt("Team")] ?? "";
     const wantTeam = record.employment_status === "unsigned" ? "FA \u2014 unsigned free agent" : (record.team ?? "\u2014");
-    if (row.cells[1] !== wantTeam && !(record.employment_status === "unsigned" && row.cells[1].startsWith("FA"))) {
-      failures.push(`not-projected ${record.display_name}: team "${row.cells[1]}", artifact ${String(record.team)} / ${String(record.employment_status)}`);
+    if (teamCell !== wantTeam && !(record.employment_status === "unsigned" && teamCell.startsWith("FA"))) {
+      failures.push(`not-projected ${record.display_name}: team "${teamCell}", artifact ${String(record.team)} / ${String(record.employment_status)}`);
+    }
+    // ADR-105: genuine actuals beside "No RoS projection" — the artifact's, or the reason not.
+    if (actualsRecords !== null) {
+      const want = actualsCells(actualsPPR.get(record.player_id));
+      const got = [row.cells[unAt("Szn rank")], row.cells[unAt("Total pts")], row.cells[unAt("Avg pts/g")]];
+      if (got[0] !== want.rank || got[1] !== want.points || got[2] !== want.perGame) {
+        failures.push(`not-projected ${record.display_name}: season ${got.join(" / ")}, artifact ${want.rank} / ${want.points} / ${want.perGame}`);
+      }
+      actualsCellsChecked += 3;
     }
   }
 
@@ -1850,6 +1950,9 @@ console.log(JSON.stringify({
   defaultBoard,
   publishedInSeason,
   rosRowsChecked,
+  seasonActualsRecords: actualsRecords === null ? null : actualsRecords.length,
+  actualsCellsChecked,
+  actualsChartRowsChecked,
   potwCardsChecked,
   behaviorSeriesRecords: behaviorSeries === null ? null : behaviorSeries.length,
   usageRecords: playerUsage === null ? null : playerUsage.length,

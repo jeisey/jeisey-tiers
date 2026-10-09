@@ -73,6 +73,9 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # ADR-099. Each team's game-day context (venue, forecast, named absences, typical week).
     # Additive and independent: without it the Start/Sit tab prints no context chips.
     "weekly_game_context",
+    # ADR-105. Season-to-date actuals and positional ranks over the whole population.
+    # Additive and independent: without it every surface prints actuals as unavailable.
+    "season_actuals_record",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -108,6 +111,7 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     # 1.1 (ADR-099): additive `explanation`, the typical-week account of P10, P50 and P90.
     "weekly_projection": "1.1",
     "weekly_game_context": "1.0",
+    "season_actuals_record": "1.0",
 }
 
 

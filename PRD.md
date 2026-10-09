@@ -2,7 +2,7 @@
 
 **Status:** Living document. Part A is the current product scope; Part B is the V1 launch
 specification, kept as a historical record.  
-**Last revised:** 2026-10-06  
+**Last revised:** 2026-10-09  
 **Live site:** <https://jeisey.github.io/jeisey-tiers/>  
 **Deployment:** static GitHub Pages site refreshed by GitHub Actions
 
@@ -118,6 +118,14 @@ These hold for every feature, current or future.
   inspectable with the reason. Season-ending is never inferred from IR; missing, stale or
   contradictory evidence is shown as uncertain, never healthy; no rank is renumbered and no
   projection is rescaled (ADR-101).
+- **CR-027 Season to date beside rest of season.** Every in-season surface that shows a
+  rest-of-season positional rank shows the season-to-date one beside it — total points, points
+  per game and the positional rank by points over every player at the position who has
+  appeared, per scoring preset, through the board's cutoff (`season_actuals_v1`, ADR-105). The
+  RoS chart draws the two ranks on their own labelled lane (square RoS, triangle season), never
+  on the value axis; the card states the gap neutrally and says what each rank measures.
+  Descriptive only: no model, value, tier or decision reads it, and incomplete source data
+  withholds it rather than ranking a smaller population.
 - **CR-026 Home.** The logo is a link to the season-aware default view under the configured base
   path.
 

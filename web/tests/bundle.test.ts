@@ -246,7 +246,7 @@ describe("loadBundle", () => {
 });
 
 describe("what a first paint fetches (ADR-098)", () => {
-  it("the in-season default view fetches the manifest, the names and one ROS block", async () => {
+  it("the in-season default view fetches the manifest, the names, one ROS block and one actuals slice", async () => {
     serve({ ...everything(), ...inSeasonFixtureFiles() });
     const store = await openSite();
     await store.ensure(
@@ -258,10 +258,12 @@ describe("what a first paint fetches (ADR-098)", () => {
       }),
     );
     const calls = vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
-    expect(calls).toHaveLength(4);
+    expect(calls).toHaveLength(5);
     expect(calls[0]).toBe("/data/manifest.json");
     expect(calls.some((url) => url.includes("/serve/players."))).toBe(true);
     expect(calls.some((url) => url.includes("/serve/ros_tiers/redraft-12.PPR."))).toBe(true);
+    // ADR-105: the season actuals for the scoring preset — one slice whatever the league size.
+    expect(calls.some((url) => url.includes("/serve/season_actuals/PPR."))).toBe(true);
     // ADR-101: the compact status slice the availability policy reads, and not the full one.
     expect(calls.some((url) => url.includes("/serve/player_availability/all."))).toBe(true);
     expect(calls.some((url) => url.includes("/serve/player_status/"))).toBe(false);
@@ -280,7 +282,11 @@ describe("what a first paint fetches (ADR-098)", () => {
         const context = { leaguePreset, scoring, cardPlayerId: null };
         const trade = requiredKeys(store.manifest, { ...context, view: "trade" });
         expect(trade).toEqual(["players", "player_availability/all", `ros_tiers/${leaguePreset}.${scoring}`]);
-        expect(requiredKeys(store.manifest, { ...context, view: "ros" })).toEqual(trade);
+        // The RoS view reads the same, plus the season actuals for its comparison (ADR-105).
+        expect(requiredKeys(store.manifest, { ...context, view: "ros" })).toEqual([
+          ...trade,
+          `season_actuals/${scoring}`,
+        ]);
       }
     }
   });

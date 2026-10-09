@@ -435,6 +435,57 @@
       "venues_unresolved": 0
     }
   },
+  "season_actuals": {
+    "rule": {
+      "version": "season_actuals_v1",
+      "points_decimals": 2,
+      "rank_method": "competition",
+      "scoring_engine_version": "scoring_v1"
+    },
+    "season": 2026,
+    "through_week": 8,
+    "weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "horizon": "weeks 1-17 (excluding NFL week 18)",
+    "scoring_presets": [
+      "HALF",
+      "PPR",
+      "STD"
+    ],
+    "definitions": {
+      "appearance": "A game played is a regular-season week with a weekly stats row or at least one offensive snap. Byes and weeks he did not appear are not games.",
+      "points": "Total fantasy points scored in weeks 1 through the cutoff, in the selected scoring preset, from the same scoring engine as every projection on the site.",
+      "points_per_game": "Total points divided by games played. Blank for a player with no appearances.",
+      "season_rank": "Rank by total points among every player at the position who has appeared this season, whatever board publishes him. Ties share a rank (1, 2, 2, 4). The same in every league size; it can change with the scoring preset.",
+      "comparison": "Season rank measures points already scored. Rest-of-season rank orders the model's value from here on. Different scoring pace, expected remaining appearances and the model's wider football history can make the two orderings differ; the gap is not a change over time and is not by itself evidence of a model error.",
+      "model_difference": "The rest-of-season model counts appearances by weekly stats rows only. A week with snaps and no statistic counts as a game here and not in the model's own inputs."
+    },
+    "status": "published",
+    "withheld_reason": null,
+    "records": 105,
+    "population": {
+      "QB": 3,
+      "RB": 5,
+      "WR": 22,
+      "TE": 3
+    },
+    "coverage": {
+      "weeks_checked": 8,
+      "scheduled_team_weeks": 120,
+      "weekly_stats_missing_team_weeks": 0,
+      "snap_counts_missing_team_weeks": 0,
+      "snap_only_appearances": 1,
+      "unbridged_snap_rows": 0
+    }
+  },
   "disclosures": {
     "uses_injury_information": false,
     "long_absence_definition": "has played at least once this season and has not appeared for 3 or more consecutive weeks ending at the cutoff",

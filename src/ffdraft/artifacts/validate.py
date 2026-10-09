@@ -18,7 +18,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ffdraft.artifacts.csv_flatten import flattener_for
+from ffdraft.artifacts.actuals_checks import (
+    actuals_cross_checks,
+    actuals_csv_checks,
+    actuals_metadata_checks,
+    actuals_record_checks,
+)
+from ffdraft.artifacts.csv_flatten import companion_columns, flattener_for
 from ffdraft.artifacts.schemas import (
     record_field_order,
     validate_envelope,
@@ -95,6 +101,8 @@ _IN_SEASON_ARTIFACTS = frozenset(
         "weekly_projections",
         # ADR-099. Written with the weekly layer, and withheld with it.
         "weekly_context",
+        # ADR-105. Written by `run_ros_build` after every board.
+        "season_actuals",
     },
 )
 
@@ -193,6 +201,14 @@ def validate_artifact_directory(
     gate.extend(_signal_cross_checks(envelopes))
     gate.extend(_weekly_cross_checks(envelopes))
     gate.extend(_weekly_context_cross_checks(envelopes))
+    gate.extend(actuals_cross_checks(envelopes))
+    gate.extend(
+        actuals_csv_checks(
+            directory,
+            envelopes,
+            {name: spec.csv_filename for name, spec in ARTIFACT_SPECS.items() if spec.csv_filename},
+        ),
+    )
     if envelopes:
         gate.extend(validate_serving_layout(directory, envelopes, required=require_serving))
     if not envelopes:
@@ -361,6 +377,8 @@ def _semantic_checks(
             return _weekly_checks(records, stage)
         case "weekly_context":
             return weekly_context_checks(records, stage)
+        case "season_actuals":
+            return actuals_record_checks(records, stage)
     return []
 
 
@@ -1460,9 +1478,11 @@ def _csv_agreement(
     # the schema's field order (ADR-065). The header is still fixed and still checked -
     # what changes is which declaration it is checked against.
     flattener = flattener_for(spec.artifact)
-    expected_header = (
-        list(flattener[0]) if flattener else list(record_field_order(spec.schema_name))
-    )
+    expected_header = [
+        *(flattener[0] if flattener else record_field_order(spec.schema_name)),
+        # ADR-105: the in-season boards append the season-actuals columns after their own.
+        *companion_columns(spec.artifact),
+    ]
     checks: list[QualityCheck] = []
     if rows[0] != expected_header:
         checks.append(
@@ -2062,6 +2082,8 @@ def _ros_metadata_checks(
                     expected=str(metadata.get("through_week")),
                 ),
             )
+
+    checks.extend(actuals_metadata_checks(metadata, envelopes))
 
     disclosures = metadata.get("disclosures", {})
     if disclosures.get("uses_injury_information") is not False:

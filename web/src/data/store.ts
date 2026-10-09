@@ -35,6 +35,7 @@ import {
   type RosBuildMetadata,
   type RosTierRecord,
   type ScoringPreset,
+  type SeasonActualsRow,
   type TeamMatchupRecord,
   type TierRecord,
   type UsageCohortRecord,
@@ -83,6 +84,10 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
   if (IN_SEASON_VIEWS.includes(context.view) && manifest.ros_build_metadata !== undefined) {
     wanted.push("player_availability/all");
   }
+  // ADR-105: season actuals beside every in-season table and the RoS chart — one slice per
+  // scoring preset, ranked at build time, so a direct link to any of these views (or to a card
+  // opened from one) has the complete standings without visiting another view first.
+  const actuals = `season_actuals/${context.scoring}`;
   switch (context.view) {
     case "tiers":
       wanted.push(`tiers/${block}`, "player_status/all");
@@ -92,11 +97,12 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
       wanted.push(`arbitrage/${block}`, `tiers/${block}`, "player_status/all");
       break;
     case "ros":
-      wanted.push(`ros_tiers/${block}`);
+      wanted.push(`ros_tiers/${block}`, actuals);
       break;
     case "opportunity":
       wanted.push(
         `ros_tiers/${block}`,
+        actuals,
         `inseason_opportunity/${block}`,
         "player_usage/all",
         "behavior_trend_series/all",
@@ -114,7 +120,14 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
       );
       break;
     case "startsit":
-      wanted.push(`weekly_projections/${context.scoring}`, "weekly_context/all");
+      // The week board prints each player's RoS positional rank beside his season rank, so
+      // it reads the league's rest-of-season block too (the default view's, already loaded).
+      wanted.push(
+        `weekly_projections/${context.scoring}`,
+        "weekly_context/all",
+        `ros_tiers/${block}`,
+        actuals,
+      );
       break;
     case "trade":
       // ADR-100 §9: one block of the rest-of-season board — the slice the default in-season
@@ -127,7 +140,7 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
     // The in-season cohort strips place a player among his published block; the draft card
     // shows the rest-of-season section beside the draft one once a board exists.
     if (manifest.ros_build_metadata !== undefined) {
-      wanted.push(`ros_tiers/${block}`, `inseason_opportunity_cohort/${block}`);
+      wanted.push(`ros_tiers/${block}`, `inseason_opportunity_cohort/${block}`, actuals);
       if (!draft) wanted.push("player_usage_cohort/all", "team_matchups/all", "weekly_context/all");
     }
   }
@@ -389,6 +402,8 @@ export class DataStore {
             status: this.published("player_status")
               ? this.rows<StatusEvidence>("player_availability", scope)
               : null,
+            actuals: this.rows<SeasonActualsRow>("season_actuals", scope),
+            actualsPublished: this.published("season_actuals"),
             published: {
               opportunity: this.published("inseason_opportunity"),
               behaviorSeries: this.published("behavior_trend_series"),

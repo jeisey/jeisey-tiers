@@ -44,7 +44,25 @@ import {
 } from "../data/duel";
 import { EM_DASH, formatEastern, formatSigned, formatValue } from "../data/format";
 import type { InSeasonBundle } from "../data/ros";
-import { MARGIN_BOUND, MAX_DUEL, SCORING_LABELS, type AppState } from "../data/state";
+import {
+  MARGIN_BOUND,
+  MAX_DUEL,
+  SCORING_LABELS,
+  SCORING_TO_PRESET,
+  leaguePresetId,
+  type AppState,
+} from "../data/state";
+import {
+  SEASON_COLUMN_LABELS,
+  formatRosPositionRank,
+  type SeasonStanding,
+} from "../data/actuals";
+import {
+  SeasonPerGameCell,
+  SeasonPointsCell,
+  SeasonRankCell,
+  seasonCaption,
+} from "./SeasonColumns";
 import { arrow, signedPoints, topReason, whyThisWeek, type WhyThisWeek } from "../data/whyweek";
 
 const POSTURES: readonly { readonly value: number; readonly label: string; readonly long: string }[] = [
@@ -222,6 +240,18 @@ export function StartSitView({
         onShowAll={() => { setShowAll((value) => !value); }}
         weekly={weekly}
         whyFor={whyFor}
+        rosRankFor={(playerId) =>
+          bundle.rosRecordFor(leaguePresetId(state.teams), SCORING_TO_PRESET[state.scoring], playerId)
+            ?.ros_position_rank ?? null
+        }
+        seasonFor={(playerId) =>
+          bundle.seasonStandingFor(SCORING_TO_PRESET[state.scoring], playerId)
+        }
+        seasonNote={seasonCaption(
+          bundle.metadata.through_week,
+          scoringLabel,
+          bundle.actualsAvailability.published ? null : bundle.actualsAvailability.reason,
+        )}
       />
 
       <details className="startsit-method">
@@ -705,6 +735,9 @@ function WeekBoard({
   onShowAll,
   weekly,
   whyFor,
+  rosRankFor,
+  seasonFor,
+  seasonNote,
 }: {
   readonly rows: readonly WeekBoardRow[];
   readonly order: WeekBoardOrder;
@@ -717,6 +750,11 @@ function WeekBoard({
   readonly onShowAll: () => void;
   readonly weekly: RosWeeklyMetadata;
   readonly whyFor: (record: WeeklyProjectionRecord) => WhyThisWeek | null;
+  /** His RoS positional rank in the reader's league and scoring (ADR-105), or null. */
+  readonly rosRankFor: (playerId: string) => number | null;
+  /** His season-to-date standing (ADR-105). */
+  readonly seasonFor: (playerId: string) => SeasonStanding;
+  readonly seasonNote: string;
 }): React.JSX.Element {
   const shown = showAll ? rows : rows.slice(0, BOARD_PAGE);
   const playing = rows.filter((row) => row.record.quantiles !== null);
@@ -739,12 +777,20 @@ function WeekBoard({
           onChange={onOrder}
         />
       </div>
-      <div className="weekboard-scroll">
+      {/* Focusable, so a keyboard can scroll to the RoS and season columns on a phone. */}
+      <div
+        className="weekboard-scroll"
+        role="region"
+        aria-label={`Week ${String(week)} board`}
+        tabIndex={0}
+      >
         <table className="sheet weekboard-table">
           <thead>
             <tr>
               <th scope="col" className="wb-add"><span className="visually-hidden">Compare</span></th>
-              <th scope="col" className="wb-rank">Pos rk</th>
+              <th scope="col" className="wb-rank">
+                <abbr title={`This week's positional rank, week ${String(week)}`}>Week rank</abbr>
+              </th>
               <th scope="col" className="wb-player">Player</th>
               <th scope="col" className="wb-game">Game</th>
               <th scope="col" className="wb-num wb-implied">Team total</th>
@@ -753,6 +799,11 @@ function WeekBoard({
               <th scope="col" className="wb-why">vs typical</th>
               <th scope="col" className="wb-range">P10 – P90</th>
               <th scope="col" className="wb-num wb-start">Startable</th>
+              {/* ADR-105: rest of season beside season to date, after the week's own columns. */}
+              <th scope="col" className="wb-num wb-ros">RoS rank</th>
+              <th scope="col" className="wb-num wb-season">{SEASON_COLUMN_LABELS.rank}</th>
+              <th scope="col" className="wb-num wb-season">{SEASON_COLUMN_LABELS.points}</th>
+              <th scope="col" className="wb-num wb-season">{SEASON_COLUMN_LABELS.perGame}</th>
             </tr>
           </thead>
           <tbody>
@@ -761,6 +812,8 @@ function WeekBoard({
               const q = record.quantiles;
               const inDuel = duel.includes(record.player_id);
               const injury = injuryReading(record, weekly);
+              const season = seasonFor(record.player_id);
+              const rosRank = rosRankFor(record.player_id);
               return (
                 <tr
                   key={record.player_id}
@@ -789,6 +842,12 @@ function WeekBoard({
                       <AvailabilityBadge availability={row.availability} extra={injury?.sentence} />
                     </span>
                     <span className="wb-sub">{`${record.position} · ${record.team} ${gameLine(record)}`}</span>
+                    {/* Phones only (the columns are off to the right there): the rank pair,
+                        under the name, so both ranks are read without scrolling (ADR-105). */}
+                    <span className="wb-sub wb-sub-ranks">
+                      {`RoS ${rosRank === null ? "—" : formatRosPositionRank(record.position, rosRank)} · ` +
+                        `Szn ${season.kind === "ranked" ? `${record.position}${String(season.rank)}` : "—"}`}
+                    </span>
                   </td>
                   <td className="wb-game">
                     {record.game === null ? "Bye" : gameLine(record)}
@@ -815,6 +874,24 @@ function WeekBoard({
                     )}
                   </td>
                   <td className="wb-num wb-start">{percent(row.startable)}</td>
+                  <td className="wb-num wb-ros">
+                    {rosRank === null ? (
+                      <span className="muted" title="No RoS projection">
+                        —<span className="visually-hidden"> No RoS projection</span>
+                      </span>
+                    ) : (
+                      formatRosPositionRank(record.position, rosRank)
+                    )}
+                  </td>
+                  <td className="wb-num wb-season">
+                    <SeasonRankCell standing={season} />
+                  </td>
+                  <td className="wb-num wb-season">
+                    <SeasonPointsCell standing={season} />
+                  </td>
+                  <td className="wb-num wb-season">
+                    <SeasonPerGameCell standing={season} />
+                  </td>
                 </tr>
               );
             })}
@@ -831,7 +908,8 @@ function WeekBoard({
         position in your league. &ldquo;Opp. allows&rdquo; ranks his opponent by fantasy points allowed to the
         position this season, shrunk toward the league rate; 1st is the most generous.
         &ldquo;vs typical&rdquo; is the median against the player&apos;s typical week, with the input that moved it
-        most.
+        most. Week rank orders this week&apos;s medians within his position; RoS rank is his
+        rest-of-season positional rank in your league. {seasonNote}
       </p>
     </div>
   );

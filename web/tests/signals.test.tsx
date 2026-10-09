@@ -274,7 +274,8 @@ describe("a card for a player the draft board never held", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).queryByText("Draft market")).toBeNull();
     expect(dialog.querySelector(".usage-rails")).not.toBeNull();
-    expect(within(dialog).getByText(/no\s+projection or pace is published for him/)).toBeDefined();
+    expect(within(dialog).getByText(/projection or pace is published for him/i)).toBeDefined();
+    expect(within(dialog).getAllByText(/No RoS projection/).length).toBeGreaterThan(0);
   });
 });
 

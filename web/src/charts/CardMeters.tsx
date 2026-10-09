@@ -201,8 +201,10 @@ export function RankShift({
  * **This is the card's answer to "was that week real?"** — and it is the model's own answer
  * rather than a verdict invented on the page. `ros_label_v1` splits the target into remaining
  * games, remaining points per appearance and their product, so a projected rate is a quantity
- * the model is built on; `points_per_game_to_date` is the identical quantity measured before
- * the cutoff. Two numbers, one unit, one either side of the cutoff. Where the projection sits
+ * the model is built on; the scored side is the season actuals' points per game (ADR-105), the
+ * same quantity measured before the cutoff — over appearances that also count a snaps-only
+ * week, which the card says when it applies. Two numbers, one unit, one either side of the
+ * cutoff. Where the projection sits
  * below the rate a player has scored at, the model is declining to buy the whole of what has
  * happened, and that is worth a reader's second of attention on a hot start.
  *
@@ -219,11 +221,14 @@ export function PaceRail({
   projected,
   appearances,
   position,
+  scoredAbsence = null,
 }: {
   readonly scored: number | null;
   readonly projected: number | null;
   readonly appearances: number;
   readonly position: Position;
+  /** Why there is no scored rate when it is not "no appearances" (ADR-105: unavailable). */
+  readonly scoredAbsence?: string | null;
 }): React.JSX.Element {
   const bound = niceCeiling(Math.max(scored ?? 0, projected ?? 0, 1) * 1.05);
   const width = (value: number | null): string =>
@@ -254,9 +259,11 @@ export function PaceRail({
       </div>
       <p className="pace-note">
         {gap === null
-          ? projected === null
-            ? "The model projects no remaining appearances for him, so there is no rate to compare."
-            : "He has not appeared this season, so there is no rate to compare it with."
+          ? scored === null && scoredAbsence !== null
+            ? scoredAbsence
+            : projected === null
+              ? "The model projects no remaining appearances for him, so there is no rate to compare."
+              : "He has not appeared this season, so there is no rate to compare it with."
           : Math.abs(gap) < 0.05
             ? "The model projects the rate he has been scoring at."
             : `The model projects ${formatValue(Math.abs(gap))} ${

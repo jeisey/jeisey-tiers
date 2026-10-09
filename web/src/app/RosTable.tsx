@@ -38,14 +38,15 @@ import { AvailabilityBadge, PositionTag, TeamCell, TierTag } from "../components
 import { isMuted } from "../data/availability";
 import { formatRange, formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rankChangeLabel, type RosRow } from "../data/ros";
+import { positionalRankAccessor, seasonColumns } from "./SeasonColumns";
 
 export const ROS_TABLE_CAPTION =
-  "Rest-of-season board. Every column is a rest-of-season quantity computed at the cutoff " +
+  "Rest-of-season board. Every ROS column is a rest-of-season quantity computed at the cutoff " +
   "week shown above — none of them is the preseason value of the same name. Sorting " +
   "re-orders these rows without changing the published ROS rank, which is the model's rank " +
-  "and is not adjusted for injuries. The mark beside a name is the availability reading " +
-  "(roster code, injury designation, or a reviewed season-ending report): it decides what is " +
-  "actionable, and is no input to any number here.";
+  "and is not adjusted for injuries. Positional ranks sort within each position. The mark " +
+  "beside a name is the availability reading (roster code, injury designation, or a reviewed " +
+  "season-ending report): it decides what is actionable, and is no input to any number here.";
 
 interface Scale {
   readonly min: number;
@@ -160,7 +161,9 @@ function rosColumns(onSelect: (playerId: string) => void, scale: Scale): ColumnD
     {
       id: "ros_position_rank",
       header: "ROS PosRk",
-      accessorFn: (row) => row.record.ros_position_rank,
+      // Grouped by position, so an all-positions sort reads QB1… then RB1… (ADR-105).
+      accessorFn: (row) => positionalRankAccessor(row.record.position, row.record.ros_position_rank),
+      sortDescFirst: false,
       cell: (context) => (
         <span className="muted">
           {context.row.original.record.position}
@@ -169,6 +172,11 @@ function rosColumns(onSelect: (playerId: string) => void, scale: Scale): ColumnD
       ),
       meta: { align: "right", width: "5.5rem" },
     },
+    // ADR-105: the season-to-date cluster, Szn rank immediately beside ROS PosRk.
+    ...seasonColumns<RosRow>(
+      (row) => row.season,
+      (row) => row.record.position,
+    ),
     {
       id: "team",
       header: "Team",
@@ -294,11 +302,14 @@ export function RosTable({
   onSelect,
   selectedPlayerId,
   visibleRowsRef,
+  seasonNote,
 }: {
   readonly rows: readonly RosRow[];
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
   readonly visibleRowsRef?: RefObject<readonly RosRow[]>;
+  /** What the season columns are, for the caption (ADR-105). */
+  readonly seasonNote?: string;
 }): React.JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([{ id: "ros_fair_rank", desc: false }]);
   const scale = useMemo(() => rosTableScale(rows), [rows]);
@@ -326,6 +337,7 @@ export function RosTable({
       <table className="sheet">
         <caption>
           {ROS_TABLE_CAPTION}{" "}
+          {seasonNote === undefined ? "" : `${seasonNote} `}
           {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}. `}
           Interval and uncertainty bars are scaled against the widest on the rows shown.
         </caption>

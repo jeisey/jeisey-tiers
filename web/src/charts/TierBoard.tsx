@@ -55,7 +55,8 @@ import { useCallback, useMemo, useRef } from "react";
 import { useElementWidth } from "../components/useElementWidth";
 import { useRovingMarks } from "./useRovingMarks";
 import { formatRank, formatValue } from "../data/format";
-import type { BoardAxis, BoardGroup } from "./boardModel";
+import type { BoardAxis, BoardGroup, BoardMark, BoardRankLane } from "./boardModel";
+import { rankGridImage, rankPercent, rankScaleEnd, rankTicks } from "./rankScale";
 
 export const TIER_SOFT_EDGE_NOTE =
   "Tier groups are useful; exact tier edges are statistically soft. Membership reproduces " +
@@ -135,6 +136,58 @@ function positionMix(group: BoardGroup): readonly { position: string; count: num
     .sort((a, b) => b.count - a.count || a.position.localeCompare(b.position));
 }
 
+/**
+ * The rank-comparison lane of one row (ADR-105): the square at his RoS positional rank on the
+ * upper track, the triangle at his season-to-date positional rank on the lower one. Two tracks,
+ * so equal ranks stack rather than hide one another; a hairline between the two x positions
+ * shows the distance however large it is. Never on the value axis: its unit is a rank.
+ */
+function RankLaneCell({ mark, end }: { readonly mark: BoardMark; readonly end: number }): React.JSX.Element {
+  const ranks = mark.ranks;
+  if (ranks === undefined) return <span className="row-ranklane" aria-hidden="true" />;
+  const ros = rankPercent(ranks.ros, end);
+  const season = ranks.season === null ? null : rankPercent(ranks.season, end);
+  return (
+    <span className="row-ranklane" aria-hidden="true">
+      <span className="ranklane-track">
+        {season !== null && (
+          <span
+            className="ranklane-gap"
+            style={{
+              left: `${String(Math.min(ros, season))}%`,
+              width: `${String(Math.abs(ros - season))}%`,
+            }}
+          />
+        )}
+        <span className="rank-mark" data-kind="ros" style={{ left: `${String(ros)}%` }} />
+        {season !== null && (
+          <span className="rank-mark" data-kind="season" style={{ left: `${String(season)}%` }} />
+        )}
+      </span>
+    </span>
+  );
+}
+
+/** The two ranks in words beside the lane: `■ RoS QB15` over `▲ Szn QB4`. */
+function RankValues({ mark }: { readonly mark: BoardMark }): React.JSX.Element {
+  const ranks = mark.ranks;
+  if (ranks === undefined) return <span className="row-rankvalues" aria-hidden="true" />;
+  return (
+    <span className="row-rankvalues" aria-hidden="true">
+      <span className="rank-value" data-kind="ros">
+        <span className="rank-glyph" data-kind="ros" />
+        <span className="rank-word">RoS</span>
+        {`${mark.position}${String(ranks.ros)}`}
+      </span>
+      <span className="rank-value" data-kind="season" data-absent={ranks.season === null ? "true" : undefined}>
+        <span className="rank-glyph" data-kind="season" />
+        <span className="rank-word">Szn</span>
+        {ranks.season === null ? "—" : `${mark.position}${String(ranks.season)}`}
+      </span>
+    </span>
+  );
+}
+
 export function TierBoard({
   groups,
   axis,
@@ -142,10 +195,17 @@ export function TierBoard({
   selectedPlayerId,
   openTiers,
   onToggleTier,
+  rankLane,
 }: {
   readonly groups: readonly BoardGroup[];
   /** Every word the board prints about its own quantity. See `BoardAxis`. */
   readonly axis: BoardAxis;
+  /**
+   * RoS board only (ADR-105): turns on the positional-rank comparison lane. In that variant the
+   * square means a RoS rank, so the value lane's median is drawn as a tick instead. The draft
+   * board passes nothing and keeps its glowing-square median.
+   */
+  readonly rankLane?: BoardRankLane;
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
   /** The tier ordinals currently expanded. */
@@ -178,6 +238,12 @@ export function TierBoard({
     const high = Math.ceil(max / step) * step;
     return { min: low, max: high, range: high - low || 1, step };
   }, [compact, groups]);
+
+  const rankEnd = rankLane === undefined ? null : rankScaleEnd(rankLane.domain);
+  const rankTickList = useMemo(
+    () => (rankEnd === null ? [] : rankTicks(rankEnd, compact)),
+    [rankEnd, compact],
+  );
 
   const ticks = useMemo(() => {
     const step = scale.step ?? scale.range;
@@ -222,9 +288,16 @@ export function TierBoard({
     <div
       className="tier-board"
       ref={container}
+      data-rank-lane={rankLane === undefined ? undefined : "true"}
       // The gridline period, as the axis's own tick spacing. Set once here and inherited by
-      // every row, so the lines land under the tick labels rather than near them.
-      style={{ "--board-grid": `${String(((scale.step ?? scale.range) / scale.range) * 100)}%` } as React.CSSProperties}
+      // every row, so the lines land under the tick labels rather than near them. The rank
+      // lane's gridlines are its log ticks, also set once.
+      style={
+        {
+          "--board-grid": `${String(((scale.step ?? scale.range) / scale.range) * 100)}%`,
+          ...(rankEnd === null ? {} : { "--rank-grid": rankGridImage(rankTickList, rankEnd) }),
+        } as React.CSSProperties
+      }
     >
       <p className="visually-hidden">{axis.summary}</p>
 
@@ -252,6 +325,24 @@ export function TierBoard({
             ))}
           </span>
           <span className="board-scale-unit">{axis.unit}</span>
+          {rankEnd !== null && rankLane !== undefined && (
+            <>
+              <span className="board-scale-ranktrack">
+                <span className="ranklane-track">
+                  {rankTickList.map((tick) => (
+                    <span
+                      key={tick}
+                      className="board-tick"
+                      style={{ left: `${String(rankPercent(tick, rankEnd))}%` }}
+                    >
+                      {tick}
+                    </span>
+                  ))}
+                </span>
+              </span>
+              <span className="board-scale-unit board-scale-rankunit">{rankLane.unit}</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -411,12 +502,19 @@ export function TierBoard({
                               <span
                                 className="interval-median"
                                 data-pos={mark.position}
+                                data-shape={rankLane === undefined ? undefined : "tick"}
                                 style={{
                                   left: `${String(pct(mark.p50, scale.min, scale.range))}%`,
                                 }}
                               />
                             </span>
                             <span className="row-value">{formatValue(mark.p50)}</span>
+                            {rankEnd !== null && (
+                              <>
+                                <RankLaneCell mark={mark} end={rankEnd} />
+                                <RankValues mark={mark} />
+                              </>
+                            )}
                           </div>
                         </li>
                       );
@@ -448,6 +546,11 @@ export function TierBoard({
           {`${formatValue(scale.min)} to ${formatValue(scale.max)}`}
         </span>
         <span className="board-axis-title">{axis.note}</span>
+        {rankLane !== undefined && rankEnd !== null && (
+          <span className="board-axis-title board-axis-ranknote">
+            {`${rankLane.note} Scale 1 to ${String(rankEnd)}.`}
+          </span>
+        )}
       </div>
     </div>
   );
