@@ -62,6 +62,10 @@ test.describe("automated scan", () => {
     ["arbitrage", "/?view=arbitrage", ".rail-row"],
     ["arbitrage premiums", "/?view=arbitrage&rail=premiums", ".rail-row"],
     ["data", "/?view=data", "h2#definitions-heading"],
+    // The in-season build's Data page: more sources, more sections. Its narrow-width failure is
+    // covered by the phone scan below, since a table only overflows (and only then needs to be
+    // focusable) when the page is narrow.
+    ["data, in season", "/scenario/in-season/?view=data", "h2#definitions-heading"],
     ["a degraded market", "/scenario/no-market/?view=arbitrage", '.notice[data-severity="warning"]'],
     ["a refused contract", "/scenario/bad-schema/", '.notice[data-severity="error"]'],
     // The in-season product, on its own builds. Both boards are charts this suite had never
@@ -158,6 +162,25 @@ test.describe("automated scan", () => {
       if ((await options.count()) > 0) await options.click();
       await expect(page.getByRole("radiogroup", { name: "Scoring" })).toBeVisible();
       expect(describe(await scan(page)), "open").toEqual([]);
+    });
+  }
+
+  /*
+   * The Data page at phone widths. Its build and freshness tables contain no control, so when
+   * they overflow their scroll box is the only way a keyboard can reach the hidden columns:
+   * axe's scrollable-region-focusable found the in-season freshness table unreachable at 320px
+   * before the box became a tab stop. At desktop width nothing overflows and the rule is silent,
+   * which is why the desktop scan above could not see it.
+   */
+  for (const path of ["/?view=data", "/scenario/in-season/?view=data"]) {
+    test(`the Data page on a phone scans clean (${path})`, async ({ page }) => {
+      for (const width of [390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        await page.goto(path);
+        await page.waitForLoadState("networkidle");
+        await expect(page.locator("h2#freshness-heading")).toBeVisible();
+        expect(describe(await scan(page)), `${String(width)}px`).toEqual([]);
+      }
     });
   }
 
@@ -373,7 +396,9 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
       await page.waitForLoadState("networkidle");
       const carousel = page.getByRole("region", { name: "How the models work" });
       await expect(carousel).toBeVisible();
-      const boards = await carousel.getByRole("button", { name: /^Board \d+:/ }).count();
+      // Read from the slide's "n of N" label: below 380px the per-board buttons are hidden.
+      const label = (await carousel.locator("article").getAttribute("aria-label")) ?? "";
+      const boards = Number(/ of (\d+):/.exec(label)?.[1] ?? 0);
       expect(boards).toBeGreaterThan(1);
       for (let board = 0; board < boards; board += 1) {
         await expect(carousel.locator("article")).toHaveAttribute(

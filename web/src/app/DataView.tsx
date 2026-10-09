@@ -249,7 +249,8 @@ export function DataView({
 
       <section className="section" aria-labelledby="model-heading">
         <SectionHead index="03" id="model-heading" title="Current build" />
-        <div className="table-scroll">
+        {/* A table with no control in it: the box is a tab stop so a keyboard can scroll it. */}
+        <div className="table-scroll" role="region" aria-labelledby="model-heading" tabIndex={0}>
           <table className="sheet">
             <caption>Read from the build metadata this page loaded.</caption>
             <tbody>
@@ -304,7 +305,7 @@ export function DataView({
 
       <section className="section" aria-labelledby="freshness-heading">
         <SectionHead index="04" id="freshness-heading" title="Freshness and source status" />
-        <div className="table-scroll">
+        <div className="table-scroll" role="region" aria-labelledby="freshness-heading" tabIndex={0}>
           <table className="sheet">
             <caption>Every row is reported by the build, not inferred by this page.</caption>
             <thead>

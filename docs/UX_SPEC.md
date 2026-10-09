@@ -964,6 +964,9 @@ model, simulation/value/tiers, bargain finder (A0), rest of season, Start/Sit v1
 
 - Previous/next buttons wrap; one button per board; arrow keys while focus is inside the
   carousel (never a global handler); the board name is announced politely.
+- Phones (below 768px): a second Previous/Next pair under the board, each named for the board
+  it opens, brings the new board's top back into view (instant, not smooth). The top row stays
+  on one line; below 380px a "02 / 09" counter replaces the per-board bars.
 - Status is a word plus a shape (square, diamond, triangle), never colour alone.
 - No metric is typed in. Boards describe and link to the generated model cards; the one number
   printed — the start/sit holdout pair accuracy against the best simple rule — is read from

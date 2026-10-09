@@ -20,9 +20,13 @@
  * Navigation: previous / next buttons that wrap, one button per board, and the arrow keys
  * while focus is inside the carousel. The keydown handler is on the carousel, never global.
  * The current board's name is announced through a polite live region.
+ *
+ * A board is long on a phone, so below the phone breakpoint a second pair of buttons sits
+ * under it, named for the board each one opens. Using them brings the new board's top back
+ * into view, instantly rather than smoothly so reduced motion has nothing to opt out of.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { DEFAULT_TRADE_RANGE } from "../data/state";
 import type { InSeasonBundle } from "../data/ros";
@@ -813,6 +817,7 @@ export function HowItWorks({
   const all = boards(inSeason);
   const count = all.length;
   const [index, setIndex] = useState(0);
+  const topRef = useRef<HTMLDivElement>(null);
   const go = useCallback(
     (next: number) => {
       setIndex(((next % count) + count) % count);
@@ -821,6 +826,15 @@ export function HowItWorks({
   );
   const board = all[index] ?? all[0];
   if (board === undefined) throw new Error("How it works has no boards");
+  const previous = all[(index - 1 + count) % count] ?? board;
+  const next = all[(index + 1) % count] ?? board;
+
+  function goFromFoot(target: number): void {
+    go(target);
+    const top = topRef.current;
+    // Optional-called: jsdom, where the unit tests run, has no layout and no scrollIntoView.
+    if (top !== null && typeof top.scrollIntoView === "function") top.scrollIntoView({ block: "start" });
+  }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>): void {
     if (event.key === "ArrowRight") {
@@ -840,7 +854,7 @@ export function HowItWorks({
       aria-label="How the models work"
       onKeyDown={onKeyDown}
     >
-      <div className="hiw-nav">
+      <div className="hiw-nav" ref={topRef}>
         <button
           type="button"
           className="hiw-arrow"
@@ -918,6 +932,30 @@ export function HowItWorks({
         )}
         <div className="hiw-body">{board.body}</div>
       </article>
+      <div className="hiw-foot">
+        <button
+          type="button"
+          className="hiw-foot-button"
+          aria-label={`Previous: ${previous.title}`}
+          onClick={() => {
+            goFromFoot(index - 1);
+          }}
+        >
+          <span className="hiw-label">Previous</span>
+          <span className="hiw-foot-title">{previous.title}</span>
+        </button>
+        <button
+          type="button"
+          className="hiw-foot-button hiw-foot-next"
+          aria-label={`Next: ${next.title}`}
+          onClick={() => {
+            goFromFoot(index + 1);
+          }}
+        >
+          <span className="hiw-label">Next</span>
+          <span className="hiw-foot-title">{next.title}</span>
+        </button>
+      </div>
     </div>
   );
 }

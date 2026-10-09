@@ -83,6 +83,16 @@ describe("How it works", () => {
     expect(within(carousel).getByText("Shadow ops")).toBeDefined();
   });
 
+  it("has a second pair of buttons under the board, named for the board each opens", async () => {
+    const user = userEvent.setup();
+    const carousel = await openData(false);
+    await user.click(within(carousel).getByRole("button", { name: "Next: The draft model" }));
+    expect(boardTitle(carousel)).toBe("The draft model");
+    await user.click(within(carousel).getByRole("button", { name: "Previous: Mission map" }));
+    expect(boardTitle(carousel)).toBe("Mission map");
+    expect(within(carousel).getByRole("button", { name: "Previous: Rules of engagement" })).toBeDefined();
+  });
+
   it("prints the start/sit holdout accuracy only from the build that published it", async () => {
     const user = userEvent.setup();
     const carousel = await openData(true);

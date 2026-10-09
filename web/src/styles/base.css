@@ -1069,6 +1069,16 @@ code {
   background: var(--panel);
 }
 
+/*
+ * A scroll box with no control inside is made a tab stop (the Data page's build and freshness
+ * tables), so a keyboard can scroll it; axe's scrollable-region-focusable found the in-season
+ * freshness table unreachable. Its focus ring is the shared one.
+ */
+.table-scroll[tabindex]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
 table.sheet {
   width: 100%;
   border-collapse: collapse;
@@ -8689,4 +8699,96 @@ table.sheet.weekboard-table thead th.wb-num {
   margin: 0;
   font-size: 0.8rem;
   color: var(--ink-muted);
+}
+
+/*
+ * The phone's second pair of board buttons, under the board (a board is several screens tall
+ * there). Each is named by the board it opens. Above the phone breakpoint the top row is
+ * always in reach, so these are not rendered. `scroll-margin-top` keeps the board's top clear
+ * of the sticky tabs when a foot button brings it back into view.
+ */
+.hiw-foot {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  /* One row on a phone: both arrows stay at the ends and the bars wrap between them. The
+     counter repeats what the current bar shows, so it is the piece that gives way. */
+  .hiw-nav {
+    scroll-margin-top: 6.5rem;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+
+  .hiw-dots {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .hiw-dot {
+    width: 24px;
+  }
+
+  .hiw-count {
+    display: none;
+  }
+
+  .hiw-foot {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .hiw-foot-button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    min-height: 56px;
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
+    background: var(--tile);
+    border: var(--hairline) solid var(--line-bright);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: var(--t-control);
+  }
+
+  .hiw-foot-next {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .hiw-foot-button:hover {
+    background: var(--surface-hover-strong);
+  }
+
+  .hiw-foot-button:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .hiw-foot-title {
+    max-width: 100%;
+    font-size: 0.8rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Below 380px nine bars no longer fit between the arrows on one row; the counter replaces them
+   (the arrows and the buttons under the board still reach every board). */
+@media (max-width: 379px) {
+  .hiw-dots {
+    display: none;
+  }
+
+  .hiw-count {
+    display: block;
+    flex: 1 1 auto;
+    text-align: center;
+  }
 }

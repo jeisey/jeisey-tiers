@@ -2080,7 +2080,14 @@ cyclable section that lives only on the Data tab.
 - [x] Tests: `web/tests/how-it-works.test.tsx` (cycle/wrap, keys, direct reach, metric source,
       Data-only); a11y E2E scans every board at 1280 and 320 px, with no horizontal overflow.
 - [x] Docs: UX_SPEC §9, screens `docs/visual-qa/2026-10-09-how-it-works/`.
-- [ ] **Follow-up (pre-existing, not this change):** axe `scrollable-region-focusable` on the
-      Freshness table (`section[aria-labelledby="freshness-heading"] > .table-scroll`) on the
-      *in-season* Data page; the existing "data" scan only covers the preseason build.
+- [x] **Pre-existing a11y fix:** axe `scrollable-region-focusable` on the Data page's freshness
+      table (`section[aria-labelledby="freshness-heading"] > .table-scroll`) at phone widths, on
+      both builds. The build and freshness scroll boxes (no control inside) are now named,
+      focusable regions with the shared focus ring. New E2E: the Data page scanned at 390 and
+      320 px on the preseason and in-season builds (fails without the fix, verified).
+- [x] **Phone navigation:** below 768px a second Previous/Next pair under each board, named for
+      the board it opens, returns the new board's top to view; the top row stays on one line
+      (below 380px the counter replaces the per-board bars).
+- [x] Validation: lint 0 errors (4 pre-existing warnings), typecheck clean, 799 Vitest,
+      226 E2E (chromium, mobile, a11y).
 - [ ] Owner review of the section.
