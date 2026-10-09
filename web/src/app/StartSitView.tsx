@@ -36,11 +36,13 @@ import {
   injuryReading,
   readDuel,
   selectWeekBoard,
+  sortWeekBoard,
   toggleDuel,
   type Contender,
   type DuelReading,
   type WeekBoardOrder,
   type WeekBoardRow,
+  type WeekBoardSort,
 } from "../data/duel";
 import { EM_DASH, formatEastern, formatSigned, formatValue } from "../data/format";
 import type { InSeasonBundle } from "../data/ros";
@@ -55,9 +57,14 @@ import {
 import {
   SEASON_COLUMN_LABELS,
   formatRosPositionRank,
+  positionalSortKey,
+  rosVsSeasonPlaces,
+  seasonPerGameSortKey,
+  seasonPointsSortKey,
   type SeasonStanding,
 } from "../data/actuals";
 import {
+  RosVsSeasonCell,
   SeasonPerGameCell,
   SeasonPointsCell,
   SeasonRankCell,
@@ -81,6 +88,50 @@ const ORDERS: readonly { readonly value: WeekBoardOrder; readonly label: string;
 ];
 
 const BOARD_PAGE = 40;
+
+/** The week board's sortable columns, in screen order. */
+type WeekColumnId =
+  | "week_rank"
+  | "player"
+  | "game"
+  | "team_total"
+  | "opp_allows"
+  | "median"
+  | "vs_typical"
+  | "range"
+  | "startable"
+  | "ros_rank"
+  | "season_rank"
+  | "ros_vs_season"
+  | "season_points"
+  | "season_per_game";
+
+/**
+ * One week-board column: its heading, the value a click sorts by, and the direction of the
+ * first click. Numbers read largest first; ranks, names and kickoffs read from the top, so
+ * the first click on any column puts what a reader most likely wants first.
+ */
+interface WeekColumn {
+  readonly id: WeekColumnId;
+  /** The heading in plain words, for the "sorted by" line. */
+  readonly label: string;
+  readonly className: string;
+  readonly header?: React.ReactNode;
+  readonly key: (row: WeekBoardRow) => number | string | null | undefined;
+  readonly descFirst: boolean;
+  /**
+   * A reading of this week. A player who cannot play this week has none that counts, so he
+   * sorts with the blanks — the board's own rule that he is not one of the choices. Season and
+   * RoS columns sort everyone by value.
+   */
+  readonly thisWeek?: true;
+}
+
+/** The column each "Order by" choice is the same ordering as, when there is one. */
+const ORDER_COLUMN: Readonly<Partial<Record<WeekBoardOrder, WeekColumnId>>> = {
+  startable: "startable",
+  median: "median",
+};
 
 function percent(value: number | null | undefined, digits = 0): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return EM_DASH;
@@ -756,7 +807,109 @@ function WeekBoard({
   readonly seasonFor: (playerId: string) => SeasonStanding;
   readonly seasonNote: string;
 }): React.JSX.Element {
-  const shown = showAll ? rows : rows.slice(0, BOARD_PAGE);
+  const [sort, setSort] = useState<WeekBoardSort<WeekColumnId> | null>(null);
+  const columns: readonly WeekColumn[] = [
+    {
+      id: "week_rank",
+      label: "Week rank",
+      className: "wb-rank",
+      header: <abbr title={`This week's positional rank, week ${String(week)}`}>Week rank</abbr>,
+      key: (row) => positionalSortKey(row.record.position, row.positionRank),
+      descFirst: false,
+    },
+    { id: "player", label: "Player", className: "wb-player", key: (row) => row.record.display_name, descFirst: false },
+    // Earliest kickoff first; a bye has no game and sorts last.
+    { id: "game", label: "Game", className: "wb-game", key: (row) => row.record.game?.kickoff_utc ?? null, descFirst: false, thisWeek: true },
+    {
+      id: "team_total",
+      label: "Team total",
+      className: "wb-num wb-implied",
+      key: (row) => row.record.game?.team_points ?? null,
+      descFirst: true,
+      thisWeek: true,
+    },
+    // 1st is the most generous defence, so the first click reads 1st, 2nd, 3rd.
+    { id: "opp_allows", label: "Opp. allows", className: "wb-num wb-opp", key: (row) => row.record.opponent?.rank ?? null, descFirst: false, thisWeek: true },
+    { id: "median", label: "Median", className: "wb-num", key: (row) => row.record.quantiles?.q50 ?? null, descFirst: true, thisWeek: true },
+    {
+      id: "vs_typical",
+      label: "vs typical",
+      className: "wb-why",
+      key: (row) => (row.record.quantiles === null ? null : (whyFor(row.record)?.median.delta ?? null)),
+      descFirst: true,
+      thisWeek: true,
+    },
+    // The interval sorts by its width, as the RoS table's does: the widest range first.
+    {
+      id: "range",
+      label: "P10 – P90",
+      className: "wb-range",
+      key: (row) => (row.record.quantiles === null ? null : row.record.quantiles.q90 - row.record.quantiles.q10),
+      descFirst: true,
+      thisWeek: true,
+    },
+    { id: "startable", label: "Startable", className: "wb-num wb-start", key: (row) => row.startable, descFirst: true, thisWeek: true },
+    // ADR-105: rest of season beside season to date, after the week's own columns.
+    {
+      id: "ros_rank",
+      label: "RoS rank",
+      className: "wb-num wb-ros",
+      key: (row) => positionalSortKey(row.record.position, rosRankFor(row.record.player_id)),
+      descFirst: false,
+    },
+    {
+      id: "season_rank",
+      label: SEASON_COLUMN_LABELS.rank,
+      className: "wb-num wb-season",
+      key: (row) => {
+        const season = seasonFor(row.record.player_id);
+        return season.kind === "ranked" ? positionalSortKey(row.record.position, season.rank) : null;
+      },
+      descFirst: false,
+    },
+    {
+      id: "ros_vs_season",
+      label: SEASON_COLUMN_LABELS.rosVsSeason,
+      // "vs Szn" holds together, so a narrow heading wraps to two lines rather than three.
+      header: "RoS vs\u00a0Szn",
+      className: "wb-num wb-season",
+      key: (row) => rosVsSeasonPlaces(rosRankFor(row.record.player_id), seasonFor(row.record.player_id)),
+      descFirst: true,
+    },
+    {
+      id: "season_points",
+      label: SEASON_COLUMN_LABELS.points,
+      className: "wb-num wb-season",
+      key: (row) => seasonPointsSortKey(seasonFor(row.record.player_id)),
+      descFirst: true,
+    },
+    {
+      id: "season_per_game",
+      label: SEASON_COLUMN_LABELS.perGame,
+      className: "wb-num wb-season",
+      key: (row) => seasonPerGameSortKey(seasonFor(row.record.player_id)),
+      descFirst: true,
+    },
+  ];
+  const sortColumn = sort === null ? undefined : columns.find((column) => column.id === sort.column);
+  const sortKey = (column: WeekColumn) => (row: WeekBoardRow) =>
+    column.thisWeek === true && isMuted(row.availability) ? null : column.key(row);
+  // Sorted before paging, so "the top 40" is the top of the whole sort.
+  const sorted = sortColumn === undefined || sort === null ? rows : sortWeekBoard(rows, sortKey(sortColumn), sort.desc);
+  const shown = showAll ? sorted : sorted.slice(0, BOARD_PAGE);
+  // With no column clicked, the column the "Order by" choice matches carries the mark.
+  const marked: WeekBoardSort<WeekColumnId> | null =
+    sort ?? (ORDER_COLUMN[order] === undefined ? null : { column: ORDER_COLUMN[order], desc: true });
+  const orderLabel = ORDERS.find((option) => option.value === order)?.label ?? order;
+  // A click on the column that already carries the mark — including the one the "Order by"
+  // choice matches — reverses it; any other column starts in its own first direction.
+  const onHeader = (column: WeekColumn): void => {
+    setSort(
+      marked?.column === column.id
+        ? { column: column.id, desc: !marked.desc }
+        : { column: column.id, desc: column.descFirst },
+    );
+  };
   const playing = rows.filter((row) => row.record.quantiles !== null);
   const high = Math.max(10, ...playing.map((row) => row.record.quantiles?.q90 ?? 0));
   const low = Math.min(0, ...playing.map((row) => row.record.quantiles?.q10 ?? 0));
@@ -774,9 +927,29 @@ function WeekBoard({
           name="weekboard-order"
           value={order}
           options={ORDERS.map((option) => ({ value: option.value, label: option.label, description: option.description }))}
-          onChange={onOrder}
+          onChange={(value) => {
+            // An "Order by" choice is the board's own ordering again: it clears a column sort.
+            setSort(null);
+            onOrder(value);
+          }}
         />
       </div>
+      <p className="weekboard-sorted" role="status">
+        {sortColumn !== undefined && sort !== null && (
+          <>
+            {`Sorted by ${sortColumn.label}, ${sort.desc ? "descending" : "ascending"}; blanks last, ties in ${orderLabel} order. `}
+            <button
+              type="button"
+              className="button-link"
+              onClick={() => {
+                setSort(null);
+              }}
+            >
+              {`Back to ${orderLabel} order`}
+            </button>
+          </>
+        )}
+      </p>
       {/* Focusable, so a keyboard can scroll to the RoS and season columns on a phone. */}
       <div
         className="weekboard-scroll"
@@ -788,22 +961,30 @@ function WeekBoard({
           <thead>
             <tr>
               <th scope="col" className="wb-add"><span className="visually-hidden">Compare</span></th>
-              <th scope="col" className="wb-rank">
-                <abbr title={`This week's positional rank, week ${String(week)}`}>Week rank</abbr>
-              </th>
-              <th scope="col" className="wb-player">Player</th>
-              <th scope="col" className="wb-game">Game</th>
-              <th scope="col" className="wb-num wb-implied">Team total</th>
-              <th scope="col" className="wb-num wb-opp">Opp. allows</th>
-              <th scope="col" className="wb-num">Median</th>
-              <th scope="col" className="wb-why">vs typical</th>
-              <th scope="col" className="wb-range">P10 – P90</th>
-              <th scope="col" className="wb-num wb-start">Startable</th>
-              {/* ADR-105: rest of season beside season to date, after the week's own columns. */}
-              <th scope="col" className="wb-num wb-ros">RoS rank</th>
-              <th scope="col" className="wb-num wb-season">{SEASON_COLUMN_LABELS.rank}</th>
-              <th scope="col" className="wb-num wb-season">{SEASON_COLUMN_LABELS.points}</th>
-              <th scope="col" className="wb-num wb-season">{SEASON_COLUMN_LABELS.perGame}</th>
+              {columns.map((column) => {
+                const state = marked?.column === column.id ? (marked.desc ? "desc" : "asc") : "none";
+                return (
+                  <th
+                    key={column.id}
+                    scope="col"
+                    className={column.className}
+                    data-col={column.id}
+                    aria-sort={state === "asc" ? "ascending" : state === "desc" ? "descending" : "none"}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onHeader(column);
+                      }}
+                    >
+                      {column.header ?? column.label}
+                      <span className="sort-mark" data-state={state} aria-hidden="true">
+                        {state === "desc" ? "▼" : "▲"}
+                      </span>
+                    </button>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -887,6 +1068,9 @@ function WeekBoard({
                     <SeasonRankCell standing={season} />
                   </td>
                   <td className="wb-num wb-season">
+                    <RosVsSeasonCell places={rosVsSeasonPlaces(rosRank, season)} />
+                  </td>
+                  <td className="wb-num wb-season">
                     <SeasonPointsCell standing={season} />
                   </td>
                   <td className="wb-num wb-season">
@@ -909,7 +1093,9 @@ function WeekBoard({
         position this season, shrunk toward the league rate; 1st is the most generous.
         &ldquo;vs typical&rdquo; is the median against the player&apos;s typical week, with the input that moved it
         most. Week rank orders this week&apos;s medians within his position; RoS rank is his
-        rest-of-season positional rank in your league. {seasonNote}
+        rest-of-season positional rank in your league. Select a column heading to sort the whole
+        board by it (P10 – P90 by the width of the range); blanks sort last either way, and an
+        &ldquo;Order by&rdquo; choice restores the board&apos;s own order. {seasonNote}
       </p>
     </div>
   );

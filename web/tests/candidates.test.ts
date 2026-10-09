@@ -573,11 +573,13 @@ describe("the filtered export", () => {
       "next_game_opponent",
       "next_game_home_away",
       "next_game_bye_week_before",
-      // ADR-105: the season actuals, under the full CSV's own names, last.
+      // ADR-105: the season actuals, under the full CSV's own names, then the table's
+      // signed gap between the two ranks, last.
       "season_position_rank",
       "season_points",
       "season_games_played",
       "season_points_per_game",
+      "ros_vs_season_places",
     ]);
   });
 

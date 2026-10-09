@@ -2139,3 +2139,47 @@ card, with honest definitions and no change to any model.
 - [ ] **Follow-up.** Owner review of the lane's log scale (on real data it ends at 200, so a
       QB-only view uses the left part of the lane) and of the Start/Sit budget headroom
       (real build +58.6 / 60 kB).
+
+## Season to date — review refinements — 2026-10-09 (ADR-105 amendment)
+
+Owner review of the merged change (PR #62) on the live site found four problems:
+- the card's headshot was squashed to a strip on desktop;
+- the phone sheet's header was clipped under the browser bar;
+- the rank pair was a heavy call-out;
+- the boards had no column for the gap between the two ranks, and the Start/Sit board did not
+  sort by column.
+
+- [x] **Headshot.** On the wide variant only the portrait yields, down to a 9rem floor; past
+      it the rail scrolls. The in-season rail has a square portrait and tighter gaps, so it fits
+      the 48rem dialog with Net adds and the status line. Both rails fit at 1280×720; the draft
+      rail keeps its 5:6 portrait.
+- [x] **Phone sheet.** The cap is `96dvh` (with a `vh` fallback), so the name and close control
+      are never under the toolbars. The desktop cap is `100dvh − 3rem`.
+- [x] **Rank tags.** `■ ROS QB15` / `▲ SZN QB5` in the identity row, styled `.detail-posrank`,
+      replace the bare RoS tag. A small line underneath gives preset, cutoff and the neutral
+      sentence. The population is in the tag title and the context box.
+- [x] **`RoS vs Szn`** (Szn rank − RoS rank, signed, dash when either is missing) in the RoS,
+      Opportunity and Start/Sit tables. It sorts largest first with blanks last; the filtered
+      CSVs add `ros_vs_season_places`.
+- [x] **Start/Sit week board sorts by any column**:
+      - `aria-sort`, sorted before paging, blanks last;
+      - P10–P90 sorts by width;
+      - a status line plus "Back to … order", and Order by also restores;
+      - headings wrap, and the board now fits at 1280px;
+      - the scroll box is positioned, so hidden cell text no longer widens a phone page by
+        210px.
+- [x] **Tests.**
+      - Vitest: the gap helpers, the board sorter, gap columns and sorting on all three
+        tables, the chips and meta, the CSV column.
+      - E2E: headshot square and rail whole at 1272×816, 1100×800 and 1440×900; no squash at
+        1280×640; the phone header on screen at 390×844, 390×664 and 320×568; week-board
+        sorting at 1440 and 390; board fit at 1280 and 1440; axe on a sorted board.
+      - `verify-real-build`: every RoS and Opportunity gap cell against the artifacts; the
+        week-board sort order, blanks last, and first page equal to the top of the whole
+        board in both directions.
+- [x] **Test race fixed** (`inseason.spec.ts` POTW portraits). The test read the portrait
+      request count the instant four cards appeared, but the portraits are `loading="lazy"`.
+      With this change's larger stylesheet it failed about 1 run in 14 (main: 0 in 42). It now
+      waits for one request per rendered image, then asserts the same ≤ 4 bound: 30 of 30 pass.
+- [x] **Docs**: ADR-105 amendment, UX_SPEC §6A.15, DATA_CONTRACTS §23.3.
+- [x] **Validation**: see SESSION_STATE.

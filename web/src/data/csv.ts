@@ -17,7 +17,12 @@ import type { OpportunityCandidate } from "./candidates";
 import type { ArbitrageRecord } from "./contracts";
 import { crossMarketOf, marketsOf } from "./multimarket";
 import type { ArbitrageRow, TierRow } from "./model";
-import { SEASON_CSV_COLUMNS, seasonCsvCells } from "./actuals";
+import {
+  ROS_VS_SEASON_CSV_COLUMN,
+  SEASON_CSV_COLUMNS,
+  rosVsSeasonPlaces,
+  seasonCsvCells,
+} from "./actuals";
 import type { RosRow } from "./ros";
 import type { ScoringValue, TeamCount } from "./state";
 
@@ -224,8 +229,10 @@ export const ROS_EXPORT_COLUMNS = [
   "in_preseason_universe",
   "current_status",
   "quality_flags",
-  // ADR-105: the season actuals, under the full CSV's own column names.
+  // ADR-105: the season actuals, under the full CSV's own column names, then the table's
+  // signed gap between the two ranks.
   ...SEASON_CSV_COLUMNS,
+  ROS_VS_SEASON_CSV_COLUMN,
 ] as const;
 
 export function rosRowsToCsv(rows: readonly RosRow[]): string {
@@ -261,6 +268,7 @@ export function rosRowsToCsv(rows: readonly RosRow[]): string {
       record.current_status,
       record.quality_flags.join("|"),
       ...seasonCsvCells(season),
+      rosVsSeasonPlaces(record.ros_position_rank, season),
     ]),
   );
 }
@@ -325,8 +333,10 @@ export const OPPORTUNITY_EXPORT_COLUMNS = [
   "next_game_opponent",
   "next_game_home_away",
   "next_game_bye_week_before",
-  // ADR-105: the season actuals, under the full CSV's own column names.
+  // ADR-105: the season actuals, under the full CSV's own column names, then the table's
+  // signed gap between the two ranks.
   ...SEASON_CSV_COLUMNS,
+  ROS_VS_SEASON_CSV_COLUMN,
 ] as const;
 
 /**
@@ -449,6 +459,7 @@ export function opportunityRowsToCsv(rows: readonly OpportunityCandidate[]): str
         record.quality_flags.join("|"),
         ...signalCells(candidate),
         ...seasonCsvCells(candidate.season),
+        rosVsSeasonPlaces(record.ros_position_rank, candidate.season),
       ];
     }),
   );

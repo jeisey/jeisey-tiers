@@ -2436,6 +2436,7 @@ dialog.player-detail {
   padding: 0;
   width: min(64rem, calc(100vw - 3rem));
   max-height: min(48rem, calc(100vh - 3rem));
+  max-height: min(48rem, calc(100dvh - 3rem));
   overflow: visible;
 }
 
@@ -2671,6 +2672,47 @@ dialog.player-detail::backdrop {
   overflow-y: auto;
 }
 
+/*
+ * Wide variant only (below 1100px the rail is a header band with its own sizes).
+ *
+ * The portrait is the rail's give, with a floor. Every flex item shrinks by default, and the
+ * portrait is the only one whose box is set by `aspect-ratio` rather than by text, so on a
+ * short screen it is the one that should yield — but with no floor a long in-season rail
+ * squashed it to a 50px strip of forehead on a live card (ADR-105 amendment). Nothing else
+ * shrinks; the portrait yields down to 9rem, where a headshot still shows the whole face
+ * (`cover` keeps the top), and past that the rail scrolls.
+ */
+@media (min-width: 1100px) {
+  .detail-rail > * {
+    flex-shrink: 0;
+  }
+
+  .detail-rail > .portrait {
+    flex-shrink: 1;
+    min-height: 9rem;
+  }
+}
+
+/*
+ * An in-season rail carries the season rank and its sentence as well, about 70px more than a
+ * draft rail, in the same 48rem dialog. A square portrait and the tighter gaps of the other
+ * two variants give that back, so at the dialog's full height the status line is on screen
+ * and the headshot is whole. Wide variant only.
+ */
+@media (min-width: 1100px) {
+  .detail-rail[data-season="true"] {
+    gap: var(--space-4);
+  }
+
+  .detail-rail[data-season="true"] > .portrait {
+    aspect-ratio: 1;
+  }
+
+  .detail-rail[data-season="true"] .rail-verdict {
+    gap: var(--space-3);
+  }
+}
+
 .detail-eyebrow {
   font: 500 0.6rem/1.3 var(--font-mono);
   letter-spacing: 0.16em;
@@ -2711,61 +2753,46 @@ dialog.player-detail::backdrop {
 }
 
 /*
- * ADR-105 — the card's two ranks, side by side and equal in weight, in the identity block so
- * they stay together and on screen at every width, including the phone sheet.
+ * ADR-105 — the card's two ranks as two more tags in the identity row: the same type, border
+ * and padding as `.detail-posrank`, so they read as part of the row rather than a call-out.
+ * The pair is one flex item, so it moves to a new line as a unit; only a pair wider than the
+ * whole row ("No appearances" on a 320px phone) splits, rather than running off the sheet.
  */
 .rank-pair {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: var(--space-1);
-}
-
-.rank-pair-cells {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: inline-flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
+  max-width: 100%;
 }
 
-.rank-pair-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  padding: 8px 10px;
-  border: var(--hairline) solid var(--line-strong);
-  background: var(--tile);
-}
-
-.rank-pair-label {
-  display: flex;
+.rank-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font: 600 0.58rem/1 var(--font-sans);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.rank-chip-label {
   color: var(--ink-faint);
 }
 
-.rank-pair-value {
-  font: 500 1.35rem/1.05 var(--font-mono);
+.rank-chip-value {
   color: var(--ink);
-  overflow-wrap: anywhere;
 }
 
-.rank-pair-value[data-absent="true"] {
-  font: 500 0.82rem/1.2 var(--font-sans);
+.rank-chip-value[data-absent="true"] {
   color: var(--ink-muted);
 }
 
-.rank-pair-note {
-  font: 400 0.66rem/1.3 var(--font-sans);
-  color: var(--ink-faint);
+/* The tables' signed gap between the two ranks: the sign carries it, not a colour. */
+.ros-vs-season {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .rank-pair-meta {
   margin: 0;
-  font: 400 0.7rem/1.45 var(--font-sans);
+  font: 400 0.68rem/1.45 var(--font-sans);
   color: var(--ink-muted);
 }
 
@@ -4357,10 +4384,17 @@ dl.facts dd {
    * three sections behind a tab bar so the highest-value readouts are above the fold and no
    * section is behind a long scroll.
    */
+  /*
+   * `dvh`, not `vh`, for the sheet's cap. A phone browser's `vh` is the viewport with its
+   * toolbars hidden, so a sheet that reaches its cap is taller than the screen whenever the
+   * address bar is showing, and its top — the name and the close control — sits under the
+   * bar. `dvh` follows the toolbars; the `vh` line before each is the fallback.
+   */
   dialog.player-detail {
     width: 100vw;
     max-width: 100vw;
     max-height: 96vh;
+    max-height: 96dvh;
     margin: auto auto 0;
   }
 
@@ -4369,10 +4403,12 @@ dl.facts dd {
 
     padding: 1px 0 0;
     max-height: 96vh;
+    max-height: 96dvh;
   }
 
   .detail-card {
     max-height: calc(96vh - 1px);
+    max-height: calc(96dvh - 1px);
   }
 
   .detail-identity h2 {
@@ -7120,16 +7156,57 @@ table.sheet.opp-sheet thead th button {
 
 .weekboard-scroll {
   overflow-x: auto;
+  /*
+   * A containing block for the cells' screen-reader-only spans, as `.table-scroll` is: the
+   * season columns' words sit past a phone's right edge, and unpositioned this box let them
+   * escape its scroll and widen the whole page by 210px at 390px.
+   */
+  position: relative;
   border: var(--hairline) solid var(--line);
 }
 
+/*
+ * Fifteen columns, every heading a sort button with its mark's room reserved. Two-word
+ * headings may take two lines and the cells pad 8px, as on the Opportunity Board, so the
+ * board's floor is set by its numbers rather than by one-line headings: it fits at 1280px
+ * with the season columns and the sort marks, where one-line headings scrolled at 1440px.
+ */
 table.sheet.weekboard-table tbody td {
-  padding: 6px 10px;
+  padding: 6px 8px;
   vertical-align: middle;
 }
 
 table.sheet.weekboard-table thead th {
-  padding: 10px;
+  padding: 10px 8px;
+  white-space: normal;
+  vertical-align: bottom;
+}
+
+/* A sortable heading is all button, so the whole cell is the target; the button pads. */
+table.sheet.weekboard-table thead th[aria-sort] {
+  padding: 0;
+}
+
+table.sheet.weekboard-table thead th[aria-sort] button {
+  padding: 10px 8px;
+}
+
+table.sheet.weekboard-table thead th.wb-num button {
+  justify-content: flex-end;
+}
+
+/*
+ * The "sorted by" line: empty, and so no height, until a column is clicked. Never
+ * `display: none` — it is a live region, and one that was not rendered may not be announced.
+ */
+.weekboard-sorted {
+  margin: 0 0 var(--space-2);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+
+.weekboard-sorted:empty {
+  margin: 0;
 }
 
 .weekboard-table .wb-num {
@@ -7214,8 +7291,9 @@ table.sheet.weekboard-table thead th.wb-num {
   background-color: var(--surface-selected);
 }
 
+/* A fifth of the board, not a third: the rest goes to the headings, so they wrap less. */
 .weekboard-table .wb-range {
-  width: 34%;
+  width: 20%;
   min-width: 9rem;
 }
 
@@ -7700,6 +7778,14 @@ table.sheet.weekboard-table thead th.wb-num {
   table.sheet.weekboard-table thead th {
     padding-left: 6px;
     padding-right: 6px;
+  }
+
+  table.sheet.weekboard-table thead th[aria-sort] {
+    padding: 0;
+  }
+
+  table.sheet.weekboard-table thead th[aria-sort] button {
+    padding: 10px 6px;
   }
 
   .ridges-axis-note {

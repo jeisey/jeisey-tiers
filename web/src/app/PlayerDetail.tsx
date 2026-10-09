@@ -139,13 +139,20 @@ export interface SeasonMeta {
   readonly modelDifference: string | null;
 }
 
+/** How many players at his position the season rank is out of, when the build says. */
+function seasonPopulation(season: SeasonStanding, meta: SeasonMeta | null): number | undefined {
+  if (meta?.population == null || season.kind !== "ranked") return undefined;
+  return meta.population[season.position as "QB" | "RB" | "WR" | "TE"];
+}
+
 /**
- * The two ranks, side by side and equally clear (ADR-105), in the identity block so a phone
- * shows both without opening another tab. A RoS positional rank orders modelled remaining
- * value; a season rank orders points already scored. The sentence beneath states the distance
- * between the two orderings and nothing more — not a decline over time, not a model error.
+ * The two ranks as two tags in the identity row (ADR-105), the same size and weight as the
+ * position, team and tier tags beside them, so a phone shows both without opening another
+ * tab. A RoS positional rank orders modelled remaining value; a season rank orders points
+ * already scored. The glyphs are the RoS chart's square and triangle; the words carry the
+ * meaning, so neither depends on colour. A screen reader hears "RoS rank QB7".
  */
-function RankPair({
+function RankChips({
   position,
   ros,
   season,
@@ -156,52 +163,68 @@ function RankPair({
   readonly season: SeasonStanding;
   readonly meta: SeasonMeta | null;
 }): React.JSX.Element {
-  const gap = rankGap(ros?.ros_position_rank, season);
   const absence = seasonAbsence(season);
-  const population =
-    meta?.population != null && season.kind === "ranked"
-      ? meta.population[season.position as "QB" | "RB" | "WR" | "TE"]
-      : undefined;
+  const population = seasonPopulation(season, meta);
+  const seasonTitle =
+    absence ??
+    `Season rank: points scored${meta === null ? "" : ` through week ${String(meta.throughWeek)}`}` +
+      (population === undefined ? "" : `, of ${String(population)} ${position}s who have appeared`);
   return (
-    <div className="rank-pair" data-testid="rank-pair">
-      <div className="rank-pair-cells">
-        <div className="rank-pair-cell" data-kind="ros">
-          <span className="rank-pair-label">
-            <span className="rank-glyph" data-kind="ros" aria-hidden="true" />
-            RoS rank
-          </span>
-          <span className="rank-pair-value">
-            {ros === null ? "No RoS projection" : formatRosPositionRank(position, ros.ros_position_rank)}
-          </span>
-          <span className="rank-pair-note">modelled value from here</span>
-        </div>
-        <div className="rank-pair-cell" data-kind="season">
-          <span className="rank-pair-label">
-            <span className="rank-glyph" data-kind="season" aria-hidden="true" />
-            Season rank
-          </span>
-          <span className="rank-pair-value" data-absent={absence === null ? undefined : "true"}>
-            {absence ?? formatSeasonRank(season)}
-          </span>
-          <span className="rank-pair-note">
-            {population === undefined
-              ? "points scored so far"
-              : `points scored, of ${String(population)} ${position}s`}
-          </span>
-        </div>
-      </div>
-      <p className="rank-pair-meta">
-        {meta === null
-          ? "Season to date"
-          : `${meta.scoringLabel} · through week ${String(meta.throughWeek)}`}
-        {gap !== null && (
-          <>
-            {" · "}
-            <span className="rank-pair-gap">{rankGapSentence(gap)}</span>
-          </>
-        )}
-      </p>
-    </div>
+    <span className="rank-pair" data-testid="rank-pair">
+      <span
+        className="detail-posrank rank-chip"
+        data-kind="ros"
+        title={ros === null ? "No RoS projection" : "RoS rank: modelled value from here"}
+      >
+        <span className="rank-glyph" data-kind="ros" aria-hidden="true" />
+        <span className="rank-chip-label" aria-hidden="true">
+          RoS
+        </span>
+        <span className="visually-hidden">RoS rank</span>
+        <span className="rank-chip-value" data-absent={ros === null ? "true" : undefined}>
+          {ros === null ? "Not projected" : formatRosPositionRank(position, ros.ros_position_rank)}
+        </span>
+      </span>
+      <span className="detail-posrank rank-chip" data-kind="season" title={seasonTitle}>
+        <span className="rank-glyph" data-kind="season" aria-hidden="true" />
+        <span className="rank-chip-label" aria-hidden="true">
+          Szn
+        </span>
+        <span className="visually-hidden">Season rank</span>
+        <span className="rank-chip-value" data-absent={absence === null ? undefined : "true"}>
+          {absence ?? formatSeasonRank(season)}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The line under the identity tags: the preset and cutoff the season rank was read at, and
+ * the distance between the two orderings — not a decline over time, not a model error.
+ */
+function RankMeta({
+  ros,
+  season,
+  meta,
+}: {
+  readonly ros: RosTierRecord | null;
+  readonly season: SeasonStanding;
+  readonly meta: SeasonMeta | null;
+}): React.JSX.Element {
+  const gap = rankGap(ros?.ros_position_rank, season);
+  return (
+    <p className="rank-pair-meta" data-testid="rank-pair-meta">
+      {meta === null
+        ? "Season to date"
+        : `${meta.scoringLabel} · through week ${String(meta.throughWeek)}`}
+      {gap !== null && (
+        <>
+          {" · "}
+          <span className="rank-pair-gap">{rankGapSentence(gap)}</span>
+        </>
+      )}
+    </p>
   );
 }
 
@@ -725,11 +748,16 @@ function SeasonContext({
   const gap = ros === null ? null : rankGap(ros.ros_position_rank, season);
   const games = season.kind === "ranked" ? season.games : 0;
   const modelGames = ros?.games_played_to_date ?? null;
+  const population = seasonPopulation(season, meta);
   return (
     <div className="season-context" data-testid="season-context">
       <p>
         <strong>Season rank</strong> measures points already scored
-        {meta === null ? "" : ` through week ${String(meta.throughWeek)} (${meta.scoringLabel})`}.{" "}
+        {meta === null ? "" : ` through week ${String(meta.throughWeek)} (${meta.scoringLabel})`}
+        {population === undefined || season.kind !== "ranked"
+          ? ""
+          : `, among the ${String(population)} ${season.position}s who have appeared`}
+        .{" "}
         <strong>RoS rank</strong> orders the model&rsquo;s value from here on. Scoring pace,
         expected remaining appearances and the model&rsquo;s wider football history can make the
         two orderings differ{gap === null ? "." : "; "}
@@ -1291,6 +1319,9 @@ export function PlayerDetail({
       ? "FA"
       : (tier?.team ?? arbitrage?.team ?? status?.current_team ?? ros?.team ?? null);
   const unprojected = opportunity?.model_coverage === "unprojected";
+  // ADR-105: his season to date beside the RoS rank, on an in-season card at a known position.
+  const season = data.season ?? null;
+  const showSeason = inSeasonCard && season !== null && position !== null;
   // ADR-102: employment outranks the roster-code badge in the rail — "No designation reported"
   // beside a free agent would read as healthy and available.
   const employmentHeadline =
@@ -1852,7 +1883,7 @@ export function PlayerDetail({
             band; below 768px it keeps identity and fair rank and the tabs carry the rest. It is
             always in the DOM, so the accessible title never moves.
           */}
-          <div className="detail-rail">
+          <div className="detail-rail" data-season={showSeason ? "true" : undefined}>
             {/*
               The portrait leads the rail on the wide variant and sits left of the identity
               block on the two narrow ones — one DOM position serves all three, because the
@@ -1876,7 +1907,15 @@ export function PlayerDetail({
                 <h2 id={`${baseId}-title`}>{name}</h2>
                 <div className="detail-subtitle">
                   {position !== null && <PositionTag position={position} />}
-                  {inSeasonCard && ros != null ? (
+                  {showSeason ? (
+                    // The labelled pair replaces the bare RoS tag: one number, said once.
+                    <RankChips
+                      position={position}
+                      ros={ros ?? null}
+                      season={season}
+                      meta={data.seasonMeta ?? null}
+                    />
+                  ) : inSeasonCard && ros != null ? (
                     <span className="detail-posrank">
                       {ros.position}
                       {formatRank(ros.ros_position_rank)}
@@ -1896,13 +1935,8 @@ export function PlayerDetail({
                   <StatusBadge status={status} />
                 </div>
               </div>
-              {inSeasonCard && data.season != null && position !== null && (
-                <RankPair
-                  position={position}
-                  ros={ros ?? null}
-                  season={data.season}
-                  meta={data.seasonMeta ?? null}
-                />
+              {showSeason && (
+                <RankMeta ros={ros ?? null} season={season} meta={data.seasonMeta ?? null} />
               )}
             </div>
 

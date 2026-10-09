@@ -85,8 +85,24 @@ function actualsCells(record) {
     perGame: fixed(record.points_per_game),
   };
 }
+/**
+ * The tables' signed gap (ADR-105): the artifact's season rank minus the row's RoS positional
+ * rank, `+3` / `\u22123` / `0`, or a dash when either rank is missing.
+ */
+function rosVsSeasonText(rosPositionRank, record) {
+  if (record === undefined || record.season_position_rank === null || rosPositionRank === null || rosPositionRank === undefined) {
+    return "\u2014";
+  }
+  const places = record.season_position_rank - rosPositionRank;
+  if (places === 0) return "0";
+  return places > 0 ? `+${String(places)}` : `\u2212${String(Math.abs(places))}`;
+}
+/** A rendered gap back to a number; NaN for the dash. */
+const gapNumber = (text) => (text === "\u2014" ? Number.NaN : Number(text.replace("\u2212", "-")));
 let actualsCellsChecked = 0;
 let actualsChartRowsChecked = 0;
+let rosVsSeasonCellsChecked = 0;
+let weekBoardSortsChecked = 0;
 
 /**
  * The opportunity artifact, which is where a Pick-of-the-Week card's numbers come from.
@@ -386,6 +402,8 @@ if (publishedInSeason && defaultBoard === "ros") {
   const rosRendered = await page.$$eval("table.sheet tbody tr", (trs) =>
     trs.slice(0, 40).map((tr) => ({
       cells: [...tr.querySelectorAll("td")].map((td) => td.textContent.trim()),
+      // The signed gap as it is seen: its cell also carries the words for a screen reader.
+      gap: tr.querySelector(".ros-vs-season > [aria-hidden='true']")?.textContent?.trim() ?? null,
       // Read from its own element, for the reason the draft board reads it that way: the
       // long-absence badge is the name button's sibling and stripping it would be a bet on
       // today's absences.
@@ -420,6 +438,7 @@ if (publishedInSeason && defaultBoard === "ros") {
       ? null
       : {
           rank: rosColumn.at("Szn rank"),
+          gap: rosColumn.at("RoS vs Szn"),
           points: rosColumn.at("Total pts"),
           perGame: rosColumn.at("Avg pts/g"),
         };
@@ -472,6 +491,8 @@ if (publishedInSeason && defaultBoard === "ros") {
         expect("season_points", cells[actualsAt.points], want.points);
         expect("season_points_per_game", cells[actualsAt.perGame], want.perGame);
         actualsCellsChecked += 3;
+        expect("ros_vs_season", rendered.gap, rosVsSeasonText(record.ros_position_rank, actualsPPR.get(record.player_id)));
+        rosVsSeasonCellsChecked += 1;
       }
 
       /*
@@ -1485,6 +1506,24 @@ if (publishedInSeason && opportunityRecords !== null) {
 
   // ADR-102: a verified free agent's team cell reads FA (never his last club), and the
   // unprojected section lists exactly the block's unprojected rows with their own counts.
+  // ADR-105: the Opportunity Board's signed gap is the artifact's season rank minus the
+  // row's own RoS positional rank, as it renders in the same row.
+  if (actualsRecords !== null) {
+    const gaps = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) =>
+      rows.map((tr) => ({
+        id: tr.getAttribute("data-player"),
+        posRank: tr.querySelector(".pos-tag b")?.textContent?.trim() ?? null,
+        gap: tr.querySelector(".ros-vs-season > [aria-hidden='true']")?.textContent?.trim() ?? null,
+      })),
+    );
+    for (const row of gaps) {
+      const rank = row.posRank === null || row.posRank === "\u2014" ? null : Number(row.posRank);
+      const want = rosVsSeasonText(rank, actualsPPR.get(row.id));
+      if (row.gap !== want) failures.push(`opportunity row ${String(row.id)}: RoS vs Szn reads ${String(row.gap)}, the artifacts ${want}`);
+      rosVsSeasonCellsChecked += 1;
+    }
+  }
+
   const teamCells = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) =>
     rows.map((tr) => ({
       id: tr.getAttribute("data-player"),
@@ -1882,6 +1921,39 @@ if (publishedInSeason && weeklyRecords !== null) {
     }
     whyBoardCellsChecked += 1;
   }
+
+  /*
+   * Column sorting (ADR-105 follow-up), on the real board's length: sorted before paging, so
+   * the first row of a sort on the paged board is the first row of the whole board, and a
+   * missing value sorts last in both directions.
+   */
+  if (actualsRecords !== null) {
+    await page.goto(`${BASE}/?view=startsit&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+    await page.waitForSelector(".weekboard-table tbody tr");
+    const readGaps = () =>
+      page.$$eval(".weekboard-table tbody tr", (rows) =>
+        rows.map((row) => row.querySelector(".ros-vs-season > [aria-hidden='true']")?.textContent?.trim() ?? ""),
+      );
+    const gapButton = page.locator("table.weekboard-table th[data-col='ros_vs_season'] button");
+    for (const direction of ["descending", "ascending"]) {
+      await gapButton.click();
+      const sort = await page.locator("table.weekboard-table th[data-col='ros_vs_season']").getAttribute("aria-sort");
+      if (sort !== direction) failures.push(`week board: RoS vs Szn reads aria-sort ${String(sort)}, expected ${direction}`);
+      const paged = await readGaps();
+      const showAll = page.locator(".weekboard-more");
+      if ((await showAll.count()) > 0 && (await showAll.textContent())?.startsWith("Show all")) await showAll.click();
+      const all = (await readGaps()).map(gapNumber);
+      const known = all.filter((value) => !Number.isNaN(value));
+      const ordered = [...known].sort((a, b) => (direction === "descending" ? b - a : a - b));
+      if (JSON.stringify(known) !== JSON.stringify(ordered)) failures.push(`week board: RoS vs Szn ${direction} is out of order`);
+      if (all.slice(known.length).some((value) => !Number.isNaN(value))) failures.push(`week board: a blank RoS vs Szn sorts before a number (${direction})`);
+      if (known.length > 0 && gapNumber(paged[0] ?? "") !== ordered[0]) {
+        failures.push(`week board: the first page of the ${direction} sort starts at ${String(paged[0])}, the whole board at ${String(ordered[0])}`);
+      }
+      if ((await showAll.count()) > 0 && (await showAll.textContent())?.startsWith("Show the top")) await showAll.click();
+      weekBoardSortsChecked += 1;
+    }
+  }
 }
 
 // The Trade tab (ADR-100): every package it renders is checked against the artifact bytes —
@@ -1953,6 +2025,8 @@ console.log(JSON.stringify({
   seasonActualsRecords: actualsRecords === null ? null : actualsRecords.length,
   actualsCellsChecked,
   actualsChartRowsChecked,
+  rosVsSeasonCellsChecked,
+  weekBoardSortsChecked,
   potwCardsChecked,
   behaviorSeriesRecords: behaviorSeries === null ? null : behaviorSeries.length,
   usageRecords: playerUsage === null ? null : playerUsage.length,

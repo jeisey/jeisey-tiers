@@ -4,6 +4,67 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Season to date — review refinements — 2026-10-09 (ADR-105 amendment).** On
+`claude/funny-planck-1pm5lj`, restarted from `main` at `582500a` after PR #62 merged. The owner
+reviewed the live site. This is UI only: no artifact, contract field, model or default ordering
+changed.
+
+* **Card headshot.** On the wide variant (≥1100px), only the portrait yields when the rail
+  overflows, and never below 9rem; past that the rail scrolls. The in-season rail
+  (`data-season`) has a square portrait and `--space-4` gaps, so it fits the 48rem dialog with
+  Net adds and the status line. Both rails fit at 1280×720. The live strip was the portrait
+  absorbing all of the overflow.
+* **Phone sheet.** Capped at `96dvh` (with a `vh` fallback). `vh` put the header under the
+  toolbars once the sheet reached its cap.
+* **Rank tags.** `RankChips` puts `■ ROS QB15` and `▲ SZN QB5` in `.detail-subtitle` in place
+  of the bare RoS tag. `RankMeta` adds the preset, the cutoff and the sentence. Test ids are
+  `rank-pair` and `rank-pair-meta`.
+* **`RoS vs Szn`.** `rosVsSeasonPlaces` gives season rank minus RoS positional rank (Shough
+  −10). It is in the RoS, Opportunity and week-board tables, and in the filtered CSVs as
+  `ros_vs_season_places`.
+* **Week board sorting.** Every column sorts (`sortWeekBoard` in `data/duel.ts`), before
+  paging. "Order by" restores the default order.
+* **Layout fixes.** Board headings wrap, and `.weekboard-scroll` is now positioned (hidden
+  spans had widened phones by 210px).
+* **Test race.** The `inseason.spec.ts` POTW portrait test now waits for the lazy requests.
+
+**Next gate:** owner review of the refinements on the next deploy.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 332 files (no Python changed)
+uv run mypy                                          # clean, 199 source files
+uv run pytest                                        # 1,956 passed (4 live deselected)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 832 vitest
+npm run e2e                                          # 249 passed (chromium, mobile, a11y)
+npm run verify:board (6 CI fixtures)                 # 0 failures each; in-season: 36 gap cells, 2 week-board sorts
+npm run e2e:size-model && npm run verify:budget      # all met: first visit 323.1/450 kB, data 74.5/150,
+                                                     # Start/Sit +56.3/60 (was 55.5), Trade +11.8/25, card +23.8/30
+# Real data (same live week-4 build as ADR-105, new bundle):
+verify-real-build (verify:board --dist realsite)     # 0 failures: 546 RoS vs Szn cells (40 RoS + 506 Opportunity),
+                                                     # week-board sort both ways over 556 rows incl. paging
+verify:budget (real, report-only)                    # Start/Sit +59.4 of 60 kB (was 58.6) — 0.6 kB headroom
+Shough, Half PPR                                     # RoS QB15, Szn QB5, RoS vs Szn −10 in all three tables and the card
+```
+
+Card geometry measured (fixture with Net adds; real Lawrence/Shough): headshot 239×239 at
+1272×816, 1100×800 and 1440×900 with the rail unscrolled. At 1280×720 the in-season headshot is
+159px tall (draft 174px) and nothing scrolls; at 1280×640 the headshot sits at the 144px floor
+and the rail scrolls. Phones at 390 and 320: sheet top ≥ 0, close control and tags on screen.
+Screens are in `docs/visual-qa/2026-10-09-season-actuals-refinements/`, with third-party
+portraits blocked (monogram).
+
+Facts a later session should not re-derive:
+
+* The wide rail's only shrinkable item is the portrait (9rem floor). Do not drop the floor:
+  with no floor, the a11y project (Desktop Chrome, 1280×720) is fine, but live cards collapse
+  the headshot to a strip. Do not drop the shrink either: with no shrink, the rail scrolls at
+  1280×720, and axe flags `scrollable-region-focusable` on `.detail-rail`.
+* An overflow container must be `position: relative`, or `.visually-hidden` spans escape it.
+  The week board had this bug. `.table-scroll` already documented it.
+
 **Season to date beside rest of season — 2026-10-09 (ADR-105).** On `claude/funny-planck-1pm5lj`
 from `main` at `6f84ce3`. Descriptive data and presentation only: no model, feature, training
 row, projection, VORP, rank, tier, calibration, POTW, trade or availability rule changed.

@@ -705,11 +705,16 @@ test.describe("pick of the week", () => {
     const portraits = await guardBoundary(page);
     await page.goto(`${IN_SEASON}?view=potw`);
     await expect(page.locator(".potw-card")).toHaveCount(4);
+    // The portraits are `loading="lazy"`: each request starts after layout and reaches the
+    // recorder asynchronously, so the count is read once every image on the cards has been
+    // asked for, not at the instant the cards appear (which raced on CI-speed machines).
+    const images = page.locator(".potw-card img.portrait-image");
+    await expect.poll(() => portraits.requested.length).toBe(await images.count());
     const afterFirst = portraits.requested.length;
     expect(afterFirst, "a set of four cards must not exceed four portrait requests").toBeLessThanOrEqual(
       4,
     );
-    await expect(page.locator(".potw-card img.portrait-image")).toHaveCount(afterFirst);
+    await expect(images).toHaveCount(afterFirst);
   });
 
   test("says which case it is in when the behaviour feed published nothing", async ({ page }) => {

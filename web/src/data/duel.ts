@@ -419,6 +419,46 @@ export function selectWeekBoard(
   );
 }
 
+/** One column of the week board as the reader sorted it: which, and which way. */
+export interface WeekBoardSort<Column extends string = string> {
+  readonly column: Column;
+  readonly desc: boolean;
+}
+
+/**
+ * The board re-sorted by one column a reader clicked.
+ *
+ * A missing value — a bye's median, an unprojected player's RoS rank, a season rank for a
+ * player who has not appeared — sorts last in either direction, because "no reading" is not
+ * the smallest or the largest reading. Rows that tie keep the order they arrived in, which
+ * is the board's "Order by" order, so a coarse column still reads best-first inside each value.
+ * Sorted before the board is paged: the first page of a sort is the top of the whole board.
+ */
+export function sortWeekBoard<Row>(
+  rows: readonly Row[],
+  key: (row: Row) => number | string | null | undefined,
+  desc: boolean,
+): Row[] {
+  const keyed = rows.map((row, index) => {
+    const value = key(row);
+    const missing = value === null || value === undefined || (typeof value === "number" && !Number.isFinite(value));
+    return { row, index, value: missing ? null : value };
+  });
+  keyed.sort((a, b) => {
+    if (a.value === null || b.value === null) {
+      if (a.value === null && b.value === null) return a.index - b.index;
+      return a.value === null ? 1 : -1;
+    }
+    const order =
+      typeof a.value === "number" && typeof b.value === "number"
+        ? a.value - b.value
+        : String(a.value).localeCompare(String(b.value));
+    if (order !== 0) return desc ? -order : order;
+    return a.index - b.index;
+  });
+  return keyed.map((entry) => entry.row);
+}
+
 /** His chance of a startable week in this league and scoring, or null (no distribution, no threshold). */
 export function startableFor(
   record: WeeklyProjectionRecord | null,

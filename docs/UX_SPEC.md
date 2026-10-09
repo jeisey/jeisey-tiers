@@ -864,24 +864,61 @@ rank and rate) and **unavailable** ("—" with the reason; never a model or pres
   position (QB4 and RB4 are separate standings). Phone (2b stack): a third line per row — lane
   across, `■ ROS QB15` / `▲ SZN QB4` in a 4.6rem column (fits `WR104`). The mark's accessible
   label carries both ranks in words.
-* **Tables — three columns, same everywhere:** `Szn rank` (position-prefixed, e.g. `QB4`)
-  immediately after the RoS positional rank, then `Total pts` and `Avg pts/g` (one decimal,
-  real minus sign). RoS table and Opportunity table: sortable; positional ranks (RoS and season)
-  sort grouped by position then rank, best first; points and rate sort high first; missing last;
-  default order unchanged. The Opportunity "Not projected" list adds `ROS PosRk` ("No RoS
-  projection"), `Szn rank`, `Total pts`, `Avg pts/g`. Start/Sit week board: `Pos rk` becomes
-  **Week rank** (this week's medians, unchanged), and `RoS rank`, `Szn rank`, `Total pts`,
-  `Avg pts/g` follow `Startable`; on phones a second sub-line under the name prints
-  `RoS QB15 · Szn QB4`, and the board's scroll region is keyboard-focusable. Captions and notes
-  say the season columns are actual results through week N in the preset, not projections.
-* **Card:** under the name in the identity block, two equal readouts — **RoS rank** `QB15`
-  ("modelled value from here", or "No RoS projection") and **Season rank** `QB5` ("points
-  scored, of 53 QBs") — then `Half PPR · through week 4 · RoS is 10 places below his
-  season-to-date rank.` (Shough on the live week-4 build.) The hero becomes **ROS overall rank**. "Production so far": the
+* **Tables — four columns, same everywhere:**
+  * `Szn rank` (position-prefixed, e.g. `QB4`) comes immediately after the RoS positional rank.
+  * **`RoS vs Szn`** follows: Szn rank minus RoS rank, in places. `+7` means the model ranks
+    him 7 places higher than his production; Shough reads `−10`, with a real minus sign. It is
+    `0` when the two agree, and a dash when either rank is missing. The cell's hidden words and
+    title say "RoS rank is 10 places below season rank", so the sign is never the only carrier
+    and nothing relies on colour.
+  * Then `Total pts` and `Avg pts/g` (one decimal, real minus sign).
+  * **Sorting, RoS and Opportunity tables:**
+    * positional ranks (RoS and season) sort grouped by position, then rank, best first;
+    * `RoS vs Szn` sorts as one number across positions, largest first, so the widest gaps
+      either way are one or two clicks from the top;
+    * points and rate sort high first;
+    * missing values sort last;
+    * default order is unchanged.
+  * The Opportunity "Not projected" list adds `ROS PosRk` ("No RoS projection"), `Szn rank`,
+    `Total pts` and `Avg pts/g`. It has no gap column, because it has no RoS rank.
+  * **Start/Sit week board:**
+    * `Pos rk` becomes **Week rank** (this week's medians, unchanged).
+    * `RoS rank`, `Szn rank`, `RoS vs Szn`, `Total pts` and `Avg pts/g` follow `Startable`.
+    * On phones, a second sub-line under the name prints `RoS QB15 · Szn QB4`.
+    * The board's scroll region is keyboard-focusable.
+  * Captions and notes say the season columns are actual results through week N in the
+    preset, not projections, and define `RoS vs Szn`.
+* **Start/Sit week board sorting:**
+  * Every heading except the compare toggle is a sort button, with `aria-sort` and ▲/▼.
+  * First click: numbers largest first; ranks, names, kickoff and "Opp. allows" from the top.
+  * P10 – P90 sorts by the range's width.
+  * Blanks sort last both ways, and ties keep the "Order by" order.
+  * On this-week columns, a player who cannot play this week sorts with the blanks.
+  * The whole board is sorted before the 40-row page.
+  * A status line says "Sorted by X, descending/ascending" and offers "Back to {order}
+    order". Any "Order by" choice also clears the column sort.
+  * With no column sorted, the Startable or Median heading carries the mark when it is the
+    order, and clicking it reverses that order.
+  * Headings may wrap to two lines.
+* **Card:** two tags in the identity row, after the position tag and in the same style as it.
+  * **`■ ROS QB15`** (or "Not projected", titled "No RoS projection") and **`▲ SZN QB5`** (or
+    "No appearances" / "Unavailable") replace the bare RoS rank tag. A screen reader hears "RoS rank" and
+    "Season rank". The season tag's title gives the population ("of 53 QBs who have appeared").
+  * The two tags move to a new line as a unit, and split only when the pair is wider than
+    the whole row.
+  * Under the row, one small line reads `Half PPR · through week 4 · RoS is 10 places below
+    his season-to-date rank.` (Shough on the live week-4 build).
+  * The wide in-season rail uses a square portrait and tighter gaps, so it fits the dialog
+    without a scroll.
+  * On a short screen the headshot yields first, but never below 9rem, which still shows the
+    whole face. Past that the rail scrolls; nothing else in the rail shrinks.
+  * The phone sheet's cap is `96dvh`, so its header is never under the browser's toolbars.
+* **Card, continued:** The hero becomes **ROS overall rank**. "Production so far": the
   PaceRail's scored side is the actuals' rate; a context box says what each rank measures and
   why they can differ, that the gap is not a fall over time or by itself a model error, and
   prints his rate, the model's remaining points per expected appearance and expected remaining
-  appearances; when a snaps-only week makes the games counts differ it says so. Readouts:
+  appearances, and names the season rank's population; when a snaps-only week makes the games
+  counts differ it says so. Readouts:
   Season rank, Games played, Total points, Points per game, then the existing ones.
 
 ## 7. Tables

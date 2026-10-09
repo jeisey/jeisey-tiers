@@ -176,6 +176,7 @@ function rosColumns(onSelect: (playerId: string) => void, scale: Scale): ColumnD
     ...seasonColumns<RosRow>(
       (row) => row.season,
       (row) => row.record.position,
+      (row) => row.record.ros_position_rank,
     ),
     {
       id: "team",
