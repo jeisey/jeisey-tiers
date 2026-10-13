@@ -4,6 +4,77 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**My Leagues — 2026-10-13 (ADR-106).** On `claude/elegant-newton-6ykeio` from `main` at
+`cd24ec1`. Browser-only work: no Python, model, artifact, schema, served file or published
+value changed. The request authorised browser-local persistence and configurable starter counts
+(PRD CR-028; CR-001 and A4 revised).
+
+* **Workspace.** An in-season tab after ROS tiers (`view=myleagues`, short label "Leagues"
+  below 1024px), holding up to three saved leagues.
+  * **Storage.** `leagueContract.ts` and `leagueStore.ts` under
+    `jeisey-tiers:my-leagues@<base>`. DATA_CONTRACTS §24 is the contract.
+  * **Roster editing** is pure, in `roster.ts`.
+  * **Auto Start/Sit:** `lineup.ts`, `lineup_assignment_v1` (an exact Hungarian assignment).
+  * **Improve:** `improve.ts`, `improve_v1`, a lazy chunk sharing the trade chunk.
+  * **Rising Stars:** `rising.ts`, `rising_stars_v1`, with `candidates.ts`'s
+    `flexRoleMagnitudeOrder`.
+  * **UI:** `app/MyLeaguesView.tsx`, `app/leagues/*`, `styles/leagues.css`. The Trade picker
+    became `components/PlayerCombobox.tsx`.
+* **Shell.**
+  * `data/leagueSignal.ts` is the only entry-bundle piece. The workspace publishes the active
+    league's preset, and `App` loads that block and scoring, rewrites the URL's scoring and
+    teams, and locks those controls.
+  * `loadedFor` keeps a league from being drawn on the previous league's files during a switch.
+  * Rising Stars' files are `risingKeys`, loaded beside the lineup, never gating it.
+* **Two fixes from measurement.**
+  * `selectRisingStars` caches its candidate pool per bundle and block, filtering the roster
+    after sorting. This is safe because the order is total. It saved about 17 ms a switch at 4×.
+  * `easternIsoDate` now uses one module formatter. The shell built one on every render.
+
+**Next gate:** owner review. A PR (when asked for) runs the Firefox/WebKit smoke, including the
+new My Leagues smoke test.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 332 files (no Python changed)
+uv run mypy                                          # clean, 199 source files
+uv run pytest                                        # 1,956 passed (live deselected), exit 0
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 905 vitest (44 files)
+npx playwright test chromium+mobile+a11y             # 266 passed
+npx playwright test --project=smoke-chromium         # 14 passed (Firefox/WebKit not installed here)
+npm run verify:board (6 CI fixtures)                 # 0 failures each
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok; entry 169.9 kB gzip, MyLeaguesView 21.2 kB
+npm run e2e:size-model && npm run verify:budget      # all met (gating mode), new scenarios included:
+  first visit 324.5/450 kB (+1.4), data 74.5/150, Start/Sit +56.3/60 (+2 B), Trade +12.9/25 (+1.1),
+  card +23.8/30, repeat 0, redeploy 0; My Leagues +71.6/80, Rising Stars +120.7/130,
+  Improve +10.3/12, new preset +85.1/95, repeat switching 0/0, cold My Leagues 396.1/450 · 120.8/150
+node web/tests/e2e/measure-leagues.mjs               # exit 0: optimise ≤16 ms, mode 66–103, keystroke 32–79,
+  edit 116–182, Improve run 155–319, Rising toggle 79–141, switch median 181–193 / worst 258–270 ms,
+  heap growth ≤ 0.15 MB over 4 cycles (Pixel 7, 4× CPU, production-shaped board)
+node web/tests/e2e/capture-leagues.mjs               # 35 screens, 0 problems (docs/visual-qa/2026-10-13-my-leagues/)
+```
+
+Facts a later session should not re-derive:
+
+* **The published startable thresholds and ROS lines assume 2 FLEX.** My Leagues' default is
+  1 FLEX (the owner's), so a default league shows the "not recomputed" note. That is correct,
+  not a bug. `PUBLISHED_STARTERS` is pinned to `config/league-defaults.yaml` by a test.
+* **Native `showModal()` focuses the first focusable element**, which is the close button.
+  React's `autoFocus` does not apply, so `Modal` focuses `[data-autofocus]`.
+* **The seven-tab row.** At 768px it overflowed by 2px with the full "My Leagues", hence the
+  short label below 1024px. On a phone the last tab sat at 0.99 in view (a subpixel scroll
+  clamp), hence the 2px end padding while overflowing and the re-reveal effect.
+* **Never `pkill -f static-server.mjs` in the same command line as other work:** the pattern
+  matches the shell itself, which then exits with 144.
+* **verify-budget's My Leagues scenarios** pick each roster from the build's own
+  `ros_tiers.json`, so they work on the real build too. A scenario that cannot run is a listed
+  failure, not a crash, so the daily refresh's report-only step still prints.
+* **The ROS board's PPR re-render takes 4–5 s at 4× throttle** on the production-shaped board
+  (`measure-leagues` setup; base commit identical). It predates this change and is a candidate
+  for a separate performance pass.
+
 **Season to date — review refinements — 2026-10-09 (ADR-105 amendment).** On
 `claude/funny-planck-1pm5lj`, restarted from `main` at `582500a` after PR #62 merged. The owner
 reviewed the live site. This is UI only: no artifact, contract field, model or default ordering

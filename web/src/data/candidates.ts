@@ -379,6 +379,22 @@ export function compareRole(
 ): number {
   const byCategory = ROLE_CATEGORY[roleCategory(a.role)] - ROLE_CATEGORY[roleCategory(b.role)];
   if (byCategory !== 0) return byCategory;
+  const byMagnitude = roleMagnitudeOrder(a, b, ordering);
+  if (byMagnitude !== 0) return byMagnitude;
+  return compareByValue(a, b);
+}
+
+/**
+ * The magnitude step of `compareRole` on its own: larger published change first, and 0 —
+ * "not comparable here" — unless both rows are measured, at the ordering's single position,
+ * in the same metric. Exported so a caller with its own tie-breaks (My Leagues' Rising Stars,
+ * ADR-106) applies exactly this guard rather than a copy of it.
+ */
+export function roleMagnitudeOrder(
+  a: OpportunityCandidate,
+  b: OpportunityCandidate,
+  ordering: RoleOrdering,
+): number {
   if (
     ordering.magnitudes &&
     a.role.kind === "measured" &&
@@ -391,7 +407,34 @@ export function compareRole(
     const cb = b.role.reading.change?.change ?? null;
     if (ca !== null && cb !== null && ca !== cb) return cb - ca;
   }
-  return compareByValue(a, b);
+  return 0;
+}
+
+/** The one metric FLEX may compare across positions: snap share, in share points. */
+export const FLEX_ROLE_METRIC: RoleMetric = "snap_share";
+const FLEX_POSITIONS: ReadonlySet<Position> = new Set(["RB", "WR", "TE"]);
+
+/**
+ * The FLEX comparator (ADR-106): the size of two published role changes across **running
+ * backs, receivers and tight ends**, and only where both are the position's *leading* metric
+ * and that metric is snap share — today the leading metric of all three
+ * (`ROLE_METRICS_BY_POSITION`), so both changes are in percentage points of snaps and "+18 pts"
+ * against "+9 pts" is a real comparison. It returns 0 (not comparable) for anything else: a
+ * quarterback, an unmeasured change, or a future map in which a FLEX position leads with
+ * another metric — so the mixed-position guard in `compareRole` stays exactly as it was, and
+ * pass attempts are never weighed against snap-share points.
+ */
+export function flexRoleMagnitudeOrder(a: OpportunityCandidate, b: OpportunityCandidate): number {
+  if (a.role.kind !== "measured" || b.role.kind !== "measured") return 0;
+  const pa = a.row.record.position;
+  const pb = b.row.record.position;
+  if (!FLEX_POSITIONS.has(pa) || !FLEX_POSITIONS.has(pb)) return 0;
+  if (primaryRoleMetric(pa) !== FLEX_ROLE_METRIC || primaryRoleMetric(pb) !== FLEX_ROLE_METRIC) return 0;
+  if (a.role.reading.spec.metric !== FLEX_ROLE_METRIC || b.role.reading.spec.metric !== FLEX_ROLE_METRIC) return 0;
+  const ca = a.role.reading.change?.change ?? null;
+  const cb = b.role.reading.change?.change ?? null;
+  if (ca === null || cb === null || ca === cb) return 0;
+  return cb - ca;
 }
 
 function sortCandidates(

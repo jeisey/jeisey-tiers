@@ -5,11 +5,13 @@
 Jeisey Tiers is a free, static fantasy-football site for redraft leagues. Before the season it is
 a draft sheet: a value model that never sees a market price, tiers discovered from that value, and
 a separate comparison of that value with draft-market ADP. Once the regular season starts it
-switches to in-season tools: rest-of-season tiers, a weekly Start/Sit comparison, trade targets,
-a waiver-activity board and a weekly pick at each position.
+switches to in-season tools: rest-of-season tiers, a workspace for up to three of your own
+leagues, a weekly Start/Sit comparison, trade targets, a waiver-activity board and a weekly pick
+at each position.
 
 Every number on the page comes from versioned JSON/CSV artifacts built by GitHub Actions and
-served by GitHub Pages. There is no backend, no account and no runtime call to a data vendor.
+served by GitHub Pages. There is no backend, no account and no runtime call to a data vendor. The
+only thing the site keeps for you is your saved leagues, in your own browser.
 
 ## What the site does
 
@@ -30,6 +32,7 @@ controls lets you open either mode at any time; the draft board stays reachable 
 | Tab | What it shows |
 |---|---|
 | **ROS tiers** | Rest-of-season value and tiers from a separate rest-of-season model, from an explicit cutoff week. It is a different quantity from the preseason fair rank and the two are never averaged. |
+| **My Leagues** (`Leagues` below 1024px) | Up to three of your own leagues, saved in this browser only (nothing is uploaded or put in a link). Enter your roster slot by slot. For the selected league you get: the week's best legal lineup by median, floor or ceiling, applied only when you choose and undoable; each slot's matchup; Improve — your weakest starting slots, players who would fix them, and value-matched trade ideas from your roster, re-checked against your lineup; and an optional Rising Stars list of players with a rising role **and** rising adds who are not on your roster. Scoring and size are the published presets; starter, bench and IR counts are yours. DST, K, superflex and custom scoring are not supported. |
 | **Start/Sit** | Compare two to four players for one lineup slot. Ranks them by the chance each gives you to win the week at your matchup margin, prints the calibrated head-to-head probability and the margin at which the answer flips, and shows each player's next-game range, game context (implied team total, kickoff-hour forecast) and injury designation with how often that designation has meant a missed game. |
 | **Trade** | Offer one to three players, choose what you want back (rest-of-season value, highest ceiling or highest floor) and how many players (1–3), and browse incoming packages whose expected rest-of-season value falls within a band around what you offer. Packages can be swapped, extended and kept. |
 | **Opportunity** (`Opp` on narrow screens) | Rest-of-season value beside what managers are doing on the waiver wire: Sleeper add/drop counts, net adds, add momentum and role direction. Five separate orderings and single-signal filters; no blended score. |
@@ -50,11 +53,17 @@ Defined in [`config/league-defaults.yaml`](config/league-defaults.yaml):
   from starter and FLEX allocation, never from ADP; in season it is the best unrostered player
   (ADR-071).
 - Positions: QB, RB, WR and TE. No kickers, team defenses, superflex, IDP, dynasty or custom scoring.
+- My Leagues lets a saved league set its own starter, bench and IR counts (1–2 QB, 1–4 RB, 1–4 WR,
+  0–2 TE, 0–3 FLEX, 0–10 bench, 0–4 IR). Those counts drive that workspace's lineup and roster
+  lines. Every published value, rank, tier and startable line stays computed for the preset
+  roster above, and the workspace says so.
 
 ## Using it
 
 - **Pick your league** with the scoring and team-count controls, and narrow with the position
   filter and player search. The boards and tools switch to that preset.
+- **Save your leagues** on My Leagues. They stay in this browser (clearing site data removes
+  them). They are never in a shared link, and opening someone's link never changes them.
 - **Share a view** by copying the address bar. Tab, scoring, league size, filters, search, open
   tiers, the Start/Sit comparison and the Trade exploration are all stored in the URL query
   string (for example `?scoring=half&teams=10&position=rb`), so a link reopens the same view.

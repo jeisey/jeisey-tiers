@@ -115,17 +115,19 @@ export function formatEasternDate(iso: string | null | undefined): string {
   return ET_DATE.format(new Date(parsed));
 }
 
+const ET_ISO_PARTS = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 /** `YYYY-MM-DD` in Eastern, for export filenames. Derived from build metadata, never `new Date()`. */
 export function easternIsoDate(iso: string | null | undefined): string {
   if (!iso) return "unknown-date";
   const parsed = Date.parse(iso);
   if (Number.isNaN(parsed)) return "unknown-date";
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date(parsed));
+  const parts = ET_ISO_PARTS.formatToParts(new Date(parsed));
   const get = (type: Intl.DateTimeFormatPartTypes): string =>
     parts.find((part) => part.type === type)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}`;

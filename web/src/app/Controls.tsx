@@ -50,6 +50,11 @@ interface TabSpec {
    * that width), so a screen reader still hears "Opportunity" where a phone shows "Opp".
    */
   readonly short?: string;
+  /**
+   * Print the short label below 1024px rather than below 560px. My Leagues' (ADR-106): with a
+   * seventh tab, "My Leagues" in full would push the row past a 768px tablet.
+   */
+  readonly shortOnTablet?: true;
 }
 
 const DRAFT_TABS: readonly TabSpec[] = [
@@ -60,6 +65,8 @@ const DRAFT_TABS: readonly TabSpec[] = [
 
 const IN_SEASON_TABS: readonly TabSpec[] = [
   { id: "ros", label: "ROS tiers" },
+  // ADR-106: the reader's own saved leagues, beside the weekly tools they feed.
+  { id: "myleagues", label: "My Leagues", short: "Leagues", shortOnTablet: true },
   // Second, beside the board it is read against: this week's decision is the one a manager
   // makes most often, and the rest-of-season board is its context (ADR-096).
   { id: "startsit", label: "Start/Sit" },
@@ -151,6 +158,13 @@ export function ViewTabs({
     };
   }, [measure, mode]);
 
+  // Whether the strip overflows changes its end padding (base.css), which moves where its end
+  // is: bring the active tab back fully into view once that is known.
+  useEffect(() => {
+    if (!overflow.start && !overflow.end) return;
+    reveal(list.current, list.current?.querySelector<HTMLButtonElement>(`#tab-${view}`) ?? null);
+  }, [overflow.start, overflow.end, view]);
+
   // The active tab is always on screen; after an arrow key, focus follows it (WAI-ARIA tabs).
   useEffect(() => {
     const active = list.current?.querySelector<HTMLButtonElement>(`#tab-${view}`) ?? null;
@@ -175,6 +189,7 @@ export function ViewTabs({
             aria-selected={view === tab.id}
             aria-controls={`panel-${tab.id}`}
             tabIndex={view === tab.id ? 0 : -1}
+            className={tab.shortOnTablet === true ? "tab-short-tablet" : undefined}
             onFocus={(event) => {
               reveal(list.current, event.currentTarget);
             }}
@@ -275,12 +290,18 @@ export function SeasonMode({
  * Every value is the URL's, so the summary is the applied state: a search still inside its
  * debounce is not on the board yet and is not printed here yet either.
  */
-export function settingsSummary(state: AppState, modeSwitch: boolean): readonly string[] {
+export function settingsSummary(
+  state: AppState,
+  modeSwitch: boolean,
+  league: string | null = null,
+): readonly string[] {
   const items: string[] = [
     state.scoring === "half" ? "Half" : state.scoring.toUpperCase(),
     `${String(state.teams)} teams`,
-    state.position === "all" ? "All positions" : POSITION_LABELS[state.position],
   ];
+  // On My Leagues the league's own preset is in force, and position and search do not apply.
+  if (league !== null) return [...items, league];
+  items.push(state.position === "all" ? "All positions" : POSITION_LABELS[state.position]);
   if (state.search !== "") items.push(`“${state.search}”`);
   if (modeSwitch && state.mode !== "auto") {
     items.push(state.mode === "draft" ? "Draft mode" : "In-season mode");
@@ -294,6 +315,7 @@ export function Controls({
   availableScoring,
   availableTeams,
   onRevealSearch,
+  league,
 }: {
   readonly state: AppState;
   readonly onChange: (next: Partial<AppState>) => void;
@@ -305,7 +327,14 @@ export function Controls({
    * nothing at all (ADR-093).
    */
   readonly onRevealSearch?: (() => void) | undefined;
+  /**
+   * My Leagues (ADR-106): the active league's name. Its scoring and size are then the league's
+   * and cannot be changed here — the league's settings change them — and the position filter
+   * and search, which no league view reads, are not shown.
+   */
+  readonly league?: string | null | undefined;
 }): React.JSX.Element {
+  const locked = league !== null && league !== undefined;
   return (
     <div className="controls">
       <Segmented<ScoringValue>
@@ -316,10 +345,10 @@ export function Controls({
           value,
           label: value === "half" ? "Half" : value.toUpperCase(),
           description: SCORING_LABELS[value],
-          disabled: !availableScoring.has(value),
+          disabled: !availableScoring.has(value) || (locked && value !== state.scoring),
         }))}
         onChange={(scoring) => {
-          onChange({ scoring });
+          if (!locked) onChange({ scoring });
         }}
       />
       <Segmented<TeamCount>
@@ -330,12 +359,37 @@ export function Controls({
           value,
           label: String(value),
           description: `${String(value)}-team league`,
-          disabled: !availableTeams.has(value),
+          disabled: !availableTeams.has(value) || (locked && value !== state.teams),
         }))}
         onChange={(teams) => {
-          onChange({ teams });
+          if (!locked) onChange({ teams });
         }}
       />
+      {locked ? (
+        <p className="control controls-league-note">
+          <span className="control-label">League</span>
+          <span>
+            Set by <strong>{league}</strong>. Edit the league to change its scoring or size.
+          </span>
+        </p>
+      ) : (
+        <LeagueFreeControls state={state} onChange={onChange} onRevealSearch={onRevealSearch} />
+      )}
+    </div>
+  );
+}
+
+function LeagueFreeControls({
+  state,
+  onChange,
+  onRevealSearch,
+}: {
+  readonly state: AppState;
+  readonly onChange: (next: Partial<AppState>) => void;
+  readonly onRevealSearch?: (() => void) | undefined;
+}): React.JSX.Element {
+  return (
+    <>
       <Segmented<PositionFilter>
         name="position"
         label="Position"
@@ -358,7 +412,7 @@ export function Controls({
           onReveal={onRevealSearch}
         />
       </div>
-    </div>
+    </>
   );
 }
 

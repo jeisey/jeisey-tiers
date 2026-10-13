@@ -23,6 +23,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 import { stubPortraits } from "./boundary";
+import { IN_SEASON, OFFICE, seed } from "./leagues-seed";
 
 /*
  * No test in this repository reaches a third party. The player card fetches its portrait from
@@ -477,5 +478,95 @@ test.describe("keyboard and semantics, which a scanner cannot judge", () => {
       );
       expect(page_, `${tab} reflows badly at 320px`).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+/*
+ * My Leagues (ADR-106): a radio-group league switcher, a roster of slot rows with disclosure
+ * buttons, two native dialogs (settings with steppers and radios; the slot picker's combobox),
+ * Rising Stars asides and Improve's results — each scanned with the state that renders it,
+ * at desktop and phone width.
+ */
+test.describe("My Leagues", () => {
+  test("the empty workspace has no WCAG A or AA violations", async ({ page }) => {
+    await page.goto(`${IN_SEASON}?view=myleagues`);
+    await expect(page.getByRole("button", { name: "Create a league" })).toBeVisible();
+    expect(describe(await scan(page))).toEqual([]);
+  });
+
+  for (const width of [1280, 390]) {
+    test(`a full workspace — Rising Stars, Improve and an open week — has none at ${String(width)}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await seed(page, [OFFICE, { id: "lg-family01", name: "Family", scoring: "half", roster: {}, rising: true }]);
+      await page.goto(`${IN_SEASON}?view=myleagues`);
+      await page.getByRole("checkbox", { name: "Rising Stars" }).check();
+      await expect(page.locator(".lg-rising-list").first()).toBeVisible();
+      await page.getByRole("button", { name: "Find upgrades" }).click();
+      await expect(page.getByRole("region", { name: "Upgrade ideas" })).toBeVisible();
+      await page.getByRole("button", { name: "Show Bijan Robinson's week" }).click();
+      await expect(page.locator(".lg-detail").first()).toBeVisible();
+      await page.waitForLoadState("networkidle");
+      expect(describe(await scan(page))).toEqual([]);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+    });
+  }
+
+  test("the settings dialog and the slot picker have none", async ({ page }) => {
+    await seed(page, [OFFICE]);
+    await page.goto(`${IN_SEASON}?view=myleagues`);
+    await page.getByRole("button", { name: "League settings" }).click();
+    const settings = page.getByRole("dialog", { name: /Edit Office/ });
+    await expect(settings).toBeVisible();
+    await expect(settings.getByLabel("League name")).toBeFocused();
+    await settings.getByRole("button", { name: "Fewer RB slots" }).click();
+    await expect(settings.getByRole("alert")).toBeVisible();
+    expect(describe(await scan(page))).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: "League settings" })).toBeFocused();
+
+    await page.getByRole("button", { name: "Add a player to Bench 3" }).click();
+    const picker = page.getByRole("dialog");
+    await page.keyboard.type("cook");
+    await expect(picker.getByRole("option").first()).toBeVisible();
+    // The combobox points at the option the arrow keys reached.
+    await page.keyboard.press("ArrowDown");
+    const active = await picker.getByRole("combobox").getAttribute("aria-activedescendant");
+    expect(active).not.toBeNull();
+    await expect(picker.locator(`#${active ?? ""}`)).toHaveAttribute("aria-selected", "true");
+    expect(describe(await scan(page))).toEqual([]);
+  });
+
+  test("the league switcher is one tab stop, arrow keys move between leagues, and every slot action is reachable", async ({
+    page,
+  }) => {
+    await seed(page, [OFFICE, { id: "lg-family01", name: "Family", roster: {} }]);
+    await page.goto(`${IN_SEASON}?view=myleagues`);
+    const office = page.getByRole("radio", { name: /Office/ });
+    await office.focus();
+    await page.keyboard.press("ArrowRight");
+    const family = page.getByRole("radio", { name: /Family/ });
+    await expect(family).toBeFocused();
+    await expect(family).toHaveAttribute("aria-checked", "true");
+    await expect(office).toHaveAttribute("tabindex", "-1");
+    await page.keyboard.press("ArrowLeft");
+    await expect(office).toHaveAttribute("aria-checked", "true");
+    // Every slot's Edit control is a real button with a name that says which slot it edits.
+    const edits = page.getByRole("button", { name: /^(Edit|Add a player to) / });
+    expect(await edits.count()).toBeGreaterThanOrEqual(14);
+    for (const button of await edits.all()) {
+      expect((await button.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(24);
+    }
+  });
+
+  test("honours reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await seed(page, [OFFICE]);
+    await page.goto(`${IN_SEASON}?view=myleagues`);
+    await expect(page.locator(".lg-slot").first()).toBeVisible();
+    const durations = await page
+      .locator(".lg-switch-option, .lg-slot-actions .button, .lg-stepper button")
+      .evaluateAll((nodes) => nodes.map((node) => Number.parseFloat(getComputedStyle(node).transitionDuration) || 0));
+    expect(Math.max(0, ...durations)).toBeLessThanOrEqual(0.01);
   });
 });

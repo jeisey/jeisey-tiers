@@ -1398,6 +1398,12 @@ revalidates at once), bytes counted at the server:
 | opening a player card adds | ≤ 30 kB |
 | repeat visit to the same deploy — data | ≤ 1 kB |
 | redeploy of unchanged data — served data files | 0 B |
+| My Leagues opened from the default view adds (ADR-106) | ≤ 80 kB |
+| then turning Rising Stars on adds | ≤ 130 kB |
+| then running Improve adds | ≤ 12 kB |
+| then a saved league on a preset not yet loaded adds | ≤ 95 kB |
+| then switching among the three saved leagues again | 0 B |
+| a cold first visit straight to My Leagues — everything · data | ≤ 450 kB · ≤ 150 kB |
 
 and that a redeploy which renames a player is shown at once to a reader holding the old files.
 
@@ -1434,6 +1440,37 @@ and that a redeploy which renames a player is shown at once to a reader holding 
 * **Trade interaction cost** is measured by `node web/tests/e2e/measure-trade.mjs` (Pixel 7
   viewport, CPU throttled 4×, a production-shaped board over the size model's rows; target
   200 ms). It is a diagnostic, not a CI gate. Re-run it when the engine changes.
+* **ADR-106 added My Leagues' budgets** and changed no existing one.
+  * **The seed.** The script saves three leagues in the browser before the page loads. One is
+    on the default preset, and the others are on 10-team Half PPR and 14-team Standard. Each is
+    a full roster taken from the build's own board.
+  * **Measured on the size model** (2026-10-13), each scenario against its budget:
+
+    | scenario | measured | budget |
+    |---|---:|---:|
+    | My Leagues opened from the default view | 71.6 kB (21.2 view, 2.9 CSS, 0.9 combobox; 43.4 weekly projections, 2.9 weekly context) | 80 kB |
+    | Rising Stars turned on | 120.7 kB (the Opportunity tab's own files: 10.1 + 102.7 `player_usage/all` + 7.9) | 130 kB |
+    | Improve run | 10.3 kB of code | 12 kB |
+    | a league on a not-yet-loaded preset | 85.1 kB | 95 kB |
+    | switching among loaded leagues | 0 B | 0 B |
+    | a cold link to My Leagues | 396.1 kB, 120.8 kB of it data | 450 kB · 150 kB |
+  * **Reported, not budgeted:** the Opportunity tab from the default view (121.7 kB) and a cold
+    visit to an empty My Leagues (308.0 kB, 32.8 kB data — no preset file).
+  * **Existing paths.** The entry grew 1.4 kB and Trade's path 1.1 kB (its engine and combobox
+    are now chunks shared with My Leagues). Start/Sit moved by 2 B. The card, repeat-visit and
+    redeploy paths did not move.
+  * **On the real build** the scenarios run report-only, as the others do. If one cannot run,
+    it is listed as a failure rather than crashing the step.
+* **My Leagues' interaction cost** is measured by `node web/tests/e2e/measure-leagues.mjs`, on
+  the same profile and board as Trade, with three full leagues. It is a diagnostic, not a CI
+  gate. Targets:
+  * 200 ms for a click or keystroke;
+  * a league switch: 200 ms median, 400 ms worst;
+  * 1 s for Improve's bounded run;
+  * ≤ 2 MB of heap growth across repeated three-league cycles.
+
+  ADR-106 records the measurements. Re-run it when the optimiser, Improve or Rising Stars
+  changes.
 
 ### 17.4 Bandwidth arithmetic (re-do it when the numbers move)
 

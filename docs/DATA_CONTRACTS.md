@@ -1468,3 +1468,46 @@ browser's filtered RoS and Opportunity exports append the same four names with t
 then `ros_vs_season_places`: `season_position_rank` minus the row's `ros_position_rank`
 (positive when the RoS rank is the better place), empty when either is missing. It is the
 tables' `RoS vs Szn` column. The full CSVs do not repeat it, since they carry both ranks.
+
+## 24. Saved leagues in the browser — `jeisey-tiers.my-leagues` v1 (ADR-106)
+
+This is not a published artifact. Nothing in the build writes it, and no schema in `schemas/`
+covers it. It is the one document the site keeps in the reader's own browser, and it is versioned
+like an artifact, because a later build must read what an earlier one saved. The code is
+`web/src/data/leagueContract.ts`. Its tests are in `web/tests/leagues-storage.test.ts`.
+
+* **Key.** `localStorage["jeisey-tiers:my-leagues@<base path>"]`, plus `…:backup` for a
+  payload set aside: `{savedAt, reason, raw}`.
+* **Document.** `{format: "jeisey-tiers.my-leagues", version: 1, revision, activeId, leagues}`.
+  `revision` counts writes, and `activeId` names the league the last tab opened.
+* **League.** `{id, name, season, scoring, teams, slots, roster, prefs, rev, updatedAt}`:
+
+  | field | values |
+  |---|---|
+  | `id` | `lg-` plus 4–16 lowercase letters or digits, unique |
+  | `name` | text, read back trimmed to at most 40 characters ("League" when empty) |
+  | `season` | an integer from 2000 to 2100 |
+  | `scoring` | `std`, `half` or `ppr` |
+  | `teams` | 10, 12 or 14 |
+  | `slots` | a count per group within ADR-106's bounds: QB 1–2, RB 1–4, WR 1–4, TE 0–2, FLEX 0–3, BN 0–10, IR 0–4 |
+  | `roster` | per group, an array of exactly `slots[group]` entries, each a canonical player id or `null` |
+  | `prefs` | `{risingStars: boolean, mode: "q50" \| "q10" \| "q90"}` (defaulted when absent) |
+  | `rev` | a non-negative integer, raised on every write of that league (0 when absent) |
+  | `updatedAt` | the time of that write, as an ISO 8601 string (kept as text, empty when absent) |
+* **Roster ids.**
+  * The id pattern is `namespace:value`, with team units (`dst:`) refused.
+  * No id may appear twice in one league; the same id in two leagues is allowed.
+  * No name, projection, value or status is stored. Every one is read from the current build by
+    id on each visit.
+* **Reading.** There are at most 3 leagues, and validation is strict. A league that fails is set
+  aside with its problem and its raw payload backed up, never repaired by guessing. Four results:
+  * **empty**;
+  * **ok**;
+  * **future** — a `version` above 1. The page is read-only, and nothing is ever written over it;
+  * **malformed** — not JSON, the wrong `format`, or not a document.
+
+  Migrations are a registry keyed by the version they upgrade from. Version 1 has none.
+* **Writing.** Only on a reader's edit. The store re-reads the key first and refuses an edit to a
+  league whose `rev` has moved since that edit was made.
+* **Never.** The document is never sent over the network, never placed in a URL, and never read
+  by the build.

@@ -26,12 +26,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("the tab", () => {
-  test("sits second, after the board it is read against", async ({ page }) => {
+  test("sits third, after the board it is read against and My Leagues", async ({ page }) => {
     await page.goto(IN_SEASON);
     const tabs = page.getByRole("tablist", { name: "Board" }).getByRole("tab");
     await expect(tabs.nth(0)).toHaveText(/ROS tiers/);
-    await expect(tabs.nth(1)).toHaveText("Start/Sit");
-    await tabs.nth(1).click();
+    await expect(tabs.nth(1)).toHaveAccessibleName("My Leagues");
+    await expect(tabs.nth(2)).toHaveText("Start/Sit");
+    await tabs.nth(2).click();
     await expect(page).toHaveURL(/view=startsit/);
     await expect(page.getByRole("heading", { name: /Start\/Sit — week 9/ })).toBeVisible();
   });
@@ -202,16 +203,21 @@ test.describe("layout", () => {
     expect(clipped).toBe(0);
   });
 
-  // Six tabs since ADR-100: one row from 360px ("Opportunity" prints as "Opp" below 560px),
-  // a sideways scroll below that with the active tab revealed, and never a wrapped label.
-  test("the six in-season tabs fit one row from 360px, each on one line", async ({ page }) => {
-    for (const width of [320, 360, 390, 480, 768]) {
+  // Seven tabs since ADR-106 (six since ADR-100): one row from 600px ("My Leagues" prints as
+  // "Leagues" below 1024px and "Opportunity" as "Opp" below 560px); below 600px a sideways
+  // scroll of the row alone — never of the page — with the active tab revealed, and never a
+  // wrapped label. Keeping the tabs at 44px and legible was chosen over squeezing seven into
+  // a phone's width.
+  test("the seven in-season tabs fit one row from 600px, scroll the row alone below it, each on one line", async ({ page }) => {
+    for (const width of [320, 360, 390, 480, 600, 768, 1024]) {
       await page.setViewportSize({ width, height: 800 });
       await page.goto(`${IN_SEASON}?view=startsit`);
       const tabs = page.getByRole("tablist", { name: "Board" });
-      await expect(tabs.getByRole("tab")).toHaveCount(6);
+      await expect(tabs.getByRole("tab")).toHaveCount(7);
       const fit = await tabs.evaluate((node) => node.scrollWidth - node.clientWidth);
-      if (width >= 360) expect(fit, `the tabs scroll at ${String(width)}px`).toBeLessThanOrEqual(1);
+      if (width >= 600) expect(fit, `the tabs scroll at ${String(width)}px`).toBeLessThanOrEqual(1);
+      const page_ = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(page_, `the page scrolls sideways at ${String(width)}px`).toBeLessThanOrEqual(1);
       await expect(tabs.getByRole("tab", { name: "Start/Sit" })).toBeInViewport({ ratio: 1 });
       const heights = await tabs
         .getByRole("tab")

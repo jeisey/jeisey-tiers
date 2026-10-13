@@ -6448,3 +6448,311 @@ Reviewed live after merge. Four corrections; no artifact, model or ordering chan
      locally and overflowed by 6px on CI's Chromium.
    * The board's scroll box is now positioned, as `.table-scroll` already was. Its cells'
      screen-reader-only spans had escaped it and widened a phone page by 210px.
+
+## ADR-106 — My Leagues: three saved leagues in this browser, an exact weekly lineup, slot-relative upgrades and Rising Stars
+
+**Status:** accepted, 2026-10-13. The owner asked for a workspace where a reader saves up to three
+leagues in their own browser, enters their own roster, and gets the week's best lineup, matchup
+detail, upgrade ideas and rising players, with the site staying free, static and login-free.
+The request explicitly authorises **browser-local persistence** of those leagues and
+**configurable starter counts** inside the workspace. Those two items revise the Part A non-goals
+and CR-001 (PRD CR-028). **Relies on:** ADR-001 (static runtime), ADR-092 (the Opportunity
+Board's signals and filters), ADR-096 and ADR-099 (`weekly-startsit-v1`, its startable thresholds
+and "why this week"), ADR-098 (served slices, `requiredKeys`, budgets), ADR-100 (the trade
+engine), ADR-101 (availability policy), ADR-102 (unprojected players) and ADR-105 (season
+actuals).
+
+### What stays fixed
+
+* **Nothing upstream reads this.** Every computation runs in the browser over files the build
+  already publishes. No model, artifact, schema, rank, tier, threshold or served file changes.
+  `intrinsic-ros-v1` and `weekly-startsit-v1` are untouched, v2 stays in shadow and is never
+  read, and no new preset combination is published.
+* **The firewall.** The workspace is a decision layer (PRD A2.2). It reads intrinsic outputs and
+  the Opportunity Board's behaviour signals and feeds nothing back.
+* **No blended score.** The lineup sum, the rest-of-season package values and the
+  role/add readings are printed as separate quantities. Nothing divides season value into weeks
+  or combines units.
+* **Availability governs eligibility, never a number** (ADR-101). No projection is rescaled for
+  an injury designation.
+* **Static.** No backend, account, upload, analytics, vendor call or league-in-URL. A share
+  link never carries a saved league, and every existing link works unchanged, with or without
+  saved leagues.
+
+### 1. The saved-leagues contract (`jeisey-tiers.my-leagues`, version 1)
+
+* **One localStorage key per deployment:** `jeisey-tiers:my-leagues@<base path>`, so a fork or
+  scenario build under another path never reads this site's leagues.
+* **The document** is `{format, version, revision, activeId, leagues[]}`, with at most **3**
+  leagues. Each league holds:
+  * `id` (`lg-…`), `name` (≤ 40 characters) and `season`;
+  * `scoring` (`std`/`half`/`ppr`) and `teams` (10/12/14) — published presets only;
+  * `slots` and `roster`, keyed by group;
+  * `prefs` — Rising Stars on/off and the lineup mode;
+  * `rev` and `updatedAt`.
+* **Roster entries** are canonical player ids or null, in fixed-length arrays per group. No
+  name, value or projection is stored. Every visit resolves ids against the current build's
+  weekly projections, ROS block and season actuals, and never joins by name.
+* **Slot counts** are bounded per group (default in brackets):
+
+  | QB | RB | WR | TE | FLEX (RB/WR/TE) | Bench | IR |
+  |---|---|---|---|---|---|---|
+  | 1–2 [1] | 1–4 [2] | 1–4 [2] | 0–2 [1] | 0–3 [1] | 0–10 [5] | 0–4 [2] |
+
+  The defaults are the request's 1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX, 5 bench and 2 IR. DST and K
+  are shown, disabled, as "Not supported". Superflex, custom scoring and any unpublished preset
+  are refused, never mapped to something close.
+* **The boundary is validated** (`parseLeagueDocument`). A read answers with one of four
+  results:
+  * **empty**;
+  * **ok**, with any invalid leagues set aside and a migration applied;
+  * **future**, a newer version: the page shows it read-only and never writes over it;
+  * **malformed**, with the reason.
+
+  Before anything is written over an unreadable or partly set-aside payload, it is copied to
+  `<key>:backup`. If even that fails, the store is **protected** and writes nothing until the
+  reader chooses "Replace the unreadable data". Migrations are a registry keyed by version;
+  version 1 has none, and the test suite proves an older payload migrates and a newer one is
+  refused.
+* **Write rules** (`leagueStore.ts`):
+  * Only a reader's edit writes; a render, a data load or a recommendation never does.
+  * A failed write (storage blocked, quota) keeps the edit in memory and shows "Not saved".
+  * Every edit names the league revision it was made against. The store re-reads storage
+    first, and an edit to a league another tab has moved on is refused and reported, not
+    applied. Edits to different leagues merge.
+  * Other tabs' writes arrive through `storage` events. A tab holding unsaved edits does not
+    adopt them silently: it offers "Load the saved version".
+  * Which league is open is per tab, and the next visit opens the last one chosen.
+* **Old seasons and unknown ids are kept.** A league saved for another season shows a notice
+  and a one-click "Mark as <season>"; its roster is untouched. An id the build cannot resolve
+  keeps its slot, shows the dictionary name when there is one, and is never optimised or
+  valued.
+
+### 2. Configurable roster, preset authority
+
+* **The selected league's preset is authoritative on My Leagues.** The shell loads that block
+  and scoring, brings the URL's `scoring`/`teams` into step, and locks those two controls with
+  "Set by <league>". Other tabs keep their own URL state. "Open on <preset>" links take the
+  other tools to the league's preset.
+* **Custom counts govern this workspace only:** slot eligibility, the lineup, its gaps, and
+  Improve's rest-of-season line (teams × the league's own starters at the position).
+* **Published values stay preset-based.** ROS values, ranks, tiers and the weekly startable
+  thresholds assume the published preset lineup (1 QB, 2 RB, 2 WR, 1 TE, 2 FLEX). The workspace
+  says so whenever a league's starters differ, and nothing is recomputed.
+* **Editing** (`roster.ts`, all pure):
+  * add, replace, remove, move and swap, each by click or tap — no drag;
+  * one assignment per player per league; the same player may be in another league;
+  * starter slots accept only their positions; a swap must be legal in both directions;
+  * an unresolved id may only sit on the bench or IR.
+
+  Shrinking a group in the settings dialog lists the players who no longer fit. Each must be
+  moved or removed before the settings save; nothing is dropped silently. Incomplete rosters
+  are allowed.
+
+### 3. Auto Start/Sit (`lineup_assignment_v1`)
+
+* **The objective.** Maximise the sum over starter slots of the chosen published quantile of
+  `weekly-startsit-v1`: q50 (Median, the default), q10 (Floor) or q90 (Ceiling). The total is
+  labelled a **sum of individual medians/floors/ceilings**, not the team's joint quantile and
+  not a win probability.
+* **Who may start.** Each player's week is read once:
+  * **Candidate** — an upcoming game in the target week, a distribution, a known future
+    kickoff, and the availability policy allows a start. Questionable and uncertain players
+    are candidates "if active".
+  * **Sidelined** — bye, out, doubtful, a reserve list, released or unsigned. Never started.
+  * **Locked** — the game kicked off at build time, or by the reader's clock (checked every
+    30 s). A locked starter stays put, and a locked bench player is never promoted.
+  * **Pinned** — no record, another week's record, a pending line, an unknown kickoff or an
+    unresolved id. Left where it is: unknown schedule data never becomes a confident move.
+  * **IR** is never read.
+* **The solver.** One exact assignment (Hungarian algorithm) of every movable player to every
+  free starter and bench slot. The objective is lexicographic, encoded as exact integers, in
+  this order:
+  1. place every player;
+  2. fill the most starter slots;
+  3. maximise the sum of chosen quantiles, in published hundredths;
+  4. keep a sidelined starter with no replacement rather than empty the slot;
+  5. keep current slots;
+  6. break remaining ties by id.
+
+  Newcomers take the lowest free index in a group, so one roster always yields one proposal. A
+  400-roster exhaustive oracle checks every mode.
+* **Nothing is applied automatically.** The proposal shows the changes and per-player values.
+  Apply writes atomically and offers Undo; Undo is valid only while the league's revision is
+  unchanged. A reload or mode change never rewrites a lineup. Unfillable slots are listed with
+  reasons (best partial lineup), and players left in place are listed with theirs.
+
+### 4. Week detail per filled slot
+
+Each slot opens to show:
+
+* the target week and the opponent, with home, away or neutral;
+* kickoff in ET;
+* the posted game total and the team's implied points;
+* q10, q50 and q90, "given that he plays";
+* the startable chance against the published threshold;
+* the opponent's points allowed to the position, and its rank among the defenses;
+* availability;
+* the rest-of-season positional rank;
+* "why this week", ADR-099's own component.
+
+Model attribution and non-model context (weather, venue, matchup) stay separate, as on
+Start/Sit. A bye is shown as a bye, not as the next game. Each part degrades on its own: "No
+line posted yet", "No distribution published", "No status record", or a dash. Names open the
+player card. "Compare in Start/Sit" opens that tab prefilled with the occupant and up to three
+bench players who fit the slot.
+
+### 5. Improve (`improve_v1`)
+
+* **Weakness is slot-relative:**
+  * **This week:** the occupant's chance of reaching the published startable threshold for his
+    position, league size and scoring. A slot below 50% is a weekly need. An empty slot or a
+    sidelined occupant counts as 0. An unknown week is not rated.
+  * **Rest of season:** the published positional rank outside teams × the league's starters
+    at that position. For FLEX, the rank among RB/WR/TE against teams × all RB/WR/TE/FLEX
+    starters. Outside that line, or no published value, is a roster need.
+
+  A weekly need inside the rest-of-season line is **temporary**. Both benchmarks are labelled
+  preset-based.
+* **Suggestions, in order:**
+  1. **The bench**, when the median lineup would start someone else.
+  2. **Targets** off this roster (starters, bench and IR all excluded) that fit the slot, pass
+     the trade engine's eligibility and the availability policy, and fix the need. Ordered by
+     expected ROS VORP; ownership is unknown and never claimed.
+  3. **Packages**, "Give A (+ B); receive C (+ D)":
+     * outgoing players only from this roster, priced by the trade engine inside its ±20%
+       band, with its 15% member share;
+     * each package is evaluated by removing the outgoing players, adding the incoming ones and
+       re-optimising the median lineup;
+     * rejected when the roster would exceed starters + bench, when any starter group ends
+       with more holes than it had (a hole moved is not a hole fixed), or when it does not fix
+       the need without creating another.
+
+     Kept packages print the before/after lineup sum, the affected slots, both sides' ROS
+     values (with the engine's approximation marks), the change in needs, and any extra roster
+     moves.
+* **Bounds.** At most 3 needs, 6 targets each, 1–2 players a side and 1,500 re-optimisations,
+  with an "evaluated / rejected" line, memoised by roster, block and clock minute. When nothing
+  defensible exists, it says so.
+
+### 6. Rising Stars (`rising_stars_v1`)
+
+* **Membership** is the Opportunity Board's own conjunction (`passesFilter` role AND momentum):
+  * a measured upward role change on the position's leading metric, **and**
+  * a measured rising add slope whose window reaches the latest snapshot.
+
+  Rostered players and players the trade-target availability block holds back are excluded.
+  A missing signal shows "Not available on this build", never "nobody".
+* **Order:**
+  * **Single position:** by the published role-change magnitude, then projected before
+    unprojected, then ROS rank, then id.
+  * **FLEX (RB/WR/TE):** compares only snap-share changes, the one shared metric
+    (`flexRoleMagnitudeOrder`). A quarterback's attempts are never compared with snap share.
+
+  The Opportunity Board's mixed-position guard and its own ordering are unchanged.
+* **Display.** Three names per group, with role gain, add momentum and their windows shown
+  separately. The toggle is remembered per league. The page never claims waiver availability.
+
+### 7. Shell, loading and navigation
+
+* "My Leagues" is an in-season tab after ROS tiers and before Start/Sit. It reads "Leagues"
+  below 1024px.
+* **The workspace is a lazy chunk:** 21.2 kB, plus 2.9 kB of CSS and a 0.9 kB shared player
+  combobox extracted from Trade. Improve is a second lazy chunk (5.7 kB), sharing the trade
+  engine's chunk (4.6 kB) with Trade.
+* **The shell learns the active league's preset from a tiny signal module**
+  (`leagueSignal.ts`). The store, validation and migrations load with the workspace. Until the
+  workspace publishes, no preset file is fetched, and an empty workspace fetches none.
+* **What the workspace loads:** the active preset's weekly projections, `weekly_context`, the
+  ROS block and season actuals. Rising Stars adds the block's Opportunity rows,
+  `player_usage/all` and `behavior_trend_series/all`, only when on. Nothing gates the lineup.
+* **A league is drawn only on its own preset's files.** Just after a switch, the shell still
+  holds the previous preset until the workspace publishes the new one, and the workspace shows
+  "Loading" rather than draw a league on another's numbers.
+* **Derived caches are bounded:**
+  * the player index — one per bundle and block, in a WeakMap;
+  * Rising Stars' candidate pool — one per bundle and block, in a WeakMap;
+  * Improve — the last three results;
+  * the store's bundles — one per key set requested, as on every other tab (with Rising Stars
+    on, two per preset).
+
+### Evidence (2026-10-13)
+
+* **Bytes.** Size model, Pages-like gzip, measured by `verify:budget`; deltas are against the
+  base commit's shell on the same data:
+
+  | scenario | measured | budget |
+  |---|---:|---:|
+  | first visit, default view — all | 324.5 kB (+1.4) | 450 |
+  | first visit — data | 74.5 kB (±0) | 150 |
+  | then Start/Sit adds | 56.3 kB (+0.002) | 60 |
+  | then Trade adds | 12.9 kB (+1.1, engine and combobox now shared chunks) | 25 |
+  | card adds | 23.8 kB (±0) | 30 |
+  | repeat visit, data · redeploy, served | 0 · 0 | 1 kB · 0 |
+  | **My Leagues** opened from the default view | 71.6 kB (25.1 code, 46.4 data) | **80** |
+  | then **Rising Stars** on | 120.7 kB | **130** |
+  | then **Improve** run | 10.3 kB (code only) | **12** |
+  | then a league on a preset not yet loaded | 85.1 kB | **95** |
+  | then switching among the three again | 0 B | **0** |
+  | **cold visit straight to My Leagues** — all · data | 396.1 · 120.8 kB | **450 · 150** |
+  | reported: Opportunity tab from the default view | 121.7 kB | — |
+  | reported: cold visit to an empty My Leagues — all · data | 308.0 · 32.8 kB | — |
+
+  **Why those budgets.**
+  * My Leagues reads the same weekly file Start/Sit reads (43.4 kB). It costs about Start/Sit
+    plus its own code.
+  * Rising Stars costs what the Opportunity tab costs (it reads the same files, 102.7 kB of
+    them `player_usage/all`), and it is off until a reader turns it on.
+  * A direct link must meet the default view's first-visit envelope.
+  * The other budgets are the measured cost plus a 10–15% margin. No existing budget changed.
+  * Start/Sit's path moved by 2 bytes, so the real build's 0.6 kB Start/Sit headroom
+    (2026-10-09) is unaffected. The real build was not re-measured here.
+* **Interaction.** `measure-leagues.mjs` on a Pixel 7 viewport, CPU throttled 4×, with a
+  production-shaped board and three full 16-player leagues (PPR/12, Half/10, Std/14). Ranges
+  cover the final three runs:
+  * optimiser 6–16 ms;
+  * mode click 66–103 ms;
+  * picker keystroke 32–79 ms;
+  * roster edit 116–182 ms;
+  * Improve's bounded run 155–319 ms (424 packages evaluated; 123 rejected for roster room,
+    141 for not fixing the need);
+  * Rising Stars toggled with its files held: 79–141 ms;
+  * repeated league switches: median 181–193 ms, worst 258–270 ms;
+  * a first switch to a new preset: 513–545 ms, including its 85 kB.
+
+  The heap after GC is 11.6–11.7 MB and grows ≤ 0.15 MB across four further three-league
+  cycles. For reference, the same profile measures 320–380 ms for Start/Sit's own scoring
+  control. The ROS board's PPR re-render takes 4.4–5.6 s, identically on the base commit, so it
+  predates this change.
+
+  Two fixes came from this measurement:
+  * The Rising Stars candidate pool is now cached per bundle and block. It cost about 17 ms of
+    every switch at 4×.
+  * `easternIsoDate` reuses one formatter. The shell rebuilt one on every render.
+* **Tests.** Vitest covers:
+  * storage — 25 tests: failure, quota, malformed, future, migration, cross-tab, cap and
+    isolation;
+  * the optimiser — 16, including the oracle;
+  * Rising Stars — 10;
+  * Improve — 14;
+  * UI — 9.
+
+  Playwright covers:
+  * 10 My Leagues flows;
+  * one cross-engine smoke test in `smoke.spec.ts`: storage across a reload, the modal
+    dialog's focus, and the `:has()` layout;
+  * a11y scans of the empty and full workspace, the dialogs and the keyboard switcher;
+  * the phone layout;
+  * screens at 320, 390 (and 390×600), 768, 1024, 1280 and 1440
+    (`docs/visual-qa/2026-10-13-my-leagues/`).
+
+### Limitations
+
+* **Ownership is unknown.** Targets and packages are hypothetical, value-matched ideas, not
+  waiver claims or acceptance odds.
+* **Benchmarks are preset-based.** A custom starter count changes the workspace's lineup and
+  lines, not any published value or threshold.
+* **The lineup total is a sum of individual quantiles.**
+* **Rising Stars is opt-in because of its cost:** roughly 121 kB, the Opportunity tab's.
+* **Leagues live only in this browser.** There is no sync, export or import. Clearing site data
+  deletes them, and the page says so.

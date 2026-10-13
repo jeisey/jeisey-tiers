@@ -34,6 +34,7 @@ export const VIEWS = [
   "opportunity",
   "potw",
   "trade",
+  "myleagues",
   "data",
 ] as const;
 export type ViewId = (typeof VIEWS)[number];
@@ -75,6 +76,8 @@ export type OpportunityFilter = (typeof OPPORTUNITY_FILTERS)[number];
 export const DRAFT_VIEWS: readonly ResolvedViewId[] = ["tiers", "arbitrage"];
 export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = [
   "ros",
+  // ADR-106: the reader's own saved leagues, beside the weekly decision tools.
+  "myleagues",
   "startsit",
   "trade",
   "opportunity",

@@ -2,7 +2,7 @@
 
 **Status:** Living document. Part A is the current product scope; Part B is the V1 launch
 specification, kept as a historical record.  
-**Last revised:** 2026-10-09  
+**Last revised:** 2026-10-13  
 **Live site:** <https://jeisey.github.io/jeisey-tiers/>  
 **Deployment:** static GitHub Pages site refreshed by GitHub Actions
 
@@ -20,8 +20,9 @@ modes:
 
 - **Draft mode** (before the season's first regular-season kickoff): an intrinsic Tier Board and
   a draft-market comparison (Arbitrage board / Draft Rail) against published ADP.
-- **In-season mode** (from that kickoff): rest-of-season tiers, a weekly Start/Sit comparison, a
-  Trade explorer, the Opportunity Board and Pick of the Week.
+- **In-season mode** (from that kickoff): rest-of-season tiers, My Leagues (the reader's own saved
+  leagues, kept in their browser), a weekly Start/Sit comparison, a Trade explorer, the
+  Opportunity Board and Pick of the Week.
 
 The season state is derived from the published NFL schedule (`season_state_v1`, ADR-079); the
 reader can override the mode, and the draft board stays reachable all season.
@@ -36,13 +37,13 @@ These hold for every feature, current or future.
    market proxy, add/drop behaviour, or output of any downstream layer. Information flows from
    the intrinsic models to the market and decision layers, never back (`AGENTS.md` sections 1
    and 8).
-2. **Decision layers are downstream.** In-season decision tools (Start/Sit, Trade, Pick of the
-   Week, the Opportunity Board) may use any permitted data that improves a start/sit, trade or
+2. **Decision layers are downstream.** In-season decision tools (My Leagues, Start/Sit, Trade,
+   Pick of the Week, the Opportunity Board) may use any permitted data that improves a start/sit, trade or
    waiver call — including sportsbook lines for the weekly model (ADR-096) — and they consume
    intrinsic outputs without feeding them.
 3. **Availability governs eligibility, never value.** Injury and roster status may decide whether
    a player is offered by a decision surface (Start/Sit, Pick of the Week, the rest-of-season
-   actionable lists, Trade) under the availability policy (ADR-101, `docs/UX_SPEC.md`). It never enters the
+   actionable lists, Trade, My Leagues) under the availability policy (ADR-101, `docs/UX_SPEC.md`). It never enters the
    intrinsic models and never changes a published intrinsic number.
 4. **No blended scores across units.** Behaviour counts (adds, drops) and model value are shown
    side by side and may gate membership; they are never combined into one score (ADR-085,
@@ -54,7 +55,8 @@ These hold for every feature, current or future.
    model passes the historical-coverage and out-of-time promotion gates of Part B section 11.4.
 7. **Static runtime.** Every number shown comes from versioned, schema-validated public
    artifacts; no backend, database, account or runtime vendor call (ADR-098 for the served
-   layout).
+   layout). The only reader data is My Leagues' saved leagues, kept in the reader's own browser
+   as compact settings and player ids, never uploaded or put in a link (CR-028, ADR-106).
 8. **Identity and time.** Canonical `gsis_id` joins, fail-closed ambiguity, and leakage-tested
    point-in-time features (`AGENTS.md` sections 6 and 7).
 
@@ -63,7 +65,11 @@ These hold for every feature, current or future.
 ### Shared
 
 - **CR-001 League presets.** Standard, Half-PPR and PPR at 10, 12 and 14 teams; 1 QB, 2 RB,
-  2 WR, 1 TE, 2 FLEX, 5 bench (`config/league-defaults.yaml`). QB/RB/WR/TE only.
+  2 WR, 1 TE, 2 FLEX, 5 bench (`config/league-defaults.yaml`). QB/RB/WR/TE only. Every published
+  value, rank, tier and threshold is computed for these presets. My Leagues (CR-028) lets a
+  saved league set its own starter, bench and IR counts within documented bounds. Those counts
+  govern that workspace's lineup and rest-of-season lines only. They never recompute or
+  multiply the published presets.
 - **CR-002 Refresh.** A daily scheduled refresh, a post-week refresh on Tuesdays and game-day
   refreshes on Thursday, Friday and Sunday (`docs/OPERATIONS.md` sections 2.2 and 16). A failed
   critical gate deploys nothing and leaves the last-known-good site serving. Models are not
@@ -129,12 +135,32 @@ These hold for every feature, current or future.
   withholds it rather than ranking a smaller population.
 - **CR-026 Home.** The logo is a link to the season-aware default view under the configured base
   path.
+- **CR-028 My Leagues.** An in-season tab after ROS tiers where a reader keeps up to three of their
+  own leagues in their browser (ADR-106).
+  * **Storage.** A versioned, validated localStorage contract per deployment path. It holds
+    only the league's name, season, published scoring and team presets, starter/bench/IR
+    counts, canonical player ids by slot, and two preferences. No sign-in, upload, analytics or
+    league-in-URL.
+  * **What it gives.** For the selected league:
+    * an exact best-lineup proposal (`lineup_assignment_v1`) that maximises the sum of the
+      chosen `weekly-startsit-v1` quantiles, with locks, byes, availability and IR respected,
+      applied only on request and undoable;
+    * each slot's matchup detail;
+    * Improve (`improve_v1`): slot-relative needs, bench moves, targets and value-matched
+      packages from the reader's roster, re-optimised before they are shown;
+    * opt-in Rising Stars (`rising_stars_v1`): the Opportunity Board's role-AND-momentum rule,
+      minus the roster.
+  * **Limits.** Superflex, custom scoring, DST and K are not supported. Ownership in the reader's
+    league is unknown, and every trade idea is hypothetical.
 
 ## A4. Current non-goals
 
 - Live draft-room synchronisation or automated picks.
-- User accounts, authentication, cloud database or persistent server state.
-- Dynasty, keeper, best-ball, DFS, superflex, IDP or custom scoring.
+- User accounts, authentication, cloud database or persistent server state. (Revised 2026-10-13:
+  saved leagues kept in the reader's own browser are in scope, CR-028.)
+- Dynasty, keeper, best-ball, DFS, superflex, IDP or custom scoring. Configurable starter counts
+  with an ordinary RB/WR/TE FLEX exist only inside My Leagues (CR-028), never as a published
+  preset.
 - Kicker and team-defense rankings.
 - Betting or prop recommendations.
 - A rostered percentage (no permitted source publishes one; ADR-088).

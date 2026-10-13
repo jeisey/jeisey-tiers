@@ -54,11 +54,13 @@ afterEach(() => {
 });
 
 describe("navigation", () => {
-  it("is a sixth in-season tab, third in order, and Opportunity keeps its full accessible name", async () => {
+  it("is an in-season tab after Start/Sit, and Opportunity keeps its full accessible name", async () => {
     await open("?view=trade");
     const tabs = within(screen.getByRole("tablist", { name: "Board" })).getAllByRole("tab");
+    // ADR-106 put My Leagues second; Trade stays directly after Start/Sit.
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       "ROS tiers",
+      "My LeaguesLeagues",
       "Start/Sit",
       "Trade",
       "OpportunityOpp",
