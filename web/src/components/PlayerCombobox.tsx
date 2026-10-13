@@ -108,7 +108,9 @@ export function PlayerCombobox({
               pick(options[active]);
             }
           } else if (event.key === "Escape") {
-            if (query !== "" || open) {
+            // Only when there is something to clear: text, or a list on screen. Focus alone opens
+            // nothing visible, so a bare Escape belongs to the dialog around the picker.
+            if (query !== "" || expanded) {
               // Stop here: inside a dialog, the first Escape clears the search, not the dialog.
               event.preventDefault();
               event.stopPropagation();

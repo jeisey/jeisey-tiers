@@ -226,6 +226,13 @@ test.describe("rules a reader can see", () => {
     const add = page.getByRole("button", { name: "Add a player to Bench 3" });
     await add.click();
     const box = page.getByRole("dialog").getByRole("combobox");
+    // Nothing typed and no list on screen: the first Escape is the dialog's.
+    await expect(box).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(add).toBeFocused();
+
+    await add.click();
     await box.fill("cook");
     await page.keyboard.press("Escape");
     await expect(box).toHaveValue("");
