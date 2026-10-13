@@ -22,6 +22,23 @@
  * | opening a player card from the default view adds | ≤ 30 kB |
  * | a repeat visit to the same deploy — data | ≤ 1 kB (≈ 0) |
  * | a redeploy of unchanged data — served data files | 0 B |
+ * | My Leagues (ADR-106), opened from the default view, adds | ≤ 80 kB |
+ * | then turning Rising Stars on adds | ≤ 130 kB |
+ * | then running Improve adds | ≤ 12 kB |
+ * | then switching to a saved league on a preset not yet loaded adds | ≤ 95 kB |
+ * | then switching among the three saved leagues again | 0 B |
+ * | a cold first visit straight to My Leagues — everything | ≤ 450 kB |
+ * | a cold first visit straight to My Leagues — data | ≤ 150 kB |
+ *
+ * My Leagues' budgets are its measured cost on the size model plus a margin (ADR-106 records the
+ * numbers). Opening it reads the week's projections Start/Sit reads, so it costs about what
+ * Start/Sit does plus its own code; Rising Stars reads exactly the Opportunity Board's evidence
+ * files (reported below as `opportunityAdds`) and is off until a reader turns it on; a direct
+ * link to My Leagues meets the default view's first-visit budgets.
+ *
+ * My Leagues' scenarios run with three leagues saved in the browser before the page loads: the
+ * active one on the default view's preset (12-team PPR), the others on 10-team Half PPR and
+ * 14-team Standard, each a full roster from the build's own board.
  *
  * It also proves the fail-safe property the cache depends on: after a deploy that changes one
  * player's name, a reader holding the old deploy's files in their cache sees the new name.
@@ -54,6 +71,13 @@ export const BUDGETS = {
   cardAdds: 30_000,
   repeatVisitData: 1_000,
   redeployServedData: 0,
+  myLeaguesAdds: 80_000,
+  risingStarsAdds: 130_000,
+  improveAdds: 12_000,
+  leagueSwitchNewPreset: 95_000,
+  leagueSwitchRepeat: 0,
+  myLeaguesFirstVisitTotal: 450_000,
+  myLeaguesFirstVisitData: 150_000,
 };
 
 function parseArgs(argv) {
@@ -139,6 +163,72 @@ function touchAll(directory, when) {
   }
 }
 
+/**
+ * Three saved leagues (ADR-106) for a browser context, written before the first page script
+ * runs and only once per tab, so the page's own saves are never overwritten by the seed.
+ */
+function leagueSeed() {
+  const ros = JSON.parse(readFileSync(join(dist, "data", "ros_tiers.json"), "utf-8")).records;
+  const counts = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, BN: 5, IR: 2 };
+  const roster = (leaguePreset, scoring) => {
+    const rows = ros
+      .filter((row) => row.league_preset_id === leaguePreset && row.scoring_preset === scoring)
+      .sort((a, b) => a.ros_fair_rank - b.ros_fair_rank);
+    const by = (position) => rows.filter((row) => row.position === position).map((row) => row.player_id);
+    const [qb, rb, wr, te] = [by("QB"), by("RB"), by("WR"), by("TE")];
+    const take = (list, index) => list[index] ?? null;
+    return {
+      QB: [take(qb, 0)],
+      RB: [take(rb, 0), take(rb, 12)],
+      WR: [take(wr, 0), take(wr, 12)],
+      TE: [take(te, 0)],
+      FLEX: [take(rb, 24)],
+      BN: [take(qb, 12), take(rb, 30), take(wr, 24), take(wr, 30), take(te, 12)],
+      IR: [take(rb, 40), null],
+    };
+  };
+  const leagues = [
+    ["lg-budget01", "Office", "ppr", 12, "redraft-12", "PPR"],
+    ["lg-budget02", "Family", "half", 10, "redraft-10", "HALF"],
+    ["lg-budget03", "Friends", "std", 14, "redraft-14", "STD"],
+  ].map(([id, name, scoring, teams, leaguePreset, scoringPreset]) => ({
+    id,
+    name,
+    season: ros[0]?.season ?? 2026,
+    scoring,
+    teams,
+    slots: counts,
+    roster: roster(leaguePreset, scoringPreset),
+    prefs: { risingStars: false, mode: "q50" },
+    rev: 1,
+    updatedAt: "2026-01-01T00:00:00Z",
+  }));
+  return {
+    key: `jeisey-tiers:my-leagues@${args.basePath}`,
+    value: JSON.stringify({ format: "jeisey-tiers.my-leagues", version: 1, revision: 1, activeId: leagues[0].id, leagues }),
+  };
+}
+
+async function seedLeagues(context) {
+  const { key, value } = leagueSeed();
+  await context.addInitScript(
+    ([storageKey, document]) => {
+      if (window.sessionStorage.getItem("budget-seeded") === null) {
+        window.localStorage.setItem(storageKey, document);
+        window.sessionStorage.setItem("budget-seeded", "1");
+      }
+    },
+    [key, value],
+  );
+}
+
+/** The workspace has drawn the active league's lineup on `label`'s preset. */
+async function leagueShown(page, label) {
+  await page.locator(".lg-preset strong", { hasText: label }).waitFor();
+  await page.locator(".lg-auto").waitFor();
+  await settle(page);
+}
+
 const results = {};
 const failures = [];
 function check(name, value, budget) {
@@ -209,6 +299,112 @@ try {
   results.draftFirstVisitData = sum(draft, isData);
   await drafter.close();
 
+  // My Leagues' scenarios run in browsers of their own, so nothing they do touches the reader
+  // the repeat-visit and redeploy checks below follow. One that cannot run is a failure on the
+  // list, not a crash, so `--report-only` still prints every other number.
+  try {
+    // 3c. My Leagues (ADR-106) from the default view: its code and stylesheet, the week's files
+    //     for the active league's scoring, and the shared weekly context. The ROS block is the
+    //     default view's. Then Rising Stars' evidence, then Improve's code (it reads only what
+    //     is loaded), then the two other leagues' presets, then a second round of switches that
+    //     must fetch nothing.
+    const manager = await browser.newContext();
+    await seedLeagues(manager);
+    const leaguePage = await newPage(manager);
+    const leagueLog = record();
+    await openDefault(leaguePage);
+    mark = leagueLog.mark();
+    await leaguePage.getByRole("tab", { name: "My Leagues" }).click();
+    await leagueShown(leaguePage, "12-team PPR");
+    const opened = leagueLog.since(mark);
+    check("myLeaguesAdds", sum(opened), BUDGETS.myLeaguesAdds);
+    results.myLeaguesAddsData = sum(opened, isData);
+    results.myLeaguesAddsFiles = opened.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+
+    mark = leagueLog.mark();
+    await leaguePage.getByRole("checkbox", { name: "Rising Stars" }).check();
+    await leaguePage.waitForFunction(() => {
+      const lists = [...document.querySelectorAll(".lg-rising")];
+      return lists.length > 0 && lists.every((list) => !(list.textContent ?? "").includes("Loading"));
+    });
+    await settle(leaguePage);
+    const rising = leagueLog.since(mark);
+    check("risingStarsAdds", sum(rising), BUDGETS.risingStarsAdds);
+    results.risingStarsAddsFiles = rising.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+
+    mark = leagueLog.mark();
+    await leaguePage.getByRole("button", { name: "Find upgrades" }).click();
+    await leaguePage.getByRole("region", { name: "Upgrade ideas" }).waitFor();
+    await settle(leaguePage);
+    const improve = leagueLog.since(mark);
+    check("improveAdds", sum(improve), BUDGETS.improveAdds);
+    results.improveAddsData = sum(improve, isData);
+
+    const switchTo = async (name, label) => {
+      const before = leagueLog.mark();
+      await leaguePage.getByRole("radio", { name: new RegExp(`^${name}`) }).click();
+      await leagueShown(leaguePage, label);
+      return sum(leagueLog.since(before));
+    };
+    const round = [
+      ["Family", "10-team Half PPR"],
+      ["Friends", "14-team Standard"],
+      ["Office", "12-team PPR"],
+    ];
+    results.leagueSwitchFirst = {};
+    for (const [name, label] of round) results.leagueSwitchFirst[name] = await switchTo(name, label);
+    check("leagueSwitchNewPreset", Math.max(...Object.values(results.leagueSwitchFirst)), BUDGETS.leagueSwitchNewPreset);
+    let repeated = 0;
+    for (let cycle = 0; cycle < 2; cycle += 1) {
+      for (const [name, label] of round) repeated += await switchTo(name, label);
+    }
+    check("leagueSwitchRepeat", repeated, BUDGETS.leagueSwitchRepeat);
+    await manager.close();
+
+    // Reported, not budgeted: the Opportunity Board opened from the default view, whose evidence
+    // files are the ones Rising Stars reads.
+    const scout = await browser.newContext();
+    const scoutPage = await newPage(scout);
+    const scoutLog = record();
+    await openDefault(scoutPage);
+    mark = scoutLog.mark();
+    await scoutPage.getByRole("tab", { name: "Opportunity" }).click();
+    await scoutPage.getByRole("table", { name: /opportunity board/i }).waitFor();
+    await settle(scoutPage);
+    results.opportunityAdds = sum(scoutLog.since(mark));
+    results.opportunityAddsData = sum(scoutLog.since(mark), isData);
+    await scout.close();
+
+    // 3d. A cold first visit straight to My Leagues with the same leagues saved: the shell, the
+    //     default preset's ROS block and the workspace — never another league's preset.
+    const direct = await browser.newContext();
+    await seedLeagues(direct);
+    const directPage = await newPage(direct);
+    mark = log.mark();
+    await directPage.goto(`${site}?view=myleagues`, { waitUntil: "domcontentloaded" });
+    await leagueShown(directPage, "12-team PPR");
+    const cold = log.since(mark);
+    check("myLeaguesFirstVisitTotal", sum(cold), BUDGETS.myLeaguesFirstVisitTotal);
+    check("myLeaguesFirstVisitData", sum(cold, isData), BUDGETS.myLeaguesFirstVisitData);
+    results.myLeaguesFirstVisitFiles = cold.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+    await direct.close();
+
+    // 3e. Reported, not budgeted: a cold visit to My Leagues with nothing saved — the empty
+    //     workspace fetches no preset-specific file.
+    const newcomer = await browser.newContext();
+    const emptyPage = await newPage(newcomer);
+    mark = log.mark();
+    await emptyPage.goto(`${site}?view=myleagues`, { waitUntil: "domcontentloaded" });
+    await emptyPage.getByRole("button", { name: "Create a league" }).waitFor();
+    await settle(emptyPage);
+    const empty = log.since(mark);
+    results.myLeaguesEmptyFirstVisitTotal = sum(empty);
+    results.myLeaguesEmptyFirstVisitData = sum(empty, isData);
+    await newcomer.close();
+  } catch (error) {
+    failures.push(`My Leagues' scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
+  }
+
   // 4. The same reader returns to the same deploy.
   mark = log.mark();
   await openDefault(page);
@@ -260,7 +456,10 @@ try {
 }
 
 const report = { site: args.dist, budgets: BUDGETS, results, failures };
-const printable = { ...report, results: { ...results, firstVisitFiles: undefined } };
+const printable = {
+  ...report,
+  results: { ...results, firstVisitFiles: undefined, myLeaguesFirstVisitFiles: undefined },
+};
 console.log(JSON.stringify(printable, null, 1));
 if (args.json !== null) writeFileSync(args.json, `${JSON.stringify(report, null, 1)}\n`);
 if (failures.length > 0 && !args.reportOnly) process.exit(1);

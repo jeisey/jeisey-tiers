@@ -106,6 +106,13 @@ The frontend may load only generated public files under `public/data/` (or Vite-
 > asserts the image count never exceeds the card count; the host allowance in
 > `web/tests/e2e/boundary.ts` is untouched, so every other origin is still a failure.
 
+> **2026-10-13 note (ADR-106).** The browser now keeps one thing of the reader's own: My
+> Leagues' saved leagues, in `localStorage` under `jeisey-tiers:my-leagues@<base path>`. They are
+> compact settings and canonical player ids, validated on every read (`leagueContract.ts`), and
+> never sent anywhere: no request carries them and no URL holds them. Every number the workspace
+> shows still comes from the published files, resolved by id on each visit. The boundary on
+> *what is fetched* is unchanged.
+
 ### 3.3 Benchmark boundary
 
 Benchmark-only source data must never be serialized into public artifacts unless its current license/terms explicitly permit redistribution.
@@ -625,6 +632,26 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 >
 > No production dependency was added. Two OFL-licensed font files were vendored (section 3.2).
 
+> **2026-10-13 addition (ADR-106).** My Leagues is split so the shell pays almost nothing for it.
+>
+> * **The shell's part** is a tab, URL parsing and `data/leagueSignal.ts`, a few dozen lines
+>   holding the active league's preset. It lives in the entry bundle.
+> * **The lazy workspace** (`app/MyLeaguesView.tsx` and `app/leagues/`, with its stylesheet)
+>   owns the rest:
+>   * `data/leagueContract.ts`, the contract and its validation;
+>   * `data/leagueStore.ts`, the storage side effects, cross-tab events and conflicts;
+>   * `data/roster.ts`, the pure roster edits;
+>   * `data/lineup.ts`, the exact assignment (`lineup_assignment_v1`);
+>   * `data/rising.ts`, Rising Stars over `candidates.ts`'s predicates;
+>   * `data/leagueUniverse.ts`, id resolution and search.
+> * **Improve** (`app/leagues/ImprovePanel.tsx`, `data/improve.ts`) is a second lazy chunk. It
+>   shares the trade engine's chunk with the Trade tab. `components/PlayerCombobox.tsx` is the
+>   ARIA combobox extracted from Trade's picker, which both tabs use.
+>
+> The workspace publishes its active league to the signal. `App` reads the signal and loads that
+> league's block and scoring, replacing the URL's `scoring`/`teams` so every other surface agrees.
+> The workspace draws a league only once the files loaded are for that league's own preset.
+
 ## 11. Pages base path
 
 The Vite build must work for both:
@@ -701,6 +728,7 @@ dictionary every slice resolves `display_name` through — comes with the first 
 | in-season | every in-season view (ADR-101) | `player_availability/all` — loaded once, with the first in-season view, when a ROS bundle exists | roster code, Sleeper status and designation, body part, observation time, flags and the reviewed override: the availability policy's evidence (`data/availability.ts`) |
 | in-season | ROS tiers (`ros`, the in-season default) | `ros_tiers/<block>`, `season_actuals/<scoring>` | every ROS field, including `current_status` (the policy's fallback roster code) and `long_absence` with the manifest's disclosures; season points, games, rate and positional rank (ADR-105) for the chart's comparison lane and the table |
 | in-season | Start/Sit | `weekly_projections/<scoring>`, `weekly_context/all`, `ros_tiers/<block>`, `season_actuals/<scoring>` | quantiles, drivers, explanation accounts, game, opponent, injury; each team's venue, forecast, listed players, typical and this-week lines (ADR-099); the weekly block's thresholds from the manifest; the RoS positional rank and the season actuals beside the week board (ADR-105) |
+| in-season | My Leagues (ADR-106) | nothing preset-specific until the workspace has said which league is active (none at all with no saved league); then, for the active league's preset, `weekly_projections/<scoring>`, `weekly_context/all`, `ros_tiers/<block>`, `season_actuals/<scoring>` — Start/Sit's files; with Rising Stars on, also `inseason_opportunity/<block>`, `player_usage/all`, `behavior_trend_series/all` (fetched beside, never gating, the lineup) | quantiles, game, opponent, kickoff and lock state, thresholds, availability; ROS rank and value for Improve and the slot detail; the Opportunity Board's role and momentum readings for Rising Stars; Improve's engine and the trade engine load as code only |
 | in-season | Trade (ADR-100) | `ros_tiers/<block>` — the slice the default view already loaded | expected VORP, the five VORP quantiles, expected points, `remaining_horizon_weeks`, `long_absence`, `current_status`, identity; the lazily loaded engine (`data/trade.ts`) does the rest in the browser |
 | in-season | Opportunity | `ros_tiers/<block>`, `season_actuals/<scoring>`, `inseason_opportunity/<block>`, `player_usage/all`, `behavior_trend_series/all`, `team_matchups/all` | the board's own fields (its copied ROS fields joined from the ROS slice); the leading role metric's change and weekly series; add momentum and its last point; the next game |
 | in-season | Pick of the Week | as Opportunity, plus `player_headshots/all` | the same readings, and the four picks' portrait addresses |
@@ -721,4 +749,8 @@ code — 11.0 kB on the size model, no data (ADR-100). ADR-101 adds the compact
 `player_availability/all` slice (about 3.4 kB gzip on the 2026-10-02 board) to the first
 in-season view; every later in-season tab reuses it. ADR-105 adds one `season_actuals/<scoring>`
 slice to the first in-season view, reused by Start/Sit, Opportunity and every in-season card.
+ADR-106, on the size model: My Leagues adds 71.6 kB after the default view (25.1 kB of it code).
+Rising Stars adds 120.7 kB, the Opportunity tab's own files. Improve adds 10.3 kB of code. A
+league on a not-yet-loaded preset adds 85.1 kB, and switching back among loaded leagues costs
+0 B. A cold link to My Leagues is 396.1 kB, 120.8 kB of it data.
 

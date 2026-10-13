@@ -14,6 +14,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { stubPortraits } from "./boundary";
+import { IN_SEASON, OFFICE, seed } from "./leagues-seed";
 
 /*
  * No test in this repository reaches a third party. The player card fetches its portrait from
@@ -362,14 +363,15 @@ test("a tier can be opened and closed with a thumb", async ({ page }) => {
 });
 
 /*
- * Six in-season tabs (ADR-100). The row scrolls rather than shrinking anything: every tab
- * keeps a 44px target, "Opportunity" prints as "Opp" with its full accessible name, and the
- * active tab is scrolled fully into view whichever it is.
+ * Seven in-season tabs (ADR-100, ADR-106). The row scrolls rather than shrinking anything:
+ * every tab keeps a 44px target, "Opportunity" prints as "Opp" and "My Leagues" as "Leagues"
+ * with their full accessible names, and the active tab is scrolled fully into view whichever
+ * it is.
  */
-test("six tabs: full tap targets, a short label with the full name, the active tab on screen", async ({
+test("seven tabs: full tap targets, short labels with full names, the active tab on screen", async ({
   page,
 }) => {
-  for (const view of ["ros", "startsit", "trade", "opportunity", "potw", "data"]) {
+  for (const view of ["ros", "myleagues", "startsit", "trade", "opportunity", "potw", "data"]) {
     await page.goto(`/scenario/in-season/?view=${view}`);
     const tablist = page.getByRole("tablist", { name: "Board" });
     await expect(tablist).toBeVisible();
@@ -382,8 +384,53 @@ test("six tabs: full tap targets, a short label with the full name, the active t
   const opportunity = page.getByRole("tab", { name: "Opportunity" });
   await expect(opportunity).toHaveAccessibleName("Opportunity");
   await expect(opportunity.locator(".tab-label-short")).toBeVisible();
+  const leagues = page.getByRole("tab", { name: "My Leagues" });
+  await expect(leagues).toHaveAccessibleName("My Leagues");
+  await expect(leagues.locator(".tab-label-short")).toHaveText("Leagues");
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+/*
+ * My Leagues on a phone (ADR-106): readable stacked slots with their actions under each one,
+ * the switcher and primary actions within reach, dialogs that fit the screen, and no sideways
+ * page scroll anywhere — including with every optional section open.
+ */
+test("My Leagues stacks its slots on a phone and nothing scrolls the page sideways", async ({ page }) => {
+  await seed(page, [OFFICE, { id: "lg-family01", name: "Family", scoring: "half", roster: {} }]);
+  await page.goto(`${IN_SEASON}?view=myleagues`);
+  const slot = page.locator(".lg-slot", { hasText: "Bijan Robinson" });
+  await expect(slot).toBeVisible();
+  // The actions sit under the player, not squeezed beside him.
+  const name = await slot.locator(".player-name").boundingBox();
+  const edit = await slot.getByRole("button", { name: /^Edit/ }).boundingBox();
+  expect((edit?.y ?? 0) >= (name?.y ?? 0) + (name?.height ?? 0)).toBe(true);
+  expect(edit?.height ?? 0).toBeGreaterThanOrEqual(40);
+  await page.getByRole("checkbox", { name: "Rising Stars" }).check();
+  await page.getByRole("button", { name: "Find upgrades" }).click();
+  await expect(page.getByRole("region", { name: "Upgrade ideas" })).toBeVisible();
+  await page.getByRole("button", { name: "Show Bijan Robinson's week" }).click();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  // The slot dialog fits the screen, its search is usable, and a pick lands in the slot.
+  await page.getByRole("button", { name: "Add a player to Bench 3" }).tap();
+  const dialog = page.getByRole("dialog");
+  const box = await dialog.boundingBox();
+  const viewport = page.viewportSize();
+  expect((box?.x ?? -1) >= 0 && (box?.width ?? 0) <= (viewport?.width ?? 0)).toBe(true);
+  await dialog.getByRole("combobox").fill("jahmyr");
+  await dialog.getByRole("option", { name: /Jahmyr Cook/ }).tap();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".lg-slot", { hasText: "Jahmyr Cook" })).toBeVisible();
+
+  // The settings dialog, with its steppers, fits too.
+  await page.getByRole("button", { name: "League settings" }).tap();
+  const settings = page.getByRole("dialog");
+  const settingsBox = await settings.boundingBox();
+  expect((settingsBox?.width ?? 0) <= (viewport?.width ?? 0)).toBe(true);
+  const inner = await settings.locator(".lg-dialog-body").evaluate((node) => node.scrollWidth - node.clientWidth);
+  expect(inner).toBeLessThanOrEqual(1);
 });

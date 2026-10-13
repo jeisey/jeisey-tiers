@@ -74,6 +74,11 @@ export function homeHref(base: string = import.meta.env.BASE_URL): string {
 export interface AppStateController {
   readonly state: AppState;
   readonly setState: (next: Partial<AppState>) => void;
+  /**
+   * The same change without a history entry: for state the app keeps in step with something
+   * else (My Leagues' active preset, ADR-106), never for a reader's own action.
+   */
+  readonly replaceState: (next: Partial<AppState>) => void;
   /** The canonical query string, for building shareable links. */
   readonly query: string;
 }
@@ -98,5 +103,11 @@ export function useAppState(): AppStateController {
     if (query !== window.location.search) writeLocation(query, "push");
   }, []);
 
-  return { state, setState, query: canonical };
+  const replaceState = useCallback((next: Partial<AppState>) => {
+    const merged = { ...parseState(window.location.search).state, ...next };
+    const query = serializeState(merged);
+    if (query !== window.location.search) writeLocation(query, "replace");
+  }, []);
+
+  return { state, setState, replaceState, query: canonical };
 }

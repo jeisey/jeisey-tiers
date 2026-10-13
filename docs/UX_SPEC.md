@@ -629,8 +629,9 @@ filtered export keeps its fixed column list whatever a screen hides.
 **The question: of these two to four players, who gives me the best chance to win this week?**
 Not "who is projected for more": that is a different question whenever two players' ranges
 differ and the matchup is not even, and it is the only one other sites answer. The tab sits
-second, after the rest-of-season board it is read against: `ROS tiers · Start/Sit ·
-Trade · Opportunity · Pick of the Week · Data` (Trade added by ADR-100). State is `duel=00-0036389.00-0039164` (reader's order,
+third, after the rest-of-season board it is read against and the reader's own leagues: `ROS tiers ·
+My Leagues · Start/Sit · Trade · Opportunity · Pick of the Week · Data` (Trade added by ADR-100,
+My Leagues by ADR-106). State is `duel=00-0036389.00-0039164` (reader's order,
 up to four, malformed or duplicate ids dropped and the URL rewritten) and `margin=-12` (an
 integer within ±40), so a call can be pasted into a league chat and reopened exactly.
 
@@ -732,7 +733,7 @@ are checked on fixtures and on a real build.
 
 **The question: if I offer these players, which packages of the size I want are worth about the
 same over the rest of the season — and, among those, which give me the most value, the highest
-ceiling or the safest floor?** The tab sits third: `ROS tiers · Start/Sit · Trade · Opportunity ·
+ceiling or the safest floor?** The tab sits fourth: `ROS tiers · My Leagues · Start/Sit · Trade · Opportunity ·
 Pick of the Week · Data`. Results are called **model-based targets**: combinations of assets to
 explore, possibly owned by different managers. One sentence beside the results says the tool
 cannot know rosters or whether anyone would accept; nothing prints an acceptance chance, a
@@ -798,11 +799,18 @@ in a polite live region. Below 768px the packages' readout grid is three columns
 difference under its number (never cut off), and Keep/Swap span the panel at 40px. Checked at
 1440, 820, 390 and 320px (`web/tests/e2e/trade.spec.ts`, `capture-trade.mjs`).
 
-**The tab row** has six in-season tabs. It scrolls sideways rather than shrinking text or
-targets (every tab stays 44px tall): the active tab is scrolled into view whenever it changes, a
-focused tab is scrolled into view, an arrow key moves focus with the selection, and a solid
-`‹` / `›` marker at either edge says there is more row. Below 560px *Opportunity* prints as
-*Opp*, its accessible name still "Opportunity". Reduced motion makes the scroll instant.
+**The tab row** has seven in-season tabs (ADR-106 added *My Leagues*). It scrolls sideways
+rather than shrinking text or targets (every tab stays 44px tall):
+
+* the active tab is scrolled into view whenever it changes, and again when the row starts or
+  stops overflowing;
+* a focused tab is scrolled into view, and an arrow key moves focus with the selection;
+* a solid `‹` / `›` marker at either edge says there is more row, and the overflowing row
+  keeps 2px of end padding so the last tab scrolls fully into view.
+
+Below 1024px *My Leagues* prints as *Leagues*, and below 560px *Opportunity* prints as *Opp*.
+Their accessible names stay the full ones. All seven tabs fit without scrolling from 600px.
+Reduced motion makes the scroll instant.
 
 ### 6A.13 Free agents and signings the roster file has not caught up with (ADR-102)
 
@@ -922,6 +930,116 @@ rank and rate) and **unavailable** ("—" with the reason; never a model or pres
   appearances, and names the season rank's population; when a snaps-only week makes the games
   counts differ it says so. Readouts:
   Season rank, Games played, Total points, Points per game, then the existing ones.
+
+### 6A.16 My Leagues (ADR-106)
+
+**The question: for my own leagues, who should start this week, what is weakest on my roster,
+and who is rising that I do not have?** The tab sits second: `ROS tiers · My Leagues · Start/Sit
+· …`. Up to three leagues are saved in this browser only. The section note says so, says
+nothing is uploaded or put in a link, and says that clearing site data removes them.
+
+#### 6A.16.1 Layout, top to bottom
+
+1. **Storage notices**, when there are any:
+   * *Not saved* — storage is blocked or full; the edit is kept on this page;
+   * *Saved by a newer version* — read-only;
+   * *Could not be read* — a backup was kept, or the store offers "Replace the unreadable
+     data";
+   * *Set aside* — leagues that could not be read;
+   * *Updated from an older version*;
+   * *Changed in another tab* — "Load the saved version".
+2. **The switcher.** One radio per league (arrow keys move, roving tab stop), then *League
+   settings* and *New league*. *New league* is disabled at three, with "Up to 3 leagues. Delete
+   one to add another."
+3. **The preset line.**
+   * `12-team PPR · 1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX · 5 bench · 2 IR · 2026 season`;
+   * *Open on 12-team PPR:* ROS tiers · Start/Sit · Trade · Opportunity;
+   * when the starters differ from the published preset, one sentence that published values,
+     ranks, tiers and startable lines assume 1 QB, 2 RB, 2 WR, 1 TE, 2 FLEX and are not
+     recomputed.
+
+   On this tab the global Scoring and Teams controls show the league's values, locked, with
+   "Set by **Office**. Edit the league to change its scoring or size." Position and search are
+   hidden: the workspace shows every slot.
+4. **Season and identity notes.** "Saved for the 2025 season" with *Mark as 2026*. Unresolved
+   ids are counted, and those players keep their slots.
+5. **The toolbar.** The *Rising Stars* checkbox, remembered per league, its one-line rule, and a
+   link to the evidence on the Opportunity Board.
+6. **Auto Start/Sit.** A *Maximise* segmented control: Median (default) · Floor · Ceiling, each
+   described as "of each starter". Then:
+   * *Your lineup* and *Best legal lineup* totals, each labelled "sum of individual medians
+     (not a team median or a win probability)";
+   * *Proposed changes*, one line per move with both players' values;
+   * *Slots that cannot be filled*, with reasons;
+   * *Players left in place* — locked, no line, unknown kickoff — with reasons;
+   * *Apply* and, after applying, *Undo*.
+
+   The target week and the build time are printed. Nothing changes until *Apply*.
+7. **The roster.** Groups QB, RB, WR, TE and FLEX, then DST and K disabled ("Not supported"),
+   Bench, and IR ("not started, not optimised"). Each slot is one row:
+   * slot name, player (name opens the card), position and team;
+   * one status line — opponent and kickoff, or bye, out, locked, no line;
+   * the chosen quantile;
+   * *Edit* or *Add*, labelled "Edit RB 1: Bijan Robinson" / "Add a player to RB 1";
+   * *Week*, a disclosure with the §6A.16.2 detail.
+
+   With Rising Stars on, each group has its *Rising* list beside it (≥1024px) or under it.
+8. **Improve.** *Find upgrades* loads and runs it, with "Searching…" while it works. Then:
+   * the rule;
+   * one block per need, tagged *This week* or *Roster need*, with the slot's standing;
+   * a bench move, if any;
+   * targets;
+   * packages, e.g. "Give A + B → receive C", "Median lineup 98.4 → 104.1 (+5.7; sum of
+     individual medians)", both sides' ROS values, the change in needs, and notes on extra
+     roster moves;
+   * a foot line — packages evaluated and rejected by reason, "hypothetical", ownership
+     unknown, and the rule version.
+
+   When nothing defensible exists, it says so.
+9. **The foot.** Projection model version (production; v2 in shadow), build time, ROS cutoff
+   and the lineup rule version.
+
+#### 6A.16.2 Dialogs and the week detail
+
+* **League settings** (create and edit):
+  * name;
+  * Scoring and Teams radios — presets this build did not publish are disabled;
+  * season;
+  * a stepper for each group, its bounds printed beside it; DST and K are listed as not
+    supported;
+  * *Delete league*, with a second confirmation.
+
+  A count reduced below its occupants lists them with *To Bench / To IR / Remove from roster*,
+  and *Save* stays disabled until every one is resolved.
+* **Slot dialog.**
+  * *Menu*: Replace, Move or swap (destinations with the reason any is refused), Remove, Open
+    player card, and Compare in Start/Sit.
+  * *Pick*: the shared player combobox. It searches the build's players by name, offers only
+    positions the slot accepts, and labels a rostered player "On roster · Bench 2". Choosing
+    one moves him rather than duplicating him.
+
+  Escape clears a search first, then closes. Focus starts in the picker and returns to the slot
+  on close.
+* **The week detail.** Week and opponent, with home, away or neutral and the ET kickoff; posted
+  total and team-implied points; floor · median · ceiling "given that he plays"; startable
+  chance against the published line; points allowed to the position and its rank; availability;
+  ROS positional rank; *Compare … in Start/Sit*; then "Why this week" (§6A.11). A bye says so
+  and shows no next game. A missing piece says what is missing.
+
+#### 6A.16.3 Responsive and access
+
+* **Desktop.** At ≥1024px, groups with a Rising list lay out in two columns.
+* **Phone.** Below 768px everything stacks: slot actions sit under the player, the week
+  detail's labels sit over their values, and the switcher spans the width with its options
+  wrapping.
+* **Touch.** Coarse pointers get 44px targets.
+* **Overflow.** No page-level horizontal overflow from 320px. Dialogs fit the viewport,
+  including at 390×600.
+* **Colour and motion.** No meaning depends on colour alone: every state is a word. Reduced
+  motion removes transitions.
+* **Checks.** `web/tests/e2e/leagues.spec.ts`, the My Leagues blocks in `a11y.spec.ts` and
+  `mobile.spec.ts`, and `capture-leagues.mjs` at 320, 390, 390×600, 768, 1024, 1280 and 1440
+  (`docs/visual-qa/2026-10-13-my-leagues/`).
 
 ## 7. Tables
 
@@ -1144,6 +1262,8 @@ Primary target too. Controls may wrap into two compact rows. Chart remains full-
   step aside because the chart above prints them (ADR-092)
 - the Start/Sit deck is two cards across (one below 360px), and the verdict, posture control,
   ridges and matrix stack in one column; the week board pins the name (ADR-096, §6A.11.3)
+- My Leagues stacks each slot's actions under the player and puts each Rising list under its
+  group; dialogs fit a 390×600 screen (ADR-106, §6A.16.3)
 - table uses essential columns and horizontal scroll or a compact row detail expander
 
 Do not create a completely separate mobile product.

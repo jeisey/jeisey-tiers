@@ -7912,8 +7912,36 @@ table.sheet.weekboard-table thead th.wb-num {
   display: flex;
 }
 
+/*
+ * Seven tabs (ADR-106) scroll on most phones, and Chromium clamps `scrollLeft` to whole pixels
+ * while the strip's width is fractional: scrolled to its end, the last tab overhung the strip by
+ * a fraction of a pixel and was never fully on screen. A little end padding, only while the
+ * strip actually overflows, so a row that fits is laid out exactly as before.
+ */
+.tabs-row[data-overflow-start] .tabs,
+.tabs-row[data-overflow-end] .tabs {
+  padding-inline-end: 2px;
+}
+
 .tab-label-short {
   display: none;
+}
+
+/* ADR-106: "My Leagues" prints as "Leagues" below 1024px, so seven tabs still fit a tablet. */
+@media (max-width: 1023px) {
+  .tab-short-tablet .tab-label-short {
+    display: inline;
+  }
+
+  .tab-short-tablet .tab-label-long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 559px) {

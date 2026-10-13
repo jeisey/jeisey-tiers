@@ -35,7 +35,8 @@ import {
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
-import { requiredKeys, type DataStore } from "../data/store";
+import { requiredKeys, risingKeys, type DataStore } from "../data/store";
+import { activeLeagueSnapshot, subscribeActiveLeague } from "../data/leagueSignal";
 import { selectWeekBoard, startableFor, toggleDuel } from "../data/duel";
 import {
   IN_SEASON_VIEWS,
@@ -76,6 +77,15 @@ const StartSitView = lazy(() =>
  */
 const TradeView = lazy(() => import("./TradeView").then((module) => ({ default: module.TradeView })));
 
+/**
+ * My Leagues (ADR-106): the reader's saved leagues, lineup, matchups, Improve and Rising Stars.
+ * Its view, editors, optimiser and stylesheet load only when the tab is opened; Improve's search
+ * loads later still, when it is run.
+ */
+const MyLeaguesView = lazy(() =>
+  import("./MyLeaguesView").then((module) => ({ default: module.MyLeaguesView })),
+);
+
 type LoadState =
   | { readonly status: "loading" }
   | { readonly status: "ready"; readonly store: DataStore }
@@ -88,7 +98,7 @@ type LoadState =
  */
 export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
-  const { state, setState } = useAppState();
+  const { state, setState, replaceState } = useAppState();
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -132,6 +142,7 @@ export function App({ now }: { readonly now?: Date } = {}): React.JSX.Element {
       store={load.store}
       state={state}
       setState={setState}
+      replaceState={replaceState}
       selectedPlayerId={selectedPlayerId}
       onSelect={onSelect}
       onCloseDetail={onCloseDetail}
@@ -161,6 +172,7 @@ function SiteBoard({
   store,
   state,
   setState,
+  replaceState,
   selectedPlayerId,
   onSelect,
   onCloseDetail,
@@ -169,6 +181,7 @@ function SiteBoard({
   readonly store: DataStore;
   readonly state: ReturnType<typeof useAppState>["state"];
   readonly setState: ReturnType<typeof useAppState>["setState"];
+  readonly replaceState: ReturnType<typeof useAppState>["replaceState"];
   readonly selectedPlayerId: string | null;
   readonly onSelect: (playerId: string) => void;
   readonly onCloseDetail: () => void;
@@ -181,18 +194,59 @@ function SiteBoard({
   );
   const mode = resolveMode(state.mode, store.rosMetadata?.season_state.product_mode ?? null);
   const view = resolveView(state.view, mode);
-  const leaguePreset = leaguePresetId(state.teams);
-  const scoring = SCORING_TO_PRESET[state.scoring];
+  // ADR-106: on My Leagues the active league's scoring and size are the ones in force. They
+  // decide which files load from the first render, and the URL is brought into step below so
+  // the controls, the card and every tab link afterwards carry the league's preset.
+  // The workspace publishes its active league once it has loaded (`data/leagueSignal`); until
+  // then no preset-specific file is fetched for it.
+  const published = useSyncExternalStore(subscribeActiveLeague, activeLeagueSnapshot, activeLeagueSnapshot);
+  const league = view === "myleagues" ? (published ?? null) : null;
+  const leagueKnown = view !== "myleagues" || published !== undefined;
+  const teams = league?.teams ?? state.teams;
+  const scoringValue = league?.scoring ?? state.scoring;
+  const leaguePreset = leaguePresetId(teams);
+  const scoring = SCORING_TO_PRESET[scoringValue];
+  useEffect(() => {
+    if (league === null) return;
+    if (state.scoring !== league.scoring || state.teams !== league.teams) {
+      replaceState({ scoring: league.scoring, teams: league.teams });
+    }
+  }, [league, state.scoring, state.teams, replaceState]);
+  const leagueFiles = leagueKnown && (view !== "myleagues" || league !== null);
   const viewKeys = useMemo(
-    () => requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: null }),
-    [store, view, leaguePreset, scoring],
+    () => requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: null, leagueFiles }),
+    [store, view, leaguePreset, scoring, leagueFiles],
   );
+  // Rising Stars' files: fetched when the active league shows it, never gating the lineup.
+  const risingOn = league?.rising === true;
+  const extraKeys = useMemo(
+    () => (risingOn ? risingKeys(store.manifest, leaguePreset, scoring).filter((key) => !viewKeys.includes(key)) : []),
+    [store, risingOn, leaguePreset, scoring, viewKeys],
+  );
+  // A failure belongs to the keys it was for, so switching leagues never shows a stale one.
+  const extraId = extraKeys.join(",");
+  const [extraFailure, setExtraFailure] = useState<{ readonly id: string; readonly error: Error } | null>(null);
+  useEffect(() => {
+    if (extraKeys.length === 0) return;
+    let cancelled = false;
+    store.ensure(extraKeys).catch((error: unknown) => {
+      if (!cancelled) {
+        setExtraFailure({ id: extraKeys.join(","), error: error instanceof Error ? error : new Error(String(error)) });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [store, extraKeys]);
+  const nameOf = useCallback((playerId: string) => store.nameFor(playerId), [store]);
+  const risingReady = risingOn && store.isLoaded(viewKeys) && store.isLoaded(extraKeys);
+  const risingBundle = risingReady ? store.inSeason([...viewKeys, ...extraKeys]) : null;
   const cardKeys = useMemo(
     () =>
       selectedPlayerId === null
         ? []
-        : requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: selectedPlayerId }),
-    [store, view, leaguePreset, scoring, selectedPlayerId],
+        : requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: selectedPlayerId, leagueFiles }),
+    [store, view, leaguePreset, scoring, selectedPlayerId, leagueFiles],
   );
   const [failure, setFailure] = useState<Error | null>(null);
   const [firstPaint, setFirstPaint] = useState(false);
@@ -228,6 +282,15 @@ function SiteBoard({
 
   return (
     <Board
+      leagueView={{
+        name: league?.name ?? null,
+        known: leagueKnown,
+        loadedFor: { scoring: scoringValue, teams },
+        risingBundle,
+        risingRequested: risingOn,
+        risingFailure: extraFailure?.id === extraId ? extraFailure.error : null,
+        nameOf,
+      }}
       index={index}
       inSeason={inSeason}
       degradations={store.degradations}
@@ -245,7 +308,23 @@ function SiteBoard({
   );
 }
 
+/** What My Leagues needs beyond an ordinary view's props (ADR-106). */
+interface LeagueViewInputs {
+  /** The active league's name while My Leagues is open, else null. */
+  readonly name: string | null;
+  /** The workspace has said which league is active (or that there is none). */
+  readonly known: boolean;
+  /** The bundle with Rising Stars' files, once they are loaded; null otherwise. */
+  /** The scoring and size the view's files were chosen for: a league is ready only on its own. */
+  readonly loadedFor: { readonly scoring: ScoringValue; readonly teams: TeamCount };
+  readonly risingBundle: InSeasonBundle | null;
+  readonly risingRequested: boolean;
+  readonly risingFailure: Error | null;
+  readonly nameOf: (playerId: string) => string | null;
+}
+
 function Board({
+  leagueView,
   index,
   inSeason,
   degradations,
@@ -260,6 +339,7 @@ function Board({
   card,
   cohorts,
 }: {
+  readonly leagueView: LeagueViewInputs;
   /**
    * The in-season bundle built from the card's own keys: the blocks and populations a card's
    * cohort strips place one player among (ADR-098). Null before kickoff.
@@ -563,7 +643,7 @@ function Board({
           <PanelToggle
             className="settings-toggle"
             label="Settings"
-            items={settingsSummary(state, inSeason !== null)}
+            items={settingsSummary(state, inSeason !== null, leagueView.name)}
             open={settingsOpen}
             controls="board-settings"
             onToggle={toggleSettings}
@@ -590,6 +670,7 @@ function Board({
               availableScoring={availableScoring}
               availableTeams={availableTeams}
               onRevealSearch={revealSearch}
+              league={view === "myleagues" ? leagueView.name : null}
             />
           </div>
           <ViewTabs
@@ -619,7 +700,7 @@ function Board({
             <AvailabilityContext.Provider
               value={inSeason !== null && IN_SEASON_VIEWS.includes(view) ? availabilityReader : null}
             >
-            {!panelReady && <PanelLoading failure={failure} />}
+            {!panelReady && view !== "myleagues" && <PanelLoading failure={failure} />}
             {panelReady && view === "tiers" && (
               <TiersView
                 index={index}
@@ -698,6 +779,35 @@ function Board({
                   }
                 >
                   <TradeView bundle={inSeason} state={state} onChange={setState} onSelect={onSelect} />
+                </Suspense>
+              ))}
+            {view === "myleagues" &&
+              (inSeason === null ? (
+                panelReady ? <NoInSeasonBundle /> : <PanelLoading failure={failure} />
+              ) : (
+                <Suspense
+                  fallback={
+                    <section className="section leagues" aria-busy="true">
+                      <p className="startsit-loading">Loading My Leagues…</p>
+                    </section>
+                  }
+                >
+                  <MyLeaguesView
+                    bundle={inSeason}
+                    ready={panelReady && leagueView.known}
+                    loadedFor={leagueView.loadedFor}
+                    failure={failure}
+                    risingBundle={leagueView.risingBundle}
+                    risingRequested={leagueView.risingRequested}
+                    risingFailure={leagueView.risingFailure}
+                    state={state}
+                    onChange={setState}
+                    onSelect={onSelect}
+                    nameOf={leagueView.nameOf}
+                    availableScoring={availableScoring}
+                    availableTeams={availableTeams}
+                    now={now}
+                  />
                 </Suspense>
               ))}
             {panelReady && view === "potw" &&

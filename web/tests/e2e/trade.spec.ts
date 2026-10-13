@@ -24,15 +24,16 @@ function packageNames(page: Page): Promise<string[]> {
 }
 
 test.describe("the tab", () => {
-  test("sits third and loads its own code and no data beyond the default view's", async ({ page }) => {
+  test("sits after Start/Sit and loads its own code and no data beyond the default view's", async ({ page }) => {
     await page.goto(IN_SEASON);
     await expect(page.getByRole("heading", { name: /Rest of season/ }).first()).toBeVisible();
     await page.waitForLoadState("networkidle");
     const requests: string[] = [];
     page.on("request", (request) => requests.push(new URL(request.url()).pathname));
     const tabs = page.getByRole("tablist", { name: "Board" }).getByRole("tab");
-    await expect(tabs.nth(2)).toHaveText("Trade");
-    await tabs.nth(2).click();
+    // Fourth since ADR-106 put My Leagues second.
+    await expect(tabs.nth(3)).toHaveText("Trade");
+    await tabs.nth(3).click();
     await expect(page).toHaveURL(/view=trade/);
     await expect(page.getByRole("heading", { name: "Trade targets" })).toBeVisible();
     await page.waitForLoadState("networkidle");

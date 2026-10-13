@@ -1,0 +1,332 @@
+{
+ "prefix": "/scenario/in-season/",
+ "roster": [
+  "gsis:00-0000009",
+  "gsis:00-0000001",
+  "gsis:00-0000016",
+  "gsis:00-0000012",
+  "gsis:00-0000006",
+  "gsis:00-0000007",
+  "gsis:00-0000017",
+  "gsis:00-0000010",
+  "gsis:00-0000002",
+  "gsis:00-0000011"
+ ],
+ "report": [
+  {
+   "screen": "workspace",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "improve-detail",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "picker",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "settings",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "empty-league",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "workspace",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "improve-detail",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "picker",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "settings",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "empty-league",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "workspace",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "improve-detail",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "picker",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "settings",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "empty-league",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "workspace",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "improve-detail",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "picker",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "settings",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "empty-league",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "workspace",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "improve-detail",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "picker",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "settings",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "empty-league",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "workspace",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "improve-detail",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "picker",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "settings",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "empty-league",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "workspace",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "improve-detail",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "picker",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "settings",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "activeTabVisible": true
+  },
+  {
+   "screen": "empty-league",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "activeTabVisible": true
+  }
+ ]
+}

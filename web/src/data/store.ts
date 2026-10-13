@@ -71,6 +71,23 @@ export interface NeedContext {
   readonly scoring: ScoringPreset;
   /** The open player card, or null. */
   readonly cardPlayerId: string | null;
+  /**
+   * My Leagues only (ADR-106): false until the workspace has named the active league's preset,
+   * and when there is no league. The view then loads no block or scoring file at all.
+   */
+  readonly leagueFiles?: boolean;
+}
+
+/**
+ * My Leagues' optional files (ADR-106): what Rising Stars reads, fetched only when a league has
+ * it switched on, and never gating the lineup — the workspace renders while these load. The
+ * same slices the Opportunity Board reads, so a reader who has opened that board pays nothing.
+ */
+export function risingKeys(manifest: Manifest, leaguePreset: string, scoring: ScoringPreset): readonly string[] {
+  const block = blockKey(leaguePreset, scoring);
+  return [`inseason_opportunity/${block}`, "player_usage/all", "behavior_trend_series/all"].filter(
+    (key) => key in manifest.files,
+  );
 }
 
 /** The same rule, spelled for the manifest's keys. Pure: the budget test calls it too. */
@@ -133,6 +150,19 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
       // ADR-100 §9: one block of the rest-of-season board — the slice the default in-season
       // view has already loaded — and nothing else.
       wanted.push(`ros_tiers/${block}`);
+      break;
+    case "myleagues":
+      if (context.leagueFiles === false) break;
+      // ADR-106: the active league's block and scoring only. The lineup and matchups read the
+      // week's projections and game-day context (Start/Sit's two files); the player search,
+      // ROS ranks and Improve read the block the default view already loaded; positions for
+      // players with no weekly or ROS row come from the season actuals.
+      wanted.push(
+        `weekly_projections/${context.scoring}`,
+        "weekly_context/all",
+        `ros_tiers/${block}`,
+        actuals,
+      );
       break;
   }
   if (context.cardPlayerId !== null) {
@@ -222,6 +252,11 @@ export class DataStore {
       }
     }
     this.degradations = degradations;
+  }
+
+  /** A player's name from the dictionary every slice resolves through, or null (ADR-106). */
+  nameFor(playerId: string): string | null {
+    return this.names?.[playerId] ?? null;
   }
 
   /** Published and readable by this build. */

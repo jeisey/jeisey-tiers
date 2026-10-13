@@ -10,8 +10,9 @@
  * Loaded lazily with its engine: a reader who never opens the tab never downloads either.
  */
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 
+import { PlayerCombobox, type ComboOption } from "../components/PlayerCombobox";
 import { AvailabilityBadge, Notice, PositionTag, SectionHead, Segmented } from "../components/primitives";
 import type { Availability } from "../data/availability";
 import type { RosTierRecord } from "../data/contracts";
@@ -591,7 +592,8 @@ function GiveBox({
 
 /**
  * The outgoing-player search: a combobox over the block's published rows, best fair rank
- * first, at most eight suggestions. The full list is the ROS board, one tab away.
+ * first, at most eight suggestions. The full list is the ROS board, one tab away. The control
+ * itself is the shared `PlayerCombobox` (also My Leagues' slot picker, ADR-106).
  */
 function PlayerPicker({
   records,
@@ -606,106 +608,35 @@ function PlayerPicker({
   readonly onPick: (id: string) => void;
   readonly availabilityOf: (id: string) => Availability;
 }): React.JSX.Element {
-  const id = useId();
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
-  const input = useRef<HTMLInputElement>(null);
-  const options = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (needle === "") return [];
-    const out: RosTierRecord[] = [];
-    for (const record of records) {
-      if (exclude.includes(record.player_id)) continue;
-      const hay = `${record.display_name} ${record.team ?? ""} ${record.position}`.toLowerCase();
-      if (!hay.includes(needle)) continue;
-      out.push(record);
-      if (out.length >= 8) break;
-    }
-    return out;
-  }, [records, exclude, query]);
-
-  const pick = (record: RosTierRecord | undefined): void => {
-    if (record === undefined) return;
-    onPick(record.player_id);
-    setQuery("");
-    setOpen(false);
-    input.current?.focus();
-  };
-  const expanded = open && options.length > 0;
+  const search = useCallback(
+    (query: string): ComboOption[] => {
+      const needle = query.trim().toLowerCase();
+      const out: ComboOption[] = [];
+      for (const record of records) {
+        if (exclude.includes(record.player_id)) continue;
+        const hay = `${record.display_name} ${record.team ?? ""} ${record.position}`.toLowerCase();
+        if (!hay.includes(needle)) continue;
+        out.push({
+          id: record.player_id,
+          name: record.display_name,
+          position: record.position,
+          availability: availabilityOf(record.player_id),
+          meta: `${record.team ?? "FA"} · ${formatValue(record.ros_expected_vorp)}`,
+        });
+        if (out.length >= 8) break;
+      }
+      return out;
+    },
+    [records, exclude, availabilityOf],
+  );
   return (
-    <div className="trade-picker">
-      <label className="visually-hidden" htmlFor={id}>
-        Add a player you would give
-      </label>
-      <input
-        ref={input}
-        id={id}
-        type="search"
-        role="combobox"
-        aria-expanded={expanded}
-        aria-controls={`${id}-list`}
-        aria-autocomplete="list"
-        aria-activedescendant={expanded ? `${id}-opt-${String(active)}` : undefined}
-        autoComplete="off"
-        spellCheck={false}
-        disabled={full}
-        placeholder={full ? `Up to ${String(MAX_GIVE)} players` : "Add a player you'd give"}
-        value={query}
-        onChange={(event) => {
-          setQuery(event.target.value);
-          setActive(0);
-          setOpen(true);
-        }}
-        onBlur={() => {
-          setOpen(false);
-        }}
-        onFocus={() => {
-          setOpen(true);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "ArrowDown") {
-            event.preventDefault();
-            setOpen(true);
-            setActive((value) => Math.min(value + 1, Math.max(0, options.length - 1)));
-          } else if (event.key === "ArrowUp") {
-            event.preventDefault();
-            setActive((value) => Math.max(value - 1, 0));
-          } else if (event.key === "Enter") {
-            if (expanded) {
-              event.preventDefault();
-              pick(options[active]);
-            }
-          } else if (event.key === "Escape") {
-            if (query !== "" || open) {
-              event.preventDefault();
-              setQuery("");
-              setOpen(false);
-            }
-          }
-        }}
-      />
-      <ul id={`${id}-list`} role="listbox" className="trade-options" hidden={!expanded} aria-label="Players">
-        {options.map((record, index) => (
-          <li
-            key={record.player_id}
-            id={`${id}-opt-${String(index)}`}
-            role="option"
-            aria-selected={index === active}
-            onMouseDown={(event) => {
-              // Before the input's blur closes the list.
-              event.preventDefault();
-              pick(record);
-            }}
-          >
-            <PositionTag position={record.position} />
-            <span className="trade-option-name">{record.display_name}</span>
-            <AvailabilityBadge availability={availabilityOf(record.player_id)} />
-            <span className="trade-option-meta">{`${record.team ?? "FA"} · ${formatValue(record.ros_expected_vorp)}`}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <PlayerCombobox
+      label="Add a player you would give"
+      placeholder={full ? `Up to ${String(MAX_GIVE)} players` : "Add a player you'd give"}
+      disabled={full}
+      search={search}
+      onPick={onPick}
+    />
   );
 }
 

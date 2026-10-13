@@ -2185,3 +2185,79 @@ Owner review of the merged change (PR #62) on the live site found four problems:
       waits for one request per rendered image, then asserts the same ≤ 4 bound: 30 of 30 pass.
 - [x] **Docs**: ADR-105 amendment, UX_SPEC §6A.15, DATA_CONTRACTS §23.3.
 - [x] **Validation**: see SESSION_STATE.
+
+## My Leagues — 2026-10-13 (ADR-106)
+
+The owner asked for a workspace where a reader saves up to three leagues in their browser, enters
+their own roster, and gets the week's best lineup, matchup detail, upgrade ideas and rising
+players. The site stays free, static and login-free. The request authorises browser-local
+persistence and configurable starter counts (PRD CR-028; CR-001 and A4 revised).
+
+- [x] **Storage contract** (`leagueContract.ts`, `leagueStore.ts`, `leagueOps.ts`).
+      - Versioned `jeisey-tiers.my-leagues` v1 under a base-path-scoped key, with a three-league
+        cap. Only compact settings and ids are stored, and ids are resolved on every visit.
+      - Strict validation; set-aside leagues and malformed payloads are backed up before any
+        write. A future version is read-only, and a migration registry is tested with a
+        synthetic step.
+      - Unavailable or full storage keeps edits in memory and shows "Not saved".
+      - Per-league revisions refuse stale cross-tab edits, `storage` events propagate, and a tab
+        with unsaved edits offers "Load the saved version". Only edits write.
+      - Season-old leagues and unresolved ids are kept, with an explanation.
+- [x] **League setup** (`SettingsDialog`, `roster.ts`, `SlotDialog`, `PlayerCombobox`).
+      - Create, rename, switch, edit and delete. Published scoring and team presets only.
+      - Starter, bench and IR counts within bounds; DST and K are shown as not supported.
+      - Add, replace, remove, move and swap by click or tap, with slot eligibility and one
+        assignment per player per league.
+      - An overflow must be resolved before the settings save. Incomplete rosters are allowed.
+      - The Trade picker was extracted as a shared accessible combobox.
+- [x] **Auto Start/Sit** (`lineup.ts`, `lineup_assignment_v1`).
+      - An exact Hungarian assignment over starters and bench under a lexicographic integer
+        objective, with Median, Floor or Ceiling of `weekly-startsit-v1`.
+      - Locks by build state and clock. Byes, out, doubtful, reserve and other-week records are
+        excluded; Q and uncertain players are "if active". Unknown data is pinned, and IR is
+        never read.
+      - A proposal with changes, gaps and pinned players. Apply is explicit and undoable, and a
+        reload or mode change never rewrites the lineup.
+      - The total is labelled a sum of individual quantiles.
+- [x] **Week detail** per slot:
+      - opponent, venue, kickoff and lines;
+      - q10/q50/q90 and the startable chance;
+      - defense vs position;
+      - availability and ROS rank;
+      - "Why this week", with the card link and *Compare in Start/Sit* prefilled.
+- [x] **Improve** (`improve.ts`, `improve_v1`, lazy).
+      - Slot-relative weekly and rest-of-season needs, temporary vs roster, with preset-based
+        benchmarks labelled.
+      - The bench first, then eligible off-roster targets.
+      - Trade-engine-priced packages from the reader's roster, each re-optimised. Packages are
+        rejected for room, moved holes, or not fixing the need without creating another.
+      - Before/after lineup and ROS values are printed separately.
+      - Bounded and memoised. It says when nothing defensible exists.
+- [x] **Rising Stars** (`rising.ts`, `rising_stars_v1`).
+      - The Opportunity Board's role AND momentum predicates, minus the roster and the
+        availability block.
+      - Single positions are ordered by the published change. FLEX uses a snap-share-only
+        comparator (`flexRoleMagnitudeOrder`), and `compareRole`'s mixed-position guard is
+        unchanged.
+      - Per-league toggle. Missing signals say so.
+- [x] **Navigation and shell.**
+      - The tab sits after ROS tiers and reads "Leagues" below 1024px; the tab row re-reveals
+        the active tab when it starts overflowing.
+      - The league's preset is in force, with the controls locked and labelled.
+      - A tiny signal module keeps the store out of the entry bundle.
+      - Lazy workspace, Improve and CSS chunks. A league is drawn only on its own preset's files.
+- [x] **Budgets** (`verify-budget.mjs`): My Leagues +80 kB, Rising Stars +130 kB, Improve
+      +12 kB, a new preset +95 kB, repeat switching 0 B, and a cold link 450/150 kB. All are
+      measured, with no existing budget changed (ADR-106 Evidence, OPERATIONS §17.3).
+- [x] **Interaction measurement** (`measure-leagues.mjs`). Two fixes came out of it: a cached
+      Rising Stars pool, and one shared formatter in `easternIsoDate`.
+- [x] **Tests.**
+      - Vitest: storage (25), lineup with an exhaustive oracle (16), Rising Stars (10),
+        Improve (14), UI (9).
+      - Playwright: 10 My Leagues flows; a11y and phone checks; seven-tab fit; one
+        cross-engine smoke test (storage across a reload, the dialog's focus, the `:has()`
+        layout).
+      - `capture-leagues.mjs` screens at 320–1440 and 390×600.
+- [x] **Docs.** ADR-106, PRD CR-028 (CR-001, A2 and A4 revised), UX_SPEC §6A.16 (tab order
+      lines), ARCHITECTURE §3.2/§10/§14, OPERATIONS §17.3, DATA_CONTRACTS §24, README.
+- [x] **Validation**: see SESSION_STATE.

@@ -198,6 +198,7 @@ export class InSeasonBundle {
   /** Whether season actuals can be read for this build, and why not (ADR-105). */
   readonly actualsAvailability: ActualsAvailability;
   private readonly actualsByScoringPlayer: ReadonlyMap<string, SeasonActualsRow>;
+  private readonly actualsRows: readonly SeasonActualsRow[];
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
@@ -205,8 +206,9 @@ export class InSeasonBundle {
       input.metadata.season_actuals,
       input.actualsPublished ?? (input.actuals !== null && input.actuals !== undefined),
     );
+    this.actualsRows = input.actuals ?? [];
     this.actualsByScoringPlayer = new Map(
-      (input.actuals ?? []).map((row) => [`${row.scoring_preset}|${row.player_id}`, row]),
+      this.actualsRows.map((row) => [`${row.scoring_preset}|${row.player_id}`, row]),
     );
     this.statusByPlayer = new Map((input.status ?? []).map((record) => [record.player_id, record]));
     this.opportunityDegradation = input.opportunityDegradation;
@@ -352,6 +354,11 @@ export class InSeasonBundle {
   /** One player's season-actuals record in one scoring preset, or null. */
   actualsFor(scoring: ScoringPreset, playerId: string): SeasonActualsRow | null {
     return this.actualsByScoringPlayer.get(`${scoring}|${playerId}`) ?? null;
+  }
+
+  /** Every loaded season-actuals row for one scoring preset (ADR-106: positions by id). */
+  actualsRowsFor(scoring: ScoringPreset): readonly SeasonActualsRow[] {
+    return this.actualsRows.filter((row) => row.scoring_preset === scoring);
   }
 
   /** One player's season standing, in the three states `data/actuals` defines. */

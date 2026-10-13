@@ -20,6 +20,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { stubPortraits } from "./boundary";
+import { IN_SEASON, OFFICE, seed } from "./leagues-seed";
 
 /*
  * No test in this repository reaches a third party. The player card fetches its portrait from
@@ -228,6 +229,50 @@ test("serves correctly from the project Pages base path", async ({ page }) => {
  * introduces one through a transition on a control, and that the preference is honoured
  * rather than merely unneeded.
  */
+/**
+ * My Leagues (ADR-106) leans on three things the engines implemented at different times:
+ * `localStorage` across a reload, the native modal `<dialog>` its slot picker opens in, and
+ * the `:has()` rule that sets a lineup group beside its Rising list. One flow touches all
+ * three; the behaviour itself is proved in `leagues.spec.ts`.
+ */
+test("My Leagues keeps an applied lineup, and its slot dialog holds and returns focus", async ({ page }) => {
+  await seed(page, [{ ...OFFICE, rising: true }]);
+  await page.goto(`${IN_SEASON}?view=myleagues`);
+  const best = page.locator(".lg-auto-none");
+  await page.getByRole("button", { name: /^Apply \d+ change/ }).click();
+  await expect(best).toHaveText("Your lineup is already the best legal lineup for the median.");
+  await page.reload();
+  await expect(best).toHaveText("Your lineup is already the best legal lineup for the median.");
+
+  // A group with a Rising list sits beside it on a desktop.
+  const group = page.locator('.lg-group[data-group="QB"]');
+  await expect(group.locator(".lg-rising")).toBeVisible();
+  const [slots, aside] = await Promise.all([
+    group.locator(".lg-slot").first().boundingBox(),
+    group.locator(".lg-rising").boundingBox(),
+  ]);
+  expect(slots !== null && aside !== null && aside.x >= slots.x + slots.width).toBe(true);
+
+  const add = page.getByRole("button", { name: /^Add a player to Bench/ }).first();
+  await add.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("combobox")).toBeFocused();
+  for (let i = 0; i < 8; i += 1) {
+    await page.keyboard.press("Tab");
+    const where = await page.evaluate(() => {
+      const open = document.querySelector("dialog[open]");
+      const active = document.activeElement;
+      if (open === null) return "no dialog";
+      if (active === null || active === document.body) return "browser chrome";
+      return open.contains(active) ? "inside" : `escaped to ${active.tagName}.${active.className}`;
+    });
+    expect(where, `after ${String(i + 1)} tabs`).toMatch(/^(inside|browser chrome)$/);
+  }
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(add).toBeFocused();
+});
+
 test.describe("reduced motion", () => {
   test("nothing animates when the viewer asks for less motion", async ({ page }) => {
     // Emulated on the page rather than declared with `test.use`, so the assertion is about
