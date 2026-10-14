@@ -29,6 +29,14 @@
  * | then switching among the three saved leagues again | 0 B |
  * | a cold first visit straight to My Leagues — everything | ≤ 450 kB |
  * | a cold first visit straight to My Leagues — data | ≤ 150 kB |
+ * | showing the Skill Tree (ADR-107) on an open card adds | ≤ 25 kB |
+ * | then hiding and showing it, or reopening that player's tree | 0 B |
+ * | then another player's tree, at another position | ≤ 10 kB |
+ *
+ * The Skill Tree's budgets are separate from the card's on purpose: opening a card fetches none
+ * of it (that is `cardAdds`, unchanged), and its code, stylesheet and two data files — his
+ * position's definitions and his bucket's readings — load only when a reader asks for them.
+ * Measured on the size model and a live week-5 build plus a margin (ADR-107 records both).
  *
  * My Leagues' budgets are its measured cost on the size model plus a margin (ADR-106 records the
  * numbers). Opening it reads the week's projections Start/Sit reads, so it costs about what
@@ -78,6 +86,9 @@ export const BUDGETS = {
   leagueSwitchRepeat: 0,
   myLeaguesFirstVisitTotal: 450_000,
   myLeaguesFirstVisitData: 150_000,
+  skillTreeAdds: 25_000,
+  skillTreeRepeat: 0,
+  skillTreeSwitch: 10_000,
 };
 
 function parseArgs(argv) {
@@ -274,6 +285,71 @@ try {
   await settle(cardPage);
   check("cardAdds", sum(cardLog.since(mark)), BUDGETS.cardAdds);
   await other.close();
+
+  // 3f. The Skill Tree (ADR-107), in a browser of its own: a card opened from the default view
+  //     (the card's own cost is `cardAdds` above and must not change), then the tree shown,
+  //     hidden and shown, the card closed and reopened, a player at another position, and the
+  //     first player again. Only a reader's request fetches anything, and nothing twice.
+  try {
+    const climber = await browser.newContext();
+    const treePage = await newPage(climber);
+    const treeLog = record();
+    await openDefault(treePage);
+    const rows = treePage.locator("table.sheet tbody tr[data-player]");
+    const openRow = async (index) => {
+      await rows.nth(index).locator(".player-name").first().click();
+      await treePage.getByRole("dialog").waitFor();
+      await settle(treePage);
+    };
+    const cardPosition = async () =>
+      (await treePage.getByRole("dialog").locator(".pos-tag").first().getAttribute("data-pos")) ?? "";
+    const showTree = async () => {
+      const before = treeLog.mark();
+      await treePage.getByRole("dialog").getByRole("button", { name: "Show skill tree" }).click();
+      await treePage.getByRole("dialog").getByRole("group", { name: /skill tree/ }).waitFor();
+      await settle(treePage);
+      return treeLog.since(before);
+    };
+    const closeCard = async () => {
+      await treePage.keyboard.press("Escape");
+      await treePage.getByRole("dialog").waitFor({ state: "hidden" });
+    };
+    await openRow(0);
+    const first = await showTree();
+    check("skillTreeAdds", sum(first), BUDGETS.skillTreeAdds);
+    results.skillTreeAddsData = sum(first, isData);
+    results.skillTreeAddsFiles = first.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+
+    mark = treeLog.mark();
+    await treePage.getByRole("dialog").getByRole("button", { name: "Hide skill tree" }).click();
+    await showTree();
+    await closeCard();
+    await openRow(0);
+    await showTree();
+    check("skillTreeRepeat", sum(treeLog.since(mark)), BUDGETS.skillTreeRepeat);
+
+    // Another player whose position differs from the first one's (cards opened to find him are
+    // the card's cost, not the tree's, and fall before the mark).
+    const firstPosition = await cardPosition();
+    await closeCard();
+    for (let other = 1; other < 60; other += 1) {
+      await openRow(other);
+      if ((await cardPosition()) !== firstPosition) break;
+      await closeCard();
+    }
+    const second = await showTree();
+    check("skillTreeSwitch", sum(second), BUDGETS.skillTreeSwitch);
+    results.skillTreeSwitchFiles = second.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+    await closeCard();
+    mark = treeLog.mark();
+    await openRow(0);
+    await showTree();
+    results.skillTreeReturn = sum(treeLog.since(mark));
+    if (results.skillTreeReturn > 0) failures.push(`returning to the first player's tree fetched ${String(results.skillTreeReturn)} B`);
+    await climber.close();
+  } catch (error) {
+    failures.push(`the Skill Tree scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
+  }
 
   // 3a. Reported, not budgeted: a cold first visit straight to a shared Trade link.
   const trader = await browser.newContext();

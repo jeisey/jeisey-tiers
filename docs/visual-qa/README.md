@@ -138,3 +138,32 @@ through week 4, Half PPR, 12 teams, QB filter) assembled with the live draft art
 week board and the unprojected list with genuine actuals beside "No RoS projection".
 `web/tests/e2e/actuals.spec.ts` measures the lane at 1440, 390 and 320 px (marks inside the lane,
 triangle below square, words inside the row, no page overflow) and scans the board and card.
+
+## 2026-10-14 — the Skill Tree (ADR-107)
+
+`2026-10-14-skill-tree/`, captured by `capture-skilltree.mjs`, each screen measured
+(`measurements.json`): document overflow, any tree element outside the tree, a cut-off label,
+value or standing, a tree wider than its dialog, a clipped tab, and the branch-column count.
+
+- `fixture/` — the in-season fixture build. Each of the four trees at 1440×1000 (`qb`, `rb`,
+  `wr`, `te`), the sparse receiver (`sparse-wr`: four games, readings below their minimums and
+  not covered by Next Gen Stats), RB at 1280×900, WR at 1280×640, TE at 1024×900, QB at
+  768×1024, RB at 390×844, WR at 390×600 and QB at 320×800. Each has a `-tree` screen (the
+  section's top) and a `-detail` screen (one node's detail open; on a phone it opens under the
+  node). `no-tree-card-1440x1000` is the card from a build with no tree. 25 screens, 0 problems.
+- `real/` — a live `build-ros` of 2026-10-14 (nflverse through week 5, PPR, 12 teams)
+  assembled with the live draft artifacts: Josh Allen (QB), Bijan Robinson (RB), Jaxon
+  Smith-Njigba (WR) and Trey McBride (TE) at 1440, Bijan Robinson at 390 and Josh Allen at 320;
+  Pat Bryant (WR, four games) as the sparse player. 14 screens, 0 problems.
+
+Two defects were found this way and fixed before commit: node labels broke mid-word in the
+four-column card (the kind tag now ends the meter row), and on a phone a detail opened below its
+branch, off screen (it now opens under the node). A sixth card tab also widened the card at
+320px; the tab row now keeps every label whole and never widens the card (UX_SPEC §6A.17).
+
+```bash
+node web/tests/e2e/capture-skilltree.mjs docs/visual-qa/<date>/fixture
+E2E_BASE_URL=http://localhost:<port> node web/tests/e2e/capture-skilltree.mjs docs/visual-qa/<date>/real \
+  --prefix /jeisey-tiers/ --screens real --players "QB,RB,WR,TE,sparse player"
+```
+

@@ -133,6 +133,14 @@ export async function prepare(): Promise<void> {
       ...fixtures.inSeasonFixtureFiles(true, { signals: "absent" }),
     },
     /*
+     * In season, from a build that published no Skill Tree (an older deploy, or a failed
+     * enrichment, ADR-107): the card has no Skill Tree section and nothing else changes.
+     */
+    "in-season-no-skill-tree": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(true, { skillTree: "absent" }),
+    },
+    /*
      * The *other* market condition, as its own site.
      *
      * `MARKET_CONDITIONS` exists because Phase 8 found every market-sensitive test written
