@@ -43,6 +43,9 @@ export const RECORD_SCHEMA_VERSIONS = {
   weekly_context: "1.0",
   // ADR-105: season-to-date actuals and positional ranks over the whole population.
   season_actuals: "1.0",
+  // ADR-107: the Skill Tree's readings and definitions.
+  player_skill_tree: "1.0",
+  skill_tree_definitions: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -65,7 +68,9 @@ export type ArtifactName =
   | "team_matchups"
   | "weekly_projections"
   | "weekly_context"
-  | "season_actuals";
+  | "season_actuals"
+  | "player_skill_tree"
+  | "skill_tree_definitions";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -1629,6 +1634,154 @@ export interface SeasonActualsMetadata {
   };
 }
 
+/** ADR-107's seven reading states. A missing value is never 0 and a 0 is never missing. */
+export type SkillState =
+  | "ranked"
+  | "below_minimum"
+  | "small_cohort"
+  | "no_opportunity"
+  | "not_covered"
+  | "unavailable"
+  | "no_appearances";
+
+/**
+ * One player's reading of one Skill Tree metric, `skill_tree_v1` (ADR-107).
+ *
+ * Descriptive context: read by no model, ranking or decision surface, and never combined into
+ * a score. `value` is the published reading (rates and shares are fractions); `numerator` and
+ * `denominator` are its sample; `rank` and `percentile` exist only when `state` is `ranked`.
+ */
+export interface PlayerSkillMetricRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly player_id: string;
+  readonly position: Position;
+  readonly metric_id: string;
+  readonly state: SkillState;
+  readonly value: number | null;
+  readonly numerator: number | null;
+  readonly denominator: number | null;
+  readonly rank: number | null;
+  readonly percentile: number | null;
+  readonly cohort_size: number | null;
+  readonly games: number;
+  readonly source_season: number | null;
+  readonly reason: string | null;
+}
+
+export const PLAYER_SKILL_METRIC_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "player_id",
+  "position",
+  "metric_id",
+  "state",
+  "value",
+  "numerator",
+  "denominator",
+  "rank",
+  "percentile",
+  "cohort_size",
+  "games",
+  "source_season",
+  "reason",
+] as const satisfies readonly (keyof PlayerSkillMetricRecord)[];
+
+/** What one Skill Tree metric is at one position. Every word the tree prints comes from here. */
+export interface SkillTreeDefinitionRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly method_version: string;
+  readonly position: Position;
+  readonly metric_id: string;
+  readonly role: "presence" | "node" | "detail" | "archive";
+  readonly branch_id: string | null;
+  readonly branch_label: string | null;
+  readonly branch_order: number | null;
+  readonly order: number;
+  readonly parent_metric_id: string | null;
+  readonly label: string;
+  readonly short_label: string;
+  readonly kind: "volume" | "share" | "rate" | "context";
+  readonly direction: "higher" | "lower" | "neutral";
+  readonly unit: "count" | "fraction" | "pp" | "yards" | "epa" | "seconds";
+  readonly decimals: number;
+  readonly source_id: string;
+  readonly source_label: string;
+  readonly source_fields: readonly string[];
+  readonly formula: string;
+  readonly numerator_label: string | null;
+  readonly denominator_label: string | null;
+  readonly minimum: number | null;
+  readonly minimum_unit: string | null;
+  readonly cohort_rule: string;
+  readonly definition: string;
+  readonly interpretation: string;
+  readonly limitations: string;
+  readonly window: string;
+  readonly source_status: "published" | "unavailable";
+  readonly source_reason: string | null;
+}
+
+export const SKILL_TREE_DEFINITION_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "method_version",
+  "position",
+  "metric_id",
+  "role",
+  "branch_id",
+  "branch_label",
+  "branch_order",
+  "order",
+  "parent_metric_id",
+  "label",
+  "short_label",
+  "kind",
+  "direction",
+  "unit",
+  "decimals",
+  "source_id",
+  "source_label",
+  "source_fields",
+  "formula",
+  "numerator_label",
+  "denominator_label",
+  "minimum",
+  "minimum_unit",
+  "cohort_rule",
+  "definition",
+  "interpretation",
+  "limitations",
+  "window",
+  "source_status",
+  "source_reason",
+] as const satisfies readonly (keyof SkillTreeDefinitionRecord)[];
+
+/** The build's account of its Skill Tree (ADR-107), carried in the manifest. */
+export interface SkillTreeMetadata {
+  readonly method_version: string;
+  readonly status: "published" | "failed";
+  readonly reason?: string | null;
+  readonly season?: number;
+  readonly through_week?: number;
+  readonly window?: string;
+  readonly population?: Readonly<Record<"QB" | "RB" | "WR" | "TE", number>>;
+  readonly minimum_cohort?: number;
+  readonly ngs_published?: boolean;
+  readonly sources?: Readonly<Record<string, { readonly status: string; readonly reason: string | null }>>;
+  readonly reasons?: Readonly<Record<string, string>>;
+  readonly statement?: string;
+}
+
 export interface RosBuildMetadata {
   readonly schema_version: string;
   readonly build_id: string;
@@ -1674,6 +1827,8 @@ export interface RosBuildMetadata {
   readonly weekly?: RosWeeklyMetadata | null;
   /** Season-to-date actuals (ADR-105). Absent, null or withheld: actuals are unavailable. */
   readonly season_actuals?: SeasonActualsMetadata | null;
+  /** The Skill Tree (ADR-107). Absent or null: the card has no Skill Tree section. */
+  readonly skill_tree?: SkillTreeMetadata | null;
   readonly disclosures: RosDisclosures;
   readonly limitations: readonly string[];
   readonly supported_presets: readonly string[];
@@ -1824,6 +1979,16 @@ export const SEASON_ACTUALS_FIELDS_COMPLETE: NoMissingKeys<
   typeof SEASON_ACTUALS_FIELDS
 > = true;
 
+export const PLAYER_SKILL_METRIC_FIELDS_COMPLETE: NoMissingKeys<
+  PlayerSkillMetricRecord,
+  typeof PLAYER_SKILL_METRIC_FIELDS
+> = true;
+
+export const SKILL_TREE_DEFINITION_FIELDS_COMPLETE: NoMissingKeys<
+  SkillTreeDefinitionRecord,
+  typeof SKILL_TREE_DEFINITION_FIELDS
+> = true;
+
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
@@ -1840,6 +2005,8 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   weekly_projections: WEEKLY_PROJECTION_FIELDS,
   weekly_context: WEEKLY_CONTEXT_FIELDS,
   season_actuals: SEASON_ACTUALS_FIELDS,
+  player_skill_tree: PLAYER_SKILL_METRIC_FIELDS,
+  skill_tree_definitions: SKILL_TREE_DEFINITION_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -1858,6 +2025,8 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   weekly_projections: "weekly_projections.json",
   weekly_context: "weekly_context.json",
   season_actuals: "season_actuals.json",
+  player_skill_tree: "player_skill_tree.json",
+  skill_tree_definitions: "skill_tree_definitions.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

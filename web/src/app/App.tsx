@@ -35,7 +35,7 @@ import {
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
-import { requiredKeys, risingKeys, type DataStore } from "../data/store";
+import { requiredKeys, risingKeys, type DataStore, type SkillTreeSource } from "../data/store";
 import { activeLeagueSnapshot, subscribeActiveLeague } from "../data/leagueSignal";
 import { selectWeekBoard, startableFor, toggleDuel } from "../data/duel";
 import {
@@ -269,6 +269,8 @@ function SiteBoard({
   const index = store.boardIndex(viewKeys);
   const inSeason = store.inSeason(viewKeys);
   const cohorts = store.inSeason(cardKeys);
+  // ADR-107: built once per store; nothing loads until a reader opens the tree.
+  const skillTree = useMemo(() => store.skillTreeSource(), [store]);
   // A shard is immutable once loaded, so the card's records are fixed by these inputs.
   const card = useMemo(
     () =>
@@ -304,6 +306,7 @@ function SiteBoard({
       failure={failure}
       card={card}
       cohorts={cohorts}
+      skillTree={skillTree}
     />
   );
 }
@@ -338,8 +341,11 @@ function Board({
   failure,
   card,
   cohorts,
+  skillTree,
 }: {
   readonly leagueView: LeagueViewInputs;
+  /** The Skill Tree's on-demand loader (ADR-107), or null when the build published none. */
+  readonly skillTree: SkillTreeSource | null;
   /**
    * The in-season bundle built from the card's own keys: the blocks and populations a card's
    * cohort strips place one player among (ADR-098). Null before kickoff.
@@ -862,6 +868,7 @@ function Board({
         onClose={onCloseDetail}
         onOpenData={openData}
         onCompare={inSeason?.hasWeekly === true ? onCompare : undefined}
+        skillTree={skillTree}
       />
     </>
   );

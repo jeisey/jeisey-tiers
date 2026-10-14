@@ -34,7 +34,7 @@ const CARD_BUCKETS = 64;
 const FAMILIES: readonly {
   readonly name: string;
   readonly artifact: string;
-  readonly partition: "block" | "scoring" | "all";
+  readonly partition: "block" | "scoring" | "all" | "bucket" | "position";
   readonly only?: readonly string[];
 }[] = [
   { name: "tiers", artifact: "tiers", partition: "block" },
@@ -87,6 +87,9 @@ const FAMILIES: readonly {
     only: ["player_id", "position", "touchdown_points_share", "pass_epa_per_dropback"],
   },
   { name: "player_headshots", artifact: "player_headshots", partition: "all" },
+  // ADR-107: fetched only when a reader opens the Skill Tree.
+  { name: "skill_tree", artifact: "player_skill_tree", partition: "bucket" },
+  { name: "skill_tree_definitions", artifact: "skill_tree_definitions", partition: "position" },
   {
     name: "season_actuals",
     artifact: "season_actuals",
@@ -133,10 +136,21 @@ const FILENAMES: Readonly<Record<string, string>> = {
   team_matchups: "team_matchups.json",
   weekly_projections: "weekly_projections.json",
   season_actuals: "season_actuals.json",
+  player_skill_tree: "player_skill_tree.json",
+  skill_tree_definitions: "skill_tree_definitions.json",
 };
 
-function partitionKey(record: Record<string, unknown>, partition: "block" | "scoring" | "all"): string | null {
+function partitionKey(
+  record: Record<string, unknown>,
+  partition: "block" | "scoring" | "all" | "bucket" | "position",
+): string | null {
   if (partition === "all") return "all";
+  if (partition === "bucket") {
+    return typeof record.player_id === "string"
+      ? String(bucketOf(record.player_id, CARD_BUCKETS)).padStart(2, "0")
+      : null;
+  }
+  if (partition === "position") return typeof record.position === "string" ? record.position : null;
   if (partition === "scoring") return typeof record.scoring_preset === "string" ? record.scoring_preset : null;
   if (typeof record.league_preset_id !== "string" || typeof record.scoring_preset !== "string") return null;
   return `${record.league_preset_id}.${record.scoring_preset}`;
