@@ -26,8 +26,9 @@ NFLREADPY_CACHE=filesystem NFLREADPY_CACHE_DIR=/tmp/nflcache \
     --current 2026 --cutoff-week 5 --history 2023 2024 2025 --out docs/experiments/skill-tree-2026-10-14
 ```
 
-`--check-artifact <player_skill_tree.json>` re-derives sampled players from a built artifact
-with this file's independent formulas (ADR-107 validation; see the bottom of this file).
+`--check-artifact <player_skill_tree.json>` re-derives every reading of a built artifact with
+this file's independent formulas and writes `artifact_check.json` (ADR-107 validation; see the
+bottom of this file).
 
 ## 1. Evidence base
 
@@ -236,6 +237,21 @@ cases. Highlights:
 
 ## 6. Production cross-check
 
-After ADR-107 was implemented, `eda.py --check-artifact` re-derived every published node for
-sampled players from the raw loaders with this file's formulas; the result is recorded in
-`artifact_check.json` and summarised in ADR-107's Evidence.
+After ADR-107 was implemented, `eda.py --check-artifact` re-derived **every** published reading
+of a live build (`2026w05-intrinsic-ros-v1-20261014T204200Z`) from the raw loaders with this
+file's own tables. For each reading it compared the value at its published precision, the
+numerator and denominator, the games, and the state the sample implies (no opportunity, below
+minimum or ranked). Next Gen Stats readings were checked against the week-0 summary's own
+column, and combine readings against the combine file's forty and year. Result
+(`artifact_check.json`):
+
+* 12,161 readings for 646 players were compared, with **0 mismatches**.
+* No appearing QB/RB/WR/TE is missing from the artifact.
+* **1 explained difference.** D.J. Moore's snap share is published as not covered, while this
+  script ranks it. His snap rows carry the PFR id `MoorD.00`, which the shared id normaliser
+  refuses because of the period, so production cannot link them. Production's reading
+  ("unknown, not zero") is the honest one. Widening the shared rule changes model inputs, so it
+  is tracked separately (registry `known_issues.pfr_id_with_period_refused`).
+
+The first run also caught the check's own assumption: published samples are rounded to three
+places. The check now compares at that precision.

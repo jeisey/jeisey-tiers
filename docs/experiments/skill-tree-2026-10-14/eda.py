@@ -15,7 +15,7 @@ Run (network; ~2-4 minutes with a warm cache)::
 
 Every candidate metric is computed here *independently* of the production module
 (``ffdraft.signals.skilltree``): plain Polars over the raw loader frames. ``--check-artifact``
-recomputes sampled players from a built ``player_skill_tree.json`` and reports any difference,
+recomputes every reading of a built ``player_skill_tree.json`` and reports any difference,
 which is how the production numbers were cross-checked.
 """
 
@@ -1388,6 +1388,206 @@ EXAMPLES: Mapping[str, Sequence[str]] = {
 }
 
 
+# ------------------------------------------------------------------ artifact cross-check
+
+#: Next Gen Stats summary columns each published NGS metric copies (week 0, REG).
+NGS_COLUMNS = {
+    "avg_time_to_throw": ("passing", "avg_time_to_throw"),
+    "rush_yards_over_expected_per_att": ("rushing", "rush_yards_over_expected_per_att"),
+    "avg_separation": ("receiving", "avg_separation"),
+    "avg_cushion": ("receiving", "avg_cushion"),
+    "yac_over_expected": ("receiving", "avg_yac_above_expectation"),
+}
+
+
+def check_artifact(loaders: Any, path: Path) -> dict[str, Any]:
+    """Recompute a built ``player_skill_tree.json`` from this script's own tables.
+
+    The production module and this script share only the column vocabulary the ADR names
+    (``att``, ``team_rz_tgt``...): every number here comes from ``player_table`` above, plain
+    Polars over the loader frames. For each published reading with a value, its value,
+    numerator, denominator, games and state must match; a Next Gen Stats reading must equal the
+    week-0 summary's own column and a combine reading the combine file's forty. Ranks are not
+    rechecked here: ``validate-artifacts`` re-derives every rank from the published values.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
+    from ffdraft.signals.skilltree_catalog import CATALOG, minimum_for
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    records = payload["records"]
+    season = int(records[0]["season"])
+    through = int(records[0]["through_week"])
+    frames = load_season(loaders, season)
+    bridge = pfr_bridge([frames.roster], loaders.load_players())
+    table = add_derived(player_table(frames, bridge, list(range(1, through + 1))))
+    rows = {str(row["gsis"]): row for row in table.iter_rows(named=True)}
+
+    summaries: dict[str, dict[str, dict[str, Any]]] = {}
+    for kind, frame in frames.ngs.items():
+        if "error" in frame.columns:
+            continue
+        week0 = frame.filter((pl.col("week") == 0) & (pl.col("season_type") == "REG"))
+        summaries[kind] = {str(r["player_gsis_id"]): r for r in week0.iter_rows(named=True)}
+    combine = loaders.load_combine().filter(pl.col("pfr_id").is_not_null())
+    forty_of = {
+        bridge[str(r["pfr_id"])]: r
+        for r in combine.iter_rows(named=True)
+        if str(r["pfr_id"]) in bridge and r["forty"] is not None
+    }
+
+    # A player with no snap-count row in any game has an unknown snap share, not a zero one:
+    # ``player_table`` fills a missing row with 0 snaps, so the check names those players.
+    snap_rows = frames.snaps.filter(
+        (pl.col("game_type") == "REG") & (pl.col("week") <= through)
+    ).with_columns(
+        pl.col("pfr_player_id")
+        .map_elements(lambda v: bridge.get(str(v)), return_dtype=pl.String)
+        .alias("gsis")
+    )
+    with_snap_row = set(snap_rows["gsis"].drop_nulls().to_list())
+    # Production refuses a malformed id before any join (``ffdraft.identity.normalize_id``). A
+    # snap share it withholds for that reason is explained, not wrong, and is listed apart.
+    from ffdraft.identity.ids import IdNamespace, normalize_id
+
+    refused_pfr = {
+        str(gsis)
+        for pfr, gsis in snap_rows.select("pfr_player_id", "gsis").drop_nulls().iter_rows()
+        if normalize_id(IdNamespace.PFR, pfr).value is None
+    }
+    explained: list[dict[str, Any]] = []
+
+    compared: dict[str, int] = {}
+    mismatches: list[dict[str, Any]] = []
+    unchecked: dict[str, int] = {}
+
+    def miss(record: Mapping[str, Any], field: str, published: Any, expected: Any) -> None:
+        mismatches.append(
+            {
+                "player_id": record["player_id"],
+                "metric_id": record["metric_id"],
+                "field": field,
+                "published": published,
+                "expected": expected,
+            }
+        )
+
+    def close(a: float | None, b: float | None, decimals: int) -> bool:
+        if a is None or b is None:
+            return a is b
+        return abs(a - b) <= 0.5 * 10 ** (-decimals) + 1e-9
+
+    for record in records:
+        metric_id = record["metric_id"]
+        gsis = str(record["player_id"]).removeprefix("gsis:")
+        row = rows.get(gsis)
+        state = record["state"]
+        if state == "no_appearances":
+            compared["no_appearances"] = compared.get("no_appearances", 0) + 1
+            if row is not None and row["games"] > 0:
+                miss(record, "state", state, f"{int(row['games'])} games")
+            continue
+        if row is None:
+            miss(record, "games", record["games"], "no appearance in this script's table")
+            continue
+        if int(record["games"]) != int(row["games"]):
+            miss(record, "games", record["games"], int(row["games"]))
+        if metric_id in NGS_COLUMNS:
+            kind, column = NGS_COLUMNS[metric_id]
+            summary = summaries.get(kind, {}).get(gsis)
+            if record["value"] is None:
+                if summary is not None and state == "not_covered":
+                    miss(record, "state", state, "a week-0 summary row exists")
+            elif summary is None:
+                miss(record, "value", record["value"], "no week-0 summary row")
+            elif not close(record["value"], _num(summary[column]), CATALOG[metric_id].decimals):
+                miss(record, "value", record["value"], _round(_num(summary[column]), 4))
+            compared[metric_id] = compared.get(metric_id, 0) + 1
+            continue
+        if metric_id == "combine_forty":
+            entry = forty_of.get(gsis)
+            if record["value"] is not None:
+                if entry is None or not close(record["value"], _num(entry["forty"]), 2):
+                    miss(
+                        record, "value", record["value"], None if entry is None else entry["forty"]
+                    )
+                elif record["source_season"] != entry["season"]:
+                    miss(record, "source_season", record["source_season"], entry["season"])
+            compared[metric_id] = compared.get(metric_id, 0) + 1
+            continue
+        metric = CATALOG.get(metric_id)
+        if metric is None or metric.num is None or metric.num not in row:
+            unchecked[metric_id] = unchecked.get(metric_id, 0) + 1
+            continue
+        num = float(row[metric.num])
+        if metric.den is None:
+            if not close(record["value"], num, metric.decimals):
+                miss(record, "value", record["value"], num)
+        else:
+            den = float(row[metric.den])
+            # Published samples are integers or rounded to three places (EPA and yards).
+            if record["denominator"] is not None and not close(record["denominator"], den, 3):
+                miss(record, "denominator", record["denominator"], den)
+            if record["numerator"] is not None and not close(record["numerator"], num, 3):
+                miss(record, "numerator", record["numerator"], num)
+            expected = None if den == 0 else num / den
+            if state in ("ranked", "below_minimum", "small_cohort") and not close(
+                record["value"], expected, metric.decimals
+            ):
+                miss(record, "value", record["value"], _round(expected, 6))
+            minimum = minimum_for(record["position"], metric)
+            sample = float(row["games"]) if metric.minimum_unit == "games" else den
+            want = (
+                "not_covered"
+                if metric.den == "team_snaps" and gsis not in with_snap_row
+                else "no_opportunity"
+                if den == 0
+                else "below_minimum"
+                if minimum is not None and sample < minimum
+                else "ranked"
+            )
+            if (
+                state == "not_covered"
+                and record["reason"] == "no_snap_rows"
+                and want != state
+                and gsis in refused_pfr
+            ):
+                explained.append(
+                    {
+                        "player_id": record["player_id"],
+                        "metric_id": metric_id,
+                        "published": state,
+                        "this_script": want,
+                        "why": "his snap rows carry a PFR id ffdraft.identity.normalize_id "
+                        "refuses (a period in the id), so production cannot link them",
+                    }
+                )
+            elif state != want and not (want == "ranked" and state == "small_cohort"):
+                miss(record, "state", state, want)
+        compared[metric_id] = compared.get(metric_id, 0) + 1
+
+    published = {str(r["player_id"]).removeprefix("gsis:") for r in records}
+    missing = sorted(
+        g
+        for g, r in rows.items()
+        if r["pos"] in POSITIONS and r["games"] > 0 and g not in published
+    )
+    return {
+        "artifact": path.name,
+        "build_id": records[0]["build_id"],
+        "season": season,
+        "through_week": through,
+        "records": len(records),
+        "players": len(published),
+        "readings_compared": sum(compared.values()),
+        "compared_by_metric": dict(sorted(compared.items())),
+        "unchecked_by_metric": dict(sorted(unchecked.items())),
+        "appearing_players_missing_from_artifact": missing,
+        "mismatches": len(mismatches),
+        "first_mismatches": mismatches[:50],
+        "explained_differences": explained,
+    }
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
     parser.add_argument("--current", type=int, default=2026)
@@ -1396,9 +1596,28 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--early-weeks", type=int, default=5)
     parser.add_argument("--recent-window-week", type=int, default=8)
     parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parent)
+    parser.add_argument(
+        "--check-artifact",
+        type=Path,
+        default=None,
+        help="recompute a built player_skill_tree.json and write artifact_check.json to --out",
+    )
     args = parser.parse_args(argv)
 
     loaders = _loaders()
+    if args.check_artifact is not None:
+        check = check_artifact(loaders, args.check_artifact)
+        check["generated_at_utc"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        args.out.mkdir(parents=True, exist_ok=True)
+        (args.out / "artifact_check.json").write_text(
+            json.dumps(check, indent=1, default=str) + "\n", encoding="utf-8"
+        )
+        print(json.dumps({k: check[k] for k in ("records", "readings_compared", "mismatches")}))
+        return (
+            0
+            if check["mismatches"] == 0 and not check["appearing_players_missing_from_artifact"]
+            else 1
+        )
     players = loaders.load_players()
     result: dict[str, Any] = {
         "generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),

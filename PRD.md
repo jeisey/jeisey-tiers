@@ -152,6 +152,19 @@ These hold for every feature, current or future.
       minus the roster.
   * **Limits.** Superflex, custom scoring, DST and K are not supported. Ownership in the reader's
     league is unknown, and every trade idea is hypothetical.
+- **CR-029 Skill Tree.** An in-season player-card section that shows a QB's, RB's, WR's or TE's
+  season so far as a position-specific tree of statistics (`skill_tree_v1`, ADR-107): four
+  branches, 13–14 nodes. Each node is an official total or a pooled rate over his
+  regular-season games through the board's cutoff, with its sample. When qualified, it also shows
+  a competition-ranked percentile among his position's qualified players. Next Gen Stats season
+  summaries are used where they reconcile, and a historical combine 40 is labelled as such.
+  * **Descriptive only.** No model, value, rank, tier or decision reads it; there is no overall
+    rating or branch score; zero, missing, unranked and unavailable readings stay distinct.
+  * **Lazy.** Opening a card fetches nothing new; the tree loads on its button (desktop) or tab
+    (phone) under its own measured budget, and the ≤ 30 kB card budget is unchanged.
+  * **Deferred.** Per-route metrics (no live route source), FTN charting (CC-BY-SA, ADR-086), PFR
+    advanced stats, a recent-game window (measured worse than season to date) and any
+    current-speed claim.
 
 ## A4. Current non-goals
 

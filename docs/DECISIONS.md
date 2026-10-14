@@ -6993,14 +6993,15 @@ ids, or a GSIS id with two combine rows, has no plaque (fail closed).
   the branches reflow vertically; nothing shrinks to fit and nothing needs pinch zoom.
 * **A node** = a bronze octagonal frame around a position-specific football glyph, the label,
   the value in the card's mono numerals with its unit, a short sample line, a kind tag
-  (VOL/SHARE/RATE/CTX), and a five-segment meter for its percentile (segment *k* lit for
+  (VOL/SHARE/RATE/CTX, at the end of the meter row — amended), and a five-segment meter for its percentile (segment *k* lit for
   percentiles ≥ 20(k − 1); the 80–100 segment glows). ↓ metrics are already direction-adjusted.
   ○ context metrics draw a position marker on a neutral track instead of a fill and say "deeper
   than 72% of qualified WRs", never "better". Unranked readings draw an empty dashed track with
   the reason in words. **Unavailable / not covered / no opportunity** use a neutral dashed frame,
   a desaturated glyph and the state in words — never a lock, never a low meter.
 * **Selection.** Tap, click, Enter or Space selects a node; an inline detail area (below the
-  tree; below the branch on a phone) gives the definition, value, numerator ÷ denominator or
+  tree; directly under the node on a phone — amended after the build, see *Evidence*) gives the
+  definition, value, numerator ÷ denominator or
   sample, rank and percentile in its cohort when qualified, window, source and fields, formula,
   limitations, and the node's detail metrics with their own samples and ranks. The selected
   branch's connectors light from the trunk to that node — a reading path, not a progression.
@@ -7019,3 +7020,109 @@ ids, or a GSIS id with two combine rows, has no plaque (fail closed).
   unchanged. A new **Skill tree activation** budget (code, styles, definitions and one shard)
   and a **player switch** budget are set from measurement on the size model plus a margin, as
   ADR-106 did, and gated in CI; a repeat activation costs 0 B.
+
+### Evidence (after the build, 2026-10-14)
+
+**Implementation.**
+* Python:
+  * `ffdraft.signals.skilltree_catalog` holds the trees, definitions and minimums;
+    `ffdraft.signals.skilltree` holds the play universes, pooling, cohorts, ranks and states.
+  * `ffdraft.sources.nextgen` adds three Next Gen Stats adapters with recorded live schemas.
+  * `ffdraft.artifacts.skilltree_checks` is the validator, wired into `validate-artifacts`.
+  * `pipeline/ros.py` loads play-by-play once for drive breadth and the tree.
+  * `artifacts/serving.py` adds the `bucket` and `position` partitions.
+  * Two schemas: `player_skill_metric` and `skill_tree_definition`.
+* Frontend:
+  * `data/skilltree.ts` (view model); `app/SkillTree.tsx`, `app/skillTreeGlyphs.tsx` and
+    `styles/skilltree.css` (lazy chunk and stylesheet);
+  * `DataStore.skillTreeSource` (hash-checked, cached, outside `requiredKeys`);
+  * a `PlayerDetail` section with the desktop button and the phone tab.
+
+**Unchanged outputs.** The fixture build's artifacts are byte-identical to before the change,
+apart from the two new artifacts, the manifest and `ros_build_metadata.json`'s new block. That
+covers `tiers`, `arbitrage`, `projections`, `ros_tiers`, `inseason_opportunity`, `player_usage`,
+`weekly_projections`, `weekly_context` and `season_actuals`. The import firewall (Python and
+TypeScript) keeps every model, board and decision module away from the tree.
+
+**Real data** (live `build-ros`, 2026-10-14, cutoff week 5, with the live draft artifacts):
+* Quality gate: 0 critical. The 4 warnings are the known operational ones (no Sleeper or
+  behaviour capture without the store; tier stability; convergence).
+* Volume: 12,161 readings for 646 players (526 appearing — QB 58, RB 131, WR 210, TE 127 — and
+  120 board players without an appearance). Every source was published: 13,054 plays; Next Gen
+  Stats through week 5 (37 / 42 / 118 summary rows), with 0 volume mismatches and 197 players
+  covered; 304 combine-linked players.
+* Validation: `validate-artifacts --require-serving` passes with 0 critical and 0 warnings.
+  `verify:board` on the real site passes with 0 failures.
+* Independent cross-check: `eda.py --check-artifact` re-derived **all 12,161 readings** from the
+  raw loaders. It found 0 mismatches and no appearing player missing, plus 1 explained
+  difference: D.J. Moore's snap share. His PFR id `MoorD.00` contains a period that the shared
+  id normaliser refuses, so production publishes "not covered" where the script, which bridges
+  raw ids, ranks him. The shared rule also feeds model features, so it was left alone, recorded
+  (registry `known_issues.pfr_id_with_period_refused`) and proposed as a separate task.
+* Store: the served tree is 64 shards totalling 157.6 kB gzip (largest 4.3 kB) plus 4
+  definition files (largest 4.2 kB).
+
+**Tests.**
+* Python: 37 new tests. 29 are hand-computed builder cases: formulas and pooled weighting,
+  play universes (kneels, spikes, two-point tries), REG/POST and the cutoff, trades, NGS
+  coverage and the summary-only rule (weekly rows present and never summed), identity
+  collisions (combine and snap bridges fail closed), sparse and small cohorts, tie and
+  direction rules, every state, source failures, the core-font rule and reason sentences. The
+  other 8 are pipeline and serving round trips (5 and 3). The NGS adapters were added to the
+  contract tests. Laterals need no rule of their own: nflverse credits them to the original
+  player, and official totals are kept as published (EDA §2).
+* Vitest: 16 new (view model, component, card integration, and the TypeScript side of the
+  import firewall).
+* Playwright: 24 new (`skilltree.spec.ts`): four trees, sparse player, keyboard, focus ring,
+  Escape and focus return, phone tab with touch, player switch, lazy requests, the no-tree
+  build, geometry at eight sizes, axe and reduced motion.
+
+**Payload** (size model, gating; real build report-only in brackets).
+
+| path | measured | budget |
+|---|---:|---:|
+| showing the tree | 16.5 kB [16.6] | 25 kB |
+| a repeat (hide/show, reopen) | 0 B [0] | 0 B |
+| another player at another position | 6.6 kB [7.6] | 10 kB |
+| card open | 23.9 kB [23.6], unchanged | 30 kB |
+
+Start/Sit, Trade and every My Leagues path are unchanged. The first visit grew 2.5 kB: the
+entry bundle +1.7 kB, and the manifest +1.5 kB for the two families and this block (only the
+reason sentences a build uses are carried).
+
+**Interaction** (`measure-skilltree.mjs`; Pixel 7, size model, real taps, Event Timing).
+
+| | 4× CPU | 1× CPU |
+|---|---:|---:|
+| card's own tab switch (baseline, non-first), median · range | 168 · 144–336 ms | 56 · 40–104 ms |
+| node detail | 184–248 ms | 56–64 ms |
+| cold activation: tap · tree on screen | 184 · 727 ms | 40 · 398 ms |
+| repeat activation: tap · tree | 328 · 393 ms | 56 · 86 ms |
+| another player's tree: tap · tree | 544–720 · 828–1,072 ms | 120–152 · 174–215 ms |
+| fresh card's first tap on its own tab (baseline for the line above) | 592–672 ms | 152–248 ms |
+| heap growth over four six-player cycles | +65 kB | +79 kB |
+
+A node tap costs about 1.2–1.3× a card tab switch. The first tap in any freshly opened card is
+slow whichever tab it lands on: a 0.75 s long task between touch and click at 4×, the same
+without the tree. That is a property of the card, recorded as a separate observation.
+
+**Amendments made during the build.** Each was measured, and none changed a definition.
+1. **Detail placement.** On a phone, the detail opens directly under its node. Below the branch,
+   it opened off screen.
+2. **Kind tag.** The tag ends the meter row. In the corner it forced labels to break mid-word
+   in the four-column card.
+3. **Formulas in core-font characters** (`sum(...)`, `/`, `<=`, `>=`), with a test. A `÷` in a
+   formula downloaded a second font file mid-tap, measured at 2 s on the throttled phone.
+4. **Reason sentences.** The metadata carries only the sentences a build uses, and the
+   validator requires one for every published reason.
+5. **No store notification.** The store does not notify its subscribers when Skill Tree files
+   arrive. Notifying re-rendered the whole board behind the card, doubling cold and switch
+   times.
+6. **Rendering.** The tree caches built views per player, renders an arrived view in a
+   transition, and memoises its nodes (one render per tap).
+7. **Six-tab card row.** The card's tab row keeps every label whole (`min-width: min-content`)
+   and tightens below 380px. A sixth tab had widened the card by 26px at 320px; the row is now
+   measured clean from 320 to 767px.
+8. **Snap-row reason.** The no-snap-row sentence names both causes: no row, or a row whose PFR
+   id could not be linked.
+

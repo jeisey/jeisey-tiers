@@ -1069,3 +1069,48 @@ withholds the drive-breadth blocks only. ADR-104 reads `qb_scramble` as well, to
 quarterback's designed runs (a rush it does not flag). Measured 2026-10-06: never null on a
 regular-season rush attempt in 2020–2024 or 2026; scrambles 863 / 910 / 905 / 1,035 / 1,062
 (2020–2024) and 243 of 3,421 rush attempts in 2026 weeks 1–4.
+
+## 22. Skill Tree sources — probed 2026-10-14 (ADR-107)
+
+Everything here is read through the cached, retrying loader (`nflverse_loaders`) during
+`build-ros`, reduced at once to per-player aggregates, and published only as those aggregates;
+no raw row is committed or served. The evidence, dictionaries and reconciliations are in
+`docs/experiments/skill-tree-2026-10-14/` (`README.md`, `sources.md`, `report.md`).
+
+**Weekly player stats and snap counts** — the frames every in-season build already loads (the
+weekly adapter now also keeps `receiving_yards_after_catch`). Official totals are summed over a
+player's games; `passing_cpoe` is a per-week mean and is never pooled (CPOE comes from
+play-by-play). Snap counts are keyed by PFR id and bridged to GSIS through nflverse's own pairs
+(fail closed); team snaps per game are the highest-share player's snaps ÷ share.
+
+**Play-by-play** — loaded once per build and shared with drive breadth (ADR-103/104), with the
+extra columns the tree needs (`epa`, `cpoe`, `air_yards`, `receiving_yards`, `rushing_yards`,
+`complete_pass`). Reconciled 2023–2026 for every player: dropbacks = attempts + sacks, targets
+= official targets, non-kneel carries = carries − kneels. Every completed REG game through the
+cutoff must be present, else the play-by-play readings are withheld for the build. 2026 weeks
+1–5: 13,054 skill plays.
+
+**Next Gen Stats** (`load_nextgen_stats`, passing / rushing / receiving; new adapters
+`NflverseNextGen*Adapter`, contract `NEXTGEN_STATS_CONTRACT`, recorded live schemas in
+`tests/fixtures/source_schemas/nflverse_nextgen_*_2026.schema.json`). Week 0 is the
+season-to-date summary for NGS's qualifying population; weekly rows cover qualifying weeks only
+and are never summed. Read only when the file's REG weeks end exactly at the cutoff and a
+player's NGS volume is within one of his official volume. Columns read: time to throw, rush
+yards over expected per attempt, separation, cushion, YAC above expectation. Licensing: no
+NGS-specific licence; nflverse's broadly CC-BY 4.0 data with the NFL as owner, attributed "NFL
+Next Gen Stats via nflverse"; `NGS_PUBLISHED` removes the readings. Optional: any failure marks
+the NGS readings unavailable and nothing else.
+
+**Combine** (`load_combine`, already loaded by the feature pipeline). The raw file supplies every
+tester since 2000 for the same-position percentile; a player's time is linked by PFR id → GSIS
+only. Historical, dated, never called speed.
+
+**Not used** (EDA §4): `load_participation` (refuses 2026; FTN-supplied after the season, CC-BY-SA
+4.0) — so no per-route metric; FTN charting (CC-BY-SA, ADR-086); PFR advanced stats (terms not
+reviewed); NGS CPOE and aggressiveness (a second CPOE model; niche).
+
+**Known identity gap.** A PFR id containing a period (D.J. Moore, `MoorD.00`) is refused by
+`normalize_id`, so his snap rows never bridge; the tree publishes his snap share as not covered.
+Registry `known_issues.pfr_id_with_period_refused`; the fix touches model inputs and is tracked
+separately.
+

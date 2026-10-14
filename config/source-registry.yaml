@@ -219,6 +219,11 @@ sources:
       # no model reads it.
       - weekly_decision_model_input
       - injury_report_context
+      # ADR-107. The Skill Tree: season-to-date player stats, snap counts and play-by-play
+      # reduced to per-player pooled readings, three Next Gen Stats season-summary columns per
+      # file and the combine 40 (historical, dated). Published descriptive context, read by no
+      # model; no raw row is committed or served.
+      - inseason_skill_tree_context
     verified_loaders:
       load_players: {rows: 25040}
       load_ff_playerids: {rows: 12472, gsis_id_coverage: 0.64, mfl_id_coverage: 1.0}
@@ -241,7 +246,35 @@ sources:
       load_snap_counts_2026: {"weeks_1_2": 2994}
       # Probed live 2026-10-06 for ADR-103 (dictionary: nflreadr data-raw/dictionary_pbp.csv).
       load_pbp: {"2024": 49492, "2026_weeks_1_4_eligible_plays": 7770}
+      # Probed live 2026-10-14 for ADR-107 (cutoff week 5; dictionaries quoted in
+      # docs/experiments/skill-tree-2026-10-14/sources.md). Week 0 is the season summary.
+      load_pbp_2026_skill_plays: {"weeks_1_5": 13054}
+      load_nextgen_stats_2026_week0: {passing: 37, rushing: 42, receiving: 118, last_week: 5}
     known_issues:
+      - id: nextgen_summary_only
+        detail: >-
+          ADR-107. load_nextgen_stats weekly rows exist only for weeks a player met NGS's own
+          qualifier (about 72% of WR and 59% of TE targets in 2026), so summing them misstates a
+          season; only the week-0 REG season summary is read, and only when the file's REG weeks
+          end exactly at the board's cutoff and the player's NGS volume is within one of his
+          official volume (2023-2026: equal for every passer, all but one rusher, within one
+          target for every receiver). There is no NGS-specific licence: nflverse distributes it
+          under its broadly CC-BY 4.0 data with the NFL as owner, the posture of every NFL
+          statistic the site publishes; only per-player season aggregates are published,
+          attributed "NFL Next Gen Stats via nflverse", and one constant (NGS_PUBLISHED) removes
+          them. Recorded for owner review.
+      - id: participation_refuses_2026
+        detail: >-
+          ADR-107. load_participation answered "Season must be between 2016 and 2025" on
+          2026-10-14: the routes feed is FTN-supplied after the season (CC-BY-SA 4.0), so no
+          live route denominator exists and per-route metrics are deferred.
+      - id: pfr_id_with_period_refused
+        detail: >-
+          Found 2026-10-14 by the ADR-107 cross-check: some PFR ids contain a period (D.J.
+          Moore, "MoorD.00", in the player master, rosters and snap counts alike), and
+          ffdraft.identity.normalize_id refuses them as malformed, so those snap rows never
+          bridge. The Skill Tree publishes his snap share as not covered (never zero); the
+          shared rule also feeds model features, so widening it is a separate, measured change.
       - id: depth_chart_schema_break_2025
         detail: >-
           Pre-2025 depth charts are weekly rows (season/club_code/week/depth_team/

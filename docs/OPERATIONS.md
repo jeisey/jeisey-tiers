@@ -1322,6 +1322,29 @@ loader (for drive breadth); both are inputs it already had access to.
   check that Sleeper reports the club (`player_status.json`: `employment_source`); the
   official roster file catches up on its own and the same canonical player is updated.
 
+### 16.12 The Skill Tree (ADR-107)
+
+No workflow changed. `build-ros` builds the tree after every board, from the frames it already
+loaded — play-by-play is now loaded **once** and shared with drive breadth — plus the three Next
+Gen Stats files and the raw combine file through the cached nflverse loader. It publishes
+`player_skill_tree.json`, `skill_tree_definitions.json` and `ros_build_metadata.skill_tree`;
+`package-site-data` serves them as `skill_tree/<bucket>` and `skill_tree_definitions/<position>`.
+
+- `ros.skill_tree_failed` (build warning): the builder raised. Both artifacts are withheld, the
+  metadata block says `failed`, the card has no Skill tree section, and every board, value and
+  rank is unchanged. Re-run after the cause is fixed; nothing else depends on it.
+- A source that fails or is incomplete does not fail the build. Its readings publish as
+  `unavailable` with the reason in `ros_build_metadata.skill_tree.sources` (and on the card):
+  a scheduled team-week missing from the weekly stats or snap counts, a completed game missing
+  from play-by-play, a Next Gen Stats file that does not end exactly at the cutoff, or an
+  unreadable combine file. The next refresh recovers on its own.
+- `validate-artifacts` fails the deploy on any `player_skill_tree.*`,
+  `skill_tree_definitions.inconsistent` or `ros_build_metadata.skill_tree_*` check (they are
+  internal-consistency checks: a failure is a code defect, not a data outage).
+- Never edit a reading by hand. `docs/experiments/skill-tree-2026-10-14/eda.py --check-artifact`
+  recomputes every published reading from the raw loaders independently of the builder and
+  names any difference.
+
 ## 17. Serving the site under load (ADR-098)
 
 ### 17.1 How GitHub Pages serves this site — verified 2026-09-30
@@ -1404,6 +1427,9 @@ revalidates at once), bytes counted at the server:
 | then a saved league on a preset not yet loaded adds | ≤ 95 kB |
 | then switching among the three saved leagues again | 0 B |
 | a cold first visit straight to My Leagues — everything · data | ≤ 450 kB · ≤ 150 kB |
+| showing the Skill Tree on an open card (ADR-107) adds | ≤ 25 kB |
+| then hiding and showing it, or reopening that player's tree | 0 B |
+| then another player's tree, at another position | ≤ 10 kB |
 
 and that a redeploy which renames a player is shown at once to a reader holding the old files.
 
@@ -1471,6 +1497,30 @@ and that a redeploy which renames a player is shown at once to a reader holding 
 
   ADR-106 records the measurements. Re-run it when the optimiser, Improve or Rising Stars
   changes.
+
+* **ADR-107 added the Skill Tree's budgets** and changed no existing one. Opening a card
+  fetches none of it; the tree's code, stylesheet, the position's definitions and the player's
+  bucket shard load only on *Show skill tree* (or the phone's tab). Measured on the size model
+  (2026-10-14; counts from the live week-5 build: 646 players, 120 without an appearance):
+
+  | scenario | measured | budget |
+  |---|---:|---:|
+  | showing the tree on an open card | 16.5 kB (7.5 code, 2.5 CSS, 4.2 definitions, 2.2 shard) | 25 kB |
+  | hiding and showing it, closing and reopening that player | 0 B | 0 B |
+  | another player's tree at another position | 6.6 kB (4.1 definitions, 2.5 shard) | 10 kB |
+  | the first player's tree again | 0 B | — |
+
+  Existing paths: the card (23.9 kB), Start/Sit, Trade and every My Leagues path are unchanged;
+  the first visit grew 2.5 kB (entry bundle +1.7 kB for the section, store and contract code;
+  manifest +1.5 kB for the two families and the metadata block). On the real week-5 build
+  (report-only): showing the tree 16.6 kB, a switch 7.6 kB, a repeat 0 B, the card 23.6 kB.
+* **The Skill Tree's interaction cost** is measured by `node web/tests/e2e/measure-skilltree.mjs`
+  (Pixel 7, CPU throttled 4×, the size model; real taps; latency from the browser's Event Timing
+  entries). It is a diagnostic, not a CI gate, and measures the card's own tabs in the same run as
+  the baseline. Targets: every tap within 200 ms or the card's own slowest tab switch; a fresh
+  card's first tap within 1.25× the same first tap on one of the card's own tabs; time to tree
+  1.5 s cold, 0.5 s repeat, and a switch within that first tap plus 0.5 s; heap growth < 1 MB.
+  ADR-107 records the measurements.
 
 ### 17.4 Bandwidth arithmetic (re-do it when the numbers move)
 
