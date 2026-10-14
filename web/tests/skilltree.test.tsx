@@ -15,6 +15,9 @@
  * * **every node works by keyboard**: arrows move, Enter opens, Close returns focus.
  */
 
+import { readFileSync, readdirSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
+
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -89,6 +92,50 @@ function playerAt(position: string): string {
   );
   return required(row, `a ${position} with games`).player_id;
 }
+
+// ------------------------------------------------------------------------ firewall
+
+describe("the firewall (ADR-107)", () => {
+  const SRC = resolve(__dirname, "../src");
+  function sources(directory: string): string[] {
+    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) return sources(path);
+      return /\.(ts|tsx)$/.test(entry.name) ? [path] : [];
+    });
+  }
+  const files = sources(SRC).map((path) => ({
+    name: relative(SRC, path).split("\\").join("/"),
+    text: readFileSync(path, "utf-8"),
+  }));
+
+  it("keeps every model, board and decision module away from the tree", () => {
+    // The card's wiring and the tree itself; nothing else may so much as name it.
+    const allowed = new Set([
+      "app/App.tsx",
+      "app/PlayerDetail.tsx",
+      "app/SkillTree.tsx",
+      "app/skillTreeGlyphs.tsx",
+      "data/contracts.ts",
+      "data/skilltree.ts",
+      "data/store.ts",
+    ]);
+    const naming = files
+      .filter((file) => !allowed.has(file.name) && /skill.?tree/i.test(file.text))
+      .map((file) => file.name);
+    expect(naming).toEqual([]);
+    expect(files.length).toBeGreaterThan(40);
+  });
+
+  it("loads the tree's code only through the card's lazy import", () => {
+    const statics = files.filter((file) => /import[^;]*from\s+["'](\.\.?\/)*(app\/)?SkillTree["']/.test(file.text));
+    expect(statics.map((file) => file.name)).toEqual([]);
+    const detail = files.find((file) => file.name === "app/PlayerDetail.tsx");
+    expect(detail?.text).toContain('lazy(() => import("./SkillTree"))');
+    const viewModel = files.filter((file) => /from\s+["'][./]*(data\/)?skilltree["']/.test(file.text));
+    expect(viewModel.map((file) => file.name)).toEqual(["app/SkillTree.tsx"]);
+  });
+});
 
 // ------------------------------------------------------------------------ view model
 
