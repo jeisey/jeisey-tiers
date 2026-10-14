@@ -82,7 +82,9 @@ CARD_BUCKETS = 64
 #: check and a cache key, never a security boundary.
 HASH_DIGITS = 16
 
-Partition = Literal["block", "scoring", "all"]
+#: ``bucket`` (ADR-107) splits a player-keyed artifact by the card's FNV-1a bucket, so the
+#: browser finds one player's file with no lookup; ``position`` splits by the record's position.
+Partition = Literal["block", "scoring", "all", "bucket", "position"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +172,12 @@ FAMILIES: tuple[Family, ...] = (
         only=("player_id", "position", "touchdown_points_share", "pass_epa_per_dropback"),
     ),
     Family("player_headshots", "player_headshots", "all"),
+    # ADR-107: the Skill Tree, fetched only when a reader opens it — never by a view, never in
+    # the card shard. Readings are scoring- and league-independent, so they are served once,
+    # split by the card's player bucket; definitions are split by position, the one a card
+    # needs.
+    Family("skill_tree", "player_skill_tree", "bucket"),
+    Family("skill_tree_definitions", "skill_tree_definitions", "position"),
     # ADR-105: season-to-date actuals, one slice per scoring preset — a season rank does not
     # depend on league size, so nine blocks would be three copies each. Every in-season view
     # and the in-season card read it. No names: every player a page can show is already in
@@ -279,11 +287,19 @@ def block_key(record: Mapping[str, Any]) -> str:
     return f"{record['league_preset_id']}.{record['scoring_preset']}"
 
 
-def _partition_key(record: Mapping[str, Any], partition: Partition) -> str:
+def _partition_key(
+    record: Mapping[str, Any],
+    partition: Partition,
+    buckets: int = CARD_BUCKETS,
+) -> str:
     if partition == "block":
         return block_key(record)
     if partition == "scoring":
         return str(record["scoring_preset"])
+    if partition == "bucket":
+        return f"{bucket_of(str(record['player_id']), buckets):02d}"
+    if partition == "position":
+        return str(record["position"])
     return "all"
 
 
@@ -625,11 +641,14 @@ def build_serving_layout(
     partitioned: dict[str, dict[str, list[Mapping[str, Any]]]] = {}
     for artifact in served:
         records = list(envelopes[artifact].get("records", ()))
-        for partition in ("block", "scoring", "all"):
+        for partition in ("block", "scoring", "all", "bucket", "position"):
             groups: dict[str, list[Mapping[str, Any]]] = {}
             try:
                 for record in records:
-                    groups.setdefault(_partition_key(record, partition), []).append(record)
+                    groups.setdefault(
+                        _partition_key(record, partition, buckets),
+                        [],
+                    ).append(record)
             except KeyError:
                 continue
             partitioned[f"{artifact}|{partition}"] = groups

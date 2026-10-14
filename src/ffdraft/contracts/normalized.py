@@ -22,6 +22,7 @@ __all__ = [
     "EXPECTED_POINTS_CONTRACT",
     "MARKET_QUOTE_CONTRACT",
     "MFL_PLAYER_CONTRACT",
+    "NEXTGEN_STATS_CONTRACT",
     "PLAYER_IDS_CONTRACT",
     "PLAYER_MASTER_CONTRACT",
     "PLAYER_STATUS_CONTRACT",
@@ -339,8 +340,9 @@ RESOLUTION_CONTRACT = FrameContract(
 WEEKLY_STATS_CONTRACT = FrameContract(
     contract_id="nflverse_weekly_player_stats",
     # 1.1 (ADR-091): two context columns for the published in-season signals. Additive, and
-    # read by nothing that builds a feature.
-    version="1.1",
+    # read by nothing that builds a feature. 1.2 (ADR-107): one more, the official YAC, read
+    # only by the Skill Tree's yards-after-catch reading.
+    version="1.2",
     primary_key=("season", "week", "season_type", "gsis_id"),
     columns=(
         ColumnSpec("season", pl.Int32, nullable=False),
@@ -388,6 +390,42 @@ WEEKLY_STATS_CONTRACT = FrameContract(
             pl.Float64,
             description="sacks taken; the denominator half of pass EPA per dropback (ADR-091)",
         ),
+        ColumnSpec(
+            "receiving_yards_after_catch",
+            pl.Float64,
+            description=(
+                "nflverse's (unofficial) yards after the catch. Published Skill Tree context "
+                "only (ADR-107); not a feature of any model"
+            ),
+        ),
+    ),
+)
+
+
+#: ADR-107. NFL Next Gen Stats via nflverse, one row per player × week × stat type; week 0 is
+#: the regular-season (to-date) summary. Published Skill Tree context only, never a feature.
+NEXTGEN_STATS_CONTRACT = FrameContract(
+    contract_id="nflverse_nextgen_stats",
+    version="1.0",
+    primary_key=("season", "season_type", "week", "stat_type", "gsis_id"),
+    columns=(
+        ColumnSpec("season", pl.Int32, nullable=False),
+        ColumnSpec("season_type", pl.String, nullable=False, description="REG or POST"),
+        ColumnSpec("week", pl.Int32, nullable=False, description="0 = season summary"),
+        ColumnSpec("stat_type", pl.String, nullable=False, description="passing/rushing/receiving"),
+        ColumnSpec("gsis_id", pl.String, nullable=False),
+        ColumnSpec("position", pl.String, description="NGS's own position"),
+        ColumnSpec(
+            "volume",
+            pl.Float64,
+            description="attempts (passing), rush attempts (rushing) or targets (receiving)",
+        ),
+        ColumnSpec("receptions", pl.Float64, description="receiving only"),
+        ColumnSpec("avg_time_to_throw", pl.Float64, description="seconds, passing only"),
+        ColumnSpec("rush_yards_over_expected_per_att", pl.Float64, description="rushing only"),
+        ColumnSpec("avg_separation", pl.Float64, description="yards, receiving only"),
+        ColumnSpec("avg_cushion", pl.Float64, description="yards, receiving only"),
+        ColumnSpec("avg_yac_above_expectation", pl.Float64, description="receiving only"),
     ),
 )
 

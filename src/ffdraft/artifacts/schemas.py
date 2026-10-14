@@ -76,6 +76,10 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # ADR-105. Season-to-date actuals and positional ranks over the whole population.
     # Additive and independent: without it every surface prints actuals as unavailable.
     "season_actuals_record",
+    # ADR-107. The Skill Tree: per-player metric readings and their definitions. Additive and
+    # independent: without them the card simply has no Skill Tree section.
+    "player_skill_metric",
+    "skill_tree_definition",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -112,6 +116,8 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "weekly_projection": "1.1",
     "weekly_game_context": "1.0",
     "season_actuals_record": "1.0",
+    "player_skill_metric": "1.0",
+    "skill_tree_definition": "1.0",
 }
 
 

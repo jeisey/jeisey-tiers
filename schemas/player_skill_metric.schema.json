@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/player_skill_metric.schema.json",
+  "title": "PlayerSkillMetric",
+  "description": "One player's reading of one Skill Tree metric under `skill_tree_v1` (ADR-107): regular-season statistics through the build's cutoff week, with the sample behind each value and — when qualified — its competition rank and percentile among qualified players at the same position. DESCRIPTIVE CONTEXT ONLY: read by no model, ranking, tier, pick, trade search or lineup, and never combined into a score. Scoring- and league-independent: one record per player per metric for the whole build. Every population player has an `appearances` record (value = games); a board player who has not appeared has that record alone (state `no_appearances`). What each metric is — label, formula, minimum, cohort rule, limitations — is in `skill_tree_definitions.json`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "build_id", "season", "through_week", "player_id", "position",
+    "metric_id", "state", "value", "numerator", "denominator", "rank", "percentile",
+    "cohort_size", "games", "source_season", "reason"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "build_id": {"type": "string", "minLength": 1},
+    "season": {"type": "integer", "minimum": 2000},
+    "through_week": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The board's cutoff: only regular-season weeks 1..through_week are counted."
+    },
+    "player_id": {"type": "string", "pattern": "^gsis:"},
+    "position": {
+      "enum": ["QB", "RB", "WR", "TE"],
+      "description": "The position the site shows for him; his tree and every peer cohort are this position's."
+    },
+    "metric_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "state": {
+      "enum": ["ranked", "below_minimum", "small_cohort", "no_opportunity", "not_covered", "unavailable", "no_appearances"],
+      "description": "ranked: value, rank and percentile. below_minimum: value and sample, no rank. small_cohort: qualified but fewer than 5 qualified players. no_opportunity: denominator 0, no value. not_covered: the source has no reading for him (see reason). unavailable: the source was withheld or failed for this build (see reason). no_appearances: presence record of a player with no games."
+    },
+    "value": {
+      "type": ["number", "null"],
+      "description": "The reading as published (rounded to the definition's decimals; fractions 0-1 for rates and shares). Null exactly for no_opportunity, not_covered and unavailable."
+    },
+    "numerator": {
+      "type": ["number", "null"],
+      "description": "The summed numerator behind a rate or share (for a total, the total itself). Null when the definition has no numerator label (CPOE, Next Gen Stats, combine) or the reading is unavailable."
+    },
+    "denominator": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "The sample: attempts, carries, targets, receptions, dropbacks, team totals in his games, or the Next Gen Stats volume. Null for totals, combine and unavailable readings."
+    },
+    "rank": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Competition rank (1, 2, 2, 4) within the cohort in the metric's direction (lower-is-better metrics rank the lowest first; neutral metrics rank the highest value first, as position not merit). Null unless state is ranked."
+    },
+    "percentile": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "100 × (players strictly behind + (ties − 1) / 2) ÷ (cohort − 1), direction-adjusted, one decimal. Null unless state is ranked."
+    },
+    "cohort_size": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Qualified players this reading was ranked among (for the combine, testers at his combine position since 2000). Null unless state is ranked or small_cohort."
+    },
+    "games": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "His games played through the cutoff (stats row or offensive snap), repeated on each record."
+    },
+    "source_season": {
+      "type": ["integer", "null"],
+      "description": "The combine year for `combine_forty`; null otherwise."
+    },
+    "reason": {
+      "type": ["string", "null"],
+      "description": "Why a reading is not_covered or unavailable (a code from ros_build_metadata.skill_tree.reasons), or `tested_as:<POS>` when a combine time is ranked among another combine position's testers. Null otherwise."
+    }
+  }
+}

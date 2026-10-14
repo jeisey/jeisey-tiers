@@ -49,7 +49,10 @@ function served(key: string): Row {
   return read(`serve/${key}.${manifest.files[key] ?? ""}.json`) as Row;
 }
 
-function partitionOf(row: Row, partition: string): string {
+function partitionOf(row: Row, partition: string, family = ""): string {
+  // ADR-107: the Skill Tree's readings split by the card's bucket, its definitions by position.
+  if (family === "skill_tree") return String(bucketOf(String(row.player_id), manifest.card_buckets)).padStart(2, "0");
+  if (family === "skill_tree_definitions") return String(row.position);
   if (partition.includes(".")) return `${String(row.league_preset_id)}.${String(row.scoring_preset)}`;
   if (partition === "all") return "all";
   return String(row.scoring_preset);
@@ -75,7 +78,12 @@ describe("the golden served layout", () => {
     expect(keys.length).toBeGreaterThan(5);
     let joined = 0;
     for (const key of keys) {
-      const payload = served(key) as unknown as Table & { artifact: string; partition: string; join?: Table["join"] };
+      const payload = served(key) as unknown as Table & {
+        artifact: string;
+        family: string;
+        partition: string;
+        join?: Table["join"];
+      };
       const { header, records } = envelope(payload.artifact);
       let source: Map<string, Row> | undefined;
       if (payload.join !== undefined) {
@@ -87,7 +95,7 @@ describe("the golden served layout", () => {
       const rows = decodeTable<Row>(payload, header, names, source);
       decoded.set(key, rows);
       const expected = records
-        .filter((row) => partitionOf(row, payload.partition) === payload.partition)
+        .filter((row) => partitionOf(row, payload.partition, payload.family) === payload.partition)
         .map((row) => project(row, payload.fields));
       expect(rows.map((row) => JSON.stringify(row))).toEqual(expected.map((row) => JSON.stringify(row)));
     }

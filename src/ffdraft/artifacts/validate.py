@@ -31,6 +31,12 @@ from ffdraft.artifacts.schemas import (
     validate_records,
 )
 from ffdraft.artifacts.serving import validate_serving_layout
+from ffdraft.artifacts.skilltree_checks import (
+    skilltree_cross_checks,
+    skilltree_definition_checks,
+    skilltree_metadata_checks,
+    skilltree_record_checks,
+)
 from ffdraft.artifacts.spec import (
     ARTIFACT_SPECS,
     BUILD_METADATA_FILENAME,
@@ -103,6 +109,9 @@ _IN_SEASON_ARTIFACTS = frozenset(
         "weekly_context",
         # ADR-105. Written by `run_ros_build` after every board.
         "season_actuals",
+        # ADR-107. Written by `run_ros_build` last, together or not at all.
+        "player_skill_tree",
+        "skill_tree_definitions",
     },
 )
 
@@ -202,6 +211,7 @@ def validate_artifact_directory(
     gate.extend(_weekly_cross_checks(envelopes))
     gate.extend(_weekly_context_cross_checks(envelopes))
     gate.extend(actuals_cross_checks(envelopes))
+    gate.extend(skilltree_cross_checks(envelopes))
     gate.extend(
         actuals_csv_checks(
             directory,
@@ -379,6 +389,10 @@ def _semantic_checks(
             return weekly_context_checks(records, stage)
         case "season_actuals":
             return actuals_record_checks(records, stage)
+        case "player_skill_tree":
+            return skilltree_record_checks(records, stage)
+        case "skill_tree_definitions":
+            return skilltree_definition_checks(records, stage)
     return []
 
 
@@ -2084,6 +2098,7 @@ def _ros_metadata_checks(
             )
 
     checks.extend(actuals_metadata_checks(metadata, envelopes))
+    checks.extend(skilltree_metadata_checks(metadata, envelopes))
 
     disclosures = metadata.get("disclosures", {})
     if disclosures.get("uses_injury_information") is not False:

@@ -3,6 +3,16 @@
   "$id": "https://example.invalid/schemas/ros_build_metadata.schema.json",
   "title": "RosBuildMetadata",
   "description": "Build-level provenance for the in-season bundle. Separate from build_metadata.json on purpose: the draft board and the rest-of-season board are produced by different models on different cadences from different cutoffs, so they carry different build ids and are validated independently (roadmap 12.5). A directory may hold either bundle, both, or one refreshed while the other is not.",
+  "$defs": {
+    "skill_tree_source": {
+      "type": "object",
+      "required": ["status", "reason"],
+      "properties": {
+        "status": {"enum": ["published", "unavailable"]},
+        "reason": {"type": ["string", "null"]}
+      }
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -268,6 +278,51 @@
             "configuration_hash": {"type": ["string", "null"]}
           }
         }
+      }
+    },
+    "skill_tree": {
+      "type": ["object", "null"],
+      "description": "ADR-107: how player_skill_tree.json and skill_tree_definitions.json were built — the rule, the cutoff window, the population at each position, each source's status (a withheld or failed source makes its readings `unavailable`, never ranked over a smaller league), the minimum cohort for a rank, whether Next Gen Stats readings are published, diagnostics, and the sentence for every `reason` code a reading can carry. `failed` means the enrichment itself could not run and neither artifact was published. Optional and additive: absent or null means the card has no Skill Tree.",
+      "additionalProperties": false,
+      "required": ["method_version", "status"],
+      "properties": {
+        "method_version": {"const": "skill_tree_v1"},
+        "status": {"enum": ["published", "failed"]},
+        "reason": {"type": ["string", "null"]},
+        "season": {"type": "integer", "minimum": 2000},
+        "through_week": {"type": "integer", "minimum": 1},
+        "window": {"type": "string", "minLength": 1},
+        "records": {"type": "integer", "minimum": 0},
+        "players": {"type": "integer", "minimum": 0},
+        "players_without_appearance": {"type": "integer", "minimum": 0},
+        "population": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["QB", "RB", "WR", "TE"],
+          "properties": {
+            "QB": {"type": "integer", "minimum": 0},
+            "RB": {"type": "integer", "minimum": 0},
+            "WR": {"type": "integer", "minimum": 0},
+            "TE": {"type": "integer", "minimum": 0}
+          }
+        },
+        "minimum_cohort": {"type": "integer", "minimum": 2},
+        "ngs_published": {"type": "boolean"},
+        "sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["player_stats", "snap_counts", "play_by_play", "next_gen_stats", "combine"],
+          "properties": {
+            "player_stats": {"$ref": "#/$defs/skill_tree_source"},
+            "snap_counts": {"$ref": "#/$defs/skill_tree_source"},
+            "play_by_play": {"$ref": "#/$defs/skill_tree_source"},
+            "next_gen_stats": {"$ref": "#/$defs/skill_tree_source"},
+            "combine": {"$ref": "#/$defs/skill_tree_source"}
+          }
+        },
+        "diagnostics": {"type": "object"},
+        "reasons": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+        "statement": {"type": "string", "minLength": 1}
       }
     },
     "season_actuals": {

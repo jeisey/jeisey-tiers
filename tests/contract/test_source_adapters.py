@@ -34,6 +34,11 @@ from ffdraft.sources.market import (
     MflPlayerDirectoryAdapter,
     classify_mfl_entity,
 )
+from ffdraft.sources.nextgen import (
+    NflverseNextGenPassingAdapter,
+    NflverseNextGenReceivingAdapter,
+    NflverseNextGenRushingAdapter,
+)
 from ffdraft.sources.nflverse_history import (
     NflverseCombineAdapter,
     NflverseDraftPickAdapter,
@@ -62,6 +67,10 @@ ADAPTERS = [
     NflverseCombineAdapter(),
     NflversePlayerMasterAdapter(),
     NflverseExpectedPointsAdapter(),
+    # ADR-107. Next Gen Stats, recorded live on 2026-10-14 (weeks 0-5) in the same format.
+    NflverseNextGenPassingAdapter(),
+    NflverseNextGenRushingAdapter(),
+    NflverseNextGenReceivingAdapter(),
 ]
 
 

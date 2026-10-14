@@ -67,8 +67,14 @@ def test_every_artifact_spec_points_at_a_real_schema(artifact):
 
 #: The entity id that closes each artifact's ordering. Every artifact describes players except
 #: the ones that describe each team's next game (ADR-091) and its game-day context (ADR-099),
-#: whose entity is the team.
-_TIE_BREAK = {"team_matchups": "team", "weekly_context": "team"}
+#: whose entity is the team. The Skill Tree (ADR-107) is long: one record per player *per
+#: metric*, and its definitions one per position per metric, so the metric closes both.
+_TIE_BREAK = {
+    "team_matchups": "team",
+    "weekly_context": "team",
+    "player_skill_tree": "metric_id",
+    "skill_tree_definitions": "metric_id",
+}
 
 
 @pytest.mark.parametrize("artifact", sorted(ARTIFACT_SPECS))

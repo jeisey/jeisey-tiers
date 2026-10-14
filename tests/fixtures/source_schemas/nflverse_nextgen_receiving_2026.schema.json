@@ -1,0 +1,138 @@
+{
+  "captured_at_utc": "2026-10-14T14:08:43Z",
+  "check_id": "nflverse_nextgen_receiving_2026",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "season_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_display_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team_abbr",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_cushion",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_separation",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_intended_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "percent_share_of_intended_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "receptions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "targets",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "catch_percentage",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rec_touchdowns",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_yac",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_expected_yac",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_yac_above_expectation",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_gsis_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_last_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "player_jersey_number",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_short_name",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {
+    "season_types": [
+      "REG"
+    ],
+    "weeks": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "record_count": 482,
+  "sample_rows": 0,
+  "source_id": "nflreadpy",
+  "target": "load_nextgen_stats(stat_type='receiving')"
+}

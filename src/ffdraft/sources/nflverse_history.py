@@ -185,7 +185,9 @@ class NflverseWeeklyStatsAdapter(BaseSourceAdapter):
         },
     )
     #: Read only into the published in-season signals (ADR-091), never into a feature.
-    context_source_columns = frozenset({"passing_epa", "sacks_suffered"})
+    context_source_columns = frozenset(
+        {"passing_epa", "sacks_suffered", "receiving_yards_after_catch"},
+    )
 
     def normalize(
         self,
@@ -249,6 +251,10 @@ class NflverseWeeklyStatsAdapter(BaseSourceAdapter):
                     # reading and an absent one is not.
                     "passing_epa": _number(record.get("passing_epa")),
                     "sacks_suffered": _number(record.get("sacks_suffered")),
+                    # ADR-107: the Skill Tree's YAC per reception; null when not published.
+                    "receiving_yards_after_catch": _number(
+                        record.get("receiving_yards_after_catch"),
+                    ),
                 },
             )
         flags.note("weekly_rows_without_key", dropped)

@@ -81,6 +81,11 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # ADR-105. Season-to-date actuals by the production builder over the same weekly
         # rows: ties, a snaps-only appearance, byes and absences all occur.
         "season_actuals",
+        # ADR-107. The Skill Tree by the production builder over synthetic plays, Next Gen
+        # summaries and combine times: ranked, below-minimum, no-opportunity, not-covered and
+        # no-appearance readings all occur.
+        "player_skill_tree",
+        "skill_tree_definitions",
     }
     assert all(records for records in pipeline_result.records.values())
 
