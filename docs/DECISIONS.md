@@ -6756,3 +6756,266 @@ bench players who fit the slot.
 * **Rising Stars is opt-in because of its cost:** roughly 121 kB, the Opportunity tab's.
 * **Leagues live only in this browser.** There is no sync, export or import. Clearing site data
   deletes them, and the page says so.
+
+## ADR-107 — The Skill Tree: a positional statistical profile on the player card, described and never scored
+
+**Status:** accepted, 2026-10-14 (frozen before implementation; the *Evidence* section is
+appended after the build). **Relies on:** ADR-091 (`usage_signals_v1`: appearances, pooled
+shares, `pass_epa_per_dropback`), ADR-098 (served slices, manifest, budgets), ADR-103/104
+(play-by-play reduced through the cached loader), ADR-105 (the board's position, the
+population, completeness withholds), ADR-086 (CC-BY-SA publication is an open owner decision).
+**Evidence:** `docs/experiments/skill-tree-2026-10-14/` (EDA, metric inventory, decisions).
+
+### Context
+
+The owner asked for a "Skill Tree" inside the player card: a Halo 2 HUD crossed with a World of
+Warcraft talent tree that shows a player's fine-grained positional profile — connected branches,
+illustrated stat nodes, the actual football numbers readable at a glance — with genuinely
+different trees for QB, RB, WR and TE. The card already shows role rails (ADR-091/104) and
+season actuals (ADR-105); it shows no efficiency, depth, red-zone or tracking statistic.
+
+The EDA (live nflverse through the board's 2026 week-5 cutoff, plus 2023–2025) settled what is
+possible: workload, shares and red-zone roles are covered for every player and stable from
+week 1; efficiency rates are covered but noisy early (RB yards per carry and receiving EPA per
+target barely persist from weeks 1–5 to the rest of a season); three Next Gen Stats readings
+are reliable only through the week-0 season summary; routes, FTN charting and any current-speed
+measurement are not available or not publishable.
+
+### Decision — what the tree is
+
+1. **Descriptive enrichment, read by nothing.** `skill_tree_v1` is computed at build time,
+   after every board, from the same cached source frames, and published beside them. No model,
+   feature, training row, projection, VORP, rank, tier, Start/Sit verdict, trade search, Pick of
+   the Week, Improve or Rising Stars computation reads it, in Python or in the browser (enforced
+   by an import test on both sides).
+2. **The metaphor describes observations.** Nodes are statistics, not talents: nothing is
+   spent, unlocked, required or earned; connectors show category and reading order only. There
+   is **no overall rating, branch score or blend** of any kind. Every node is one statistic with
+   its own value, sample and (when qualified) its own peer rank.
+3. **One window.** The regular season, weeks `1..through_week` — the board's own cutoff — of
+   the board's season. No recent window (EDA §3: worse than season to date in 34–41 of 46
+   readings each season), no carry-over from last season, no extension backward through an
+   absence. Historical athletic testing is a separate, dated archive plaque.
+
+### Decision — shared definitions
+
+* **Appearance** = a regular-season week with a weekly stats row **or** an offensive snap
+  (ADR-091/105). His **games** are those weeks, each keyed by the club he played for that week.
+* **Position** = the board's (rest-of-season snapshot → identity registry → season roster →
+  box score), exactly as `season_actuals_v1` assigns it. Peer cohorts are by that position.
+* **Population** = every QB/RB/WR/TE who appeared through the cutoff, before any board depth,
+  filter or availability rule; plus a presence record for every board player who has not
+  appeared. Ids are canonical `gsis:`; identity is never resolved by name.
+* **Official totals stay official.** Attempts, completions, yards, touchdowns, interceptions,
+  sacks, carries, targets, receptions, air yards and YAC are nflverse's weekly player totals
+  summed over his games. Efficiency universes may drop clock plays; they never rewrite a total.
+* **Play-by-play universes** (REG, week ≤ cutoff, two-point tries always excluded; nflverse
+  attributes laterals to the original passer, rusher or receiver):
+  * *dropback* = `pass_attempt = 1` with him as passer — sacks and spikes included. Equals
+    official attempts + sacks for every player in 2023–2026 (EDA §2);
+  * *carry* = `rush_attempt = 1` with him as rusher, **excluding `qb_kneel`** — equals official
+    carries − kneels for every player. Kneels stay in official carries and rushing yards;
+  * *target* = `pass_attempt = 1`, `sack = 0`, him as receiver — equals official targets;
+  * *scramble* = `rush_attempt = 1` and `qb_scramble = 1`; *designed rush* = a carry (kneels
+    excluded) with `qb_scramble = 0`. nflverse has no designed-run flag; this is the derivation;
+  * *red zone* = `yardline_100 ≤ 20` at the snap; *goal line* = `yardline_100 ≤ 5`;
+    *end-zone target* = a target with `air_yards ≥ yardline_100` (the throw reaches the goal
+    line). All three are derived, not nflverse fields;
+  * *EPA* = nflverse `epa`; *success* = `epa > 0` (identical to nflverse `success`; not a
+    down-and-distance formula). QB EPA per dropback is nflverse's `passing_epa` (`qb_epa`-based)
+    as ADR-091 defines it, so the card's two EPA-per-dropback readings are one quantity.
+* **Pooled, never averaged.** Every rate is Σ numerator ÷ Σ denominator over his games; CPOE is
+  Σ `cpoe` ÷ the attempts that carry one (nflverse's weekly `passing_cpoe` is a per-week mean and
+  differs by up to 34 pp). A share's denominator is the sum of his team's totals **in the games
+  he played**, keyed by the club he played for that week — a traded player's earlier games stay
+  with his earlier club.
+* **Snap share** (`offense_snap_share`, new) = Σ his offensive snaps ÷ Σ his team's offensive
+  snaps in his games, pooled. Team snaps = the snaps ÷ share of the team-game's highest-share
+  player (100% in 99.4% of 2026 team-games). A game where the snap file has no row for him is
+  left out of both sides and counted. This differs from the usage layer's per-game mean, so it
+  has its own id.
+
+### Decision — the trees
+
+`node` = drawn in the tree; `detail` = shown when its parent node is selected, with its own
+value, sample and rank. Kind: **V** volume, **S** share/opportunity, **R** rate/efficiency,
+**C** context (no better direction). Direction: ↑ higher ranks first, ↓ lower ranks first,
+○ neutral (positioned, never praised). Minimum = the sample below which a value prints unranked.
+
+**QB** — 4 branches, 13 nodes.
+
+| branch | node (detail) | definition | kind | dir | minimum | source |
+|---|---|---|---|---|---|---|
+| Passing volume | `pass_attempts` (`completions`) | official attempts (completions) | V | ↑ | — | stats |
+| | `passing_yards` | official | V | ↑ | — | stats |
+| | `passing_tds` (`passing_td_rate`) | official (TDs ÷ attempts) | V (R) | ↑ | — (50 att) | stats |
+| Accuracy & depth | `cpoe` (`completion_pct`) | pooled CPOE, pp (completions ÷ attempts) | R | ↑ | 50 att with CPOE (50 att) | pbp (stats) |
+| | `yards_per_attempt` | passing yards ÷ attempts | R | ↑ | 50 att | stats |
+| | `intended_air_yards` | passing air yards ÷ attempts | C | ○ | 50 att | stats |
+| Efficiency & ball security | `pass_epa_per_dropback` (`dropback_success_rate`) | `passing_epa` ÷ (att + sacks) (dropbacks with EPA > 0 ÷ dropbacks) | R | ↑ | 50 dropbacks | stats (pbp) |
+| | `sack_rate` (`avg_time_to_throw`) | sacks ÷ dropbacks (NGS time to throw, s) | R (C) | ↓ (○) | 50 dropbacks (NGS) | stats (ngs) |
+| | `interception_rate` | INTs ÷ attempts | R | ↓ | 50 att | stats |
+| Legs & scoring | `designed_rushes` | designed rushes | V | ↑ | — | pbp |
+| | `scrambles` (`scramble_rate`) | scrambles (÷ dropbacks + scrambles) | V (C) | ↑ (○) | — (50) | pbp |
+| | `rushing_yards` (`rushing_tds`) | official, kneels included | V | ↑ | — | stats |
+| | `red_zone_rushes` (`goal_line_rushes`, `red_zone_dropbacks`) | his non-kneel rushes inside the 20 (inside the 5; dropbacks inside the 20) | V | ↑ | — | pbp |
+
+**RB** — 4 branches, 13 nodes.
+
+| branch | node (detail) | definition | kind | dir | minimum | source |
+|---|---|---|---|---|---|---|
+| Ground workload | `carries` (`rushing_yards`, `rushing_tds`) | official | V | ↑ | — | stats |
+| | `carry_share` | his carries ÷ all his team's official carries in his games (every position; QB scrambles and kneels included) — ADR-091's definition | S | ↑ | 2 games | stats |
+| | `offense_snap_share` | pooled, above | S | ↑ | 2 games | snaps |
+| Rushing efficiency | `yards_per_carry` (`rush_epa_per_carry`) | official yards ÷ carries (Σ EPA ÷ non-kneel carries) | R | ↑ | 25 carries | stats (pbp) |
+| | `rush_success_rate` | non-kneel carries with EPA > 0 ÷ non-kneel carries | R | ↑ | 25 | pbp |
+| | `explosive_run_rate` (`explosive_runs`) | carries gaining ≥ 10 yards ÷ non-kneel carries | R | ↑ | 25 | pbp |
+| | `rush_yards_over_expected_per_att` | NGS RYOE per attempt | R | ↑ | NGS cohort | ngs |
+| Receiving | `targets` (`receptions`, `catch_rate`) | official (receptions ÷ targets) | V (R) | ↑ | — (10 tgt) | stats |
+| | `receiving_yards` (`receiving_tds`, `yards_per_target`) | official | V | ↑ | — (10 tgt) | stats |
+| | `target_share` | ADR-091's pooled target share | S | ↑ | 2 games | stats |
+| Scoring role | `red_zone_carries` (`red_zone_carry_share`) | non-kneel carries inside the 20 (÷ all his team's non-kneel carries inside the 20 in his games) | V (S) | ↑ | — (2 games) | pbp |
+| | `goal_line_carries` (`goal_line_carry_share`) | inside the 5, likewise | V (S) | ↑ | — (2 games) | pbp |
+| | `red_zone_targets` (`red_zone_target_share`) | targets snapped inside the 20 (÷ team's) | V (S) | ↑ | — (2 games) | pbp |
+
+**WR** — 4 branches, 14 nodes.
+
+| branch | node (detail) | definition | kind | dir | minimum | source |
+|---|---|---|---|---|---|---|
+| Target earning | `targets` (`receptions`) | official | V | ↑ | — | stats |
+| | `target_share` (`air_yards_share`) | ADR-091's pooled shares | S | ↑ | 2 games | stats |
+| | `receiving_yards` (`receiving_tds`) | official | V | ↑ | — | stats |
+| | `offense_snap_share` | pooled | S | ↑ | 2 games | snaps |
+| Depth & big plays | `adot` | receiving air yards ÷ targets | C | ○ | 15 tgt | stats |
+| | `yards_per_reception` | official yards ÷ receptions | R | ↑ | 10 rec | stats |
+| | `explosive_catches` (`explosive_catch_rate`) | receptions gaining ≥ 20 yards (÷ targets) | V (R) | ↑ | — (15 tgt) | pbp |
+| Catch & contribution | `catch_rate` | receptions ÷ targets | R | ↑ | 15 tgt | stats |
+| | `rec_epa_per_target` (`yards_per_target`) | Σ EPA on his targets ÷ targets (official yards ÷ targets) | R | ↑ | 15 tgt | pbp (stats) |
+| | `yac_per_reception` | official YAC ÷ receptions | R | ↑ | 10 rec | stats |
+| | `yac_over_expected` | NGS YAC above expectation, yards per reception | R | ↑ | NGS cohort | ngs |
+| | `avg_separation` (`avg_cushion`) | NGS yards to the nearest defender at catch or incompletion, on targets (cushion at the snap) | C | ○ | NGS cohort | ngs |
+| Scoring role | `red_zone_targets` (`red_zone_target_share`) | above | V (S) | ↑ | — (2 games) | pbp |
+| | `end_zone_targets` | targets whose air yards reach the goal line | V | ↑ | — | pbp |
+
+**TE** — 4 branches, 13 nodes, ordered around role and reliability: *Usage* — `offense_snap_share`,
+`target_share` (`air_yards_share`), `targets` (`receptions`); *Reliability* — `catch_rate`,
+`yards_per_target`, `yac_per_reception`, `yac_over_expected`; *Production* — `receiving_yards`
+(`receiving_tds`), `rec_epa_per_target`; *Scoring & depth* — `red_zone_targets`
+(`red_zone_target_share`), `end_zone_targets`, `adot` (C), `avg_separation` (C). Definitions and
+minimums as for WR (yards per target 15 targets).
+
+**Archive plaque (every position)** — `combine_forty`: his NFL Scouting Combine 40-yard dash
+(seconds), the test year, and its percentile among every tester at the **same combine position**
+2000–present with a recorded time (faster ranks first). Labelled *historical athletic context,
+not current speed*. Linked through nflverse's PFR → GSIS bridge only; a PFR id claiming two GSIS
+ids, or a GSIS id with two combine rows, has no plaque (fail closed).
+
+### Decision — cohorts, ranks, states
+
+* **Cohorts** are deterministic per metric × position over the whole population: volume —
+  every appearing player at the position (zeros included); share — at least 2 games and a team
+  denominator above 0; rate/context — the metric's minimum; NGS — every player at the position
+  with a reconciled NGS season row (NGS's own qualification is the minimum); combine — testers at
+  the same combine position since 2000. A cohort smaller than **5** publishes values and no ranks.
+* **Rank and percentile** are computed on the value **as published** (rounded), so a visible
+  tie is a tie. Rank is a competition rank (1, 2, 2, 4) in the metric's direction (↑ highest
+  first, ↓ lowest first, ○ highest value first, worded as position not merit). Percentile =
+  100 × (players strictly behind + (ties − 1) / 2) ÷ (cohort − 1): the best is 100, the worst 0,
+  the median 50, ties share one value.
+* **Seven states, never merged:** `ranked`; `below_minimum` (value and sample shown, no rank);
+  `small_cohort` (qualified, cohort < 5); `no_opportunity` (denominator 0 — no value); `not_covered`
+  (the source has no reading for him: NGS did not qualify him or his NGS volume does not match
+  his official volume, or no combine time); `unavailable` (the source was withheld or failed for
+  this build); and, on the presence record only, `no_appearances`. A missing value is never 0 and
+  a 0 is never missing.
+
+### Decision — sources and gates
+
+* **Official totals** (`load_player_stats`, week) and **snaps** (`load_snap_counts`, bridged)
+  are the frames every in-season build already loads. If any scheduled team-week through the
+  cutoff lacks weekly rows (or snap rows), the stats-based (or snap-based) metrics are
+  `unavailable` for that build — never computed over a smaller league (ADR-105's rule).
+* **Play-by-play** is loaded **once** per build and shared by drive breadth (ADR-103) and the
+  skill tree. Every completed regular-season game through the cutoff must be present, else the
+  play-by-play metrics are `unavailable`.
+* **Next Gen Stats** (`load_nextgen_stats`, three files; a new adapter, optional): only the
+  `week == 0`, `season_type == "REG"` season-summary row is used. It is used only when the
+  file's REG weekly rows end **exactly** at the board's cutoff (none beyond it), and for a player
+  only when his NGS volume (attempts / rush attempts / targets) is within one of his official
+  volume through the cutoff. Weekly rows are never summed (they cover only qualifying weeks).
+  Any failure → NGS metrics `unavailable` (whole build) or `not_covered` (that player).
+  Licensing: nflverse distributes NGS under its broadly CC-BY 4.0 data with the NFL as the
+  underlying owner — the same posture as every NFL-originated statistic the site already
+  publishes; there is no NGS-specific licence. Only per-player season aggregates are published,
+  attributed "NFL Next Gen Stats via nflverse"; no raw row is served. Recorded in the source
+  registry for owner review; one constant (`NGS_PUBLISHED`) removes them.
+* **Combine** (`load_combine`, already loaded by the feature pipeline).
+* **Deferred** (EDA §4): routes per route run and route participation (no live route
+  denominator; `load_participation` refuses 2026; FTN-supplied, post-season, CC-BY-SA);
+  FTN charting (CC-BY-SA, ADR-086); PFR advanced stats (terms unreviewed); NGS CPOE and
+  aggressiveness (a second CPOE model; niche); a recent-game window.
+
+### Decision — contract and serving
+
+* **`player_skill_tree`** (`player_skill_metric` 1.0, JSON, no CSV): one record per player per
+  metric — `season`, `through_week`, `player_id`, `position`, `metric_id`, `state`, `value`,
+  `numerator`, `denominator`, `rank`, `percentile`, `cohort_size`, `games`, `source_season`
+  (combine test year, else null), `reason` (why a reading is not covered or unavailable). Every
+  population player has an `appearances` record (`value` = games) and nothing else when he has
+  not appeared. Scoring- and league-independent: published once, never per preset.
+* **`skill_tree_definitions`** (`skill_tree_definition` 1.0): one record per position × metric —
+  role (node/detail/archive), branch id/label/order, order, parent, label, short label, kind,
+  direction, unit, decimals, source id and fields, formula, numerator and denominator labels,
+  minimum and its unit, cohort rule, definition, interpretation, limitations, window, and this
+  build's source status. Every word the tree prints about a metric comes from here, not from
+  frontend copy.
+* **`ros_build_metadata.skill_tree`**: rule version, status, cutoff, per-source status (with
+  reason) and population per position — small, because the manifest carries it on every visit.
+* **Validator** (`artifacts/skilltree_checks.py`): every rank, percentile and cohort size
+  re-derived from the artifact's own rows; state ↔ value/sample consistency; minimums; one
+  presence record per population player and per board player; totals equal the season actuals'
+  games; a definition for every metric record; no metric outside its position's tree.
+* **Serving**: two new families — `skill_tree/<bucket>` (64 buckets, the card's FNV-1a, so the
+  browser finds a player's shard with no lookup) and `skill_tree_definitions/<position>`. Neither
+  is in the card shard or in any view's `requiredKeys`: **opening a card fetches nothing new.**
+
+### Decision — presentation
+
+* **Where.** A new card section, **Skill tree**, immediately after *In-season usage* (it
+  deepens the same observed-role story) and before *Current status*; in-season cards only, and
+  only when the build published the artifact. Desktop and tablet: the section's heading carries
+  an explicit **Show skill tree** button (`aria-expanded`); nothing loads until it is pressed. A
+  phone: an extra tab, **Skill tree**, in the card's tab list; nothing loads until it is chosen.
+  Once open, it stays open for the next player in the same dialog and loads only his shard.
+* **Shape.** A core emblem (the position, framed) on a circuit trunk; four named branches, each a
+  vertical chain of nodes joined by right-angled connectors. Four columns where the pane is at
+  least ~620px wide (desktop 1c and tablet 1a), two from ~400px, and **one column on phones**:
+  the branches reflow vertically; nothing shrinks to fit and nothing needs pinch zoom.
+* **A node** = a bronze octagonal frame around a position-specific football glyph, the label,
+  the value in the card's mono numerals with its unit, a short sample line, a kind tag
+  (VOL/SHARE/RATE/CTX), and a five-segment meter for its percentile (segment *k* lit for
+  percentiles ≥ 20(k − 1); the 80–100 segment glows). ↓ metrics are already direction-adjusted.
+  ○ context metrics draw a position marker on a neutral track instead of a fill and say "deeper
+  than 72% of qualified WRs", never "better". Unranked readings draw an empty dashed track with
+  the reason in words. **Unavailable / not covered / no opportunity** use a neutral dashed frame,
+  a desaturated glyph and the state in words — never a lock, never a low meter.
+* **Selection.** Tap, click, Enter or Space selects a node; an inline detail area (below the
+  tree; below the branch on a phone) gives the definition, value, numerator ÷ denominator or
+  sample, rank and percentile in its cohort when qualified, window, source and fields, formula,
+  limitations, and the node's detail metrics with their own samples and ranks. The selected
+  branch's connectors light from the trunk to that node — a reading path, not a progression.
+  Arrow keys move between nodes (↑↓ within a branch, ←→ across), Home/End jump; hover is never
+  required. Every node's accessible name carries label, value, state and rank; colour never
+  carries meaning alone.
+* **Legend** (one line plus a disclosure): what the meter encodes, the kind tags, the window, and
+  "No overall rating: each node is one statistic, ranked only against qualified players at his
+  position."
+* **Style.** The card's own tokens: metallic panel gradients from `--panel`/`--tile`, cyan
+  `--accent` connectors at the token alphas, a bronze frame tone introduced for the tree only,
+  Exo 2 / JetBrains Mono, cut corners, no radius. Original SVG glyphs drawn for this tree (no
+  game assets, no image pack, no audio, no canvas, no graph library). One 160 ms transition on
+  selection; none under `prefers-reduced-motion`; no continuous animation.
+* **Budgets.** The ordinary card-open budget (≤ 30 kB) and every My Leagues budget are
+  unchanged. A new **Skill tree activation** budget (code, styles, definitions and one shard)
+  and a **player switch** budget are set from measurement on the size model plus a margin, as
+  ADR-106 did, and gated in CI; a repeat activation costs 0 B.
