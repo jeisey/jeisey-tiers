@@ -41,6 +41,8 @@ const SCHEMA_BY_ARTIFACT: Readonly<Record<ArtifactName, string>> = {
   weekly_projections: "weekly_projection",
   weekly_context: "weekly_game_context",
   season_actuals: "season_actuals_record",
+  player_skill_tree: "player_skill_metric",
+  skill_tree_definitions: "skill_tree_definition",
 };
 
 function readJson(path: string): Record<string, unknown> {

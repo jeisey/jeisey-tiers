@@ -4,6 +4,86 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**The Skill Tree — 2026-10-14 (ADR-107, PRD CR-029).** On `claude/brave-einstein-tjmbj8` from
+`main` at `f207378` (PR #64 merged). A descriptive in-season card section: each QB/RB/WR/TE's
+season through the board's cutoff as a position-specific tree of statistics (4 branches, 13–14
+nodes), each node one statistic with its sample and, when qualified, its percentile among
+qualified players at his position. No model, feature, projection, VORP, rank, tier, Start/Sit,
+trade, POTW, Improve or Rising Stars output changed. The fixture build's other artifacts are
+byte-identical, and an import firewall keeps every model and decision module away from it.
+
+* **Evidence.** `docs/experiments/skill-tree-2026-10-14/` holds the EDA (`eda.py`, `report.*`,
+  `sources.md`), a decision for every requested statistic, and `artifact_check.json` (every
+  reading of a live build re-derived independently: 12,161 compared, 0 mismatches).
+* **Python.**
+  * `signals/skilltree_catalog.py` (trees, definitions, minimums) and `signals/skilltree.py`
+    (`skill_tree_v1`).
+  * `sources/nextgen.py` (three NGS adapters, `NEXTGEN_STATS_CONTRACT`).
+  * `artifacts/skilltree_checks.py` (validator).
+  * Serving partitions `bucket` and `position`, and schemas `player_skill_metric` 1.0 and
+    `skill_tree_definition` 1.0.
+  * `pipeline/ros.py` loads play-by-play once (drive breadth and the tree share it) and the raw
+    combine file. A builder failure publishes neither artifact (`ros.skill_tree_failed`).
+* **Frontend.**
+  * `data/skilltree.ts` (view model) and `app/SkillTree.tsx` + `skillTreeGlyphs.tsx` +
+    `styles/skilltree.css` (the lazy chunk).
+  * `DataStore.skillTreeSource` (outside `requiredKeys`; its families never notify the store's
+    subscribers).
+  * `PlayerDetail` gains a "Show skill tree" button on desktop and a sixth tab on a phone.
+* **Docs.** ADR-107 (+ Evidence), PRD CR-029, DATA_CONTRACTS §21.3/§25, UX_SPEC §6A.17,
+  ARCHITECTURE §14, OPERATIONS §16.12/§17.3, DATA_SOURCES §22, the source registry (role,
+  probes, three known issues), README, `docs/visual-qa/2026-10-14-skill-tree/`.
+
+**Next gate:** owner review, including two owner decisions recorded in ADR-107:
+* publishing Next Gen Stats aggregates (one constant, `NGS_PUBLISHED`, removes them);
+* the PFR-id follow-up (below).
+
+A PR (when asked for) runs the Firefox/WebKit smoke.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean, 340 files
+uv run mypy                                          # clean, 203 source files
+uv run pytest                                        # 2,009 passed (4 live deselected)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 929 vitest (45 files)
+npm run e2e                                          # 290 passed (chromium, mobile, a11y; 24 new in skilltree.spec.ts)
+npm run verify:board (6 CI fixtures)                 # 0 failures each
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok; entry 170.7 kB gzip, SkillTree 7.5 kB + 2.5 kB CSS (lazy)
+npm run e2e:size-model && verify-budget (gating)     # all met: tree +16.5/25 kB, repeat 0/0, switch +6.6/10;
+                                                     # card +23.9/30 (unchanged), first visit 327.0/450 (+2.5)
+node web/tests/e2e/measure-skilltree.mjs (4×, 1×)    # all targets met (ADR-107 Evidence table)
+node web/tests/e2e/capture-skilltree.mjs             # fixture 25 screens, real 14 screens, 0 problems
+# Real data: build-ros on live nflverse 2026-10-14 (cutoff week 5) + the live draft artifacts:
+build-ros                                            # gate pass (0 critical, 4 known warnings); 12,161 readings, 646 players
+validate-artifacts --require-serving                 # 0 critical, 0 warning
+eda.py --check-artifact                              # 12,161 compared, 0 mismatches, 1 explained (D.J. Moore PFR id)
+verify:board (real site, /jeisey-tiers/)             # 0 failures
+verify:budget (real, report-only)                    # tree +16.6, switch +7.6, repeat 0, card +23.6 kB; all met
+```
+
+Facts a later session should not re-derive:
+
+* **PFR ids can contain a period** (D.J. Moore `MoorD.00`). `identity.ids._PFR_RE` refuses
+  them, so his snap rows never bridge anywhere: in the tree he reads "not covered". Widening
+  the rule changes model inputs, so it is a separate, measured change (registry
+  `known_issues.pfr_id_with_period_refused`; a follow-up task was proposed).
+* **The core font subset matters.** A detail that printed `÷` downloaded `exo2-latin-rest`
+  mid-tap, which took 2 s on a 4× phone. Every published Skill Tree string is pinned to the core
+  subset by a test.
+* **`store.ensure` notifies every subscriber,** and a notification re-renders the whole board.
+  Families nothing subscribes to (`QUIET_FAMILIES`) must stay quiet.
+* **Measuring taps on this board:** Playwright's role engine walks all ~37,000 nodes per query
+  and ran for most of a second inside the timed window. `measure-skilltree.mjs` resolves the
+  target first, taps raw coordinates, polls `querySelector` once a frame, and reads Event
+  Timing. **The first tap in a freshly opened card** has a ~0.75 s long task at 4× whatever tab
+  it hits. That is pre-existing, and the tree is held to the same baseline.
+* **Vite must run from the repo root** (`vite.config.ts` lives there; `--outDir dist-realsite`
+  lands in `web/`). From `web/` it silently builds with base `/`.
+* **Real-site captures:** a deep board player is reachable with `?search=<name>`; click the
+  visible match (`.and(page.locator(":visible"))`).
+
 **My Leagues — 2026-10-13 (ADR-106).** On `claude/elegant-newton-6ykeio` from `main` at
 `cd24ec1`. Browser-only work: no Python, model, artifact, schema, served file or published
 value changed. The request authorised browser-local persistence and configurable starter counts

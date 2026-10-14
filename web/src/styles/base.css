@@ -857,6 +857,23 @@ code {
   color: var(--accent-bright);
 }
 
+/*
+ * The card's Skill Tree activation row (ADR-107). The tree's own styles arrive with its lazy
+ * chunk; only this row is needed before anything is fetched.
+ */
+.skilltree-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.skilltree-toggle .section-note {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
 /* --------------------------------------------------------------- notices */
 
 .notice {
@@ -2972,7 +2989,8 @@ dialog.player-detail::backdrop {
 .detail-tabs button {
   appearance: none;
   flex: 1;
-  min-width: 0;
+  /* Never narrower than its longest word: the row shares out only the space left over. */
+  min-width: min-content;
   height: 40px;
   padding: 0 4px;
   border: none;
@@ -2989,6 +3007,19 @@ dialog.player-detail::backdrop {
   background: rgb(46 204 255 / 16%);
   color: var(--accent-bright);
   box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/*
+ * Six tabs on an in-season card with a Skill Tree (ADR-107). Below 380px the row's longest words
+ * at full tracking add up to more than the sheet is wide, and a row of tabs must never widen the
+ * card: the tracking and padding tighten instead, and every label stays whole (measured from
+ * 320px to 767px in 5px steps: no clipped label, no row overflow, no card wider than the screen).
+ */
+@media (max-width: 379px) {
+  .detail-tabs button {
+    padding: 0 2px;
+    letter-spacing: 0.03em;
+  }
 }
 
 .detail-body {

@@ -433,6 +433,34 @@ def build(out: Path, seed: int = 20260930) -> None:
                     f"https://a.espncdn.com/i/headshots/nfl/players/full/{player['espn']}.png"
                 )
             records[artifact].append(row)
+    # ADR-107: every appearing player's whole tree, one reading per metric of his position (a
+    # complete golden tree per position, cloned), and one presence record per board player
+    # with no appearance. The definitions do not grow with the board: they are the golden ones.
+    trees: dict[str, list[dict[str, Any]]] = {}
+    for record in templates["player_skill_tree"]:
+        if record["state"] == "no_appearances":
+            continue
+        tree = [
+            row for row in templates["player_skill_tree"] if row["player_id"] == record["player_id"]
+        ]
+        if len(tree) > len(trees.get(record["position"], [])):
+            trees[record["position"]] = tree
+    absent = next(row for row in templates["player_skill_tree"] if row["state"] == "no_appearances")
+    tree_players = [player for player in players if player["position"] in trees]
+    for index in range(counts["skill_tree_players"]):
+        player = tree_players[index % len(tree_players)]
+        # The board's deepest players are the ones with no appearance yet, never its leaders.
+        if index >= counts["skill_tree_players"] - counts["skill_tree_without_appearance"]:
+            records["player_skill_tree"].append(_identity(dict(absent), player))
+            continue
+        games = rng.randrange(1, 9)
+        for template in trees[player["position"]]:
+            row = _identity(perturb.walk("player_skill_tree", template), player)
+            # A year is not a measurement: the combine season is copied, never perturbed.
+            row["games"], row["source_season"] = games, template["source_season"]
+            records["player_skill_tree"].append(row)
+    records["skill_tree_definitions"] = list(templates["skill_tree_definitions"])
+
     records["team_matchups"] = [
         {**template, "team": TEAMS[index]}
         for index, template in enumerate(templates["team_matchups"] * 2)

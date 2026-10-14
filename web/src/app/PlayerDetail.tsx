@@ -39,7 +39,7 @@
  *   probability and not model confidence (ADR-041).
  */
 
-import { useEffect, useId, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useId, useRef, useState } from "react";
 
 import { AvailabilityBadge, ConfidenceMeter, PositionTag, StatusBadge, TierTag } from "../components/primitives";
 import type { Availability } from "../data/availability";
@@ -98,6 +98,7 @@ import { WhyWeek } from "../components/WhyWeek";
 import { explainFlags, playerLevelFlags } from "../data/flags";
 import { CONFIDENCE_SHORT, describeGap, describeTrend, marketSourceLabel } from "../data/market";
 import type { WhyThisWeek } from "../data/whyweek";
+import type { SkillTreeSource } from "../data/store";
 import { hasMeaningfulStatus, isNoteworthyRosterStatus, statusBadge } from "../data/model";
 import {
   formatRosPositionRank,
@@ -126,6 +127,14 @@ import {
   breadthReading,
   type UsageCohort,
 } from "../data/signals";
+
+/**
+ * The Skill Tree (ADR-107): code, styles and data all load on an explicit activation — the
+ * section's button on desktop and tablet, its tab on a phone — never with the card.
+ */
+const SkillTree = lazy(() => import("./SkillTree"));
+
+const SKILL_TREE_POSITIONS: ReadonlySet<string> = new Set(["QB", "RB", "WR", "TE"]);
 
 /** The stylesheet's sheet breakpoint. Keep in step with `base.css`. */
 const SHEET_QUERY = "(max-width: 767px)";
@@ -1219,6 +1228,7 @@ export function PlayerDetail({
   onClose,
   onOpenData,
   onCompare,
+  skillTree = null,
 }: {
   readonly data: PlayerDetailData | null;
   readonly onClose: () => void;
@@ -1226,11 +1236,16 @@ export function PlayerDetail({
   readonly onOpenData?: (() => void) | undefined;
   /** Put this player on the Start/Sit comparison and go there (ADR-096). */
   readonly onCompare?: ((playerId: string) => void) | undefined;
+  /** The build's Skill Tree loader (ADR-107); null or absent when none was published. */
+  readonly skillTree?: SkillTreeSource | null | undefined;
 }): React.JSX.Element | null {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const returnFocusTo = useRef<HTMLElement | null>(null);
   const sheet = useMediaQuery(SHEET_QUERY);
   const [tab, setTab] = useState(0);
+  // ADR-107: whether the reader has opened the Skill Tree. It stays open for the next player in
+  // the same dialog and resets when the dialog closes, so opening a card never fetches it.
+  const [treeOpen, setTreeOpen] = useState(false);
   const baseId = useId();
 
   useEffect(() => {
@@ -1259,6 +1274,7 @@ export function PlayerDetail({
   if (lastPlayerId !== playerId) {
     setLastPlayerId(playerId);
     setTab(0);
+    if (playerId === null) setTreeOpen(false);
   }
 
   useEffect(() => {
@@ -1345,13 +1361,18 @@ export function PlayerDetail({
     ...playerLevelFlags(arbitrage?.quality_flags ?? []),
   ]);
 
+  // ADR-107: the Skill Tree follows the observed role it deepens — in-season cards only, at a
+  // position with a tree, and only when this build published one.
+  const showSkillTree =
+    inSeasonCard && skillTree !== null && position !== null && SKILL_TREE_POSITIONS.has(position);
   /** Sections actually rendered, in order. The index and the tab list both follow this. */
-  const sections: readonly ("intrinsic" | "ros" | "week" | "usage" | "market" | "status")[] = [
+  const sections: readonly ("intrinsic" | "ros" | "week" | "usage" | "skilltree" | "market" | "status")[] = [
     ...(tier !== null ? (["intrinsic"] as const) : []),
     ...(ros != null ? (["ros"] as const) : []),
     ...(inSeasonCard && data.weekly != null ? (["week"] as const) : []),
     // One slot, two panels, and the season decides which. See `PlayerDetailData.inSeason`.
     inSeasonCard ? ("usage" as const) : ("market" as const),
+    ...(showSkillTree ? (["skilltree"] as const) : []),
     "status",
   ];
   // The tab label is the panel's own heading, word for word: a tab that says something else
@@ -1362,6 +1383,7 @@ export function PlayerDetail({
     ros: "Rest of season",
     week: "This week",
     usage: "In-season usage",
+    skilltree: "Skill tree",
     market: "Draft market",
     status: "Current status",
   };
@@ -1643,6 +1665,63 @@ export function PlayerDetail({
               seriesPublished: data.seriesPublished === true,
             }}
           />
+        </DetailSection>
+      );
+    }
+    if (kind === "skilltree" && skillTree !== null && position !== null) {
+      // On a phone the tab is the activation; elsewhere the button is.
+      const open = sheet || treeOpen;
+      const panelId = `${id}-tree`;
+      return (
+        <DetailSection
+          key={kind}
+          index={index}
+          id={id}
+          title="Skill tree"
+          badge={
+            <>
+              <span className="detail-badge-label">Observed</span>
+              season to date
+            </>
+          }
+          tabbed={sheet}
+        >
+          {!sheet && (
+            <div className="skilltree-toggle">
+              <p className="section-note">
+                Every statistic behind his role, ranked only against qualified players at his
+                position. Each node is one number; there is no overall rating.
+              </p>
+              <button
+                type="button"
+                className="button"
+                aria-expanded={treeOpen}
+                aria-controls={treeOpen ? panelId : undefined}
+                onClick={() => {
+                  if (!treeOpen) void skillTree.load(data.playerId, position).catch(() => undefined);
+                  setTreeOpen((current) => !current);
+                }}
+              >
+                {treeOpen ? "Hide skill tree" : "Show skill tree"}
+              </button>
+            </div>
+          )}
+          {skillTree.status === "incompatible" ? (
+            open && (
+              <p className="section-note" id={panelId}>
+                This build&apos;s skill tree uses a contract version this page cannot read; reload to
+                get the current page.
+              </p>
+            )
+          ) : (
+            open && (
+              <div id={panelId}>
+                <Suspense fallback={<p className="section-note">Loading the skill tree…</p>}>
+                  <SkillTree source={skillTree} playerId={data.playerId} position={position} name={name} />
+                </Suspense>
+              </div>
+            )
+          )}
         </DetailSection>
       );
     }

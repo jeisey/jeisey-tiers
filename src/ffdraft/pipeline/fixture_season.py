@@ -401,6 +401,9 @@ def _row(
         row[name] = float(line.get(name, 0.0))
     row["passing_epa"] = line.get("passing_epa")
     row["sacks_suffered"] = line.get("sacks_suffered", 0.0)
+    # ADR-107: yards after the catch, a third to a half of receiving yards by position.
+    share = {"RB": 0.8, "TE": 0.45, "WR": 0.32}.get(str(player.get("position")), 0.0)
+    row["receiving_yards_after_catch"] = round(float(line.get("receiving_yards", 0.0)) * share)
     return row
 
 
@@ -549,3 +552,374 @@ def fixture_drive_plays(weekly: pl.DataFrame, *, through_week: int) -> pl.DataFr
                     play(drive, kind, gsis, yardline, scramble)
                     placed += 1
     return pl.DataFrame(rows)
+
+
+# ------------------------------------------------------------------ Skill Tree (ADR-107)
+
+#: Pass and rush plays every synthetic team-game carries beyond its players' own: a
+#: two-point try (excluded everywhere) and, for the cutoff's next week, a whole extra game.
+_SKILL_RED_ZONE_EVERY = 4
+_SKILL_GOAL_LINE_EVERY = 9
+
+
+def _spread(total: float, parts: int) -> list[float]:
+    """``total`` over ``parts`` plays as whole yards, the remainder on the first plays."""
+    if parts <= 0:
+        return []
+    base, extra = divmod(int(round(total)), parts)
+    return [float(base + (1 if index < extra else 0)) for index in range(parts)]
+
+
+def _epa(gsis: str, week: int, index: int) -> float:
+    code = sum(ord(char) for char in gsis) + 7 * week + 13 * index
+    return round(((code % 17) - 7) * 0.12, 3)
+
+
+def fixture_skill_plays(weekly: pl.DataFrame, *, through_week: int) -> pl.DataFrame:
+    """A play-by-play frame carrying every column the Skill Tree reads (ADR-107). Synthetic.
+
+    Built from the fixture's own weekly rows so the universes reconcile with the box score:
+    each target, carry and sack is one play; a quarterback's extra attempts are throwaways; a
+    rushing quarterback's alternate carries are scrambles and, in the cutoff week, one carry
+    is a kneel-down. Every fourth play is snapped in the red zone and every ninth at the goal
+    line. Each team-game also carries a two-point try, and the file holds one game past the
+    cutoff and one postseason play — all three must be ignored.
+    """
+    rows: list[dict[str, object]] = []
+    frame = weekly.filter((pl.col("week") <= through_week) & pl.col("team").is_not_null())
+
+    def play(**fields: object) -> None:
+        base: dict[str, object] = {
+            "season": 2026,
+            "season_type": "REG",
+            "play_type": "pass",
+            "pass_attempt": 0.0,
+            "rush_attempt": 0.0,
+            "sack": 0.0,
+            "qb_scramble": 0.0,
+            "two_point_attempt": 0.0,
+            "passer_player_id": None,
+            "rusher_player_id": None,
+            "receiver_player_id": None,
+            "yardline_100": 45.0,
+            "air_yards": None,
+            "receiving_yards": None,
+            "rushing_yards": None,
+            "complete_pass": 0.0,
+            "epa": 0.0,
+            "cpoe": None,
+        }
+        base.update(fields)
+        rows.append(base)
+
+    for (week, team), group in sorted(
+        frame.group_by("week", "team"),
+        key=lambda item: (int(item[0][0]), str(item[0][1])),
+    ):
+        week_i, team_s = int(week), str(team)
+        ordered = group.sort("gsis_id")
+        quarterbacks = [
+            str(row["gsis_id"])
+            for row in ordered.iter_rows(named=True)
+            if row.get("position") == "QB"
+        ]
+        passer = quarterbacks[0] if quarterbacks else None
+        index = 0
+        targets_thrown = 0
+        for row in ordered.iter_rows(named=True):
+            gsis = str(row["gsis_id"])
+            targets = int(row.get("targets") or 0)
+            receptions = int(row.get("receptions") or 0)
+            yards = _spread(float(row.get("receiving_yards") or 0.0), receptions)
+            air = _spread(float(row.get("receiving_air_yards") or 0.0), targets)
+            for slot in range(targets):
+                index += 1
+                complete = slot < receptions
+                yardline = (
+                    3.0
+                    if index % _SKILL_GOAL_LINE_EVERY == 0
+                    else 15.0
+                    if index % _SKILL_RED_ZONE_EVERY == 0
+                    else 45.0
+                )
+                gained = yards[slot] if complete else 0.0
+                play(
+                    week=week_i,
+                    posteam=team_s,
+                    pass_attempt=1.0,
+                    passer_player_id=passer,
+                    receiver_player_id=gsis,
+                    yardline_100=yardline,
+                    air_yards=air[slot] if air else 0.0,
+                    receiving_yards=gained,
+                    complete_pass=1.0 if complete else 0.0,
+                    epa=_epa(gsis, week_i, slot),
+                    cpoe=round((1.0 if complete else 0.0) * 100 - 64.0 - (index % 5), 3),
+                )
+            targets_thrown += targets
+            carries = int(row.get("carries") or 0)
+            rushed = _spread(float(row.get("rushing_yards") or 0.0), carries)
+            for slot in range(carries):
+                index += 1
+                is_qb = row.get("position") == "QB"
+                kneel = is_qb and week_i == through_week and slot == carries - 1 and carries >= 3
+                yardline = (
+                    3.0
+                    if index % _SKILL_GOAL_LINE_EVERY == 0
+                    else 15.0
+                    if index % _SKILL_RED_ZONE_EVERY == 0
+                    else 45.0
+                )
+                play(
+                    week=week_i,
+                    posteam=team_s,
+                    play_type="qb_kneel" if kneel else "run",
+                    rush_attempt=1.0,
+                    rusher_player_id=gsis,
+                    qb_scramble=1.0 if is_qb and slot % 2 == 1 and not kneel else 0.0,
+                    yardline_100=yardline,
+                    rushing_yards=-1.0 if kneel else rushed[slot],
+                    epa=-0.4 if kneel else _epa(gsis, week_i, 100 + slot),
+                )
+        if passer is not None:
+            qb_row = next(
+                row for row in ordered.iter_rows(named=True) if str(row["gsis_id"]) == passer
+            )
+            for slot in range(int(qb_row.get("sacks_suffered") or 0)):
+                play(
+                    week=week_i,
+                    posteam=team_s,
+                    pass_attempt=1.0,
+                    sack=1.0,
+                    passer_player_id=passer,
+                    epa=-1.5,
+                    yardline_100=40.0 + slot,
+                )
+            for slot in range(max(0, int(qb_row.get("pass_attempts") or 0) - targets_thrown)):
+                play(
+                    week=week_i,
+                    posteam=team_s,
+                    pass_attempt=1.0,
+                    passer_player_id=passer,
+                    air_yards=5.0,
+                    epa=-0.3,
+                    yardline_100=50.0 + slot % 5,
+                )
+        # A two-point try: a play, never an opportunity.
+        play(
+            week=week_i,
+            posteam=team_s,
+            play_type="run",
+            rush_attempt=1.0,
+            two_point_attempt=1.0,
+            rusher_player_id=passer,
+            yardline_100=2.0,
+            rushing_yards=2.0,
+            epa=0.9,
+        )
+    regular = pl.DataFrame(rows, infer_schema_length=None)
+    if regular.is_empty():
+        return regular
+    beyond = regular.filter(pl.col("week") == through_week).with_columns(
+        (pl.col("week") + 1).alias("week"),
+    )
+    postseason = regular.head(1).with_columns(
+        pl.lit("POST").alias("season_type"),
+        pl.lit(19).cast(regular.schema["week"]).alias("week"),
+    )
+    return pl.concat([regular, beyond, postseason], how="vertical_relaxed")
+
+
+def _code(gsis: str) -> int:
+    return sum(ord(char) for char in gsis)
+
+
+def fixture_nextgen(weekly: pl.DataFrame, *, through_week: int) -> dict[str, pl.DataFrame]:
+    """Next Gen Stats-shaped frames (normalized) for the fixture players. Synthetic.
+
+    Season summaries (week 0) for passers with 48+ attempts, rushers with 30+ carries and
+    receivers with 15+ targets, matching the official volume — except one receiver whose
+    summary is off by five targets, which must be refused. Weekly rows exist only for
+    qualifying weeks and end at the cutoff, as a real file's do on build day.
+    """
+    from ffdraft.contracts.normalized import NEXTGEN_STATS_CONTRACT
+
+    stats = weekly.filter(
+        (pl.col("week") <= through_week)
+        & pl.col("position").is_in(["QB", "RB", "WR", "TE"])
+        & ~pl.col("gsis_id").str.starts_with("00-99"),
+    )
+    totals = stats.group_by("gsis_id", "position").agg(
+        pl.col("pass_attempts").sum(),
+        pl.col("carries").sum(),
+        pl.col("targets").sum(),
+        pl.col("receptions").sum(),
+    )
+    frames: dict[str, list[dict[str, object]]] = {"passing": [], "rushing": [], "receiving": []}
+    mismatched = False
+    for row in totals.sort("gsis_id").iter_rows(named=True):
+        gsis, position = str(row["gsis_id"]), str(row["position"])
+        code = _code(gsis)
+        base = {"season": 2026, "season_type": "REG", "gsis_id": gsis, "position": position}
+        if position == "QB" and row["pass_attempts"] >= 48:
+            frames["passing"].append(
+                {
+                    **base,
+                    "week": 0,
+                    "stat_type": "passing",
+                    "volume": row["pass_attempts"],
+                    "avg_time_to_throw": round(2.5 + (code % 10) * 0.07, 3),
+                },
+            )
+        if position == "RB" and row["carries"] >= 30:
+            frames["rushing"].append(
+                {
+                    **base,
+                    "week": 0,
+                    "stat_type": "rushing",
+                    "volume": row["carries"],
+                    "rush_yards_over_expected_per_att": round(((code % 9) - 4) * 0.2, 3),
+                },
+            )
+        if position in ("WR", "TE") and row["targets"] >= 15:
+            volume = float(row["targets"])
+            if not mismatched and position == "WR":
+                volume += 5.0
+                mismatched = True
+            frames["receiving"].append(
+                {
+                    **base,
+                    "week": 0,
+                    "stat_type": "receiving",
+                    "volume": volume,
+                    "receptions": row["receptions"],
+                    "avg_separation": round(2.0 + (code % 12) * 0.15, 3),
+                    "avg_cushion": round(5.0 + (code % 7) * 0.3, 3),
+                    "avg_yac_above_expectation": round(((code % 11) - 5) * 0.15, 3),
+                },
+            )
+    for row in stats.iter_rows(named=True):
+        base = {
+            "season": 2026,
+            "season_type": "REG",
+            "week": int(row["week"]),
+            "gsis_id": str(row["gsis_id"]),
+            "position": row["position"],
+        }
+        if float(row["pass_attempts"] or 0) >= 15:
+            frames["passing"].append(
+                {**base, "stat_type": "passing", "volume": row["pass_attempts"]}
+            )
+        if float(row["carries"] or 0) >= 10:
+            frames["rushing"].append({**base, "stat_type": "rushing", "volume": row["carries"]})
+        if float(row["targets"] or 0) >= 5:
+            frames["receiving"].append(
+                {**base, "stat_type": "receiving", "volume": row["targets"]},
+            )
+    return {kind: NEXTGEN_STATS_CONTRACT.build(rows) for kind, rows in frames.items()}
+
+
+def fixture_combine(weekly: pl.DataFrame) -> tuple[pl.DataFrame, dict[str, str]]:
+    """Combine testers and the PFR → GSIS bridge for the fixture players. Synthetic.
+
+    Every third fixture player has no combine time (not covered); one GSIS id is linked from
+    two combine rows (ambiguous, so it fails closed); forty unnamed testers per position make
+    the cohorts real.
+    """
+    players = (
+        weekly.filter(
+            pl.col("position").is_in(["QB", "RB", "WR", "TE"])
+            & ~pl.col("gsis_id").str.starts_with("00-99"),
+        )
+        .select("gsis_id", "position")
+        .unique()
+        .sort("gsis_id")
+    )
+    rows: list[dict[str, object]] = []
+    bridge: dict[str, str] = {}
+    base_time = {"QB": 4.75, "RB": 4.45, "WR": 4.40, "TE": 4.65}
+    for index, (gsis, position) in enumerate(players.iter_rows()):
+        pfr = f"pfr-{gsis}"
+        bridge[pfr] = str(gsis)
+        if index % 3 == 2:
+            continue
+        rows.append(
+            {
+                "combine_year": 2018 + index % 8,
+                "pfr_id": pfr,
+                "position": position,
+                "forty": round(base_time[str(position)] + (_code(str(gsis)) % 15) * 0.02, 2),
+            },
+        )
+        if index == 0:
+            # A second row claiming the same player: ambiguous, so he gets no reading.
+            rows.append(
+                {"combine_year": 2017, "pfr_id": pfr, "position": position, "forty": 4.99},
+            )
+    for position, start in base_time.items():
+        for slot in range(40):
+            rows.append(
+                {
+                    "combine_year": 2001 + slot % 25,
+                    "pfr_id": None,
+                    "position": position,
+                    "forty": round(start - 0.15 + slot * 0.012, 2),
+                },
+            )
+    frame = pl.DataFrame(
+        rows,
+        schema={
+            "combine_year": pl.Int32,
+            "pfr_id": pl.String,
+            "position": pl.String,
+            "forty": pl.Float64,
+        },
+    )
+    return frame, bridge
+
+
+#: Peer clubs the Skill Tree fixture adds so every position has a rankable cohort (the fixture
+#: board has three quarterbacks and three tight ends; a rank needs five). Their rows reach the
+#: Skill Tree builder only — no board, actuals or usage record describes them.
+_PEER_TEAMS: tuple[str, ...] = ("PHA", "PHB", "PHC", "PHD", "PHE", "PHF")
+
+
+def fixture_skill_peers(
+    *,
+    season: int,
+    through_week: int,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Weekly rows and snap counts for six synthetic peer clubs (QB, RB, WR, TE each). Synthetic."""
+    stat_rows: list[dict[str, Any]] = []
+    snap_rows: list[dict[str, Any]] = []
+    for index, team in enumerate(_PEER_TEAMS):
+        for slot, position in enumerate(("QB", "RB", "WR", "TE")):
+            gsis = f"00-98{index:02d}{slot:03d}"
+            player = {"display_name": f"{team} {position}", "position": position}
+            snap = 0.55 + 0.07 * index if position != "QB" else 1.0
+            for week in range(1, through_week + 1):
+                if week == 5 + index % 3 and position != "QB":
+                    continue  # a missed game, so games differ across the cohort
+                line = _stat_line("steady", position, week + index, min(snap, 0.95))
+                stat_rows.append(_row(season, week, gsis, player, team, line))
+                snap_rows.append(
+                    {
+                        "season": season,
+                        "week": week,
+                        "game_type": "REG",
+                        "pfr_player_id": f"pfr-{gsis}",
+                        "player_name": player["display_name"],
+                        "position": position,
+                        "team": team,
+                        "offense_snaps": round(min(snap, 1.0) * 64),
+                        "offense_pct": round(min(snap, 1.0), 2),
+                        "gsis_id": gsis,
+                    },
+                )
+    weekly = WEEKLY_STATS_CONTRACT.build(stat_rows)
+    snaps = SNAP_COUNTS_CONTRACT.build(
+        [{key: value for key, value in row.items() if key != "gsis_id"} for row in snap_rows],
+    ).with_columns(
+        pl.Series("gsis_id", [row["gsis_id"] for row in snap_rows], dtype=pl.String),
+    )
+    return weekly, snaps

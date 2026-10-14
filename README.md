@@ -43,6 +43,14 @@ controls lets you open either mode at any time; the draft board stays reachable 
 range, market history, current status and, in season, his next game and his availability
 reading. Headshots are loaded from ESPN only when a card or Pick of the Week is opened.
 
+In season, a card also has a **Skill tree**: the player's season so far as a tree of
+position-specific statistics (four branches, 13–14 nodes for a QB, RB, WR or TE): workload,
+shares, efficiency, depth, red-zone role and, where Next Gen Stats covers him, tracking context.
+Each node is one statistic, with its sample and its percentile among qualified players at his
+position. There is no overall rating, and nothing on the site reads the tree. It loads only when
+you open it (a button on a desktop card, a tab on a phone). A combine 40-yard time sits apart,
+labelled as historical rather than current speed.
+
 ## Leagues and scoring
 
 Defined in [`config/league-defaults.yaml`](config/league-defaults.yaml):
@@ -115,6 +123,11 @@ previous site keeps serving, so the page can be stale but should not be partiall
   reads its output.
 - **Trade.** Packages are arithmetic over published rest-of-season fields; floors and ceilings for
   two- or three-player packages are approximations, printed with `~`.
+- **Skill tree.** Descriptive only (ADR-107): official totals and pooled rates over the
+  regular-season games through the board's cutoff, play-by-play universes stated per metric,
+  Next Gen Stats season summaries only where they reconcile with official volume, and
+  competition-ranked percentiles among each position's qualified players. Below its minimum a
+  rate prints unranked with its sample.
 
 Model cards: [`models/cards/`](models/cards/). Feature definitions:
 [`docs/FEATURE_DICTIONARY.md`](docs/FEATURE_DICTIONARY.md) and
@@ -148,12 +161,16 @@ These are measured shortfalls or deliberate scope limits. The Data view lists th
   and say so.
 - **Trade packages ignore who owns the players** and whether anyone would accept; asset value is
   not lineup value.
+- **Early-season efficiency is noisy.** Several skill-tree rates (yards per carry, receiving EPA
+  per target, interception rate) barely persist from the first five weeks to the rest of a
+  season; the tree prints their samples and says so. Route-based metrics are not shown: no
+  permitted live source has routes for the current season.
 
 ## Data sources and attribution
 
 | Source | Used for | Terms |
 |---|---|---|
-| [nflverse](https://github.com/nflverse/nflverse-data) via [nflreadpy](https://github.com/nflverse/nflreadpy) | Statistics, play-by-play, rosters, depth charts, snap counts, schedules (including spread and total lines), injury reports, draft and combine data | Data broadly CC-BY 4.0 and owned by its respective owners; nflreadpy is MIT |
+| [nflverse](https://github.com/nflverse/nflverse-data) via [nflreadpy](https://github.com/nflverse/nflreadpy) | Statistics, play-by-play, rosters, depth charts, snap counts, schedules (including spread and total lines), injury reports, draft and combine data, and NFL Next Gen Stats season summaries (skill tree context only) | Data broadly CC-BY 4.0 and owned by its respective owners (Next Gen Stats: the NFL); nflreadpy is MIT |
 | [ffopportunity](https://ffopportunity.ffverse.com/) | Expected fantasy points, as a model input only | CC-BY-SA 4.0 |
 | [MyFantasyLeague](https://api.myfantasyleague.com/) | Draft ADP | Read under MyFantasyLeague's developer rules with a registered client |
 | [Fantasy Football Calculator](https://fantasyfootballcalculator.com/adp) | Draft ADP | Used with attribution, as its API terms ask |

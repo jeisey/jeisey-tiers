@@ -53,6 +53,7 @@ import { ArtifactIndex } from "./model";
 import { InSeasonBundle } from "./ros";
 import {
   blockKey,
+  bucketOf,
   cardKey,
   decodeTable,
   fetchServed,
@@ -179,6 +180,36 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
   return [...new Set(wanted)].filter((key) => key in manifest.files);
 }
 
+/**
+ * The Skill Tree's two served files for one player (ADR-107): his position's definitions and
+ * the bucket shard holding his readings. Never part of `requiredKeys`: no view and no card open
+ * fetches them; only an explicit Skill Tree activation does. A key the build did not publish is
+ * left out — a player whose bucket holds no one has no readings.
+ */
+export function skillTreeKeys(manifest: Manifest, playerId: string, position: string): readonly string[] {
+  const shard = `skill_tree/${String(bucketOf(playerId, manifest.card_buckets)).padStart(2, "0")}`;
+  return [`skill_tree_definitions/${position}`, shard].filter((key) => key in manifest.files);
+}
+
+/** Families whose arrival changes nothing any subscriber renders (ADR-107). */
+const QUIET_FAMILIES: ReadonlySet<string> = new Set(["skill_tree", "skill_tree_definitions"]);
+
+/** One player's Skill Tree rows as the store decoded them; parsed by the lazy chunk. */
+export interface SkillTreeLoad {
+  readonly rows: readonly Record<string, unknown>[];
+  readonly definitions: readonly Record<string, unknown>[];
+}
+
+/** What the card needs to offer a Skill Tree and load one on demand (ADR-107). */
+export interface SkillTreeSource {
+  /** `incompatible`: published under a record major version this page does not read. */
+  readonly status: "published" | "incompatible";
+  /** `ros_build_metadata.skill_tree`, verbatim. */
+  readonly meta: unknown;
+  /** Start fetching (or reuse) a player's two files; resolves with his rows. */
+  readonly load: (playerId: string, position: string) => Promise<SkillTreeLoad>;
+}
+
 function supported(header: EnvelopeHeader | undefined): boolean {
   return (
     header !== undefined &&
@@ -254,6 +285,40 @@ export class DataStore {
     this.degradations = degradations;
   }
 
+  /**
+   * The Skill Tree's loader, or null when this build published none (an older deploy, or a
+   * failed enrichment). Its files go through the same hash-checked cache as every slice.
+   */
+  skillTreeSource(): SkillTreeSource | null {
+    const header = this.manifest.artifacts.player_skill_tree;
+    const definitions = this.manifest.artifacts.skill_tree_definitions;
+    if (header === undefined || definitions === undefined) return null;
+    const meta = (this.manifest.ros_build_metadata as { skill_tree?: unknown } | undefined)?.skill_tree ?? null;
+    if (!supported(header) || !supported(definitions)) {
+      return {
+        status: "incompatible",
+        meta,
+        load: () => Promise.reject(new Error("the Skill Tree's artifact version is not supported")),
+      };
+    }
+    return {
+      status: "published",
+      meta,
+      load: async (playerId, position) => {
+        const keys = skillTreeKeys(this.manifest, playerId, position);
+        const definitionsKey = `skill_tree_definitions/${position}`;
+        if (!keys.includes(definitionsKey)) throw new Error(`no Skill Tree definitions for ${position}`);
+        await this.ensure(keys);
+        const shard = keys.find((key) => key.startsWith("skill_tree/"));
+        const rows = shard === undefined ? [] : (this.tables.get(shard) ?? []);
+        return {
+          rows: rows.filter((row) => row.player_id === playerId),
+          definitions: this.tables.get(definitionsKey) ?? [],
+        };
+      },
+    };
+  }
+
   /** A player's name from the dictionary every slice resolves through, or null (ADR-106). */
   nameFor(playerId: string): string | null {
     return this.names?.[playerId] ?? null;
@@ -306,7 +371,9 @@ export class DataStore {
     const task = Promise.all([fetchServed(key, digest, this.base), ...dependencies])
       .then(([payload]) => {
         this.decode(key, payload);
-        this.notify();
+        // The Skill Tree reads its rows from the promise it awaited; no board or view
+        // subscribes to them, so its files never re-render the page behind the card.
+        if (!QUIET_FAMILIES.has(family)) this.notify();
       })
       .finally(() => {
         this.pending.delete(key);

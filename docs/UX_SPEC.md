@@ -1041,6 +1041,60 @@ nothing is uploaded or put in a link, and says that clearing site data removes t
   `mobile.spec.ts`, and `capture-leagues.mjs` at 320, 390, 390×600, 768, 1024, 1280 and 1440
   (`docs/visual-qa/2026-10-13-my-leagues/`).
 
+### 6A.17 The Skill Tree (ADR-107)
+
+A player's positional statistical profile as a tree of illustrated stat nodes, on in-season
+cards for QB/RB/WR/TE when the build published one. Every number and word is
+`player_skill_tree` / `skill_tree_definitions`; the page only formats and orders them. The
+metaphor describes observations: nothing is spent, unlocked or earned, the connectors show
+category and reading order, and there is **no overall rating or branch score**.
+
+* **Where.** A card section, *Skill tree*, after *In-season usage* and before *Current status*,
+  badged "Observed · season to date". Desktop and tablet: the section shows one sentence and a
+  **Show skill tree** button (`aria-expanded`); nothing loads until it is pressed. Phone: a sixth
+  tab, *Skill tree*; nothing loads until it is chosen. The section is absent from a build with
+  no tree, and says so in words if the contract version is unreadable. While loading: "Loading
+  the skill tree…"; on a failure: the reason, and every other part of the card unaffected.
+* **Header.** The position in a framed hexagon (the core), the window ("2026 regular season,
+  weeks 1–8 · 8 games played") and one legend: meter = percentile among qualified players at his
+  position, each segment 20 points; context metrics mark a position, not a grade; the kind tags;
+  "No overall rating: each node is one statistic." Withheld sources are listed under it with
+  the build's own sentence.
+* **Branches.** Four per position (QB *Passing volume*, *Accuracy & depth*, *Efficiency & ball
+  security*, *Legs & scoring*; RB *Ground workload*, *Rushing efficiency*, *Receiving*, *Scoring
+  role*; WR *Target earning*, *Depth & big plays*, *Catch & contribution*, *Scoring role*; TE
+  *Usage*, *Reliability*, *Production*, *Scoring & depth*), 13–14 nodes, each a vertical chain on
+  a cyan trunk. Columns follow the pane, never a scaled drawing: four from 620px of pane, two from
+  400px, one below (every phone) — the branches reflow vertically.
+* **A node.** Bronze octagonal frame with an original football glyph; the short label (whole
+  words, wrapping at spaces); the value in mono numerals with its unit; the standing in words
+  ("80th pct · 9th of 40", "Unranked · 12 of 15 targets", "No targets yet", "Not in Next Gen
+  Stats"); a five-segment meter (segment *k* lit from percentile 20(k − 1); lower-is-better
+  metrics are already direction-adjusted) with the kind tag (VOL, SHARE, RATE, CTX) at the end of
+  its row. A context metric draws a marker on a neutral track and says "above 72%", never
+  "better". Unranked, no-opportunity, not-covered and unavailable readings draw a dashed frame, a
+  muted glyph, an empty track and the state in words — never a lock, never a low meter.
+* **Detail.** Tap, click, Enter or Space opens one node's detail (again, or *Close*, closes it
+  and returns focus to the node): label and kind, value with its sample, standing and the
+  build's reason sentence, then *What it is*, *How to read it*, *Ranked against*, *Window*,
+  *Formula*, *Source* (with fields) and *Limitations*, and the node's detail metrics with their
+  own values, samples and standings. Below the tree on a wide pane; **directly under the node**
+  on a phone. The selected branch's connectors light from the trunk to the node — a reading path.
+* **Archive.** The combine 40 sits apart on a plaque labelled "Archive · historical context,
+  not current speed", with its test year and its percentile among same-position testers.
+* **Keyboard.** One tab stop for the tree (roving); ↑↓ within a branch (continuing into the next),
+  ←→ across branches at the same depth, Home/End; the archive plaque is its own stop. Escape
+  closes the card as everywhere. Every node's accessible name carries label, value and standing.
+* **Card tab row (phone).** Six tabs must never widen the card: every tab is at least as wide as
+  its longest word, and below 380px the row's tracking and padding tighten. Measured clean from
+  320 to 767px in 5px steps.
+* **Motion and colour.** One short transition on selection, none under reduced motion, nothing
+  continuous; no state depends on colour alone.
+* **Checks.** `web/tests/skilltree.test.tsx`, `web/tests/e2e/skilltree.spec.ts` (four trees,
+  sparse player, keyboard, touch, phone tab, player switch, lazy requests, no-tree build,
+  geometry at 320–1440 and short screens, axe, reduced motion), `capture-skilltree.mjs`
+  (`docs/visual-qa/2026-10-14-skill-tree/`) and `measure-skilltree.mjs`.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns

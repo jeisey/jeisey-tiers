@@ -1271,6 +1271,8 @@ never change.
 | `player_usage_cohort` | `player_usage` | whole | `player_id`, `position`, `touchdown_points_share`, `pass_epa_per_dropback` |
 | `player_availability` (ADR-101) | `player_status` | whole | `season`, `player_id`, `roster_status`, `sleeper_status`, `injury_status`, `injury_body_part`, `observed_at_utc`, `quality_flags`, `availability_override`, and (ADR-102) `current_team`, `employment_status`, `employment_source` |
 | `season_actuals` (ADR-105) | same | scoring | `season`, `through_week`, `scoring_preset`, `player_id`, `position`, `games_played`, `points`, `points_per_game`, `season_position_rank` (no names: every player a page shows already has one from his board row) |
+| `skill_tree` (ADR-107) | `player_skill_tree` | bucket (the card's FNV-1a, `skill_tree/NN`) | all (§25) |
+| `skill_tree_definitions` (ADR-107) | same | position (`skill_tree_definitions/QB`…) | all (§25) |
 | `players` | every artifact with names | whole | `player_id` → `display_name` |
 | `card` | tiers, arbitrage, market trend series (block); projections, weekly projections (scoring); player status, headshots, usage, behaviour series (whole); ROS, Opportunity (block) | block × bucket | every field of every row of those artifacts whose player falls in the bucket |
 
@@ -1511,3 +1513,83 @@ like an artifact, because a later build must read what an earlier one saved. The
   league whose `rev` has moved since that edit was made.
 * **Never.** The document is never sent over the network, never placed in a URL, and never read
   by the build.
+
+## 25. The Skill Tree — 2026-10-14 (ADR-107)
+
+Descriptive enrichment, read by nothing: no model, board, rank, tier or decision imports or
+reads these artifacts (an import firewall test enforces it in Python and TypeScript). Built by
+`ffdraft.signals.skilltree` (`skill_tree_v1`) during `build-ros`, after every board, from the
+frames the build already loaded; scoring- and league-independent, so published once.
+
+### 25.1 `player_skill_metric` 1.0 — `player_skill_tree.json`
+
+One record per player per metric of his position's tree, plus one `appearances` record per
+population player; a player with no appearance has only that record. Sorted by `position`,
+`player_id`, `metric_id`; keyed by `build_id`, `player_id`, `metric_id`. No CSV.
+
+| field | meaning |
+|---|---|
+| `season`, `through_week` | the board's season and cutoff: REG weeks `1..through_week` only |
+| `player_id`, `position` | canonical `gsis:` id; the board's position (as `season_actuals_v1` assigns it), which picks the tree and the cohort |
+| `metric_id` | a metric in `skill_tree_definitions` for that position, or `appearances` |
+| `state` | `ranked` · `below_minimum` · `small_cohort` · `no_opportunity` · `not_covered` · `unavailable` · `no_appearances` (presence record only) |
+| `value` | the published reading, rounded to the definition's `decimals`; null exactly for `no_opportunity`, `not_covered`, `unavailable` |
+| `numerator`, `denominator` | the pooled sample (integers, or three places for EPA and yards); null where the definition has none |
+| `rank`, `percentile`, `cohort_size` | competition rank and percentile among the metric's position cohort, computed on published values; non-null exactly when `state` is `ranked` |
+| `games` | his appearances (a weekly stats row or an offensive snap) — equal to `season_actuals.games_played` |
+| `source_season` | the combine year for `combine_forty`, else null |
+| `reason` | why a reading is not covered or unavailable (a code with a sentence in the metadata), or `tested_as:<POS>` for a combine time ranked among another combine position |
+
+A zero is a value (`0` targets is `ranked`), never a missing reading; a missing reading is never
+0. Percentile = 100 × (players strictly behind + (ties − 1) / 2) ÷ (cohort − 1); a cohort below
+5 publishes values and no ranks.
+
+### 25.2 `skill_tree_definition` 1.0 — `skill_tree_definitions.json`
+
+One record per position × metric: `role` (`presence`, `node`, `detail`, `archive`), `branch_id`,
+`branch_label`, `branch_order`, `order`, `parent_metric_id`, `label`, `short_label`, `kind`
+(`volume`, `share`, `rate`, `context`), `direction` (`higher`, `lower`, `neutral`), `unit`,
+`decimals`, `source_id`, `source_label`, `source_fields`, `formula`, `numerator_label`,
+`denominator_label`, `minimum`, `minimum_unit`, `cohort_rule`, `definition`, `interpretation`,
+`limitations`, `window` and this build's `source_status`. Every word the card prints about a
+metric comes from here; every published string is in the site's core font subset (a test
+holds it), so opening a detail never downloads a second font file.
+
+### 25.3 `ros_build_metadata.skill_tree`
+
+`method_version`, `status` (`published` · `failed`), `season`, `through_week`, `window`,
+`records`, `players`, `players_without_appearance`, `population` (appearing players per
+position), `minimum_cohort`, `ngs_published`, `sources` (per source: `status`, `reason`, and
+file-level detail — play-by-play plays, Next Gen Stats last week and summary rows per file,
+combine testers per combine position), `diagnostics` (games without a snap row, players on two
+clubs, unbridged snap rows, NGS volume mismatches, NGS-covered and combine-linked players),
+`reasons` (the sentence for each reason code **this build uses**, and no other: the manifest
+carries the block on every first visit) and `statement`. Optional and additive: absent or null
+means the build published no tree and the card has no Skill tree section.
+
+### 25.4 Validator and gates
+
+`artifacts/skilltree_checks.py`, wired into `validate-artifacts`, critical on failure:
+`player_skill_tree.state_inconsistent` (each state's value, sample, rank and reason fields),
+`.duplicate_reading`, `.undefined_metric` (a definition for every reading, none outside its
+position's tree), `.incomplete_tree` (an appearing player has every metric of his tree),
+`.rank_rederivation` (every rank, percentile and cohort size re-derived from the artifact's own
+rows), `.rate_arithmetic` (a rate equals numerator ÷ denominator at its published precision),
+`.actuals_disagree` (`games` and position equal to `season_actuals`), `.usage_disagree`
+(targets, carries and attempts equal to `player_usage`), `.half_published` (both artifacts or
+neither), `skill_tree_definitions.inconsistent`, and `ros_build_metadata.skill_tree_mismatch` /
+`_undescribed` (status, record count, cutoff, population, and a sentence for every published
+reason). Source gates (ADR-107): a scheduled
+team-week missing from the weekly stats or snap counts, or a completed game missing from
+play-by-play, makes that source's readings `unavailable` for the build; Next Gen Stats is used
+only when its REG weeks end exactly at the cutoff and a player's NGS volume is within one of his
+official volume. A builder failure publishes no tree and a warning; every board is unaffected.
+
+### 25.5 Serving
+
+`skill_tree/<bucket>` and `skill_tree_definitions/<position>` are content-addressed slices like
+every other (§21), hash-verified and cached by the page. Neither is in a card shard or in any
+view's `requiredKeys`: opening a card fetches none of them. Showing the tree fetches one
+definitions file and one bucket shard; the page re-renders nothing else when they arrive (the
+store's Skill Tree families do not notify its subscribers).
+

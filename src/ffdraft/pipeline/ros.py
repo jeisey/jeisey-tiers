@@ -202,6 +202,8 @@ def run_ros_build(
     shadow_out: Path | None = None,
     status_capture: Any | None = None,
     pbp: pl.DataFrame | None = None,
+    nextgen: Mapping[str, pl.DataFrame] | None = None,
+    combine_testers: pl.DataFrame | None = None,
     write: bool = True,
 ) -> RosBuildResult:
     """Build the current rest-of-season board and write the in-season artifacts.
@@ -434,13 +436,17 @@ def run_ros_build(
     # game. Strictly after every board exists and reading none of them beyond which players
     # to describe, so nothing below can move a published value — and, like the series above,
     # an enrichment whose failure costs its own artifacts and nothing else.
+    # Play-by-play is read once per build and shared: drive breadth (ADR-103) and the Skill
+    # Tree (ADR-107) both reduce this one frame. A failure costs both enrichments and nothing
+    # else, and each says so.
+    plays, plays_error = _load_play_by_play(pbp, allow_fetch=sources is None, season=season)
     usage_records, matchup_records, signal_summary = _signal_layer(
         opportunity_records=records["inseason_opportunity"],
         loaded=loaded,
         roster=roster,
         employment=employment,
-        pbp=pbp,
-        allow_fetch=sources is None,
+        pbp=plays,
+        pbp_error=plays_error,
         settings=settings,
         season=season,
         cutoff=cutoff,
@@ -500,6 +506,29 @@ def run_ros_build(
     if actuals_records:
         records["season_actuals"] = actuals_records
 
+    # The Skill Tree (ADR-107): every appearing player's positional statistical profile with
+    # peer ranks, published beside the boards and read by nothing. Last, because it reads the
+    # boards only to know which players need a presence record.
+    tree_records, tree_definitions, tree_summary = _skill_tree(
+        records=records,
+        snapshot_frame=snapshot.frame,
+        registry=identity,
+        loaded=loaded,
+        roster=roster,
+        pbp=plays,
+        pbp_error=plays_error,
+        nextgen=nextgen,
+        combine_testers=combine_testers,
+        allow_fetch=sources is None,
+        season=season,
+        cutoff=cutoff,
+        build_id=resolved_build_id,
+        gate=gate,
+    )
+    if tree_records:
+        records["player_skill_tree"] = tree_records
+        records["skill_tree_definitions"] = tree_definitions
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -522,6 +551,7 @@ def run_ros_build(
         signal_layer=signal_summary,
         weekly=weekly_summary,
         season_actuals=actuals_summary,
+        skill_tree=tree_summary,
     )
 
     written: list[Path] = []
@@ -1211,7 +1241,7 @@ def _signal_layer(
     settings: AppConfig,
     employment: Any | None = None,
     pbp: pl.DataFrame | None = None,
-    allow_fetch: bool = False,
+    pbp_error: str | None = None,
     season: int,
     cutoff: RosCutoff,
     build_id: str,
@@ -1296,7 +1326,7 @@ def _signal_layer(
         season=season,
         through_week=cutoff.through_week,
         pbp=pbp,
-        allow_fetch=allow_fetch,
+        pbp_error=pbp_error,
         gate=gate,
     )
     try:
@@ -1377,7 +1407,7 @@ def _drive_breadth(
     season: int,
     through_week: int,
     pbp: pl.DataFrame | None,
-    allow_fetch: bool,
+    pbp_error: str | None = None,
     gate: QualityGate,
 ) -> dict[str, Any]:
     """Attach the drive-breadth block (ADR-103, ADR-104) to every usage record, in place.
@@ -1426,14 +1456,12 @@ def _drive_breadth(
     if not usage:
         return summary
     try:
-        frame = pbp
-        if frame is None:
-            if not allow_fetch:
+        if pbp is None:
+            if pbp_error is None:
                 summary["reason"] = "no play-by-play supplied"
                 return summary
-            loaded = nflverse_loaders().load_pbp(seasons=[season])
-            frame = loaded if isinstance(loaded, pl.DataFrame) else pl.DataFrame(loaded)
-        plays = drive_plays(frame)
+            raise RuntimeError(pbp_error)
+        plays = drive_plays(pbp)
         blocks, diagnostics = usage_breadth_blocks(
             usage,
             plays,
@@ -1579,6 +1607,130 @@ def _season_actuals(
         return [], None
     gate.extend(result.checks)
     return result.records, result.metadata
+
+
+def _load_play_by_play(
+    pbp: pl.DataFrame | None,
+    *,
+    allow_fetch: bool,
+    season: int,
+) -> tuple[pl.DataFrame | None, str | None]:
+    """The season's play-by-play, read once per build through the cached nflverse loader.
+
+    Returns ``(frame, None)``, ``(None, None)`` when none was supplied and fetching is off (a
+    test or replay), or ``(None, error)`` when the download failed. Raw rows stay in memory and
+    in the loader's cache; only per-player aggregates are ever published.
+    """
+    if pbp is not None:
+        return pbp, None
+    if not allow_fetch:
+        return None, None
+    try:
+        loaded = nflverse_loaders().load_pbp(seasons=[season])
+    except Exception as exc:  # noqa: BLE001 - both consumers degrade and say why
+        return None, f"{type(exc).__name__}: {exc}"
+    return (loaded if isinstance(loaded, pl.DataFrame) else pl.DataFrame(loaded)), None
+
+
+def _skill_tree(
+    *,
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    snapshot_frame: pl.DataFrame,
+    registry: Any,
+    loaded: Any,
+    roster: pl.DataFrame,
+    pbp: pl.DataFrame | None,
+    pbp_error: str | None,
+    nextgen: Mapping[str, pl.DataFrame] | None,
+    combine_testers: pl.DataFrame | None,
+    allow_fetch: bool,
+    season: int,
+    cutoff: RosCutoff,
+    build_id: str,
+    gate: QualityGate,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
+    """Build the Skill Tree (ADR-107), or explain why not.
+
+    An enrichment of the card: each source that cannot be read or is incomplete makes its own
+    readings unavailable; a failure of the whole computation withholds both artifacts and
+    nothing else. It reads the boards only to know which players need a presence record.
+    """
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.features.build import pfr_to_gsis_bridge
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.signals.skilltree import (
+        SKILL_TREE_RULE_VERSION,
+        build_skill_tree,
+    )
+    from ffdraft.signals.skilltree import (
+        combine_testers as testers_of,
+    )
+    from ffdraft.sources.nextgen import load_nextgen_frames
+
+    sources = loaded.sources
+    nextgen_error: str | None = None
+    if nextgen is None and allow_fetch:
+        try:
+            nextgen = load_nextgen_frames(season)
+        except Exception as exc:  # noqa: BLE001 - an optional source
+            nextgen_error = f"{type(exc).__name__}: {exc}"
+    elif nextgen is None:
+        nextgen_error = "no Next Gen Stats supplied"
+    if combine_testers is None and allow_fetch:
+        try:
+            combine_testers = testers_of(nflverse_loaders().load_combine())
+        except Exception:  # noqa: BLE001 - an optional source; reported as unavailable
+            combine_testers = None
+    try:
+        positions, _, include = season_actuals_inputs(
+            records,
+            snapshot_frame=snapshot_frame,
+            catalog=_catalog(registry),
+        )
+        rosters = dict(getattr(sources, "rosters", {}) or {})
+        if not roster.is_empty() and "pfr_id" in roster.columns:
+            rosters[season] = roster
+        result = build_skill_tree(
+            weekly=sources.weekly_stats,
+            snap_counts=bridged_snap_counts(sources),
+            schedule=sources.schedule,
+            pbp=pbp,
+            pbp_error=pbp_error,
+            nextgen=nextgen,
+            nextgen_error=nextgen_error,
+            combine=combine_testers,
+            pfr_bridge=pfr_to_gsis_bridge(sources.player_master, rosters),
+            season=season,
+            through_week=cutoff.through_week,
+            positions=positions,
+            include=include,
+            build_id=build_id,
+            metric_schema_version=record_schema_version("player_skill_metric"),
+            definition_schema_version=record_schema_version("skill_tree_definition"),
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        reason = f"{type(exc).__name__}: {exc}"
+        gate.add(
+            QualityCheck.fail(
+                "ros.skill_tree_failed",
+                stage="ros_build",
+                message=(
+                    "the Skill Tree could not be built, so player_skill_tree.json and "
+                    "skill_tree_definitions.json are withheld; every board, value and rank is "
+                    "unaffected"
+                ),
+                observed=reason,
+                expected="a skill-tree record set per appearing player",
+                severity=Severity.WARNING,
+            ),
+        )
+        return (
+            [],
+            [],
+            {"method_version": SKILL_TREE_RULE_VERSION, "status": "failed", "reason": reason},
+        )
+    gate.extend(result.checks)
+    return result.records, result.definitions, result.metadata
 
 
 DEFAULT_WEEKLY_MODEL_DIR = Path("models/production/weekly-startsit-v1")
@@ -2519,6 +2671,7 @@ def _ros_metadata(
     employment: Any | None = None,
     unprojected_rows: int = 0,
     season_actuals: Mapping[str, Any] | None = None,
+    skill_tree: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2583,6 +2736,7 @@ def _ros_metadata(
         "signals": None if signal_layer is None else dict(signal_layer),
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
+        "skill_tree": None if skill_tree is None else dict(skill_tree),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

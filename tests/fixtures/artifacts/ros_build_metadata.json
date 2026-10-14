@@ -435,6 +435,82 @@
       "venues_unresolved": 0
     }
   },
+  "skill_tree": {
+    "method_version": "skill_tree_v1",
+    "status": "published",
+    "season": 2026,
+    "through_week": 8,
+    "window": "2026 regular season, weeks 1–8",
+    "records": 1319,
+    "players": 57,
+    "players_without_appearance": 2,
+    "population": {
+      "QB": 9,
+      "RB": 11,
+      "WR": 28,
+      "TE": 9
+    },
+    "minimum_cohort": 5,
+    "ngs_published": true,
+    "sources": {
+      "player_stats": {
+        "status": "published",
+        "reason": null
+      },
+      "snap_counts": {
+        "status": "published",
+        "reason": null
+      },
+      "play_by_play": {
+        "status": "published",
+        "reason": null,
+        "plays": 9800
+      },
+      "next_gen_stats": {
+        "status": "published",
+        "reason": null,
+        "files": {
+          "passing": {
+            "last_week": 8,
+            "summary_rows": 9
+          },
+          "rushing": {
+            "last_week": 8,
+            "summary_rows": 10
+          },
+          "receiving": {
+            "last_week": 8,
+            "summary_rows": 21
+          }
+        }
+      },
+      "combine": {
+        "status": "published",
+        "reason": null,
+        "testers_since": 2000,
+        "testers": {
+          "QB": 47,
+          "RB": 47,
+          "TE": 46,
+          "WR": 49
+        }
+      }
+    },
+    "diagnostics": {
+      "games_without_snap_row": 1,
+      "players_on_two_or_more_teams": 0,
+      "unbridged_offense_snap_rows": 0,
+      "ngs_volume_mismatches": 1,
+      "ngs_covered_players": 39,
+      "combine_linked_players": 27
+    },
+    "reasons": {
+      "not_in_ngs_summary": "Next Gen Stats publishes no season summary for him (it qualifies players by volume).",
+      "ngs_volume_mismatch": "His Next Gen Stats season summary does not match his official volume through the cutoff, so it is not used.",
+      "no_combine_forty": "No linked NFL Scouting Combine 40-yard dash on file for him."
+    },
+    "statement": "Descriptive context only: observed regular-season statistics through the board's cutoff, each ranked only against qualified players at the same position. No model, ranking, pick or trade reads it, and nothing is combined into a score."
+  },
   "season_actuals": {
     "rule": {
       "version": "season_actuals_v1",

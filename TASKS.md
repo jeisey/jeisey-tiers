@@ -2261,3 +2261,78 @@ persistence and configurable starter counts (PRD CR-028; CR-001 and A4 revised).
 - [x] **Docs.** ADR-106, PRD CR-028 (CR-001, A2 and A4 revised), UX_SPEC §6A.16 (tab order
       lines), ARCHITECTURE §3.2/§10/§14, OPERATIONS §17.3, DATA_CONTRACTS §24, README.
 - [x] **Validation**: see SESSION_STATE.
+
+## The Skill Tree — 2026-10-14 (ADR-107)
+
+The owner asked for a Skill Tree inside the player card: a HUD-style talent tree that reveals
+each player's positional statistical profile, with distinct QB, RB, WR and TE trees. It is
+descriptive only (PRD CR-029): nothing on the site reads it.
+
+- [x] **Plan and ADR first.** ADR-107 was frozen before implementation. It fixes metric
+      definitions, play universes, cohorts, states, sources and gates, the contract and serving,
+      presentation and budgets. Its Evidence section was appended after the build.
+- [x] **Reproducible EDA** (`docs/experiments/skill-tree-2026-10-14/`).
+      - Live nflverse through the 2026 week-5 cutoff, plus 2023–2025.
+      - Grain, coverage, identity joins, duplicates and missingness.
+      - Universe reconciliations: dropbacks, targets and non-kneel carries equal the official
+        totals for every player.
+      - Distributions and outliers, redundancy, early-season stability and split-half
+        reliability, the recent window (rejected), threshold sensitivity, and NGS summary
+        reconciliation.
+      - Combine coverage, and star, role and sparse examples per position.
+      - A ship / conditional / defer decision for every requested statistic.
+- [x] **Builder** (`signals/skilltree.py`, `skilltree_catalog.py`, `skill_tree_v1`).
+      - Official totals; pooled rates; CPOE pooled over attempts; shares over his own games by
+        the club he played for.
+      - Seven distinct states; competition ranks and percentiles on published values; a
+        minimum cohort of 5.
+      - NGS week-0 summaries only when they end at the cutoff and reconcile; combine testers
+        by combine position.
+      - Source gates withhold rather than shrink a population.
+- [x] **Contract and serving.**
+      - Schemas `player_skill_metric` and `skill_tree_definition`, and the
+        `ros_build_metadata.skill_tree` block (only the reason sentences in use).
+      - Validator `artifacts/skilltree_checks.py`: re-derived ranks, rate arithmetic,
+        agreement with season actuals and usage, and metadata.
+      - Bucket and position partitions, hash-verified, outside every `requiredKeys`.
+      - Old manifests and builds without a tree simply show no section.
+- [x] **Card section** (lazy `SkillTree` chunk and stylesheet).
+      - Desktop: a *Show skill tree* button. Phone: a sixth tab.
+      - Four, two or one branch columns by pane width.
+      - Original SVG glyphs, a percentile meter with a legend, and neutral dashed states.
+      - Inline detail: under the node on a phone, below the tree when wide.
+      - Roving keyboard navigation and reduced motion.
+      - The card's tab row now keeps every label whole and never widens the card.
+- [x] **Performance fixes from measurement.**
+      - Skill Tree files never notify the store's subscribers.
+      - Built views are cached per player; an arrived view renders in a transition; nodes are
+        memoised.
+      - Published strings are pinned to the core font subset.
+- [x] **Budgets** (`verify-budget.mjs`): showing the tree +25 kB, a repeat 0 B, another
+      position +10 kB. All are measured (16.5 / 0 / 6.6 kB on the size model), and no existing
+      budget changed (ADR-107 Evidence, OPERATIONS §17.3). The size model gained the tree's
+      counts from the live build.
+- [x] **Interaction and memory** (`measure-skilltree.mjs`): real taps, Event Timing, and the
+      card's own tabs as the baseline. All targets met at 4× and 1×; heap growth +65–79 kB over
+      four cycles.
+- [x] **Tests.**
+      - Python: 37 new — builder cases (hand-computed), pipeline and serving round trips, and
+        the NGS adapter contracts.
+      - Vitest: 16 new, including the TypeScript import firewall.
+      - Playwright: 24 new in `skilltree.spec.ts`, plus a `in-season-no-skill-tree` scenario.
+      - `capture-skilltree.mjs`: 25 fixture and 14 real screens, 0 problems.
+- [x] **Real data.**
+      - A live `build-ros` (week 5) passes `validate-artifacts --require-serving` (0/0) and
+        `verify:board` (0 failures).
+      - `eda.py --check-artifact`: 12,161 readings compared, 0 mismatches, 1 explained
+        difference.
+- [x] **Docs.** ADR-107, PRD CR-029, DATA_CONTRACTS §21.3/§25, UX_SPEC §6A.17, ARCHITECTURE
+      §14, OPERATIONS §16.12/§17.3, DATA_SOURCES §22, the source registry, README, the
+      visual-QA index.
+- [ ] **Follow-ups**, not part of this gate:
+      - PFR ids with a period are refused by `normalize_id`. This affects snap rows and model
+        inputs, so it needs a measured fix.
+      - The owner's decision on publishing NGS aggregates (`NGS_PUBLISHED`).
+      - The fresh card's first-tap long task (pre-existing).
+- [x] **Validation**: see SESSION_STATE.
+

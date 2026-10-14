@@ -248,6 +248,34 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "through the in-season cutoff. Observed facts; no model reads them (ADR-105)."
         ),
     ),
+    "player_skill_tree": ArtifactSpec(
+        artifact="player_skill_tree",
+        schema_name="player_skill_metric",
+        json_filename="player_skill_tree.json",
+        # No CSV: a long table of readings with states, read by the card's Skill Tree.
+        csv_filename=None,
+        key_fields=("build_id", "player_id", "metric_id"),
+        sort_fields=("position", "player_id", "metric_id"),
+        description=(
+            "The Skill Tree's readings: one record per player per metric, regular season "
+            "through the cutoff, with each value's sample, state and (when qualified) its rank "
+            "and percentile among qualified players at his position. Descriptive context; no "
+            "model reads it (ADR-107)."
+        ),
+    ),
+    "skill_tree_definitions": ArtifactSpec(
+        artifact="skill_tree_definitions",
+        schema_name="skill_tree_definition",
+        json_filename="skill_tree_definitions.json",
+        csv_filename=None,
+        key_fields=("build_id", "position", "metric_id"),
+        sort_fields=("position", "branch_order", "role", "order", "metric_id"),
+        description=(
+            "What each Skill Tree metric is at each position: its place in the tree, formula, "
+            "source fields, minimum, cohort rule, interpretation and limitations, and this "
+            "build's source status (ADR-107)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

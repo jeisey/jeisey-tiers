@@ -1,0 +1,625 @@
+/*
+ * The Skill Tree (ADR-107). Loaded with its lazy chunk, never with the entry stylesheet.
+ *
+ * A tactical-HUD talent tree in the card's own design system: the card's tokens, cut corners
+ * and no radius, cyan circuit connectors at the token alphas, and one tone introduced for the
+ * tree alone — a bronze frame around each glyph. Every meaning has words beside it (the value,
+ * the standing line, the kind tag, the accessible name); colour and the meter only repeat it.
+ *
+ * Layout is the pane's, never a scaled drawing: `data-columns` (4, 2 or 1) comes from the
+ * measured width, and on a phone the branches stack.
+ */
+
+.st {
+  --st-bronze: #c8925a;
+  --st-bronze-deep: #5c3f24;
+  --st-gold: #f2c77f;
+  --st-plate: linear-gradient(165deg, #10263a 0%, #0b1a2a 46%, #091523 100%);
+  --st-plate-selected: linear-gradient(165deg, #133248 0%, #0f2a3e 50%, #0b2032 100%);
+  --st-trace: var(--line-strong);
+  --st-trace-lit: var(--accent);
+  --st-gap: var(--space-3);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.st-note {
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------- head and legend */
+
+.st-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.st-core {
+  flex: none;
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+.st-core-frame {
+  fill: var(--st-bronze-deep);
+  stroke: var(--st-bronze);
+  stroke-width: 2;
+}
+
+.st-core-inner {
+  fill: #0a1a2a;
+  stroke: var(--line-bright);
+  stroke-width: 1;
+}
+
+.st-core-trace {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.st-core-text {
+  fill: var(--accent-bright);
+  font: 700 17px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.st-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.st-window,
+.st-legend {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.st-window strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.st-legend-meter {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+}
+
+.st-legend-meter span {
+  width: 9px;
+  height: 6px;
+  background: rgb(46 204 255 / 12%);
+  clip-path: polygon(2px 0, 100% 0, calc(100% - 2px) 100%, 0 100%);
+}
+
+.st-legend-meter span[data-on] {
+  background: var(--st-bronze);
+}
+
+.st-withheld {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  list-style: none;
+  border-left: 2px solid var(--warn-line);
+  background: var(--tile-warn);
+  color: var(--ink-strong);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------- the trunk and branches */
+
+.st-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--st-cols, 4), minmax(0, 1fr));
+  gap: var(--space-4) var(--st-gap);
+  padding-top: var(--space-3);
+  /* The trunk: one circuit bus every branch hangs from. */
+  border-top: var(--hairline) solid var(--st-trace);
+}
+
+.st[data-columns="2"] .st-grid {
+  --st-cols: 2;
+}
+
+.st[data-columns="1"] .st-grid {
+  --st-cols: 1;
+  border-top: none;
+  padding-top: 0;
+}
+
+.st-branch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* A stub from the trunk down to each branch's header. */
+.st[data-columns="4"] .st-branch::before,
+.st[data-columns="2"] .st-branch::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--space-3));
+  left: 14px;
+  width: var(--hairline);
+  height: var(--space-3);
+  background: var(--st-trace);
+}
+
+.st-branch[data-lit]::before {
+  background: var(--st-trace-lit);
+}
+
+.st-branch-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--ink-accent);
+  font: 600 0.62rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.st-branch-emblem {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 29px;
+  height: 29px;
+  color: var(--accent-bright);
+  background: #0c2133;
+  border: var(--hairline) solid var(--line-bright);
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+}
+
+.st-branch-emblem .st-glyph {
+  width: 17px;
+  height: 17px;
+}
+
+.st-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 0 0 var(--space-4);
+  list-style: none;
+  position: relative;
+}
+
+/* The branch spine and an elbow into each node: a circuit trace, not a progression. */
+.st-link {
+  position: relative;
+  min-width: 0;
+}
+
+.st-link::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--space-4) + 14px);
+  top: calc(-1 * var(--space-2));
+  bottom: 0;
+  width: var(--hairline);
+  background: var(--st-trace);
+}
+
+/* The stubs meet the node's middle, or 2.4rem down when its detail opens beneath it (phone). */
+.st-link:last-child::before {
+  bottom: auto;
+  height: calc(var(--space-2) + min(50%, 2.4rem));
+}
+
+.st-link::after {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--space-4) + 14px);
+  top: min(50%, 2.4rem);
+  width: calc(var(--space-4) - 14px);
+  height: var(--hairline);
+  background: var(--st-trace);
+}
+
+.st-link[data-lit]::before,
+.st-link[data-lit]::after {
+  background: var(--st-trace-lit);
+  box-shadow: 0 0 6px rgb(46 204 255 / 45%);
+}
+
+/* ------------------------------------------------------------------------- a node */
+
+.st-node {
+  appearance: none;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "frame text text"
+    "meter meter kind";
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--space-2) var(--space-2) 7px;
+  border: var(--hairline) solid var(--line);
+  background: var(--st-plate);
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  transition: var(--t-control);
+}
+
+.st-node:hover {
+  border-color: var(--line-bright);
+  background: var(--st-plate-selected);
+}
+
+.st-node:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.st-node[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: var(--st-plate-selected);
+  box-shadow:
+    inset 0 0 0 1px rgb(46 204 255 / 35%),
+    var(--glow-soft);
+}
+
+.st-frame {
+  grid-area: frame;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--st-gold);
+  background:
+    linear-gradient(160deg, #1a2c3d, #0b1724) padding-box,
+    linear-gradient(150deg, var(--st-gold), var(--st-bronze) 45%, var(--st-bronze-deep)) border-box;
+  border: 2px solid transparent;
+  clip-path: polygon(29% 0, 71% 0, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0 71%, 0 29%);
+}
+
+.st-node[data-top] .st-frame {
+  color: #fff3dc;
+}
+
+.st-node-text {
+  grid-area: text;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.st-node-label {
+  /* The label has the row to itself and wraps between words, never inside one. */
+  color: var(--ink-muted);
+  font: 600 0.6rem/1.2 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow-wrap: normal;
+}
+
+.st-node-value {
+  color: var(--ink);
+  font: 700 1rem/1.25 var(--font-mono);
+  white-space: nowrap;
+}
+
+.st-node-value small,
+.st-detail-value small,
+.st-detail-more-value small {
+  margin-left: 0.2em;
+  color: var(--ink-muted);
+  font: 600 0.62rem/1 var(--font-sans);
+  letter-spacing: 0.04em;
+}
+
+.st-node-standing {
+  color: var(--ink-faint);
+  font: 500 0.64rem/1.3 var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+/* The kind tag ends the meter row: what sort of number this is, beside how it ranks. */
+.st-kind {
+  grid-area: kind;
+  color: var(--ink-faint);
+  font: 600 0.52rem/1 var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+/* The meter: five cut segments. Words in the standing line say the same thing. */
+.st-meter {
+  grid-area: meter;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+  height: 6px;
+}
+
+.st-seg {
+  background: rgb(46 204 255 / 10%);
+  clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
+}
+
+.st-seg[data-on] {
+  background: linear-gradient(90deg, var(--st-bronze), var(--st-gold));
+}
+
+.st-node[data-top] .st-seg[data-on] {
+  box-shadow: 0 0 6px rgb(242 199 127 / 60%);
+}
+
+/* Context metrics: a position marker on a neutral track, never a fill. */
+.st-meter[data-variant="context"] .st-seg {
+  background: rgb(159 216 255 / 14%);
+}
+
+.st-mark {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 12px;
+  margin-left: -2px;
+  background: var(--accent-bright);
+}
+
+/* Unranked: an empty dashed track — not a weak reading. */
+.st-meter[data-variant="empty"] {
+  background:
+    repeating-linear-gradient(90deg, var(--line-strong) 0 4px, transparent 4px 8px) center / 100% 1px
+    no-repeat;
+}
+
+.st-meter[data-variant="empty"] .st-seg {
+  background: transparent;
+}
+
+/* No reading at all (no opportunity, not covered, unavailable): a neutral dashed frame and a
+   desaturated glyph, with the state in words. Never a lock, never a low meter. */
+.st-node[data-empty] {
+  border-style: dashed;
+  border-color: var(--line-strong);
+  background: var(--panel);
+}
+
+.st-node[data-empty] .st-frame {
+  color: var(--ink-faint);
+  background:
+    linear-gradient(160deg, #0d1a27, #0a1520) padding-box,
+    linear-gradient(150deg, #4c6378, #2c3d4d) border-box;
+}
+
+.st-node[data-empty] .st-node-value {
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------------ detail */
+
+.st-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--hairline) solid var(--line-bright);
+  border-left: 2px solid var(--accent);
+  background: var(--panel-raised);
+  min-width: 0;
+}
+
+/* On a phone the detail sits under its node, inside the same branch. */
+.st-link > .st-detail {
+  margin-top: var(--space-2);
+}
+
+.st-detail-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.st-detail-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.st-detail-title h5 {
+  margin: 0;
+  color: var(--ink);
+  font: 600 0.86rem/1.3 var(--font-sans);
+}
+
+.st-detail-kind {
+  color: var(--ink-faint);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.st-detail-close {
+  appearance: none;
+  flex: none;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--tile);
+  color: var(--ink-accent);
+  font: 600 0.66rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--t-control);
+}
+
+.st-detail-close:hover {
+  background: var(--surface-hover);
+}
+
+.st-detail-close:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.st-detail-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+
+.st-detail-value strong {
+  color: var(--accent-bright);
+  font: 700 1.35rem/1.1 var(--font-mono);
+}
+
+.st-detail-sample {
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+}
+
+.st-detail-standing {
+  margin: 0;
+  color: var(--ink-strong);
+  font-size: 0.76rem;
+}
+
+.st-detail-reason {
+  color: var(--ink-muted);
+}
+
+.st-detail-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.st-detail-facts > div {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.st-detail-facts dt {
+  color: var(--ink-faint);
+  font: 600 0.62rem/1.5 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.st-detail-facts dd {
+  margin: 0;
+  color: var(--ink-strong);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.st-detail-fields {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.st-detail-more {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) 0 0;
+  list-style: none;
+  border-top: var(--hairline) solid var(--line);
+}
+
+.st-detail-more-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-3);
+}
+
+.st-detail-more-label {
+  color: var(--ink-accent);
+  font: 600 0.72rem/1.4 var(--font-sans);
+}
+
+.st-detail-more-value {
+  color: var(--ink);
+  font: 700 0.86rem/1.3 var(--font-mono);
+  text-align: right;
+}
+
+.st-detail-more-sample,
+.st-detail-more-definition {
+  grid-column: 1 / -1;
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.st-detail-more-definition {
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------------ archive */
+
+.st-archive {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: var(--hairline) dashed var(--line-strong);
+}
+
+.st[data-columns="4"] .st-archive {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+  align-items: center;
+}
+
+.st-archive-label {
+  color: var(--ink-faint);
+  font: 600 0.62rem/1.4 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------------- narrow */
+
+.st[data-columns="1"] .st-detail-facts > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-node,
+  .st-detail-close {
+    transition: none;
+  }
+
+  .st-link[data-lit]::before,
+  .st-link[data-lit]::after {
+    box-shadow: none;
+  }
+}

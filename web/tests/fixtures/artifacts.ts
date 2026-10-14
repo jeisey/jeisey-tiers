@@ -62,11 +62,17 @@ import type {
   UsageWeek,
   MarketComparison,
   MarketTrendSeriesRecord,
+  PlayerSkillMetricRecord,
+  SkillTreeDefinitionRecord,
+  SkillTreeMetadata,
   RosWeeklyMetadata,
   WeeklyAccount,
   WeeklyGameContextRecord,
   WeeklyProjectionRecord,
 } from "../../src/data/contracts";
+// ADR-107: the Skill Tree's definitions are player-independent, so the TypeScript fixtures use
+// the Python golden's exactly — every word the tree prints is the production builder's.
+import goldenSkillTreeDefinitions from "../../../tests/fixtures/artifacts/skill_tree_definitions.json";
 
 /**
  * The market condition a fixture board describes.
@@ -1066,6 +1072,162 @@ const OFF_BOARD_ACTUALS: readonly {
   // The ADR-102 signing: off the board, no projection, real games.
   { id: FIXTURE_SIGNING_ID, name: "", position: "WR", games: 3, points: { STD: 18.4, HALF: 24.9, PPR: 31.4 } },
 ];
+
+// ------------------------------------------------------------------- Skill Tree (ADR-107)
+
+/** A fixture player with readings in every state the tree draws (see `skillTreeRecords`). */
+export const FIXTURE_SKILL_TREE_ZERO_ID = "gsis:00-0000092";
+
+export function skillTreeDefinitionRecords(): SkillTreeDefinitionRecord[] {
+  return (goldenSkillTreeDefinitions.records as unknown as SkillTreeDefinitionRecord[]).map((record) => ({
+    ...record,
+    build_id: FIXTURE_BUILD_ID,
+    through_week: FIXTURE_THROUGH_WEEK,
+  }));
+}
+
+function skillCode(playerId: string): number {
+  let code = 0;
+  for (const char of playerId) code += char.charCodeAt(0);
+  return code;
+}
+
+function fixtureSkillValue(definition: SkillTreeDefinitionRecord, seed: number): number {
+  switch (definition.unit) {
+    case "count":
+      return 4 + (seed % 90);
+    case "fraction":
+      return round(0.12 + (seed % 61) / 100, 4);
+    case "pp":
+      return round(((seed % 11) - 5) * 0.93, 2);
+    case "yards":
+      return definition.metric_id.includes("over_expected")
+        ? round(((seed % 9) - 4) * 0.21, 2)
+        : round(4 + (seed % 9) * 0.7, 2);
+    case "epa":
+      return round(((seed % 13) - 6) * 0.047, 3);
+    case "seconds":
+      return round(2.55 + (seed % 8) * 0.07, 2);
+  }
+}
+
+/**
+ * Readings for every in-season fixture player, deterministic and in every state the card
+ * draws: ranked (most), below the minimum (every fifth player's rates), no opportunity (the
+ * zero-point tight end's rates), not covered (Next Gen Stats for every third player, no combine
+ * time for every fourth), and the presence-only record of a player with no games. Values are
+ * shaped like football numbers and mean nothing; the production builder is tested in Python.
+ */
+export function skillTreeRecords(): PlayerSkillMetricRecord[] {
+  const definitions = skillTreeDefinitionRecords();
+  const players = new Map<string, { position: Position; games: number }>();
+  for (const record of seasonActualsRecords()) {
+    if (record.scoring_preset !== "PPR") continue;
+    players.set(record.player_id, { position: record.position, games: record.games_played });
+  }
+  const records: PlayerSkillMetricRecord[] = [];
+  for (const [playerId, player] of [...players].sort(([a], [b]) => a.localeCompare(b))) {
+    const code = skillCode(playerId);
+    const base = {
+      schema_version: "1.0",
+      build_id: FIXTURE_BUILD_ID,
+      season: 2026,
+      through_week: FIXTURE_THROUGH_WEEK,
+      player_id: playerId,
+      position: player.position,
+      games: player.games,
+    };
+    if (player.games === 0) {
+      records.push({
+        ...base,
+        metric_id: "appearances",
+        state: "no_appearances",
+        value: 0,
+        numerator: null,
+        denominator: null,
+        rank: null,
+        percentile: null,
+        cohort_size: null,
+        source_season: null,
+        reason: null,
+      });
+      continue;
+    }
+    definitions
+      .filter((definition) => definition.position === player.position)
+      .forEach((definition, index) => {
+        const seed = code * 7 + index * 13;
+        const cohort = 40;
+        const percentile = round(((code * 37 + index * 53) % 101), 1);
+        const rank = Math.max(1, Math.round((cohort - 1) * (1 - percentile / 100)) + 1);
+        const value = fixtureSkillValue(definition, seed);
+        const ranked = {
+          state: "ranked" as const,
+          value,
+          numerator: definition.kind === "volume" ? value : definition.numerator_label === null ? null : 12 + (seed % 40),
+          denominator: definition.kind === "volume" ? null : 30 + (seed % 120),
+          rank,
+          percentile,
+          cohort_size: cohort,
+          source_season: null,
+          reason: null,
+        };
+        let reading: Omit<PlayerSkillMetricRecord, keyof typeof base | "metric_id"> = ranked;
+        if (definition.role === "presence") {
+          reading = { ...ranked, value: player.games, numerator: player.games, denominator: null };
+        } else if (definition.role === "archive") {
+          reading =
+            code % 4 === 0
+              ? { ...ranked, state: "not_covered", value: null, numerator: null, denominator: null, rank: null, percentile: null, cohort_size: null, reason: "no_combine_forty" }
+              : { ...ranked, value: round(4.35 + (code % 30) * 0.015, 2), numerator: null, denominator: null, cohort_size: 718, rank: 1 + (code % 700), source_season: 2018 + (code % 7) };
+        } else if (definition.source_id === "next_gen_stats" && code % 3 === 0) {
+          reading = { ...ranked, state: "not_covered", value: null, numerator: null, denominator: null, rank: null, percentile: null, cohort_size: null, reason: "not_in_ngs_summary" };
+        } else if (playerId === FIXTURE_SKILL_TREE_ZERO_ID && definition.kind !== "volume") {
+          reading = { ...ranked, state: "no_opportunity", value: null, numerator: 0, denominator: 0, rank: null, percentile: null, cohort_size: null };
+        } else if (code % 5 === 0 && definition.kind === "rate" && definition.minimum !== null) {
+          reading = { ...ranked, state: "below_minimum", denominator: Math.max(1, definition.minimum - 3), rank: null, percentile: null, cohort_size: null };
+        }
+        records.push({ ...base, metric_id: definition.metric_id, ...reading });
+      });
+  }
+  return records;
+}
+
+export function skillTreeEnvelope(): ArtifactEnvelope<PlayerSkillMetricRecord> {
+  return envelope("player_skill_tree", "player_skill_metric", skillTreeRecords());
+}
+
+export function skillTreeDefinitionsEnvelope(): ArtifactEnvelope<SkillTreeDefinitionRecord> {
+  return envelope("skill_tree_definitions", "skill_tree_definition", skillTreeDefinitionRecords());
+}
+
+export function skillTreeMetadata(overrides: Partial<SkillTreeMetadata> = {}): SkillTreeMetadata {
+  return {
+    method_version: "skill_tree_v1",
+    status: "published",
+    season: 2026,
+    through_week: FIXTURE_THROUGH_WEEK,
+    window: `2026 regular season, weeks 1–${String(FIXTURE_THROUGH_WEEK)}`,
+    minimum_cohort: 5,
+    ngs_published: true,
+    sources: {
+      player_stats: { status: "published", reason: null },
+      snap_counts: { status: "published", reason: null },
+      play_by_play: { status: "published", reason: null },
+      next_gen_stats: { status: "published", reason: null },
+      combine: { status: "published", reason: null },
+    },
+    reasons: {
+      not_in_ngs_summary:
+        "Next Gen Stats publishes no season summary for him (it qualifies players by volume).",
+      no_combine_forty: "No linked NFL Scouting Combine 40-yard dash on file for him.",
+      next_gen_stats_not_at_cutoff:
+        "Next Gen Stats does not yet end at the board's cutoff week (or already includes a later week), so its season summary is not used for this build.",
+    },
+    statement: "Descriptive context only.",
+    ...overrides,
+  };
+}
 
 function competitionRanks(points: ReadonlyMap<string, number>): Map<string, number> {
   const ordered = [...points.values()].map((value) => Math.round(value * 100)).sort((a, b) => b - a);
@@ -2318,6 +2480,7 @@ export function rosBuildMetadata(
     signals: FIXTURE_SIGNALS,
     weekly: FIXTURE_WEEKLY,
     season_actuals: seasonActualsMetadata(),
+    skill_tree: skillTreeMetadata(),
     quality_gate: { status: "pass", critical_failures: 0, warnings: 0 },
     warnings: [],
     ...overrides,
@@ -2565,10 +2728,13 @@ export function inSeasonFixtureFiles(
     readonly behaviorSeries?: "mature" | "young" | "absent";
     /** `absent` publishes neither signal artifact: a build whose signal layer failed. */
     readonly signals?: "present" | "absent";
+    /** ADR-107. `absent`: a build (or an older deploy) with no Skill Tree at all. */
+    readonly skillTree?: "present" | "absent";
   } = {},
 ): Record<string, unknown> {
   const series = options.behaviorSeries ?? "mature";
   const signals = options.signals ?? "present";
+  const skillTree = options.skillTree ?? "present";
   return {
     // The draft build's own record of the season, replaced because in season it says
     // something different — and the page reads it whether or not a ROS bundle is beside it.
@@ -2584,12 +2750,22 @@ export function inSeasonFixtureFiles(
       },
     }),
     "ros_build_metadata.json": rosBuildMetadata(
-      signals === "present" ? {} : { weekly: null },
+      {
+        ...(signals === "present" ? {} : { weekly: null }),
+        ...(skillTree === "present" ? {} : { skill_tree: null }),
+      },
       behaviorAvailable,
     ),
     "ros_tiers.json": rosTierEnvelope(),
     // ADR-105: season actuals, published with every in-season bundle.
     "season_actuals.json": seasonActualsEnvelope(),
+    // ADR-107: the Skill Tree, fetched only when a reader opens it.
+    ...(skillTree === "present"
+      ? {
+          "player_skill_tree.json": skillTreeEnvelope(),
+          "skill_tree_definitions.json": skillTreeDefinitionsEnvelope(),
+        }
+      : {}),
     "inseason_opportunity.json": opportunityEnvelope(behaviorAvailable),
     // ADR-101: in season the status artifact carries the reserve, week and season-ending
     // shapes the availability policy reads.

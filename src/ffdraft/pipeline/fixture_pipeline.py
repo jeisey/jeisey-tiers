@@ -572,6 +572,13 @@ def run_fixture_pipeline(
     gate.extend(actuals.checks)
     if actuals.records:
         records["season_actuals"] = actuals.records
+    # ADR-107: the real builder over synthetic play-by-play, Next Gen Stats and combine
+    # testers derived from the same rows, so every state the card draws is in the fixture.
+    skill_tree = _skill_tree(records, season=season, identity=identity, build_id=build_id)
+    gate.extend(skill_tree.checks)
+    if skill_tree.records:
+        records["player_skill_tree"] = skill_tree.records
+        records["skill_tree_definitions"] = skill_tree.definitions
     gate.extend(_published_identity_checks(records, market_outcomes))
 
     metadata = _build_metadata(
@@ -621,6 +628,7 @@ def run_fixture_pipeline(
             matchups=matchups,
             weekly=weekly_block,
             season_actuals=actuals.metadata,
+            skill_tree=skill_tree.metadata,
             build_id=build_id,
             generated_at=now,
             git_sha=git_sha or _git_sha(),
@@ -1329,6 +1337,59 @@ def _season_actuals(
     )
 
 
+def _skill_tree(
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    season: FixtureSeason,
+    identity: Any,
+    build_id: str,
+) -> Any:
+    """The Skill Tree (ADR-107) from the fixture season, by the production builder."""
+    from ffdraft.pipeline.fixture_season import (
+        fixture_combine,
+        fixture_nextgen,
+        fixture_skill_peers,
+        fixture_skill_plays,
+    )
+    from ffdraft.pipeline.ros import season_actuals_inputs
+    from ffdraft.signals.skilltree import build_skill_tree
+
+    catalog = {
+        player_id: {"display_name": player.display_name, "position": str(player.position)}
+        for player_id, player in (identity.players.items() if identity is not None else ())
+    }
+    positions, _, include = season_actuals_inputs(
+        records,
+        snapshot_frame=pl.DataFrame(),
+        catalog=catalog,
+    )
+    # Six peer clubs so every position's cohort can be ranked; their rows reach this builder
+    # and nothing else.
+    peer_weekly, peer_snaps = fixture_skill_peers(
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+    )
+    weekly = pl.concat([season.weekly, peer_weekly], how="vertical_relaxed")
+    snaps = pl.concat([season.snap_counts, peer_snaps], how="vertical_relaxed")
+    testers, bridge = fixture_combine(weekly)
+    return build_skill_tree(
+        weekly=weekly,
+        snap_counts=snaps,
+        schedule=season.schedule,
+        pbp=fixture_skill_plays(weekly, through_week=FIXTURE_THROUGH_WEEK),
+        nextgen=fixture_nextgen(weekly, through_week=FIXTURE_THROUGH_WEEK),
+        combine=testers,
+        pfr_bridge=bridge,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        positions=positions,
+        include=include,
+        build_id=build_id,
+        metric_schema_version=record_schema_version("player_skill_metric"),
+        definition_schema_version=record_schema_version("skill_tree_definition"),
+    )
+
+
 def _signal_records(
     opportunity: Sequence[Mapping[str, Any]],
     *,
@@ -1740,6 +1801,7 @@ def _ros_build_metadata(
     generated_at: datetime,
     git_sha: str,
     season_actuals: Mapping[str, Any] | None = None,
+    skill_tree: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The in-season bundle's metadata, carrying the disclosures the UI renders from."""
     from ffdraft.pipeline.ros import (
@@ -1817,6 +1879,7 @@ def _ros_build_metadata(
         },
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
+        "skill_tree": None if skill_tree is None else dict(skill_tree),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

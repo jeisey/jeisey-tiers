@@ -33,7 +33,9 @@
         "team_matchups",
         "weekly_projections",
         "weekly_context",
-        "season_actuals"
+        "season_actuals",
+        "player_skill_tree",
+        "skill_tree_definitions"
       ]
     },
     "record_schema": {

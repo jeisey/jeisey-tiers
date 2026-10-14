@@ -1,0 +1,133 @@
+{
+  "captured_at_utc": "2026-10-14T14:08:43Z",
+  "check_id": "nflverse_nextgen_rushing_2026",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "season_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_display_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team_abbr",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "efficiency",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "percent_attempts_gte_eight_defenders",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_time_to_los",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rush_attempts",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rush_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_rush_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "rush_touchdowns",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_gsis_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_last_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "player_jersey_number",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_short_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "expected_rush_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_over_expected",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_yards_over_expected_per_att",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "rush_pct_over_expected",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {
+    "season_types": [
+      "REG"
+    ],
+    "weeks": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "record_count": 200,
+  "sample_rows": 0,
+  "source_id": "nflreadpy",
+  "target": "load_nextgen_stats(stat_type='rushing')"
+}

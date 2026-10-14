@@ -1,0 +1,168 @@
+{
+  "captured_at_utc": "2026-10-14T14:08:43Z",
+  "check_id": "nflverse_nextgen_passing_2026",
+  "columns": [
+    {
+      "dtype": "Int32",
+      "name": "season",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "season_type",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "week",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_display_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_position",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "team_abbr",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_time_to_throw",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_completed_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_intended_air_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_air_yards_differential",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "aggressiveness",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "max_completed_air_distance",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_air_yards_to_sticks",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "attempts",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pass_yards",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "pass_touchdowns",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "interceptions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "passer_rating",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "completions",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "completion_percentage",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "expected_completion_percentage",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "completion_percentage_above_expectation",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "avg_air_distance",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Float64",
+      "name": "max_air_distance",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_gsis_id",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_first_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_last_name",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "Int32",
+      "name": "player_jersey_number",
+      "null_fraction": 0.0
+    },
+    {
+      "dtype": "String",
+      "name": "player_short_name",
+      "null_fraction": 0.0
+    }
+  ],
+  "coverage": {
+    "season_types": [
+      "REG"
+    ],
+    "weeks": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "record_count": 198,
+  "sample_rows": 0,
+  "source_id": "nflreadpy",
+  "target": "load_nextgen_stats(stat_type='passing')"
+}

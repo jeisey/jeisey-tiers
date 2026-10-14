@@ -734,6 +734,7 @@ dictionary every slice resolves `display_name` through — comes with the first 
 | in-season | Pick of the Week | as Opportunity, plus `player_headshots/all` | the same readings, and the four picks' portrait addresses |
 | both | player card | `card/<block>/<bucket>` — one file | the player's own row in every per-player artifact: tier, arbitrage, market history, projection, status, portrait, ROS, Opportunity, next-game distribution, usage, momentum |
 | in-season | player card, cohorts | from an in-season board: `inseason_opportunity_cohort/<block>`, `player_usage_cohort/all`, `team_matchups/all`, `weekly_context/all` (the ROS block is already loaded); from a draft board in season: `ros_tiers/<block>`, `inseason_opportunity_cohort/<block>`; always in season, `season_actuals/<scoring>` (ADR-105: the card's rank pair, production readouts and the rate cohort) | the block's share and transaction fields and the position's touchdown share and pass EPA, which the cohort strips place one player among; the next game; his team's and the opponent's game-day context for the "This week" explanation |
+| in-season | player card, Skill Tree (ADR-107) | nothing when the card opens; on **Show skill tree** (or the phone's *Skill tree* tab) the lazy `SkillTree` chunk and stylesheet, `skill_tree_definitions/<position>` and `skill_tree/<bucket>` (the card's bucket) — never part of `requiredKeys`, and their arrival re-renders nothing else on the page | every reading of the player's tree and every word about each metric (definitions); the build's per-source status and reason sentences from the manifest's `ros_build_metadata.skill_tree` |
 | both | search, filters, sort | nothing new | the open view's rows |
 | both | CSV export | nothing new | the view export writes the loaded rows; "Download full CSV" is a static link to the full artifact's CSV |
 | both | mode or block switch | the new mode's or block's files | as the view |
@@ -752,5 +753,8 @@ slice to the first in-season view, reused by Start/Sit, Opportunity and every in
 ADR-106, on the size model: My Leagues adds 71.6 kB after the default view (25.1 kB of it code).
 Rising Stars adds 120.7 kB, the Opportunity tab's own files. Improve adds 10.3 kB of code. A
 league on a not-yet-loaded preset adds 85.1 kB, and switching back among loaded leagues costs
-0 B. A cold link to My Leagues is 396.1 kB, 120.8 kB of it data.
+0 B. A cold link to My Leagues is 396.1 kB, 120.8 kB of it data. ADR-107, on the size model:
+opening a card costs what it did (23.9 kB); showing the Skill Tree adds 16.5 kB (7.5 kB code,
+2.5 kB style, 4.2 kB definitions, 2.2 kB shard), another player at another position 6.6 kB, and
+a repeat 0 B. The manifest grew by the two families' file entries and the tree's metadata block.
 
