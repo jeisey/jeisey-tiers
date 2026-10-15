@@ -82,9 +82,11 @@ export function NormalChanges({
   const anyBetter = best !== undefined && best.result.paired !== null && best.result.paired.win > 0 && meaningfulDelta(best.result.paired);
   return (
     <div className="wmm-changes">
-      <p className="lg-help">
-        {`Best of ${String(evaluated.length)} evaluated lineup${evaluated.length === 1 ? "" : "s"} — Auto Start/Sit's median, floor and ceiling proposals and single bench swaps, each on the same simulated games as yours. Ranked by the chance to win this matchup, not by projected points. Not a proof that no better lineup exists.`}
-      </p>
+      {evaluated.length > 0 && (
+        <p className="lg-help">
+          {`Best of ${String(evaluated.length)} evaluated lineup${evaluated.length === 1 ? "" : "s"} — Auto Start/Sit's median, floor and ceiling proposals and single bench swaps, each on the same simulated games as yours. Ranked by the chance to win this matchup, not by projected points. Not a proof that no better lineup exists.`}
+        </p>
+      )}
       <p className="wmm-change-base">{`Your lineup: ${percentLabel(base.win)} to win.`}</p>
       {evaluated.length === 0 ? (
         <p className="lg-auto-none">No legal change to evaluate: every bench player is locked, sidelined or cannot fill a starting slot.</p>

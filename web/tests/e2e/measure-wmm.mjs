@@ -299,7 +299,8 @@ try {
     await timed(page, clickButton("Evaluate changes and pickups"), `document.querySelector(".wmm-changes") !== null`, "evaluate"),
   );
   result.evaluate = evaluate;
-  result.evaluated = (await page.locator(".wmm-changes .lg-help").first().innerText()).match(/Best of (\d+)/)?.[1] ?? null;
+  const evaluatedHelp = page.locator(".wmm-changes .lg-help").first();
+  result.evaluated = (await evaluatedHelp.count()) > 0 ? ((await evaluatedHelp.innerText()).match(/Best of (\d+)/)?.[1] ?? null) : "0";
   result.yoloCandidates = await page.locator(".wmm-yolo-card").count();
   result.prepareMs = await page.evaluate(() => performance.getEntriesByName("wmm-prepare").map((entry) => Math.round(entry.duration)));
   result.changesRunMs = await page.evaluate(() => performance.getEntriesByName("wmm-changes").map((entry) => Math.round(entry.duration)));
