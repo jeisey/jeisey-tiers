@@ -7362,3 +7362,261 @@ Two tests guard it:
   1.25× a fresh card's first tap on its own tab, and that baseline is now about 170 ms at 4×. The
   limit therefore falls from about 770 ms to about 210 ms, a tighter target the tree meets.
 * ADR-107's "property of the card" note is resolved, not deleted.
+
+## ADR-110 — Win My Matchup: a seeded joint simulation of two entered lineups, ranked lineup changes, and an opt-in ceiling-first waiver mode
+
+**Status:** accepted, 2026-10-15, frozen before implementation. The owner asked for a weekly
+matchup workspace inside My Leagues: enter the opponent's team, compare both starting lineups,
+find actionable changes, optionally chase weekly upside with waiver pickups ("YOLO"), and press
+Simulate for an understandable probability picture — static, lightweight, no login.
+**Relies on:** ADR-096 and ADR-099 (`weekly-startsit-v1`, `quantile_distribution_v1`, the
+measured same-game correlations), ADR-098 (served slices, `requiredKeys`, budgets), ADR-101
+(availability), ADR-092 (the Opportunity Board's role predicate), ADR-106 (My Leagues, its store
+rules, `lineup_assignment_v1`), ADR-107–109 (quiet loading, the card's performance fixes).
+
+### What stays fixed
+
+* **Nothing upstream reads this.** No model, artifact, schema, served file, rank, tier,
+  threshold or projection changes. Win My Matchup (WMM) is a decision layer (PRD A2.2) over files
+  the build already publishes.
+* **The distributions are used as published.** Every player outcome comes from his own seven
+  published quantiles under the metadata's tail rule. The weekly projections already contain
+  their published game inputs (lines, opponent, venue), so no Vegas or opponent modifier is
+  applied again.
+* **No new predictive inputs.** The Skill Tree stays behind its firewall (ADR-107): WMM imports
+  none of it. Role and net-add readings are eligibility evidence for YOLO only and never move a
+  projection.
+* **Availability governs eligibility, never a number** (ADR-101). No projection is multiplied by
+  an appearance rate. Questionable and uncertain players are simulated "if active", labelled.
+* **Existing tools are untouched.** `lineup.ts` (sums of individual quantiles, not team
+  quantiles), `startsit.ts` (two-to-four-player `bestOfSet`), Rising Stars' conjunction, the
+  leagues contract and every ADR-107–109 fix keep their behaviour. WMM reuses their functions; it
+  does not stretch `bestOfSet` into a team simulator.
+* **Static.** No backend, account, upload or vendor call. Nothing about a league or an opponent
+  enters a URL.
+
+### 1. Where it lives
+
+A sub-view of the active league's workspace, chosen by a two-tab row (*Lineup* · *Win My
+Matchup*) and carried in the URL as `panel=wmm` (no league data). It is not a top-level tab. Its
+code, stylesheet and worker are lazy chunks: opening My Leagues downloads none of them, and the
+worker loads on the first simulation.
+
+### 2. Inputs and completeness
+
+* **The league:** its scoring and size presets, starter counts and the reader's roster
+  (ADR-106). **The week:** the build's weekly target week. Both lineups use the league's starter
+  slots (QB, RB, WR, TE, ordinary RB/WR/TE FLEX; DST and K are not modelled).
+* **My baseline** is my current starting lineup, imported from the saved roster.
+* **The opponent** is entered slot by slot through the shared player picker: positional and FLEX
+  eligibility, slot counts and unique assignment are enforced. Bench/IR entry is optional (it
+  only removes known-owned players from YOLO). A player cannot be on both teams; a later roster
+  edit that creates an overlap blocks simulation until it is resolved. **The opponent's lineup is
+  simulated exactly as entered — never optimised.**
+* **Each starter slot is in one state.** Only the first five may enter a simulation:
+
+  | state | when | contributes |
+  |---|---|---|
+  | modelled | a published distribution for the target week and scoring (upcoming, or locked with its pregame distribution) | a draw from his distribution; "if active" when questionable/uncertain |
+  | final | locked (kicked off) and the reader entered a confirmed final score, in the *with finals* scenario | that score, exactly once |
+  | bye | his team is on bye | 0, printed as a known zero |
+  | confirmed zero | out, doubtful or unavailable under the policy, and the reader chose *Count as 0* | 0 |
+  | confirmed empty | an empty slot the reader chose *Leave empty (0)* for | 0 |
+  | **blocking** | an empty slot not confirmed; out/doubtful/unavailable not confirmed; no record, another week's record, no line posted, unknown kickoff, an unresolved id, locked without a distribution and no final; a player on both teams | nothing — Simulate is disabled and the slot is named |
+
+  An unknown player, a missing distribution or an unfilled slot is never an unnoticed zero.
+  Missing projections never fall back to rest-of-season points or last week's statistics.
+
+### 3. The simulation (`matchup_sim_v1`)
+
+* **Marginals.** `quantile_distribution_v1` knots (the seven quantiles, sorted, plus a knot at 0
+  and 1 extended by `tail_lower_factor` and `tail_upper_factor` from the build metadata), read as
+  a piecewise-linear inverse CDF at `u ∈ (0, 1)`. q90 is an upside percentile, not a maximum: a
+  draw reaches the upper knot. Negative values are kept. No normal or uniform substitute.
+* **Joint.** A Gaussian copula per NFL game (`game.game_id`), across both fantasy teams.
+  * The latent correlation is the metadata's `correlation.pairs[key].rho` — the latent value
+    the build converted from its Spearman measurement by `2 sin(π r / 6)` — never `spearman`.
+  * Key: same NFL team → `teammates:<positions sorted>`; same game, other team →
+    `opponents:any` (Start/Sit's `pairCorrelation` rule). An unmeasured key is 0, and the result
+    says which pairs were unmeasured. Different games are independent.
+  * **Validation, no repair.** A game block's matrix must be finite, symmetric, unit-diagonal,
+    `|ρ| < 1`, and factor by Cholesky with every pivot > 1e-9. A block that fails is simulated
+    **independently**, and the result names the game. There is no nearest-PSD projection,
+    shrinkage or invented value.
+* **Randomness.** A fixed seed and a counter-based generator: player `p`'s innovation in draw `d`
+  is a function of `(seed, p's canonical id, d)` only. Pressing Simulate again gives the same
+  answer; reordering slots or players changes nothing.
+* **One draw.** One outcome per unique active player. Each team total sums its slots once each
+  (a FLEX occupant is counted only in FLEX), plus fixed contributions. The margin is mine minus
+  the opponent's. Disjoint slot-group totals (QB, RB, WR, TE, FLEX) come from the same draw.
+* **Ties.** Team totals are compared at 0.01 points (each total rounded to hundredths). Equal is
+  a tie. Win, tie and loss are reported separately; nothing splits a tie into a half-win.
+* **Not used:** `marginSigma` (two fully simulated lineups already carry that uncertainty;
+  adding it would double-count), appearance rates, and products of group probabilities.
+* **Draws.** Start at **8,192**; the engine refuses more than **65,536** (the hard cap). The
+  frozen count and convergence rule are decided by this measurement, recorded below **before**
+  any recommendation example is evaluated:
+  1. the headline's 95% numerical half-width (binomial, worst case p = 0.5) is ≤ 1.1 points,
+     and the seed-to-seed SD on realistic lineups is within 20% of the binomial SE;
+  2. the median paired SE of a single-swap ΔP(win) is ≤ 0.5 points;
+  3. the rounded headline equals a 1,048,576-draw reference (offline only) within ±1 point for
+     ≥ 95% of test lineups.
+
+  If any fails, the count doubles (up to the cap) while the CPU targets hold.
+* **Outputs.** P(win/tie/loss) and the win's numerical SE; a margin histogram on fixed bins
+  shared by every variant of one run; team totals p10/p25/p50/p75/p90 and mean; per slot group,
+  each side's p10/p50/p90 and P(my group outscores theirs) and P(tie); for proposals, the paired
+  ΔP(win) with its paired SE and Δ of my total's p50 and p90.
+* **Wording.** Headlines are whole percents ("<1%", ">99%" at the extremes); ties print to 0.1.
+  Simulation noise is printed as ±1.96·SE, and kept apart from model uncertainty: the numbers
+  assume the published distributions and correlations are right. A proposal's change is
+  reported as a difference only when |Δ| > 1.96·SE_paired **and** |Δ| ≥ 0.5 points; otherwise
+  it is "within simulation noise".
+
+### 4. Scenarios, locks and finals
+
+This is not live scoring. **Pregame** simulates every starter, locked or not, from his published
+pregame distribution. **With finals** replaces a locked starter's distribution with the final
+score the reader confirmed. Each scenario is its own simulation with its own fingerprint, and
+the result says which it is. An in-progress game is never conditioned on its current score, and
+the page says so: there is no remaining-game model.
+
+### 5. Proposals and common random numbers
+
+* **Normal mode** evaluates the three `lineup_assignment_v1` proposals (Median, Floor, Ceiling)
+  and bounded single bench swaps (per bench candidate, its best starting slot by q50 gain and by
+  q90 gain: ≤ 20), deduplicated, with the baseline. Locks, pinned players, IR and roster capacity
+  are respected because only candidate-kind players move. Ranked by P(win). The label is "best of
+  N evaluated lineups", never "optimal".
+* **Coupling.** Every variant reuses the baseline's draws. In each game, the variant's block is
+  the baseline's active players (canonical order) followed by the variant's new players, so the
+  baseline players' latent values are the leading Cholesky block — bit-identical across
+  variants. If the extended block fails validation, that block is independent in that variant
+  only, and the variant is flagged "coupling reduced".
+* **Bounds.** ≤ 32 variants per run (baseline, ≤ 23 normal, ≤ 8 YOLO); ≤ 48 unique players;
+  per-group detail only for the baseline and a previewed variant.
+* **Applying.** Simulating, previewing, toggling modes, refreshing data or switching leagues
+  never changes a roster. *Apply* commits one roster edit through the league store (with its
+  revision check) and offers *Undo*.
+
+### 6. YOLO (`yolo_ceiling_v1`)
+
+Opt-in per league, off by default. It prioritises weekly upside; it does not promise a better
+chance to win. A potential pickup must pass **every** gate:
+
+1. **This week.** `readWeek` says `candidate` (a distribution for this week and scoring, an
+   upcoming game, a known future kickoff, start-eligible), and `featureable` holds (Pick of the
+   Week's policy: not out, doubtful, reserve, released, unsigned, inactive, contradicted or
+   season-over).
+2. **Rising role.** The Opportunity Board's own predicate, `passesFilter(candidate, "role")`: a
+   measured upward `role_change_v1` on his position's leading metric.
+3. **High net adds** from the current behaviour snapshot. The population is the league block's
+   published Opportunity rows (projected and unprojected) at his position with
+   `behavior_available` and `net_add_count > 0`. The threshold is the ceiling of that
+   population's median (`quantileAt`, linear). The population must hold ≥ 5 rows, and the
+   snapshot must be ≤ 48 hours old at the reader's clock. A missing or stale feed, a small pool or
+   a missing count qualifies nobody: none is a positive signal. This is **not** Rising Stars'
+   momentum (`behavior_trend_v1`), which YOLO neither reads nor changes.
+4. **Ceiling.** His q90 is above the q90 of the incumbent at a starting slot he can legally fill
+   whose occupant can move (a locked or pinned occupant cannot). A confirmed-zero or confirmed
+   empty slot's incumbent counts as 0.
+5. **Not known to be owned.** Not on my roster (any group), not among the opponent's starters,
+   bench or IR, and not marked unavailable by the reader.
+
+Qualifiers are ranked by ceiling gain (his q90 minus the incumbent's), then his q90, then id: ≤ 3
+per position and ≤ 8 in all are simulated. Each shows the incumbent and target, both q50 and q90,
+the net-add count beside the threshold, the pool size and the window, the role change and its
+weeks, and ΔP(win). When the ceiling rises and P(win) falls, the page says so plainly.
+
+**Measured coverage, frozen with the rule** (live build of 2026-10-15, target week 6, 24-hour
+Sleeper window, `redraft-12`/PPR; identical in every block that day). Positive net-add pool sizes
+QB 10, RB 20, WR 18, TE 5. Thresholds QB 49,065, RB 57,568, WR 55,110, TE 42,482. At or above
+the threshold: QB 5, RB 10, WR 9, TE 3. Of those, with a rising role: QB 2, RB 7, WR 5, TE 3,
+all with a week-6 distribution. A 75th-percentile rule left QB 1, RB 4, WR 2, TE 2 and was
+rejected as too narrow for a waiver list. The TE pool sat exactly at the minimum of 5 that day,
+so a quieter day leaves TE without YOLO candidates — the intended, stated outcome.
+
+Ownership elsewhere in the league is unknown, so results read "potential pickups — availability
+unverified". The reader may mark a player *Available* or *Unavailable*. *Apply* requires
+*Available*, and a drop when the incumbent has no free bench slot. It is one atomic roster edit
+with *Undo*; no platform transaction is implied. Bench players with a higher ceiling are listed
+separately as bench upgrades.
+
+### 7. Persistence (`jeisey-tiers.win-my-matchup`, version 1)
+
+* **A separate document** under `jeisey-tiers:win-my-matchup@<base path>`. It cannot erase or
+  rewrite the leagues document, and an older build that knows nothing of it is unaffected.
+* **Contents:** `{format, version, revision, entries[], prefs}`.
+  * An entry is keyed by league id, season and week. It holds the opponent's name (≤ 40
+    characters), starters by slot, and others (bench/IR, ≤ 14). It also holds the confirmed-empty
+    slots for both sides, count-as-zero player ids, finals (≤ 30, |points| ≤ 100, two decimals),
+    availability marks (≤ 24), and `rev` and `updatedAt`.
+  * `prefs` holds YOLO on/off per league (≤ 6).
+  * No results, projections or player names are stored.
+* **Bounds:** ≤ 4 weeks per league and ≤ 12 entries, oldest week first out.
+* **ADR-106's store rules, unchanged in substance:**
+  * strict validation;
+  * a backup before anything unreadable is replaced, and *protected* when no backup can be kept;
+  * a newer version is read-only;
+  * per-entry revisions refuse a stale tab's edit;
+  * `storage` events, so other tabs follow;
+  * only edits write;
+  * blocked or full storage keeps edits in memory and says "Not saved".
+* **Week rollover.** Only the entry for the build's target week is current. If none exists and
+  an earlier week's does, the page names that opponent and week and offers *Reuse for week N*
+  (starters and others are copied; finals, confirmations and marks are not) or *Start fresh*.
+  Results are never stored, so no earlier week's result can be shown as current.
+
+### 8. Execution
+
+* One lazy, dedicated module Worker runs the engine. It receives compact, validated numeric input
+  (knots, game and team codes, slot lists), never the DataStore.
+* Every run carries a request id and an input fingerprint. The fingerprint covers the engine
+  version, seed, draws, build id, model version, distribution rule, correlation table, scoring,
+  week, league id, both lineups, fixed contributions and the scenario.
+* A superseded or cancelled run is terminated, and a response whose id or fingerprint is not
+  current is dropped.
+* Results are cached in memory (≤ 6, by fingerprint) and never re-rendered by the global
+  board. Unmount and league switches terminate the worker.
+* Without a working Worker, a sliced main-thread run (≤ 512 draws per slice, yielding between
+  slices) is used, or the page says simulation is unavailable.
+* Nothing simulates during render, per keystroke or in the background: only *Simulate*,
+  *Find changes* and *Preview* start a run.
+
+### 9. Performance targets (frozen before implementation)
+
+These are measured on the repository's throttled phone benchmark: Pixel 7 viewport, 4× CPU, the
+production-shaped board.
+
+| | target |
+|---|---|
+| baseline simulation, click to painted result (code loaded) | ≤ 500 ms |
+| bounded recommendation run (≤ 32 variants), click to painted | ≤ 1,500 ms |
+| WMM-induced main-thread long task during a run | none > 50 ms |
+| *Cancel* to controls usable | ≤ 100 ms |
+| opponent picker keystroke, opponent pick | ≤ 200 ms (My Leagues' target) |
+| maximum lineups (15 starters a side) baseline run | ≤ 500 ms |
+| retained heap growth over repeated simulate / switch cycles | ≤ 2 MB |
+| worker transient memory per run | ≤ 4 MB of result arrays (32 × draws × 4 B + group detail) |
+
+Byte budgets — opening WMM, the first simulation (worker), turning YOLO on, and repeats at 0 B —
+are the measured cost plus a margin, as ADR-106 set them, recorded in Evidence. No existing
+budget changes.
+
+### 10. Limitations, stated on the page
+
+* **Not calibrated as a team probability.** Player distributions and pairwise head-to-head
+  accuracy were evaluated; whole-lineup sums and matchup probabilities were not. The build
+  saves no out-of-fold weekly predictions, so a development-only aggregation diagnostic is not
+  practical here. WMM's figures are estimated scenario probabilities under these assumptions:
+  * the published marginals;
+  * the same-game Gaussian copula with pairwise correlations measured on PPR starters;
+  * independence across games.
+
+  Numerical stability does not prove forecast accuracy.
+* **Covers the modelled offensive lineup only.** Kickers and team defenses are not modelled, so
+  this is not a full fantasy-team win probability.
+* Conditional on appearing: "if active" players are simulated as playing.
+* No in-game conditioning.
+* Ownership is unknown.
+* The behaviour feed is one 24-hour snapshot.
