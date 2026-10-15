@@ -4,6 +4,41 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**PFR ids keep their punctuation; a card forgets the opening tap's caret — 2026-10-15 (ADR-108,
+ADR-109).** On `claude/brave-einstein-tjmbj8`, restarted from `main` at `88709a2` (PR #65
+merged). These are the two ADR-107 follow-ups.
+
+* **ADR-108 (a model-input change, AGENTS.md §8).** `identity.ids._PFR_RE` now accepts the
+  punctuation PFR keeps from a name (`. ' - _`, never first or last). Every one of the 23,161
+  nflverse PFR ids passes unchanged, and everything else is still refused.
+  * Measured A/B on the same cached frames. Training rows changed: historical 4.5%, rest of
+    season 4.2%, weekly 1.8%. Snap-bridge coverage 0.9774 → 0.9980.
+  * Development folds: see ADR-108. Published outputs: only D.J. Moore and five Bears teammates
+    move, and tiers re-segment.
+  * Decision: no retrain. The committed models serve the corrected inputs. Each card (and its
+    generator) states the training-data gap, and ADR-077 is answered explicitly.
+* **ADR-109 (browser-only).** `PlayerDetail` drops a collapsed caret right after `showModal()`.
+  The opening tap's caret made Chromium re-canonicalise across ~37k nodes on the first tap
+  inside the card. First tap at 4×: 592–672 → 160–208 ms.
+
+**Next gate:** owner review of the PR. The `NGS_PUBLISHED` decision (ADR-107) is still open.
+
+Validation of this pass so far (local):
+
+```
+uv run ruff check . ; uv run ruff format --check .   # clean
+uv run mypy                                          # clean, 203 source files
+tests/unit/test_identity_ids.py + tests/contract/test_source_adapters.py   # 125 passed
+build-fixture-artifacts                              # byte-identical to tests/fixtures/artifacts
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 930 vitest (45 files; 1 new)
+playwright --project=mobile mobile.spec.ts           # 23 passed (1 new; fails on the pre-fix build)
+measure-skilltree.mjs (4×, 1×; before = main 88709a2) # ADR-109 table; all targets met in all four runs
+A/B builds (build-historical, build-ros-dataset, build-weekly-dataset, build-current, build-ros)
+eda.py --check-artifact (build B)                    # 12,162 compared, 0 mismatches, 0 explained
+# pending: full pytest; evaluate-ros / evaluate-weekly A vs B; full e2e
+```
+
 **The Skill Tree — 2026-10-14 (ADR-107, PRD CR-029).** On `claude/brave-einstein-tjmbj8` from
 `main` at `f207378` (PR #64 merged). A descriptive in-season card section: each QB/RB/WR/TE's
 season through the board's cutoff as a position-specific tree of statistics (4 branches, 13–14
@@ -34,11 +69,11 @@ byte-identical, and an import firewall keeps every model and decision module awa
   ARCHITECTURE §14, OPERATIONS §16.12/§17.3, DATA_SOURCES §22, the source registry (role,
   probes, three known issues), README, `docs/visual-qa/2026-10-14-skill-tree/`.
 
-**Next gate:** owner review, including two owner decisions recorded in ADR-107:
-* publishing Next Gen Stats aggregates (one constant, `NGS_PUBLISHED`, removes them);
-* the PFR-id follow-up (below).
+**Next gate (then):** owner review, including two owner decisions recorded in ADR-107:
+* publishing Next Gen Stats aggregates (one constant, `NGS_PUBLISHED`, removes them): still open;
+* the PFR-id follow-up: done in ADR-108.
 
-A PR (when asked for) runs the Firefox/WebKit smoke.
+PR #65 merged, and the daily refresh ran on it.
 
 Validation of this pass (local):
 
@@ -65,10 +100,10 @@ verify:budget (real, report-only)                    # tree +16.6, switch +7.6, 
 
 Facts a later session should not re-derive:
 
-* **PFR ids can contain a period** (D.J. Moore `MoorD.00`). `identity.ids._PFR_RE` refuses
-  them, so his snap rows never bridge anywhere: in the tree he reads "not covered". Widening
-  the rule changes model inputs, so it is a separate, measured change (registry
-  `known_issues.pfr_id_with_period_refused`; a follow-up task was proposed).
+* **PFR ids keep a name's punctuation** (`MoorD.00`, `St.BEq00`, `O'ShJa00`, `Ya-SRo00`,
+  `Cox_Mi20`). The id rule accepts `. ' - _` inside an id since ADR-108. Before that, 232
+  player-master ids and 5,770 snap rows were refused. The committed models were trained on data
+  with that gap; their next refits train on corrected data.
 * **The core font subset matters.** A detail that printed `÷` downloaded `exo2-latin-rest`
   mid-tap, which took 2 s on a 4× phone. Every published Skill Tree string is pinned to the core
   subset by a test.
@@ -77,8 +112,10 @@ Facts a later session should not re-derive:
 * **Measuring taps on this board:** Playwright's role engine walks all ~37,000 nodes per query
   and ran for most of a second inside the timed window. `measure-skilltree.mjs` resolves the
   target first, taps raw coordinates, polls `querySelector` once a frame, and reads Event
-  Timing. **The first tap in a freshly opened card** has a ~0.75 s long task at 4× whatever tab
-  it hits. That is pre-existing, and the tree is held to the same baseline.
+  Timing. **The first tap in a freshly opened card** used to cost a ~0.6–0.75 s long task at 4×.
+  The cause was the opening tap's collapsed caret, which Chromium re-canonicalised across the
+  whole board on the next tap. `PlayerDetail` drops it on open (ADR-109). `user-select: none`
+  does not help, because the caret is already placed.
 * **Vite must run from the repo root** (`vite.config.ts` lives there; `--outDir dist-realsite`
   lands in `web/`). From `web/` it silently builds with base `/`.
 * **Real-site captures:** a deep board player is reachable with `?search=<name>`; click the

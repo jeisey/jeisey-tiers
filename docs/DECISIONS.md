@@ -7059,6 +7059,8 @@ TypeScript) keeps every model, board and decision module away from the tree.
   id normaliser refuses, so production publishes "not covered" where the script, which bridges
   raw ids, ranks him. The shared rule also feeds model features, so it was left alone, recorded
   (registry `known_issues.pfr_id_with_period_refused`) and proposed as a separate task.
+  *Resolved by ADR-108 (2026-10-15):* with the widened rule, the same check over a fresh
+  week-5 build compares 12,162 readings with 0 mismatches and 0 explained differences.
 * Store: the served tree is 64 shards totalling 157.6 kB gzip (largest 4.3 kB) plus 4
   definition files (largest 4.2 kB).
 
@@ -7105,6 +7107,9 @@ reason sentences a build uses are carried).
 A node tap costs about 1.2–1.3× a card tab switch. The first tap in any freshly opened card is
 slow whichever tab it lands on: a 0.75 s long task between touch and click at 4×, the same
 without the tree. That is a property of the card, recorded as a separate observation.
+*Resolved by ADR-109 (2026-10-15):* the cost was the opening tap's stale caret. The card now
+drops it, and the first tap measures 160–208 ms at 4× (40–56 ms at 1×). Another player's tree
+then measures 136–192 ms to the tap and 333–459 ms to the tree.
 
 **Amendments made during the build.** Each was measured, and none changed a definition.
 1. **Detail placement.** On a phone, the detail opens directly under its node. Below the branch,
@@ -7126,3 +7131,196 @@ without the tree. That is a property of the card, recorded as a separate observa
 8. **Snap-row reason.** The no-snap-row sentence names both causes: no row, or a row whose PFR
    id could not be linked.
 
+
+## ADR-108 — PFR ids keep their name punctuation; the committed models serve the corrected inputs
+
+**Status:** accepted, 2026-10-15. **Relies on:** ADR-019 (an id bridge fails closed), ADR-077
+(the sealed 2025 season is spent), ADR-078 (a production refit carries no performance claim of its
+own), ADR-107 (whose artifact cross-check found the gap). **Treated as a model change** under
+AGENTS.md §8: the rule feeds model features, so its effect on training rows, development metrics
+and every published output was measured before the decision below.
+
+### Context
+
+`ffdraft.identity.ids.normalize_id` accepted a Pro Football Reference id only as letters and
+digits. PFR keeps a name's own punctuation inside the id: `MoorD.00` (D.J. Moore), `St.BEq00`
+(Equanimeous St. Brown), `O'ShJa00`, `Ya-SRo00`, `Cox_Mi20`. Every such id was refused as
+malformed, so every row carrying one fell out before any join. Snap counts are keyed by PFR id
+alone, so those players had no snap share anywhere. Their combine rows were lost the same way,
+and draft rows lost the PFR id that stands in when GSIS is missing. ADR-107's cross-check found
+it through D.J. Moore's snap share.
+
+**Survey** (2026-10-15, every nflverse PFR id: player master, rosters and snap counts 2012–2026,
+draft picks, combine; 23,161 distinct). Besides letters and digits only `. ' - _` occur, and
+never as the first or last character. Lengths run from 7 to 10. The old rule refused:
+
+| source | refused by the old rule |
+|---|---|
+| player master | 232 of 22,688 ids |
+| rosters | 46 ids (333 roster rows) |
+| snap counts | 101 ids; 5,770 of 331,982 rows (1.7%), 35 of them in 2026 |
+| draft picks | 128 of 11,176 rows |
+| combine | 102 of 7,437 rows |
+
+The historical build's snap-count bridge coverage was 0.9774 (6,733 of 6,889 player-seasons);
+the remaining 2.3% was almost entirely this gap.
+
+### Decision
+
+1. **The rule.** A PFR id is 4–12 characters of letters, digits and `. ' - _`, begins and ends
+   with a letter or digit, and contains a letter. Every observed id passes unchanged. Still
+   refused: any other character (a space, `:`, `/`), punctuation first or last, a bare number, a
+   float rendered as text (`12.0`), anything shorter or longer. Outer whitespace is still trimmed
+   with its quality flag. The bridge's own rule is untouched: a PFR id claiming two GSIS ids is
+   dropped (ADR-019).
+2. **No retrain.** `intrinsic-cb-hurdle-v1`, `intrinsic-ros-v1` and `weekly-startsit-v1` keep
+   serving, and from this build on they receive the corrected inputs for the affected players:
+   * the feature schema is unchanged (no column added, renamed or re-typed), so the committed
+     artifacts' feature-schema hashes still match and both builds run as before;
+   * each model learned its features from the 95–98% of rows whose ids bridged. An affected
+     player now enters with the values every other player has, not with the missing values the
+     models associate with players who have no snap history. That corrects an input; it does not
+     change a model;
+   * a refit would change every player's published values in mid-season for a gap in 2–5% of
+     training rows, and would replace three production artifacts with fits whose only evidence
+     is the development comparison below. The sealed 2025 season is spent (ADR-077), so no
+     out-of-time evidence exists for such a refit;
+   * ADR-077 (§4) holds that any change to `RC1`'s outputs needs a fresh sealed season. That
+     constraint governs the model: a refit, a feature, a fallback, a tuning. This change touches
+     none of them. The fitted artifacts, feature definitions and code paths are unchanged. What
+     changed is an identity step upstream of every feature, the same kind of correction a
+     revised nflverse file makes. The sealed results are not re-scored. Their rows carried the
+     gap at 1.1% (preseason, 12 of 1,103; rest of season, 576 of 53,259) and 0.4% (weekly, 75 of
+     18,192), and each card says so.
+3. **The training-data gap is on each card.** Every affected card states how many of its
+   training rows lacked the snap, combine or role values (below), and that its next production
+   refit trains on corrected data. The weekly-startsit-v2 shadow inherits the weekly gap. v1 and
+   v2 read the same corrected rows from this build on, so the prospective comparison stays
+   paired.
+4. **Regression fixtures.** Real punctuated ids are accepted unchanged, and malformed ones are
+   still refused (`tests/unit/test_identity_ids.py`). A punctuated id's snap rows survive the
+   adapter and bridge to GSIS, and combine and draft rows keep theirs
+   (`tests/contract/test_source_adapters.py`).
+
+### Evidence
+
+Two builds, A (old rule) and B (new rule), on the same cached nflverse frames with code otherwise
+identical (a worktree of `main`). The live builds are as of 2026-10-15T12:00Z (week 5).
+
+**Training data.**
+
+| dataset | rows changed | what changed |
+|---|---|---|
+| historical (preseason) 2014–2025 | 520 of 11,604 (4.5%) | 148 rows gain a prior-season snap share and snaps per game; 134 gain combine measurements; `prior_season_role_rank` changes on 489 (148 newly known, the rest teammates re-ranked); depth context state on 147. Labels unchanged. |
+| rest of season 2017–2025 | 19,218 of 455,109 (4.2%), 228 players | the preseason block as above, plus in-season snap share (mean, last 3, trend) on 3,933 rows |
+| weekly 2017–2025 | 2,805 of 155,976 (1.8%) | 342 new rows: 16 players whose snap-only appearances never bridged (C.J. Ham, J.P. Holtz, C.J. Uzomah, Equanimeous St. Brown and others); 2,463 rows with changed snap features |
+
+Snap-count bridge coverage in the historical quality report: 0.9774 → **0.9980** (6,875 of
+6,889).
+
+**Development evaluation** (rolling-origin development folds only; the sealed season is not
+touched).
+
+*Pending:* `evaluate-ros` and `evaluate-weekly` re-run on the development folds, A against
+B; the result is recorded here when the runs complete.
+
+**Published outputs** (`build-current` and `build-ros`; both `build-ros` runs read the same live
+preseason board, so the in-season comparison isolates the in-season layer).
+
+* **Draft board.** D.J. Moore's expected points fall by 2.1 in half PPR, 4.4 in PPR and 4.3 in
+  standard; he moves from 54th to 60th in the 12-team PPR preset. Five Bears teammates move by at
+  most 0.31 points. Every other player moves by at most 0.07 expected VORP, through replacement
+  level. Tier segmentation re-runs on the new values:
+  * four presets are unchanged;
+  * in three, one boundary moves by one rank;
+  * 10-team PPR and 10-team standard each lose one deep tier (11 → 10 and 14 → 13), which
+    relabels the tiers below it.
+* **Rest of season.** D.J. Moore falls by 1.6–6.3 rest-of-season points (12-team PPR: rank
+  118 → 128). His teammates move by at most 0.24 points. Rest-of-season tiers re-segment in 4 of
+  9 presets.
+* **Week 6.** Only D.J. Moore's projection changes: PPR median 9.23 → 8.42.
+* **Usage and actuals.** Only D.J. Moore's usage changes: his five weeks now carry a snap share.
+  Season actuals are unchanged.
+* **Skill Tree.** D.J. Moore's snap share (0.514, 51.9th percentile) and 40-yard dash (4.42,
+  79.2nd) are published where they read "not covered". The cohort gains him, so 183 other
+  players' snap-share percentiles shift. `eda.py --check-artifact` compares 12,162 readings with
+  0 mismatches and **0 explained differences**; ADR-107's one explained difference is gone.
+
+Both builds pass their quality gates with 0 critical issues. The `malformed_pfr_id` and
+`snap_rows_without_key` warnings no longer appear in the source metadata. In the live build,
+games without a snap row fall from 9 to 5, and combine-linked players rise from 304 to 305.
+
+### Consequences
+
+* Registry `known_issues.pfr_id_with_period_refused` is resolved, and DATA_SOURCES §22's
+  "Known identity gap" is closed.
+* A draft board built before this change and one built after differ for the affected players.
+  That is the correction, not drift.
+* Fuzzy or name matching is still never used for PFR rows. The widened rule only stops
+  refusing ids that nflverse itself publishes.
+
+## ADR-109 — A player card forgets the caret its opening tap left
+
+**Status:** accepted, 2026-10-15. **Relies on:** ADR-107, which measured the first-tap cost and
+held the Skill Tree to it.
+
+### Context
+
+ADR-107 measured a long task of about 0.6–0.75 s, at 4× CPU, on the first tap inside any freshly
+opened player card. It hit whichever tab the tap landed on, with or without the tree, and later
+taps never paid it. ADR-107 recorded it as a property of the card.
+
+A trace with input, editing and GC categories found the cause. A tap is a gesture, and it
+places a collapsed selection (a caret) where it lands. The tap that opens a card lands on a
+board row, leaving the caret in the board under the modal. On the next tap, the first inside the
+card, Chromium's editing code re-canonicalises that stale caret: `canonicalPosition` →
+`nextCandidate` walks the document for a valid position, and this board has about 37,000 nodes.
+That walk took about 320 ms of the long task under the trace. The first tap replaces the caret,
+so later taps pay nothing.
+
+Variants measured on the same build (4×, under the same background load; long task · tap latency):
+
+| | long task | tap latency |
+|---|---:|---:|
+| as is | 599 ms | 664 ms |
+| `user-select: none` on the tabs, or on the board | 511–589 ms | about the same |
+| the stale caret removed before the tap | 190 ms | 264 ms |
+
+`user-select` does not help, because the caret is already placed when the card opens.
+
+### Decision
+
+When the card opens (right after `showModal()`), a collapsed caret in the document is removed
+(`Selection.type === "Caret"` → `removeAllRanges()`). A range the reader selected on purpose is
+never touched. Nothing else changes: no published value, layout, focus order or dialog behaviour.
+
+### Evidence
+
+`measure-skilltree.mjs` on the size model (Pixel 7, real taps, Event Timing). "Before" is `main`
+at `88709a2`, built from the same source data.
+
+| | 4× before | 4× after | 1× before | 1× after |
+|---|---:|---:|---:|---:|
+| fresh card's first tap on its own tab (5 cards), range · median | 592–672 · 616 ms | 160–208 · 168 ms | 120–176 · 136 ms | 40–56 · 40 ms |
+| another player's tree (a fresh card's first tap): tap | 544–640 ms | 136–192 ms | 112–160 ms | 32–48 ms |
+| another player's tree: tree on screen | 772–958 ms | 333–459 ms | 158–209 ms | 82–95 ms |
+| card's own tab switch (non-first), median | 152 ms | 176 ms | 40 ms | 40 ms |
+| cold activation: tap · tree | 176 · 672 ms | 168 · 676 ms | 40 · 391 ms | 40 · 395 ms |
+| repeat activation: tap · tree | 192 · 247 ms | 176 · 204 ms | 48 · 61 ms | 48 · 58 ms |
+| node detail | 168–208 ms | 160–200 ms | 48–56 ms | 48–56 ms |
+
+The first tap now costs what any other tap costs. Every other row is unchanged within run-to-run
+noise, and every target passes in all four runs.
+
+Two tests guard it:
+* Vitest: a caret is dropped on open and a real range is kept. The test fails when the call is
+  removed.
+* Playwright (mobile): a card opened by tap leaves no caret, and its first tab tap works. The test
+  fails on the pre-fix build.
+
+### Consequences
+
+* The measurement script's rule is unchanged. A switch to another player's tree is still held to
+  1.25× a fresh card's first tap on its own tab, and that baseline is now about 170 ms at 4×. The
+  limit therefore falls from about 770 ms to about 210 ms, a tighter target the tree meets.
+* ADR-107's "property of the card" note is resolved, not deleted.

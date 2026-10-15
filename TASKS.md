@@ -2330,9 +2330,39 @@ descriptive only (PRD CR-029): nothing on the site reads it.
       §14, OPERATIONS §16.12/§17.3, DATA_SOURCES §22, the source registry, README, the
       visual-QA index.
 - [ ] **Follow-ups**, not part of this gate:
-      - PFR ids with a period are refused by `normalize_id`. This affects snap rows and model
-        inputs, so it needs a measured fix.
-      - The owner's decision on publishing NGS aggregates (`NGS_PUBLISHED`).
-      - The fresh card's first-tap long task (pre-existing).
+      - [x] PFR ids with a period are refused by `normalize_id`. This affects snap rows and model
+        inputs, so it needs a measured fix. Done 2026-10-15 (ADR-108).
+      - [ ] The owner's decision on publishing NGS aggregates (`NGS_PUBLISHED`).
+      - [x] The fresh card's first-tap long task (pre-existing). Done 2026-10-15 (ADR-109).
+- [x] **Validation**: see SESSION_STATE.
+
+## PFR ids keep their punctuation; a card forgets the opening tap's caret — 2026-10-15 (ADR-108, ADR-109)
+
+The two ADR-107 follow-ups. One changes model inputs, so it is treated as a model change (AGENTS.md §8).
+The other is browser-only.
+
+- [x] **PFR id rule** (`identity/ids.py`).
+      - Survey of every nflverse PFR id (23,161 distinct): only `. ' - _` besides letters and
+        digits, never first or last.
+      - The rule accepts every observed id and still refuses any other character, punctuation
+        at either end, a bare number, a float as text, and anything too short or too long.
+- [x] **Regression fixtures.**
+      - Unit: real punctuated ids accepted unchanged; malformed ones still refused.
+      - Contract: a `MoorD.00` snap row survives the adapter and bridges to GSIS; combine and
+        draft rows keep their ids.
+- [x] **Measured effect** (A/B on the same cached frames).
+      - Training rows: historical 4.5%, rest of season 4.2%, weekly 1.8%.
+      - Development evaluations, rest of season and weekly: ADR-108 Evidence.
+      - Published outputs: only D.J. Moore and his teammates move; tiers re-segment.
+      - Skill Tree: cross-check now has 0 explained differences.
+- [x] **Decision.** No retrain. The committed models serve corrected inputs, and each card
+      records its training-data gap. ADR-077 is addressed explicitly in ADR-108.
+- [x] **First-tap caret** (`PlayerDetail.tsx`). The card drops a collapsed caret on open.
+      - First tap at 4×: 592–672 → 160–208 ms. At 1×: 120–176 → 40–56 ms.
+      - Vitest and Playwright (mobile) regressions, both shown to fail without the fix.
+- [x] **Docs.**
+      - ADR-108 and ADR-109; ADR-107 notes; four model cards and their generators.
+      - Registry known issue resolved; DATA_SOURCES §22; DATA_CONTRACTS §12.1.
+      - EDA README; the `measure-skilltree.mjs` comment.
 - [x] **Validation**: see SESSION_STATE.
 
