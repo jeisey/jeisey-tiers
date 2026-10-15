@@ -526,6 +526,13 @@ def _card_markdown(inputs: CardInputs, payload: Mapping[str, Any]) -> str:
             "undefined for a player who never appears, so the availability/performance "
             "dependence is estimated on players who played and extrapolated to those who did "
             "not.",
+            "- **Its training rows carry an identity gap (ADR-108).** Until "
+            "2026-10-15 a PFR id that keeps a name's punctuation (`MoorD.00`) was "
+            "refused, so 520 of 11,604 2014-2025 rows (4.5%) were built with a "
+            "missing prior-season snap share (148), missing combine measurements "
+            "(134) or a shifted prior-season role rank (489); 12 of them are in the "
+            "2025 final holdout, which is not re-scored. The served model receives "
+            "the corrected values, and its next production refit trains on them.",
             "",
             "## Fairness and coverage",
             "",

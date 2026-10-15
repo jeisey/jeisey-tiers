@@ -1109,8 +1109,10 @@ only. Historical, dated, never called speed.
 4.0) — so no per-route metric; FTN charting (CC-BY-SA, ADR-086); PFR advanced stats (terms not
 reviewed); NGS CPOE and aggressiveness (a second CPOE model; niche).
 
-**Known identity gap.** A PFR id containing a period (D.J. Moore, `MoorD.00`) is refused by
-`normalize_id`, so his snap rows never bridge; the tree publishes his snap share as not covered.
-Registry `known_issues.pfr_id_with_period_refused`; the fix touches model inputs and is tracked
-separately.
+**Identity gap, resolved (ADR-108).** A PFR id keeps a name's punctuation: D.J. Moore is
+`MoorD.00`, and `. ' - _` occur in 232 player-master ids. `normalize_id` used to refuse them, so
+those players' snap rows never bridged and the tree published "not covered". It accepts them
+since 2026-10-15. The registry entry `known_issues.pfr_id_with_period_refused` records the
+measured effect on model inputs and outputs. A snap share can still read "not covered" when
+no snap row exists or an id has no single GSIS match (a bridge conflict fails closed).
 

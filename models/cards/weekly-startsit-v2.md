@@ -57,3 +57,4 @@ Rule `weekly_promotion_v2`; minimum 8 weeks, 6000 rows, 40000 pairs; status: pen
 - The injury report is point in time for 2017-2024 to 24 of 44,356 rows; 2025 rows carry no timestamp and are unverified (docs/DATA_SOURCES.md 20.3).
 - Starters are lagged snap-share leaders; a starter returning from a long absence, or a mid-week signing, is not one until he plays.
 - A team whose report carries no game status is unknown (null) on every health input, never healthy.
+- Its development rows inherit weekly-startsit-v1's identity gap (ADR-108): until 2026-10-15, 1.8% of 2017-2025 weekly rows were absent or had missing snap features. v1 and v2 read the same corrected inputs from then on, so the prospective comparison stays paired.

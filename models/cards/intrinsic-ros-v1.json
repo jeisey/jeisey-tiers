@@ -1514,7 +1514,8 @@
     "It cannot order the long-absence cohort: Spearman 0.311 on 18,951 development rows against 0.797 on the full universe. ADR-076 specifies what a product built on it must disclose.",
     "Its intervals on the zero-current-games cohort are conservative \u2014 14.5 wide against a climatological 4.5 \u2014 though narrower than the baseline's and better scored.",
     "The sealed season is spent. This model's published out-of-time result describes these exact outputs; any change to them requires a fresh sealed season (ADR-077).",
-    "The served artifact is a production refit of this architecture on the widest permitted window (ADR-078). It carries no performance claim of its own: it was scored on nothing, and every number above belongs to the Phase-11 evaluation."
+    "The served artifact is a production refit of this architecture on the widest permitted window (ADR-078). It carries no performance claim of its own: it was scored on nothing, and every number above belongs to the Phase-11 evaluation.",
+    "Its training rows carry an identity gap (ADR-108). Until 2026-10-15 a PFR id that keeps a name's punctuation (`MoorD.00`) was refused, so 19,218 of 455,109 2017-2025 rows (4.2%, 228 players) were built with missing or shifted snap, combine or role values; 576 of them are in the sealed 2025 season, which is not re-scored (ADR-077). The served artifact is unchanged and receives the corrected values, and its next production refit trains on them."
   ],
   "model_name": "intrinsic-ros-v1",
   "model_version": "rc1_ros_hurdle_v1",

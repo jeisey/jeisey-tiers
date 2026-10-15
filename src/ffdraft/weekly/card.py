@@ -215,6 +215,12 @@ def _limitations() -> list[str]:
         "roof the schedule contradicts: nflverse files the MCG, the Stade de France and the "
         "Allianz Arena (2026, open to the sky) as dome, and those games are read as outdoors "
         "(ADR-099 amendment). Every 2017-2025 roof it was trained on already agrees.",
+        "Its training rows carry an identity gap (ADR-108). Until 2026-10-15 a PFR id "
+        "that keeps a name's punctuation (`MoorD.00`) was refused, so 342 rows were "
+        "absent (snap-only appearances that never bridged) and 2,463 had missing snap "
+        "features: 2,805 of 155,976 2017-2025 rows (1.8%), 75 of them in the sealed "
+        "2025 season. The served model is unchanged and receives the corrected "
+        "inputs, and its next production refit trains on them.",
     ]
 
 

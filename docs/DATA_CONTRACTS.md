@@ -411,7 +411,7 @@ The Phase-2 gate's thresholds live in `ffdraft.quality.thresholds` as `Historica
 | canonical key coverage | >= 1.0 | 1.0 | The universe is assembled only from GSIS-keyed sources, so anything less is a construction bug. |
 | duplicate `(season, player_id)` | 0 | 0 | Named by the Phase-2 exit gate. |
 | `age_at_anchor` coverage | >= 0.93 | 0.967 (worst season 0.925) | The gap is 380 deep fringe roster entries for whom no nflverse source publishes a birth date. |
-| snap-count bridge coverage | >= 0.90 | 0.977 | Snap counts are keyed by `pfr_id` and must cross an id space; this is the identity join that can genuinely fail. |
+| snap-count bridge coverage | >= 0.90 | 0.998 (0.977 before ADR-108) | Snap counts are keyed by `pfr_id` and must cross an id space; this is the identity join that can genuinely fail. Most of the old 2.3% gap was punctuated PFR ids refused as malformed (ADR-108). |
 | ffopportunity coverage | >= 0.80 (warning) | 0.954 | ffopportunity models only plays it can attribute, so some gaps are legitimate. |
 | label coverage | >= 1.0 | 1.0 | A missing label is a join failure; a player who did not play scores zero. |
 | season row-count tolerance | <= 0.35 of median (warning) | fires on 2014-2016 | Wide enough for a genuine era change, narrow enough to catch a truncated source. |

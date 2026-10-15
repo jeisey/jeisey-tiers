@@ -600,3 +600,56 @@ def test_one_player_on_two_teams_is_not_a_collision():
     )
     assert collided_gsis_ids(batch.frame) == frozenset()
     assert batch.frame.height == 2
+
+
+def test_a_pfr_id_with_a_period_bridges_its_snap_rows_to_gsis():
+    """ADR-108: D.J. Moore's snap rows were refused at normalization and never bridged."""
+    from ffdraft.features.build import pfr_to_gsis_bridge
+    from ffdraft.sources.nflverse_history import NflversePlayerMasterAdapter
+
+    snaps = NflverseSnapCountAdapter().normalize(
+        [
+            {
+                "season": 2026,
+                "week": 1,
+                "game_type": "REG",
+                "pfr_player_id": "MoorD.00",
+                "player": "D.J. Moore",
+                "position": "WR",
+                "team": "BUF",
+                "offense_snaps": 44,
+                "offense_pct": 0.72,
+            },
+        ],
+    )
+    assert snaps.frame["pfr_player_id"].to_list() == ["MoorD.00"]
+    assert "malformed_pfr_id" not in snaps.metadata.warning_codes
+    master = NflversePlayerMasterAdapter().normalize(
+        [{"gsis_id": "00-0034827", "display_name": "D.J. Moore", "pfr_id": "MoorD.00"}],
+    )
+    bridge = pfr_to_gsis_bridge(master.frame, {})
+    assert bridge == {"MoorD.00": "00-0034827"}
+
+
+def test_combine_and_draft_rows_keep_ids_with_name_punctuation():
+    from ffdraft.sources.nflverse_history import NflverseDraftPickAdapter
+
+    combine = NflverseCombineAdapter().normalize(
+        [{"season": 2018, "pfr_id": "St.BEq00", "ht": "6-5", "wt": 214, "forty": 4.48}],
+    )
+    assert combine.frame["pfr_id"].to_list() == ["St.BEq00"]
+    picks = NflverseDraftPickAdapter().normalize(
+        [
+            {
+                "season": 2018,
+                "round": 1,
+                "pick": 24,
+                "team": "CAR",
+                "gsis_id": "00-0034827",
+                "pfr_player_id": "MoorD.00",
+                "pfr_player_name": "D.J. Moore",
+                "position": "WR",
+            },
+        ],
+    )
+    assert picks.frame["pfr_id"].to_list() == ["MoorD.00"]
