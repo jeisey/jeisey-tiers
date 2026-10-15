@@ -10,16 +10,9 @@ import {
   MATCHUP_ENGINE_VERSION,
   MATCHUP_MAX_DRAWS,
   MATCHUP_SEED,
-  choleskyFactor,
-  createRun,
-  marginBins,
   meaningfulDelta,
   percentLabel,
-  simulateMatchup,
   tieLabel,
-  uniformAt,
-  playerStream,
-  validateSimInput,
   type SimGroup,
   type SimInput,
   type SimPlayer,
@@ -27,6 +20,7 @@ import {
   type SimSlot,
   type VariantResult,
 } from "../src/data/matchup";
+import { choleskyFactor, createRun, marginBins, playerStream, simulateMatchup, uniformAt, validateSimInput } from "../src/data/matchupEngine";
 import { distributionRule, gridFromQuantiles, knots, probGreater, probGreaterCorrelated } from "../src/data/startsit";
 import { required } from "./required";
 

@@ -232,7 +232,8 @@ class Perturb:
         if isinstance(value, bool) or value is None or value == 0:
             return value
         if isinstance(value, int):
-            if key.endswith("rank") or key in {"week", "latest_week", "season", "through_week"}:
+            fixed = {"week", "latest_week", "season", "through_week", "target_week"}
+            if key.endswith("rank") or key in fixed:
                 return value
             # Most players on a board draw no waiver transactions on a given day.
             if key in {"add_count", "drop_count", "net_add_count"} and self.random.random() < 0.7:

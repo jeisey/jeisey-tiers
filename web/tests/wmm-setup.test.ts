@@ -11,7 +11,8 @@ import { readAvailability, type Availability } from "../src/data/availability";
 import type { OpportunityRecord, PlayerUsageRecord, Position, WeeklyProjectionRecord } from "../src/data/contracts";
 import { DEFAULT_SLOTS, emptyRoster, type Roster, type SavedLeague, type SlotCounts, type SlotGroup } from "../src/data/leagueContract";
 import type { WeekContext } from "../src/data/lineup";
-import { meaningfulDelta, simulateMatchup, type SimResult } from "../src/data/matchup";
+import { meaningfulDelta, type SimResult } from "../src/data/matchup";
+import { simulateMatchup } from "../src/data/matchupEngine";
 import {
   MAX_NORMAL_PROPOSALS,
   buildSimInput,

@@ -22,7 +22,13 @@ import { dirname } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import type { RosWeeklyMetadata, WeeklyProjectionRecord } from "../src/data/contracts";
-import { MATCHUP_ENGINE_VERSION, simulateMatchup, type SimInput, type SimPlayer, type SimSlot } from "../src/data/matchup";
+import {
+  MATCHUP_ENGINE_VERSION,
+  type SimInput,
+  type SimPlayer,
+  type SimSlot,
+} from "../src/data/matchup";
+import { simulateMatchup } from "../src/data/matchupEngine";
 import { distributionRule, knots, quantileValues } from "../src/data/startsit";
 
 const SOURCE = process.env.MATCHUP_CONVERGENCE;

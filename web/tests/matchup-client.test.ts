@@ -5,7 +5,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { MATCHUP_ENGINE_VERSION, MATCHUP_SEED, simulateMatchup, type SimInput } from "../src/data/matchup";
+import { MATCHUP_ENGINE_VERSION, MATCHUP_SEED, type SimInput } from "../src/data/matchup";
+import { simulateMatchup } from "../src/data/matchupEngine";
 import { CancelledError, MatchupRunner } from "../src/data/matchupClient";
 import type { MatchupRequest, MatchupResponse } from "../src/data/matchup.worker";
 

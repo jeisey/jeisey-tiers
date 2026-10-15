@@ -4,7 +4,8 @@
  * the page terminates it to cancel a run, and creates it only when a reader first simulates.
  */
 
-import { createRun, type SimInput, type SimResult } from "./matchup";
+import type { SimInput, SimResult } from "./matchup";
+import { createRun } from "./matchupEngine";
 
 export interface MatchupRequest {
   readonly id: number;

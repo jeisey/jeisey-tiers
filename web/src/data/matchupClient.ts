@@ -9,12 +9,13 @@
  *   it — and the next run starts a fresh one.
  * * **Stale answers are dropped.** Every request carries an id; a response for any other id is
  *   ignored, and the caller also checks the run's fingerprint against its current inputs.
- * * **Without a worker** (no `Worker`, or one that fails to start), the same engine runs on the
- *   main thread in slices of at most 512 draws, yielding between slices so no slice is a long
- *   task, and cancellation stops it at the next slice.
+ * * **Without a worker** (no `Worker`, or one that fails to start), the same engine — loaded on
+ *   demand, so the view's chunk carries no copy of it — runs on the main thread in slices of at
+ *   most 512 draws, yielding between slices so no slice is a long task, and cancellation stops it
+ *   at the next slice.
  */
 
-import { createRun, type SimInput, type SimResult } from "./matchup";
+import type { SimInput, SimResult } from "./matchup";
 import type { MatchupRequest, MatchupResponse } from "./matchup.worker";
 
 /** Draws per main-thread slice in the fallback. */
@@ -158,6 +159,9 @@ export class MatchupRunner {
   private async runOnMain(pending: Pending): Promise<void> {
     const started = performance.now();
     try {
+      // The engine loads on the main thread only when no worker can run it.
+      const { createRun } = await import("./matchupEngine");
+      if (pending.cancelled) return;
       const run = createRun(pending.input);
       while (!run.step(FALLBACK_SLICE)) {
         await nextTick();
