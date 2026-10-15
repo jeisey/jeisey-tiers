@@ -13,7 +13,7 @@
  *   against group, never player against an arbitrarily paired player.
  */
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { useElementWidth } from "../../components/useElementWidth";
 import {
@@ -26,6 +26,9 @@ import {
   type VariantResult,
 } from "../../data/matchup";
 import { points } from "./shared";
+
+/** The margin chart's last measured width, so a new result's chart is drawn at it first. */
+let lastPlotWidth = 640;
 
 const GROUP_LABEL: Readonly<Record<string, string>> = { QB: "QB", RB: "RB", WR: "WR", TE: "TE", FLEX: "FLEX" };
 
@@ -99,7 +102,12 @@ export function MarginChart({
   readonly compareLabel: string | null;
 }): React.JSX.Element {
   const wrapper = useRef<HTMLDivElement>(null);
-  const width = useElementWidth(wrapper, 640);
+  // Each new result mounts a new chart: starting from the last measured width draws it once at
+  // the right size instead of once at a guess and again a frame later.
+  const width = useElementWidth(wrapper, lastPlotWidth);
+  useEffect(() => {
+    lastPlotWidth = width;
+  }, [width]);
   const { base, other, peak } = useBins(result, compare);
   const { start, width: binWidth, count } = result.bins;
   const end = start + binWidth * count;
@@ -113,6 +121,17 @@ export function MarginChart({
   const x = (value: number): number => left + ((value - start) / (end - start)) * plotWidth;
   const y = (countValue: number): number => top + plotHeight - (countValue / peak) * plotHeight;
   const ticks = niceTicks(start, end);
+  const floor = top + plotHeight;
+  const bars = (win: boolean): string =>
+    base
+      .map((value, index) => {
+        const low = start + index * binWidth;
+        const barHeight = Math.max(0, floor - y(value));
+        if (low >= 0 !== win || barHeight === 0) return "";
+        const barWidth = Math.max(0.5, x(low + binWidth) - x(low) - 1);
+        return `M${(x(low) + 0.5).toFixed(1)},${floor.toFixed(1)}v${(-barHeight).toFixed(1)}h${barWidth.toFixed(1)}v${barHeight.toFixed(1)}z`;
+      })
+      .join("");
   const baseVariant = result.variants[0];
   const total = result.draws;
   const line =
@@ -137,21 +156,9 @@ export function MarginChart({
               </text>
             </g>
           ))}
-          {base.map((value, index) => {
-            const low = start + index * binWidth;
-            const win = low >= 0;
-            return (
-              <rect
-                key={low}
-                className="wmm-bar"
-                data-side={win ? "win" : "loss"}
-                x={x(low) + 0.5}
-                y={y(value)}
-                width={Math.max(0.5, x(low + binWidth) - x(low) - 1)}
-                height={Math.max(0, top + plotHeight - y(value))}
-              />
-            );
-          })}
+          {/* One path per side, a rectangle per bin: two shapes to lay out, not one per bin. */}
+          <path className="wmm-bar" data-side="loss" d={bars(false)} />
+          <path className="wmm-bar" data-side="win" d={bars(true)} />
           <line className="wmm-zero" x1={x(0)} x2={x(0)} y1={top - 4} y2={top + plotHeight} />
           {line !== null && <path className="wmm-overlay" d={line} />}
         </svg>

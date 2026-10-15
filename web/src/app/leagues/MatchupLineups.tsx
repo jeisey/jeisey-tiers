@@ -8,7 +8,7 @@
  * YOLO. Nothing here optimises the opponent: the starters entered are the starters simulated.
  */
 
-import { useId, useState } from "react";
+import { memo, useId, useState } from "react";
 
 import { PlayerCombobox, type ComboOption } from "../../components/PlayerCombobox";
 import { AvailabilityBadge, PositionTag } from "../../components/primitives";
@@ -55,7 +55,8 @@ const KIND_TEXT: Readonly<Record<SlotReading["kind"], string>> = {
   blocking: "Needs a decision",
 };
 
-export function MatchupLineups({
+/** Memoized, like `FinalsEditor`: a result arriving re-renders the view, not these unchanged rows. */
+export const MatchupLineups = memo(function MatchupLineups({
   league,
   setup,
   entry,
@@ -173,7 +174,7 @@ export function MatchupLineups({
       )}
     </div>
   );
-}
+});
 
 function MatchupSlot({
   line,
@@ -433,7 +434,7 @@ function OpponentDialog({
 }
 
 /** The kicked-off starters on both sides, with a final score each when the reader has one. */
-export function FinalsEditor({
+export const FinalsEditor = memo(function FinalsEditor({
   setup,
   entry,
   readers,
@@ -502,4 +503,4 @@ export function FinalsEditor({
       </ul>
     </div>
   );
-}
+});

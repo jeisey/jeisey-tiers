@@ -24,7 +24,7 @@
    "rule2": true,
    "withinOnePointOfReference": 0.9916666666666667,
    "rule3": true,
-   "msPerRunMedian": 32.69072000001324
+   "msPerRunMedian": 22.981706999999005
   },
   {
    "count": 16384,
@@ -40,7 +40,7 @@
    "rule2": true,
    "withinOnePointOfReference": 1,
    "rule3": true,
-   "msPerRunMedian": 68.66384900000412
+   "msPerRunMedian": 46.38222200000018
   },
   {
    "count": 32768,
@@ -56,7 +56,7 @@
    "rule2": true,
    "withinOnePointOfReference": 1,
    "rule3": true,
-   "msPerRunMedian": 136.74038199999632
+   "msPerRunMedian": 92.79514500001096
   }
  ],
  "rows": [
@@ -873,7 +873,7 @@
   {
    "matchup": 30,
    "referenceWin": 0.5814266204833984,
-   "referenceDelta": -0.019249916076660156,
+   "referenceDelta": -0.019250869750976562,
    "swap": "WR",
    "n8192": {
     "seedSd": 0.0052099973964925515,
@@ -1351,8 +1351,8 @@
    "n32768": {
     "seedSd": 0.0034344280441743684,
     "binomialSe": 0.002697042040196203,
-    "deltaSd": 0.002051722637935635,
-    "meanPairedSe": 0.0020135058182078757,
+    "deltaSd": 0.002053936703385862,
+    "meanPairedSe": 0.0020135150824724243,
     "withinOneOfReference": 1
    }
   },
@@ -1493,26 +1493,26 @@
   },
   {
    "matchup": 53,
-   "referenceWin": 0.5612525939941406,
-   "referenceDelta": -0.031640052795410156,
+   "referenceWin": 0.561253547668457,
+   "referenceDelta": -0.03164100646972656,
    "swap": "RB",
    "n8192": {
     "seedSd": 0.005058190760522622,
-    "binomialSe": 0.005482662211722978,
+    "binomialSe": 0.005482660911114529,
     "deltaSd": 0.004046075802084996,
     "meanPairedSe": 0.00416747539085159,
     "withinOneOfReference": 1
    },
    "n16384": {
     "seedSd": 0.0034722965355221107,
-    "binomialSe": 0.0038768276288645527,
+    "binomialSe": 0.0038768267091954982,
     "deltaSd": 0.0032590640806828266,
     "meanPairedSe": 0.0029541602811215422,
     "withinOneOfReference": 1
    },
    "n32768": {
     "seedSd": 0.0023977957234264796,
-    "binomialSe": 0.002741331105861489,
+    "binomialSe": 0.0027413304555572644,
     "deltaSd": 0.0029768950897952795,
     "meanPairedSe": 0.0020896807330738325,
     "withinOneOfReference": 1

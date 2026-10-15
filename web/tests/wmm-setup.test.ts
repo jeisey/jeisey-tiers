@@ -18,6 +18,7 @@ import {
   buildSimInput,
   latentCorrelations,
   normalProposals,
+  normalProposalSteps,
   opponentLineup,
   readSetup,
   startersSignature,
@@ -309,6 +310,16 @@ describe("normal-mode proposals", () => {
     const proposals = normalProposals(input, setup.mine);
     expect(proposals.length).toBeGreaterThan(0);
     expect(proposals.length).toBeLessThanOrEqual(MAX_NORMAL_PROPOSALS);
+    // Built in pieces (the page builds them between frames), the same list.
+    const steps = normalProposalSteps(input, setup.mine);
+    let pieces = 0;
+    let step = steps.next();
+    while (step.done !== true) {
+      pieces += 1;
+      step = steps.next();
+    }
+    expect(pieces).toBeGreaterThanOrEqual(3);
+    expect(step.value).toEqual(proposals);
     const signatures = proposals.map((proposal) => startersSignature(proposal.mine));
     expect(new Set(signatures).size).toBe(signatures.length);
     expect(signatures).not.toContain(startersSignature(setup.mine));

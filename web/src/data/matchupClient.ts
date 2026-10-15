@@ -10,16 +10,18 @@
  * * **Stale answers are dropped.** Every request carries an id; a response for any other id is
  *   ignored, and the caller also checks the run's fingerprint against its current inputs.
  * * **Without a worker** (no `Worker`, or one that fails to start), the same engine — loaded on
- *   demand, so the view's chunk carries no copy of it — runs on the main thread in slices of at
- *   most 512 draws, yielding between slices so no slice is a long task, and cancellation stops it
- *   at the next slice.
+ *   demand, so the view's chunk carries no copy of it — runs on the main thread in slices of
+ *   about 8 ms of work: draws in steps of 64, then the summary piece by piece, yielding to the
+ *   browser whenever a slice's time is spent, so no slice is a long task even while the engine's
+ *   code is still cold. Cancellation stops it at the next slice.
  */
 
 import type { SimInput, SimResult } from "./matchup";
 import type { MatchupRequest, MatchupResponse } from "./matchup.worker";
 
-/** Draws per main-thread slice in the fallback. */
-export const FALLBACK_SLICE = 512;
+/** Main-thread work per slice in the fallback, in ms, and the draws between clock checks. */
+export const FALLBACK_SLICE_MS = 8;
+export const FALLBACK_STEP = 64;
 
 export class CancelledError extends Error {
   constructor() {
@@ -163,13 +165,26 @@ export class MatchupRunner {
       const { createRun } = await import("./matchupEngine");
       if (pending.cancelled) return;
       const run = createRun(pending.input);
-      while (!run.step(FALLBACK_SLICE)) {
+      let sliceStart = performance.now();
+      // True when the slice's time is spent and, after yielding, the run was cancelled.
+      const pause = async (): Promise<boolean> => {
+        if (performance.now() - sliceStart < FALLBACK_SLICE_MS) return false;
         await nextTick();
-        if (pending.cancelled) return;
+        sliceStart = performance.now();
+        return pending.cancelled;
+      };
+      while (!run.step(FALLBACK_STEP)) {
+        if (await pause()) return;
+      }
+      const pieces = run.summarize();
+      let piece = pieces.next();
+      while (piece.done !== true) {
+        if (await pause()) return;
+        piece = pieces.next();
       }
       if (pending.cancelled || this.pending !== pending) return;
       this.pending = null;
-      pending.resolve({ result: run.result(), ms: performance.now() - started, where: "main" });
+      pending.resolve({ result: piece.value, ms: performance.now() - started, where: "main" });
     } catch (error) {
       if (this.pending === pending) this.pending = null;
       pending.reject(error instanceof Error ? error : new Error(String(error)));

@@ -50,7 +50,7 @@ function lcg(seed: number): () => number {
 }
 
 describe.skipIf(SOURCE === undefined || METADATA === undefined)("convergence (offline)", () => {
-  it("measures the draw count against ADR-110's rule", { timeout: 3_600_000 }, () => {
+  it("measures the draw count against ADR-110's rule", { timeout: 3_600_000 }, async () => {
     const records = (JSON.parse(readFileSync(SOURCE ?? "", "utf-8")) as { records: WeeklyProjectionRecord[] }).records;
     const metadata = (JSON.parse(readFileSync(METADATA ?? "", "utf-8")) as { weekly: RosWeeklyMetadata; build_id: string }).weekly;
     const rule = distributionRule(metadata);
@@ -79,6 +79,9 @@ describe.skipIf(SOURCE === undefined || METADATA === undefined)("convergence (of
     for (const count of COUNTS) summary[count] = { sdRatio: [], pairedSe: [], withinOne: 0, headlineHalfWidth: [], ms: [] };
 
     for (let m = 0; m < MATCHUPS; m += 1) {
+      // Minutes of synchronous work would starve Vitest's worker RPC ("Timeout calling
+      // onTaskUpdate"): yield once per matchup.
+      await new Promise((resolve) => setTimeout(resolve, 0));
       const used = new Set<string>();
       const take = (position: string): WeeklyProjectionRecord => {
         const pool = (pools.get(position) ?? []).filter((record) => !used.has(record.player_id));

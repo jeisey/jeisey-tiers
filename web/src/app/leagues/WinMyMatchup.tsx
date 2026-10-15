@@ -37,7 +37,7 @@ import { CancelledError, MatchupRunner } from "../../data/matchupClient";
 import {
   buildSimInput,
   latentCorrelations,
-  normalProposals,
+  normalProposalSteps,
   readSetup,
   type BuiltInput,
   type Identity,
@@ -116,9 +116,9 @@ function hoursSince(iso: string, now: number): number {
   return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : (now - parsed) / 3_600_000;
 }
 
-function measure(name: string, start: number): void {
+function measure(name: string, start: number, detail?: Readonly<Record<string, unknown>>): void {
   if (typeof performance !== "undefined" && typeof performance.measure === "function") {
-    performance.measure(name, { start, end: performance.now() });
+    performance.measure(name, { start, end: performance.now(), detail });
   }
 }
 
@@ -126,6 +126,50 @@ function measure(name: string, start: number): void {
 function yieldToBrowser(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
+
+/** Main-thread work per slice while preparing lineup changes, in ms. */
+const PREPARE_SLICE_MS = 8;
+
+/** Run a piecewise computation to its end, yielding to the browser whenever a slice is spent. */
+async function finishInSlices<T>(steps: Generator<undefined, T, undefined>): Promise<T> {
+  let sliceStart = performance.now();
+  for (;;) {
+    const step = steps.next();
+    if (step.done === true) return step.value;
+    if (performance.now() - sliceStart >= PREPARE_SLICE_MS) {
+      await yieldToBrowser();
+      sliceStart = performance.now();
+    }
+  }
+}
+
+/**
+ * How many of a result's `stages` are on screen: the first at once, then one more each frame.
+ * A new result paints in pieces — the headline, then the chart and totals, then the slot groups
+ * and lineup changes — so that no one frame is a long task on a slow phone (ADR-110 §9). Zero
+ * while there is no result.
+ */
+function usePaintStages(key: unknown, stages: number): number {
+  const [painted, setPainted] = useState<{ readonly key: unknown; readonly stage: number }>({ key: undefined, stage: 0 });
+  const stage = key === undefined ? 0 : painted.key === key ? painted.stage : 1;
+  useEffect(() => {
+    if (key === undefined || stage >= stages) return undefined;
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => {
+        setPainted({ key, stage: stage + 1 });
+      }, 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [key, stage, stages]);
+  return stage;
+}
+
+const NO_EVALUATIONS: ReadonlyMap<string, VariantResult> = new Map();
+const NO_CHANGES: readonly EvaluatedChange[] = [];
 
 export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
   const { league, leagueStore, leagueWritable, bundle, yoloBundle, yoloFailure, context, universe, name, rule, weekly, scoring, leaguePreset } = props;
@@ -211,7 +255,7 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
       setRunning({ kind, fingerprint: built.fingerprint, cancel: handle.cancel });
       handle.promise.then(
         (outcome) => {
-          measure(`wmm-${kind}`, begun);
+          measure(`wmm-${kind}`, begun, { where: outcome.where, computeMs: Math.round(outcome.ms), variants: built.input.variants.length });
           remember(built.fingerprint, outcome.result);
           setRunning((current) => (current?.fingerprint === built.fingerprint ? null : current));
         },
@@ -258,12 +302,19 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
     setPreparing(true);
     const begun = performance.now();
     await yieldToBrowser();
-    const proposals = normalProposals(setupInput, setup.mine);
+    const proposals = await finishInSlices(normalProposalSteps(setupInput, setup.mine));
+    const candidates = yoloSelection?.kind === "ready" ? yoloSelection.candidates : [];
+    const yolo = await finishInSlices(
+      (function* yoloSteps() {
+        const out: (ReturnType<typeof yoloProposal> & { readonly candidateId: string })[] = [];
+        for (const candidate of candidates) {
+          out.push({ ...yoloProposal(candidate, setupInput), candidateId: candidate.id });
+          yield;
+        }
+        return out;
+      })(),
+    );
     await yieldToBrowser();
-    const yolo =
-      yoloSelection?.kind === "ready"
-        ? yoloSelection.candidates.map((candidate) => ({ ...yoloProposal(candidate, setupInput), candidateId: candidate.id }))
-        : [];
     const built = buildSimInput(setup, [...proposals, ...yolo], rule, correlation, identity);
     measure("wmm-prepare", begun);
     setPreparing(false);
@@ -347,6 +398,8 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
     }
   }
   const compare = previewResult?.variants[1] ?? null;
+  const resultStage = usePaintStages(baseResult, 3);
+  const changesStage = usePaintStages(changesResult, 2);
 
   return (
     <section className="wmm" aria-labelledby="wmm-heading">
@@ -465,57 +518,65 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
             number is not proof of an accurate forecast.{conditional > 0 && ` ${String(conditional)} starter${conditional === 1 ? " is" : "s are"} simulated "if active".`}
             {lockedPregame > 0 && ` ${String(lockedPregame)} kicked-off starter${lockedPregame === 1 ? " is" : "s are"} simulated from the pregame projection.`}
           </p>
-          <MarginChart result={previewResult ?? baseResult} compare={compare} compareLabel={previewCurrent?.label ?? null} />
-          <Totals result={previewResult ?? baseResult} compare={compare} compareLabel={previewCurrent?.label ?? null} />
+          {resultStage >= 2 && (
+            <>
+              <MarginChart result={previewResult ?? baseResult} compare={compare} compareLabel={previewCurrent?.label ?? null} />
+              <Totals result={previewResult ?? baseResult} compare={compare} compareLabel={previewCurrent?.label ?? null} />
+            </>
+          )}
           {previewCurrent !== null && previewResult === undefined && running?.kind === "preview" && (
             <p className="lg-help" role="status">Simulating the preview…</p>
           )}
-          <GroupTable
-            groups={(compare ?? baseResult.variants[0])?.groups ?? []}
-            baseline={compare === null ? null : (baseResult.variants[0]?.groups ?? null)}
-            label={compare === null ? "Slot groups: your lineup against theirs" : `Slot groups with ${previewCurrent?.label ?? "the proposal"}`}
-          />
-          <SimNotes result={baseResult} />
-
-          <section className="wmm-section" aria-labelledby="wmm-changes-heading">
-            <h4 id="wmm-changes-heading" className="wmm-side-title">Lineup changes</h4>
-            {changesResult === undefined ? (
-              <p className="wmm-run-actions">
-                {running?.kind === "changes" || preparing ? (
-                  <>
-                    <span className="lg-help" role="status">Evaluating lineup changes…</span>
-                    {running !== null && (
-                      <button type="button" className="button" onClick={running.cancel}>
-                        Cancel
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <button type="button" className="button" onClick={() => { void findChanges(); }}>
-                      {prefs.yolo ? "Evaluate changes and pickups" : "Evaluate lineup changes"}
-                    </button>
-                    <span className="lg-help">Compares your bench options{prefs.yolo ? " and YOLO's potential pickups" : ""} against this opponent on the same simulated games.</span>
-                  </>
-                )}
-              </p>
-            ) : (
-              <NormalChanges
-                league={league}
-                evaluated={evaluated.filter((item) => item.proposal.kind !== "yolo")}
-                base={changesResult.variants[0] ?? required(changesResult)}
-                name={name}
-                previewId={previewCurrent?.proposal.id ?? null}
-                writable={leagueWritable}
-                onPreview={(proposal) => {
-                  showPreview(proposal, proposal === null ? "" : proposal.label);
-                }}
-                onApply={(proposal) => {
-                  applyRoster(proposal.roster, `Applied: ${movesText(proposal, league, name)}.`);
-                }}
+          {resultStage >= 3 && (
+            <>
+              <GroupTable
+                groups={(compare ?? baseResult.variants[0])?.groups ?? []}
+                baseline={compare === null ? null : (baseResult.variants[0]?.groups ?? null)}
+                label={compare === null ? "Slot groups: your lineup against theirs" : `Slot groups with ${previewCurrent?.label ?? "the proposal"}`}
               />
-            )}
-          </section>
+              <SimNotes result={baseResult} />
+
+              <section className="wmm-section" aria-labelledby="wmm-changes-heading">
+                <h4 id="wmm-changes-heading" className="wmm-side-title">Lineup changes</h4>
+                {changesResult === undefined ? (
+                  <p className="wmm-run-actions">
+                    {running?.kind === "changes" || preparing ? (
+                      <>
+                        <span className="lg-help" role="status">Evaluating lineup changes…</span>
+                        {running !== null && (
+                          <button type="button" className="button" onClick={running.cancel}>
+                            Cancel
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" className="button" onClick={() => { void findChanges(); }}>
+                          {prefs.yolo ? "Evaluate changes and pickups" : "Evaluate lineup changes"}
+                        </button>
+                        <span className="lg-help">Compares your bench options{prefs.yolo ? " and YOLO's potential pickups" : ""} against this opponent on the same simulated games.</span>
+                      </>
+                    )}
+                  </p>
+                ) : (
+                  <NormalChanges
+                    league={league}
+                    evaluated={evaluated.filter((item) => item.proposal.kind !== "yolo")}
+                    base={changesResult.variants[0] ?? required(changesResult)}
+                    name={name}
+                    previewId={previewCurrent?.proposal.id ?? null}
+                    writable={leagueWritable}
+                    onPreview={(proposal) => {
+                      showPreview(proposal, proposal === null ? "" : proposal.label);
+                    }}
+                    onApply={(proposal) => {
+                      applyRoster(proposal.roster, `Applied: ${movesText(proposal, league, name)}.`);
+                    }}
+                  />
+                )}
+              </section>
+            </>
+          )}
         </section>
       )}
 
@@ -526,8 +587,8 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
         selection={yoloSelection}
         loading={prefs.yolo && yoloBundle === null && yoloFailure === null}
         failure={prefs.yolo ? yoloFailure : null}
-        evaluated={yoloEvaluated}
-        benchCeiling={benchCeiling}
+        evaluated={changesStage >= 2 ? yoloEvaluated : NO_EVALUATIONS}
+        benchCeiling={changesStage >= 2 ? benchCeiling : NO_CHANGES}
         name={name}
         previewId={previewCurrent?.proposal.id ?? null}
         onToggle={(on) => {

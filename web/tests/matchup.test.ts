@@ -405,6 +405,23 @@ describe("correlation blocks", () => {
     expect(together.margin.p90 - together.margin.p10).toBeLessThan(independent.margin.p90 - independent.margin.p10 - 0.5);
   });
 
+  it("a block's first player keeps his own draws exactly; correlation moves the others to him", () => {
+    // In canonical order "qb" leads the block: his latent normal is his own innovation, so his
+    // value is read from his own uniform, draw for draw the same as with no correlation at all.
+    const shared = [
+      published("qb", QB, { game: "G", team: "CIN", position: "QB" }),
+      published("wr", WR, { game: "G", team: "CIN", position: "WR" }),
+    ];
+    const apart = [
+      published("qb", QB, { game: "G1", team: "CIN", position: "QB" }),
+      published("wr", WR, { game: "G2", team: "LAR", position: "WR" }),
+    ];
+    const together = simulateMatchup(input(shared, [slot("QB", 0)], [slot("WR", 1)]));
+    const independent = simulateMatchup(input(apart, [slot("QB", 0)], [slot("WR", 1)]));
+    expect(variant(together, 0).mine).toEqual(variant(independent, 0).mine);
+    expect(together.theirs).not.toEqual(independent.theirs);
+  });
+
   it("a block that is not a valid correlation matrix is simulated independently and named", () => {
     const three = ["a", "b", "c"].map((key) => published(key, WR, { game: "G", team: "KC", position: "WR" }));
     const opponent = [published("o", WR, { game: "H", team: "X", position: "WR" })];
@@ -542,6 +559,25 @@ describe("slicing and wording", () => {
     }
     expect(run.result()).toEqual(simulateMatchup(data));
     expect(() => createRun(data).result()).toThrow(/not finished/);
+  });
+
+  it("the summary in pieces equals the summary in one piece", () => {
+    const me = standardTeam("m");
+    const them = standardTeam("o");
+    const data = input([...me.players, ...them.players], me.slots(0), them.slots(7));
+    const run = createRun(data);
+    run.step(run.draws);
+    const pieces = run.summarize();
+    let count = 0;
+    let piece = pieces.next();
+    while (piece.done !== true) {
+      count += 1;
+      piece = pieces.next();
+    }
+    // The bins, the totals, then each lineup and each of its slot groups: several pieces.
+    expect(count).toBeGreaterThan(3);
+    expect(piece.value).toEqual(simulateMatchup(data));
+    expect(() => createRun(data).summarize().next()).toThrow(/not finished/);
   });
 
   it("bins put zero on an edge and stay bounded", () => {

@@ -310,6 +310,18 @@ function withSlot(roster: Roster, slot: SlotRef, value: string | null): Roster {
  * deterministic.
  */
 export function normalProposals(input: SetupInput, baseline: readonly SlotReading[]): Proposal[] {
+  const steps = normalProposalSteps(input, baseline);
+  for (;;) {
+    const step = steps.next();
+    if (step.done === true) return step.value;
+  }
+}
+
+/**
+ * `normalProposals` in pieces — one lineup optimisation, or one candidate's readings, per
+ * `next()` — so the page can build them between frames instead of in one long task.
+ */
+export function* normalProposalSteps(input: SetupInput, baseline: readonly SlotReading[]): Generator<undefined, Proposal[], undefined> {
   const { league, context } = input;
   const weeks = readWeeks(league.roster, context);
   const seen = new Set([startersSignature(baseline)]);
@@ -325,8 +337,10 @@ export function normalProposals(input: SetupInput, baseline: readonly SlotReadin
   const modes: LineupMode[] = ["q50", "q10", "q90"];
   for (const mode of modes) {
     const proposal = optimizeLineup(league.roster, league.slots, context, mode, weeks);
-    if (proposal.moves.length === 0) continue;
-    add({ id: `auto-${mode}`, kind: "auto", label: `Auto Start/Sit · ${MODE_LABELS[mode]}`, roster: proposal.roster, moves: proposal.moves });
+    if (proposal.moves.length > 0) {
+      add({ id: `auto-${mode}`, kind: "auto", label: `Auto Start/Sit · ${MODE_LABELS[mode]}`, roster: proposal.roster, moves: proposal.moves });
+    }
+    yield;
   }
   const swaps: { gain: number; proposal: Omit<Proposal, "mine"> }[] = [];
   league.roster.BN.forEach((benchId, benchIndex) => {
@@ -358,7 +372,10 @@ export function normalProposals(input: SetupInput, baseline: readonly SlotReadin
     }
   });
   swaps.sort((a, b) => b.gain - a.gain || (a.proposal.id < b.proposal.id ? -1 : a.proposal.id > b.proposal.id ? 1 : 0));
-  for (const swap of swaps) add(swap.proposal);
+  for (const swap of swaps) {
+    add(swap.proposal);
+    yield;
+  }
   return out.slice(0, MAX_NORMAL_PROPOSALS);
 }
 

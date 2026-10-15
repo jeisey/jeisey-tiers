@@ -133,10 +133,19 @@ export function playerStream(seed: number, key: string): number {
   return mix32(mix32(seed >>> 0) ^ hashKey(key));
 }
 
+/** Draw `draw`'s word, shared by every player's stream in that draw. */
+function drawWord(draw: number): number {
+  return mix32(Math.imul(draw + 1, 0x9e3779b9) ^ 0x632be5ab);
+}
+
+/** A stream's uniform from a draw's word: strictly inside (0, 1), never exactly 0, ½ or 1. */
+function uniformFrom(stream: number, word: number): number {
+  return (mix32(stream ^ word) + 0.5) / 4294967296;
+}
+
 /** His uniform in draw `draw`: strictly inside (0, 1), never exactly 0, ½ or 1. */
 export function uniformAt(stream: number, draw: number): number {
-  const word = mix32(stream ^ mix32(Math.imul(draw + 1, 0x9e3779b9) ^ 0x632be5ab));
-  return (word + 0.5) / 4294967296;
+  return uniformFrom(stream, drawWord(draw));
 }
 
 // ---------------------------------------------------------------------------- correlation
@@ -267,7 +276,17 @@ function activeOf(slots: readonly SimSlot[]): number[] {
   return slots.filter((slot) => slot.player >= 0).map((slot) => slot.player);
 }
 
-/** A player's latent row: the block factor's row, over the block members' innovations. */
+/**
+ * A player's latent row: the block factor's row, over the block members' innovations — or
+ * null for the block's first member, whose row is exactly `[1]`: his latent normal is his own
+ * innovation, so Φ(Φ⁻¹(u)) is his own uniform `u`, read directly (exact, and one Φ fewer per
+ * block per draw). His innovation is still drawn for the members after him.
+ */
+function blockRow(block: Block, position: number): { row: Float64Array; cols: Int32Array } | null {
+  return position === 0 ? null : latentRow(block, position);
+}
+
+/** The block factor's row for `position`, over the block members' innovations. */
 function latentRow(block: Block, position: number): { row: Float64Array; cols: Int32Array } {
   const factorRow = block.factor?.[position] ?? [];
   const row = new Float64Array(position + 1);
@@ -311,11 +330,11 @@ function makePlan(input: SimInput): Plan {
     baseBlocks.set(game, block);
     if (block.failed) notes.push({ kind: "block_fallback", subject: game, variants: [] });
   }
-  const baseRowByPlayer = new Map<number, { row: Float64Array; cols: Int32Array }>();
+  const baseRowByPlayer = new Map<number, { row: Float64Array; cols: Int32Array } | null>();
   for (const block of baseBlocks.values()) {
     if (block.factor === null) continue;
     block.members.forEach((member, position) => {
-      baseRowByPlayer.set(member, latentRow(block, position));
+      baseRowByPlayer.set(member, blockRow(block, position));
       needsNormal[member] = 1;
     });
   }
@@ -366,8 +385,10 @@ function makePlan(input: SimInput): Plan {
       }
       // The baseline members lead the block: their rows are the baseline's own, unchanged.
       freshMembers.forEach((member, offset) => {
-        const { row, cols } = latentRow(block, baseMembers.length + offset);
-        overrides.push({ player: member, row, cols });
+        const position = baseMembers.length + offset;
+        const { cols } = latentRow(block, position);
+        const read = blockRow(block, position);
+        overrides.push({ player: member, row: read?.row ?? null, cols: read?.cols ?? null });
         own.add(member);
         for (const col of cols) needsNormal[col] = 1;
       });
@@ -407,7 +428,8 @@ function quantileOf(sorted: Int32Array, q: number): number {
 }
 
 function spreadOf(values: Int32Array): Spread {
-  const sorted = Int32Array.from(values).sort();
+  // `slice` copies the typed array directly; `Int32Array.from` would walk it as an iterable.
+  const sorted = values.slice().sort();
   let total = 0;
   for (const value of values) total += value;
   return {
@@ -424,7 +446,7 @@ const NICE_WIDTHS = [0.5, 1, 2, 2.5, 5, 10, 20, 25, 50];
 
 /** Shared margin bins from the drawn lineups' margins: zero is always an edge. */
 export function marginBins(margins: Int32Array): SimResult["bins"] {
-  const sorted = Int32Array.from(margins).sort();
+  const sorted = margins.slice().sort();
   const low = quantileOf(sorted, 0.005);
   const high = quantileOf(sorted, 0.995);
   const span = Math.max(high - low, 1);
@@ -459,7 +481,13 @@ export interface Run {
   done(): number;
   /** Simulate up to `count` more draws. True when every draw is done. */
   step(count: number): boolean;
-  /** The summary; throws if called before every draw is done. */
+  /**
+   * The summary in pieces, for a caller that must not block: each `next()` does one piece (the
+   * bins, one lineup's spreads, one slot group's) and the last returns the summary. Throws, on
+   * the first `next()`, if called before every draw is done.
+   */
+  summarize(): Generator<undefined, SimResult, undefined>;
+  /** The summary in one piece; throws if called before every draw is done. */
   result(): SimResult;
 }
 
@@ -520,8 +548,9 @@ export function createRun(input: SimInput): Run {
   const variantCount = variantPlans.length;
 
   const simulateDraw = (draw: number): void => {
+    const word = drawWord(draw);
     for (let p = 0; p < playerCount; p += 1) {
-      const u = uniformAt(streams[p] ?? 0, draw);
+      const u = uniformFrom(streams[p] ?? 0, word);
       uniform[p] = u;
       if (needsNormal[p] === 1) normal[p] = normalQuantile(u);
     }
@@ -593,6 +622,88 @@ export function createRun(input: SimInput): Run {
     }
   };
 
+  function* summarize(): Generator<undefined, SimResult, undefined> {
+    if (next < n) throw new Error("the run is not finished");
+    const baseTotals = myTotals[0] ?? theirTotals;
+    const margins = plan.variants.map((_, v) => {
+      const totals = myTotals[v] ?? baseTotals;
+      const out = new Int32Array(n);
+      for (let d = 0; d < n; d += 1) out[d] = (totals[d] ?? 0) - (theirTotals[d] ?? 0);
+      return out;
+    });
+    // The bins span every lineup the page draws — the baseline and any with detail — so a
+    // previewed lineup's margins are never piled into an edge bin the baseline chose.
+    const drawn = margins.filter((_, v) => v === 0 || plan.variants[v]?.detail === true);
+    const pooled = new Int32Array(drawn.reduce((size, list) => size + list.length, 0));
+    drawn.reduce((offset, list) => {
+      pooled.set(list, offset);
+      return offset + list.length;
+    }, 0);
+    const bins = marginBins(pooled);
+    yield;
+    const baseSpread = spreadOf(baseTotals);
+    const theirs = spreadOf(theirTotals);
+    yield;
+    const variants: VariantResult[] = [];
+    for (let v = 0; v < plan.variants.length; v += 1) {
+      const variant = plan.variants[v];
+      if (variant === undefined) continue;
+      const totals = myTotals[v] ?? baseTotals;
+      const variantMargins = margins[v] ?? new Int32Array(n);
+      const tally = counts[v] ?? { win: 0, tie: 0 };
+      const win = tally.win / n;
+      const tie = tally.tie / n;
+      const mine = v === 0 ? baseSpread : spreadOf(totals);
+      let paired: PairedDelta | null = null;
+      if (v > 0) {
+        let sum = 0;
+        let squares = 0;
+        for (let d = 0; d < n; d += 1) {
+          const diff = (wins[v * n + d] ?? 0) - (wins[d] ?? 0);
+          sum += diff;
+          squares += diff * diff;
+        }
+        const mean = sum / n;
+        const variance = n > 1 ? Math.max(0, (squares - n * mean * mean) / (n - 1)) : 0;
+        paired = { win: mean, se: Math.sqrt(variance / n), p50: mine.p50 - baseSpread.p50, p90: mine.p90 - baseSpread.p90 };
+      }
+      const margin = spreadOf(variantMargins);
+      yield;
+      const groupTotals = myGroupTotals[v];
+      let groups: GroupComparison[] | null = null;
+      if (groupTotals !== null && groupTotals !== undefined && theirGroupTotals !== null) {
+        groups = [];
+        for (let g = 0; g < SIM_GROUPS.length; g += 1) {
+          const group = SIM_GROUPS[g];
+          if (group === undefined || (groupSlots[g] ?? 0) === 0) continue;
+          groups.push({
+            group,
+            slots: groupSlots[g] ?? 0,
+            mine: spreadOf(groupTotals[g] ?? theirTotals),
+            theirs: spreadOf(theirGroupTotals[g] ?? theirTotals),
+            ahead: (groupAhead[v]?.[g] ?? 0) / n,
+            tie: (groupTie[v]?.[g] ?? 0) / n,
+          });
+          yield;
+        }
+      }
+      variants.push({
+        id: variant.id,
+        win,
+        tie,
+        loss: Math.max(0, 1 - win - tie),
+        se: Math.sqrt((win * (1 - win)) / n),
+        mine,
+        margin,
+        histogram: histogramOf(variantMargins, bins),
+        groups,
+        paired,
+        couplingReduced: variant.couplingReduced,
+      });
+    }
+    return { version: MATCHUP_ENGINE_VERSION, seed: input.seed, draws: n, theirs, bins, variants, notes: plan.notes };
+  }
+
   return {
     draws: n,
     done: () => next,
@@ -601,86 +712,13 @@ export function createRun(input: SimInput): Run {
       for (; next < end; next += 1) simulateDraw(next);
       return next >= n;
     },
+    summarize,
     result(): SimResult {
-      if (next < n) throw new Error("the run is not finished");
-      const baseTotals = myTotals[0] ?? theirTotals;
-      const margins = plan.variants.map((_, v) => {
-        const totals = myTotals[v] ?? baseTotals;
-        const out = new Int32Array(n);
-        for (let d = 0; d < n; d += 1) out[d] = (totals[d] ?? 0) - (theirTotals[d] ?? 0);
-        return out;
-      });
-      // The bins span every lineup the page draws — the baseline and any with detail — so a
-      // previewed lineup's margins are never piled into an edge bin the baseline chose.
-      const drawn = margins.filter((_, v) => v === 0 || plan.variants[v]?.detail === true);
-      const pooled = new Int32Array(drawn.reduce((size, list) => size + list.length, 0));
-      drawn.reduce((offset, list) => {
-        pooled.set(list, offset);
-        return offset + list.length;
-      }, 0);
-      const bins = marginBins(pooled);
-      const baseSpread = spreadOf(baseTotals);
-      const variants = plan.variants.map((variant, v): VariantResult => {
-        const totals = myTotals[v] ?? baseTotals;
-        const variantMargins = margins[v] ?? new Int32Array(n);
-        const tally = counts[v] ?? { win: 0, tie: 0 };
-        const win = tally.win / n;
-        const tie = tally.tie / n;
-        const mine = v === 0 ? baseSpread : spreadOf(totals);
-        let paired: PairedDelta | null = null;
-        if (v > 0) {
-          let sum = 0;
-          let squares = 0;
-          for (let d = 0; d < n; d += 1) {
-            const diff = (wins[v * n + d] ?? 0) - (wins[d] ?? 0);
-            sum += diff;
-            squares += diff * diff;
-          }
-          const mean = sum / n;
-          const variance = n > 1 ? Math.max(0, (squares - n * mean * mean) / (n - 1)) : 0;
-          paired = { win: mean, se: Math.sqrt(variance / n), p50: mine.p50 - baseSpread.p50, p90: mine.p90 - baseSpread.p90 };
-        }
-        const groupTotals = myGroupTotals[v];
-        const groups =
-          groupTotals === null || groupTotals === undefined || theirGroupTotals === null
-            ? null
-            : SIM_GROUPS.flatMap((group, g): GroupComparison[] =>
-                (groupSlots[g] ?? 0) === 0
-                  ? []
-                  : [
-                      {
-                        group,
-                        slots: groupSlots[g] ?? 0,
-                        mine: spreadOf(groupTotals[g] ?? theirTotals),
-                        theirs: spreadOf(theirGroupTotals[g] ?? theirTotals),
-                        ahead: (groupAhead[v]?.[g] ?? 0) / n,
-                        tie: (groupTie[v]?.[g] ?? 0) / n,
-                      },
-                    ],
-              );
-        return {
-          id: variant.id,
-          win,
-          tie,
-          loss: Math.max(0, 1 - win - tie),
-          se: Math.sqrt((win * (1 - win)) / n),
-          mine,
-          margin: spreadOf(variantMargins),
-          histogram: histogramOf(variantMargins, bins),
-          groups,
-          paired,
-          couplingReduced: variant.couplingReduced,
-        };
-      });
-      return {
-        version: MATCHUP_ENGINE_VERSION,
-        seed: input.seed,
-        draws: n,
-        theirs: spreadOf(theirTotals),
-        bins,
-        variants,
-        notes: plan.notes,
-      };
+      const pieces = summarize();
+      for (;;) {
+        const piece = pieces.next();
+        if (piece.done === true) return piece.value;
+      }
     },
   };
 }

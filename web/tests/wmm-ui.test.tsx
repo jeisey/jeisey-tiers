@@ -193,7 +193,8 @@ describe("simulating", () => {
     expect(screen.getByText(/Simulation noise ±\d\.\d pts \(95%\)/)).toBeTruthy();
     expect(screen.getByText(/Tie /)).toBeTruthy();
     expect(screen.getByText(/not calibrated as team probabilities/)).toBeTruthy();
-    const groups = screen.getByRole("table", { name: /Slot groups/ });
+    // The slot groups paint a frame after the headline (ADR-110 §9).
+    const groups = await screen.findByRole("table", { name: /Slot groups/ });
     expect(within(groups).getByRole("rowheader", { name: /FLEX/ })).toBeTruthy();
     expect(screen.getByRole("figure")).toBeTruthy();
     // An input change hides the old answer rather than presenting it as current.

@@ -3,11 +3,11 @@
  * for an older question, a sliced main-thread fallback when the worker cannot run, and cleanup.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MATCHUP_ENGINE_VERSION, MATCHUP_SEED, type SimInput } from "../src/data/matchup";
 import { simulateMatchup } from "../src/data/matchupEngine";
-import { CancelledError, MatchupRunner } from "../src/data/matchupClient";
+import { CancelledError, FALLBACK_STEP, MatchupRunner } from "../src/data/matchupClient";
 import type { MatchupRequest, MatchupResponse } from "../src/data/matchup.worker";
 
 function input(draws = 2048, value = 10): SimInput {
@@ -52,6 +52,10 @@ function runnerWithFake(): MatchupRunner {
   FakeWorker.created = [];
   return new MatchupRunner(() => new FakeWorker() as unknown as Worker);
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("the worker client", () => {
   it("creates the worker only on the first run, and resolves with the engine's answer", async () => {
@@ -118,6 +122,18 @@ describe("the worker client", () => {
     const cancelled = runner.run(input(65536));
     cancelled.cancel();
     await expect(cancelled.promise).rejects.toBeInstanceOf(CancelledError);
+  });
+
+  it("yields to the browser whenever a slice's time is spent, through the draws and the summary", async () => {
+    // A clock on which every check finds the slice's 8 ms spent: the run yields at every step.
+    let clock = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => (clock += 9));
+    const timeout = vi.spyOn(globalThis, "setTimeout");
+    const runner = new MatchupRunner(null);
+    const done = await runner.run(input(2048)).promise;
+    expect(done.result).toEqual(simulateMatchup(input(2048)));
+    // At least one yield per 64-draw step, and more for the summary's pieces.
+    expect(timeout.mock.calls.length).toBeGreaterThan(2048 / FALLBACK_STEP);
   });
 
   it("reports an input the engine refuses as an error, not a result", async () => {
