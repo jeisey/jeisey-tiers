@@ -2448,3 +2448,40 @@ pickups ("YOLO"). The site stays static, lightweight and login-free (PRD CR-030;
         Evidence).
       - A team-aggregation calibration diagnostic needs saved out-of-fold weekly predictions,
         which the build does not keep.
+
+## Search dialog, Start/Sit empty cards, compact phone card header — 2026-10-15 (ADR-111)
+
+A frontend usability pass on `claude/compassionate-tesla-w9jfr4`, from `main` at `18e743e`. No
+model, data, artifact, contract, URL parameter or saved-document change.
+
+- [x] **Shared search** (`components/PlayerPickerDialog.tsx`; `Modal` moved to `components/`
+      with its rules in `base.css`; `PlayerCombobox` gains `persistent`, `autoActive`,
+      `onSubmit`, `initialQuery`, disabled options; `data/playerSearch.ts`,
+      `data/boardSearch.ts`). Leagues, WMM and Trade pickers unchanged in behaviour.
+- [x] **Board search** in a dialog on Tiers, Arbitrage, ROS, Start/Sit and Opportunity:
+      - a local list over the open board's rows, with the board's own match rule;
+      - a choice applies the name (by canonical id) and clears a position or *Show only* filter
+        that would hide him, with a note; Enter or *Show all N* applies a partial query;
+      - one history entry per search; cancel applies nothing; the applied search above the board
+        with *Change* and *Clear search*; `/` opens it, never over a dialog or in a field.
+- [x] **Start/Sit**: every empty A–D card is a button opening the add-player dialog; adds once
+      (`addToDuel`), lists chosen and bye/pending players as unavailable, respects the cap and
+      missing ids (*Remove it/them from the link*); a folded 44 px empty row on a phone.
+- [x] **Card header on a phone**: compact by default (name, position, club, status, close,
+      *Expand details*); the choice persists across tabs and players and resets on close; the
+      expanded rail is capped at half the screen; the sheet is full height. Desktop and tablet
+      unchanged.
+- [x] **Tests**: Vitest `player-search.test.ts` (new) and ADR-111 blocks in `controls`, `app`,
+      `startsit-view`, `skilltree`; Playwright `search.spec.ts` (new), a header block in
+      `mobile.spec.ts`, and updated search/card checks in `board`, `smoke`, `startsit`,
+      `actuals`.
+- [x] **Visual QA**: `docs/visual-qa/2026-10-15-search-and-header/` (before/after at 320, 390,
+      390×560, 820 and 1440 px; header and panel heights).
+- [x] **Docs**: ADR-111 (+ ADR-093 note), PRD CR-031, UX_SPEC §6A.19 (+ §3, §6A.5, §6A.11.1,
+      §11), ARCHITECTURE note.
+- [x] **Validation**: see SESSION_STATE.
+- [ ] **Follow-up**, not part of this gate:
+      - Firefox and WebKit smoke were not run here, because those browsers are not installed. CI
+        runs them.
+      - A namesake whose name contains the chosen player's still shows beside him. Precision
+        would need a `player=` URL parameter, which is a contract change (ADR-111).

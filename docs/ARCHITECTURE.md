@@ -683,6 +683,17 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 > * **Shared math.** The engine reuses Start/Sit's `interp`, `normalCdf` and `normalQuantile`,
 >   so a two-player matchup agrees with Start/Sit's arithmetic, and that agreement is tested.
 
+> **2026-10-15 addition (ADR-111).** One player search for the site, in the entry bundle.
+>
+> * `components/Modal.tsx` (moved from `app/leagues/`) is the dialog shell, and its rules moved
+>   from `styles/leagues.css` to `base.css`. `components/PlayerPickerDialog.tsx` puts the shared
+>   `PlayerCombobox` in it. `data/playerSearch.ts` ranks a pool with the boards' own
+>   `matchesSearch`; `data/boardSearch.ts` builds the open board's pool and the state change for
+>   a choice.
+> * The board search's open state is `App`'s, not the URL's; the search it applies is the URL's
+>   `search`, unchanged. Start/Sit's add-player picker lives in the lazy Start/Sit chunk and
+>   reuses the same dialog. No artifact, request or contract changed.
+
 ## 11. Pages base path
 
 The Vite build must work for both:
