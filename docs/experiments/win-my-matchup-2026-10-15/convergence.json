@@ -1,0 +1,1684 @@
+{
+ "adr": "ADR-110",
+ "engine": "matchup_sim_v1",
+ "source": {
+  "build_id": "2026w05-intrinsic-ros-v1-20261015T113222Z",
+  "target_week": 6,
+  "scoring": "PPR"
+ },
+ "matchups": 60,
+ "seeds": 20,
+ "reference_draws": 1048576,
+ "verdicts": [
+  {
+   "count": 8192,
+   "worstCaseHalfWidthPts": 1.082757258691901,
+   "rule1HalfWidth": true,
+   "seedSdOverBinomialMedian": 0.9646095404911368,
+   "seedSdOverBinomialRange": [
+    0.5766047366906096,
+    1.4988235266244423
+   ],
+   "rule1Spread": true,
+   "pairedSeMedianPts": 0.37612528021327507,
+   "rule2": true,
+   "withinOnePointOfReference": 0.9916666666666667,
+   "rule3": true,
+   "msPerRunMedian": 32.69072000001324
+  },
+  {
+   "count": 16384,
+   "worstCaseHalfWidthPts": 0.765625,
+   "rule1HalfWidth": true,
+   "seedSdOverBinomialMedian": 0.9396643339074611,
+   "seedSdOverBinomialRange": [
+    0.7206264709162968,
+    1.2612874115197388
+   ],
+   "rule1Spread": true,
+   "pairedSeMedianPts": 0.26670303719856225,
+   "rule2": true,
+   "withinOnePointOfReference": 1,
+   "rule3": true,
+   "msPerRunMedian": 68.66384900000412
+  },
+  {
+   "count": 32768,
+   "worstCaseHalfWidthPts": 0.5413786293459505,
+   "rule1HalfWidth": true,
+   "seedSdOverBinomialMedian": 1.0149172163853277,
+   "seedSdOverBinomialRange": [
+    0.6528609862835417,
+    1.3604418486731678
+   ],
+   "rule1Spread": true,
+   "pairedSeMedianPts": 0.18874384403030256,
+   "rule2": true,
+   "withinOnePointOfReference": 1,
+   "rule3": true,
+   "msPerRunMedian": 136.74038199999632
+  }
+ ],
+ "rows": [
+  {
+   "matchup": 0,
+   "referenceWin": 0.5194692611694336,
+   "referenceDelta": 0.1041421890258789,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.006157387153763151,
+    "binomialSe": 0.005520082165419105,
+    "deltaSd": 0.0038805871525033537,
+    "meanPairedSe": 0.004081095000348756,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0036571482465779822,
+    "binomialSe": 0.0039032875318747704,
+    "deltaSd": 0.002233691861176305,
+    "meanPairedSe": 0.0028823245331942057,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0031139969834643537,
+    "binomialSe": 0.0027600410827095523,
+    "deltaSd": 0.002081418817767428,
+    "meanPairedSe": 0.002033810795206088,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 1,
+   "referenceWin": 0.8365192413330078,
+   "referenceDelta": -0.06546401977539062,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004179877536279483,
+    "binomialSe": 0.004085792603379923,
+    "deltaSd": 0.002855094147370292,
+    "meanPairedSe": 0.0031479607739810884,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.00275748248135535,
+    "binomialSe": 0.0028890916563717815,
+    "deltaSd": 0.0017567854663916567,
+    "meanPairedSe": 0.0022295452418580656,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0017689745080259618,
+    "binomialSe": 0.0020428963016899614,
+    "deltaSd": 0.001310677670788948,
+    "meanPairedSe": 0.0015731995223053617,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 2,
+   "referenceWin": 0.7454605102539062,
+   "referenceDelta": 0.11599063873291016,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004582384291107092,
+    "binomialSe": 0.004812768076770148,
+    "deltaSd": 0.004067862365453788,
+    "meanPairedSe": 0.003673788427740434,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003404938087834361,
+    "binomialSe": 0.0034031409433623104,
+    "deltaSd": 0.0031784132605968147,
+    "meanPairedSe": 0.002606687565094409,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002316766197649337,
+    "binomialSe": 0.002406384038385074,
+    "deltaSd": 0.0020132223863498218,
+    "meanPairedSe": 0.0018475434903303663,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 3,
+   "referenceWin": 0.32494449615478516,
+   "referenceDelta": 0.016971588134765625,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.005307713410163709,
+    "binomialSe": 0.005174630716149965,
+    "deltaSd": 0.00409259532952963,
+    "meanPairedSe": 0.004009505146666512,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0030907574345355755,
+    "binomialSe": 0.003659016469525841,
+    "deltaSd": 0.0029115803291969292,
+    "meanPairedSe": 0.0028316378105061935,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002518693402548599,
+    "binomialSe": 0.0025873153580749826,
+    "deltaSd": 0.0020109086508349394,
+    "meanPairedSe": 0.0020046164291970007,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 4,
+   "referenceWin": 0.24363422393798828,
+   "referenceDelta": 0.06310558319091797,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.0036774111510090896,
+    "binomialSe": 0.004742857871481861,
+    "deltaSd": 0.0035479172347901125,
+    "meanPairedSe": 0.003842850043331922,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003351146327240741,
+    "binomialSe": 0.0033537069631288186,
+    "deltaSd": 0.003086993337368597,
+    "meanPairedSe": 0.0027176036691427203,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002077680463800447,
+    "binomialSe": 0.0023714289357409306,
+    "deltaSd": 0.0022369526100985858,
+    "meanPairedSe": 0.0019215458327451849,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 5,
+   "referenceWin": 0.5918140411376953,
+   "referenceDelta": -0.016922950744628906,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.0054143559621220826,
+    "binomialSe": 0.005430335863379643,
+    "deltaSd": 0.003583849531421877,
+    "meanPairedSe": 0.0035919864416141777,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.00479195948065446,
+    "binomialSe": 0.0038398273131162505,
+    "deltaSd": 0.0027499280034912095,
+    "meanPairedSe": 0.0025226679556800873,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.003693828080446202,
+    "binomialSe": 0.0027151679316898213,
+    "deltaSd": 0.001833148896424068,
+    "meanPairedSe": 0.0017793334738126425,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 6,
+   "referenceWin": 0.7621603012084961,
+   "referenceDelta": -0.10145378112792969,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.00444024386595623,
+    "binomialSe": 0.004704033037215893,
+    "deltaSd": 0.004514447888464465,
+    "meanPairedSe": 0.0038161414107468054,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0032163466967882488,
+    "binomialSe": 0.0033262536595409092,
+    "deltaSd": 0.0030093993787502025,
+    "meanPairedSe": 0.002698323797882853,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.00205882021752552,
+    "binomialSe": 0.0023520165186079467,
+    "deltaSd": 0.0018596069388676156,
+    "meanPairedSe": 0.0019061092089226548,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 7,
+   "referenceWin": 0.42803001403808594,
+   "referenceDelta": -0.07583236694335938,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.006644931967267188,
+    "binomialSe": 0.005466744287557916,
+    "deltaSd": 0.005458719333126097,
+    "meanPairedSe": 0.0039681411230973514,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.00397361096606823,
+    "binomialSe": 0.003865571956745024,
+    "deltaSd": 0.002783242222730598,
+    "meanPairedSe": 0.002819480713558839,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0027741464475093355,
+    "binomialSe": 0.002733372143778958,
+    "deltaSd": 0.0018635591924496275,
+    "meanPairedSe": 0.001987487930555211,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 8,
+   "referenceWin": 0.5492324829101562,
+   "referenceDelta": -0.012204170227050781,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.00544655101840194,
+    "binomialSe": 0.005497426628829877,
+    "deltaSd": 0.006242038650401461,
+    "meanPairedSe": 0.004451693031887713,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0034511021437247467,
+    "binomialSe": 0.003887267648321107,
+    "deltaSd": 0.003948852715922454,
+    "meanPairedSe": 0.0031430318277450194,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.003439162094347788,
+    "binomialSe": 0.0027487133144149384,
+    "deltaSd": 0.0024593591648034126,
+    "meanPairedSe": 0.0022178536741664216,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 9,
+   "referenceWin": 0.20809078216552734,
+   "referenceDelta": 0.03282928466796875,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.0030842165179483074,
+    "binomialSe": 0.004485069204532044,
+    "deltaSd": 0.0029874429225614538,
+    "meanPairedSe": 0.003357661004018928,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.002507732316896421,
+    "binomialSe": 0.0031714228486155625,
+    "deltaSd": 0.0017437911055231431,
+    "meanPairedSe": 0.002375187263226222,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0021344003510437573,
+    "binomialSe": 0.002242534602266022,
+    "deltaSd": 0.0013017700052558277,
+    "meanPairedSe": 0.0016784277935655953,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 10,
+   "referenceWin": 0.6085453033447266,
+   "referenceDelta": -0.044152259826660156,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.004830394265514124,
+    "binomialSe": 0.005392525900369639,
+    "deltaSd": 0.0036109699871846117,
+    "meanPairedSe": 0.003550534843059475,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0029202358974765477,
+    "binomialSe": 0.0038130916318754645,
+    "deltaSd": 0.002065277018024263,
+    "meanPairedSe": 0.002522881134112966,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0031541002724169145,
+    "binomialSe": 0.0026962629501848193,
+    "deltaSd": 0.0017720088407054012,
+    "meanPairedSe": 0.0017895670736413876,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 11,
+   "referenceWin": 0.6075534820556641,
+   "referenceDelta": -0.07988739013671875,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.00609935096401508,
+    "binomialSe": 0.005394951258741096,
+    "deltaSd": 0.003510891365493533,
+    "meanPairedSe": 0.00407019687920122,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.004303839619798251,
+    "binomialSe": 0.003814806619226729,
+    "deltaSd": 0.002525844997533258,
+    "meanPairedSe": 0.002875240301043837,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0030500366979270195,
+    "binomialSe": 0.002697475629370548,
+    "deltaSd": 0.0019338332640833258,
+    "meanPairedSe": 0.0020360829164777724,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 12,
+   "referenceWin": 0.24015045166015625,
+   "referenceDelta": 0.05103778839111328,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.0051377223975080984,
+    "binomialSe": 0.004719658079889041,
+    "deltaSd": 0.0032278004645312007,
+    "meanPairedSe": 0.003642467684496679,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0026713364916445574,
+    "binomialSe": 0.0033373022331714217,
+    "deltaSd": 0.0020578206221197604,
+    "meanPairedSe": 0.002571074453869917,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0015622276771548593,
+    "binomialSe": 0.0023598290399445207,
+    "deltaSd": 0.001608764549962638,
+    "meanPairedSe": 0.0018194275161734959,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 13,
+   "referenceWin": 0.5470762252807617,
+   "referenceDelta": -0.02460479736328125,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.005763813900357299,
+    "binomialSe": 0.005499731760740875,
+    "deltaSd": 0.00252273809951175,
+    "meanPairedSe": 0.003761252802132751,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.00299690500818747,
+    "binomialSe": 0.0038888976227269036,
+    "deltaSd": 0.0023789683544784505,
+    "meanPairedSe": 0.0026670303719856228,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0026025947210011114,
+    "binomialSe": 0.0027498658803704373,
+    "deltaSd": 0.0020873355355788834,
+    "meanPairedSe": 0.0018874384403030256,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 14,
+   "referenceWin": 0.6786050796508789,
+   "referenceDelta": -0.024908065795898438,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.004993053555017938,
+    "binomialSe": 0.005159802582066612,
+    "deltaSd": 0.004082080395992771,
+    "meanPairedSe": 0.003509294246451188,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.00334229411991861,
+    "binomialSe": 0.0036485313953631584,
+    "deltaSd": 0.002373753872609714,
+    "meanPairedSe": 0.0024914847769656303,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.00230226229183824,
+    "binomialSe": 0.002579901291033306,
+    "deltaSd": 0.0018215777444365623,
+    "meanPairedSe": 0.001762985056814477,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 15,
+   "referenceWin": 0.42697715759277344,
+   "referenceDelta": 0.022037506103515625,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004760429176408732,
+    "binomialSe": 0.0054650396396133385,
+    "deltaSd": 0.0029134467523880877,
+    "meanPairedSe": 0.00359310741529714,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003874725577784486,
+    "binomialSe": 0.0038643665886238772,
+    "deltaSd": 0.0019125385548235674,
+    "meanPairedSe": 0.0025390303588782915,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0032530842510045243,
+    "binomialSe": 0.0027325198198066693,
+    "deltaSd": 0.001416020990489618,
+    "meanPairedSe": 0.0017950715953902886,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 16,
+   "referenceWin": 0.39505577087402344,
+   "referenceDelta": -0.12038040161132812,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.00621168476194398,
+    "binomialSe": 0.0054012204383162765,
+    "deltaSd": 0.004746140547354973,
+    "meanPairedSe": 0.004138768302998823,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.00444962174400064,
+    "binomialSe": 0.0038192395986168153,
+    "deltaSd": 0.0033404163868856257,
+    "meanPairedSe": 0.002923295747664181,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.003461849720920296,
+    "binomialSe": 0.0027006102191581382,
+    "deltaSd": 0.002218843219175949,
+    "meanPairedSe": 0.0020679865198696057,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 17,
+   "referenceWin": 0.6531658172607422,
+   "referenceDelta": -0.03474140167236328,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.005271979087544915,
+    "binomialSe": 0.00525869156403756,
+    "deltaSd": 0.0030043018162335105,
+    "meanPairedSe": 0.003433810425087635,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003526838166436897,
+    "binomialSe": 0.0037184564650994505,
+    "deltaSd": 0.001641795546292306,
+    "meanPairedSe": 0.0024270677889850346,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002258176515288544,
+    "binomialSe": 0.00262934578201878,
+    "deltaSd": 0.0012250031477230084,
+    "meanPairedSe": 0.001719120884268076,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 18,
+   "referenceWin": 0.4611806869506836,
+   "referenceDelta": 0.048610687255859375,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.006463711166710138,
+    "binomialSe": 0.005507597080609765,
+    "deltaSd": 0.004015567433047923,
+    "meanPairedSe": 0.004002316601753443,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0031815700855343863,
+    "binomialSe": 0.003894459243742397,
+    "deltaSd": 0.0030302538914243147,
+    "meanPairedSe": 0.0028327281990953032,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0025161012868628353,
+    "binomialSe": 0.0027537985403048824,
+    "deltaSd": 0.0017762505438461273,
+    "meanPairedSe": 0.002006153429387339,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 19,
+   "referenceWin": 0.31607723236083984,
+   "referenceDelta": 0.09459400177001953,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.0046114516535817746,
+    "binomialSe": 0.005136947957623283,
+    "deltaSd": 0.004088688966146135,
+    "meanPairedSe": 0.004019663352262006,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0032998461068392397,
+    "binomialSe": 0.003632370735437809,
+    "deltaSd": 0.002328397427017705,
+    "meanPairedSe": 0.0028411829304968318,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002842369439325585,
+    "binomialSe": 0.0025684739788116415,
+    "deltaSd": 0.0019585033450101094,
+    "meanPairedSe": 0.00201228301033765,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 20,
+   "referenceWin": 0.14684581756591797,
+   "referenceDelta": -0.01835918426513672,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004309854570432784,
+    "binomialSe": 0.003910655694085081,
+    "deltaSd": 0.003222012493563462,
+    "meanPairedSe": 0.0027280020781140463,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0027793738174666217,
+    "binomialSe": 0.0027652511601733453,
+    "deltaSd": 0.0019201098339502699,
+    "meanPairedSe": 0.0019209808395149596,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.001532517297998725,
+    "binomialSe": 0.0019553278470425405,
+    "deltaSd": 0.0009400558662733516,
+    "meanPairedSe": 0.001355576123844154,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 21,
+   "referenceWin": 0.5979032516479492,
+   "referenceDelta": -0.14676952362060547,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.005458417611080076,
+    "binomialSe": 0.005417335921008554,
+    "deltaSd": 0.0037835112468708357,
+    "meanPairedSe": 0.004424444046456946,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0033446104928627645,
+    "binomialSe": 0.00383063496571062,
+    "deltaSd": 0.002894967115776512,
+    "meanPairedSe": 0.003135082921627011,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0027991982641652393,
+    "binomialSe": 0.002708667960504277,
+    "deltaSd": 0.0026623835771734474,
+    "meanPairedSe": 0.002219035876505218,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 22,
+   "referenceWin": 0.36655235290527344,
+   "referenceDelta": 0.1150808334350586,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004493604912163371,
+    "binomialSe": 0.005323881712609107,
+    "deltaSd": 0.004799479059761746,
+    "meanPairedSe": 0.004177573429896695,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003084693266475917,
+    "binomialSe": 0.0037645528612209496,
+    "deltaSd": 0.0034560115670427185,
+    "meanPairedSe": 0.0029547598450463436,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002001423086140577,
+    "binomialSe": 0.0026619408563045535,
+    "deltaSd": 0.002610346505375415,
+    "meanPairedSe": 0.002091277128740206,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 23,
+   "referenceWin": 0.4348888397216797,
+   "referenceDelta": 0.1321249008178711,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.0052746598461130305,
+    "binomialSe": 0.005477231556929466,
+    "deltaSd": 0.004224608482425535,
+    "meanPairedSe": 0.004274183160924981,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.002984473299103669,
+    "binomialSe": 0.003872987576033777,
+    "deltaSd": 0.0027428513560051617,
+    "meanPairedSe": 0.0030234367309506438,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.001961037019558745,
+    "binomialSe": 0.002738615778464733,
+    "deltaSd": 0.001736924506539745,
+    "meanPairedSe": 0.0021345021902150593,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 24,
+   "referenceWin": 0.3697824478149414,
+   "referenceDelta": -0.0004482269287109375,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.004760738069066622,
+    "binomialSe": 0.005333636595593475,
+    "deltaSd": 0.002840104685067116,
+    "meanPairedSe": 0.0035568653105706115,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0037322321025133436,
+    "binomialSe": 0.003771450605128877,
+    "deltaSd": 0.00207675131459478,
+    "meanPairedSe": 0.0025093199857271634,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0027658086273957237,
+    "binomialSe": 0.0026668182977967374,
+    "deltaSd": 0.0012221719036804586,
+    "meanPairedSe": 0.0017776489392200175,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 25,
+   "referenceWin": 0.5518608093261719,
+   "referenceDelta": 0.01660442352294922,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.005177107700666382,
+    "binomialSe": 0.005494475835246322,
+    "deltaSd": 0.004319737950307181,
+    "meanPairedSe": 0.003718320630189991,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.004327814153706779,
+    "binomialSe": 0.003885181122168294,
+    "deltaSd": 0.003281978488067366,
+    "meanPairedSe": 0.002635967517118725,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002924875021077867,
+    "binomialSe": 0.002747237917623161,
+    "deltaSd": 0.002305372372052928,
+    "meanPairedSe": 0.0018627507196882225,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 26,
+   "referenceWin": 0.4910736083984375,
+   "referenceDelta": 0.1412515640258789,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.00519703551547156,
+    "binomialSe": 0.0055233913047592585,
+    "deltaSd": 0.003945325858375314,
+    "meanPairedSe": 0.004378570692449331,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.004199205676353769,
+    "binomialSe": 0.003905627446742084,
+    "deltaSd": 0.0027726216173040684,
+    "meanPairedSe": 0.0030907898715367027,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0020485092187821933,
+    "binomialSe": 0.0027616956523796293,
+    "deltaSd": 0.002282186436820693,
+    "meanPairedSe": 0.002188380501967278,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 27,
+   "referenceWin": 0.5307683944702148,
+   "referenceDelta": 0.1165323257446289,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.003179284475099351,
+    "binomialSe": 0.005513802216309694,
+    "deltaSd": 0.0041313514164868295,
+    "meanPairedSe": 0.004127410358608802,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.002870017279098622,
+    "binomialSe": 0.003898846937274,
+    "deltaSd": 0.0029114591133809343,
+    "meanPairedSe": 0.0029233208124323567,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002802522956685479,
+    "binomialSe": 0.002756901108154847,
+    "deltaSd": 0.0017602056531072652,
+    "meanPairedSe": 0.0020693890918941573,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 28,
+   "referenceWin": 0.5651540756225586,
+   "referenceDelta": -0.004279136657714844,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.004285652618364888,
+    "binomialSe": 0.005477169260585506,
+    "deltaSd": 0.004044985332513297,
+    "meanPairedSe": 0.0037667039938509223,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003893745636331289,
+    "binomialSe": 0.0038729435258665194,
+    "deltaSd": 0.003089056859162204,
+    "meanPairedSe": 0.0026593419240773745,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0026627057490866846,
+    "binomialSe": 0.002738584630292753,
+    "deltaSd": 0.0017184939433285186,
+    "meanPairedSe": 0.0018759550714599737,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 29,
+   "referenceWin": 0.4922904968261719,
+   "referenceDelta": -0.003803253173828125,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.006436352989686915,
+    "binomialSe": 0.005523615002902947,
+    "deltaSd": 0.0025525618397194564,
+    "meanPairedSe": 0.0036061632224316264,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.004019764357515461,
+    "binomialSe": 0.0039057856252164252,
+    "deltaSd": 0.0022534857652350532,
+    "meanPairedSe": 0.002549987243785706,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.00313018373595859,
+    "binomialSe": 0.0027618075014514735,
+    "deltaSd": 0.0019229330935908314,
+    "meanPairedSe": 0.0018026837264579823,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 30,
+   "referenceWin": 0.5814266204833984,
+   "referenceDelta": -0.019249916076660156,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.0052099973964925515,
+    "binomialSe": 0.005450524378494967,
+    "deltaSd": 0.0039754855390067186,
+    "meanPairedSe": 0.003927945865342561,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0036215628925029813,
+    "binomialSe": 0.0038541027490563836,
+    "deltaSd": 0.002281484532693884,
+    "meanPairedSe": 0.002766212480281099,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002785818908433583,
+    "binomialSe": 0.0027252621892474836,
+    "deltaSd": 0.002086005972240919,
+    "meanPairedSe": 0.0019567337384282855,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 31,
+   "referenceWin": 0.08114051818847656,
+   "referenceDelta": 0.0018949508666992188,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.002479149048022912,
+    "binomialSe": 0.0030168135306938185,
+    "deltaSd": 0.002344350570561919,
+    "meanPairedSe": 0.002176991585994662,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0018947175048742758,
+    "binomialSe": 0.00213320930512893,
+    "deltaSd": 0.0015432521196435509,
+    "meanPairedSe": 0.0015444497245563856,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.001407908861049088,
+    "binomialSe": 0.0015084067653469092,
+    "deltaSd": 0.0010073611218662686,
+    "meanPairedSe": 0.0010912956073679868,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 32,
+   "referenceWin": 0.7957944869995117,
+   "referenceDelta": -0.0863180160522461,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.003664994023898116,
+    "binomialSe": 0.004453887290302015,
+    "deltaSd": 0.004969022528085727,
+    "meanPairedSe": 0.003930921759941803,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.002661153442361791,
+    "binomialSe": 0.0031493739056131322,
+    "deltaSd": 0.0032250840869090564,
+    "meanPairedSe": 0.0027836416094237245,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.001998401669811751,
+    "binomialSe": 0.0022269436451510076,
+    "deltaSd": 0.0019026946458748472,
+    "meanPairedSe": 0.001971441010270078,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 33,
+   "referenceWin": 0.7549848556518555,
+   "referenceDelta": 0.037636756896972656,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.005154760379780878,
+    "binomialSe": 0.004751936326498802,
+    "deltaSd": 0.0035002926223729144,
+    "meanPairedSe": 0.0031524026956244303,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003939202255002622,
+    "binomialSe": 0.003360126400233995,
+    "deltaSd": 0.0029965762372412895,
+    "meanPairedSe": 0.002234725961701102,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0028830254686514263,
+    "binomialSe": 0.002375968163249401,
+    "deltaSd": 0.002058794623460525,
+    "meanPairedSe": 0.0015808430359438492,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 34,
+   "referenceWin": 0.5586843490600586,
+   "referenceDelta": 0.1832733154296875,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.00529193496906583,
+    "binomialSe": 0.005486090222963594,
+    "deltaSd": 0.00510824130313205,
+    "meanPairedSe": 0.004571924603988075,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0033408785831519723,
+    "binomialSe": 0.0038792515988587753,
+    "deltaSd": 0.0034370335235030685,
+    "meanPairedSe": 0.0032290524791271915,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.00250580039477024,
+    "binomialSe": 0.002743045111481797,
+    "deltaSd": 0.0022944630402330153,
+    "meanPairedSe": 0.0022851884328959652,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 35,
+   "referenceWin": 0.07851696014404297,
+   "referenceDelta": -0.030900001525878906,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.0030139451727786617,
+    "binomialSe": 0.00297187432459619,
+    "deltaSd": 0.0022618489723385143,
+    "meanPairedSe": 0.0023122021568373246,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0015143478775205734,
+    "binomialSe": 0.002101432487756157,
+    "deltaSd": 0.001624217944626536,
+    "meanPairedSe": 0.0016218517621677058,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0013003835961098412,
+    "binomialSe": 0.001485937162298095,
+    "deltaSd": 0.001115171416477508,
+    "meanPairedSe": 0.0011497661139158407,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 36,
+   "referenceWin": 0.6945819854736328,
+   "referenceDelta": -0.04285240173339844,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.0056962719195185725,
+    "binomialSe": 0.0050887850962679105,
+    "deltaSd": 0.0033512984438443297,
+    "meanPairedSe": 0.003516890695260076,
+    "withinOneOfReference": 0.9
+   },
+   "n16384": {
+    "seedSd": 0.004538508717934839,
+    "binomialSe": 0.0035983144495720775,
+    "deltaSd": 0.0024318387134913276,
+    "meanPairedSe": 0.0024773166613653716,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002591324131842736,
+    "binomialSe": 0.0025443925481339552,
+    "deltaSd": 0.0015012818511852424,
+    "meanPairedSe": 0.001750636671502102,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 37,
+   "referenceWin": 0.39966297149658203,
+   "referenceDelta": 0.06337642669677734,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004758418825150225,
+    "binomialSe": 0.005411897347447079,
+    "deltaSd": 0.003001592205223256,
+    "meanPairedSe": 0.003729476391708676,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0035292153606679456,
+    "binomialSe": 0.003826789313465318,
+    "deltaSd": 0.0026725124187029752,
+    "meanPairedSe": 0.002635511513638752,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002954519589893893,
+    "binomialSe": 0.0027059486737235393,
+    "deltaSd": 0.0017999135825538628,
+    "meanPairedSe": 0.0018634801906923172,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 38,
+   "referenceWin": 0.7270946502685547,
+   "referenceDelta": 0.03505134582519531,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.004782044477563131,
+    "binomialSe": 0.004921602420768128,
+    "deltaSd": 0.0029325237264960055,
+    "meanPairedSe": 0.00353189836341824,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.003147866948046363,
+    "binomialSe": 0.0034800984460292713,
+    "deltaSd": 0.0024678852287260723,
+    "meanPairedSe": 0.0024976114799040755,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0024034072715680937,
+    "binomialSe": 0.002460801210384064,
+    "deltaSd": 0.0019559958340060737,
+    "meanPairedSe": 0.0017636301104149332,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 39,
+   "referenceWin": 0.25772857666015625,
+   "referenceDelta": -0.0069446563720703125,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.004761499918612482,
+    "binomialSe": 0.004832453528851221,
+    "deltaSd": 0.0034117678272884227,
+    "meanPairedSe": 0.0032427336555296603,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0029430336380776865,
+    "binomialSe": 0.00341706066001956,
+    "deltaSd": 0.0025874932144031447,
+    "meanPairedSe": 0.0022881335917269386,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0022600387028561477,
+    "binomialSe": 0.0024162267644256105,
+    "deltaSd": 0.001727983799567568,
+    "meanPairedSe": 0.001615962186398486,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 40,
+   "referenceWin": 0.5014266967773438,
+   "referenceDelta": 0.05600738525390625,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.005397690624226962,
+    "binomialSe": 0.005524249239065046,
+    "deltaSd": 0.003372806094405358,
+    "meanPairedSe": 0.0038318870825927603,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0032307982829301364,
+    "binomialSe": 0.0039062340979075186,
+    "deltaSd": 0.002616578980548101,
+    "meanPairedSe": 0.0027092047192048725,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002243192772145877,
+    "binomialSe": 0.002762124619532523,
+    "deltaSd": 0.0017208996191171628,
+    "meanPairedSe": 0.0019160788582467392,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 41,
+   "referenceWin": 0.7710990905761719,
+   "referenceDelta": -0.08210086822509766,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.0036346153013070304,
+    "binomialSe": 0.00464177283637916,
+    "deltaSd": 0.0038900087925266167,
+    "meanPairedSe": 0.003616509099468525,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.00300129171219342,
+    "binomialSe": 0.0032822290493312186,
+    "deltaSd": 0.0020698478465206384,
+    "meanPairedSe": 0.0025555718617150947,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0016838251032494052,
+    "binomialSe": 0.00232088641818958,
+    "deltaSd": 0.001773065898232913,
+    "meanPairedSe": 0.001808818831682385,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 42,
+   "referenceWin": 0.5019111633300781,
+   "referenceDelta": -0.020531654357910156,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.005498725797129582,
+    "binomialSe": 0.005524231372567314,
+    "deltaSd": 0.0028984411279918375,
+    "meanPairedSe": 0.0036667207957014796,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.00355169934049269,
+    "binomialSe": 0.003906221464385817,
+    "deltaSd": 0.001759127632425702,
+    "meanPairedSe": 0.0025874679135372792,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002037579004673207,
+    "binomialSe": 0.002762115686283657,
+    "deltaSd": 0.0014966752029936868,
+    "meanPairedSe": 0.0018313773356012039,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 43,
+   "referenceWin": 0.4307289123535156,
+   "referenceDelta": -0.058793067932128906,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.005844294230926613,
+    "binomialSe": 0.005470998604862583,
+    "deltaSd": 0.0035440190645011946,
+    "meanPairedSe": 0.0037611629693052283,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.0034351633425725517,
+    "binomialSe": 0.0038685802133604738,
+    "deltaSd": 0.002534963024244555,
+    "meanPairedSe": 0.0026676511823924484,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0029236828186142284,
+    "binomialSe": 0.0027354993024312916,
+    "deltaSd": 0.001733782833791099,
+    "meanPairedSe": 0.001888966081961321,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 44,
+   "referenceWin": 0.5786361694335938,
+   "referenceDelta": -0.017299652099609375,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.008176867209057243,
+    "binomialSe": 0.005455523658260608,
+    "deltaSd": 0.00471670189942996,
+    "meanPairedSe": 0.004303727922819228,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.004533006981702837,
+    "binomialSe": 0.0038576377736797168,
+    "deltaSd": 0.0034168944427257894,
+    "meanPairedSe": 0.0030395071783168403,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.003390096731989744,
+    "binomialSe": 0.002727761829130304,
+    "deltaSd": 0.002699989288478001,
+    "meanPairedSe": 0.002155345624105833,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 45,
+   "referenceWin": 0.8682403564453125,
+   "referenceDelta": -0.009428024291992188,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.0033887951835833187,
+    "binomialSe": 0.003736940800770796,
+    "deltaSd": 0.002557013066686136,
+    "meanPairedSe": 0.0026641650690442343,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0029682499260966677,
+    "binomialSe": 0.002642416181117717,
+    "deltaSd": 0.0017672591657892996,
+    "meanPairedSe": 0.0018912634194792847,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002138021764977788,
+    "binomialSe": 0.001868470400385398,
+    "deltaSd": 0.0014085632393963455,
+    "meanPairedSe": 0.001339900958316793,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 46,
+   "referenceWin": 0.6212711334228516,
+   "referenceDelta": 0.028052330017089844,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.004413834500654141,
+    "binomialSe": 0.005359321612780021,
+    "deltaSd": 0.0041842470382137875,
+    "meanPairedSe": 0.0034940908117904595,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003978181154354177,
+    "binomialSe": 0.0037896126549563777,
+    "deltaSd": 0.0033428147106073537,
+    "meanPairedSe": 0.002465621246114554,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0028990786213116903,
+    "binomialSe": 0.0026796608063900107,
+    "deltaSd": 0.0019863780076159196,
+    "meanPairedSe": 0.001746744046358144,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 47,
+   "referenceWin": 0.6079092025756836,
+   "referenceDelta": 0.09467792510986328,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.005116613378077796,
+    "binomialSe": 0.005394084080392406,
+    "deltaSd": 0.0027016771301788915,
+    "meanPairedSe": 0.004044595198636472,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.004303748505814831,
+    "binomialSe": 0.003814193431535872,
+    "deltaSd": 0.0022282320105438814,
+    "meanPairedSe": 0.0028491852863963543,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0034344280441743684,
+    "binomialSe": 0.002697042040196203,
+    "deltaSd": 0.002051722637935635,
+    "meanPairedSe": 0.0020135058182078757,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 48,
+   "referenceWin": 0.6901493072509766,
+   "referenceDelta": 0.04588890075683594,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.004561692696555224,
+    "binomialSe": 0.005109198689522676,
+    "deltaSd": 0.003353316260887743,
+    "meanPairedSe": 0.003633866283210474,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0028637612606690318,
+    "binomialSe": 0.003612749039790906,
+    "deltaSd": 0.0025297910707114926,
+    "meanPairedSe": 0.0025700723512009304,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0026452407352284277,
+    "binomialSe": 0.002554599344761338,
+    "deltaSd": 0.001996976079252818,
+    "meanPairedSe": 0.001816948251513997,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 49,
+   "referenceWin": 0.44752979278564453,
+   "referenceDelta": 0.10724258422851562,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004777368093606614,
+    "binomialSe": 0.005493769524048101,
+    "deltaSd": 0.0028525383674564233,
+    "meanPairedSe": 0.003944172032839184,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003976317714019978,
+    "binomialSe": 0.0038846816847304035,
+    "deltaSd": 0.0018763746066475843,
+    "meanPairedSe": 0.0027810926427453025,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002894177563361503,
+    "binomialSe": 0.0027468847620240504,
+    "deltaSd": 0.0014460851630713279,
+    "meanPairedSe": 0.00196010894520701,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 50,
+   "referenceWin": 0.5531959533691406,
+   "referenceDelta": 0.03272724151611328,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.004691873985901751,
+    "binomialSe": 0.00549291747621706,
+    "deltaSd": 0.004215897456457495,
+    "meanPairedSe": 0.0038071424746326187,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003449390223621736,
+    "binomialSe": 0.003884079195931179,
+    "deltaSd": 0.0029148663854148596,
+    "meanPairedSe": 0.002702685545781428,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0024916921153775276,
+    "binomialSe": 0.00274645873810853,
+    "deltaSd": 0.0018540104553581606,
+    "meanPairedSe": 0.0019146688238590778,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 51,
+   "referenceWin": 0.7478475570678711,
+   "referenceDelta": -0.012392997741699219,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004186027285863616,
+    "binomialSe": 0.004797811243825965,
+    "deltaSd": 0.003412796351749443,
+    "meanPairedSe": 0.0033323454190395,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0032588354616147185,
+    "binomialSe": 0.0033925648653624044,
+    "deltaSd": 0.0027648939963924707,
+    "meanPairedSe": 0.0023656753828723374,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0032086378525650566,
+    "binomialSe": 0.0023989056219129827,
+    "deltaSd": 0.0020545302568109693,
+    "meanPairedSe": 0.0016780070266013054,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 52,
+   "referenceWin": 0.2089519500732422,
+   "referenceDelta": -0.011651992797851562,
+   "swap": "TE",
+   "n8192": {
+    "seedSd": 0.003496257236407831,
+    "binomialSe": 0.004491895814359401,
+    "deltaSd": 0.003466379467131605,
+    "meanPairedSe": 0.003238235235780931,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0033239232793760964,
+    "binomialSe": 0.003176249990717002,
+    "deltaSd": 0.0024076843315159963,
+    "meanPairedSe": 0.002292934545452519,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002634521967228715,
+    "binomialSe": 0.0022459479071797006,
+    "deltaSd": 0.0019390553107731634,
+    "meanPairedSe": 0.0016223251690162285,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 53,
+   "referenceWin": 0.5612525939941406,
+   "referenceDelta": -0.031640052795410156,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.005058190760522622,
+    "binomialSe": 0.005482662211722978,
+    "deltaSd": 0.004046075802084996,
+    "meanPairedSe": 0.00416747539085159,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0034722965355221107,
+    "binomialSe": 0.0038768276288645527,
+    "deltaSd": 0.0032590640806828266,
+    "meanPairedSe": 0.0029541602811215422,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0023977957234264796,
+    "binomialSe": 0.002741331105861489,
+    "deltaSd": 0.0029768950897952795,
+    "meanPairedSe": 0.0020896807330738325,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 54,
+   "referenceWin": 0.35819435119628906,
+   "referenceDelta": -0.1416912078857422,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.00570464712786713,
+    "binomialSe": 0.005297441410158523,
+    "deltaSd": 0.004109729675963491,
+    "meanPairedSe": 0.0041770084747829745,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.0033512501768237462,
+    "binomialSe": 0.003745856744061519,
+    "deltaSd": 0.0029074426690760056,
+    "meanPairedSe": 0.0029527965474089504,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002746354924678376,
+    "binomialSe": 0.0026487207050792617,
+    "deltaSd": 0.002083055473503578,
+    "meanPairedSe": 0.0020861078523961556,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 55,
+   "referenceWin": 0.6163797378540039,
+   "referenceDelta": -0.11081123352050781,
+   "swap": "WR",
+   "n8192": {
+    "seedSd": 0.006114411917413771,
+    "binomialSe": 0.005372543913516687,
+    "deltaSd": 0.00457189795844472,
+    "meanPairedSe": 0.004153521437802431,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.004285861918760145,
+    "binomialSe": 0.003798962233470162,
+    "deltaSd": 0.0027801972956838653,
+    "meanPairedSe": 0.0029315372648150498,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0027463500164704936,
+    "binomialSe": 0.0026862719567583436,
+    "deltaSd": 0.0020455256020433686,
+    "meanPairedSe": 0.00207536402807575,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 56,
+   "referenceWin": 0.48699188232421875,
+   "referenceDelta": 0.06306648254394531,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004319361206476102,
+    "binomialSe": 0.005522401875093461,
+    "deltaSd": 0.004741391535132553,
+    "meanPairedSe": 0.004562913844459372,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003142505790289991,
+    "binomialSe": 0.0039049278143158915,
+    "deltaSd": 0.0023595145906550397,
+    "meanPairedSe": 0.0032117445571448466,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.0018026803674137985,
+    "binomialSe": 0.0027612009375467305,
+    "deltaSd": 0.0017220214972274214,
+    "meanPairedSe": 0.00227284882873787,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 57,
+   "referenceWin": 0.33385658264160156,
+   "referenceDelta": -0.06801509857177734,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.006585952517748426,
+    "binomialSe": 0.005210373667824461,
+    "deltaSd": 0.003496431078139377,
+    "meanPairedSe": 0.0035670976176948657,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.004199760103290995,
+    "binomialSe": 0.0036842905530345,
+    "deltaSd": 0.0021878111589309916,
+    "meanPairedSe": 0.0025279074542712914,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002230364260747591,
+    "binomialSe": 0.0026051868339122303,
+    "deltaSd": 0.0015436363935987347,
+    "meanPairedSe": 0.0017929997742889918,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 58,
+   "referenceWin": 0.5699892044067383,
+   "referenceDelta": -0.11777973175048828,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.00708289946958534,
+    "binomialSe": 0.005469882820913568,
+    "deltaSd": 0.005341557233374209,
+    "meanPairedSe": 0.004281411725580707,
+    "withinOneOfReference": 0.95
+   },
+   "n16384": {
+    "seedSd": 0.004171406826983573,
+    "binomialSe": 0.003867791234963785,
+    "deltaSd": 0.003834531598183731,
+    "meanPairedSe": 0.0030214456464343837,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.003302830476094988,
+    "binomialSe": 0.002734941410456784,
+    "deltaSd": 0.0023226284000240375,
+    "meanPairedSe": 0.002139188497792716,
+    "withinOneOfReference": 1
+   }
+  },
+  {
+   "matchup": 59,
+   "referenceWin": 0.5578746795654297,
+   "referenceDelta": -0.09237957000732422,
+   "swap": "RB",
+   "n8192": {
+    "seedSd": 0.004444092689486076,
+    "binomialSe": 0.005487140077813285,
+    "deltaSd": 0.003974203031993758,
+    "meanPairedSe": 0.0036782773208979777,
+    "withinOneOfReference": 1
+   },
+   "n16384": {
+    "seedSd": 0.003765037058767661,
+    "binomialSe": 0.0038799939583422536,
+    "deltaSd": 0.0028170707994046216,
+    "meanPairedSe": 0.0026128510026100556,
+    "withinOneOfReference": 1
+   },
+   "n32768": {
+    "seedSd": 0.002477188403513439,
+    "binomialSe": 0.0027435700389066425,
+    "deltaSd": 0.0023321390112786807,
+    "meanPairedSe": 0.0018486970843911914,
+    "withinOneOfReference": 1
+   }
+  }
+ ]
+}

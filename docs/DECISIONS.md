@@ -7620,3 +7620,33 @@ budget changes.
 * No in-game conditioning.
 * Ownership is unknown.
 * The behaviour feed is one 24-hour snapshot.
+
+### Evidence — the draw count, frozen before any recommendation example (2026-10-15)
+
+`web/tests/matchup-convergence.test.ts` (offline; skipped unless pointed at a build) on the live
+2026-10-15 build (`2026w05-intrinsic-ros-v1-20261015T113222Z`, target week 6, PPR). The setup:
+* 60 random matchups, 1 QB, 2 RB, 2 WR, 1 TE and 1 FLEX a side, from each position's weekly
+  decision pool (QB 24, RB 48, WR 60, TE 24), with real games, teams and latent correlations;
+* one single-player swap per matchup;
+* 20 seeds per draw count;
+* a 1,048,576-draw reference built from 16 independent 65,536-draw runs, so the engine's cap is
+  never lifted.
+
+The reference P(win) ranged 0.08–0.87 (median 0.55), and the swaps' |ΔP(win)| had median 4.7
+points and maximum 18.3. Report: `docs/experiments/win-my-matchup-2026-10-15/convergence.json`.
+
+| draws | 95% half-width, worst case | seed SD ÷ binomial SE, median (range) | paired SE of a swap, median | rounded headline within ±1 of reference | ms per 2-lineup run (Node, unthrottled) |
+|---:|---:|---:|---:|---:|---:|
+| **8,192** | **1.08 pts** | **0.96** (0.58–1.50) | **0.38 pts** | **99.2%** | 33 |
+| 16,384 | 0.77 pts | 0.94 (0.72–1.26) | 0.27 pts | 100% | 69 |
+| 32,768 | 0.54 pts | 1.01 (0.65–1.36) | 0.19 pts | 100% | 137 |
+
+Every rule passes at 8,192:
+1. The half-width is ≤ 1.1 points, and the median SD ratio is within 20% of 1. The range is
+   wide because each SD is estimated from 20 seeds, whose own SD is about 16%.
+2. The median paired SE is ≤ 0.5 points.
+3. At least 95% of rounded headlines are within ±1 point.
+
+**`MATCHUP_DRAWS` is frozen at 8,192**, the cap stays at 65,536, and the page prints the
+numerical noise beside every headline and difference. This was decided before any recommendation
+example was evaluated.
