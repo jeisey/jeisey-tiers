@@ -14,7 +14,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { stubPortraits } from "./boundary";
-import { IN_SEASON, OFFICE, seed } from "./leagues-seed";
+import { IN_SEASON, MATCH, OFFICE, matchOpponent, seed, seedMatchups } from "./leagues-seed";
 
 /*
  * No test in this repository reaches a third party. The player card fetches its portrait from
@@ -449,4 +449,32 @@ test("My Leagues stacks its slots on a phone and nothing scrolls the page sidewa
   expect((settingsBox?.width ?? 0) <= (viewport?.width ?? 0)).toBe(true);
   const inner = await settings.locator(".lg-dialog-body").evaluate((node) => node.scrollWidth - node.clientWidth);
   expect(inner).toBeLessThanOrEqual(1);
+});
+
+/*
+ * Win My Matchup on a phone (ADR-110): the two lineups stack, every slot's actions sit under
+ * it, the chart fits the screen, the group table scrolls inside itself, and nothing scrolls
+ * the page sideways — with a result, YOLO and a preview on screen.
+ */
+test("Win My Matchup stacks on a phone, its chart fits, and nothing scrolls the page sideways", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-22T12:00:00Z"));
+  await seed(page, [MATCH]);
+  await seedMatchups(page, matchOpponent());
+  await page.goto(`${IN_SEASON}?view=myleagues&panel=wmm`);
+  const sides = page.locator(".wmm-side");
+  const [mine, theirs] = await Promise.all([sides.nth(0).boundingBox(), sides.nth(1).boundingBox()]);
+  expect((theirs?.y ?? 0) >= (mine?.y ?? 0) + (mine?.height ?? 0) - 1).toBe(true);
+  await page.getByRole("button", { name: "Simulate" }).tap();
+  await expect(page.locator(".wmm-headline")).toBeVisible();
+  await page.getByRole("checkbox", { name: "YOLO" }).check();
+  await page.getByRole("button", { name: "Evaluate changes and pickups" }).tap();
+  await page.getByRole("list", { name: "Potential pickups" }).getByRole("button", { name: "Preview" }).first().tap();
+  await expect(page.locator(".wmm-legend[data-side=overlay]")).toBeVisible();
+  const viewport = page.viewportSize();
+  const chart = await page.locator(".wmm-chart svg").boundingBox();
+  expect((chart?.x ?? -1) >= 0 && (chart?.x ?? 0) + (chart?.width ?? 0) <= (viewport?.width ?? 0) + 1).toBe(true);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+  const simulate = await page.getByRole("button", { name: "Simulate" }).boundingBox();
+  expect(simulate?.height ?? 0).toBeGreaterThanOrEqual(40);
 });

@@ -487,11 +487,11 @@ export function FinalsEditor({
                     className="wmm-final-input"
                   />
                 </label>
-                <button type="submit" className="button" disabled={!writable}>
+                <button type="submit" className="button" disabled={!writable} aria-label={`${saved === undefined ? "Save final" : "Update final"} for ${readers.name(id)}`}>
                   {saved === undefined ? "Save final" : "Update"}
                 </button>
                 {saved !== undefined && (
-                  <button type="button" className="button-link" disabled={!writable} onClick={() => { onEdit((current) => setFinal(current, id, null)); }}>
+                  <button type="button" className="button-link" disabled={!writable} aria-label={`Clear the final for ${readers.name(id)}`} onClick={() => { onEdit((current) => setFinal(current, id, null)); }}>
                     Clear
                   </button>
                 )}

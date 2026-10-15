@@ -24,7 +24,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncE
 import { Notice, Segmented } from "../../components/primitives";
 import type { Availability } from "../../data/availability";
 import type { RosWeeklyMetadata, ScoringPreset } from "../../data/contracts";
-import { formatEastern } from "../../data/format";
+import { formatAge, formatEastern } from "../../data/format";
 import { STALE_WARNING_HOURS } from "../../data/freshness";
 import { rosterIds, type Roster, type SavedLeague } from "../../data/leagueContract";
 import { updateLeague } from "../../data/leagueOps";
@@ -332,8 +332,15 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
       const result = variantFor(changesResult, proposal.id);
       if (result === null) continue;
       evaluated.push({ proposal, result });
-      if (proposal.kind === "swap" && proposal.label.includes("ceiling")) benchCeiling.push({ proposal, result });
     }
+    // Bench options that raise the 90th percentile of my simulated total, best first: the
+    // ceiling-minded reading of the same evaluated changes.
+    benchCeiling.push(
+      ...evaluated
+        .filter((item) => (item.result.paired?.p90 ?? 0) >= 0.05)
+        .sort((a, b) => (b.result.paired?.p90 ?? 0) - (a.result.paired?.p90 ?? 0) || (a.proposal.id < b.proposal.id ? -1 : 1))
+        .slice(0, 3),
+    );
     for (const proposal of changesCurrent.yolo) {
       const result = variantFor(changesResult, proposal.id);
       if (result !== null) yoloEvaluated.set(proposal.candidateId, result);
@@ -346,7 +353,7 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
       <div className="wmm-head">
         <h3 id="wmm-heading" className="lg-section-title">{`Win My Matchup — week ${String(week)}`}</h3>
         <p className="lg-help">
-          {`${props.presetLabel} · projections ${weekly.model_version} · build ${formatEastern(bundle.metadata.generated_at_utc)}. Covers your QB, RB, WR, TE and FLEX starters only: kickers and team defenses are not modelled, so this is not a full fantasy-team win probability.`}
+          {`${props.presetLabel} · projections ${weekly.model_version} · build ${formatEastern(bundle.metadata.generated_at_utc)}${Number.isFinite(age) ? ` (${formatAge(Math.max(0, age))})` : ""}. Covers your QB, RB, WR, TE and FLEX starters only: kickers and team defenses are not modelled, so this is not a full fantasy-team win probability.`}
         </p>
         {age > STALE_WARNING_HOURS && (
           <Notice severity="warning" title="This build is not fresh.">

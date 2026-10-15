@@ -423,8 +423,17 @@
   display: grid;
   gap: var(--space-1);
   min-width: 0;
+}
+
+.wmm-groups-scroll {
+  min-width: 0;
   overflow-x: auto;
   position: relative;
+}
+
+.wmm-groups-scroll:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .wmm-range-col {

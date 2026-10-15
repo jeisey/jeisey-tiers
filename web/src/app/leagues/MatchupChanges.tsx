@@ -148,7 +148,7 @@ export function YoloPanel({
   readonly failure: Error | null;
   /** The simulated difference for each candidate, once changes have been evaluated. */
   readonly evaluated: ReadonlyMap<string, VariantResult>;
-  /** Bench swaps that raise a starter's ceiling, with their simulated difference. */
+  /** Evaluated bench options that raise the 90th percentile of the simulated total. */
   readonly benchCeiling: readonly EvaluatedChange[];
   readonly name: (id: string) => string;
   readonly previewId: string | null;
@@ -276,13 +276,13 @@ function YoloBody({
       )}
       <h5 className="wmm-subhead">From your bench</h5>
       {benchCeiling.length === 0 ? (
-        <p className="lg-help">No bench player has a higher ceiling than a starter he could replace, or changes have not been evaluated yet.</p>
+        <p className="lg-help">No evaluated bench option raises your 90th-percentile total, or changes have not been evaluated yet.</p>
       ) : (
         <ul className="wmm-change-list" aria-label="Bench ceiling upgrades">
           {benchCeiling.map(({ proposal, result }) => (
             <li key={proposal.id} className="wmm-change">
               <div className="wmm-change-head">
-                <span className="wmm-change-label">Bench upgrade</span>
+                <span className="wmm-change-label">{`Bench option · 90th percentile ${(result.paired?.p90 ?? 0) >= 0 ? "+" : "−"}${Math.abs(result.paired?.p90 ?? 0).toFixed(1)}`}</span>
                 <span className="wmm-change-moves">{movesText(proposal, league, name)}</span>
               </div>
               <p className="wmm-change-figures">

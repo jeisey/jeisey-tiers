@@ -20,7 +20,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { stubPortraits } from "./boundary";
-import { IN_SEASON, OFFICE, seed } from "./leagues-seed";
+import { IN_SEASON, MATCH, OFFICE, matchOpponent, seed, seedMatchups } from "./leagues-seed";
 
 /*
  * No test in this repository reaches a third party. The player card fetches its portrait from
@@ -271,6 +271,22 @@ test("My Leagues keeps an applied lineup, and its slot dialog holds and returns 
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(add).toBeFocused();
+});
+
+/**
+ * Win My Matchup (ADR-110) runs its simulation in a module worker served under the deployment's
+ * base path — a feature the engines shipped at different times. The same simulation must answer
+ * in every engine, and its saved inputs must survive a reload.
+ */
+test("Win My Matchup simulates in a module worker and keeps its inputs across a reload", async ({ page }) => {
+  await seed(page, [MATCH]);
+  await seedMatchups(page, matchOpponent());
+  await page.goto(`${IN_SEASON}?view=myleagues&panel=wmm`);
+  await page.getByRole("button", { name: "Simulate" }).click();
+  await expect(page.locator(".wmm-headline")).toContainText("of 8,192 simulated games");
+  await page.reload();
+  await expect(page.locator(".wmm-ready")).toContainText("Ready");
+  await expect(page.locator(".wmm-headline")).toHaveCount(0);
 });
 
 test.describe("reduced motion", () => {

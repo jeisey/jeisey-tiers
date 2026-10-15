@@ -297,6 +297,8 @@ export function GroupTable({
   const before = new Map(baseline?.map((group) => [group.group, group]) ?? []);
   return (
     <div className="wmm-groups">
+      {/* A focusable region: on a phone the table can scroll sideways (axe scrollable-region-focusable). */}
+      <div className="wmm-groups-scroll" tabIndex={0} role="region" aria-label={label}>
       <table className="wmm-table wmm-group-table">
         <caption>{label}</caption>
         <thead>
@@ -350,6 +352,7 @@ export function GroupTable({
           })}
         </tbody>
       </table>
+      </div>
       <p className="lg-help">
         Each row compares one slot group&rsquo;s simulated total against the same group on the other side — a FLEX
         player counts in FLEX only. These are group comparisons, not head-to-head contests between paired players,
