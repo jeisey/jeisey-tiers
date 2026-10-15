@@ -137,6 +137,9 @@ for (const [width, height] of [
     await page.goto(`${IN_SEASON}?view=ros&scoring=ppr&teams=12`);
     await page.getByRole("button", { name: "Josh Allen", exact: true }).first().click();
     const dialog = page.getByRole("dialog");
+    // The header opens compact on a phone (ADR-111); the rank pair is in what it expands.
+    await expect(dialog.getByTestId("rank-pair")).toBeHidden();
+    await dialog.getByRole("button", { name: "Expand details" }).click();
     await expect(dialog.getByTestId("rank-pair")).toBeVisible();
     const sheet = await box(page, "dialog[open]");
     expect(sheet.y).toBeGreaterThanOrEqual(0);
@@ -233,6 +236,13 @@ for (const width of [1280, 320]) {
     const board = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
     expect(board.violations.map((v) => `${v.id}: ${String(v.nodes.length)}`)).toEqual([]);
     await page.getByRole("button", { name: "Josh Allen", exact: true }).first().click();
+    if (width < 768) {
+      // Compact first (ADR-111), then expanded: both states of the phone header scan clean.
+      await expect(page.getByRole("dialog").getByRole("button", { name: "Expand details" })).toBeVisible();
+      const compact = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+      expect(compact.violations.map((v) => `${v.id}: ${String(v.nodes.length)}`)).toEqual([]);
+      await page.getByRole("dialog").getByRole("button", { name: "Expand details" }).click();
+    }
     await expect(page.getByRole("dialog").getByTestId("rank-pair")).toBeVisible();
     const card = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
     expect(card.violations.map((v) => `${v.id}: ${String(v.nodes.length)}`)).toEqual([]);

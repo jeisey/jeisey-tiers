@@ -33,7 +33,7 @@ import {
   trimOpponent,
   type MatchupEntry,
 } from "../../data/wmmContract";
-import { Modal } from "./Modal";
+import { Modal } from "../../components/Modal";
 import { kickoffLabel, opponentLabel, points } from "./shared";
 
 export type EntryEdit = (change: (entry: MatchupEntry) => MatchupEntry) => void;

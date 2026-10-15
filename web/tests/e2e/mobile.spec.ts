@@ -184,7 +184,7 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     for (const group of ["Season mode", "Scoring", "Teams", "Position"]) {
       await expect(page.getByRole("radiogroup", { name: group })).toBeInViewport();
     }
-    await expect(page.getByLabel("Player search")).toBeInViewport();
+    await expect(page.getByRole("button", { name: /^Search players/ })).toBeInViewport();
 
     // A change is on the board and in the summary at once; the panel stays open for the next.
     await page.getByRole("radio", { name: "Half PPR" }).click();
@@ -273,7 +273,7 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     const te = page.getByRole("radiogroup", { name: "Position" }).getByRole("radio", { name: "TE" });
     await te.scrollIntoViewIfNeeded();
     await expect(te).toBeInViewport();
-    await expect(page.getByLabel("Player search")).toBeAttached();
+    await expect(page.getByRole("button", { name: /^Search players/ })).toBeAttached();
   });
 });
 
@@ -293,16 +293,24 @@ test("the player card becomes a sheet, with the draft-critical readouts above th
   expect((box?.y ?? 0) + (box?.height ?? 0)).toBeGreaterThanOrEqual((viewport?.height ?? 0) - 1);
 
   /*
-   * What a drafter needs while the clock runs is on screen with no scroll and no tap.
-   *
-   * The labels changed with the sheet's shape, not the requirement. Phase 8 stacked every
-   * readout and asked that the first four be above the fold; artboard 1b splits the detail
-   * across three tabs and puts the answers in the identity rail above them, so what is
-   * unconditionally visible is now fair rank, the market verdict — the signed gap and its
-   * direction, which is `Value gap` and `MFL ADP` combined into the sentence a drafter
-   * actually wants — the arbitrage score, and the status line. That is one more draft-critical
-   * fact than Phase 8 showed without scrolling, not one fewer.
+   * ADR-111: the header opens compact — the name, position and team, any status worth stating,
+   * the close control and *Expand details* — so the tabs and their panel get the screen. What a
+   * drafter reads next (fair rank, the market verdict, the arbitrage score, the status line) is
+   * one tap away on the same control, and the tabs are on screen either way.
    */
+  const expand = dialog.getByRole("button", { name: "Expand details" });
+  await expect(expand).toBeInViewport();
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(dialog.getByRole("heading", { name: "Amon-Ra Bright" })).toBeInViewport();
+  await expect(dialog.locator(".detail-compact-identity")).toContainText("WR");
+  await expect(dialog.locator(".detail-compact-identity")).toContainText("DET");
+  // Questionable is a status worth stating, so it stays on the compact line.
+  await expect(dialog.locator(".detail-compact-identity .status-badge")).toBeVisible();
+  await expect(dialog.getByText("Fair rank", { exact: true })).toBeHidden();
+  await expect(dialog.getByRole("tab", { name: "Draft market" })).toBeInViewport();
+
+  await expand.click();
+  await expect(dialog.getByRole("button", { name: "Collapse details" })).toHaveAttribute("aria-expanded", "true");
   for (const label of ["Fair rank", "Arbitrage score", "Status"]) {
     await expect(dialog.getByText(label, { exact: true })).toBeInViewport();
   }
@@ -478,3 +486,79 @@ test("Win My Matchup stacks on a phone, its chart fits, and nothing scrolls the 
   const simulate = await page.getByRole("button", { name: "Simulate" }).boundingBox();
   expect(simulate?.height ?? 0).toBeGreaterThanOrEqual(40);
 });
+
+/*
+ * ADR-111: the card's header on a phone. Compact by default, one tap to expand, the choice held
+ * across every tab (the Skill Tree's included) and reset when the card closes; the close control
+ * and the tabs never leave the screen, at a phone's width and at a short one.
+ */
+for (const viewport of [
+  { width: 412, height: 839 },
+  { width: 320, height: 568 },
+]) {
+  test(`the card's header collapses and expands at ${String(viewport.width)}x${String(viewport.height)}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/scenario/in-season/?view=ros");
+    await page.getByRole("button", { name: "Puka Nightingale", exact: true }).first().tap();
+    const dialog = page.getByRole("dialog");
+    const close = dialog.getByRole("button", { name: "Close player detail" });
+    const rail = dialog.locator(".detail-rail");
+    const body = dialog.locator(".detail-body");
+    await expect(dialog.getByRole("button", { name: "Expand details" })).toBeInViewport({ ratio: 1 });
+    await expect(close).toBeInViewport({ ratio: 1 });
+    const compact = { rail: (await rail.boundingBox())?.height ?? 0, body: (await body.boundingBox())?.height ?? 0 };
+    // A couple of rows, not a miniature of the whole header.
+    expect(compact.rail).toBeLessThanOrEqual(100);
+    await expect(dialog.locator(".rail-hero")).toBeHidden();
+    await expect(dialog.locator(".portrait")).toBeHidden();
+
+    await dialog.getByRole("button", { name: "Expand details" }).tap();
+    const toggle = dialog.getByRole("button", { name: "Collapse details" });
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(dialog.getByText("ROS overall rank", { exact: true })).toBeVisible();
+    const expanded = (await rail.boundingBox())?.height ?? 0;
+    expect(expanded).toBeGreaterThan(compact.rail + 100);
+    // Capped, so the tabs stay on a short screen.
+    expect(expanded).toBeLessThanOrEqual(viewport.height * 0.51);
+
+    const tabs = dialog.getByRole("tab");
+    const names = await tabs.allTextContents();
+    expect(names).toContain("Skill tree");
+    for (const name of names) {
+      const tab = dialog.getByRole("tab", { name, exact: true });
+      await tab.tap();
+      await expect(tab).toHaveAttribute("aria-selected", "true");
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      await expect(tab).toBeInViewport({ ratio: 1 });
+      await expect(close).toBeInViewport({ ratio: 1 });
+    }
+    await dialog.getByRole("tab", { name: "Skill tree", exact: true }).tap();
+    await expect(dialog.getByRole("group", { name: /skill tree/ })).toBeVisible();
+    await toggle.tap();
+    await expect(dialog.getByRole("button", { name: "Expand details" })).toBeFocused();
+    await expect(dialog.getByRole("tab", { name: "Skill tree", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(dialog.getByRole("group", { name: /skill tree/ })).toBeVisible();
+
+    const overflow = await page.evaluate(() => {
+      const card = document.querySelector(".detail-card");
+      return {
+        page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        card: card === null ? 0 : card.scrollWidth - card.clientWidth,
+      };
+    });
+    expect(overflow.page).toBeLessThanOrEqual(0);
+    expect(overflow.card).toBeLessThanOrEqual(0);
+
+    // Closing resets it: Escape still closes, and the next card opens compact.
+    await dialog.getByRole("button", { name: "Expand details" }).tap();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await page.getByRole("button", { name: "Puka Nightingale", exact: true }).first().tap();
+    await expect(page.getByRole("dialog").getByRole("button", { name: "Expand details" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+}

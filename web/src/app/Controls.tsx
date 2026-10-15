@@ -8,7 +8,7 @@
  * not in the URL.
  */
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Segmented } from "../components/primitives";
 import type {
@@ -287,8 +287,8 @@ export function SeasonMode({
  * schedule chose. The mode goes last although its switch is first in the panel: at 320px
  * the row ellipsises, and a rare override should be what is cut, not the scoring.
  *
- * Every value is the URL's, so the summary is the applied state: a search still inside its
- * debounce is not on the board yet and is not printed here yet either.
+ * Every value is the URL's, so the summary is the applied state: a query still being typed in
+ * the search dialog is not on the board and is not printed here either (ADR-111).
  */
 export function settingsSummary(
   state: AppState,
@@ -314,7 +314,7 @@ export function Controls({
   onChange,
   availableScoring,
   availableTeams,
-  onRevealSearch,
+  search,
   league,
 }: {
   readonly state: AppState;
@@ -322,11 +322,10 @@ export function Controls({
   readonly availableScoring: ReadonlySet<ScoringValue>;
   readonly availableTeams: ReadonlySet<TeamCount>;
   /**
-   * Make the search box visible, synchronously, before the `/` shortcut focuses it. On a phone
-   * the box can be inside a folded panel, and focusing an element that is not rendered does
-   * nothing at all (ADR-093).
+   * The board search's trigger (ADR-111), or absent on a view no search applies to (Trade,
+   * Pick of the Week, Data): a control that changes nothing on screen is not offered.
    */
-  readonly onRevealSearch?: (() => void) | undefined;
+  readonly search?: SearchTriggerProps | undefined;
   /**
    * My Leagues (ADR-106): the active league's name. Its scoring and size are then the league's
    * and cannot be changed here — the league's settings change them — and the position filter
@@ -373,7 +372,7 @@ export function Controls({
           </span>
         </p>
       ) : (
-        <LeagueFreeControls state={state} onChange={onChange} onRevealSearch={onRevealSearch} />
+        <LeagueFreeControls state={state} onChange={onChange} search={search} />
       )}
     </div>
   );
@@ -382,11 +381,11 @@ export function Controls({
 function LeagueFreeControls({
   state,
   onChange,
-  onRevealSearch,
+  search,
 }: {
   readonly state: AppState;
   readonly onChange: (next: Partial<AppState>) => void;
-  readonly onRevealSearch?: (() => void) | undefined;
+  readonly search?: SearchTriggerProps | undefined;
 }): React.JSX.Element {
   return (
     <>
@@ -403,138 +402,54 @@ function LeagueFreeControls({
           onChange({ position });
         }}
       />
-      <div className="control control-spacer">
-        <PlayerSearch
-          value={state.search}
-          onChange={(search) => {
-            onChange({ search });
-          }}
-          onReveal={onRevealSearch}
-        />
-      </div>
+      {search !== undefined && (
+        <div className="control control-spacer">
+          <SearchTrigger {...search} />
+        </div>
+      )}
     </>
   );
 }
 
-/**
- * The search box.
- *
- * Locally controlled and pushed to the URL on a short debounce: typing eight characters should
- * not leave eight entries in the browser's history, and the address bar should not flicker on
- * every keystroke. The value is still fully shareable — it is in the URL as soon as typing
- * pauses, and immediately on blur or Enter.
- */
-export function PlayerSearch({
-  value,
-  onChange,
-  onReveal,
-}: {
+export interface SearchTriggerProps {
+  /** The applied search, from the URL. */
   readonly value: string;
-  readonly onChange: (value: string) => void;
-  /** Called before the shortcut focuses the box, when the box is not rendered. */
-  readonly onReveal?: (() => void) | undefined;
-}): React.JSX.Element {
-  const id = useId();
-  const input = useRef<HTMLInputElement>(null);
-  const [draft, setDraft] = useState(value);
-  const [lastPropValue, setLastPropValue] = useState(value);
+  readonly onOpen: () => void;
+  readonly triggerRef: React.Ref<HTMLButtonElement>;
+}
 
-  // Adopt an externally-driven change (back/forward, or a cleared filter) by adjusting state
-  // during render rather than in an effect: React re-renders immediately with the new value
-  // instead of painting the stale one first.
-  if (lastPropValue !== value) {
-    setLastPropValue(value);
-    setDraft(value);
-  }
-
-  useEffect(() => {
-    if (draft === value) return;
-    const timer = setTimeout(() => {
-      onChange(draft);
-    }, 220);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [draft, onChange, value]);
-
-  /**
-   * `/` focuses the search box — the shortcut the design source advertises with a key hint
-   * inside the field. It is ignored whenever the keystroke could be text: any modifier, any
-   * form control, any editable element, or an open dialog, which is where a drafter typing a
-   * name into the card's own controls would otherwise lose the character.
-   */
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
-      const active = document.activeElement;
-      if (
-        active instanceof HTMLInputElement ||
-        active instanceof HTMLTextAreaElement ||
-        active instanceof HTMLSelectElement ||
-        (active instanceof HTMLElement && active.isContentEditable) ||
-        active?.closest("dialog[open]") != null
-      ) {
-        return;
-      }
-      event.preventDefault();
-      // A box inside a folded phone panel has no layout box, and `focus()` on it would be a
-      // silent no-op. Ask for it to be shown first; the caller shows it synchronously.
-      if (input.current !== null && input.current.getClientRects().length === 0) onReveal?.();
-      input.current?.focus();
-      input.current?.select();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [onReveal]);
-
+/**
+ * The board search's trigger (ADR-111).
+ *
+ * The search itself is a dialog (`PlayerPickerDialog`), so typing re-renders the dialog's list
+ * and never the board behind it, and nothing reaches the URL until a player is chosen or a
+ * query applied — one history entry per search. The trigger prints the applied search, so what
+ * is filtering the board is visible on the control that changes it; the board says it again
+ * beside a Clear action (`ActiveSearch`). `/` opens the same dialog (App).
+ */
+export function SearchTrigger({ value, onOpen, triggerRef }: SearchTriggerProps): React.JSX.Element {
   return (
     <>
-      <label className="control-label" htmlFor={id}>
+      <span className="control-label" aria-hidden="true">
         Player search
-      </label>
-      <div className="search-field">
-        <input
-          ref={input}
-          id={id}
-          type="search"
-          value={draft}
-          placeholder="Name, team or position"
-          autoComplete="off"
-          spellCheck={false}
-          onChange={(event) => {
-            setDraft(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              onChange(draft);
-            }
-            if (event.key === "Escape" && draft !== "") {
-              event.preventDefault();
-              setDraft("");
-              onChange("");
-            }
-          }}
-        />
-        {draft === "" ? (
-          <span className="search-key" aria-hidden="true">
-            /
-          </span>
-        ) : (
-          <button
-            type="button"
-            aria-label="Clear player search"
-            onClick={() => {
-              setDraft("");
-              onChange("");
-            }}
-          >
-            ×
-          </button>
-        )}
-      </div>
+      </span>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="search-trigger"
+        aria-haspopup="dialog"
+        aria-keyshortcuts="/"
+        onClick={onOpen}
+      >
+        <span className="search-trigger-icon" aria-hidden="true">
+          ⌕
+        </span>
+        <span className="search-trigger-label">Search players</span>
+        {value !== "" && <span className="search-trigger-value">{`“${value}”`}</span>}
+        <span className="search-key" aria-hidden="true">
+          /
+        </span>
+      </button>
     </>
   );
 }

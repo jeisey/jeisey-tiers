@@ -192,8 +192,12 @@ test.describe("layout", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${IN_SEASON}?view=startsit&${PAIR}`);
     await expect(page.locator(".verdict-head")).toBeVisible();
-    // The empty slots step aside on a phone once there is a verdict to read.
-    await expect(page.locator(".deck-card.deck-empty").first()).toBeHidden();
+    // Once there is a verdict to read, the empty slots fold into one short full-width row,
+    // still a button that adds (ADR-111).
+    const empty = page.locator(".deck-card.deck-empty");
+    await expect(empty.first()).toBeVisible();
+    await expect(empty.nth(1)).toBeHidden();
+    expect((await empty.first().boundingBox())?.height ?? Infinity).toBeLessThanOrEqual(64);
     const box = await page.locator(".verdict-head").boundingBox();
     expect(box?.y ?? Infinity).toBeLessThan(844);
     // No range is clipped inside a half-width card.

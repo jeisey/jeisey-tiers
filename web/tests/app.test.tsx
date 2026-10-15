@@ -224,7 +224,8 @@ describe("tier table", () => {
     const user = userEvent.setup();
     render(<App />);
     await boardReady();
-    await user.type(screen.getByLabelText("Player search"), "burrow");
+    await user.click(screen.getByRole("button", { name: /^Search players/ }));
+    await user.type(screen.getByRole("combobox", { name: /Search players on/ }), "burrow{Enter}");
     await waitFor(() => {
       const table = screen.getByRole("table", { name: /Intrinsic tier board/ });
       expect(within(table).getAllByRole("row")).toHaveLength(2);
@@ -950,41 +951,38 @@ describe("the shell", () => {
   });
 
   /**
-   * The slash shortcut the design source advertises with a key hint inside the field. It must
-   * never eat a character someone is typing, which is the whole risk of a bare-key shortcut.
+   * The slash shortcut the design source advertises with a key hint on the search control. It
+   * opens the search dialog (ADR-111) and must never eat a character someone is typing, which
+   * is the whole risk of a bare-key shortcut, nor open a second dialog over a first.
    */
-  it("focuses the search box on / but never while text is being typed", async () => {
+  it("opens the search dialog on / but never while text is being typed", async () => {
     render(<App now={FIXTURE_NOW} />);
     await boardReady();
 
     /*
      * The shortcut is a `document` listener registered from an effect, so it goes live one
-     * flush after the board paints — and `boardReady` resolves on the DOM mutation that puts
-     * the heading there, which can be that flush too early. Pressing until the shell answers
-     * waits for the listener without weakening the guarantee: a `/` that never focuses the
-     * field still fails, on the timeout. Re-querying the field each attempt also survives a
-     * re-render replacing the node, which the URL normalization in `useAppState` can schedule
-     * right after the first paint.
-     *
-     * Written this way because the single instantaneous assertion it replaces failed once on
-     * a loaded CI runner and never in eleven local runs — isolated, whole-file, whole-suite
-     * oversubscribed, and shuffled. A test that only holds while the machine is fast is
-     * measuring the machine.
+     * flush after the board paints. Pressing until the shell answers waits for the listener
+     * without weakening the guarantee: a `/` that never opens the dialog still fails, on the
+     * timeout.
      */
     await waitFor(() => {
       fireEvent.keyDown(document.body, { key: "/" });
-      expect(document.activeElement).toBe(screen.getByLabelText("Player search"));
+      expect(screen.getByRole("dialog", { name: "Search players" })).toBeDefined();
     });
-    const search = screen.getByLabelText("Player search");
+    const search = screen.getByRole("combobox", { name: /Search players on/ });
+    expect(document.activeElement).toBe(search);
 
-    // Already in the field: the keystroke is a character, not a command.
-    const before = document.activeElement;
+    // Already in the field: the keystroke is a character, not a command, and no second dialog.
     fireEvent.keyDown(search, { key: "/" });
-    expect(document.activeElement).toBe(before);
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
 
     // A modifier is somebody else's shortcut.
-    (document.activeElement as HTMLElement).blur();
     fireEvent.keyDown(document.body, { key: "/", ctrlKey: true });
-    expect(document.activeElement).not.toBe(search);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(window.location.search).toBe("");
   });
 });

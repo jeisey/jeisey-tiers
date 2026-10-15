@@ -29,7 +29,7 @@ import {
   type PositionOf,
   type SlotRef,
 } from "../../data/roster";
-import { Modal } from "./Modal";
+import { Modal } from "../../components/Modal";
 import { points } from "./shared";
 
 export function SlotDialog({

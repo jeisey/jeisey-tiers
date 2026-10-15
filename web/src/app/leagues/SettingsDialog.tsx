@@ -38,7 +38,7 @@ import {
   type ScoringValue,
   type TeamCount,
 } from "../../data/state";
-import { Modal } from "./Modal";
+import { Modal } from "../../components/Modal";
 
 interface Draft {
   readonly name: string;
