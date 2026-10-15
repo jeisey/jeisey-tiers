@@ -91,6 +91,16 @@ export function risingKeys(manifest: Manifest, leaguePreset: string, scoring: Sc
   );
 }
 
+/**
+ * Win My Matchup's YOLO files (ADR-110 §6): the block's Opportunity rows (net adds) and the role
+ * series — Rising Stars' files minus the add-momentum series, which YOLO does not read. Fetched
+ * only while YOLO is on for the open league, never gating the matchup.
+ */
+export function matchupYoloKeys(manifest: Manifest, leaguePreset: string, scoring: ScoringPreset): readonly string[] {
+  const block = blockKey(leaguePreset, scoring);
+  return [`inseason_opportunity/${block}`, "player_usage/all"].filter((key) => key in manifest.files);
+}
+
 /** The same rule, spelled for the manifest's keys. Pure: the budget test calls it too. */
 export function requiredKeys(manifest: Manifest, context: NeedContext): readonly string[] {
   const block = blockKey(context.leaguePreset, context.scoring);

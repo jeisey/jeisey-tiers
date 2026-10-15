@@ -53,3 +53,29 @@ export function subscribeActiveLeague(listener: () => void): () => void {
     listeners.delete(listener);
   };
 }
+
+/**
+ * Win My Matchup's YOLO mode (ADR-110 §6) is on for the open league: the shell may load the two
+ * files it reads (the block's Opportunity rows and the role series). Published by the lazy
+ * Win My Matchup panel while it is mounted with YOLO on, and cleared when it unmounts, so no
+ * other view or league ever loads them on its behalf.
+ */
+let yoloFiles = false;
+const yoloListeners = new Set<() => void>();
+
+export function publishYoloFiles(on: boolean): void {
+  if (yoloFiles === on) return;
+  yoloFiles = on;
+  for (const listener of yoloListeners) listener();
+}
+
+export function yoloFilesSnapshot(): boolean {
+  return yoloFiles;
+}
+
+export function subscribeYoloFiles(listener: () => void): () => void {
+  yoloListeners.add(listener);
+  return () => {
+    yoloListeners.delete(listener);
+  };
+}

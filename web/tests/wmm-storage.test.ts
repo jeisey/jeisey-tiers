@@ -11,6 +11,16 @@ import { leagueStorageKey, type StorageLike } from "../src/data/leagueStore";
 import {
   EMPTY_WMM,
   WMM_FORMAT,
+  addOpponentOther,
+  assignOpponent,
+  clearOpponentSlot,
+  confirmEmpty,
+  countAsZero,
+  removeOpponentPlayer,
+  renameOpponent,
+  setFinal,
+  setMark,
+  trimOpponent,
   WMM_MAX_ENTRIES,
   WMM_WEEKS_PER_LEAGUE,
   boundDocument,
@@ -308,5 +318,62 @@ describe("the store", () => {
     expect(prefsFor(store.snapshot().doc, AT.leagueId).yolo).toBe(true);
     expect(prefsFor(store.snapshot().doc, "lg-family01").yolo).toBe(false);
     expect(entryKey("lg-a1b2", 2026, 6)).toBe("lg-a1b2|2026|6");
+  });
+});
+
+describe("the edits", () => {
+  const counts = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1 } as const;
+  const fits = (group: string, id: string): boolean => group !== "QB" || id === g(8);
+
+  it("assigns opponent starters on the league's layout, swapping or clearing a moved player", () => {
+    const start = entry({ confirmedEmpty: { mine: [], theirs: ["WR:0"] } });
+    const placed = assignOpponent(start, counts, { group: "WR", index: 0 }, g(20), fits);
+    expect(placed.opponent.starters.WR).toEqual([g(20), null]);
+    expect(placed.confirmedEmpty.theirs).toEqual([]);
+    expect(placed.opponent.starters.TE).toEqual([null]);
+    // Moving RB1 to RB2 swaps the two backs.
+    const swapped = assignOpponent(placed, counts, { group: "RB", index: 1 }, g(11), fits);
+    expect(swapped.opponent.starters.RB).toEqual([g(13), g(11)]);
+    // Moving a back to FLEX leaves his old slot empty when the occupant cannot fill it.
+    const flexed = assignOpponent(swapped, counts, { group: "FLEX", index: 0 }, g(13), () => false);
+    expect(flexed.opponent.starters.RB).toEqual([null, g(11)]);
+    expect(flexed.opponent.starters.FLEX).toEqual([g(13)]);
+    // A player among their others moves out of that list.
+    const promoted = assignOpponent(flexed, counts, { group: "TE", index: 0 }, g(4), fits);
+    expect(promoted.opponent.others).toEqual([]);
+    expect(assignOpponent(promoted, counts, { group: "TE", index: 0 }, g(4), fits)).toBe(promoted);
+  });
+
+  it("clears, trims, removes and adds without duplicates or growth past the bound", () => {
+    const start = entry();
+    expect(clearOpponentSlot(start, counts, { group: "RB", index: 0 }).opponent.starters.RB).toEqual([null, g(13)]);
+    const wide = entry({ opponent: { name: "", starters: { ...emptyStarters(), RB: [g(11), g(13), g(14)] }, others: [] } });
+    expect(trimOpponent(wide, counts).opponent.starters.RB).toEqual([g(11), g(13)]);
+    expect(removeOpponentPlayer(start, g(4)).opponent.others).toEqual([]);
+    expect(removeOpponentPlayer(start, g(11)).opponent.starters.RB).toEqual([null, g(13)]);
+    expect(addOpponentOther(start, g(11))).toBe(start);
+    let full = entry({ opponent: { name: "", starters: emptyStarters(), others: [] } });
+    for (let i = 1; i <= 20; i += 1) full = addOpponentOther(full, g(i));
+    expect(full.opponent.others).toHaveLength(14);
+  });
+
+  it("confirms empties, zeros, finals and marks, and changes nothing when nothing changes", () => {
+    const start = entry();
+    const empty = confirmEmpty(start, "mine", "TE:0", true);
+    expect(empty.confirmedEmpty.mine).toEqual(["TE:0"]);
+    expect(confirmEmpty(empty, "mine", "TE:0", true)).toBe(empty);
+    expect(confirmEmpty(empty, "mine", "TE:0", false).confirmedEmpty.mine).toEqual([]);
+    expect(countAsZero(start, g(1), true).countZero).toEqual([g(1)]);
+    expect(countAsZero(start, g(1), false)).toBe(start);
+    const final = setFinal(start, g(8), 24.567);
+    expect(final.finals).toEqual({ [g(8)]: 24.57 });
+    expect(setFinal(final, g(8), 500)).toBe(final);
+    expect(setFinal(final, g(8), null).finals).toEqual({});
+    const marked = setMark(start, g(3), "available");
+    expect(marked.marks).toEqual({ [g(3)]: "available" });
+    expect(setMark(marked, g(3), "unavailable").marks).toEqual({ [g(3)]: "unavailable" });
+    expect(setMark(marked, g(3), null).marks).toEqual({});
+    expect(renameOpponent(start, "  Mike\n ")).toBe(start);
+    expect(renameOpponent(start, "Jordan").opponent.name).toBe("Jordan");
   });
 });

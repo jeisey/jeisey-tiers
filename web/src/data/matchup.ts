@@ -154,7 +154,11 @@ export interface SimResult {
   readonly seed: number;
   readonly draws: number;
   readonly theirs: Spread;
-  /** Margin bins: `[start + i·width, start + (i+1)·width)`; the first and last absorb the tails. */
+  /**
+   * Margin bins shared by every lineup in the run, spanning the baseline's and each detailed
+   * lineup's 0.5th–99.5th percentiles: `[start + i·width, start + (i+1)·width)`; the first and
+   * last absorb the tails.
+   */
   readonly bins: { readonly start: number; readonly width: number; readonly count: number };
   readonly variants: readonly VariantResult[];
   readonly notes: readonly SimNote[];
@@ -552,7 +556,7 @@ function spreadOf(values: Int32Array): Spread {
 
 const NICE_WIDTHS = [0.5, 1, 2, 2.5, 5, 10, 20, 25, 50];
 
-/** Shared margin bins from the baseline's margins: zero is always an edge. */
+/** Shared margin bins from the drawn lineups' margins: zero is always an edge. */
 export function marginBins(margins: Int32Array): SimResult["bins"] {
   const sorted = Int32Array.from(margins).sort();
   const low = quantileOf(sorted, 0.005);
@@ -734,14 +738,25 @@ export function createRun(input: SimInput): Run {
     result(): SimResult {
       if (next < n) throw new Error("the run is not finished");
       const baseTotals = myTotals[0] ?? theirTotals;
-      const baseMargins = new Int32Array(n);
-      for (let d = 0; d < n; d += 1) baseMargins[d] = (baseTotals[d] ?? 0) - (theirTotals[d] ?? 0);
-      const bins = marginBins(baseMargins);
+      const margins = plan.variants.map((_, v) => {
+        const totals = myTotals[v] ?? baseTotals;
+        const out = new Int32Array(n);
+        for (let d = 0; d < n; d += 1) out[d] = (totals[d] ?? 0) - (theirTotals[d] ?? 0);
+        return out;
+      });
+      // The bins span every lineup the page draws — the baseline and any with detail — so a
+      // previewed lineup's margins are never piled into an edge bin the baseline chose.
+      const drawn = margins.filter((_, v) => v === 0 || plan.variants[v]?.detail === true);
+      const pooled = new Int32Array(drawn.reduce((size, list) => size + list.length, 0));
+      drawn.reduce((offset, list) => {
+        pooled.set(list, offset);
+        return offset + list.length;
+      }, 0);
+      const bins = marginBins(pooled);
       const baseSpread = spreadOf(baseTotals);
       const variants = plan.variants.map((variant, v): VariantResult => {
         const totals = myTotals[v] ?? baseTotals;
-        const margins = new Int32Array(n);
-        for (let d = 0; d < n; d += 1) margins[d] = (totals[d] ?? 0) - (theirTotals[d] ?? 0);
+        const variantMargins = margins[v] ?? new Int32Array(n);
         const tally = counts[v] ?? { win: 0, tie: 0 };
         const win = tally.win / n;
         const tie = tally.tie / n;
@@ -784,8 +799,8 @@ export function createRun(input: SimInput): Run {
           loss: Math.max(0, 1 - win - tie),
           se: Math.sqrt((win * (1 - win)) / n),
           mine,
-          margin: spreadOf(margins),
-          histogram: histogramOf(margins, bins),
+          margin: spreadOf(variantMargins),
+          histogram: histogramOf(variantMargins, bins),
           groups,
           paired,
           couplingReduced: variant.couplingReduced,

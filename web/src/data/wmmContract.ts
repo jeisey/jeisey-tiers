@@ -386,3 +386,130 @@ export function previousEntry(doc: WmmDocument, leagueId: string, season: number
 export function prefsFor(doc: WmmDocument, leagueId: string): WmmPrefs {
   return doc.prefs[leagueId] ?? DEFAULT_WMM_PREFS;
 }
+
+// ------------------------------------------------------------------------------ the edits
+
+/**
+ * The edits a reader makes to one week's entry, as pure transforms. Each returns the same
+ * object when nothing changes, so the store writes nothing. The opponent's starters are always
+ * stored laid out on the league's current slot counts.
+ */
+
+type Layout = Readonly<Record<StarterGroup, number>>;
+
+function laid(entry: MatchupEntry, counts: Layout): Record<StarterGroup, (string | null)[]> {
+  return Object.fromEntries(
+    STARTER_GROUPS.map((group) => [group, Array.from({ length: counts[group] }, (_, index) => entry.opponent.starters[group][index] ?? null)]),
+  ) as Record<StarterGroup, (string | null)[]>;
+}
+
+function sameStarters(a: Starters, b: Starters): boolean {
+  return STARTER_GROUPS.every(
+    (group) => a[group].length === b[group].length && a[group].every((id, index) => id === b[group][index]),
+  );
+}
+
+function withoutKey(list: readonly string[], key: string): readonly string[] {
+  return list.includes(key) ? list.filter((item) => item !== key) : list;
+}
+
+/**
+ * Put a player into one of the opponent's starter slots. A player already in another of their
+ * starter slots swaps with the occupant when the occupant fits his old slot (`fits`), and leaves
+ * it empty otherwise; a player listed among their others moves out of that list. The slot stops
+ * being a confirmed empty one.
+ */
+export function assignOpponent(
+  entry: MatchupEntry,
+  counts: Layout,
+  slot: { readonly group: StarterGroup; readonly index: number },
+  id: string,
+  fits: (group: StarterGroup, playerId: string) => boolean,
+): MatchupEntry {
+  const starters = laid(entry, counts);
+  const target = starters[slot.group];
+  if (slot.index < 0 || slot.index >= target.length) return entry;
+  const occupant = target[slot.index] ?? null;
+  if (occupant === id) return entry;
+  for (const group of STARTER_GROUPS) {
+    const index = starters[group].indexOf(id);
+    if (index < 0) continue;
+    starters[group][index] = occupant !== null && fits(group, occupant) ? occupant : null;
+  }
+  target[slot.index] = id;
+  return {
+    ...entry,
+    opponent: { ...entry.opponent, starters, others: entry.opponent.others.filter((other) => other !== id) },
+    confirmedEmpty: { ...entry.confirmedEmpty, theirs: withoutKey(entry.confirmedEmpty.theirs, slotKeyOf(slot.group, slot.index)) },
+  };
+}
+
+/** Empty one opponent starter slot. */
+export function clearOpponentSlot(entry: MatchupEntry, counts: Layout, slot: { readonly group: StarterGroup; readonly index: number }): MatchupEntry {
+  const starters = laid(entry, counts);
+  if ((starters[slot.group][slot.index] ?? null) === null && sameStarters(starters, entry.opponent.starters)) return entry;
+  starters[slot.group][slot.index] = null;
+  return { ...entry, opponent: { ...entry.opponent, starters } };
+}
+
+/** Drop opponent starters the league's counts no longer have room for. */
+export function trimOpponent(entry: MatchupEntry, counts: Layout): MatchupEntry {
+  const starters = laid(entry, counts);
+  return sameStarters(starters, entry.opponent.starters) ? entry : { ...entry, opponent: { ...entry.opponent, starters } };
+}
+
+/** Remove a player from the opponent's entry entirely (starters or others). */
+export function removeOpponentPlayer(entry: MatchupEntry, id: string): MatchupEntry {
+  const inStarters = STARTER_GROUPS.some((group) => entry.opponent.starters[group].includes(id));
+  if (!inStarters && !entry.opponent.others.includes(id)) return entry;
+  const starters = Object.fromEntries(
+    STARTER_GROUPS.map((group) => [group, entry.opponent.starters[group].map((item) => (item === id ? null : item))]),
+  ) as unknown as Starters;
+  return { ...entry, opponent: { ...entry.opponent, starters, others: entry.opponent.others.filter((other) => other !== id) } };
+}
+
+/** Add one of the opponent's bench or IR players. Refused past the bound or when listed already. */
+export function addOpponentOther(entry: MatchupEntry, id: string): MatchupEntry {
+  if (opponentIds(entry).includes(id) || entry.opponent.others.length >= WMM_MAX_OTHERS) return entry;
+  return { ...entry, opponent: { ...entry.opponent, others: [...entry.opponent.others, id] } };
+}
+
+export function renameOpponent(entry: MatchupEntry, raw: string): MatchupEntry {
+  const name = cleanOpponentName(raw);
+  return name === entry.opponent.name ? entry : { ...entry, opponent: { ...entry.opponent, name } };
+}
+
+/** Confirm (or withdraw) an empty starter slot as scoring 0. */
+export function confirmEmpty(entry: MatchupEntry, side: Side, key: string, on: boolean): MatchupEntry {
+  const list = entry.confirmedEmpty[side];
+  if (on === list.includes(key)) return entry;
+  return { ...entry, confirmedEmpty: { ...entry.confirmedEmpty, [side]: on ? [...list, key] : list.filter((item) => item !== key) } };
+}
+
+/** Count (or stop counting) a player who is not playing as 0 when he is started. */
+export function countAsZero(entry: MatchupEntry, id: string, on: boolean): MatchupEntry {
+  if (on === entry.countZero.includes(id)) return entry;
+  return { ...entry, countZero: on ? [...entry.countZero, id] : entry.countZero.filter((item) => item !== id) };
+}
+
+/** Record (or clear, with null) a confirmed final score. Refused outside the bound. */
+export function setFinal(entry: MatchupEntry, id: string, points: number | null): MatchupEntry {
+  if (points === null) {
+    if (!(id in entry.finals)) return entry;
+    return { ...entry, finals: Object.fromEntries(Object.entries(entry.finals).filter(([key]) => key !== id)) };
+  }
+  const clean = cleanFinal(points);
+  if (clean === null || entry.finals[id] === clean) return entry;
+  if (!(id in entry.finals) && Object.keys(entry.finals).length >= WMM_MAX_FINALS) return entry;
+  return { ...entry, finals: { ...entry.finals, [id]: clean } };
+}
+
+/** Mark a potential pickup available or unavailable in the reader's league (null clears). */
+export function setMark(entry: MatchupEntry, id: string, mark: Mark | null): MatchupEntry {
+  const current = entry.marks[id] ?? null;
+  if (current === mark) return entry;
+  const rest = Object.fromEntries(Object.entries(entry.marks).filter(([key]) => key !== id));
+  if (mark === null) return { ...entry, marks: rest };
+  if (current === null && Object.keys(rest).length >= WMM_MAX_MARKS) return entry;
+  return { ...entry, marks: { ...rest, [id]: mark } };
+}

@@ -55,7 +55,7 @@ describe("parseState", () => {
   it("reads every supported parameter", () => {
     const parsed = parseState(
       "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&set=3&duel=00-0036389.00-0039164&margin=-12" +
-        "&give=00-0000001.00-0000013&goal=ceiling&get=2&range=35&comp=rb.wr&keep=00-0000002.00-0000011&shown=0.1.6.3.4&dealt=7&stamp=0a1b2c3d&ret=1&unavail=1",
+        "&give=00-0000001.00-0000013&goal=ceiling&get=2&range=35&comp=rb.wr&keep=00-0000002.00-0000011&shown=0.1.6.3.4&dealt=7&stamp=0a1b2c3d&ret=1&unavail=1&panel=wmm",
     );
     expect(parsed.state).toEqual({
       view: "arbitrage",
@@ -84,8 +84,18 @@ describe("parseState", () => {
       stamp: "0a1b2c3d",
       returning: true,
       unavailable: true,
+      panel: "wmm",
     });
     expect(parsed.normalized).toBe(true);
+  });
+
+  it("reads My Leagues' panel, omits the default, and normalizes anything else (ADR-110)", () => {
+    expect(parseState("?view=myleagues&panel=wmm").state.panel).toBe("wmm");
+    expect(serializeState({ ...DEFAULT_STATE, view: "myleagues", panel: "wmm" })).toBe("?view=myleagues&panel=wmm");
+    expect(serializeState({ ...DEFAULT_STATE, panel: "lineup" })).toBe("");
+    const odd = parseState("?panel=league-3");
+    expect(odd.state.panel).toBe("lineup");
+    expect(odd.normalized).toBe(false);
   });
 
   it("reads the availability flags only as `1`, and omits them when off (ADR-101)", () => {

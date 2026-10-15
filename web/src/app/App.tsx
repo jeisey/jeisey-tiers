@@ -35,8 +35,8 @@ import {
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
-import { requiredKeys, risingKeys, type DataStore, type SkillTreeSource } from "../data/store";
-import { activeLeagueSnapshot, subscribeActiveLeague } from "../data/leagueSignal";
+import { matchupYoloKeys, requiredKeys, risingKeys, type DataStore, type SkillTreeSource } from "../data/store";
+import { activeLeagueSnapshot, subscribeActiveLeague, subscribeYoloFiles, yoloFilesSnapshot } from "../data/leagueSignal";
 import { selectWeekBoard, startableFor, toggleDuel } from "../data/duel";
 import {
   IN_SEASON_VIEWS,
@@ -219,10 +219,19 @@ function SiteBoard({
   );
   // Rising Stars' files: fetched when the active league shows it, never gating the lineup.
   const risingOn = league?.rising === true;
-  const extraKeys = useMemo(
+  const risingExtra = useMemo(
     () => (risingOn ? risingKeys(store.manifest, leaguePreset, scoring).filter((key) => !viewKeys.includes(key)) : []),
     [store, risingOn, leaguePreset, scoring, viewKeys],
   );
+  // Win My Matchup's YOLO files (ADR-110): the Opportunity rows and the role series, fetched only
+  // while its panel is open with YOLO on, never gating the matchup.
+  const yoloPublished = useSyncExternalStore(subscribeYoloFiles, yoloFilesSnapshot, yoloFilesSnapshot);
+  const yoloOn = league !== null && yoloPublished;
+  const yoloExtra = useMemo(
+    () => (yoloOn ? matchupYoloKeys(store.manifest, leaguePreset, scoring).filter((key) => !viewKeys.includes(key)) : []),
+    [store, yoloOn, leaguePreset, scoring, viewKeys],
+  );
+  const extraKeys = useMemo(() => [...new Set([...risingExtra, ...yoloExtra])], [risingExtra, yoloExtra]);
   // A failure belongs to the keys it was for, so switching leagues never shows a stale one.
   const extraId = extraKeys.join(",");
   const [extraFailure, setExtraFailure] = useState<{ readonly id: string; readonly error: Error } | null>(null);
@@ -239,8 +248,10 @@ function SiteBoard({
     };
   }, [store, extraKeys]);
   const nameOf = useCallback((playerId: string) => store.nameFor(playerId), [store]);
-  const risingReady = risingOn && store.isLoaded(viewKeys) && store.isLoaded(extraKeys);
-  const risingBundle = risingReady ? store.inSeason([...viewKeys, ...extraKeys]) : null;
+  const risingReady = risingOn && store.isLoaded(viewKeys) && store.isLoaded(risingExtra);
+  const risingBundle = risingReady ? store.inSeason([...viewKeys, ...risingExtra]) : null;
+  const yoloReady = yoloOn && store.isLoaded(viewKeys) && store.isLoaded(yoloExtra);
+  const yoloBundle = yoloReady ? store.inSeason([...viewKeys, ...yoloExtra]) : null;
   const cardKeys = useMemo(
     () =>
       selectedPlayerId === null
@@ -290,7 +301,10 @@ function SiteBoard({
         loadedFor: { scoring: scoringValue, teams },
         risingBundle,
         risingRequested: risingOn,
-        risingFailure: extraFailure?.id === extraId ? extraFailure.error : null,
+        risingFailure: extraFailure?.id === extraId && risingOn ? extraFailure.error : null,
+        yoloBundle,
+        yoloRequested: yoloOn,
+        yoloFailure: extraFailure?.id === extraId && yoloOn ? extraFailure.error : null,
         nameOf,
       }}
       index={index}
@@ -323,6 +337,10 @@ interface LeagueViewInputs {
   readonly risingBundle: InSeasonBundle | null;
   readonly risingRequested: boolean;
   readonly risingFailure: Error | null;
+  /** The bundle with Win My Matchup's YOLO files, once they are loaded; null otherwise. */
+  readonly yoloBundle: InSeasonBundle | null;
+  readonly yoloRequested: boolean;
+  readonly yoloFailure: Error | null;
   readonly nameOf: (playerId: string) => string | null;
 }
 
@@ -806,6 +824,9 @@ function Board({
                     risingBundle={leagueView.risingBundle}
                     risingRequested={leagueView.risingRequested}
                     risingFailure={leagueView.risingFailure}
+                    yoloBundle={leagueView.yoloBundle}
+                    yoloRequested={leagueView.yoloRequested}
+                    yoloFailure={leagueView.yoloFailure}
                     state={state}
                     onChange={setState}
                     onSelect={onSelect}

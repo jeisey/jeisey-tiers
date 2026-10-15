@@ -473,7 +473,26 @@ describe("proposals on common random numbers", () => {
   it("the baseline's numbers do not move when proposals are evaluated beside it", () => {
     const alone = variant(simulateMatchup(one), 0);
     const beside = variant(simulateMatchup(many), 0);
-    expect(beside).toEqual(alone);
+    // Only the histogram's bins may widen to fit a detailed proposal; every number is the same.
+    expect({ ...beside, histogram: [] }).toEqual({ ...alone, histogram: [] });
+    expect(beside.histogram.reduce((sum, count) => sum + count, 0)).toBe(8192);
+    const quiet = variant(simulateMatchup({ ...many, variants: many.variants.map((item) => ({ ...item, detail: item.id === "base" })) }), 0);
+    expect(quiet).toEqual(alone);
+  });
+
+  it("bins fit every drawn lineup: a previewed proposal's tail is not piled into an edge bin", () => {
+    const boost = published("boost", [30, 35, 45, 60, 75, 90, 100], { position: "RB" });
+    const lifted: SimInput = {
+      ...one,
+      players: [...players, boost],
+      variants: [
+        { id: "base", slots: baseline, detail: true },
+        { id: "boost", slots: baseline.map((s, index) => (index === 2 ? slot("RB", players.length) : s)), detail: true },
+      ],
+    };
+    const result = simulateMatchup(lifted);
+    const top = required(variant(result, 1).histogram.at(-1), "last bin");
+    expect(top / 8192).toBeLessThan(0.02);
   });
 
   it("an identical lineup differs by exactly zero", () => {
