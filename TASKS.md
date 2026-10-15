@@ -2352,7 +2352,8 @@ The other is browser-only.
         draft rows keep their ids.
 - [x] **Measured effect** (A/B on the same cached frames).
       - Training rows: historical 4.5%, rest of season 4.2%, weekly 1.8%.
-      - Development evaluations, rest of season and weekly: ADR-108 Evidence.
+      - Development evaluations (rest of season, weekly, preseason stage B): thousandths, no
+        verdict changed (ADR-108 Evidence).
       - Published outputs: only D.J. Moore and his teammates move; tiers re-segment.
       - Skill Tree: cross-check now has 0 explained differences.
 - [x] **Decision.** No retrain. The committed models serve corrected inputs, and each card
@@ -2365,4 +2366,8 @@ The other is browser-only.
       - Registry known issue resolved; DATA_SOURCES §22; DATA_CONTRACTS §12.1.
       - EDA README; the `measure-skilltree.mjs` comment.
 - [x] **Validation**: see SESSION_STATE.
+- [ ] **Follow-up**, not part of this gate: the Phase-4 stage-B study re-run on today's
+      historical dataset selects `A1`, not the committed `CB`, under the old and new rule alike.
+      Only feature values differ from the 2026-08-19 dataset. Isolate the cause and decide what
+      it means for `intrinsic-cb-hurdle-v1` (ADR-108 Evidence).
 

@@ -13,8 +13,9 @@ merged). These are the two ADR-107 follow-ups.
   nflverse PFR ids passes unchanged, and everything else is still refused.
   * Measured A/B on the same cached frames. Training rows changed: historical 4.5%, rest of
     season 4.2%, weekly 1.8%. Snap-bridge coverage 0.9774 → 0.9980.
-  * Development folds: see ADR-108. Published outputs: only D.J. Moore and five Bears teammates
-    move, and tiers re-segment.
+  * Development folds, A against B: rest of season, weekly and the preseason stage-B study all
+    move by thousandths, and no verdict changes (ADR-108 table). Published outputs: only D.J.
+    Moore and five Bears teammates move, and tiers re-segment.
   * Decision: no retrain. The committed models serve the corrected inputs. Each card (and its
     generator) states the training-data gap, and ADR-077 is answered explicitly.
 * **ADR-109 (browser-only).** `PlayerDetail` drops a collapsed caret right after `showModal()`.
@@ -23,7 +24,7 @@ merged). These are the two ADR-107 follow-ups.
 
 **Next gate:** owner review of the PR. The `NGS_PUBLISHED` decision (ADR-107) is still open.
 
-Validation of this pass so far (local):
+Validation of this pass (local):
 
 ```
 uv run ruff check . ; uv run ruff format --check .   # clean
@@ -36,8 +37,21 @@ playwright --project=mobile mobile.spec.ts           # 23 passed (1 new; fails o
 measure-skilltree.mjs (4×, 1×; before = main 88709a2) # ADR-109 table; all targets met in all four runs
 A/B builds (build-historical, build-ros-dataset, build-weekly-dataset, build-current, build-ros)
 eda.py --check-artifact (build B)                    # 12,162 compared, 0 mismatches, 0 explained
-# pending: full pytest; evaluate-ros / evaluate-weekly A vs B; full e2e
+uv run pytest                                        # 2,030 passed (21 new; live deselected)
+npm run e2e                                          # 291 passed (chromium, mobile, a11y; 1 new)
+npm run e2e:size-model && verify:budget (gating)     # all met; first visit 327.0 kB, card +23.9, tree +16.5, switch +6.6 (unchanged)
+verify:board (in-season fixture)                     # 0 failures
+evaluate-ros / evaluate-weekly / evaluate-distribution, A vs B (development folds only)   # ADR-108 table
 ```
+
+* **Re-running the Phase-4 stage-B study on today's data selects `A1`, not `CB`**, on both
+  rules alike. Seed, rules, feature set, labels and row counts are identical; only
+  `features.parquet` values differ from the 2026-08-19 dataset. The cause (nflverse revisions or
+  builder changes since `4e2fb4b`) is not isolated. Recorded in ADR-108 as a separate
+  investigation; the production model is still `intrinsic-cb-hurdle-v1`.
+* **Long CPU jobs here:** `evaluate-ros` takes about 25 min alone (RC1 pins LightGBM to 4
+  threads), and two concurrent LightGBM jobs on 4 cores spin-wait each other to a crawl. Run them
+  one at a time, detached (`setsid nohup`), because a background task is stopped at 2 h.
 
 **The Skill Tree — 2026-10-14 (ADR-107, PRD CR-029).** On `claude/brave-einstein-tjmbj8` from
 `main` at `f207378` (PR #64 merged). A descriptive in-season card section: each QB/RB/WR/TE's

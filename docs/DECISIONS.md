@@ -7221,8 +7221,46 @@ Snap-count bridge coverage in the historical quality report: 0.9774 → **0.9980
 **Development evaluation** (rolling-origin development folds only; the sealed season is not
 touched).
 
-*Pending:* `evaluate-ros` and `evaluate-weekly` re-run on the development folds, A against
-B; the result is recorded here when the runs complete.
+Same seeds, rules and code on both sides; only the datasets differ.
+
+| | A (old rule) | B (new rule) |
+|---|---:|---:|
+| rest of season, `RC1` macro MAE | 9.862 | 9.851 |
+| `RC1` macro pinball | 3.635 | 3.632 |
+| `RC1` macro Spearman | 0.797 | 0.798 |
+| `RC1` P10–P90 coverage · width | 0.869 · 32.5 | 0.868 · 32.2 |
+| `RC1` − `R2` pinball, 95% CI | −0.8089 [−0.8326, −0.7865] | −0.8119 [−0.8361, −0.7900] |
+| `high_capital_rookie` coverage (tightest v2 clause; attainable 0.898) | 0.766 | 0.763 |
+| `ros_promotion_v2` | promoted | promoted |
+| weekly, WC1 pinball | 1.1086 | 1.1062 |
+| WC1 pair accuracy (lead over B2, bootstrap CI) | 0.6590 (+0.0228 [0.0188, 0.0269]) | 0.6594 (+0.0232 [0.0191, 0.0274]) |
+| `weekly_promotion_v1` | pass, 6 of 6 | pass, 6 of 6 |
+| preseason, `CB` macro MAE · pinball · Spearman | 21.980 · 8.148 · 0.749 | 21.993 · 8.151 · 0.749 |
+| `CB` P10–P90 coverage | 0.803 | 0.800 |
+| Phase-4 stage-B verdicts | identical | identical |
+
+* **Rest of season and weekly.** A reproduces the committed reports. In Phase 11, three `RC1`
+  columns differ in the last printed digit (top-K 0.558 against 0.557, P25–P75 coverage
+  0.714 against 0.715, width 32.5 against 32.6), from nflverse revisions since. Weekly
+  reproduces exactly on pinball and MAE. B moves every headline metric by thousandths, each in the
+  improving direction, and changes no verdict. B's `high_capital_rookie` coverage, 0.763, is the
+  committed value exactly, so the clause keeps its published 0.015 of headroom. The
+  rest-of-season baselines are identical on A and B. The weekly baselines move too, because B
+  scores 342 more rows (the snap-only appearances).
+* **Preseason** (`evaluate-distribution`, the Phase-4 stage-B study). A and B reach the same
+  verdict on every rule, and `CB` moves by thousandths (pinball +0.003, MAE +0.013).
+  * *Both sides differ from the committed Phase-4 report, for a reason this change did not
+    introduce.* On today's historical dataset the frozen rules select `A1`: calibration is
+    decisive, and `CB`'s pinball lead is no longer decisive. The 2026-08-19 run selected `CB`.
+  * Seed, rules, feature set, configuration, row counts, anchors and labels are all identical.
+    Only the feature *values* differ, since `features.parquet`'s content hash has changed
+    since `4e2fb4b`.
+  * Whether that is nflverse revisions or builder changes is not isolated here. It is recorded
+    as a separate investigation. It does not bear on this rule: the old and new rules agree.
+
+This is the evidence for decision 2. The corrected data do not move any evaluated architecture
+by more than its own noise, and no gate verdict changes. A refit would therefore buy no
+measured accuracy to set against a mid-season change to every published value.
 
 **Published outputs** (`build-current` and `build-ros`; both `build-ros` runs read the same live
 preseason board, so the in-season comparison isolates the in-season layer).
