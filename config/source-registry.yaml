@@ -275,6 +275,11 @@ sources:
           ffdraft.identity.normalize_id refuses them as malformed, so those snap rows never
           bridge. The Skill Tree publishes his snap share as not covered (never zero); the
           shared rule also feeds model features, so widening it is a separate, measured change.
+          RESOLVED 2026-10-15 (ADR-108): PFR keeps a name's punctuation (". ' - _", never
+          first or last) in 232 player-master ids; the rule now accepts every observed id and
+          still refuses anything else. Historical snap-bridge coverage 0.9774 -> 0.9980. The
+          committed models serve the corrected inputs without a retrain; each card records the
+          training-data gap.
       - id: depth_chart_schema_break_2025
         detail: >-
           Pre-2025 depth charts are weekly rows (season/club_code/week/depth_team/

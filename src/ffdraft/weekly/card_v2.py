@@ -190,6 +190,12 @@ def _limitations(families: tuple[str, ...]) -> list[str]:
             "or Open-Meteo, whose error differs. Precipitation's mapping rests on 18 wet games.",
             "Retractable-roof and unverified venues carry no weather at training or serving.",
         ]
+    notes.append(
+        "Its development rows inherit weekly-startsit-v1's identity gap (ADR-108): "
+        "until 2026-10-15, 1.8% of 2017-2025 weekly rows were absent or had missing "
+        "snap features. v1 and v2 read the same corrected inputs from then on, so the "
+        "prospective comparison stays paired."
+    )
     return notes
 
 

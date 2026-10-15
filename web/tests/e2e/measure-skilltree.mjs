@@ -18,9 +18,10 @@
  * Targets: every interaction's latency within 200 ms (a "good" INP) or, if the card's own tabs
  * already exceed that on this profile, no slower than the slowest of their (non-first) switches
  * in the same run. A switch's activation
- * is the first tap in a freshly opened card, which costs far more than any later tap whichever
- * tab it lands on (measured, not the tree's), so it is held to the first tap on one of the
- * card's own tabs, and its time to tree (median) to that first tap plus 500 ms for the tree's own
+ * is the first tap in a freshly opened card. That tap used to cost far more than any later one,
+ * whichever tab it hit, until ADR-109 dropped the opening tap's stale caret. It is still held to
+ * the like-for-like first tap on one of the card's own tabs, and its time to tree (median) to that
+ * first tap plus 500 ms for the tree's own
  * fetch, decode and render. Time to tree 1,500 ms cold and 500 ms for a repeat; heap growth under
  * 1 MB across cycles.
  *

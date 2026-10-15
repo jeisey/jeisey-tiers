@@ -296,6 +296,7 @@ For context, the same model scored MAE 21.907 and pinball 8.080 on the developme
 - **Pre-2025 team and depth context is mostly unobservable.** Free agency and trades leave no timestamped preseason trace before the snapshot era, so `team_at_anchor` and `depth_rank_at_anchor` are excluded from the feature set entirely (ADR-026).
 - **Current status is metadata, not signal.** Today's roster status and team annotate a published row and can remove a retired player from the board, but they never enter a prediction: they have no development-era support and could not be validated.
 - **The copula parameter describes active players.** Points per game is undefined for a player who never appears, so the availability/performance dependence is estimated on players who played and extrapolated to those who did not.
+- **Its training rows carry an identity gap (ADR-108).** Until 2026-10-15 a PFR id that keeps a name's punctuation (`MoorD.00`) was refused, so 520 of 11,604 2014-2025 rows (4.5%) were built with a missing prior-season snap share (148), missing combine measurements (134) or a shifted prior-season role rank (489); 12 of them are in the 2025 final holdout, which is not re-scored. The served model receives the corrected values, and its next production refit trains on them.
 
 ## Fairness and coverage
 

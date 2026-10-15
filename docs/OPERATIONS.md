@@ -1520,7 +1520,9 @@ and that a redeploy which renames a player is shown at once to a reader holding 
   the baseline. Targets: every tap within 200 ms or the card's own slowest tab switch; a fresh
   card's first tap within 1.25× the same first tap on one of the card's own tabs; time to tree
   1.5 s cold, 0.5 s repeat, and a switch within that first tap plus 0.5 s; heap growth < 1 MB.
-  ADR-107 records the measurements.
+  ADR-107 records the measurements. ADR-109 removed the fresh card's first-tap long task (the
+  opening tap's stale caret), so a first tap now costs what any tap costs. A first tap that
+  slows back towards 0.6 s at 4× means a stray caret has returned.
 
 ### 17.4 Bandwidth arithmetic (re-do it when the numbers move)
 

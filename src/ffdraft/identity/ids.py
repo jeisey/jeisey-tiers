@@ -61,7 +61,15 @@ REGISTRY_NAMESPACES: tuple[IdNamespace, ...] = (
 _GSIS_RE = re.compile(r"^00-\d{7}$")
 _NUMERIC_RE = re.compile(r"^\d{1,12}$")
 _TEAM_CODE_RE = re.compile(r"^[A-Z]{2,4}$")
-_PFR_RE = re.compile(r"^[A-Za-z0-9]{4,12}$")
+#: Pro Football Reference ids: eight characters for a player (four of the surname, two of the
+#: given name, two digits), and PFR keeps a name's own punctuation in them — ``MoorD.00`` (D.J.
+#: Moore), ``St.BEq00`` (St. Brown), ``O'ShJa00``, ``Ya-SRo00``, ``Cox_Mi20``. Measured
+#: 2026-10-15 over every nflverse PFR id (player master, rosters and snap counts 2012-2026,
+#: draft picks, combine): the only characters besides letters and digits are ``. ' - _``, and
+#: never first or last (ADR-108). The old letters-and-digits rule refused 232 player-master ids,
+#: D.J. Moore among them. Punctuation stays inside the id, and an id needs a letter, so a
+#: float rendered as text ("12.0") or a bare number is still refused.
+_PFR_RE = re.compile(r"^(?=[^A-Za-z]*[A-Za-z])[A-Za-z0-9][A-Za-z0-9.'_-]{2,10}[A-Za-z0-9]$")
 _TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{3,63}$")
 
 # Values some upstreams use to mean "absent". Treating them as ids would create a single

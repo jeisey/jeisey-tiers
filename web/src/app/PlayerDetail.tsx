@@ -136,6 +136,20 @@ const SkillTree = lazy(() => import("./SkillTree"));
 
 const SKILL_TREE_POSITIONS: ReadonlySet<string> = new Set(["QB", "RB", "WR", "TE"]);
 
+/**
+ * Forget the collapsed caret the opening tap or click left in the document.
+ *
+ * A tap places a caret at the point it lands. With the card open over a board of tens of
+ * thousands of nodes, the browser re-canonicalises that stale caret on the reader's *first* tap
+ * inside the card, walking the document for a valid position: measured at about 400 ms of a
+ * single long task on a 4× throttled phone (a later tap costs none of it). The caret has no
+ * meaning for a reader, so it is dropped; a real text selection (a range) is never touched.
+ */
+function dropStrayCaret(): void {
+  const selection = typeof window.getSelection === "function" ? window.getSelection() : null;
+  if (selection !== null && selection.type === "Caret") selection.removeAllRanges();
+}
+
 /** The stylesheet's sheet breakpoint. Keep in step with `base.css`. */
 const SHEET_QUERY = "(max-width: 767px)";
 
@@ -1261,6 +1275,7 @@ export function PlayerDetail({
       // `showModal` gives focus trapping, Escape-to-close and inert background for free, which
       // is a great deal more correct than any hand-rolled overlay.
       dialog.showModal();
+      dropStrayCaret();
     }
     if (data === null && dialog.open) dialog.close();
   }, [data]);

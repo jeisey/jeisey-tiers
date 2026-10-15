@@ -99,3 +99,48 @@ def test_a_bare_id_is_not_a_canonical_key():
 def test_external_ids_containing_the_separator_are_refused():
     with pytest.raises(ValueError, match="must not contain"):
         make_player_id(IdNamespace.ESPN, "43:626")
+
+
+# ADR-108. Every PFR id nflverse publishes (23,161 distinct across the player master, rosters,
+# snap counts, draft picks and combine, measured 2026-10-15) is letters and digits plus PFR's own
+# copy of a name's punctuation. Each case below is a real id the old letters-and-digits rule
+# refused, which silently dropped that player's snap counts, combine and bridged draft rows.
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "MoorD.00",  # D.J. Moore: initials
+        "St.BEq00",  # Equanimeous St. Brown: an abbreviated surname
+        "O'ShJa00",  # James O'Shaughnessy: an apostrophe
+        "ReedD'00",  # D'Aundre Reed: an apostrophe in the given name
+        "Ya-SRo00",  # Rock Ya-Sin: a hyphen
+        "TrulR-20",  # R-Kal Truluck: a hyphen in the given name
+        "Cox_Mi20",  # Mike Cox: a three-letter surname padded with an underscore
+        "MoorDJ00",  # the plain shape stays valid
+        "abbotvin01",  # nflverse's ten-character form stays valid
+        "MichJ00",  # and the seven-character one
+    ],
+)
+def test_real_pfr_ids_with_name_punctuation_are_accepted(raw):
+    result = normalize_id(IdNamespace.PFR, raw)
+    assert result.value == raw
+    assert result.quality_flags == ()
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        ".MoorD00",  # punctuation never starts an id
+        "MoorD00.",  # or ends one
+        "12.0",  # a float rendered as text is not an id
+        "1234",  # and an id has a letter
+        "Moor D00",  # whitespace inside
+        "Moor:D00",  # the canonical separator
+        "Moor/D00",  # characters PFR never uses
+        "MoorD.0000000",  # too long (13 characters)
+        "Mo",  # too short
+    ],
+)
+def test_malformed_pfr_ids_still_fail_closed(raw):
+    result = normalize_id(IdNamespace.PFR, raw)
+    assert result.value is None
+    assert result.reason == "malformed_pfr_id"

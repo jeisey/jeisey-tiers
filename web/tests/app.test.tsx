@@ -802,6 +802,42 @@ describe("player card variants", () => {
     return screen.getByRole("dialog");
   }
 
+  /*
+   * The tap or click that opens a card leaves a collapsed caret in the document, and on a large
+   * board the browser spends hundreds of milliseconds re-canonicalising it on the first tap
+   * inside the card (measured on a throttled phone, ADR-109). Opening drops that caret; a real
+   * text selection the reader made is a range and is left alone.
+   */
+  it("drops the stray caret the opening tap left, and keeps a real text selection", async () => {
+    render(<App now={FIXTURE_NOW} />);
+    await boardReady();
+    const button = screen.getByRole("button", { name: "Amon-Ra Bright" });
+    const selection = window.getSelection();
+    if (selection === null) throw new Error("jsdom has no Selection");
+    selection.collapse(button, 0);
+    expect(selection.type).toBe("Caret");
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Amon-Ra Bright" })).toBeDefined();
+    });
+    expect(selection.rangeCount).toBe(0);
+
+    cleanup();
+    render(<App now={FIXTURE_NOW} />);
+    await boardReady();
+    const again = screen.getByRole("button", { name: "Amon-Ra Bright" });
+    const heading = screen.getAllByRole("heading")[0];
+    if (heading === undefined) throw new Error("no heading to select");
+    selection.selectAllChildren(heading);
+    expect(selection.type).toBe("Range");
+    fireEvent.click(again);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Amon-Ra Bright" })).toBeDefined();
+    });
+    expect(selection.type).toBe("Range");
+    expect(selection.rangeCount).toBe(1);
+  });
+
   it("renders every section at once above the sheet breakpoint, with no tab list", async () => {
     const dialog = await openCard("Amon-Ra Bright");
     expect(within(dialog).queryByRole("tablist")).toBeNull();

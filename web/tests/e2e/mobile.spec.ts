@@ -26,6 +26,22 @@ test.beforeEach(async ({ page }) => {
 });
 
 
+/*
+ * ADR-109. The tap that opens a card leaves a collapsed caret in the document; on the in-season
+ * board the browser then spent ~400 ms (4x CPU) re-canonicalising it on the first tap inside
+ * the card. The card drops that caret as it opens, so the first tab tap is as quick as the rest.
+ */
+test("opening a card by tap leaves no stray caret behind", async ({ page }) => {
+  await page.goto(`${IN_SEASON}?view=ros`);
+  const row = page.locator(".board-row[data-player]").first();
+  await row.tap();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("tablist")).toBeVisible();
+  expect(await page.evaluate(() => window.getSelection()?.type ?? "None")).not.toBe("Caret");
+  await dialog.getByRole("tab", { name: "Current status" }).tap();
+  await expect(dialog.getByRole("tab", { name: "Current status" })).toHaveAttribute("aria-selected", "true");
+});
+
 test("the whole product is usable on a phone without hover", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Tier board" })).toBeVisible();

@@ -252,6 +252,9 @@ column, and combine readings against the combine file's forty and year. Result
   refuses because of the period, so production cannot link them. Production's reading
   ("unknown, not zero") is the honest one. Widening the shared rule changes model inputs, so it
   is tracked separately (registry `known_issues.pfr_id_with_period_refused`).
+  *Resolved by ADR-108 (2026-10-15).* With the widened rule, a fresh week-5 build re-checks
+  12,162 readings with 0 mismatches and 0 explained differences. The committed
+  `artifact_check.json` stays as the 2026-10-14 record.
 
 The first run also caught the check's own assumption: published samples are rounded to three
 places. The check now compares at that precision.
