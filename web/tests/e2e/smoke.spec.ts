@@ -84,7 +84,9 @@ test.describe("primary flows", () => {
   test("search narrows the table", async ({ page }) => {
     await page.goto("/");
     await ready(page);
-    await page.getByLabel("Player search").fill("burrow");
+    await page.getByRole("button", { name: /^Search players/ }).click();
+    await page.getByRole("combobox", { name: /Search players on/ }).fill("burrow");
+    await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/search=burrow/);
     const table = page.getByRole("table", { name: /Intrinsic tier board/ });
     await expect(table.getByRole("row")).toHaveCount(2);

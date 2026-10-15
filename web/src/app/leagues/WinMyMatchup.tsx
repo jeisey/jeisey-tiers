@@ -54,7 +54,7 @@ import { selectYolo, yoloProposal, type YoloCandidate } from "../../data/yolo";
 import { MatchupLineups, FinalsEditor, type LineupReaders } from "./MatchupLineups";
 import { GroupTable, Headline, MarginChart, Totals } from "./MatchupResults";
 import { NormalChanges, YoloPanel, movesText, variantFor, type EvaluatedChange } from "./MatchupChanges";
-import { Modal } from "./Modal";
+import { Modal } from "../../components/Modal";
 import { WmmStoreContext } from "./wmmContext";
 import { points } from "./shared";
 

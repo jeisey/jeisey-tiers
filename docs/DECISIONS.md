@@ -4722,6 +4722,7 @@ Opportunity view.
 - **`/`** focuses the search box even when it is folded: `focus()` on an element that is not
   rendered is a silent no-op, so the shortcut asks the shell to open the panel synchronously
   (`flushSync`) first. Only when the box has no layout box — on a desktop nothing changes.
+  *Amended by ADR-111:* the search is a dialog, and `/` opens it without unfolding the panel.
 - **A short screen.** A sticky block taller than the viewport cannot be scrolled to, so the open
   settings panel is capped at `100dvh − 7rem` and scrolls inside itself (568×320, a small phone
   held sideways, is below the breakpoint and shorter than the open panel).
@@ -7766,3 +7767,99 @@ and "Best of 0 evaluated lineups" wording defects, both fixed.
 * Regenerate development-fold out-of-fold weekly predictions, so a team-aggregation calibration
   diagnostic becomes possible (§10).
 
+
+## ADR-111 — One player search in a dialog, Start/Sit's empty cards as add buttons, and a compact phone card header
+
+**Status:** accepted, 2026-10-15. **Amends:** ADR-093 decision 4 (`/` and Escape), ADR-096 §6A.11
+(the deck's empty slots), the Phase 9A sheet (the verdict row on a phone). **Relies on:** ADR-106
+(the dialog shell and the shared combobox), ADR-109 (the dropped caret).
+
+A frontend usability pass. No model, value, artifact, contract, URL parameter, saved league or
+Win My Matchup document changed.
+
+### Context
+
+* **Search.** The control strip's search was an inline box. It pushed to the URL on a 220 ms
+  debounce, so the board behind it re-filtered while a reader typed, and a pause mid-name
+  applied a half-typed query. It offered no list of players, so a reader could not tell two
+  namesakes apart or see that a position filter was hiding the one they meant. On a phone it was
+  inside the folded settings panel. My Leagues already had the pattern the owner preferred: a
+  dialog with the query and its results together (ADR-106).
+* **Start/Sit.** The A–D placeholders were inert. The only way to add a player was the week
+  board's + button, below the fold on a phone.
+* **The card on a phone.** Everything above the tabs — portrait, rank chips, rank sentence, hero
+  rank, verdict row — took 288 px of a 390 px-wide screen and 352 px at 320 px. On a 390×560
+  screen the tab's own panel was 134 px tall.
+
+### Decision
+
+1. **One search component.** `components/PlayerPickerDialog.tsx` is the shared `Modal` (moved to
+   `components/`, its rules moved from `leagues.css` to `base.css`) around the shared
+   `PlayerCombobox`, extended with `persistent` (results stay on screen), `autoActive`,
+   `onSubmit` (Enter with nothing highlighted), `initialQuery` and disabled options. My Leagues,
+   Win My Matchup and Trade keep their pickers as they were; the board search and Start/Sit's
+   picker are the same component.
+2. **The board search is a dialog.** A **Search players** trigger replaces the box, on the five
+   boards a search filters (not on Trade, POTW, Data or My Leagues, where it filtered nothing).
+   * The pool is the open board's rows for the reader's preset, already loaded
+     (`data/boardSearch.ts`); no request is made and no other preset is loaded.
+   * Results use the boards' own `matchesSearch`, so the dialog's count is the board's count
+     (`data/playerSearch.ts`): names starting with the query first, then the board's order.
+   * Choosing a player resolves him by canonical id and applies his name as `search`. A position
+     filter (or an Opportunity *Show only* filter) that would hide him is cleared and the change
+     is stated on the board; nothing else changes. Enter with nothing highlighted, or *Show all N
+     matches*, applies the query as typed.
+   * One `pushState` per applied search; cancel, close, backdrop and Escape apply nothing.
+   * The applied search is shown above the board with *Change* and *Clear search*.
+   * `/` opens the dialog (no longer unfolds the phone panel to focus a box), never in a form
+     control, an editable element or while any dialog is open.
+3. **Empty deck cards are buttons** that open the same dialog over this week's projections. A
+   choice is appended once (`addToDuel`, which never removes). Players already chosen, or with no
+   distribution this week, are listed with the reason and cannot be chosen. A comparison whose
+   last places are held by ids this build has no projection for disables the card and offers
+   *Remove it/them from the link*. Below 768 px with two players chosen, the empty card is a
+   44 px full-width row rather than hidden.
+4. **The card's header on a phone opens compact.** Name, position, club, a status worth stating,
+   close, and *Expand details*. The rest of the rail is behind the toggle, capped at half the
+   screen when open. The choice persists across tabs and players and resets on close. The sheet
+   is full height on a phone, as artboard 1b specified, so the tabs do not move between tabs.
+   Above 767 px nothing changes.
+
+### Alternatives considered
+
+* **Keep the inline box and add a dropdown.** Rejected: the board still re-renders per
+  keystroke, and a dropdown under a box inside a folded phone panel is the finicky interaction
+  being replaced.
+* **A new `player=` URL parameter** so a choice names exactly one player. Rejected for this pass:
+  it changes the public URL contract, and a name search already reveals the player; a namesake
+  whose name contains his stays visible beside him, which the page does not hide.
+* **Lazy-load the dialog.** Rejected: it costs a loading flash on the most frequent action for
+  3.8 kB, and every budget has room.
+* **Keep the verdict row on the compact phone header.** Rejected by the owner's brief: the
+  compact header is a couple of rows, and the verdict is one tap away beside the tabs.
+
+### Evidence
+
+Captures (`docs/visual-qa/2026-10-15-search-and-header/`, in-season fixture, Puka Nightingale's
+card):
+
+| viewport | header before → compact | tab panel before → compact |
+|---|---:|---:|
+| 390×844 | 288 → 81 px | 401 → 617 px |
+| 390×560 | 288 → 81 px | 134 → 345 px |
+| 320×640 | 352 → 81 px | 147 → 422 px |
+| 820×1180 (tablet), 1440×900 | unchanged (209 px, 766 px rail) | unchanged |
+
+No horizontal overflow at any capture, and no console error.
+
+Payload budgets on the size model (`verify:budget`, all met): first visit 327.4 → 331.2 kB of
+450 (the dialog and combobox now in the entry bundle; data unchanged at 76.0 of 150); Start/Sit
++56.4 of 60; My Leagues +70.5 of 80; card +23.9 of 30; Skill Tree +16.5 of 25; Win My Matchup
++26.3 of 30; cold My Leagues 401.7 of 450.
+
+### Consequences
+
+* The search no longer has a debounce; nothing reaches the URL until a choice or an apply.
+* Tests that typed into the old box now drive the dialog. New: `player-search.test.ts`, the
+  ADR-111 blocks in `controls.test.tsx`, `app.test.tsx`, `startsit-view.test.tsx` and
+  `skilltree.test.tsx`; Playwright `search.spec.ts` and the header block in `mobile.spec.ts`.

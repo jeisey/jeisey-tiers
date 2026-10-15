@@ -14,13 +14,6 @@
   --lg-label: 3.25rem;
 }
 
-.lg-help {
-  font-size: 0.75rem;
-  line-height: 1.5;
-  color: var(--ink-muted);
-  max-width: 80ch;
-}
-
 .lg-muted {
   color: var(--ink-faint);
 }
@@ -650,73 +643,11 @@
   color: var(--ink-faint);
 }
 
-/* ---------------------------------------------------------------------------- dialogs */
-
-dialog.lg-dialog {
-  border: none;
-  padding: 0;
-  background: transparent;
-  color: var(--ink);
-  width: min(38rem, calc(100vw - 2rem));
-  max-height: calc(100vh - 2rem);
-  max-height: calc(100dvh - 2rem);
-  overflow: visible;
-}
-
-dialog.lg-dialog[data-wide] {
-  width: min(46rem, calc(100vw - 2rem));
-}
-
-dialog.lg-dialog::backdrop {
-  background: rgb(2 6 12 / 78%);
-}
-
-.lg-dialog-card {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  max-height: inherit;
-  border: var(--hairline) solid var(--line-bright);
-  background: var(--panel-raised);
-  box-shadow: var(--shadow-pop);
-}
-
-.lg-dialog-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-  border-bottom: var(--hairline) solid var(--line);
-}
-
-.lg-dialog-head h2 {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.lg-dialog-close {
-  appearance: none;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border: none;
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: 1.4rem;
-  cursor: pointer;
-}
-
-.lg-dialog-close:hover {
-  color: var(--accent-bright);
-}
-
-.lg-dialog-body {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  overflow: auto;
-  min-height: 0;
-}
+/* ---------------------------------------------------------------------------- dialogs
+ *
+ * The dialog shell itself (`components/Modal.tsx`) is styled in base.css since ADR-111: the
+ * board search and Start/Sit's picker use it outside this tab.
+ */
 
 .lg-slot-summary {
   display: flex;
@@ -739,16 +670,6 @@ dialog.lg-dialog::backdrop {
 .lg-move {
   display: grid;
   gap: var(--space-2);
-}
-
-.lg-picker {
-  max-width: none;
-}
-
-.lg-picker .trade-options {
-  position: static;
-  margin-top: 2px;
-  box-shadow: none;
 }
 
 .lg-destinations {
@@ -1013,10 +934,6 @@ dialog.lg-dialog::backdrop {
 
   .lg-auto,
   .lg-need {
-    padding: var(--space-3);
-  }
-
-  .lg-dialog-body {
     padding: var(--space-3);
   }
 

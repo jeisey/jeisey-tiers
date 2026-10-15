@@ -17,10 +17,10 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { flushSync } from "react-dom";
-
 
 import { AvailabilityContext, PanelToggle } from "../components/primitives";
+import { PlayerPickerDialog } from "../components/PlayerPickerDialog";
+import { boardName, boardSearchPool, chooseSearchPlayer, searchApplies } from "../data/boardSearch";
 import { CriticalArtifactError, openSite, type Degradation } from "../data/bundle";
 import { selectOpportunityCandidates, signalTeam } from "../data/candidates";
 import { easternIsoDate } from "../data/format";
@@ -37,7 +37,7 @@ import {
 import { buildUsageCohort } from "../data/signals";
 import { matchupYoloKeys, requiredKeys, risingKeys, type DataStore, type SkillTreeSource } from "../data/store";
 import { activeLeagueSnapshot, subscribeActiveLeague, subscribeYoloFiles, yoloFilesSnapshot } from "../data/leagueSignal";
-import { selectWeekBoard, startableFor, toggleDuel } from "../data/duel";
+import { addToDuel, selectWeekBoard, startableFor } from "../data/duel";
 import {
   IN_SEASON_VIEWS,
   SCORING_LABELS,
@@ -448,14 +448,8 @@ function Board({
   const toggleSettings = useCallback(() => {
     setSettingsOpen((open) => !open);
   }, []);
-  // Synchronous, so the `/` shortcut can focus the search box in the same keystroke.
-  const revealSearch = useCallback(() => {
-    flushSync(() => {
-      setSettingsOpen(true);
-    });
-  }, []);
   // Escape closes the panel and returns focus to the row that opened it — but only where
-  // there is a panel to close. A search box with text uses its own Escape to clear first.
+  // there is a panel to close.
   const onSettingsKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key !== "Escape" || event.isDefaultPrevented() || !settingsOpen) return;
@@ -467,6 +461,67 @@ function Board({
     },
     [settingsOpen],
   );
+
+  /*
+    The board search (ADR-111): a dialog over the open board's rows. Whether it is open is
+    chrome, not board state, so it is not in the URL; what it applies is. The note says what
+    else a choice changed (a filter that would have hidden him), for as long as that search is
+    the one applied — back, forward or a new search retire it.
+  */
+  const searchable = searchApplies(view, inSeason);
+  const [searchOpen, setSearchOpen] = useState(false);
+  // A view with no search (reached by Back while the dialog was open) closes it for good, so it
+  // never reappears on a later return.
+  if (searchOpen && !searchable) setSearchOpen(false);
+  const [searchNote, setSearchNote] = useState<{ readonly search: string; readonly text: string } | null>(null);
+  const searchTrigger = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+  }, []);
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+  }, []);
+  const clearSearch = useCallback(() => {
+    setState({ search: "" });
+    // The Clear button goes with the search; focus goes to the trigger, or — when the trigger
+    // is folded away on a phone and cannot take it — to the board.
+    const trigger = searchTrigger.current;
+    trigger?.focus();
+    if (trigger === null || document.activeElement !== trigger) panel.current?.focus({ preventScroll: true });
+  }, [setState]);
+
+  /**
+   * `/` opens the search — the shortcut the trigger's key hint advertises. It is ignored
+   * whenever the keystroke could be text (any modifier, any form control, any editable
+   * element) and whenever a dialog is already open, so a reader typing in a card, a league
+   * editor or the search itself never loses the character, and dialogs never stack.
+   */
+  useEffect(() => {
+    if (!searchable) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) return;
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLSelectElement ||
+        (active instanceof HTMLElement && active.isContentEditable) ||
+        document.querySelector("dialog[open]") !== null
+      ) {
+        return;
+      }
+      event.preventDefault();
+      // Focus the trigger first, so the dialog hands focus back to it on close. A trigger
+      // folded into the phone's settings panel cannot take focus, and focus stays where it was.
+      searchTrigger.current?.focus();
+      setSearchOpen(true);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [searchable]);
 
   /**
    * The row count beside the navigation, from the design source.
@@ -642,7 +697,7 @@ function Board({
     (playerId: string) => {
       setState({
         view: "startsit",
-        duel: state.duel.includes(playerId) ? state.duel : toggleDuel(state.duel, playerId),
+        duel: addToDuel(state.duel, playerId),
       });
       onCloseDetail();
     },
@@ -693,7 +748,11 @@ function Board({
               onChange={setState}
               availableScoring={availableScoring}
               availableTeams={availableTeams}
-              onRevealSearch={revealSearch}
+              search={
+                searchable
+                  ? { value: state.search, onOpen: openSearch, triggerRef: searchTrigger }
+                  : undefined
+              }
               league={view === "myleagues" ? leagueView.name : null}
             />
           </div>
@@ -716,11 +775,20 @@ function Board({
             />
           )}
           <div
+            ref={panel}
             role="tabpanel"
             id={`panel-${view}`}
             aria-labelledby={`tab-${view}`}
             tabIndex={-1}
           >
+            {searchable && panelReady && state.search !== "" && (
+              <ActiveSearch
+                search={state.search}
+                note={searchNote?.search === state.search ? searchNote.text : null}
+                onChange={openSearch}
+                onClear={clearSearch}
+              />
+            )}
             <AvailabilityContext.Provider
               value={inSeason !== null && IN_SEASON_VIEWS.includes(view) ? availabilityReader : null}
             >
@@ -884,6 +952,22 @@ function Board({
         </footer>
       </div>
 
+      {searchOpen && searchable && (
+        <BoardSearchDialog
+          view={view}
+          index={index}
+          inSeason={inSeason}
+          state={state}
+          ready={panelReady}
+          onClose={closeSearch}
+          onApply={(patch, note) => {
+            setSearchNote(note === null || patch.search === undefined ? null : { search: patch.search, text: note });
+            setState(patch);
+            setSearchOpen(false);
+          }}
+        />
+      )}
+
       <PlayerDetail
         data={detail}
         onClose={onCloseDetail}
@@ -892,6 +976,87 @@ function Board({
         skillTree={skillTree}
       />
     </>
+  );
+}
+
+/**
+ * The board search's dialog (ADR-111). Its pool is built when it opens, from the rows the open
+ * board already holds; until they have loaded it says so rather than listing nothing.
+ */
+function BoardSearchDialog({
+  view,
+  index,
+  inSeason,
+  state,
+  ready,
+  onClose,
+  onApply,
+}: {
+  readonly view: ReturnType<typeof resolveView>;
+  readonly index: ArtifactIndex;
+  readonly inSeason: InSeasonBundle | null;
+  readonly state: ReturnType<typeof useAppState>["state"];
+  readonly ready: boolean;
+  readonly onClose: () => void;
+  readonly onApply: (patch: Partial<ReturnType<typeof useAppState>["state"]>, note: string | null) => void;
+}): React.JSX.Element {
+  const { teams, scoring } = state;
+  const pool = useMemo(
+    () => (ready ? boardSearchPool(view, index, inSeason, { teams, scoring }) : null),
+    [ready, view, index, inSeason, teams, scoring],
+  );
+  const board = boardName(view, inSeason);
+  return (
+    <PlayerPickerDialog
+      title="Search players"
+      label={`Search players on ${board}`}
+      help={`Choose a player to show him on ${board}, or press Enter to show every match.`}
+      pool={pool}
+      poolName={board}
+      initialQuery={state.search}
+      onPick={(entry) => {
+        const choice = chooseSearchPlayer(entry, state, view, inSeason);
+        onApply(choice.patch, choice.note);
+      }}
+      onApply={(query) => {
+        onApply({ search: query.slice(0, 64) }, null);
+      }}
+      onClose={onClose}
+    />
+  );
+}
+
+/**
+ * The applied search, on the board it filters (ADR-111): what it is, what else choosing it
+ * changed, and one action to change it and one to clear it. Outside the settings panel, so a
+ * phone reader can clear a search without unfolding anything.
+ */
+function ActiveSearch({
+  search,
+  note,
+  onChange,
+  onClear,
+}: {
+  readonly search: string;
+  readonly note: string | null;
+  readonly onChange: () => void;
+  readonly onClear: () => void;
+}): React.JSX.Element {
+  return (
+    <div className="active-search">
+      <p className="active-search-text">
+        <span className="active-search-label">Search</span> <strong>{`“${search}”`}</strong>
+        {note !== null && <span className="active-search-note">{` ${note}`}</span>}
+      </p>
+      <span className="active-search-actions">
+        <button type="button" className="button-link" aria-haspopup="dialog" onClick={onChange}>
+          Change
+        </button>
+        <button type="button" className="button-link" onClick={onClear}>
+          Clear search
+        </button>
+      </span>
+    </div>
   );
 }
 

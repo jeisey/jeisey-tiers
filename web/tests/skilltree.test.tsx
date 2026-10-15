@@ -395,4 +395,59 @@ describe("on the in-season card", () => {
     expect(await within(dialog).findByRole("group", { name: /skill tree/ }, { timeout: 10_000 })).toBeDefined();
     expect(within(dialog).queryByRole("button", { name: "Show skill tree" })).toBeNull();
   });
+
+  /*
+   * ADR-111: the phone's compact header. jsdom applies no stylesheet, so this pins the state the
+   * stylesheet keys on (`data-header`) and the control's semantics; the pixels are Playwright's
+   * (`mobile.spec.ts`).
+   */
+  it("starts compact on a phone, and keeps the reader's choice across every tab until it closes", async () => {
+    setMediaQuery(SHEET, true);
+    serve();
+    const name = boardPlayer();
+    const dialog = await openCard(name);
+    const card = required(dialog.querySelector<HTMLElement>(".detail-card"), ".detail-card");
+    const toggle = within(dialog).getByRole("button", { name: "Expand details" });
+    expect(card.dataset.header).toBe("compact");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.getAttribute("aria-controls")).toBe(required(dialog.querySelector(".detail-rail"), "rail").id);
+    // The title is still the whole name, in the dialog's accessible name.
+    expect(within(dialog).getByRole("heading", { level: 2, name })).toBeDefined();
+
+    fireEvent.click(toggle);
+    expect(card.dataset.header).toBe("expanded");
+    const tabs = within(dialog).getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toContain("Skill tree");
+    for (const tab of tabs) {
+      fireEvent.click(tab);
+      expect(tab.getAttribute("aria-selected")).toBe("true");
+      expect(card.dataset.header).toBe("expanded");
+      expect(within(dialog).getByRole("button", { name: "Collapse details" })).toBeDefined();
+      expect(within(dialog).getByRole("button", { name: "Close player detail" })).toBeDefined();
+      if (tab.textContent === "Skill tree") {
+        expect(await within(dialog).findByRole("group", { name: /skill tree/ }, { timeout: 10_000 })).toBeDefined();
+        expect(card.dataset.header).toBe("expanded");
+      }
+    }
+    fireEvent.click(within(dialog).getByRole("button", { name: "Collapse details" }));
+    fireEvent.click(tabs[0] ?? toggle);
+    expect(card.dataset.header).toBe("compact");
+
+    // Closing resets it: the next card opens compact.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Expand details" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close player detail" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("heading", { level: 2, name })).toBeNull();
+    });
+    fireEvent.click(required(screen.getAllByRole("button", { name })[0], name));
+    const reopened = await screen.findByRole("button", { name: "Expand details" });
+    expect(reopened.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("renders no header toggle above the sheet breakpoint", async () => {
+    serve();
+    const dialog = await openCard(boardPlayer());
+    expect(within(dialog).queryByRole("button", { name: /details$/ })).toBeNull();
+    expect(required(dialog.querySelector<HTMLElement>(".detail-card"), ".detail-card").dataset.header).toBeUndefined();
+  });
 });

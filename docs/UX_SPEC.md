@@ -55,7 +55,7 @@ Persist to URL query parameters:
 - scoring
 - teams
 - position
-- search (optional)
+- search (optional; applied from the search dialog, one history entry per search — §6A.19)
 
 Example semantic state, not binding URL syntax:
 
@@ -307,6 +307,11 @@ two new blocks. The card also renders for a player the draft board never held: i
 back to the in-season records, and a player surfaced from beyond the rest-of-season depth gets
 the in-season section from his Opportunity Board row, with the projection-dependent pace and
 tiles withheld and a sentence saying why — never the draft market card.
+
+**Amended 2026-10-15 (ADR-111).** On a phone the card's header opens compact — name, position,
+club, a status worth stating, the close control and *Expand details* — and the rest of the rail
+(portrait, rank chips, hero rank, verdict row) is one tap away, so the tabs get the screen
+(§6A.19.3). This supersedes the Phase 9A rule that the verdict row is always on a phone screen.
 
 ### 6A.6 A number with no scale is not a reading (ADR-086)
 
@@ -642,7 +647,8 @@ integer within ±40), so a call can be pasted into a league chat and reopened ex
    three Halo-style **shield meters** (20 segments, the value printed beside them): *Startable
    week* against this league's threshold, *Win the week* at the reader's margin, and, for three
    or four players, *Top scorer of the set*. The leading card's meter is lit; the rest are
-   muted. Empty slots invite an add; a flag line replaces the numbers' meaning for a bye, a
+   muted. Empty slots invite an add, and each is a button that opens the add-player picker
+   (ADR-111, §6A.19.2); a flag line replaces the numbers' meaning for a bye, a
    game with no posted line ("left out of the verdict until then"), a player ruled Out, or a
    game already kicked off.
 2. **The verdict** — a kicker word from the head-to-head (*Coin flip*, *Lean*, *Clear*,
@@ -1191,6 +1197,97 @@ fetches its code only. Nothing simulates until the reader presses *Simulate*.
   * `capture-wmm.mjs`, at 320, 390, 390×600, 768, 1024, 1280, 1280×720 and 1440
     (`docs/visual-qa/2026-10-15-win-my-matchup/`).
 
+### 6A.19 Player search, Start/Sit's empty cards and the card's phone header (ADR-111)
+
+Three quality-of-life changes, one shared search. No model, value, artifact, URL parameter or
+saved document changed.
+
+#### 6A.19.1 The player search is a dialog
+
+* **Where.** The control strip's *Player search* is a button, **Search players** (with the `/` key
+  hint, and the applied search printed beside it as `“burrow”`). It is offered on the boards a
+  search filters — Tiers, Arbitrage, ROS tiers, Start/Sit's week board and Opportunity — and not
+  on Trade, Pick of the Week, Data or My Leagues, where it changed nothing. On a phone it is in
+  the folded settings panel, as before.
+* **The dialog.** The shared dialog shell (`components/Modal.tsx`) around the shared combobox
+  (`components/PlayerCombobox.tsx`) — the My Leagues picker's pattern, now the site's
+  (`components/PlayerPickerDialog.tsx`). Title *Search players*; one line saying what a choice
+  does on this board; the input, focused; the results under it; a status line (*Loading
+  players…*, *N matches.*, *8 of N matches shown. Keep typing to narrow them.*, *No player on
+  the rest-of-season board matches “…”.*); *Show all N matches*; *Cancel*. On a phone the dialog
+  sits at the top of the screen so the query and the first results stay above the keyboard, and
+  each result is two lines (who, then club and number).
+* **What it searches.** The open board's own rows for the reader's preset, already in memory —
+  no request, no other preset loaded. The match is the board's own (`matchesSearch`: case,
+  accents and punctuation ignored, name, team or position), so the dialog's count is the
+  board's count. Names that start with the query come first, then the board's order. Each
+  result shows position, name, availability (the in-season reading, or the draft status mark)
+  and club with one number (fair rank, RoS position rank, or this week's median).
+* **What a choice does.**
+  * *A player* (click, tap, or arrow to him and Enter): his canonical id resolves the entry, and
+    his name is applied as the search. A position filter that would hide him is cleared — and
+    on the Opportunity Board a *Show only* filter that would — and the board says so beside the
+    search ("Cleared the QB position filter to show Puka Nightingale (WR)."). The preset,
+    ordering and every other setting are untouched. A namesake whose name contains his stays
+    on the board too: the URL contract is a search term, not a player.
+  * *The query as typed* (Enter with no player highlighted, or *Show all N matches*): every
+    match, filters as they are — the old partial search. A query with no match applies nothing.
+  * Either is **one** `pushState`, so back and forward step through searches; typing changes the
+    dialog only. *Cancel*, the close button, the backdrop and Escape apply nothing. Escape clears
+    the query first, then closes. Focus returns to the control that opened the dialog.
+* **The applied search, on the board.** Above the board: `SEARCH “burrow”`, any note, *Change*
+  (reopens the dialog with the query selected) and *Clear search* (focus goes to the trigger, or
+  to the board when the trigger is folded away). It is outside the phone's settings panel. The
+  settings summary still prints the term.
+* **`/`** opens the dialog wherever a search applies, whether or not the trigger is folded. It
+  is ignored with a modifier, in any form control or editable element, and while any dialog is
+  open, so dialogs never stack.
+
+#### 6A.19.2 Start/Sit's empty cards add a player
+
+* Every empty deck card (A–D) is one `<button>` — letter, sentence and a *+ Add player* line —
+  named "Add a player to the comparison", described by its sentence. Hover, focus and press
+  change its border and ground; the words carry the meaning.
+* It opens the same dialog, titled *Add a player to the comparison*, over this week's published
+  projections for the reader's scoring: "He joins the comparison as C." A choice is appended once
+  (the comparison's order is the order players were added, whichever empty card was pressed), in
+  one URL change. A player already in it, or with no distribution this week (bye, line pending),
+  is listed with the reason and cannot be chosen; nothing is ever removed or toggled off.
+* **Four is the cap.** A full comparison has no empty card. When a link's ids with no projection
+  on this build hold the last places, the card says so and is disabled, and the missing-player
+  note gains *Remove it/them from the link* — removal is only ever on request.
+* The week board's + and ✓ toggles, and the occupied cards' Remove, are unchanged.
+* **Width.** Four empty cards across from 1100px; one below it. Below 768px with two players
+  in the comparison, the empty card is one full-width row about 44px tall (it used to be hidden
+  there), so a third player is still one tap away without pushing the verdict down.
+
+#### 6A.19.3 The player card's header on a phone
+
+* Below 768px (the sheet) the header opens **compact**: the name (two lines at most; the
+  dialog's title is still the whole name), and one line with the position tag, the club, a
+  status worth stating (the availability chip in season, the status mark on the draft card)
+  and **Expand details ▾**. The close control stays in the corner.
+* *Expand details* (`aria-expanded`, controlling the rail) shows the full rail as it was — the
+  portrait, the rank chips, the rank sentence, the hero rank, the verdict row and the status line
+  — capped at half the screen's height; past that the rail scrolls inside itself, so the tabs
+  never leave a short screen. *Collapse details ▴* folds it again.
+* The choice holds across tabs (the Skill Tree's included) and across players opened in the same
+  dialog, and resets when the dialog closes. Changing it does not re-render a tab's content or
+  move focus. Escape, focus return, the accessible title and ADR-109's dropped caret are
+  unchanged. Above 767px nothing changes.
+* **Measured** (in-season card, `Puka Nightingale`, tab content height):
+
+  | viewport | header before | header compact | tab content before | tab content compact |
+  |---|---:|---:|---:|---:|
+  | 390×844 | 288 px | 81 px | 401 px (all of it) | 401 px (sheet 207 px shorter) |
+  | 390×560 | 288 px | 81 px | 134 px | 345 px |
+  | 320×640 | 352 px | 81 px | 147 px | 401 px |
+
+* **Checks.** `controls.test.tsx`, `app.test.tsx`, `startsit-view.test.tsx`, `skilltree.test.tsx`,
+  `player-search.test.ts`; Playwright `search.spec.ts`, the header block in `mobile.spec.ts`,
+  and the updated search and card checks in `board.spec.ts`, `smoke.spec.ts` and
+  `startsit.spec.ts`. Captures: `docs/visual-qa/2026-10-15-search-and-header/`.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
@@ -1397,7 +1494,7 @@ Primary target too. Controls may wrap into two compact rows. Chart remains full-
   that prints every folded value (`PPR · 12 teams · All positions`, then any search term, then
   an overridden season mode) above the tabs, at most 96px and 12% of the viewport; tapping it
   opens the season-mode switch and the four controls between the row and the tabs, Escape folds
-  it and returns focus, `/` opens it and focuses search, and on a short screen the open panel
+  it and returns focus, `/` opens the search dialog without unfolding it (ADR-111), and on a short screen the open panel
   scrolls inside itself so the tabs stay on screen. Open/closed is chrome, not in the URL.
 - the Opportunity Board's orderings, depth switch and "Show only" chips fold behind one
   **Options** row (`By Adds · Role rising · Top 40 of 176`); the filter census line under
@@ -1411,7 +1508,9 @@ Primary target too. Controls may wrap into two compact rows. Chart remains full-
 - the Opportunity table pins the player's name and leads with Role; rank, team, value and drops
   step aside because the chart above prints them (ADR-092)
 - the Start/Sit deck is two cards across (one below 360px), and the verdict, posture control,
-  ridges and matrix stack in one column; the week board pins the name (ADR-096, §6A.11.3)
+  ridges and matrix stack in one column; the week board pins the name (ADR-096, §6A.11.3); an
+  empty card is a button that opens the add-player picker (ADR-111, §6A.19.2)
+- the player card's header opens compact, with *Expand details* (ADR-111, §6A.19.3)
 - My Leagues stacks each slot's actions under the player and puts each Rising list under its
   group; dialogs fit a 390×600 screen (ADR-106, §6A.16.3)
 - table uses essential columns and horizontal scroll or a compact row detail expander

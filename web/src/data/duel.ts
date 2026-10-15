@@ -528,3 +528,13 @@ export function toggleDuel(duel: readonly string[], playerId: string): readonly 
   if (duel.length >= MAX_DUEL) return duel;
   return [...duel, playerId];
 }
+
+/**
+ * Add one player, never remove one (ADR-111): the add-player picker and the card's *Compare*
+ * action. A player already in the comparison stays where he is, and a full comparison is
+ * returned unchanged — the same array, so a caller can tell nothing happened.
+ */
+export function addToDuel(duel: readonly string[], playerId: string): readonly string[] {
+  if (duel.includes(playerId) || duel.length >= MAX_DUEL) return duel;
+  return [...duel, playerId];
+}

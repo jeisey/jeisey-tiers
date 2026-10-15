@@ -1,7 +1,9 @@
 /**
- * The workspace's dialog shell (ADR-106): native `<dialog>` with `showModal()`, as the player
- * card uses — focus trapping, Escape and an inert page come from the platform. Opened when it
- * mounts, closed when it unmounts, and focus goes back to whatever opened it.
+ * The site's dialog shell (ADR-106; shared since ADR-111): native `<dialog>` with
+ * `showModal()`, as the player card uses — focus trapping, Escape and an inert page come from
+ * the platform. Opened when it mounts, closed when it unmounts, and focus goes back to whatever
+ * opened it. My Leagues' editors, the board's player search and Start/Sit's add-player picker
+ * all use it, so there is one dialog behaviour on the site rather than one per tab.
  */
 
 import { useEffect, useId, useRef } from "react";
@@ -11,11 +13,17 @@ export function Modal({
   onClose,
   children,
   wide = false,
+  picker = false,
 }: {
   readonly title: string;
   readonly onClose: () => void;
   readonly children: React.ReactNode;
   readonly wide?: boolean;
+  /**
+   * A search dialog (ADR-111): on a phone it sits at the top of the screen rather than in the
+   * middle, so the query and the first results stay above the on-screen keyboard.
+   */
+  readonly picker?: boolean;
 }): React.JSX.Element {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -40,6 +48,7 @@ export function Modal({
       ref={ref}
       className="lg-dialog"
       data-wide={wide || undefined}
+      data-picker={picker || undefined}
       aria-labelledby={titleId}
       onClose={onClose}
       onClick={(event) => {

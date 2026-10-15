@@ -225,7 +225,9 @@ test.describe("global controls and URL state", () => {
 test.describe("search", () => {
   test("finds a player and shares the search in the URL", async ({ page }) => {
     await openBoard(page);
-    await page.getByLabel("Player search").fill("burrow");
+    await page.getByRole("button", { name: /^Search players/ }).click();
+    await page.getByRole("combobox", { name: /Search players on/ }).fill("burrow");
+    await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/search=burrow/);
     const table = page.getByRole("table", { name: /Intrinsic tier board/ });
     await expect(table.getByRole("row")).toHaveCount(2);
@@ -543,6 +545,9 @@ test.describe("the portrait's browser boundary", () => {
       await page.setViewportSize(size);
       await openBoard(page);
       await page.getByRole("button", { name: "Bijan Robinson", exact: true }).click();
+      // A phone's header opens compact and the portrait is part of what it expands (ADR-111).
+      const expand = page.getByRole("dialog").getByRole("button", { name: "Expand details" });
+      if (size.width < 768) await expand.click();
       const frame = page.getByRole("dialog").locator(".portrait");
       await expect(frame, `no portrait frame at ${String(size.width)}px`).toBeVisible();
       const box = await frame.boundingBox();
@@ -900,7 +905,7 @@ test.describe("the phone fold above the sheet breakpoint (ADR-093)", () => {
       for (const group of ["Season mode", "Scoring", "Teams", "Position", "Order by"]) {
         await expect(page.getByRole("radiogroup", { name: group })).toBeVisible();
       }
-      await expect(page.getByLabel("Player search")).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Search players/ })).toBeVisible();
       await expect(page.getByRole("button", { name: "Role rising" })).toBeVisible();
       await expect(page.getByRole("button", { name: /^Show full board/ })).toBeVisible();
       // Nothing is sticky above the breakpoint either; the fold did not change that.
@@ -927,26 +932,34 @@ test.describe("the phone fold above the sheet breakpoint (ADR-093)", () => {
     await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeVisible();
   });
 
-  test("the search shortcut opens a folded panel before it focuses the box", async ({ page }) => {
-    // A narrow window with a keyboard. Focusing an element that is not rendered is a silent
-    // no-op, so `/` would otherwise do nothing below the breakpoint.
+  test("the search shortcut opens the search dialog, even with the panel folded", async ({ page }) => {
+    // A narrow window with a keyboard. The trigger is folded into the settings panel here; the
+    // shortcut does not need it, because the search is a dialog of its own (ADR-111).
     await page.setViewportSize({ width: 700, height: 900 });
     await openBoard(page);
     const settings = page.getByRole("button", { name: /^Settings/ });
     await expect(settings).toHaveAttribute("aria-expanded", "false");
     await page.keyboard.press("/");
-    await expect(page.getByLabel("Player search")).toBeFocused();
-    await expect(settings).toHaveAttribute("aria-expanded", "true");
+    const field = page.getByRole("combobox", { name: /Search players on/ });
+    await expect(field).toBeFocused();
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
 
-    // Escape clears a search first — its own, older meaning — and folds the panel second.
+    // Escape clears the query first, and closes the dialog second without applying anything.
+    await page.keyboard.type("bij");
+    await page.keyboard.press("Escape");
+    await expect(field).toHaveValue("");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(page).not.toHaveURL(/search=/);
+
+    await page.keyboard.press("/");
     await page.keyboard.type("bij");
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/search=bij/);
-    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+    // The applied search sits on the board with its Clear, outside the folded panel.
+    await page.getByRole("button", { name: "Clear search" }).click();
     await expect(page).not.toHaveURL(/search=/);
-    await expect(settings).toHaveAttribute("aria-expanded", "true");
-    await page.keyboard.press("Escape");
-    await expect(settings).toHaveAttribute("aria-expanded", "false");
-    await expect(settings).toBeFocused();
   });
 });

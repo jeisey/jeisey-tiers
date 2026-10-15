@@ -8,7 +8,7 @@
  * boards are unaffected.
  */
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -91,6 +91,94 @@ describe("the verdict, as printed", () => {
       expect(window.location.search).toContain("duel=00-0000011.00-0000012.00-0000003");
     });
     expect(screen.getByLabelText(/Slot C: Ja'Marr Swift/)).toBeDefined();
+  });
+});
+
+describe("the empty deck cards (ADR-111)", () => {
+  const empties = (): HTMLElement[] =>
+    screen.getAllByRole("button", { name: "Add a player to the comparison" });
+  const picker = (): HTMLElement => screen.getByRole("dialog", { name: "Add a player to the comparison" });
+  const field = (): HTMLElement => screen.getByRole("combobox", { name: /Add a player to the week-9 comparison/ });
+
+  it("are buttons, every one, and each opens the picker", async () => {
+    const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+    await open("?view=startsit");
+    expect(empties()).toHaveLength(4);
+    for (const index of [0, 1, 2, 3]) {
+      const card = empties()[index];
+      if (card === undefined) throw new Error("missing card");
+      expect(card.tagName).toBe("BUTTON");
+      await user.click(card);
+      expect(picker()).toBeDefined();
+      expect(document.activeElement).toBe(field());
+      await user.click(within(picker()).getByRole("button", { name: "Cancel" }));
+      // Cancel leaves the comparison untouched and gives focus back to the card.
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(window.location.search).toBe("?view=startsit");
+      expect(document.activeElement).toBe(empties()[index]);
+    }
+  });
+
+  it("adds the chosen player once, in the reader's order, from the keyboard", async () => {
+    const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+    await open();
+    expect(empties()).toHaveLength(2);
+    const last = empties()[1];
+    if (last === undefined) throw new Error("missing card");
+    last.focus();
+    await user.keyboard("{Enter}");
+    expect(within(picker()).getByText(/He joins the comparison as C\./)).toBeDefined();
+    await user.type(field(), "swift");
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      expect(window.location.search).toContain("duel=00-0000011.00-0000012.00-0000003");
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByLabelText(/Slot C: Ja'Marr Swift/)).toBeDefined();
+    expect(empties()).toHaveLength(1);
+  });
+
+  it("lists a chosen or bye player with the reason, and will not choose him", async () => {
+    const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+    await open();
+    const before = window.location.search;
+    const card = empties()[0];
+    if (card === undefined) throw new Error("missing card");
+    await user.click(card);
+    await user.type(field(), "puka");
+    const chosen = within(picker()).getByRole("option", { name: /Puka Nightingale/ });
+    expect(chosen.getAttribute("aria-disabled")).toBe("true");
+    expect(chosen.textContent).toContain("Already in the comparison");
+    await user.click(chosen);
+    await user.keyboard("{Enter}");
+    // Choosing him again neither duplicates him nor takes him out.
+    expect(window.location.search).toBe(before);
+    expect(picker()).toBeDefined();
+    await user.clear(field());
+    await user.type(field(), "ertz");
+    const pending = within(picker()).getByRole("option", { name: /Zach Ertz/ });
+    expect(pending.getAttribute("aria-disabled")).toBe("true");
+    expect(pending.textContent).toContain("Line pending: nothing to compare");
+  });
+
+  it("stops at four, and a link's unprojected players are removed only on request", async () => {
+    const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+    // Three projected players and one id this build has no projection for: four places taken.
+    await open("?view=startsit&duel=00-0000011.00-0000012.00-0000003.00-9999999");
+    const card = screen.getByRole("button", { name: "Add a player to the comparison" });
+    expect(card.hasAttribute("disabled")).toBe(true);
+    expect(card.textContent).toMatch(/Full: the players in this link with no projection/);
+    await user.click(screen.getByRole("button", { name: "Remove it from the link" }));
+    await waitFor(() => {
+      expect(window.location.search).toContain("duel=00-0000011.00-0000012.00-0000003");
+    });
+    expect(window.location.search).not.toContain("9999999");
+    expect(screen.getByRole("button", { name: "Add a player to the comparison" }).hasAttribute("disabled")).toBe(false);
+  });
+
+  it("are gone when the comparison is full", async () => {
+    await open("?view=startsit&duel=00-0000011.00-0000012.00-0000003.00-0000002");
+    expect(screen.queryByRole("button", { name: "Add a player to the comparison" })).toBeNull();
   });
 });
 

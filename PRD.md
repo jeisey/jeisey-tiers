@@ -202,6 +202,16 @@ These hold for every feature, current or future.
     opponent ids by slot, the reader's confirmations, finals, availability marks and the YOLO
     preference, bounded, by league, season and week. Results are never stored, and a new week
     never shows last week's numbers; the old opponent can be reused.
+- **CR-031 Search and card quality of life.** A usability pass with no model, data or contract
+  change (ADR-111, UX_SPEC §6A.19):
+  * **Player search** is one dialog for the site: the query and the open board's matching players
+    together, by name, position, club and availability. Choosing a player shows him on the board
+    (clearing a filter that would hide him, and saying so); Enter applies a partial query. One
+    URL change per search; cancel applies nothing; `/` opens it.
+  * **Start/Sit's empty cards** open the same dialog and add the chosen player once, within the
+    four-player cap.
+  * **The player card on a phone** opens with a compact header and *Expand details*, so the
+    tabs get the screen.
 
 ## A4. Current non-goals
 

@@ -4,6 +4,53 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Search dialog, Start/Sit empty cards, compact phone card header — 2026-10-15 (ADR-111, PRD
+CR-031).** On `claude/compassionate-tesla-w9jfr4` from `main` at `18e743e` (WMM merged). A
+frontend usability pass. No model, data, artifact, contract, URL parameter, saved league or WMM
+document changed.
+
+* **Search.** One component: `components/PlayerPickerDialog.tsx`, which is `Modal` (moved to
+  `components/`; its CSS is now in `base.css`) around `PlayerCombobox`. The control strip's box
+  became a *Search players* trigger, shown only on Tiers, Arbitrage, ROS, Start/Sit and
+  Opportunity.
+  * The dialog lists the open board's rows with the boards' own `matchesSearch`
+    (`data/playerSearch.ts`, `data/boardSearch.ts`).
+  * Choosing a player applies his name and clears a filter that would hide him, with a note.
+    Enter or *Show all* applies a partial query. Each is one `pushState`.
+  * `/` opens the dialog. The old debounce and the `flushSync` panel reveal are gone.
+* **Start/Sit.** Empty cards are buttons that open the same dialog and append the player once
+  (`addToDuel`). A link's unprojected ids that hold the cap disable the card and can be removed
+  on request.
+* **Card on a phone.** The header opens compact behind *Expand details*. The choice persists
+  across tabs and resets on close. The sheet is full height, and the expanded rail is capped at
+  50dvh. Measured tab panel: 390×560 went from 134 to 345 px, 320×640 from 147 to 422 px, and
+  390×844 from 401 to 617 px. Tablet and desktop are unchanged.
+* **Superseded.** Tests that asserted the verdict row or the rank pair on a phone's first screen
+  now expand first. The ADR-093 `/` behaviour is amended.
+
+**Next gate:** owner review of the PR. Firefox and WebKit smoke were not run locally (those
+browsers are not installed here); CI's browser job runs them.
+
+Validation of this pass (local):
+
+```
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 1,041 passed, 1 skipped (52 files; 1 new)
+playwright chromium + mobile + a11y + smoke-chromium # 328 passed (search.spec.ts new; mobile header block new)
+verify:board on the six CI fixture builds            # 0 failures each
+npm run e2e:size-model && verify:budget (gating)     # all met; first visit 331.2/450 kB (+3.8), data 76.0/150, Start/Sit +56.4/60, card +23.9/30, My Leagues +70.5/80, WMM open +26.3/30
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok; asset URLs under /jeisey-tiers/, no root leak
+docs/visual-qa/2026-10-15-search-and-header/capture.mjs  # before (main) and after: 0 overflow, 0 console errors
+```
+
+* **Facts for the next session.**
+  * `npm run build` overwrites `web/dist` with the given base path. Run `npm run e2e:build`
+    again before `E2E_SKIP_BUILD=1` Playwright runs.
+  * In this sandbox, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium`. The pinned
+    headless shell is not installed.
+  * Playwright counts generated `::before` text in an accessible name. The search trigger's
+    glyph is a hidden span for that reason.
+
 **Win My Matchup — 2026-10-15 (ADR-110, PRD CR-030).** On `claude/amazing-noether-3xlr6s` from
 `main` at `83089c4`. It is a tool inside My Leagues, beside *Lineup* (`panel=wmm`).
 

@@ -1,0 +1,184 @@
+{
+ "before": {
+  "card-320": {
+   "rail": 352,
+   "tabsTop": 390,
+   "bodyHeight": 147,
+   "close": [
+    51,
+    296
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "errors-320": [],
+  "card-390": {
+   "rail": 288,
+   "tabsTop": 340,
+   "bodyHeight": 401,
+   "close": [
+    65,
+    366
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "errors-390": [],
+  "card-short": {
+   "rail": 288,
+   "tabsTop": 323,
+   "bodyHeight": 134,
+   "close": [
+    47,
+    366
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "errors-short": [],
+  "card-tablet": {
+   "rail": 209,
+   "tabsTop": null,
+   "bodyHeight": 514,
+   "close": [
+    219,
+    765
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "errors-tablet": [],
+  "card-desktop": {
+   "rail": 766,
+   "tabsTop": null,
+   "bodyHeight": 667,
+   "close": [
+    83,
+    1215
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "errors-desktop": []
+ },
+ "after": {
+  "card-320": {
+   "rail": 81,
+   "tabsTop": 116,
+   "bodyHeight": 422,
+   "close": [
+    51,
+    296
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "card-320-expanded": {
+   "rail": 320,
+   "tabsTop": 359,
+   "bodyHeight": 179,
+   "close": [
+    51,
+    296
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "search-modal-320": {
+   "top": 12,
+   "bottom": 514,
+   "overflowX": 0
+  },
+  "errors-320": [],
+  "card-390": {
+   "rail": 81,
+   "tabsTop": 124,
+   "bodyHeight": 617,
+   "close": [
+    59,
+    366
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "card-390-expanded": {
+   "rail": 328,
+   "tabsTop": 375,
+   "bodyHeight": 367,
+   "close": [
+    59,
+    366
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "search-modal-390": {
+   "top": 12,
+   "bottom": 496,
+   "overflowX": 0
+  },
+  "errors-390": [],
+  "card-short": {
+   "rail": 81,
+   "tabsTop": 113,
+   "bodyHeight": 345,
+   "close": [
+    47,
+    366
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "card-short-expanded": {
+   "rail": 280,
+   "tabsTop": 315,
+   "bodyHeight": 142,
+   "close": [
+    47,
+    366
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "search-modal-short": {
+   "top": 12,
+   "bottom": 496,
+   "overflowX": 0
+  },
+  "errors-short": [],
+  "card-tablet": {
+   "rail": 209,
+   "tabsTop": null,
+   "bodyHeight": 514,
+   "close": [
+    219,
+    765
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "search-modal-tablet": {
+   "top": 365,
+   "bottom": 815,
+   "overflowX": 0
+  },
+  "errors-tablet": [],
+  "card-desktop": {
+   "rail": 766,
+   "tabsTop": null,
+   "bodyHeight": 667,
+   "close": [
+    83,
+    1215
+   ],
+   "overflowX": 0,
+   "dialogOverflowX": 0
+  },
+  "search-modal-desktop": {
+   "top": 225,
+   "bottom": 675,
+   "overflowX": 0
+  },
+  "errors-desktop": []
+ }
+}

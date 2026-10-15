@@ -577,59 +577,6 @@ code {
   text-decoration: line-through;
 }
 
-.search-field {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  height: var(--control-height);
-  padding: 0 12px;
-  border: var(--hairline) solid var(--line-strong);
-  background: var(--tile);
-  width: min(20rem, 100%);
-  transition: border-color var(--t);
-}
-
-.search-field:focus-within {
-  border-color: var(--accent);
-}
-
-.search-field::before {
-  content: "⌕";
-  font: 500 0.85rem/1 var(--font-mono);
-  color: var(--ink-faint);
-}
-
-.search-field input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  font: 400 0.85rem/1 var(--font-sans);
-  color: var(--ink);
-}
-
-.search-field input::placeholder {
-  color: var(--ink-faint);
-}
-
-.search-field button {
-  appearance: none;
-  border: var(--hairline) solid var(--line-strong);
-  background: transparent;
-  color: var(--ink-faint);
-  font: 500 0.7rem/1 var(--font-mono);
-  min-width: 22px;
-  min-height: 22px;
-  cursor: pointer;
-  transition: var(--t-control);
-}
-
-.search-field button:hover {
-  border-color: var(--accent-bright);
-  color: var(--accent-bright);
-}
-
 /* The source's key hint. Decoration for the shortcut, so it is hidden from the a11y tree. */
 .search-key {
   font: 500 0.6rem/1 var(--font-mono);
@@ -4463,12 +4410,12 @@ dl.facts dd {
   }
 
   /*
-   * The verdict block stays on a phone.
+   * The verdict block is in the rail on a phone, not behind a tab.
    *
    * Hiding it put the market answer behind a tab, which is the one thing a drafter on the
    * clock reads first — artboard 1c's own caption for the same block is that it answers "is he
-   * underpriced" in under a second. It costs one wrapped row and it means fair rank, the
-   * market verdict, the arbitrage score and the status line are all on screen with no tap.
+   * underpriced" in under a second. Since ADR-111 the rail opens compact and the verdict is one
+   * tap away on *Expand details*, beside the tabs rather than inside one of them.
    */
   .rail-verdict {
     flex-basis: 100%;
@@ -4553,6 +4500,356 @@ dl.facts dd {
 
   .detail-close > span:not(.detail-close-glyph) {
     display: none;
+  }
+
+  /*
+   * The compact header (ADR-111). Collapsed, the rail is the name and one line — position,
+   * team, a status worth stating, and *Expand details* — and the portrait, rank chips, rank
+   * sentence, hero rank and verdict row step out, so the tabs and their panel get the screen.
+   * Expanded, the rail is the sheet's full rail again, capped at half the screen
+   * so the tabs never leave it on a short phone; past the cap the rail scrolls in itself.
+   */
+  .detail-compact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+
+  .detail-compact-identity {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .detail-compact-team {
+    font: 600 0.7rem/1 var(--font-mono);
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+  }
+
+  .detail-expand {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    margin-left: auto;
+    padding: 0 10px;
+    border: var(--hairline) solid var(--line-bright);
+    background: transparent;
+    color: var(--ink-accent);
+    font: 600 0.62rem/1 var(--font-sans);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: var(--t-control);
+  }
+
+  .detail-expand:hover {
+    border-color: var(--accent-bright);
+    color: var(--accent-bright);
+  }
+
+  .detail-expand-mark {
+    font-size: 0.75rem;
+  }
+
+  /*
+   * The sheet is full height on a phone (artboard 1b), so the tabs stay where they are when a
+   * tab's content is shorter or taller than the last one, and when the header folds; the panel
+   * takes whatever the header leaves.
+   */
+  .detail-frame {
+    height: 96vh;
+    height: 96dvh;
+  }
+
+  .detail-card {
+    height: 100%;
+  }
+
+  .detail-main {
+    flex: 1 1 auto;
+  }
+
+  .detail-main > .detail-body {
+    flex: 1 1 auto;
+  }
+
+  .detail-card[data-header="compact"] .detail-rail {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .detail-card[data-header="compact"] .detail-rail > .portrait,
+  .detail-card[data-header="compact"] .detail-subtitle,
+  .detail-card[data-header="compact"] .rank-pair-meta,
+  .detail-card[data-header="compact"] .rail-hero,
+  .detail-card[data-header="compact"] .rail-verdict {
+    display: none;
+  }
+
+  /* A long name takes two lines at most; the dialog's title is still the whole name. */
+  .detail-card[data-header="compact"] .detail-identity h2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .detail-card[data-header="compact"] .detail-tabs {
+    margin-top: var(--space-2);
+  }
+
+  .detail-card[data-header="expanded"] .detail-compact-identity {
+    display: none;
+  }
+
+  .detail-card[data-header="expanded"] .detail-rail {
+    max-height: 50vh;
+    max-height: 50dvh;
+    overflow-y: auto;
+  }
+}
+
+/* ------------------------------------------------------------ dialogs and the player search
+ *
+ * The site's dialog shell (`components/Modal.tsx`, ADR-106) and the player search inside it
+ * (`components/PlayerPickerDialog.tsx`, ADR-111). Here rather than in My Leagues' lazy sheet
+ * because the board search and Start/Sit's add-player picker use them too; the rules are My
+ * Leagues' own, moved, not restyled.
+ */
+
+.lg-help {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  max-width: 80ch;
+}
+
+dialog.lg-dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  width: min(38rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: visible;
+}
+
+dialog.lg-dialog[data-wide] {
+  width: min(46rem, calc(100vw - 2rem));
+}
+
+dialog.lg-dialog::backdrop {
+  background: rgb(2 6 12 / 78%);
+}
+
+.lg-dialog-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: inherit;
+  border: var(--hairline) solid var(--line-bright);
+  background: var(--panel-raised);
+  box-shadow: var(--shadow-pop);
+}
+
+.lg-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-bottom: var(--hairline) solid var(--line);
+}
+
+.lg-dialog-head h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.lg-dialog-close {
+  appearance: none;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.lg-dialog-close:hover {
+  color: var(--accent-bright);
+}
+
+.lg-dialog-body {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  overflow: auto;
+  min-height: 0;
+}
+
+.lg-picker {
+  max-width: none;
+}
+
+.lg-picker .trade-options {
+  position: static;
+  margin-top: 2px;
+  box-shadow: none;
+}
+
+/*
+ * A search dialog sits at the top of a phone screen, not its middle, so the query and the first
+ * results stay above the on-screen keyboard; the list scrolls inside the dialog's body.
+ */
+.picker {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.picker .trade-options {
+  max-height: none;
+}
+
+.trade-options li[aria-disabled="true"] {
+  cursor: default;
+  color: var(--ink-faint);
+}
+
+.trade-options li[aria-disabled="true"] .trade-option-name {
+  color: var(--ink-muted);
+}
+
+.picker-status {
+  min-height: 1.2em;
+  margin: 0;
+  font: 500 0.7rem/1.5 var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+/* The board search's trigger: it reads as the field it replaced, and it is a button. */
+.search-trigger {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: var(--control-height);
+  width: min(20rem, 100%);
+  padding: 0 12px;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--tile);
+  color: var(--ink-muted);
+  font: 400 0.85rem/1 var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--t-control);
+}
+
+/* The glyph is a span, not `::before`: generated content would join the button's name. */
+.search-trigger-icon {
+  font: 500 0.85rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.search-trigger:hover {
+  border-color: var(--accent);
+  color: var(--ink-strong);
+}
+
+.search-trigger-label {
+  flex: none;
+}
+
+.search-trigger-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-bright);
+}
+
+.search-trigger .search-key {
+  margin-left: auto;
+}
+
+/* The applied search, on the board it filters. */
+.active-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--accent-wash);
+  font-size: 0.8rem;
+}
+
+.active-search-text {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.active-search-label {
+  font: 600 0.62rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.active-search-note {
+  color: var(--ink-muted);
+}
+
+.active-search-actions {
+  display: inline-flex;
+  gap: var(--space-4);
+}
+
+.active-search-actions .button-link {
+  min-height: 24px;
+}
+
+@media (max-width: 767px) {
+  .lg-dialog-body {
+    padding: var(--space-3);
+  }
+
+  /* A phone's result row is two lines: who he is, then his club and number under it. */
+  .picker .trade-options li {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    padding-block: 6px;
+  }
+
+  .picker .trade-option-meta {
+    flex-basis: 100%;
+  }
+
+  dialog.lg-dialog[data-picker] {
+    margin-top: var(--space-3);
+    max-height: calc(100vh - 2 * var(--space-3));
+    max-height: calc(100dvh - 2 * var(--space-3));
   }
 }
 
@@ -6590,8 +6887,46 @@ table.sheet.opp-sheet thead th button {
   line-height: 1.45;
 }
 
-.deck-empty p {
-  margin: 0;
+/*
+ * An empty card is a button (ADR-111): the whole card opens the add-player picker. Hover, focus
+ * and press change its border and ground, and the "+ Add player" line says what it does in
+ * words, so no state is colour alone.
+ */
+button.deck-empty {
+  appearance: none;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: var(--t-control);
+}
+
+button.deck-empty:hover:not(:disabled) {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--surface-hover);
+  color: var(--ink-strong);
+}
+
+button.deck-empty:active:not(:disabled) {
+  background: var(--accent-wash-strong);
+}
+
+button.deck-empty:disabled {
+  cursor: not-allowed;
+}
+
+.deck-empty-text {
+  display: block;
+}
+
+.deck-empty-action {
+  margin-top: auto;
+  font: 600 0.66rem/1 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-accent);
 }
 
 .deck-head {
@@ -7758,9 +8093,22 @@ table.sheet.weekboard-table thead th.wb-num {
   }
 
   /* With a verdict to read, an empty slot is a half-screen of invitation between the reader
-     and it; the week board below offers "add" to every player anyway. */
+     and it; it becomes one full-width row instead, still a button that adds (ADR-111). */
   .deck:has(.deck-card:not(.deck-empty) ~ .deck-card:not(.deck-empty)) .deck-empty {
-    display: none;
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 8px;
+  }
+
+  .deck:has(.deck-card:not(.deck-empty) ~ .deck-card:not(.deck-empty)) .deck-empty .deck-empty-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .deck:has(.deck-card:not(.deck-empty) ~ .deck-card:not(.deck-empty)) .deck-empty .deck-empty-action {
+    margin-top: 0;
   }
 
   .deck-range {

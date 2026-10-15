@@ -100,35 +100,138 @@ describe("view tabs", () => {
   });
 });
 
-describe("player search", () => {
-  it("clears from the keyboard with Escape and from the clear button", async () => {
+describe("player search (ADR-111)", () => {
+  const trigger = (): HTMLElement => screen.getByRole("button", { name: /^Search players/ });
+  const field = (): HTMLInputElement =>
+    screen.getByRole<HTMLInputElement>("combobox", { name: /Search players on/ });
+
+  it("lists matches in a dialog and applies a typed query once, on Enter", async () => {
     const user = userEvent.setup();
     render(<App />);
     await boardReady();
-    const input = screen.getByLabelText("Player search");
-    await user.type(input, "burrow");
+    await user.click(trigger());
+    const dialog = screen.getByRole("dialog", { name: "Search players" });
+    expect(document.activeElement).toBe(field());
+    await user.type(field(), "burrow");
+    // Typing changes the dialog's list and nothing else: the URL and the board wait.
+    expect(within(dialog).getByRole("option", { name: /Joe Burrow/ })).toBeDefined();
+    expect(within(dialog).getByRole("status").textContent).toBe("1 match.");
+    expect(window.location.search).toBe("");
+    const before = window.history.length;
+    await user.keyboard("{Enter}");
     await waitFor(() => {
       expect(window.location.search).toBe("?search=burrow");
     });
-    await user.keyboard("{Escape}");
-    await waitFor(() => {
-      expect(window.location.search).toBe("");
-    });
-    await user.type(input, "ertz");
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Clear player search" })).toBeDefined();
-    });
-    await user.click(screen.getByRole("button", { name: "Clear player search" }));
-    await waitFor(() => {
-      expect(window.location.search).toBe("");
-    });
+    expect(window.history.length).toBe(before + 1);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // Focus goes back to the control that opened it, which now prints the search.
+    expect(document.activeElement).toBe(trigger());
+    expect(trigger().textContent).toContain("“burrow”");
   });
 
-  it("adopts a search supplied by the URL", async () => {
+  it("applies a chosen player by name, from the arrow keys", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await boardReady();
+    await user.click(trigger());
+    await user.type(field(), "amon ra");
+    await user.keyboard("{ArrowDown}{Enter}");
+    await waitFor(() => {
+      expect(window.location.search).toBe("?search=Amon-Ra+Bright");
+    });
+    const table = screen.getByRole("table", { name: /Intrinsic tier board/ });
+    expect(within(table).getAllByRole("row")).toHaveLength(2);
+  });
+
+  it("matches punctuation, accents and suffixes the way the board does", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await boardReady();
+    await user.click(trigger());
+    await user.type(field(), "pitts sr");
+    expect(screen.getByRole("option", { name: /Kyle Pitts Sr\./ })).toBeDefined();
+    await user.clear(field());
+    await user.type(field(), "zzqx");
+    const dialog = screen.getByRole("dialog", { name: "Search players" });
+    expect(within(dialog).getByRole("status").textContent).toMatch(/^No player on the tier board matches “zzqx”/);
+    expect(within(dialog).queryByRole("button", { name: /^Show/ })).toBeNull();
+  });
+
+  it("cancels without applying, and Escape clears the query first", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await boardReady();
+    await user.click(trigger());
+    await user.type(field(), "bij");
+    await user.keyboard("{Escape}");
+    expect(field().value).toBe("");
+    expect(screen.getByRole("dialog")).toBeDefined();
+    await user.type(field(), "bij");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(window.location.search).toBe("");
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it("shows the applied search on the board, with Change and Clear", async () => {
+    const user = userEvent.setup();
     window.history.replaceState(null, "", "/?search=pitts");
     render(<App />);
     await boardReady();
-    expect(screen.getByLabelText<HTMLInputElement>("Player search").value).toBe("pitts");
+    expect(trigger().textContent).toContain("“pitts”");
+    await user.click(screen.getByRole("button", { name: "Change" }));
+    // The applied query is where the reader left it, selected so typing replaces it.
+    expect(field().value).toBe("pitts");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+    await waitFor(() => {
+      expect(window.location.search).toBe("");
+    });
+    expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it("clears a position filter that would hide the chosen player, and says so", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, "", "/?scoring=half&position=qb");
+    render(<App />);
+    await boardReady();
+    await user.click(trigger());
+    await user.type(field(), "bijan");
+    await user.click(screen.getByRole("option", { name: /Bijan Robinson/ }));
+    await waitFor(() => {
+      // The preset is untouched; only the conflicting filter went.
+      expect(window.location.search).toBe("?scoring=half&search=Bijan+Robinson");
+    });
+    expect(screen.getByText(/Cleared the QB position filter to show Bijan Robinson \(RB\)\./)).toBeDefined();
+    // A partial query never moves a filter: it is the reader's own question.
+    await user.click(trigger());
+    await user.clear(field());
+    await user.type(field(), "burrow{Enter}");
+    await waitFor(() => {
+      expect(window.location.search).toBe("?scoring=half&search=burrow");
+    });
+    expect(screen.queryByText(/Cleared the/)).toBeNull();
+  });
+
+  it("follows back and forward", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await boardReady();
+    await user.click(trigger());
+    await user.type(field(), "burrow{Enter}");
+    await waitFor(() => {
+      expect(window.location.search).toBe("?search=burrow");
+    });
+    window.history.back();
+    await waitFor(() => {
+      expect(window.location.search).toBe("");
+      expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
+    });
+    window.history.forward();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Clear search" })).toBeDefined();
+    });
   });
 });
 

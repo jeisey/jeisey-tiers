@@ -27,11 +27,13 @@ import { useMemo, useState } from "react";
 
 import { OutcomeRidges, slotLetter } from "../charts/OutcomeRidges";
 import { AvailabilityBadge, Notice, PositionTag, SectionHead, Segmented } from "../components/primitives";
+import { PlayerPickerDialog } from "../components/PlayerPickerDialog";
 import { isMuted } from "../data/availability";
 import { SHORT_REASON, WhyWeek, WhyWeekCompact } from "../components/WhyWeek";
 import type { RosWeeklyMetadata, WeeklyProjectionRecord } from "../data/contracts";
 import { WEEKLY_DRIVER_FAMILIES } from "../data/contracts";
 import {
+  addToDuel,
   flipSentence,
   injuryReading,
   readDuel,
@@ -45,6 +47,7 @@ import {
   type WeekBoardSort,
 } from "../data/duel";
 import { EM_DASH, formatEastern, formatSigned, formatValue } from "../data/format";
+import type { SearchEntry } from "../data/playerSearch";
 import type { InSeasonBundle } from "../data/ros";
 import {
   MARGIN_BOUND,
@@ -213,6 +216,15 @@ export function StartSitView({
     onChange({ duel: toggleDuel(state.duel, playerId) });
   };
 
+  // ADR-111: an empty deck card opens the add-player picker. Whether it is open is chrome; the
+  // comparison it changes is the URL's, once, on a choice.
+  const [adding, setAdding] = useState(false);
+  const add = (playerId: string): void => {
+    const next = addToDuel(state.duel, playerId);
+    if (next !== state.duel) onChange({ duel: next });
+    setAdding(false);
+  };
+
   // This week against a typical week (ADR-099), for every record on screen.
   const whyFor = (record: WeeklyProjectionRecord): WhyThisWeek | null =>
     whyThisWeek(
@@ -253,12 +265,45 @@ export function StartSitView({
         </Notice>
       )}
 
-      <DuelDeck duel={duel} weekly={weekly} onRemove={toggle} onSelect={onSelect} whyFor={whyFor} />
+      <DuelDeck
+        duel={duel}
+        weekly={weekly}
+        onRemove={toggle}
+        onSelect={onSelect}
+        whyFor={whyFor}
+        full={state.duel.length >= MAX_DUEL}
+        onAdd={() => {
+          setAdding(true);
+        }}
+      />
 
       {duel.missing.length > 0 && (
         <p className="startsit-missing" role="note">
-          {`${String(duel.missing.length)} player${duel.missing.length === 1 ? "" : "s"} in this link ${duel.missing.length === 1 ? "has" : "have"} no week-${String(week)} projection on this build and ${duel.missing.length === 1 ? "is" : "are"} left out.`}
+          {`${String(duel.missing.length)} player${duel.missing.length === 1 ? "" : "s"} in this link ${duel.missing.length === 1 ? "has" : "have"} no week-${String(week)} projection on this build and ${duel.missing.length === 1 ? "is" : "are"} left out.`}{" "}
+          {/* They still hold places in the four: a reader who wants the room back asks for it. */}
+          <button
+            type="button"
+            className="button-link"
+            onClick={() => {
+              onChange({ duel: state.duel.filter((id) => !duel.missing.includes(id)) });
+            }}
+          >
+            {duel.missing.length === 1 ? "Remove it from the link" : "Remove them from the link"}
+          </button>
         </p>
+      )}
+
+      {adding && (
+        <AddPlayerDialog
+          bundle={bundle}
+          state={state}
+          week={week}
+          slot={slotLetter(duel.contenders.length)}
+          onPick={add}
+          onClose={() => {
+            setAdding(false);
+          }}
+        />
       )}
 
       <Verdict duel={duel} weekly={weekly} onMargin={(margin) => { onChange({ margin }); }} />
@@ -321,12 +366,17 @@ function DuelDeck({
   onRemove,
   onSelect,
   whyFor,
+  full,
+  onAdd,
 }: {
   readonly duel: DuelReading;
   readonly weekly: RosWeeklyMetadata;
   readonly onRemove: (playerId: string) => void;
   readonly onSelect: (playerId: string) => void;
   readonly whyFor: (record: WeeklyProjectionRecord) => WhyThisWeek | null;
+  /** Every place in the link is taken (players with no projection here hold one). */
+  readonly full: boolean;
+  readonly onAdd: () => void;
 }): React.JSX.Element {
   const empty = MAX_DUEL - duel.contenders.length;
   const leader = duel.verdict?.pick.record.player_id ?? null;
@@ -346,20 +396,123 @@ function DuelDeck({
         />
       ))}
       {Array.from({ length: empty }, (_, index) => (
-        <div key={`empty-${String(index)}`} className="deck-card deck-empty chamfer">
-          <span className="deck-slot" aria-hidden="true">
-            {slotLetter(duel.contenders.length + index)}
-          </span>
-          <p>
-            {duel.contenders.length + index === 0
-              ? "Add a player from the week board below — the + beside any name."
-              : duel.contenders.length + index === 1
-                ? "Add a second player to compare."
-                : "Optional: a third or fourth candidate for the slot."}
-          </p>
-        </div>
+        <EmptyDeckCard
+          key={`empty-${String(index)}`}
+          slot={duel.contenders.length + index}
+          full={full}
+          onAdd={onAdd}
+        />
       ))}
     </div>
+  );
+}
+
+/**
+ * An empty place in the deck (ADR-111): the whole card is one button that opens the add-player
+ * picker — letter, words and all, so a tap anywhere on it works at any width. The player it
+ * adds takes the next letter, whichever empty card was pressed, because the comparison's order
+ * is the order players were added. When the link's players without a projection hold the last
+ * places, the card says so and is disabled rather than replacing one of them.
+ */
+function EmptyDeckCard({
+  slot,
+  full,
+  onAdd,
+}: {
+  readonly slot: number;
+  readonly full: boolean;
+  readonly onAdd: () => void;
+}): React.JSX.Element {
+  const id = `deck-empty-${String(slot)}`;
+  const text = full
+    ? "Full: the players in this link with no projection hold the other places. Remove them to add someone."
+    : slot === 0
+      ? "Add a player: search by name, or use + on the week board below."
+      : slot === 1
+        ? "Add a second player to compare."
+        : "Optional: add a third or fourth candidate for the slot.";
+  return (
+    <button
+      type="button"
+      className="deck-card deck-empty chamfer"
+      aria-label="Add a player to the comparison"
+      aria-describedby={id}
+      aria-haspopup="dialog"
+      disabled={full}
+      onClick={onAdd}
+    >
+      <span className="deck-slot" aria-hidden="true">
+        {slotLetter(slot)}
+      </span>
+      <span className="deck-empty-text" id={id}>
+        {text}
+      </span>
+      {!full && (
+        <span className="deck-empty-action" aria-hidden="true">
+          + Add player
+        </span>
+      )}
+    </button>
+  );
+}
+
+/**
+ * The add-player picker (ADR-111): the shared player search over this week's published
+ * projections for the reader's scoring. Choosing a player adds him once, at the end of the
+ * comparison; a player already in it, or with no distribution this week (a bye, a line not yet
+ * posted), is listed with the reason and cannot be chosen — the same rules as the week board's
+ * + button. Cancel changes nothing.
+ */
+function AddPlayerDialog({
+  bundle,
+  state,
+  week,
+  slot,
+  onPick,
+  onClose,
+}: {
+  readonly bundle: InSeasonBundle;
+  readonly state: AppState;
+  readonly week: number;
+  readonly slot: string;
+  readonly onPick: (playerId: string) => void;
+  readonly onClose: () => void;
+}): React.JSX.Element {
+  const scoring = SCORING_TO_PRESET[state.scoring];
+  const { duel } = state;
+  const pool = useMemo(
+    () =>
+      bundle.weeklyFor(scoring).map((record): SearchEntry => {
+        const team = record.team ?? EM_DASH;
+        const q = record.quantiles;
+        return {
+          id: record.player_id,
+          name: record.display_name,
+          position: record.position,
+          team: record.team,
+          availability: bundle.availabilityFor(record.player_id),
+          meta: q === null ? team : `${team} ${gameLine(record)} · median ${formatValue(q.q50)}`,
+          unavailableReason: duel.includes(record.player_id)
+            ? "Already in the comparison"
+            : q === null
+              ? `${record.game_state === "lines_pending" ? "Line pending" : "Bye"}: nothing to compare`
+              : undefined,
+        };
+      }),
+    [bundle, scoring, duel],
+  );
+  return (
+    <PlayerPickerDialog
+      title="Add a player to the comparison"
+      label={`Add a player to the week-${String(week)} comparison`}
+      help={`Choose a player with a week-${String(week)} ${SCORING_LABELS[state.scoring]} projection. He joins the comparison as ${slot}.`}
+      pool={pool}
+      poolName={`the week-${String(week)} board`}
+      onPick={(entry) => {
+        onPick(entry.id);
+      }}
+      onClose={onClose}
+    />
   );
 }
 

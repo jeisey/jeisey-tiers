@@ -1260,6 +1260,10 @@ export function PlayerDetail({
   // ADR-107: whether the reader has opened the Skill Tree. It stays open for the next player in
   // the same dialog and resets when the dialog closes, so opening a card never fetches it.
   const [treeOpen, setTreeOpen] = useState(false);
+  // ADR-111: on a phone the header starts compact — name, position and team, availability, the
+  // close and expand controls — and the tabs get the room. The reader's choice holds across
+  // tabs and players in the same dialog and resets when the dialog closes.
+  const [expanded, setExpanded] = useState(false);
   const baseId = useId();
 
   useEffect(() => {
@@ -1289,7 +1293,10 @@ export function PlayerDetail({
   if (lastPlayerId !== playerId) {
     setLastPlayerId(playerId);
     setTab(0);
-    if (playerId === null) setTreeOpen(false);
+    if (playerId === null) {
+      setTreeOpen(false);
+      setExpanded(false);
+    }
   }
 
   useEffect(() => {
@@ -1971,13 +1978,13 @@ export function PlayerDetail({
       }}
     >
       <div className="detail-frame chamfer">
-        <div className="detail-card chamfer">
+        <div className="detail-card chamfer" data-header={sheet ? (expanded ? "expanded" : "compact") : undefined}>
           {/*
             The identity rail (artboard 1c). Below 1100px the stylesheet turns it into a header
             band; below 768px it keeps identity and fair rank and the tabs carry the rest. It is
             always in the DOM, so the accessible title never moves.
           */}
-          <div className="detail-rail" data-season={showSeason ? "true" : undefined}>
+          <div id={`${baseId}-rail`} className="detail-rail" data-season={showSeason ? "true" : undefined}>
             {/*
               The portrait leads the rail on the wide variant and sits left of the identity
               block on the two narrow ones — one DOM position serves all three, because the
@@ -2031,6 +2038,40 @@ export function PlayerDetail({
               </div>
               {showSeason && (
                 <RankMeta ros={ros ?? null} season={season} meta={data.seasonMeta ?? null} />
+              )}
+              {/*
+                The phone's compact header (ADR-111): one line under the name with what tells
+                this player apart — position, team, a status worth stating — and the control
+                that shows the rest of the rail. Collapsed, the portrait, the rank chips, the
+                rank sentence, the hero rank and the verdict row are not shown; expanded, the
+                rail is exactly the sheet's rail as it was. Wider variants never render it.
+              */}
+              {sheet && (
+                <div className="detail-compact">
+                  <span className="detail-compact-identity">
+                    {position !== null && <PositionTag position={position} />}
+                    {team !== null && <span className="detail-compact-team">{team}</span>}
+                    {inSeasonCard && data.availability != null ? (
+                      <AvailabilityBadge availability={data.availability} />
+                    ) : (
+                      <StatusBadge status={status} />
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="detail-expand"
+                    aria-expanded={expanded}
+                    aria-controls={`${baseId}-rail`}
+                    onClick={() => {
+                      setExpanded((value) => !value);
+                    }}
+                  >
+                    {expanded ? "Collapse details" : "Expand details"}
+                    <span className="detail-expand-mark" aria-hidden="true">
+                      {expanded ? "▴" : "▾"}
+                    </span>
+                  </button>
+                </div>
               )}
             </div>
 
