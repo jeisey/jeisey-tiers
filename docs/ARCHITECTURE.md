@@ -113,6 +113,12 @@ The frontend may load only generated public files under `public/data/` (or Vite-
 > shows still comes from the published files, resolved by id on each visit. The boundary on
 > *what is fetched* is unchanged.
 
+> **2026-10-15 note (ADR-110).** Win My Matchup adds a second browser-only document beside it,
+> `jeisey-tiers:win-my-matchup@<base path>`: the opponent's ids by slot and the reader's own
+> confirmations, finals and availability marks (DATA_CONTRACTS §26). It is versioned
+> separately, so neither contract migrates the other. It stores no result, and like the
+> leagues it is never sent or put in a URL.
+
 ### 3.3 Benchmark boundary
 
 Benchmark-only source data must never be serialized into public artifacts unless its current license/terms explicitly permit redistribution.
@@ -652,6 +658,31 @@ No routing library is required for V1. A single page with tabs and `URLSearchPar
 > league's block and scoring, replacing the URL's `scoring`/`teams` so every other surface agrees.
 > The workspace draws a league only once the files loaded are for that league's own preset.
 
+> **2026-10-15 addition (ADR-110).** Win My Matchup is a third lazy chunk inside the workspace,
+> and the site's first Web Worker.
+>
+> * **The view** (`app/leagues/WinMyMatchup.tsx`, `MatchupLineups.tsx`, `MatchupResults.tsx`,
+>   `MatchupChanges.tsx`, and the lazy `styles/wmm.css`) loads when its tab opens. It holds:
+>   * `data/wmmContract.ts` and `data/wmmStore.ts`: the document and its store, under ADR-106's
+>     rules;
+>   * `data/matchupSetup.ts`: slot conditions, proposals and the engine's compact input, with
+>     its fingerprint;
+>   * `data/yolo.ts`: the YOLO gates, over `candidates.ts`'s predicates.
+> * **The engine** (`data/matchupEngine.ts`, contract types in `data/matchup.ts`) is pure,
+>   seeded and versioned (`matchup_sim_v1`). It runs inside a module worker
+>   (`data/matchup.worker.ts`), created on the first *Simulate* and terminated on cancel,
+>   unmount or league switch. `data/matchupClient.ts` owns that lifecycle:
+>   * request ids;
+>   * one run at a time;
+>   * stale answers dropped;
+>   * a main-thread fallback in time-budgeted slices, which is the only path that loads the
+>     engine as a main-thread chunk.
+> * **YOLO's data.** The view asks for YOLO's two files through the signal
+>   (`publishYoloFiles`), and `App` loads them beside — never gating — the lineup. That only
+>   happens while YOLO is on.
+> * **Shared math.** The engine reuses Start/Sit's `interp`, `normalCdf` and `normalQuantile`,
+>   so a two-player matchup agrees with Start/Sit's arithmetic, and that agreement is tested.
+
 ## 11. Pages base path
 
 The Vite build must work for both:
@@ -729,6 +760,7 @@ dictionary every slice resolves `display_name` through — comes with the first 
 | in-season | ROS tiers (`ros`, the in-season default) | `ros_tiers/<block>`, `season_actuals/<scoring>` | every ROS field, including `current_status` (the policy's fallback roster code) and `long_absence` with the manifest's disclosures; season points, games, rate and positional rank (ADR-105) for the chart's comparison lane and the table |
 | in-season | Start/Sit | `weekly_projections/<scoring>`, `weekly_context/all`, `ros_tiers/<block>`, `season_actuals/<scoring>` | quantiles, drivers, explanation accounts, game, opponent, injury; each team's venue, forecast, listed players, typical and this-week lines (ADR-099); the weekly block's thresholds from the manifest; the RoS positional rank and the season actuals beside the week board (ADR-105) |
 | in-season | My Leagues (ADR-106) | nothing preset-specific until the workspace has said which league is active (none at all with no saved league); then, for the active league's preset, `weekly_projections/<scoring>`, `weekly_context/all`, `ros_tiers/<block>`, `season_actuals/<scoring>` — Start/Sit's files; with Rising Stars on, also `inseason_opportunity/<block>`, `player_usage/all`, `behavior_trend_series/all` (fetched beside, never gating, the lineup) | quantiles, game, opponent, kickoff and lock state, thresholds, availability; ROS rank and value for Improve and the slot detail; the Opportunity Board's role and momentum readings for Rising Stars; Improve's engine and the trade engine load as code only |
+| in-season | Win My Matchup (ADR-110), a tool inside My Leagues | nothing beyond My Leagues' files when its tab opens (its code only); the worker's code on the first *Simulate*; with YOLO on, `inseason_opportunity/<block>` and `player_usage/all` | the same week's quantiles, games, teams, kickoffs and lock state, availability and the build's latent same-game correlations (`weekly.correlation`); for YOLO, the Opportunity Board's role reading and the net-add snapshot |
 | in-season | Trade (ADR-100) | `ros_tiers/<block>` — the slice the default view already loaded | expected VORP, the five VORP quantiles, expected points, `remaining_horizon_weeks`, `long_absence`, `current_status`, identity; the lazily loaded engine (`data/trade.ts`) does the rest in the browser |
 | in-season | Opportunity | `ros_tiers/<block>`, `season_actuals/<scoring>`, `inseason_opportunity/<block>`, `player_usage/all`, `behavior_trend_series/all`, `team_matchups/all` | the board's own fields (its copied ROS fields joined from the ROS slice); the leading role metric's change and weekly series; add momentum and its last point; the next game |
 | in-season | Pick of the Week | as Opportunity, plus `player_headshots/all` | the same readings, and the four picks' portrait addresses |
@@ -757,4 +789,7 @@ league on a not-yet-loaded preset adds 85.1 kB, and switching back among loaded 
 opening a card costs what it did (23.9 kB); showing the Skill Tree adds 16.5 kB (7.5 kB code,
 2.5 kB style, 4.2 kB definitions, 2.2 kB shard), another player at another position 6.6 kB, and
 a repeat 0 B. The manifest grew by the two families' file entries and the tree's metadata block.
+ADR-110, on the size model: opening Win My Matchup adds 26.3 kB (its code and stylesheet; no
+data), the first simulation 5.4 kB (the worker), a repeat 0 B, and YOLO 112.5 kB. A cold first
+visit that opens it is 425.6 kB, 122.0 kB of it data.
 

@@ -56,6 +56,7 @@ import {
   SCORING_TO_PRESET,
   leaguePresetId,
   type AppState,
+  type LeaguePanel,
   type ResolvedViewId,
   type ScoringValue,
   type TeamCount,
@@ -66,6 +67,14 @@ import { SettingsDialog } from "./leagues/SettingsDialog";
 import { SlotDialog } from "./leagues/SlotDialog";
 import { points, sumLabel, useClock } from "./leagues/shared";
 import { useLeagueSnapshot, useLeagueStore } from "./useLeagues";
+
+/**
+ * Win My Matchup (ADR-110): its view, stylesheet and engine load when the reader opens it, and
+ * its simulation worker on the first *Simulate*.
+ */
+const WinMyMatchup = lazy(() =>
+  import("./leagues/WinMyMatchup").then((module) => ({ default: module.WinMyMatchup })),
+);
 
 /** Improve's view and engine (with the trade engine it reuses), loaded when first run. */
 const ImprovePanel = lazy(() =>
@@ -86,6 +95,8 @@ export function MyLeaguesView({
   risingBundle,
   risingRequested,
   risingFailure,
+  yoloBundle = null,
+  yoloFailure = null,
   state,
   onChange,
   onSelect,
@@ -106,6 +117,10 @@ export function MyLeaguesView({
   readonly risingBundle: InSeasonBundle | null;
   readonly risingRequested: boolean;
   readonly risingFailure: Error | null;
+  /** Win My Matchup's YOLO files, once loaded (ADR-110); requested by the view itself. */
+  readonly yoloBundle?: InSeasonBundle | null;
+  readonly yoloRequested?: boolean;
+  readonly yoloFailure?: Error | null;
   readonly state: AppState;
   readonly onChange: (patch: Partial<AppState>) => void;
   readonly onSelect: (playerId: string) => void;
@@ -176,6 +191,9 @@ export function MyLeaguesView({
           risingBundle={risingBundle}
           risingRequested={risingRequested}
           risingFailure={risingFailure}
+          yoloBundle={yoloBundle}
+          yoloFailure={yoloFailure}
+          panel={state.panel}
           onChange={onChange}
           onSelect={onSelect}
           nameOf={nameOf}
@@ -392,6 +410,9 @@ function LeagueWorkspace({
   risingBundle,
   risingRequested,
   risingFailure,
+  yoloBundle,
+  yoloFailure,
+  panel,
   onChange,
   onSelect,
   nameOf,
@@ -411,6 +432,9 @@ function LeagueWorkspace({
   readonly risingBundle: InSeasonBundle | null;
   readonly risingRequested: boolean;
   readonly risingFailure: Error | null;
+  readonly yoloBundle: InSeasonBundle | null;
+  readonly yoloFailure: Error | null;
+  readonly panel: LeaguePanel;
   readonly onChange: (patch: Partial<AppState>) => void;
   readonly onSelect: (playerId: string) => void;
   readonly nameOf: (playerId: string) => string | null;
@@ -483,6 +507,9 @@ function LeagueWorkspace({
       risingBundle={risingBundle}
       risingRequested={risingRequested}
       risingFailure={risingFailure}
+      yoloBundle={yoloBundle}
+      yoloFailure={yoloFailure}
+      panel={panel}
       onChange={onChange}
       onSelect={onSelect}
       nameOf={nameOf}
@@ -506,6 +533,9 @@ function ReadyWorkspace({
   risingBundle,
   risingRequested,
   risingFailure,
+  yoloBundle,
+  yoloFailure,
+  panel,
   onChange,
   onSelect,
   nameOf,
@@ -525,6 +555,9 @@ function ReadyWorkspace({
   readonly risingBundle: InSeasonBundle | null;
   readonly risingRequested: boolean;
   readonly risingFailure: Error | null;
+  readonly yoloBundle: InSeasonBundle | null;
+  readonly yoloFailure: Error | null;
+  readonly panel: LeaguePanel;
   readonly onChange: (patch: Partial<AppState>) => void;
   readonly onSelect: (playerId: string) => void;
   readonly nameOf: (playerId: string) => string | null;
@@ -682,106 +715,150 @@ function ReadyWorkspace({
         </p>
       )}
 
-      <div className="lg-toolbar">
-        <label className="lg-toggle">
-          <input
-            type="checkbox"
-            checked={league.prefs.risingStars}
-            disabled={!writable}
-            onChange={(event) => {
-              setPrefs(store, league, { risingStars: event.target.checked });
-            }}
-          />
-          <span>Rising Stars</span>
-        </label>
-        {league.prefs.risingStars && (
-          <p className="lg-help lg-rising-rule">
-            {`Off-roster players whose role (snap share; QB pass attempts) AND adds are both rising now — never either alone, no blended score. Ownership in your league is unknown. `}
-            <button
-              type="button"
-              className="button-link"
-              onClick={() => {
-                onChange({ view: "opportunity", scoring: league.scoring, teams: league.teams, only: ["role", "momentum"] });
-              }}
-            >
-              Evidence on the Opportunity Board
-            </button>
-            {rising?.selection?.kind === "unavailable" &&
-              ` This build did not publish ${rising.selection.missing.map((signal) => RISING_SIGNAL_TEXT[signal]).join(" or ")}, so rising players cannot be read — not "nobody is rising".`}
-            <span className="visually-hidden">{` ${RISING_RULE_VERSION}`}</span>
-          </p>
-        )}
-      </div>
-
-      {weekly === null ? (
-        <Notice title="No weekly projections were published with this build.">
-          Auto Start/Sit and matchups need the week&rsquo;s projections. Your roster can still be
-          edited, and Rising Stars still works.
-        </Notice>
-      ) : (
-        proposal !== null &&
-        !empty && (
-          <AutoLineup
-            proposal={proposal}
-            league={league}
-            weekly={{ target: weekly.target_week, generated: bundle.metadata.generated_at_utc, kickedOff: weekly.kicked_off > 0 && weekly.upcoming === 0 }}
-            name={name}
-            writable={writable}
-            onMode={(next) => {
-              setPrefs(store, league, { mode: next });
-            }}
-            onApply={apply}
-            onUndo={undo === null ? null : revert}
-            message={message}
-          />
-        )
-      )}
-
-      <LineupBoard
-        league={league}
-        universe={universe}
-        readers={readers}
-        mode={mode}
-        weekly={weekly}
-        rising={rising}
-        onEditSlot={(slot) => {
-          if (writable) onEditSlot(slot);
+      <LeagueTools
+        panel={panel}
+        onPanel={(next) => {
+          onChange({ panel: next });
         }}
-        onSelect={onSelect}
       />
+      {panel === "lineup" ? (
+        <div id="lg-panel-lineup" role="tabpanel" aria-labelledby="lg-tab-lineup" className="lg-panel">
+          <div className="lg-toolbar">
+            <label className="lg-toggle">
+              <input
+                type="checkbox"
+                checked={league.prefs.risingStars}
+                disabled={!writable}
+                onChange={(event) => {
+                  setPrefs(store, league, { risingStars: event.target.checked });
+                }}
+              />
+              <span>Rising Stars</span>
+            </label>
+            {league.prefs.risingStars && (
+              <p className="lg-help lg-rising-rule">
+                {`Off-roster players whose role (snap share; QB pass attempts) AND adds are both rising now — never either alone, no blended score. Ownership in your league is unknown. `}
+                <button
+                  type="button"
+                  className="button-link"
+                  onClick={() => {
+                    onChange({ view: "opportunity", scoring: league.scoring, teams: league.teams, only: ["role", "momentum"] });
+                  }}
+                >
+                  Evidence on the Opportunity Board
+                </button>
+                {rising?.selection?.kind === "unavailable" &&
+                  ` This build did not publish ${rising.selection.missing.map((signal) => RISING_SIGNAL_TEXT[signal]).join(" or ")}, so rising players cannot be read — not "nobody is rising".`}
+                <span className="visually-hidden">{` ${RISING_RULE_VERSION}`}</span>
+              </p>
+            )}
+          </div>
 
-      <section className="lg-improve" aria-labelledby="lg-improve-heading">
-        <h3 id="lg-improve-heading" className="lg-section-title">Improve</h3>
-        {weekly === null || empty ? (
-          <p className="lg-help">{empty ? "Add players to your roster to find upgrades." : "Improve needs this week's projections."}</p>
-        ) : !improveOpen ? (
-          <p>
-            <button type="button" className="button" onClick={() => { setImproveOpen(true); }}>
-              Find upgrades
-            </button>{" "}
-            <span className="lg-help">Your weakest starting slots, players who would fix them, and value-matched trade ideas from your roster.</span>
+          {weekly === null ? (
+            <Notice title="No weekly projections were published with this build.">
+              Auto Start/Sit and matchups need the week&rsquo;s projections. Your roster can still be
+              edited, and Rising Stars still works.
+            </Notice>
+          ) : (
+            proposal !== null &&
+            !empty && (
+              <AutoLineup
+                proposal={proposal}
+                league={league}
+                weekly={{ target: weekly.target_week, generated: bundle.metadata.generated_at_utc, kickedOff: weekly.kicked_off > 0 && weekly.upcoming === 0 }}
+                name={name}
+                writable={writable}
+                onMode={(next) => {
+                  setPrefs(store, league, { mode: next });
+                }}
+                onApply={apply}
+                onUndo={undo === null ? null : revert}
+                message={message}
+              />
+            )
+          )}
+
+          <LineupBoard
+            league={league}
+            universe={universe}
+            readers={readers}
+            mode={mode}
+            weekly={weekly}
+            rising={rising}
+            onEditSlot={(slot) => {
+              if (writable) onEditSlot(slot);
+            }}
+            onSelect={onSelect}
+          />
+
+          <section className="lg-improve" aria-labelledby="lg-improve-heading">
+            <h3 id="lg-improve-heading" className="lg-section-title">Improve</h3>
+            {weekly === null || empty ? (
+              <p className="lg-help">{empty ? "Add players to your roster to find upgrades." : "Improve needs this week's projections."}</p>
+            ) : !improveOpen ? (
+              <p>
+                <button type="button" className="button" onClick={() => { setImproveOpen(true); }}>
+                  Find upgrades
+                </button>{" "}
+                <span className="lg-help">Your weakest starting slots, players who would fix them, and value-matched trade ideas from your roster.</span>
+              </p>
+            ) : (
+              <Suspense fallback={<p className="lg-help" role="status">Loading Improve…</p>}>
+                <ImprovePanel
+                  league={league}
+                  records={records}
+                  week={context}
+                  threshold={threshold}
+                  rule={rule}
+                  availabilityOf={(id) => bundle.availabilityFor(id)}
+                  nameOf={name}
+                  onSelect={onSelect}
+                  signature={improveSignature}
+                  presetLabel={presetLabel}
+                />
+              </Suspense>
+            )}
+          </section>
+
+          <p className="lg-help lg-foot">
+            {`Projections: ${weekly?.model_version ?? "none"} (production; weekly v2 stays in shadow) · build ${formatEastern(bundle.metadata.generated_at_utc)} · ROS through week ${String(bundle.throughWeek)} · ${LINEUP_RULE_VERSION}`}
           </p>
-        ) : (
-          <Suspense fallback={<p className="lg-help" role="status">Loading Improve…</p>}>
-            <ImprovePanel
-              league={league}
-              records={records}
-              week={context}
-              threshold={threshold}
-              rule={rule}
-              availabilityOf={(id) => bundle.availabilityFor(id)}
-              nameOf={name}
-              onSelect={onSelect}
-              signature={improveSignature}
-              presetLabel={presetLabel}
-            />
-          </Suspense>
-        )}
-      </section>
-
-      <p className="lg-help lg-foot">
-        {`Projections: ${weekly?.model_version ?? "none"} (production; weekly v2 stays in shadow) · build ${formatEastern(bundle.metadata.generated_at_utc)} · ROS through week ${String(bundle.throughWeek)} · ${LINEUP_RULE_VERSION}`}
-      </p>
+        </div>
+      ) : (
+        <div id="lg-panel-wmm" role="tabpanel" aria-labelledby="lg-tab-wmm" className="lg-panel">
+          {weekly === null ? (
+            <Notice title="No weekly projections were published with this build.">
+              Win My Matchup simulates this week&rsquo;s projections, so it needs them. Your roster and opponent
+              entries are kept.
+            </Notice>
+          ) : (
+            <Suspense fallback={<p className="lg-help" role="status">Loading Win My Matchup…</p>}>
+              <WinMyMatchup
+                league={league}
+                leagueStore={store}
+                leagueWritable={writable}
+                bundle={bundle}
+                yoloBundle={yoloBundle}
+                yoloFailure={yoloFailure}
+                context={context}
+                universe={universe}
+                name={name}
+                teamOf={readers.teamOf}
+                availabilityOf={availabilityOf}
+                rule={rule}
+                weekly={weekly}
+                scoring={scoring}
+                leaguePreset={leaguePreset}
+                presetLabel={presetLabel}
+                onSelect={onSelect}
+                onEditLineup={() => {
+                  onChange({ panel: "lineup" });
+                }}
+              />
+            </Suspense>
+          )}
+        </div>
+      )}
 
       {slotOpen !== null && (
         <SlotDialog
@@ -800,6 +877,46 @@ function ReadyWorkspace({
           compareIds={comparablesFor(slotOpen, league.roster, weeks)}
         />
       )}
+    </div>
+  );
+}
+
+const PANEL_LABELS: Readonly<Record<LeaguePanel, string>> = { lineup: "Lineup", wmm: "Win My Matchup" };
+
+/**
+ * The league's two tools (ADR-110): the lineup workspace and Win My Matchup, as tabs inside the
+ * league — not another top-level destination. The choice is in the URL (`panel=wmm`), never the
+ * league.
+ */
+function LeagueTools({ panel, onPanel }: { readonly panel: LeaguePanel; readonly onPanel: (panel: LeaguePanel) => void }): React.JSX.Element {
+  const panels: readonly LeaguePanel[] = ["lineup", "wmm"];
+  return (
+    <div className="lg-tools" role="tablist" aria-label="League tools">
+      {panels.map((value, index) => (
+        <button
+          key={value}
+          id={`lg-tab-${value}`}
+          type="button"
+          role="tab"
+          className="lg-tools-tab"
+          aria-selected={panel === value}
+          aria-controls={`lg-panel-${value}`}
+          tabIndex={panel === value ? 0 : -1}
+          onClick={() => {
+            onPanel(value);
+          }}
+          onKeyDown={(event) => {
+            const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+            if (step === 0) return;
+            event.preventDefault();
+            const next = panels[(index + step + panels.length) % panels.length] ?? "lineup";
+            onPanel(next);
+            event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#lg-tab-${next}`)?.focus();
+          }}
+        >
+          {PANEL_LABELS[value]}
+        </button>
+      ))}
     </div>
   );
 }

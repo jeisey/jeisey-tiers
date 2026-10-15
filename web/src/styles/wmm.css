@@ -1,0 +1,663 @@
+/*
+ * Win My Matchup (ADR-110).
+ *
+ * Imported by the lazy `app/leagues/WinMyMatchup.tsx`, so it is that chunk's own stylesheet: a
+ * reader who never opens the view downloads none of it. Every colour, font, space and line is an
+ * existing token from `base.css`, and the slot rows reuse My Leagues' `lg-slot` layout. Win and
+ * loss are never told apart by colour alone: the zero line, the legend words and the table say
+ * which side is which. No gradient, no decorative motion.
+ */
+
+.wmm {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.wmm-head {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.wmm-muted {
+  color: var(--ink-faint);
+}
+
+.wmm-side-title,
+.wmm-subhead {
+  margin: 0;
+  font: 600 0.68rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+}
+
+.wmm-subhead {
+  margin-top: var(--space-2);
+  color: var(--ink-faint);
+}
+
+/* ----------------------------------------------------------------------- the lineups */
+
+.wmm-lineups {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .wmm-lineups {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.wmm-side {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wmm-side-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  min-height: 40px;
+}
+
+.wmm-name-input {
+  width: min(16rem, 100%);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--canvas-deep);
+  color: var(--ink);
+  font: 500 0.8rem/1 var(--font-sans);
+}
+
+.wmm-name-input:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.wmm-slot[data-kind="blocking"] {
+  background: var(--tile-warn);
+}
+
+.wmm-slot[data-kind="bye"],
+.wmm-slot[data-kind="zero"],
+.wmm-slot[data-kind="empty"] {
+  background: var(--canvas-deep);
+}
+
+.wmm-kind {
+  font: 600 0.62rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+  border: var(--hairline) solid var(--line-strong);
+  padding: 3px 5px;
+}
+
+.wmm-kind[data-kind="blocking"] {
+  color: var(--warn);
+  border-color: var(--warn-line);
+}
+
+.wmm-slot .lg-slot-actions {
+  flex-wrap: wrap;
+}
+
+.wmm-others summary,
+.wmm-table-toggle summary {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.74rem;
+  color: var(--ink-muted);
+}
+
+.wmm-others {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.wmm-other-list,
+.wmm-final-list,
+.wmm-funnel {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-1);
+  font-size: 0.78rem;
+}
+
+.wmm-other-list li,
+.wmm-final-list li,
+.wmm-funnel li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.wmm-funnel li {
+  color: var(--ink-muted);
+}
+
+.wmm-finals {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--hairline) solid var(--line);
+  background: var(--panel);
+}
+
+.wmm-final-name {
+  min-width: 12rem;
+  color: var(--ink-strong);
+}
+
+.wmm-final-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.wmm-final-input {
+  width: 6.5rem;
+  min-height: 40px;
+  padding: 0 var(--space-2);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--canvas-deep);
+  color: var(--ink);
+  font: 500 0.8rem/1 var(--font-mono);
+}
+
+/* ------------------------------------------------------------------------ simulate */
+
+.wmm-run {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--hairline) solid var(--line-strong);
+  border-left: 2px solid var(--accent);
+  background: var(--panel);
+}
+
+.wmm-run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.wmm-ready {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-strong);
+}
+
+.wmm-ready[data-ready="false"] {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.wmm-ready-title {
+  margin: 0;
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------------ the result */
+
+.wmm-result {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wmm-headline {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.wmm-headline-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.wmm-headline-figure {
+  font: 700 2.25rem/1 var(--font-mono);
+  color: var(--ink);
+}
+
+.wmm-headline-words {
+  font-size: 0.86rem;
+  color: var(--ink-strong);
+}
+
+.wmm-headline-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font: 500 0.74rem/1.4 var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.wmm-scenario-tag {
+  color: var(--ink-accent);
+}
+
+.wmm-caveat {
+  margin: 0;
+}
+
+.wmm-chart {
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wmm-chart-plot {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wmm-chart svg {
+  display: block;
+}
+
+.wmm-bar[data-side="win"] {
+  fill: var(--good);
+  fill-opacity: 0.75;
+}
+
+.wmm-bar[data-side="loss"] {
+  fill: var(--danger);
+  fill-opacity: 0.55;
+}
+
+.wmm-zero {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.wmm-overlay {
+  fill: none;
+  stroke: var(--accent-bright);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.wmm-tick line {
+  stroke: var(--line-faint);
+}
+
+.wmm-tick text {
+  fill: var(--ink-faint);
+  font: 500 10px var(--font-mono);
+}
+
+.wmm-chart-caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+}
+
+.wmm-legend::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.wmm-legend[data-side="loss"]::before {
+  background: var(--danger);
+  opacity: 0.55;
+}
+
+.wmm-legend[data-side="win"]::before {
+  background: var(--good);
+  opacity: 0.75;
+}
+
+.wmm-legend[data-side="zero"]::before {
+  width: 2px;
+  background: var(--ink);
+}
+
+.wmm-legend[data-side="overlay"]::before {
+  height: 2px;
+  vertical-align: 3px;
+  background: var(--accent-bright);
+}
+
+.wmm-totals {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.wmm-totals div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.wmm-totals dt {
+  min-width: 11rem;
+  color: var(--ink-muted);
+}
+
+.wmm-totals dd {
+  margin: 0;
+  color: var(--ink-strong);
+  font-family: var(--font-mono);
+}
+
+.wmm-totals div[data-variant="proposal"] dt {
+  color: var(--accent-bright);
+}
+
+.wmm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.wmm-table caption {
+  text-align: left;
+  padding-bottom: var(--space-1);
+  font: 600 0.66rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.wmm-table th,
+.wmm-table td {
+  padding: 6px var(--space-2);
+  border-bottom: var(--hairline) solid var(--line-faint);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.wmm-table thead th {
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.wmm-table tbody th {
+  color: var(--ink-accent);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.wmm-table td {
+  font-family: var(--font-mono);
+  color: var(--ink-strong);
+}
+
+.wmm-group-table tr[data-changed] td:last-child {
+  color: var(--accent-bright);
+}
+
+.wmm-groups {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wmm-groups-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+.wmm-groups-scroll:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.wmm-range-col {
+  width: 28%;
+  min-width: 7rem;
+}
+
+.wmm-range-pair {
+  display: grid;
+  gap: 3px;
+}
+
+.wmm-range {
+  position: relative;
+  display: block;
+  height: 8px;
+  background: var(--line-faint);
+}
+
+.wmm-range-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.wmm-range[data-side="mine"] .wmm-range-band {
+  background: var(--accent);
+  opacity: 0.7;
+}
+
+.wmm-range[data-side="theirs"] .wmm-range-band {
+  border: var(--hairline) solid var(--warn);
+  background: transparent;
+}
+
+.wmm-range-median {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--ink);
+}
+
+/* ------------------------------------------------------------------------- changes */
+
+.wmm-section,
+.wmm-changes,
+.wmm-yolo {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wmm-yolo {
+  padding: var(--space-3) var(--space-4);
+  border: var(--hairline) solid var(--line);
+  background: var(--panel);
+}
+
+.wmm-yolo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.wmm-change-base {
+  margin: 0;
+  font: 500 0.8rem/1.4 var(--font-mono);
+  color: var(--ink-strong);
+}
+
+.wmm-change-list,
+.wmm-yolo-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--hairline);
+  background: var(--line-faint);
+}
+
+.wmm-change,
+.wmm-yolo-card {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--panel-raised);
+  min-width: 0;
+}
+
+.wmm-change[data-previewing],
+.wmm-yolo-card[data-previewing] {
+  box-shadow: inset 2px 0 0 var(--accent-bright);
+}
+
+.wmm-change-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.wmm-change-label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+.wmm-change-moves {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+}
+
+.wmm-change-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font: 500 0.74rem/1.4 var(--font-mono);
+  color: var(--ink-strong);
+}
+
+.wmm-change-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.wmm-gain {
+  margin-left: auto;
+  font: 700 0.74rem/1 var(--font-mono);
+  color: var(--good);
+}
+
+.wmm-evidence {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: 0.74rem;
+}
+
+.wmm-evidence dt {
+  color: var(--ink-faint);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wmm-evidence dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  color: var(--ink-strong);
+}
+
+.wmm-tradeoff {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border-left: 2px solid var(--warn);
+  font-size: 0.76rem;
+  color: var(--warn);
+}
+
+.wmm-mark-line {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+.wmm-confirm,
+.wmm-drop-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  font-size: 0.82rem;
+}
+
+.wmm-confirm input,
+.wmm-drop-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.wmm-drop {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline) solid var(--line-strong);
+}
+
+.wmm-drop legend {
+  padding: 0 var(--space-1);
+  font-size: 0.78rem;
+  color: var(--ink-strong);
+}
+
+@media (max-width: 767px) {
+  .wmm-run,
+  .wmm-yolo {
+    padding: var(--space-3);
+  }
+
+  .wmm-headline-figure {
+    font-size: 1.9rem;
+  }
+
+  .wmm-totals dt {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .wmm-range-col {
+    display: none;
+  }
+
+  .wmm-name-input {
+    width: 100%;
+  }
+
+  .wmm-gain {
+    margin-left: 0;
+  }
+}

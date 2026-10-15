@@ -1,0 +1,465 @@
+{
+ "prefix": "/scenario/in-season/",
+ "report": [
+  {
+   "screen": "01-ready",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  },
+  {
+   "screen": "06-sunday-finals",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-ready",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  },
+  {
+   "screen": "01-ready",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  },
+  {
+   "screen": "01-ready",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  },
+  {
+   "screen": "01-ready",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  },
+  {
+   "screen": "01-ready",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  },
+  {
+   "screen": "06-sunday-finals",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-ready",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  },
+  {
+   "screen": "06-sunday-finals",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-ready",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-opponent-picker",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": null
+  },
+  {
+   "screen": "03-result-in-view",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "03-result",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "04-changes-yolo-preview",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": true
+  },
+  {
+   "screen": "05-pickup-confirm",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": true,
+   "chartFits": true
+  }
+ ],
+ "consoleErrors": []
+}

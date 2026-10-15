@@ -1345,6 +1345,33 @@ Gen Stats files and the raw combine file through the cached nflverse loader. It 
   recomputes every published reading from the raw loaders independently of the builder and
   names any difference.
 
+### 16.13 Win My Matchup (ADR-110)
+
+No workflow and no published file changed. WMM reads files the build already publishes:
+* the week's `weekly_projections`, with `ros_build_metadata.weekly.correlation`'s latent
+  same-game correlations and the distribution rule;
+* availability;
+* for YOLO, the Opportunity Board's role reading and the behaviour snapshot's net adds.
+
+What a refresh can change for a reader:
+
+- **A new target week** starts a fresh, empty matchup. The page offers to reuse last week's
+  opponent and never shows last week's result.
+- **A missing or renamed correlation pair** is simulated as independent and named on the page
+  (*Unmeasured pairs*). A same-game block whose measured correlations do not form a valid
+  matrix is simulated independently and named (*Independent games*). Neither fails anything. If
+  either becomes common, look at `weekly.correlation` in the build's metadata.
+- **A behaviour snapshot older than 48 hours** turns YOLO into a stated "stale" notice instead
+  of a list. Fewer than five positive-net-add players at a position gives that position no bar.
+- **Diagnostics, not CI gates.** Re-run them when the engine, the view or the YOLO rule changes:
+  - `node web/tests/e2e/measure-wmm.mjs --dist web/dist-size-model --base-path /jeisey-tiers/`
+    measures interaction cost (§17.3). `--profile dir` adds Chrome traces.
+  - `node web/tests/e2e/capture-wmm.mjs <dir>` captures the visual QA set, with the fixture
+    server running.
+  - `MATCHUP_CONVERGENCE=…/weekly_projections.json MATCHUP_METADATA=…/ros_build_metadata.json
+    MATCHUP_REPORT=… npx vitest run tests/matchup-convergence.test.ts` re-measures the draw
+    count against ADR-110's rule, offline, in about five minutes.
+
 ## 17. Serving the site under load (ADR-098)
 
 ### 17.1 How GitHub Pages serves this site — verified 2026-09-30
@@ -1430,6 +1457,11 @@ revalidates at once), bytes counted at the server:
 | showing the Skill Tree on an open card (ADR-107) adds | ≤ 25 kB |
 | then hiding and showing it, or reopening that player's tree | 0 B |
 | then another player's tree, at another position | ≤ 10 kB |
+| opening Win My Matchup inside a saved league (ADR-110) adds | ≤ 30 kB |
+| then the first *Simulate* (the worker) adds | ≤ 7 kB |
+| then simulating again | 0 B |
+| then turning YOLO on adds | ≤ 125 kB |
+| a cold first visit that opens Win My Matchup — everything · data | ≤ 450 kB · ≤ 150 kB |
 
 and that a redeploy which renames a player is shown at once to a reader holding the old files.
 
@@ -1523,6 +1555,37 @@ and that a redeploy which renames a player is shown at once to a reader holding 
   ADR-107 records the measurements. ADR-109 removed the fresh card's first-tap long task (the
   opening tap's stale caret), so a first tap now costs what any tap costs. A first tap that
   slows back towards 0.6 s at 4× means a stray caret has returned.
+* **ADR-110 added Win My Matchup's budgets** and changed no existing one. The seed is one saved
+  league and its opponent, drawn from the build's own playable players (`wmm-seed.mjs`).
+  Measured on the size model (2026-10-15):
+
+  | scenario | measured | budget |
+  |---|---:|---:|
+  | opening Win My Matchup | 26.3 kB (24.3 view, 2.0 CSS; no data) | 30 kB |
+  | the first *Simulate* | 5.4 kB (the worker) | 7 kB |
+  | simulating again | 0 B | 0 B |
+  | turning YOLO on | 112.5 kB (10.1 `inseason_opportunity/<block>`, 102.4 `player_usage/all`) | 125 kB |
+  | a cold first visit that opens it | 425.6 kB, 122.0 kB of it data | 450 kB · 150 kB |
+
+  The engine is not in the view's chunk; only the no-Worker fallback fetches it (4.7 kB gzip).
+  Existing paths are unchanged, except the entry bundle: +78 B for the disabled-button rule.
+* **Win My Matchup's interaction cost** is measured by `measure-wmm.mjs`:
+  * Pixel 7, 4× CPU, the production-shaped board;
+  * the largest legal matchup, 15 starters a side;
+  * the behaviour snapshot re-stamped current.
+
+  It is a diagnostic, not a CI gate. Targets (ADR-110 §9):
+  * a baseline run within 500 ms;
+  * the recommendation run within 1.5 s;
+  * no long task over 50 ms during a run;
+  * *Cancel* within 100 ms;
+  * a picker keystroke or pick within 200 ms;
+  * heap growth within 2 MB;
+  * no worker left after a league switch.
+
+  CDP's throttle does not slow a dedicated worker, so the script also reports each run with the
+  worker's compute scaled to the throttle. ADR-110 records the measurements, including the cold
+  first run, which misses under that scaling.
 
 ### 17.4 Bandwidth arithmetic (re-do it when the numbers move)
 

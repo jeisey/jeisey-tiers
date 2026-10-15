@@ -1593,3 +1593,43 @@ view's `requiredKeys`: opening a card fetches none of them. Showing the tree fet
 definitions file and one bucket shard; the page re-renders nothing else when they arrive (the
 store's Skill Tree families do not notify its subscribers).
 
+## 26. Win My Matchup's entered opponents — `jeisey-tiers.win-my-matchup` v1 (ADR-110)
+
+This is not a published artifact either. It is the second document the site keeps in the
+reader's browser, separate from §24 so that neither contract migrates the other. The code is
+`web/src/data/wmmContract.ts` and `wmmStore.ts`, tested in `web/tests/wmm-storage.test.ts`.
+
+* **Key.** `localStorage["jeisey-tiers:win-my-matchup@<base path>"]`, plus `…:backup`
+  (`{savedAt, reason, raw}`), as §24.
+* **Document.** `{format: "jeisey-tiers.win-my-matchup", version: 1, revision, entries, prefs}`.
+  `prefs` maps a league id to `{yolo: boolean}`, for at most 6 leagues; YOLO is off when absent.
+* **Entry.** One per league, season and week:
+  `{leagueId, season, week, opponent, confirmedEmpty, countZero, finals, marks, rev, updatedAt}`.
+
+  | field | values |
+  |---|---|
+  | `leagueId` | a §24 league id |
+  | `season` · `week` | integers, 2000–2100 · 1–25 |
+  | `opponent` | `{name, starters, others}`. `name` is text of at most 40 characters. `starters` has, per starter group (QB, RB, WR, TE, FLEX), an array within §24's slot bounds, each entry a canonical id or `null`. `others` is the bench and IR: at most 14 ids, used only to exclude known-owned players |
+  | `confirmedEmpty` | `{mine, theirs}`: slot keys such as `TE:0` or `FLEX:1` that the reader chose to leave empty, scoring 0 |
+  | `countZero` | at most 30 ids the reader chose to count as 0 if started (out, doubtful or unavailable) |
+  | `finals` | at most 30 `id → points` pairs: confirmed final fantasy points, \|points\| ≤ 100, kept to two decimals |
+  | `marks` | at most 24 `id → "available" \| "unavailable"` pairs: waiver availability the reader checked in their own league |
+  | `rev` · `updatedAt` | as §24 |
+
+  No id may appear twice in one entry's opponent. Names, projections, results and win
+  probabilities are never stored.
+* **Bounds.** Each league keeps its four latest weeks and the document its twelve latest
+  entries, newest first by season, week and `updatedAt`, so whatever is dropped is the oldest.
+* **Reading.** The same four results as §24: empty, ok, future (read-only) and malformed (backed
+  up). An entry that fails validation, or repeats another's league-season-week key, is set aside
+  with its problem, never repaired. Migrations are keyed by the version they upgrade from;
+  version 1 has none.
+* **Writing.** Only on a reader's edit, with §24's revision check. Opening the tab, simulating or
+  changing weeks writes nothing. An untouched week creates no entry. *Reuse that opponent's
+  lineup* copies the opponent only, never confirmations, finals or marks.
+* **Never.** The document is never sent over the network, never placed in a URL, and never read
+  by the build.
+* **URL.** The only shared state is `panel=wmm`, appended to `PARAM_ORDER` after every older
+  parameter. It selects the tool inside My Leagues, and `lineup` is the default and is omitted.
+  An older link without it opens the Lineup tool, as before.

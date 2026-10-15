@@ -32,6 +32,16 @@
  * | showing the Skill Tree (ADR-107) on an open card adds | ≤ 25 kB |
  * | then hiding and showing it, or reopening that player's tree | 0 B |
  * | then another player's tree, at another position | ≤ 10 kB |
+ * | Win My Matchup (ADR-110), opened from a league's lineup, adds | ≤ 30 kB |
+ * | then the first Simulate (the worker) adds | ≤ 7 kB |
+ * | then evaluating changes, switching tools and simulating again | 0 B |
+ * | then turning YOLO on adds | ≤ 125 kB |
+ * | a cold first visit straight to Win My Matchup — everything / data | ≤ 450 kB / ≤ 150 kB |
+ *
+ * Win My Matchup's budgets are its measured cost on the size model plus a margin (ADR-110
+ * records the numbers): its code and stylesheet, then its worker on the first simulation, then
+ * YOLO's two files — the Opportunity block and the role series, which Rising Stars already holds
+ * when it is on. A direct link must meet the default view's first-visit envelope.
  *
  * The Skill Tree's budgets are separate from the card's on purpose: opening a card fetches none
  * of it (that is `cardAdds`, unchanged), and its code, stylesheet and two data files — his
@@ -70,6 +80,7 @@ import { join, resolve } from "node:path";
 import { chromium } from "@playwright/test";
 
 import { createStaticServer } from "./static-server.mjs";
+import { leaguesDocument, wmmScenario } from "./wmm-seed.mjs";
 
 export const BUDGETS = {
   firstVisitTotal: 450_000,
@@ -89,6 +100,12 @@ export const BUDGETS = {
   skillTreeAdds: 25_000,
   skillTreeRepeat: 0,
   skillTreeSwitch: 10_000,
+  wmmOpenAdds: 30_000,
+  wmmSimulateAdds: 7_000,
+  wmmRepeat: 0,
+  yoloAdds: 125_000,
+  wmmFirstVisitTotal: 450_000,
+  wmmFirstVisitData: 150_000,
 };
 
 function parseArgs(argv) {
@@ -479,6 +496,85 @@ try {
     await newcomer.close();
   } catch (error) {
     failures.push(`My Leagues' scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
+  }
+
+  // 3g. Win My Matchup (ADR-110), in browsers of their own: a 12-team PPR league (the default
+  //     view's block) with a complete opponent drawn from the build's own playable players.
+  //     Opening the tool fetches its code and stylesheet only; the first Simulate fetches the
+  //     worker; evaluating changes, switching tools and simulating the same inputs again fetch
+  //     nothing; YOLO fetches the block's Opportunity rows and the role series. A direct link
+  //     meets the first-visit envelope.
+  try {
+    const scenario = wmmScenario(dist, { base: args.basePath });
+    const seedWmm = async (context) => {
+      await context.addInitScript(
+        ([leaguesKey, leagues, matchupsKey, matchups]) => {
+          if (window.sessionStorage.getItem("wmm-seeded") === null) {
+            window.localStorage.setItem(leaguesKey, leagues);
+            window.localStorage.setItem(matchupsKey, matchups);
+            window.sessionStorage.setItem("wmm-seeded", "1");
+          }
+        },
+        [scenario.keys.leagues, leaguesDocument([scenario.league]), scenario.keys.matchups, JSON.stringify(scenario.matchup)],
+      );
+    };
+    const coach = await browser.newContext();
+    await seedWmm(coach);
+    const wmmPage = await newPage(coach);
+    const wmmLog = record();
+    await openDefault(wmmPage);
+    await wmmPage.getByRole("tab", { name: "My Leagues" }).click();
+    await leagueShown(wmmPage, "12-team PPR");
+    mark = wmmLog.mark();
+    await wmmPage.getByRole("tab", { name: "Win My Matchup" }).click();
+    await wmmPage.getByRole("heading", { name: /Win My Matchup — week/ }).waitFor();
+    await settle(wmmPage);
+    const wmmOpened = wmmLog.since(mark);
+    check("wmmOpenAdds", sum(wmmOpened), BUDGETS.wmmOpenAdds);
+    results.wmmOpenAddsData = sum(wmmOpened, isData);
+    results.wmmOpenAddsFiles = wmmOpened.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+
+    mark = wmmLog.mark();
+    await wmmPage.getByRole("button", { name: "Simulate" }).click();
+    await wmmPage.locator(".wmm-headline").waitFor();
+    await settle(wmmPage);
+    const simulated = wmmLog.since(mark);
+    check("wmmSimulateAdds", sum(simulated), BUDGETS.wmmSimulateAdds);
+    results.wmmSimulateAddsFiles = simulated.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+
+    mark = wmmLog.mark();
+    await wmmPage.getByRole("button", { name: "Evaluate lineup changes" }).click();
+    await wmmPage.locator(".wmm-changes").waitFor();
+    await wmmPage.getByRole("tab", { name: "Lineup" }).click();
+    await wmmPage.locator(".lg-auto").waitFor();
+    await wmmPage.getByRole("tab", { name: "Win My Matchup" }).click();
+    await wmmPage.getByRole("button", { name: "Simulate" }).click();
+    await wmmPage.locator(".wmm-headline").waitFor();
+    await settle(wmmPage);
+    check("wmmRepeat", sum(wmmLog.since(mark)), BUDGETS.wmmRepeat);
+
+    mark = wmmLog.mark();
+    await wmmPage.getByRole("checkbox", { name: "YOLO" }).check();
+    await wmmPage.locator(".wmm-yolo .wmm-funnel, .wmm-yolo .notice").first().waitFor();
+    await settle(wmmPage);
+    const yolo = wmmLog.since(mark);
+    check("yoloAdds", sum(yolo), BUDGETS.yoloAdds);
+    results.yoloAddsFiles = yolo.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+    await coach.close();
+
+    const direct = await browser.newContext();
+    await seedWmm(direct);
+    const directPage = await newPage(direct);
+    mark = log.mark();
+    await directPage.goto(`${site}?view=myleagues&panel=wmm`, { waitUntil: "domcontentloaded" });
+    await directPage.getByRole("heading", { name: /Win My Matchup — week/ }).waitFor();
+    await settle(directPage);
+    const wmmCold = log.since(mark);
+    check("wmmFirstVisitTotal", sum(wmmCold), BUDGETS.wmmFirstVisitTotal);
+    check("wmmFirstVisitData", sum(wmmCold, isData), BUDGETS.wmmFirstVisitData);
+    await direct.close();
+  } catch (error) {
+    failures.push(`Win My Matchup's scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
   }
 
   // 4. The same reader returns to the same deploy.

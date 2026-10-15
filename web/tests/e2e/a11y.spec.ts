@@ -23,7 +23,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 import { stubPortraits } from "./boundary";
-import { IN_SEASON, OFFICE, seed } from "./leagues-seed";
+import { IN_SEASON, MATCH, OFFICE, matchOpponent, seed, seedMatchups } from "./leagues-seed";
 
 /*
  * No test in this repository reaches a third party. The player card fetches its portrait from
@@ -567,6 +567,86 @@ test.describe("My Leagues", () => {
     const durations = await page
       .locator(".lg-switch-option, .lg-slot-actions .button, .lg-stepper button")
       .evaluateAll((nodes) => nodes.map((node) => Number.parseFloat(getComputedStyle(node).transitionDuration) || 0));
+    expect(Math.max(0, ...durations)).toBeLessThanOrEqual(0.01);
+  });
+});
+
+/*
+ * Win My Matchup (ADR-110): the league's tool tabs, two lineups of slot rows with fix buttons,
+ * a result with a chart, a table and a scrollable group table, YOLO's cards, the opponent picker
+ * and the pickup confirmation — scanned with each state rendered, at desktop and phone width.
+ */
+test.describe("Win My Matchup", () => {
+  for (const width of [1280, 390]) {
+    test(`a simulated matchup with YOLO and a preview has no violations at ${String(width)}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.clock.setFixedTime(new Date("2026-08-22T12:00:00Z"));
+      await seed(page, [MATCH]);
+      await seedMatchups(page, matchOpponent());
+      await page.goto(`${IN_SEASON}?view=myleagues&panel=wmm`);
+      await page.getByRole("button", { name: "Simulate" }).click();
+      await expect(page.locator(".wmm-headline")).toBeVisible();
+      await page.getByRole("checkbox", { name: "YOLO" }).check();
+      await page.getByRole("button", { name: "Evaluate changes and pickups" }).click();
+      const card = page.getByRole("list", { name: "Potential pickups" }).locator("li").first();
+      await card.getByRole("button", { name: "Preview" }).click();
+      await expect(page.locator(".wmm-legend[data-side=overlay]")).toBeVisible();
+      await page.getByText("Margins as a table").click();
+      await page.waitForLoadState("networkidle");
+      expect(describe(await scan(page))).toEqual([]);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+    });
+  }
+
+  test("the opponent picker and the pickup confirmation have none, and the tool tabs follow the arrow keys", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-08-22T12:00:00Z"));
+    await seed(page, [MATCH]);
+    await seedMatchups(page, matchOpponent());
+    await page.goto(`${IN_SEASON}?view=myleagues`);
+    const lineup = page.getByRole("tab", { name: "Lineup" });
+    await lineup.focus();
+    await page.keyboard.press("ArrowRight");
+    const wmm = page.getByRole("tab", { name: "Win My Matchup" });
+    await expect(wmm).toBeFocused();
+    await expect(wmm).toHaveAttribute("aria-selected", "true");
+    await expect(lineup).toHaveAttribute("tabindex", "-1");
+    await expect(page.getByRole("tabpanel", { name: "Win My Matchup" })).toBeVisible();
+
+    await page.getByRole("button", { name: /^Change the opponent's WR 1/ }).click();
+    const picker = page.getByRole("dialog");
+    await expect(picker.getByRole("combobox")).toBeFocused();
+    // Zay Meadows is already their WR 2: offered, and named as a move.
+    await page.keyboard.type("zay");
+    await expect(picker.getByRole("option", { name: /Zay Meadows.*already entered for the opponent at WR 2/ })).toBeVisible();
+    expect(describe(await scan(page))).toEqual([]);
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await page.getByRole("checkbox", { name: "YOLO" }).check();
+    await page.getByRole("list", { name: "Potential pickups" }).getByRole("button", { name: "Add to my roster…" }).first().click();
+    const confirm = page.getByRole("dialog", { name: /^Add / });
+    await expect(confirm.getByRole("checkbox")).toBeFocused();
+    expect(describe(await scan(page))).toEqual([]);
+    // Every slot action names its slot, and is a usable target.
+    await page.keyboard.press("Escape");
+    for (const button of await page.locator(".wmm-slot .lg-slot-actions button").all()) {
+      expect(((await button.getAttribute("aria-label")) ?? (await button.textContent()) ?? "").length).toBeGreaterThan(3);
+      expect((await button.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(24);
+    }
+  });
+
+  test("honours reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await seed(page, [MATCH]);
+    await seedMatchups(page, matchOpponent());
+    await page.goto(`${IN_SEASON}?view=myleagues&panel=wmm`);
+    await page.getByRole("button", { name: "Simulate" }).click();
+    await expect(page.locator(".wmm-headline")).toBeVisible();
+    const durations = await page
+      .locator(".wmm *")
+      .evaluateAll((nodes) => nodes.map((node) => Math.max(Number.parseFloat(getComputedStyle(node).transitionDuration) || 0, Number.parseFloat(getComputedStyle(node).animationDuration) || 0)));
     expect(Math.max(0, ...durations)).toBeLessThanOrEqual(0.01);
   });
 });

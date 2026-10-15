@@ -85,7 +85,8 @@ export function leagueStorageKey(base: string): string {
   return `jeisey-tiers:my-leagues@${base}`;
 }
 
-function isQuota(error: unknown): boolean {
+/** Whether a failed write was storage being full. Shared with Win My Matchup's store. */
+export function isQuota(error: unknown): boolean {
   if (typeof DOMException !== "undefined" && error instanceof DOMException) {
     return error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED";
   }

@@ -21,8 +21,8 @@ modes:
 - **Draft mode** (before the season's first regular-season kickoff): an intrinsic Tier Board and
   a draft-market comparison (Arbitrage board / Draft Rail) against published ADP.
 - **In-season mode** (from that kickoff): rest-of-season tiers, My Leagues (the reader's own saved
-  leagues, kept in their browser), a weekly Start/Sit comparison, a Trade explorer, the
-  Opportunity Board and Pick of the Week.
+  leagues, kept in their browser, with Win My Matchup for the week's opponent), a weekly
+  Start/Sit comparison, a Trade explorer, the Opportunity Board and Pick of the Week.
 
 The season state is derived from the published NFL schedule (`season_state_v1`, ADR-079); the
 reader can override the mode, and the draft board stays reachable all season.
@@ -55,8 +55,9 @@ These hold for every feature, current or future.
    model passes the historical-coverage and out-of-time promotion gates of Part B section 11.4.
 7. **Static runtime.** Every number shown comes from versioned, schema-validated public
    artifacts; no backend, database, account or runtime vendor call (ADR-098 for the served
-   layout). The only reader data is My Leagues' saved leagues, kept in the reader's own browser
-   as compact settings and player ids, never uploaded or put in a link (CR-028, ADR-106).
+   layout). The only reader data is My Leagues' saved leagues and Win My Matchup's entered
+   opponents, kept in the reader's own browser as compact settings, player ids and the reader's
+   own confirmations, never uploaded or put in a link (CR-028, CR-030, ADR-106, ADR-110).
 8. **Identity and time.** Canonical `gsis_id` joins, fail-closed ambiguity, and leakage-tested
    point-in-time features (`AGENTS.md` sections 6 and 7).
 
@@ -165,6 +166,42 @@ These hold for every feature, current or future.
   * **Deferred.** Per-route metrics (no live route source), FTN charting (CC-BY-SA, ADR-086), PFR
     advanced stats, a recent-game window (measured worse than season to date) and any
     current-speed claim.
+- **CR-030 Win My Matchup.** A tool inside My Leagues, beside *Lineup*, that answers "how likely
+  am I to win this week, where am I ahead or behind, and which changes or pickups could help?"
+  for the active league's target week (ADR-110).
+  * **Inputs.** The reader's current starters are the baseline. The opponent's starters are
+    entered through the player picker, never from the reader's roster; their bench is optional.
+    Slot counts, eligibility, FLEX and unique assignment are enforced. A slot counts 0 only when
+    the reader confirms it. QB, RB, WR, TE and FLEX only; kickers and defenses are not modelled
+    and the page says so.
+  * **The simulation** (`matchup_sim_v1`) runs only on *Simulate*, in a lazy worker. 8,192
+    draws, a fixed seed, and the published seven quantiles with the tail convention. A Gaussian
+    copula on the latent same-game correlations holds within each NFL game, across both teams;
+    different games are independent. Shown:
+    * win, tie and loss, with the simulation's noise beside them;
+    * both totals' ranges and the margin distribution, as a chart and a table;
+    * QB, RB, WR, TE and FLEX group comparisons, labelled as groups, not paired contests.
+
+    These are estimated scenario probabilities, not calibrated team probabilities.
+  * **Locks and finals.** Locked starters are never moved. The reader may enter a completed
+    starter's final score, used only in a separate *With final scores* scenario.
+  * **Changes.** Auto Start/Sit's proposals and bounded single bench swaps, evaluated on the same
+    simulated games and ranked by win probability. Labelled "best of N evaluated lineups";
+    previewed, applied only on request, and undoable.
+  * **YOLO** (`yolo_ceiling_v1`). A per-league toggle, off by default. It lists potential
+    pickups — availability unverified — that pass four gates:
+    * a rising role, by the Opportunity Board's rule;
+    * net adds at or above the median of the position's positive-net-add players;
+    * not on either roster;
+    * a 90th-percentile week above an eligible incumbent's.
+
+    Ranked by ceiling gain. Each shows its evidence and its simulated change in win probability,
+    including when that falls. It is added only after the reader confirms availability and any
+    drop, atomically and undoably.
+  * **Storage.** A separate versioned localStorage document (`jeisey-tiers.win-my-matchup` v1):
+    opponent ids by slot, the reader's confirmations, finals, availability marks and the YOLO
+    preference, bounded, by league, season and week. Results are never stored, and a new week
+    never shows last week's numbers; the old opponent can be reused.
 
 ## A4. Current non-goals
 
@@ -174,6 +211,8 @@ These hold for every feature, current or future.
 - Dynasty, keeper, best-ball, DFS, superflex, IDP or custom scoring. Configurable starter counts
   with an ordinary RB/WR/TE FLEX exist only inside My Leagues (CR-028), never as a published
   preset.
+- Live scoring or in-game win probability. Win My Matchup (CR-030) is a pregame scenario; a
+  final score enters only when the reader types it.
 - Kicker and team-defense rankings.
 - Betting or prop recommendations.
 - A rostered percentage (no permitted source publishes one; ADR-088).

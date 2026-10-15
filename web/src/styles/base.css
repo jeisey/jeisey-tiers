@@ -840,6 +840,14 @@ code {
   color: var(--accent-fill-ink);
 }
 
+/* A disabled primary control must look disabled: the primary rule above outranks `:disabled`
+   (equal specificity, later in the file), so without this it kept its filled, enabled look. */
+.button[data-variant="primary"]:disabled {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink-faint);
+}
+
 .button-link {
   appearance: none;
   background: none;

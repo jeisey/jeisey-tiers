@@ -175,35 +175,54 @@ export function normalCdf(x: number): number {
   return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
+// Acklam's coefficients, once: the simulation calls `normalQuantile` for every correlated
+// player in every draw, so it allocates nothing.
+const ACKLAM_A0 = -39.69683028665376;
+const ACKLAM_A1 = 220.9460984245205;
+const ACKLAM_A2 = -275.9285104469687;
+const ACKLAM_A3 = 138.357751867269;
+const ACKLAM_A4 = -30.66479806614716;
+const ACKLAM_A5 = 2.506628277459239;
+const ACKLAM_B0 = -54.47609879822406;
+const ACKLAM_B1 = 161.5858368580409;
+const ACKLAM_B2 = -155.6989798598866;
+const ACKLAM_B3 = 66.80131188771972;
+const ACKLAM_B4 = -13.28068155288572;
+const ACKLAM_C0 = -0.007784894002430293;
+const ACKLAM_C1 = -0.3223964580411365;
+const ACKLAM_C2 = -2.400758277161838;
+const ACKLAM_C3 = -2.549732539343734;
+const ACKLAM_C4 = 4.374664141464968;
+const ACKLAM_C5 = 2.938163982698783;
+const ACKLAM_D0 = 0.007784695709041462;
+const ACKLAM_D1 = 0.3224671290700398;
+const ACKLAM_D2 = 2.445134137142996;
+const ACKLAM_D3 = 3.754408661907416;
+const ACKLAM_LOW = 0.02425;
+
 /** Acklam's inverse normal CDF (relative error < 1.2e-9). */
 export function normalQuantile(p: number): number {
   if (p <= 0) return -Infinity;
   if (p >= 1) return Infinity;
-  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
-  const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
-  const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
-  const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
-  const low = 0.02425;
-  const at = (xs: number[], i: number): number => xs[i] ?? 0;
-  if (p < low) {
+  if (p < ACKLAM_LOW) {
     const q = Math.sqrt(-2 * Math.log(p));
     return (
-      (((((at(c, 0) * q + at(c, 1)) * q + at(c, 2)) * q + at(c, 3)) * q + at(c, 4)) * q + at(c, 5)) /
-      ((((at(d, 0) * q + at(d, 1)) * q + at(d, 2)) * q + at(d, 3)) * q + 1)
+      (((((ACKLAM_C0 * q + ACKLAM_C1) * q + ACKLAM_C2) * q + ACKLAM_C3) * q + ACKLAM_C4) * q + ACKLAM_C5) /
+      ((((ACKLAM_D0 * q + ACKLAM_D1) * q + ACKLAM_D2) * q + ACKLAM_D3) * q + 1)
     );
   }
-  if (p > 1 - low) {
+  if (p > 1 - ACKLAM_LOW) {
     const q = Math.sqrt(-2 * Math.log(1 - p));
     return -(
-      (((((at(c, 0) * q + at(c, 1)) * q + at(c, 2)) * q + at(c, 3)) * q + at(c, 4)) * q + at(c, 5)) /
-      ((((at(d, 0) * q + at(d, 1)) * q + at(d, 2)) * q + at(d, 3)) * q + 1)
+      (((((ACKLAM_C0 * q + ACKLAM_C1) * q + ACKLAM_C2) * q + ACKLAM_C3) * q + ACKLAM_C4) * q + ACKLAM_C5) /
+      ((((ACKLAM_D0 * q + ACKLAM_D1) * q + ACKLAM_D2) * q + ACKLAM_D3) * q + 1)
     );
   }
   const q = p - 0.5;
   const r = q * q;
   return (
-    ((((((at(a, 0) * r + at(a, 1)) * r + at(a, 2)) * r + at(a, 3)) * r + at(a, 4)) * r + at(a, 5)) * q) /
-    (((((at(b, 0) * r + at(b, 1)) * r + at(b, 2)) * r + at(b, 3)) * r + at(b, 4)) * r + 1)
+    ((((((ACKLAM_A0 * r + ACKLAM_A1) * r + ACKLAM_A2) * r + ACKLAM_A3) * r + ACKLAM_A4) * r + ACKLAM_A5) * q) /
+    (((((ACKLAM_B0 * r + ACKLAM_B1) * r + ACKLAM_B2) * r + ACKLAM_B3) * r + ACKLAM_B4) * r + 1)
   );
 }
 

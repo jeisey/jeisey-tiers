@@ -141,6 +141,13 @@ export const MAX_SHOWN = 5;
  */
 export const MAX_DEALT = 999;
 
+/**
+ * My Leagues' sub-view (ADR-110): the lineup workspace, or Win My Matchup. It names a panel,
+ * never a league or a player, so a shared link carries nothing the reader saved.
+ */
+export const LEAGUE_PANELS = ["lineup", "wmm"] as const;
+export type LeaguePanel = (typeof LEAGUE_PANELS)[number];
+
 export const SCORING_VALUES = ["std", "half", "ppr"] as const;
 export type ScoringValue = (typeof SCORING_VALUES)[number];
 
@@ -253,6 +260,8 @@ export interface AppState {
    * actionable ranking (out for the season, retired). `unavail=1`. Inspection, not advice.
    */
   readonly unavailable: boolean;
+  /** My Leagues' sub-view (ADR-110): `panel=wmm` opens Win My Matchup. */
+  readonly panel: LeaguePanel;
 }
 
 /**
@@ -298,6 +307,7 @@ export const DEFAULT_STATE: AppState = {
   stamp: "",
   returning: false,
   unavailable: false,
+  panel: "lineup",
 };
 
 /** Parameter order is fixed so two identical states serialize to identical strings. */
@@ -328,6 +338,7 @@ const PARAM_ORDER = [
   "stamp",
   "ret",
   "unavail",
+  "panel",
 ] as const;
 
 export const SCORING_TO_PRESET: Readonly<Record<ScoringValue, ScoringPreset>> = {
@@ -600,6 +611,8 @@ export function parseState(search: string): ParsedState {
   };
   const returning = flag("ret");
   const unavailable = flag("unavail");
+  const panel = oneOf(params.get("panel"), LEAGUE_PANELS, DEFAULT_STATE.panel);
+  note(panel.valid);
 
   // A parameter the app does not know is dropped rather than preserved: keeping it would make
   // two URLs describing the same state compare unequal.
@@ -635,6 +648,7 @@ export function parseState(search: string): ParsedState {
       stamp,
       returning,
       unavailable,
+      panel: panel.value,
     },
     normalized,
   };

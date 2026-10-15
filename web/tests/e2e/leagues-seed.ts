@@ -75,3 +75,63 @@ export const OFFICE: SeedLeague = {
   },
 };
 
+export const MATCHUP_KEY = `jeisey-tiers:win-my-matchup@${IN_SEASON}`;
+
+/** Seed Win My Matchup's saved inputs (ADR-110), once per page, beside the leagues. */
+export async function seedMatchups(page: Page, document: unknown): Promise<void> {
+  await page.addInitScript(
+    ([key, value]) => {
+      if (window.sessionStorage.getItem("seeded-wmm") === null) {
+        window.localStorage.setItem(key, value);
+        window.sessionStorage.setItem("seeded-wmm", "1");
+      }
+    },
+    [MATCHUP_KEY, JSON.stringify(document)] as const,
+  );
+}
+
+/**
+ * A week-9 league whose starters exercise Win My Matchup's slot conditions: a bye (Deebo Gray),
+ * three players the policy sidelines (Omarion Vance, Kyle Pitts Sr., Rashee Kirk), and three
+ * playable starters. Jahmyr Cook, a rising back with high net adds, is on nobody's roster.
+ */
+export const MATCH: SeedLeague = {
+  id: "lg-match01",
+  name: "Match",
+  roster: {
+    QB: [g("09")],
+    RB: [g("01"), g("16")],
+    WR: [g("12"), g("06")],
+    TE: [g("04")],
+    FLEX: [g("17")],
+    BN: [g("07"), g("10")],
+  },
+};
+
+/** A complete week-9 opponent for `MATCH`, with every absence confirmed as 0. */
+export function matchOpponent(week = 9, complete = true): unknown {
+  return {
+    format: "jeisey-tiers.win-my-matchup",
+    version: 1,
+    revision: 1,
+    prefs: {},
+    entries: [
+      {
+        leagueId: MATCH.id,
+        season: 2026,
+        week,
+        opponent: {
+          name: "Rival",
+          starters: { QB: [g("18")], RB: [g("13"), g("14")], WR: [g("02"), g("15")], TE: [null], FLEX: [g("03")] },
+          others: [],
+        },
+        confirmedEmpty: { mine: [], theirs: complete ? ["TE:0"] : [] },
+        countZero: complete ? [g("16"), g("04"), g("17"), g("13"), g("14"), g("15"), g("03")] : [],
+        finals: {},
+        marks: {},
+        rev: 1,
+        updatedAt: "2026-08-21T00:00:00Z",
+      },
+    ],
+  };
+}
