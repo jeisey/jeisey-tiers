@@ -7579,7 +7579,8 @@ separately as bench upgrades.
 * Results are cached in memory (≤ 6, by fingerprint) and never re-rendered by the global
   board. Unmount and league switches terminate the worker.
 * Without a working Worker, a sliced main-thread run (≤ 512 draws per slice, yielding between
-  slices) is used, or the page says simulation is unavailable.
+  slices) is used, or the page says simulation is unavailable. *(Amended after measurement:
+  slices are time-budgeted and the summary is sliced too — see the implementation evidence.)*
 * Nothing simulates during render, per keystroke or in the background: only *Simulate*,
   *Find changes* and *Preview* start a run.
 
@@ -7637,9 +7638,9 @@ points and maximum 18.3. Report: `docs/experiments/win-my-matchup-2026-10-15/con
 
 | draws | 95% half-width, worst case | seed SD ÷ binomial SE, median (range) | paired SE of a swap, median | rounded headline within ±1 of reference | ms per 2-lineup run (Node, unthrottled) |
 |---:|---:|---:|---:|---:|---:|
-| **8,192** | **1.08 pts** | **0.96** (0.58–1.50) | **0.38 pts** | **99.2%** | 33 |
-| 16,384 | 0.77 pts | 0.94 (0.72–1.26) | 0.27 pts | 100% | 69 |
-| 32,768 | 0.54 pts | 1.01 (0.65–1.36) | 0.19 pts | 100% | 137 |
+| **8,192** | **1.08 pts** | **0.96** (0.58–1.50) | **0.38 pts** | **99.2%** | 33 (23 after the engine work below) |
+| 16,384 | 0.77 pts | 0.94 (0.72–1.26) | 0.27 pts | 100% | 69 (46) |
+| 32,768 | 0.54 pts | 1.01 (0.65–1.36) | 0.19 pts | 100% | 137 (93) |
 
 Every rule passes at 8,192:
 1. The half-width is ≤ 1.1 points, and the median SD ratio is within 20% of 1. The range is
@@ -7650,3 +7651,118 @@ Every rule passes at 8,192:
 **`MATCHUP_DRAWS` is frozen at 8,192**, the cap stays at 65,536, and the page prints the
 numerical noise beside every headline and difference. This was decided before any recommendation
 example was evaluated.
+
+### Evidence — implementation, performance and budgets (2026-10-15)
+
+**Amendments made after measurement.** None changes a published number or the method. Each was
+needed because a frozen target was missed on the first measurement.
+
+* **Execution (§8).** Without a Worker, the run takes slices of about 8 ms of work, in 64-draw
+  steps, instead of fixed 512-draw slices, and the summary is built piece by piece
+  (`Run.summarize`: the bins, then each lineup, then each slot group). The first 512-draw slice
+  ran on cold code, and the one-piece summary was a single task, measuring 87–164 ms at 4×.
+* **Paint.** A new result paints in three frames: the headline first, then the chart and totals,
+  then the slot groups and lineup changes. YOLO's evaluated evidence follows one frame after the
+  change list. The lineups and finals editor are memoized, so a result arriving no longer
+  re-renders them. The chart draws each side's bars as one path, and starts at the last measured
+  width rather than drawing once at 640 px and again a frame later.
+* **Preparation.** Lineup changes are built in pieces (`normalProposalSteps`; YOLO proposals one
+  at a time), yielding whenever 8 ms of work is spent.
+* **Engine.** `matchup_sim_v1` keeps its definition and got faster:
+  * Acklam's coefficients are hoisted out of `normalQuantile` (shared with Start/Sit; it
+    allocated four arrays and a closure per call);
+  * each draw's word is computed once;
+  * typed arrays are copied with `slice`;
+  * a same-game block's first player reads his own uniform. His Cholesky row is exactly `[1]`,
+    so Φ(Φ⁻¹(u)) = u: exact, with one Φ fewer per block per draw.
+
+  Re-running the convergence experiment reproduced every statistic. The report changed only in
+  run times and in three values at the sixth decimal. 8,192 draws now take 23 ms.
+
+**Interaction cost and memory.** `web/tests/e2e/measure-wmm.mjs` measured on the size model. The
+setup:
+* the production-shaped board, with the behaviour snapshot re-stamped current;
+* Pixel 7 viewport, 4× CPU through CDP;
+* the largest legal matchup: 15 starters a side (2 QB, 4 RB, 4 WR, 2 TE, 3 FLEX) and a 10-player
+  bench, all playable players from the build.
+
+There were three runs on a shared VM, whose speed varied ±30% between runs (the same loop took
+162–263 ms). **CDP's CPU throttle does not reach a dedicated worker:** the same loop took 38–63
+ms in the worker against 162–263 ms on the page. So beside each measured time the table gives a
+stricter estimate, which adds 3× the worker's own compute time, as if the worker ran at the
+page's throttled speed.
+
+| | target | measured (3 runs) | with the worker scaled to 4× |
+|---|---|---|---|
+| open the tab, click to painted | — | 450–543 ms | — |
+| first *Simulate* (worker created, cold code), click to the whole result painted | ≤ 500 ms | **323–418 ms** | 584–754 ms ✗ |
+| later *Simulate* after an opponent edit (12 runs) | ≤ 500 ms | **166–367 ms** | 292–616 ms (11 of 12 ≤ 500) |
+| *Evaluate changes and pickups* (12 lineups: baseline, 10 changes, 1 YOLO pickup) | ≤ 1,500 ms | **252–296 ms** | 579–763 ms |
+| preview a proposal | — | 43–59 ms | — |
+| *Cancel* to *Simulate* usable | ≤ 100 ms | **42–78 ms** | |
+| picker keystroke · pick | ≤ 200 ms | **18–66 · 87–193 ms** | |
+| main-thread long tasks during a run (21 run windows) | none > 50 ms | **none in 17; 53–61 ms in 4** ✗ | |
+| retained heap growth over 4 switch-and-simulate cycles | ≤ 2 MB | **115–140 kB** | |
+| workers alive after a league switch · before the first *Simulate* | 0 · 0 | **0 · 0** | |
+| performance entries before anything was asked | 0 | **0** | |
+| no-Worker fallback: *Simulate* · *Evaluate* | — | 696–760 · 893–1,058 ms; long task none, 51 or 59 ms | |
+
+Results against the frozen targets:
+* **Every time target holds as measured** on the repository's benchmark.
+* **Two misses.**
+  * Under the stricter worker estimate, the cold first simulation is 584–754 ms. On a phone,
+    the first press after opening the tab will probably take longer than 500 ms. Later presses
+    stay within target (11 of 12, all but one run on a contended VM).
+  * Four of 21 run windows still had one long task of 53–61 ms, 3–11 ms over the target. Each
+    was one frame of style, layout and paint, or a React commit, inserting a result piece.
+    Before the work above, most windows had one of 74–117 ms, and the fallback had 87–164 ms.
+* **Memory.** Worker memory per run is within §9 by construction: 12 lineups use about 1.3 MB of
+  result arrays, and the 32-lineup cap about 2.4 MB plus 330 kB for each detailed lineup.
+
+**Byte budgets** (`verify-budget.mjs`, size model; CI gates them):
+
+| | measured | budget |
+|---|---:|---:|
+| opening WMM (its chunk and stylesheet; no data) | 26,320 B | 30,000 |
+| first *Simulate* (the worker) | 5,447 B | 7,000 |
+| repeat simulation | 0 B | 0 |
+| turning YOLO on (`inseason_opportunity/<block>`, `player_usage/all`) | 112,525 B | 125,000 |
+| a first visit that opens WMM, total · data | 425,646 · 121,958 B | 450,000 · 150,000 |
+
+The engine is not in the view's chunk; it is fetched only by the no-Worker fallback (4.7 kB
+gzip). Every existing budget is unchanged and passes. The entry bundle grew by 78 B, for one
+shared rule: a disabled primary button now looks disabled. That defect also affected My Leagues'
+settings *Save* and *New league*.
+
+**Tests.**
+* Vitest: 1,022 tests pass (one offline experiment skipped). WMM's are:
+  * `matchup.test.ts`, 36 tests: validation, the generator, invariance, oracles, Start/Sit
+    agreement, tails, correlation and its fallback, CRN, slicing and the block leader;
+  * `wmm-storage.test.ts`, 21;
+  * `wmm-setup.test.ts`, 19: slot conditions, proposals, YOLO gates and the 17 → 22 acceptance
+    fixture;
+  * `matchup-client.test.ts`, 8: worker, cancellation, stale answers, fallback and its yields;
+  * `wmm-ui.test.tsx`, 7.
+* Playwright: 300 tests pass on chromium, mobile and a11y, including `wmm.spec.ts` (lazy
+  loading, the full flow through Undo, reload and league switch, rollover, Sunday's locks and
+  finals) and WMM's axe scans at 1280 and 390 px. `smoke-chromium` passes (15).
+* `verify:board` passes on all six fixture builds.
+* The Pages-path build passes.
+* Ruff, mypy and pytest pass (2,030 tests), and the fixture pipeline and `validate-artifacts`
+  pass with 0 critical.
+
+**Visual QA.** `web/tests/e2e/capture-wmm.mjs` captured 51 screens of the fixture build:
+* widths 320, 390, 768, 1024, 1280 and 1440 px;
+* short heights 390×600 and 1280×720;
+* the Sunday finals scenario at 390 and 1440 px.
+
+None overflowed, clipped, truncated or logged a console error
+(`docs/visual-qa/2026-10-15-win-my-matchup/fixture`). Review by eye found the disabled-button
+and "Best of 0 evaluated lineups" wording defects, both fixed.
+
+**Follow-ups, not done here.**
+* Remove the remaining 53–61 ms frames, for example by memoizing the YOLO panel's props.
+* Measure on a real phone whether the cold first worker run exceeds 500 ms.
+* Regenerate development-fold out-of-fold weekly predictions, so a team-aggregation calibration
+  diagnostic becomes possible (§10).
+

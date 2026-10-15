@@ -4,6 +4,64 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Win My Matchup — 2026-10-15 (ADR-110, PRD CR-030).** On `claude/amazing-noether-3xlr6s` from
+`main` at `83089c4`. It is a tool inside My Leagues, beside *Lineup* (`panel=wmm`).
+
+* **How it works.** The reader enters the week's opponent by id, then presses *Simulate*.
+  * A lazy module worker runs `matchup_sim_v1`: 8,192 seeded draws of the published quantiles,
+    with a Gaussian copula on the latent same-game correlations within each NFL game.
+  * It shows win, tie and loss with the simulation's noise, the margin chart and table, totals,
+    and QB/RB/WR/TE/FLEX group comparisons.
+  * *Evaluate* ranks Auto Start/Sit's proposals and single bench swaps by win chance, on common
+    random numbers.
+  * YOLO (`yolo_ceiling_v1`, opt-in per league) lists potential pickups, availability
+    unverified, that pass four gates: a rising role, net adds ≥ the positional median, unowned,
+    and a q90 above an incumbent's.
+  * Pickups and changes apply only on request, atomically, with Undo.
+* **Storage.** Inputs live in a separate `jeisey-tiers.win-my-matchup` v1 document
+  (DATA_CONTRACTS §26). Results are never stored.
+* **Not calibrated.** The figures are scenario probabilities. No out-of-fold weekly predictions
+  are saved, so a team-aggregation diagnostic was not possible. DST and K are not modelled.
+* **Performance (ADR-110 Evidence).** `measure-wmm.mjs`, Pixel 7 at 4×, 15 starters a side,
+  three runs:
+  * Every target holds as measured: simulate 166–418 ms, evaluate 252–296 ms, cancel
+    42–78 ms, pick ≤ 193 ms, heap +115–140 kB, 0 workers after a switch.
+  * **CDP throttling does not reach a dedicated worker.** With the worker's compute scaled to
+    4×, the cold first simulation is 584–754 ms, a miss.
+  * Four of 21 run windows had one long task of 53–61 ms, a miss (before the fixes, 74–117 ms
+    in most).
+  * Byte budgets are gated in CI and all are met.
+
+**Next gate:** owner review. No PR was opened (none was requested). Follow-ups are in TASKS.
+
+Validation of this pass (local):
+
+```
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 1,022 passed, 1 skipped (51 files; convergence is offline)
+npm run e2e                                          # 300 passed (chromium, mobile, a11y)
+playwright --project=smoke-chromium                  # 15 passed
+verify:board on the six CI fixture builds            # 0 failures each
+npm run e2e:size-model && verify:budget (gating)     # all met; WMM open 26.3 kB, simulate 5.4, repeat 0, YOLO 112.5, cold 425.6/122.0; first visit 327.4 kB
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok; WinMyMatchup 24.2 kB gzip, worker 12.4 kB raw, engine (fallback only) 4.7 kB gzip
+uv run ruff check . ; ruff format --check ; mypy     # clean (scripts/size_model.py changed)
+uv run pytest                                        # exit 0, 2,030 collected (4 live deselected)
+build-fixture-artifacts + validate-artifacts         # pass, 0 critical
+measure-wmm.mjs ×3 (size model, 4×)                  # ADR-110 Evidence table
+matchup-convergence (offline, live 2026-10-15 build) # identical statistics after the engine work; 8,192 draws = 23 ms
+capture-wmm.mjs                                      # 51 screens, 0 problems, 0 console errors
+```
+
+* **Facts for the next session.**
+  * Prettier is not this repo's formatter. Running it rewrites whole files; ESLint is the
+    check.
+  * `npm run build` writes `web/dist` with the given base path. Playwright's `globalSetup`
+    rebuilds every fixture site anyway.
+  * The convergence experiment takes about 5 minutes. It yields once per matchup, so Vitest's
+    worker RPC does not time out.
+  * The YOLO rule's coverage numbers come from the live week-6 build
+    (`docs/experiments/win-my-matchup-2026-10-15/`).
+
 **PFR ids keep their punctuation; a card forgets the opening tap's caret — 2026-10-15 (ADR-108,
 ADR-109).** On `claude/brave-einstein-tjmbj8`, restarted from `main` at `88709a2` (PR #65
 merged). These are the two ADR-107 follow-ups.

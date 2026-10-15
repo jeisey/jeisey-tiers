@@ -2371,3 +2371,80 @@ The other is browser-only.
       Only feature values differ from the 2026-08-19 dataset. Isolate the cause and decide what
       it means for `intrinsic-cb-hurdle-v1` (ADR-108 Evidence).
 
+
+## Win My Matchup — 2026-10-15 (ADR-110)
+
+The owner asked for a weekly matchup tool inside My Leagues: enter the opponent's team, compare
+both lineups, simulate the chance to win, find changes, and optionally chase upside with waiver
+pickups ("YOLO"). The site stays static, lightweight and login-free (PRD CR-030; A2 and A4 revised).
+
+- [x] **ADR-110, frozen before implementation**: the method (`matchup_sim_v1`), YOLO's rule
+      (`yolo_ceiling_v1`, coverage measured on the live week-6 build first), the persistence
+      contract, the limitations and the performance gates. The draw count was frozen at 8,192
+      by a convergence experiment before any recommendation example was evaluated.
+- [x] **Engine** (`matchup.ts`, `matchupEngine.ts`). A pure, versioned Monte Carlo:
+      - a fixed seed and counter-based per-player streams;
+      - the seven quantiles with the tail convention, negatives preserved;
+      - a Gaussian copula on latent same-game correlations within each NFL game, across both
+        teams. A non-PSD block is simulated independently, named and tested, never repaired;
+      - unique players per draw, FLEX once, fixed scores once;
+      - ties at 0.01 points;
+      - win, tie and loss with the binomial noise, ranges, the margin histogram and group
+        comparisons;
+      - common random numbers for proposals, with the paired ΔP(win) SE.
+- [x] **Storage** (`wmmContract.ts`, `wmmStore.ts`). A separate `jeisey-tiers.win-my-matchup`
+      v1 document by league, season and week, with ADR-106's validation, backup, future
+      read-only, conflict and quota rules. It is bounded (4 weeks per league, 12 entries),
+      writes only on edits, and stores no results.
+- [x] **Setup** (`matchupSetup.ts`):
+      - slot conditions: modelled, if active, bye, confirmed 0, final, blocking with its fix;
+      - completeness: no unnoticed zeros, and no player on both teams;
+      - the pregame and finals scenarios, with locks preserved;
+      - proposals: Auto Start/Sit's three plus bounded single bench swaps, deduplicated;
+      - the fingerprinted engine input.
+- [x] **YOLO** (`yolo.ts`). Four gates:
+      - a rising role (the Opportunity Board's predicate);
+      - net adds ≥ the positional median of positive net adds (pool ≥ 5, snapshot ≤ 48 h);
+      - not owned by either side, and not marked unavailable;
+      - a 90th percentile above an eligible incumbent's.
+
+      Ranked by ceiling gain, ≤ 3 per position and ≤ 8 in all. The funnel is shown. The
+      17 → 22 acceptance fixture passes.
+- [x] **UI** (`WinMyMatchup.tsx`, `MatchupLineups.tsx`, `MatchupResults.tsx`,
+      `MatchupChanges.tsx`, lazy `wmm.css`):
+      - a *League tools* tab row (`panel=wmm`);
+      - opponent entry through the shared picker;
+      - readiness, *Simulate* and *Cancel*;
+      - the headline with noise and the caveat, the margin chart with its table, totals, and
+        the slot-group table;
+      - ranked changes with preview, apply and Undo;
+      - YOLO cards with evidence, availability marks and a confirmation dialog;
+      - rollover reuse, finals and the scenario control.
+- [x] **Execution** (`matchup.worker.ts`, `matchupClient.ts`):
+      - a lazy module worker with request ids and fingerprints, so stale answers are dropped;
+      - cancel by terminating it;
+      - a time-sliced main-thread fallback;
+      - cleanup on unmount and league switch.
+- [x] **Performance.**
+      - Byte budgets, gated in CI: open +30 kB, first simulate +7 kB, repeat 0 B, YOLO
+        +125 kB, cold visit 450/150 kB.
+      - `measure-wmm.mjs` measurements, recorded in ADR-110, with fixes: three-frame paint,
+        memoized lineups, sliced preparation and fallback, and a faster engine.
+- [x] **Tests.**
+      - Vitest: engine (36), storage (21), setup and YOLO (19), worker client (8), UI (7).
+      - Playwright: `wmm.spec.ts` (4 flows), a11y (3), mobile (1), smoke (1).
+      - The offline convergence experiment.
+- [x] **Visual QA** (`capture-wmm.mjs`): 51 screens, 320–1440 px plus two short heights. Two
+      defects were found and fixed (the disabled primary button style, and "Best of 0").
+- [x] **Docs.**
+      - ADR-110 with its Evidence; PRD CR-030 (A1, A2 and A4); UX_SPEC §6A.18.
+      - DATA_CONTRACTS §26; ARCHITECTURE notes, table and sizes.
+      - OPERATIONS §16.13 and §17.3; README.
+      - `docs/experiments/win-my-matchup-2026-10-15/`.
+- [x] **Validation**: see SESSION_STATE.
+- [ ] **Follow-up**, not part of this gate:
+      - Four of 21 measured run windows still had one 53–61 ms frame. The cold first
+        simulation exceeds 500 ms when the worker's compute is scaled to a 4× phone (ADR-110
+        Evidence).
+      - A team-aggregation calibration diagnostic needs saved out-of-fold weekly predictions,
+        which the build does not keep.

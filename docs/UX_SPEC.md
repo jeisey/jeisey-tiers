@@ -1095,6 +1095,102 @@ category and reading order, and there is **no overall rating or branch score**.
   geometry at 320–1440 and short screens, axe, reduced motion), `capture-skilltree.mjs`
   (`docs/visual-qa/2026-10-14-skill-tree/`) and `measure-skilltree.mjs`.
 
+### 6A.18 Win My Matchup (ADR-110)
+
+**The question: how likely am I to beat this week's opponent, where am I ahead or behind, and
+which changes or pickups could help?** It is a tool inside the active league, not a top-level
+tab. A *League tools* tab row sits under the preset line: **Lineup · Win My Matchup**. Arrow
+keys move between the tabs, and the choice is carried in the URL (`panel=wmm`). Opening the tab
+fetches its code only. Nothing simulates until the reader presses *Simulate*.
+
+#### 6A.18.1 Layout, top to bottom
+
+1. **Header.** "Win My Matchup — week N", then the scoring and size preset, the projection
+   model, the build time and its age, and one sentence of scope: "Covers your QB, RB, WR, TE and
+   FLEX starters only: kickers and team defenses are not modelled, so this is not a full
+   fantasy-team win probability." A build older than 48 hours gets a *not fresh* notice.
+2. **Storage notices** (ADR-106's set, for this document) and, in a new week, the **rollover
+   notice**: last week's opponent is named and can be reused with one button. Last week's
+   result is never shown.
+3. **The two lineups.** *Your starters* (with *Edit your lineup*, which opens the Lineup tab)
+   and *Opponent's starters* (an optional name, then one row per slot). Every row says what the
+   simulation will do with that slot, in words:
+   * modelled, with its median · 10th–90th line;
+   * *If active: simulated as playing*;
+   * *Bye · 0*;
+   * *Counted as 0* or *Left empty · 0*, only after the reader's confirmation, with *Undo*;
+   * a locked game: *Game kicked off: simulated from his pregame projection*, or *Final 17.40*;
+   * a blocking row that names its fix: *Set*, *Count as 0*, *Replace*, *Resolve*.
+
+   Opponent slots use the player picker. It offers only players that slot accepts, and never
+   one on the reader's roster; picking a player already elsewhere on their side moves him.
+   *Their bench and IR (optional)* is a disclosure.
+4. **Finals**, when any starter has kicked off. "This is not live scoring." The reader may type
+   a completed starter's final fantasy points, used only by the *With final scores* scenario.
+5. **The run box.** The *Scenario* control (Pregame projection · With final scores), shown when
+   a starter has kicked off. Then the **readiness line** ("Ready: 7 starters a side. 2 count as
+   a known 0. 1 'if active'.", or what blocks), then *Simulate*: disabled until ready, *Cancel*
+   while running. "Runs only when you press it. The same inputs give the same answer."
+6. **The result**, once simulated, in three frames:
+   * **Headline.** The win percentage, then "your modelled lineup wins, of 8,192 simulated
+     games", opponent wins, tie, the simulation's noise, and the scenario. The calibration
+     caveat follows.
+   * **Margin chart.** Bars of your total minus theirs: *You ahead* and *Opponent ahead* differ
+     by colour and by side of the zero line, with a legend. A previewed lineup is drawn as a
+     line. "Margins as a table" gives at most eight rows.
+   * **Totals and slot groups.** Both totals as median · 80% range. Then the slot-group table:
+     QB, RB, WR, TE and FLEX, each as you · them · range bars · "Your group scores more". Fixed
+     groups read *Always*, *Never* or *Tied (both fixed)*. A note says groups are not paired
+     contests and the matchup chance is not their product.
+7. **Lineup changes.** *Evaluate lineup changes* (or *Evaluate changes and pickups* with YOLO
+   on). "Best of N evaluated lineups…", ranked by the chance to win, top 5. Each change shows its
+   moves, win chance and Δ with noise, median and 90th-percentile changes, *Preview* and
+   *Apply*. A difference within the noise is said to be within the noise. With nothing legal to
+   evaluate, the panel says only that.
+8. **YOLO waiver mode.** A checkbox, remembered per league and off by default, with its rule in
+   one paragraph. When on:
+   * the net-add snapshot time and the bar's definition;
+   * one funnel line per position (bar · at or above · rising · playable · not known owned ·
+     beat a starter's ceiling);
+   * **Potential pickups — availability unverified.** Cards ranked by ceiling gain, each with:
+     * ceiling and median, from → to;
+     * net adds against the bar;
+     * the role reading;
+     * the simulated chance to win and its change. When the ceiling rises but the chance falls,
+       the card says so.
+
+     Each card offers *Mark available*, *Mark unavailable*, *Preview* and *Add to my roster…*.
+   * *From your bench*: evaluated bench options that raise the 90th-percentile total.
+9. **Pickup confirmation** (a dialog):
+   * the move in words, with ceiling and median from → to;
+   * "This updates only the roster saved in this browser: no transaction is made on your
+     fantasy platform";
+   * the required "I checked: X is available in my league";
+   * the player to drop, when the roster is full.
+
+   *Add to my roster* stays disabled until both are answered. It applies atomically, with
+   *Undo*.
+10. **Applied changes.** "Applied: … Simulate again to see the new picture." and *Undo* sit
+    outside the result, so applying (which invalidates the result) never removes its Undo.
+11. **The method line**: engine, draws, fixed seed, the copula, and ties at 0.01 points.
+
+#### 6A.18.2 Behaviour
+
+* **Stale results.** Any input change hides the old result and says the lineups changed. A run
+  for inputs that have since changed is cancelled, and its late answer is dropped. A league or
+  week switch shows no other league's or week's numbers.
+* **Locks.** A locked starter is never moved by a proposal or a pickup.
+* **Reduced motion.** No transitions.
+* **Colour.** Every state is a word, and no state is shown by colour alone.
+* **Phone.** Below 1100px the two lineups stack. The slot-group table scrolls sideways inside a
+  focusable region, labelled with the table's caption.
+* **Checks.**
+  * `web/tests/e2e/wmm.spec.ts`;
+  * the WMM blocks in `a11y.spec.ts`, `mobile.spec.ts` and `smoke.spec.ts`;
+  * `measure-wmm.mjs`, for interaction cost;
+  * `capture-wmm.mjs`, at 320, 390, 390×600, 768, 1024, 1280, 1280×720 and 1440
+    (`docs/visual-qa/2026-10-15-win-my-matchup/`).
+
 ## 7. Tables
 
 ### 7.1 Tier table columns
