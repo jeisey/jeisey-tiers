@@ -1,0 +1,62 @@
+{
+  "opportunity-320": {
+    "pageX": 0,
+    "clipped": []
+  },
+  "card-320": {
+    "pageX": 0,
+    "clipped": [],
+    "chartOverflow": null
+  },
+  "errors-320": [],
+  "opportunity-390": {
+    "pageX": 0,
+    "clipped": []
+  },
+  "card-390": {
+    "pageX": 0,
+    "clipped": [],
+    "chartOverflow": null
+  },
+  "errors-390": [],
+  "opportunity-short": {
+    "pageX": 0,
+    "clipped": []
+  },
+  "card-short": {
+    "pageX": 0,
+    "clipped": [],
+    "chartOverflow": null
+  },
+  "errors-short": [],
+  "opportunity-768": {
+    "pageX": 0,
+    "clipped": []
+  },
+  "card-768": {
+    "pageX": 0,
+    "clipped": [],
+    "chartOverflow": null
+  },
+  "errors-768": [],
+  "opportunity-1024": {
+    "pageX": 0,
+    "clipped": []
+  },
+  "card-1024": {
+    "pageX": 0,
+    "clipped": [],
+    "chartOverflow": null
+  },
+  "errors-1024": [],
+  "opportunity-1440": {
+    "pageX": 0,
+    "clipped": []
+  },
+  "card-1440": {
+    "pageX": 0,
+    "clipped": [],
+    "chartOverflow": null
+  },
+  "errors-1440": []
+}

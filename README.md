@@ -35,13 +35,15 @@ controls lets you open either mode at any time; the draft board stays reachable 
 | **My Leagues** (`Leagues` below 1024px) | Up to three of your own leagues, saved in this browser only (nothing is uploaded or put in a link). Enter your roster slot by slot. For the selected league you get: the week's best legal lineup by median, floor or ceiling, applied only when you choose and undoable; each slot's matchup; Improve — your weakest starting slots, players who would fix them, and value-matched trade ideas from your roster, re-checked against your lineup; and an optional Rising Stars list of players with a rising role **and** rising adds who are not on your roster. **Win My Matchup**, a second tool beside *Lineup*: enter this week's opponent and press *Simulate* for your chance to win, tie or lose over 8,192 simulated games (same-game correlations included), the margin's range, where each position group is ahead or behind, and which bench changes — or, with the opt-in YOLO mode, which rising, heavily added potential pickups — would raise your chance or your ceiling. These are scenario probabilities, not calibrated team probabilities. Scoring and size are the published presets; starter, bench and IR counts are yours. DST, K, superflex and custom scoring are not supported. |
 | **Start/Sit** | Compare two to four players for one lineup slot. Ranks them by the chance each gives you to win the week at your matchup margin, prints the calibrated head-to-head probability and the margin at which the answer flips, and shows each player's next-game range, game context (implied team total, kickoff-hour forecast) and injury designation with how often that designation has meant a missed game. |
 | **Trade** | Offer one to three players, choose what you want back (rest-of-season value, highest ceiling or highest floor) and how many players (1–3), and browse incoming packages whose expected rest-of-season value falls within a band around what you offer. Packages can be swapped, extended and kept. |
-| **Opportunity** (`Opp` on narrow screens) | Rest-of-season value beside what managers are doing on the waiver wire: Sleeper add/drop counts, net adds, add momentum and role direction. Five separate orderings and single-signal filters; no blended score. |
+| **Opportunity** (`Opp` on narrow screens) | Rest-of-season value beside what managers are doing on the waiver wire: Sleeper add/drop counts, net adds, add momentum, role direction, and ESPN's rostered % and started % with 1- and 7-day roster changes. Seven separate orderings, single-signal filters and an ESPN roster ceiling ("Role rising + rostered below 50% on ESPN"); no blended score. |
 | **POTW** | Pick of the Week: one waiver target per position. Add volume decides who is eligible; rest-of-season value decides who is picked. Each card prints the threshold the player cleared. |
 | **Data** | As above, plus the in-season methods. |
 
 **Player cards** open from any board row or chart mark. They carry the player's model numbers,
 range, market history, current status and, in season, his next game and his availability
-reading. Headshots are loaded from ESPN only when a card or Pick of the Week is opened.
+reading. Headshots are loaded from ESPN only when a card or Pick of the Week is opened. In
+season the card's *In-season usage* also states ESPN's rostered and started share ("Rostered on
+ESPN: 18% → 31% in 7 days (+13 percentage points)") and, on request, their 28-day trend.
 
 In season, a card also has a **Skill tree**: the player's season so far as a tree of
 position-specific statistics (four branches, 13–14 nodes for a QB, RB, WR or TE): workload,
@@ -178,7 +180,7 @@ These are measured shortfalls or deliberate scope limits. The Data view lists th
 | [Sleeper](https://docs.sleeper.com/) | Player status, injury designations, add/drop trending | Free for non-commercial use |
 | [National Weather Service](https://www.weather.gov/documentation/services-web-api) | Kickoff-hour forecasts at U.S. venues | U.S. Government open data |
 | [Open-Meteo](https://open-meteo.com/) | Kickoff-hour forecasts at venues outside the U.S. | Weather data by Open-Meteo.com, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
-| [ESPN](https://www.espn.com/) | Player headshots on cards, loaded by the browser from ESPN's CDN | No ESPN ranking, projection or ADP is used |
+| [ESPN](https://www.espn.com/) | Player headshots on cards, loaded by the browser from ESPN's CDN; in season, ESPN Fantasy's public rostered % and started %, read once a day by the pipeline (ADR-112) | No ESPN ranking, projection, ADP or stat is used; the percentages describe ESPN leagues and no model reads them. Enabled on an owner decision with ESPN's terms in view, not a licence |
 | [FantasyPros](https://www.fantasypros.com/) | Retrieved server-side; no FantasyPros number is published | Attribution given wherever retrieved |
 
 Source policy, verification evidence and fallbacks: [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md)

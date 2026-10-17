@@ -137,6 +137,9 @@ Automated test must reject feature names/lineage matching:
 - consensus rank
 - market pick/rank
 - arbitrage score
+- ESPN rostered/started percentage and their changes (ADR-112): `percent_rostered`,
+  `percent_started`, `percent_owned`, `espn_ownership`, `rostered_change`, and any column whose
+  lineage is `espn_fantasy_ownership`
 
 Do not evade this rule by renaming a market proxy.
 
@@ -882,6 +885,10 @@ The intrinsic firewall (section 6) is unchanged and is audited by the same
   gap is recorded rather than papered over (ADR-070).
 - **No depth-chart or roster snapshot**, for the same reason: no historical point-in-time
   parity below 2025.
+- **No ESPN roster or start percentage** (ADR-112). They are crowd expectation, which section 6
+  forbids, and they have no point-in-time history before 2026-10-17. The rest-of-season and
+  weekly models read none, and `tests/contract/test_architecture_boundary.py` proves no
+  value-producing module can import them.
 
 ## 28. Rest-of-season evaluation protocol
 

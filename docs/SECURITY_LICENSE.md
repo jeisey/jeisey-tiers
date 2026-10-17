@@ -193,6 +193,34 @@ from a board row. Those bounds are asserted by tests, not intended. Adding a sec
 provider is a decision for this section, not a configuration change, which is why the record
 schema's `provider` is an enum of one.
 
+### ESPN roster and start percentages (ADR-112)
+
+**Captured by the pipeline and published, on the owner's decision rather than on a licence.**
+From 2026-10-17 the daily refresh reads ESPN Fantasy's public roster and start percentages
+(`espn_fantasy_ownership`, `docs/DATA_SOURCES.md` section 23). ESPN publishes no licence for
+them and no sanctioned API. The Disney Terms of Use that ESPN links (last updated 2024-05-24)
+limit use to personal, noncommercial use (§2.A, §3.G), prohibit automated access, copying or
+extraction and data mining or web scraping (§2.B.x), and grant no right to reproduce or
+distribute (§2.A). The project owner reviewed those clauses and chose to proceed for this
+non-commercial site with attribution, accepting the risk. **That is recorded as an owner decision
+and must not be read as a clearance.**
+
+What the project does to stay narrow:
+
+* **What is read.** One retrieval a day, with a descriptive User-Agent, no cookies, no login and
+  no league id. Transfers are bounded.
+* **What is kept.** Only ownership fields and their provenance. ADP, auction values, ranks,
+  projections, stats and editorial text are discarded before anything is retained.
+* **What is published.** Two small derived artifacts, restricted to the Opportunity Board's
+  players. No server-side CSV of ESPN values. The full universe stays in the private store.
+* **How it is presented.** Attribution on the Opportunity Board, on the card and in the Data
+  view, and the statement that the numbers describe ESPN leagues.
+* **When it stops.** If ESPN or Disney objects, or the deployment becomes commercial, the capture
+  step is removed and ADR-112 is revisited. The site degrades to "unavailable" by construction.
+
+**Privacy.** Unlike the headshots, this adds no visitor request to ESPN. The browser reads the
+published artifacts from this site only.
+
 ### Vendored fonts
 
 **Exo 2** and **JetBrains Mono**, both **SIL Open Font License 1.1**, added in Phase 9A under
@@ -248,6 +276,12 @@ player statistics and schedules, and says that the card's next-game spread and t
 nflverse schedule lines shown as context and read by no model. The ffopportunity entry now says
 it is a model input and that no per-player expected-points figure is published — true today,
 and the sentence to change first if ADR-086 is ever decided the other way.
+
+**ESPN roster and start percentages (ADR-112, 2026-10-17).** The Data view's ESPN entry now
+also names the rostered and started percentages, says the pipeline reads them once a day and
+that they describe ESPN leagues, and links ESPN Fantasy Football. The Opportunity Board and the
+card carry ESPN's attribution sentence beside the numbers. The filtered Opportunity export
+carries the ESPN columns a reader was looking at, with `espn_reading` naming each absence.
 
 ## 10. Non-commercial boundary
 

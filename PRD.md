@@ -212,6 +212,20 @@ These hold for every feature, current or future.
     four-player cap.
   * **The player card on a phone** opens with a compact header and *Expand details*, so the
     tabs get the screen.
+- **CR-032 ESPN roster and start percentages.** Waiver research can tell heavy transaction
+  volume from low roster penetration (ADR-112, UX_SPEC §6A.20, DATA_CONTRACTS §27):
+  * **Source.** ESPN's public rostered % and started %, captured once a day in season, retained
+    privately and published for Opportunity Board players. It is enabled on an owner decision
+    with ESPN's terms in view, not a licence.
+  * **Opportunity Board.** An ESPN column (rostered, started, 7- and 1-day roster change in
+    percentage points), two orderings, and an ESPN roster ceiling (All/<10/<25/<50/<75%) that
+    composes with every filter. With Role rising it reads "Role rising + rostered below N% on
+    ESPN", each condition inspectable. Missing readings never pass and are counted apart.
+  * **Card.** The latest reading and sentence in *In-season usage*, and a lazily loaded 28-day
+    trend of roster and start share, on separate percent axes, with gaps and ESPN period
+    boundaries.
+  * **Never** a model input, a blended score, a start-share change, or a ratio of Sleeper adds
+    to ESPN shares. Pick of the Week is unchanged.
 
 ## A4. Current non-goals
 
