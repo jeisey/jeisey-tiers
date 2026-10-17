@@ -51,7 +51,9 @@ function served(key: string): Row {
 
 function partitionOf(row: Row, partition: string, family = ""): string {
   // ADR-107: the Skill Tree's readings split by the card's bucket, its definitions by position.
-  if (family === "skill_tree") return String(bucketOf(String(row.player_id), manifest.card_buckets)).padStart(2, "0");
+  if (family === "skill_tree" || family === "espn_ownership_series") {
+    return String(bucketOf(String(row.player_id), manifest.card_buckets)).padStart(2, "0");
+  }
   if (family === "skill_tree_definitions") return String(row.position);
   if (partition.includes(".")) return `${String(row.league_preset_id)}.${String(row.scoring_preset)}`;
   if (partition === "all") return "all";

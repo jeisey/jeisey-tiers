@@ -46,6 +46,9 @@ export const RECORD_SCHEMA_VERSIONS = {
   // ADR-107: the Skill Tree's readings and definitions.
   player_skill_tree: "1.0",
   skill_tree_definitions: "1.0",
+  // ADR-112: ESPN's public roster and start percentages.
+  espn_ownership: "1.0",
+  espn_ownership_series: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -70,7 +73,9 @@ export type ArtifactName =
   | "weekly_context"
   | "season_actuals"
   | "player_skill_tree"
-  | "skill_tree_definitions";
+  | "skill_tree_definitions"
+  | "espn_ownership"
+  | "espn_ownership_series";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -674,6 +679,150 @@ export const BEHAVIOR_TREND_SERIES_FIELDS = [
   "quality_flags",
   "points",
 ] as const satisfies readonly (keyof BehaviorTrendSeriesRecord)[];
+
+/**
+ * ESPN's latest public roster and start percentages for one Opportunity Board player
+ * (`espn_ownership_v1`, ADR-112). Crowd interest in ESPN's leagues — not the reader's league
+ * and not a projection — and never a model input. Every published player carries a record, so
+ * an absent reading is a stated state rather than a missing row read as zero.
+ */
+export type EspnReadingState =
+  | "observed"
+  | "stale"
+  | "not_published"
+  | "invalid"
+  | "no_espn_id"
+  | "ambiguous_espn_id";
+export type EspnStartState = "observed" | "not_published" | "invalid" | "no_reading";
+export type EspnChangeState =
+  | "measured"
+  | "no_current_reading"
+  | "insufficient_history"
+  | "no_baseline_reading"
+  | "incomparable";
+
+/** Current minus a retained baseline, in percentage points — never relative growth. */
+export interface EspnRosterChange {
+  readonly state: EspnChangeState;
+  readonly change_pp: number | null;
+  readonly baseline_percent_rostered: number | null;
+  readonly baseline_observed_at_utc: string | null;
+  readonly span_hours: number | null;
+}
+
+export interface EspnOwnershipRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly source_id: string;
+  readonly player_id: string;
+  readonly position: Position;
+  readonly espn_id: string | null;
+  readonly reading_state: EspnReadingState;
+  /** Our retrieval instant of the capture this reading came from. */
+  readonly observed_at_utc: string | null;
+  /** ESPN's own `ownership.date` stamp; its meaning is not stated by ESPN. */
+  readonly espn_updated_at_utc: string | null;
+  /** The period ESPN reported as current at retrieval: context, not the week counted. */
+  readonly espn_current_period: number | null;
+  readonly percent_rostered: number | null;
+  readonly start_state: EspnStartState;
+  readonly percent_started: number | null;
+  readonly rostered_change_1d: EspnRosterChange;
+  readonly rostered_change_7d: EspnRosterChange;
+}
+
+export const ESPN_OWNERSHIP_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "source_id",
+  "player_id",
+  "position",
+  "espn_id",
+  "reading_state",
+  "observed_at_utc",
+  "espn_updated_at_utc",
+  "espn_current_period",
+  "percent_rostered",
+  "start_state",
+  "percent_started",
+  "rostered_change_1d",
+  "rostered_change_7d",
+] as const satisfies readonly (keyof EspnOwnershipRecord)[];
+
+/** One retained capture that carried the player. A capture without him is no point. */
+export interface EspnOwnershipPoint {
+  readonly observed_at_utc: string;
+  readonly espn_updated_at_utc: string | null;
+  readonly espn_current_period: number | null;
+  readonly percent_rostered: number | null;
+  readonly percent_started: number | null;
+}
+
+export interface EspnOwnershipSeriesRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly source_id: string;
+  readonly player_id: string;
+  readonly position: Position;
+  readonly espn_id: string;
+  readonly window_days: number;
+  readonly captures_in_window: number;
+  readonly observations: number;
+  readonly span_hours: number;
+  readonly points: readonly EspnOwnershipPoint[];
+}
+
+export const ESPN_OWNERSHIP_SERIES_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "source_id",
+  "player_id",
+  "position",
+  "espn_id",
+  "window_days",
+  "captures_in_window",
+  "observations",
+  "span_hours",
+  "points",
+] as const satisfies readonly (keyof EspnOwnershipSeriesRecord)[];
+
+/** `ros_build_metadata.espn_ownership` (ADR-112). Absent or null: an older bundle. */
+export interface EspnOwnershipMetadata {
+  readonly rule_version: string;
+  readonly status: "published" | "unavailable" | "failed";
+  readonly reason?: string | null;
+  readonly source_id: string;
+  readonly rule?: Readonly<Record<string, unknown>>;
+  readonly latest_snapshot_key?: string | null;
+  readonly latest_observed_at_utc?: string | null;
+  readonly latest_age_hours?: number | null;
+  readonly stale?: boolean | null;
+  readonly espn_current_period?: number | null;
+  readonly captures_in_window?: number;
+  readonly capture_times_utc?: readonly string[];
+  readonly skipped_captures?: number;
+  readonly baseline_1d_observed_at_utc?: string | null;
+  readonly baseline_7d_observed_at_utc?: string | null;
+  readonly espn_universe_rows?: number;
+  readonly espn_rows_matched?: number;
+  readonly espn_rows_not_on_board?: number;
+  readonly players?: number;
+  readonly series_players?: number;
+  readonly reading_states?: Readonly<Record<string, number>>;
+  readonly start_states?: Readonly<Record<string, number>>;
+  readonly change_states?: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  readonly attribution?: string;
+  readonly population_statement?: string;
+  readonly start_context_statement?: string;
+}
 
 /** A value per scoring preset. Null where the rule withholds a reading for that preset. */
 export interface ByPreset {
@@ -1829,6 +1978,8 @@ export interface RosBuildMetadata {
   readonly season_actuals?: SeasonActualsMetadata | null;
   /** The Skill Tree (ADR-107). Absent or null: the card has no Skill Tree section. */
   readonly skill_tree?: SkillTreeMetadata | null;
+  /** ESPN roster/start percentages (ADR-112). Absent or null: no ESPN reading anywhere. */
+  readonly espn_ownership?: EspnOwnershipMetadata | null;
   readonly disclosures: RosDisclosures;
   readonly limitations: readonly string[];
   readonly supported_presets: readonly string[];
@@ -1989,6 +2140,16 @@ export const SKILL_TREE_DEFINITION_FIELDS_COMPLETE: NoMissingKeys<
   typeof SKILL_TREE_DEFINITION_FIELDS
 > = true;
 
+export const ESPN_OWNERSHIP_FIELDS_COMPLETE: NoMissingKeys<
+  EspnOwnershipRecord,
+  typeof ESPN_OWNERSHIP_FIELDS
+> = true;
+
+export const ESPN_OWNERSHIP_SERIES_FIELDS_COMPLETE: NoMissingKeys<
+  EspnOwnershipSeriesRecord,
+  typeof ESPN_OWNERSHIP_SERIES_FIELDS
+> = true;
+
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
@@ -2007,6 +2168,8 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   season_actuals: SEASON_ACTUALS_FIELDS,
   player_skill_tree: PLAYER_SKILL_METRIC_FIELDS,
   skill_tree_definitions: SKILL_TREE_DEFINITION_FIELDS,
+  espn_ownership: ESPN_OWNERSHIP_FIELDS,
+  espn_ownership_series: ESPN_OWNERSHIP_SERIES_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -2027,6 +2190,8 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   season_actuals: "season_actuals.json",
   player_skill_tree: "player_skill_tree.json",
   skill_tree_definitions: "skill_tree_definitions.json",
+  espn_ownership: "espn_ownership.json",
+  espn_ownership_series: "espn_ownership_series.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

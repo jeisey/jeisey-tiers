@@ -438,7 +438,8 @@ describe("the filters", () => {
 
   it("has a predicate per filter and no filter that counts signals", () => {
     expect([...OPPORTUNITY_FILTERS].sort()).toEqual(["momentum", "role", "surfaced"]);
-    expect([...OPPORTUNITY_SORTS].sort()).toEqual(["adds", "momentum", "net", "role", "value"]);
+    // ADR-112: two ESPN orderings, each over one published quantity; still no blended score.
+    expect([...OPPORTUNITY_SORTS].sort()).toEqual(["adds", "espn", "espn7", "momentum", "net", "role", "value"]);
   });
 });
 
@@ -580,6 +581,19 @@ describe("the filtered export", () => {
       "season_games_played",
       "season_points_per_game",
       "ros_vs_season_places",
+      // ADR-112: ESPN's readings, appended after every earlier column.
+      "espn_reading",
+      "espn_percent_rostered",
+      "espn_start_reading",
+      "espn_percent_started",
+      "espn_rostered_change_7d_pp",
+      "espn_rostered_change_7d_reading",
+      "espn_rostered_change_7d_since_utc",
+      "espn_rostered_change_7d_span_hours",
+      "espn_rostered_change_1d_pp",
+      "espn_rostered_change_1d_reading",
+      "espn_observed_at_utc",
+      "espn_current_period",
     ]);
   });
 

@@ -46,6 +46,8 @@ import type { Availability } from "../data/availability";
 import { PlayerPortrait } from "../components/PlayerPortrait";
 import { useMediaQuery } from "../components/useMediaQuery";
 import { BehaviorSparkline } from "../charts/BehaviorSparkline";
+import { EspnOwnershipPanel } from "./EspnOwnershipPanel";
+import type { EspnSignal } from "../data/espn";
 import { CohortStrip, PaceRail, RankShift, type CohortReadingRow } from "../charts/CardMeters";
 import { MatchupPanel } from "../charts/MatchupPanel";
 import { MarketTrend, type TrendSeries } from "../charts/MarketTrend";
@@ -62,6 +64,7 @@ import type {
   PlayerStatusRecord,
   PlayerUsageRecord,
   RosBehaviorMetadata,
+  EspnOwnershipMetadata,
   RosDisclosures,
   RosSignalMetadata,
   Position,
@@ -98,7 +101,7 @@ import { WhyWeek } from "../components/WhyWeek";
 import { explainFlags, playerLevelFlags } from "../data/flags";
 import { CONFIDENCE_SHORT, describeGap, describeTrend, marketSourceLabel } from "../data/market";
 import type { WhyThisWeek } from "../data/whyweek";
-import type { SkillTreeSource } from "../data/store";
+import type { OwnershipHistorySource, SkillTreeSource } from "../data/store";
 import { hasMeaningfulStatus, isNoteworthyRosterStatus, statusBadge } from "../data/model";
 import {
   formatRosPositionRank,
@@ -344,6 +347,12 @@ export interface PlayerDetailData {
   readonly signals?: RosSignalMetadata | null;
   readonly momentum?: BehaviorMomentum | null;
   readonly seriesPublished?: boolean;
+  /**
+   * ESPN's roster/start reading for him (ADR-112), from his card shard, and the build's account
+   * of it. Null on a draft card. Crowd interest in ESPN leagues: never a value or a rank.
+   */
+  readonly espn?: EspnSignal | null;
+  readonly espnMeta?: EspnOwnershipMetadata | null;
   /**
    * Whether this card was opened from an in-season board (ADR-085).
    *
@@ -1243,6 +1252,7 @@ export function PlayerDetail({
   onOpenData,
   onCompare,
   skillTree = null,
+  ownershipHistory = null,
 }: {
   readonly data: PlayerDetailData | null;
   readonly onClose: () => void;
@@ -1252,6 +1262,8 @@ export function PlayerDetail({
   readonly onCompare?: ((playerId: string) => void) | undefined;
   /** The build's Skill Tree loader (ADR-107); null or absent when none was published. */
   readonly skillTree?: SkillTreeSource | null | undefined;
+  /** The build's ESPN history loader (ADR-112); null or absent when none was published. */
+  readonly ownershipHistory?: OwnershipHistorySource | null | undefined;
 }): React.JSX.Element | null {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const returnFocusTo = useRef<HTMLElement | null>(null);
@@ -1686,6 +1698,14 @@ export function PlayerDetail({
               momentum: data.momentum ?? null,
               seriesPublished: data.seriesPublished === true,
             }}
+          />
+          {/* ADR-112: ESPN's roster/start shares beside the Sleeper counts, never on their axis. */}
+          <EspnOwnershipPanel
+            signal={data.espn ?? null}
+            meta={data.espnMeta ?? null}
+            history={ownershipHistory}
+            playerId={data.playerId}
+            sheet={sheet}
           />
         </DetailSection>
       );

@@ -40,9 +40,11 @@ phase7_decisions_as_of: "2026-08-22"
 phase10_decisions_as_of: "2026-09-02"
 phase10_evidence: "docs/source-probes/2026-09-02/phase10-report.md"
 # 2026-09-16 (ADR-087). The player card shows ESPN's public headshot, fetched by the
-# visitor's browser when a card is opened. This changes nothing below: ESPN remains
-# `disabled` as a DATA source, no ESPN endpoint is called by the pipeline, and no ESPN
-# quantity enters this product. The player-to-picture mapping is nflverse's `espn_id`, which
+# visitor's browser when a card is opened. AMENDED 2026-10-17 (ADR-112): ESPN is no longer
+# `disabled` for one narrow purpose — its public roster and start percentages, captured once
+# a day by the pipeline (`espn_fantasy_ownership` below). Every other ESPN quantity (ranks,
+# projections, ADP, auction values, stats) is still excluded, and the headshot reference
+# below is unchanged. The player-to-picture mapping is nflverse's `espn_id`, which
 # has been the primary market identity bridge since ADR-019. Recorded here because the one
 # third-party host this deployment reaches is a source-policy fact even though the thing
 # fetched is an image rather than data.
@@ -88,7 +90,7 @@ decisions:
     config/identity-aliases.yaml (human-reviewed) is loaded LAST and wins. A generated file
     is a machine's reading of a name; a reviewed entry is a person's decision about a
     player, usually written because the automatic path could not see him (ADR-019/054/061).
-  non_commercial_deployment_required_by: [sleeper, fantasypros_ecr_via_dynastyprocess, open_meteo]
+  non_commercial_deployment_required_by: [sleeper, fantasypros_ecr_via_dynastyprocess, open_meteo, espn_fantasy_ownership]
   # Sources permitted for internal comparison only. Nothing here may reach a public
   # artifact, an intrinsic feature, or any DraftValue input.
   benchmark_only_sources: [fantasypros_ecr_via_dynastyprocess]
@@ -520,6 +522,97 @@ sources:
         detail: >-
           Observed gsis_id values with a leading space (" 00-0035057"). Trim and validate
           ids; fail closed on malformed values.
+  # ADR-112 (2026-10-17). ESPN's public roster and start percentages for the in-season
+  # Opportunity Board and the player card. Narrow by construction: one retrieval per day of
+  # the QB/RB/WR/TE ownership universe; everything but the ownership/provenance fields is
+  # discarded before anything is retained. Probe: docs/source-probes/2026-10-17/espn-ownership/.
+  espn_fantasy_ownership:
+    policy: allowed_optional
+    verified: true
+    verified_at: "2026-10-17"
+    criticality: optional
+    cost: free_non_commercial_only
+    non_commercial_only: true
+    authentication: none
+    api_base_url: "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/"
+    sanctioned_api: false
+    verified_endpoints:
+      ownership: >-
+        GET /seasons/{season}/segments/0/leaguedefaults/3?view=kona_player_info with
+        X-Fantasy-Filter {"players":{"limit":2000,"sortPercOwned":{"sortPriority":1,
+        "sortAsc":false},"filterStatsForSourceIds":{"value":[99]},
+        "filterRanksForScoringPeriodIds":{"value":[99]}}}
+      season_context: "GET /seasons/{season} -> currentScoringPeriod.id"
+    verified_contract:
+      universe_rows: 1052
+      core_rows_qb_rb_wr_te: 962
+      wire_bytes: 463301
+      decoded_bytes: 2490153
+      scale: "percent, 0-100, two decimals (percentOwned 0.0-99.93, percentStarted 0.0-99.75)"
+      completeness: >-
+        rows returned == X-Fantasy-Filter-Player-Count == the global /players list's count of
+        QB/RB/WR/TE/K/DST players carrying an ownership object (1052/1052, 0 value disagreements)
+      percent_started_coverage: "962/962 core rows on 2026-10-17"
+      period_semantics: >-
+        scoringPeriodId 0, 1, 5, 6, 7 and omitted return byte-identical ownership; no period is
+        requested. currentScoringPeriod is recorded as the period ESPN reported current at
+        retrieval. Which week's lineups percentStarted counts, and its denominator, are NOT
+        stated by ESPN.
+      source_timestamp: >-
+        ownership.date per player, epoch ms; stamps cluster at :30 past the hour (an hourly
+        recompute) and 38 low-roster players carried stamps up to 7 days old — consistent with
+        "last changed", not verified.
+      cache: "CloudFront, cache-control max-age=300, Vary on x-fantasy-filter"
+    known_issues:
+      - id: global_players_endpoint_ignores_filter
+        detail: >-
+          /seasons/{season}/players ignores X-Fantasy-Filter contents (limit, sort, filterIds):
+          with any filter it returns all 11,618 players (2.3 MB players_wl, 45 MB
+          kona_player_info decoded); without one, 50. Use the leaguedefaults route.
+      - id: players_wl_has_no_percent_started
+        detail: "players_wl is light but carries percentOwned only."
+      - id: percent_change_window_unstated
+        detail: >-
+          ownership.percentChange is published without a window. Retained privately; never
+          published until its window is verified against our own captures.
+    obligations:
+      - "At most one retrieval per America/New_York day; same-day reuse otherwise."
+      - "Descriptive User-Agent naming the project; no cookies, no login, no league ids."
+      - "Bounded transfer: 8 MB wire / 40 MB decoded caps; 3 attempts with 2s/4s backoff."
+      - "Attribute ESPN on every surface that shows a percentage, and in the Data view."
+      - "State that the percentages describe ESPN leagues, not the reader's league."
+    roles:
+      - inseason_crowd_interest_context
+    forbidden_roles:
+      - intrinsic_feature
+      - ros_feature
+      - weekly_model_feature
+      - draftvalue_input
+      - tier_input
+      - replacement_level_input
+      - critical_production_dependency
+    license: >-
+      No licence is granted. ESPN's site links the Disney Terms of Use (last updated
+      2024-05-24): personal, noncommercial use only (sections 2.A and 3.G); no automated
+      access, copying or extraction "using a robot, spider, script, or other automated
+      means", and no data mining or web scraping (2.B.x); "no right to reproduce,
+      distribute, communicate to the public" (2.A). No sanctioned public API exists.
+    owner_decision: >-
+      2026-10-17: the project owner reviewed those clauses and chose to enable daily capture
+      and public display of ESPN's roster and start percentages for this non-commercial
+      project, with attribution, accepting the risk. Recorded as an owner decision, NOT as a
+      legal clearance or a reading that the terms permit it.
+    redistribution_permitted: true
+    redistribution_note: >-
+      Owner decision, not clearance (above). Published as two small derived artifacts
+      restricted to the players the Opportunity Board shows; no server-side CSV of ESPN
+      values; the full retained universe stays in the private store.
+    decision_ref: "docs/DECISIONS.md ADR-112"
+    evidence: "docs/source-probes/2026-10-17/espn-ownership/report.json"
+    revisit_if:
+      - "ESPN or Disney contacts the project or changes the terms or the endpoint."
+      - "The deployment stops being non-commercial."
+      - "ESPN documents percentStarted's denominator or week, or percentChange's window."
   fantasyfootballcalculator_adp:
     policy: production_allowed
     verified: true

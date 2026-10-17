@@ -43,6 +43,8 @@ const SCHEMA_BY_ARTIFACT: Readonly<Record<ArtifactName, string>> = {
   season_actuals: "season_actuals_record",
   player_skill_tree: "player_skill_metric",
   skill_tree_definitions: "skill_tree_definition",
+  espn_ownership: "espn_ownership_record",
+  espn_ownership_series: "espn_ownership_series",
 };
 
 function readJson(path: string): Record<string, unknown> {

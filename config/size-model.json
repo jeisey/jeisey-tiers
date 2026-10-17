@@ -26,7 +26,9 @@
     "status": 911,
     "headshots": 522,
     "skill_tree_players": 646,
-    "skill_tree_without_appearance": 120
+    "skill_tree_without_appearance": 120,
+    "espn_ownership": 510,
+    "espn_series": 470
   },
   "trend_points": 12,
   "markets": 2,
@@ -42,5 +44,7 @@
   "_published_decimals": "The precision each artifact's model floats are published at on the real board. The golden templates carry fewer digits; the size model writes at least this many.",
   "_status": "ADR-101 widened the in-season status population to every rostered QB/RB/WR/TE plus the draft board: 545 rows on 2026-10-02 before the change, 675 measured in daily-refresh run 37069228948 (2026-10-02) after it; 911 measured on 2026-10-06 sources after ADR-102 added verified off-roster players (211 unsigned, 5 Sleeper-only signings).",
   "_actuals": "ADR-105: season_actuals records per scoring preset measured on a live build-ros of 2026-10-09 (cutoff week 4): 498 appearing QB/RB/WR/TE plus 143 board players with no appearance. Grows slowly with the season as more players appear.",
-  "_skill_tree": "ADR-107: player_skill_tree players measured on a live build-ros of 2026-10-14 (cutoff week 5): 526 appearing QB/RB/WR/TE, each with one reading per metric of his position's tree, plus 120 board players with no appearance, each with one presence record (12,161 records). Grows with the season as more players appear."
+  "_skill_tree": "ADR-107: player_skill_tree players measured on a live build-ros of 2026-10-14 (cutoff week 5): 526 appearing QB/RB/WR/TE, each with one reading per metric of his position's tree, plus 120 board players with no appearance, each with one presence record (12,161 records). Grows with the season as more players appear.",
+  "espn_points": 28,
+  "_espn": "ADR-112: espn_ownership is one record per Opportunity Board player (510 rows a block, preset-independent, so 510). espn_series is the board players with an ESPN reading: 885 of 962 ESPN QB/RB/WR/TE rows resolved on the 2026-10-17 probe, every one rostered at 1% or more; 470 of 510 is that rate applied to the board. espn_points is the steady state of a full 28-day window at one read a day. Projected from the probe, not measured on a live ESPN build, which does not exist yet."
 }

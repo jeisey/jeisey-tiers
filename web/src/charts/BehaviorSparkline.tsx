@@ -61,9 +61,9 @@ const GLYPH: Readonly<Record<string, string>> = { ...MOMENTUM_GLYPH, unknown: "Â
  * The sentence a screen reader gets, and the one printed under the bars.
  *
  * Exported because two surfaces render it and a second copy would be a second wording of one
- * claim. It never prints a percentage and never implies a share of leagues: ADR-088's rule
- * that no surface in this feature may leave room to infer a rostered percentage binds the
- * history exactly as it binds the day.
+ * claim. It never prints a percentage and never implies a share of leagues: an add count has
+ * no denominator in leagues. ESPN's rostered share (ADR-112) is a separate published reading,
+ * drawn on its own percent axis beside this strip and never inferred from it.
  */
 export function momentumSentence(momentum: BehaviorMomentum): string {
   const { trend, spanLabel, missing, points } = momentum;

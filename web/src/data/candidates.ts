@@ -34,6 +34,17 @@
  */
 
 import type { SeasonStanding } from "./actuals";
+import {
+  compareRosterChange,
+  compareRostered,
+  espnFilterUnavailableReason,
+  espnFilterUsable,
+  isCurrent,
+  passesCeiling,
+  risingOnEspn,
+  type EspnCeiling,
+  type EspnSignal,
+} from "./espn";
 import type { OpportunityRecord, PlayerUsageRecord, Position, RoleMetric } from "./contracts";
 import { EM_DASH, formatEasternDay, formatValue } from "./format";
 import { matchesPosition, matchesSearch } from "./model";
@@ -158,6 +169,8 @@ export interface OpportunityCandidate {
   readonly nextGame: NextGameSignal;
   /** His season-to-date standing (ADR-105): context beside the board, never an ordering. */
   readonly season?: SeasonStanding;
+  /** ESPN's roster/start reading (ADR-112): crowd interest in ESPN leagues, never a value. */
+  readonly espn: EspnSignal;
 }
 
 /**
@@ -235,6 +248,7 @@ export function opportunityCandidate(
     momentum: momentumSignal(bundle, record.player_id),
     nextGame: nextGameSignal(bundle, signalTeam(usage, record.team)),
     season: bundle.seasonStandingFor(record.scoring_preset, record.player_id),
+    espn: bundle.espnFor(record.player_id),
   };
 }
 
@@ -467,8 +481,60 @@ function sortCandidates(
     case "value":
       sorted.sort(compareByValue);
       break;
+    case "espn":
+      sorted.sort((a, b) => compareRostered(a.espn, b.espn) || compareByValue(a, b));
+      break;
+    case "espn7":
+      sorted.sort((a, b) => compareRosterChange(a.espn, b.espn) || compareByValue(a, b));
+      break;
   }
   return sorted;
+}
+
+/**
+ * The ESPN roster ceiling's census (ADR-112), in the same two numbers every filter prints:
+ * how many rows pass, and how many have no current reading and are excluded without being
+ * counted as a "no". `usable: false` means the build cannot apply it, and it is not applied.
+ */
+export interface CeilingReport {
+  readonly ceiling: Exclude<EspnCeiling, "all">;
+  readonly usable: boolean;
+  /** Why it is not applied, when it is not. */
+  readonly reason: string | null;
+  readonly passing: number;
+  readonly withoutReading: number;
+}
+
+/**
+ * Supporting evidence for the rows shown, each labelled apart and never combined (ADR-112):
+ * how many have a current ESPN 7-day roster gain, and how many have positive Sleeper net adds.
+ * Two populations in two units, so they are two counts and never a ratio or a blend.
+ */
+export interface SupportingEvidence {
+  readonly espnRising: number;
+  readonly espnMeasured: number;
+  readonly sleeperPositive: number;
+  readonly sleeperMeasured: number;
+}
+
+function supportingEvidence(rows: readonly OpportunityCandidate[]): SupportingEvidence {
+  let espnRising = 0;
+  let espnMeasured = 0;
+  let sleeperPositive = 0;
+  let sleeperMeasured = 0;
+  for (const candidate of rows) {
+    const rising = risingOnEspn(candidate.espn);
+    if (rising !== null) {
+      espnMeasured += 1;
+      if (rising) espnRising += 1;
+    }
+    const net = candidate.row.record.net_add_count;
+    if (net !== null && net !== undefined) {
+      sleeperMeasured += 1;
+      if (net > 0) sleeperPositive += 1;
+    }
+  }
+  return { espnRising, espnMeasured, sleeperPositive, sleeperMeasured };
 }
 
 // ----------------------------------------------------------------------------- the selection
@@ -484,6 +550,10 @@ export interface OpportunitySelection {
   readonly unavailable: readonly OpportunityFilter[];
   /** The role ordering in force, so the view can say whether magnitudes were compared. */
   readonly roleOrdering: RoleOrdering;
+  /** The ESPN roster ceiling's census, or null when the reader chose All. */
+  readonly ceiling: CeilingReport | null;
+  /** Supporting evidence over the rows shown, labelled apart (ADR-112). */
+  readonly evidence: SupportingEvidence;
 }
 
 /**
@@ -518,8 +588,24 @@ export function selectOpportunityCandidates(
     withoutReading: matched.filter((candidate) => !hasEvidence(candidate, filter)).length,
   }));
 
-  const kept = matched.filter((candidate) =>
-    applied.every((filter) => passesFilter(candidate, filter)),
+  // ADR-112: the ESPN ceiling, one more predicate ANDed with the rest. Only a current reading
+  // can pass it; a build that cannot apply it leaves it off and says why.
+  const ceilingValue = state.espn;
+  const usable = espnFilterUsable(bundle.espnAvailability);
+  const ceiling: CeilingReport | null =
+    ceilingValue === "all"
+      ? null
+      : {
+          ceiling: ceilingValue,
+          usable,
+          reason: espnFilterUnavailableReason(bundle.espnAvailability),
+          passing: matched.filter((candidate) => passesCeiling(candidate.espn, ceilingValue)).length,
+          withoutReading: matched.filter((candidate) => !isCurrent(candidate.espn)).length,
+        };
+  const kept = matched.filter(
+    (candidate) =>
+      applied.every((filter) => passesFilter(candidate, filter)) &&
+      (ceiling === null || !ceiling.usable || passesCeiling(candidate.espn, ceiling.ceiling)),
   );
   const sorted = sortCandidates(kept, state.opportunity);
   return {
@@ -531,6 +617,8 @@ export function selectOpportunityCandidates(
     filters: reports,
     unavailable: active.filter((filter) => !filterAvailable(bundle, filter)),
     roleOrdering: roleOrderingFor(kept),
+    ceiling,
+    evidence: supportingEvidence(kept),
   };
 }
 

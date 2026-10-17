@@ -54,7 +54,7 @@ describe("parseState", () => {
 
   it("reads every supported parameter", () => {
     const parsed = parseState(
-      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&set=3&duel=00-0036389.00-0039164&margin=-12" +
+      "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&espn=lt50&set=3&duel=00-0036389.00-0039164&margin=-12" +
         "&give=00-0000001.00-0000013&goal=ceiling&get=2&range=35&comp=rb.wr&keep=00-0000002.00-0000011&shown=0.1.6.3.4&dealt=7&stamp=0a1b2c3d&ret=1&unavail=1&panel=wmm",
     );
     expect(parsed.state).toEqual({
@@ -70,6 +70,7 @@ describe("parseState", () => {
       mode: "auto",
       opportunity: "value",
       only: ["role", "surfaced"],
+      espn: 50,
       set: 3,
       duel: ["gsis:00-0036389", "gsis:00-0039164"],
       margin: -12,
@@ -87,6 +88,27 @@ describe("parseState", () => {
       panel: "wmm",
     });
     expect(parsed.normalized).toBe(true);
+  });
+
+  it("round-trips the ESPN roster ceiling and normalizes anything else (ADR-112)", () => {
+    for (const ceiling of [10, 25, 50, 75] as const) {
+      const href = serializeState({ ...DEFAULT_STATE, view: "opportunity", espn: ceiling });
+      expect(href).toBe(`?view=opportunity&espn=lt${String(ceiling)}`);
+      const parsed = parseState(href);
+      expect(parsed.state.espn).toBe(ceiling);
+      expect(parsed.normalized).toBe(true);
+    }
+    // All is the default and is never written.
+    expect(serializeState({ ...DEFAULT_STATE, espn: "all" })).toBe("");
+    // The filter and the ESPN orderings compose with the rest, in the fixed parameter order.
+    expect(
+      serializeState({ ...DEFAULT_STATE, view: "opportunity", opportunity: "espn7", only: ["role"], espn: 25 }),
+    ).toBe("?view=opportunity&opportunity=espn7&only=role&espn=lt25");
+    for (const odd of ["lt5", "50", "lt100", "LT50", ""]) {
+      const parsed = parseState(`?espn=${odd}`);
+      expect(parsed.state.espn).toBe("all");
+      expect(parsed.normalized).toBe(false);
+    }
   });
 
   it("reads My Leagues' panel, omits the default, and normalizes anything else (ADR-110)", () => {

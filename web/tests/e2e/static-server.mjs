@@ -138,6 +138,8 @@ const MOUNTS = [
   { base: "/scenario/in-season-no-behavior/", dir: "web/dist-in-season-no-behavior" },
   { base: "/scenario/in-season-no-signals/", dir: "web/dist-in-season-no-signals" },
   { base: "/scenario/in-season-no-skill-tree/", dir: "web/dist-in-season-no-skill-tree" },
+  { base: "/scenario/in-season-no-espn/", dir: "web/dist-in-season-no-espn" },
+  { base: "/scenario/in-season-espn-stale/", dir: "web/dist-in-season-espn-stale" },
   { base: "/scenario/awaiting-first-week/", dir: "web/dist-awaiting-first-week" },
   { base: "/scenario/season-complete/", dir: "web/dist-season-complete" },
   { base: "/", dir: "web/dist" },

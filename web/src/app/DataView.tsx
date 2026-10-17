@@ -34,6 +34,7 @@ import {
   TRADE_METHOD_VERSION,
 } from "../data/tradeMethod";
 import type { Degradation } from "../data/bundle";
+import type { EspnOwnershipMetadata } from "../data/contracts";
 import { formatAge, formatEastern, formatInteger } from "../data/format";
 import { STALE_WARNING_HOURS } from "../data/freshness";
 import { buildAgeHours } from "../data/load";
@@ -66,6 +67,78 @@ const SOURCE_LABELS: Readonly<Record<string, string>> = {
   myfantasyleague_adp: "MyFantasyLeague ADP export",
   sleeper: "Sleeper",
 };
+
+/**
+ * How ESPN's roster and start percentages were read, and how many players they cover
+ * (ADR-112): the census a reader needs to trust a filter, and the plain statement of what the
+ * numbers are and are not.
+ */
+function EspnMethod({ meta }: { readonly meta: EspnOwnershipMetadata | null }): React.JSX.Element {
+  if (meta === null) {
+    return (
+      <p className="prose" data-espn="unpublished">
+        <strong>ESPN roster percentages</strong> are not part of this build. When published they
+        appear on the Opportunity Board and the player card, and nowhere they could reach a
+        value, a rank or a tier.
+      </p>
+    );
+  }
+  if (meta.status !== "published") {
+    return (
+      <p className="prose" data-espn="unavailable">
+        <strong>ESPN roster percentages are unavailable for this build</strong> ({meta.reason ?? "no capture"}).
+        The ESPN filter is disabled and every ESPN column reads as unavailable; nothing else changes.
+      </p>
+    );
+  }
+  const states = meta.reading_states ?? {};
+  const changes = meta.change_states ?? {};
+  return (
+    <>
+      <dl className="facts" data-espn="published">
+        <div>
+          <dt>ESPN read</dt>
+          <dd>{`${formatEastern(meta.latest_observed_at_utc ?? null)}${meta.stale === true ? " · stale" : ""}`}</dd>
+        </div>
+        <div>
+          <dt>ESPN period at read</dt>
+          <dd>{meta.espn_current_period == null ? "not reported" : String(meta.espn_current_period)}</dd>
+        </div>
+        <div>
+          <dt>Players with a reading</dt>
+          <dd>{`${formatInteger((states.observed ?? 0) + (states.stale ?? 0))} of ${formatInteger(meta.players ?? 0)}`}</dd>
+        </div>
+        <div>
+          <dt>Not listed by ESPN</dt>
+          <dd>{formatInteger(states.not_published ?? 0)}</dd>
+        </div>
+        <div>
+          <dt>No / conflicting ESPN id</dt>
+          <dd>{`${formatInteger(states.no_espn_id ?? 0)} / ${formatInteger(states.ambiguous_espn_id ?? 0)}`}</dd>
+        </div>
+        <div>
+          <dt>7-day changes measured</dt>
+          <dd>{formatInteger(changes["7d"]?.measured ?? 0)}</dd>
+        </div>
+        <div>
+          <dt>Daily reads in 28 days</dt>
+          <dd>{formatInteger(meta.captures_in_window ?? 0)}</dd>
+        </div>
+      </dl>
+      <p className="prose">
+        <strong>Rostered % and started % are ESPN&apos;s</strong>, read once a day from ESPN&apos;s
+        public player data and matched to players only through the verified ESPN id each player
+        already carries. {meta.population_statement ?? ""} A player ESPN does not list has no
+        reading, never 0%, and passes no ESPN filter. Roster changes are the current share minus a
+        retained read about 1 or 7 days earlier, in percentage points, with that read&apos;s time
+        and the actual span; without such a read, no change is shown. {meta.start_context_statement ?? ""}{" "}
+        Sleeper&apos;s add counts are a different population in a different unit, so the two are
+        shown side by side and never divided or blended. Actual availability in your league is
+        what My Leagues asks you to confirm.
+      </p>
+    </>
+  );
+}
 
 export function DataView({
   index,
@@ -514,17 +587,7 @@ export function DataView({
             on the Opportunity Board are counts of transactions over the window above; they are
             not a draft price, not a rank, and are never subtracted from one.
           </p>
-          <p className="prose">
-            <strong>There is no rostered percentage anywhere on this site.</strong> It is the
-            natural way to say whether a waiver target is actually available, and no source
-            this project may publish from reports one: Sleeper documents no ownership field,
-            FantasyPros&apos; ownership columns are benchmark-only and may not be
-            redistributed, and ESPN is disabled in the source registry. Pick of the Week uses
-            the add count instead, which is availability evidence in the direction that
-            matters — a roster that added a player did not have him, so a player rostered
-            almost everywhere cannot post a large count. It recovers no percentage, and nothing
-            on this site claims otherwise.
-          </p>
+          <EspnMethod meta={inSeason.metadata.espn_ownership ?? null} />
           <ul className="limitations">
             {inSeason.metadata.limitations.map((limitation) => (
               <li key={limitation}>{limitation}</li>
@@ -797,8 +860,12 @@ export function DataView({
             <span className="mono">a.espncdn.com</span> when you open a card, with no referrer
             sent; none is copied onto this site. Which picture belongs to which player comes
             from nflverse&apos;s published <span className="mono">espn_id</span>, not from
-            ESPN. No ESPN ranking, projection or ADP is used anywhere in this product.{" "}
-            <a href="https://www.espn.com/">ESPN</a>
+            ESPN. In season, ESPN Fantasy&apos;s public <strong>rostered %</strong> and{" "}
+            <strong>started %</strong>, read once a day by this project&apos;s pipeline and
+            shown on the Opportunity Board and the player card (ADR-112). They describe ESPN
+            leagues, not yours, and no model reads them. No ESPN ranking, projection, ADP or
+            stat is used anywhere in this product.{" "}
+            <a href="https://fantasy.espn.com/">ESPN Fantasy Football</a>
           </li>
           <li>
             <strong>FantasyPros</strong> — expert consensus rankings, retrieved server-side

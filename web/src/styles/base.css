@@ -5052,6 +5052,186 @@ dialog.lg-dialog::backdrop {
   color: var(--ink-faint);
 }
 
+/* ------------------------------------------------------- ESPN roster and start share (ADR-112)
+ *
+ * Two aligned small multiples on one dated axis, each with its own labelled percent scale. The
+ * roster line takes the accent; the start line the neutral stroke and a dash, so the two are
+ * told apart without hue. A missed read is a gap on the floor, a week rollover a dashed rule.
+ */
+.espn-block {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: var(--hairline) solid var(--line);
+}
+
+.espn-sentence {
+  margin: 4px 0 var(--space-2);
+  font-size: 0.8rem;
+  color: var(--ink-strong);
+}
+
+.espn-sentence[data-current="false"] {
+  color: var(--ink-muted);
+}
+
+.espn-readouts {
+  margin-bottom: var(--space-2);
+}
+
+.espn-history {
+  margin-top: var(--space-2);
+}
+
+.espn-chart {
+  margin: 0;
+  padding: 8px 10px;
+  border: var(--hairline) solid var(--line);
+  background: var(--tile);
+}
+
+.espn-panel + .espn-panel {
+  margin-top: 6px;
+}
+
+.espn-panel-label {
+  display: block;
+  font: 600 0.56rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.espn-plot {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.espn-ticks {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 4px 4px 0;
+  font: 400 0.6rem/1 var(--font-mono);
+  color: var(--ink-faint);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.espn-plot-area {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.espn-plot-area svg {
+  display: block;
+  max-width: 100%;
+}
+
+.espn-period-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(3px);
+  font: 500 0.56rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.espn-axis {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.espn-grid {
+  stroke: var(--line-faint);
+  stroke-width: 1;
+}
+
+.espn-period {
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.espn-gap {
+  stroke: var(--ink-faint);
+  stroke-width: 1.5;
+  stroke-dasharray: 1 3;
+}
+
+.espn-line {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.espn-line[data-field="percent_started"] {
+  stroke: var(--ink-muted);
+  stroke-dasharray: 4 2.5;
+}
+
+.espn-point {
+  fill: var(--panel-raised);
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  cursor: pointer;
+}
+
+.espn-point[data-field="percent_started"] {
+  stroke: var(--ink-muted);
+}
+
+.espn-point[data-latest="true"] {
+  fill: var(--ink-accent);
+}
+
+.espn-point:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.espn-axis-dates {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0 0 2.2rem;
+  font-size: 0.66rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.espn-caption {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+
+.espn-reading {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-strong);
+}
+
+.espn-panel-empty {
+  margin: 4px 0;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+.espn-readings {
+  margin-top: 6px;
+  font-size: 0.72rem;
+}
+
+.espn-readings summary {
+  cursor: pointer;
+  color: var(--ink-accent);
+}
+
+.espn-readings-table {
+  margin-top: 4px;
+  width: 100%;
+}
+
 .market-compare {
   margin-top: 12px;
 }
@@ -5743,6 +5923,57 @@ dialog.lg-dialog::backdrop {
   color: var(--ink-faint);
 }
 
+/* ADR-112: ESPN's roster share. A 7-day gain or loss takes the board's two direction colours,
+   and the arrow-free signed `pp` figure carries the direction in text as well. A stale reading
+   is printed muted, never as current. */
+.signal-cell[data-signal="espn"][data-direction="up"] .signal-change {
+  color: var(--bargain);
+}
+
+.signal-cell[data-signal="espn"][data-direction="down"] .signal-change {
+  color: var(--premium);
+}
+
+.signal-cell[data-signal="espn"][data-current="false"] .signal-value {
+  color: var(--ink-muted);
+}
+
+.signal-cell[data-signal="espn"][data-kind="absent"] .signal-value,
+.signal-cell[data-signal="espn"][data-kind="unavailable"] .signal-value {
+  color: var(--ink-faint);
+  font-size: 0.66rem;
+}
+
+/* The ESPN ceiling sits with the filter chips and folds with them on a phone. */
+.opp-espn-control .control {
+  margin: 0;
+}
+
+/* The discovery rule, plainly labelled, each condition inspectable beneath it (ADR-112). */
+.opp-discovery {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--line-bright);
+  background: var(--accent-wash);
+  font-size: 0.74rem;
+}
+
+.opp-discovery-rule {
+  margin: 0 0 var(--space-1);
+  color: var(--ink-strong);
+}
+
+.opp-discovery-conditions {
+  margin: 0 0 var(--space-1);
+  padding-left: 1.1rem;
+  color: var(--ink-muted);
+}
+
+.opp-discovery-evidence {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
 /*
  * Responsive priority, in two steps, so the table never scrolls sideways on a laptop (UX
  * spec 7.3). Below 1280px the team and the drop count step aside — the chart above prints
@@ -5769,6 +6000,12 @@ table.sheet.opp-sheet tbody td {
 
 @media (max-width: 1279px) {
   .opp-sheet .col-mid {
+    display: none;
+  }
+
+  /* ADR-112: below 1280px the RoS-vs-Szn gap steps aside on this board — it is the difference
+     of the two ranks printed beside it, and the export carries it — so the ESPN column fits. */
+  .opp-sheet [data-col="ros_vs_season"] {
     display: none;
   }
 }
@@ -5816,7 +6053,13 @@ table.sheet.opp-sheet thead th button {
 
 @media (max-width: 1439px) {
   .opp-sheet .col-player {
-    min-width: 9.5rem;
+    min-width: 8.75rem;
+  }
+
+  /* ADR-112: the season totals give the ESPN column its room below 1440px; the card and both
+     exports still carry them, and Szn rank stays beside ROS PosRk. */
+  .opp-sheet .col-wide {
+    display: none;
   }
 }
 

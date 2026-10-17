@@ -45,6 +45,8 @@ VENDOR_HOSTS = (
     "api.myfantasyleague.com",
     "api.sleeper.app",
     "nflverse-data",
+    # ADR-112.
+    "fantasy.espn.com",
 )
 
 
@@ -91,7 +93,13 @@ def test_ci_contacts_no_vendor(workflow_dir):
     text = _code(workflow_dir / "ci.yml")
     for host in VENDOR_HOSTS:
         assert host not in text, f"ci.yml references {host}; PR CI must stay offline"
-    for command in ("snapshot-market", "capture-status", "build-current", "build-historical"):
+    for command in (
+        "snapshot-market",
+        "capture-status",
+        "capture-espn-ownership",
+        "build-current",
+        "build-historical",
+    ):
         assert command not in text, f"ci.yml runs {command}, which needs live vendor access"
 
 
@@ -560,3 +568,19 @@ def test_a_verdict_is_shown_only_after_its_look_is_on_the_ledger(workflow_dir):
     assert "> prospective/run.log" in steps[look]["run"]
     for index in shown:
         assert "always()" not in str(steps[index].get("if", "")), names[index]
+
+
+def test_the_espn_capture_is_in_season_daily_optional_and_never_on_a_news_slot(workflows):
+    """ADR-112: one optional capture per daily in-season run, honouring `skip_capture`."""
+    steps = workflows["daily-refresh.yml"]["jobs"]["capture"]["steps"]
+    espn = next(step for step in steps if step.get("id") == "espn")
+    assert "capture-espn-ownership" in espn["run"]
+    assert espn["continue-on-error"] is True
+    condition = espn["if"]
+    assert "inputs.skip_capture != true" in condition
+    assert "steps.plan.outputs.kind != 'news'" in condition
+    assert "steps.season.outputs.mode == 'in_season'" in condition
+    names = [step.get("name") for step in steps]
+    assert names.index(espn["name"]) < names.index("Validate the retained store"), (
+        "the capture must be validated with the rest of the store before it is pushed"
+    )

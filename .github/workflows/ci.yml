@@ -320,6 +320,15 @@ jobs:
           npm run verify:board -- \
             --dist web/dist-in-season-no-signals --base-path /scenario/in-season-no-signals/ \
             --port 4185
+          # ADR-112: an older build with no ESPN readings, and one whose newest ESPN capture is
+          # stale. Every ESPN cell must say what its bytes say, and the ESPN ceiling must be
+          # applied exactly — or, on these two, not at all.
+          npm run verify:board -- \
+            --dist web/dist-in-season-no-espn --base-path /scenario/in-season-no-espn/ \
+            --port 4186
+          npm run verify:board -- \
+            --dist web/dist-in-season-espn-stale --base-path /scenario/in-season-espn-stale/ \
+            --port 4187
           # The two ADR-079 windows: the season has started and no rest-of-season board
           # exists. `auto` must fall back to the draft board in both, and the draft board is
           # what these check — the lifecycle state between the other two, and the one a

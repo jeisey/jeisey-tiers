@@ -32,6 +32,8 @@
  * | showing the Skill Tree (ADR-107) on an open card adds | ≤ 25 kB |
  * | then hiding and showing it, or reopening that player's tree | 0 B |
  * | then another player's tree, at another position | ≤ 10 kB |
+ * | showing the ESPN trend (ADR-112) on an open card adds | ≤ 15 kB |
+ * | then hiding and showing it, or reopening the card and showing it again | 0 B |
  * | Win My Matchup (ADR-110), opened from a league's lineup, adds | ≤ 30 kB |
  * | then the first Simulate (the worker) adds | ≤ 7 kB |
  * | then evaluating changes, switching tools and simulating again | 0 B |
@@ -100,6 +102,8 @@ export const BUDGETS = {
   skillTreeAdds: 25_000,
   skillTreeRepeat: 0,
   skillTreeSwitch: 10_000,
+  ownershipHistoryAdds: 15_000,
+  ownershipHistoryRepeat: 0,
   wmmOpenAdds: 30_000,
   wmmSimulateAdds: 7_000,
   wmmRepeat: 0,
@@ -368,6 +372,53 @@ try {
     failures.push(`the Skill Tree scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
   }
 
+  // 3g. ESPN's roster/start history (ADR-112), in a browser of its own: a card opened from the
+  //     default view (its cost is `cardAdds` and must not change), then the trend shown — one
+  //     bucket file — then hidden and shown, and the card closed, reopened and shown again,
+  //     which must fetch nothing.
+  try {
+    const watcher = await browser.newContext();
+    const espnPage = await newPage(watcher);
+    const espnLog = record();
+    await openDefault(espnPage);
+    const openFirst = async () => {
+      await espnPage.locator("table.sheet tbody tr[data-player] .player-name").first().click();
+      await espnPage.getByRole("dialog").waitFor();
+      await settle(espnPage);
+    };
+    const showTrend = async () => {
+      const before = espnLog.mark();
+      await espnPage.getByRole("dialog").getByRole("button", { name: "Show ESPN trend" }).click();
+      // The drawn chart, or the one sentence that replaces it: never a loading note, which
+      // would end the wait before the chart's own code has arrived.
+      await espnPage
+        .getByRole("dialog")
+        .locator("[data-testid='espn-ownership-chart'], .espn-history .section-note:has-text('No retained ESPN read')")
+        .first()
+        .waitFor();
+      await settle(espnPage);
+      return espnLog.since(before);
+    };
+    await openFirst();
+    const cardOnly = espnLog.since(0).filter((entry) => entry.path.includes("espn_ownership_series"));
+    if (cardOnly.length > 0) failures.push("opening a card fetched the ESPN history before it was asked for");
+    const shown = await showTrend();
+    check("ownershipHistoryAdds", sum(shown), BUDGETS.ownershipHistoryAdds);
+    results.ownershipHistoryAddsData = sum(shown, isData);
+    results.ownershipHistoryFiles = shown.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+    mark = espnLog.mark();
+    await espnPage.getByRole("dialog").getByRole("button", { name: "Hide ESPN trend" }).click();
+    await showTrend();
+    await espnPage.keyboard.press("Escape");
+    await espnPage.getByRole("dialog").waitFor({ state: "hidden" });
+    await openFirst();
+    await showTrend();
+    check("ownershipHistoryRepeat", sum(espnLog.since(mark)), BUDGETS.ownershipHistoryRepeat);
+    await watcher.close();
+  } catch (error) {
+    failures.push(`the ESPN history scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
+  }
+
   // 3a. Reported, not budgeted: a cold first visit straight to a shared Trade link.
   const trader = await browser.newContext();
   const tradePage = await newPage(trader);
@@ -466,6 +517,11 @@ try {
     await settle(scoutPage);
     results.opportunityAdds = sum(scoutLog.since(mark));
     results.opportunityAddsData = sum(scoutLog.since(mark), isData);
+    // ADR-112: the one ESPN file a view reads, inside the figure above.
+    results.opportunityEspnSlice = sum(scoutLog.since(mark), (entry) => entry.path.includes("/espn_ownership/"));
+    if (scoutLog.since(mark).some((entry) => entry.path.includes("espn_ownership_series"))) {
+      failures.push("opening the Opportunity Board fetched ESPN history files");
+    }
     await scout.close();
 
     // 3d. A cold first visit straight to My Leagues with the same leagues saved: the shell, the

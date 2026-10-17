@@ -541,6 +541,8 @@ def run_fixture_pipeline(
         identity=identity,
     )
     behavior_series = _behavior_series_records(opportunity, build_id=build_id)
+    espn = _espn_ownership_layer(opportunity, identity=identity, build_id=build_id)
+    gate.extend(espn.checks)
     usage, matchups = _signal_records(opportunity, season=season, app=app, build_id=build_id)
     weekly, weekly_block, weekly_context = _weekly_records(
         opportunity,
@@ -566,6 +568,10 @@ def run_fixture_pipeline(
         "weekly_projections": weekly,
         "weekly_context": weekly_context,
     }
+    if espn.latest:
+        records["espn_ownership"] = espn.latest
+    if espn.series:
+        records["espn_ownership_series"] = espn.series
     # ADR-105: the real builder over the same synthetic rows, so the actuals agree with the
     # points to date the boards print and with every week the card draws.
     actuals = _season_actuals(records, season=season, app=app, identity=identity, build_id=build_id)
@@ -629,6 +635,7 @@ def run_fixture_pipeline(
             weekly=weekly_block,
             season_actuals=actuals.metadata,
             skill_tree=skill_tree.metadata,
+            espn_ownership=espn.metadata,
             build_id=build_id,
             generated_at=now,
             git_sha=git_sha or _git_sha(),
@@ -1257,6 +1264,139 @@ def _behavior_series_records(
     )
 
 
+#: ESPN ownership captures, as hours before the fixture's anchor (ADR-112). Roughly daily, as
+#: `capture-espn-ownership` retains them, with one missed day (no 122 h capture) so the series
+#: carries a real gap; 24.5 h and 170 h qualify as the 1-day and 7-day baselines.
+FIXTURE_ESPN_CAPTURE_HOURS = (230.0, 196.0, 170.0, 146.0, 98.0, 74.0, 50.0, 24.5, 1.0)
+#: Captures at or after this age read ESPN's current period as the next one: a week rollover.
+FIXTURE_ESPN_ROLLOVER_HOURS = 98.0
+#: Each player's latest roster share, by sorted index. Boundary values on purpose: exactly
+#: 10, 25 and 50 must fail "below 10/25/50%", and 0.0 is a valid reading.
+FIXTURE_ESPN_FINAL_ROSTERED = (
+    31.0,
+    4.2,
+    66.5,
+    0.0,
+    22.4,
+    48.9,
+    12.0,
+    9.99,
+    7.1,
+    50.0,
+    88.6,
+    25.0,
+    10.0,
+    74.99,
+    99.1,
+    3.3,
+    40.2,
+    1.5,
+    60.0,
+)
+
+
+def _espn_ownership_layer(
+    opportunity: Sequence[Mapping[str, Any]],
+    *,
+    identity: Any,
+    build_id: str,
+) -> Any:
+    """Synthetic retained ESPN captures through the real metric (ADR-112).
+
+    Every state a real window produces, each on a named player (sorted index):
+
+    * ``0`` the documented riser, 18% → 31% over the 7-day baseline, started share rising too;
+    * ``1`` **first seen today**: only in the newest capture, so both changes are
+      ``no_baseline_reading`` and the series is one point;
+    * ``2`` **roster-only**: ESPN never publishes a start share for him (never a zero);
+    * ``3`` a valid **0%** reading, rostered and started;
+    * ``4`` a **gap**: absent from three captures inside the window, changes still measured;
+    * ``5`` **falling**;
+    * ``6`` ESPN **publishes nothing** for his (verified) ESPN id;
+    * ``7`` an **invalid** newest value (failed validation, so no reading and no change);
+    * ``8`` **two points** only: the 1-day change is measured, the 7-day one is not;
+    * the surfaced players and the player the crosswalk cannot bridge: **no ESPN id**.
+    """
+    from ffdraft.ownership.capture import OwnershipCapture
+    from ffdraft.ownership.publish import ownership_layer
+    from ffdraft.retention import snapshot_key
+    from ffdraft.sources.espn import CORE_POSITION_IDS, ESPN_SOURCE_ID
+
+    anchor = parse_utc(FIXTURE_GENERATED_AT)
+    by_player: dict[str, Mapping[str, Any]] = {}
+    for row in opportunity:
+        by_player.setdefault(str(row["player_id"]), row)
+    players = sorted(by_player)
+    position_ids = {name: number for number, name in CORE_POSITION_IDS.items()}
+    newest = len(FIXTURE_ESPN_CAPTURE_HOURS) - 1
+    carried: dict[int, set[int]] = {1: {newest}, 4: {0, 1, 2, 6, 7, 8}, 8: {7, 8}}
+
+    captures: list[OwnershipCapture] = []
+    for position, hours in enumerate(FIXTURE_ESPN_CAPTURE_HOURS):
+        observed = anchor - timedelta(hours=hours)
+        rows: list[dict[str, Any]] = []
+        for index, player_id in enumerate(players):
+            player = identity.players.get(player_id) if identity is not None else None
+            espn_id = None if player is None else player.crosswalk.espn_id
+            if not espn_id or index == 6:
+                continue
+            if position not in carried.get(index, set(range(len(FIXTURE_ESPN_CAPTURE_HOURS)))):
+                continue
+            final = FIXTURE_ESPN_FINAL_ROSTERED[index % len(FIXTURE_ESPN_FINAL_ROSTERED)]
+            days = (hours - FIXTURE_ESPN_CAPTURE_HOURS[-1]) / 24.0
+            rate = 13.0 / 7.0 if index == 0 else (-0.9 if index == 5 else 0.35 + 0.1 * (index % 4))
+            value = 0.0 if index == 3 else round(min(100.0, max(0.0, final - rate * days)), 2)
+            rostered: float | None = value
+            started: float | None = (
+                None if index == 2 else round(value * (0.42 + 0.03 * (index % 5)), 2)
+            )
+            flags = ""
+            if index == 7 and position == newest:
+                rostered, started, flags = None, None, "invalid_percent_rostered"
+            rows.append(
+                {
+                    "source_id": ESPN_SOURCE_ID,
+                    "external_player_id": str(espn_id),
+                    "position_id": position_ids[str(by_player[player_id]["position"])],
+                    "full_name": None,
+                    "percent_rostered": rostered,
+                    "percent_started": started,
+                    "espn_percent_change": None,
+                    "league_type": 0,
+                    "source_updated_at_utc": isoformat_utc(observed - timedelta(minutes=47)),
+                    "snapshot_at_utc": isoformat_utc(observed),
+                    "quality_flags": flags,
+                },
+            )
+        captures.append(
+            OwnershipCapture(
+                source_id=ESPN_SOURCE_ID,
+                season=FIXTURE_SEASON,
+                snapshot_key=snapshot_key(observed),
+                observed_at_utc=observed,
+                adapter_version="1.0",
+                source_policy_version="espn-owner-decision/2026-10-17",
+                espn_current_period=(
+                    FIXTURE_THROUGH_WEEK + 1
+                    if hours < FIXTURE_ESPN_ROLLOVER_HOURS
+                    else FIXTURE_THROUGH_WEEK
+                ),
+                request={"rows_returned": len(rows), "universe_count_header": len(rows)},
+                rows=rows,
+            ),
+        )
+    return ownership_layer(
+        opportunity_records=opportunity,
+        registry=identity,
+        store=None,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        build_id=build_id,
+        generated_at=anchor,
+        captures=captures,
+    )
+
+
 def _in_season_players(tiers: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """Every player the in-season fixture describes: the tier rows plus each surfaced one.
 
@@ -1802,6 +1942,7 @@ def _ros_build_metadata(
     git_sha: str,
     season_actuals: Mapping[str, Any] | None = None,
     skill_tree: Mapping[str, Any] | None = None,
+    espn_ownership: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The in-season bundle's metadata, carrying the disclosures the UI renders from."""
     from ffdraft.pipeline.ros import (
@@ -1880,6 +2021,7 @@ def _ros_build_metadata(
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
+        "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

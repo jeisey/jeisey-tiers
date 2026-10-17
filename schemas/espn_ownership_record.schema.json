@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/espn_ownership_record.schema.json",
+  "title": "EspnOwnershipRecord",
+  "description": "One Opportunity Board player's latest ESPN roster and start percentages under espn_ownership_v1 (ADR-112). Crowd interest in ESPN's leagues, not the reader's league, and not a performance projection: never a price, a rank or a model input, and no field here may move a projection, a replacement level, a fair rank, a tier or a rest-of-season value. One record per player, not per preset, because ESPN publishes one population-wide figure. Every published player carries a record so that an absent reading is a stated state, never a missing row read as zero.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "build_id",
+    "season",
+    "through_week",
+    "source_id",
+    "player_id",
+    "position",
+    "espn_id",
+    "reading_state",
+    "observed_at_utc",
+    "espn_updated_at_utc",
+    "espn_current_period",
+    "percent_rostered",
+    "start_state",
+    "percent_started",
+    "rostered_change_1d",
+    "rostered_change_7d"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "season": {
+      "type": "integer",
+      "minimum": 1999
+    },
+    "through_week": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 22
+    },
+    "source_id": {
+      "const": "espn_fantasy_ownership"
+    },
+    "player_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "position": {
+      "enum": [
+        "QB",
+        "RB",
+        "WR",
+        "TE"
+      ]
+    },
+    "espn_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[1-9][0-9]*$",
+      "description": "The canonical player's verified ESPN id from the identity registry (nflverse crosswalk), never one read off ESPN by name. Null when the registry holds none."
+    },
+    "reading_state": {
+      "enum": [
+        "observed",
+        "stale",
+        "not_published",
+        "invalid",
+        "no_espn_id",
+        "ambiguous_espn_id"
+      ],
+      "description": "`observed`: a reading from the latest capture, retrieved within the rule's freshness bound. `stale`: the same, but the latest capture is older than that bound when this build ran; the values are the capture's and are not fresh. `not_published`: ESPN published no ownership for his ESPN id (not 0%). `invalid`: ESPN's value failed validation. `no_espn_id` / `ambiguous_espn_id`: identity failed closed."
+    },
+    "observed_at_utc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "Our retrieval instant of the capture this reading came from. Not ESPN's timestamp."
+    },
+    "espn_updated_at_utc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "ESPN's own ownership.date stamp for this player. Kept apart from retrieval time; its meaning (plausibly 'last changed') is not stated by ESPN."
+    },
+    "espn_current_period": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 25,
+      "description": "The scoring period ESPN's season endpoint reported as current when the capture was retrieved. Context only: ESPN does not state which week's lineups percent_started counts."
+    },
+    "percent_rostered": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "ESPN ownership.percentOwned: percent of ESPN leagues, 0-100. Non-null exactly when reading_state is observed or stale. 0 is a valid reading."
+    },
+    "start_state": {
+      "enum": [
+        "observed",
+        "not_published",
+        "invalid",
+        "no_reading"
+      ],
+      "description": "Independent of reading_state. `not_published`: ESPN gave a roster reading but no start reading; never inferred as 0."
+    },
+    "percent_started": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "ESPN ownership.percentStarted, 0-100. Non-null exactly when start_state is observed. Its denominator and week are not stated by ESPN, so no ratio to percent_rostered is published."
+    },
+    "rostered_change_1d": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "change_pp",
+        "baseline_percent_rostered",
+        "baseline_observed_at_utc",
+        "span_hours"
+      ],
+      "description": "current percent_rostered minus a retained baseline capture's, in PERCENTAGE POINTS (never relative growth). The baseline is the retained capture whose age before the latest capture lies inside the rule's window and is nearest its target (earlier on a tie): 1d = 18-30 h, 7d = 156-180 h. Never interpolated, backfilled or carried forward.",
+      "properties": {
+        "state": {
+          "enum": [
+            "measured",
+            "no_current_reading",
+            "insufficient_history",
+            "no_baseline_reading",
+            "incomparable"
+          ],
+          "description": "`measured`: change_pp is published. `no_current_reading`: this player has no current roster reading. `insufficient_history`: no retained capture falls in the window. `no_baseline_reading`: the baseline capture carried no roster reading for him. `incomparable`: the two readings' ESPN league type differs."
+        },
+        "change_pp": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Non-null exactly when state is `measured`. Equal to percent_rostered - baseline_percent_rostered, rounded to 2 decimals."
+        },
+        "baseline_percent_rostered": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "baseline_observed_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Our retrieval instant of the baseline capture, when one qualified."
+        },
+        "span_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Actual hours between the baseline and latest captures."
+        }
+      }
+    },
+    "rostered_change_7d": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "change_pp",
+        "baseline_percent_rostered",
+        "baseline_observed_at_utc",
+        "span_hours"
+      ],
+      "description": "current percent_rostered minus a retained baseline capture's, in PERCENTAGE POINTS (never relative growth). The baseline is the retained capture whose age before the latest capture lies inside the rule's window and is nearest its target (earlier on a tie): 1d = 18-30 h, 7d = 156-180 h. Never interpolated, backfilled or carried forward.",
+      "properties": {
+        "state": {
+          "enum": [
+            "measured",
+            "no_current_reading",
+            "insufficient_history",
+            "no_baseline_reading",
+            "incomparable"
+          ],
+          "description": "`measured`: change_pp is published. `no_current_reading`: this player has no current roster reading. `insufficient_history`: no retained capture falls in the window. `no_baseline_reading`: the baseline capture carried no roster reading for him. `incomparable`: the two readings' ESPN league type differs."
+        },
+        "change_pp": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Non-null exactly when state is `measured`. Equal to percent_rostered - baseline_percent_rostered, rounded to 2 decimals."
+        },
+        "baseline_percent_rostered": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "baseline_observed_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Our retrieval instant of the baseline capture, when one qualified."
+        },
+        "span_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Actual hours between the baseline and latest captures."
+        }
+      }
+    }
+  }
+}

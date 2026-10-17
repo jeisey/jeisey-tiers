@@ -276,6 +276,33 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "build's source status (ADR-107)."
         ),
     ),
+    "espn_ownership": ArtifactSpec(
+        artifact="espn_ownership",
+        schema_name="espn_ownership_record",
+        json_filename="espn_ownership.json",
+        # No CSV of ESPN's numbers (ADR-112): the Opportunity Board's own export carries the
+        # columns a reader looked at, beside the board's rows, and nothing more.
+        csv_filename=None,
+        key_fields=("build_id", "player_id"),
+        sort_fields=("player_id",),
+        description=(
+            "ESPN's latest public roster and start percentages for each Opportunity Board "
+            "player, with 1- and 7-day roster changes in percentage points and every absence "
+            "a named state. Crowd interest in ESPN's leagues; never a model input (ADR-112)."
+        ),
+    ),
+    "espn_ownership_series": ArtifactSpec(
+        artifact="espn_ownership_series",
+        schema_name="espn_ownership_series",
+        json_filename="espn_ownership_series.json",
+        csv_filename=None,
+        key_fields=("build_id", "player_id"),
+        sort_fields=("player_id",),
+        description=(
+            "Each player's retained ESPN roster/start readings over at most 28 days, one point "
+            "per retained capture, for the card's trend chart (ADR-112)."
+        ),
+    ),
     "market_snapshot": ArtifactSpec(
         artifact="market_snapshot",
         schema_name="market_snapshot",

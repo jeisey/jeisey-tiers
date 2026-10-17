@@ -90,6 +90,9 @@ const FAMILIES: readonly {
   // ADR-107: fetched only when a reader opens the Skill Tree.
   { name: "skill_tree", artifact: "player_skill_tree", partition: "bucket" },
   { name: "skill_tree_definitions", artifact: "skill_tree_definitions", partition: "position" },
+  // ADR-112: the Opportunity Board's ESPN slice, and the lazily fetched series by bucket.
+  { name: "espn_ownership", artifact: "espn_ownership", partition: "all" },
+  { name: "espn_ownership_series", artifact: "espn_ownership_series", partition: "bucket" },
   {
     name: "season_actuals",
     artifact: "season_actuals",
@@ -120,6 +123,7 @@ const CARD_SECTIONS: readonly (readonly [string, "block" | "scoring" | "all"])[]
   ["weekly_projections", "scoring"],
   ["player_usage", "all"],
   ["behavior_trend_series", "all"],
+  ["espn_ownership", "all"],
 ];
 
 const FILENAMES: Readonly<Record<string, string>> = {
@@ -138,6 +142,8 @@ const FILENAMES: Readonly<Record<string, string>> = {
   season_actuals: "season_actuals.json",
   player_skill_tree: "player_skill_tree.json",
   skill_tree_definitions: "skill_tree_definitions.json",
+  espn_ownership: "espn_ownership.json",
+  espn_ownership_series: "espn_ownership_series.json",
 };
 
 function partitionKey(

@@ -31,6 +31,7 @@ import {
 import { cohortStat, finiteValues, type CohortStat } from "./cohort";
 import type {
   BehaviorTrendSeriesRecord,
+  EspnOwnershipRecord,
   EmploymentStatus,
   OpportunityRecord,
   UnprojectedRecord,
@@ -48,6 +49,7 @@ import type {
   WeeklyGameContextRecord,
   WeeklyProjectionRecord,
 } from "./contracts";
+import { espnAvailability, espnSignal, type EspnAvailability, type EspnSignal } from "./espn";
 import { EM_DASH } from "./format";
 import { isNoteworthyRosterStatus, matchesPosition, matchesSearch } from "./model";
 import type { AppState, PositionFilter } from "./state";
@@ -105,6 +107,14 @@ export interface InSeasonInput {
   readonly actuals?: readonly SeasonActualsRow[] | null;
   /** Whether the build published `season_actuals.json` at all (ADR-098's published/loaded). */
   readonly actualsPublished?: boolean;
+  /**
+   * ESPN's latest roster/start readings (ADR-112): the `espn_ownership` slice, or a card
+   * shard's own record. Null when not loaded or not published; `espnPublished` says which.
+   */
+  readonly espn?: readonly EspnOwnershipRecord[] | null;
+  /** Whether the build published `espn_ownership.json`, and whether this page can read it. */
+  readonly espnPublished?: boolean;
+  readonly espnCompatible?: boolean;
 }
 
 
@@ -199,9 +209,18 @@ export class InSeasonBundle {
   readonly actualsAvailability: ActualsAvailability;
   private readonly actualsByScoringPlayer: ReadonlyMap<string, SeasonActualsRow>;
   private readonly actualsRows: readonly SeasonActualsRow[];
+  /** Whether ESPN readings can be used on this build, and why not (ADR-112). */
+  readonly espnAvailability: EspnAvailability;
+  private readonly espnByPlayer: ReadonlyMap<string, EspnOwnershipRecord>;
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
+    this.espnAvailability = espnAvailability(
+      input.metadata.espn_ownership,
+      input.espnPublished ?? (input.espn !== null && input.espn !== undefined),
+      input.espnCompatible ?? true,
+    );
+    this.espnByPlayer = new Map((input.espn ?? []).map((record) => [record.player_id, record]));
     this.actualsAvailability = actualsAvailability(
       input.metadata.season_actuals,
       input.actualsPublished ?? (input.actuals !== null && input.actuals !== undefined),
@@ -444,6 +463,11 @@ export class InSeasonBundle {
    */
   behaviorSeriesFor(playerId: string): BehaviorTrendSeriesRecord | null {
     return this.behaviorByPlayer.get(playerId) ?? null;
+  }
+
+  /** A player's ESPN reading as a signal: every absence a kind, never 0% (ADR-112). */
+  espnFor(playerId: string): EspnSignal {
+    return espnSignal(this.espnAvailability, this.espnByPlayer.get(playerId) ?? null);
   }
 
   /** A player's observed role, or null — the build published none, or not for him. */

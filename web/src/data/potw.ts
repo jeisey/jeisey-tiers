@@ -32,7 +32,7 @@
  * |---|---|
  * | Sleeper | the documented API publishes no ownership field anywhere — `/players/nfl` has none in its recorded schema, and the trending endpoints return a bare `{player_id, count}` list |
  * | FantasyPros | publishes `player_owned_avg`/`_espn`/`_yahoo`, and is `benchmark_only` (ADR-014): redistribution is forbidden, so it may not reach a public artifact even with a key — and the provisioned key is free-tier, 40 distinct players (ADR-080) |
- * | ESPN | publishes `percentOwned`, and is `disabled` in `config/source-registry.yaml`; enabling it is a source decision needing a probe, a terms review and its own ADR, not a frontend change |
+ * | ESPN | publishes `percentOwned`; ADR-112 (2026-10-17) later enabled it for the Opportunity Board and the card, after a probe, a terms review and an owner decision. `potw_selection_v1` was deliberately not changed to read it: that would be a new selection rule |
  * | sampling public leagues | a scrape, at a volume `AGENTS.md` section 5's cadence rule forbids |
  *
  * So the owner's named fallback is what this implements — add volume and direction — and the

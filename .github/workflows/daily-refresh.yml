@@ -246,6 +246,24 @@ jobs:
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" | tee behavior.log
 
+      # ADR-112. ESPN's public roster and start percentages: one request for the whole
+      # QB/RB/WR/TE ownership universe (~463 kB compressed) plus ESPN's 201-byte season
+      # object, at most once per America/New_York day — a valid capture already retained
+      # today is reused and ESPN is not called, so the Tuesday second slot and a re-run cost
+      # nothing. In-season only and never on a news slot. `continue-on-error` because it is
+      # an enrichment: a failure keeps yesterday's snapshot as the newest, the build marks
+      # the readings stale or unavailable, and no board is affected.
+      - name: Capture ESPN roster and start percentages
+        id: espn
+        if: ${{ inputs.skip_capture != true && steps.plan.outputs.kind != 'news' && steps.season.outputs.mode == 'in_season' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-espn-ownership \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee espn.log
+
       # Once the season starts, ADR-094 prices the draft board from retained evidence at
       # the draft anchor. Today's ADP is still worth retaining, but it is no longer a build
       # input: an empty post-draft feed must not block status/behaviour or the ROS refresh.
@@ -375,12 +393,13 @@ jobs:
             echo "| Forecast capture | \`${{ steps.forecasts.outcome || 'not run' }}\` |"
             echo "| Injury-report capture | \`${{ steps.injuries.outcome || 'not run' }}\` |"
             echo "| MFL capture outcome | \`${{ steps.market.outcome || 'not run' }}\` |"
+            echo "| ESPN ownership capture | \`${{ steps.espn.outcome || 'not run' }}\` |"
             echo "| Store | \`${{ steps.store.outputs.repository }}@${{ steps.store.outputs.branch }}\` |"
             echo "| Store head before | \`${{ steps.store.outputs.commit }}\` |"
             echo "| Store head after | \`${{ steps.persist.outputs.commit || 'unchanged' }}\` |"
             echo "| Appended | \`${{ steps.persist.outputs.appended || 'no' }}\` |"
             echo
-            for log in snapshot.log ffc.log status.log behavior.log forecasts.log injuries.log; do
+            for log in snapshot.log ffc.log status.log behavior.log espn.log forecasts.log injuries.log; do
               if [ -f "${log}" ]; then
                 echo "<details><summary>${log}</summary>"
                 echo

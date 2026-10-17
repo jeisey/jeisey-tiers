@@ -19,6 +19,7 @@ __all__ = [
     "COMBINE_CONTRACT",
     "DEPTH_CHART_CONTRACT",
     "DRAFT_PICK_CONTRACT",
+    "ESPN_OWNERSHIP_CONTRACT",
     "EXPECTED_POINTS_CONTRACT",
     "MARKET_QUOTE_CONTRACT",
     "MFL_PLAYER_CONTRACT",
@@ -280,6 +281,51 @@ SLEEPER_BEHAVIOR_CONTRACT = FrameContract(
         ),
         ColumnSpec("request_limit", pl.Int32, nullable=False, description="The `limit` sent"),
         ColumnSpec("snapshot_at_utc", _UTC, nullable=False),
+        ColumnSpec("quality_flags", pl.String),
+    ),
+)
+
+
+# ESPN's public roster and start percentages (ADR-112). One row per ESPN player id that ESPN
+# published an ownership object for, QB/RB/WR/TE only. Everything else the response carries -
+# draft ranks, ADP, auction values, projections, stats, editorial outlooks - is discarded by
+# the adapter before this frame exists. Both percentages are nullable and independent: a
+# roster reading with no start reading is a valid, roster-only row, never a start of zero.
+ESPN_OWNERSHIP_CONTRACT = FrameContract(
+    contract_id="espn_ownership_snapshot",
+    version="1.0",
+    primary_key=("source_id", "external_player_id"),
+    columns=(
+        ColumnSpec("source_id", pl.String, nullable=False),
+        ColumnSpec("external_player_id", pl.String, nullable=False, description="ESPN id"),
+        ColumnSpec("position_id", pl.Int32, description="ESPN defaultPositionId (1-4)"),
+        ColumnSpec(
+            "full_name",
+            pl.String,
+            description="Diagnostics only. Never a join key (AGENTS.md section 6).",
+        ),
+        ColumnSpec(
+            "percent_rostered",
+            pl.Float64,
+            description="ownership.percentOwned, percent of ESPN leagues, 0-100",
+        ),
+        ColumnSpec(
+            "percent_started",
+            pl.Float64,
+            description="ownership.percentStarted, 0-100; null when ESPN omits it",
+        ),
+        ColumnSpec(
+            "espn_percent_change",
+            pl.Float64,
+            description="ownership.percentChange. Retained privately; window not stated.",
+        ),
+        ColumnSpec("league_type", pl.Int32, description="ownership.leagueType as published"),
+        ColumnSpec(
+            "source_updated_at_utc",
+            _UTC,
+            description="ownership.date: ESPN's own stamp, kept apart from retrieval time",
+        ),
+        ColumnSpec("snapshot_at_utc", _UTC, nullable=False, description="Retrieval instant"),
         ColumnSpec("quality_flags", pl.String),
     ),
 )
