@@ -2567,3 +2567,24 @@ tier and Pick of the Week rules do not read it.
       - The size model's ESPN counts are projected from the probe, not measured on a production
         bundle.
       - Firefox and WebKit smoke were not run locally. CI runs them.
+
+## Damaged retained snapshots are skipped, not fatal — 2026-10-18
+
+A follow-up to ADR-112, from `main` at `609ace6`. No artifact, contract or model change.
+
+- [x] `ffdraft.retention.UNREADABLE_SNAPSHOT_ERRORS` collects every error a damaged snapshot
+      raises: `OSError`, `ValueError`, `KeyError`, `EOFError` and `SnapshotConflictError`.
+      `SnapshotConflictError` is a `RuntimeError`, so `(OSError, ValueError)` never caught a
+      payload whose hash no longer matched its manifest.
+- [x] The tuple is used everywhere a damaged snapshot is documented as degrading rather than
+      failing:
+      - `load_behavior_window`;
+      - the ROS build's status capture, behaviour capture and behaviour series reads;
+      - the current build's `_retained_status`;
+      - the two ESPN ownership readers.
+- [x] Regression tests, each of which fails without the fix:
+      - a re-hashed behaviour payload;
+      - a behaviour manifest missing a field;
+      - a tampered status capture reaching the current build.
+- [ ] Not changed, by design: the gameday look ledger and the weekly CLI's reads still raise.
+      A recorded look must not silently vanish.

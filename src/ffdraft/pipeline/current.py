@@ -63,6 +63,7 @@ from ffdraft.modeling.build_config import CurrentBuildConfig
 from ffdraft.modeling.features import core_feature_selection
 from ffdraft.modeling.production import ProductionModel
 from ffdraft.quality import QualityGate, audit_intrinsic_feature_names
+from ffdraft.retention import UNREADABLE_SNAPSHOT_ERRORS
 from ffdraft.season.state import (
     SEASON_STATE_RULE_VERSION,
     SeasonState,
@@ -565,7 +566,7 @@ def _retained_status(store: Any, season: int, gate: QualityGate) -> StatusCaptur
         return None
     try:
         return read_status_capture(store, season=season)
-    except (OSError, ValueError) as exc:
+    except UNREADABLE_SNAPSHOT_ERRORS as exc:
         gate.add(
             QualityCheck.fail(
                 "current.status_capture_unreadable",

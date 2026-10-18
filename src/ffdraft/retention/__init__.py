@@ -9,6 +9,7 @@ from __future__ import annotations
 from ffdraft.retention.store import (
     MANIFEST_FILENAME,
     SNAPSHOT_KEY_PATTERN,
+    UNREADABLE_SNAPSHOT_ERRORS,
     SnapshotConflictError,
     SnapshotStore,
     WriteResult,
@@ -24,6 +25,7 @@ __all__ = [
     "SNAPSHOT_KEY_PATTERN",
     "SnapshotConflictError",
     "SnapshotStore",
+    "UNREADABLE_SNAPSHOT_ERRORS",
     "WriteResult",
     "canonical_json",
     "content_hash",

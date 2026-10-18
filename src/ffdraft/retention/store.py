@@ -58,6 +58,20 @@ class SnapshotConflictError(RuntimeError):
     """Raised when a write would change bytes a retained snapshot already holds."""
 
 
+#: What reading one retained snapshot can raise when its files are damaged: unreadable or
+#: undecodable (``OSError``, which includes ``gzip.BadGzipFile``, and ``ValueError``), a
+#: manifest missing a field (``KeyError``), truncated gzip (``EOFError``), or a payload whose
+#: hash no longer matches its manifest (:class:`SnapshotConflictError`, a ``RuntimeError``).
+#: A reader that promises to skip or degrade on a bad snapshot catches all of them.
+UNREADABLE_SNAPSHOT_ERRORS: tuple[type[Exception], ...] = (
+    OSError,
+    ValueError,
+    KeyError,
+    EOFError,
+    SnapshotConflictError,
+)
+
+
 def snapshot_key(moment: datetime) -> str:
     """The directory name for a retrieval instant.
 

@@ -52,7 +52,7 @@ from ffdraft.behavior.trend import (
 from ffdraft.contracts.enums import BehaviorType
 from ffdraft.identity.ids import IdNamespace
 from ffdraft.identity.registry import CanonicalRegistry, LookupStatus
-from ffdraft.retention import SnapshotStore, parse_snapshot_key
+from ffdraft.retention import UNREADABLE_SNAPSHOT_ERRORS, SnapshotStore, parse_snapshot_key
 from ffdraft.sources.sleeper import SLEEPER_SOURCE_ID
 
 __all__ = [
@@ -82,7 +82,9 @@ def load_behavior_window(
     against its own manifest on the way in — a truncated snapshot fails here rather than
     becoming a point on a chart.
 
-    A capture that cannot be read is **skipped, not fatal**. The behaviour feed is optional by
+    A capture that cannot be read is **skipped, not fatal**, whatever is wrong with it: an
+    unreadable file, a manifest missing a field, or a payload that no longer matches its hash
+    (:data:`~ffdraft.retention.UNREADABLE_SNAPSHOT_ERRORS`). The behaviour feed is optional by
     construction (ADR-079) and a history missing its oldest day is a shorter history, which
     this rule already handles; a history that takes the whole build down would make an
     enrichment critical.
@@ -105,8 +107,7 @@ def load_behavior_window(
                 source_id=source_id,
                 key=key,
             )
-        except (OSError, ValueError) as exc:  # noqa: PERF203 - one bad day is not an outage
-            del exc
+        except UNREADABLE_SNAPSHOT_ERRORS:  # noqa: PERF203 - one bad day is not an outage
             continue
         if capture is not None:
             captures.append(capture)

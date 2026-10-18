@@ -110,8 +110,11 @@ The size model's ESPN counts (510 readings, 470 series, 28 points) are projected
 probe, not measured on a production bundle.
 
 * **Facts for the next session.**
-  * `SnapshotConflictError` is a `RuntimeError`. The ownership readers catch it. The behaviour
-    reader has the same latent gap, which is filed separately and not fixed here.
+  * `SnapshotConflictError` is a `RuntimeError`. Every reader that promises to skip or degrade
+    on a damaged snapshot catches `ffdraft.retention.UNREADABLE_SNAPSHOT_ERRORS` (`OSError`,
+    `ValueError`, `KeyError`, `EOFError`, `SnapshotConflictError`). The gap the behaviour
+    window, the ROS build's status/behaviour reads and the current build's status read had is
+    closed (2026-10-18). The gameday look ledger still raises on purpose.
   * A CSV column containing "line" trips the sportsbook guard, which is why the column is
     `…_since_utc`, not `…_baseline_utc`.
   * The ESPN cell's detail line uses no-break spaces. `white-space: nowrap` spans raised the
