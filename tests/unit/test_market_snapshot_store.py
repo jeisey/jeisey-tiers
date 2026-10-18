@@ -371,6 +371,24 @@ def test_tampering_with_a_status_capture_is_detected(tmp_path):
         read_status_capture(store, season=SEASON)
 
 
+def test_a_tampered_status_capture_degrades_the_build_rather_than_stopping_it(tmp_path):
+    """`SnapshotConflictError` is a `RuntimeError`; the build's reader must still catch it."""
+    from ffdraft.pipeline.current import _retained_status
+    from ffdraft.quality import QualityGate
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.status.capture import STATUS_NORMALIZED_FILENAME, write_status_capture
+
+    store = SnapshotStore(root=tmp_path, prefix="market")
+    write_status_capture(_status_capture("2026-08-20T12:00:00Z"), store=store)
+    target = tmp_path / "status" / "sleeper" / str(SEASON) / "2026-08-20T12-00-00Z"
+    (target / STATUS_NORMALIZED_FILENAME).write_bytes(gzip_bytes(canonical_json([])))
+
+    gate = QualityGate()
+    assert _retained_status(store, SEASON, gate) is None
+    assert [check.check_id for check in gate.checks] == ["current.status_capture_unreadable"]
+    assert "hashes to" in gate.checks[0].observed
+
+
 def test_an_absent_status_capture_is_none_rather_than_an_error(tmp_path):
     from ffdraft.retention import SnapshotStore
     from ffdraft.status.capture import read_status_capture

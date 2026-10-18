@@ -915,7 +915,7 @@ def _identity_and_employment(
     reading the capture degrades employment to "unknown" for off-roster players — they keep
     whatever the board printed before — and costs no board.
     """
-    from ffdraft.retention import SnapshotStore
+    from ffdraft.retention import UNREADABLE_SNAPSHOT_ERRORS, SnapshotStore
     from ffdraft.status.capture import STATUS_PREFIX, read_status_capture
 
     prior = loaded.sources.rosters.get(season - 1)
@@ -927,7 +927,7 @@ def _identity_and_employment(
                 SnapshotStore(root=store, prefix=STATUS_PREFIX),
                 season=season,
             )
-        except (OSError, ValueError) as exc:
+        except UNREADABLE_SNAPSHOT_ERRORS as exc:
             gate.add(
                 QualityCheck.fail(
                     "ros.status_capture_unreadable",
@@ -1107,7 +1107,7 @@ def _opportunity(
     """Assemble the Opportunity Board. Every failure here degrades a column, not the board."""
     from ffdraft.behavior.capture import BEHAVIOR_PREFIX, read_behavior_capture
     from ffdraft.opportunity.board import build_opportunity_records, resolve_behavior_signals
-    from ffdraft.retention import SnapshotStore
+    from ffdraft.retention import UNREADABLE_SNAPSHOT_ERRORS, SnapshotStore
 
     resolved_capture = capture
     if resolved_capture is None and store is not None:
@@ -1116,7 +1116,7 @@ def _opportunity(
                 SnapshotStore(root=store, prefix=BEHAVIOR_PREFIX),
                 season=season,
             )
-        except (OSError, ValueError) as exc:
+        except UNREADABLE_SNAPSHOT_ERRORS as exc:
             gate.add(
                 QualityCheck.fail(
                     "ros.behavior_capture_unreadable",
@@ -1182,13 +1182,14 @@ def _behavior_series(
     from ffdraft.artifacts.schemas import record_schema_version
     from ffdraft.behavior.history import build_behavior_history, load_behavior_window
     from ffdraft.behavior.trend import BEHAVIOR_TREND_RULE, behavior_series_records
+    from ffdraft.retention import UNREADABLE_SNAPSHOT_ERRORS
 
     if store is None or registry is None or not len(registry):
         return None, []
 
     try:
         captures = load_behavior_window(store, season=season, now=as_of)
-    except (OSError, ValueError) as exc:
+    except UNREADABLE_SNAPSHOT_ERRORS as exc:
         gate.add(
             QualityCheck.fail(
                 "ros.behavior_history_unreadable",

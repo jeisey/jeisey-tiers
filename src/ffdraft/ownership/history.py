@@ -47,7 +47,7 @@ from ffdraft.ownership.capture import (
     OwnershipCapture,
     read_ownership_capture,
 )
-from ffdraft.retention import SnapshotConflictError, SnapshotStore, parse_snapshot_key
+from ffdraft.retention import UNREADABLE_SNAPSHOT_ERRORS, SnapshotStore, parse_snapshot_key
 from ffdraft.sources.espn import ESPN_SOURCE_ID
 from ffdraft.timeutil import isoformat_utc
 
@@ -183,7 +183,7 @@ def load_ownership_window(
                 source_id=source_id,
                 key=key,
             )
-        except (OSError, ValueError, KeyError, EOFError, SnapshotConflictError) as exc:  # noqa: PERF203
+        except UNREADABLE_SNAPSHOT_ERRORS as exc:  # noqa: PERF203
             skipped.append(f"{key}: {exc}")
             continue
         if capture is not None and capture.season == season:

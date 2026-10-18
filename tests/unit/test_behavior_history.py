@@ -19,6 +19,7 @@ must not move a number the Opportunity Board already published.
 
 from __future__ import annotations
 
+import gzip
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -26,6 +27,7 @@ import polars as pl
 import pytest
 
 from ffdraft.behavior.capture import (
+    BEHAVIOR_NORMALIZED_FILENAME,
     BEHAVIOR_PREFIX,
     BehaviorCapture,
     capture_behavior,
@@ -340,6 +342,30 @@ def test_an_unreadable_snapshot_shortens_the_history_rather_than_failing(
     )
     captures = load_behavior_window(store, season=2026, now=_NOW)
     assert len(captures) == 2
+
+
+def test_a_payload_that_no_longer_matches_its_manifest_is_skipped_not_raised(
+    tmp_path: Path,
+) -> None:
+    """A re-hashed payload raises `SnapshotConflictError`, a `RuntimeError`: skip that day."""
+    store = _store(tmp_path, days=[2, 1, 0])
+    behavior_store = SnapshotStore(root=tmp_path, prefix=BEHAVIOR_PREFIX)
+    keys = behavior_store.keys("sleeper", 2026)
+    payload = behavior_store.snapshot_dir("sleeper", 2026, keys[1]) / BEHAVIOR_NORMALIZED_FILENAME
+    payload.write_bytes(gzip.compress(b"[]"))
+    captures = load_behavior_window(store, season=2026, now=_NOW)
+    assert [capture.snapshot_key for capture in captures] == [keys[0], keys[2]]
+
+
+def test_a_manifest_missing_a_field_is_skipped_not_raised(tmp_path: Path) -> None:
+    store = _store(tmp_path, days=[2, 1, 0])
+    behavior_store = SnapshotStore(root=tmp_path, prefix=BEHAVIOR_PREFIX)
+    key = behavior_store.keys("sleeper", 2026)[0]
+    (behavior_store.snapshot_dir("sleeper", 2026, key) / "manifest.json").write_text(
+        "{}",
+        encoding="utf-8",
+    )
+    assert len(load_behavior_window(store, season=2026, now=_NOW)) == 2
 
 
 def test_the_history_projects_onto_canonical_ids_and_counts_what_it_cannot(

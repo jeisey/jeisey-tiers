@@ -32,6 +32,7 @@ from ffdraft.contracts import SourceBatch
 from ffdraft.quality import QualityGate
 from ffdraft.retention import (
     MANIFEST_FILENAME,
+    UNREADABLE_SNAPSHOT_ERRORS,
     SnapshotConflictError,
     SnapshotStore,
     WriteResult,
@@ -325,7 +326,7 @@ def same_day_capture(
             continue
         try:
             capture = read_ownership_capture(store, season=season, source_id=source_id, key=key)
-        except (OSError, ValueError, KeyError, EOFError, SnapshotConflictError):
+        except UNREADABLE_SNAPSHOT_ERRORS:
             continue
         if capture is not None and not _stored_problems(capture):
             return capture
