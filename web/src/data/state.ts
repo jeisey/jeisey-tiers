@@ -16,6 +16,7 @@
  */
 
 import type { ScoringPreset } from "./contracts";
+import { parseCeiling, serializeCeiling, type EspnCeiling } from "./espn";
 
 /**
  * Every panel the product can show, plus `auto`.
@@ -55,8 +56,12 @@ export type ModeId = (typeof MODES)[number];
  * — and compares the size of a change only among rows that all share one position, because a
  * quarterback's change is in pass attempts and everyone else's is in share points
  * (`compareRole` in `data/candidates.ts` owns the rule and refuses the mixed case).
+ *
+ * ADR-112: `espn` orders by ESPN's rostered %, highest first, and `espn7` by its 7-day change
+ * in percentage points, largest gain first. Both put every row without a current reading last
+ * (`compareRostered` / `compareRosterChange` in `data/espn.ts`), never between two readings.
  */
-export const OPPORTUNITY_SORTS = ["value", "adds", "net", "momentum", "role"] as const;
+export const OPPORTUNITY_SORTS = ["value", "adds", "net", "momentum", "role", "espn", "espn7"] as const;
 export type OpportunitySort = (typeof OPPORTUNITY_SORTS)[number];
 
 /**
@@ -213,6 +218,11 @@ export interface AppState {
    */
   readonly only: readonly OpportunityFilter[];
   /**
+   * ADR-112: the ESPN roster ceiling — keep rows whose current ESPN rostered % is strictly
+   * below it. `all` (the default, never written) applies none. Written as `espn=lt50`.
+   */
+  readonly espn: EspnCeiling;
+  /**
    * Which Pick-of-the-Week set is on screen, 1-based.
    *
    * A depth into each position's eligible pool rather than a tier: set 3 is the third-ranked
@@ -293,6 +303,7 @@ export const DEFAULT_STATE: AppState = {
   mode: "auto",
   opportunity: "value",
   only: [],
+  espn: "all",
   set: 1,
   duel: [],
   margin: 0,
@@ -324,6 +335,7 @@ const PARAM_ORDER = [
   "mode",
   "opportunity",
   "only",
+  "espn",
   "set",
   "duel",
   "margin",
@@ -494,6 +506,10 @@ export function parseState(search: string): ParsedState {
     if (serializeFilters(only) !== rawOnly) normalized = false;
   }
 
+  // `espn=lt50` — the ESPN roster ceiling (ADR-112). Anything else normalizes to All.
+  const espn = parseCeiling(params.get("espn"));
+  note(espn.valid);
+
   // `duel=00-0036389.00-0039164` — the Start/Sit comparison. Order is the reader's and is
   // kept; a duplicate or a malformed id is dropped and the URL rewritten, and anything past
   // four players is ignored rather than truncating silently in the middle.
@@ -634,6 +650,7 @@ export function parseState(search: string): ParsedState {
       mode: mode.value,
       opportunity: opportunity.value,
       only,
+      espn: espn.value,
       set,
       duel,
       margin,
@@ -720,6 +737,11 @@ export function serializeState(state: AppState): string {
     if (key === "only") {
       const filters = serializeFilters(state.only);
       if (filters !== "") params.set(key, filters);
+      continue;
+    }
+    if (key === "espn") {
+      const ceiling = serializeCeiling(state.espn);
+      if (ceiling !== "") params.set(key, ceiling);
       continue;
     }
     if (key === "duel" || key === "give") {

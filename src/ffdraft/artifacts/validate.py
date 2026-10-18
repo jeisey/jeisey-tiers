@@ -25,6 +25,11 @@ from ffdraft.artifacts.actuals_checks import (
     actuals_record_checks,
 )
 from ffdraft.artifacts.csv_flatten import companion_columns, flattener_for
+from ffdraft.artifacts.ownership_checks import (
+    ownership_cross_checks,
+    ownership_record_checks,
+    ownership_series_checks,
+)
 from ffdraft.artifacts.schemas import (
     record_field_order,
     validate_envelope,
@@ -112,6 +117,10 @@ _IN_SEASON_ARTIFACTS = frozenset(
         # ADR-107. Written by `run_ros_build` last, together or not at all.
         "player_skill_tree",
         "skill_tree_definitions",
+        # ADR-112. Written by `run_ros_build` after the behaviour series, in the same change
+        # that adds them to the pipeline.
+        "espn_ownership",
+        "espn_ownership_series",
     },
 )
 
@@ -212,6 +221,7 @@ def validate_artifact_directory(
     gate.extend(_weekly_context_cross_checks(envelopes))
     gate.extend(actuals_cross_checks(envelopes))
     gate.extend(skilltree_cross_checks(envelopes))
+    gate.extend(ownership_cross_checks(envelopes))
     gate.extend(
         actuals_csv_checks(
             directory,
@@ -393,6 +403,18 @@ def _semantic_checks(
             return skilltree_record_checks(records, stage)
         case "skill_tree_definitions":
             return skilltree_definition_checks(records, stage)
+        case "espn_ownership":
+            return ownership_record_checks(
+                records,
+                stage,
+                generated_at=_parse_iso(str(envelope.get("generated_at_utc") or "")),
+            )
+        case "espn_ownership_series":
+            return ownership_series_checks(
+                records,
+                stage,
+                generated_at=_parse_iso(str(envelope.get("generated_at_utc") or "")),
+            )
     return []
 
 

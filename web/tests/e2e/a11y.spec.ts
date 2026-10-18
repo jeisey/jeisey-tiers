@@ -92,6 +92,18 @@ test.describe("automated scan", () => {
       "/scenario/in-season-no-signals/?view=opportunity&only=role",
       ".notice",
     ],
+    // ADR-112: the ESPN ceiling, the discovery rule, and a link naming the ceiling on a build
+    // without ESPN readings.
+    [
+      "the opportunity board, role rising and an ESPN ceiling",
+      "/scenario/in-season/?view=opportunity&only=role&espn=lt50",
+      ".opp-discovery",
+    ],
+    [
+      "the opportunity board, an ESPN ceiling the build cannot apply",
+      "/scenario/in-season-no-espn/?view=opportunity&espn=lt25",
+      ".notice",
+    ],
     // Pick of the Week (ADR-088). A different construction again — cards rather than rows,
     // four portraits, and a set switcher — so neither board's scan says anything about it.
     ["pick of the week", "/scenario/in-season/?view=potw", ".potw-card"],
@@ -204,6 +216,16 @@ test.describe("automated scan", () => {
     await expect(card.locator(".shift-track")).toHaveCount(1);
     await expect(card.locator(".pace")).toHaveCount(1);
     await expect(card.locator(".cohort")).toHaveCount(2);
+    expect(describe(await scan(page))).toEqual([]);
+  });
+
+  test("the in-season card scans clean with the ESPN trend open (ADR-112)", async ({ page }) => {
+    await page.goto("/scenario/in-season/?view=opportunity");
+    await page.getByRole("button", { name: "Jahmyr Cook", exact: true }).first().click();
+    const card = page.getByRole("dialog");
+    await card.getByRole("button", { name: "Show ESPN trend" }).click();
+    await expect(card.getByTestId("espn-ownership-chart")).toBeVisible();
+    await card.getByText(/^Exact readings/).click();
     expect(describe(await scan(page))).toEqual([]);
   });
 

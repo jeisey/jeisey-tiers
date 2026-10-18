@@ -749,9 +749,10 @@ function boards(inSeason: InSeasonBundle | null | undefined): readonly Board[] {
             </p>
             <p className="hiw-label hiw-warn">Fine print</p>
             <p>
-              No public source gives a true &ldquo;% rostered&rdquo;, so it
-              never shows one. It shows the pickup count and its time window
-              instead.
+              The pick never uses a &ldquo;% rostered&rdquo;. It shows the
+              pickup count and its time window. ESPN&rsquo;s rostered % sits on
+              the Opportunity Board and the player card, and it describes ESPN
+              leagues, not yours.
             </p>
           </Panel>
         </div>

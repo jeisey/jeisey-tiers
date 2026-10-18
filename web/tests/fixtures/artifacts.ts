@@ -72,6 +72,7 @@ import type {
 } from "../../src/data/contracts";
 // ADR-107: the Skill Tree's definitions are player-independent, so the TypeScript fixtures use
 // the Python golden's exactly — every word the tree prints is the production builder's.
+import { espnFixtureFiles, espnOwnershipMetadata, type EspnFixtureMode } from "./espn";
 import goldenSkillTreeDefinitions from "../../../tests/fixtures/artifacts/skill_tree_definitions.json";
 
 /**
@@ -2730,8 +2731,15 @@ export function inSeasonFixtureFiles(
     readonly signals?: "present" | "absent";
     /** ADR-107. `absent`: a build (or an older deploy) with no Skill Tree at all. */
     readonly skillTree?: "present" | "absent";
+    /**
+     * ADR-112. `absent`: an older deploy with no ESPN block at all; `unavailable`: the step ran
+     * and published nothing; `stale`: published, but past the freshness bound.
+     */
+    readonly espn?: EspnFixtureMode;
   } = {},
 ): Record<string, unknown> {
+  const espn = options.espn ?? "present";
+  const espnMeta = espnOwnershipMetadata(espn);
   const series = options.behaviorSeries ?? "mature";
   const signals = options.signals ?? "present";
   const skillTree = options.skillTree ?? "present";
@@ -2753,9 +2761,12 @@ export function inSeasonFixtureFiles(
       {
         ...(signals === "present" ? {} : { weekly: null }),
         ...(skillTree === "present" ? {} : { skill_tree: null }),
+        ...(espnMeta === null ? {} : { espn_ownership: espnMeta }),
       },
       behaviorAvailable,
     ),
+    // ADR-112: ESPN's latest readings and the lazily fetched series.
+    ...espnFixtureFiles(espn),
     "ros_tiers.json": rosTierEnvelope(),
     // ADR-105: season actuals, published with every in-season bundle.
     "season_actuals.json": seasonActualsEnvelope(),

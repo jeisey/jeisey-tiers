@@ -1633,3 +1633,119 @@ reader's browser, separate from §24 so that neither contract migrates the other
 * **URL.** The only shared state is `panel=wmm`, appended to `PARAM_ORDER` after every older
   parameter. It selects the tool inside My Leagues, and `lineup` is the default and is omitted.
   An older link without it opens the Lineup tool, as before.
+
+## 27. ESPN roster and start percentages — 2026-10-17 (ADR-112)
+
+Two in-season artifacts and one metadata block, written by `run_ros_build` after the
+Opportunity Board (`src/ffdraft/ownership/publish.py`). Both are preset-independent (one record
+per player), carry no CSV, and are read by no model. Schemas:
+`schemas/espn_ownership_record.schema.json` and `schemas/espn_ownership_series.schema.json`,
+both 1.0.
+
+### 27.1 `espn_ownership.json` — the latest reading (`espn_ownership_v1`)
+
+One record per Opportunity Board player, so that an absence is a stated state rather than a
+missing row read as zero.
+
+| field | meaning |
+|---|---|
+| `player_id`, `position`, `espn_id` | the canonical player and his verified registry `espn_id` (null when none) |
+| `reading_state` | `observed` · `stale` · `not_published` · `invalid` · `no_espn_id` · `ambiguous_espn_id` |
+| `observed_at_utc` | **our** retrieval instant of the capture the reading came from |
+| `espn_updated_at_utc` | ESPN's own `ownership.date` stamp; meaning not stated by ESPN |
+| `espn_current_period` | the scoring period ESPN reported as current at retrieval: context, not the week counted |
+| `percent_rostered` | percent of ESPN leagues, 0–100; non-null exactly when `observed` or `stale` |
+| `start_state`, `percent_started` | independent of the roster reading; `not_published` is unknown, never 0 |
+| `rostered_change_1d`, `rostered_change_7d` | `{state, change_pp, baseline_percent_rostered, baseline_observed_at_utc, span_hours}` |
+
+**Definitions.**
+
+* *Stale.* The newest capture is more than 36 h older than the build. Its values are published
+  as-is under `stale` and pass no filter.
+* *Change.* `percent_rostered − baseline_percent_rostered`, in **percentage points** rounded to
+  2 decimals. The baseline is the retained capture whose age before the latest lies inside
+  18–30 h (1-day) or 156–180 h (7-day) and is nearest 24 h / 168 h, the earlier one on a tie.
+* *Change states.*
+  * `measured`
+  * `no_current_reading`: no current roster reading.
+  * `insufficient_history`: no capture inside the window.
+  * `no_baseline_reading`: the baseline capture did not carry him.
+  * `incomparable`: the league type changed.
+* *Never published.* No start-share change, no started-among-rostered ratio, no roster-minus-start
+  gap, no relative growth, and no blend with a Sleeper count or a model value.
+
+### 27.2 `espn_ownership_series.json` — the bounded history
+
+One record per board player with at least one retained point inside the trailing 28 days
+(one season). It carries `window_days`, `captures_in_window` (every retained capture in the
+window, whether or not it carried him), `observations` (`= len(points)`), `span_hours`, and
+`points[]`. Each point is `{observed_at_utc, espn_updated_at_utc, espn_current_period,
+percent_rostered, percent_started}`.
+
+* There is one point per retained capture that carried him, with strictly ascending instants.
+* A day with no capture, or a capture without him, produces **no point**. A reused capture is
+  never duplicated.
+* A change of `espn_current_period` between consecutive points is a week boundary.
+
+### 27.3 `ros_build_metadata.espn_ownership`
+
+`{rule_version, status, reason, source_id, rule, latest_snapshot_key, latest_observed_at_utc,
+latest_age_hours, stale, espn_current_period, captures_in_window, capture_times_utc,
+skipped_captures, baseline_1d_observed_at_utc, baseline_7d_observed_at_utc, espn_universe_rows,
+espn_rows_matched, espn_rows_not_on_board, players, series_players, reading_states,
+start_states, change_states, attribution, population_statement, start_context_statement}`.
+
+`status` is one of:
+
+* `published`: both artifacts were written.
+* `unavailable`: no capture in the window, no store, or no registry. Neither artifact is written.
+* `failed`: the step raised. Neither artifact is written.
+
+Absent or null is an older bundle. The page then shows no ESPN reading, and it disables the
+ESPN filter with a sentence saying why.
+
+### 27.4 Validation
+
+* **Per artifact** (`src/ffdraft/artifacts/ownership_checks.py`):
+  * a state agrees with its values;
+  * a change is exactly the difference;
+  * a span lies inside its window and matches its instants;
+  * no instant postdates the envelope;
+  * a series ascends with unique instants, counts its points, and stays inside 28 days.
+* **Across artifacts:** ESPN players equal the Opportunity Board's, and each series' newest point
+  is the summary's capture with the same values.
+* Each check is negative-controlled in `tests/contract/test_ownership_validation.py`.
+
+### 27.5 Serving and export
+
+* `espn_ownership/all` is read by the Opportunity view. The record also rides in each card
+  shard.
+* `espn_ownership_series/NN` is split by the card's FNV-1a bucket, never required by a view or a
+  card open, and fetched on activation of the card's In-season usage section.
+* The Opportunity filtered CSV appends `espn_reading`, `espn_percent_rostered`,
+  `espn_start_reading`, `espn_percent_started`, `espn_rostered_change_7d_pp`,
+  `espn_rostered_change_7d_reading`, `espn_rostered_change_7d_since_utc`,
+  `espn_rostered_change_7d_span_hours`, `espn_rostered_change_1d_pp`,
+  `espn_rostered_change_1d_reading`, `espn_observed_at_utc` and `espn_current_period` after
+  every earlier column.
+* URL state: `espn=lt10|lt25|lt50|lt75` (All omitted), and `opportunity=espn|espn7`.
+
+### 27.6 The private retained capture
+
+`ownership/espn_fantasy_ownership/{season}/{YYYY-MM-DDTHH-MM-SSZ}/` holds
+`ownership.normalized.json.gz` (canonical JSON, `mtime=0`) and `manifest.json`. The manifest
+records:
+
+* the request (URL, view, league default, filter, `scoring_period_requested: null`, ESPN's
+  count header, rows, wire and decoded bytes, duration, attempts);
+* `espn_current_period`;
+* coverage;
+* the range of ESPN's stamps;
+* the content hash and row count;
+* the adapter and policy versions;
+* the git sha;
+* the retrieval instant.
+
+Rows are `{source_id, external_player_id, position_id, full_name (diagnostics only),
+percent_rostered, percent_started, espn_percent_change, league_type, source_updated_at_utc,
+snapshot_at_utc, quality_flags}`.

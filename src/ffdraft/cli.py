@@ -952,6 +952,22 @@ def _build_parser() -> argparse.ArgumentParser:
     behavior_capture.add_argument("--no-write", action="store_true")
     behavior_capture.set_defaults(handler=_capture_behavior)
 
+    ownership_capture = subparsers.add_parser(
+        "capture-espn-ownership",
+        help="retrieve ESPN roster/start percentages once a day and retain them (network)",
+    )
+    ownership_capture.add_argument("--season", type=int, default=None)
+    ownership_capture.add_argument("--store", type=Path, default=None)
+    ownership_capture.add_argument("--as-of", default=None, help="RFC 3339 retrieval timestamp")
+    ownership_capture.add_argument("--git-sha", default=None)
+    ownership_capture.add_argument(
+        "--force",
+        action="store_true",
+        help="capture even when a valid capture is already retained for today",
+    )
+    ownership_capture.add_argument("--no-write", action="store_true")
+    ownership_capture.set_defaults(handler=_capture_espn_ownership)
+
     history = subparsers.add_parser(
         "validate-market-history",
         help="verify the append-only snapshot store against its manifests",
@@ -2328,6 +2344,79 @@ def _capture_behavior(args: argparse.Namespace) -> int:
     return _report_gate(gate)
 
 
+def _capture_espn_ownership(args: argparse.Namespace) -> int:
+    """Retrieve ESPN roster/start percentages and retain them. **Network I/O** (ADR-112).
+
+    At most one retained capture per America/New_York day: a valid capture already retained
+    for today is reused and ESPN is not called, so a re-run, the Tuesday second slot or a
+    redeploy costs no request. A capture that fails its own validation is never written, so
+    the newest good snapshot stays the newest.
+    """
+    import resource
+    import time
+
+    from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.ownership import (
+        capture_espn_ownership,
+        capture_problems,
+        same_day_capture,
+        write_ownership_capture,
+    )
+    from ffdraft.timeutil import utc_now
+
+    season = args.season or PRODUCTION_SEASON
+    store = _market_store(args.store)
+    now = parse_utc(args.as_of) if args.as_of else utc_now()
+    if not args.force:
+        existing = same_day_capture(store, season=season, now=now)
+        if existing is not None:
+            print(f"reused         : {existing.snapshot_key} (retained today; ESPN not called)")
+            print(f"rows           : {len(existing.rows)} core player(s)")
+            return 0
+    gate = QualityGate()
+    started = time.monotonic()
+    try:
+        capture = capture_espn_ownership(
+            season=season,
+            as_of=now,
+            git_sha=args.git_sha,
+            gate=gate,
+        )
+    except Exception as exc:  # noqa: BLE001 - reported, and the store is untouched
+        print(f"ESPN ownership capture failed; nothing retained: {exc}", file=sys.stderr)
+        return 1
+    elapsed = time.monotonic() - started
+    request = capture.request
+    coverage = capture.coverage()
+    print(f"capture        : {capture.snapshot_key}")
+    print("requests       : 2 (ownership universe, season context)")
+    print(
+        f"ownership      : {request.get('rows_returned')} row(s), ESPN count "
+        f"{request.get('universe_count_header')}, {request.get('wire_bytes')} B wire, "
+        f"{request.get('decoded_bytes')} B decoded, {request.get('duration_ms')} ms, "
+        f"{request.get('attempts')} attempt(s)",
+    )
+    print(
+        f"core rows      : {coverage['core_rows']} "
+        f"(rostered {coverage['rows_with_percent_rostered']}, "
+        f"started {coverage['rows_with_percent_started']})",
+    )
+    print(f"ESPN period    : {capture.espn_current_period} (reported current at retrieval)")
+    print(f"elapsed        : {elapsed:.2f} s")
+    print(f"peak RSS       : {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024:.1f} MB")
+    problems = capture_problems(capture)
+    if problems:
+        for problem in problems:
+            print(f"  [critical] {problem}", file=sys.stderr)
+        print("refusing to retain an invalid ownership capture", file=sys.stderr)
+        return 1
+    if not args.no_write:
+        result = write_ownership_capture(capture, store=store)
+        for path in result.written:
+            print(f"wrote {path}")
+    return _report_gate(gate)
+
+
 def _validate_market_history(args: argparse.Namespace) -> int:
     """Re-hash every retained capture and check the store's append-only invariants.
 
@@ -2336,6 +2425,7 @@ def _validate_market_history(args: argparse.Namespace) -> int:
     """
     from ffdraft.behavior.capture import verify_behavior_store
     from ffdraft.modeling.frozen import PRODUCTION_SEASON
+    from ffdraft.ownership import verify_ownership_store
     from ffdraft.sources.market import MFL_SOURCE_ID
     from ffdraft.status.capture import verify_status_store
     from ffdraft.weekly.capture import verify_gameday_store
@@ -2347,15 +2437,31 @@ def _validate_market_history(args: argparse.Namespace) -> int:
     behaviors, behavior_files, behavior_problems = verify_behavior_store(store, season=season)
     # ADR-099: forecasts, the injury report and the private weekly shadow record.
     gameday, gameday_files, gameday_problems = verify_gameday_store(store, season=season)
+    # ADR-112: ESPN roster/start percentages.
+    ownerships, ownership_files, ownership_problems = verify_ownership_store(store, season=season)
 
     print(f"store          : {store.root}")
     print(f"market         : {market.snapshots} snapshot(s), {market.files_checked} file(s)")
     print(f"status         : {captures} capture(s), {status_files} file(s)")
     print(f"behaviour      : {behaviors} capture(s), {behavior_files} file(s)")
     print(f"game day       : {gameday} capture(s), {gameday_files} file(s)")
-    for problem in (*market.problems, *status_problems, *behavior_problems, *gameday_problems):
+    print(f"ownership      : {ownerships} capture(s), {ownership_files} file(s)")
+    problems = (
+        *market.problems,
+        *status_problems,
+        *behavior_problems,
+        *gameday_problems,
+        *ownership_problems,
+    )
+    for problem in problems:
         print(f"  [critical] {problem}")
-    ok = market.ok and not status_problems and not behavior_problems and not gameday_problems
+    ok = (
+        market.ok
+        and not status_problems
+        and not behavior_problems
+        and not gameday_problems
+        and not ownership_problems
+    )
     if not (market.snapshots or captures or behaviors):
         print("  [warning] the store holds nothing for this source and season")
     print(f"retained history: {'pass' if ok else 'fail'}")

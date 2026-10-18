@@ -371,7 +371,7 @@ test.describe("the opportunity board", () => {
     await expect(surfaced.locator(".surface-badge")).toContainText("surfaced");
   });
 
-  test("offers five orderings over separate quantities and no blended score", async ({ page }) => {
+  test("offers seven orderings over separate quantities and no blended score", async ({ page }) => {
     await page.goto(`${IN_SEASON}?view=opportunity`);
     // `Segmented` renders an ARIA radiogroup, which is not the same role as `group`.
     const group = page.getByRole("radiogroup", { name: /Order by/i });
@@ -381,7 +381,10 @@ test.describe("the opportunity board", () => {
     await expect(group.getByRole("radio", { name: "Net adds" })).toBeVisible();
     await expect(group.getByRole("radio", { name: /^Add momentum/ })).toBeVisible();
     await expect(group.getByRole("radio", { name: /^Role direction/ })).toBeVisible();
-    await expect(group.getByRole("radio")).toHaveCount(5);
+    // ADR-112: ESPN's rostered share and its 7-day change, each one published quantity.
+    await expect(group.getByRole("radio", { name: /^ESPN rostered percentage/ })).toBeVisible();
+    await expect(group.getByRole("radio", { name: /^ESPN 7-day roster change/ })).toBeVisible();
+    await expect(group.getByRole("radio")).toHaveCount(7);
     for (const label of await group.getByRole("radio").allTextContents()) {
       expect(label).not.toMatch(/score|signal|waiver|breakout|hot|composite/i);
     }
@@ -570,7 +573,8 @@ test.describe("the opportunity board's signals (ADR-092)", () => {
       await expect(header).toHaveCSS("white-space", "normal");
       await expect(scroller.locator("tbody td").first()).toHaveCSS("padding-left", "8px");
       // Whatever steps aside, the three signal columns never do on a laptop.
-      for (const column of ["role", "add_momentum", "next_game"]) {
+      // ADR-112: and neither does ESPN's.
+      for (const column of ["role", "add_momentum", "espn", "next_game"]) {
         await expect(scroller.locator(`th[data-col="${column}"]`)).toBeVisible();
       }
     });
@@ -680,8 +684,9 @@ test.describe("pick of the week", () => {
     expect(text).not.toMatch(/\d+% rostered|rostered in|percent of leagues|% owned/);
     expect(text).not.toMatch(/matchup/);
     expect(text).not.toMatch(/last 3 games/);
-    // And it says so in as many words, because the absence is the finding.
-    expect(text).toContain("there is no rostered percentage here");
+    // And it says so in as many words. ADR-112 published ESPN's rostered share on the
+    // Opportunity Board and the card; this page's rule does not read it, and says so.
+    expect(text).toContain("pick of the week does not use a rostered percentage");
   });
 
   test("cycles sets, keeps the set in the URL, and survives a reload", async ({ page }) => {

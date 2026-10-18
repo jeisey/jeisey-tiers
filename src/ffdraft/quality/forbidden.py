@@ -93,6 +93,16 @@ FORBIDDEN_NAME_SUBSTRINGS = (
     "opp_db_",
     "report_final",
     "kickoff_forecast",
+    # ADR-112: ESPN's roster and start percentages are crowd interest in ESPN's population,
+    # published beside a player for waiver research. They are a market-expectation proxy and
+    # no intrinsic, rest-of-season or weekly model may read them under any name.
+    "percent_rostered",
+    "percent_started",
+    "percent_owned",
+    "percentowned",
+    "percentstarted",
+    "espn_ownership",
+    "rostered_change",
 )
 
 #: Sources whose data may never feed the intrinsic model, whatever the column is called.
@@ -104,6 +114,8 @@ FORBIDDEN_LINEAGE_SOURCES = frozenset(
         # ADR-099: forecast providers feed the weekly game-day layer only.
         "nws_api",
         "open_meteo",
+        # ADR-112.
+        "espn_fantasy_ownership",
     },
 )
 

@@ -141,6 +141,19 @@ export async function prepare(): Promise<void> {
       ...fixtures.inSeasonFixtureFiles(true, { skillTree: "absent" }),
     },
     /*
+     * ADR-112: an older deploy with no ESPN block at all, and a build whose newest ESPN
+     * capture is past the freshness bound. Both must disable the ESPN ceiling, say why, and
+     * leave every board whole — never read an unknown as 0%.
+     */
+    "in-season-no-espn": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(true, { espn: "absent" }),
+    },
+    "in-season-espn-stale": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(true, { espn: "stale" }),
+    },
+    /*
      * The *other* market condition, as its own site.
      *
      * `MARKET_CONDITIONS` exists because Phase 8 found every market-sensitive test written

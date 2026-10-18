@@ -1372,6 +1372,56 @@ What a refresh can change for a reader:
     MATCHUP_REPORT=… npx vitest run tests/matchup-convergence.test.ts` re-measures the draw
     count against ADR-110's rule, offline, in about five minutes.
 
+### 16.14 ESPN roster and start percentages (ADR-112)
+
+**Capture.** `daily-refresh`'s capture job runs `ffdraft capture-espn-ownership --store
+market-data` with `continue-on-error`:
+
+* only when `mode == in_season`;
+* never on a news slot;
+* never with `skip_capture`.
+
+It makes two requests (the ownership universe, about 463 kB, and ESPN's 201-byte season object)
+and appends one validated snapshot under `ownership/espn_fantasy_ownership/{season}/`. The log
+(`espn.log`, in the run summary) prints the requests, rows against ESPN's own count, bytes,
+duration, attempts, core-row coverage, ESPN's reported period and peak RSS.
+
+**Once a day.** A valid capture already retained for today's America/New_York date is reused
+and ESPN is not called (`reused : <key>`), so the Tuesday second slot, a re-run and a redeploy
+cost nothing. `--force` captures anyway. Do not use it to retry within a day unless the retained
+capture is known bad.
+
+**Failure handling.**
+
+| what happened | what the store and the site do |
+|---|---|
+| ESPN down, timeout, 5xx | 3 attempts (2 s, 4 s), then the step fails; nothing written; yesterday's capture stays newest |
+| filter ignored / list truncated (rows ≠ `X-Fantasy-Filter-Player-Count`, or rows ≥ 2000) | refused as incomplete; nothing written |
+| fewer than 500 core rows, an out-of-range value, duplicate ids | refused by `capture_problems`; nothing written |
+| a 4xx other than 429 | not retried; the step fails; investigate the route (ESPN may have changed it) |
+| newest capture older than 36 h at build time | every reading `stale`; values kept and labelled; the ESPN filter disabled with a sentence |
+| no capture in 28 days, or a store/registry the build cannot read | `espn_ownership.status = unavailable` or `failed`; neither artifact written; every surface says unavailable |
+
+No ESPN failure fails a build, holds a deploy or moves a board value. `validate-market-history`
+re-hashes the `ownership/` prefix with the others and fails the capture job on a corrupt
+snapshot before anything is pushed. A corrupt snapshot inside the window is skipped by the
+build (`ros.espn_ownership_capture_skipped`) rather than fatal.
+
+**Replay and offline.** `build-ros --store <dir>` reads the retained window offline. The
+fixture build carries synthetic captures with every state (`_espn_ownership_layer`). Live
+probes stay opt-in: `uv run python scripts/probe_espn_ownership.py --season <y> --out <dir>`
+re-verifies the route, the count header, the period insensitivity and identity coverage in
+eight paced requests.
+
+**When to look.**
+
+* `espn.log` says `incomplete`, or HTTP 400/404: the route or filter changed. Run the probe
+  before touching the adapter.
+* Matched coverage (`espn_rows_matched`) falls well below the probe's 885 of 962: the crosswalk
+  or ESPN's ids changed.
+* `started_above_rostered` warnings: ESPN's start-share definition may have changed. Re-read
+  ADR-112 before publishing anything derived from it.
+
 ## 17. Serving the site under load (ADR-098)
 
 ### 17.1 How GitHub Pages serves this site — verified 2026-09-30
@@ -1462,6 +1512,8 @@ revalidates at once), bytes counted at the server:
 | then simulating again | 0 B |
 | then turning YOLO on adds | ≤ 125 kB |
 | a cold first visit that opens Win My Matchup — everything · data | ≤ 450 kB · ≤ 150 kB |
+| showing the ESPN trend on an open card (ADR-112) adds | ≤ 15 kB |
+| then hiding and showing it, or reopening the card and showing it again | 0 B |
 
 and that a redeploy which renames a player is shown at once to a reader holding the old files.
 

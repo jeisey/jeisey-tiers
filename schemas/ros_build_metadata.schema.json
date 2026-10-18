@@ -325,6 +325,40 @@
         "statement": {"type": "string", "minLength": 1}
       }
     },
+    "espn_ownership": {
+      "type": ["object", "null"],
+      "description": "ADR-112: how espn_ownership.json and espn_ownership_series.json were built — ESPN's public roster and start percentages under espn_ownership_v1, read from the private retained store. `published`: both artifacts were written (the series only for players with a retained point). `unavailable`: no retained capture fell inside the window, so neither was. `failed`: the enrichment raised and neither was. Optional and additive: absent or null (an older bundle) means the page shows no ESPN reading and disables the ESPN filter, saying why. Never a model input.",
+      "additionalProperties": false,
+      "required": ["rule_version", "status", "source_id"],
+      "properties": {
+        "rule_version": {"const": "espn_ownership_v1"},
+        "status": {"enum": ["published", "unavailable", "failed"]},
+        "reason": {"type": ["string", "null"]},
+        "source_id": {"const": "espn_fantasy_ownership"},
+        "rule": {"type": "object", "description": "The frozen rule: windows, tolerances, the staleness bound, units, and the policies on start changes and absence."},
+        "latest_snapshot_key": {"type": ["string", "null"]},
+        "latest_observed_at_utc": {"type": ["string", "null"], "format": "date-time", "description": "Our retrieval instant of the newest retained capture."},
+        "latest_age_hours": {"type": ["number", "null"], "minimum": 0, "description": "Hours between that retrieval and this build."},
+        "stale": {"type": ["boolean", "null"], "description": "True when latest_age_hours exceeds the rule's staleness bound; every reading is then `stale` and passes no filter."},
+        "espn_current_period": {"type": ["integer", "null"], "minimum": 0, "maximum": 25},
+        "captures_in_window": {"type": "integer", "minimum": 0},
+        "capture_times_utc": {"type": "array", "items": {"type": "string", "format": "date-time"}, "description": "Every retained capture inside the series window, oldest first. A day with no entry had no capture."},
+        "skipped_captures": {"type": "integer", "minimum": 0, "description": "Retained captures in the window that failed their hash check and were left out."},
+        "baseline_1d_observed_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "baseline_7d_observed_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "espn_universe_rows": {"type": "integer", "minimum": 0, "description": "QB/RB/WR/TE rows in the latest capture."},
+        "espn_rows_matched": {"type": "integer", "minimum": 0, "description": "Of those, rows matched to a published player through the verified espn_id crosswalk."},
+        "espn_rows_not_on_board": {"type": "integer", "minimum": 0, "description": "ESPN rows that reach no published player. ESPN never adds a player to the board."},
+        "players": {"type": "integer", "minimum": 0},
+        "series_players": {"type": "integer", "minimum": 0},
+        "reading_states": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "start_states": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "change_states": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}},
+        "attribution": {"type": "string", "minLength": 1},
+        "population_statement": {"type": "string", "minLength": 1},
+        "start_context_statement": {"type": "string", "minLength": 1}
+      }
+    },
     "season_actuals": {
       "type": ["object", "null"],
       "description": "ADR-105: how season_actuals.json was built — the rule, the cutoff and the weeks it covers, the sentences every surface prints beside the numbers, the population ranked at each position, and the source coverage that decided whether it was published. `withheld` means a scheduled team-week was missing upstream and no actuals were published, so every surface prints them as unavailable rather than as ranks over a smaller population. Optional and additive: absent or null is the same unavailable state.",

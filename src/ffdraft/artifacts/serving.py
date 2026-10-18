@@ -178,6 +178,13 @@ FAMILIES: tuple[Family, ...] = (
     # needs.
     Family("skill_tree", "player_skill_tree", "bucket"),
     Family("skill_tree_definitions", "skill_tree_definitions", "position"),
+    # ADR-112: ESPN's latest roster/start readings, one record per board player and preset-
+    # independent, so one slice serves every block. The Opportunity Board reads all of it; a
+    # card reads its own record from the card shard.
+    Family("espn_ownership", "espn_ownership", "all"),
+    # ADR-112: the 28-day series, split by the card's player bucket and fetched only when a
+    # reader activates a card's In-season usage section — never by a view, never in a shard.
+    Family("espn_ownership_series", "espn_ownership_series", "bucket"),
     # ADR-105: season-to-date actuals, one slice per scoring preset — a season rank does not
     # depend on league size, so nine blocks would be three copies each. Every in-season view
     # and the in-season card read it. No names: every player a page can show is already in
@@ -214,6 +221,8 @@ CARD_SECTIONS: tuple[tuple[str, Partition], ...] = (
     ("weekly_projections", "scoring"),
     ("player_usage", "all"),
     ("behavior_trend_series", "all"),
+    # ADR-112: the latest ESPN reading only; the series is its own lazily fetched family.
+    ("espn_ownership", "all"),
 )
 
 #: Artifacts whose rows name a player, in the order the dictionary takes a name from.

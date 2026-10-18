@@ -35,7 +35,7 @@ import {
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
-import { matchupYoloKeys, requiredKeys, risingKeys, type DataStore, type SkillTreeSource } from "../data/store";
+import { matchupYoloKeys, requiredKeys, risingKeys, type DataStore, type OwnershipHistorySource, type SkillTreeSource } from "../data/store";
 import { activeLeagueSnapshot, subscribeActiveLeague, subscribeYoloFiles, yoloFilesSnapshot } from "../data/leagueSignal";
 import { addToDuel, selectWeekBoard, startableFor } from "../data/duel";
 import {
@@ -282,6 +282,8 @@ function SiteBoard({
   const cohorts = store.inSeason(cardKeys);
   // ADR-107: built once per store; nothing loads until a reader opens the tree.
   const skillTree = useMemo(() => store.skillTreeSource(), [store]);
+  // ADR-112: likewise, nothing loads until a reader activates a card's In-season usage.
+  const ownershipHistory = useMemo(() => store.ownershipHistorySource(), [store]);
   // A shard is immutable once loaded, so the card's records are fixed by these inputs.
   const card = useMemo(
     () =>
@@ -321,6 +323,7 @@ function SiteBoard({
       card={card}
       cohorts={cohorts}
       skillTree={skillTree}
+      ownershipHistory={ownershipHistory}
     />
   );
 }
@@ -360,10 +363,13 @@ function Board({
   card,
   cohorts,
   skillTree,
+  ownershipHistory,
 }: {
   readonly leagueView: LeagueViewInputs;
   /** The Skill Tree's on-demand loader (ADR-107), or null when the build published none. */
   readonly skillTree: SkillTreeSource | null;
+  /** The ESPN history's on-demand loader (ADR-112), or null when the build published none. */
+  readonly ownershipHistory: OwnershipHistorySource | null;
   /**
    * The in-season bundle built from the card's own keys: the blocks and populations a card's
    * cohort strips place one player among (ADR-098). Null before kickoff.
@@ -654,6 +660,9 @@ function Board({
       signals: inSeason?.metadata.signals ?? null,
       momentum: own === null ? null : behaviorMomentum(own, selectedPlayerId),
       seriesPublished: inSeason?.hasBehaviorSeries ?? false,
+      // ADR-112: his ESPN reading from the card shard, and the build's account of it.
+      espn: own === null ? null : own.espnFor(selectedPlayerId),
+      espnMeta: own?.metadata.espn_ownership ?? null,
       inSeason: IN_SEASON_VIEWS.includes(view) && inSeason !== null,
       // ADR-101: the policy's reading from the card's own shard (status, ROS row, report).
       availability: own?.availabilityFor(selectedPlayerId) ?? null,
@@ -974,6 +983,7 @@ function Board({
         onOpenData={openData}
         onCompare={inSeason?.hasWeekly === true ? onCompare : undefined}
         skillTree={skillTree}
+        ownershipHistory={ownershipHistory}
       />
     </>
   );

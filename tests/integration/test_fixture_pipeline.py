@@ -86,6 +86,11 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # no-appearance readings all occur.
         "player_skill_tree",
         "skill_tree_definitions",
+        # ADR-112. ESPN roster/start percentages through the production metric over
+        # synthetic captures: a riser, first-day, roster-only, 0%, a gap, falling, not
+        # published, invalid, two points, no ESPN id and a week rollover all occur.
+        "espn_ownership",
+        "espn_ownership_series",
     }
     assert all(records for records in pipeline_result.records.values())
 

@@ -24,6 +24,8 @@ import {
   type ArtifactName,
   type BehaviorTrendSeriesRecord,
   type BuildMetadata,
+  type EspnOwnershipRecord,
+  type EspnOwnershipSeriesRecord,
   type MarketTrendSeriesRecord,
   type OpportunityCohortRecord,
   type OpportunityRecord,
@@ -135,6 +137,8 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
         "player_usage/all",
         "behavior_trend_series/all",
         "team_matchups/all",
+        // ADR-112: ESPN's latest readings, one small slice for every block. Never the series.
+        "espn_ownership/all",
       );
       break;
     case "potw":
@@ -201,8 +205,30 @@ export function skillTreeKeys(manifest: Manifest, playerId: string, position: st
   return [`skill_tree_definitions/${position}`, shard].filter((key) => key in manifest.files);
 }
 
-/** Families whose arrival changes nothing any subscriber renders (ADR-107). */
-const QUIET_FAMILIES: ReadonlySet<string> = new Set(["skill_tree", "skill_tree_definitions"]);
+/**
+ * One player's ESPN ownership history file (ADR-112): the bucket shard holding his series.
+ * Never part of `requiredKeys` — no view and no card open fetches it; only activating a card's
+ * In-season usage section does, and a second player in the same bucket costs nothing more.
+ */
+export function ownershipHistoryKeys(manifest: Manifest, playerId: string): readonly string[] {
+  const shard = `espn_ownership_series/${String(bucketOf(playerId, manifest.card_buckets)).padStart(2, "0")}`;
+  return [shard].filter((key) => key in manifest.files);
+}
+
+/** Families whose arrival changes nothing any subscriber renders (ADR-107, ADR-112). */
+const QUIET_FAMILIES: ReadonlySet<string> = new Set([
+  "skill_tree",
+  "skill_tree_definitions",
+  "espn_ownership_series",
+]);
+
+/** What the card needs to load one player's ESPN history on demand (ADR-112). */
+export interface OwnershipHistorySource {
+  /** `incompatible`: published under a record major version this page does not read. */
+  readonly status: "published" | "incompatible";
+  /** Start fetching (or reuse) a player's bucket; resolves with his series, or null. */
+  readonly load: (playerId: string) => Promise<EspnOwnershipSeriesRecord | null>;
+}
 
 /** One player's Skill Tree rows as the store decoded them; parsed by the lazy chunk. */
 export interface SkillTreeLoad {
@@ -325,6 +351,31 @@ export class DataStore {
           rows: rows.filter((row) => row.player_id === playerId),
           definitions: this.tables.get(definitionsKey) ?? [],
         };
+      },
+    };
+  }
+
+  /**
+   * The ESPN history loader, or null when this build published no series (an older deploy, a
+   * build with no retained capture, or one where no board player had a point).
+   */
+  ownershipHistorySource(): OwnershipHistorySource | null {
+    const header = this.manifest.artifacts.espn_ownership_series;
+    if (header === undefined) return null;
+    if (!supported(header)) {
+      return {
+        status: "incompatible",
+        load: () => Promise.reject(new Error("the ESPN history's artifact version is not supported")),
+      };
+    }
+    return {
+      status: "published",
+      load: async (playerId) => {
+        const keys = ownershipHistoryKeys(this.manifest, playerId);
+        await this.ensure(keys);
+        const rows = keys.length === 0 ? [] : (this.tables.get(keys[0] ?? "") ?? []);
+        const found = rows.find((row) => row.player_id === playerId);
+        return (found as unknown as EspnOwnershipSeriesRecord | undefined) ?? null;
       },
     };
   }
@@ -516,6 +567,12 @@ export class DataStore {
               : null,
             actuals: this.rows<SeasonActualsRow>("season_actuals", scope),
             actualsPublished: this.published("season_actuals"),
+            espn:
+              scope.has("espn_ownership/all") && this.tables.has("espn_ownership/all")
+                ? this.rows<EspnOwnershipRecord>("espn_ownership", scope)
+                : null,
+            espnPublished: this.manifest.artifacts.espn_ownership !== undefined,
+            espnCompatible: this.published("espn_ownership"),
             published: {
               opportunity: this.published("inseason_opportunity"),
               behaviorSeries: this.published("behavior_trend_series"),
@@ -584,6 +641,9 @@ export class DataStore {
             matchups: [],
             weekly: section<WeeklyProjectionRecord>("weekly_projections"),
             status: section<PlayerStatusRecord>("player_status"),
+            espn: section<EspnOwnershipRecord>("espn_ownership"),
+            espnPublished: this.manifest.artifacts.espn_ownership !== undefined,
+            espnCompatible: this.published("espn_ownership"),
           });
     return { index, inSeason };
   }

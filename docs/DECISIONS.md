@@ -7863,3 +7863,183 @@ Payload budgets on the size model (`verify:budget`, all met): first visit 327.4 
 * Tests that typed into the old box now drive the dialog. New: `player-search.test.ts`, the
   ADR-111 blocks in `controls.test.tsx`, `app.test.tsx`, `startsit-view.test.tsx` and
   `skilltree.test.tsx`; Playwright `search.spec.ts` and the header block in `mobile.spec.ts`.
+
+## ADR-112 — ESPN's public roster and start percentages: captured daily, published beside the boards, never a value
+
+**Status:** accepted, 2026-10-17. **Amends:** ADR-087 (ESPN was `disabled` as a data source;
+headshots unchanged), ADR-088 and ADR-089 (the claim that no rostered percentage could be
+sourced), `docs/DATA_SOURCES.md` §16.4 and §17. **Relies on:** ADR-011 (nflverse-first joins),
+ADR-019 (the poisoned crosswalk index), ADR-038 (the append-only store), ADR-092 (the
+Opportunity Board's filters), ADR-098 (the serving layout), ADR-107 (lazy bucket families).
+
+### Context
+
+Waiver research needs two things the site could not show: how widely a player is already
+rostered, and whether interest in him is rising. Sleeper's add counts measure transactions,
+so a large count can mean heavy churn at any roster level, and they say nothing about the
+level itself. ADR-088 checked four routes to a rostered share and found all four closed; one
+was ESPN, then `disabled`. The owner asked for ESPN's public roster and start percentages
+end to end and authorized revisiting that decision.
+
+**What the probe established** (`docs/source-probes/2026-10-17/espn-ownership/`, reproducible
+with `scripts/probe_espn_ownership.py`):
+
+* ESPN's fantasy read API answers without a login. The global `/seasons/2026/players` route
+  ignores the contents of `X-Fantasy-Filter`. With any filter it returns all 11,618 players (45 MB
+  decoded for the full view); without one it returns 50. The league-default route honours
+  `limit`, `sortPercOwned` and the stats/rank filters. Its count equals its own
+  `X-Fantasy-Filter-Player-Count` (1,052), and it covers exactly the global list's
+  QB/RB/WR/TE/K/DST players carrying an ownership object, with 0 value disagreements.
+* With stats and per-period ranks filtered out server side, one request is 463 kB on the wire
+  and 2.5 MB decoded. It yields 962 QB/RB/WR/TE rows, and every one carries both `percentOwned`
+  and `percentStarted`.
+* The scale is percent, 0–100, at two decimals. `percentStarted` ≤ `percentOwned` on every row.
+* `scoringPeriodId` changes nothing: 0, 1, 5, 6, 7 and omitted returned byte-identical ownership.
+  The season object's `currentScoringPeriod` was 6.
+* `ownership.date` is per player and clusters at :30 past the hour. 31 low-roster rows were
+  stamped more than a day before the probe. That is consistent with "last changed", but not
+  verified.
+* 885 of 962 rows resolve through the verified `espn_id` crosswalk (nflverse 2026 + 2025 rosters).
+  **All 268 rows rostered ≥ 1% resolve**, none is ambiguous, and the 77 that do not resolve are
+  all under 1%.
+
+**What the probe could not establish:** the denominator of `percentStarted`, which week's
+lineups it counts, what `ownership.date` means, and the window of `percentChange`.
+
+**Rights.** ESPN links the Disney Terms of Use (last updated 2024-05-24). §2.A and §3.G limit use
+to personal, noncommercial use. §2.B.x prohibits automated access or extraction "using a robot,
+spider, script, or other automated means", data mining and web scraping. §2.A grants "no right to
+reproduce, distribute, communicate to the public". No sanctioned public API exists.
+`lm-api-reads.fantasy.espn.com/robots.txt` answers 403. The project owner reviewed these
+clauses on 2026-10-17 and chose to enable the capture and public display for this
+non-commercial project, with attribution. **This is recorded as an owner decision, not as legal
+clearance and not as a reading that the terms permit it.**
+
+### Decision
+
+1. **Source.** `espn_fantasy_ownership`, `allowed_optional`, `non_commercial_only`, with the
+   terms, the owner decision and the revisit conditions in `config/source-registry.yaml`. Its
+   forbidden roles are intrinsic, rest-of-season and weekly features, DraftValue, tier and
+   replacement-level inputs, and any critical dependency. The forbidden-feature guard refuses
+   its field names and its lineage.
+2. **Capture** (`ffdraft capture-espn-ownership`, `src/ffdraft/sources/espn.py`,
+   `src/ffdraft/ownership/capture.py`).
+   * The run makes two requests: the league-default universe with the verified filter, and the
+     201-byte season object for context.
+   * Transfer is bounded: 8 MB on the wire, 40 MB decoded, 3 attempts with 2 s / 4 s backoff, and
+     no retry on a non-429 4xx.
+   * A response is refused when its rows differ from ESPN's own count or reach the requested
+     limit. That is how an ignored filter, a truncated list and an empty body are each caught.
+   * Only the id, position, a diagnostics-only name, `percentOwned`, `percentStarted`,
+     `percentChange`, `leagueType` and `date` are normalized. ADP, auction values, ranks,
+     projections, stats and outlooks never leave the adapter.
+   * Each row is validated: a percentage outside [0, 100] or non-finite is nulled and flagged, a
+     missing start share stays null, conflicting duplicate ids fail closed, and a future stamp
+     is nulled.
+   * The capture is validated before it is written, as an append-only, hashed snapshot under
+     `ownership/espn_fantasy_ownership/{season}/`. A capture that fails leaves the previous one
+     newest.
+   * There is at most one capture per America/New_York day. A valid capture already retained
+     today is reused without calling ESPN, and it keeps its own key and time.
+3. **Workflow.** One `daily-refresh` step: in season only, never on a news slot, honouring
+   `skip_capture`, `continue-on-error`. It runs before the store is validated and pushed.
+   `validate-market-history` re-hashes the new prefix, and the summary carries the step's
+   outcome and log.
+4. **`espn_ownership_v1`** (`src/ffdraft/ownership/history.py`).
+   * Identity runs from each Opportunity Board player through his registry `espn_id` and never
+     from ESPN or by name. ESPN adds no player.
+   * Every board player gets one state: `observed`, `stale` (latest capture older than 36 h at
+     build time; values kept and labelled, never refreshed), `not_published`, `invalid`,
+     `no_espn_id` or `ambiguous_espn_id`.
+   * The start state is independent of the roster state: `observed`, `not_published`, `invalid`
+     or `no_reading`.
+   * A change is current minus a retained baseline, in **percentage points**. The baseline is
+     the capture nearest the target age inside 18–30 h (1-day) or 156–180 h (7-day), the earlier
+     one on a tie. Its value, its time and the actual span are published. Without a qualifying
+     capture the state is `insufficient_history`. When that capture lacks the player it is
+     `no_baseline_reading`, and when the league type changed it is `incomparable`. Nothing is
+     interpolated, backfilled or carried forward.
+   * No start-share change and no started-among-rostered ratio is published: neither the
+     denominator nor the week is stated by ESPN, and lineup cadence would read as a trend.
+5. **Artifacts.** `espn_ownership.json` is one record per Opportunity Board player.
+   `espn_ownership_series.json` holds one record per player with a point, at most 28 days, one
+   point per retained capture, with ESPN's reported period on each point.
+   * Both are preset-independent, schema-validated (`espn_ownership_record`,
+     `espn_ownership_series`, both 1.0) and in-season-bundle members.
+   * There is no server-side CSV of ESPN values.
+   * `ros_build_metadata.espn_ownership` reports the status (`published` / `unavailable` /
+     `failed`), the rule, the read time and age, coverage by state, change states, capture
+     times, baselines and the three statements every surface prints.
+   * The validator checks state/value agreement, change arithmetic, spans inside windows, no
+     future instant, series order and counts. Across artifacts it checks that ESPN records equal
+     the board's players and that each series ends on its summary.
+6. **Serving.** The `espn_ownership` slice (`all`) is read by the Opportunity Board only. The
+   record rides in the card shard. `espn_ownership_series` is split by the card's bucket and
+   fetched only when a card's In-season usage section is activated, through a quiet family like
+   the Skill Tree's. The chart's code is a lazy chunk fetched with it.
+7. **Opportunity Board.**
+   * One **ESPN rost** column: rostered %, 7-day change, start share and 1-day change. It sorts
+     by rostered % with no current reading last in both directions.
+   * Two orderings, `opportunity=espn` and `opportunity=espn7`.
+   * An **ESPN rostered** ceiling: All, <10%, <25%, <50%, <75%, strictly below, as `espn=lt50`.
+     Only a current reading passes. Rows without one are counted apart in the status line.
+   * A build that cannot apply it (older, unavailable, stale, incompatible) disables it, says
+     why, and leaves the board whole when a shared link names it.
+   * With Role rising, the board prints **"Role rising + rostered below N% on ESPN"**, with each
+     condition's census. Two separately labelled supporting-evidence counts (rising on ESPN over
+     7 days; positive Sleeper net adds) are never combined or ranked.
+   * The CSV export appends twelve ESPN columns after every earlier column.
+8. **Card.** A *Rostered on ESPN* block in In-season usage.
+   * It shows the sentence ("Rostered on ESPN: 18% → 31% in 7 days (+13 percentage points)."),
+     four readouts and the population and start-context statements.
+   * On activation it adds two aligned small multiples, Rostered % and Started %, on one dated
+     axis with explicit percent scales. Missed reads draw as gaps, and ESPN period changes as
+     labelled rules.
+   * Points are focusable, and an *Exact readings* table lists every read.
+   * Sleeper counts never go on the percent axis. A single point renders, and one read says so.
+9. **Pick of the Week is unchanged.** `potw_selection_v1` does not read ESPN. Changing who is
+   picked would be a new rule and its own decision.
+
+### Alternatives considered
+
+* **Request a scoring period.** Rejected: it changes nothing, so naming one would be a claim.
+* **The light `players_wl` view.** Rejected: it carries no start share.
+* **The global route plus trimming.** Rejected: 45 MB decoded per call, trimmed after download.
+* **A blended "waiver score"** of ESPN, Sleeper and value. Rejected: three populations in three
+  units. AGENTS.md §10.
+* **Dividing Sleeper adds by ESPN's unrostered share.** Rejected: different populations.
+* **A start-share change or a started/rostered ratio.** Withheld until ESPN's definition is known.
+* **A server-side ESPN CSV.** Rejected: the Opportunity export already carries what a reader looked at.
+* **Keep ESPN disabled.** That was the owner's call to make, and the owner chose otherwise with
+  the terms in view.
+
+### Evidence
+
+* **Capture cost** (live, 2026-10-17): 2 requests; 463,301 B on the wire; 2,490,153 B decoded;
+  0.68–1.12 s per request; 1.2 s end to end; peak RSS 178.5 MB against an import-only baseline
+  of 144.5 MB. The retained snapshot is 20,962 B gzipped per day plus a 2.3 kB manifest.
+  Same-day reuse made no request.
+* **Payload** (`verify:budget` on the size model, `main` 912a299 → this change; all budgets met):
+  * First visit total 331.2 → 339.9 kB of 450; first visit data 76.0 → 77.9 kB of 150.
+  * Card +23.9 → +24.3 kB of 30.
+  * **ESPN trend activation +4.96 kB** (2.57 kB data, 2.39 kB chart code; target 15) and **0 B**
+    on repeat.
+  * Opportunity view +121.7 → +135.3 kB, of which the ESPN slice is 13.6 kB (reported, not
+    budgeted).
+  * Cold Win My Matchup 428.0 → 436.6 kB of 450; cold My Leagues 401.7 → 410.3 kB of 450.
+  * Repeat and redeploy 0.
+* **Invariance:** `tests/integration/test_ownership_invariance.py` (every other artifact
+  byte-identical with and without ESPN, non-vacuous), the import-graph firewall in
+  `tests/contract/test_architecture_boundary.py`, and a vitest comparing the Opportunity rows
+  and the picks with and without ESPN.
+
+### Consequences
+
+* The capture depends on an unsanctioned, undocumented endpoint whose terms restrict automated
+  use. It can change or close without notice. When it does, the step fails, the readings go
+  stale and then unavailable, the filter disables itself, and no board is affected.
+* Re-verify with the probe script if ESPN changes the route or its count header, and revisit on
+  any contact from ESPN or Disney, a commercial deployment, or a documented definition of
+  `percentStarted` or `percentChange`.
+* `percentChange` is retained privately so its window can later be checked against our own
+  captures. Nothing publishes it.

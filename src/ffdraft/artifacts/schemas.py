@@ -80,6 +80,11 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # independent: without them the card simply has no Skill Tree section.
     "player_skill_metric",
     "skill_tree_definition",
+    # ADR-112. ESPN's public roster and start percentages: the latest reading per published
+    # player and a bounded series. Additive and independent: without them every surface says
+    # ESPN readings are unavailable and the ESPN filter is disabled.
+    "espn_ownership_record",
+    "espn_ownership_series",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -118,6 +123,8 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "season_actuals_record": "1.0",
     "player_skill_metric": "1.0",
     "skill_tree_definition": "1.0",
+    "espn_ownership_record": "1.0",
+    "espn_ownership_series": "1.0",
 }
 
 

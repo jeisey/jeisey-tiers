@@ -205,7 +205,8 @@ describe("the methodology on the page", () => {
   it("states the rule in the reader's own words, including that a count is not a share", async () => {
     await open();
     expect(screen.getByText(/How a pick is chosen/)).toBeDefined();
-    expect(screen.getByText(/There is no rostered percentage here/)).toBeDefined();
+    // ADR-112: ESPN's share is published elsewhere; this rule does not read it, and says so.
+    expect(screen.getByText(/Pick of the Week does not use a rostered percentage/)).toBeDefined();
     // The rule version travels with the picks, like every other versioned rule in this product.
     expect(screen.getByText(/potw_selection_v1/)).toBeDefined();
   });

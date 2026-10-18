@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/espn_ownership_series.schema.json",
+  "title": "EspnOwnershipSeries",
+  "description": "One player's retained ESPN roster/start history over the trailing window (at most 28 days, one season), one point per retained capture that carried him (ADR-112). A capture that did not carry him produces no point, and days without a capture produce no point: gaps are gaps. Reused captures are not duplicated. Crowd interest in ESPN's leagues, never a model input.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "build_id",
+    "season",
+    "through_week",
+    "source_id",
+    "player_id",
+    "position",
+    "espn_id",
+    "window_days",
+    "captures_in_window",
+    "observations",
+    "span_hours",
+    "points"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "season": {
+      "type": "integer",
+      "minimum": 1999
+    },
+    "through_week": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 22
+    },
+    "source_id": {
+      "const": "espn_fantasy_ownership"
+    },
+    "player_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "position": {
+      "enum": [
+        "QB",
+        "RB",
+        "WR",
+        "TE"
+      ]
+    },
+    "espn_id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "window_days": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 28
+    },
+    "captures_in_window": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Retained captures inside the window, whether or not they carried this player."
+    },
+    "observations": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Always equal to the length of points."
+    },
+    "span_hours": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Hours between the first and last point."
+    },
+    "points": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "observed_at_utc",
+          "espn_updated_at_utc",
+          "espn_current_period",
+          "percent_rostered",
+          "percent_started"
+        ],
+        "properties": {
+          "observed_at_utc": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Our retrieval instant of one retained capture."
+          },
+          "espn_updated_at_utc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "espn_current_period": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 25,
+            "description": "The period ESPN reported as current at that retrieval; a change between consecutive points marks a week boundary."
+          },
+          "percent_rostered": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "percent_started": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Null when ESPN published no start reading in that capture; never 0 in its place."
+          }
+        }
+      },
+      "description": "Ascending by observed_at_utc, unique instants."
+    }
+  }
+}

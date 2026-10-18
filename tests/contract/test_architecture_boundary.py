@@ -197,3 +197,43 @@ def test_the_arbitrage_score_cannot_reach_current_status(graph):
     for module in ("ffdraft.arbitrage.build", "ffdraft.pipeline.market", "ffdraft.market.current"):
         offenders = [name for name in _reachable(module, graph) if _is_status(name)]
         assert not offenders, f"{module} -> {offenders}"
+
+
+# --------------------------------------------------------------------------------------
+# ESPN ownership is crowd interest, never a model input (ADR-112)
+# --------------------------------------------------------------------------------------
+
+#: ESPN's roster and start percentages, their adapter and everything built on them.
+OWNERSHIP_MODULES = ("ffdraft.ownership", "ffdraft.sources.espn")
+
+#: Everything that produces a number a board prints: the intrinsic packages, the rest-of-season
+#: and weekly models, the Opportunity Board and the arbitrage score.
+VALUE_PACKAGES = (
+    *INTRINSIC_PACKAGES,
+    "ffdraft.ros",
+    "ffdraft.weekly",
+    "ffdraft.opportunity",
+    "ffdraft.arbitrage",
+    "ffdraft.signals",
+)
+
+
+def _is_ownership(module: str) -> bool:
+    return any(module == name or module.startswith(f"{name}.") for name in OWNERSHIP_MODULES)
+
+
+@pytest.mark.parametrize("package", VALUE_PACKAGES)
+def test_no_value_producing_module_can_reach_espn_ownership(package, graph):
+    """No feature, projection, replacement level, rank, tier or board value can read ESPN."""
+    offenders = [
+        f"{module} -> {reached}"
+        for module in _modules_under(package, graph)
+        for reached in sorted(_reachable(module, graph))
+        if _is_ownership(reached)
+    ]
+    assert not offenders, f"ESPN ownership may not reach a value-producing module: {offenders}"
+
+
+def test_the_in_season_build_does_reach_espn_ownership(graph):
+    """The allowed direction is real: the orchestrator publishes it beside the boards."""
+    assert any(_is_ownership(name) for name in _reachable("ffdraft.pipeline.ros", graph))

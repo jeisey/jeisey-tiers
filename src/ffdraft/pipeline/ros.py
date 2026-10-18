@@ -432,6 +432,26 @@ def run_ros_build(
     if series_records:
         records["behavior_trend_series"] = series_records
 
+    # ESPN's public roster and start percentages (ADR-112). After the Opportunity Board, for
+    # the same reason as the series above: it reads the board only to know which players to
+    # describe, and its failure costs its own two artifacts and nothing else.
+    from ffdraft.ownership.publish import ownership_layer
+
+    ownership = ownership_layer(
+        opportunity_records=records["inseason_opportunity"],
+        registry=identity,
+        store=store,
+        season=season,
+        through_week=cutoff.through_week,
+        build_id=resolved_build_id,
+        generated_at=stamped,
+    )
+    gate.extend(ownership.checks)
+    if ownership.latest:
+        records["espn_ownership"] = ownership.latest
+    if ownership.series:
+        records["espn_ownership_series"] = ownership.series
+
     # The in-season signal layer (ADR-091): observed role week by week, and each team's next
     # game. Strictly after every board exists and reading none of them beyond which players
     # to describe, so nothing below can move a published value — and, like the series above,
@@ -552,6 +572,7 @@ def run_ros_build(
         weekly=weekly_summary,
         season_actuals=actuals_summary,
         skill_tree=tree_summary,
+        espn_ownership=ownership.metadata,
     )
 
     written: list[Path] = []
@@ -2672,6 +2693,7 @@ def _ros_metadata(
     unprojected_rows: int = 0,
     season_actuals: Mapping[str, Any] | None = None,
     skill_tree: Mapping[str, Any] | None = None,
+    espn_ownership: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2737,6 +2759,7 @@ def _ros_metadata(
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
+        "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

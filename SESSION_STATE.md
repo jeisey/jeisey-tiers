@@ -4,6 +4,119 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**ESPN roster and start percentages — 2026-10-17 (ADR-112, PRD CR-032).** On
+`claude/compassionate-dirac-0wbo39` from `main` at `912a299`.
+
+The site now publishes ESPN's public roster and start percentages. They are optional context
+and never a value.
+
+The firewall:
+
+* The intrinsic, ROS, weekly, DraftValue and tier models, and Pick of the Week, do not read
+  them.
+* `test_ownership_invariance` proves every value artifact is byte-identical with and without
+  ESPN.
+* The forbidden-feature guard refuses ESPN's field names and lineage.
+
+* **Owner decision.** The Disney Terms of Use (§2.A, §2.B.x, §3.G) restrict automated access
+  and redistribution. On 2026-10-17 the owner chose to enable the capture and display for this
+  non-commercial project, with attribution. ADR-112 and `config/source-registry.yaml` record
+  this as an **owner decision, not legal clearance**. The registry names the revisit
+  conditions.
+* **Source facts, verified** (`docs/source-probes/2026-10-17/espn-ownership/`).
+  * Route: the league-default route `…/segments/0/leaguedefaults/3?view=kona_player_info` with
+    the verified `X-Fantasy-Filter`. The global `/players` route ignores the filter (45 MB).
+  * Completeness: rows equal the `X-Fantasy-Filter-Player-Count` header (1,052) and stay below
+    the limit.
+  * Size: 463 kB on the wire, 2.5 MB decoded, 962 QB/RB/WR/TE rows. Scale 0–100.
+  * `scoringPeriodId` changes nothing.
+  * Identity: 885 of 962 resolve by `espn_id`. All 268 rows rostered ≥1% resolve, and none is
+    ambiguous.
+* **Unverified, stated on the site.**
+  * `percentStarted`: its denominator and which week's lineups it counts.
+  * `ownership.date`: what it means.
+  * `percentChange`: its window. It is not used; changes are computed from retained captures.
+* **Capture.** `ffdraft capture-espn-ownership`, the `daily-refresh` step `espn`.
+  * It runs in season only, never on a news slot, honours `skip_capture`, and is
+    `continue-on-error`.
+  * It makes two requests, with bounded bytes, retries and timeouts. A capture is refused when
+    its rows differ from ESPN's own count.
+  * The snapshot is append-only and hashed, under `ownership/espn_fantasy_ownership/{season}/`
+    in the private store.
+  * There is one capture per America/New_York day, with same-day reuse.
+  * Cost: 1.2 s, peak RSS 178.5 MB (144.5 MB import baseline), 21 kB retained per day.
+* **Rule `espn_ownership_v1`** (`ownership/history.py`).
+  * Identity goes from board player to registry `espn_id`; ESPN adds no player.
+  * Reading states: observed, stale (>36 h), not_published, invalid, no_espn_id,
+    ambiguous_espn_id.
+  * Start states: observed, not_published, invalid, no_reading.
+  * 1-day and 7-day changes are in percentage points. Baselines are taken from the 18–30 h and
+    156–180 h windows, and the change carries its baseline value, time and actual span.
+  * Change states: measured, no_current_reading, insufficient_history, no_baseline_reading,
+    incomparable.
+  * There is no start-share change and no ratio.
+* **Artifacts.** `espn_ownership` and `espn_ownership_series`: 28 days, lazy, served in the card
+  bucket, schemas 1.0. Plus `ros_build_metadata.espn_ownership`.
+* **UI.**
+  * Opportunity Board:
+    * an ESPN rost column;
+    * `opportunity=espn|espn7`;
+    * a strict `espn=lt10|lt25|lt50|lt75` ceiling, disabled with a reason when the build
+      cannot apply it;
+    * "Role rising + rostered below N% on ESPN";
+    * 12 CSV columns.
+  * Card: a *Rostered on ESPN* block in In-season usage, with a lazy two-panel trend and exact
+    readings.
+  * Two columns now hide on Opportunity to make room: season totals below 1440 px, and
+    ROS-vs-season below 1280 px.
+* **Next gate:**
+  * owner review of the PR;
+  * after merge, the first in-season `daily-refresh` is the first live capture;
+  * the 1-day change appears about a day later, and the 7-day change about a week later;
+  * check the run summary's ESPN row and `ros_build_metadata.espn_ownership.status`.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; ruff format --check . ; mypy   # clean; 352 files formatted; 209 source files
+uv run pytest                                        # 2,123 passed, 4 live deselected
+build-fixture-artifacts + validate-artifacts         # pass; goldens regenerated and deterministic
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing TanStack warnings); clean
+npm run test -- --run                                # 1,070 passed, 1 skipped (54 files)
+playwright chromium + mobile + a11y + smoke-chromium # 343 passed
+verify:board on the eight CI fixture builds          # 0 failures; 19 ESPN cells on each ESPN build
+npm run e2e:size-model && verify:budget              # all met (below)
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok
+docs/visual-qa/2026-10-17-espn-ownership/capture.mjs # 0 overflow, 0 clipped, 0 console errors
+```
+
+The 4 live tests are opt-in. When run by hand, the MFL current-ADP live test failed; that
+source is untouched here.
+
+Budgets, main → branch (size model):
+
+| Measure | main | branch | budget |
+|---|---|---|---|
+| First visit, total | 331.2 kB | 339.9 kB | 450 kB |
+| First visit, data | 76.0 kB | 77.9 kB | 150 kB |
+| Card open | +23.9 kB | +24.3 kB | 30 kB |
+| ESPN history activation (new) | — | +4.96 kB (2.57 data + 2.39 chart code) | 15 kB |
+| ESPN history repeat (new) | — | 0 B | 0 B |
+| Opportunity view | +121.7 kB | +135.3 kB (ESPN slice 13.6 kB) | not budgeted |
+| WMM cold visit | 428.0 kB | 436.6 kB | 450 kB |
+| My Leagues cold visit | 401.7 kB | 410.3 kB | 450 kB |
+
+The size model's ESPN counts (510 readings, 470 series, 28 points) are projected from the
+probe, not measured on a production bundle.
+
+* **Facts for the next session.**
+  * `SnapshotConflictError` is a `RuntimeError`. The ownership readers catch it. The behaviour
+    reader has the same latent gap, which is filed separately and not fixed here.
+  * A CSV column containing "line" trips the sportsbook guard, which is why the column is
+    `…_since_utc`, not `…_baseline_utc`.
+  * The ESPN cell's detail line uses no-break spaces. `white-space: nowrap` spans raised the
+    table's minimum width and broke the 64 px slack test.
+
 **Search dialog, Start/Sit empty cards, compact phone card header — 2026-10-15 (ADR-111, PRD
 CR-031).** On `claude/compassionate-tesla-w9jfr4` from `main` at `18e743e` (WMM merged). A
 frontend usability pass. No model, data, artifact, contract, URL parameter, saved league or WMM

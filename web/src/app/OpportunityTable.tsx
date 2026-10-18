@@ -57,6 +57,7 @@ import {
   type OpportunityCandidate,
   type RoleOrdering,
 } from "../data/candidates";
+import { compareRostered, espnCell } from "../data/espn";
 import { formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rosValue } from "../data/ros";
 import { positionalRankAccessor, seasonColumns } from "./SeasonColumns";
@@ -72,7 +73,9 @@ export const OPPORTUNITY_TABLE_CAPTION =
   "measure — pass attempts for a quarterback, snap share otherwise — in his latest game " +
   "against the average of his earlier games. Add momentum is the published slope of his add " +
   "count over the retained window. Next game is sportsbook context no board reads, and no " +
-  "column rates an opponent.";
+  "column rates an opponent. ESPN rost is the share of ESPN leagues rostering him, with its " +
+  "change in percentage points over about 7 days (7d) and 1 day (1d) and ESPN's start share " +
+  "(st): ESPN's population, not your league, and popularity rather than a projection.";
 
 interface Scale {
   /** The largest rest-of-season value on the rows shown; the value bar's denominator. */
@@ -100,6 +103,13 @@ function barGradient(share: number, colour: string, wash: string): string {
     `linear-gradient(90deg, ${colour} 0 ${String(width)}%, ` +
     `${wash} ${String(width)}% 100%)`
   );
+}
+
+/** `+13.0`, `−0.4`, `±0.0`: percentage points in a cell whose caption names the unit. */
+function signedPoints(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  if (rounded === 0) return "±0.0";
+  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)}`;
 }
 
 function countCell(value: number | null | undefined): string {
@@ -195,7 +205,9 @@ function opportunityColumns(
       (row) => row.season,
       (row) => row.row.record.position,
       (row) => row.row.record.ros_position_rank,
-      "col-mid",
+      // The two totals step aside below 1440px too: the ESPN column needs their room, and the
+      // card and both exports carry them (ADR-112).
+      "col-mid col-wide",
     ),
     {
       id: "team",
@@ -361,6 +373,61 @@ function opportunityColumns(
             {cell.span !== "" && (
               <span className="signal-detail" aria-hidden="true">
                 {cell.span}
+              </span>
+            )}
+            <span className="visually-hidden">{cell.sentence}</span>
+          </span>
+        );
+      },
+    },
+    {
+      /*
+        ESPN's public roster share (ADR-112): rostered %, its 7-day change in percentage points,
+        and underneath the start share and the 1-day change. ESPN leagues, not the reader's, and
+        crowd interest, not value — printed beside the Sleeper counts and never combined with
+        them. Sorted by rostered %, and a row with no current reading sorts last in both
+        directions: "not listed by ESPN" is an unknown, never 0%.
+      */
+      id: "espn",
+      header: "ESPN rost",
+      accessorFn: (row) => (row.espn.kind === "observed" ? row.espn.rostered : undefined),
+      sortingFn: (a, b) => compareRostered(b.original.espn, a.original.espn),
+      sortUndefined: "last",
+      sortDescFirst: true,
+      cell: (context) => {
+        const candidate = context.row.original;
+        const cell = espnCell(candidate.espn);
+        const reading = candidate.espn.kind === "observed" || candidate.espn.kind === "stale" ? candidate.espn : null;
+        const week = reading?.record.rostered_change_7d ?? null;
+        const day = reading?.record.rostered_change_1d ?? null;
+        const measured = (change: typeof week): number | null =>
+          change?.state === "measured" ? change.change_pp : null;
+        const week7 = measured(week);
+        const day1 = measured(day);
+        const direction = week7 === null ? "none" : week7 > 0 ? "up" : week7 < 0 ? "down" : "flat";
+        /*
+          Compact on purpose: the share, then `7d +13.0` (points; the caption says so), and
+          underneath ESPN's start share and the 1-day change. A change the rule withholds is
+          left out of the cell and named in its sentence, so no long phrase widens the column.
+        */
+        return (
+          <span
+            className="signal-cell"
+            data-signal="espn"
+            data-kind={candidate.espn.kind}
+            data-direction={direction}
+            data-current={cell.current ? "true" : "false"}
+            title={cell.sentence}
+          >
+            <span className="signal-line" aria-hidden="true">
+              <span className="signal-value">{cell.rostered}</span>
+              {week7 !== null && <span className="signal-change">{`7d ${signedPoints(week7)}`}</span>}
+            </span>
+            {reading !== null && (
+              <span className="signal-detail" aria-hidden="true">
+                {/* A no-break space keeps "1d" with its figure when a narrow column wraps. */}
+                {`st\u00a0${cell.started}`}
+                {day1 === null ? "" : ` · 1d\u00a0${signedPoints(day1)}`}
               </span>
             )}
             <span className="visually-hidden">{cell.sentence}</span>

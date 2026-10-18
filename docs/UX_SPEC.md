@@ -1288,6 +1288,74 @@ saved document changed.
   and the updated search and card checks in `board.spec.ts`, `smoke.spec.ts` and
   `startsit.spec.ts`. Captures: `docs/visual-qa/2026-10-15-search-and-header/`.
 
+### 6A.20 ESPN roster and start percentages (ADR-112)
+
+ESPN's public **rostered %** and **started %** sit beside Sleeper's counts and the model's value,
+and are combined with neither. They describe ESPN leagues, not the reader's, and popularity is
+crowd interest, not a projection. Every surface that shows one says so.
+
+#### 6A.20.1 Opportunity Board
+
+* **One column, ESPN rost.** The first line is the rostered share and its 7-day change (`31%  7d
+  +13.0 pp`). The second is ESPN's start share and the 1-day change (`st 13% · 1d +1.8 pp`).
+  * A board cell truncates and never rounds up (9.99% reads `9.9%`), so a cell cannot contradict
+    a ceiling. The exact value is in the cell's sentence (title and screen-reader text).
+  * Absences are words: *not listed*, *no ESPN id*, *id conflict*, *invalid*. A stale reading is
+    muted. A gain or loss takes the board's two direction colours and keeps its sign in text.
+  * The header sorts by rostered %, highest first, with every row without a current reading last
+    in both directions.
+* **Two orderings.** *ESPN rost%* and *ESPN 7d* (`opportunity=espn`, `opportunity=espn7`). Ties
+  fall back to the board's own order (ROS rank, then id).
+* **The ESPN rostered ceiling.** Choices are All, <10%, <25%, <50% and <75%. The default is All,
+  which is never written to the URL; the others write `espn=lt10` and so on.
+  * It sits with the *Show only* chips and folds with them on a phone. It is strictly below:
+    exactly 10% fails "<10%".
+  * It composes by AND with position, search and every chip.
+  * The status line adds `Rostered below 50% on ESPN: 30 · 12 with no current ESPN reading, not
+    counted either way`.
+  * A build that cannot apply it (older, unavailable, stale or incompatible) disables the
+    choices and gives the reason in their tooltip. A shared link naming it then gets a notice,
+    and the board is shown whole, never emptied and never with unknowns read as 0%.
+* **The discovery rule.** With *Role rising* on and a ceiling chosen, a block above the board
+  reads **Role rising + rostered below 50% on ESPN — N players pass both conditions.** It lists
+  each condition's own count and rule.
+  * A muted line gives two separately labelled supporting-evidence counts: rising on ESPN over 7
+    days, and positive Sleeper net adds.
+  * Nothing is weighted, blended or ranked, and no improvement in prediction is claimed.
+* **Facts and notes.** ESPN read time (with *stale* when it is), ESPN's period at the read,
+  readings and absences out of the board, daily reads in 28 days, and the population,
+  start-context and attribution sentences.
+* **Export.** The filtered CSV appends twelve ESPN columns (`DATA_CONTRACTS.md` §27.5).
+
+#### 6A.20.2 Player card
+
+* **Where.** A **Rostered on ESPN** block at the end of *In-season usage*, inside the tab. It is
+  not a new header block, and the phone's compact header is unchanged.
+* **Immediately, from the card shard.** The sentence comes first, e.g. "Rostered on ESPN: 18% →
+  31% in 7 days (+13 percentage points)." It is built from the published change, its baseline
+  and its actual span, and when no change is published it says why (*new since baseline*, *not
+  enough history*).
+  * Four readouts follow: ESPN rostered (exact share beneath), ESPN started ("read in ESPN period
+    9", or "unknown, not 0%"), 7-day change and 1-day change (each "vs <baseline time>" or its
+    reason).
+  * A note gives the read time, the population statement, "percentage points, not percent
+    growth", and ESPN's start-context statement.
+* **On activation only.** **Show ESPN trend** above 767 px, or the *In-season usage* tab on a
+  phone, fetches the player's bucket and the chart's code.
+  * The chart is two aligned small multiples, Rostered % and Started %, on one dated axis. Each
+    panel has a labelled 0–N% scale (N in 5, 10, 20, 25, 50, 100).
+  * Reads more than 36 h apart are not joined: the line breaks and a dotted floor marks the gap.
+  * A change in ESPN's reported period is a dashed rule labelled `P9`.
+  * Rostered is the accent line; started is the neutral, dashed line. Sleeper counts are never
+    on this axis.
+  * Points are focusable buttons that announce date, share and period, and the caption repeats
+    the focused reading. *Exact readings (N)* opens a table of every read.
+  * A single read renders as one point with "One retained read so far". A player with no read in
+    28 days gets a sentence instead of a chart.
+* **Absent, unavailable, stale.** Each is one sentence in the block: *not listed by ESPN*, *no
+  verified ESPN id*, *id claimed twice*, *value failed validation*, *no ESPN percentages in this
+  build*, or a bold *Stale: read …*.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns

@@ -31,6 +31,7 @@ import random
 import shutil
 import sys
 from collections.abc import Mapping
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -434,6 +435,50 @@ def build(out: Path, seed: int = 20260930) -> None:
                     f"https://a.espncdn.com/i/headshots/nfl/players/full/{player['espn']}.png"
                 )
             records[artifact].append(row)
+    # ADR-112: one ESPN record per Opportunity Board player, preset-independent, and a series
+    # at the steady state of a full 28-day window — one read a day, the same read instants for
+    # every player (they are the same captures), values at ESPN's two decimals.
+    espn_template = templates["espn_ownership"]
+    measured = next(
+        row for row in espn_template if row["rostered_change_7d"]["state"] == "measured"
+    )
+    for index in range(counts["espn_ownership"]):
+        player = players[index % len(players)]
+        row = _identity(perturb.walk("espn_ownership", measured), player)
+        row["espn_id"] = player["espn"]
+        row["observed_at_utc"] = measured["observed_at_utc"]
+        records["espn_ownership"].append(row)
+    series_template = next(
+        row for row in templates["espn_ownership_series"] if row["observations"] > 2
+    )
+    newest = series_template["points"][-1]["observed_at_utc"]
+    anchor_at = datetime.fromisoformat(newest.replace("Z", "+00:00"))
+    instants = [
+        (anchor_at - timedelta(days=offset)).isoformat().replace("+00:00", "Z")
+        for offset in range(profile["espn_points"] - 1, -1, -1)
+    ]
+    for index in range(counts["espn_series"]):
+        player = players[index % len(players)]
+        row = _identity(dict(series_template), player)
+        row["espn_id"] = player["espn"]
+        points = []
+        level = round(rng.uniform(0.0, 99.0), 2)
+        for instant in instants:
+            level = round(min(100.0, max(0.0, level + rng.uniform(-1.5, 1.5))), 2)
+            points.append(
+                {
+                    "observed_at_utc": instant,
+                    "espn_updated_at_utc": instant,
+                    "espn_current_period": series_template["points"][-1]["espn_current_period"],
+                    "percent_rostered": level,
+                    "percent_started": round(level * rng.uniform(0.2, 0.9), 2),
+                },
+            )
+        row["points"] = points
+        row["observations"] = len(points)
+        row["captures_in_window"] = len(points)
+        row["span_hours"] = float((len(points) - 1) * 24)
+        records["espn_ownership_series"].append(row)
     # ADR-107: every appearing player's whole tree, one reading per metric of his position (a
     # complete golden tree per position, cloned), and one presence record per board player
     # with no appearance. The definitions do not grow with the board: they are the golden ones.

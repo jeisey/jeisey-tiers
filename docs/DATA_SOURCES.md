@@ -770,10 +770,17 @@ when the season starts, and a feed first captured in week 3 can only describe we
 Not probed and not built on. There is no verified sanctioned public production route that
 meets this project's reliability and policy standard (roadmap 10.1.5). Unchanged.
 
+> **Superseded 2026-10-17 for one narrow purpose** — ESPN's public roster and start
+> percentages — by section 23 and ADR-112. Every other ESPN quantity is still excluded.
+
 ## 17. ESPN player headshots — 2026-09-16 (ADR-087)
 
 **ESPN is not a data source here and its policy state is unchanged: `disabled`.** What was
 added is an *image reference*, and the distinction is the whole record.
+
+> **Amended 2026-10-17 (ADR-112, section 23).** ESPN is now `allowed_optional` for its public
+> roster and start percentages only. The headshot reference below is unchanged, and "what is
+> not used" now reads: every ESPN ranking, projection, ADP, auction value and stat.
 
 | | |
 |---|---|
@@ -1115,4 +1122,83 @@ those players' snap rows never bridged and the tree published "not covered". It 
 since 2026-10-15. The registry entry `known_issues.pfr_id_with_period_refused` records the
 measured effect on model inputs and outputs. A snap share can still read "not covered" when
 no snap row exists or an id has no single GSIS match (a bridge conflict fails closed).
+
+## 23. ESPN roster and start percentages — probed 2026-10-17 (ADR-112)
+
+Machine-readable evidence: `docs/source-probes/2026-10-17/espn-ownership/report.json` and
+`summary.md`, regenerable with `uv run python scripts/probe_espn_ownership.py`. Registry entry:
+`espn_fantasy_ownership` (`allowed_optional`, non-commercial only).
+
+### 23.1 The route, and why this one
+
+| | global `/seasons/{y}/players` | league default `/seasons/{y}/segments/0/leaguedefaults/3` |
+|---|---|---|
+| `X-Fantasy-Filter` | **contents ignored** — any filter returns all 11,618 players | honoured: `limit`, `sortPercOwned`, stats and rank filters; invalid values answer 400 |
+| Universe | 2,675 rows with ownership (IDP included) | 1,052 (QB/RB/WR/TE/K/DST) = the global list's set for those positions, 0 value disagreements |
+| Count header | 0 when any filter is sent | `X-Fantasy-Filter-Player-Count: 1052` = rows returned |
+| `players_wl` view | `percentOwned` only | `percentOwned` only |
+| `kona_player_info`, stats and ranks filtered | 45 MB decoded (not trimmable) | **463 kB wire / 2.5 MB decoded**, both percentages on all 962 core rows |
+
+The adapter uses the right-hand column with
+`{"players":{"limit":2000,"sortPercOwned":{...},"filterStatsForSourceIds":{"value":[99]},"filterRanksForScoringPeriodIds":{"value":[99]}}}`.
+`99` is a value no stat source or period has, which makes ESPN drop those arrays server side.
+League defaults 1, 3, 5 and 6 are identical, and 2 and 4 answer 404.
+
+### 23.2 Fields and semantics
+
+| field | measured | treatment |
+|---|---|---|
+| `percentOwned` | 0–100, two decimals; 0.0–99.93; 128 core rows at 0.0 | `percent_rostered`; 0 is a valid reading |
+| `percentStarted` | present on 962/962; 0.0–99.75; never above `percentOwned` | `percent_started`; **denominator and week not stated by ESPN** |
+| `scoringPeriodId` request param | 0, 1, 5, 6, 7, omitted → byte-identical ownership | not sent; none claimed |
+| season `currentScoringPeriod.id` | 6 on 2026-10-17 | recorded as "the period ESPN reported as current at retrieval" |
+| `date` | epoch ms per player; :30-past cadence; 31 rows > 24 h old | `source_updated_at_utc`, kept apart from our retrieval time; freshness is judged on retrieval |
+| `percentChange` | −1.91 to 11.35, window unstated | retained privately, published nowhere |
+| `leagueType` | 0 on every row | compared across baseline and current; a change makes the pair `incomparable` |
+| ADP, auction value, draft ranks, projections, stats, outlooks | present | discarded in the adapter |
+
+### 23.3 Identity
+
+Against nflverse 2026 + 2025 rosters (1,254 registry players), 885 of the 962 core ESPN rows
+resolve through the verified `espn_id` crosswalk. **Every row rostered ≥ 1% resolves (268/268).**
+The 77 rows that do not are all under 1%, and none is ambiguous. Joins run from the canonical
+board player to ESPN, never the reverse, and never by name. A shared `espn_id` is poisoned in
+the registry and both players fail closed.
+
+### 23.4 Rights and the owner decision
+
+Reachability is not licence. ESPN links the Disney Terms of Use (last updated 2024-05-24):
+
+* §2.A and §3.G: personal, noncommercial use only.
+* §2.B.x: no access, monitoring, copying or extraction "using a robot, spider, script, or other
+  automated means", and no data mining or web scraping.
+* §2.A: "no right to reproduce, distribute, communicate to the public".
+
+There is no sanctioned public API, and the API host's `robots.txt` answers 403. **On 2026-10-17
+the project owner reviewed these clauses and chose to enable the capture and public display for
+this non-commercial project, with attribution.** That is recorded as an owner decision and not
+as clearance. The obligations this project keeps:
+
+* one retrieval per America/New_York day;
+* a descriptive User-Agent;
+* no cookies, login or league ids;
+* bounded transfers;
+* attribution on every surface that shows a percentage and in the Data view;
+* a statement that the numbers describe ESPN leagues;
+* no server-side CSV of ESPN values;
+* the full universe kept in the private store only.
+
+### 23.5 Cost and cadence
+
+| measure | value |
+|---|---:|
+| requests per capture | 2 |
+| bytes on the wire / decoded | 463,301 / 2,490,153 |
+| request duration | 0.68–1.12 s |
+| peak RSS (process) / import-only baseline | 178.5 / 144.5 MB |
+| retained per day | 20,962 B gzipped rows + 2.3 kB manifest |
+| reuse | a valid same-day capture is reused without a request |
+
+ESPN's CloudFront answers `cache-control: max-age=300` or `max-age=5` and varies on
+`x-fantasy-filter`.
 

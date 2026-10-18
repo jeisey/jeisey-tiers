@@ -35,7 +35,9 @@
         "weekly_context",
         "season_actuals",
         "player_skill_tree",
-        "skill_tree_definitions"
+        "skill_tree_definitions",
+        "espn_ownership",
+        "espn_ownership_series"
       ]
     },
     "record_schema": {

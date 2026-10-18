@@ -44,13 +44,23 @@ import {
   filterAvailable,
   roleCell,
   selectOpportunityCandidates,
+  type CeilingReport,
   type FilterReport,
   type OpportunityCandidate,
   type OpportunitySelection,
 } from "../data/candidates";
 import { opportunityRowsToCsv } from "../data/csv";
-import { formatRank, formatValue } from "../data/format";
-import type { ScoringPreset, UnprojectedRecord } from "../data/contracts";
+import {
+  ESPN_CEILINGS,
+  ESPN_CEILING_LABELS,
+  ceilingPhrase,
+  espnCell,
+  espnFilterUnavailableReason,
+  espnFilterUsable,
+  type EspnCeiling,
+} from "../data/espn";
+import { formatEastern, formatRank, formatValue } from "../data/format";
+import type { EspnOwnershipMetadata, ScoringPreset, UnprojectedRecord } from "../data/contracts";
 import { matchesPosition, matchesSearch } from "../data/model";
 import { longAbsenceLabel, rosValue, type InSeasonBundle } from "../data/ros";
 import {
@@ -79,6 +89,8 @@ const SORT_LABELS: Readonly<Record<OpportunitySort, string>> = {
   net: "Net adds",
   momentum: "Momentum",
   role: "Role",
+  espn: "ESPN rost%",
+  espn7: "ESPN 7d",
 };
 
 /** The long form a screen reader hears for each ordering. */
@@ -88,6 +100,8 @@ const SORT_DESCRIPTIONS: Readonly<Record<OpportunitySort, string>> = {
   net: "Net adds",
   momentum: "Add momentum, steepest published rise first",
   role: "Role direction: rising, flat, falling, then no reading",
+  espn: "ESPN rostered percentage, highest first; no current reading last",
+  espn7: "ESPN 7-day roster change in percentage points, largest gain first; no change last",
 };
 
 const FILTER_LABELS: Readonly<Record<OpportunityFilter, string>> = {
@@ -130,11 +144,92 @@ function reportText(report: FilterReport): string {
   return `${FILTER_LABELS[report.filter]}: ${String(report.passing)}${missing}`;
 }
 
+/** `Rostered below 50% on ESPN: 30 · 12 with no current ESPN reading, not counted either way`. */
+function ceilingReportText(report: CeilingReport): string {
+  const missing =
+    report.withoutReading > 0
+      ? ` · ${String(report.withoutReading)} with no current ESPN reading, not counted either way`
+      : "";
+  const phrase = ceilingPhrase(report.ceiling);
+  return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}: ${String(report.passing)}${missing}`;
+}
+
 /** How the role ordering compared rows, which depends on how many positions are on screen. */
 function roleOrderNote(selection: OpportunitySelection): string {
   return selection.roleOrdering.magnitudes
     ? "Role order: rising, flat, falling, then no reading; within each, the larger published change first."
     : "Role order: rising, flat, falling, then no reading; within each, by ROS rank — a QB's change is in attempts and everyone else's in share points, so sizes are compared only within one position.";
+}
+
+/** The ceiling's values as the radio group carries them. */
+type EspnCeilingOption = "all" | "10" | "25" | "50" | "75";
+
+/** What the ESPN ceiling tests, in one sentence. */
+const ESPN_CEILING_RULE =
+  "Keep players whose current ESPN rostered percentage is strictly below the ceiling. A player " +
+  "with no current ESPN reading (not listed by ESPN, no verified ESPN id, or a stale reading) " +
+  "does not pass, and is counted apart rather than as 0%.";
+
+/** The ESPN readings' source, freshness and coverage, beside the board's own facts. */
+function EspnFacts({
+  bundle,
+  meta,
+}: {
+  readonly bundle: InSeasonBundle;
+  readonly meta: EspnOwnershipMetadata | null;
+}): React.JSX.Element {
+  const availability = bundle.espnAvailability;
+  if (meta === null) {
+    return (
+      <p className="muted board-note" data-espn="unavailable">
+        {availability.kind === "unpublished"
+          ? "ESPN roster percentages: not in this build."
+          : `ESPN roster percentages: unavailable for this build${
+              availability.kind === "unavailable" ? ` (${availability.reason})` : ""
+            }. Every other column is unaffected.`}
+      </p>
+    );
+  }
+  const states = meta.reading_states ?? {};
+  const absent =
+    (states.not_published ?? 0) +
+    (states.invalid ?? 0) +
+    (states.no_espn_id ?? 0) +
+    (states.ambiguous_espn_id ?? 0);
+  return (
+    <>
+      <dl className="facts" data-espn={availability.kind} style={{ marginTop: "0.75rem" }}>
+        <div>
+          <dt>ESPN read</dt>
+          <dd>
+            {formatEastern(meta.latest_observed_at_utc ?? null)}
+            {availability.kind === "stale" ? " · stale" : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>ESPN period at read</dt>
+          <dd>{meta.espn_current_period === null || meta.espn_current_period === undefined ? "—" : String(meta.espn_current_period)}</dd>
+        </div>
+        <div>
+          <dt>ESPN readings</dt>
+          <dd>{`${String((states.observed ?? 0) + (states.stale ?? 0))} of ${String(meta.players ?? 0)}`}</dd>
+        </div>
+        <div>
+          <dt>No ESPN reading</dt>
+          <dd>{String(absent)}</dd>
+        </div>
+        <div>
+          <dt>Daily ESPN reads (28d)</dt>
+          <dd>{String(meta.captures_in_window ?? 0)}</dd>
+        </div>
+      </dl>
+      <p className="muted board-note" data-espn-note="population">
+        {meta.population_statement ?? ""} {meta.start_context_statement ?? ""} Changes are in
+        percentage points against a retained read about 1 or 7 days earlier, with the actual
+        span stated; a player with no such read shows no change. {meta.attribution ?? ""}
+      </p>
+    </>
+  );
 }
 
 /** How deep the chart goes by default. The table below still holds every published row. */
@@ -148,12 +243,13 @@ export const OPPORTUNITY_BOARD_PREVIEW_DEPTH = 40;
  */
 export function opportunityOptionsSummary(
   state: Pick<AppState, "opportunity" | "board">,
-  selection: Pick<OpportunitySelection, "filters">,
+  selection: Pick<OpportunitySelection, "filters"> & { readonly ceiling?: CeilingReport | null },
   rowCount: number,
 ): readonly string[] {
   const applied = selection.filters
     .filter((report) => report.available)
     .map((report) => FILTER_LABELS[report.filter]);
+  if (selection.ceiling?.usable === true) applied.push(`ESPN ${ESPN_CEILING_LABELS[selection.ceiling.ceiling] ?? ""}`);
   return [
     `By ${SORT_LABELS[state.opportunity]}`,
     applied.length === 0 ? "No filters" : applied.join(" + "),
@@ -184,11 +280,12 @@ function markLabel(candidate: OpportunityCandidate, windowText: string): string 
         `${String(record.drop_count ?? 0)} drop${record.drop_count === 1 ? "" : "s"} ` +
         `over the ${windowText} window`;
   const role = ` Role: ${roleCell(candidate.role, record.position).sentence}`;
+  const espn = candidate.espn.kind === "unavailable" ? "" : ` ESPN: ${espnCell(candidate.espn).sentence}`;
   return (
     `${record.display_name}, ${record.position}${String(record.ros_position_rank)}` +
     `${record.team === null ? "" : `, ${record.team}`}, rest-of-season rank ` +
     `${formatRank(record.ros_fair_rank)}, rest-of-season median VORP ` +
-    `${formatValue(rosValue(record))} points. Separately: ${moves}.${role}` +
+    `${formatValue(rosValue(record))} points. Separately: ${moves}.${role}${espn}` +
     (record.outside_tier_board ? " Surfaced from beyond the tier depth; no tier." : "") +
     (record.long_absence ? ` ${longAbsenceLabel(record)}.` : "")
   );
@@ -247,6 +344,25 @@ export function OpportunityView({
     },
     [onChange, state.only],
   );
+
+  const espnUnavailable = espnFilterUsable(bundle.espnAvailability)
+    ? null
+    : espnFilterUnavailableReason(bundle.espnAvailability);
+  const espnMeta =
+    bundle.espnAvailability.kind === "published" || bundle.espnAvailability.kind === "stale"
+      ? bundle.espnAvailability.meta
+      : null;
+  const discovery = useMemo(() => {
+    const role = selection.filters.find((report) => report.filter === "role" && report.available);
+    const ceiling = selection.ceiling;
+    if (role === undefined || !ceiling?.usable) return null;
+    return {
+      label: `Role rising + ${ceilingPhrase(ceiling.ceiling)}`,
+      ceilingText: `${ceilingPhrase(ceiling.ceiling).charAt(0).toUpperCase()}${ceilingPhrase(ceiling.ceiling).slice(1)}`,
+      role,
+      ceiling,
+    };
+  }, [selection]);
 
   const window = behavior?.lookback_hours;
   const windowText = windowLabel(window);
@@ -436,17 +552,79 @@ export function OpportunityView({
               })}
             </div>
           </div>
+          <div
+            className="phone-panel phone-panel-contents opp-espn-control"
+            data-open={optionsOpen}
+            title={espnUnavailable ?? ESPN_CEILING_RULE}
+          >
+            <Segmented<EspnCeilingOption>
+              name="espn-ceiling"
+              label="ESPN rostered"
+              value={String(state.espn) as EspnCeilingOption}
+              options={ESPN_CEILINGS.map((ceiling) => ({
+                value: String(ceiling) as EspnCeilingOption,
+                label: ESPN_CEILING_LABELS[String(ceiling)] ?? String(ceiling),
+                description:
+                  ceiling === "all"
+                    ? "All players, whatever their ESPN roster percentage"
+                    : `Only players rostered in strictly fewer than ${String(ceiling)}% of ESPN leagues`,
+                disabled: ceiling !== "all" && espnUnavailable !== null,
+              }))}
+              onChange={(value) => {
+                onChange({ espn: (value === "all" ? "all" : Number(value)) as EspnCeiling });
+              }}
+            />
+          </div>
           <span className="opp-filter-status muted">
             {[
-              selection.filters.length === 0
+              selection.filters.length === 0 && selection.ceiling === null
                 ? `${String(rows.length)} shown`
                 : `${String(rows.length)} of ${String(selection.matched)} shown`,
               ...selection.filters.filter((report) => report.available).map(reportText),
+              ...(selection.ceiling?.usable === true ? [ceilingReportText(selection.ceiling)] : []),
             ].join(" · ")}
           </span>
         </div>
+        {discovery !== null && (
+          <div className="opp-discovery" data-rule="role-espn">
+            <p className="opp-discovery-rule">
+              <strong>{discovery.label}</strong>
+              {` — ${String(rows.length)} player${rows.length === 1 ? "" : "s"} pass both conditions.`}
+            </p>
+            <ul className="opp-discovery-conditions">
+              <li>
+                {`Role rising: ${String(discovery.role.passing)} of ${String(selection.matched)}`}
+                {discovery.role.withoutReading > 0
+                  ? ` (${String(discovery.role.withoutReading)} with no published change).`
+                  : "."}{" "}
+                {FILTER_RULES.role}
+              </li>
+              <li>
+                {`${discovery.ceilingText}: ${String(discovery.ceiling.passing)} of ${String(selection.matched)}`}
+                {discovery.ceiling.withoutReading > 0
+                  ? ` (${String(discovery.ceiling.withoutReading)} with no current ESPN reading).`
+                  : "."}{" "}
+                {`Strictly below ${String(discovery.ceiling.ceiling)}%; the reading is ESPN's, not your league's.`}
+              </li>
+            </ul>
+            <p className="muted opp-discovery-evidence">
+              {`Supporting evidence, not part of the rule: ${String(selection.evidence.espnRising)} of ` +
+                `${String(selection.evidence.espnMeasured)} with a measured ESPN 7-day change are rising on ESPN; ` +
+                `${String(selection.evidence.sleeperPositive)} of ${String(selection.evidence.sleeperMeasured)} ` +
+                "with Sleeper counts have positive net adds. Two populations in two units, shown apart; " +
+                "neither changes who passes, and no score combines them."}
+            </p>
+          </div>
+        )}
         {state.opportunity === "role" && (
           <p className="muted opp-order-note">{roleOrderNote(selection)}</p>
+        )}
+
+        {state.espn !== "all" && espnUnavailable !== null && (
+          <Notice title="The ESPN filter in this link cannot be applied to this build.">
+            {espnUnavailable} The board below is shown without it rather than as though no
+            player passed it, and no player is treated as 0% rostered.
+          </Notice>
         )}
 
         {selection.unavailable.length > 0 && (
@@ -528,6 +706,8 @@ export function OpportunityView({
             </div>
           </dl>
         ) : null}
+
+        <EspnFacts bundle={bundle} meta={espnMeta} />
 
         <p className="muted board-note">
           A count is a count. &ldquo;Adds&rdquo; is the number of rosters that added the player

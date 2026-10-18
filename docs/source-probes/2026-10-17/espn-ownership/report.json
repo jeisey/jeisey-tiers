@@ -1,0 +1,119 @@
+{
+  "global_players_route": {
+    "finding": "filter contents ignored: any X-Fantasy-Filter returns the whole universe",
+    "no_filter": {
+      "count_header": "2675",
+      "decoded_bytes": 12577,
+      "rows": 50,
+      "seconds": 0.532,
+      "status": 200,
+      "wire_bytes": 2015
+    },
+    "two_id_filter_limit_2": {
+      "count_header": "0",
+      "decoded_bytes": 2348214,
+      "rows": 11618,
+      "seconds": 0.54,
+      "status": 200,
+      "wire_bytes": 301865
+    }
+  },
+  "identity": {
+    "core_espn_rows": 962,
+    "lookup_status": {
+      "absent": 77,
+      "found": 885
+    },
+    "lookup_status_by_rostered_band": {
+      "<1%": {
+        "absent": 77,
+        "found": 617
+      },
+      ">=1%": {
+        "found": 72
+      },
+      ">=10%": {
+        "found": 196
+      }
+    },
+    "registry_players": 1254
+  },
+  "league_default_route": {
+    "cache_control": "max-age=5",
+    "complete": true,
+    "core_rows": 962,
+    "core_rows_with_percent_started": 962,
+    "count_header": "1052",
+    "decoded_bytes": 2490153,
+    "league_types": {
+      "0": 962
+    },
+    "ownership_date_range_utc": [
+      "2026-10-10T04:30:18+00:00",
+      "2026-10-17T18:30:20+00:00"
+    ],
+    "ownership_dates_older_than_24h_before_probe": 31,
+    "ownership_keys": [
+      "activityLevel",
+      "auctionValueAverage",
+      "auctionValueAverageChange",
+      "averageDraftPosition",
+      "averageDraftPositionPercentChange",
+      "date",
+      "leagueType",
+      "percentChange",
+      "percentOwned",
+      "percentStarted"
+    ],
+    "percent_rostered_range": [
+      0.0,
+      99.93
+    ],
+    "percent_started_range": [
+      0.0,
+      99.75
+    ],
+    "positions": {
+      "1": 131,
+      "16": 32,
+      "2": 244,
+      "3": 382,
+      "4": 205,
+      "5": 58
+    },
+    "rostered_bands": {
+      "<10": 766,
+      "<25": 793,
+      "<50": 828,
+      "<75": 860
+    },
+    "rows": 1052,
+    "seconds": 0.707,
+    "started_above_rostered": 0,
+    "status": 200,
+    "wire_bytes": 463301,
+    "zero_rostered": 128
+  },
+  "probed_at_utc": "2026-10-17T19:19:32+00:00",
+  "scoring_period_sensitivity": {
+    "finding": "scoringPeriodId does not change ownership; none is requested",
+    "rows_differing_from_no_period_request": {
+      "0": 0,
+      "6": 0,
+      "7": 0
+    }
+  },
+  "season": 2026,
+  "season_endpoint": {
+    "current_scoring_period": 6,
+    "decoded_bytes": 201,
+    "status": 200
+  },
+  "universe_comparison": {
+    "global_offense_k_dst_rows_with_ownership": 1052,
+    "global_rows_with_ownership": 2675,
+    "league_default_rows": 1052,
+    "percent_owned_disagreements": 0,
+    "same_ids": true
+  }
+}

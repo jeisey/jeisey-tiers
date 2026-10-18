@@ -10,10 +10,10 @@
  *   A reader who thinks the pick is wrong can see exactly which threshold produced it.
  * - **the reasons are published fields read back in words.** `reasonsFor` in `data/potw.ts`
  *   builds them; nothing in this file writes a sentence about a player.
- * - **no percentage of leagues and no matchup rating.** Two of the three things a waiver card
- *   conventionally shows that this product cannot source. ADR-088 records the four routes that
- *   were checked for a rostered share and why all four are closed; the honest substitute is
- *   the add volume itself, and it is labelled as a count of transactions every time it appears.
+ * - **no percentage of leagues and no matchup rating.** ADR-088 recorded why no rostered share
+ *   could be sourced then; ADR-112 later published ESPN's on the Opportunity Board and the
+ *   card, and deliberately left `potw_selection_v1` and this page unchanged — the pick still
+ *   uses the add volume itself, labelled as a count of transactions every time it appears.
  * - **the third one is now sourced.** The mockup's `ADD MOMENTUM` sparkline was a *data* gap
  *   rather than a rights gap: the retained store had held a daily add/drop snapshot since the
  *   season opened and nothing published a series over them. `behavior_trend_series.json` does,
@@ -671,13 +671,13 @@ export function PotwView({
         not be combined into a score.
       </p>
       <p className="muted board-note">
-        <strong>There is no rostered percentage here, and it is not an omission.</strong> No
-        source this project may publish from reports one: Sleeper documents no ownership field,
-        FantasyPros&rsquo; ownership columns are benchmark-only and may not be redistributed,
-        and ESPN is disabled in the source registry. An add count is availability evidence in
-        the direction that matters — a roster that added a player did not have him, so a player
-        rostered nearly everywhere cannot post a large one — but it recovers no percentage, and
-        nothing on this page claims it does.
+        <strong>Pick of the Week does not use a rostered percentage.</strong> Its selection
+        rule is unchanged by ESPN&rsquo;s rostered %
+        arriving on the Opportunity Board and the player card (ADR-112): those describe ESPN
+        leagues, not yours, and changing who is picked would be a new rule with its own
+        decision. An add count is availability evidence in the direction that matters — a
+        roster that added a player did not have him, so a player rostered nearly everywhere
+        cannot post a large one — and it is shown as a count, never as a percentage.
       </p>
     </section>
   );

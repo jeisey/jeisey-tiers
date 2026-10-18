@@ -2485,3 +2485,85 @@ model, data, artifact, contract, URL parameter or saved-document change.
         runs them.
       - A namesake whose name contains the chosen player's still shows beside him. Precision
         would need a `player=` URL parameter, which is a contract change (ADR-111).
+
+## ESPN roster and start percentages — 2026-10-17 (ADR-112)
+
+On `claude/compassionate-dirac-0wbo39`, from `main` at `912a299`. A new optional source,
+published beside the boards and never used as a value. The intrinsic, ROS, weekly, DraftValue,
+tier and Pick of the Week rules do not read it.
+
+- [x] **Source verification** (`scripts/probe_espn_ownership.py`,
+      `docs/source-probes/2026-10-17/espn-ownership/`):
+      - Route: the league-default route with the verified `X-Fantasy-Filter`. The global
+        `/players` route ignores the filter.
+      - Completeness: the row count must equal the `X-Fantasy-Filter-Player-Count` header.
+      - Scale: 0–100.
+      - `scoringPeriodId` changes nothing.
+      - Identity: all 268 players rostered ≥1% resolve by `espn_id`.
+      - The Disney Terms of Use were reviewed. The **owner decision** to enable is recorded in
+        ADR-112 and in the registry. It is not legal clearance.
+- [x] **Capture** (`ffdraft capture-espn-ownership`; `sources/espn.py`, `ownership/capture.py`):
+      - two requests, with bounded bytes, timeouts and retries;
+      - completeness and row validation;
+      - an append-only hashed snapshot that is validated before writing;
+      - one capture per America/New_York day, with same-day reuse;
+      - cost and RSS reported.
+- [x] **Workflow**: the `daily-refresh` step `espn` runs in season only, skips news slots,
+      honours `skip_capture` and is `continue-on-error`. `validate-market-history` re-hashes the
+      ownership prefix.
+- [x] **Rule `espn_ownership_v1`** (`ownership/history.py`):
+      - registry-first identity, so ESPN adds no player;
+      - six reading states and four start states;
+      - 1-day and 7-day changes in percentage points, with their baseline, span and five
+        change states;
+      - stale after 36 h;
+      - no start change and no ratio.
+- [x] **Artifacts**: `espn_ownership` and `espn_ownership_series` (28 days), both
+      preset-independent, plus their schemas. Also the `ros_build_metadata.espn_ownership`
+      block, validator record and cross checks, serving families, the card section, and the
+      size model.
+- [x] **Opportunity Board**:
+      - an ESPN rost column;
+      - `opportunity=espn|espn7` orderings;
+      - an `espn=lt10|lt25|lt50|lt75` ceiling: strict, current readings only, disabled with a
+        reason on a build that cannot apply it;
+      - the discovery label "Role rising + rostered below N% on ESPN", with per-condition counts
+        and separate supporting evidence;
+      - 12 CSV columns.
+- [x] **Card**:
+      - a *Rostered on ESPN* block in In-season usage;
+      - a lazily loaded two-panel trend with gaps and period rules, focusable points and an
+        exact-readings table.
+- [x] **Retired claims**: "no rostered percentage" in HowItWorks, DataView, PotwView, `potw.ts`
+      and `BehaviorSparkline.tsx`.
+- [x] **Firewall**:
+      - forbidden-feature substrings and lineage;
+      - `test_architecture_boundary` (ownership modules ↛ value packages);
+      - `test_ownership_invariance`: every value artifact is byte-identical with and without
+        ESPN.
+- [x] **Tests**:
+      - pytest: `test_espn_source`, `test_espn_ownership`, `test_ownership_validation` (negative
+        controls), `test_ownership_invariance`, plus workflow and fixture-pipeline updates;
+      - Vitest: `espn.test.ts`, `espn-ui.test.tsx`;
+      - Playwright: `espn.spec.ts`, plus a11y scans with the trend open;
+      - `verify:board` on the new `in-season-no-espn` and `in-season-espn-stale` builds.
+- [x] **Budgets**: `ownershipHistoryAdds` ≤ 15 kB and `ownershipHistoryRepeat` = 0 added to
+      `verify:budget`. All earlier budgets held (see SESSION_STATE).
+- [x] **Visual QA**: `docs/visual-qa/2026-10-17-espn-ownership/` at 320, 390, 390×560, 768, 1024
+      and 1440 px: 0 page overflow, 0 clipped controls, 0 console errors.
+- [x] **Docs**:
+      - ADR-112 and PRD CR-032;
+      - DATA_SOURCES §16.4, §17 and §23; the source registry;
+      - DATA_CONTRACTS §27; OPERATIONS §16.14; UX_SPEC §6A.20;
+      - ARCHITECTURE §14; SECURITY_LICENSE; MODELING; README.
+- [ ] **Not yet verified**, and not blocking this gate:
+      - ESPN's denominator and week for `percentStarted`, the meaning of `ownership.date`, and
+        the window of `percentChange`. The site states the first two as unknown and does not
+        use `percentChange`.
+      - No production build has run with ESPN yet. The first in-season `daily-refresh` after
+        merge is the first live capture.
+      - Changes need retained history: about 1 day before the first 1-day change, and about 7
+        days before the first 7-day change.
+      - The size model's ESPN counts are projected from the probe, not measured on a production
+        bundle.
+      - Firefox and WebKit smoke were not run locally. CI runs them.

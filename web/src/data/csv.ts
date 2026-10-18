@@ -13,6 +13,7 @@
  * quantity that was measured and lost rather than one that was never claimed (ADR-010).
  */
 
+import type { EspnSignal } from "./espn";
 import type { OpportunityCandidate } from "./candidates";
 import type { ArbitrageRecord } from "./contracts";
 import { crossMarketOf, marketsOf } from "./multimarket";
@@ -281,6 +282,50 @@ export function rosRowsToCsv(rows: readonly RosRow[]): string {
  * window is uninterpretable. There is no combined score column, because there is no combined
  * score: adding a rank to a count would invent one.
  */
+/** ESPN's columns in the Opportunity export (ADR-112), in order. */
+export const ESPN_CSV_COLUMNS = [
+  "espn_reading",
+  "espn_percent_rostered",
+  "espn_start_reading",
+  "espn_percent_started",
+  "espn_rostered_change_7d_pp",
+  "espn_rostered_change_7d_reading",
+  "espn_rostered_change_7d_since_utc",
+  "espn_rostered_change_7d_span_hours",
+  "espn_rostered_change_1d_pp",
+  "espn_rostered_change_1d_reading",
+  "espn_observed_at_utc",
+  "espn_current_period",
+] as const;
+
+/**
+ * The ESPN cells for one row. `espn_reading` is the record's own state (`observed`, `stale`,
+ * `not_published`, …), `unavailable` when the build carries no readings and `no_record` when it
+ * carries none for him — so an empty percentage is never mistaken for 0%.
+ */
+export function espnCsvCells(signal: EspnSignal): (string | number | null)[] {
+  if (signal.kind === "unavailable" || signal.kind === "no_record") {
+    return [signal.kind, null, null, null, null, null, null, null, null, null, null, null];
+  }
+  const { record } = signal;
+  const week = record.rostered_change_7d;
+  const day = record.rostered_change_1d;
+  return [
+    record.reading_state,
+    record.percent_rostered,
+    record.start_state,
+    record.percent_started,
+    week.change_pp,
+    week.state,
+    week.baseline_observed_at_utc,
+    week.span_hours,
+    day.change_pp,
+    day.state,
+    record.observed_at_utc,
+    record.espn_current_period,
+  ];
+}
+
 export const OPPORTUNITY_EXPORT_COLUMNS = [
   "season",
   "through_week",
@@ -337,6 +382,9 @@ export const OPPORTUNITY_EXPORT_COLUMNS = [
   // signed gap between the two ranks.
   ...SEASON_CSV_COLUMNS,
   ROS_VS_SEASON_CSV_COLUMN,
+  // ADR-112: ESPN's readings, appended so every earlier column keeps its index. Published
+  // fields copied verbatim, with `espn_reading` naming which absence an empty cell is.
+  ...ESPN_CSV_COLUMNS,
 ] as const;
 
 /**
@@ -460,6 +508,7 @@ export function opportunityRowsToCsv(rows: readonly OpportunityCandidate[]): str
         ...signalCells(candidate),
         ...seasonCsvCells(candidate.season),
         rosVsSeasonPlaces(record.ros_position_rank, candidate.season),
+        ...espnCsvCells(candidate.espn),
       ];
     }),
   );

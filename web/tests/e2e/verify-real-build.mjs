@@ -128,6 +128,26 @@ try {
  * do not run, which is correct; a *present* artifact that disagrees with the page is a
  * failure, which is the whole point of reading it.
  */
+/**
+ * ESPN's roster/start readings (ADR-112). Optional like the series: absent on an older build, or
+ * when no capture fell in the window. A *present* artifact must be what every ESPN cell prints,
+ * and the ESPN ceiling must keep exactly the rows its predicate allows.
+ */
+let espnRecords = null;
+try {
+  espnRecords = JSON.parse(readFileSync(`${dataDir}/espn_ownership.json`, "utf-8")).records;
+} catch {
+  espnRecords = null;
+}
+let espnCellsChecked = 0;
+/** Exactly `formatEspnPercent` in web/src/data/espn.ts: truncated, never rounded up. */
+function espnPercent(value) {
+  if (value === null) return "\u2014";
+  if (value === 0) return "0%";
+  if (value < 10) return `${(Math.floor(value * 10) / 10).toFixed(1)}%`;
+  return `${String(Math.floor(value))}%`;
+}
+
 let behaviorSeries = null;
 try {
   behaviorSeries = JSON.parse(
@@ -1537,6 +1557,53 @@ if (publishedInSeason && opportunityRecords !== null) {
     }
     if (unsigned) faCellsChecked += 1;
   }
+  if (espnRecords !== null) {
+    const byId = new Map(espnRecords.map((record) => [record.player_id, record]));
+    const cells = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) =>
+      rows.map((tr) => {
+        const cell = tr.querySelector('td[data-col="espn"] .signal-cell');
+        return {
+          id: tr.getAttribute("data-player"),
+          kind: cell?.getAttribute("data-kind") ?? null,
+          value: cell?.querySelector(".signal-value")?.textContent?.trim() ?? null,
+        };
+      }),
+    );
+    for (const cell of cells) {
+      const record = byId.get(cell.id);
+      if (record === undefined) {
+        failures.push(`opportunity row ${String(cell.id)}: no espn_ownership record for a board player`);
+        continue;
+      }
+      const hasValue = record.reading_state === "observed" || record.reading_state === "stale";
+      const wantKind = hasValue ? record.reading_state : "absent";
+      if (cell.kind !== wantKind) failures.push(`opportunity row ${String(cell.id)}: ESPN cell is ${String(cell.kind)}, artifact ${record.reading_state}`);
+      if (hasValue && cell.value !== espnPercent(record.percent_rostered)) {
+        failures.push(`opportunity row ${String(cell.id)}: ESPN reads ${String(cell.value)}, artifact ${String(record.percent_rostered)}`);
+      }
+      if (!hasValue && /^\d/.test(cell.value ?? "")) failures.push(`opportunity row ${String(cell.id)}: an absent ESPN reading prints a number`);
+      espnCellsChecked += 1;
+    }
+    // The ceiling keeps exactly the current readings strictly below it — or, on a stale build,
+    // is not applied at all.
+    const usable = rosMetadata?.espn_ownership?.status === "published" && rosMetadata.espn_ownership.stale !== true;
+    await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12&espn=lt50`, { waitUntil: "networkidle" });
+    await page.waitForSelector("table.sheet tbody tr[data-player]");
+    const kept = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) => rows.map((tr) => tr.getAttribute("data-player")));
+    const block = cells.map((cell) => cell.id);
+    const want = usable
+      ? block.filter((id) => {
+          const record = byId.get(id);
+          return record?.reading_state === "observed" && record.percent_rostered < 50;
+        })
+      : block;
+    if (JSON.stringify([...kept].sort()) !== JSON.stringify([...want].sort())) {
+      failures.push(`opportunity ESPN ceiling <50%: ${String(kept.length)} rows shown, the artifact allows ${String(want.length)}`);
+    }
+    await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+    await page.waitForSelector("table.sheet tbody tr[data-player]");
+  }
+
   const unprojectedRows = await page.$$eval(".unprojected-sheet tbody tr", (rows) =>
     rows.map((tr) => ({
       id: tr.getAttribute("data-player-id"),
@@ -2036,6 +2103,8 @@ console.log(JSON.stringify({
   signalPicksChecked,
   oppRowsChecked,
   faCellsChecked,
+  espnRecords: espnRecords === null ? null : espnRecords.length,
+  espnCellsChecked,
   unprojectedRowsChecked,
   breadthRowsChecked,
   oppChartRowsChecked,

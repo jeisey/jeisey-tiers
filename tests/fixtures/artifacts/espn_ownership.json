@@ -1,0 +1,599 @@
+{
+  "schema_version": "1.0",
+  "artifact": "espn_ownership",
+  "record_schema": "espn_ownership_record",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 19,
+  "records": [
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000001",
+      "position": "QB",
+      "espn_id": "4000001",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 31.0,
+      "start_state": "observed",
+      "percent_started": 13.02,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 1.82,
+        "baseline_percent_rostered": 29.18,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 13.08,
+        "baseline_percent_rostered": 17.92,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000002",
+      "position": "RB",
+      "espn_id": "4000002",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 4.2,
+      "start_state": "observed",
+      "percent_started": 1.89,
+      "rostered_change_1d": {
+        "state": "no_baseline_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "no_baseline_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000002-surfaced",
+      "position": "RB",
+      "espn_id": null,
+      "reading_state": "no_espn_id",
+      "observed_at_utc": null,
+      "espn_updated_at_utc": null,
+      "espn_current_period": null,
+      "percent_rostered": null,
+      "start_state": "no_reading",
+      "percent_started": null,
+      "rostered_change_1d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      },
+      "rostered_change_7d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000003",
+      "position": "RB",
+      "espn_id": "4000003",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 0.0,
+      "start_state": "observed",
+      "percent_started": 0.0,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.0,
+        "baseline_percent_rostered": 0.0,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 0.0,
+        "baseline_percent_rostered": 0.0,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000004",
+      "position": "WR",
+      "espn_id": "4000004",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 22.4,
+      "start_state": "observed",
+      "percent_started": 12.1,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.34,
+        "baseline_percent_rostered": 22.06,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 2.46,
+        "baseline_percent_rostered": 19.94,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000005",
+      "position": "WR",
+      "espn_id": "4000005",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 48.9,
+      "start_state": "observed",
+      "percent_started": 20.54,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": -0.88,
+        "baseline_percent_rostered": 49.78,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": -6.34,
+        "baseline_percent_rostered": 55.24,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000006",
+      "position": "WR",
+      "espn_id": "4000006",
+      "reading_state": "not_published",
+      "observed_at_utc": null,
+      "espn_updated_at_utc": null,
+      "espn_current_period": null,
+      "percent_rostered": null,
+      "start_state": "no_reading",
+      "percent_started": null,
+      "rostered_change_1d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      },
+      "rostered_change_7d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000007",
+      "position": "TE",
+      "espn_id": "4000007",
+      "reading_state": "invalid",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": null,
+      "start_state": "not_published",
+      "percent_started": null,
+      "rostered_change_1d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      },
+      "rostered_change_7d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000008",
+      "position": "RB",
+      "espn_id": "4000008",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 7.1,
+      "start_state": "observed",
+      "percent_started": 3.62,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.34,
+        "baseline_percent_rostered": 6.76,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "no_baseline_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000009",
+      "position": "WR",
+      "espn_id": null,
+      "reading_state": "no_espn_id",
+      "observed_at_utc": null,
+      "espn_updated_at_utc": null,
+      "espn_current_period": null,
+      "percent_rostered": null,
+      "start_state": "no_reading",
+      "percent_started": null,
+      "rostered_change_1d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      },
+      "rostered_change_7d": {
+        "state": "no_current_reading",
+        "change_pp": null,
+        "baseline_percent_rostered": null,
+        "baseline_observed_at_utc": null,
+        "span_hours": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000010",
+      "position": "QB",
+      "espn_id": "4000010",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 88.6,
+      "start_state": "observed",
+      "percent_started": 37.21,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.54,
+        "baseline_percent_rostered": 88.06,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 3.87,
+        "baseline_percent_rostered": 84.73,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000011",
+      "position": "TE",
+      "espn_id": "4000011",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 25.0,
+      "start_state": "observed",
+      "percent_started": 11.25,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.64,
+        "baseline_percent_rostered": 24.36,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 4.58,
+        "baseline_percent_rostered": 20.42,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000012",
+      "position": "WR",
+      "espn_id": "4000012",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 10.0,
+      "start_state": "observed",
+      "percent_started": 4.8,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.34,
+        "baseline_percent_rostered": 9.66,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 2.46,
+        "baseline_percent_rostered": 7.54,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000013",
+      "position": "RB",
+      "espn_id": "4000013",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 74.99,
+      "start_state": "observed",
+      "percent_started": 38.24,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.44,
+        "baseline_percent_rostered": 74.55,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 3.17,
+        "baseline_percent_rostered": 71.82,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000014",
+      "position": "QB",
+      "espn_id": "4000014",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 99.1,
+      "start_state": "observed",
+      "percent_started": 53.51,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.54,
+        "baseline_percent_rostered": 98.56,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 3.87,
+        "baseline_percent_rostered": 95.23,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000015",
+      "position": "WR",
+      "espn_id": "4000015",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 3.3,
+      "start_state": "observed",
+      "percent_started": 1.39,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.64,
+        "baseline_percent_rostered": 2.66,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 3.3,
+        "baseline_percent_rostered": 0.0,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000016",
+      "position": "TE",
+      "espn_id": "4000016",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 40.2,
+      "start_state": "observed",
+      "percent_started": 18.09,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.34,
+        "baseline_percent_rostered": 39.86,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 2.46,
+        "baseline_percent_rostered": 37.74,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000020",
+      "position": "WR",
+      "espn_id": "4000020",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 1.5,
+      "start_state": "observed",
+      "percent_started": 0.72,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.44,
+        "baseline_percent_rostered": 1.06,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 1.5,
+        "baseline_percent_rostered": 0.0,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "source_id": "espn_fantasy_ownership",
+      "player_id": "gsis:00-0000021",
+      "position": "RB",
+      "espn_id": "4000021",
+      "reading_state": "observed",
+      "observed_at_utc": "2026-08-18T11:00:00Z",
+      "espn_updated_at_utc": "2026-08-18T10:13:00Z",
+      "espn_current_period": 9,
+      "percent_rostered": 60.0,
+      "start_state": "observed",
+      "percent_started": 30.6,
+      "rostered_change_1d": {
+        "state": "measured",
+        "change_pp": 0.54,
+        "baseline_percent_rostered": 59.46,
+        "baseline_observed_at_utc": "2026-08-17T11:30:00Z",
+        "span_hours": 23.5
+      },
+      "rostered_change_7d": {
+        "state": "measured",
+        "change_pp": 3.87,
+        "baseline_percent_rostered": 56.13,
+        "baseline_observed_at_utc": "2026-08-11T10:00:00Z",
+        "span_hours": 169.0
+      }
+    }
+  ]
+}
