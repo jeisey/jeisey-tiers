@@ -126,8 +126,11 @@ test.describe("the reader's flow", () => {
     await second.getByRole("button", { name: "Create league" }).click();
     await expect(page.getByText("10-team Half PPR", { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/scoring=half&teams=10/);
+    // Polled, not read once after `networkidle`: that load state was reached on the first load
+    // and resolves at once after a client-side switch, so on a fast runner the read ran 43 ms
+    // after the click, before the switch's effect had issued the block's request.
+    await expect.poll(() => requests.some((path) => path.includes("ros_tiers/redraft-10.HALF"))).toBe(true);
     await page.waitForLoadState("networkidle");
-    expect(requests.some((path) => path.includes("ros_tiers/redraft-10.HALF"))).toBe(true);
     const before = requests.length;
     await page.getByRole("radio", { name: /Office/ }).click();
     await expect(page.getByText("12-team PPR", { exact: true })).toBeVisible();
