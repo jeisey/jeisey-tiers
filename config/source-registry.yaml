@@ -461,6 +461,36 @@ sources:
       state: "https://api.sleeper.app/v1/state/nfl"
       players: "https://api.sleeper.app/v1/players/nfl"
       trending_add: "https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=25"
+      trending_drop: "https://api.sleeper.app/v1/players/nfl/trending/drop?lookback_hours=24&limit=100"
+    # ADR-114 (2026-10-21, docs/source-probes/2026-10-21/sleeper-trending-coverage/). Each
+    # trending feed is a descending top-N list capped at 100 rows. Complete daily counts for
+    # the player universe are NOT obtainable from any documented route; the product publishes
+    # each side's observability instead of zero-filling absences.
+    trending_contract:
+      verified_at: "2026-10-21"
+      documented_parameters: ["lookback_hours (default 24)", "limit (default 25)"]
+      feed_ceiling_rows: 100
+      limit_tested: [25, 100, 101, 250, 500, 1000, 5000]
+      limit_result: >-
+        every limit >= 100 returned exactly 100 distinct ids, the same id set as limit=100, on
+        both feeds; limit=25 returned an exact prefix of the limit=100 order
+      windows_tested_hours: [1, 6, 12, 24, 48, 168]
+      window_result: "each window honoured (different counts and floors) and each capped at 100 rows"
+      undocumented_parameters_tested:
+        [offset, page, skip, start, cursor, after, position, season, week, order, sort, min_count]
+      undocumented_parameter_result: >-
+        all answered HTTP 200 and none changed the returned population against bracketing
+        baselines (baseline drift 0 ids); an HTTP 200 is not evidence a parameter works
+      season_selector: none (the platform population is not limited to one season's leagues)
+      absence_rule: >-
+        a player absent from a retrieved feed has an unknown count no greater than that feed's
+        smallest count (its floor); never zero (coverage rule sleeper_top_n_v1)
+      universe_coverage_2026_10_21: >-
+        987 canonical QB/RB/WR/TE with a verified sleeper_id (212 without, 0 ambiguous); add
+        feed observed 83, drop feed 77, both 29 (2.9%), neither 856
+      retained_history: >-
+        76 captures 2026-09-10..2026-10-21, all limit 100 / 24h; 8,864 of 12,032
+        player-snapshot rows (73.7%) were one-sided and had been zero-filled before ADR-114
     roles:
       - current_player_map
       - current_status
@@ -517,7 +547,14 @@ sources:
           `trending/{add,drop}` returns a BARE JSON list of {player_id, count} with no
           envelope and no timestamp. A retained snapshot must record the `lookback_hours`
           and `limit` it REQUESTED, or the counts are uninterpretable later. Both were
-          measured as honoured on 2026-09-02 (limit exactly; 6h vs 24h shared 24 of 25 ids).
+          measured as honoured on 2026-09-02 (limit exactly; 6h vs 24h shared 24 of 25 ids),
+          and the limit as capped at 100 on 2026-10-21 (ADR-114).
+      - id: trending_top_100_ceiling
+        detail: >-
+          Each trending feed returns at most 100 rows. An absence is not a zero: the board
+          publishes per-side states (observed / not_in_feed / no_sleeper_id /
+          ambiguous_sleeper_id / stale / unavailable), an exact net only when both sides were
+          observed, and the feed floor as a labelled upper bound (ADR-114).
       - id: whitespace_in_ids
         detail: >-
           Observed gsis_id values with a leading space (" 00-0035057"). Trim and validate

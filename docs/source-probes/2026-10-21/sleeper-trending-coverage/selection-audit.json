@@ -1,0 +1,117 @@
+{
+  "audit": "behaviour-based selections, live build before and after ADR-114",
+  "build_id": "2026w06-intrinsic-ros-v1-20261021T162324Z",
+  "behaviour_snapshot": "2026-10-21T16:18:29Z (retained capture 2026-10-21T16-18-29Z)",
+  "block": "redraft-12 / PPR",
+  "method": "The live site's served slices, read by the app's own selection code: main at ee863cc on the rows as published (contract 1.2, unobserved sides zero-filled), and this branch on the same rows with each side re-read from the retained capture by resolve_behavior_signals (feed floors: add 38,526, drop 58,977).",
+  "opportunity_rows": 505,
+  "per_side_states": {
+    "not_in_feed/not_in_feed": 370,
+    "not_in_feed/observed": 47,
+    "observed/not_in_feed": 55,
+    "observed/observed": 29,
+    "no_sleeper_id/no_sleeper_id": 4
+  },
+  "rows_published_with_adds_and_zero_filled_drops": 55,
+  "pick_of_the_week": {
+    "main": [
+      {
+        "0": "Bo Nix",
+        "1": "Ollie Gordon II",
+        "2": "Germie Bernard",
+        "3": "Kyle Pitts Sr."
+      },
+      {
+        "0": "C.J. Stroud",
+        "1": "Blake Corum",
+        "2": "Malik Washington",
+        "3": "Michael Mayer"
+      },
+      {
+        "0": "Omar Cooper Jr.",
+        "1": "Hunter Henry"
+      },
+      {
+        "0": "Keenan Allen"
+      },
+      {
+        "0": "Tre Tucker"
+      }
+    ],
+    "branch": [
+      {
+        "0": "Bo Nix",
+        "1": "Ollie Gordon II",
+        "2": "Germie Bernard",
+        "3": "Kyle Pitts Sr."
+      },
+      {
+        "0": "C.J. Stroud",
+        "1": "Blake Corum",
+        "2": "Malik Washington",
+        "3": "Michael Mayer"
+      },
+      {
+        "0": "Omar Cooper Jr.",
+        "1": "Hunter Henry"
+      },
+      {
+        "0": "Keenan Allen"
+      },
+      {
+        "0": "Tre Tucker"
+      }
+    ],
+    "changed": false
+  },
+  "yolo_net_add_bar": {
+    "QB": {
+      "main": {
+        "position": "QB",
+        "pool": 14,
+        "threshold": 71840
+      },
+      "branch": {
+        "position": "QB",
+        "pool": 11,
+        "threshold": 121500
+      }
+    },
+    "RB": {
+      "main": {
+        "position": "RB",
+        "pool": 21,
+        "threshold": 124432
+      },
+      "branch": {
+        "position": "RB",
+        "pool": 16,
+        "threshold": 111854
+      }
+    },
+    "WR": {
+      "main": {
+        "position": "WR",
+        "pool": 22,
+        "threshold": 148088
+      },
+      "branch": {
+        "position": "WR",
+        "pool": 18,
+        "threshold": 126949
+      }
+    },
+    "TE": {
+      "main": {
+        "position": "TE",
+        "pool": 8,
+        "threshold": 117561
+      },
+      "branch": {
+        "position": "TE",
+        "pool": 7,
+        "threshold": 61611
+      }
+    }
+  }
+}

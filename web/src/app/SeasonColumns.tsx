@@ -152,12 +152,7 @@ export function seasonColumns<Row>(
 /** The caption sentence every table with these columns carries, from the build's cutoff. */
 export function seasonCaption(throughWeek: number, scoringLabel: string, unavailable: string | null): string {
   if (unavailable !== null) return `Szn rank, RoS vs Szn, Total pts and Avg pts/g: ${unavailable}`;
-  return (
-    `Szn rank, Total pts and Avg pts/g are actual results through week ${String(throughWeek)} ` +
-    `in ${scoringLabel} scoring, not projections: Szn rank orders every player at the position ` +
-    "who has appeared by points scored (ties share a rank), whichever board lists him; Avg " +
-    "pts/g counts only games he appeared in. RoS vs Szn is Szn rank minus RoS rank in places: " +
-    "+7 means the rest-of-season model ranks him 7 places higher than his production so far, " +
-    "−7 lower. A dash means no appearances or no data."
-  );
+  // The unit and the horizon stay with the table; how the ranks are formed and what the signed
+  // gap means are on the Data tab (ADR-115).
+  return `Szn rank, Total pts and Avg pts/g are actual results through week ${String(throughWeek)} in ${scoringLabel} scoring.`;
 }

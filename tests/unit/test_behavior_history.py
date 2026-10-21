@@ -1,4 +1,4 @@
-"""`behavior_trend_v1`: momentum over the retained behaviour window (ADR-089).
+"""`behavior_trend_v2`: momentum over the retained behaviour window (ADR-089, ADR-114).
 
 The store has held a daily add/drop snapshot since the season opened and the only reader
 resolved ``latest_key``, so a real history reached the board as one 24-hour number. These
@@ -393,12 +393,12 @@ def test_the_history_projects_onto_canonical_ids_and_counts_what_it_cannot(
     assert history.trend_for(_PLAYER) is not None
 
 
-def test_a_capture_that_carried_only_one_feed_still_yields_a_zero_for_the_other() -> None:
-    """The one place a zero *is* correct: the feed reported, and he was in one half of it.
+def test_a_player_in_one_feed_only_has_an_unknown_other_side_not_a_zero() -> None:
+    """ADR-114. Each feed is its own top-100 list, so being in one says nothing of the other.
 
-    A player can be in the top 100 adds and outside the top 100 drops. That is a drop count
-    of zero-or-unknown for that day, and the board has always published it as zero; the
-    series matches, because the union is taken per capture rather than per feed.
+    `behavior_trend_v1` wrote a zero here and called it "the one place a zero is correct".
+    It was not: a player in the top 100 adds and outside the top 100 drops had *some* drop
+    count no larger than the drop feed's smallest, and the zero made his net his whole adds.
     """
     capture = _capture(adds={"1001": 900}, drops={"1002": 4}, at=_NOW)
     observations, _ = observations_from_captures(
@@ -407,7 +407,10 @@ def test_a_capture_that_carried_only_one_feed_still_yields_a_zero_for_the_other(
     )
     alpha = next(item for item in observations if item.player_id == _PLAYER)
     assert alpha.add_count == 900
-    assert alpha.drop_count == 0
+    assert alpha.drop_count is None
+    assert alpha.net_add_count is None
+    bravo = next(item for item in observations if item.player_id == "gsis:00-0000002")
+    assert (bravo.add_count, bravo.drop_count, bravo.net_add_count) == (None, 4, None)
 
 
 # --------------------------------------------------------------------------------------

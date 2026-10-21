@@ -2636,3 +2636,49 @@ Opportunity Board; no model, value, rank, tier, POTW, Trade, My Leagues or WMM o
       smoke not run locally (CI runs them).
 - [ ] **Follow-up (pre-existing):** any Opportunity selection change re-renders every row
       (≈1 s at 1×, 4–6 s at 4× CPU on the size model); the Recent column adds ~10–15% to it.
+
+## Sleeper per-side observability; card controls, bye filter, methodology on Data — 2026-10-21 (ADR-114, ADR-115)
+
+On `claude/magical-maxwell-0s0xat`, from `main` at `ee863cc`. No intrinsic, ROS, weekly, tier or
+DraftValue number changes; behaviour still decides visibility only.
+
+- [x] **Sleeper coverage investigation** (`scripts/probe_sleeper_trending_coverage.py`,
+      `docs/source-probes/2026-10-21/sleeper-trending-coverage/`): official docs list
+      `lookback_hours` and `limit` only; limits up to 5,000 and every window 1–168 h return the
+      same 100 ids; `limit=25` is an exact prefix (a top-N list); 12 undocumented pagination and
+      filter parameters change nothing. Complete daily counts are **not** obtainable; not claimed.
+- [x] **Historical trace**: the 2026-10-17T11:24:45Z retained capture — Allgeier 549,030 adds,
+      absent from the drop feed (floor 17,444), published as +549,030. 73.7% of retained
+      player-snapshot rows were one-sided and zero-filled.
+- [x] **Contract** `inseason_opportunity_record` 1.3 (`add_state`/`drop_state`,
+      `*_count_max`, exact-or-null net), `behavior_trend_series` 2.0 (`behavior_trend_v2`,
+      per-side observations and spans), capture manifest 1.1 (per-feed status, retrieval time,
+      rows, floor, truncation; partial captures retained), `ros_build_metadata.behavior`
+      coverage and floors. 1.0 manifests and 1.2 rows read honestly.
+- [x] **Validator**: `opportunity.behavior_side_state`; per-side series checks; cross-check
+      compares nulls too.
+- [x] **Frontend**: one reader (`data/behavior.ts`) for every surface — table cells, sorts,
+      chart marks, card sentence and readouts, POTW tile and gate, YOLO bar and gate, candidate
+      sorts, CSV (six columns appended), sparkline gaps.
+- [x] **Selection audit on the live build**: Pick of the Week unchanged in all five sets; the YOLO
+      net-add bar changes at every position (`selection-audit.json`).
+- [x] **Card controls** (ADR-115 §1): reproduced (6.41 × 25.77 px overlap at 412×839); fixed by
+      dropping the absolutely-placed head's phone padding and deriving the rail gutter from
+      `--detail-close-size`; 0 overlaps in 160 measurements, smallest gap 8 px; regression test.
+- [x] **Hide bye-week players** (ADR-115 §2): ROS and Start/Sit, `nobye=1`, folded summary,
+      lazy schedule slice on ROS only, filtered before paging/chart/table/counts/export, search
+      empty state, disabled with a reason on a build without a schedule.
+- [x] **Methodology on Data** (ADR-115 §3): Data → *Reading the boards* (lazy); captions and
+      notes trimmed on ROS, Opportunity, Start/Sit, POTW, Trade, Tiers, Arbitrage and the card;
+      copy-placement tests moved to the new home. Audit table in UX_SPEC §6A.22.
+- [x] **Tests**: pytest `test_behavior_observability.py` (23) and updated history/board tests;
+      Vitest `behavior-sides.test.ts`, `bye-filter.test.ts` and updated copy/CSV tests; Playwright
+      `bye.spec.ts`, the control-gap block in `mobile.spec.ts`; `verify:board` now checks every
+      Adds/Drops/Net cell against the bytes.
+- [x] **Budgets**: every budget met, none raised; the size model now models per-side states.
+- [x] **Docs**: ADR-114, ADR-115, PRD CR-034/CR-035, DATA_CONTRACTS §29, DATA_SOURCES §24,
+      source registry, OPERATIONS §16.15, UX_SPEC §6A.22, visual QA.
+- [ ] **Not achieved, by evidence**: complete daily add/drop coverage (Sleeper's 100-row ceiling).
+- [ ] **Follow-up (pre-existing)**: each ROS selection change retains ~2.3 MB of heap after GC
+      (on main too); the bye filter adds a one-time ~6 MB second bundle and no per-cycle growth.
+- [ ] Firefox/WebKit smoke not run locally (CI runs them); no physical-device test.

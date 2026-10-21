@@ -106,13 +106,35 @@
         "matched_players": {"type": ["integer", "null"], "minimum": 0},
         "age_hours": {"type": ["number", "null"], "minimum": 0},
         "degraded_reason": {"type": ["string", "null"]},
+        "coverage_rule": {
+          "type": "string",
+          "description": "ADR-114: `sleeper_top_n_v1` - each feed is a descending top-N list capped at feed_ceiling rows, so a player absent from a retrieved feed has an unknown count no greater than its floor, never a zero."
+        },
+        "feed_ceiling": {"type": "integer", "minimum": 1, "description": "The most rows a trending feed returns whatever limit is requested: 100, measured 2026-10-21."},
+        "add_available": {"type": "boolean", "description": "Whether the add feed was retrieved in the capture behind the board. Tracked independently of the drop feed."},
+        "drop_available": {"type": "boolean"},
+        "add_feed_floor": {"type": ["integer", "null"], "minimum": 0, "description": "The smallest count in the add feed: the upper bound on a player absent from it."},
+        "drop_feed_floor": {"type": ["integer", "null"], "minimum": 0},
+        "add_retrieved_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "drop_retrieved_at_utc": {"type": ["string", "null"], "format": "date-time"},
+        "coverage": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "description": "Coverage of this board's own players, per side: how many distinct published players each feed observed, missed, or could not reach, and how many carry an exact net. Different from raw-feed completeness, which is capped at feed_ceiling.",
+          "properties": {
+            "players": {"type": "integer", "minimum": 0},
+            "add_states": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+            "drop_states": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+            "net_exact": {"type": "integer", "minimum": 0}
+          }
+        },
         "signal_semantics": {"type": "string"},
         "history": {
           "type": ["object", "null"],
           "additionalProperties": true,
           "description": "The retained window behind `behavior_trend_series.json` (ADR-089). Null when no retained observation falls inside the trend window, which withholds the momentum sparkline and nothing else. `snapshot_at_utc` above is the single instant the board's own counts came from; this describes every instant the series draws.",
           "properties": {
-            "rule_version": {"type": "string", "description": "`behavior_trend_v1`."},
+            "rule_version": {"type": "string", "description": "`behavior_trend_v2` (ADR-114); `behavior_trend_v1` before it."},
             "window_days": {"type": "number", "exclusiveMinimum": 0},
             "min_observations": {
               "type": "integer",
@@ -130,6 +152,8 @@
               "minimum": 0,
               "description": "Players the window held snapshots for that did not carry them — days they were outside the feed's top N, which is an unknown count rather than a zero."
             },
+            "players_with_net_trend": {"type": "integer", "minimum": 0, "description": "behavior_trend_v2: players with a net slope, which needs two points with both sides observed."},
+            "players_with_one_sided_points": {"type": "integer", "minimum": 0, "description": "Players with at least one point carrying only one side (in one feed's top 100 and not the other's)."},
             "trend_available": {"type": "boolean"},
             "unresolved_rows": {"type": "integer", "minimum": 0},
             "lookback_hours": {"type": ["integer", "null"]},

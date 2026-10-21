@@ -15,6 +15,8 @@
  * the interface cannot drift apart, and a build that omitted them cannot render at all.
  */
 
+import { sideOf } from "./behavior";
+import { applyByeFilter, rosByeSchedule, type ByeSchedule } from "./bye";
 import {
   readAvailability,
   rosActionable,
@@ -145,13 +147,23 @@ export interface InSeasonInput {
  */
 export interface BehaviorMomentum {
   readonly record: BehaviorTrendSeriesRecord;
-  /** Ascending. One entry per retained snapshot that carried the player. */
-  readonly points: readonly { readonly at: string; readonly adds: number; readonly drops: number }[];
-  /** Transactions per day, or null when one observation cannot support a direction. */
+  /**
+   * Ascending. One entry per retained snapshot in which either feed carried the player; a side
+   * that feed did not carry is null (ADR-114), never 0.
+   */
+  readonly points: readonly {
+    readonly at: string;
+    readonly adds: number | null;
+    readonly drops: number | null;
+  }[];
+  /** Transactions per day, or null when fewer than two add counts were observed. */
   readonly trend: number | null;
-  /** "over 3 days", "over 18 hours" — never absent when `trend` is present. */
+  /** The add series' own span — "over 3 days", "over 18 hours" — never absent with `trend`. */
   readonly spanLabel: string;
-  /** Snapshots in the window that did not carry this player: days outside the feed's top N. */
+  /**
+   * Snapshots in the window with no observed add count for this player: outside the add feed's
+   * top 100 (or that feed was not retrieved). Unknown counts, never zeros.
+   */
   readonly missing: number;
   /** The largest add count in the series, for a bar scale that is the player's own. */
   readonly peak: number;
@@ -367,7 +379,8 @@ export class InSeasonBundle {
       // Most added first, then by name: there is no value to order them by.
       rows.sort(
         (a, b) =>
-          (b.add_count ?? 0) - (a.add_count ?? 0) || a.display_name.localeCompare(b.display_name),
+          (sideOf(b, "add").count ?? -1) - (sideOf(a, "add").count ?? -1) ||
+          a.display_name.localeCompare(b.display_name),
       );
     }
     this.unprojectedByBlock = unprojectedByBlock;
@@ -594,6 +607,21 @@ export function displayTeam(team: string | null, employment: EmploymentStatus | 
 }
 
 export function selectRosRows(bundle: InSeasonBundle, state: AppState): readonly RosRow[] {
+  return selectRosBoard(bundle, state).rows;
+}
+
+/**
+ * The ROS rows for the reader's filters, and what the bye filter (ADR-115) did to them.
+ *
+ * The bye filter runs here, after position and search and before the actionable split, the
+ * chart's preview cut, the table and the export, so every one of them reads the same rows.
+ * It hides only a row the build's schedule calls a bye; a search never overrides it — the view
+ * says how many it hid and offers to show them.
+ */
+export function selectRosBoard(
+  bundle: InSeasonBundle,
+  state: AppState,
+): { readonly rows: readonly RosRow[]; readonly byeHidden: number; readonly bye: ByeSchedule | null } {
   const leaguePreset = leaguePresetId(state.teams);
   const scoring = SCORING_TO_PRESET[state.scoring];
   const rows: RosRow[] = [];
@@ -606,7 +634,14 @@ export function selectRosRows(bundle: InSeasonBundle, state: AppState): readonly
       season: bundle.seasonStandingFor(scoring, record.player_id),
     });
   }
-  return rows;
+  if (!state.hideBye) return { rows, byeHidden: 0, bye: null };
+  const bye = rosByeSchedule(bundle);
+  if (bye.kind !== "ready") return { rows, byeHidden: 0, bye };
+  // An unsigned player has no club this week, whatever team his record last carried.
+  const filtered = applyByeFilter(rows, true, (row) =>
+    row.availability?.kind === "unsigned" ? "unknown" : bye.stateOf(row.record.team),
+  );
+  return { rows: filtered.shown, byeHidden: filtered.hidden, bye };
 }
 
 /**
@@ -816,13 +851,15 @@ export function behaviorMomentum(
     adds: point.add_count,
     drops: point.drop_count,
   }));
+  // A 1.0 record has no per-side fields because every point was whole (zero-filled).
+  const addObservations = record.add_observations ?? record.observations;
   return {
     record,
     points,
     trend: record.add_trend,
-    spanLabel: spanLabel(record.span_days),
-    missing: Math.max(0, record.snapshots_in_window - record.observations),
-    peak: Math.max(1, ...points.map((point) => point.adds)),
+    spanLabel: spanLabel(record.add_span_days ?? record.span_days),
+    missing: Math.max(0, record.snapshots_in_window - addObservations),
+    peak: Math.max(1, ...points.map((point) => point.adds ?? 0)),
   };
 }
 

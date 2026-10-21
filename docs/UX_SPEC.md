@@ -1401,6 +1401,43 @@ value, rank, tier, role reading or count.
   prints every drop count and the export keeps it), so 1024, 1280 and 1440px keep ≥ 64px of table
   slack. Phones keep every column, scrolled under the pinned name.
 
+### 6A.22 Card controls, the bye filter, and methodology on Data (ADR-114, ADR-115)
+
+* **Card controls on a phone.** The close (✕) and *Expand/Collapse details* are separate targets
+  with at least an 8px gap in both header states, on every tab, after scrolling, and for any name
+  length or badge. The rail's right gutter is derived from the close control's size
+  (`--detail-close-size`), never a hand-tuned number.
+* **Hide bye-week players** (ROS, Start/Sit). A checkbox beside Position, labelled with the week
+  it means ("Hide week 9 byes"); `nobye=1`; folded row prints *Byes hidden*. It hides only what
+  the build's schedule calls a bye for its target week; unknown stays. Filtering runs before the
+  chart cut, paging, the table, the counts and the export; ranks are never renumbered. A line
+  above the table says how many it hid, with *Show bye-week players*; a search that matches only
+  hidden players says so instead of "No players match". A build that cannot answer disables the
+  control with a one-line reason and hides nobody.
+* **Sleeper counts.** A side outside Sleeper's top 100 is a quiet dash (its bound in the label);
+  a one-sided net prints `≥ +N` / `≤ −N` and sorts by that bound; the card says "not in Sleeper's
+  top 100 drops (at most N)". One line under the Opportunity chart states the rule.
+* **Copy placement.** Boards keep a short caption (the table's accessible name and row count),
+  units, horizons, attribution, glyph keys and state lines. General explanations live in Data →
+  *Reading the boards*:
+
+  | Old surface | Now |
+  |---|---|
+  | ROS table caption (6 sentences) | "Rest-of-season board. … Showing N players." → Data: ROS board |
+  | ROS board/table section notes | Removed as duplicates of the caption → Data: ROS board |
+  | ROS legend band sentence | "Tier bands overlap at their edges" → Data: Tier bands |
+  | ROS rank-lane note | "Positional rank, log scale: ■ RoS, ▲ season" → Data: Rank lane |
+  | Season caption (RoS vs Szn definition) | Units and horizon kept → Data: Season to date |
+  | Opportunity section note, table caption, table note, two board notes | One Sleeper line kept → Data: Opportunity Board, Sleeper adds and drops |
+  | Opportunity Recent caption sentence | "Recent: positional rank by total points in W…" → Data: Recent |
+  | Opportunity ESPN change-mechanics sentences | Population line and attribution kept; mechanics already in Data §05b |
+  | Start/Sit section note | "Compare up to 4 players for one slot · PPR · model" → Data: Start/Sit |
+  | Start/Sit board note | Range-bar key kept → Data: Start/Sit |
+  | POTW "How a pick is chosen", "does not use a rostered percentage" | Data: Pick of the Week |
+  | Trade floor/ceiling sentence, excluded-players paragraph, returning note | Horizon and setting kept → Data: Trade |
+  | Card: "A count of transactions…", role-rail note, moves-strip note, surfaced note | Glyph key, axis and one state line kept → Data: Player card |
+  | Tier / Arbitrage table captions and the arbitrage note | Short captions kept → Data: Draft boards |
+
 ## 7. Tables
 
 ### 7.1 Tier table columns

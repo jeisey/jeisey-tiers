@@ -40,13 +40,12 @@ import { formatRange, formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rankChangeLabel, type RosRow } from "../data/ros";
 import { positionalRankAccessor, seasonColumns } from "./SeasonColumns";
 
-export const ROS_TABLE_CAPTION =
-  "Rest-of-season board. Every ROS column is a rest-of-season quantity computed at the cutoff " +
-  "week shown above — none of them is the preseason value of the same name. Sorting " +
-  "re-orders these rows without changing the published ROS rank, which is the model's rank " +
-  "and is not adjusted for injuries. Positional ranks sort within each position. The mark " +
-  "beside a name is the availability reading (roster code, injury designation, or a reviewed " +
-  "season-ending report): it decides what is actionable, and is no input to any number here.";
+/**
+ * The table's caption: what the table is and how many rows it holds. What each column means —
+ * a cutoff quantity, the model's unrenumbered rank, the availability mark — is on the Data tab
+ * under "Reading the boards" (ADR-115), not repeated above every table.
+ */
+export const ROS_TABLE_CAPTION = "Rest-of-season board.";
 
 interface Scale {
   readonly min: number;
@@ -339,8 +338,7 @@ export function RosTable({
         <caption>
           {ROS_TABLE_CAPTION}{" "}
           {seasonNote === undefined ? "" : `${seasonNote} `}
-          {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}. `}
-          Interval and uncertainty bars are scaled against the widest on the rows shown.
+          {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}.`}
         </caption>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (

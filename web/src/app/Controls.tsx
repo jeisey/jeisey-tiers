@@ -294,6 +294,7 @@ export function settingsSummary(
   state: AppState,
   modeSwitch: boolean,
   league: string | null = null,
+  byeFilter = false,
 ): readonly string[] {
   const items: string[] = [
     state.scoring === "half" ? "Half" : state.scoring.toUpperCase(),
@@ -303,6 +304,8 @@ export function settingsSummary(
   if (league !== null) return [...items, league];
   items.push(state.position === "all" ? "All positions" : POSITION_LABELS[state.position]);
   if (state.search !== "") items.push(`“${state.search}”`);
+  // ADR-115: on a board the bye filter applies to, a hidden-byes board says so while folded.
+  if (byeFilter && state.hideBye) items.push("Byes hidden");
   if (modeSwitch && state.mode !== "auto") {
     items.push(state.mode === "draft" ? "Draft mode" : "In-season mode");
   }
@@ -316,6 +319,7 @@ export function Controls({
   availableTeams,
   search,
   league,
+  byeFilter,
 }: {
   readonly state: AppState;
   readonly onChange: (next: Partial<AppState>) => void;
@@ -332,6 +336,8 @@ export function Controls({
    * and search, which no league view reads, are not shown.
    */
   readonly league?: string | null | undefined;
+  /** ADR-115: the bye filter, on the two boards it applies to; absent everywhere else. */
+  readonly byeFilter?: ByeFilterProps | undefined;
 }): React.JSX.Element {
   const locked = league !== null && league !== undefined;
   return (
@@ -372,7 +378,7 @@ export function Controls({
           </span>
         </p>
       ) : (
-        <LeagueFreeControls state={state} onChange={onChange} search={search} />
+        <LeagueFreeControls state={state} onChange={onChange} search={search} byeFilter={byeFilter} />
       )}
     </div>
   );
@@ -382,10 +388,12 @@ function LeagueFreeControls({
   state,
   onChange,
   search,
+  byeFilter,
 }: {
   readonly state: AppState;
   readonly onChange: (next: Partial<AppState>) => void;
   readonly search?: SearchTriggerProps | undefined;
+  readonly byeFilter?: ByeFilterProps | undefined;
 }): React.JSX.Element {
   return (
     <>
@@ -402,12 +410,67 @@ function LeagueFreeControls({
           onChange({ position });
         }}
       />
+      {byeFilter !== undefined && (
+        <ByeFilter
+          {...byeFilter}
+          on={state.hideBye}
+          onToggle={(hideBye) => {
+            onChange({ hideBye });
+          }}
+        />
+      )}
       {search !== undefined && (
         <div className="control control-spacer">
           <SearchTrigger {...search} />
         </div>
       )}
     </>
+  );
+}
+
+export interface ByeFilterProps {
+  /** The week "bye" means: the build's target week. Null when the build cannot say. */
+  readonly week: number | null;
+  /** Why the filter cannot be applied on this build, or null when it can. */
+  readonly unavailable: string | null;
+}
+
+/**
+ * "Hide bye-week players" (ADR-115): a checkbox in the segmented controls' frame, so it reads
+ * as one more filter rather than a setting. The week it means is in its label; a build whose
+ * schedule cannot answer disables it and says why in one line, and a link that asked for it
+ * keeps asking — the rows simply stay visible.
+ */
+function ByeFilter({
+  week,
+  unavailable,
+  on,
+  onToggle,
+}: ByeFilterProps & { readonly on: boolean; readonly onToggle: (on: boolean) => void }): React.JSX.Element {
+  const disabled = unavailable !== null;
+  return (
+    <div className="control">
+      <span className="control-label" aria-hidden="true">
+        Byes
+      </span>
+      <label className="bye-filter" data-disabled={disabled || undefined}>
+        <input
+          type="checkbox"
+          checked={on && !disabled}
+          disabled={disabled}
+          aria-describedby={disabled ? "bye-filter-reason" : undefined}
+          onChange={(event) => {
+            onToggle(event.target.checked);
+          }}
+        />
+        <span>{week === null ? "Hide bye-week players" : `Hide week ${String(week)} byes`}</span>
+      </label>
+      {disabled && (
+        <span className="bye-filter-reason muted" id="bye-filter-reason">
+          {`Unavailable: ${unavailable}`}
+        </span>
+      )}
+    </div>
   );
 }
 

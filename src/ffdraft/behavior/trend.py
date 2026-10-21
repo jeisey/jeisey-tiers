@@ -33,12 +33,24 @@ more rosters adding him each day. `phase5_trend_v1` negates its slope because a 
 means a player is getting more expensive; there is no such inversion here, because a bigger
 add count is straightforwardly more interest. Do not "fix" this to match the market module.
 
-**The feed is a top-N list, so an absence is not a zero.** Sleeper returns the 100 most-added
-players and nothing else, so a player outside it on a given day has a count somewhere in
-``[0, the smallest count that did appear]`` — unknown, not zero. A snapshot that did not carry
-the player therefore produces **no point**, and the record publishes ``snapshots_in_window``
-beside ``observations`` so a reader can see the difference. Filling those days with zero would
-manufacture a collapse in interest out of a player leaving a leaderboard.
+**Each feed is a top-N list, so an absence is not a zero — on either side.** Sleeper returns
+the 100 most-added players and, separately, the 100 most-dropped, and nothing else (ADR-114
+measured the ceiling). A player outside a feed on a given day has a count somewhere in
+``[0, the smallest count that did appear]`` — unknown, not zero. ``behavior_trend_v1`` applied
+that rule to the *point* but not to its sides: a player in the add feed and not the drop feed
+got a point with ``drop_count = 0``, so his net that day was his whole add count, and a player
+in the drop feed only got ``add_count = 0``, which entered his add slope as a real zero.
+
+``behavior_trend_v2`` (this module) keeps each side's observability apart:
+
+* a point exists when **either** feed carried the player; each side is ``None`` when its feed
+  did not carry him (or was not retrieved);
+* ``add_trend`` is fitted over the points whose **add** side was observed, and is published
+  with that series' own count and span (``add_observations``, ``add_span_days``);
+* ``net_trend`` is fitted over the points where **both** sides were observed, with
+  ``net_observations`` and ``net_span_days`` — a net is only a measurement when both of its
+  terms are;
+* a gap is a gap: no unobserved side is filled, interpolated or imputed.
 """
 
 from __future__ import annotations
@@ -53,6 +65,7 @@ from ffdraft.timeutil import isoformat_utc
 __all__ = [
     "BEHAVIOR_TREND_RULE",
     "BEHAVIOR_TREND_RULE_VERSION",
+    "ONE_SIDED_POINTS",
     "SINGLE_OBSERVATION",
     "SPARSE_FEED_COVERAGE",
     "BehaviorObservation",
@@ -63,11 +76,16 @@ __all__ = [
     "compute_behavior_trends",
 ]
 
-BEHAVIOR_TREND_RULE_VERSION = "behavior_trend_v1"
+BEHAVIOR_TREND_RULE_VERSION = "behavior_trend_v2"
 
-#: A record carrying one observation. Not a defect and not a degradation — the series is
-#: young, or the player entered the feed today — but a consumer must not print a direction.
+#: A record whose add series has fewer than two observations. Not a defect and not a
+#: degradation — the series is young, or the player entered the feed today — but a consumer
+#: must not print a direction.
 SINGLE_OBSERVATION = "single_observation"
+
+#: Some point carries only one side: the player was in one feed's top 100 and not the
+#: other's, so that instant has no net (ADR-114).
+ONE_SIDED_POINTS = "one_sided_points"
 
 #: The window held snapshots this player did not appear in, so the slope is fitted over the
 #: days he was inside the feed's top N rather than over the whole window.
@@ -98,8 +116,9 @@ class BehaviorTrendRule:
                 "presented without the span it was measured over"
             ),
             "absence_is_not_zero": (
-                "the feed is a top-N list, so a snapshot that did not carry the player "
-                "produces no point rather than a zero"
+                "each feed is a top-N list, so a side the feed did not carry is null rather "
+                "than zero; add_trend is fitted over observed add counts and net_trend over "
+                "points where both sides were observed, each with its own count and span"
             ),
         }
 
@@ -109,20 +128,27 @@ BEHAVIOR_TREND_RULE = BehaviorTrendRule()
 
 @dataclass(frozen=True, slots=True)
 class BehaviorObservation:
-    """One player's add and drop counts at one retained instant."""
+    """One player's add and drop counts at one retained instant.
+
+    A side is ``None`` when its feed did not carry him at that instant — outside its top 100,
+    or not retrieved. ``None`` is never read as zero.
+    """
 
     player_id: str
     observed_at: datetime
-    add_count: int
-    drop_count: int
+    add_count: int | None
+    drop_count: int | None
 
     @property
-    def net_add_count(self) -> int:
-        """Adds minus drops.
+    def net_add_count(self) -> int | None:
+        """Adds minus drops, only when both were observed.
 
         Legitimate for the narrow reason the Opportunity Board already relies on: both sides
-        are the same unit, over the same window, from the same feed, at the same moment.
+        are the same unit, over the same window, from the same feed, at the same moment. With
+        either side unobserved there is no net, only a bound, and this returns ``None``.
         """
+        if self.add_count is None or self.drop_count is None:
+            return None
         return self.add_count - self.drop_count
 
 
@@ -133,10 +159,17 @@ class BehaviorTrendResult:
     player_id: str
     add_trend: float | None
     net_trend: float | None
+    #: Points, of either side.
     observations: int
     observation_days: int
     span_days: float
     snapshots_in_window: int
+    #: The add series ``add_trend`` was fitted over: its points and its span.
+    add_observations: int = 0
+    add_span_days: float = 0.0
+    #: The points with both sides observed, which ``net_trend`` was fitted over.
+    net_observations: int = 0
+    net_span_days: float = 0.0
 
     @property
     def missing_snapshots(self) -> int:
@@ -146,10 +179,12 @@ class BehaviorTrendResult:
     @property
     def quality_flags(self) -> tuple[str, ...]:
         flags: list[str] = []
-        if self.observations < BEHAVIOR_TREND_RULE.min_observations:
+        if self.add_observations < BEHAVIOR_TREND_RULE.min_observations:
             flags.append(SINGLE_OBSERVATION)
         if self.missing_snapshots > 0:
             flags.append(SPARSE_FEED_COVERAGE)
+        if self.net_observations < self.observations:
+            flags.append(ONE_SIDED_POINTS)
         return tuple(flags)
 
 
@@ -208,34 +243,55 @@ def compute_behavior_trends(
 
     results: dict[str, BehaviorTrendResult] = {}
     for player_id, points in grouped.items():
-        ordered = sorted(points, key=lambda item: (item.observed_at, item.add_count))
+        ordered = sorted(points, key=lambda item: (item.observed_at, item.add_count or 0))
         days = {observation.observed_at.date() for observation in ordered}
-        span = (ordered[-1].observed_at - ordered[0].observed_at).total_seconds() / 86400.0
-        add_trend: float | None = None
-        net_trend: float | None = None
-        if len(ordered) >= rule.min_observations:
-            origin = ordered[0].observed_at
-            xs = [
-                (observation.observed_at - origin).total_seconds() / 86400.0
-                for observation in ordered
-            ]
-            adds = _ols_slope(xs, [float(item.add_count) for item in ordered])
-            nets = _ols_slope(xs, [float(item.net_add_count) for item in ordered])
-            add_trend = None if adds is None else round(adds, 4)
-            net_trend = None if nets is None else round(nets, 4)
+        adds = [
+            (item.observed_at, item.add_count) for item in ordered if item.add_count is not None
+        ]
+        nets = [
+            (item.observed_at, item.net_add_count)
+            for item in ordered
+            if item.net_add_count is not None
+        ]
+        add_trend, add_span = _fit(adds, rule)
+        net_trend, net_span = _fit(nets, rule)
         results[player_id] = BehaviorTrendResult(
             player_id=player_id,
             add_trend=add_trend,
             net_trend=net_trend,
             observations=len(ordered),
             observation_days=len(days),
-            span_days=span,
+            span_days=_span(ordered[0].observed_at, ordered[-1].observed_at),
             # A player can only be missing from snapshots that were actually taken, so the
             # floor is his own observation count: a caller that passes no snapshot times
             # gets "every snapshot carried him" rather than a negative absence.
             snapshots_in_window=max(snapshots_in_window, len(ordered)),
+            add_observations=len(adds),
+            add_span_days=add_span,
+            net_observations=len(nets),
+            net_span_days=net_span,
         )
     return results
+
+
+def _span(first: datetime, last: datetime) -> float:
+    return (last - first).total_seconds() / 86400.0
+
+
+def _fit(
+    series: Sequence[tuple[datetime, int]],
+    rule: BehaviorTrendRule,
+) -> tuple[float | None, float]:
+    """A slope over one side's own observations, and the span it was measured over."""
+    if not series:
+        return None, 0.0
+    span = _span(series[0][0], series[-1][0])
+    if len(series) < rule.min_observations:
+        return None, span
+    origin = series[0][0]
+    xs = [(moment - origin).total_seconds() / 86400.0 for moment, _ in series]
+    slope = _ols_slope(xs, [float(value) for _, value in series])
+    return (None if slope is None else round(slope, 4)), span
 
 
 def _aware(moment: datetime, reference: datetime) -> datetime:
@@ -300,6 +356,18 @@ def behavior_series_records(
                 "span_days": round(result.span_days, 4) if result else 0.0,
                 "add_trend": result.add_trend if result else None,
                 "net_trend": result.net_trend if result else None,
+                "add_observations": (
+                    result.add_observations
+                    if result
+                    else sum(1 for point in points if point.add_count is not None)
+                ),
+                "add_span_days": round(result.add_span_days, 4) if result else 0.0,
+                "net_observations": (
+                    result.net_observations
+                    if result
+                    else sum(1 for point in points if point.net_add_count is not None)
+                ),
+                "net_span_days": round(result.net_span_days, 4) if result else 0.0,
                 "quality_flags": list(result.quality_flags) if result else [],
                 "points": [
                     {
@@ -323,7 +391,11 @@ def behavior_trend_summary(
 ) -> dict[str, object]:
     """Counts for the build metadata, in the shape the market summary already uses."""
     with_trend = [result for result in results.values() if result.add_trend is not None]
+    with_net = [result for result in results.values() if result.net_trend is not None]
     sparse = [result for result in results.values() if result.missing_snapshots > 0]
+    one_sided = [
+        result for result in results.values() if result.net_observations < result.observations
+    ]
     return {
         "rule_version": rule.version,
         "window_days": rule.window_days,
@@ -332,5 +404,7 @@ def behavior_trend_summary(
         "players": len(results),
         "players_with_trend": len(with_trend),
         "players_with_sparse_coverage": len(sparse),
+        "players_with_net_trend": len(with_net),
+        "players_with_one_sided_points": len(one_sided),
         "trend_available": bool(with_trend),
     }

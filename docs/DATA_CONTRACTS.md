@@ -1811,3 +1811,50 @@ recent rank, positive when the recent rank is better), `breakout_category` (`una
 record), `breakout_reason`, `breakout_rule_version`, `breakout_games_weeks` (`6|7|8`) and
 `breakout_role_passed` (`snap_share:substantial|target_share:increase`). The prebuilt
 `inseason_opportunity.csv` carries no recent window; the page labels it *season only*.
+
+## 29. Sleeper adds and drops, one side at a time — 2026-10-21 (ADR-114)
+
+### 29.1 `inseason_opportunity_record` 1.3
+
+| Field | Type | Meaning |
+|---|---|---|
+| `add_state`, `drop_state` | enum, required | `observed`, `not_in_feed`, `no_sleeper_id`, `ambiguous_sleeper_id`, `stale`, `unavailable` — how each Sleeper feed saw the player, independently |
+| `add_count`, `drop_count` | integer \| null | Non-null **exactly** when that side is `observed` (a real zero is a count). Null — never 0 — otherwise |
+| `add_count_max`, `drop_count_max` | integer \| null | Set **only** for `not_in_feed`: the feed's smallest count, an inclusive upper bound (each feed is a descending top-N list). One value per side per board, never above an observed count |
+| `net_add_count` | integer \| null | Exact only: both sides `observed`. A one-sided net is a bound a consumer derives and labels (`≥ adds − drop_count_max`, `≤ add_count_max − drops`) |
+| `add_rank`, `drop_rank` | integer \| null | Only for an observed side |
+| `behavior_request_limit` | integer | The request; Sleeper caps each feed at 100 whatever is asked |
+
+A 1.2 row has no states and wrote 0 for an absence; the page reads its 0-with-no-feed-rank as
+`not_in_feed` with no bound. The validator check `opportunity.behavior_side_state` enforces every
+rule in the table.
+
+### 29.2 `behavior_trend_series` 2.0 (`behavior_trend_v2`)
+
+* A point exists when **either** feed carried the player; `add_count`, `drop_count` and
+  `net_add_count` are each nullable, and `net_add_count` is non-null only with both sides.
+* New required fields: `add_observations`, `add_span_days` (the series `add_trend` is fitted over)
+  and `net_observations`, `net_span_days` (`net_trend`'s). `observations` and `span_days` still
+  describe all points. A slope needs two points of its own series.
+* New flag: `one_sided_points`. `single_observation` now means fewer than two observed add counts.
+
+### 29.3 Behaviour capture manifest 1.1 (private store)
+
+Adds `coverage_rule` (`sleeper_top_n_v1`), `feed_ceiling` (100) and `feeds.{add,drop}` with
+`status` (`ok` / `failed` / `empty`), `retrieved_at_utc`, `rows`, `floor`, `truncated` and
+`error`. Retained rows are unchanged. A 1.0 manifest reads as both feeds `ok` at
+`observed_at_utc`, with floors derived from its rows.
+
+### 29.4 `ros_build_metadata.behavior`
+
+Adds `coverage_rule`, `feed_ceiling`, `add_available`, `drop_available`, `add_feed_floor`,
+`drop_feed_floor`, `add_retrieved_at_utc`, `drop_retrieved_at_utc`, and `coverage`
+(`players`, `add_states`, `drop_states`, `net_exact`, over distinct published players). The
+history block adds `players_with_net_trend` and `players_with_one_sided_points`.
+
+### 29.5 CSV
+
+The filtered Opportunity export keeps every earlier column in place — `add_count`, `drop_count`
+and `net_add_count` are now blank, never 0, for an unobserved side or an inexact net — and
+appends `add_state`, `drop_state`, `add_count_at_most`, `drop_count_at_most`,
+`net_add_at_least`, `net_add_at_most`.

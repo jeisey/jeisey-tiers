@@ -40,21 +40,21 @@ import {
   groupRosByTier,
   longAbsenceLabel,
   rosRankDomain,
-  selectRosRows,
+  selectRosBoard,
   splitActionable,
   type InSeasonBundle,
   type RosRow,
   type RosTierGroup,
 } from "../data/ros";
 import { SCORING_LABELS, type AppState } from "../data/state";
+import { ByeNote } from "./ByeNote";
 import { ExportControls } from "./ExportControls";
 import { LongAbsenceBadge } from "./RosTable";
 import { RosTable } from "./RosTable";
 import { seasonCaption } from "./SeasonColumns";
 
-export const ROS_BAND_NOTE =
-  "Rest-of-season tiers are bands, not lines. Membership reproduces across resamples; the " +
-  "exact cut positions do not, so read a player near an edge as belonging to both.";
+/** The legend's label for a band. Why bands overlap is on the Data tab (ADR-115). */
+export const ROS_BAND_NOTE = "Tier bands overlap at their edges";
 
 /** How deep the default board goes. The table below still holds every published row. */
 export const ROS_BOARD_PREVIEW_DEPTH = 100;
@@ -138,7 +138,21 @@ export function RosView({
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
 }): React.JSX.Element {
-  const all = useMemo(() => selectRosRows(bundle, state), [bundle, state]);
+  // ADR-115: the bye filter has already run here, before the split, the chart and the table.
+  const { rows: all, byeHidden, bye } = useMemo(() => selectRosBoard(bundle, state), [bundle, state]);
+  const byeNote = (empty: boolean) => (
+    <ByeNote
+      on={state.hideBye}
+      hidden={byeHidden}
+      week={bye?.kind === "ready" ? bye.targetWeek : null}
+      schedule={bye}
+      search={state.search}
+      empty={empty}
+      onShow={() => {
+        onChange({ hideBye: false });
+      }}
+    />
+  );
   // ADR-101: the default ranking is actionable — a player whose season is over is held back
   // (and searchable, and one click away). Nothing is renumbered: ranks are the model's.
   const { shown: rows, held } = useMemo(
@@ -207,10 +221,7 @@ export function RosView({
   const rankLane: BoardRankLane = {
     domain: rankDomain,
     unit: "Pos rank",
-    note:
-      "Positional rank, log scale, 1 at the left: ■ rest of season, ▲ season to date by " +
-      "points. Each player is ranked within his own position" +
-      (state.position === "all" ? " — QB4 and RB4 are separate standings." : "."),
+    note: "Positional rank, log scale: ■ rest of season, ▲ season to date",
   };
 
   const axis: BoardAxis = {
@@ -236,11 +247,6 @@ export function RosView({
           index="01"
           id="ros-board-heading"
           title={`Rest of season — through week ${String(metadata.through_week)}`}
-          note={
-            `What is left of ${String(metadata.season)}, from weeks 1–` +
-            `${String(metadata.through_week)}. Not the preseason board: another model, another ` +
-            "horizon, another replacement baseline."
-          }
         >
           <button type="button" className="button" onClick={onToggleAll}>
             {allOpen ? "Collapse all tiers" : "Expand all tiers"}
@@ -290,7 +296,9 @@ export function RosView({
           </p>
         </details>
 
-        {groups.length === 0 ? (
+        {groups.length === 0 && byeHidden > 0 && rows.length === 0 ? (
+          byeNote(true)
+        ) : groups.length === 0 ? (
           <Notice title="No players match.">
             {state.search === ""
               ? "This position filter returns nothing for the selected preset."
@@ -378,12 +386,6 @@ export function RosView({
           index="02"
           id="ros-table-heading"
           title="Rest-of-season table"
-          note={
-            "ROS rank is the model's published order — sorting re-orders these rows without " +
-            "changing it, and it is not adjusted for injuries. Szn rank, Total pts and Avg " +
-            "pts/g are what each player has actually scored so far. The mark beside a name is " +
-            "the availability reading (ADR-101), which reached no model input."
-          }
         >
           <ExportControls
             board="ros_tiers"
@@ -396,6 +398,9 @@ export function RosView({
           />
         </SectionHead>
 
+        {/* When the filter hid every match, the board above already says so, once. */}
+        {!(rows.length === 0 && byeHidden > 0) && byeNote(false)}
+
         <AvailabilityNote
           held={held.length}
           seasonOverShown={seasonOverShown}
@@ -406,7 +411,7 @@ export function RosView({
           }}
         />
 
-        {rows.length === 0 ? (
+        {rows.length === 0 && byeHidden > 0 ? null : rows.length === 0 ? (
           <Notice title="No players match.">
             {state.search === ""
               ? "This position filter returns nothing for the selected preset."

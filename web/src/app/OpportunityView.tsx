@@ -29,6 +29,7 @@
  * exception rather than quietly slotted in.
  */
 
+import { describeNet, describeSide, netAdds, sideOf } from "../data/behavior";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { OpportunityBoard, type OpportunityMark } from "../charts/OpportunityBoard";
@@ -218,12 +219,8 @@ function censusText(span: string, census: BreakoutCensus): string {
 function recentCaption(windowKey: RecentWindowKey | null, span: string, unavailable: string | null): string {
   if (unavailable !== null) return `Recent columns: ${unavailable}`;
   if (windowKey === null) return "Season lens: no recent-window columns.";
-  return (
-    `Recent is the positional rank by total points in ${span} among every player at the position ` +
-    "who appeared in those weeks, with points per game and games under it; vs Szn is Szn rank " +
-    "minus Recent rank in places, positive when the recent rank is better. The badge on a name " +
-    "is a descriptive breakout category with its evidence one tap away."
-  );
+  // The window stays with the table; how the rank and the badge are formed is on the Data tab.
+  return `Recent: positional rank by total points in ${span}.`;
 }
 
 function hasActiveFilter(selection: OpportunitySelection): boolean {
@@ -287,10 +284,10 @@ function EspnFacts({
           <dd>{String(meta.captures_in_window ?? 0)}</dd>
         </div>
       </dl>
+      {/* Whose leagues these are, and the attribution, stay beside the numbers (ADR-112); how
+          the changes are measured is on the Data tab (ADR-115). */}
       <p className="muted board-note" data-espn-note="population">
-        {meta.population_statement ?? ""} {meta.start_context_statement ?? ""} Changes are in
-        percentage points against a retained read about 1 or 7 days earlier, with the actual
-        span stated; a player with no such read shows no change. {meta.attribution ?? ""}
+        {meta.population_statement ?? ""} {meta.attribution ?? ""}
       </p>
     </>
   );
@@ -357,12 +354,11 @@ function windowLabel(hours: number | null | undefined): string {
  */
 function markLabel(candidate: OpportunityCandidate, windowText: string): string {
   const record = candidate.row.record;
-  const moves =
-    record.add_count === null || record.add_count === undefined
-      ? "no add or drop counts published"
-      : `${String(record.add_count)} add${record.add_count === 1 ? "" : "s"} and ` +
-        `${String(record.drop_count ?? 0)} drop${record.drop_count === 1 ? "" : "s"} ` +
-        `over the ${windowText} window`;
+  const moves = !record.behavior_available
+    ? "no add or drop counts published"
+    : `${describeSide(sideOf(record, "add"), "add")} and ` +
+      `${describeSide(sideOf(record, "drop"), "drop")}, ${describeNet(record)}, ` +
+      `over the ${windowText} window`;
   const role = ` Role: ${roleCell(candidate.role, record.position).sentence}`;
   const espn = candidate.espn.kind === "unavailable" ? "" : ` ESPN: ${espnCell(candidate.espn).sentence}`;
   return (
@@ -467,9 +463,9 @@ export function OpportunityView({
           positionRank: row.record.ros_position_rank,
           displayName: row.record.display_name,
           rosValue: rosValue(row.record),
-          addCount: row.record.add_count ?? null,
-          dropCount: row.record.drop_count ?? null,
-          netAddCount: row.record.net_add_count ?? null,
+          addCount: sideOf(row.record, "add").count,
+          dropCount: sideOf(row.record, "drop").count,
+          net: netAdds(row.record),
           role: roleCell(candidate.role, row.record.position),
           surfaced: row.record.outside_tier_board,
           badges: (
@@ -570,11 +566,6 @@ export function OpportunityView({
           index="01"
           id="opportunity-heading"
           title={`Opportunity — through week ${String(metadata.through_week)}`}
-          note={
-            "Rest-of-season value beside fantasy-market behaviour. Adds and drops are " +
-            "transactions over the window shown — not a price, not a rank, and never " +
-            "combined with a value."
-          }
         >
           <PanelToggle
             className="opp-options-toggle"
@@ -894,19 +885,12 @@ export function OpportunityView({
 
         <EspnFacts bundle={bundle} meta={espnMeta} />
 
-        <p className="muted board-note">
-          A count is a count. &ldquo;Adds&rdquo; is the number of rosters that added the player
-          inside the requested window, as the source reported it. The source publishes no
-          observation time of its own, so the time above is when the snapshot was retrieved,
-          not a claim about when the transactions happened.
-        </p>
-        <p className="muted board-note">
-          Four readings sit side by side and are never combined: rest-of-season value (the
-          model), role (observed: the position&rsquo;s leading measure, latest game against the
-          average of earlier games), add momentum (the published slope of the add count over
-          the retained window, with its span) and the next game (sportsbook context read by no
-          model; nothing here rates an opponent). A filter tests one of them at a time.
-        </p>
+        {/* ADR-114: the one state a reader needs to read a dash or a "≥" in the count columns. */}
+        {available && (
+          <p className="muted board-note" data-behavior-note="coverage">
+            {`Sleeper lists its top 100 adds and top 100 drops (${windowText}). A dash is outside that list, not zero; a net marked ≥ is a bound.`}
+          </p>
+        )}
       </section>
 
       <section className="section" aria-labelledby="opportunity-table-heading">
@@ -914,10 +898,6 @@ export function OpportunityView({
           index="02"
           id="opportunity-table-heading"
           title="Opportunity table"
-          note={
-            "Every rest-of-season column is copied from the rest-of-season board unchanged. " +
-            "The mark beside a name is annotation and reached no model input."
-          }
         >
           <ExportControls
             board="inseason_opportunity"
@@ -1119,8 +1099,12 @@ function UnprojectedSection({
                       <span className="muted">{recentDetail(recent)}</span>
                     </td>
                   )}
-                  <td className="num">{formatCount(record.add_count)}</td>
-                  <td className="num">{formatCount(record.drop_count)}</td>
+                  <td className="num" title={describeSide(sideOf(record, "add"), "add")}>
+                    {formatCount(sideOf(record, "add").count)}
+                  </td>
+                  <td className="num" title={describeSide(sideOf(record, "drop"), "drop")}>
+                    {formatCount(sideOf(record, "drop").count)}
+                  </td>
                   <td className="muted">
                     {reading.kind === "unsigned"
                       ? "Unsigned free agent · no projection"

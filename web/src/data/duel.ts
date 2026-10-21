@@ -20,6 +20,7 @@
  * every combination is a probability over them.
  */
 
+import { applyByeFilter, weekByeState } from "./bye";
 import type {
   RosWeeklyMetadata,
   ScoringPreset,
@@ -344,10 +345,24 @@ export interface WeekBoardRow {
  */
 export function selectWeekBoard(
   bundle: InSeasonBundle,
-  state: Pick<AppState, "scoring" | "teams" | "position" | "search">,
+  state: Pick<AppState, "scoring" | "teams" | "position" | "search"> & Partial<Pick<AppState, "hideBye">>,
   order: WeekBoardOrder,
   now?: Date,
 ): readonly WeekBoardRow[] {
+  return selectWeekBoardWithByes(bundle, state, order, now).rows;
+}
+
+/**
+ * The week board and what the bye filter (ADR-115) hid from it. A bye is the weekly build's own
+ * `game_state` for the target week; a line pending, a kicked-off game or an injury is not one.
+ * The ranks are computed before the filter, so hiding byes never renumbers anyone.
+ */
+export function selectWeekBoardWithByes(
+  bundle: InSeasonBundle,
+  state: Pick<AppState, "scoring" | "teams" | "position" | "search"> & Partial<Pick<AppState, "hideBye">>,
+  order: WeekBoardOrder,
+  now?: Date,
+): { readonly rows: readonly WeekBoardRow[]; readonly byeHidden: number } {
   const weekly = bundle.metadata.weekly;
   const scoring = SCORING_TO_PRESET[state.scoring];
   const leaguePreset = leaguePresetId(state.teams);
@@ -372,9 +387,13 @@ export function selectWeekBoard(
       .forEach((record, index) => ranks.set(record.player_id, index + 1));
   }
 
-  const rows = records
+  const matched = records
     .filter((record) => matchesPosition(record.position, state.position))
-    .filter((record) => matchesSearch(record, state.search))
+    .filter((record) => matchesSearch(record, state.search));
+  const { shown, hidden } = applyByeFilter(matched, state.hideBye === true, (record) =>
+    weekByeState(record, weekly),
+  );
+  const rows = shown
     .map((record): WeekBoardRow => {
       const quantiles = quantileValues(record);
       const threshold = startableThreshold(weekly, leaguePreset, scoring, record.position);
@@ -410,13 +429,14 @@ export function selectWeekBoard(
   // the board is a list of choices, and he is not one. He stays on it, muted and labelled.
   const sidelined = (row: WeekBoardRow): number =>
     row.availability.week === "out" || row.availability.week === "unavailable" ? 1 : 0;
-  return rows.sort(
+  const sorted = rows.sort(
     (a, b) =>
       sidelined(a) - sidelined(b) ||
       key(b) - key(a) ||
       (b.record.quantiles?.q50 ?? -Infinity) - (a.record.quantiles?.q50 ?? -Infinity) ||
       a.record.player_id.localeCompare(b.record.player_id),
   );
+  return { rows: sorted, byeHidden: hidden };
 }
 
 /** One column of the week board as the reader sorted it: which, and which way. */

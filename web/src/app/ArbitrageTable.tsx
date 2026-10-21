@@ -39,11 +39,8 @@ import {
 } from "../data/multimarket";
 import type { ArbitrageRow } from "../data/model";
 
-export const ARBITRAGE_TABLE_CAPTION =
-  "Deterministic market-gap board: the model's fair rank compared with the selected ADP " +
-  "market. Columns appear only for the markets this build actually published. " +
-  "Confidence describes how much draft evidence stands behind the price, not how likely the " +
-  "player is to be a bargain.";
+/** What the table is; what confidence and the gap mean is on the Data tab (ADR-115). */
+export const ARBITRAGE_TABLE_CAPTION = "Market-gap board: fair rank against the selected ADP market.";
 
 interface ColumnMeta {
   readonly align?: "right";

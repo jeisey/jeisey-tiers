@@ -13,9 +13,10 @@
  * quantity that was measured and lost rather than one that was never claimed (ADR-010).
  */
 
+import { netAdds, sideOf } from "./behavior";
 import type { EspnSignal } from "./espn";
 import type { OpportunityCandidate } from "./candidates";
-import type { ArbitrageRecord } from "./contracts";
+import type { ArbitrageRecord, OpportunityRecord } from "./contracts";
 import { crossMarketOf, marketsOf } from "./multimarket";
 import type { ArbitrageRow, TierRow } from "./model";
 import {
@@ -281,7 +282,9 @@ export function rosRowsToCsv(rows: readonly RosRow[]): string {
  *
  * `add_count` and `drop_count` are counts of transactions over the window named in
  * `behavior_lookback_hours`, and the window travels in the file because a count without its
- * window is uninterpretable. There is no combined score column, because there is no combined
+ * window is uninterpretable. Each side carries its state (ADR-114): a count is blank unless
+ * observed, `*_count_at_most` is the feed's floor for a player outside its top 100, and
+ * `net_add_count` is exact or blank — a one-sided net is in `net_add_at_least`/`_at_most`. There is no combined score column, because there is no combined
  * score: adding a rank to a count would invent one.
  */
 /** ESPN's columns in the Opportunity export (ADR-112), in order. */
@@ -327,6 +330,16 @@ export function espnCsvCells(signal: EspnSignal): (string | number | null)[] {
     record.espn_current_period,
   ];
 }
+
+/** ADR-114's per-side columns, in the order `behaviorSideCells` writes them. */
+export const BEHAVIOR_SIDE_CSV_COLUMNS = [
+  "add_state",
+  "drop_state",
+  "add_count_at_most",
+  "drop_count_at_most",
+  "net_add_at_least",
+  "net_add_at_most",
+] as const;
 
 export const OPPORTUNITY_EXPORT_COLUMNS = [
   "season",
@@ -391,6 +404,9 @@ export const OPPORTUNITY_EXPORT_COLUMNS = [
   // column keeps its index. `recent_window` names the lens the reader exported under, and is
   // `season` (every other recent cell empty) when no window was selected.
   ...RECENT_CSV_COLUMNS,
+  // ADR-114: each side's state and the feed-floor bounds, appended so every earlier column
+  // keeps its index. `add_count`/`drop_count` above are now blank, never 0, for an absence.
+  ...BEHAVIOR_SIDE_CSV_COLUMNS,
 ] as const;
 
 /**
@@ -501,9 +517,9 @@ export function opportunityRowsToCsv(
         record.behavior_available ? "true" : "false",
         record.behavior_snapshot_at_utc ?? null,
         record.behavior_lookback_hours ?? null,
-        record.add_count ?? null,
-        record.drop_count ?? null,
-        record.net_add_count ?? null,
+        sideOf(record, "add").count,
+        sideOf(record, "drop").count,
+        exactNet(record),
         record.add_rank ?? null,
         record.drop_rank ?? null,
         record.snap_share_last3 ?? null,
@@ -520,6 +536,7 @@ export function opportunityRowsToCsv(
         rosVsSeasonPlaces(record.ros_position_rank, candidate.season),
         ...espnCsvCells(candidate.espn),
         ...recentCsvCells(lens, candidate.recent, candidate.season, recentMeta),
+        ...behaviorSideCells(record),
       ];
     }),
   );
@@ -567,4 +584,25 @@ export function downloadCsv(filename: string, contents: string): void {
   setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 0);
+}
+
+/** The exact net, blank unless both sides were observed (ADR-114). */
+function exactNet(record: OpportunityRecord): number | null {
+  const net = netAdds(record);
+  return net.kind === "exact" ? net.value : null;
+}
+
+/** `BEHAVIOR_SIDE_CSV_COLUMNS`' cells. Nothing unobserved is a zero; a bound is labelled one. */
+function behaviorSideCells(record: OpportunityRecord): (string | number | null)[] {
+  const adds = sideOf(record, "add");
+  const drops = sideOf(record, "drop");
+  const net = netAdds(record);
+  return [
+    adds.state,
+    drops.state,
+    adds.max,
+    drops.max,
+    net.kind === "exact" ? net.value : net.kind === "bounded" ? net.min : null,
+    net.kind === "exact" ? net.value : net.kind === "bounded" ? net.max : null,
+  ];
 }

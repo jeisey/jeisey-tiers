@@ -33,6 +33,7 @@
  * predicate over one reading; each sort orders by one published quantity.
  */
 
+import { netAdds, netSortValue, sideOf } from "./behavior";
 import type { SeasonStanding } from "./actuals";
 import {
   breakoutCensus,
@@ -478,14 +479,17 @@ function sortCandidates(
     case "adds":
       sorted.sort(
         (a, b) =>
-          (b.row.record.add_count ?? -1) - (a.row.record.add_count ?? -1) || compareByValue(a, b),
+          (sideOf(b.row.record, "add").count ?? -1) - (sideOf(a.row.record, "add").count ?? -1) ||
+          compareByValue(a, b),
       );
       break;
     case "net":
       sorted.sort(
         (a, b) =>
-          (b.row.record.net_add_count ?? Number.NEGATIVE_INFINITY) -
-            (a.row.record.net_add_count ?? Number.NEGATIVE_INFINITY) || compareByValue(a, b),
+          // ADR-114: exact nets and one-sided bounds sort by the number the cell prints.
+          (netSortValue(netAdds(b.row.record)) ?? Number.NEGATIVE_INFINITY) -
+            (netSortValue(netAdds(a.row.record)) ?? Number.NEGATIVE_INFINITY) ||
+          compareByValue(a, b),
       );
       break;
     case "momentum":
@@ -559,10 +563,13 @@ function supportingEvidence(rows: readonly OpportunityCandidate[]): SupportingEv
       espnMeasured += 1;
       if (rising) espnRising += 1;
     }
-    const net = candidate.row.record.net_add_count;
-    if (net !== null && net !== undefined) {
+    // ADR-114: a sign is measured when the net is exact, or when a one-sided bound fixes it.
+    const net = netAdds(candidate.row.record);
+    const sign =
+      net.kind === "exact" ? Math.sign(net.value) : net.kind === "bounded" && (net.min > 0 || net.max < 0) ? Math.sign(net.min) : null;
+    if (sign !== null) {
       sleeperMeasured += 1;
-      if (net > 0) sleeperPositive += 1;
+      if (sign > 0) sleeperPositive += 1;
     }
   }
   return { espnRising, espnMeasured, sleeperPositive, sleeperMeasured };

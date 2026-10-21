@@ -1202,3 +1202,49 @@ as clearance. The obligations this project keeps:
 ESPN's CloudFront answers `cache-control: max-age=300` or `max-age=5` and varies on
 `x-fantasy-filter`.
 
+
+## 24. Sleeper trending feeds — coverage probed 2026-10-21 (ADR-114)
+
+Probe: `scripts/probe_sleeper_trending_coverage.py`; evidence (aggregates only, no player rows)
+in `docs/source-probes/2026-10-21/sleeper-trending-coverage/`. Official documentation
+(`https://docs.sleeper.com/#trending-players`) lists two parameters — `lookback_hours`
+(default 24) and `limit` (default 25) — and no pagination, season, position or per-player
+add/drop route.
+
+### 24.1 What was measured
+
+* **A 100-row ceiling.** `limit` 101, 250, 500, 1000 and 5000 each returned exactly 100 distinct
+  ids — the same id set as `limit=100` — on both `trending/add` and `trending/drop`. Every
+  `lookback_hours` from 1 to 168 is honoured (different counts and floors) and also capped at 100.
+* **A descending top-N list.** Responses are sorted by count, and `limit=25` is an exact prefix of
+  the `limit=100` order on both feeds. That is the evidence behind reading an absence as *at most
+  the smallest count present* (the feed's floor). Ties at the floor may be cut, so the bound is
+  inclusive.
+* **No hidden pagination.** `offset`, `page`, `skip`, `start`, `cursor`, `after`, `position`,
+  `season`, `week`, `order`, `sort` and `min_count` all answered HTTP 200 and none changed the
+  returned population against baselines fetched before and after (baseline drift 0 ids).
+* **Our universe.** The configured-season identity spine (nflverse 2026 + 2025 rosters, the
+  builds' own registry) has 987 QB/RB/WR/TE with a verified `sleeper_id`, 212 without one and 0
+  ambiguous. On the probe's snapshot the add feed observed 83 of them, the drop feed 77, both 29
+  (2.9%), neither 856. 17 add rows and 23 drop rows reached no canonical player (kickers,
+  defences and unmapped ids).
+* **Retained history.** 76 captures from 2026-09-10 to 2026-10-21, all `limit=100` over 24 h:
+  8,864 of 12,032 player-snapshot rows (73.7%) appear in only one feed.
+
+### 24.2 Decision
+
+Complete daily add and drop counts for the player universe are **not obtainable** from any
+documented route, and none is implemented or claimed. The trending route has no season selector,
+so its population is Sleeper's whole platform, not 2026 leagues alone. The product keeps the
+documented 24-hour `limit=100` request, and publishes each side's observability (ADR-114):
+observed, outside the top 100 (with the floor as a labelled upper bound), no or ambiguous Sleeper
+id, stale, or unavailable. A net is exact only with both sides observed. Different windows are
+never combined, retained snapshots are never re-read as calendar-day totals, and old captures are
+read under the same rule, because they made the same 100-row request.
+
+### 24.3 The traced example
+
+The 2026-10-17T11:24:45Z capture (private retained store) carried Tyler Allgeier at 549,030 adds
+and not in the drop feed, whose smallest count was 17,444. The board published his drops as 0 and
+his net as +549,030. Under ADR-114 the same bytes read: drops outside Sleeper's top 100, at most
+17,444; net at least +531,586.

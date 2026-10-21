@@ -1161,6 +1161,56 @@ def _headshot_checks(
     return checks
 
 
+def _behavior_side_violations(records: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Opportunity rows whose per-side behaviour columns contradict their own states.
+
+    A 1.2 row has no states and is skipped: its zeros cannot be told from absences, which is
+    the defect contract 1.3 exists to end, and a validator cannot recover what was not kept.
+    """
+    problems: list[str] = []
+    for record in records:
+        key = str(record.get("player_id"))
+        states = {side: record.get(f"{side}_state") for side in ("add", "drop")}
+        if states["add"] is None and states["drop"] is None:
+            continue
+        for side, state in states.items():
+            count = record.get(f"{side}_count")
+            bound = record.get(f"{side}_count_max")
+            rank = record.get(f"{side}_rank")
+            if (state == "observed") != (count is not None):
+                problems.append(f"{key}: {side}_state={state} {side}_count={count}")
+            if bound is not None and state != "not_in_feed":
+                problems.append(f"{key}: {side}_count_max={bound} with {side}_state={state}")
+            if rank is not None and state != "observed":
+                problems.append(f"{key}: {side}_rank={rank} with {side}_state={state}")
+        both = states["add"] == "observed" and states["drop"] == "observed"
+        if (record.get("net_add_count") is not None) != both:
+            problems.append(
+                f"{key}: net_add_count={record.get('net_add_count')} with states "
+                f"{states['add']}/{states['drop']}",
+            )
+    # The bound is the feed's own floor: one value per side per board, and never above a
+    # count the same feed reported, or "at most N" would contradict a published row.
+    for side in ("add", "drop"):
+        bounds = {
+            int(record[f"{side}_count_max"])
+            for record in records
+            if record.get(f"{side}_count_max") is not None
+        }
+        observed = [
+            int(record[f"{side}_count"])
+            for record in records
+            if record.get(f"{side}_count") is not None and record.get(f"{side}_state")
+        ]
+        if len(bounds) > 1:
+            problems.append(f"{side}_count_max takes {len(bounds)} values; a feed has one floor")
+        if bounds and observed and max(bounds) > min(observed):
+            problems.append(
+                f"{side}_count_max {max(bounds)} exceeds an observed {side}_count {min(observed)}",
+            )
+    return problems
+
+
 def _behavior_series_checks(
     records: Sequence[Mapping[str, Any]],
     stage: str,
@@ -1204,10 +1254,24 @@ def _behavior_series_checks(
         observations = record.get("observations")
         if observations != len(points):
             miscounted.append(f"{key}: observations={observations} points={len(points)}")
-        if len(points) < 2 and (
-            record.get("add_trend") is not None or record.get("net_trend") is not None
-        ):
-            invented.append(key)
+        adds = [point for point in points if point.get("add_count") is not None]
+        nets = [point for point in points if point.get("net_add_count") is not None]
+        if len(adds) < 2 and record.get("add_trend") is not None:
+            invented.append(f"{key}: add_trend over {len(adds)} add point(s)")
+        if len(nets) < 2 and record.get("net_trend") is not None:
+            invented.append(f"{key}: net_trend over {len(nets)} two-sided point(s)")
+        for field, subset in (("add", adds), ("net", nets)):
+            declared = record.get(f"{field}_observations")
+            if declared is not None and declared != len(subset):
+                miscounted.append(f"{key}: {field}_observations={declared} points={len(subset)}")
+            side_span = record.get(f"{field}_span_days")
+            if side_span is not None and len(subset) >= 1:
+                first_side = _parse_iso(str(subset[0].get("observed_at")))
+                last_side = _parse_iso(str(subset[-1].get("observed_at")))
+                if first_side is not None and last_side is not None:
+                    measured_side = (last_side - first_side).total_seconds() / 86400.0
+                    if abs(measured_side - float(side_span)) > _SPAN_TOLERANCE_DAYS:
+                        bad_span.append(f"{key}: {field}_span_days={side_span}")
         span = record.get("span_days")
         if len(points) >= 2 and span is not None:
             first = _parse_iso(stamps[0])
@@ -1225,9 +1289,11 @@ def _behavior_series_checks(
             add = point.get("add_count")
             drop = point.get("drop_count")
             net = point.get("net_add_count")
-            if add is None or drop is None or net is None:
+            if add is None or drop is None:
+                if net is not None:
+                    bad_net.append(f"{key}@{point.get('observed_at')}: net without both sides")
                 continue
-            if int(net) != int(add) - int(drop):
+            if net is None or int(net) != int(add) - int(drop):
                 bad_net.append(f"{key}@{point.get('observed_at')}: {add} - {drop} != {net}")
 
     checks: list[QualityCheck] = []
@@ -1260,11 +1326,11 @@ def _behavior_series_checks(
                 "behavior_trend_series.trend_without_two_points",
                 stage=stage,
                 message=(
-                    "a single observation carries no direction; behavior_trend_v1 estimates "
-                    "a slope from two points and never from one"
+                    "a single observation carries no direction; the behaviour trend rule "
+                    "estimates each slope from two points of its own series and never from one"
                 ),
                 observed="; ".join(invented[:10]),
-                expected="add_trend and net_trend null below two observations",
+                expected="each trend null below two observations of its own series",
             ),
         )
     if bad_span:
@@ -1295,9 +1361,12 @@ def _behavior_series_checks(
             QualityCheck.fail(
                 "behavior_trend_series.net_is_not_the_difference",
                 stage=stage,
-                message="net_add_count must be add_count minus drop_count at that instant",
+                message=(
+                    "net_add_count must be add_count minus drop_count at that instant, and "
+                    "null unless both sides were observed"
+                ),
                 observed="; ".join(bad_net[:10]),
-                expected="net_add_count == add_count - drop_count",
+                expected="net_add_count == add_count - drop_count, or null",
             ),
         )
     if not checks and records:
@@ -1856,8 +1925,28 @@ def _opportunity_checks(
         str(record.get("player_id"))
         for record in records
         if not bool(record.get("behavior_available"))
-        and (record.get("add_count") is not None or record.get("drop_count") is not None)
+        and (
+            record.get("add_count") is not None
+            or record.get("drop_count") is not None
+            or record.get("add_state") not in (None, "stale", "unavailable")
+            or record.get("drop_state") not in (None, "stale", "unavailable")
+        )
     ]
+    side_violations = _behavior_side_violations(records)
+    if side_violations:
+        checks.append(
+            QualityCheck.fail(
+                "opportunity.behavior_side_state",
+                stage=stage,
+                message=(
+                    "a count is published exactly when its side was observed, a bound only "
+                    "when the player was outside a retrieved feed, and a net only when both "
+                    "sides were observed (ADR-114): an unobserved side is never a zero"
+                ),
+                observed="; ".join(side_violations[:10]),
+                expected="count <=> observed; *_count_max <=> not_in_feed; net <=> both observed",
+            ),
+        )
     if stale_behavior:
         checks.append(
             QualityCheck.fail(
@@ -1903,7 +1992,13 @@ def _opportunity_checks(
             ),
         )
     if not (
-        inconsistent or tiered_exceptions or unexplained or stale_behavior or misplaced or coverage
+        inconsistent
+        or tiered_exceptions
+        or unexplained
+        or stale_behavior
+        or side_violations
+        or misplaced
+        or coverage
     ):
         surfaced = sum(1 for record in records if record.get("outside_tier_board"))
         checks.append(
@@ -2485,9 +2580,10 @@ def _behavior_series_cross_checks(
         for field, point_field in (("add_count", "add_count"), ("drop_count", "drop_count")):
             published = row.get(field)
             drawn = newest.get(point_field)
-            if published is None or drawn is None:
+            # A 1.2 board wrote 0 for an unobserved side; only a 1.3 row's null is a claim.
+            if published is None and row.get(field.replace("_count", "_state")) is None:
                 continue
-            if int(published) != int(drawn):
+            if published != drawn:
                 disagreeing.append(f"{player_id}/{field}: board={published} series={drawn}")
 
     checks: list[QualityCheck] = []

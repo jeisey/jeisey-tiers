@@ -114,9 +114,12 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     # 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
     # 1.2 (ADR-102): additive `employment_status` and `model_coverage`; an unprojected row's
     # ranks and values are null.
-    "inseason_opportunity_record": "1.2",
+    # 1.3 (ADR-114): per-side `add_state`/`drop_state` and the feed-floor bounds; an
+    # unobserved side is null rather than 0, and `net_add_count` is exact or null.
+    "inseason_opportunity_record": "1.3",
     "player_headshot_record": "1.0",
-    "behavior_trend_series": "1.0",
+    # 2.0 (ADR-114): a point's unobserved side is null; per-side observation counts and spans.
+    "behavior_trend_series": "2.0",
     # 1.1 (ADR-103): additive optional `drive_breadth`.
     # 1.2 (ADR-104): `drive_breadth` v2 — `weeks` and `change`, QB metric `designed_runs`.
     "player_usage": "1.2",

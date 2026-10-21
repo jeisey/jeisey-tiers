@@ -80,6 +80,11 @@ export interface NeedContext {
    * and when there is no league. The view then loads no block or scoring file at all.
    */
   readonly leagueFiles?: boolean;
+  /**
+   * ADR-115: the ROS board's bye filter is on, so it needs the next-game records — about 2 kB,
+   * fetched only then. Start/Sit reads byes off its own weekly records.
+   */
+  readonly hideBye?: boolean;
 }
 
 /**
@@ -129,6 +134,7 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
       break;
     case "ros":
       wanted.push(`ros_tiers/${block}`, actuals);
+      if (context.hideBye === true) wanted.push("team_matchups/all");
       break;
     case "opportunity":
       wanted.push(

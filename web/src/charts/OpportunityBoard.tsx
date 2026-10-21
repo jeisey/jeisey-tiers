@@ -38,6 +38,7 @@
  * system rather than inventing a second one.
  */
 
+import { formatNet, type NetReading } from "../data/behavior";
 import { useCallback, useMemo, useRef } from "react";
 
 import { useElementWidth } from "../components/useElementWidth";
@@ -58,9 +59,11 @@ export interface OpportunityMark {
   readonly displayName: string;
   /** The median remaining VORP the rank orders by (ADR-097), never the mean. */
   readonly rosValue: number;
+  /** Observed counts only (ADR-114): null when the side was not in its feed's top 100. */
   readonly addCount: number | null;
   readonly dropCount: number | null;
-  readonly netAddCount: number | null;
+  /** Exact with both sides observed, a bound with one, unknown with neither. */
+  readonly net: NetReading;
   /** The position's leading role reading, formatted by the card's own functions. */
   readonly role: RoleCell;
   readonly surfaced: boolean;
@@ -361,21 +364,26 @@ export function OpportunityBoard({
 
                 <span
                   className="opp-net"
+                  data-net={mark.net.kind}
                   data-change={
-                    mark.netAddCount === null
-                      ? "none"
-                      : mark.netAddCount > 0
+                    mark.net.kind === "exact"
+                      ? mark.net.value > 0
                         ? "up"
-                        : mark.netAddCount < 0
+                        : mark.net.value < 0
                           ? "down"
                           : "flat"
+                      : mark.net.kind === "bounded" && mark.net.min > 0
+                        ? "up"
+                        : mark.net.kind === "bounded" && mark.net.max < 0
+                          ? "down"
+                          : "none"
                   }
                 >
-                  {mark.netAddCount === null
-                    ? "—"
-                    : mark.netAddCount > 0
-                      ? `+${String(mark.netAddCount)}`
-                      : String(mark.netAddCount)}
+                  {mark.net.kind === "exact"
+                    ? mark.net.value > 0
+                      ? `+${String(mark.net.value)}`
+                      : String(mark.net.value)
+                    : formatNet(mark.net)}
                 </span>
               </div>
             </li>

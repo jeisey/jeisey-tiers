@@ -1,0 +1,4916 @@
+{
+  "320/puka": {
+    "compact": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 130.05,
+        "x1": 262.41,
+        "y0": 64.84,
+        "y1": 96.84
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 118.44,
+        "x1": 262.41,
+        "y0": 225.56,
+        "y1": 257.56
+      },
+      "gap": 134.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 130.05,
+        "x1": 262.41,
+        "y0": 64.84,
+        "y1": 96.84
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 118.44,
+        "x1": 262.41,
+        "y0": 153.56,
+        "y1": 185.56
+      },
+      "gap": 62.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Puka Nightingale"
+  },
+  "320/pitts": {
+    "compact": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 130.05,
+        "x1": 262.41,
+        "y0": 64.84,
+        "y1": 96.84
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 225.56,
+          "y1": 257.56
+        },
+        "gap": 134.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 118.44,
+        "x1": 262.41,
+        "y0": 225.56,
+        "y1": 257.56
+      },
+      "gap": 134.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 130.05,
+        "x1": 262.41,
+        "y0": 64.84,
+        "y1": 96.84
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 118.44,
+        "x1": 262.41,
+        "y0": 153.56,
+        "y1": 185.56
+      },
+      "gap": 62.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Kyle Pitts Sr."
+  },
+  "320/surfaced": {
+    "compact": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 130.05,
+        "x1": 262.41,
+        "y0": 64.84,
+        "y1": 96.84
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:In-season usage": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 130.05,
+          "x1": 262.41,
+          "y0": 64.84,
+          "y1": 96.84
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 138.84,
+          "y1": 170.84
+        },
+        "gap": 48.23,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 256,
+          "x1": 296,
+          "y0": 50.61,
+          "y1": 90.61
+        },
+        "toggle": {
+          "x0": 118.44,
+          "x1": 262.41,
+          "y0": 138.84,
+          "y1": 170.84
+        },
+        "gap": 48.23,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 118.44,
+        "x1": 262.41,
+        "y0": 138.84,
+        "y1": 170.84
+      },
+      "gap": 48.23,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 130.05,
+        "x1": 262.41,
+        "y0": 64.84,
+        "y1": 96.84
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 256,
+        "x1": 296,
+        "y0": 50.61,
+        "y1": 90.61
+      },
+      "toggle": {
+        "x0": 118.44,
+        "x1": 262.41,
+        "y0": 138.84,
+        "y1": 170.84
+      },
+      "gap": 48.23,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Bijan Robinson (surfaced)"
+  },
+  "320/errors": [],
+  "390/puka": {
+    "compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 73,
+        "y1": 105
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 169.72,
+        "y1": 201.72
+      },
+      "gap": 70.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 73,
+        "y1": 105
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 169.72,
+        "y1": 201.72
+      },
+      "gap": 70.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Puka Nightingale"
+  },
+  "390/pitts": {
+    "compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 73,
+        "y1": 105
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 169.72,
+          "y1": 201.72
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 169.72,
+        "y1": 201.72
+      },
+      "gap": 70.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 73,
+        "y1": 105
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 169.72,
+        "y1": 201.72
+      },
+      "gap": 70.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Kyle Pitts Sr."
+  },
+  "390/surfaced": {
+    "compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 73,
+        "y1": 105
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 73,
+          "y1": 105
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 83,
+          "y1": 115
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          15.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 58.77,
+          "y1": 98.77
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 83,
+          "y1": 115
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          15.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 83,
+        "y1": 115
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        15.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 73,
+        "y1": 105
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 58.77,
+        "y1": 98.77
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 83,
+        "y1": 115
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        15.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Bijan Robinson (surfaced)"
+  },
+  "390/errors": [],
+  "412-pixel7/puka": {
+    "compact": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 222.05,
+        "x1": 354.41,
+        "y0": 72.8,
+        "y1": 104.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 169.52,
+          "y1": 201.52
+        },
+        "gap": 70.96,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 169.52,
+          "y1": 201.52
+        },
+        "gap": 70.96,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 169.52,
+          "y1": 201.52
+        },
+        "gap": 70.96,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 169.52,
+          "y1": 201.52
+        },
+        "gap": 70.96,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 169.52,
+          "y1": 201.52
+        },
+        "gap": 70.96,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 169.52,
+          "y1": 201.52
+        },
+        "gap": 70.96,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 210.44,
+        "x1": 354.41,
+        "y0": 169.52,
+        "y1": 201.52
+      },
+      "gap": 70.96,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 222.05,
+        "x1": 354.41,
+        "y0": 72.8,
+        "y1": 104.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 210.44,
+        "x1": 354.41,
+        "y0": 169.52,
+        "y1": 201.52
+      },
+      "gap": 70.96,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Puka Nightingale"
+  },
+  "412-pixel7/pitts": {
+    "compact": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 222.05,
+        "x1": 354.41,
+        "y0": 72.8,
+        "y1": 104.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 166.72,
+          "y1": 198.72
+        },
+        "gap": 68.16,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 166.72,
+          "y1": 198.72
+        },
+        "gap": 68.16,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 166.72,
+          "y1": 198.72
+        },
+        "gap": 68.16,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 166.72,
+          "y1": 198.72
+        },
+        "gap": 68.16,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 166.72,
+          "y1": 198.72
+        },
+        "gap": 68.16,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 166.72,
+          "y1": 198.72
+        },
+        "gap": 68.16,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 210.44,
+        "x1": 354.41,
+        "y0": 166.72,
+        "y1": 198.72
+      },
+      "gap": 68.16,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 222.05,
+        "x1": 354.41,
+        "y0": 72.8,
+        "y1": 104.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 210.44,
+        "x1": 354.41,
+        "y0": 166.72,
+        "y1": 198.72
+      },
+      "gap": 68.16,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Kyle Pitts Sr."
+  },
+  "412-pixel7/surfaced": {
+    "compact": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 222.05,
+        "x1": 354.41,
+        "y0": 72.8,
+        "y1": 104.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:In-season usage": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 222.05,
+          "x1": 354.41,
+          "y0": 72.8,
+          "y1": 104.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 82.8,
+          "y1": 114.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          15.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 348,
+          "x1": 388,
+          "y0": 58.56,
+          "y1": 98.56
+        },
+        "toggle": {
+          "x0": 210.44,
+          "x1": 354.41,
+          "y0": 82.8,
+          "y1": 114.8
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          15.76
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 210.44,
+        "x1": 354.41,
+        "y0": 82.8,
+        "y1": 114.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        15.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 222.05,
+        "x1": 354.41,
+        "y0": 72.8,
+        "y1": 104.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 348,
+        "x1": 388,
+        "y0": 58.56,
+        "y1": 98.56
+      },
+      "toggle": {
+        "x0": 210.44,
+        "x1": 354.41,
+        "y0": 82.8,
+        "y1": 114.8
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        15.76
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Bijan Robinson (surfaced)"
+  },
+  "412-pixel7/errors": [],
+  "390x560-short/puka": {
+    "compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 61.64,
+        "y1": 93.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 158.36,
+        "y1": 190.36
+      },
+      "gap": 70.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 61.64,
+        "y1": 93.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 110.36,
+        "y1": 142.36
+      },
+      "gap": 22.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Puka Nightingale"
+  },
+  "390x560-short/pitts": {
+    "compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 61.64,
+        "y1": 93.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:Intrinsic value": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Rest of season": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:This week": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Skill tree": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 158.36,
+          "y1": 190.36
+        },
+        "gap": 70.95,
+        "overlap": null,
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 158.36,
+        "y1": 190.36
+      },
+      "gap": 70.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 61.64,
+        "y1": 93.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 110.36,
+        "y1": 142.36
+      },
+      "gap": 22.95,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Kyle Pitts Sr."
+  },
+  "390x560-short/surfaced": {
+    "compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 61.64,
+        "y1": 93.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "tabs": {
+      "compact:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "compact:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 200.05,
+          "x1": 332.41,
+          "y0": 61.64,
+          "y1": 93.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          25.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "false"
+      },
+      "expanded:In-season usage": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 71.64,
+          "y1": 103.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          15.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      },
+      "expanded:Current status": {
+        "close": {
+          "x0": 326,
+          "x1": 366,
+          "y0": 47.41,
+          "y1": 87.41
+        },
+        "toggle": {
+          "x0": 188.44,
+          "x1": 332.41,
+          "y0": 71.64,
+          "y1": 103.64
+        },
+        "gap": -6.41,
+        "overlap": [
+          6.41,
+          15.77
+        ],
+        "closeInView": true,
+        "toggleInView": true,
+        "pageOverflowX": 0,
+        "cardOverflowX": 0,
+        "railOverflowX": 0,
+        "expanded": "true"
+      }
+    },
+    "scrolled": null,
+    "expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 71.64,
+        "y1": 103.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        15.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "scrolled-compact": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 200.05,
+        "x1": 332.41,
+        "y0": 61.64,
+        "y1": 93.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        25.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "false"
+    },
+    "scrolled-expanded": {
+      "close": {
+        "x0": 326,
+        "x1": 366,
+        "y0": 47.41,
+        "y1": 87.41
+      },
+      "toggle": {
+        "x0": 188.44,
+        "x1": 332.41,
+        "y0": 71.64,
+        "y1": 103.64
+      },
+      "gap": -6.41,
+      "overlap": [
+        6.41,
+        15.77
+      ],
+      "closeInView": true,
+      "toggleInView": true,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": "true"
+    },
+    "closedByEscape": true,
+    "focusReturned": "Bijan Robinson (surfaced)"
+  },
+  "390x560-short/errors": [],
+  "768/puka": {
+    "compact": {
+      "close": {
+        "x0": 673.64,
+        "x1": 738,
+        "y0": 141,
+        "y1": 181
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 673.64,
+        "x1": 738,
+        "y0": 141,
+        "y1": 181
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Puka Nightingale"
+  },
+  "768/pitts": {
+    "compact": {
+      "close": {
+        "x0": 673.64,
+        "x1": 738,
+        "y0": 141,
+        "y1": 181
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 673.64,
+        "x1": 738,
+        "y0": 141,
+        "y1": 181
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Kyle Pitts Sr."
+  },
+  "768/surfaced": {
+    "compact": {
+      "close": {
+        "x0": 673.64,
+        "x1": 738,
+        "y0": 141,
+        "y1": 181
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 673.64,
+        "x1": 738,
+        "y0": 141,
+        "y1": 181
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Bijan Robinson (surfaced)"
+  },
+  "768/errors": [],
+  "1024/puka": {
+    "compact": {
+      "close": {
+        "x0": 802.64,
+        "x1": 867,
+        "y0": 37,
+        "y1": 77
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 802.64,
+        "x1": 867,
+        "y0": 37,
+        "y1": 77
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Puka Nightingale"
+  },
+  "1024/pitts": {
+    "compact": {
+      "close": {
+        "x0": 802.64,
+        "x1": 867,
+        "y0": 37,
+        "y1": 77
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 802.64,
+        "x1": 867,
+        "y0": 37,
+        "y1": 77
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Kyle Pitts Sr."
+  },
+  "1024/surfaced": {
+    "compact": {
+      "close": {
+        "x0": 802.64,
+        "x1": 867,
+        "y0": 37,
+        "y1": 77
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 802.64,
+        "x1": 867,
+        "y0": 37,
+        "y1": 77
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Bijan Robinson (surfaced)"
+  },
+  "1024/errors": [],
+  "1440/puka": {
+    "compact": {
+      "close": {
+        "x0": 1150.64,
+        "x1": 1215,
+        "y0": 83,
+        "y1": 123
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 1150.64,
+        "x1": 1215,
+        "y0": 83,
+        "y1": 123
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Puka Nightingale"
+  },
+  "1440/pitts": {
+    "compact": {
+      "close": {
+        "x0": 1150.64,
+        "x1": 1215,
+        "y0": 83,
+        "y1": 123
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 1150.64,
+        "x1": 1215,
+        "y0": 83,
+        "y1": 123
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Kyle Pitts Sr."
+  },
+  "1440/surfaced": {
+    "compact": {
+      "close": {
+        "x0": 1150.64,
+        "x1": 1215,
+        "y0": 83,
+        "y1": 123
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "tabs": {},
+    "scrolled": null,
+    "expanded": null,
+    "scrolled-static": {
+      "close": {
+        "x0": 1150.64,
+        "x1": 1215,
+        "y0": 83,
+        "y1": 123
+      },
+      "toggle": null,
+      "gap": null,
+      "overlap": null,
+      "closeInView": true,
+      "toggleInView": null,
+      "pageOverflowX": 0,
+      "cardOverflowX": 0,
+      "railOverflowX": 0,
+      "expanded": null
+    },
+    "closedByEscape": true,
+    "focusReturned": "Bijan Robinson (surfaced)"
+  },
+  "1440/errors": [],
+  "summary": {
+    "measurements": 178,
+    "withBothControls": 160,
+    "overlaps": [
+      [
+        "320/puka compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/puka compact:Intrinsic value",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/puka compact:Rest of season",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/puka compact:This week",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/puka compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/puka compact:Skill tree",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/puka compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/puka scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts compact:Intrinsic value",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts compact:Rest of season",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts compact:This week",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts compact:Skill tree",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/pitts scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/surfaced compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/surfaced compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/surfaced compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "320/surfaced scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka compact:Intrinsic value",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka compact:Rest of season",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka compact:This week",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka compact:Skill tree",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/puka scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts compact:Intrinsic value",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts compact:Rest of season",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts compact:This week",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts compact:Skill tree",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/pitts scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/surfaced compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/surfaced compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/surfaced compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/surfaced expanded:In-season usage",
+        [
+          6.41,
+          15.77
+        ]
+      ],
+      [
+        "390/surfaced expanded:Current status",
+        [
+          6.41,
+          15.77
+        ]
+      ],
+      [
+        "390/surfaced expanded",
+        [
+          6.41,
+          15.77
+        ]
+      ],
+      [
+        "390/surfaced scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390/surfaced scrolled-expanded",
+        [
+          6.41,
+          15.77
+        ]
+      ],
+      [
+        "412-pixel7/puka compact",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/puka compact:Intrinsic value",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/puka compact:Rest of season",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/puka compact:This week",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/puka compact:In-season usage",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/puka compact:Skill tree",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/puka compact:Current status",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/puka scrolled-compact",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts compact",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts compact:Intrinsic value",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts compact:Rest of season",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts compact:This week",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts compact:In-season usage",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts compact:Skill tree",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts compact:Current status",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/pitts scrolled-compact",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced compact",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced compact:In-season usage",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced compact:Current status",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced expanded:In-season usage",
+        [
+          6.41,
+          15.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced expanded:Current status",
+        [
+          6.41,
+          15.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced expanded",
+        [
+          6.41,
+          15.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced scrolled-compact",
+        [
+          6.41,
+          25.76
+        ]
+      ],
+      [
+        "412-pixel7/surfaced scrolled-expanded",
+        [
+          6.41,
+          15.76
+        ]
+      ],
+      [
+        "390x560-short/puka compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/puka compact:Intrinsic value",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/puka compact:Rest of season",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/puka compact:This week",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/puka compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/puka compact:Skill tree",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/puka compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/puka scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts compact:Intrinsic value",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts compact:Rest of season",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts compact:This week",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts compact:Skill tree",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/pitts scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced compact:In-season usage",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced compact:Current status",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced expanded:In-season usage",
+        [
+          6.41,
+          15.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced expanded:Current status",
+        [
+          6.41,
+          15.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced expanded",
+        [
+          6.41,
+          15.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced scrolled-compact",
+        [
+          6.41,
+          25.77
+        ]
+      ],
+      [
+        "390x560-short/surfaced scrolled-expanded",
+        [
+          6.41,
+          15.77
+        ]
+      ]
+    ],
+    "smallestGap": [
+      "320/puka compact",
+      -6.41
+    ],
+    "pageOverflow": [],
+    "cardOverflow": [],
+    "closeOutOfView": [],
+    "browser": "141.0.7390.37"
+  }
+}

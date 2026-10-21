@@ -23,9 +23,8 @@ import { PositionTag, StatusBadge, TierTag } from "../components/primitives";
 import { formatRange, formatRank, formatValue } from "../data/format";
 import type { TierRow } from "../data/model";
 
-export const TIER_TABLE_CAPTION =
-  "Intrinsic tier board. Fair rank is the published order; sorting this table re-orders the " +
-  "rows without changing it. Every value is read from the tier artifact.";
+/** What the table is; how its rank and bars read is on the Data tab (ADR-115). */
+export const TIER_TABLE_CAPTION = "Intrinsic tier board.";
 
 /**
  * The two micro-glyphs the design source puts in its table cells, drawn as a background
@@ -270,11 +269,7 @@ export function TierTable({
       <table className="sheet">
         <caption>
           {TIER_TABLE_CAPTION}{" "}
-          {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}. `}
-          {/* The design source's own caption for its relative bars, kept because a relative
-              bar without its denominator is the thing that misleads. */}
-          Interval and uncertainty bars are scaled against the widest on the rows shown — a long
-          amber bar means the projection is thin, not that the player is bad.
+          {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}.`}
         </caption>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (

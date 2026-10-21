@@ -31,9 +31,12 @@ export const RECORD_SCHEMA_VERSIONS = {
   // 1.1 (ADR-097): additive `ros_vorp_p50`, the statistic the rank orders by.
   // 1.2 (ADR-102): additive `employment_status` and `model_coverage`; an unprojected row's
   // ranks and values are null, and the bundle keeps such rows apart (`UnprojectedRecord`).
-  inseason_opportunity: "1.2",
+  // 1.3 (ADR-114): per-side `add_state`/`drop_state` and feed-floor bounds; an unobserved side
+  // is null rather than 0, and `net_add_count` is exact or null.
+  inseason_opportunity: "1.3",
   player_headshots: "1.0",
-  behavior_trend_series: "1.0",
+  // 2.0 (ADR-114): a point's unobserved side is null; per-side observation counts and spans.
+  behavior_trend_series: "2.0",
   // 1.1 (ADR-103): additive optional `drive_breadth`.
   // 1.2 (ADR-104): `drive_breadth` v2 — `weeks` and `change`, QB metric `designed_runs`.
   player_usage: "1.2",
@@ -618,6 +621,18 @@ export const MARKET_TREND_SERIES_FIELDS = [
 ] as const satisfies readonly (keyof MarketTrendSeriesRecord)[];
 
 /**
+ * How one Sleeper trending feed saw one player (ADR-114). Each feed is a separate top-100 list,
+ * so `not_in_feed` is an unknown count no greater than the feed's floor — never a zero.
+ */
+export type BehaviorSideState =
+  | "observed"
+  | "not_in_feed"
+  | "no_sleeper_id"
+  | "ambiguous_sleeper_id"
+  | "stale"
+  | "unavailable";
+
+/**
  * One player's retained add/drop history, from the append-only behaviour store (ADR-089).
  *
  * **Behaviour, never a price.** Every number here is a count of roster transactions inside a
@@ -651,15 +666,22 @@ export interface BehaviorTrendSeriesRecord {
   readonly observations: number;
   readonly observation_days: number;
   readonly span_days: number;
-  /** Transactions per day. Positive means rising. Null below two observations. */
+  /** Transactions per day. Positive means rising. Null below two observed add counts. */
   readonly add_trend: number | null;
+  /** Fitted only over points with both sides observed (2.0). */
   readonly net_trend: number | null;
+  /** 2.0 (ADR-114): each trend's own series. Absent on a 1.0 record, where every point is whole. */
+  readonly add_observations?: number;
+  readonly add_span_days?: number;
+  readonly net_observations?: number;
+  readonly net_span_days?: number;
   readonly quality_flags?: readonly string[];
+  /** A side its feed did not carry at that instant is null (2.0), never 0. */
   readonly points: readonly {
     readonly observed_at: string;
-    readonly add_count: number;
-    readonly drop_count: number;
-    readonly net_add_count: number;
+    readonly add_count: number | null;
+    readonly drop_count: number | null;
+    readonly net_add_count: number | null;
   }[];
 }
 
@@ -679,6 +701,10 @@ export const BEHAVIOR_TREND_SERIES_FIELDS = [
   "span_days",
   "add_trend",
   "net_trend",
+  "add_observations",
+  "add_span_days",
+  "net_observations",
+  "net_span_days",
   "quality_flags",
   "points",
 ] as const satisfies readonly (keyof BehaviorTrendSeriesRecord)[];
@@ -1281,9 +1307,17 @@ export interface OpportunityRecord {
   /** The window REQUESTED. Sleeper confirms no window of its own. */
   readonly behavior_lookback_hours?: number | null;
   readonly behavior_request_limit?: number | null;
+  /** Non-null exactly when `add_state` is `observed` (1.3). Null, never 0, for an absence. */
   readonly add_count?: number | null;
   readonly drop_count?: number | null;
+  /** Exact: both sides observed. A one-sided net is a bound — `netAdds` in `data/behavior.ts`. */
   readonly net_add_count?: number | null;
+  /** Contract 1.3 (ADR-114). Absent on a 1.2 row; `data/behavior.ts` reads those honestly. */
+  readonly add_state?: BehaviorSideState;
+  readonly drop_state?: BehaviorSideState;
+  /** The feed's floor, set only when `*_state` is `not_in_feed`: an upper bound, not a count. */
+  readonly add_count_max?: number | null;
+  readonly drop_count_max?: number | null;
   readonly add_rank?: number | null;
   readonly drop_rank?: number | null;
   readonly long_absence: boolean;
@@ -1364,6 +1398,14 @@ export interface RosBehaviorMetadata {
   readonly age_hours?: number | null;
   readonly degraded_reason?: string | null;
   readonly signal_semantics?: string;
+  /** ADR-114: per-side retrieval and each feed's floor, the bound on an absent player. */
+  readonly feed_ceiling?: number;
+  readonly add_available?: boolean;
+  readonly drop_available?: boolean;
+  readonly add_feed_floor?: number | null;
+  readonly drop_feed_floor?: number | null;
+  readonly add_retrieved_at_utc?: string | null;
+  readonly drop_retrieved_at_utc?: string | null;
 }
 
 /** The signal layer's own account of itself (ADR-091), carried on `ros_build_metadata`. */
@@ -2215,6 +2257,10 @@ export const OPPORTUNITY_FIELDS = [
   "add_count",
   "drop_count",
   "net_add_count",
+  "add_state",
+  "drop_state",
+  "add_count_max",
+  "drop_count_max",
   "add_rank",
   "drop_rank",
   "long_absence",

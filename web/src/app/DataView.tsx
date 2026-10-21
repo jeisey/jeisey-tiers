@@ -60,6 +60,9 @@ const REPO = "https://github.com/jeisey/jeisey-tiers";
  * them (the same split as Start/Sit and Trade in `App.tsx`).
  */
 const HowItWorks = lazy(() => import("./HowItWorks").then((module) => ({ default: module.HowItWorks })));
+// ADR-115: what each board's columns, bars and rules mean, moved here from the boards. Lazy, like
+// How it works, so no board pays for the reading.
+const BoardGuide = lazy(() => import("./BoardGuide"));
 
 const SOURCE_LABELS: Readonly<Record<string, string>> = {
   nflreadpy: "nflverse (via nflreadpy)",
@@ -318,6 +321,13 @@ export function DataView({
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section className="section" aria-labelledby="guide-heading">
+        <SectionHead index="02b" id="guide-heading" title="Reading the boards" />
+        <Suspense fallback={<p className="hiw-loading" aria-busy="true">Loading…</p>}>
+          <BoardGuide />
+        </Suspense>
       </section>
 
       <section className="section" aria-labelledby="model-heading">
@@ -584,8 +594,9 @@ export function DataView({
             The rest-of-season model uses <strong>no injury or practice-report information</strong>.
             It infers absence from appearances alone, which is why a long absence is reported as
             &ldquo;has not appeared for N weeks&rdquo; and never as a status. Add and drop counts
-            on the Opportunity Board are counts of transactions over the window above; they are
-            not a draft price, not a rank, and are never subtracted from one.
+            on the Opportunity Board are counts of transactions over the window above, from
+            Sleeper&rsquo;s top-100 lists (see Reading the boards); they are not a draft price,
+            not a rank, and are never subtracted from one.
           </p>
           <EspnMethod meta={inSeason.metadata.espn_ownership ?? null} />
           <ul className="limitations">

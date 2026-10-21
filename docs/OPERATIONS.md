@@ -1424,6 +1424,18 @@ eight paced requests.
 * `started_above_rostered` warnings: ESPN's start-share definition may have changed. Re-read
   ADR-112 before publishing anything derived from it.
 
+### 16.15 Sleeper add/drop coverage (ADR-114)
+
+`capture-behavior` requests both trending feeds (24 h, limit 100) separately. The log prints each
+feed's status, rows and floor. **One feed failing** is retained with that side marked
+`unavailable` (stderr says "partial capture"); the board publishes the other side's counts and no
+nets. **Both failing** retains nothing and exits 1 (the step is `continue-on-error`). The manifest
+(1.1) records each feed's status, retrieval time, rows, floor and truncation; 1.0 manifests read as
+two retrieved feeds. `ros_build_metadata.behavior.coverage` counts the published players per side
+state — expect most to be `not_in_feed`; a sudden rise of `no_sleeper_id` means the crosswalk
+broke. Every capture so far is truncated at 100 rows: that is the source's ceiling, not a fault.
+Re-run `scripts/probe_sleeper_trending_coverage.py` before changing the request.
+
 ## 17. Serving the site under load (ADR-098)
 
 ### 17.1 How GitHub Pages serves this site — verified 2026-09-30

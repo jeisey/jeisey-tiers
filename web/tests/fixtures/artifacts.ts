@@ -630,6 +630,63 @@ function offRosterStatusRecords(): PlayerStatusRecord[] {
 }
 
 /** Their adds and drops in the fixture feed: well past the surface rule's 500-add bar. */
+/**
+ * Each fixture feed's smallest count (ADR-114). Below every board player's observed count,
+ * because the feeds also carry players off the board.
+ */
+export const FIXTURE_ADD_FEED_FLOOR = 10;
+/** A build with no usable feed publishes states and no numbers. */
+const UNAVAILABLE_BEHAVIOR = {
+  add_count: null,
+  drop_count: null,
+  net_add_count: null,
+  add_state: "unavailable",
+  drop_state: "unavailable",
+  add_count_max: null,
+  drop_count_max: null,
+  add_rank: null,
+  drop_rank: null,
+} as const;
+export const FIXTURE_DROP_FEED_FLOOR = 4;
+
+/**
+ * A row's behaviour columns under contract 1.3. A side the fixture's walk takes to zero is a
+ * player outside that feed's top 100 — an unknown count, at most the floor — never an observed
+ * zero, which a top-100 list of six-figure counts does not produce. The deep rows are therefore
+ * in neither feed and row 24 is in the add feed only: the 2026-10-17 shape ADR-114 traced.
+ */
+export function fixtureBehaviorColumns(
+  adds: number,
+  drops: number,
+  addRank: number | null,
+  dropRank: number | null,
+): Pick<
+  OpportunityRecord,
+  | "add_count"
+  | "drop_count"
+  | "net_add_count"
+  | "add_state"
+  | "drop_state"
+  | "add_count_max"
+  | "drop_count_max"
+  | "add_rank"
+  | "drop_rank"
+> {
+  const addSeen = adds > 0;
+  const dropSeen = drops > 0;
+  return {
+    add_count: addSeen ? adds : null,
+    drop_count: dropSeen ? drops : null,
+    net_add_count: addSeen && dropSeen ? adds - drops : null,
+    add_state: addSeen ? "observed" : "not_in_feed",
+    drop_state: dropSeen ? "observed" : "not_in_feed",
+    add_count_max: addSeen ? null : FIXTURE_ADD_FEED_FLOOR,
+    drop_count_max: dropSeen ? null : FIXTURE_DROP_FEED_FLOOR,
+    add_rank: addSeen ? addRank : null,
+    drop_rank: dropSeen ? dropRank : null,
+  };
+}
+
 const OFF_ROSTER_COUNTS: Readonly<Record<string, readonly [number, number]>> = {
   [FIXTURE_UNSIGNED_ID]: [2400, 35],
   [FIXTURE_SIGNING_ID]: [950, 0],
@@ -654,7 +711,7 @@ export function unprojectedRecords(behaviorAvailable = true): UnprojectedRecord[
     offRosterStatusRecords().map((status, index): UnprojectedRecord => {
       const [adds, drops] = OFF_ROSTER_COUNTS[status.player_id] ?? [0, 0];
       return {
-        schema_version: "1.2",
+        schema_version: "1.3",
         build_id: FIXTURE_BUILD_ID,
         season: block.season,
         through_week: block.through_week,
@@ -677,11 +734,7 @@ export function unprojectedRecords(behaviorAvailable = true): UnprojectedRecord[
         behavior_snapshot_at_utc: FIXTURE_GENERATED_AT,
         behavior_lookback_hours: FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
         behavior_request_limit: 100,
-        add_count: adds,
-        drop_count: drops,
-        net_add_count: adds - drops,
-        add_rank: index + 1,
-        drop_rank: null,
+        ...fixtureBehaviorColumns(adds, drops, index + 1, drops > 0 ? index + 1 : null),
         long_absence: false,
         weeks_since_last_game: 0,
         games_played_to_date: null,
@@ -1427,10 +1480,12 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
     // axis. A count is a state, and a fixture that only produces it for the first block is a
     // fixture that expresses the field and not the state (ADR-086).
     const depth = record.ros_fair_rank - 1;
-    const adds = Math.max(0, 900 - depth * 37);
-    const drops = Math.max(0, 120 - depth * 5);
+    // ADR-114: rank 16 is in the add feed and outside the drop feed's top 100 (the 2026-10-17
+    // shape), and rank 18 is in neither — the ordinary state for most of a real board.
+    const adds = record.ros_fair_rank === 18 ? 0 : Math.max(0, 900 - depth * 37);
+    const drops = record.ros_fair_rank === 16 || record.ros_fair_rank === 18 ? 0 : Math.max(0, 120 - depth * 5);
     return {
-      schema_version: "1.2",
+      schema_version: "1.3",
       build_id: FIXTURE_BUILD_ID,
       season: record.season,
       through_week: record.through_week,
@@ -1454,11 +1509,9 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
       behavior_snapshot_at_utc: behaviorAvailable ? FIXTURE_GENERATED_AT : null,
       behavior_lookback_hours: behaviorAvailable ? FIXTURE_BEHAVIOR_LOOKBACK_HOURS : null,
       behavior_request_limit: behaviorAvailable ? 100 : null,
-      add_count: behaviorAvailable ? adds : null,
-      drop_count: behaviorAvailable ? drops : null,
-      net_add_count: behaviorAvailable ? adds - drops : null,
-      add_rank: behaviorAvailable ? index + 1 : null,
-      drop_rank: behaviorAvailable ? index + 1 : null,
+      ...(behaviorAvailable
+        ? fixtureBehaviorColumns(adds, drops, index + 1, index + 1)
+        : UNAVAILABLE_BEHAVIOR),
       long_absence: record.long_absence,
       weeks_since_last_game: record.weeks_since_last_game,
       games_played_to_date: record.games_played_to_date,
@@ -1519,11 +1572,7 @@ export function opportunityRecords(behaviorAvailable = true): OpportunityRecord[
       ros_uncertainty: anchor.ros_uncertainty,
       // No tier. The segmentation never saw him, and inventing one is what ADR-063 forbids.
       ros_tier: null,
-      add_count: behaviorAvailable ? 1450 : null,
-      drop_count: behaviorAvailable ? 20 : null,
-      net_add_count: behaviorAvailable ? 1430 : null,
-      add_rank: behaviorAvailable ? 1 : null,
-      drop_rank: behaviorAvailable ? 90 : null,
+      ...(behaviorAvailable ? fixtureBehaviorColumns(1450, 20, 1, 90) : UNAVAILABLE_BEHAVIOR),
       long_absence: false,
       weeks_since_last_game: 0,
       games_played_to_date: appearances,
@@ -2503,6 +2552,12 @@ export function rosBuildMetadata(
       request_limit: behaviorAvailable ? 100 : null,
       matched_players: behaviorAvailable ? 18 : 0,
       degraded_reason: behaviorAvailable ? null : "no retained behaviour capture",
+      // ADR-114: both feeds retrieved, each capped at 100 rows, with the floors the rows bound to.
+      feed_ceiling: 100,
+      add_available: behaviorAvailable,
+      drop_available: behaviorAvailable,
+      add_feed_floor: behaviorAvailable ? FIXTURE_ADD_FEED_FLOOR : null,
+      drop_feed_floor: behaviorAvailable ? FIXTURE_DROP_FEED_FLOOR : null,
     },
     disclosures: {
       uses_injury_information: false,
@@ -2632,6 +2687,11 @@ export function behaviorSeriesRecords(
     if (absent.has(playerId)) return;
     const row = byPlayer.get(playerId);
     if (row === undefined) return;
+    // ADR-114: a side the board did not observe is unobserved on every point, and a player in
+    // neither feed has no series at all.
+    const addSeen = row.add_count != null;
+    const dropSeen = row.drop_count != null;
+    if (!addSeen && !dropSeen) return;
     const finalAdds = row.add_count ?? 0;
     const finalDrops = row.drop_count ?? 0;
     const indices = carried[seed] ?? [...Array(snapshots).keys()];
@@ -2646,11 +2706,13 @@ export function behaviorSeriesRecords(
       const drift = Math.round(elapsed * rate);
       const adds = falling.has(seed) ? finalAdds + drift : finalAdds - drift;
       const drops = finalDrops + Math.round(elapsed * 3);
+      const addCount = addSeen ? Math.max(0, adds) : null;
+      const dropCount = dropSeen ? Math.max(0, drops) : null;
       return {
         observed_at: stampAt(index),
-        add_count: Math.max(0, adds),
-        drop_count: Math.max(0, drops),
-        net_add_count: Math.max(0, adds) - Math.max(0, drops),
+        add_count: addCount,
+        drop_count: dropCount,
+        net_add_count: addCount === null || dropCount === null ? null : addCount - dropCount,
       };
     });
 
@@ -2665,8 +2727,12 @@ export function behaviorSeriesRecords(
     // points is exactly the difference over the elapsed days however unevenly they are
     // spaced — so this shortcut is the rule rather than an approximation of it, up to the
     // integer rounding each count carries.
+    // Each side's points are every point here or none of them, so its series and span are the
+    // whole series or empty (behavior_trend_v2).
+    const addObservations = addSeen ? points.length : 0;
+    const netObservations = addSeen && dropSeen ? points.length : 0;
     const addTrend =
-      points.length < 2 || spanDays <= 0
+      addObservations < 2 || spanDays <= 0
         ? null
         : Number(
             (
@@ -2675,7 +2741,7 @@ export function behaviorSeriesRecords(
             ).toFixed(4),
           );
     const netTrend =
-      points.length < 2 || spanDays <= 0
+      netObservations < 2 || spanDays <= 0
         ? null
         : Number(
             (
@@ -2684,11 +2750,12 @@ export function behaviorSeriesRecords(
             ).toFixed(4),
           );
     const flags: string[] = [];
-    if (points.length < 2) flags.push("single_observation");
+    if (addObservations < 2) flags.push("single_observation");
     if (points.length < snapshots) flags.push("sparse_feed_coverage");
+    if (netObservations < points.length) flags.push("one_sided_points");
 
     records.push({
-      schema_version: "1.0",
+      schema_version: "2.0",
       build_id: FIXTURE_BUILD_ID,
       season: 2026,
       through_week: FIXTURE_THROUGH_WEEK,
@@ -2703,6 +2770,10 @@ export function behaviorSeriesRecords(
       span_days: Number(spanDays.toFixed(4)),
       add_trend: addTrend,
       net_trend: netTrend,
+      add_observations: addObservations,
+      add_span_days: addSeen ? Number(spanDays.toFixed(4)) : 0,
+      net_observations: netObservations,
+      net_span_days: netObservations > 0 ? Number(spanDays.toFixed(4)) : 0,
       quality_flags: flags,
       points,
     });

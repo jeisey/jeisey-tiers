@@ -7,6 +7,7 @@
  * table, and a card that puts the two ranks side by side with a neutral sentence about the gap.
  */
 
+import { BoardGuide } from "../src/app/BoardGuide";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -282,7 +283,10 @@ describe("the RoS table", () => {
     // The sign is never the only carrier: the words are in the cell for a screen reader.
     expect(row.querySelectorAll("td")[at + 2]?.textContent).toContain("RoS rank is 3 places above season rank");
     expect(table.querySelector("caption")?.textContent).toMatch(/actual results through week 8/);
-    expect(table.querySelector("caption")?.textContent).toMatch(/RoS vs Szn is Szn rank minus RoS rank/);
+    // ADR-115: the sign convention is defined once, on the Data tab.
+    const guide = render(<BoardGuide />);
+    expect(guide.container.textContent).toMatch(/Szn rank minus RoS rank, in places/);
+    guide.unmount();
   });
 
   it("sorts the signed gap widest-first, blanks last, and reverses on a second click", async () => {

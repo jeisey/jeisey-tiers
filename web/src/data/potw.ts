@@ -57,7 +57,9 @@
  *    binds a gate harder, because this feature makes a positive claim about a player.
  * 2. **The volume clears the position's own bar** (`addFloorFor`). Population-relative rather
  *    than a constant, so it survives a feed whose scale changes between seasons.
- * 3. **The direction is positive.** `net_add_count > 0`. The one subtraction the opportunity
+ * 3. **The direction is provably positive** (ADR-114): `net_add_count > 0`, or — when his drops
+ *    were outside Sleeper's top 100 — adds above the drop feed's floor, which proves it. A missing
+ *    side is never read as zero. The net is the one subtraction the opportunity
  *    schema sanctions, for the reason it gives: both sides are the same unit, over the same
  *    window, from the same feed, at the same moment. It is the closest thing to the "momentum"
  *    half of the brief that a single snapshot can honestly support, and it is labelled as a
@@ -81,6 +83,7 @@
  * surfaced player is exactly who a waiver feature exists to find.
  */
 
+import { describeNet, netIsPositive, sideOf } from "./behavior";
 import { quantileAt } from "./cohort";
 import { featureable, type Availability } from "./availability";
 import type {
@@ -221,7 +224,7 @@ export function addFloorFor(rows: readonly OpportunityRecord[], position: Positi
   const counts: number[] = [];
   for (const row of rows) {
     if (row.position !== position) continue;
-    const count = row.add_count;
+    const count = sideOf(row, "add").count;
     if (typeof count === "number" && Number.isFinite(count) && count > 0) counts.push(count);
   }
   if (counts.length < POTW_FLOOR_MINIMUM) {
@@ -255,11 +258,12 @@ export function isPotwCandidate(
   availability?: Availability,
 ): boolean {
   if (!record.behavior_available) return false;
-  const adds = record.add_count;
-  const net = record.net_add_count;
+  const adds = sideOf(record, "add").count;
   if (typeof adds !== "number" || !Number.isFinite(adds)) return false;
   if (adds < floor.value) return false;
-  if (typeof net !== "number" || !Number.isFinite(net) || net <= 0) return false;
+  // ADR-114: provably positive. A one-sided row passes only when its bound does — adds above
+  // the drop feed's floor — never because a missing drop count was read as zero.
+  if (!netIsPositive(record)) return false;
   if (record.long_absence) return false;
   if (availability !== undefined ? !featureable(availability) : !playableStatus(record.current_status)) {
     return false;
@@ -307,7 +311,7 @@ function reasonsFor(
   usage: PlayerUsageRecord | null,
 ): readonly string[] {
   const reasons: string[] = [];
-  const adds = record.add_count ?? 0;
+  const adds = sideOf(record, "add").count ?? 0;
   const window =
     record.behavior_lookback_hours === null || record.behavior_lookback_hours === undefined
       ? "the requested window"
@@ -318,9 +322,7 @@ function reasonsFor(
       ? `${adds.toLocaleString("en-US")} adds in ${window} — over the ${floor.value.toLocaleString("en-US")}-add median of the ${String(floor.count)} ${record.position}s the feed moved on`
       : `${adds.toLocaleString("en-US")} adds in ${window}; too few ${record.position} add counts on this board to set a median`,
   );
-  reasons.push(
-    `Net ${(record.net_add_count ?? 0).toLocaleString("en-US")} roster moves over the same window`,
-  );
+  reasons.push(`${describeNet(record).replace(/^net/, "Net")} over the same window`);
 
   // Preseason context, not a gate. It is the closest published answer to "was he drafted?",
   // and it is stated as what it is — this project's own preseason ordering — rather than as a

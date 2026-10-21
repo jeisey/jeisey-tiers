@@ -219,6 +219,76 @@ def _decimals(value: float) -> int:
     return min(4, len(text.split(".")[1]))
 
 
+#: ADR-114: how a board's rows split across Sleeper's two top-100 lists. Most board players are
+#: in neither (the 2026-10-21 probe: 856 of 987 mapped players in neither, 29 in both); a board
+#: is weighted to the top of the player pool, so its share in a list is higher than that.
+BEHAVIOR_SIDE_SPLIT = (("neither", 0.70), ("both", 0.15), ("add", 0.10), ("drop", 0.05))
+BEHAVIOR_FEED_FLOORS = {"add": 9_546, "drop": 17_444}
+
+
+def _behavior_sides(row: dict[str, Any], rng: random.Random) -> None:
+    """Give a cloned Opportunity row a consistent per-side state, as production publishes it."""
+    if not row.get("behavior_available"):
+        return
+    draw = rng.random()
+    kind = "neither"
+    for name, share in BEHAVIOR_SIDE_SPLIT:
+        if draw < share:
+            kind = name
+            break
+        draw -= share
+    observed = {"add": kind in {"both", "add"}, "drop": kind in {"both", "drop"}}
+    for side in ("add", "drop"):
+        if observed[side]:
+            floor = BEHAVIOR_FEED_FLOORS[side]
+            row[f"{side}_state"] = "observed"
+            row[f"{side}_count"] = floor + rng.randrange(0, 40 * floor)
+            row[f"{side}_count_max"] = None
+            row[f"{side}_rank"] = rng.randrange(1, 101)
+        else:
+            row[f"{side}_state"] = "not_in_feed"
+            row[f"{side}_count"] = None
+            row[f"{side}_count_max"] = BEHAVIOR_FEED_FLOORS[side]
+            row[f"{side}_rank"] = None
+    adds, drops = row["add_count"], row["drop_count"]
+    row["net_add_count"] = None if adds is None or drops is None else adds - drops
+
+
+#: ADR-114: which sides a retained series carries. A series exists only for a player one feed
+#: carried, so it is in both, or the add list only, or the drop list only — about a third of
+#: sides unobserved, as on the live 2026-10-21 series (1,099 of 3,200 sides had been zero-filled).
+BEHAVIOR_SERIES_SPLIT = (("both", 0.35), ("add", 0.35), ("drop", 0.30))
+
+
+def _behavior_series_sides(row: dict[str, Any], rng: random.Random) -> None:
+    """ADR-114's per-side points, counts and spans, derived from the record's own points as
+    production derives them — never perturbed independently, which would price random floats."""
+    draw = rng.random()
+    kind = "both"
+    for name, share in BEHAVIOR_SERIES_SPLIT:
+        if draw < share:
+            kind = name
+            break
+        draw -= share
+    points = row["points"]
+    for point in points:
+        if kind == "drop":
+            point["add_count"] = None
+        if kind == "add":
+            point["drop_count"] = None
+        adds, drops = point.get("add_count"), point.get("drop_count")
+        point["net_add_count"] = None if adds is None or drops is None else adds - drops
+    row["observations"] = len(points)
+    for side, field in (("add", "add_count"), ("net", "net_add_count")):
+        seen = [point for point in points if point.get(field) is not None]
+        row[f"{side}_observations"] = len(seen)
+        row[f"{side}_span_days"] = row["span_days"] if len(seen) == len(points) else 0.0
+    if kind != "both":
+        row["net_trend"] = None
+    if kind == "drop":
+        row["add_trend"] = None
+
+
 class Perturb:
     def __init__(self, seed: int) -> None:
         self.random = random.Random(seed)
@@ -236,9 +306,6 @@ class Perturb:
             fixed = {"week", "latest_week", "season", "through_week", "target_week"}
             if key.endswith("rank") or key in fixed:
                 return value
-            # Most players on a board draw no waiver transactions on a given day.
-            if key in {"add_count", "drop_count", "net_add_count"} and self.random.random() < 0.7:
-                return 0
             return max(0, round(value * self.random.uniform(0.5, 1.5)))
         if isinstance(value, float):
             if key.endswith("_share_last3"):
@@ -377,6 +444,7 @@ def build(out: Path, seed: int = 20260930) -> None:
                         "schema_version",
                     }:
                         row[field] = value
+            _behavior_sides(row, perturb.random)
             opportunity.append(row)
         records["inseason_opportunity"].extend(opportunity)
 
@@ -429,6 +497,7 @@ def build(out: Path, seed: int = 20260930) -> None:
                 )
             if artifact == "behavior_trend_series":
                 row["points"] = perturb.series(row["points"], profile["behavior_points"])
+                _behavior_series_sides(row, perturb.random)
             if artifact == "player_headshots":
                 row["provider_player_id"] = player["espn"]
                 row["image_url"] = (

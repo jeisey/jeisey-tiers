@@ -1027,12 +1027,23 @@ if (publishedInSeason && opportunityRecords !== null) {
           `${String(record.add_count)}`,
       );
     }
-    const renderedNet = asNumber(tileValue(card, "Net roster moves"));
-    if (renderedNet !== record.net_add_count) {
+    // ADR-114: the exact net when both sides were observed; otherwise the bound the artifact's
+    // own bytes imply — adds minus the drop feed's floor — printed as one ("≥").
+    const netText = tileValue(card, "Net roster moves");
+    const renderedNet = asNumber(netText);
+    const boundedNet =
+      record.net_add_count == null && record.add_count != null && record.drop_count_max != null
+        ? record.add_count - record.drop_count_max
+        : null;
+    const expectedNet = record.net_add_count ?? boundedNet;
+    if (renderedNet !== expectedNet) {
       failures.push(
-        `${card.name}: card shows net ${String(renderedNet)}, artifact has ` +
-          `${String(record.net_add_count)}`,
+        `${card.name}: card shows net ${String(renderedNet)}, artifact implies ` +
+          `${String(expectedNet)}`,
       );
+    }
+    if (boundedNet !== null && !String(netText).includes("\u2265")) {
+      failures.push(`${card.name}: a one-sided net is printed without its "\u2265" bound`);
     }
     const renderedVorp = asNumber(tileValue(card, "ROS expected VORP"));
     if (renderedVorp === null || Math.abs(renderedVorp - record.ros_expected_vorp) > 0.05) {
@@ -1058,10 +1069,10 @@ if (publishedInSeason && opportunityRecords !== null) {
           "remaining VORP, which is no better than the wire he would come off",
       );
     }
-    if (!(record.net_add_count > 0)) {
+    if (!((expectedNet ?? 0) > 0)) {
       failures.push(
-        `${card.name}: published as a waiver pick while the feed is net shedding him ` +
-          `(${String(record.net_add_count)})`,
+        `${card.name}: published as a waiver pick without a provably positive net ` +
+          `(${String(expectedNet)})`,
       );
     }
 
@@ -1402,6 +1413,8 @@ const spanText = (days) => {
 };
 
 let oppRowsChecked = 0;
+let behaviorCellsChecked = 0;
+let behaviorBoundsChecked = 0;
 let faCellsChecked = 0;
 let unprojectedRowsChecked = 0;
 let oppChartRowsChecked = 0;
@@ -1556,6 +1569,51 @@ if (publishedInSeason && opportunityRecords !== null) {
       const want = rosVsSeasonText(rank, actualsPPR.get(row.id));
       if (row.gap !== want) failures.push(`opportunity row ${String(row.id)}: RoS vs Szn reads ${String(row.gap)}, the artifacts ${want}`);
       rosVsSeasonCellsChecked += 1;
+    }
+  }
+
+  /*
+    ADR-114: each side is observed or not, and a net is exact only with both. Re-derived here from
+    the artifact's own states and floors — not from the page's helper — so a page that zero-filled
+    a side, or printed a bound as a count, fails against the bytes.
+  */
+  const integer = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+  const signedText = (value) => `${value > 0 ? "+" : value < 0 ? "\u2212" : ""}${integer.format(Math.abs(value))}`;
+  const sideState = (record, side) => record[`${side}_state`] ?? (record[`${side}_count`] == null ? "unavailable" : "observed");
+  const expectedNet = (record) => {
+    const adds = sideState(record, "add") === "observed" ? record.add_count : null;
+    const drops = sideState(record, "drop") === "observed" ? record.drop_count : null;
+    if (adds !== null && drops !== null) return adds - drops > 0 ? `+${String(adds - drops)}` : String(adds - drops);
+    if (adds !== null && record.drop_count_max != null) return `\u2265 ${signedText(adds - record.drop_count_max)}`;
+    if (drops !== null && record.add_count_max != null) return `\u2264 ${signedText(record.add_count_max - drops)}`;
+    return "\u2014";
+  };
+  const behaviorCells = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) =>
+    rows.map((tr) => {
+      const shown = (col) => {
+        const td = tr.querySelector(`td[data-col="${col}"]`);
+        if (td === null) return null;
+        const visible = td.querySelector('[aria-hidden="true"], span[data-net] > span');
+        return (visible ?? td).textContent?.trim() ?? null;
+      };
+      return { id: tr.getAttribute("data-player"), adds: shown("add_count"), drops: shown("drop_count"), net: shown("net_add_count") };
+    }),
+  );
+  for (const cell of behaviorCells) {
+    const record = oppById.get(cell.id);
+    if (record === undefined) continue;
+    for (const side of ["add", "drop"]) {
+      const rendered = side === "add" ? cell.adds : cell.drops;
+      if (rendered === null) continue;
+      const want = sideState(record, side) === "observed" ? String(record[`${side}_count`]) : "\u2014";
+      if (rendered !== want) failures.push(`opportunity row ${String(cell.id)}: ${side}s read "${rendered}", the artifact ${want} (${sideState(record, side)})`);
+      behaviorCellsChecked += 1;
+    }
+    if (cell.net !== null) {
+      const want = expectedNet(record);
+      if (cell.net !== want) failures.push(`opportunity row ${String(cell.id)}: net reads "${cell.net}", the artifact implies "${want}"`);
+      if (want.startsWith("\u2265") || want.startsWith("\u2264")) behaviorBoundsChecked += 1;
+      behaviorCellsChecked += 1;
     }
   }
 
@@ -2167,6 +2225,8 @@ console.log(JSON.stringify({
   signalMomentumChecked,
   signalPicksChecked,
   oppRowsChecked,
+  behaviorCellsChecked,
+  behaviorBoundsChecked,
   faCellsChecked,
   espnRecords: espnRecords === null ? null : espnRecords.length,
   espnCellsChecked,

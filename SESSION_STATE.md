@@ -4,6 +4,54 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Sleeper per-side observability; card controls, bye filter, methodology on Data — 2026-10-21
+(ADR-114, ADR-115, PRD CR-034/CR-035).** On `claude/magical-maxwell-0s0xat` from `main` at
+`ee863cc`.
+
+* **Sleeper.** Each trending feed is a descending top-100 list — a measured ceiling (limits to
+  5,000, windows 1–168 h, 12 undocumented parameters: no change). Complete counts are not
+  obtainable and not claimed. Every side is now `observed` / `not_in_feed` (floor as a labelled
+  bound) / `no_sleeper_id` / `ambiguous_sleeper_id` / `stale` / `unavailable`; a net is exact only
+  with both sides, else `≥ +N` / `≤ −N` or a dash. Contracts: opportunity 1.3, series 2.0
+  (`behavior_trend_v2`), capture manifest 1.1 (partial captures kept). Traced the owner's case:
+  2026-10-17T11:24:45Z, Allgeier 549,030 adds, drops absent (floor 17,444), shown +549,030.
+  73.7% of retained player-snapshot rows had been one-sided and zero-filled.
+* **Audit (live build).** Pick of the Week unchanged in all five sets; YOLO net-add bars changed
+  at every position (`docs/source-probes/2026-10-21/sleeper-trending-coverage/selection-audit.json`).
+* **Card.** The phone head's leftover padding pushed ✕ 12px into the rail gutter (6.41 × 25.77 px
+  overlap). Padding 0; gutter = `--space-3 + --detail-close-size + --space-2`. 0/160 overlaps.
+* **Bye filter.** `nobye=1` on ROS and Start/Sit; ROS fetches `team_matchups/all` only while on.
+* **Copy.** Board methodology moved to Data → *Reading the boards* (lazy `BoardGuide.tsx`).
+* **Payload (size model, main → branch).** First visit 345.7 → 346.8 kB; WMM cold 442.4 → 443.5
+  of 450 kB (6.5 kB headroom); card +24.3 → +25.0 kB; Rising Stars 120.7 → 127.7 of 130 kB (the
+  size model now models per-side nulls instead of zeroing 70% of counts — on the live series
+  contract 2.0 is ~2.6 kB *smaller*); YOLO 112.5 → 114.7 of 125 kB. No budget changed.
+* **Profile (4× CPU, Pixel 7, size model).** ROS bye toggle max 3.9 s vs the Position control's
+  3.9–7.1 s on the same board (pre-existing ROS re-render cost); Start/Sit ≤ 0.26 s. 1 request on
+  first ROS enable, 0 after. Heap: ROS +2.3 MB per selection change on main *and* branch
+  (pre-existing; follow-up suggested); bye filter adds one ~6 MB bundle, no per-cycle growth.
+* **Facts for the next session.**
+  * The private store is `jeisey/jeisey-tiers-market-data` (sparse-clone `behavior/` to trace).
+  * The browser fixture (`web/tests/fixtures/artifacts.ts`) is 1.3/2.0: rank 16 (Jalen Marsh) is
+    add-only, rank 18 (Jaylin Lane) is in neither; SF and PHI are week 9 byes.
+  * `verify-real-build.mjs` re-derives Adds/Drops/Net text from states and floors.
+* **Next gate:** owner review; after merge the first in-season `daily-refresh` writes the first
+  1.1 manifest — check `ros_build_metadata.behavior.coverage`.
+
+Validation of this pass (local, Chromium 141.0.7390.37):
+
+```
+uv run ruff check . ; ruff format --check . ; mypy   # clean; 358 files; 211 source files
+uv run pytest                                        # 2,209 passed, exit 0 (live deselected)
+build-fixture-artifacts + validate-artifacts         # pass; goldens regenerated, deterministic
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 1,118 passed, 1 skipped
+playwright chromium + mobile + a11y + smoke-chromium # 361 passed
+verify:board on nine fixture builds                  # 0 failures; 57 behaviour cells checked
+npm run e2e:size-model && verify:budget              # all met
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok
+```
+
 **Recent form and breakout categories — 2026-10-21 (ADR-113, PRD CR-033).** On
 `claude/loving-faraday-f3i224` from `main` at `09d54f0`. The Opportunity Board answers "whose
 recent production and role beat his season rank — sustained, or one big game?"
