@@ -19,6 +19,7 @@
  * improve, and a row whose usage shares the feed never published.
  */
 
+import { BoardGuide } from "../src/app/BoardGuide";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -286,9 +287,11 @@ describe("the cohort strip", () => {
 describe("the roster-moves strip", () => {
   it("names the axis it drew the bars on", async () => {
     const dialog = await openCard(ORDINARY);
-    expect(
-      within(dialog).getByText(/85th percentile of its non-zero counts/i),
-    ).toBeDefined();
+    expect(within(dialog).getByText(/Drops left, adds right · axis ±[\d,]+/)).toBeDefined();
+    // ADR-115: where that axis comes from is on the Data tab, not repeated in every card.
+    cleanup();
+    render(<BoardGuide />);
+    expect(screen.getByText(/85th percentile of its non-zero counts/i)).toBeDefined();
   });
 
   it("says the feed published nothing rather than drawing a zero, when it did not", async () => {

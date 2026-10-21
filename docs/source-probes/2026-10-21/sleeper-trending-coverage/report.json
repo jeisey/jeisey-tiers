@@ -1,0 +1,468 @@
+{
+  "add_candidate_parameters": {
+    "candidates": {
+      "after=<last id>": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815600,
+        "min_count": 38492,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "cursor=<last id>": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815576,
+        "min_count": 38492,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "min_count=1": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815768,
+        "min_count": 38494,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "offset=100": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815512,
+        "min_count": 38490,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "order=asc": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815680,
+        "min_count": 38494,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "page=2": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815528,
+        "min_count": 38490,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "position=TE": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815608,
+        "min_count": 38492,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "season=2024": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815632,
+        "min_count": 38494,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "skip=100": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815544,
+        "min_count": 38490,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "sort=asc": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815736,
+        "min_count": 38494,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "start=100": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815568,
+        "min_count": 38490,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "week=1": {
+        "baseline_to_baseline_overlap": 100,
+        "bytes": 3592,
+        "changes_population": false,
+        "distinct_ids": 100,
+        "ids_in_neither_baseline": 0,
+        "max_count": 3815656,
+        "min_count": 38494,
+        "rows": 100,
+        "shared_with_bracketing_baseline": 100,
+        "sorted_descending": true,
+        "status": 200
+      }
+    },
+    "max_baseline_drift_ids": 0
+  },
+  "add_limits": {
+    "by_limit": {
+      "100": {
+        "bytes": 3592,
+        "distinct_ids": 100,
+        "max_count": 3814576,
+        "min_count": 38470,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "1000": {
+        "bytes": 3592,
+        "distinct_ids": 100,
+        "max_count": 3810616,
+        "min_count": 38328,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "101": {
+        "bytes": 3592,
+        "distinct_ids": 100,
+        "max_count": 3815280,
+        "min_count": 38486,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "25": {
+        "bytes": 912,
+        "distinct_ids": 25,
+        "max_count": 3813832,
+        "min_count": 231012,
+        "rows": 25,
+        "same_id_set_as_limit_100": false,
+        "shared_with_limit_100": 25,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "250": {
+        "bytes": 3592,
+        "distinct_ids": 100,
+        "max_count": 3810960,
+        "min_count": 38336,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "500": {
+        "bytes": 3592,
+        "distinct_ids": 100,
+        "max_count": 3814904,
+        "min_count": 38480,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "5000": {
+        "bytes": 3592,
+        "distinct_ids": 100,
+        "max_count": 3815312,
+        "min_count": 38488,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      }
+    },
+    "limit_25_ids_inside_limit_100": 25,
+    "limit_25_is_prefix_of_limit_100": true
+  },
+  "add_windows_at_limit_1000": {
+    "1": {
+      "bytes": 3465,
+      "distinct_ids": 100,
+      "max_count": 53872,
+      "min_count": 2100,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "12": {
+      "bytes": 3559,
+      "distinct_ids": 100,
+      "max_count": 798632,
+      "min_count": 20048,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "168": {
+      "bytes": 3642,
+      "distinct_ids": 100,
+      "max_count": 7536064,
+      "min_count": 196650,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "24": {
+      "bytes": 3592,
+      "distinct_ids": 100,
+      "max_count": 3815304,
+      "min_count": 38488,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "48": {
+      "bytes": 3611,
+      "distinct_ids": 100,
+      "max_count": 6877176,
+      "min_count": 63264,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "6": {
+      "bytes": 3543,
+      "distinct_ids": 100,
+      "max_count": 363552,
+      "min_count": 11103,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    }
+  },
+  "documentation": "https://docs.sleeper.com/#trending-players",
+  "documented_parameters": [
+    "lookback_hours (default 24)",
+    "limit (default 25)"
+  ],
+  "drop_limits": {
+    "by_limit": {
+      "100": {
+        "bytes": 3588,
+        "distinct_ids": 100,
+        "max_count": 1256766,
+        "min_count": 58608,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "1000": {
+        "bytes": 3588,
+        "distinct_ids": 100,
+        "max_count": 1257744,
+        "min_count": 58668,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "101": {
+        "bytes": 3588,
+        "distinct_ids": 100,
+        "max_count": 1257726,
+        "min_count": 58668,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "25": {
+        "bytes": 906,
+        "distinct_ids": 25,
+        "max_count": 1255620,
+        "min_count": 239296,
+        "rows": 25,
+        "same_id_set_as_limit_100": false,
+        "shared_with_limit_100": 25,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "250": {
+        "bytes": 3588,
+        "distinct_ids": 100,
+        "max_count": 1253244,
+        "min_count": 58248,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "500": {
+        "bytes": 3588,
+        "distinct_ids": 100,
+        "max_count": 1257162,
+        "min_count": 58626,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      },
+      "5000": {
+        "bytes": 3588,
+        "distinct_ids": 100,
+        "max_count": 1257750,
+        "min_count": 58668,
+        "rows": 100,
+        "same_id_set_as_limit_100": true,
+        "shared_with_limit_100": 100,
+        "sorted_descending": true,
+        "status": 200
+      }
+    },
+    "limit_25_ids_inside_limit_100": 25,
+    "limit_25_is_prefix_of_limit_100": true
+  },
+  "drop_windows_at_limit_1000": {
+    "1": {
+      "bytes": 3454,
+      "distinct_ids": 100,
+      "max_count": 53415,
+      "min_count": 3451,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "12": {
+      "bytes": 3552,
+      "distinct_ids": 100,
+      "max_count": 555426,
+      "min_count": 28660,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "168": {
+      "bytes": 3644,
+      "distinct_ids": 100,
+      "max_count": 2237904,
+      "min_count": 227604,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "24": {
+      "bytes": 3588,
+      "distinct_ids": 100,
+      "max_count": 1257744,
+      "min_count": 58668,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "48": {
+      "bytes": 3620,
+      "distinct_ids": 100,
+      "max_count": 1964295,
+      "min_count": 90432,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    },
+    "6": {
+      "bytes": 3536,
+      "distinct_ids": 100,
+      "max_count": 317151,
+      "min_count": 17822,
+      "rows": 100,
+      "sorted_descending": true,
+      "status": 200
+    }
+  },
+  "finished_at_utc": "2026-10-21T18:13:27Z",
+  "probe": "sleeper-trending-coverage",
+  "started_at_utc": "2026-10-21T18:11:48Z",
+  "universe": {
+    "core_ambiguous_sleeper_id": 0,
+    "core_players": 1199,
+    "core_with_sleeper_id": 987,
+    "core_without_sleeper_id": 212,
+    "feed_rows_unresolved": {
+      "add": 17,
+      "drop": 23
+    },
+    "mapped_universe": 987,
+    "registry_players": 1255,
+    "universe_add_observed": 83,
+    "universe_add_only": 54,
+    "universe_both_observed": 29,
+    "universe_both_share": 0.0294,
+    "universe_drop_observed": 77,
+    "universe_drop_only": 48,
+    "universe_neither": 856
+  }
+}

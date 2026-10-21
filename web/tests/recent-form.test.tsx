@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
 import { selectOpportunityCandidates, type OpportunityCandidate } from "../src/data/candidates";
 import { chooseSearchPlayer } from "../src/data/boardSearch";
-import { opportunityRowsToCsv } from "../src/data/csv";
+import { BEHAVIOR_SIDE_CSV_COLUMNS, opportunityRowsToCsv } from "../src/data/csv";
 import {
   RECENT_CSV_COLUMNS,
   badgeOf,
@@ -273,12 +273,16 @@ describe("the explanation and the export", () => {
     const csv = opportunityRowsToCsv(rows, "3", recentFormMetadata());
     const lines = csv.trim().split(/\r?\n/);
     const header = required(lines[0], "header").split(",");
-    expect(header.slice(-RECENT_CSV_COLUMNS.length)).toEqual([...RECENT_CSV_COLUMNS]);
+    // ADR-114's per-side columns are appended after the recent ones.
+    const tail = BEHAVIOR_SIDE_CSV_COLUMNS.length;
+    const recentCells = (cells: readonly string[]) =>
+      cells.slice(-RECENT_CSV_COLUMNS.length - tail, -tail);
+    expect(recentCells(header)).toEqual([...RECENT_CSV_COLUMNS]);
     expect(lines).toHaveLength(rows.length + 1);
     const ertzLine = required(lines.find((line) => line.includes("Zach Ertz")), "Ertz");
-    expect(ertzLine.endsWith("3,6,8,3,3,28.54,3,9.51,12,takeover,takeover_role,breakout_v1,6|7|8,snap_share:substantial")).toBe(true);
+    expect(recentCells(ertzLine.split(",")).join(",").endsWith("3,6,8,3,3,28.54,3,9.51,12,takeover,takeover_role,breakout_v1,6|7|8,snap_share:substantial")).toBe(true);
     const season = opportunityRowsToCsv(select({ last: "season" }).candidates, "season", recentFormMetadata());
-    expect(required(season.split(/\r?\n/)[1], "row").split(",").slice(-RECENT_CSV_COLUMNS.length)[0]).toBe("season");
+    expect(recentCells(required(season.split(/\r?\n/)[1], "row").split(","))[0]).toBe("season");
   });
 
   it("keeps the record's numbers verbatim", () => {

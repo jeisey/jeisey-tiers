@@ -8207,3 +8207,113 @@ unchanged; the breakout filter is one more AND-ed predicate over one published f
   draws every drop count and the export keeps it), so every laptop width keeps ≥ 64px of slack.
 * Not validated as predictive. No backtest was run, by design; the badges describe, they do not
   forecast. Revisit the thresholds only with a stated reason and a version bump.
+
+## ADR-114 — Sleeper add and drop counts are observed one side at a time: no zero for an absence, an exact net only with both sides
+
+**Status:** accepted, 2026-10-21. **Amends:** ADR-089 (`behavior_trend_v1` → `behavior_trend_v2`),
+ADR-088 (Pick of the Week's direction gate), ADR-110 (the YOLO net-add bar), ADR-063/ADR-079 (the
+Opportunity Board's behaviour columns). **Evidence:** `docs/source-probes/2026-10-21/sleeper-trending-coverage/`,
+`docs/DATA_SOURCES.md` §24.
+
+### Context
+
+The owner saw Tyler Allgeier on 2026-10-17 with +549,030 net adds — an implied zero drops — and
+the same shape on many players. Traced through the private retained store: the 11:24:45Z capture
+had him first in the add feed and absent from the drop feed, whose smallest count was 17,444.
+Two defects turned that absence into a zero: `opportunity/board.py` defaulted a missing count to
+0 whenever the feed was available (projected and unprojected rows), and `behavior/history.py`
+took the union of the two feeds and wrote `adds.get(id, 0)` / `drops.get(id, 0)`, with a comment
+claiming the zero was "the one place a zero is correct". It is not: each feed is a separate list.
+The zero reached every net, every net slope, and — for a drop-only player — the add slope.
+Across all 76 retained captures 73.7% of player-snapshot rows were one-sided.
+
+The capture asks for `limit=100`. The 2026-10-21 probe found 100 to be a ceiling on both feeds and
+every window, with no working pagination or filter, so complete counts cannot be had (§24).
+
+### Decision
+
+1. **Per-side state on every Opportunity row** (`inseason_opportunity_record` 1.3):
+   `add_state` / `drop_state` ∈ `observed`, `not_in_feed`, `no_sleeper_id`,
+   `ambiguous_sleeper_id`, `stale`, `unavailable`. A count is published exactly when its side is
+   `observed` (a real zero is possible and is a count); otherwise it is null.
+2. **The floor is a bound, labelled as one.** For `not_in_feed`, `*_count_max` is that feed's
+   smallest count. It rests on each feed being a descending top-N list (a shorter limit returns an
+   exact prefix). `net_add_count` is exact or null; with one side observed the page prints
+   `≥ +531,586` (adds known) or `≤ −62,556` (drops known), sorts by the printed bound, and labels
+   it; with neither there is no net.
+3. **Capture** (manifest 1.1): each feed is requested separately and records its status,
+   retrieval time, rows, floor and truncation; one failing feed keeps the other side (it was
+   refused before), and a capture with neither is refused. 1.0 manifests read as both feeds
+   retrieved — their retention guaranteed it — with floors derived from the rows. Rows are never
+   rewritten; old captures are read under the same rule because they made the same request.
+4. **`behavior_trend_v2`** (`behavior_trend_series` 2.0): a point exists when either feed carried
+   the player; each side is null when its feed did not. `add_trend` is fitted over observed add
+   counts (`add_observations`, `add_span_days`), `net_trend` over points with both sides
+   (`net_observations`, `net_span_days`); flag `one_sided_points`. No gap is filled.
+5. **Selections.** Pick of the Week's direction gate is *provably positive*: an exact net above 0,
+   or a bound whose floor is above 0. The YOLO net-add bar and gate use the exact net or the
+   bound's floor. Surfacing and the unprojected-row rule use observed adds only (unchanged in
+   effect). Audited on the live 2026-10-21 build: Pick of the Week is identical in all five sets;
+   the YOLO bars move at every position (`selection-audit.json`).
+6. **Validation.** `opportunity.behavior_side_state` fails a count without an observed state, a
+   bound off `not_in_feed`, a rank on an unobserved side, a net without both sides, more than one
+   floor per side, or a floor above an observed count; the series checks count each side's points
+   and spans and refuse a net without both sides.
+7. **Metadata** `ros_build_metadata.behavior` gains `coverage_rule` (`sleeper_top_n_v1`),
+   `feed_ceiling`, per-side availability, floors and retrieval times, and `coverage` — the
+   published players by state on each side and how many carry an exact net. Raw-feed completeness
+   and coverage of this board's universe are reported separately.
+
+### Consequences
+
+* 100% coverage is **not** achieved and is not claimed. Most board players read "not in the top
+  100" on both sides; that is the honest state of the source.
+* A 1.2 artifact is read honestly by the page: a 0 with no feed rank is an absence with no bound.
+* No intrinsic, ROS, weekly, tier or DraftValue number reads behaviour; nothing in them changes.
+
+## ADR-115 — Three quality-of-life changes: the phone card's controls, a bye-week filter, and methodology on the Data tab
+
+**Status:** accepted, 2026-10-21. **Amends:** ADR-111 (the phone card header), ADR-085 and
+ADR-092 (what each board prints about itself).
+
+### 1. The card's close and Expand controls never touch
+
+Below 768px the card's head is absolutely placed in the card's corner (the ≤1099px rule), but the
+phone rule re-added the head's old in-flow padding, pushing the 40px close control 12px further in
+than the rail's 3.6rem gutter allowed. On a Pixel 7 viewport the compact Expand control and the ✕
+overlapped by 6.41 × 25.77 px (reproduced on main at ee863cc in Chromium 141; also at 320 and
+390px, and in the expanded state for a long name). The head's phone padding is now 0, and the
+rail's right gutter is `--space-3 + --detail-close-size + --space-2`, derived from the control it
+keeps clear of. Every measurement across seven viewports, three cards (including the longest name
+and an Out badge), both header states, all six tabs and scrolled panels now has a gap ≥ 8px.
+`mobile.spec.ts` asserts non-intersecting rectangles with a ≥ 4px gap and an unshrunk target; it
+fails on main (−6.4px).
+
+### 2. Hide bye-week players (ROS and Start/Sit)
+
+A checkbox in the controls strip (`nobye=1`, off by default, named in the phone's folded row). A
+bye is the build's schedule for its target week (`through_week + 1`), never a missing projection,
+a pending line, an injury, a null opponent or a next-game date; unknown stays visible.
+
+* **Start/Sit** reads its weekly record's `game_state === "bye"` (a record for another week is
+  unknown). The comparison is never filtered; its bye explanation is unchanged.
+* **ROS** reads the team's `team_matchups` record — fetched only while the filter is on (about
+  4 kB on the live build), so no ordinary ROS visit pays for it. `upcoming_bye_weeks` is computed
+  from the whole schedule, so a team whose Thursday game is over is not on a bye; a record from
+  another cutoff, a missing team or an unsigned player is unknown. A build with no schedule, or
+  whose weekly target differs, disables the control with its reason and hides nobody.
+* Applied in the row selectors before the actionable split, the chart's preview cut, paging, the
+  table, the row counts and the filtered export; ranks are never renumbered. A search does not
+  override it: the board says how many it hid ("“Deebo” matches only 1 week 9 bye player…") with
+  *Show bye-week players*.
+
+No new artifact or contract: the rule reuses published schedule facts.
+
+### 3. Methodology moves to the Data tab
+
+The boards repeated their methodology in captions and paragraphs — the ROS caption alone was six
+sentences above every table. Those passages now live once, grouped by board, in Data → *Reading
+the boards* (lazy, like *How it works*). Boards keep a short semantic caption (their accessible
+name), units, time horizons, attribution, glyph keys and state-specific lines (a stale feed, a
+bound, a disabled filter, a bye). The audit list is in the PR and `docs/UX_SPEC.md` §6A.22.
+Copy-placement tests now assert the meaning in its new home.

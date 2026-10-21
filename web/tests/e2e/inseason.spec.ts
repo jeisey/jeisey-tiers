@@ -161,7 +161,7 @@ test.describe("the ROS tier board", () => {
     // In the legend beside the board, where the bands are, and visible with no interaction.
     // The disclosure block repeats the build's own sentence, but the claim has to be on the
     // picture rather than one click behind it.
-    await expect(page.locator(".legend").getByText(/bands, not lines/i)).toBeVisible();
+    await expect(page.locator(".legend").getByText(/tier bands overlap/i)).toBeVisible();
     // And no edge is drawn as a fact: a tier strip is a span, never a rule at a cut position.
     await expect(page.locator(".tier-band-fill").first()).toBeVisible();
   });
@@ -279,9 +279,11 @@ test.describe("the ROS tier board", () => {
     const badge = table.locator(".player-cell .availability-badge").first();
     await expect(badge).toBeVisible();
     await expect(badge.locator(".visually-hidden")).toContainText(/Availability: .+\./);
-    // The caption says what the mark is and that no number used it.
-    await expect(table.locator("caption")).toContainText(/availability reading/i);
-    await expect(table.locator("caption")).toContainText(/no input to any number/i);
+    // What the mark is, and that no number used it, is said once on the Data tab (ADR-115).
+    await page.goto(`${IN_SEASON}?view=data`);
+    const guide = page.locator(".board-guide");
+    await expect(guide.getByText(/The availability reading/)).toBeVisible();
+    await expect(guide.getByText(/no input to any number/)).toBeVisible();
   });
 
   test("holds a season that is over back from the actionable board, and shows it on request", async ({
@@ -341,7 +343,10 @@ test.describe("the opportunity board", () => {
     for (const heading of headings) {
       expect(heading).not.toMatch(/adp|rank gap|score|edge/i);
     }
-    await expect(page.getByText(/not a price, not a rank/i)).toBeVisible();
+    // The one line the counts need on screen (ADR-114); the rest is on the Data tab (ADR-115).
+    await expect(page.locator('[data-behavior-note="coverage"]')).toContainText("top 100 adds and top 100 drops");
+    await page.goto(`${IN_SEASON}?view=data`);
+    await expect(page.locator(".board-guide").getByText(/never a price, never a rank/i)).toBeVisible();
   });
 
   test("draws two tracks on two scales and never one combined position", async ({ page }) => {
@@ -687,9 +692,11 @@ test.describe("pick of the week", () => {
     expect(text).not.toMatch(/\d+% rostered|rostered in|percent of leagues|% owned/);
     expect(text).not.toMatch(/matchup/);
     expect(text).not.toMatch(/last 3 games/);
-    // And it says so in as many words. ADR-112 published ESPN's rostered share on the
-    // Opportunity Board and the card; this page's rule does not read it, and says so.
-    expect(text).toContain("pick of the week does not use a rostered percentage");
+    // And it says so in as many words — once, on the Data tab, where every board's method now
+    // lives (ADR-115). ADR-112 published ESPN's rostered share on the Opportunity Board and the
+    // card; this page's rule does not read it.
+    await page.goto(`${IN_SEASON}?view=data`);
+    await expect(page.getByText(/Pick of the Week does not use a rostered percentage/)).toBeVisible();
   });
 
   test("cycles sets, keeps the set in the URL, and survives a reload", async ({ page }) => {
@@ -785,8 +792,8 @@ test.describe("the player card in season", () => {
     // are the reading — so the assertion names which of the two it means.
     await expect(card.locator(".readout-label", { hasText: /^Points per game$/ })).toBeVisible();
     await expect(card.locator(".readout-label", { hasText: /^Snap share$/ })).toBeVisible();
-    // A count is never called a price, and the card says so where the counts are.
-    await expect(card.getByText(/not a price and not a rank/i)).toBeVisible();
+    // A count is never called a price; the Data tab says so once, for every surface (ADR-115).
+    await expect(card.getByText(/\b(is|as) a (draft )?price\b/i)).toHaveCount(0);
   });
 
   /*

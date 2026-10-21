@@ -4,10 +4,10 @@
   "record_schema": "behavior_trend_series",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 18,
+  "record_count": 17,
   "records": [
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -20,104 +20,111 @@
       "observations": 15,
       "observation_days": 8,
       "span_days": 6.9583,
-      "add_trend": 39.9869,
-      "net_trend": 42.9889,
-      "quality_flags": [],
+      "add_trend": null,
+      "net_trend": null,
+      "add_observations": 0,
+      "add_span_days": 0.0,
+      "net_observations": 0,
+      "net_span_days": 0.0,
+      "quality_flags": [
+        "single_observation",
+        "one_sided_points"
+      ],
       "points": [
         {
           "observed_at": "2026-08-11T13:00:00Z",
-          "add_count": 437,
-          "drop_count": 116,
-          "net_add_count": 321
+          "add_count": null,
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-12T05:00:00Z",
-          "add_count": 463,
-          "drop_count": 114,
-          "net_add_count": 349
+          "add_count": null,
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-13T05:00:00Z",
-          "add_count": 503,
+          "add_count": null,
           "drop_count": 111,
-          "net_add_count": 392
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T08:00:00Z",
-          "add_count": 548,
+          "add_count": null,
           "drop_count": 107,
-          "net_add_count": 441
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T09:00:00Z",
-          "add_count": 550,
+          "add_count": null,
           "drop_count": 107,
-          "net_add_count": 443
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T11:00:00Z",
-          "add_count": 553,
+          "add_count": null,
           "drop_count": 107,
-          "net_add_count": 446
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T13:00:00Z",
-          "add_count": 557,
+          "add_count": null,
           "drop_count": 107,
-          "net_add_count": 450
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T19:00:00Z",
-          "add_count": 567,
+          "add_count": null,
           "drop_count": 106,
-          "net_add_count": 461
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T05:00:00Z",
-          "add_count": 583,
+          "add_count": null,
           "drop_count": 105,
-          "net_add_count": 478
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T11:00:00Z",
-          "add_count": 593,
+          "add_count": null,
           "drop_count": 104,
-          "net_add_count": 489
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-16T05:00:00Z",
-          "add_count": 623,
+          "add_count": null,
           "drop_count": 102,
-          "net_add_count": 521
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T05:00:00Z",
-          "add_count": 663,
+          "add_count": null,
           "drop_count": 99,
-          "net_add_count": 564
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T10:00:00Z",
-          "add_count": 672,
+          "add_count": null,
           "drop_count": 98,
-          "net_add_count": 574
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T05:00:00Z",
-          "add_count": 703,
+          "add_count": null,
           "drop_count": 96,
-          "net_add_count": 607
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T12:00:00Z",
-          "add_count": 715,
+          "add_count": null,
           "drop_count": 95,
-          "net_add_count": 620
+          "net_add_count": null
         }
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -132,6 +139,10 @@
       "span_days": 0.2917,
       "add_trend": 54.8571,
       "net_trend": 58.2857,
+      "add_observations": 2,
+      "add_span_days": 0.2917,
+      "net_observations": 2,
+      "net_span_days": 0.2917,
       "quality_flags": [
         "sparse_feed_coverage"
       ],
@@ -151,7 +162,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -166,21 +177,26 @@
       "span_days": 0.0,
       "add_trend": null,
       "net_trend": null,
+      "add_observations": 1,
+      "add_span_days": 0.0,
+      "net_observations": 0,
+      "net_span_days": 0.0,
       "quality_flags": [
         "single_observation",
-        "sparse_feed_coverage"
+        "sparse_feed_coverage",
+        "one_sided_points"
       ],
       "points": [
         {
           "observed_at": "2026-08-18T12:00:00Z",
           "add_count": 1450,
-          "drop_count": 20,
-          "net_add_count": 1430
+          "drop_count": null,
+          "net_add_count": null
         }
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -195,6 +211,10 @@
       "span_days": 6.9583,
       "add_trend": 84.9788,
       "net_trend": 88.0033,
+      "add_observations": 6,
+      "add_span_days": 6.9583,
+      "net_observations": 6,
+      "net_span_days": 6.9583,
       "quality_flags": [
         "sparse_feed_coverage"
       ],
@@ -238,7 +258,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -253,6 +273,10 @@
       "span_days": 6.9583,
       "add_trend": -100.0259,
       "net_trend": -97.0239,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -348,7 +372,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -363,6 +387,10 @@
       "span_days": 6.9583,
       "add_trend": 39.9869,
       "net_trend": 42.9889,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -458,7 +486,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -472,103 +500,109 @@
       "observation_days": 8,
       "span_days": 6.9583,
       "add_trend": 55.0036,
-      "net_trend": 58.0056,
-      "quality_flags": [],
+      "net_trend": null,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 0,
+      "net_span_days": 0.0,
+      "quality_flags": [
+        "one_sided_points"
+      ],
       "points": [
         {
           "observed_at": "2026-08-11T13:00:00Z",
           "add_count": 406,
-          "drop_count": 126,
-          "net_add_count": 280
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-12T05:00:00Z",
           "add_count": 443,
-          "drop_count": 124,
-          "net_add_count": 319
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-13T05:00:00Z",
           "add_count": 498,
-          "drop_count": 121,
-          "net_add_count": 377
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T08:00:00Z",
           "add_count": 560,
-          "drop_count": 117,
-          "net_add_count": 443
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T09:00:00Z",
           "add_count": 562,
-          "drop_count": 117,
-          "net_add_count": 445
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T11:00:00Z",
           "add_count": 567,
-          "drop_count": 117,
-          "net_add_count": 450
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T13:00:00Z",
           "add_count": 571,
-          "drop_count": 117,
-          "net_add_count": 454
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T19:00:00Z",
           "add_count": 585,
-          "drop_count": 116,
-          "net_add_count": 469
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T05:00:00Z",
           "add_count": 608,
-          "drop_count": 115,
-          "net_add_count": 493
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T11:00:00Z",
           "add_count": 622,
-          "drop_count": 114,
-          "net_add_count": 508
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-16T05:00:00Z",
           "add_count": 663,
-          "drop_count": 112,
-          "net_add_count": 551
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T05:00:00Z",
           "add_count": 718,
-          "drop_count": 109,
-          "net_add_count": 609
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T10:00:00Z",
           "add_count": 729,
-          "drop_count": 108,
-          "net_add_count": 621
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T05:00:00Z",
           "add_count": 773,
-          "drop_count": 106,
-          "net_add_count": 667
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T12:00:00Z",
           "add_count": 789,
-          "drop_count": 105,
-          "net_add_count": 684
+          "drop_count": null,
+          "net_add_count": null
         }
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -583,6 +617,10 @@
       "span_days": 6.9583,
       "add_trend": 70.0075,
       "net_trend": 73.0096,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -678,7 +716,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -693,6 +731,10 @@
       "span_days": 6.9583,
       "add_trend": 80.9489,
       "net_trend": 83.951,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -788,7 +830,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -803,6 +845,10 @@
       "span_days": 6.9583,
       "add_trend": 93.0796,
       "net_trend": 96.0817,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -898,117 +944,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "behavior_source_id": "sleeper",
-      "player_id": "gsis:00-0000010",
-      "lookback_hours": 24,
-      "request_limit": 100,
-      "window_days": 7.0,
-      "snapshots_in_window": 15,
-      "observations": 15,
-      "observation_days": 8,
-      "span_days": 6.9583,
-      "add_trend": 39.9869,
-      "net_trend": 42.9889,
-      "quality_flags": [],
-      "points": [
-        {
-          "observed_at": "2026-08-11T13:00:00Z",
-          "add_count": 363,
-          "drop_count": 106,
-          "net_add_count": 257
-        },
-        {
-          "observed_at": "2026-08-12T05:00:00Z",
-          "add_count": 389,
-          "drop_count": 104,
-          "net_add_count": 285
-        },
-        {
-          "observed_at": "2026-08-13T05:00:00Z",
-          "add_count": 429,
-          "drop_count": 101,
-          "net_add_count": 328
-        },
-        {
-          "observed_at": "2026-08-14T08:00:00Z",
-          "add_count": 474,
-          "drop_count": 97,
-          "net_add_count": 377
-        },
-        {
-          "observed_at": "2026-08-14T09:00:00Z",
-          "add_count": 476,
-          "drop_count": 97,
-          "net_add_count": 379
-        },
-        {
-          "observed_at": "2026-08-14T11:00:00Z",
-          "add_count": 479,
-          "drop_count": 97,
-          "net_add_count": 382
-        },
-        {
-          "observed_at": "2026-08-14T13:00:00Z",
-          "add_count": 483,
-          "drop_count": 97,
-          "net_add_count": 386
-        },
-        {
-          "observed_at": "2026-08-14T19:00:00Z",
-          "add_count": 493,
-          "drop_count": 96,
-          "net_add_count": 397
-        },
-        {
-          "observed_at": "2026-08-15T05:00:00Z",
-          "add_count": 509,
-          "drop_count": 95,
-          "net_add_count": 414
-        },
-        {
-          "observed_at": "2026-08-15T11:00:00Z",
-          "add_count": 519,
-          "drop_count": 94,
-          "net_add_count": 425
-        },
-        {
-          "observed_at": "2026-08-16T05:00:00Z",
-          "add_count": 549,
-          "drop_count": 92,
-          "net_add_count": 457
-        },
-        {
-          "observed_at": "2026-08-17T05:00:00Z",
-          "add_count": 589,
-          "drop_count": 89,
-          "net_add_count": 500
-        },
-        {
-          "observed_at": "2026-08-17T10:00:00Z",
-          "add_count": 598,
-          "drop_count": 88,
-          "net_add_count": 510
-        },
-        {
-          "observed_at": "2026-08-18T05:00:00Z",
-          "add_count": 629,
-          "drop_count": 86,
-          "net_add_count": 543
-        },
-        {
-          "observed_at": "2026-08-18T12:00:00Z",
-          "add_count": 641,
-          "drop_count": 85,
-          "net_add_count": 556
-        }
-      ]
-    },
-    {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1022,103 +958,109 @@
       "observation_days": 8,
       "span_days": 6.9583,
       "add_trend": 55.0036,
-      "net_trend": 58.0056,
-      "quality_flags": [],
+      "net_trend": null,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 0,
+      "net_span_days": 0.0,
+      "quality_flags": [
+        "one_sided_points"
+      ],
       "points": [
         {
           "observed_at": "2026-08-11T13:00:00Z",
           "add_count": 184,
-          "drop_count": 96,
-          "net_add_count": 88
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-12T05:00:00Z",
           "add_count": 221,
-          "drop_count": 94,
-          "net_add_count": 127
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-13T05:00:00Z",
           "add_count": 276,
-          "drop_count": 91,
-          "net_add_count": 185
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T08:00:00Z",
           "add_count": 338,
-          "drop_count": 87,
-          "net_add_count": 251
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T09:00:00Z",
           "add_count": 340,
-          "drop_count": 87,
-          "net_add_count": 253
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T11:00:00Z",
           "add_count": 345,
-          "drop_count": 87,
-          "net_add_count": 258
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T13:00:00Z",
           "add_count": 349,
-          "drop_count": 87,
-          "net_add_count": 262
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T19:00:00Z",
           "add_count": 363,
-          "drop_count": 86,
-          "net_add_count": 277
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T05:00:00Z",
           "add_count": 386,
-          "drop_count": 85,
-          "net_add_count": 301
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T11:00:00Z",
           "add_count": 400,
-          "drop_count": 84,
-          "net_add_count": 316
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-16T05:00:00Z",
           "add_count": 441,
-          "drop_count": 82,
-          "net_add_count": 359
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T05:00:00Z",
           "add_count": 496,
-          "drop_count": 79,
-          "net_add_count": 417
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T10:00:00Z",
           "add_count": 507,
-          "drop_count": 78,
-          "net_add_count": 429
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T05:00:00Z",
           "add_count": 551,
-          "drop_count": 76,
-          "net_add_count": 475
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T12:00:00Z",
           "add_count": 567,
-          "drop_count": 75,
-          "net_add_count": 492
+          "drop_count": null,
+          "net_add_count": null
         }
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1133,6 +1075,10 @@
       "span_days": 6.9583,
       "add_trend": 64.7461,
       "net_trend": 67.7481,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -1228,7 +1174,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1243,6 +1189,10 @@
       "span_days": 6.9583,
       "add_trend": 62.0597,
       "net_trend": 65.0617,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -1338,7 +1288,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1353,6 +1303,10 @@
       "span_days": 6.9583,
       "add_trend": 74.0231,
       "net_trend": 77.0251,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {
@@ -1448,7 +1402,7 @@
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1461,104 +1415,111 @@
       "observations": 15,
       "observation_days": 8,
       "span_days": 6.9583,
-      "add_trend": 39.9869,
-      "net_trend": 42.9889,
-      "quality_flags": [],
+      "add_trend": null,
+      "net_trend": null,
+      "add_observations": 0,
+      "add_span_days": 0.0,
+      "net_observations": 0,
+      "net_span_days": 0.0,
+      "quality_flags": [
+        "single_observation",
+        "one_sided_points"
+      ],
       "points": [
         {
           "observed_at": "2026-08-11T13:00:00Z",
-          "add_count": 215,
+          "add_count": null,
           "drop_count": 86,
-          "net_add_count": 129
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-12T05:00:00Z",
-          "add_count": 241,
+          "add_count": null,
           "drop_count": 84,
-          "net_add_count": 157
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-13T05:00:00Z",
-          "add_count": 281,
+          "add_count": null,
           "drop_count": 81,
-          "net_add_count": 200
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T08:00:00Z",
-          "add_count": 326,
+          "add_count": null,
           "drop_count": 77,
-          "net_add_count": 249
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T09:00:00Z",
-          "add_count": 328,
+          "add_count": null,
           "drop_count": 77,
-          "net_add_count": 251
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T11:00:00Z",
-          "add_count": 331,
+          "add_count": null,
           "drop_count": 77,
-          "net_add_count": 254
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T13:00:00Z",
-          "add_count": 335,
+          "add_count": null,
           "drop_count": 77,
-          "net_add_count": 258
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T19:00:00Z",
-          "add_count": 345,
+          "add_count": null,
           "drop_count": 76,
-          "net_add_count": 269
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T05:00:00Z",
-          "add_count": 361,
+          "add_count": null,
           "drop_count": 75,
-          "net_add_count": 286
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T11:00:00Z",
-          "add_count": 371,
+          "add_count": null,
           "drop_count": 74,
-          "net_add_count": 297
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-16T05:00:00Z",
-          "add_count": 401,
+          "add_count": null,
           "drop_count": 72,
-          "net_add_count": 329
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T05:00:00Z",
-          "add_count": 441,
+          "add_count": null,
           "drop_count": 69,
-          "net_add_count": 372
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T10:00:00Z",
-          "add_count": 450,
+          "add_count": null,
           "drop_count": 68,
-          "net_add_count": 382
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T05:00:00Z",
-          "add_count": 481,
+          "add_count": null,
           "drop_count": 66,
-          "net_add_count": 415
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T12:00:00Z",
-          "add_count": 493,
+          "add_count": null,
           "drop_count": 65,
-          "net_add_count": 428
+          "net_add_count": null
         }
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1572,103 +1533,109 @@
       "observation_days": 8,
       "span_days": 6.9583,
       "add_trend": 52.6051,
-      "net_trend": 55.6071,
-      "quality_flags": [],
+      "net_trend": null,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 0,
+      "net_span_days": 0.0,
+      "quality_flags": [
+        "one_sided_points"
+      ],
       "points": [
         {
           "observed_at": "2026-08-11T13:00:00Z",
           "add_count": 0,
-          "drop_count": 66,
-          "net_add_count": -66
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-12T05:00:00Z",
           "add_count": 0,
-          "drop_count": 64,
-          "net_add_count": -64
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-13T05:00:00Z",
           "add_count": 54,
-          "drop_count": 61,
-          "net_add_count": -7
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T08:00:00Z",
           "add_count": 116,
-          "drop_count": 57,
-          "net_add_count": 59
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T09:00:00Z",
           "add_count": 118,
-          "drop_count": 57,
-          "net_add_count": 61
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T11:00:00Z",
           "add_count": 123,
-          "drop_count": 57,
-          "net_add_count": 66
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T13:00:00Z",
           "add_count": 127,
-          "drop_count": 57,
-          "net_add_count": 70
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T19:00:00Z",
           "add_count": 141,
-          "drop_count": 56,
-          "net_add_count": 85
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T05:00:00Z",
           "add_count": 164,
-          "drop_count": 55,
-          "net_add_count": 109
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-15T11:00:00Z",
           "add_count": 178,
-          "drop_count": 54,
-          "net_add_count": 124
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-16T05:00:00Z",
           "add_count": 219,
-          "drop_count": 52,
-          "net_add_count": 167
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T05:00:00Z",
           "add_count": 274,
-          "drop_count": 49,
-          "net_add_count": 225
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-17T10:00:00Z",
           "add_count": 285,
-          "drop_count": 48,
-          "net_add_count": 237
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T05:00:00Z",
           "add_count": 329,
-          "drop_count": 46,
-          "net_add_count": 283
+          "drop_count": null,
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-18T12:00:00Z",
           "add_count": 345,
-          "drop_count": 45,
-          "net_add_count": 300
+          "drop_count": null,
+          "net_add_count": null
         }
       ]
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1683,6 +1650,10 @@
       "span_days": 6.9583,
       "add_trend": 70.0075,
       "net_trend": 73.0096,
+      "add_observations": 15,
+      "add_span_days": 6.9583,
+      "net_observations": 15,
+      "net_span_days": 6.9583,
       "quality_flags": [],
       "points": [
         {

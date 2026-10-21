@@ -2333,11 +2333,19 @@ def _capture_behavior(args: argparse.Namespace) -> int:
     )
     print(f"capture        : {capture.snapshot_key}")
     print(f"window         : {capture.lookback_hours}h requested, limit {capture.request_limit}")
-    print(f"adds           : {capture.rows_for(BehaviorType.ADD)} row(s)")
-    print(f"drops          : {capture.rows_for(BehaviorType.DROP)} row(s)")
-    if not capture.is_complete:
-        print("incomplete capture: one feed returned nothing; refusing to retain", file=sys.stderr)
+    for behavior, label in ((BehaviorType.ADD, "adds"), (BehaviorType.DROP, "drops")):
+        feed = capture.feed(behavior)
+        floor = capture.floor(behavior)
+        shown = "-" if floor is None else str(floor)
+        error = f" ({feed.error})" if feed.error else ""
+        print(f"{label:<15}: {feed.status}, {feed.rows} row(s), floor {shown}{error}")
+    if not capture.is_usable:
+        print("no feed was retrieved; refusing to retain", file=sys.stderr)
         return 1
+    if not capture.is_complete:
+        # ADR-114: the retrieved side is still an observation. It is retained with the other
+        # side marked unavailable, and no net count is computed from this snapshot.
+        print("partial capture: one feed failed; retaining the other side only", file=sys.stderr)
     if not args.no_write:
         for path in write_behavior_capture(capture, store=store):
             print(f"wrote {path}")

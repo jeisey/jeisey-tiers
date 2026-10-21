@@ -284,6 +284,11 @@ export interface AppState {
    * actionable ranking (out for the season, retired). `unavail=1`. Inspection, not advice.
    */
   readonly unavailable: boolean;
+  /**
+   * ROS and Start/Sit (ADR-115): hide players whose team has no game in the build's target
+   * week, by the build's schedule. `nobye=1`. Off by default; unknown schedules stay visible.
+   */
+  readonly hideBye: boolean;
   /** My Leagues' sub-view (ADR-110): `panel=wmm` opens Win My Matchup. */
   readonly panel: LeaguePanel;
 }
@@ -334,6 +339,7 @@ export const DEFAULT_STATE: AppState = {
   stamp: "",
   returning: false,
   unavailable: false,
+  hideBye: false,
   panel: "lineup",
 };
 
@@ -368,6 +374,7 @@ const PARAM_ORDER = [
   "stamp",
   "ret",
   "unavail",
+  "nobye",
   "panel",
 ] as const;
 
@@ -652,6 +659,7 @@ export function parseState(search: string): ParsedState {
   };
   const returning = flag("ret");
   const unavailable = flag("unavail");
+  const hideBye = flag("nobye");
   const panel = oneOf(params.get("panel"), LEAGUE_PANELS, DEFAULT_STATE.panel);
   note(panel.valid);
 
@@ -692,6 +700,7 @@ export function parseState(search: string): ParsedState {
       stamp,
       returning,
       unavailable,
+      hideBye,
       panel: panel.value,
     },
     normalized,
@@ -787,8 +796,9 @@ export function serializeState(state: AppState): string {
       if (state.shown.length > 0) params.set(key, state.shown.join("."));
       continue;
     }
-    if (key === "ret" || key === "unavail") {
-      if (state[key === "ret" ? "returning" : "unavailable"]) params.set(key, "1");
+    if (key === "ret" || key === "unavail" || key === "nobye") {
+      const on = key === "ret" ? state.returning : key === "unavail" ? state.unavailable : state.hideBye;
+      if (on) params.set(key, "1");
       continue;
     }
     const value = state[key];

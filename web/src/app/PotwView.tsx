@@ -28,6 +28,7 @@
  * than accumulating twenty.
  */
 
+import { describeNet, describeSide, formatNet, netAdds, sideOf } from "../data/behavior";
 import { useCallback, useMemo } from "react";
 
 import { BehaviorSparkline } from "../charts/BehaviorSparkline";
@@ -325,7 +326,9 @@ function PickCard({
     record.behavior_lookback_hours === null || record.behavior_lookback_hours === undefined
       ? "window unknown"
       : `${String(record.behavior_lookback_hours)}h`;
-  const net = record.net_add_count ?? 0;
+  const addSide = sideOf(record, "add");
+  const dropSide = sideOf(record, "drop");
+  const net = netAdds(record);
 
   return (
     <article
@@ -392,7 +395,7 @@ function PickCard({
         <div className="readout-grid potw-tiles" data-row="primary">
           <Tile
             label={`Adds (${window})`}
-            value={formatInteger(record.add_count)}
+            value={formatInteger(addSide.count)}
             hint={
               pick.floor.fromPopulation
                 ? `bar ${formatInteger(pick.floor.value)} · median of ${String(pick.floor.count)}`
@@ -401,9 +404,27 @@ function PickCard({
           />
           <Tile
             label="Net roster moves"
-            value={`${net > 0 ? "▲ +" : net < 0 ? "▼ " : ""}${formatInteger(net)}`}
-            hint={`adds minus drops, ${window}`}
-            kind={net > 0 ? "bargain" : net < 0 ? "premium" : "even"}
+            value={
+              net.kind === "exact"
+                ? `${net.value > 0 ? "▲ +" : net.value < 0 ? "▼ " : ""}${formatInteger(net.value)}`
+                : `${net.kind === "bounded" && net.min > 0 ? "▲ " : ""}${formatNet(net)}`
+            }
+            hint={
+              net.kind === "bounded"
+                ? `a bound: ${net.known === "add" ? "drops" : "adds"} not in Sleeper's top 100, ${window}`
+                : `adds minus drops, ${window}`
+            }
+            kind={
+              net.kind === "exact"
+                ? net.value > 0
+                  ? "bargain"
+                  : net.value < 0
+                    ? "premium"
+                    : "even"
+                : net.kind === "bounded" && net.min > 0
+                  ? "bargain"
+                  : "even"
+            }
           />
           <Tile
             label="ROS expected VORP"
@@ -456,8 +477,8 @@ function PickCard({
                 {`Roster moves — drops left, adds right, axis ±${formatInteger(movesAxis)}`}
               </span>
               <MovesStrip
-                adds={record.add_count ?? null}
-                drops={record.drop_count ?? null}
+                adds={addSide.count}
+                drops={dropSide.count}
                 bound={movesAxis}
               />
             </div>
@@ -480,7 +501,7 @@ function PickCard({
             )}
           </div>
           <p className="cohort-note">
-            {`${formatInteger(record.drop_count)} drops and ${formatInteger(record.add_count)} adds over the ${window} window. ` +
+            {`${describeSide(addSide, "add")}, ${describeSide(dropSide, "drop")}, ${describeNet(record)}, over the ${window} window. ` +
               "A count is a count of transactions, not a share of leagues." +
               (momentum === null
                 ? ""
@@ -521,8 +542,8 @@ export function PotwView({
   /** The whole block's counts, bounded exactly as the Opportunity Board bounds them. */
   const movesAxis = useMemo(() => {
     const counts = finiteValues([
-      ...rows.map((row) => row.add_count),
-      ...rows.map((row) => row.drop_count),
+      ...rows.map((row) => sideOf(row, "add").count),
+      ...rows.map((row) => sideOf(row, "drop").count),
     ]);
     return counts.length === 0 ? 1 : movesBound(counts);
   }, [rows]);
@@ -661,24 +682,8 @@ export function PotwView({
         <PositionAbsences set={activeSet} board={board} filter={state.position} />
       )}
 
-      <p className="muted board-note">
-        <strong>How a pick is chosen.</strong> A player is eligible when the feed reports him
-        added at least as often as the median of his own position&rsquo;s non-zero add counts on
-        this board, with adds exceeding drops over the same window, no long absence, and no
-        roster code that says he cannot play. Among the eligible, the pick is the one the
-        rest-of-season model values highest — the add count decides membership and never the
-        ordering, because a count of transactions and a number of points share no unit and may
-        not be combined into a score.
-      </p>
-      <p className="muted board-note">
-        <strong>Pick of the Week does not use a rostered percentage.</strong> Its selection
-        rule is unchanged by ESPN&rsquo;s rostered %
-        arriving on the Opportunity Board and the player card (ADR-112): those describe ESPN
-        leagues, not yours, and changing who is picked would be a new rule with its own
-        decision. An add count is availability evidence in the direction that matters — a
-        roster that added a player did not have him, so a player rostered nearly everywhere
-        cannot post a large one — and it is shown as a count, never as a percentage.
-      </p>
+      {/* How a pick is chosen, and why it reads no rostered percentage, are on the Data tab
+          under "Reading the boards" (ADR-115). */}
     </section>
   );
 }

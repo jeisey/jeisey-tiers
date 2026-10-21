@@ -235,8 +235,10 @@ describe("a gap is not a zero", () => {
     );
     expect(sparse).toBeDefined();
     expect(sparse?.observations).toBeLessThan(sparse?.snapshots_in_window ?? 0);
-    // Every published point is a real count; the missing days are absent, not zeroed.
-    expect(sparse?.points.every((point) => point.add_count >= 0)).toBe(true);
+    // Every published side is a real count or null; the missing days are absent, not zeroed.
+    expect(
+      sparse?.points.every((point) => point.add_count === null || point.add_count >= 0),
+    ).toBe(true);
     expect(sparse?.points.length).toBe(sparse?.observations);
   });
 

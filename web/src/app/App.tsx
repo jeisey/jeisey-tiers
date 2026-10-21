@@ -45,12 +45,13 @@ import {
   leaguePresetId,
   resolveMode,
   resolveView,
+  type ResolvedViewId,
   type ScoringValue,
   type TeamCount,
 } from "../data/state";
 import { TEAM_COUNTS, SCORING_VALUES } from "../data/state";
 import { ArbitrageView } from "./ArbitrageView";
-import { Controls, SeasonMode, ViewTabs, settingsSummary } from "./Controls";
+import { Controls, SeasonMode, ViewTabs, settingsSummary, type ByeFilterProps } from "./Controls";
 import { DataView } from "./DataView";
 import { BrandLogo, Masthead } from "./Masthead";
 import { OpportunityView } from "./OpportunityView";
@@ -214,8 +215,8 @@ function SiteBoard({
   }, [league, state.scoring, state.teams, replaceState]);
   const leagueFiles = leagueKnown && (view !== "myleagues" || league !== null);
   const viewKeys = useMemo(
-    () => requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: null, leagueFiles }),
-    [store, view, leaguePreset, scoring, leagueFiles],
+    () => requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: null, leagueFiles, hideBye: state.hideBye }),
+    [store, view, leaguePreset, scoring, leagueFiles, state.hideBye],
   );
   // Rising Stars' files: fetched when the active league shows it, never gating the lineup.
   const risingOn = league?.rising === true;
@@ -256,8 +257,8 @@ function SiteBoard({
     () =>
       selectedPlayerId === null
         ? []
-        : requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: selectedPlayerId, leagueFiles }),
-    [store, view, leaguePreset, scoring, selectedPlayerId, leagueFiles],
+        : requiredKeys(store.manifest, { view, leaguePreset, scoring, cardPlayerId: selectedPlayerId, leagueFiles, hideBye: state.hideBye }),
+    [store, view, leaguePreset, scoring, selectedPlayerId, leagueFiles, state.hideBye],
   );
   const [failure, setFailure] = useState<Error | null>(null);
   const [firstPaint, setFirstPaint] = useState(false);
@@ -324,6 +325,7 @@ function SiteBoard({
       cohorts={cohorts}
       skillTree={skillTree}
       ownershipHistory={ownershipHistory}
+      byeFilter={byeFilterFor(view, store)}
     />
   );
 }
@@ -364,8 +366,11 @@ function Board({
   cohorts,
   skillTree,
   ownershipHistory,
+  byeFilter,
 }: {
   readonly leagueView: LeagueViewInputs;
+  /** ADR-115: the bye filter's control on the two boards it applies to. */
+  readonly byeFilter: ByeFilterProps | undefined;
   /** The Skill Tree's on-demand loader (ADR-107), or null when the build published none. */
   readonly skillTree: SkillTreeSource | null;
   /** The ESPN history's on-demand loader (ADR-112), or null when the build published none. */
@@ -731,7 +736,7 @@ function Board({
           <PanelToggle
             className="settings-toggle"
             label="Settings"
-            items={settingsSummary(state, inSeason !== null, leagueView.name)}
+            items={settingsSummary(state, inSeason !== null, leagueView.name, byeFilter !== undefined)}
             open={settingsOpen}
             controls="board-settings"
             onToggle={toggleSettings}
@@ -763,6 +768,7 @@ function Board({
                   : undefined
               }
               league={view === "myleagues" ? leagueView.name : null}
+              byeFilter={byeFilter}
             />
           </div>
           <ViewTabs
@@ -1206,4 +1212,28 @@ function CriticalError({ error }: { readonly error: CriticalArtifactError }): Re
       </div>
     </main>
   );
+}
+
+/**
+ * The bye filter's control (ADR-115), on the ROS and Start/Sit boards only. Decided from the
+ * manifest and the build's metadata alone, before any slice loads, so the control's state never
+ * flickers: a build that cannot answer the question disables it with the reason.
+ */
+function byeFilterFor(view: ResolvedViewId, store: DataStore): ByeFilterProps | undefined {
+  const meta = store.rosMetadata;
+  if (meta === null || (view !== "ros" && view !== "startsit")) return undefined;
+  const target = meta.through_week + 1;
+  const weeklyTarget = meta.weekly?.target_week ?? null;
+  if (view === "startsit") {
+    return weeklyTarget === null
+      ? { week: null, unavailable: "this build published no weekly projections" }
+      : { week: weeklyTarget, unavailable: null };
+  }
+  if (!("team_matchups/all" in store.manifest.files)) {
+    return { week: target, unavailable: "this build published no schedule" };
+  }
+  if (weeklyTarget !== null && weeklyTarget !== target) {
+    return { week: null, unavailable: `this build's schedule is for week ${String(weeklyTarget)}` };
+  }
+  return { week: target, unavailable: null };
 }

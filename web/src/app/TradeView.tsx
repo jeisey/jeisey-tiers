@@ -251,7 +251,7 @@ export function TradeView({
         index="01"
         id="trade-heading"
         title="Trade targets"
-        note={`Rest of season from ${bundle.metadata.ros_model_version}, through week ${String(bundle.throughWeek)} · ${scoringLabel} · ${String(state.teams)} teams. Value is expected points above the best player nobody rosters.`}
+        note={`Rest of season from ${bundle.metadata.ros_model_version}, through week ${String(bundle.throughWeek)} · ${scoringLabel} · ${String(state.teams)} teams`}
       />
 
       <GiveBox
@@ -325,11 +325,7 @@ export function TradeView({
           />
           <span>
             Include players expected back
-            <span className="trade-returning-note">
-              {" "}
-              — on a reserve list or absent 3+ weeks. Their value is the model&rsquo;s, which does not
-              know when they return. Never players out for the season.
-            </span>
+            <span className="trade-returning-note"> — reserve list or absent 3+ weeks</span>
           </span>
         </label>
       </div>
@@ -339,11 +335,7 @@ export function TradeView({
         <span>{rosterLabel(Math.max(giveCount, 1), state.get)}</span>
         <span>{compositionLabel(state.comp, state.get)}</span>
       </p>
-      <p className="trade-help">
-        {horizonSentence(horizon)} Floor and ceiling are the 10th and 90th percentiles of a
-        player&rsquo;s <em>total</em> value over those weeks — not weekly consistency, not one
-        game&rsquo;s upside.
-      </p>
+      <p className="trade-help">{horizonSentence(horizon)}</p>
 
       <SearchStatus search={search} state={state} onChange={control} />
 
@@ -1012,13 +1004,9 @@ function ExcludedList({
     <details className="trade-excluded">
       <summary>{`Not targets: ${plural(excluded.length, "player")} with value, plus ${String(belowReplacement)} at or below replacement`}</summary>
       <p className="trade-help">
-        Players with positive value who are left out, and why. Availability and absence never
-        change a value; they only keep a player from leading suggestions on an estimate that does
-        not read injury news. A player listed Out, Doubtful or Questionable for this week only is
-        still a target, with the warning beside his name.
         {returning
-          ? " Players expected back are included (your setting); a season that is over never is."
-          : " Players on a reserve list or absent three weeks or more can be included with “Include players expected back”."}
+          ? "Players expected back are included (your setting); a season that is over never is."
+          : "Players on a reserve list or absent three weeks or more can be included with “Include players expected back”."}
       </p>
       {excluded.length > 0 && (
         <ul className="trade-excluded-list">

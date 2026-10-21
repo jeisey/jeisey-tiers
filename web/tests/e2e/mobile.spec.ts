@@ -566,3 +566,73 @@ for (const viewport of [
     );
   });
 }
+
+/*
+ * ADR-115. The close control and *Expand/Collapse details* are two separate targets with a clear
+ * gap, in both header states, on every tab, after the panel and the rail scroll, and for a long
+ * name with a badge. A viewport-visibility check passed while the two rectangles overlapped by
+ * 6.4 x 25.8 px (Pixel 7, 2026-10-21), because both were on screen — only intersecting them
+ * catches it. The gutter the rail reserves is derived from the close control, so the gap is the
+ * stylesheet's `--space-2`; 4px is the floor this asserts.
+ */
+const MIN_CONTROL_GAP = 4;
+
+async function controlGap(page: Page): Promise<{ gap: number; tapSize: number }> {
+  return page.evaluate(() => {
+    const close = document.querySelector("dialog.player-detail .detail-close")?.getBoundingClientRect();
+    const toggle = document.querySelector("dialog.player-detail .detail-expand")?.getBoundingClientRect();
+    if (close === undefined || toggle === undefined) return { gap: Number.NaN, tapSize: 0 };
+    const dx = Math.max(close.left - toggle.right, toggle.left - close.right);
+    const dy = Math.max(close.top - toggle.bottom, toggle.top - close.bottom);
+    return { gap: Math.max(dx, dy), tapSize: Math.min(close.width, close.height, toggle.height) };
+  });
+}
+
+for (const viewport of [
+  { width: 412, height: 839 },
+  { width: 390, height: 844 },
+  { width: 390, height: 560 },
+  { width: 320, height: 568 },
+]) {
+  test(`the card's close and expand controls never touch at ${String(viewport.width)}x${String(viewport.height)}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    for (const [view, name] of [
+      ["ros", "Puka Nightingale"],
+      ["ros", "Kyle Pitts Sr."],
+      ["opportunity", "Bijan Robinson (surfaced)"],
+    ] as const) {
+      await page.goto(`/scenario/in-season/?view=${view}`);
+      await page.getByRole("button", { name, exact: true }).first().tap();
+      const dialog = page.getByRole("dialog");
+      const tabs = dialog.getByRole("tab");
+      for (const expanded of [false, true]) {
+        if (expanded) await dialog.getByRole("button", { name: "Expand details" }).tap();
+        for (const tab of await tabs.allTextContents()) {
+          await dialog.getByRole("tab", { name: tab, exact: true }).tap();
+          const reading = await controlGap(page);
+          expect(reading.gap, `${name}, ${expanded ? "expanded" : "compact"}, ${tab}`).toBeGreaterThanOrEqual(MIN_CONTROL_GAP);
+          // No target was shrunk to make room.
+          expect(reading.tapSize).toBeGreaterThanOrEqual(32);
+        }
+        await page.evaluate(() => {
+          for (const selector of [".detail-body", ".detail-rail"]) {
+            const node = document.querySelector(`dialog.player-detail ${selector}`);
+            if (node !== null) node.scrollTop = node.scrollHeight;
+          }
+        });
+        expect((await controlGap(page)).gap, `${name} scrolled`).toBeGreaterThanOrEqual(MIN_CONTROL_GAP);
+        await expect(dialog.getByRole("button", { name: "Close player detail" })).toBeInViewport({ ratio: 1 });
+      }
+      // The reported overlap ate into the toggle's own row: the rail still has room to spare.
+      const slack = await page.evaluate(() => {
+        const rail = document.querySelector("dialog.player-detail .detail-rail");
+        return rail === null ? 0 : rail.clientWidth - rail.scrollWidth;
+      });
+      expect(slack).toBeGreaterThanOrEqual(0);
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+    }
+  });
+}

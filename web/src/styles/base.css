@@ -218,6 +218,9 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
 
+  /* The card's close control: its size and the rail gutter that keeps clear of it (ADR-115). */
+  --detail-close-size: 40px;
+
   /* Zero. The source has no rounded corner; a cut corner is `--notch` with `.chamfer`. */
   --radius: 0;
   --notch: 12px;
@@ -587,6 +590,69 @@ code {
 
 .control-spacer {
   margin-left: auto;
+}
+
+/* Data's "Reading the boards" (ADR-115): one short heading per board over the definition grid. */
+.board-guide {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.board-guide-title {
+  margin: 0 0 var(--space-2);
+  font: 600 0.7rem/1.2 var(--font-sans);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-accent);
+}
+
+/*
+ * The bye filter (ADR-115): a checkbox drawn in the segmented control's frame and type, so it
+ * reads as a filter beside Position rather than as a setting. The box is the hit target.
+ */
+.bye-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 12px;
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--accent-wash);
+  color: var(--ink-faint);
+  font: 600 0.66rem/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  width: fit-content;
+  cursor: pointer;
+  transition: var(--t-control);
+}
+
+.bye-filter:hover:not([data-disabled]) {
+  background: var(--surface-hover);
+  color: var(--ink-strong);
+}
+
+.bye-filter:has(input:checked) {
+  background: var(--accent-wash-strong);
+  color: var(--accent-bright);
+  box-shadow: inset 0 0 0 1px rgb(102 241 255 / 50%);
+}
+
+.bye-filter input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.bye-filter[data-disabled] {
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.bye-filter-reason {
+  font-size: 0.68rem;
 }
 
 /*
@@ -2907,8 +2973,8 @@ dialog.player-detail::backdrop {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-width: 40px;
-  height: 40px;
+  min-width: var(--detail-close-size);
+  height: var(--detail-close-size);
   padding: 0 12px;
   background: transparent;
   border: var(--hairline) solid var(--line-bright);
@@ -4435,8 +4501,14 @@ dl.facts dd {
     display: none;
   }
 
+  /*
+   * No padding here: below 1100px the head is absolutely placed in the card's corner, and the
+   * rail's gutter below is measured from that corner. This rule used to re-add the in-flow
+   * padding, which pushed the close control 12px further in than the gutter allowed, so the
+   * compact header's Expand control ran 6.4px under it (ADR-115).
+   */
   .detail-head {
-    padding: var(--space-3) var(--space-3) 0;
+    padding: 0;
   }
 
   .detail-tabs {
@@ -4472,8 +4544,13 @@ dl.facts dd {
     grid-column: span 2;
   }
 
+  /*
+   * The right gutter is the close control's corner offset, its width and a clear gap, so every
+   * rail control — Expand details included, at any name length — ends left of it (ADR-115).
+   */
   .detail-rail {
-    padding: var(--space-3) 3.6rem var(--space-3) var(--space-3);
+    padding: var(--space-3) calc(var(--space-3) + var(--detail-close-size) + var(--space-2))
+      var(--space-3) var(--space-3);
     gap: var(--space-3);
   }
 
@@ -4492,8 +4569,8 @@ dl.facts dd {
 
   /* The close control is a square on a phone: the word costs a third of the header's width. */
   .detail-close {
-    width: 40px;
-    min-width: 40px;
+    width: var(--detail-close-size);
+    min-width: var(--detail-close-size);
     padding: 0;
     justify-content: center;
   }
@@ -6602,6 +6679,23 @@ table.sheet.opp-sheet thead th .recent-head button {
 
 .momentum[data-direction="falling"] .momentum-bar[data-latest="true"] {
   background: var(--premium);
+}
+
+/*
+ * ADR-114: a snapshot that carried his drops and not his adds. In place, because the point is
+ * real, and a dotted hairline rather than a bar, because its add count is unknown, not zero.
+ */
+.momentum-bar[data-unobserved="true"] {
+  align-self: stretch;
+  flex: 0 0 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--ink-faint) 0,
+    var(--ink-faint) 2px,
+    transparent 2px,
+    transparent 5px
+  );
+  opacity: 0.55;
 }
 
 /*

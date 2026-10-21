@@ -160,7 +160,7 @@ export function ArbitrageView({
           index="01"
           id="draft-rail-heading"
           title="Draft rail"
-          note={`${METHOD_LABEL}: fair rank against ${options.length > 1 ? marketLabel(market) : marketSourceLabel(summary.sourceId)}. The bar is the signed difference in picks — not points, not dollars and not a probability.`}
+          note={`${METHOD_LABEL}: fair rank against ${options.length > 1 ? marketLabel(market) : marketSourceLabel(summary.sourceId)} · bars in picks`}
         >
           <div className="segmented" role="radiogroup" aria-label="Draft rail population">
             {RAIL_MODES.map((mode) => (

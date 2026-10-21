@@ -228,6 +228,18 @@ These hold for every feature, current or future.
     boundaries.
   * **Never** a model input, a blended score, a start-share change, or a ratio of Sleeper adds
     to ESPN shares. Pick of the Week is unchanged.
+- **CR-034 Sleeper adds and drops, one side at a time** (ADR-114, DATA_CONTRACTS §29,
+  DATA_SOURCES §24). Sleeper's trending feeds are two top-100 lists, a measured ceiling with no
+  working pagination, so a player outside a list has an unknown count. Every surface shows an
+  observed count, *not in the top 100* (with the list's floor as a labelled bound), *no Sleeper
+  id*, *stale* or *unavailable*, per side; a net is exact only with both counts and otherwise a
+  labelled bound (`≥ +531,586`) or a dash. Complete daily coverage is not achieved and not
+  claimed. Pick of the Week's direction gate requires a provably positive net.
+- **CR-035 Three quality-of-life changes** (ADR-115, UX_SPEC §6A.22): the phone card's close and
+  Expand controls never touch; *Hide bye-week players* on the ROS and Start/Sit boards (`nobye=1`,
+  off by default, by the build's schedule for its target week, unknown stays visible); and each
+  board's methodology moves to Data → *Reading the boards*, so the boards lead with players,
+  values and controls.
 - **CR-033 Recent form and breakout categories.** "Whose recent production and role are
   substantially better than his season rank suggests — sustained, or one big game?" (ADR-113,
   UX_SPEC §6A.21, DATA_CONTRACTS §28):

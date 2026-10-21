@@ -50,12 +50,34 @@
     "snapshot_at_utc": "2026-08-18T12:00:00Z",
     "lookback_hours": 24,
     "request_limit": 100,
-    "add_rows": 38,
-    "drop_rows": 38,
-    "matched_players": 38,
+    "add_rows": 100,
+    "drop_rows": 100,
+    "matched_players": 19,
     "age_hours": 0.0,
     "degraded_reason": null,
-    "signal_semantics": "add and drop COUNTS over the requested lookback window; never an ADP, never a rank, never differenced against one"
+    "coverage_rule": "sleeper_top_n_v1",
+    "feed_ceiling": 100,
+    "add_available": true,
+    "drop_available": true,
+    "add_feed_floor": 60,
+    "drop_feed_floor": 4,
+    "add_retrieved_at_utc": "2026-08-18T12:00:00Z",
+    "drop_retrieved_at_utc": "2026-08-18T12:00:00Z",
+    "coverage": {
+      "players": 19,
+      "add_states": {
+        "no_sleeper_id": 1,
+        "not_in_feed": 2,
+        "observed": 16
+      },
+      "drop_states": {
+        "no_sleeper_id": 1,
+        "not_in_feed": 5,
+        "observed": 13
+      },
+      "net_exact": 11
+    },
+    "signal_semantics": "add and drop COUNTS over the requested lookback window; never an ADP, never a rank, never differenced against one. Each feed is a top-100 list: a side the feed did not carry is unknown, never zero."
   },
   "surface": null,
   "signals": {

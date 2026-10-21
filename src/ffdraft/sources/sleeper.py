@@ -43,6 +43,7 @@ from ffdraft.timeutil import utc_now
 __all__ = [
     "SLEEPER_BASE_URL",
     "SLEEPER_SOURCE_ID",
+    "TRENDING_FEED_CEILING",
     "TRENDING_LIMIT",
     "TRENDING_LOOKBACK_HOURS",
     "SleeperPlayerAdapter",
@@ -223,8 +224,17 @@ class SleeperPlayerAdapter(BaseSourceAdapter):
 #: while a 72-hour window shares 22. A window that is requested but silently clamped would
 #: make a retained count mean something other than what its manifest says, which is why the
 #: snapshot records the request rather than assuming it.
+#:
+#: **100 is also the ceiling, not a choice we could widen** (ADR-114,
+#: `docs/source-probes/2026-10-21/sleeper-trending-coverage/`). ``limit`` 101, 250, 500,
+#: 1000 and 5000 each return exactly 100 distinct ids, the same set as ``limit=100``, on both
+#: feeds and on every window from 1 to 168 hours; ``limit=25`` is an exact prefix of the 100,
+#: so each feed is a descending top-N list. No pagination, offset, cursor, season, week or
+#: position parameter changed the population. Absence from a feed is therefore *not in the
+#: top 100* — an unknown count, at most the smallest count the feed carried — never a zero.
 TRENDING_LOOKBACK_HOURS = 24
 TRENDING_LIMIT = 100
+TRENDING_FEED_CEILING = 100
 
 
 class SleeperTrendingAdapter(BaseSourceAdapter):

@@ -44,7 +44,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState, type RefObject } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 
 import { RosStatusBadge, TeamCell } from "../components/primitives";
 import {
@@ -57,26 +57,27 @@ import {
   type OpportunityCandidate,
   type RoleOrdering,
 } from "../data/candidates";
+import {
+  describeNet,
+  describeSide,
+  formatNet,
+  netAdds,
+  netSortValue,
+  sideOf,
+  type BehaviorSide,
+} from "../data/behavior";
+import type { OpportunityRecord } from "../data/contracts";
 import { compareRostered, espnCell } from "../data/espn";
 import { formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rosValue } from "../data/ros";
 import { BreakoutBadge, RecentHeader, recentColumns } from "./RecentColumns";
 import { positionalRankAccessor, seasonColumns } from "./SeasonColumns";
 
-export const OPPORTUNITY_TABLE_CAPTION =
-  "In-season opportunity board. Add and drop counts are transactions over the requested " +
-  "window; they are never converted into a draft position and never differenced against the " +
-  "rest-of-season rank. ROS columns are the model's; Szn rank, Total pts and Avg pts/g are " +
-  "actual results so far. Positional ranks sort within each position. A row marked " +
-  "“surfaced” is published because current evidence made " +
-  "him relevant, and carries no tier. The mark beside a name is the roster status the build " +
-  "recorded: annotation, and no input to any number here. Role is the position's leading " +
-  "measure — pass attempts for a quarterback, snap share otherwise — in his latest game " +
-  "against the average of his earlier games. Add momentum is the published slope of his add " +
-  "count over the retained window. Next game is sportsbook context no board reads, and no " +
-  "column rates an opponent. ESPN rost is the share of ESPN leagues rostering him, with its " +
-  "change in percentage points over about 7 days (7d) and 1 day (1d) and ESPN's start share " +
-  "(st): ESPN's population, not your league, and popularity rather than a projection.";
+/**
+ * The table's caption: what it is and how many rows it shows. What each column means is on the
+ * Data tab under "Reading the boards" (ADR-115).
+ */
+export const OPPORTUNITY_TABLE_CAPTION = "In-season opportunity board.";
 
 interface Scale {
   /** The largest rest-of-season value on the rows shown; the value bar's denominator. */
@@ -92,7 +93,7 @@ export function opportunityTableScale(rows: readonly OpportunityCandidate[]): Sc
     row: { record },
   } of rows) {
     widestValue = Math.max(widestValue, Math.abs(rosValue(record)));
-    widestCount = Math.max(widestCount, record.add_count ?? 0, record.drop_count ?? 0);
+    widestCount = Math.max(widestCount, sideOf(record, "add").count ?? 0, sideOf(record, "drop").count ?? 0);
   }
   return { widestValue: widestValue || 1, widestCount: widestCount || 1 };
 }
@@ -113,8 +114,34 @@ function signedPoints(value: number): string {
   return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)}`;
 }
 
-function countCell(value: number | null | undefined): string {
-  return value === null || value === undefined ? "—" : String(value);
+/**
+ * A count, or a dash that says why there is none (ADR-114). Outside a feed's top 100 is the
+ * ordinary state for most rows, so it is a quiet dash with its bound in the label rather than
+ * a `≤ N` repeated down the board.
+ */
+function countCell(record: OpportunityRecord, side: BehaviorSide): ReactNode {
+  const reading = sideOf(record, side);
+  if (reading.count !== null) return String(reading.count);
+  const label = describeSide(reading, side);
+  return (
+    <span className="count-absent" data-state={reading.state} title={label}>
+      <span aria-hidden="true">—</span>
+      <span className="visually-hidden">{label}</span>
+    </span>
+  );
+}
+
+/** An exact net as the column has always printed it: `+1430`, `-12`, `0`. */
+function signedCount(value: number): string {
+  return value > 0 ? `+${String(value)}` : String(value);
+}
+
+/** Observed counts first; a player outside the feed sorts just below its floor; then unknowns. */
+function countSortValue(record: OpportunityRecord, side: BehaviorSide): number {
+  const reading = sideOf(record, side);
+  if (reading.count !== null) return reading.count;
+  if (reading.max !== null) return reading.max - 0.5;
+  return -1;
 }
 
 /** The recent lens a table renders (ADR-113): null in the Season lens or without the artifact. */
@@ -310,14 +337,14 @@ function opportunityColumns(
     {
       id: "add_count",
       header: `Adds${windowSuffix}`,
-      accessorFn: (row) => row.row.record.add_count ?? -1,
-      cell: (context) => countCell(context.row.original.row.record.add_count),
+      accessorFn: (row) => countSortValue(row.row.record, "add"),
+      cell: (context) => countCell(context.row.original.row.record, "add"),
       meta: {
         align: "right",
         // No bar at all when the feed said nothing: a zero-width bar and "nobody added him"
         // look identical, and only one of them is a reading.
         track: (row: OpportunityCandidate) =>
-          row.row.record.add_count === null || row.row.record.add_count === undefined
+          row.row.record.add_count === null || row.row.record.add_count === undefined || sideOf(row.row.record, "add").count === null
             ? undefined
             : barGradient(
                 row.row.record.add_count / scale.widestCount,
@@ -329,13 +356,13 @@ function opportunityColumns(
     {
       id: "drop_count",
       header: `Drops${windowSuffix}`,
-      accessorFn: (row) => row.row.record.drop_count ?? -1,
-      cell: (context) => countCell(context.row.original.row.record.drop_count),
+      accessorFn: (row) => countSortValue(row.row.record, "drop"),
+      cell: (context) => countCell(context.row.original.row.record, "drop"),
       meta: {
         align: "right",
         className: "col-mid",
         track: (row: OpportunityCandidate) =>
-          row.row.record.drop_count === null || row.row.record.drop_count === undefined
+          row.row.record.drop_count === null || row.row.record.drop_count === undefined || sideOf(row.row.record, "drop").count === null
             ? undefined
             : barGradient(
                 row.row.record.drop_count / scale.widestCount,
@@ -347,22 +374,31 @@ function opportunityColumns(
     {
       id: "net_add_count",
       header: "Net adds",
-      accessorFn: (row) => row.row.record.net_add_count ?? Number.NEGATIVE_INFINITY,
+      // ADR-114: exact only with both sides observed; a one-sided net prints and sorts as the
+      // bound it is (`≥ +531,586`), and a row with neither sorts last.
+      accessorFn: (row) => netSortValue(netAdds(row.row.record)) ?? Number.NEGATIVE_INFINITY,
       cell: (context) => {
-        const net = context.row.original.row.record.net_add_count;
+        const record = context.row.original.row.record;
+        const net = netAdds(record);
+        const change =
+          net.kind === "exact"
+            ? net.value > 0
+              ? "up"
+              : net.value < 0
+                ? "down"
+                : "flat"
+            : net.kind === "bounded"
+              ? net.min > 0
+                ? "up"
+                : net.max < 0
+                  ? "down"
+                  : "none"
+              : "none";
+        const text = formatNet(net);
         return (
-          <span
-            data-change={
-              net === null || net === undefined
-                ? "none"
-                : net > 0
-                  ? "up"
-                  : net < 0
-                    ? "down"
-                    : "flat"
-            }
-          >
-            {net === null || net === undefined ? "—" : net > 0 ? `+${String(net)}` : String(net)}
+          <span data-change={change} data-net={net.kind} title={net.kind === "exact" ? undefined : describeNet(record)}>
+            <span aria-hidden={net.kind !== "exact"}>{net.kind === "exact" ? signedCount(net.value) : text}</span>
+            {net.kind !== "exact" && <span className="visually-hidden">{describeNet(record)}</span>}
           </span>
         );
       },
@@ -572,9 +608,7 @@ export function OpportunityTable({
           {OPPORTUNITY_TABLE_CAPTION}{" "}
           {seasonNote === undefined ? "" : `${seasonNote} `}
           {recentNote === undefined ? "" : `${recentNote} `}
-          {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}. `}
-          Add and drop bars are scaled against the largest count on the rows shown; the value
-          bar against the largest rest-of-season value.
+          {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}.`}
         </caption>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (

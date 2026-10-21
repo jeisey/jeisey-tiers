@@ -23,6 +23,7 @@
  * quantiles by `data/startsit.ts`, the twin of the Python the evaluation scored.
  */
 
+import { ByeNote } from "./ByeNote";
 import { useMemo, useState } from "react";
 
 import { OutcomeRidges, slotLetter } from "../charts/OutcomeRidges";
@@ -37,7 +38,7 @@ import {
   flipSentence,
   injuryReading,
   readDuel,
-  selectWeekBoard,
+  selectWeekBoardWithByes,
   sortWeekBoard,
   toggleDuel,
   type Contender,
@@ -207,8 +208,10 @@ export function StartSitView({
   const effectiveOrder: WeekBoardOrder = order ?? (state.position === "all" ? "startable" : "median");
 
   const duel = useMemo(() => readDuel(bundle, state, now), [bundle, state, now]);
-  const board = useMemo(
-    () => selectWeekBoard(bundle, state, effectiveOrder, now),
+  // ADR-115: the bye filter runs inside the selection, before paging, so the count, the board
+  // and "Show all" agree. The comparison above reads its own records and is never filtered.
+  const { rows: board, byeHidden } = useMemo(
+    () => selectWeekBoardWithByes(bundle, state, effectiveOrder, now),
     [bundle, state, effectiveOrder, now],
   );
 
@@ -256,7 +259,7 @@ export function StartSitView({
         index="01"
         id="startsit-heading"
         title={`Start/Sit — week ${String(week)}`}
-        note={`Up to ${String(MAX_DUEL)} players for one slot. Each is a distribution of his week-${String(week)} ${scoringLabel} points given that he plays, from ${weekly.model_version}; the pick is whoever gives you the best chance to win the week at your margin.`}
+        note={`Compare up to ${String(MAX_DUEL)} players for one slot · ${scoringLabel} · ${weekly.model_version}`}
       />
       {kickedOff && (
         <Notice severity="warning" title={`Every week-${String(week)} game had kicked off when this build ran.`}>
@@ -326,6 +329,19 @@ export function StartSitView({
 
       <WeekBoard
         rows={board}
+        byeNote={
+          <ByeNote
+            on={state.hideBye}
+            hidden={byeHidden}
+            week={week}
+            schedule={null}
+            search={state.search}
+            empty={board.length === 0}
+            onShow={() => {
+              onChange({ hideBye: false });
+            }}
+          />
+        }
         order={effectiveOrder}
         onOrder={setOrder}
         duel={state.duel}
@@ -929,6 +945,7 @@ function WhyThisWeekPanel({
 
 function WeekBoard({
   rows,
+  byeNote,
   order,
   onOrder,
   duel,
@@ -944,6 +961,8 @@ function WeekBoard({
   seasonNote,
 }: {
   readonly rows: readonly WeekBoardRow[];
+  /** ADR-115: what the bye filter hid, with the way back; null when it hid nothing. */
+  readonly byeNote: React.ReactNode;
   readonly order: WeekBoardOrder;
   readonly onOrder: (order: WeekBoardOrder) => void;
   readonly duel: readonly string[];
@@ -1087,6 +1106,7 @@ function WeekBoard({
           }}
         />
       </div>
+      {byeNote}
       <p className="weekboard-sorted" role="status">
         {sortColumn !== undefined && sort !== null && (
           <>
@@ -1247,14 +1267,10 @@ function WeekBoard({
         </button>
       )}
       <p className="weekboard-note">
-        Range bar: whisker P10–P90, box P25–P75, tick the median, dashed line a startable week at his
-        position in your league. &ldquo;Opp. allows&rdquo; ranks his opponent by fantasy points allowed to the
-        position this season, shrunk toward the league rate; 1st is the most generous.
-        &ldquo;vs typical&rdquo; is the median against the player&apos;s typical week, with the input that moved it
-        most. Week rank orders this week&apos;s medians within his position; RoS rank is his
-        rest-of-season positional rank in your league. Select a column heading to sort the whole
-        board by it (P10 – P90 by the width of the range); blanks sort last either way, and an
-        &ldquo;Order by&rdquo; choice restores the board&apos;s own order. {seasonNote}
+        {/* The range bar's key stays with the bars; the columns' definitions are on the Data tab
+            under "Reading the boards" (ADR-115). */}
+        Range bar: whisker P10–P90, box P25–P75, tick the median, dashed line a startable week.{" "}
+        {seasonNote}
       </p>
     </div>
   );

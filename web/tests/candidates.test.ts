@@ -609,6 +609,13 @@ describe("the filtered export", () => {
       "breakout_rule_version",
       "breakout_games_weeks",
       "breakout_role_passed",
+      // ADR-114: each side's state and the feed-floor bounds, appended last.
+      "add_state",
+      "drop_state",
+      "add_count_at_most",
+      "drop_count_at_most",
+      "net_add_at_least",
+      "net_add_at_most",
     ]);
   });
 

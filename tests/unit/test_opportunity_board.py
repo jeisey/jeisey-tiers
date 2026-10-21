@@ -187,11 +187,28 @@ def test_a_capture_records_the_request_rather_than_claiming_a_window() -> None:
     assert capture.counts(BehaviorType.DROP) == {"1002": 40}
 
 
-def test_a_half_missing_snapshot_is_refused_rather_than_retained(tmp_path: Path) -> None:
-    """A drop count is only interpretable against the add count from the same moment."""
+def test_a_half_missing_snapshot_keeps_its_observed_side_and_no_net(tmp_path: Path) -> None:
+    """ADR-114: a failed or empty feed costs its own side of the snapshot, not the other's.
+
+    Before ADR-114 this capture was refused, because a net count from it would be wrong. The
+    net is now never computed from a missing side, so refusing the capture only threw away
+    valid add counts.
+    """
     capture = _capture(adds={"1001": 900}, drops={})
-    assert not capture.is_complete
-    with pytest.raises(ValueError, match="missing one of its two feeds"):
+    assert not capture.is_complete and capture.is_usable
+    assert capture.side_available(BehaviorType.ADD)
+    assert not capture.side_available(BehaviorType.DROP)
+    written = write_behavior_capture(
+        capture,
+        store=SnapshotStore(root=tmp_path, prefix=BEHAVIOR_PREFIX),
+    )
+    assert len(written) == 2
+
+
+def test_a_snapshot_with_neither_feed_is_refused(tmp_path: Path) -> None:
+    capture = _capture(adds={}, drops={})
+    assert not capture.is_usable
+    with pytest.raises(ValueError, match="neither feed"):
         write_behavior_capture(capture, store=SnapshotStore(root=tmp_path, prefix=BEHAVIOR_PREFIX))
 
 

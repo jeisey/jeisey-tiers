@@ -30,6 +30,17 @@ edge and mean nothing (roadmap 10.3, 12.3). Adds and drops *are* differenced int
 ``net_add_count``, and that is legitimate for the narrow reason that both sides are the same
 unit, measured over the same window, by the same feed, at the same moment.
 
+**Each side is observed or not, on its own** (ADR-114). Sleeper's add and drop feeds are two
+separate top-100 lists — the ceiling is measured, not chosen — so most board players are in
+neither and many are in one. Every row says, per side, which of these it is
+(``add_state``/``drop_state``): ``observed`` (the count, which may be a real zero),
+``not_in_feed`` (outside that feed's top 100: unknown, at most ``*_count_max``, the feed's
+smallest count), ``no_sleeper_id`` / ``ambiguous_sleeper_id`` (the feed cannot reach him),
+``stale`` or ``unavailable``. Only an observed side carries a count, and ``net_add_count``
+exists only when both sides were observed. Before ADR-114 every unobserved side was written as
+``0``, which published a player in the add feed and absent from the drop feed as having no
+drops at all.
+
 **Degradation.** The behaviour feed is optional and the board says so per row
 (``behavior_available``). A capture that is missing, unreadable or stale leaves every
 intrinsic column exactly as the rest-of-season build produced it and empties the behaviour
@@ -44,7 +55,7 @@ from datetime import datetime
 from typing import Any
 
 from ffdraft.artifacts.schemas import record_schema_version
-from ffdraft.behavior.capture import BehaviorCapture
+from ffdraft.behavior.capture import BEHAVIOR_COVERAGE_RULE, BehaviorCapture
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import BehaviorType, Severity, SurfaceReason
 from ffdraft.identity.registry import CanonicalRegistry
@@ -56,6 +67,7 @@ from ffdraft.market.surface import (
     build_surface_universe,
 )
 from ffdraft.quality import QualityGate
+from ffdraft.sources.sleeper import TRENDING_FEED_CEILING
 
 #: The employment reading (``ffdraft.status.employment``, ADR-102) is read *by value*: this
 #: module may not import the status package (`tests/unit/test_availability_overrides.py`), and
@@ -67,7 +79,13 @@ _SIGNED = "signed"
 _SLEEPER_SOURCE = "sleeper"
 
 __all__ = [
+    "AMBIGUOUS_SLEEPER_ID",
     "BEHAVIOR_MAX_AGE_HOURS",
+    "NOT_IN_FEED",
+    "NO_SLEEPER_ID",
+    "OBSERVED",
+    "STALE",
+    "UNAVAILABLE",
     "OPPORTUNITY_METHOD_VERSION",
     "SURFACE_ADD_COUNT_MINIMUM",
     "BehaviorSignals",
@@ -79,8 +97,18 @@ __all__ = [
     "resolve_behavior_signals",
 ]
 
-#: Bump when the meaning of an opportunity row changes.
-OPPORTUNITY_METHOD_VERSION = "phase12_opportunity_v1"
+#: Bump when the meaning of an opportunity row changes. v2 (ADR-114): per-side
+#: observability; an unobserved side is null, never zero.
+OPPORTUNITY_METHOD_VERSION = "phase12_opportunity_v2"
+
+#: Per-side behaviour states (ADR-114). Published on every row as ``add_state`` and
+#: ``drop_state``; only ``observed`` carries a count.
+OBSERVED = "observed"
+NOT_IN_FEED = "not_in_feed"
+NO_SLEEPER_ID = "no_sleeper_id"
+AMBIGUOUS_SLEEPER_ID = "ambiguous_sleeper_id"
+STALE = "stale"
+UNAVAILABLE = "unavailable"
 
 #: How stale a retained behaviour snapshot may be before the board stops presenting it as
 #: current. Two days rather than one: the in-season capture cadence is daily, so a single
@@ -105,9 +133,10 @@ SURFACE_SNAP_SHARE_MINIMUM = 0.55
 class BehaviorSignals:
     """One resolved behaviour snapshot, keyed by canonical player id.
 
-    ``available`` is the single question the board asks. Everything else is provenance the
-    row carries so a reader can tell a zero from an absence: a player with no add row inside
-    a top-N feed has ``add_count`` 0, and a build with no feed at all has ``None``.
+    ``available`` is the board-level question: is there a fresh capture with at least one
+    feed retrieved? :meth:`side` answers the per-player one, separately for adds and drops,
+    so a reader can tell an observed count from a player outside a top-N feed, from a player
+    the feed cannot reach, from a feed that failed (ADR-114).
     """
 
     available: bool
@@ -123,8 +152,79 @@ class BehaviorSignals:
     drop_ranks: Mapping[str, int] = field(default_factory=dict)
     matched_players: int = 0
     unresolved_rows: int = 0
+    #: Whether each feed was retrieved in this capture. A failed feed observed nobody.
+    #: ``None`` (a directly constructed signal) follows ``available``.
+    add_available: bool | None = None
+    drop_available: bool | None = None
+    #: Each feed's smallest count: the most a player absent from it can have had.
+    add_floor: int | None = None
+    drop_floor: int | None = None
+    add_retrieved_at_utc: datetime | None = None
+    drop_retrieved_at_utc: datetime | None = None
+    #: Canonical players the feed can reach (a verified, unpoisoned ``sleeper_id``), and those
+    #: whose ``sleeper_id`` is poisoned. ``None`` when not resolved against a registry: every
+    #: player then counts as reachable, so an absence reads as ``not_in_feed``.
+    reachable: frozenset[str] | None = None
+    ambiguous: frozenset[str] = frozenset()
+    #: True when a capture exists but is beyond the freshness window.
+    stale: bool = False
+    #: Per-side state counts over the published rows; filled by the board.
+    coverage: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.add_available is None:
+            self.add_available = self.available
+        if self.drop_available is None:
+            self.drop_available = self.available
+
+    def side(
+        self,
+        player_id: str,
+        behavior: BehaviorType,
+    ) -> tuple[str, int | None, int | None]:
+        """``(state, count, count_max)`` for one player and one feed.
+
+        ``count`` is set only when observed. ``count_max`` is set only when he is outside a
+        retrieved feed: the feed's smallest count, an upper bound that rests on each feed
+        being a descending top-N list (verified: a shorter limit returns an exact prefix).
+        """
+        if not self.available:
+            return (STALE if self.stale else UNAVAILABLE), None, None
+        is_add = behavior is BehaviorType.ADD
+        if not (self.add_available if is_add else self.drop_available):
+            return UNAVAILABLE, None, None
+        counts = self.add_counts if is_add else self.drop_counts
+        if player_id in counts:
+            return OBSERVED, int(counts[player_id]), None
+        if player_id in self.ambiguous:
+            return AMBIGUOUS_SLEEPER_ID, None, None
+        if self.reachable is not None and player_id not in self.reachable:
+            return NO_SLEEPER_ID, None, None
+        return NOT_IN_FEED, None, (self.add_floor if is_add else self.drop_floor)
+
+    def behavior_columns(self, player_id: str) -> dict[str, Any]:
+        """Every per-player behaviour column, with no unobserved side written as a number."""
+        add_state, add_count, add_max = self.side(player_id, BehaviorType.ADD)
+        drop_state, drop_count, drop_max = self.side(player_id, BehaviorType.DROP)
+        return {
+            "add_state": add_state,
+            "drop_state": drop_state,
+            "add_count": add_count,
+            "drop_count": drop_count,
+            "add_count_max": add_max,
+            "drop_count_max": drop_max,
+            # Exact only: both sides observed, over the same requested window.
+            "net_add_count": (
+                None if add_count is None or drop_count is None else add_count - drop_count
+            ),
+            "add_rank": self.add_ranks.get(player_id) if add_state == OBSERVED else None,
+            "drop_rank": self.drop_ranks.get(player_id) if drop_state == OBSERVED else None,
+        }
 
     def to_dict(self) -> dict[str, Any]:
+        def stamp(moment: datetime | None) -> str | None:
+            return None if moment is None else moment.isoformat().replace("+00:00", "Z")
+
         return {
             "source_id": self.source_id,
             "available": self.available,
@@ -140,10 +240,21 @@ class BehaviorSignals:
             "matched_players": self.matched_players,
             "age_hours": None if self.age_hours is None else round(self.age_hours, 2),
             "degraded_reason": self.degraded_reason,
+            "coverage_rule": BEHAVIOR_COVERAGE_RULE,
+            "feed_ceiling": TRENDING_FEED_CEILING,
+            "add_available": self.add_available,
+            "drop_available": self.drop_available,
+            "add_feed_floor": self.add_floor,
+            "drop_feed_floor": self.drop_floor,
+            "add_retrieved_at_utc": stamp(self.add_retrieved_at_utc),
+            "drop_retrieved_at_utc": stamp(self.drop_retrieved_at_utc),
+            "coverage": dict(self.coverage) or None,
             "signal_semantics": (
                 "add and drop COUNTS over the requested lookback window, from the feed's "
                 "own snapshot. Transactions, not a price: never an ADP, never a draft rank, "
-                "and never differenced against a fair rank."
+                "and never differenced against a fair rank. Each feed is a top-100 list: a "
+                "side the feed did not carry is unknown (at most the feed's floor), never "
+                "zero, and a net exists only when both sides were observed."
             ),
         }
 
@@ -205,6 +316,7 @@ def resolve_behavior_signals(
             lookback_hours=capture.lookback_hours,
             request_limit=capture.request_limit,
             age_hours=age,
+            stale=True,
             degraded_reason=(
                 f"the latest retained snapshot is {age:.1f}h old, beyond the "
                 f"{max_age_hours:.0f}h freshness window"
@@ -219,8 +331,18 @@ def resolve_behavior_signals(
             degraded_reason="no canonical registry, so no feed row can be resolved",
         )
 
+    if not capture.is_usable:
+        return BehaviorSignals(
+            available=False,
+            source_id=capture.source_id,
+            snapshot_at_utc=capture.observed_at_utc,
+            age_hours=age,
+            degraded_reason="neither trending feed was retrieved in the latest capture",
+        )
+
     # The one fail-closed mapping the momentum series uses too: a poisoned sleeper_id
     # reaches nobody (ADR-019, ADR-102).
+    from ffdraft.behavior.history import ambiguous_sleeper_players
     from ffdraft.behavior.history import sleeper_to_canonical as crosswalk
 
     sleeper_to_canonical = crosswalk(registry)
@@ -254,6 +376,14 @@ def resolve_behavior_signals(
         drop_ranks=drop_ranks,
         matched_players=len(set(add_counts) | set(drop_counts)),
         unresolved_rows=add_unresolved + drop_unresolved,
+        add_available=capture.side_available(BehaviorType.ADD),
+        drop_available=capture.side_available(BehaviorType.DROP),
+        add_floor=capture.floor(BehaviorType.ADD),
+        drop_floor=capture.floor(BehaviorType.DROP),
+        add_retrieved_at_utc=capture.feed(BehaviorType.ADD).retrieved_at_utc,
+        drop_retrieved_at_utc=capture.feed(BehaviorType.DROP).retrieved_at_utc,
+        reachable=frozenset(sleeper_to_canonical.values()),
+        ambiguous=ambiguous_sleeper_players(registry),
     )
 
 
@@ -372,6 +502,7 @@ def build_opportunity_records(
                 ),
             )
 
+    signals.coverage = behavior_coverage(records)
     gate.extend(signals.checks())
     gate.add(
         QualityCheck.ok(
@@ -401,6 +532,34 @@ def build_opportunity_records(
         "blocks": [universe.to_dict() for universe in universes],
     }
     return records, universes, diagnostics
+
+
+def behavior_coverage(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """How many distinct published players each side observed, and how many have an exact net.
+
+    Over players, not rows: behaviour is preset-independent, so one player in nine blocks is
+    one observation. Raw-feed completeness (the feed is capped at 100) and coverage of this
+    board's universe are different facts, and this is the second.
+    """
+    by_player: dict[str, Mapping[str, Any]] = {}
+    for record in records:
+        by_player.setdefault(str(record.get("player_id")), record)
+    add_states: dict[str, int] = {}
+    drop_states: dict[str, int] = {}
+    exact = 0
+    for record in by_player.values():
+        add_state = str(record.get("add_state"))
+        drop_state = str(record.get("drop_state"))
+        add_states[add_state] = add_states.get(add_state, 0) + 1
+        drop_states[drop_state] = drop_states.get(drop_state, 0) + 1
+        if record.get("net_add_count") is not None:
+            exact += 1
+    return {
+        "players": len(by_player),
+        "add_states": dict(sorted(add_states.items())),
+        "drop_states": dict(sorted(drop_states.items())),
+        "net_exact": exact,
+    }
 
 
 def _memberships(
@@ -481,8 +640,6 @@ def _opportunity_record(
     cut from, his tier is null rather than invented, and the distributional columns that only
     the published record carries are null too.
     """
-    add_count = signals.add_counts.get(player_id, 0) if signals.available else None
-    drop_count = signals.drop_counts.get(player_id, 0) if signals.available else None
     if published is None:
         values = surfaced_values(player_id, board_row)
     else:
@@ -521,13 +678,7 @@ def _opportunity_record(
         ),
         "behavior_lookback_hours": signals.lookback_hours if signals.available else None,
         "behavior_request_limit": signals.request_limit if signals.available else None,
-        "add_count": add_count,
-        "drop_count": drop_count,
-        "net_add_count": (
-            None if add_count is None or drop_count is None else add_count - drop_count
-        ),
-        "add_rank": signals.add_ranks.get(player_id) if signals.available else None,
-        "drop_rank": signals.drop_ranks.get(player_id) if signals.available else None,
+        **signals.behavior_columns(player_id),
         "long_absence": bool((published or {}).get("long_absence", False)),
         "weeks_since_last_game": _optional_float(
             published.get("weeks_since_last_game")
@@ -573,6 +724,7 @@ def unprojected_candidates(
         )
         if not off_roster:
             continue
+        # Observed adds only: an unobserved side is not a zero, and not a qualifying count.
         if signals.add_counts.get(player_id, 0) >= SURFACE_ADD_COUNT_MINIMUM:
             chosen.append(player_id)
     return chosen
@@ -591,8 +743,6 @@ def unprojected_record(
     scoring_preset: str,
 ) -> dict[str, Any]:
     """A row for a player the model never valued: identity, club and behaviour, no numbers."""
-    add_count = signals.add_counts.get(player_id, 0)
-    drop_count = signals.drop_counts.get(player_id, 0)
     return {
         "schema_version": record_schema_version("inseason_opportunity_record"),
         "build_id": build_id,
@@ -621,11 +771,7 @@ def unprojected_record(
         ),
         "behavior_lookback_hours": signals.lookback_hours,
         "behavior_request_limit": signals.request_limit,
-        "add_count": add_count,
-        "drop_count": drop_count,
-        "net_add_count": add_count - drop_count,
-        "add_rank": signals.add_ranks.get(player_id),
-        "drop_rank": signals.drop_ranks.get(player_id),
+        **signals.behavior_columns(player_id),
         "long_absence": False,
         "weeks_since_last_game": 0.0,
         "games_played_to_date": None,

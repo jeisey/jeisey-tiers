@@ -49,6 +49,7 @@ from ffdraft.artifacts.csv_flatten import actuals_index
 from ffdraft.artifacts.serialize import write_json_artifact
 from ffdraft.artifacts.serving import MANIFEST_FILENAME, package_serving
 from ffdraft.artifacts.validate import ROS_BUILD_METADATA_FILENAME
+from ffdraft.behavior.capture import BEHAVIOR_COVERAGE_RULE
 from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_config
 from ffdraft.contracts import (
     CORE_POSITIONS,
@@ -99,6 +100,7 @@ from ffdraft.market.trend import (
 )
 from ffdraft.opportunity.board import (
     BehaviorSignals,
+    behavior_coverage,
     surfaced_values,
     unprojected_candidates,
     unprojected_record,
@@ -140,6 +142,7 @@ from ffdraft.sources.market import (
     MflPlayerDirectoryAdapter,
 )
 from ffdraft.sources.nflverse import NFLVERSE_SOURCE_ID
+from ffdraft.sources.sleeper import TRENDING_FEED_CEILING
 from ffdraft.status.build import PlayerStatusResult, build_player_status_records
 from ffdraft.status.capture import StatusCapture
 from ffdraft.status.employment import (
@@ -974,8 +977,6 @@ def _opportunity_records(
     records: list[dict[str, Any]] = []
     blocks = sorted({(str(r["league_preset_id"]), str(r["scoring_preset"])) for r in ros_tiers})
     for index, row in enumerate(ros_tiers):
-        adds = max(0, 900 - index * 37)
-        drops = max(0, 120 - index * 5)
         records.append(
             {
                 "schema_version": record_schema_version("inseason_opportunity_record"),
@@ -1002,11 +1003,7 @@ def _opportunity_records(
                 "behavior_snapshot_at_utc": FIXTURE_GENERATED_AT,
                 "behavior_lookback_hours": FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
                 "behavior_request_limit": 100,
-                "add_count": adds,
-                "drop_count": drops,
-                "net_add_count": adds - drops,
-                "add_rank": index + 1,
-                "drop_rank": index + 1,
+                **_fixture_behavior(index),
                 "long_absence": row["long_absence"],
                 "weeks_since_last_game": row["weeks_since_last_game"],
                 "games_played_to_date": row["games_played_to_date"],
@@ -1064,11 +1061,17 @@ def _opportunity_records(
                 "behavior_snapshot_at_utc": FIXTURE_GENERATED_AT,
                 "behavior_lookback_hours": FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
                 "behavior_request_limit": 100,
+                # Surfaced by his adds and outside the drop feed's top 100: the shape of the
+                # 2026-10-17 case ADR-114 traced, where drops were published as zero.
+                "add_state": "observed",
+                "drop_state": "not_in_feed",
                 "add_count": 1450,
-                "drop_count": 20,
-                "net_add_count": 1430,
+                "drop_count": None,
+                "add_count_max": None,
+                "drop_count_max": FIXTURE_DROP_FEED_FLOOR,
+                "net_add_count": None,
                 "add_rank": 1,
-                "drop_rank": 90,
+                "drop_rank": None,
                 "long_absence": False,
                 "weeks_since_last_game": 0.0,
                 "games_played_to_date": float(surfaced.games),
@@ -1099,6 +1102,14 @@ def _opportunity_records(
             add_ranks={
                 player_id: rank for rank, player_id in enumerate(FIXTURE_OFF_ROSTER_ADDS, 1)
             },
+            drop_ranks={
+                player_id: rank for rank, player_id in enumerate(FIXTURE_OFF_ROSTER_DROPS, 1)
+            },
+            add_available=True,
+            drop_available=True,
+            add_floor=FIXTURE_ADD_FEED_FLOOR,
+            drop_floor=FIXTURE_DROP_FEED_FLOOR,
+            reachable=frozenset(FIXTURE_OFF_ROSTER_ADDS),
         )
         catalog = {
             player_id: {"display_name": player.display_name, "position": str(player.position)}
@@ -1135,7 +1146,49 @@ def _opportunity_records(
 #: The fixture feed's add and drop counts for its off-roster players (ADR-102). Both clear
 #: `SURFACE_ADD_COUNT_MINIMUM`; Ashby's are on the scale of a released star's real ones.
 FIXTURE_OFF_ROSTER_ADDS: Mapping[str, int] = {"gsis:00-0000020": 2400, "gsis:00-0000021": 950}
-FIXTURE_OFF_ROSTER_DROPS: Mapping[str, int] = {"gsis:00-0000020": 35, "gsis:00-0000021": 0}
+#: Halvorsen is outside the drop feed's top 100 (ADR-114): an unknown drop count, not a zero.
+FIXTURE_OFF_ROSTER_DROPS: Mapping[str, int] = {"gsis:00-0000020": 35}
+
+#: Each fixture feed's smallest count (ADR-114). The feeds also carry players off this board,
+#: which is why a floor sits below every board player's observed count rather than at one.
+FIXTURE_ADD_FEED_FLOOR = 60
+FIXTURE_DROP_FEED_FLOOR = 4
+
+
+def _fixture_behavior(index: int) -> dict[str, Any]:
+    """One board row's behaviour columns, covering every per-side state ADR-114 publishes.
+
+    Most real board players are in neither top-100 feed and many are in exactly one, so the
+    fixture's deep rows are in neither, and the top of the board mixes both-observed rows
+    with each one-sided case and a player the feed cannot reach.
+    """
+    adds = 900 - index * 37
+    drops = 120 - index * 5
+    if index >= 24:
+        add_state, drop_state = "not_in_feed", "not_in_feed"
+    elif index == 7:
+        add_state, drop_state = "no_sleeper_id", "no_sleeper_id"
+    elif index % 6 == 3:
+        add_state, drop_state = "observed", "not_in_feed"
+    elif index % 6 == 5:
+        add_state, drop_state = "not_in_feed", "observed"
+    else:
+        add_state, drop_state = "observed", "observed"
+    add_count = adds if add_state == "observed" else None
+    drop_count = drops if drop_state == "observed" else None
+    return {
+        "add_state": add_state,
+        "drop_state": drop_state,
+        "add_count": add_count,
+        "drop_count": drop_count,
+        "add_count_max": FIXTURE_ADD_FEED_FLOOR if add_state == "not_in_feed" else None,
+        "drop_count_max": FIXTURE_DROP_FEED_FLOOR if drop_state == "not_in_feed" else None,
+        "net_add_count": (
+            None if add_count is None or drop_count is None else add_count - drop_count
+        ),
+        "add_rank": index + 1 if add_count is not None else None,
+        "drop_rank": index + 1 if drop_count is not None else None,
+    }
 
 
 def _employment_fields(employment: EmploymentResult | None, player_id: str) -> dict[str, Any]:
@@ -1221,6 +1274,8 @@ def _behavior_series_records(
     }
     #: player index -> whether his count rises or falls across the window.
     falling = {4}
+    #: player index -> outside the drop feed on the two oldest snapshots (ADR-114).
+    one_sided = {0}
     #: The last player on the board is deliberately given no series at all.
     absent = set(players[-1:])
 
@@ -1229,6 +1284,12 @@ def _behavior_series_records(
         if player_id in absent:
             continue
         row = by_player[player_id]
+        # ADR-114: a side the board did not observe is not observed on the newest point
+        # either, and a player in neither feed today has no newest point at all.
+        add_seen = row.get("add_count") is not None
+        drop_seen = row.get("drop_count") is not None
+        if not (add_seen or drop_seen):
+            continue
         final_adds = int(row.get("add_count") or 0)
         final_drops = int(row.get("drop_count") or 0)
         indices = special.get(index, list(range(FIXTURE_BEHAVIOR_SNAPSHOTS)))
@@ -1247,12 +1308,15 @@ def _behavior_series_records(
             drift = round(elapsed * rate)
             adds = final_adds + drift if index in falling else final_adds - drift
             drops = final_drops + round(elapsed * 3)
+            # One-sided days: a player observed on both sides today was outside the drop
+            # feed on two older snapshots, so his add slope has points his net slope lacks.
+            older_drop_gap = index in one_sided and position in (0, 1)
             observations.append(
                 BehaviorObservation(
                     player_id=player_id,
                     observed_at=stamps[position],
-                    add_count=max(0, adds),
-                    drop_count=max(0, drops),
+                    add_count=max(0, adds) if add_seen else None,
+                    drop_count=(max(0, drops) if drop_seen and not older_drop_gap else None),
                 ),
             )
 
@@ -2042,14 +2106,30 @@ def _ros_build_metadata(
             "snapshot_at_utc": FIXTURE_GENERATED_AT,
             "lookback_hours": FIXTURE_BEHAVIOR_LOOKBACK_HOURS,
             "request_limit": 100,
-            "add_rows": len(opportunity),
-            "drop_rows": len(opportunity),
-            "matched_players": len(opportunity),
+            "add_rows": 100,
+            "drop_rows": 100,
+            "matched_players": len(
+                {
+                    str(row["player_id"])
+                    for row in opportunity
+                    if row.get("add_count") is not None or row.get("drop_count") is not None
+                },
+            ),
             "age_hours": 0.0,
             "degraded_reason": None,
+            "coverage_rule": BEHAVIOR_COVERAGE_RULE,
+            "feed_ceiling": TRENDING_FEED_CEILING,
+            "add_available": True,
+            "drop_available": True,
+            "add_feed_floor": FIXTURE_ADD_FEED_FLOOR,
+            "drop_feed_floor": FIXTURE_DROP_FEED_FLOOR,
+            "add_retrieved_at_utc": FIXTURE_GENERATED_AT,
+            "drop_retrieved_at_utc": FIXTURE_GENERATED_AT,
+            "coverage": behavior_coverage(opportunity),
             "signal_semantics": (
                 "add and drop COUNTS over the requested lookback window; never an ADP, "
-                "never a rank, never differenced against one"
+                "never a rank, never differenced against one. Each feed is a top-100 list: "
+                "a side the feed did not carry is unknown, never zero."
             ),
         },
         "surface": None,

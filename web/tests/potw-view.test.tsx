@@ -14,6 +14,7 @@
  *   request per opened card and not three hundred per board.
  */
 
+import { BoardGuide } from "../src/app/BoardGuide";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -201,21 +202,21 @@ describe("what it says when there is no pick", () => {
   });
 });
 
-describe("the methodology on the page", () => {
-  it("states the rule in the reader's own words, including that a count is not a share", async () => {
+describe("the methodology", () => {
+  it("travels with the picks as a rule version; the rule itself is on the Data tab (ADR-115)", async () => {
     await open();
+    // The rule version travels with the picks, like every other versioned rule in this product.
+    expect(screen.getByText(/potw_selection_v1/)).toBeDefined();
+    // The paragraphs moved: the board leads with the picks.
+    expect(screen.queryByText(/How a pick is chosen/)).toBeNull();
+    cleanup();
+    render(<BoardGuide />);
     expect(screen.getByText(/How a pick is chosen/)).toBeDefined();
     // ADR-112: ESPN's share is published elsewhere; this rule does not read it, and says so.
     expect(screen.getByText(/Pick of the Week does not use a rostered percentage/)).toBeDefined();
-    // The rule version travels with the picks, like every other versioned rule in this product.
-    expect(screen.getByText(/potw_selection_v1/)).toBeDefined();
-  });
-
-  it("says the add count decides membership and never the ordering", async () => {
-    await open();
-    expect(
-      screen.getByText(/the add count decides membership and never the ordering/i),
-    ).toBeDefined();
+    expect(screen.getByText(/the add count decides membership and never the ordering/i)).toBeDefined();
+    // ADR-114: a one-sided net counts only when its bound proves it.
+    expect(screen.getByText(/provably more adds than drops/)).toBeDefined();
   });
 });
 

@@ -57,6 +57,7 @@ from ffdraft.sources.sleeper import SLEEPER_SOURCE_ID
 
 __all__ = [
     "BehaviorHistory",
+    "ambiguous_sleeper_players",
     "build_behavior_history",
     "load_behavior_window",
     "sleeper_to_canonical",
@@ -113,6 +114,21 @@ def load_behavior_window(
             captures.append(capture)
     captures.sort(key=lambda capture: capture.observed_at_utc)
     return captures
+
+
+def ambiguous_sleeper_players(registry: CanonicalRegistry) -> frozenset[str]:
+    """Canonical players whose ``sleeper_id`` another canonical player also claims.
+
+    The feed can never reach them (the id is poisoned, ADR-019), and that is a different fact
+    from "he has no Sleeper id", so the board reports the two separately.
+    """
+    return frozenset(
+        player_id
+        for player_id, player in registry.players.items()
+        if player.crosswalk.sleeper_id
+        and registry.lookup(IdNamespace.SLEEPER, player.crosswalk.sleeper_id).status
+        is LookupStatus.AMBIGUOUS
+    )
 
 
 def sleeper_to_canonical(registry: CanonicalRegistry) -> dict[str, str]:
@@ -221,23 +237,25 @@ def observations_from_captures(
 ) -> tuple[list[BehaviorObservation], int]:
     """Flatten retained captures into canonical-keyed observations.
 
-    A player appears in one capture's output when **either** feed carried him: he can be in
-    the top 100 adds and outside the top 100 drops, and the missing half is a zero rather than
-    an unknown, because the feed did report on him that day. That is the one place a zero is
-    correct, and it is why the union is taken per capture rather than per feed.
+    A player gets a point in a capture when **either** feed carried him, and each side of
+    the point is observed or not on its own (ADR-114). Each feed is a separate top-100 list,
+    so a player in the top 100 adds and outside the top 100 drops has an *unknown* drop count
+    that day — at most the drop feed's smallest count — not a zero. That side is ``None``,
+    and so is the net. (`behavior_trend_v1` wrote ``0`` there, which turned a leaderboard
+    absence into a real-looking zero and made his net the whole of his adds.)
     """
     observations: list[BehaviorObservation] = []
     unresolved = 0
     for capture in captures:
         adds = capture.counts(BehaviorType.ADD)
         drops = capture.counts(BehaviorType.DROP)
-        resolved: dict[str, tuple[int, int]] = {}
+        resolved: dict[str, tuple[int | None, int | None]] = {}
         for external in sorted(set(adds) | set(drops)):
             canonical = crosswalk.get(external)
             if canonical is None:
                 unresolved += 1
                 continue
-            resolved[canonical] = (adds.get(external, 0), drops.get(external, 0))
+            resolved[canonical] = (adds.get(external), drops.get(external))
         for player_id in sorted(resolved):
             add_count, drop_count = resolved[player_id]
             observations.append(

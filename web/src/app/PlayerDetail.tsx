@@ -75,6 +75,7 @@ import type {
   WeeklyProjectionRecord,
 } from "../data/contracts";
 import { injuryReading } from "../data/duel";
+import { describeSide, formatNet, formatSide, netAdds, sideOf } from "../data/behavior";
 import {
   CROSS_MARKET,
   consensusOf,
@@ -843,9 +844,26 @@ function InSeasonUsage({
   const window = opportunity?.behavior_lookback_hours ?? behavior?.lookback_hours ?? null;
   const windowText = window === null ? "the declared window" : `${String(window)}h`;
   const feedUp = opportunity?.behavior_available === true;
-  const adds = opportunity?.add_count ?? null;
-  const drops = opportunity?.drop_count ?? null;
-  const net = opportunity?.net_add_count ?? null;
+  // ADR-114: each side on its own. An unobserved side is null here, never 0.
+  const addSide = opportunity === null ? null : sideOf(opportunity, "add");
+  const dropSide = opportunity === null ? null : sideOf(opportunity, "drop");
+  const adds = addSide?.count ?? null;
+  const drops = dropSide?.count ?? null;
+  const netReading = opportunity === null ? null : netAdds(opportunity);
+  const netKind =
+    netReading === null || netReading.kind === "unknown"
+      ? "even"
+      : netReading.kind === "exact"
+        ? netReading.value > 0
+          ? "bargain"
+          : netReading.value < 0
+            ? "premium"
+            : "even"
+        : netReading.min > 0
+          ? "bargain"
+          : netReading.max < 0
+            ? "premium"
+            : "even";
   /*
     The symmetric bound for the strip below, from the board rather than from this player.
 
@@ -859,6 +877,14 @@ function InSeasonUsage({
     caption, because a bar whose denominator is not stated is a bar that cannot be read.
   */
   const bound = cohort?.movesAxis ?? Math.max(1, adds ?? 0, drops ?? 0);
+  const sideHint = (reading: typeof addSide): string =>
+    !feedUp || reading === null
+      ? "not published"
+      : reading.state === "observed"
+        ? windowText
+        : reading.state === "not_in_feed"
+          ? "not in top 100"
+          : "unknown";
   const addsWidth = Math.min(50, ((adds ?? 0) / bound) * 50);
   const dropsWidth = Math.min(50, ((drops ?? 0) / bound) * 50);
 
@@ -935,9 +961,7 @@ function InSeasonUsage({
           sentence about transactions and says nothing about value. */}
       <div
         className="market-verdict"
-        data-kind={
-          !feedUp || net === null ? "even" : net > 0 ? "bargain" : net < 0 ? "premium" : "even"
-        }
+        data-kind={feedUp ? netKind : "even"}
       >
         <strong>
           {/*
@@ -945,20 +969,13 @@ function InSeasonUsage({
             board" is not "the feed said nothing", and neither is "nobody moved on him" — the
             last of those is a reading and the first two are the lack of one.
           */}
-          {opportunity === null
+          {opportunity === null || addSide === null || dropSide === null
             ? "He is not on this build's opportunity board."
             : !feedUp
               ? "No add or drop activity is published for this build."
-              : (adds ?? 0) === 0 && (drops ?? 0) === 0
-                ? `No rosters added or dropped him in the last ${windowText}.`
-                : `${formatInteger(adds ?? 0)} roster${(adds ?? 0) === 1 ? "" : "s"} added him and ` +
-                  `${formatInteger(drops ?? 0)} dropped him in the last ${windowText}.`}
+              : rosterMovesSentence(addSide, dropSide, windowText)}
         </strong>{" "}
-        <span>
-          {feedUp
-            ? "A count of transactions, not a price and not a rank."
-            : "Every value on this card is unaffected: behaviour decides who is visible, never what he is worth."}
-        </span>
+        {!feedUp && <span>Every value on this card is unaffected.</span>}
       </div>
 
       {/*
@@ -988,15 +1005,9 @@ function InSeasonUsage({
             weeks={usage.weeks.map((week) => week.week)}
             breadth={breadth}
           />
-          <p className="cohort-note">
-            {"Each reading is his latest game against the average of his earlier games. " +
-              "Shares are drawn on a 0–100% scale; attempts and points against his own peak. " +
-              "B is a bye, × a week he did not play, · a week with no value for that measure."}
-            {breadth !== null &&
-              " On the drive row, each bar is the share of drives he got the ball on, and the " +
-                "notch is where the same number would land if spread at random: short of it, " +
-                "bunched into fewer drives; above it, spread across more. Descriptive, not a forecast."}
-          </p>
+          {/* The glyph key stays beside the rails; how each reading is formed is on the Data tab
+              under "Reading the boards" (ADR-115). */}
+          <p className="cohort-note">B bye · × did not play · · no value for that measure</p>
         </>
       )}
 
@@ -1181,9 +1192,7 @@ function InSeasonUsage({
       </div>
       <p className="cohort-note">
         {feedUp
-          ? `Drops left of centre, adds right, on the board's own axis of ±${formatInteger(bound)}` +
-            (cohort?.movesAxis == null ? "" : " — the 85th percentile of its non-zero counts") +
-            ". A chevron marks a count past it; the numbers below are the reading."
+          ? `Drops left, adds right · axis ±${formatInteger(bound)}`
           : "The behaviour feed published nothing for this build, so the strip is empty rather than zero."}
       </p>
       {/* The window behind today's counts, beside them rather than instead of them — the
@@ -1204,19 +1213,20 @@ function InSeasonUsage({
       <div className="readout-grid">
         <Readout
           label="Drops"
-          value={drops === null ? EM_DASH : formatInteger(drops)}
-          hint={feedUp ? windowText : "not published"}
+          value={dropSide === null || !feedUp ? EM_DASH : formatSide(dropSide)}
+          hint={sideHint(dropSide)}
         />
         <Readout
           label="Adds"
-          value={adds === null ? EM_DASH : formatInteger(adds)}
-          hint={feedUp ? windowText : "not published"}
+          value={addSide === null || !feedUp ? EM_DASH : formatSide(addSide)}
+          hint={sideHint(addSide)}
           strong
         />
         <Readout
           label="Net adds"
-          value={net === null ? EM_DASH : net > 0 ? `+${formatInteger(net)}` : formatInteger(net)}
-          kind={net === null || net === 0 ? "even" : net > 0 ? "bargain" : "premium"}
+          value={netReading === null || !feedUp ? EM_DASH : formatNet(netReading)}
+          hint={netReading?.kind === "bounded" ? "bound: one side not in top 100" : undefined}
+          kind={feedUp ? netKind : "even"}
         />
         <Readout
           label="Add rank"
@@ -1237,10 +1247,7 @@ function InSeasonUsage({
       </div>
 
       {opportunity?.outside_tier_board === true && (
-        <p className="status-annotation">
-          Published from beyond the tier depth because current evidence made him relevant, so he
-          carries a rest-of-season value and no tier.
-        </p>
+        <p className="status-annotation">Surfaced beyond the tier depth: a rest-of-season value, no tier.</p>
       )}
     </>
   );
@@ -2152,23 +2159,33 @@ export function PlayerDetail({
                             : ` · ${String(opportunity.behavior_lookback_hours)}h`
                         }`}
                       </span>
-                      <span
-                        className="rail-verdict-value"
-                        data-kind={
-                          opportunity.net_add_count == null || opportunity.net_add_count === 0
-                            ? undefined
-                            : opportunity.net_add_count > 0
-                              ? "bargain"
-                              : "premium"
-                        }
-                      >
-                        {opportunity.net_add_count == null
-                          ? EM_DASH
-                          : opportunity.net_add_count > 0
-                            ? `+${formatInteger(opportunity.net_add_count)}`
-                            : formatInteger(opportunity.net_add_count)}
-                      </span>
-                      <span className="rail-verdict-note">transactions, not a price</span>
+                      {(() => {
+                        // ADR-114: exact with both sides, a labelled bound with one, else a dash.
+                        const reading = netAdds(opportunity);
+                        const value = reading.kind === "exact" ? reading.value : reading.kind === "bounded" ? reading.min : null;
+                        return (
+                          <>
+                            <span
+                              className="rail-verdict-value"
+                              data-net={reading.kind}
+                              data-kind={
+                                value === null || value === 0 || (reading.kind === "bounded" && reading.min <= 0)
+                                  ? undefined
+                                  : value > 0
+                                    ? "bargain"
+                                    : "premium"
+                              }
+                            >
+                              {formatNet(reading)}
+                            </span>
+                            <span className="rail-verdict-note">
+                              {reading.kind === "bounded"
+                                ? "a bound: one side not in Sleeper's top 100"
+                                : "transactions, not a price"}
+                            </span>
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </>
@@ -2395,4 +2412,34 @@ function decisionSentence(availability: Availability): string {
     default:
       return "Nothing in the decision tabs is changed by his status.";
   }
+}
+
+/**
+ * The card's one sentence about roster moves (ADR-114). Each side says what was observed, and a
+ * side outside Sleeper's top 100 says so — it is never "0 dropped him".
+ */
+function rosterMovesSentence(
+  adds: ReturnType<typeof sideOf>,
+  drops: ReturnType<typeof sideOf>,
+  windowText: string,
+): string {
+  if (adds.count === 0 && drops.count === 0) {
+    return `No rosters added or dropped him in the last ${windowText}.`;
+  }
+  if (adds.count !== null && drops.count !== null) {
+    return (
+      `${formatInteger(adds.count)} roster${adds.count === 1 ? "" : "s"} added him and ` +
+      `${formatInteger(drops.count)} dropped him in the last ${windowText}.`
+    );
+  }
+  if (adds.count !== null) {
+    return `${formatInteger(adds.count)} roster${adds.count === 1 ? "" : "s"} added him in the last ${windowText}; ${describeSide(drops, "drop")}.`;
+  }
+  if (drops.count !== null) {
+    return `${formatInteger(drops.count)} roster${drops.count === 1 ? "" : "s"} dropped him in the last ${windowText}; ${describeSide(adds, "add")}.`;
+  }
+  if (adds.state === "not_in_feed" && drops.state === "not_in_feed") {
+    return `Not in Sleeper's top 100 adds or top 100 drops in the last ${windowText}.`;
+  }
+  return `${describeSide(adds, "add")}; ${describeSide(drops, "drop")}.`.replace(/^./, (first) => first.toUpperCase());
 }

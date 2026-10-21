@@ -68,10 +68,13 @@ const GLYPH: Readonly<Record<string, string>> = { ...MOMENTUM_GLYPH, unknown: "Â
 export function momentumSentence(momentum: BehaviorMomentum): string {
   const { trend, spanLabel, missing, points } = momentum;
   const latest = points[points.length - 1];
-  const observed = `${formatInteger(latest?.adds ?? 0)} adds at the latest snapshot`;
+  const observed =
+    latest?.adds === null || latest?.adds === undefined
+      ? "Not in Sleeper's top 100 adds at the latest snapshot"
+      : `${formatInteger(latest.adds)} adds at the latest snapshot`;
   const gap =
     missing > 0
-      ? ` ${String(missing)} snapshot${missing === 1 ? "" : "s"} in the window did not carry him, so those days have no count rather than a count of zero.`
+      ? ` ${String(missing)} snapshot${missing === 1 ? "" : "s"} in the window did not carry his adds, so those have no count rather than a count of zero.`
       : "";
   if (trend === null) {
     return (
@@ -125,6 +128,10 @@ export function BehaviorSparkline({
         */}
         <div className="momentum-bars" aria-hidden="true">
           {bars.map((point) => {
+            // ADR-114: a snapshot that carried only his drops has no add count to draw.
+            if (point.adds === null) {
+              return <span key={point.at} className="momentum-bar" data-unobserved="true" />;
+            }
             const height = Math.max(6, Math.round((point.adds / momentum.peak) * 100));
             return (
               <span
@@ -135,13 +142,16 @@ export function BehaviorSparkline({
               />
             );
           })}
-          {momentum.missing > 0 && (
+          {momentum.record.snapshots_in_window > momentum.record.observations && (
             /*
               One mark for the whole gap rather than one per missing day: the artifact says
               how many snapshots skipped him, not which ones, and drawing a bar per unknown
               day at a guessed position would invent the very thing the count avoids.
             */
-            <span className="momentum-gap" data-count={momentum.missing} />
+            <span
+              className="momentum-gap"
+              data-count={momentum.record.snapshots_in_window - momentum.record.observations}
+            />
           )}
         </div>
 

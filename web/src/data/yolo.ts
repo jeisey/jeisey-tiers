@@ -6,9 +6,11 @@
  * **Gates, all required, in this order** (the funnel is reported position by position):
  *
  * 1. **High net adds** in the current behaviour snapshot. The population is the league block's
- *    published Opportunity rows at his position with a positive `net_add_count`; the bar is the
- *    ceiling of that population's median; a population under five, a missing feed, a snapshot
- *    older than 48 hours at the reader's clock, or a missing count qualifies nobody.
+ *    published Opportunity rows at his position with a provably positive net — the exact net,
+ *    or the floor of a one-sided bound (ADR-114: a drop count outside Sleeper's top 100 is never
+ *    read as zero); the bar is the ceiling of that population's median; a population under five,
+ *    a missing feed, a snapshot older than 48 hours at the reader's clock, or a missing count
+ *    qualifies nobody.
  * 2. **Rising role**: the Opportunity Board's own `role` predicate (`passesFilter`).
  * 3. **Playable this week**: `readWeek` says candidate (a distribution for this week and scoring,
  *    an upcoming game, a future kickoff) and the availability policy would feature him
@@ -23,6 +25,7 @@
  * nothing here is Rising Stars' add-momentum rule, which stays as it was.
  */
 
+import { netLowerBound } from "./behavior";
 import { featureable } from "./availability";
 import { opportunityCandidate, passesFilter, roleCell, type RoleCell } from "./candidates";
 import { quantileAt } from "./cohort";
@@ -117,7 +120,8 @@ export function netAddBar(rows: readonly (OpportunityRecord | UnprojectedRecord)
   const values: number[] = [];
   for (const row of rows) {
     if (row.position !== position || !row.behavior_available) continue;
-    const net = row.net_add_count;
+    // ADR-114: the exact net, or the floor of a one-sided bound — never a zero-filled side.
+    const net = netLowerBound(row);
     if (typeof net === "number" && Number.isFinite(net) && net > 0) values.push(net);
   }
   if (values.length < YOLO_POOL_MINIMUM) return { position, pool: values.length, threshold: null };
@@ -169,7 +173,7 @@ export function selectYolo(input: YoloInput): YoloSelection {
       const slots = input.baseline.filter((line) => movableOccupant(line) && slotAccepts(line.slot.group, position));
       for (const record of rows) {
         if (record.position !== position || !record.behavior_available) continue;
-        const net = record.net_add_count;
+        const net = netLowerBound(record);
         if (typeof net !== "number" || !Number.isFinite(net) || net <= 0 || net < threshold) continue;
         counts.highAdds += 1;
         const candidate = opportunityCandidate(bundle, { record: record as OpportunityRecord, rank: 0 });
