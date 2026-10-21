@@ -47,7 +47,9 @@ These hold for every feature, current or future.
    intrinsic models and never changes a published intrinsic number.
 4. **No blended scores across units.** Behaviour counts (adds, drops) and model value are shown
    side by side and may gate membership; they are never combined into one score (ADR-085,
-   ADR-088, ADR-092).
+   ADR-088, ADR-092). The one categorical summary allowed is the Opportunity Board's breakout
+   label (CR-033): ordered, published predicates over observed production and role only, each
+   shown with its value and threshold — never weighted, counted or scored (ADR-113).
 5. **Tiers** are contiguous in fair-rank order, discovered rather than fixed per position, never
    hand-edited, and drawn as bands while their boundaries fail the declared stability bar
    (ADR-035, ADR-074).
@@ -226,6 +228,20 @@ These hold for every feature, current or future.
     boundaries.
   * **Never** a model input, a blended score, a start-share change, or a ratio of Sleeper adds
     to ESPN shares. Pick of the Week is unchanged.
+- **CR-033 Recent form and breakout categories.** "Whose recent production and role are
+  substantially better than his season rank suggests — sustained, or one big game?" (ADR-113,
+  UX_SPEC §6A.21, DATA_CONTRACTS §28):
+  * **Recent weeks** on the Opportunity Board: Season or the last 1/2/3/4/6 completed calendar
+    weeks (default 3), the same weeks for everyone. The recent rank is by total points over every
+    appearing player at the position, built at build time, with games and points per game beside
+    it and the signed gap to the season rank. It changes no value, rank, tier or reading.
+  * **Takeover / Sneaking / Eyebrow**, plus explicit *none* and *insufficient evidence*: a
+    descriptive heuristic needing an upward, in-band, ≥ 3-place and ≥ 30% rank gain over a real
+    pre-window baseline, current evidence, consecutive strong weekly finishes and — for the two
+    stronger badges — a confirmed role. Every badge opens its evidence. A breakout filter
+    composes with every other filter.
+  * **Never** a model input, a prediction, or read by Pick of the Week, Trade, My Leagues or Win
+    My Matchup; it reads no adds, ESPN share, RoS value or market.
 
 ## A4. Current non-goals
 

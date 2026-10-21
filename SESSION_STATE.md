@@ -4,6 +4,53 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Recent form and breakout categories — 2026-10-21 (ADR-113, PRD CR-033).** On
+`claude/loving-faraday-f3i224` from `main` at `09d54f0`. The Opportunity Board answers "whose
+recent production and role beat his season rank — sustained, or one big game?"
+
+* **Rules.** `recent_form_v1`: Last 1/2/3/4/6 completed calendar weeks ending at the cutoff (the
+  same weeks for everyone; shorter early in the season, stated), ranked by total points over
+  every appearing QB/RB/WR/TE, per preset, from season actuals' frames, positions and
+  completeness check (withheld with them). `breakout_v1`: gates in order — a game in the window;
+  recent rank in band (QB/TE ≤ 12, RB/WR ≤ 24); ≥ 2 games before the window; better than season
+  rank by ≥ 3 places and ≥ 30%; no missed team game after the latest appearance; latest game a
+  top-band weekly finish. Takeover = 3 consecutive strong appearances + role; Sneaking = 2 +
+  role; Eyebrow = latest strong. Role per position (ADR-113 table); missing role facts →
+  `insufficient`, never a weaker badge. Heuristic, versioned, published in metadata.
+* **Artifact** `recent_form` (`recent_form_record` 1.0) + `ros_build_metadata.recent_form`;
+  served `recent_form/<scoring>`, Opportunity only. The validator re-derives every rank and
+  category. No other artifact changes (golden diff, invariance test).
+* **UI.** `last=` (default 3) and `form=` URL params; one Recent column (`TE3 +12`, `9.5/g · 3g`)
+  with Rank and ±Szn sort buttons; badge button on the name → lazy evidence dialog; census line;
+  14 CSV columns; full CSV labelled *season only*. Net adds steps aside 768–1439px with a window
+  on (slack 99/117/82 px at 1024/1280/1440).
+* **Payload.** First visit 339.9 → 345.7 kB (+4.2 kB JS, +1.0 kB manifest); Opportunity +33.9 kB
+  slice (budget 40 kB); window switch 0 B; WMM cold 442.4/450 (8 kB headroom left).
+* **Facts for the next session.**
+  * The browser fixture's twelve off-board TE peers (`FIXTURE_TE_PEERS`) give TE Zach Ertz a
+    genuine Takeover in PPR; they moved his season rank TE3 → TE15 in PPR, which is why two
+    RoS-vs-Szn sort expectations now name Ertz.
+  * The table's sort state drops a sort on a column that disappears (Season lens).
+  * Pre-existing: any Opportunity selection change re-renders every row (~1 s at 1×, 4–6 s at
+    4× on the size model); this change adds ~10–15% to it.
+* **Next gate:** owner review of the PR; after merge, the first in-season `daily-refresh` is the
+  first live recent-form build — check `ros_build_metadata.recent_form.status` and categories.
+
+Validation of this pass (local):
+
+```
+uv run ruff check . ; ruff format --check . ; mypy   # clean; 356 files formatted; 211 source files
+uv run pytest                                        # 2,185 collected, exit 0 (4 live deselected)
+build-fixture-artifacts + validate-artifacts --require-serving  # pass; goldens deterministic
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 1,095 passed, 1 skipped
+playwright chromium + mobile + a11y + smoke-chromium # 352 passed
+verify:board on nine fixture builds (incl. in-season-no-recent)  # 0 failures
+npm run e2e:size-model && verify:budget              # all met
+measure-recent.mjs (1x, 4x)                          # ADR-113 Evidence
+docs/visual-qa/2026-10-21-recent-form/capture.mjs    # 0 overflow, 0 clipped, 0 console errors
+```
+
 **ESPN roster and start percentages — 2026-10-17 (ADR-112, PRD CR-032).** On
 `claude/compassionate-dirac-0wbo39` from `main` at `912a299`.
 

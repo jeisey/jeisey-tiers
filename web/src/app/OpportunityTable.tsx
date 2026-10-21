@@ -60,7 +60,7 @@ import {
 import { compareRostered, espnCell } from "../data/espn";
 import { formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rosValue } from "../data/ros";
-import { BreakoutBadge, recentColumns } from "./RecentColumns";
+import { BreakoutBadge, RecentHeader, recentColumns } from "./RecentColumns";
 import { positionalRankAccessor, seasonColumns } from "./SeasonColumns";
 
 export const OPPORTUNITY_TABLE_CAPTION =
@@ -233,7 +233,6 @@ function opportunityColumns(
           (row) => row.season,
           (row) => row.row.record.position,
           (row) => row.row.record.player_id,
-          recent.spanLabel,
           recent.onExplain,
         )),
     {
@@ -500,6 +499,8 @@ function opportunityColumns(
 }
 
 interface ColumnMeta {
+  /** ADR-113: the recent column's heading holds two sort buttons of its own. */
+  readonly recentHeader?: boolean;
   readonly align?: "right";
   readonly className?: string;
   readonly width?: string;
@@ -550,7 +551,8 @@ export function OpportunityTable({
   const table = useReactTable({
     data,
     columns,
-    state: { sorting: activeSorting },
+    // The gap column is sorted through the recent heading and never drawn (ADR-113).
+    state: { sorting: activeSorting, columnVisibility: { recent_vs_season: false } },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -565,7 +567,7 @@ export function OpportunityTable({
 
   return (
     <div className="table-scroll">
-      <table className="sheet opp-sheet">
+      <table className="sheet opp-sheet" data-recent={recent === null ? undefined : "on"}>
         <caption>
           {OPPORTUNITY_TABLE_CAPTION}{" "}
           {seasonNote === undefined ? "" : `${seasonNote} `}
@@ -579,6 +581,30 @@ export function OpportunityTable({
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 const meta = (header.column.columnDef.meta ?? {}) as ColumnMeta;
+                if (meta.recentHeader === true && recent !== null) {
+                  const gapColumn = table.getColumn("recent_vs_season");
+                  const handle = (column: typeof gapColumn) => ({
+                    sorted: column?.getIsSorted() ?? false,
+                    toggle: () => {
+                      column?.toggleSorting();
+                    },
+                  });
+                  const rank = handle(header.column);
+                  const gap = handle(gapColumn);
+                  const active = rank.sorted !== false ? rank.sorted : gap.sorted;
+                  return (
+                    <th
+                      key={header.id}
+                      scope="col"
+                      className={meta.className}
+                      data-col={header.id}
+                      style={{ textAlign: "right" }}
+                      aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"}
+                    >
+                      <RecentHeader spanLabel={recent.spanLabel} rank={rank} gap={gap} />
+                    </th>
+                  );
+                }
                 const sorted = header.column.getIsSorted();
                 const sortable = header.column.getCanSort();
                 return (

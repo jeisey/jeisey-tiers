@@ -63,7 +63,8 @@ test.describe("the ESPN roster ceiling", () => {
     for await (const chunk of stream) chunks.push(new Uint8Array(Buffer.from(chunk as Buffer)));
     const lines = Buffer.concat(chunks).toString("utf-8").replace(/^\uFEFF/, "").trim().split("\r\n");
     const header = (lines[0] ?? "").split(",");
-    expect(header.slice(-12)[0]).toBe("espn_reading");
+    // ESPN's twelve columns, then ADR-113's fourteen recent-window columns.
+    expect(header.slice(-26)[0]).toBe("espn_reading");
     expect(header).toContain("espn_rostered_change_7d_pp");
     expect(lines).toHaveLength((await page.locator("table.sheet.opp-sheet tbody tr").count()) + 1);
   });

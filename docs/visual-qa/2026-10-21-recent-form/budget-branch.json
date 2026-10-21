@@ -1,0 +1,239 @@
+{
+ "site": "web/dist-size-model",
+ "budgets": {
+  "firstVisitTotal": 450000,
+  "firstVisitData": 150000,
+  "startSitAdds": 60000,
+  "tradeAdds": 25000,
+  "cardAdds": 30000,
+  "repeatVisitData": 1000,
+  "redeployServedData": 0,
+  "myLeaguesAdds": 80000,
+  "risingStarsAdds": 130000,
+  "improveAdds": 12000,
+  "leagueSwitchNewPreset": 95000,
+  "leagueSwitchRepeat": 0,
+  "myLeaguesFirstVisitTotal": 450000,
+  "myLeaguesFirstVisitData": 150000,
+  "skillTreeAdds": 25000,
+  "skillTreeRepeat": 0,
+  "skillTreeSwitch": 10000,
+  "ownershipHistoryAdds": 15000,
+  "ownershipHistoryRepeat": 0,
+  "wmmOpenAdds": 30000,
+  "wmmSimulateAdds": 7000,
+  "wmmRepeat": 0,
+  "yoloAdds": 125000,
+  "wmmFirstVisitTotal": 450000,
+  "wmmFirstVisitData": 150000,
+  "recentSlice": 40000,
+  "recentWindowSwitch": 0
+ },
+ "results": {
+  "firstVisitTotal": {
+   "bytes": 345655,
+   "budget": 450000
+  },
+  "firstVisitData": {
+   "bytes": 78876,
+   "budget": 150000
+  },
+  "firstVisitRequests": 12,
+  "firstVisitFiles": [
+   "/jeisey-tiers/ 200 811",
+   "/jeisey-tiers/assets/index-C4BW4yr3.js 200 185569",
+   "/jeisey-tiers/assets/index-BXR-ayye.css 200 24285",
+   "/jeisey-tiers/data/manifest.json 200 20171",
+   "/jeisey-tiers/assets/exo2-core-BHAspsh8.woff2 200 17720",
+   "/jeisey-tiers/favicon.ico 200 4360",
+   "/jeisey-tiers/data/serve/players.4aca3276e32778ed.json 200 10186",
+   "/jeisey-tiers/data/serve/player_availability/all.25c4aed55d6b91d3.json 200 6845",
+   "/jeisey-tiers/data/serve/ros_tiers/redraft-12.PPR.663679363d4b06e9.json 200 36435",
+   "/jeisey-tiers/data/serve/season_actuals/PPR.8b5d3ec3286333d6.json 200 5239",
+   "/jeisey-tiers/assets/jt_logo-96-B3qqpz0N.png 200 9994",
+   "/jeisey-tiers/assets/jetbrains-mono-core-DxELyE-S.woff2 200 24040"
+  ],
+  "startSitAdds": {
+   "bytes": 56439,
+   "budget": 60000
+  },
+  "tradeAdds": {
+   "bytes": 12000,
+   "budget": 25000
+  },
+  "tradeAddsData": 0,
+  "cardAdds": {
+   "bytes": 24327,
+   "budget": 30000
+  },
+  "skillTreeAdds": {
+   "bytes": 16472,
+   "budget": 25000
+  },
+  "skillTreeAddsData": 6444,
+  "skillTreeAddsFiles": [
+   "/jeisey-tiers/assets/SkillTree-D1wS1rOJ.js 7544",
+   "/jeisey-tiers/assets/SkillTree-CvdS5DrQ.css 2484",
+   "/jeisey-tiers/data/serve/skill_tree_definitions/QB.f160420ccc95ca50.json 4219",
+   "/jeisey-tiers/data/serve/skill_tree/03.67aced9b3e58a165.json 2225"
+  ],
+  "skillTreeRepeat": {
+   "bytes": 0,
+   "budget": 0
+  },
+  "skillTreeSwitch": {
+   "bytes": 6562,
+   "budget": 10000
+  },
+  "skillTreeSwitchFiles": [
+   "/jeisey-tiers/data/serve/skill_tree_definitions/RB.835377a4a02832b6.json 4068",
+   "/jeisey-tiers/data/serve/skill_tree/09.b97489fb9f855def.json 2494"
+  ],
+  "skillTreeReturn": 0,
+  "ownershipHistoryAdds": {
+   "bytes": 4956,
+   "budget": 15000
+  },
+  "ownershipHistoryAddsData": 2570,
+  "ownershipHistoryFiles": [
+   "/jeisey-tiers/data/serve/espn_ownership_series/03.7d7eec6bb1658be4.json 2570",
+   "/jeisey-tiers/assets/EspnOwnershipChart-7Sf_TFXr.js 2386"
+  ],
+  "ownershipHistoryRepeat": {
+   "bytes": 0,
+   "budget": 0
+  },
+  "tradeFirstVisitTotal": 352416,
+  "tradeFirstVisitData": 73637,
+  "draftFirstVisitTotal": 327398,
+  "draftFirstVisitData": 60619,
+  "myLeaguesAdds": {
+   "bytes": 70467,
+   "budget": 80000
+  },
+  "myLeaguesAddsData": 45933,
+  "myLeaguesAddsFiles": [
+   "/jeisey-tiers/assets/MyLeaguesView-CAmNlZwE.js 21733",
+   "/jeisey-tiers/assets/MyLeaguesView-q826aGaT.css 2801",
+   "/jeisey-tiers/favicon.ico 0",
+   "/jeisey-tiers/data/serve/weekly_projections/PPR.0a433d2d1d448ad0.json 43026",
+   "/jeisey-tiers/data/serve/weekly_context/all.0c3f4a1e1a4585d1.json 2907"
+  ],
+  "risingStarsAdds": {
+   "bytes": 120667,
+   "budget": 130000
+  },
+  "risingStarsAddsFiles": [
+   "/jeisey-tiers/data/serve/inseason_opportunity/redraft-12.PPR.6e361151572a2330.json 10147",
+   "/jeisey-tiers/data/serve/player_usage/all.a806c3cb3701e7e7.json 102378",
+   "/jeisey-tiers/data/serve/behavior_trend_series/all.789d7d305fcd1eab.json 8142"
+  ],
+  "improveAdds": {
+   "bytes": 10244,
+   "budget": 12000
+  },
+  "improveAddsData": 0,
+  "leagueSwitchFirst": {
+   "Family": 84587,
+   "Friends": 84585,
+   "Office": 0
+  },
+  "leagueSwitchNewPreset": {
+   "bytes": 84587,
+   "budget": 95000
+  },
+  "leagueSwitchRepeat": {
+   "bytes": 0,
+   "budget": 0
+  },
+  "opportunityAdds": 169222,
+  "opportunityAddsData": 169222,
+  "opportunityEspnSlice": 13620,
+  "recentSlice": {
+   "bytes": 33943,
+   "budget": 40000
+  },
+  "recentWindowSwitch": {
+   "bytes": 0,
+   "budget": 0
+  },
+  "myLeaguesFirstVisitTotal": {
+   "bytes": 416122,
+   "budget": 450000
+  },
+  "myLeaguesFirstVisitData": {
+   "bytes": 124809,
+   "budget": 150000
+  },
+  "myLeaguesFirstVisitFiles": [
+   "/jeisey-tiers/ 811",
+   "/jeisey-tiers/assets/index-C4BW4yr3.js 185569",
+   "/jeisey-tiers/assets/index-BXR-ayye.css 24285",
+   "/jeisey-tiers/data/manifest.json 20171",
+   "/jeisey-tiers/favicon.ico 4360",
+   "/jeisey-tiers/assets/exo2-core-BHAspsh8.woff2 17720",
+   "/jeisey-tiers/data/serve/players.4aca3276e32778ed.json 10186",
+   "/jeisey-tiers/data/serve/player_availability/all.25c4aed55d6b91d3.json 6845",
+   "/jeisey-tiers/assets/MyLeaguesView-CAmNlZwE.js 21733",
+   "/jeisey-tiers/assets/MyLeaguesView-q826aGaT.css 2801",
+   "/jeisey-tiers/assets/jt_logo-96-B3qqpz0N.png 9994",
+   "/jeisey-tiers/assets/jetbrains-mono-core-DxELyE-S.woff2 24040",
+   "/jeisey-tiers/data/serve/weekly_projections/PPR.0a433d2d1d448ad0.json 43026",
+   "/jeisey-tiers/data/serve/weekly_context/all.0c3f4a1e1a4585d1.json 2907",
+   "/jeisey-tiers/data/serve/ros_tiers/redraft-12.PPR.663679363d4b06e9.json 36435",
+   "/jeisey-tiers/data/serve/season_actuals/PPR.8b5d3ec3286333d6.json 5239"
+  ],
+  "myLeaguesEmptyFirstVisitTotal": 328515,
+  "myLeaguesEmptyFirstVisitData": 37202,
+  "wmmOpenAdds": {
+   "bytes": 26295,
+   "budget": 30000
+  },
+  "wmmOpenAddsData": 0,
+  "wmmOpenAddsFiles": [
+   "/jeisey-tiers/assets/WinMyMatchup-BXodK2JU.js 24261",
+   "/jeisey-tiers/assets/WinMyMatchup-ts-ESVOr.css 2034",
+   "/jeisey-tiers/favicon.ico 0"
+  ],
+  "wmmSimulateAdds": {
+   "bytes": 5447,
+   "budget": 7000
+  },
+  "wmmSimulateAddsFiles": [
+   "/jeisey-tiers/assets/matchup.worker-DhDRE7vT.js 5447"
+  ],
+  "wmmRepeat": {
+   "bytes": 0,
+   "budget": 0
+  },
+  "yoloAdds": {
+   "bytes": 112525,
+   "budget": 125000
+  },
+  "yoloAddsFiles": [
+   "/jeisey-tiers/data/serve/inseason_opportunity/redraft-12.PPR.6e361151572a2330.json 10147",
+   "/jeisey-tiers/data/serve/player_usage/all.a806c3cb3701e7e7.json 102378"
+  ],
+  "wmmFirstVisitTotal": {
+   "bytes": 442417,
+   "budget": 450000
+  },
+  "wmmFirstVisitData": {
+   "bytes": 124809,
+   "budget": 150000
+  },
+  "repeatVisitData": {
+   "bytes": 0,
+   "budget": 1000
+  },
+  "repeatVisitTotal": 0,
+  "redeployServedData": {
+   "bytes": 0,
+   "budget": 0
+  },
+  "redeployManifest": 20171,
+  "redeployTotal": 286950,
+  "freshDeployShown": true
+ },
+ "failures": []
+}

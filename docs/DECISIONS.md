@@ -8043,3 +8043,167 @@ clearance and not as a reading that the terms permit it.**
   `percentStarted` or `percentChange`.
 * `percentChange` is retained privately so its window can later be checked against our own
   captures. Nothing publishes it.
+
+## ADR-113 — Recent form on the Opportunity Board: calendar windows over the whole population, and three descriptive breakout categories with their evidence
+
+**Status:** accepted, 2026-10-21. **Amends:** ADR-092 (the board's "no combined signal" rule, by
+one narrow, categorical exception stated below), ADR-112 (column priority below 1440px).
+**Relies on:** ADR-091 (observed role, `usage_signals_v1`), ADR-098 (served slices), ADR-105
+(`season_actuals_v1`: scoring, appearances, competition ranks, the completeness check).
+
+### Context
+
+A manager scanning the wire asks: *whose recent production and role are substantially better
+than his season-long rank suggests — and is it sustained, or one big game?* The board showed the
+season rank (ADR-105), the rest-of-season rank and a one-metric role direction (ADR-092). It did
+not show a rank over recent weeks, and a reader who wanted one could only open cards and add up
+week strips — over the board's own rows, which is a rank over the page rather than the league.
+
+### Decision — `recent_form_v1`
+
+1. **Windows are calendar weeks, common to everyone.** Last *N* ∈ {1, 2, 3, 4, 6} is the
+   completed regular-season weeks `max(1, W − N + 1)..W`, where *W* is the board's cutoff
+   (season actuals' cutoff, clipped to the fantasy horizon). At cutoff 5, Last 3 is W3–W5 for
+   every player. It is never "each player's last three games". Early in the season a window is
+   shorter than requested and the metadata publishes its real first week, last week and count;
+   the page prints `W1–W2 (2 of 3 wks)`.
+2. **The standing is season actuals' over the window.** Points are the scoring engine's;
+   an appearance is a stats row or an offensive snap; the rank is the competition rank of points
+   rounded to 0.01, among **every** QB/RB/WR/TE who appeared in the window — the same population
+   rule, sources and completeness check as ADR-105, computed from the same scoped frames, with
+   positions, names and season ranks read from the season-actuals result of the same build. A
+   zero or negative game is an observation; no appearance is no rank. Byes (`B`), missed games
+   (`D`) and played weeks (`P`) are distinct in a six-week `span_status`. League size is not an
+   input. Recent form is withheld whenever season actuals are.
+3. **Total points, not points per game, ranks.** It matches the season basis. Games and points
+   per game print beside the rank so a bye or a missed game is visible rather than silently
+   normalised away.
+4. **Artifact.** `recent_form` (`recent_form_record` 1.0): per scoring preset and player, the
+   season rank, the span's status, points and weekly positional ranks, and for each window its
+   points, games, rate, rank, games before the window, and the breakout verdict with its
+   evidence. Records exist for every player who appeared in the span and every board player.
+   No CSV: the filtered export writes the selected window. Served as `recent_form/<scoring>`,
+   fetched only by the Opportunity Board.
+
+### Decision — `breakout_v1`, the rule table
+
+Constants are versioned in `BreakoutRule` and published whole in
+`ros_build_metadata.recent_form.breakout_rule`, so the page explains a badge from the artifact.
+They are **editable heuristics, not a calibrated probability** and not a statistical change in
+talent; no threshold was tuned to produce any player's outcome.
+
+Gates, checked in this order; the first that decides, decides:
+
+| # | Predicate | Fails → |
+|---|---|---|
+| 1 | At least one appearance in the window (so a window rank exists) | `insufficient` / `no_games` |
+| 2 | Recent rank inside the band: QB ≤ 12, RB ≤ 24, WR ≤ 24, TE ≤ 12 (a 12-team starter) | `none` / `outside_band` |
+| 3 | At least 2 appearances before the window's first week (the season rank is a baseline) | `insufficient` / `no_baseline` |
+| 4 | Recent rank better than season rank | `none` / `not_improved` |
+| 5 | Gain ≥ 3 places **and** gain ≥ 30% of the season rank (`100·(S−R) ≥ 30·S`, integers) | `none` / `gain_too_small` |
+| 6 | No missed team game (`D`, never a bye) after his latest appearance, through the cutoff | `none` / `stale` |
+| 7 | His latest appearance is a strong week: weekly positional rank ≤ the band, over every player who appeared that week | `none` / `latest_not_strong` |
+
+Then, with *streak* = consecutive strong appearances inside the window counted from the latest
+(byes and missed weeks are not appearances and do not break it; capped at 3):
+
+| Category | Production | Role | Otherwise |
+|---|---|---|---|
+| **Takeover** | streak ≥ 3: the three latest appearances in the window are strong | confirmed over those 3 | role facts missing → `insufficient` / `role_unavailable`; role fails → try Sneaking |
+| **Sneaking** | streak ≥ 2 | confirmed over the 2 latest | missing → `insufficient` / `role_unavailable`; fails → Eyebrow |
+| **Eyebrow** | streak ≥ 1 | not required | — (reason `one_strong`, or `role_not_confirmed` when 2+ strong weeks lacked a role) |
+
+**Role confirmation** passes when *any* of the position's measures passes, each rounded to its
+published precision (0.001 for a share, 0.1 for attempts) before it is compared:
+
+| Position | Measure (averaging) | Substantial ≥ | or Emerging ≥ **and** rise ≥ |
+|---|---|---|---|
+| QB | snap share (per-game mean) | 0.80 | — |
+| QB | pass attempts per game | 25 | — |
+| RB | snap share (mean) | 0.55 | 0.40, +0.15 |
+| RB | carry share (pooled over team carries) | 0.45 | 0.30, +0.15 |
+| WR | target share (pooled over team targets) | 0.22 | 0.16, +0.06 |
+| WR | snap share (mean) | 0.80 | 0.65, +0.15 |
+| TE | target share (pooled) | 0.18 | 0.13, +0.05 |
+| TE | snap share (mean) | 0.70 | 0.55, +0.15 |
+
+* A measure is evaluated only when every evidence game has it; the pre-window baseline pools the
+  pre-window appearances that have it and needs at least two. A role is **unknown** (and the
+  category `insufficient`) when no measure passes and at least one is undefined — missing data
+  never masquerades as `none` or as a weaker badge.
+* A quarterback's targets are never his role. Growth from a tiny baseline to a still-small role
+  fails (the emerging floor); a sustained, already-large role passes (the substantial floor).
+  Team shares pool real numerators over real denominators (team totals from the same weekly
+  rows, as `usage_signals_v1` does); snap share and attempts are per-game means.
+* Last 1 can reach Eyebrow at most and Last 2 Sneaking at most, by construction; a three-week
+  window holding a bye has two games and can reach Sneaking at most.
+
+**Tradeoffs, stated.** Two pre-window games make every badge `insufficient` in weeks 1–3 of a
+season and for a player returning from a long absence; that is the price of never reading a
+missed-games gap as a rise. Zero tolerance for a missed game after the latest appearance drops a
+badge the week a player is hurt, even if he was rising. A per-game snap share mean lets one high
+game carry a weak one; production is checked game by game, so a single outlier still cannot reach
+Sneaking. The strong-week cutoff equals the band, a modest bar; three of them in a row is not.
+
+### The narrow extension of ADR-092's rule
+
+ADR-092 forbids a quantity derived from more than one reading on the board. A breakout category
+is such a summary, and it is allowed **only** in this form: a categorical label decided by
+explicit, ordered predicates over observed production and role, each published with its value
+and threshold, never a weighted sum, a count of agreeing signals, or a hidden score. It reads no
+add count, ESPN share, rest-of-season value or rank, tier, ownership or market quantity. The
+existing filters (Role rising, Momentum rising, Surfaced, the ESPN ceiling) and their meanings are
+unchanged; the breakout filter is one more AND-ed predicate over one published field.
+
+### Evidence
+
+* **Fixture behaviour** (`tests/unit/test_recent_form.py`, 38 tests): a synthetic TE19 → TE6 riser
+  with three strong games and a 35% target share is a Takeover over W3–W5, Sneaking over W4–W5
+  and an Eyebrow over W5; the same production at 30% snaps and 1 target a game is an Eyebrow
+  (`role_not_confirmed`); a 3-touchdown game after nothing is an Eyebrow in Last 1 and
+  `outside_band` in Last 3; a TE2 → TE1 move is `gain_too_small`; a 70 → 40 fringe rise is
+  `outside_band`; a debut inside the window is `no_baseline`; a run ending in a missed game is
+  `stale`; missing snap and team facts are `role_unavailable`.
+* **Browser fixture** (`web/tests/fixtures/recent.ts`): twelve off-board tight ends who faded
+  late make the board's third tight end TE15 for the season in PPR and TE3 over W6–W8 — the rule
+  gives him a Takeover in Last 3, 4 and 6 and an Eyebrow in Last 1 and 2; in Standard scoring
+  he is TE3 for the season and has no badge.
+* **Invariance:** the golden fixture rebuild changes only `ros_build_metadata.json` (the new
+  block), `manifest.json` and the new `recent_form` files; every other artifact is
+  byte-identical, and `test_recent_form_invariance.py` proves it with the builder withheld.
+* **Payload** (size model, `verify:budget`, main `09d54f0` → this change; all budgets met):
+  first visit 339.9 → 345.7 kB of 450 (+4.2 kB JS gzip in the main chunk, +1.0 kB of manifest
+  metadata); first-visit data 77.9 → 78.9 kB of 150; card +24.3 kB (unchanged) of 30; Start/Sit,
+  Trade, Skill Tree, Rising Stars, YOLO unchanged; cold My Leagues 410.3 → 416.1 kB and cold Win
+  My Matchup 436.6 → 442.4 kB of 450; Opportunity view +135.3 → +169.2 kB, of which the recent
+  slice is **33.9 kB** (new budget `recentSlice` 40 kB) on a projected late-season count of 700
+  records per preset; **window switch 0 B** (new budget `recentWindowSwitch` 0). No view but the
+  Opportunity Board fetches the slice (asserted). The evidence dialog is a lazy 2.2 kB chunk.
+* **Interaction** (`web/tests/e2e/measure-recent.mjs`, size model, Pixel 7): at 1× CPU a window
+  switch's input-to-paint is 868 ms median (max 1,144 ms) against the board's own *Order by*
+  at 896–1,144 ms; at 4× throttling 4.3 s median against *Order by* at 4.2–6.3 s. Window taps
+  ran no task longer than the baseline's longest, made **0 data requests**, and the heap moved
+  +0.2 MB over 24 switches. Measured on main at 4×, *Order by* took 3.4–4.7 s: the added Recent
+  column and badge make that existing re-render roughly 10–15% slower on this profile. The
+  re-render of every row on any selection change predates this change and dominates both.
+  Recorded in `docs/visual-qa/2026-10-21-recent-form/perf-*.json`.
+* **Layout:** table slack 99 / 117 / 82 px at 1024 / 1280 / 1440 (≥ 64 required); 0 page
+  overflow and 0 clipped controls at 320, 390, 390×560, 820, 1024 and 1440
+  (`docs/visual-qa/2026-10-21-recent-form/`).
+
+### Consequences
+
+* The UI never ranks or classifies: a window switch re-reads build-time fields from one cached
+  slice, and the validator (`recent_form.rank_not_rederivable`,
+  `recent_form.category_not_rederivable`, `recent_form.disagrees_with_season_actuals`)
+  re-derives every weekly rank, window rank and category independently.
+* No model, rank, tier, value, Pick of the Week, Trade, My Leagues or Win My Matchup output reads
+  it: `tests/contract/test_architecture_boundary.py` (no value package reaches
+  `ffdraft.signals.recent`; it reaches no market, ownership or behaviour module) and
+  `tests/integration/test_recent_form_invariance.py` (every other artifact byte-identical with it
+  withheld).
+* Column priority: with a window on, the board's Recent column is one column with two sort
+  buttons (rank, gap), and Net adds steps aside from 768 to 1439px (it is Adds − Drops; the chart
+  draws every drop count and the export keeps it), so every laptop width keeps ≥ 64px of slack.
+* Not validated as predictive. No backtest was run, by design; the badges describe, they do not
+  forecast. Revisit the thresholds only with a stated reason and a version bump.

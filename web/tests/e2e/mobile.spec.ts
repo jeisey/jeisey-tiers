@@ -215,10 +215,11 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     );
     const options = page.getByRole("button", { name: /^Options/ });
     await expect(options).toHaveAccessibleName(
-      summaryName("Options", "By Momentum", "Role rising + Momentum rising", /All \d+/),
+      summaryName("Options", "By Momentum", "Role rising + Momentum rising", /All \d+/, /Last 3 W6–8 · \d+ without evidence/),
     );
     // The filters' census never folds (ADR-092): how many pass, and how many had no reading.
     await expect(page.locator(".opp-filter-status")).toBeInViewport();
+    await expect(page.locator(".opp-breakout-census")).toContainText(/Breakouts in W6–8/);
     await expect(page.locator(".opp-filter-status")).toContainText(/Role rising: \d+/);
   });
 
@@ -228,7 +229,8 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     await expect(options).toHaveAttribute("aria-expanded", "false");
     await expect(options).toHaveAttribute("aria-controls", "opp-order-options opp-filter-options");
     await expect(options).toHaveAccessibleName(
-      summaryName("Options", "By ROS value", "No filters", /All \d+/),
+      // ADR-113: the recent-weeks lens, its real weeks and its missing evidence close the row.
+      summaryName("Options", "By ROS value", "No filters", /All \d+/, /Last 3 W6–8 · \d+ without evidence/),
     );
     await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeHidden();
     await expect(page.getByRole("button", { name: "Role rising", exact: true })).toBeHidden();
@@ -241,7 +243,9 @@ test.describe("folded controls on a phone (ADR-093)", () => {
     await page.getByRole("button", { name: "Role rising", exact: true }).click();
     await page.getByRole("radio", { name: "Adds", exact: true }).click();
     await expect(page).toHaveURL(/opportunity=adds&only=role/);
-    await expect(options).toHaveAccessibleName(summaryName("Options", "By Adds", "Role rising", /All \d+/));
+    await expect(options).toHaveAccessibleName(
+      summaryName("Options", "By Adds", "Role rising", /All \d+/, /Last 3 W6–8 · \d+ without evidence/),
+    );
 
     await options.click();
     await expect(page.getByRole("radiogroup", { name: "Order by" })).toBeHidden();

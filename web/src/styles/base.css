@@ -6141,7 +6141,8 @@ button.breakout-badge:focus-visible {
   color: var(--ink-faint);
   text-decoration: underline dotted;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: right;
+  white-space: normal;
 }
 
 .th-sub {
@@ -6153,18 +6154,68 @@ button.breakout-badge:focus-visible {
   color: var(--ink-faint);
 }
 
-.signal-cell[data-signal="recent-gap"][data-direction="up"] .signal-value {
+.signal-cell[data-signal="recent"][data-direction="up"] .signal-change {
   color: var(--good);
 }
 
-.signal-cell[data-signal="recent-gap"][data-direction="down"] .signal-value {
+.signal-cell[data-signal="recent"][data-direction="down"] .signal-change {
   color: var(--danger);
 }
 
 .signal-cell[data-signal="recent"][data-kind="no_games"] .signal-value,
-.signal-cell[data-signal="recent"][data-kind="unavailable"] .signal-value,
-.signal-cell[data-signal="recent-gap"][data-direction="none"] .signal-value {
+.signal-cell[data-signal="recent"][data-kind="unavailable"] .signal-value {
   color: var(--ink-faint);
+}
+
+/* A rank with its gap, and rate with games, each read as one phrase: never broken mid-way. */
+.opp-sheet .recent-cell .signal-line {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* The detail wraps only between whole units — `22.1/g` | `3g` — never inside one. */
+.opp-sheet .recent-cell .signal-detail > span {
+  white-space: nowrap;
+}
+
+/* The recent heading: two sort buttons around the window's weeks, stacked. */
+.recent-head {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+/* Each sort button keeps WCAG 2.2's 24px target height (axe `target-size`). */
+table.sheet.opp-sheet thead th .recent-head button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  justify-content: flex-end;
+}
+
+.recent-head {
+  gap: 0;
+}
+
+.recent-head .th-sub {
+  display: block;
+  white-space: normal;
+  text-align: right;
+}
+
+/*
+ * ADR-113: with a recent window on, Net adds steps aside on laptops below 1440px — it is Adds
+ * minus Drops, both printed (the chart draws every drop count), and the card and the export
+ * carry it — so the Recent column fits with the table's 64px of slack. On a phone the table
+ * scrolls under the pinned name and nothing else changes; at 1440px and wider every column
+ * is drawn.
+ */
+@media (min-width: 768px) and (max-width: 1439px) {
+  .opp-sheet[data-recent="on"] [data-col="net_add_count"] {
+    display: none;
+  }
 }
 
 .opp-recent-control .control,
@@ -6172,9 +6223,12 @@ button.breakout-badge:focus-visible {
   margin: 0;
 }
 
-.opp-breakout-census {
-  display: block;
-  margin-top: 2px;
+/* The window's category census on its own line under the filters' census, never folded. */
+.opp-recent-status {
+  flex-basis: 100%;
+  font: 500 0.66rem/1.35 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
 }
 
 .breakout-explain p {

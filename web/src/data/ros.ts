@@ -231,6 +231,8 @@ export class InSeasonBundle {
   /** Whether recent-form windows can be read on this build, and why not (ADR-113). */
   readonly recentAvailability: RecentAvailability;
   private readonly recentByScoringPlayer: ReadonlyMap<string, RecentFormRow>;
+  private readonly recentCache = new Map<string, RecentStanding>();
+  private readonly seasonCache = new Map<string, SeasonStanding>();
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
@@ -409,7 +411,14 @@ export class InSeasonBundle {
 
   /** One player's season standing, in the three states `data/actuals` defines. */
   seasonStandingFor(scoring: ScoringPreset, playerId: string): SeasonStanding {
-    return seasonStanding(this.actualsFor(scoring, playerId), this.actualsAvailability);
+    // Cached for a stable identity, which lets the Opportunity table's memoized recent cells
+    // skip a re-render when only the order or the window changed (ADR-113).
+    const id = `${scoring}|${playerId}`;
+    const cached = this.seasonCache.get(id);
+    if (cached !== undefined) return cached;
+    const standing = seasonStanding(this.actualsFor(scoring, playerId), this.actualsAvailability);
+    this.seasonCache.set(id, standing);
+    return standing;
   }
 
   rosFor(leaguePreset: string, scoring: ScoringPreset): readonly RosTierRecord[] {
@@ -494,11 +503,18 @@ export class InSeasonBundle {
 
   /** One player's standing in one recent window, in the states `data/recent` defines. */
   recentStandingFor(scoring: ScoringPreset, playerId: string, key: RecentWindowKey): RecentStanding {
-    return recentStanding(
+    // Cached, so a window switch or a re-sort hands the table the same objects it rendered
+    // before and its memoized cells skip the work.
+    const id = `${scoring}|${playerId}|${key}`;
+    const cached = this.recentCache.get(id);
+    if (cached !== undefined) return cached;
+    const standing = recentStanding(
       this.recentByScoringPlayer.get(`${scoring}|${playerId}`),
       key,
       this.recentAvailability,
     );
+    this.recentCache.set(id, standing);
+    return standing;
   }
 
   /** A player's ESPN reading as a signal: every absence a kind, never 0% (ADR-112). */

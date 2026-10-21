@@ -19,7 +19,6 @@ import {
   RECENT_CSV_COLUMNS,
   badgeOf,
   breakoutCensus,
-  breakoutExplanation,
   formatSpan,
   passesBreakout,
   recentAvailability,
@@ -27,6 +26,7 @@ import {
   recentVsSeasonPlaces,
   windowSpan,
 } from "../src/data/recent";
+import { breakoutExplanation } from "../src/data/recentEvidence";
 import { InSeasonBundle } from "../src/data/ros";
 import { DEFAULT_STATE, parseState, serializeState, type AppState } from "../src/data/state";
 import {
@@ -315,11 +315,12 @@ describe("on the page", () => {
     const group = screen.getByRole("radiogroup", { name: "Recent weeks" });
     expect(within(group).getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["Season", "1", "2", "3", "4", "6"]);
     expect(within(group).getByRole("radio", { name: /Last 3 completed weeks, W6–W8/ }).getAttribute("aria-checked")).toBe("true");
-    expect(within(table()).getAllByText("W6–8").length).toBe(2);
+    expect(within(table()).getByText("Recent W6–8")).toBeDefined();
     expect(screen.getByText(/Breakouts in W6–8: 1 Takeover/)).toBeDefined();
     const badge = within(table()).getByRole("button", { name: /^Takeover in W6–W8/ });
     fireEvent.click(badge);
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5_000 });
+    await within(dialog).findByText("TE15 season → TE3 in W6–W8 (+12 places)", {}, { timeout: 5_000 });
     expect(within(dialog).getByText("TE15 season → TE3 in W6–W8 (+12 places)")).toBeDefined();
     expect(within(dialog).getByText(/Games used: W6 TE3/)).toBeDefined();
   });
@@ -334,7 +335,7 @@ describe("on the page", () => {
 
   it("sorts the recent rank best-first with no-game rows last in both directions", async () => {
     await openBoard("");
-    const button = within(table()).getByRole("button", { name: /^Recent/ });
+    const button = within(table()).getByRole("button", { name: /^Sort by recent rank in W6–8/ });
     const order = (): string[] =>
       [...table().querySelectorAll('tbody td[data-col="recent_rank"] .signal-value')].map((cell) => cell.textContent ?? "");
     fireEvent.click(button);

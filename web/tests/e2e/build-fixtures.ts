@@ -154,6 +154,15 @@ export async function prepare(): Promise<void> {
       ...fixtures.inSeasonFixtureFiles(true, { espn: "stale" }),
     },
     /*
+     * ADR-113: an older deploy with no recent-form artifact or metadata block. The board must
+     * render whole, the window and breakout controls disabled with their reason, and a link's
+     * breakout filter named rather than applied.
+     */
+    "in-season-no-recent": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(true, { recent: "absent" }),
+    },
+    /*
      * The *other* market condition, as its own site.
      *
      * `MARKET_CONDITIONS` exists because Phase 8 found every market-sensitive test written

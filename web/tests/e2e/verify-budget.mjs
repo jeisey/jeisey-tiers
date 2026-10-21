@@ -110,6 +110,11 @@ export const BUDGETS = {
   yoloAdds: 125_000,
   wmmFirstVisitTotal: 450_000,
   wmmFirstVisitData: 150_000,
+  // ADR-113: the recent-form slice the Opportunity Board adds (one scoring preset) — measured
+  // 33.9 kB on the size model's late-season projection (700 records, 8% of windows badged) —
+  // and a window switch, which must re-use it.
+  recentSlice: 40_000,
+  recentWindowSwitch: 0,
 };
 
 function parseArgs(argv) {
@@ -522,6 +527,27 @@ try {
     if (scoutLog.since(mark).some((entry) => entry.path.includes("espn_ownership_series"))) {
       failures.push("opening the Opportunity Board fetched ESPN history files");
     }
+    // ADR-113: the recent-form slice is the Opportunity Board's alone. The default view never
+    // fetches it, opening the board fetches one scoring preset's slice, and switching windows
+    // (and back) re-uses it — no request at all.
+    // Every scenario above (first visits, Start/Sit, cards, Trade, My Leagues, Rising Stars,
+    // Win My Matchup, YOLO, the ESPN history) ran before this mark.
+    if (served.slice(0, mark).some((entry) => entry.path.includes("/recent_form/"))) {
+      failures.push("a view other than the Opportunity Board fetched the recent-form slice");
+    }
+    check(
+      "recentSlice",
+      sum(scoutLog.since(mark), (entry) => entry.path.includes("/recent_form/")),
+      BUDGETS.recentSlice,
+    );
+    const switchMark = scoutLog.mark();
+    const lens = scoutPage.getByRole("radiogroup", { name: "Recent weeks" });
+    for (const name of [/^Last 1 /, /^Last 6 /, /^Season to date/, /^Last 2 /, /^Last 4 /, /^Last 3 /]) {
+      await lens.getByRole("radio", { name }).click();
+      await scoutPage.getByRole("table", { name: /opportunity board/i }).waitFor();
+    }
+    await settle(scoutPage);
+    check("recentWindowSwitch", sum(scoutLog.since(switchMark)), BUDGETS.recentWindowSwitch);
     await scout.close();
 
     // 3d. A cold first visit straight to My Leagues with the same leagues saved: the shell, the

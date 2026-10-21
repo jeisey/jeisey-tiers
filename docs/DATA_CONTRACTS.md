@@ -1749,3 +1749,65 @@ records:
 Rows are `{source_id, external_player_id, position_id, full_name (diagnostics only),
 percent_rostered, percent_started, espn_percent_change, league_type, source_updated_at_utc,
 snapshot_at_utc, quality_flags}`.
+
+## 28. Recent form and breakout categories — 2026-10-21 (ADR-113)
+
+### 28.1 `recent_form_record` 1.0 — `recent_form.json`
+
+One record per player per scoring preset, `recent_form_v1` + `breakout_v1`. Sorted by
+`scoring_preset`, `position`, `player_id`. Observed facts and fixed thresholds; read by no model.
+No CSV (the Opportunity Board's filtered export writes the selected window).
+
+| field | meaning |
+|---|---|
+| `through_week`, `season` | the board's cutoff; identical to `season_actuals` |
+| `scoring_preset`, `player_id`, `display_name`, `position` | `position` is season actuals' — the standing he is ranked in |
+| `season_rank` | `season_actuals.season_position_rank` for the same preset, copied so a category re-derives from the record alone |
+| `span_status` | one letter per `ros_build_metadata.recent_form.span_weeks` entry (the last ≤ 6 completed weeks): `P` played (stats row or offensive snap — zero and negative games included), `B` his team had no game, `D` his team played and he did not appear. A week's team is his own that week, else his latest club before it, else his next |
+| `span_points` | points each span week, 0.01 precise; null exactly when not `P` |
+| `span_ranks` | weekly positional competition rank among every player at the position who appeared that week; null exactly when not `P` |
+| `windows."1"…"6"` | for Last 1, 2, 3, 4, 6: `games`, `points` (0 with 0 games), `points_per_game` (null with 0 games), `rank` (competition rank of `points` among every player at the position with a game in the window; null with 0 games), `prior_games` (his appearances before the window's first week), `breakout` |
+| `windows.*.breakout` | `category` (`takeover`, `sneaking`, `eyebrow`, `none`, `insufficient`), `reason` (the deciding predicate, ADR-113 rule table), `games` (evidence weeks, ascending), `streak` (consecutive strong appearances from the latest, capped at 3; null if not examined), `role` (each of the position's measures over the evidence games of the last role check: `metric`, `games`, `level`, `baseline`, `baseline_games`, `passed` = `substantial` / `increase` / null; null when no role check was needed) |
+
+**Population.** Every QB/RB/WR/TE with an appearance in the span, plus every RoS/Opportunity/weekly
+board player that season actuals publishes (a board player with no appearance in the span has
+`games` 0 and no rank in every window).
+
+**Validator.** `recent_form.shape` (span arrays align with the status; a window has a rank and rate
+exactly when it has a game), `recent_form.arithmetic` (a window's games and points are the span
+weeks it covers), `recent_form.rank_not_rederivable` (every weekly and window rank is the
+competition rank of the published points over the published population),
+`recent_form.category_not_rederivable` (from `ros_build_metadata`: every category and reason
+re-derived, independently of the builder, from the record's evidence and the published
+thresholds), `recent_form.disagrees_with_season_actuals` (same position and season rank; while
+the span is the whole season, the six-week totals equal the season totals) and
+`ros_build_metadata.recent_form_mismatch` (status, record count, cutoff, span length and per-window
+population describe the artifact).
+
+### 28.2 `ros_build_metadata.recent_form`
+
+`rule` (`version` `recent_form_v1`, `windows`, `default_window` 3, `points_decimals`,
+`rank_method`, `scoring_engine_version`), `breakout_rule` (`version` `breakout_v1`, `bands`,
+`min_gain_places`, `min_gain_percent`, `min_prior_games`, `max_missed_after_latest`,
+`takeover_games`, `sneaking_games`, and per position the `measures` with `averaging`,
+`substantial`, `emerging`, `increase`), `status` (`published | withheld`), `withheld_reason`,
+`season`, `through_week`, `span_weeks`, `windows` (each window's `requested`, `first_week`,
+`last_week`, `weeks` — the real calendar span), `scoring_presets`, `definitions` (the sentences
+the page prints), `records`, `population` (window → position → players ranked) and `categories`
+(preset → window → category → records). Optional and additive; absent, null or `withheld` all
+mean "recent form unavailable" to the page. Withheld whenever season actuals are.
+
+### 28.3 Serving and export
+
+Served as family `recent_form`, partitioned by scoring preset, every field but `schema_version`
+and `display_name`. Fetched by the Opportunity Board only; no other view and no card shard
+carries it. One slice serves every window, so a window switch reads the cached slice.
+
+The Opportunity Board's filtered CSV appends, after every earlier column: `recent_window`
+(`1`–`6`, or `season` with every other recent cell empty), `recent_first_week`,
+`recent_last_week`, `recent_weeks`, `recent_position_rank`, `recent_points`,
+`recent_games_played`, `recent_points_per_game`, `recent_vs_season_places` (season rank minus
+recent rank, positive when the recent rank is better), `breakout_category` (`unavailable` when no
+record), `breakout_reason`, `breakout_rule_version`, `breakout_games_weeks` (`6|7|8`) and
+`breakout_role_passed` (`snap_share:substantial|target_share:increase`). The prebuilt
+`inseason_opportunity.csv` carries no recent window; the page labels it *season only*.

@@ -11,21 +11,18 @@
  */
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { Fragment, memo } from "react";
 
-import { Modal } from "../components/Modal";
 import type { SeasonStanding } from "../data/actuals";
 import { positionalSortKey } from "../data/actuals";
-import type { Position, RecentFormMetadata } from "../data/contracts";
+import type { Position } from "../data/contracts";
 import {
   BREAKOUT_GLYPHS,
   BREAKOUT_LABELS,
   badgeAccessibleName,
   badgeOf,
-  breakoutExplanation,
-  categoryDefinition,
   describeRecentVsSeason,
   formatPlaces,
-  formatPoints,
   formatRecentRank,
   formatSpan,
   recentDetail,
@@ -35,7 +32,7 @@ import {
 } from "../data/recent";
 
 /** The breakout badge on a name: a button that opens the evidence. Nothing for no badge. */
-export function BreakoutBadge({
+export const BreakoutBadge = memo(function BreakoutBadge({
   standing,
   playerId,
   onExplain,
@@ -63,34 +60,14 @@ export function BreakoutBadge({
       <span aria-hidden="true">{BREAKOUT_LABELS[badge]}</span>
     </button>
   );
-}
-
-function RecentRankCell({ standing }: { readonly standing: RecentStanding | undefined }): React.JSX.Element {
-  const sentence = recentSentence(standing);
-  return (
-    <span
-      className="signal-cell recent-cell"
-      data-signal="recent"
-      data-kind={standing?.kind ?? "none"}
-      title={sentence}
-    >
-      <span className="signal-line" aria-hidden="true">
-        <span className="signal-value">{formatRecentRank(standing)}</span>
-      </span>
-      <span className="signal-detail" aria-hidden="true">
-        {recentDetail(standing)}
-      </span>
-      <span className="visually-hidden">{sentence}</span>
-    </span>
-  );
-}
+});
 
 /**
- * The signed gap, and under it the category state when it is not a plain "no": an
- * `insufficient` verdict is a button too, because "not enough evidence" deserves its reason
- * as much as a badge does.
+ * One cell for the window: the recent rank and, beside it, the signed gap to the season rank;
+ * under them points per game and games. An `insufficient` verdict adds a button, because "not
+ * enough evidence" deserves its reason as much as a badge does.
  */
-function RecentGapCell({
+const RecentCell = memo(function RecentCell({
   standing,
   season,
   playerId,
@@ -103,20 +80,33 @@ function RecentGapCell({
 }): React.JSX.Element {
   const places = recentVsSeasonPlaces(season, standing);
   const span = standing === undefined || standing.kind === "unavailable" ? "the window" : formatSpan(standing.span);
-  const words = describeRecentVsSeason(places, span);
+  const sentence = `${recentSentence(standing)}. ${describeRecentVsSeason(places, span)}.`;
   const insufficient =
     standing !== undefined && standing.kind !== "unavailable" && standing.verdict.category === "insufficient";
   return (
     <span
-      className="signal-cell recent-gap"
-      data-signal="recent-gap"
+      className="signal-cell recent-cell"
+      data-signal="recent"
+      data-kind={standing?.kind ?? "none"}
       data-direction={places === null ? "none" : places > 0 ? "up" : places < 0 ? "down" : "flat"}
-      title={words}
+      title={sentence}
     >
       <span className="signal-line" aria-hidden="true">
-        <span className="signal-value">{formatPlaces(places)}</span>
+        <span className="signal-value">{formatRecentRank(standing)}</span>
+        {places !== null && <span className="signal-change">{formatPlaces(places)}</span>}
       </span>
-      <span className="visually-hidden">{words}</span>
+      <span className="signal-detail" aria-hidden="true">
+        {recentDetail(standing)
+          .split(" · ")
+          .map((part, index) => (
+            // The space sits between the spans, so the line can break there and nowhere else.
+            <Fragment key={part}>
+              {index === 0 ? "" : " "}
+              <span>{index === 0 ? part : `· ${part}`}</span>
+            </Fragment>
+          ))}
+      </span>
+      <span className="visually-hidden">{sentence}</span>
       {insufficient && (
         <button
           type="button"
@@ -132,111 +122,84 @@ function RecentGapCell({
       )}
     </span>
   );
+});
+
+/** What a recent header's two sort buttons need from the table, without depending on it. */
+export interface SortHandle {
+  readonly sorted: false | "asc" | "desc";
+  readonly toggle: () => void;
 }
 
-/** The two recent columns, for a TanStack table whose rows carry both standings. */
+/**
+ * The window's heading: two sort buttons in one column — the recent rank (best first) and the
+ * signed gap to the season rank (largest rise first) — around the window's real weeks. One
+ * column rather than two because the laptop table has no room for two (ADR-113 measurements).
+ */
+export function RecentHeader({
+  spanLabel,
+  rank,
+  gap,
+}: {
+  readonly spanLabel: string;
+  readonly rank: SortHandle;
+  readonly gap: SortHandle;
+}): React.JSX.Element {
+  const mark = (handle: SortHandle): React.JSX.Element => (
+    <span className="sort-mark" data-state={handle.sorted === false ? "none" : handle.sorted}>
+      {handle.sorted === "desc" ? "▼" : "▲"}
+    </span>
+  );
+  return (
+    <span className="recent-head">
+      <span className="th-sub">{`Recent ${spanLabel}`}</span>
+      <button type="button" data-sort="recent_rank" onClick={rank.toggle} aria-label={`Sort by recent rank in ${spanLabel}`}>
+        Rank{mark(rank)}
+      </button>
+      <button type="button" data-sort="recent_vs_season" onClick={gap.toggle} aria-label={`Sort by recent rank versus season rank in ${spanLabel}`}>
+        ±Szn{mark(gap)}
+      </button>
+    </span>
+  );
+}
+
+/** The two sortable quantities, for a TanStack table whose rows carry both standings. */
 export function recentColumns<Row>(
   recentOf: (row: Row) => RecentStanding | undefined,
   seasonOf: (row: Row) => SeasonStanding | undefined,
   positionOf: (row: Row) => Position,
   playerOf: (row: Row) => string,
-  spanLabel: string,
   onExplain: (playerId: string) => void,
 ): ColumnDef<Row>[] {
   return [
     {
       id: "recent_rank",
-      header: () => (
-        <>
-          Recent <span className="th-sub">{spanLabel}</span>
-        </>
-      ),
+      // Rendered by `RecentHeader`, which the table supplies (it owns the sort state).
+      header: "Recent",
       accessorFn: (row) => {
         const standing = recentOf(row);
         return standing?.kind === "ranked" ? positionalSortKey(positionOf(row), standing.rank) : undefined;
       },
       sortUndefined: "last",
       sortDescFirst: false,
-      cell: (context) => <RecentRankCell standing={recentOf(context.row.original)} />,
-      meta: { align: "right", width: "5.2rem", className: "col-recent" },
-    },
-    {
-      id: "recent_vs_season",
-      header: () => (
-        <>
-          vs Szn <span className="th-sub">{spanLabel}</span>
-        </>
-      ),
-      accessorFn: (row) => recentVsSeasonPlaces(seasonOf(row), recentOf(row)) ?? undefined,
-      sortUndefined: "last",
-      // Largest rise first; the second click puts the steepest fall on top.
-      sortDescFirst: true,
       cell: (context) => (
-        <RecentGapCell
+        <RecentCell
           standing={recentOf(context.row.original)}
           season={seasonOf(context.row.original)}
           playerId={playerOf(context.row.original)}
           onExplain={onExplain}
         />
       ),
-      meta: { align: "right", width: "4.6rem", className: "col-recent" },
+      meta: { align: "right", className: "col-recent", recentHeader: true },
+    },
+    {
+      // Never drawn: it exists so the gap sorts as one signed number across positions, largest
+      // rise first and the steepest fall first on the second click, with blanks last.
+      id: "recent_vs_season",
+      header: "±Szn",
+      accessorFn: (row) => recentVsSeasonPlaces(seasonOf(row), recentOf(row)) ?? undefined,
+      sortUndefined: "last",
+      sortDescFirst: true,
     },
   ];
 }
 
-/** The evidence behind one player's category in the selected window, in a dialog. */
-export function BreakoutDialog({
-  name,
-  standing,
-  season,
-  meta,
-  onClose,
-}: {
-  readonly name: string;
-  readonly standing: RecentStanding;
-  readonly season: SeasonStanding | undefined;
-  readonly meta: RecentFormMetadata;
-  readonly onClose: () => void;
-}): React.JSX.Element {
-  if (standing.kind === "unavailable") {
-    return (
-      <Modal title={`${name} — recent form`} onClose={onClose}>
-        <p>{standing.reason}</p>
-      </Modal>
-    );
-  }
-  const badge = badgeOf(standing);
-  const category = standing.verdict.category;
-  const explanation = breakoutExplanation(standing, season, meta);
-  const title =
-    badge === null
-      ? `${name} — ${category === "insufficient" ? "insufficient evidence" : "no breakout"}`
-      : `${name} — ${BREAKOUT_LABELS[badge]}`;
-  return (
-    <Modal title={title} onClose={onClose}>
-      <div className="breakout-explain" data-category={category}>
-        <p className="breakout-explain-head">
-          {badge !== null && (
-            <span className="breakout-badge" data-category={badge} aria-hidden="true">
-              <span className="breakout-glyph">{BREAKOUT_GLYPHS[badge]}</span>
-              {BREAKOUT_LABELS[badge]}
-            </span>
-          )}{" "}
-          <strong>{explanation.headline}</strong>
-        </p>
-        {badge !== null && <p className="muted">{categoryDefinition(meta, category)}</p>}
-        <ul className="breakout-explain-lines">
-          {explanation.lines.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-        {standing.kind === "ranked" && (
-          <p className="muted">
-            {`${formatPoints(standing.points)} points, ${String(standing.games)} game${standing.games === 1 ? "" : "s"}, ${formatPoints(standing.perGame)} per game in ${formatSpan(standing.span)}.`}
-          </p>
-        )}
-        <p className="muted breakout-explain-foot">{explanation.footnote}</p>
-      </div>
-    </Modal>
-  );
-}

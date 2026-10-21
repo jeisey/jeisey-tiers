@@ -2588,3 +2588,51 @@ A follow-up to ADR-112, from `main` at `609ace6`. No artifact, contract or model
       - a tampered status capture reaching the current build.
 - [ ] Not changed, by design: the gameday look ledger and the weekly CLI's reads still raise.
       A recorded look must not silently vanish.
+
+## Recent form and breakout categories on the Opportunity Board — 2026-10-21 (ADR-113)
+
+On `claude/loving-faraday-f3i224`, from `main` at `09d54f0`. A descriptive enrichment of the
+Opportunity Board; no model, value, rank, tier, POTW, Trade, My Leagues or WMM output changes.
+
+- [x] **Rule and contract.** ADR-113 rule table; `recent_form_v1` (calendar windows Last
+      1/2/3/4/6 ending at the cutoff, ranked by total points over every appearing player, per
+      scoring preset, from season actuals' frames, positions and completeness check) and
+      `breakout_v1` (Takeover / Sneaking / Eyebrow / none / insufficient, ordered predicates,
+      published thresholds). `src/ffdraft/signals/recent.py`.
+- [x] **Artifact** `recent_form` (`recent_form_record` 1.0), `ros_build_metadata.recent_form`,
+      served as `recent_form/<scoring>` for the Opportunity Board only; envelope enum, spec,
+      schema registry, serving family, in-season artifact set, both pipelines (production ROS
+      build and fixture pipeline), goldens regenerated (only the new files, the metadata block
+      and the manifest changed).
+- [x] **Validator** (`src/ffdraft/artifacts/recent_checks.py`): shape, arithmetic, weekly and
+      window ranks re-derived, every category re-derived independently from published evidence
+      and thresholds, agreement with season actuals, metadata description.
+- [x] **Firewall**: `test_architecture_boundary.py` (no value package reaches
+      `ffdraft.signals.recent`; it reaches no market/ownership/behaviour code) and
+      `test_recent_form_invariance.py` (every other artifact byte-identical with it withheld).
+- [x] **Board**: Recent weeks control (default Last 3; `last=`), one Recent column (rank, signed
+      gap to Szn rank, rate and games) with two sort buttons, badge button on the name with a
+      lazily loaded evidence dialog, *too little data* explanations, breakout filter (`form=`)
+      AND-ed with every filter, census line, folded summary, notices for unusable links,
+      player-picker clearing, Not projected recent rank, CSV with 14 columns, full download
+      labelled *season only*. Net adds steps aside 768–1439px with a window on.
+- [x] **Tests**: pytest `test_recent_form.py` (38), invariance (3), boundary (+3); Vitest
+      `recent-form.test.tsx` (21) and updated fold/state/candidates/actuals tests; Playwright
+      `recent.spec.ts` (9) plus updated inseason/espn/actuals/mobile specs; `verify:board`
+      checks every Recent cell, badge and the Any filter against the bytes on every in-season
+      fixture build, and a new `in-season-no-recent` scenario (CI step added).
+- [x] **Budgets**: `recentSlice` ≤ 40 kB (measured 33.9 kB), `recentWindowSwitch` = 0; every
+      earlier budget met; `scripts/size_model.py` + `config/size-model.json` model 700 records
+      per preset.
+- [x] **Profile**: `web/tests/e2e/measure-recent.mjs` (window-switch latency, long tasks,
+      requests, heap) — numbers in ADR-113 Evidence.
+- [x] **Visual QA**: `docs/visual-qa/2026-10-21-recent-form/` at 320, 390, 390×560, 820, 1024,
+      1440; before/after; 0 overflow, 0 clipped controls, 0 console errors.
+- [x] **Docs**: ADR-113, PRD CR-033 (and principle 4's narrow extension), DATA_CONTRACTS §28,
+      UX_SPEC §6A.21, ARCHITECTURE §14, OPERATIONS failure table.
+- [ ] **Not yet verified, not blocking:** no live build has published recent form (the first
+      in-season `daily-refresh` after merge will); the size model's 700 records per preset is
+      a projection; the thresholds are heuristics with no backtest by design; Firefox/WebKit
+      smoke not run locally (CI runs them).
+- [ ] **Follow-up (pre-existing):** any Opportunity selection change re-renders every row
+      (≈1 s at 1×, 4–6 s at 4× CPU on the size model); the Recent column adds ~10–15% to it.

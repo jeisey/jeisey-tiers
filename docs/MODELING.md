@@ -889,6 +889,10 @@ The intrinsic firewall (section 6) is unchanged and is audited by the same
   forbids, and they have no point-in-time history before 2026-10-17. The rest-of-season and
   weekly models read none, and `tests/contract/test_architecture_boundary.py` proves no
   value-producing module can import them.
+- **No recent-form window or breakout category** (ADR-113). They are descriptive summaries for
+  the Opportunity Board, published after every model has run; no model reads them, no model
+  changed to produce them, and the same boundary test proves no value-producing module can
+  import `ffdraft.signals.recent`.
 
 ## 28. Rest-of-season evaluation protocol
 

@@ -29,7 +29,7 @@
  * exception rather than quietly slotted in.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { OpportunityBoard, type OpportunityMark } from "../charts/OpportunityBoard";
 import {
@@ -98,8 +98,10 @@ import {
   type BreakoutFilter,
   type RecentLens,
 } from "../data/recent";
-import { BreakoutDialog } from "./RecentColumns";
 import type { RecentColumnsSpec } from "./OpportunityTable";
+
+/** ADR-113: the evidence dialog and its sentences load on first use, never with the board. */
+const BreakoutDialog = lazy(() => import("./BreakoutDialog"));
 
 const SORT_LABELS: Readonly<Record<OpportunitySort, string>> = {
   value: "ROS value",
@@ -524,8 +526,11 @@ export function OpportunityView({
     bundle.recentAvailability.kind === "unavailable" ? bundle.recentAvailability.reason : null;
   const windowKey: RecentWindowKey | null =
     state.last === "season" || recentMeta === null ? null : state.last;
-  const spanLabel =
-    windowKey === null || recentMeta === null ? "" : formatSpan(windowSpan(recentMeta, windowKey), true);
+  const span = windowKey === null || recentMeta === null ? null : windowSpan(recentMeta, windowKey);
+  // The headings carry the bare range (`W6–8`); the census, the caption and the control say
+  // when the season is younger than the window asked for.
+  const spanLabel = span === null ? "" : formatSpan({ ...span, requested: span.weeks }, true);
+  const spanFull = span === null ? "" : formatSpan(span, true);
   const [explaining, setExplaining] = useState<string | null>(null);
   const onExplain = useCallback((playerId: string) => {
     setExplaining(playerId);
@@ -716,7 +721,9 @@ export function OpportunityView({
             <Segmented<BreakoutFilter>
               name="breakout"
               label="Breakout"
-              value={state.form}
+              // What the board applies: All when the lens or the build cannot apply the link's
+              // choice (the notice below names it).
+              value={breakoutReason === null ? state.form : "all"}
               options={BREAKOUT_FILTERS.map((filter) => ({
                 value: filter,
                 label: BREAKOUT_FILTER_LABELS[filter],
@@ -746,12 +753,12 @@ export function OpportunityView({
             ].join(" · ")}
           </span>
           {selection.census !== null && (
-            <span className="opp-filter-status opp-breakout-census muted" data-census="breakout">
-              {censusText(spanLabel, selection.census)}
+            <span className="opp-recent-status opp-breakout-census muted" data-census="breakout">
+              {censusText(spanFull, selection.census)}
             </span>
           )}
           {recentReason !== null && (
-            <span className="opp-filter-status muted" data-recent="unavailable">
+            <span className="opp-recent-status muted" data-recent="unavailable">
               {`Recent weeks: ${recentReason}`}
             </span>
           )}
@@ -954,12 +961,13 @@ export function OpportunityView({
               bundle.actualsAvailability.published ? null : bundle.actualsAvailability.reason,
             )}
             recent={recentSpec}
-            recentNote={recentCaption(windowKey, spanLabel, recentReason)}
+            recentNote={recentCaption(windowKey, spanFull, recentReason)}
           />
         )}
       </section>
 
       {explained?.recent !== undefined && recentMeta !== null && (
+        <Suspense fallback={null}>
         <BreakoutDialog
           name={explained.row.record.display_name}
           standing={explained.recent}
@@ -967,6 +975,7 @@ export function OpportunityView({
           meta={recentMeta}
           onClose={closeExplain}
         />
+        </Suspense>
       )}
 
       {unprojected.length > 0 && (

@@ -140,6 +140,21 @@ try {
   espnRecords = null;
 }
 let espnCellsChecked = 0;
+
+/**
+ * Recent form (ADR-113). Optional like ESPN: absent on an older build. A *present* artifact must
+ * be what every Recent cell prints — the window rank and the signed gap to the season rank —
+ * every badge must be the record's own category, and the breakout filter must keep exactly the
+ * rows whose category it names.
+ */
+let recentRecords = null;
+try {
+  recentRecords = JSON.parse(readFileSync(`${dataDir}/recent_form.json`, "utf-8")).records;
+} catch {
+  recentRecords = null;
+}
+let recentCellsChecked = 0;
+let recentBadgesChecked = 0;
 /** Exactly `formatEspnPercent` in web/src/data/espn.ts: truncated, never rounded up. */
 function espnPercent(value) {
   if (value === null) return "\u2014";
@@ -1604,6 +1619,56 @@ if (publishedInSeason && opportunityRecords !== null) {
     await page.waitForSelector("table.sheet tbody tr[data-player]");
   }
 
+  if (recentRecords !== null) {
+    // Last 3, the default lens, in PPR: every Recent cell and badge against the bytes.
+    const published = rosMetadata?.recent_form?.status === "published";
+    const byId = new Map(recentRecords.filter((r) => r.scoring_preset === "PPR").map((r) => [r.player_id, r]));
+    const cells = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) =>
+      rows.map((tr) => {
+        const cell = tr.querySelector('td[data-col="recent_rank"] .signal-cell');
+        return {
+          id: tr.getAttribute("data-player"),
+          present: cell !== null,
+          value: cell?.querySelector(".signal-value")?.textContent?.trim() ?? null,
+          change: cell?.querySelector(".signal-change")?.textContent?.trim() ?? null,
+          badge: tr.querySelector(".breakout-badge")?.getAttribute("data-category") ?? null,
+        };
+      }),
+    );
+    for (const cell of cells) {
+      if (!published) {
+        if (cell.present || cell.badge !== null) failures.push(`opportunity row ${String(cell.id)}: a recent cell on a build whose recent form is not published`);
+        continue;
+      }
+      const record = byId.get(cell.id);
+      const window = record?.windows?.["3"];
+      const rank = window?.rank ?? null;
+      const wantValue = rank === null || record === undefined ? "\u2014" : `${record.position}${String(rank)}`;
+      if (cell.value !== wantValue) failures.push(`opportunity row ${String(cell.id)}: Recent reads ${String(cell.value)}, artifact ${wantValue}`);
+      const season = actualsPPR.get(cell.id)?.season_position_rank ?? null;
+      const gap = rank === null || season === null ? null : season - rank;
+      const wantChange = gap === null ? null : gap === 0 ? "0" : gap > 0 ? `+${String(gap)}` : `\u2212${String(Math.abs(gap))}`;
+      if (cell.change !== wantChange) failures.push(`opportunity row ${String(cell.id)}: Recent gap reads ${String(cell.change)}, artifacts ${String(wantChange)}`);
+      const category = window?.breakout?.category ?? null;
+      const wantBadge = ["takeover", "sneaking", "eyebrow"].includes(category) ? category : null;
+      if (cell.badge !== wantBadge) failures.push(`opportunity row ${String(cell.id)}: badge ${String(cell.badge)}, artifact ${String(category)}`);
+      if (wantBadge !== null) recentBadgesChecked += 1;
+      recentCellsChecked += 1;
+    }
+    // The breakout filter keeps exactly the rows with a badge (Any), or none of it applies.
+    await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12&form=any`, { waitUntil: "networkidle" });
+    await page.waitForSelector("table.sheet.opp-sheet, .notice");
+    const kept = await page.$$eval("table.sheet.opp-sheet tbody tr[data-player]", (rows) => rows.map((tr) => tr.getAttribute("data-player")));
+    const want = published
+      ? cells.map((cell) => cell.id).filter((id) => ["takeover", "sneaking", "eyebrow"].includes(byId.get(id)?.windows?.["3"]?.breakout?.category))
+      : cells.map((cell) => cell.id);
+    if (JSON.stringify([...kept].sort()) !== JSON.stringify([...want].sort())) {
+      failures.push(`opportunity breakout filter Any: ${String(kept.length)} rows shown, the artifact allows ${String(want.length)}`);
+    }
+    await page.goto(`${BASE}/?view=opportunity&scoring=ppr&teams=12`, { waitUntil: "networkidle" });
+    await page.waitForSelector("table.sheet tbody tr[data-player]");
+  }
+
   const unprojectedRows = await page.$$eval(".unprojected-sheet tbody tr", (rows) =>
     rows.map((tr) => ({
       id: tr.getAttribute("data-player-id"),
@@ -2105,6 +2170,9 @@ console.log(JSON.stringify({
   faCellsChecked,
   espnRecords: espnRecords === null ? null : espnRecords.length,
   espnCellsChecked,
+  recentRecords: recentRecords === null ? null : recentRecords.length,
+  recentCellsChecked,
+  recentBadgesChecked,
   unprojectedRowsChecked,
   breadthRowsChecked,
   oppChartRowsChecked,

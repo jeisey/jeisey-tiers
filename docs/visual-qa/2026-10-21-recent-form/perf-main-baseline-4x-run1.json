@@ -1,0 +1,34 @@
+{
+ "throttle": 4,
+ "cycles": 4,
+ "targets": {
+  "interactionMs": 200,
+  "interactionVsBaseline": 1.25,
+  "heapGrowthBytes": 1000000,
+  "requestsPerSwitch": 0
+ },
+ "allowedLatencyMs": 5780,
+ "baselineLatencyMs": [
+  4624,
+  3408,
+  4264,
+  3600
+ ],
+ "baselineLongestMs": [
+  3989,
+  2865,
+  3758,
+  3055
+ ],
+ "windowLatencyMs": [],
+ "windowElapsedMs": [],
+ "windowLongestMs": [],
+ "windowRequests": [],
+ "heapBytes": [
+  31576624
+ ],
+ "heapGrowthBytes": 0,
+ "failures": [
+  "baseline only: this build has no recent_form metadata"
+ ]
+}
