@@ -37,7 +37,8 @@
         "player_skill_tree",
         "skill_tree_definitions",
         "espn_ownership",
-        "espn_ownership_series"
+        "espn_ownership_series",
+        "recent_form"
       ]
     },
     "record_schema": {

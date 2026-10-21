@@ -24,6 +24,8 @@ import {
   rosVsSeasonPlaces,
   seasonCsvCells,
 } from "./actuals";
+import type { RecentFormMetadata } from "./contracts";
+import { RECENT_CSV_COLUMNS, recentCsvCells, type RecentLens } from "./recent";
 import type { RosRow } from "./ros";
 import type { ScoringValue, TeamCount } from "./state";
 
@@ -385,6 +387,10 @@ export const OPPORTUNITY_EXPORT_COLUMNS = [
   // ADR-112: ESPN's readings, appended so every earlier column keeps its index. Published
   // fields copied verbatim, with `espn_reading` naming which absence an empty cell is.
   ...ESPN_CSV_COLUMNS,
+  // ADR-113: the selected recent window and its breakout category, appended so every earlier
+  // column keeps its index. `recent_window` names the lens the reader exported under, and is
+  // `season` (every other recent cell empty) when no window was selected.
+  ...RECENT_CSV_COLUMNS,
 ] as const;
 
 /**
@@ -470,7 +476,11 @@ function signalCells(candidate: OpportunityCandidate): (string | number | null)[
   ];
 }
 
-export function opportunityRowsToCsv(rows: readonly OpportunityCandidate[]): string {
+export function opportunityRowsToCsv(
+  rows: readonly OpportunityCandidate[],
+  lens: RecentLens = "season",
+  recentMeta: RecentFormMetadata | null = null,
+): string {
   return toCsv(
     OPPORTUNITY_EXPORT_COLUMNS,
     rows.map((candidate) => {
@@ -509,6 +519,7 @@ export function opportunityRowsToCsv(rows: readonly OpportunityCandidate[]): str
         ...seasonCsvCells(candidate.season),
         rosVsSeasonPlaces(record.ros_position_rank, candidate.season),
         ...espnCsvCells(candidate.espn),
+        ...recentCsvCells(lens, candidate.recent, candidate.season, recentMeta),
       ];
     }),
   );

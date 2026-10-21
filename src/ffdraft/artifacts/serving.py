@@ -205,6 +205,10 @@ FAMILIES: tuple[Family, ...] = (
             "season_position_rank",
         ),
     ),
+    # ADR-113: recent windows and breakout evidence, one slice per scoring preset (a window
+    # rank, like a season rank, does not depend on league size). Read by the Opportunity Board
+    # only — never by another view, never in a card shard — so no other tab pays for it.
+    Family("recent_form", "recent_form", "scoring", exclude=("schema_version", "display_name")),
 )
 
 #: What one card shard carries: every per-player record a card reads, per artifact, with the

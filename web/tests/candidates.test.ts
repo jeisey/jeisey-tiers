@@ -594,6 +594,21 @@ describe("the filtered export", () => {
       "espn_rostered_change_1d_reading",
       "espn_observed_at_utc",
       "espn_current_period",
+      // ADR-113: the selected recent window and its breakout category, appended last.
+      "recent_window",
+      "recent_first_week",
+      "recent_last_week",
+      "recent_weeks",
+      "recent_position_rank",
+      "recent_points",
+      "recent_games_played",
+      "recent_points_per_game",
+      "recent_vs_season_places",
+      "breakout_category",
+      "breakout_reason",
+      "breakout_rule_version",
+      "breakout_games_weeks",
+      "breakout_role_passed",
     ]);
   });
 

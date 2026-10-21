@@ -17,6 +17,13 @@
 
 import type { ScoringPreset } from "./contracts";
 import { parseCeiling, serializeCeiling, type EspnCeiling } from "./espn";
+import {
+  BREAKOUT_FILTERS,
+  DEFAULT_RECENT_LENS,
+  RECENT_LENSES,
+  type BreakoutFilter,
+  type RecentLens,
+} from "./recent";
 
 /**
  * Every panel the product can show, plus `auto`.
@@ -223,6 +230,13 @@ export interface AppState {
    */
   readonly espn: EspnCeiling;
   /**
+   * ADR-113: the Opportunity Board's recent-weeks lens — `season`, or the last 1, 2, 3, 4 or 6
+   * completed calendar weeks. Written as `last=6`; Last 3 (the default) is never written.
+   */
+  readonly last: RecentLens;
+  /** ADR-113: the breakout-category filter. `all` (the default) is never written; `form=any`. */
+  readonly form: BreakoutFilter;
+  /**
    * Which Pick-of-the-Week set is on screen, 1-based.
    *
    * A depth into each position's eligible pool rather than a tier: set 3 is the third-ranked
@@ -304,6 +318,8 @@ export const DEFAULT_STATE: AppState = {
   opportunity: "value",
   only: [],
   espn: "all",
+  last: DEFAULT_RECENT_LENS,
+  form: "all",
   set: 1,
   duel: [],
   margin: 0,
@@ -336,6 +352,8 @@ const PARAM_ORDER = [
   "opportunity",
   "only",
   "espn",
+  "last",
+  "form",
   "set",
   "duel",
   "margin",
@@ -510,6 +528,13 @@ export function parseState(search: string): ParsedState {
   const espn = parseCeiling(params.get("espn"));
   note(espn.valid);
 
+  // `last=6`, `form=takeover` — the recent-weeks lens and breakout filter (ADR-113). Anything
+  // else normalizes to the default and the URL is rewritten.
+  const last = oneOf(params.get("last"), RECENT_LENSES, DEFAULT_RECENT_LENS);
+  note(last.valid);
+  const form = oneOf(params.get("form"), BREAKOUT_FILTERS, "all");
+  note(form.valid);
+
   // `duel=00-0036389.00-0039164` — the Start/Sit comparison. Order is the reader's and is
   // kept; a duplicate or a malformed id is dropped and the URL rewritten, and anything past
   // four players is ignored rather than truncating silently in the middle.
@@ -651,6 +676,8 @@ export function parseState(search: string): ParsedState {
       opportunity: opportunity.value,
       only,
       espn: espn.value,
+      last: last.value,
+      form: form.value,
       set,
       duel,
       margin,

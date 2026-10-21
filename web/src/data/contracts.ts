@@ -49,6 +49,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   // ADR-112: ESPN's public roster and start percentages.
   espn_ownership: "1.0",
   espn_ownership_series: "1.0",
+  // ADR-113: recent calendar windows and descriptive breakout categories.
+  recent_form: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -75,7 +77,8 @@ export type ArtifactName =
   | "player_skill_tree"
   | "skill_tree_definitions"
   | "espn_ownership"
-  | "espn_ownership_series";
+  | "espn_ownership_series"
+  | "recent_form";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -1783,6 +1786,152 @@ export interface SeasonActualsMetadata {
   };
 }
 
+/** The windows `recent_form_v1` publishes, in weeks (ADR-113). "Season" is season actuals. */
+export const RECENT_WINDOW_KEYS = ["1", "2", "3", "4", "6"] as const;
+export type RecentWindowKey = (typeof RECENT_WINDOW_KEYS)[number];
+
+export type BreakoutCategory = "takeover" | "sneaking" | "eyebrow" | "none" | "insufficient";
+
+export type BreakoutReason =
+  | "no_games"
+  | "outside_band"
+  | "no_baseline"
+  | "not_improved"
+  | "gain_too_small"
+  | "stale"
+  | "latest_not_strong"
+  | "role_unavailable"
+  | "role_not_confirmed"
+  | "one_strong"
+  | "takeover_role"
+  | "sneaking_role";
+
+export type RoleMeasureMetric = "snap_share" | "target_share" | "carry_share" | "pass_attempts";
+
+/** One role measure over the evidence games, with its pre-window baseline and verdict. */
+export interface BreakoutRoleReading {
+  readonly metric: RoleMeasureMetric;
+  readonly games: number;
+  readonly level: number | null;
+  readonly baseline: number | null;
+  readonly baseline_games: number;
+  readonly passed: "substantial" | "increase" | null;
+}
+
+/** `breakout_v1`'s verdict for one window: a category, the deciding predicate, the evidence. */
+export interface BreakoutVerdict {
+  readonly category: BreakoutCategory;
+  readonly reason: BreakoutReason;
+  readonly games: readonly number[];
+  readonly streak: number | null;
+  readonly role: readonly BreakoutRoleReading[] | null;
+}
+
+export interface RecentWindow {
+  readonly games: number;
+  readonly points: number;
+  readonly points_per_game: number | null;
+  readonly rank: number | null;
+  readonly prior_games: number;
+  readonly breakout: BreakoutVerdict;
+}
+
+/**
+ * One player's recent form in one scoring preset, `recent_form_v1` + `breakout_v1` (ADR-113).
+ *
+ * Every rank is computed at build time over every player at the position who appeared in the
+ * window or week — never over the rows a page holds. `span_status` has one letter per
+ * `ros_build_metadata.recent_form.span_weeks` entry: `P` played, `B` bye, `D` did not play.
+ */
+export interface RecentFormRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly scoring_preset: ScoringPreset;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly position: Position;
+  readonly season_rank: number | null;
+  readonly span_status: string;
+  readonly span_points: readonly (number | null)[];
+  readonly span_ranks: readonly (number | null)[];
+  readonly windows: Readonly<Record<RecentWindowKey, RecentWindow>>;
+}
+
+/** What a served recent-form slice carries (no names, no record version; see `serving.py`). */
+export type RecentFormRow = Omit<RecentFormRecord, "schema_version" | "display_name">;
+
+export const RECENT_FORM_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "scoring_preset",
+  "player_id",
+  "display_name",
+  "position",
+  "season_rank",
+  "span_status",
+  "span_points",
+  "span_ranks",
+  "windows",
+] as const satisfies readonly (keyof RecentFormRecord)[];
+
+export interface RecentRoleMeasureSpec {
+  readonly metric: RoleMeasureMetric;
+  readonly averaging: "pooled" | "mean";
+  readonly substantial: number;
+  readonly emerging: number | null;
+  readonly increase: number | null;
+}
+
+/** The build's account of recent form: windows, every threshold, definitions, counts. */
+export interface RecentFormMetadata {
+  readonly rule: {
+    readonly version: string;
+    readonly windows: readonly number[];
+    readonly default_window: number;
+    readonly points_decimals: number;
+    readonly rank_method: "competition";
+    readonly scoring_engine_version: string;
+  };
+  readonly breakout_rule: {
+    readonly version: string;
+    readonly bands: Readonly<Record<string, number>>;
+    readonly min_gain_places: number;
+    readonly min_gain_percent: number;
+    readonly min_prior_games: number;
+    readonly max_missed_after_latest: number;
+    readonly takeover_games: number;
+    readonly sneaking_games: number;
+    readonly measures: Readonly<Record<string, readonly RecentRoleMeasureSpec[]>>;
+  };
+  readonly status: "published" | "withheld";
+  readonly withheld_reason: string | null;
+  readonly season: number;
+  readonly through_week: number;
+  readonly span_weeks: readonly number[];
+  readonly windows: Readonly<
+    Record<
+      string,
+      {
+        readonly requested: number;
+        readonly first_week: number | null;
+        readonly last_week: number | null;
+        readonly weeks: number;
+      }
+    >
+  >;
+  readonly scoring_presets: readonly ScoringPreset[];
+  readonly definitions: Readonly<Record<string, string>>;
+  readonly records: number;
+  readonly population: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  readonly categories: Readonly<
+    Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>
+  >;
+}
+
 /** ADR-107's seven reading states. A missing value is never 0 and a 0 is never missing. */
 export type SkillState =
   | "ranked"
@@ -1976,6 +2125,8 @@ export interface RosBuildMetadata {
   readonly weekly?: RosWeeklyMetadata | null;
   /** Season-to-date actuals (ADR-105). Absent, null or withheld: actuals are unavailable. */
   readonly season_actuals?: SeasonActualsMetadata | null;
+  /** Recent form (ADR-113). Absent, null or withheld: season columns only on Opportunity. */
+  readonly recent_form?: RecentFormMetadata | null;
   /** The Skill Tree (ADR-107). Absent or null: the card has no Skill Tree section. */
   readonly skill_tree?: SkillTreeMetadata | null;
   /** ESPN roster/start percentages (ADR-112). Absent or null: no ESPN reading anywhere. */
@@ -2150,6 +2301,11 @@ export const ESPN_OWNERSHIP_SERIES_FIELDS_COMPLETE: NoMissingKeys<
   typeof ESPN_OWNERSHIP_SERIES_FIELDS
 > = true;
 
+export const RECENT_FORM_FIELDS_COMPLETE: NoMissingKeys<
+  RecentFormRecord,
+  typeof RECENT_FORM_FIELDS
+> = true;
+
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
@@ -2170,6 +2326,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   skill_tree_definitions: SKILL_TREE_DEFINITION_FIELDS,
   espn_ownership: ESPN_OWNERSHIP_FIELDS,
   espn_ownership_series: ESPN_OWNERSHIP_SERIES_FIELDS,
+  recent_form: RECENT_FORM_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -2192,6 +2349,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   skill_tree_definitions: "skill_tree_definitions.json",
   espn_ownership: "espn_ownership.json",
   espn_ownership_series: "espn_ownership_series.json",
+  recent_form: "recent_form.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

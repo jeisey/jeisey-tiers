@@ -578,6 +578,18 @@ def run_fixture_pipeline(
     gate.extend(actuals.checks)
     if actuals.records:
         records["season_actuals"] = actuals.records
+    # ADR-113: recent windows and breakout categories over the same rows and population.
+    recent = _recent_form(
+        records,
+        season=season,
+        app=app,
+        identity=identity,
+        actuals=actuals,
+        build_id=build_id,
+    )
+    gate.extend(recent.checks)
+    if recent.records:
+        records["recent_form"] = recent.records
     # ADR-107: the real builder over synthetic play-by-play, Next Gen Stats and combine
     # testers derived from the same rows, so every state the card draws is in the fixture.
     skill_tree = _skill_tree(records, season=season, identity=identity, build_id=build_id)
@@ -634,6 +646,7 @@ def run_fixture_pipeline(
             matchups=matchups,
             weekly=weekly_block,
             season_actuals=actuals.metadata,
+            recent_form=recent.metadata,
             skill_tree=skill_tree.metadata,
             espn_ownership=espn.metadata,
             build_id=build_id,
@@ -1477,6 +1490,38 @@ def _season_actuals(
     )
 
 
+def _recent_form(
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    season: FixtureSeason,
+    app: AppConfig,
+    identity: Any,
+    actuals: SeasonActualsResult,
+    build_id: str,
+) -> Any:
+    """``recent_form`` (ADR-113) from the fixture season, by the production builder."""
+    from ffdraft.pipeline.ros import season_actuals_inputs
+    from ffdraft.signals.recent import build_recent_form
+
+    catalog = {
+        player_id: {"display_name": player.display_name, "position": str(player.position)}
+        for player_id, player in (identity.players.items() if identity is not None else ())
+    }
+    _, _, include = season_actuals_inputs(records, snapshot_frame=pl.DataFrame(), catalog=catalog)
+    return build_recent_form(
+        weekly=season.weekly,
+        snap_counts=season.snap_counts,
+        schedule=season.schedule,
+        scoring=app.league.scoring,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        actuals=actuals,
+        include=include,
+        build_id=build_id,
+        schema_version=record_schema_version("recent_form_record"),
+    )
+
+
 def _skill_tree(
     records: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
@@ -1943,6 +1988,7 @@ def _ros_build_metadata(
     season_actuals: Mapping[str, Any] | None = None,
     skill_tree: Mapping[str, Any] | None = None,
     espn_ownership: Mapping[str, Any] | None = None,
+    recent_form: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The in-season bundle's metadata, carrying the disclosures the UI renders from."""
     from ffdraft.pipeline.ros import (
@@ -2020,6 +2066,7 @@ def _ros_build_metadata(
         },
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
+        "recent_form": None if recent_form is None else dict(recent_form),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
         "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
         "disclosures": {

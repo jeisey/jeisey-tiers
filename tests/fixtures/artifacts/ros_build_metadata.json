@@ -600,6 +600,263 @@
     "baseline_7d_observed_at_utc": "2026-08-11T10:00:00Z",
     "series_players": 16
   },
+  "recent_form": {
+    "rule": {
+      "version": "recent_form_v1",
+      "windows": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "default_window": 3,
+      "points_decimals": 2,
+      "rank_method": "competition",
+      "scoring_engine_version": "scoring_v1"
+    },
+    "breakout_rule": {
+      "version": "breakout_v1",
+      "bands": {
+        "QB": 12,
+        "RB": 24,
+        "WR": 24,
+        "TE": 12
+      },
+      "min_gain_places": 3,
+      "min_gain_percent": 30,
+      "min_prior_games": 2,
+      "max_missed_after_latest": 0,
+      "takeover_games": 3,
+      "sneaking_games": 2,
+      "measures": {
+        "QB": [
+          {
+            "metric": "snap_share",
+            "averaging": "mean",
+            "substantial": 0.8,
+            "emerging": null,
+            "increase": null
+          },
+          {
+            "metric": "pass_attempts",
+            "averaging": "mean",
+            "substantial": 25.0,
+            "emerging": null,
+            "increase": null
+          }
+        ],
+        "RB": [
+          {
+            "metric": "snap_share",
+            "averaging": "mean",
+            "substantial": 0.55,
+            "emerging": 0.4,
+            "increase": 0.15
+          },
+          {
+            "metric": "carry_share",
+            "averaging": "pooled",
+            "substantial": 0.45,
+            "emerging": 0.3,
+            "increase": 0.15
+          }
+        ],
+        "WR": [
+          {
+            "metric": "target_share",
+            "averaging": "pooled",
+            "substantial": 0.22,
+            "emerging": 0.16,
+            "increase": 0.06
+          },
+          {
+            "metric": "snap_share",
+            "averaging": "mean",
+            "substantial": 0.8,
+            "emerging": 0.65,
+            "increase": 0.15
+          }
+        ],
+        "TE": [
+          {
+            "metric": "target_share",
+            "averaging": "pooled",
+            "substantial": 0.18,
+            "emerging": 0.13,
+            "increase": 0.05
+          },
+          {
+            "metric": "snap_share",
+            "averaging": "mean",
+            "substantial": 0.7,
+            "emerging": 0.55,
+            "increase": 0.15
+          }
+        ]
+      }
+    },
+    "season": 2026,
+    "through_week": 8,
+    "span_weeks": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "windows": {
+      "1": {
+        "requested": 1,
+        "first_week": 8,
+        "last_week": 8,
+        "weeks": 1
+      },
+      "2": {
+        "requested": 2,
+        "first_week": 7,
+        "last_week": 8,
+        "weeks": 2
+      },
+      "3": {
+        "requested": 3,
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3
+      },
+      "4": {
+        "requested": 4,
+        "first_week": 5,
+        "last_week": 8,
+        "weeks": 4
+      },
+      "6": {
+        "requested": 6,
+        "first_week": 3,
+        "last_week": 8,
+        "weeks": 6
+      }
+    },
+    "scoring_presets": [
+      "HALF",
+      "PPR",
+      "STD"
+    ],
+    "definitions": {
+      "window": "The last N completed regular-season weeks ending at the cutoff, the same calendar weeks for every player. A bye or a missed game is fewer games, never an older week.",
+      "recent_rank": "Rank by total points in the window among every player at the position who appeared in it, whichever board lists him. Ties share a rank. No appearance, no rank.",
+      "recent_vs_season": "Season rank minus recent rank, in places. Positive means the recent rank is better.",
+      "breakout": "A descriptive, heuristic category from fixed thresholds over published weekly ranks and role shares. Not a prediction, not a probability, and read by no model.",
+      "takeover": "Three consecutive appearances inside the window, each a top-band weekly finish, with a substantial or clearly increased role over those games.",
+      "sneaking": "His two most recent appearances inside the window are top-band weekly finishes with a confirmed role; the three-game condition is not met.",
+      "eyebrow": "A one-game watch: his latest appearance is a top-band weekly finish, and earlier games do not establish a sustained pattern.",
+      "insufficient": "The sample, the pre-window baseline or the role facts the rule needs do not exist, so no category is stated — not a 'no'."
+    },
+    "status": "published",
+    "withheld_reason": null,
+    "records": 105,
+    "population": {
+      "1": {
+        "QB": 2,
+        "RB": 3,
+        "WR": 19,
+        "TE": 1
+      },
+      "2": {
+        "QB": 2,
+        "RB": 4,
+        "WR": 21,
+        "TE": 2
+      },
+      "3": {
+        "QB": 2,
+        "RB": 4,
+        "WR": 21,
+        "TE": 2
+      },
+      "4": {
+        "QB": 3,
+        "RB": 5,
+        "WR": 22,
+        "TE": 3
+      },
+      "6": {
+        "QB": 3,
+        "RB": 5,
+        "WR": 22,
+        "TE": 3
+      }
+    },
+    "categories": {
+      "HALF": {
+        "1": {
+          "none": 24,
+          "insufficient": 11
+        },
+        "2": {
+          "none": 28,
+          "insufficient": 7
+        },
+        "3": {
+          "none": 28,
+          "insufficient": 7
+        },
+        "4": {
+          "none": 32,
+          "insufficient": 3
+        },
+        "6": {
+          "none": 32,
+          "insufficient": 3
+        }
+      },
+      "PPR": {
+        "1": {
+          "none": 24,
+          "insufficient": 11
+        },
+        "2": {
+          "none": 28,
+          "insufficient": 7
+        },
+        "3": {
+          "none": 28,
+          "insufficient": 7
+        },
+        "4": {
+          "none": 32,
+          "insufficient": 3
+        },
+        "6": {
+          "none": 32,
+          "insufficient": 3
+        }
+      },
+      "STD": {
+        "1": {
+          "none": 24,
+          "insufficient": 11
+        },
+        "2": {
+          "none": 28,
+          "insufficient": 7
+        },
+        "3": {
+          "none": 28,
+          "insufficient": 7
+        },
+        "4": {
+          "none": 32,
+          "insufficient": 3
+        },
+        "6": {
+          "none": 32,
+          "insufficient": 3
+        }
+      }
+    }
+  },
   "season_actuals": {
     "rule": {
       "version": "season_actuals_v1",

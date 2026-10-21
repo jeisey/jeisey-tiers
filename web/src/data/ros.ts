@@ -38,6 +38,8 @@ import type {
   PlayerUsageRecord,
   Position,
   ProductMode,
+  RecentFormRow,
+  RecentWindowKey,
   RosBuildMetadata,
   RosTierRecord,
   ScoringPreset,
@@ -50,6 +52,12 @@ import type {
   WeeklyProjectionRecord,
 } from "./contracts";
 import { espnAvailability, espnSignal, type EspnAvailability, type EspnSignal } from "./espn";
+import {
+  recentAvailability,
+  recentStanding,
+  type RecentAvailability,
+  type RecentStanding,
+} from "./recent";
 import { EM_DASH } from "./format";
 import { isNoteworthyRosterStatus, matchesPosition, matchesSearch } from "./model";
 import type { AppState, PositionFilter } from "./state";
@@ -115,6 +123,14 @@ export interface InSeasonInput {
   /** Whether the build published `espn_ownership.json`, and whether this page can read it. */
   readonly espnPublished?: boolean;
   readonly espnCompatible?: boolean;
+  /**
+   * Recent form (ADR-113): the `recent_form` slice for the scoring preset the Opportunity
+   * Board loaded. Ranked and classified at build time; read, never re-ranked.
+   */
+  readonly recent?: readonly RecentFormRow[] | null;
+  /** Whether the build published `recent_form.json`, and whether this page can read it. */
+  readonly recentPublished?: boolean;
+  readonly recentCompatible?: boolean;
 }
 
 
@@ -212,6 +228,9 @@ export class InSeasonBundle {
   /** Whether ESPN readings can be used on this build, and why not (ADR-112). */
   readonly espnAvailability: EspnAvailability;
   private readonly espnByPlayer: ReadonlyMap<string, EspnOwnershipRecord>;
+  /** Whether recent-form windows can be read on this build, and why not (ADR-113). */
+  readonly recentAvailability: RecentAvailability;
+  private readonly recentByScoringPlayer: ReadonlyMap<string, RecentFormRow>;
 
   constructor(input: InSeasonInput) {
     this.metadata = input.metadata;
@@ -221,6 +240,14 @@ export class InSeasonBundle {
       input.espnCompatible ?? true,
     );
     this.espnByPlayer = new Map((input.espn ?? []).map((record) => [record.player_id, record]));
+    this.recentAvailability = recentAvailability(
+      input.metadata.recent_form,
+      input.recentPublished ?? (input.recent !== null && input.recent !== undefined),
+      input.recentCompatible ?? true,
+    );
+    this.recentByScoringPlayer = new Map(
+      (input.recent ?? []).map((row) => [`${row.scoring_preset}|${row.player_id}`, row]),
+    );
     this.actualsAvailability = actualsAvailability(
       input.metadata.season_actuals,
       input.actualsPublished ?? (input.actuals !== null && input.actuals !== undefined),
@@ -463,6 +490,15 @@ export class InSeasonBundle {
    */
   behaviorSeriesFor(playerId: string): BehaviorTrendSeriesRecord | null {
     return this.behaviorByPlayer.get(playerId) ?? null;
+  }
+
+  /** One player's standing in one recent window, in the states `data/recent` defines. */
+  recentStandingFor(scoring: ScoringPreset, playerId: string, key: RecentWindowKey): RecentStanding {
+    return recentStanding(
+      this.recentByScoringPlayer.get(`${scoring}|${playerId}`),
+      key,
+      this.recentAvailability,
+    );
   }
 
   /** A player's ESPN reading as a signal: every absence a kind, never 0% (ADR-112). */

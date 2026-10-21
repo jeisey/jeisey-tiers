@@ -30,6 +30,11 @@ from ffdraft.artifacts.ownership_checks import (
     ownership_record_checks,
     ownership_series_checks,
 )
+from ffdraft.artifacts.recent_checks import (
+    recent_cross_checks,
+    recent_metadata_checks,
+    recent_record_checks,
+)
 from ffdraft.artifacts.schemas import (
     record_field_order,
     validate_envelope,
@@ -121,6 +126,8 @@ _IN_SEASON_ARTIFACTS = frozenset(
         # that adds them to the pipeline.
         "espn_ownership",
         "espn_ownership_series",
+        # ADR-113. Written by `run_ros_build` right after the season actuals.
+        "recent_form",
     },
 )
 
@@ -220,6 +227,7 @@ def validate_artifact_directory(
     gate.extend(_weekly_cross_checks(envelopes))
     gate.extend(_weekly_context_cross_checks(envelopes))
     gate.extend(actuals_cross_checks(envelopes))
+    gate.extend(recent_cross_checks(envelopes))
     gate.extend(skilltree_cross_checks(envelopes))
     gate.extend(ownership_cross_checks(envelopes))
     gate.extend(
@@ -399,6 +407,8 @@ def _semantic_checks(
             return weekly_context_checks(records, stage)
         case "season_actuals":
             return actuals_record_checks(records, stage)
+        case "recent_form":
+            return recent_record_checks(records, stage)
         case "player_skill_tree":
             return skilltree_record_checks(records, stage)
         case "skill_tree_definitions":
@@ -2120,6 +2130,7 @@ def _ros_metadata_checks(
             )
 
     checks.extend(actuals_metadata_checks(metadata, envelopes))
+    checks.extend(recent_metadata_checks(metadata, envelopes))
     checks.extend(skilltree_metadata_checks(metadata, envelopes))
 
     disclosures = metadata.get("disclosures", {})

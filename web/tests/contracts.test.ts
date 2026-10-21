@@ -45,6 +45,7 @@ const SCHEMA_BY_ARTIFACT: Readonly<Record<ArtifactName, string>> = {
   skill_tree_definitions: "skill_tree_definition",
   espn_ownership: "espn_ownership_record",
   espn_ownership_series: "espn_ownership_series",
+  recent_form: "recent_form_record",
 };
 
 function readJson(path: string): Record<string, unknown> {

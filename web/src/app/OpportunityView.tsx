@@ -41,6 +41,7 @@ import {
   TeamCell,
 } from "../components/primitives";
 import {
+  breakoutUnavailableReason,
   filterAvailable,
   roleCell,
   selectOpportunityCandidates,
@@ -82,6 +83,23 @@ import {
   seasonCaption,
 } from "./SeasonColumns";
 import { SEASON_COLUMN_LABELS } from "../data/actuals";
+import type { RecentFormMetadata, RecentWindowKey } from "../data/contracts";
+import {
+  BREAKOUT_FILTERS,
+  BREAKOUT_FILTER_LABELS,
+  LENS_LABELS,
+  RECENT_LENSES,
+  formatRecentRank,
+  formatSpan,
+  recentDetail,
+  recentSentence,
+  windowSpan,
+  type BreakoutCensus,
+  type BreakoutFilter,
+  type RecentLens,
+} from "../data/recent";
+import { BreakoutDialog } from "./RecentColumns";
+import type { RecentColumnsSpec } from "./OpportunityTable";
 
 const SORT_LABELS: Readonly<Record<OpportunitySort, string>> = {
   value: "ROS value",
@@ -170,6 +188,50 @@ const ESPN_CEILING_RULE =
   "with no current ESPN reading (not listed by ESPN, no verified ESPN id, or a stale reading) " +
   "does not pass, and is counted apart rather than as 0%.";
 
+/** What the recent-weeks lens does, in one sentence. */
+const RECENT_LENS_RULE =
+  "Observed production in the last N completed regular-season weeks ending at the cutoff — the " +
+  "same calendar weeks for every player. A bye or missed game is fewer games, never an older " +
+  "week. Changes no value, rank, tier or role reading.";
+
+/** What the breakout filter tests, in one sentence. */
+const BREAKOUT_RULE_TEXT =
+  "Keeps players whose published breakout category in the selected window is the one chosen " +
+  "(Any: Takeover, Sneaking or Eyebrow). Descriptive heuristic thresholds over weekly ranks and " +
+  "role shares; not a prediction. A player with too little data does not pass and is counted apart.";
+
+/** `W3–5: 1 Takeover · 2 Sneaking · 3 Eyebrow · 5 too little data · 2 no record`. */
+function censusText(span: string, census: BreakoutCensus): string {
+  const parts = [
+    `${String(census.takeover)} Takeover`,
+    `${String(census.sneaking)} Sneaking`,
+    `${String(census.eyebrow)} Eyebrow`,
+  ];
+  if (census.insufficient > 0) parts.push(`${String(census.insufficient)} too little data`);
+  if (census.unavailable > 0) parts.push(`${String(census.unavailable)} no recent record`);
+  return `Breakouts in ${span}: ${parts.join(" · ")}`;
+}
+
+/** The caption sentence for the recent columns, or for their absence. */
+function recentCaption(windowKey: RecentWindowKey | null, span: string, unavailable: string | null): string {
+  if (unavailable !== null) return `Recent columns: ${unavailable}`;
+  if (windowKey === null) return "Season lens: no recent-window columns.";
+  return (
+    `Recent is the positional rank by total points in ${span} among every player at the position ` +
+    "who appeared in those weeks, with points per game and games under it; vs Szn is Szn rank " +
+    "minus Recent rank in places, positive when the recent rank is better. The badge on a name " +
+    "is a descriptive breakout category with its evidence one tap away."
+  );
+}
+
+function hasActiveFilter(selection: OpportunitySelection): boolean {
+  return (
+    selection.filters.some((report) => report.available) ||
+    selection.ceiling?.usable === true ||
+    selection.breakout?.usable === true
+  );
+}
+
 /** The ESPN readings' source, freshness and coverage, beside the board's own facts. */
 function EspnFacts({
   bundle,
@@ -242,20 +304,40 @@ export const OPPORTUNITY_BOARD_PREVIEW_DEPTH = 40;
  * link that this build cannot apply is not listed; the notice below the options names it.
  */
 export function opportunityOptionsSummary(
-  state: Pick<AppState, "opportunity" | "board">,
-  selection: Pick<OpportunitySelection, "filters"> & { readonly ceiling?: CeilingReport | null },
+  state: Pick<AppState, "opportunity" | "board"> & { readonly last?: RecentLens },
+  selection: Pick<OpportunitySelection, "filters"> & {
+    readonly ceiling?: CeilingReport | null;
+    readonly breakout?: OpportunitySelection["breakout"];
+    readonly census?: BreakoutCensus | null;
+  },
   rowCount: number,
+  recentMeta: RecentFormMetadata | null = null,
 ): readonly string[] {
   const applied = selection.filters
     .filter((report) => report.available)
     .map((report) => FILTER_LABELS[report.filter]);
   if (selection.ceiling?.usable === true) applied.push(`ESPN ${ESPN_CEILING_LABELS[selection.ceiling.ceiling] ?? ""}`);
+  if (selection.breakout?.usable === true) applied.push(BREAKOUT_FILTER_LABELS[selection.breakout.filter]);
+  // ADR-113: the lens is folded too, so its real weeks and missing evidence are in the row.
+  const lens = state.last;
+  const lensText =
+    lens === undefined || recentMeta === null
+      ? []
+      : [
+          lens === "season"
+            ? "Season"
+            : `${LENS_LABELS[lens]} ${formatSpan(windowSpan(recentMeta, lens), true)}` +
+              (selection.census === null || selection.census === undefined
+                ? ""
+                : ` · ${String(selection.census.insufficient + selection.census.unavailable)} without evidence`),
+        ];
   return [
     `By ${SORT_LABELS[state.opportunity]}`,
     applied.length === 0 ? "No filters" : applied.join(" + "),
     state.board === "full" || rowCount <= OPPORTUNITY_BOARD_PREVIEW_DEPTH
       ? `All ${String(rowCount)}`
       : `Top ${String(OPPORTUNITY_BOARD_PREVIEW_DEPTH)} of ${String(rowCount)}`,
+    ...lensText,
   ];
 }
 
@@ -434,6 +516,31 @@ export function OpportunityView({
     setOptionsOpen((open) => !open);
   }, []);
 
+  // ADR-113: the recent-weeks lens. Observed production only: it changes no value, rank, tier,
+  // role reading or count, and the Season lens shows the season columns alone.
+  const recentMeta =
+    bundle.recentAvailability.kind === "published" ? bundle.recentAvailability.meta : null;
+  const recentReason =
+    bundle.recentAvailability.kind === "unavailable" ? bundle.recentAvailability.reason : null;
+  const windowKey: RecentWindowKey | null =
+    state.last === "season" || recentMeta === null ? null : state.last;
+  const spanLabel =
+    windowKey === null || recentMeta === null ? "" : formatSpan(windowSpan(recentMeta, windowKey), true);
+  const [explaining, setExplaining] = useState<string | null>(null);
+  const onExplain = useCallback((playerId: string) => {
+    setExplaining(playerId);
+  }, []);
+  const closeExplain = useCallback(() => {
+    setExplaining(null);
+  }, []);
+  const recentSpec: RecentColumnsSpec | null = useMemo(
+    () => (windowKey === null ? null : { spanLabel, onExplain }),
+    [windowKey, spanLabel, onExplain],
+  );
+  const explained =
+    explaining === null ? null : (rows.find((row) => row.row.record.player_id === explaining) ?? null);
+  const breakoutReason = breakoutUnavailableReason(bundle, state.last);
+
   if (!bundle.hasOpportunity) {
     return (
       <section className="section" aria-labelledby="opportunity-missing-heading">
@@ -467,7 +574,7 @@ export function OpportunityView({
           <PanelToggle
             className="opp-options-toggle"
             label="Options"
-            items={opportunityOptionsSummary(state, selection, rows.length)}
+            items={opportunityOptionsSummary(state, selection, rows.length, recentMeta)}
             open={optionsOpen}
             controls="opp-order-options opp-filter-options"
             onToggle={toggleOptions}
@@ -575,15 +682,79 @@ export function OpportunityView({
               }}
             />
           </div>
+          {/* ADR-113: the recent-weeks lens and the breakout filter fold with the others. */}
+          <div
+            className="phone-panel phone-panel-contents opp-recent-control"
+            data-open={optionsOpen}
+            title={recentReason ?? RECENT_LENS_RULE}
+          >
+            <Segmented<RecentLens>
+              name="recent-lens"
+              label="Recent weeks"
+              value={recentMeta === null ? "season" : state.last}
+              options={RECENT_LENSES.map((lens) => ({
+                value: lens,
+                label: lens === "season" ? "Season" : lens,
+                description:
+                  lens === "season"
+                    ? "Season to date only: no recent window and no breakout category"
+                    : recentMeta === null
+                      ? `${LENS_LABELS[lens]} weeks: unavailable for this build`
+                      : `${LENS_LABELS[lens]} completed weeks, ${formatSpan(windowSpan(recentMeta, lens))}`,
+                disabled: lens !== "season" && recentMeta === null,
+              }))}
+              onChange={(last) => {
+                onChange({ last });
+              }}
+            />
+          </div>
+          <div
+            className="phone-panel phone-panel-contents opp-breakout-control"
+            data-open={optionsOpen}
+            title={breakoutReason ?? BREAKOUT_RULE_TEXT}
+          >
+            <Segmented<BreakoutFilter>
+              name="breakout"
+              label="Breakout"
+              value={state.form}
+              options={BREAKOUT_FILTERS.map((filter) => ({
+                value: filter,
+                label: BREAKOUT_FILTER_LABELS[filter],
+                description:
+                  filter === "all"
+                    ? "All players, whatever their breakout category"
+                    : filter === "any"
+                      ? "Only players with a Takeover, Sneaking or Eyebrow badge in the selected window"
+                      : `Only players with a ${BREAKOUT_FILTER_LABELS[filter]} badge in the selected window`,
+                disabled: filter !== "all" && breakoutReason !== null,
+              }))}
+              onChange={(form) => {
+                onChange({ form });
+              }}
+            />
+          </div>
           <span className="opp-filter-status muted">
             {[
-              selection.filters.length === 0 && selection.ceiling === null
+              selection.filters.length === 0 && selection.ceiling === null && selection.breakout === null
                 ? `${String(rows.length)} shown`
                 : `${String(rows.length)} of ${String(selection.matched)} shown`,
               ...selection.filters.filter((report) => report.available).map(reportText),
               ...(selection.ceiling?.usable === true ? [ceilingReportText(selection.ceiling)] : []),
+              ...(selection.breakout?.usable === true
+                ? [`${BREAKOUT_FILTER_LABELS[selection.breakout.filter]}: ${String(selection.breakout.passing)}`]
+                : []),
             ].join(" · ")}
           </span>
+          {selection.census !== null && (
+            <span className="opp-filter-status opp-breakout-census muted" data-census="breakout">
+              {censusText(spanLabel, selection.census)}
+            </span>
+          )}
+          {recentReason !== null && (
+            <span className="opp-filter-status muted" data-recent="unavailable">
+              {`Recent weeks: ${recentReason}`}
+            </span>
+          )}
         </div>
         {discovery !== null && (
           <div className="opp-discovery" data-rule="role-espn">
@@ -627,6 +798,13 @@ export function OpportunityView({
           </Notice>
         )}
 
+        {state.form !== "all" && breakoutReason !== null && (
+          <Notice title="The breakout filter in this link cannot be applied here.">
+            {breakoutReason} The board below is shown without it rather than as though no
+            player passed it.
+          </Notice>
+        )}
+
         {selection.unavailable.length > 0 && (
           <Notice title="A filter in this link cannot be applied to this build.">
             {selection.unavailable.map((filter) => FILTER_UNAVAILABLE[filter]).join(" ")} The
@@ -637,7 +815,7 @@ export function OpportunityView({
 
         {rows.length === 0 ? (
           <Notice title="No players match.">
-            {selection.matched > 0 && selection.filters.length > 0
+            {selection.matched > 0 && hasActiveFilter(selection)
               ? `None of the ${String(selection.matched)} players the position and search controls leave passes every filter switched on.`
               : state.search === ""
                 ? "This position filter returns nothing for the selected preset."
@@ -741,13 +919,22 @@ export function OpportunityView({
             buildDate={buildDate}
             throughWeek={metadata.through_week}
             filteredCount={rows.length}
-            buildFilteredCsv={() => opportunityRowsToCsv(visibleRows.current)}
+            buildFilteredCsv={() =>
+              opportunityRowsToCsv(visibleRows.current, windowKey ?? "season", recentMeta)
+            }
+            fullLabel="Download full CSV · season only"
+            fullTitle={
+              "The build's file: every published row of every league and scoring block, with " +
+              "season-to-date columns. It carries no recent window; the filtered export writes " +
+              "the window selected here for the rows on screen."
+            }
+            filteredLabel={windowKey === null ? "Export filtered CSV" : `Export filtered CSV · ${spanLabel}`}
           />
         </SectionHead>
 
         {rows.length === 0 ? (
           <Notice title="No players match.">
-            {selection.matched > 0 && selection.filters.length > 0
+            {selection.matched > 0 && hasActiveFilter(selection)
               ? "No player passes every filter switched on above."
               : state.search === ""
                 ? "This position filter returns nothing for the selected preset."
@@ -766,14 +953,28 @@ export function OpportunityView({
               SCORING_LABELS[state.scoring],
               bundle.actualsAvailability.published ? null : bundle.actualsAvailability.reason,
             )}
+            recent={recentSpec}
+            recentNote={recentCaption(windowKey, spanLabel, recentReason)}
           />
         )}
       </section>
+
+      {explained?.recent !== undefined && recentMeta !== null && (
+        <BreakoutDialog
+          name={explained.row.record.display_name}
+          standing={explained.recent}
+          season={explained.season}
+          meta={recentMeta}
+          onClose={closeExplain}
+        />
+      )}
 
       {unprojected.length > 0 && (
         <UnprojectedSection
           bundle={bundle}
           records={unprojected}
+          windowKey={windowKey}
+          spanLabel={spanLabel}
           scoring={SCORING_TO_PRESET[state.scoring]}
           onSelect={onSelect}
           selectedPlayerId={selectedPlayerId}
@@ -793,12 +994,16 @@ export function OpportunityView({
 function UnprojectedSection({
   bundle,
   records,
+  windowKey,
+  spanLabel,
   scoring,
   onSelect,
   selectedPlayerId,
 }: {
   readonly bundle: InSeasonBundle;
   readonly records: readonly UnprojectedRecord[];
+  readonly windowKey: RecentWindowKey | null;
+  readonly spanLabel: string;
   readonly scoring: ScoringPreset;
   readonly onSelect: (playerId: string) => void;
   readonly selectedPlayerId: string | null;
@@ -848,6 +1053,12 @@ function UnprojectedSection({
               <th scope="col" className="plain">
                 {SEASON_COLUMN_LABELS.perGame}
               </th>
+              {/* ADR-113: genuine recent actuals too, and still no projection beside them. */}
+              {windowKey !== null && (
+                <th scope="col" className="plain">
+                  Recent <span className="th-sub">{spanLabel}</span>
+                </th>
+              )}
               <th scope="col">Adds</th>
               <th scope="col">Drops</th>
               <th scope="col" className="plain">
@@ -859,6 +1070,8 @@ function UnprojectedSection({
             {records.map((record) => {
               const reading = bundle.availabilityFor(record.player_id);
               const season = bundle.seasonStandingFor(scoring, record.player_id);
+              const recent =
+                windowKey === null ? undefined : bundle.recentStandingFor(scoring, record.player_id, windowKey);
               return (
                 <tr
                   key={record.player_id}
@@ -891,6 +1104,12 @@ function UnprojectedSection({
                   <td className="num">
                     <SeasonPerGameCell standing={season} />
                   </td>
+                  {windowKey !== null && (
+                    <td className="num" title={recentSentence(recent)}>
+                      {formatRecentRank(recent)}{" "}
+                      <span className="muted">{recentDetail(recent)}</span>
+                    </td>
+                  )}
                   <td className="num">{formatCount(record.add_count)}</td>
                   <td className="num">{formatCount(record.drop_count)}</td>
                   <td className="muted">

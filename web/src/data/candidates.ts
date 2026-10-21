@@ -35,6 +35,14 @@
 
 import type { SeasonStanding } from "./actuals";
 import {
+  breakoutCensus,
+  passesBreakout,
+  type BreakoutCensus,
+  type BreakoutFilter,
+  type RecentLens,
+  type RecentStanding,
+} from "./recent";
+import {
   compareRosterChange,
   compareRostered,
   espnFilterUnavailableReason,
@@ -171,6 +179,11 @@ export interface OpportunityCandidate {
   readonly season?: SeasonStanding;
   /** ESPN's roster/start reading (ADR-112): crowd interest in ESPN leagues, never a value. */
   readonly espn: EspnSignal;
+  /**
+   * His standing in the selected recent window (ADR-113), or undefined in the Season lens.
+   * Observed production and its breakout category: context, never an ordering of value.
+   */
+  readonly recent?: RecentStanding | undefined;
 }
 
 /**
@@ -239,6 +252,7 @@ export function nextGameSignal(bundle: InSeasonBundle, team: string | null): Nex
 export function opportunityCandidate(
   bundle: InSeasonBundle,
   row: OpportunityRow,
+  lens: RecentLens = "season",
 ): OpportunityCandidate {
   const { record } = row;
   const usage = bundle.hasUsage ? bundle.usageFor(record.player_id) : null;
@@ -249,6 +263,10 @@ export function opportunityCandidate(
     nextGame: nextGameSignal(bundle, signalTeam(usage, record.team)),
     season: bundle.seasonStandingFor(record.scoring_preset, record.player_id),
     espn: bundle.espnFor(record.player_id),
+    recent:
+      lens === "season"
+        ? undefined
+        : bundle.recentStandingFor(record.scoring_preset, record.player_id, lens),
   };
 }
 
@@ -506,6 +524,19 @@ export interface CeilingReport {
 }
 
 /**
+ * The breakout-category filter's census (ADR-113): how many rows carry a matching badge, and
+ * the category states of every row the position and search controls leave — badges, `none`,
+ * and the missing-evidence states counted apart. `usable: false` means the filter is not
+ * applied (Season lens, or a build without recent form) and `reason` says why.
+ */
+export interface BreakoutReport {
+  readonly filter: Exclude<BreakoutFilter, "all">;
+  readonly usable: boolean;
+  readonly reason: string | null;
+  readonly passing: number;
+}
+
+/**
  * Supporting evidence for the rows shown, each labelled apart and never combined (ADR-112):
  * how many have a current ESPN 7-day roster gain, and how many have positive Sleeper net adds.
  * Two populations in two units, so they are two counts and never a ratio or a blend.
@@ -554,6 +585,19 @@ export interface OpportunitySelection {
   readonly ceiling: CeilingReport | null;
   /** Supporting evidence over the rows shown, labelled apart (ADR-112). */
   readonly evidence: SupportingEvidence;
+  /** The breakout filter's census, or null when the reader chose All (ADR-113). */
+  readonly breakout: BreakoutReport | null;
+  /** Category states over the rows position and search leave, or null in the Season lens. */
+  readonly census: BreakoutCensus | null;
+}
+
+/** Why the breakout filter cannot be applied, or null when it can. */
+export function breakoutUnavailableReason(bundle: InSeasonBundle, lens: RecentLens): string | null {
+  if (bundle.recentAvailability.kind !== "published") return bundle.recentAvailability.reason;
+  if (lens === "season") {
+    return "Breakout categories describe a recent window; choose Last 1–6 weeks to use them.";
+  }
+  return null;
 }
 
 /**
@@ -577,7 +621,7 @@ export function selectOpportunityCandidates(
       (record) =>
         matchesPosition(record.position, state.position) && matchesSearch(record, state.search),
     )
-    .map((record) => opportunityCandidate(bundle, { record, rank: 0 }));
+    .map((record) => opportunityCandidate(bundle, { record, rank: 0 }, state.last));
 
   const active = OPPORTUNITY_FILTERS.filter((filter) => state.only.includes(filter));
   const applied = active.filter((filter) => filterAvailable(bundle, filter));
@@ -602,10 +646,28 @@ export function selectOpportunityCandidates(
           passing: matched.filter((candidate) => passesCeiling(candidate.espn, ceilingValue)).length,
           withoutReading: matched.filter((candidate) => !isCurrent(candidate.espn)).length,
         };
+  // ADR-113: the breakout filter, one more predicate ANDed with the rest. Only an actual
+  // matching badge passes; a lens or build that cannot apply it leaves it off and says why.
+  const breakoutReason = breakoutUnavailableReason(bundle, state.last);
+  const breakout: BreakoutReport | null =
+    state.form === "all"
+      ? null
+      : {
+          filter: state.form,
+          usable: breakoutReason === null,
+          reason: breakoutReason,
+          passing: matched.filter((candidate) => passesBreakout(candidate.recent, state.form))
+            .length,
+        };
+  const census =
+    state.last === "season" || bundle.recentAvailability.kind !== "published"
+      ? null
+      : breakoutCensus(matched.map((candidate) => candidate.recent));
   const kept = matched.filter(
     (candidate) =>
       applied.every((filter) => passesFilter(candidate, filter)) &&
-      (ceiling === null || !ceiling.usable || passesCeiling(candidate.espn, ceiling.ceiling)),
+      (ceiling === null || !ceiling.usable || passesCeiling(candidate.espn, ceiling.ceiling)) &&
+      (breakout === null || !breakout.usable || passesBreakout(candidate.recent, breakout.filter)),
   );
   const sorted = sortCandidates(kept, state.opportunity);
   return {
@@ -619,6 +681,8 @@ export function selectOpportunityCandidates(
     roleOrdering: roleOrderingFor(kept),
     ceiling,
     evidence: supportingEvidence(kept),
+    breakout,
+    census,
   };
 }
 

@@ -18,6 +18,9 @@ export function ExportControls({
   filteredCount,
   buildFilteredCsv,
   throughWeek,
+  fullLabel = "Download full CSV",
+  fullTitle,
+  filteredLabel = "Export filtered CSV",
 }: {
   readonly board: ExportBoard;
   readonly scoring: ScoringValue;
@@ -27,12 +30,20 @@ export function ExportControls({
   readonly buildFilteredCsv: () => string;
   /** Present on an in-season export, so two cutoffs never share a filename. */
   readonly throughWeek?: number;
+  /**
+   * ADR-113: what the prebuilt file is and is not. The full CSV is the build's, written once
+   * for every row and block; it never reflects a lens the reader picked on the page.
+   */
+  readonly fullLabel?: string;
+  readonly fullTitle?: string;
+  /** The filtered button's words, e.g. naming the selected window it exports. */
+  readonly filteredLabel?: string;
 }): React.JSX.Element {
   const fullHref = artifactUrl(`${board}.csv`);
   return (
     <>
-      <a className="button" href={fullHref} download>
-        Download full CSV
+      <a className="button" href={fullHref} download title={fullTitle}>
+        {fullLabel}
       </a>
       <button
         type="button"
@@ -45,7 +56,7 @@ export function ExportControls({
           );
         }}
       >
-        {`Export filtered CSV (${String(filteredCount)})`}
+        {`${filteredLabel} (${String(filteredCount)})`}
       </button>
     </>
   );

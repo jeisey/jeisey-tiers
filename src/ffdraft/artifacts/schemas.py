@@ -85,6 +85,10 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # ESPN readings are unavailable and the ESPN filter is disabled.
     "espn_ownership_record",
     "espn_ownership_series",
+    # ADR-113. Recent calendar windows and descriptive breakout categories. Additive and
+    # independent: without it the Opportunity Board shows season columns only and disables
+    # the window and category controls with a reason.
+    "recent_form_record",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -125,6 +129,7 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "skill_tree_definition": "1.0",
     "espn_ownership_record": "1.0",
     "espn_ownership_series": "1.0",
+    "recent_form_record": "1.0",
 }
 
 

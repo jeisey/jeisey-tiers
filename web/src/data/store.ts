@@ -34,6 +34,7 @@ import {
   type PlayerProjectionRecord,
   type PlayerStatusRecord,
   type PlayerUsageRecord,
+  type RecentFormRow,
   type RosBuildMetadata,
   type RosTierRecord,
   type ScoringPreset,
@@ -139,6 +140,9 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
         "team_matchups/all",
         // ADR-112: ESPN's latest readings, one small slice for every block. Never the series.
         "espn_ownership/all",
+        // ADR-113: recent windows and breakout evidence, one slice per scoring preset. Read
+        // by this view only, so no other tab and no card pays for it.
+        `recent_form/${context.scoring}`,
       );
       break;
     case "potw":
@@ -573,6 +577,11 @@ export class DataStore {
                 : null,
             espnPublished: this.manifest.artifacts.espn_ownership !== undefined,
             espnCompatible: this.published("espn_ownership"),
+            recent: [...scope].some((key) => key.startsWith("recent_form/") && this.tables.has(key))
+              ? this.rows<RecentFormRow>("recent_form", scope)
+              : null,
+            recentPublished: this.manifest.artifacts.recent_form !== undefined,
+            recentCompatible: this.published("recent_form"),
             published: {
               opportunity: this.published("inseason_opportunity"),
               behaviorSeries: this.published("behavior_trend_series"),
