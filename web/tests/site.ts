@@ -109,6 +109,25 @@ const FAMILIES: readonly {
       "season_position_rank",
     ],
   },
+  // ADR-113: the Opportunity Board's recent windows, one slice per scoring preset.
+  {
+    name: "recent_form",
+    artifact: "recent_form",
+    partition: "scoring",
+    only: [
+      "build_id",
+      "season",
+      "through_week",
+      "scoring_preset",
+      "player_id",
+      "position",
+      "season_rank",
+      "span_status",
+      "span_points",
+      "span_ranks",
+      "windows",
+    ],
+  },
 ];
 
 const CARD_SECTIONS: readonly (readonly [string, "block" | "scoring" | "all"])[] = [
@@ -144,6 +163,7 @@ const FILENAMES: Readonly<Record<string, string>> = {
   skill_tree_definitions: "skill_tree_definitions.json",
   espn_ownership: "espn_ownership.json",
   espn_ownership_series: "espn_ownership_series.json",
+  recent_form: "recent_form.json",
 };
 
 function partitionKey(

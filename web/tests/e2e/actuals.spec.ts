@@ -164,7 +164,9 @@ for (const width of [1440, 390]) {
     const gap = table.getByRole("button", { name: /RoS vs\s+Szn/ });
     await gap.click();
     await expect(table.locator("th[data-col='ros_vs_season']")).toHaveAttribute("aria-sort", "descending");
-    await expect(table.locator("tbody tr").first().locator(".player-name")).toHaveText("Ja'Marr Swift");
+    // ADR-113's off-board tight-end peers make Ertz TE15 for the season in PPR: his is now the
+    // widest positive gap (it was Swift's).
+    await expect(table.locator("tbody tr").first().locator(".player-name")).toHaveText("Zach Ertz");
     await expect(page.locator(".weekboard-sorted")).toContainText("Sorted by RoS vs Szn, descending");
     await gap.click();
     await expect(table.locator("th[data-col='ros_vs_season']")).toHaveAttribute("aria-sort", "ascending");

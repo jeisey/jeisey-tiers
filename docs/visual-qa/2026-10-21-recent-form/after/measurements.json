@@ -1,0 +1,368 @@
+{
+  "controls-320": {
+    "pageX": 0,
+    "tableSlack": -556,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "table-320": {
+    "pageX": 0,
+    "tableSlack": -556,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "dialog-320": {
+    "pageX": 0,
+    "tableSlack": -556,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -18,
+      "bottom": -16
+    }
+  },
+  "long-name-320": {
+    "pageX": 0,
+    "tableSlack": -556,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "combined-320": {
+    "pageX": 0,
+    "tableSlack": -422,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "no-results-320": {
+    "pageX": 0,
+    "tableSlack": null,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "season-lens-320": {
+    "pageX": 0,
+    "tableSlack": -493,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "insufficient-320": {
+    "pageX": 0,
+    "tableSlack": -556,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -18,
+      "bottom": -83
+    }
+  },
+  "no-recent-320": {
+    "pageX": 0,
+    "tableSlack": -493,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "errors-320": [],
+  "controls-390": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "table-390": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "dialog-390": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -18,
+      "bottom": -128
+    }
+  },
+  "long-name-390": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "combined-390": {
+    "pageX": 0,
+    "tableSlack": -352,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "no-results-390": {
+    "pageX": 0,
+    "tableSlack": null,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "season-lens-390": {
+    "pageX": 0,
+    "tableSlack": -423,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "insufficient-390": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -18,
+      "bottom": -233
+    }
+  },
+  "no-recent-390": {
+    "pageX": 0,
+    "tableSlack": -423,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "errors-390": [],
+  "controls-short": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "table-short": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "dialog-short": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -18,
+      "bottom": -16
+    }
+  },
+  "long-name-short": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "combined-short": {
+    "pageX": 0,
+    "tableSlack": -352,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "no-results-short": {
+    "pageX": 0,
+    "tableSlack": null,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "season-lens-short": {
+    "pageX": 0,
+    "tableSlack": -423,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "insufficient-short": {
+    "pageX": 0,
+    "tableSlack": -486,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -18,
+      "bottom": -91
+    }
+  },
+  "no-recent-short": {
+    "pageX": 0,
+    "tableSlack": -423,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "errors-short": [],
+  "controls-820": {
+    "pageX": 0,
+    "tableSlack": -81,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "table-820": {
+    "pageX": 0,
+    "tableSlack": -81,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "dialog-820": {
+    "pageX": 0,
+    "tableSlack": -81,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -106,
+      "bottom": -383
+    }
+  },
+  "long-name-820": {
+    "pageX": 0,
+    "tableSlack": -180,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "combined-820": {
+    "pageX": 0,
+    "tableSlack": 23,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "no-results-820": {
+    "pageX": 0,
+    "tableSlack": null,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "season-lens-820": {
+    "pageX": 0,
+    "tableSlack": -77,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "insufficient-820": {
+    "pageX": 0,
+    "tableSlack": -81,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -106,
+      "bottom": -444
+    }
+  },
+  "no-recent-820": {
+    "pageX": 0,
+    "tableSlack": -77,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "errors-820": [],
+  "controls-1024": {
+    "pageX": 0,
+    "tableSlack": 99,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "table-1024": {
+    "pageX": 0,
+    "tableSlack": 99,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "dialog-1024": {
+    "pageX": 0,
+    "tableSlack": 99,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -208,
+      "bottom": -193
+    }
+  },
+  "long-name-1024": {
+    "pageX": 0,
+    "tableSlack": 0,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "combined-1024": {
+    "pageX": 0,
+    "tableSlack": 203,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "no-results-1024": {
+    "pageX": 0,
+    "tableSlack": null,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "season-lens-1024": {
+    "pageX": 0,
+    "tableSlack": 103,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "insufficient-1024": {
+    "pageX": 0,
+    "tableSlack": 99,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -208,
+      "bottom": -254
+    }
+  },
+  "no-recent-1024": {
+    "pageX": 0,
+    "tableSlack": 103,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "errors-1024": [],
+  "controls-1440": {
+    "pageX": 0,
+    "tableSlack": 82,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "table-1440": {
+    "pageX": 0,
+    "tableSlack": 82,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "dialog-1440": {
+    "pageX": 0,
+    "tableSlack": 82,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -416,
+      "bottom": -243
+    }
+  },
+  "long-name-1440": {
+    "pageX": 0,
+    "tableSlack": -10,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "combined-1440": {
+    "pageX": 0,
+    "tableSlack": 157,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "no-results-1440": {
+    "pageX": 0,
+    "tableSlack": null,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "season-lens-1440": {
+    "pageX": 0,
+    "tableSlack": 146,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "insufficient-1440": {
+    "pageX": 0,
+    "tableSlack": 82,
+    "clipped": [],
+    "dialogOverflow": {
+      "right": -416,
+      "bottom": -304
+    }
+  },
+  "no-recent-1440": {
+    "pageX": 0,
+    "tableSlack": 146,
+    "clipped": [],
+    "dialogOverflow": null
+  },
+  "errors-1440": []
+}

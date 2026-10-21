@@ -1,0 +1,908 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/recent_form_record.schema.json",
+  "title": "RecentFormRecord",
+  "description": "One player's recent form in one scoring preset (ADR-113): `recent_form_v1` windows of the last 1, 2, 3, 4 and 6 completed regular-season calendar weeks ending at the cutoff — the same weeks for every player — with points, games and a positional rank over every player who appeared in the window, plus a `breakout_v1` category with its evidence. OBSERVED FACTS and fixed heuristic thresholds: arithmetic over nflverse weekly rows and snap counts, ranked at build time before any board depth, filter or page, independent of league size. No model reads it. Published for every QB/RB/WR/TE who appeared in the span and every board player.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "build_id",
+    "season",
+    "through_week",
+    "scoring_preset",
+    "player_id",
+    "display_name",
+    "position",
+    "season_rank",
+    "span_status",
+    "span_points",
+    "span_ranks",
+    "windows"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "season": {
+      "type": "integer",
+      "minimum": 2000
+    },
+    "through_week": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scoring_preset": {
+      "enum": [
+        "STD",
+        "HALF",
+        "PPR"
+      ]
+    },
+    "player_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "position": {
+      "enum": [
+        "QB",
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "description": "season_actuals' position: the standing he is ranked in."
+    },
+    "season_rank": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "season_actuals.season_position_rank for the same preset, copied so the category re-derives from this record alone."
+    },
+    "span_status": {
+      "type": "string",
+      "pattern": "^[PBD]{1,6}$",
+      "description": "One letter per ros_build_metadata.recent_form.span_weeks entry: P played (stats row or offensive snap; zero and negative games included), B his team had no game, D his team played and he did not appear."
+    },
+    "span_points": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "description": "Points each span week, 0.01 precise; null exactly when not P."
+    },
+    "span_ranks": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "description": "Weekly positional competition rank among every player at the position who appeared that week; null exactly when not P."
+    },
+    "windows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "6"
+      ],
+      "properties": {
+        "1": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "games",
+            "points",
+            "points_per_game",
+            "rank",
+            "prior_games",
+            "breakout"
+          ],
+          "properties": {
+            "games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Appearances (stats row or offensive snap) in the window's calendar weeks."
+            },
+            "points": {
+              "type": "number",
+              "description": "Scoring-engine points in the window, 0.01 precise. 0 with 0 games is no appearance."
+            },
+            "points_per_game": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "round(points / games, 2); null exactly when games is 0."
+            },
+            "rank": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "description": "Competition rank of `points` among every player at the position with an appearance in the window, this preset. Null exactly when games is 0."
+            },
+            "prior_games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "His appearances this season before the window's first week: the baseline the season rank and the role increase are read against."
+            },
+            "breakout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "category",
+                "reason",
+                "games",
+                "streak",
+                "role"
+              ],
+              "properties": {
+                "category": {
+                  "enum": [
+                    "takeover",
+                    "sneaking",
+                    "eyebrow",
+                    "none",
+                    "insufficient"
+                  ],
+                  "description": "breakout_v1 (ADR-113). A descriptive heuristic category, never a probability and never a model input. `none`: the evidence exists and the rules do not pass. `insufficient`: the sample, the baseline or the role facts needed do not exist."
+                },
+                "reason": {
+                  "enum": [
+                    "no_games",
+                    "outside_band",
+                    "no_baseline",
+                    "not_improved",
+                    "gain_too_small",
+                    "stale",
+                    "latest_not_strong",
+                    "role_unavailable",
+                    "role_not_confirmed",
+                    "one_strong",
+                    "takeover_role",
+                    "sneaking_role"
+                  ],
+                  "description": "The deciding predicate, checked in the fixed order of ADR-113's rule table."
+                },
+                "games": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "description": "Weeks of the evidence games, ascending: the qualifying appearances for a badge, the latest appearance for eyebrow or latest_not_strong, the games whose role facts were missing for role_unavailable; empty when the decision came before any game was examined."
+                },
+                "streak": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "description": "Consecutive appearances inside the window, newest first, whose weekly positional rank is inside the band (capped at takeover_games). Null when not examined."
+                },
+                "role": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "metric",
+                      "games",
+                      "level",
+                      "baseline",
+                      "baseline_games",
+                      "passed"
+                    ],
+                    "properties": {
+                      "metric": {
+                        "enum": [
+                          "snap_share",
+                          "target_share",
+                          "carry_share",
+                          "pass_attempts"
+                        ]
+                      },
+                      "games": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Evidence games the level is measured over."
+                      },
+                      "level": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "Pooled share (his total over his team's total in those games) for target and carry share; per-game mean for snap share and pass attempts. Rounded to 0.001 for a share and 0.1 for attempts; the pass decision is made on the rounded value. Null when any evidence game lacks the fact."
+                      },
+                      "baseline": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "The same measure over his appearances before the window's first week where it is defined, when there are at least breakout_rule.min_prior_games of them; else null."
+                      },
+                      "baseline_games": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "passed": {
+                        "enum": [
+                          "substantial",
+                          "increase",
+                          null
+                        ],
+                        "description": "`substantial`: level >= the position's substantial threshold. `increase`: level >= the emerging threshold and level − baseline >= the increase threshold. Null: neither."
+                      }
+                    }
+                  },
+                  "description": "Every role measure of the position over the evidence games of the last role check made; null when no role check was needed."
+                }
+              }
+            }
+          }
+        },
+        "2": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "games",
+            "points",
+            "points_per_game",
+            "rank",
+            "prior_games",
+            "breakout"
+          ],
+          "properties": {
+            "games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Appearances (stats row or offensive snap) in the window's calendar weeks."
+            },
+            "points": {
+              "type": "number",
+              "description": "Scoring-engine points in the window, 0.01 precise. 0 with 0 games is no appearance."
+            },
+            "points_per_game": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "round(points / games, 2); null exactly when games is 0."
+            },
+            "rank": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "description": "Competition rank of `points` among every player at the position with an appearance in the window, this preset. Null exactly when games is 0."
+            },
+            "prior_games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "His appearances this season before the window's first week: the baseline the season rank and the role increase are read against."
+            },
+            "breakout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "category",
+                "reason",
+                "games",
+                "streak",
+                "role"
+              ],
+              "properties": {
+                "category": {
+                  "enum": [
+                    "takeover",
+                    "sneaking",
+                    "eyebrow",
+                    "none",
+                    "insufficient"
+                  ],
+                  "description": "breakout_v1 (ADR-113). A descriptive heuristic category, never a probability and never a model input. `none`: the evidence exists and the rules do not pass. `insufficient`: the sample, the baseline or the role facts needed do not exist."
+                },
+                "reason": {
+                  "enum": [
+                    "no_games",
+                    "outside_band",
+                    "no_baseline",
+                    "not_improved",
+                    "gain_too_small",
+                    "stale",
+                    "latest_not_strong",
+                    "role_unavailable",
+                    "role_not_confirmed",
+                    "one_strong",
+                    "takeover_role",
+                    "sneaking_role"
+                  ],
+                  "description": "The deciding predicate, checked in the fixed order of ADR-113's rule table."
+                },
+                "games": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "description": "Weeks of the evidence games, ascending: the qualifying appearances for a badge, the latest appearance for eyebrow or latest_not_strong, the games whose role facts were missing for role_unavailable; empty when the decision came before any game was examined."
+                },
+                "streak": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "description": "Consecutive appearances inside the window, newest first, whose weekly positional rank is inside the band (capped at takeover_games). Null when not examined."
+                },
+                "role": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "metric",
+                      "games",
+                      "level",
+                      "baseline",
+                      "baseline_games",
+                      "passed"
+                    ],
+                    "properties": {
+                      "metric": {
+                        "enum": [
+                          "snap_share",
+                          "target_share",
+                          "carry_share",
+                          "pass_attempts"
+                        ]
+                      },
+                      "games": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Evidence games the level is measured over."
+                      },
+                      "level": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "Pooled share (his total over his team's total in those games) for target and carry share; per-game mean for snap share and pass attempts. Rounded to 0.001 for a share and 0.1 for attempts; the pass decision is made on the rounded value. Null when any evidence game lacks the fact."
+                      },
+                      "baseline": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "The same measure over his appearances before the window's first week where it is defined, when there are at least breakout_rule.min_prior_games of them; else null."
+                      },
+                      "baseline_games": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "passed": {
+                        "enum": [
+                          "substantial",
+                          "increase",
+                          null
+                        ],
+                        "description": "`substantial`: level >= the position's substantial threshold. `increase`: level >= the emerging threshold and level − baseline >= the increase threshold. Null: neither."
+                      }
+                    }
+                  },
+                  "description": "Every role measure of the position over the evidence games of the last role check made; null when no role check was needed."
+                }
+              }
+            }
+          }
+        },
+        "3": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "games",
+            "points",
+            "points_per_game",
+            "rank",
+            "prior_games",
+            "breakout"
+          ],
+          "properties": {
+            "games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Appearances (stats row or offensive snap) in the window's calendar weeks."
+            },
+            "points": {
+              "type": "number",
+              "description": "Scoring-engine points in the window, 0.01 precise. 0 with 0 games is no appearance."
+            },
+            "points_per_game": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "round(points / games, 2); null exactly when games is 0."
+            },
+            "rank": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "description": "Competition rank of `points` among every player at the position with an appearance in the window, this preset. Null exactly when games is 0."
+            },
+            "prior_games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "His appearances this season before the window's first week: the baseline the season rank and the role increase are read against."
+            },
+            "breakout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "category",
+                "reason",
+                "games",
+                "streak",
+                "role"
+              ],
+              "properties": {
+                "category": {
+                  "enum": [
+                    "takeover",
+                    "sneaking",
+                    "eyebrow",
+                    "none",
+                    "insufficient"
+                  ],
+                  "description": "breakout_v1 (ADR-113). A descriptive heuristic category, never a probability and never a model input. `none`: the evidence exists and the rules do not pass. `insufficient`: the sample, the baseline or the role facts needed do not exist."
+                },
+                "reason": {
+                  "enum": [
+                    "no_games",
+                    "outside_band",
+                    "no_baseline",
+                    "not_improved",
+                    "gain_too_small",
+                    "stale",
+                    "latest_not_strong",
+                    "role_unavailable",
+                    "role_not_confirmed",
+                    "one_strong",
+                    "takeover_role",
+                    "sneaking_role"
+                  ],
+                  "description": "The deciding predicate, checked in the fixed order of ADR-113's rule table."
+                },
+                "games": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "description": "Weeks of the evidence games, ascending: the qualifying appearances for a badge, the latest appearance for eyebrow or latest_not_strong, the games whose role facts were missing for role_unavailable; empty when the decision came before any game was examined."
+                },
+                "streak": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "description": "Consecutive appearances inside the window, newest first, whose weekly positional rank is inside the band (capped at takeover_games). Null when not examined."
+                },
+                "role": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "metric",
+                      "games",
+                      "level",
+                      "baseline",
+                      "baseline_games",
+                      "passed"
+                    ],
+                    "properties": {
+                      "metric": {
+                        "enum": [
+                          "snap_share",
+                          "target_share",
+                          "carry_share",
+                          "pass_attempts"
+                        ]
+                      },
+                      "games": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Evidence games the level is measured over."
+                      },
+                      "level": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "Pooled share (his total over his team's total in those games) for target and carry share; per-game mean for snap share and pass attempts. Rounded to 0.001 for a share and 0.1 for attempts; the pass decision is made on the rounded value. Null when any evidence game lacks the fact."
+                      },
+                      "baseline": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "The same measure over his appearances before the window's first week where it is defined, when there are at least breakout_rule.min_prior_games of them; else null."
+                      },
+                      "baseline_games": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "passed": {
+                        "enum": [
+                          "substantial",
+                          "increase",
+                          null
+                        ],
+                        "description": "`substantial`: level >= the position's substantial threshold. `increase`: level >= the emerging threshold and level − baseline >= the increase threshold. Null: neither."
+                      }
+                    }
+                  },
+                  "description": "Every role measure of the position over the evidence games of the last role check made; null when no role check was needed."
+                }
+              }
+            }
+          }
+        },
+        "4": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "games",
+            "points",
+            "points_per_game",
+            "rank",
+            "prior_games",
+            "breakout"
+          ],
+          "properties": {
+            "games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Appearances (stats row or offensive snap) in the window's calendar weeks."
+            },
+            "points": {
+              "type": "number",
+              "description": "Scoring-engine points in the window, 0.01 precise. 0 with 0 games is no appearance."
+            },
+            "points_per_game": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "round(points / games, 2); null exactly when games is 0."
+            },
+            "rank": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "description": "Competition rank of `points` among every player at the position with an appearance in the window, this preset. Null exactly when games is 0."
+            },
+            "prior_games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "His appearances this season before the window's first week: the baseline the season rank and the role increase are read against."
+            },
+            "breakout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "category",
+                "reason",
+                "games",
+                "streak",
+                "role"
+              ],
+              "properties": {
+                "category": {
+                  "enum": [
+                    "takeover",
+                    "sneaking",
+                    "eyebrow",
+                    "none",
+                    "insufficient"
+                  ],
+                  "description": "breakout_v1 (ADR-113). A descriptive heuristic category, never a probability and never a model input. `none`: the evidence exists and the rules do not pass. `insufficient`: the sample, the baseline or the role facts needed do not exist."
+                },
+                "reason": {
+                  "enum": [
+                    "no_games",
+                    "outside_band",
+                    "no_baseline",
+                    "not_improved",
+                    "gain_too_small",
+                    "stale",
+                    "latest_not_strong",
+                    "role_unavailable",
+                    "role_not_confirmed",
+                    "one_strong",
+                    "takeover_role",
+                    "sneaking_role"
+                  ],
+                  "description": "The deciding predicate, checked in the fixed order of ADR-113's rule table."
+                },
+                "games": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "description": "Weeks of the evidence games, ascending: the qualifying appearances for a badge, the latest appearance for eyebrow or latest_not_strong, the games whose role facts were missing for role_unavailable; empty when the decision came before any game was examined."
+                },
+                "streak": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "description": "Consecutive appearances inside the window, newest first, whose weekly positional rank is inside the band (capped at takeover_games). Null when not examined."
+                },
+                "role": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "metric",
+                      "games",
+                      "level",
+                      "baseline",
+                      "baseline_games",
+                      "passed"
+                    ],
+                    "properties": {
+                      "metric": {
+                        "enum": [
+                          "snap_share",
+                          "target_share",
+                          "carry_share",
+                          "pass_attempts"
+                        ]
+                      },
+                      "games": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Evidence games the level is measured over."
+                      },
+                      "level": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "Pooled share (his total over his team's total in those games) for target and carry share; per-game mean for snap share and pass attempts. Rounded to 0.001 for a share and 0.1 for attempts; the pass decision is made on the rounded value. Null when any evidence game lacks the fact."
+                      },
+                      "baseline": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "The same measure over his appearances before the window's first week where it is defined, when there are at least breakout_rule.min_prior_games of them; else null."
+                      },
+                      "baseline_games": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "passed": {
+                        "enum": [
+                          "substantial",
+                          "increase",
+                          null
+                        ],
+                        "description": "`substantial`: level >= the position's substantial threshold. `increase`: level >= the emerging threshold and level − baseline >= the increase threshold. Null: neither."
+                      }
+                    }
+                  },
+                  "description": "Every role measure of the position over the evidence games of the last role check made; null when no role check was needed."
+                }
+              }
+            }
+          }
+        },
+        "6": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "games",
+            "points",
+            "points_per_game",
+            "rank",
+            "prior_games",
+            "breakout"
+          ],
+          "properties": {
+            "games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Appearances (stats row or offensive snap) in the window's calendar weeks."
+            },
+            "points": {
+              "type": "number",
+              "description": "Scoring-engine points in the window, 0.01 precise. 0 with 0 games is no appearance."
+            },
+            "points_per_game": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "round(points / games, 2); null exactly when games is 0."
+            },
+            "rank": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "description": "Competition rank of `points` among every player at the position with an appearance in the window, this preset. Null exactly when games is 0."
+            },
+            "prior_games": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "His appearances this season before the window's first week: the baseline the season rank and the role increase are read against."
+            },
+            "breakout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "category",
+                "reason",
+                "games",
+                "streak",
+                "role"
+              ],
+              "properties": {
+                "category": {
+                  "enum": [
+                    "takeover",
+                    "sneaking",
+                    "eyebrow",
+                    "none",
+                    "insufficient"
+                  ],
+                  "description": "breakout_v1 (ADR-113). A descriptive heuristic category, never a probability and never a model input. `none`: the evidence exists and the rules do not pass. `insufficient`: the sample, the baseline or the role facts needed do not exist."
+                },
+                "reason": {
+                  "enum": [
+                    "no_games",
+                    "outside_band",
+                    "no_baseline",
+                    "not_improved",
+                    "gain_too_small",
+                    "stale",
+                    "latest_not_strong",
+                    "role_unavailable",
+                    "role_not_confirmed",
+                    "one_strong",
+                    "takeover_role",
+                    "sneaking_role"
+                  ],
+                  "description": "The deciding predicate, checked in the fixed order of ADR-113's rule table."
+                },
+                "games": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "description": "Weeks of the evidence games, ascending: the qualifying appearances for a badge, the latest appearance for eyebrow or latest_not_strong, the games whose role facts were missing for role_unavailable; empty when the decision came before any game was examined."
+                },
+                "streak": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "description": "Consecutive appearances inside the window, newest first, whose weekly positional rank is inside the band (capped at takeover_games). Null when not examined."
+                },
+                "role": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "metric",
+                      "games",
+                      "level",
+                      "baseline",
+                      "baseline_games",
+                      "passed"
+                    ],
+                    "properties": {
+                      "metric": {
+                        "enum": [
+                          "snap_share",
+                          "target_share",
+                          "carry_share",
+                          "pass_attempts"
+                        ]
+                      },
+                      "games": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Evidence games the level is measured over."
+                      },
+                      "level": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "Pooled share (his total over his team's total in those games) for target and carry share; per-game mean for snap share and pass attempts. Rounded to 0.001 for a share and 0.1 for attempts; the pass decision is made on the rounded value. Null when any evidence game lacks the fact."
+                      },
+                      "baseline": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "The same measure over his appearances before the window's first week where it is defined, when there are at least breakout_rule.min_prior_games of them; else null."
+                      },
+                      "baseline_games": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "passed": {
+                        "enum": [
+                          "substantial",
+                          "increase",
+                          null
+                        ],
+                        "description": "`substantial`: level >= the position's substantial threshold. `increase`: level >= the emerging threshold and level − baseline >= the increase threshold. Null: neither."
+                      }
+                    }
+                  },
+                  "description": "Every role measure of the position over the evidence games of the last role check made; null when no role check was needed."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

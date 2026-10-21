@@ -215,7 +215,8 @@ describe("the opportunity board's options", () => {
     });
 
     const toggle = screen.getByRole("button", { name: /^Options/ });
-    expect(spoken(toggle)).toMatch(/^Options By Adds, Role rising, All \d+$/);
+    // ADR-113: the recent-weeks lens and its real weeks close the row.
+    expect(spoken(toggle)).toMatch(/^Options By Adds, Role rising, All \d+, Last 3 W6–8 · \d+ without evidence$/);
     const ids = (toggle.getAttribute("aria-controls") ?? "").split(" ");
     expect(ids).toEqual(["opp-order-options", "opp-filter-options"]);
     const panels = ids.map((id) => required(document.getElementById(id), `panel ${id}`));

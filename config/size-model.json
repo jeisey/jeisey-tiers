@@ -28,7 +28,8 @@
     "skill_tree_players": 646,
     "skill_tree_without_appearance": 120,
     "espn_ownership": 510,
-    "espn_series": 470
+    "espn_series": 470,
+    "recent_per_scoring": 700
   },
   "trend_points": 12,
   "markets": 2,
@@ -46,5 +47,7 @@
   "_actuals": "ADR-105: season_actuals records per scoring preset measured on a live build-ros of 2026-10-09 (cutoff week 4): 498 appearing QB/RB/WR/TE plus 143 board players with no appearance. Grows slowly with the season as more players appear.",
   "_skill_tree": "ADR-107: player_skill_tree players measured on a live build-ros of 2026-10-14 (cutoff week 5): 526 appearing QB/RB/WR/TE, each with one reading per metric of his position's tree, plus 120 board players with no appearance, each with one presence record (12,161 records). Grows with the season as more players appear.",
   "espn_points": 28,
-  "_espn": "ADR-112: espn_ownership is one record per Opportunity Board player (510 rows a block, preset-independent, so 510). espn_series is the board players with an ESPN reading: 885 of 962 ESPN QB/RB/WR/TE rows resolved on the 2026-10-17 probe, every one rostered at 1% or more; 470 of 510 is that rate applied to the board. espn_points is the steady state of a full 28-day window at one read a day. Projected from the probe, not measured on a live ESPN build, which does not exist yet."
+  "_espn": "ADR-112: espn_ownership is one record per Opportunity Board player (510 rows a block, preset-independent, so 510). espn_series is the board players with an ESPN reading: 885 of 962 ESPN QB/RB/WR/TE rows resolved on the 2026-10-17 probe, every one rostered at 1% or more; 470 of 510 is that rate applied to the board. espn_points is the steady state of a full 28-day window at one read a day. Projected from the probe, not measured on a live ESPN build, which does not exist yet.",
+  "recent_badge_share": 0.08,
+  "_recent": "ADR-113: recent_form records per scoring preset — every QB/RB/WR/TE who appeared in the last six completed weeks plus every board player. Projected for late season from the ADR-105 actuals population (641 at week 4, which counts the whole season) rounded up to 700; no live build has published it yet. recent_badge_share gives 8% of windows a badge verdict with two role readings, above the fixture's rate, so the slice is not measured at its lightest."
 }

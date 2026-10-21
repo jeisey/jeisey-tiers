@@ -248,6 +248,24 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "through the in-season cutoff. Observed facts; no model reads them (ADR-105)."
         ),
     ),
+    "recent_form": ArtifactSpec(
+        artifact="recent_form",
+        schema_name="recent_form_record",
+        json_filename="recent_form.json",
+        # No CSV (ADR-113): a record is a six-week span and five windows with their evidence.
+        # The Opportunity Board's filtered export writes the selected window's columns for
+        # the rows on screen; the full board CSV carries season columns only, and says so.
+        csv_filename=None,
+        key_fields=("build_id", "scoring_preset", "player_id"),
+        sort_fields=("scoring_preset", "position", "player_id"),
+        description=(
+            "Recent form per player and scoring preset: points, games and positional rank in "
+            "the last 1, 2, 3, 4 and 6 completed calendar weeks over every appearing player, "
+            "each span week's status, points and weekly rank, and a descriptive breakout "
+            "category with its evidence. Observed facts and fixed heuristic thresholds; no "
+            "model reads them (ADR-113)."
+        ),
+    ),
     "player_skill_tree": ArtifactSpec(
         artifact="player_skill_tree",
         schema_name="player_skill_metric",

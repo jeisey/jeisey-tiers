@@ -325,6 +325,9 @@ test.describe("the ROS tier board", () => {
 
 test.describe("the opportunity board", () => {
   test("shows behaviour as counts over a named window, never as a price", async ({ page }) => {
+    // 1440px: below it, with a recent window on, Net adds steps aside for the Recent column
+    // (ADR-113); its heading is asserted where every column is drawn.
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${IN_SEASON}?view=opportunity`);
     const table = page.getByRole("table", { name: /opportunity board/i });
     await expect(table).toBeVisible();

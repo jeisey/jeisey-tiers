@@ -91,6 +91,9 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # published, invalid, two points, no ESPN id and a week rollover all occur.
         "espn_ownership",
         "espn_ownership_series",
+        # ADR-113. Recent windows and breakout categories by the production builder over the
+        # same weekly rows and population as the season actuals.
+        "recent_form",
     }
     assert all(records for records in pipeline_result.records.values())
 

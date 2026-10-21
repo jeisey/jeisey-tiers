@@ -512,7 +512,7 @@ def run_ros_build(
     # Season-to-date actuals (ADR-105): points, games and a positional rank over every player
     # who has appeared, published beside the boards and read by no model. After every board,
     # because the boards decide only which players with no appearance still get a record.
-    actuals_records, actuals_summary = _season_actuals(
+    actuals_records, actuals_summary, actuals_result = _season_actuals(
         records=records,
         snapshot_frame=snapshot.frame,
         registry=identity,
@@ -525,6 +525,22 @@ def run_ros_build(
     )
     if actuals_records:
         records["season_actuals"] = actuals_records
+    # Recent form (ADR-113): calendar windows and descriptive breakout categories, sliced
+    # from the same population under the same completeness check, and read by no model.
+    recent_records, recent_summary = _recent_form(
+        records=records,
+        snapshot_frame=snapshot.frame,
+        registry=identity,
+        loaded=loaded,
+        settings=settings,
+        season=season,
+        cutoff=cutoff,
+        build_id=resolved_build_id,
+        gate=gate,
+        actuals=actuals_result,
+    )
+    if recent_records:
+        records["recent_form"] = recent_records
 
     # The Skill Tree (ADR-107): every appearing player's positional statistical profile with
     # peer ranks, published beside the boards and read by nothing. Last, because it reads the
@@ -571,6 +587,7 @@ def run_ros_build(
         signal_layer=signal_summary,
         weekly=weekly_summary,
         season_actuals=actuals_summary,
+        recent_form=recent_summary,
         skill_tree=tree_summary,
         espn_ownership=ownership.metadata,
     )
@@ -1582,7 +1599,7 @@ def _season_actuals(
     cutoff: RosCutoff,
     build_id: str,
     gate: QualityGate,
-) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None, Any]:
     """Build ``season_actuals`` (ADR-105), or explain why not.
 
     An enrichment: a failure withholds the actuals and nothing else, and the metadata block
@@ -1623,6 +1640,69 @@ def _season_actuals(
                 ),
                 observed=f"{type(exc).__name__}: {exc}",
                 expected="a season-actuals record per appearing player",
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None, None
+    gate.extend(result.checks)
+    return result.records, result.metadata, result
+
+
+def _recent_form(
+    *,
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    snapshot_frame: pl.DataFrame,
+    registry: Any,
+    loaded: Any,
+    settings: AppConfig,
+    season: int,
+    cutoff: RosCutoff,
+    build_id: str,
+    gate: QualityGate,
+    actuals: Any,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Build ``recent_form`` (ADR-113), or explain why not.
+
+    An enrichment of the Opportunity Board: its failure withholds the windows and categories
+    and nothing else. Withheld whenever season actuals are, because the windows are slices of
+    the same population under the same completeness check.
+    """
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.ros.dataset import bridged_snap_counts
+    from ffdraft.signals.recent import build_recent_form
+
+    if actuals is None:
+        return [], None
+    _, _, include = season_actuals_inputs(
+        records,
+        snapshot_frame=snapshot_frame,
+        catalog=_catalog(registry),
+    )
+    sources = loaded.sources
+    try:
+        result = build_recent_form(
+            weekly=sources.weekly_stats,
+            snap_counts=bridged_snap_counts(sources),
+            schedule=sources.schedule,
+            scoring=settings.league.scoring,
+            season=season,
+            through_week=cutoff.through_week,
+            actuals=actuals,
+            include=include,
+            build_id=build_id,
+            schema_version=record_schema_version("recent_form_record"),
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        gate.add(
+            QualityCheck.fail(
+                "ros.recent_form_failed",
+                stage="ros_build",
+                message=(
+                    "recent-form windows could not be built, so recent_form.json is withheld; "
+                    "every board, value, rank and season actual is unaffected"
+                ),
+                observed=f"{type(exc).__name__}: {exc}",
+                expected="a recent-form record per player who appeared in the span",
                 severity=Severity.WARNING,
             ),
         )
@@ -2695,6 +2775,7 @@ def _ros_metadata(
     season_actuals: Mapping[str, Any] | None = None,
     skill_tree: Mapping[str, Any] | None = None,
     espn_ownership: Mapping[str, Any] | None = None,
+    recent_form: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2759,6 +2840,7 @@ def _ros_metadata(
         "signals": None if signal_layer is None else dict(signal_layer),
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
+        "recent_form": None if recent_form is None else dict(recent_form),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
         "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
         "disclosures": {

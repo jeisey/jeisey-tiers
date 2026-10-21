@@ -6086,6 +6086,173 @@ table.sheet.opp-sheet thead th button {
   }
 }
 
+/*
+ * ADR-113: the recent-weeks lens. The breakout badge is a button on the name, so it stays
+ * beside the player where the name column is pinned on a phone. The category is carried by
+ * the glyph count and the word; colour only repeats it.
+ */
+.breakout-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  font: 600 0.55rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--accent-wash);
+  padding: 3px 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+button.breakout-badge:hover,
+button.breakout-badge:focus-visible {
+  border-color: var(--accent);
+}
+
+.breakout-badge .breakout-glyph {
+  font-size: 0.5rem;
+  letter-spacing: -0.05em;
+}
+
+.breakout-badge[data-category="takeover"] {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.breakout-badge[data-category="sneaking"] {
+  color: var(--accent-bright);
+}
+
+.breakout-badge[data-category="eyebrow"] {
+  color: var(--warn);
+}
+
+/* Small enough to sit under a signed number; still a real, focusable target. */
+.breakout-insufficient {
+  display: block;
+  margin: 2px 0 0 auto;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font: 0.62rem/1.2 var(--font-sans);
+  color: var(--ink-faint);
+  text-decoration: underline dotted;
+  cursor: pointer;
+  text-align: right;
+  white-space: normal;
+}
+
+.th-sub {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+
+.signal-cell[data-signal="recent"][data-direction="up"] .signal-change {
+  color: var(--good);
+}
+
+.signal-cell[data-signal="recent"][data-direction="down"] .signal-change {
+  color: var(--danger);
+}
+
+.signal-cell[data-signal="recent"][data-kind="no_games"] .signal-value,
+.signal-cell[data-signal="recent"][data-kind="unavailable"] .signal-value {
+  color: var(--ink-faint);
+}
+
+/* A rank with its gap, and rate with games, each read as one phrase: never broken mid-way. */
+.opp-sheet .recent-cell .signal-line {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* The detail wraps only between whole units — `22.1/g` | `3g` — never inside one. */
+.opp-sheet .recent-cell .signal-detail > span {
+  white-space: nowrap;
+}
+
+/* The recent heading: two sort buttons around the window's weeks, stacked. */
+.recent-head {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+/* Each sort button keeps WCAG 2.2's 24px target height (axe `target-size`). */
+table.sheet.opp-sheet thead th .recent-head button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  justify-content: flex-end;
+}
+
+.recent-head {
+  gap: 0;
+}
+
+.recent-head .th-sub {
+  display: block;
+  white-space: normal;
+  text-align: right;
+}
+
+/*
+ * ADR-113: with a recent window on, Net adds steps aside on laptops below 1440px — it is Adds
+ * minus Drops, both printed (the chart draws every drop count), and the card and the export
+ * carry it — so the Recent column fits with the table's 64px of slack. On a phone the table
+ * scrolls under the pinned name and nothing else changes; at 1440px and wider every column
+ * is drawn.
+ */
+@media (min-width: 768px) and (max-width: 1439px) {
+  .opp-sheet[data-recent="on"] [data-col="net_add_count"] {
+    display: none;
+  }
+}
+
+.opp-recent-control .control,
+.opp-breakout-control .control {
+  margin: 0;
+}
+
+/* The window's category census on its own line under the filters' census, never folded. */
+.opp-recent-status {
+  flex-basis: 100%;
+  font: 500 0.66rem/1.35 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.breakout-explain p {
+  margin: 0 0 var(--space-2);
+}
+
+.breakout-explain-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.breakout-explain-lines {
+  margin: 0 0 var(--space-2);
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.breakout-explain-foot {
+  font-size: 0.72rem;
+}
+
 /* Five orderings do not fit one row at 320px. They wrap rather than clip the last one. */
 @media (max-width: 30rem) {
   .section-actions .segmented,

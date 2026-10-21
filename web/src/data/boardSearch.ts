@@ -170,14 +170,25 @@ export function chooseSearchPlayer(
     next = { ...next, position: "all" };
     changed.push(`the ${POSITION_LABELS[state.position]} position filter`);
   }
-  if (view === "opportunity" && inSeason !== null && state.only.length > 0) {
+  if (view === "opportunity" && inSeason !== null && (state.only.length > 0 || state.form !== "all")) {
     const shown = (candidate: AppState) =>
       selectOpportunityCandidates(inSeason, candidate).candidates.some((row) => row.row.record.player_id === entry.id);
     const onBoard = inSeason
       .opportunityFor(leaguePresetId(state.teams), SCORING_TO_PRESET[state.scoring])
       .some((record) => record.player_id === entry.id);
-    if (onBoard && !shown(next)) {
+    // ADR-113: the breakout filter first — when clearing it alone shows him, the Show only
+    // filters stay as the reader set them.
+    if (onBoard && !shown(next) && state.form !== "all") {
+      const cleared: AppState = { ...next, form: "all" };
+      if (shown(cleared) || state.only.length === 0) {
+        patch.form = "all";
+        next = cleared;
+        changed.push("the Breakout filter");
+      }
+    }
+    if (onBoard && !shown(next) && state.only.length > 0) {
       patch.only = [];
+      next = { ...next, only: [] };
       changed.push(state.only.length === 1 ? "the Show only filter" : "the Show only filters");
     }
   }

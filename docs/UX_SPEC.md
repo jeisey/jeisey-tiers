@@ -1356,6 +1356,51 @@ crowd interest, not a projection. Every surface that shows one says so.
   verified ESPN id*, *id claimed twice*, *value failed validation*, *no ESPN percentages in this
   build*, or a bold *Stale: read …*.
 
+### 6A.21 Recent form and breakout categories (ADR-113)
+
+The Opportunity Board answers "whose recent production and role are substantially better than
+his season-long rank suggests — and is it sustained or one big game?" without changing any
+value, rank, tier, role reading or count.
+
+* **Recent weeks.** A compact radio group, *Season · 1 · 2 · 3 · 4 · 6*, default **3** (never
+  written to the URL; others write `last=1` … `last=6`, `last=season`). Each option's accessible
+  name states its real weeks (`Last 3 completed weeks, W6–W8`). It sits with the filters and
+  folds with them on a phone. It controls observed production only.
+* **Recent column.** In a window, one column beside *Szn rank*: the recent positional rank, the
+  signed gap to the season rank (`TE3 +12`, positive when the recent rank is better, coloured and
+  signed so it never depends on colour), and under them points per game and games (`9.5/g · 3g`).
+  Its heading reads `Recent W6–8` with two sort buttons: **Rank** (best first) and **±Szn**
+  (largest rise first; the second click puts the steepest fall on top). Rows with no value sort
+  last in both directions; positional ranks sort grouped by position. Total points are in the
+  cell's sentence, the dialog and the export. In the Season lens the column and every badge are
+  gone, and the existing RoS vs Szn comparison is untouched.
+* **Badges.** A button on the name — so it stays beside the player in the pinned phone column —
+  reading `▲▲▲ Takeover`, `▲▲ Sneaking` or `▲ Eyebrow` (glyph count and word carry it; colour only
+  repeats it). It opens a dialog with every number it rests on: `TE15 season → TE3 in W6–W8 (+12
+  places)`, the deciding reason, the games used with their weekly ranks and points, each role
+  measure against its threshold and pre-window baseline, the sample and the span's byes and
+  missed games, and the rule's version with "descriptive heuristic, not a prediction". An
+  `insufficient` verdict prints a small *too little data* button in the Recent cell that opens
+  the same dialog with its reason. Eyebrow is "a one-game watch", never "lucky".
+* **Breakout filter.** *All · Any signal · Takeover · Sneaking · Eyebrow* (`form=any` …). It
+  composes by AND with position, search, the Show-only chips and the ESPN ceiling, and only an
+  actual matching badge passes. The status line adds `Any signal: N`, and a second line, never
+  folded, gives the window's census: `Breakouts in W6–8: 1 Takeover · 0 Sneaking · 0 Eyebrow ·
+  9 too little data · …`. In the Season lens or on a build without recent form the choices are
+  disabled with the reason, and a link naming one gets a notice and the whole board.
+* **Folded summary (phone).** The Options row ends with the lens: `Last 3 W6–8 · 9 without
+  evidence`.
+* **Player picker.** Choosing a player the breakout filter would hide clears that filter (and
+  says so) before it clears the Show-only chips.
+* **Not projected.** Off-board signings show their recent rank and games beside their season
+  columns, with no RoS rank or projection.
+* **Export.** The filtered CSV writes the selected window's fourteen columns (DATA_CONTRACTS
+  §28.3) for the visible rows in the visible order, at every width. The full download is
+  labelled **Download full CSV · season only**, with a tooltip saying it carries no window.
+* **Widths.** With a window on, Net adds steps aside from 768 to 1439px (Adds − Drops; the chart
+  prints every drop count and the export keeps it), so 1024, 1280 and 1440px keep ≥ 64px of table
+  slack. Phones keep every column, scrolled under the pinned name.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns

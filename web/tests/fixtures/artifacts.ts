@@ -73,6 +73,7 @@ import type {
 // ADR-107: the Skill Tree's definitions are player-independent, so the TypeScript fixtures use
 // the Python golden's exactly — every word the tree prints is the production builder's.
 import { espnFixtureFiles, espnOwnershipMetadata, type EspnFixtureMode } from "./espn";
+import { recentFormMetadata, recentFormRecords } from "./recent";
 import goldenSkillTreeDefinitions from "../../../tests/fixtures/artifacts/skill_tree_definitions.json";
 
 /**
@@ -1074,6 +1075,48 @@ const OFF_BOARD_ACTUALS: readonly {
   { id: FIXTURE_SIGNING_ID, name: "", position: "WR", games: 3, points: { STD: 18.4, HALF: 24.9, PPR: 31.4 } },
 ];
 
+/** The off-board actuals plus the ADR-113 tight-end peers. */
+function offBoardActuals(): typeof OFF_BOARD_ACTUALS {
+  return [
+    ...OFF_BOARD_ACTUALS,
+    ...FIXTURE_TE_PEERS.map((peer) => ({
+      id: peer.id,
+      name: peer.name,
+      position: "TE" as const,
+      games: 8,
+      points: { STD: peerTotal(peer, "STD"), HALF: peerTotal(peer, "HALF"), PPR: peerTotal(peer, "PPR") },
+    })),
+  ];
+}
+
+/**
+ * ADR-113: twelve off-board tight ends who out-scored the board's third tight end early and
+ * faded late — the population a genuine recent rise needs (see `fixtures/recent.ts`). Their
+ * season totals sit between his and the second tight end's, so no other board player's season
+ * rank moves. They appear in season actuals and recent form only.
+ */
+export const FIXTURE_TE_PEERS: readonly {
+  readonly id: string;
+  readonly name: string;
+  readonly early: number;
+  readonly late: number;
+}[] = Array.from({ length: 12 }, (_, index) => ({
+  id: `gsis:00-00009${String(50 + index)}`,
+  name: `Peer End ${String(index + 1)}`,
+  early: Math.round((15.2 + index * 0.06) * 100) / 100,
+  late: Math.round((1.0 + index * 0.1) * 100) / 100,
+}));
+
+/** A peer's points scale with the preset the way the usage fixture's weeks do (PPR 1, HALF 0.93, STD 0.86). */
+export const PEER_PRESET_FACTOR: Readonly<Record<ScoringPreset, number>> = { PPR: 1, HALF: 0.93, STD: 0.86 };
+
+function peerTotal(peer: (typeof FIXTURE_TE_PEERS)[number], preset: ScoringPreset): number {
+  const factor = PEER_PRESET_FACTOR[preset];
+  const early = Math.round(peer.early * factor * 100) / 100;
+  const late = Math.round(peer.late * factor * 100) / 100;
+  return Math.round((early * 5 + late * 3) * 100) / 100;
+}
+
 // ------------------------------------------------------------------- Skill Tree (ADR-107)
 
 /** A fixture player with readings in every state the tree draws (see `skillTreeRecords`). */
@@ -1122,8 +1165,9 @@ function fixtureSkillValue(definition: SkillTreeDefinitionRecord, seed: number):
 export function skillTreeRecords(): PlayerSkillMetricRecord[] {
   const definitions = skillTreeDefinitionRecords();
   const players = new Map<string, { position: Position; games: number }>();
+  const peers = new Set(FIXTURE_TE_PEERS.map((peer) => peer.id));
   for (const record of seasonActualsRecords()) {
-    if (record.scoring_preset !== "PPR") continue;
+    if (record.scoring_preset !== "PPR" || peers.has(record.player_id)) continue;
     players.set(record.player_id, { position: record.position, games: record.games_played });
   }
   const records: PlayerSkillMetricRecord[] = [];
@@ -1253,7 +1297,7 @@ export function seasonActualsRecords(): SeasonActualsRecord[] {
       });
     }
     const tieWith = [...rows.values()].find((row) => row.position === "WR");
-    for (const extra of OFF_BOARD_ACTUALS) {
+    for (const extra of offBoardActuals()) {
       const status = offRosterStatusRecords().find((row) => row.player_id === extra.id);
       rows.set(extra.id, {
         name: extra.name === "" ? (status?.display_name ?? extra.id) : extra.name,
@@ -2481,6 +2525,7 @@ export function rosBuildMetadata(
     signals: FIXTURE_SIGNALS,
     weekly: FIXTURE_WEEKLY,
     season_actuals: seasonActualsMetadata(),
+    recent_form: recentFormMetadata(),
     skill_tree: skillTreeMetadata(),
     quality_gate: { status: "pass", critical_failures: 0, warnings: 0 },
     warnings: [],
@@ -2736,6 +2781,11 @@ export function inSeasonFixtureFiles(
      * and published nothing; `stale`: published, but past the freshness bound.
      */
     readonly espn?: EspnFixtureMode;
+    /**
+     * ADR-113. `absent`: an older deploy with no recent-form artifact or block; `withheld`: the
+     * build withheld it (season actuals incomplete) and says so in its metadata.
+     */
+    readonly recent?: "present" | "absent" | "withheld";
   } = {},
 ): Record<string, unknown> {
   const espn = options.espn ?? "present";
@@ -2743,6 +2793,7 @@ export function inSeasonFixtureFiles(
   const series = options.behaviorSeries ?? "mature";
   const signals = options.signals ?? "present";
   const skillTree = options.skillTree ?? "present";
+  const recent = options.recent ?? "present";
   return {
     // The draft build's own record of the season, replaced because in season it says
     // something different — and the page reads it whether or not a ROS bundle is beside it.
@@ -2762,6 +2813,18 @@ export function inSeasonFixtureFiles(
         ...(signals === "present" ? {} : { weekly: null }),
         ...(skillTree === "present" ? {} : { skill_tree: null }),
         ...(espnMeta === null ? {} : { espn_ownership: espnMeta }),
+        ...(recent === "absent"
+          ? { recent_form: null }
+          : recent === "withheld"
+            ? {
+                recent_form: recentFormMetadata({
+                  status: "withheld",
+                  withheld_reason:
+                    "season actuals are withheld for this build, and recent windows are slices of the same population",
+                  records: 0,
+                }),
+              }
+            : {}),
       },
       behaviorAvailable,
     ),
@@ -2770,6 +2833,10 @@ export function inSeasonFixtureFiles(
     "ros_tiers.json": rosTierEnvelope(),
     // ADR-105: season actuals, published with every in-season bundle.
     "season_actuals.json": seasonActualsEnvelope(),
+    // ADR-113: recent windows and breakout categories, read by the Opportunity Board only.
+    ...(recent === "present"
+      ? { "recent_form.json": envelope("recent_form", "recent_form_record", recentFormRecords()) }
+      : {}),
     // ADR-107: the Skill Tree, fetched only when a reader opens it.
     ...(skillTree === "present"
       ? {

@@ -486,7 +486,9 @@ describe("the other tables", () => {
     expect(header.getAttribute("aria-sort")).toBe("descending");
     const gaps = column("RoS vs Szn").filter((text) => text !== "—").map((text) => Number(text.replace("−", "-")));
     expect(gaps).toEqual([...gaps].sort((a, b) => b - a));
-    expect(players()[0]).toBe("Ja'Marr Swift");
+    // ADR-113's off-board tight-end peers put Ertz at TE15 for the season in PPR, so his is the
+    // widest positive gap; before them it was Swift's.
+    expect(players()[0]).toBe("Zach Ertz");
     const sortedBy = required(document.querySelector(".weekboard-sorted"), "the sorted-by line");
     expect(sortedBy.getAttribute("role")).toBe("status");
     expect(sortedBy.textContent).toMatch(/Sorted by RoS vs Szn, descending/);

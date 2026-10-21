@@ -60,6 +60,7 @@ import {
 import { compareRostered, espnCell } from "../data/espn";
 import { formatRank, formatValue } from "../data/format";
 import { longAbsenceLabel, rosValue } from "../data/ros";
+import { BreakoutBadge, RecentHeader, recentColumns } from "./RecentColumns";
 import { positionalRankAccessor, seasonColumns } from "./SeasonColumns";
 
 export const OPPORTUNITY_TABLE_CAPTION =
@@ -116,11 +117,19 @@ function countCell(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : String(value);
 }
 
+/** The recent lens a table renders (ADR-113): null in the Season lens or without the artifact. */
+export interface RecentColumnsSpec {
+  /** `W3–5`: the selected window's real weeks, printed under both headings. */
+  readonly spanLabel: string;
+  readonly onExplain: (playerId: string) => void;
+}
+
 function opportunityColumns(
   onSelect: (playerId: string) => void,
   scale: Scale,
   windowSuffix: string,
   roleOrdering: RoleOrdering,
+  recent: RecentColumnsSpec | null,
 ): ColumnDef<OpportunityCandidate>[] {
   return [
     {
@@ -171,6 +180,13 @@ function opportunityColumns(
                 </span>
               </span>
             )}
+            {recent !== null && (
+              <BreakoutBadge
+                standing={context.row.original.recent}
+                playerId={record.player_id}
+                onExplain={recent.onExplain}
+              />
+            )}
           </span>
         );
       },
@@ -209,6 +225,16 @@ function opportunityColumns(
       // card and both exports carry them (ADR-112).
       "col-mid col-wide",
     ),
+    // ADR-113: the selected recent window beside the season cluster, only when one is chosen.
+    ...(recent === null
+      ? []
+      : recentColumns<OpportunityCandidate>(
+          (row) => row.recent,
+          (row) => row.season,
+          (row) => row.row.record.position,
+          (row) => row.row.record.player_id,
+          recent.onExplain,
+        )),
     {
       id: "team",
       header: "Team",
@@ -473,6 +499,8 @@ function opportunityColumns(
 }
 
 interface ColumnMeta {
+  /** ADR-113: the recent column's heading holds two sort buttons of its own. */
+  readonly recentHeader?: boolean;
   readonly align?: "right";
   readonly className?: string;
   readonly width?: string;
@@ -487,6 +515,8 @@ export function OpportunityTable({
   selectedPlayerId,
   visibleRowsRef,
   seasonNote,
+  recent = null,
+  recentNote,
 }: {
   readonly rows: readonly OpportunityCandidate[];
   /** The declared window, e.g. ` (24h)`, appended to the two count headings. */
@@ -498,19 +528,31 @@ export function OpportunityTable({
   readonly visibleRowsRef?: RefObject<readonly OpportunityCandidate[]>;
   /** What the season columns are, for the caption (ADR-105). */
   readonly seasonNote?: string;
+  /** The recent window's columns (ADR-113); null in the Season lens. */
+  readonly recent?: RecentColumnsSpec | null;
+  /** What the recent columns are, for the caption. */
+  readonly recentNote?: string;
 }): React.JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([]);
   const scale = useMemo(() => opportunityTableScale(rows), [rows]);
   const columns = useMemo(
-    () => opportunityColumns(onSelect, scale, windowSuffix, roleOrdering),
-    [onSelect, scale, windowSuffix, roleOrdering],
+    () => opportunityColumns(onSelect, scale, windowSuffix, roleOrdering, recent),
+    [onSelect, scale, windowSuffix, roleOrdering, recent],
   );
   const data = useMemo(() => [...rows], [rows]);
+
+  // A sort on a recent column ends with the window: switching to Season drops it rather than
+  // leaving the table ordered by a column it no longer has.
+  const activeSorting = useMemo(
+    () => sorting.filter((sort) => columns.some((column) => column.id === sort.id)),
+    [sorting, columns],
+  );
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    // The gap column is sorted through the recent heading and never drawn (ADR-113).
+    state: { sorting: activeSorting, columnVisibility: { recent_vs_season: false } },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -525,10 +567,11 @@ export function OpportunityTable({
 
   return (
     <div className="table-scroll">
-      <table className="sheet opp-sheet">
+      <table className="sheet opp-sheet" data-recent={recent === null ? undefined : "on"}>
         <caption>
           {OPPORTUNITY_TABLE_CAPTION}{" "}
           {seasonNote === undefined ? "" : `${seasonNote} `}
+          {recentNote === undefined ? "" : `${recentNote} `}
           {`Showing ${String(rows.length)} player${rows.length === 1 ? "" : "s"}. `}
           Add and drop bars are scaled against the largest count on the rows shown; the value
           bar against the largest rest-of-season value.
@@ -538,6 +581,30 @@ export function OpportunityTable({
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 const meta = (header.column.columnDef.meta ?? {}) as ColumnMeta;
+                if (meta.recentHeader === true && recent !== null) {
+                  const gapColumn = table.getColumn("recent_vs_season");
+                  const handle = (column: typeof gapColumn) => ({
+                    sorted: column?.getIsSorted() ?? false,
+                    toggle: () => {
+                      column?.toggleSorting();
+                    },
+                  });
+                  const rank = handle(header.column);
+                  const gap = handle(gapColumn);
+                  const active = rank.sorted !== false ? rank.sorted : gap.sorted;
+                  return (
+                    <th
+                      key={header.id}
+                      scope="col"
+                      className={meta.className}
+                      data-col={header.id}
+                      style={{ textAlign: "right" }}
+                      aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"}
+                    >
+                      <RecentHeader spanLabel={recent.spanLabel} rank={rank} gap={gap} />
+                    </th>
+                  );
+                }
                 const sorted = header.column.getIsSorted();
                 const sortable = header.column.getCanSort();
                 return (

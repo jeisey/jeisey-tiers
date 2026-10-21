@@ -237,3 +237,43 @@ def test_no_value_producing_module_can_reach_espn_ownership(package, graph):
 def test_the_in_season_build_does_reach_espn_ownership(graph):
     """The allowed direction is real: the orchestrator publishes it beside the boards."""
     assert any(_is_ownership(name) for name in _reachable("ffdraft.pipeline.ros", graph))
+
+
+# --------------------------------------------------------------------------------------
+# Recent form and breakout categories are descriptive and read by nothing (ADR-113)
+# --------------------------------------------------------------------------------------
+
+RECENT_MODULE = "ffdraft.signals.recent"
+
+#: Market, ownership and transaction-behaviour code: none of it may decide a badge.
+MARKET_PACKAGES = (
+    "ffdraft.ownership",
+    "ffdraft.sources.espn",
+    "ffdraft.market",
+    "ffdraft.behavior",
+)
+
+
+@pytest.mark.parametrize("package", VALUE_PACKAGES)
+def test_no_value_producing_module_can_reach_recent_form(package, graph):
+    """No feature, projection, rank, tier, board or pick reads a breakout category."""
+    offenders = [
+        f"{module} -> {RECENT_MODULE}"
+        for module in _modules_under(package, graph)
+        if module != RECENT_MODULE and RECENT_MODULE in _reachable(module, graph)
+    ]
+    assert not offenders, f"recent form may not reach a value-producing module: {offenders}"
+
+
+def test_recent_form_reads_no_market_ownership_or_behaviour(graph):
+    reached = _reachable(RECENT_MODULE, graph)
+    offenders = [
+        name
+        for name in reached
+        if any(name == p or name.startswith(f"{p}.") for p in MARKET_PACKAGES)
+    ]
+    assert not offenders, offenders
+
+
+def test_the_in_season_build_does_reach_recent_form(graph):
+    assert RECENT_MODULE in _reachable("ffdraft.pipeline.ros", graph)
