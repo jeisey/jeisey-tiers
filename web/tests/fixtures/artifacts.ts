@@ -2680,6 +2680,10 @@ export function behaviorSeriesRecords(
     ? {}
     : { 1: [13, 14], 2: [14], 3: [0, 1, 2, 12, 13, 14], 15: [0, 1, 2, 3, 4] };
   const falling = new Set([4]);
+  // ADR-114: outside the *add* list on the five oldest snapshots and inside the drop list
+  // throughout, so his add trend is fitted over a shorter span than the series' — the
+  // production shape the 2026-10-22 refresh's `verify:board` met and no fixture carried.
+  const addLate = young ? new Set<number>() : new Set([5]);
   const absent = new Set(players.slice(-1));
 
   const records: BehaviorTrendSeriesRecord[] = [];
@@ -2706,7 +2710,7 @@ export function behaviorSeriesRecords(
       const drift = Math.round(elapsed * rate);
       const adds = falling.has(seed) ? finalAdds + drift : finalAdds - drift;
       const drops = finalDrops + Math.round(elapsed * 3);
-      const addCount = addSeen ? Math.max(0, adds) : null;
+      const addCount = addSeen && !(addLate.has(seed) && index < 5) ? Math.max(0, adds) : null;
       const dropCount = dropSeen ? Math.max(0, drops) : null;
       return {
         observed_at: stampAt(index),
@@ -2716,39 +2720,34 @@ export function behaviorSeriesRecords(
       };
     });
 
-    const first = points[0];
-    const last = points[points.length - 1];
-    const spanDays =
-      first === undefined || last === undefined
+    const spanOf = (side: readonly (typeof points)[number][]): number => {
+      const head = side[0];
+      const tail = side[side.length - 1];
+      return head === undefined || tail === undefined
         ? 0
-        : (Date.parse(last.observed_at) - Date.parse(first.observed_at)) / day;
-    // The same statistic the Python side computes, over these same points. These counts are
-    // a straight line in elapsed time by construction, and an OLS slope through collinear
+        : (Date.parse(tail.observed_at) - Date.parse(head.observed_at)) / day;
+    };
+    // The same statistic the Python side computes, over each side's own points. These counts
+    // are a straight line in elapsed time by construction, and an OLS slope through collinear
     // points is exactly the difference over the elapsed days however unevenly they are
     // spaced — so this shortcut is the rule rather than an approximation of it, up to the
-    // integer rounding each count carries.
-    // Each side's points are every point here or none of them, so its series and span are the
-    // whole series or empty (behavior_trend_v2).
-    const addObservations = addSeen ? points.length : 0;
-    const netObservations = addSeen && dropSeen ? points.length : 0;
-    const addTrend =
-      addObservations < 2 || spanDays <= 0
+    // integer rounding each count carries. A point missing a side is a gap in that side's
+    // series, never a zero (behavior_trend_v2).
+    const slopeOf = (side: readonly (typeof points)[number][], value: (p: (typeof points)[number]) => number): number | null => {
+      const head = side[0];
+      const tail = side[side.length - 1];
+      const span = spanOf(side);
+      return side.length < 2 || span <= 0 || head === undefined || tail === undefined
         ? null
-        : Number(
-            (
-              ((last?.add_count ?? 0) - (first?.add_count ?? 0)) /
-              spanDays
-            ).toFixed(4),
-          );
-    const netTrend =
-      netObservations < 2 || spanDays <= 0
-        ? null
-        : Number(
-            (
-              ((last?.net_add_count ?? 0) - (first?.net_add_count ?? 0)) /
-              spanDays
-            ).toFixed(4),
-          );
+        : Number(((value(tail) - value(head)) / span).toFixed(4));
+    };
+    const spanDays = spanOf(points);
+    const addPoints = points.filter((point) => point.add_count !== null);
+    const netPoints = points.filter((point) => point.net_add_count !== null);
+    const addObservations = addPoints.length;
+    const netObservations = netPoints.length;
+    const addTrend = slopeOf(addPoints, (point) => point.add_count ?? 0);
+    const netTrend = slopeOf(netPoints, (point) => point.net_add_count ?? 0);
     const flags: string[] = [];
     if (addObservations < 2) flags.push("single_observation");
     if (points.length < snapshots) flags.push("sparse_feed_coverage");
@@ -2771,9 +2770,9 @@ export function behaviorSeriesRecords(
       add_trend: addTrend,
       net_trend: netTrend,
       add_observations: addObservations,
-      add_span_days: addSeen ? Number(spanDays.toFixed(4)) : 0,
+      add_span_days: Number(spanOf(addPoints).toFixed(4)),
       net_observations: netObservations,
-      net_span_days: netObservations > 0 ? Number(spanDays.toFixed(4)) : 0,
+      net_span_days: Number(spanOf(netPoints).toFixed(4)),
       quality_flags: flags,
       points,
     });

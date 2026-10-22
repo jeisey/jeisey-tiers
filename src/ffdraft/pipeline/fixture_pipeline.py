@@ -1276,6 +1276,11 @@ def _behavior_series_records(
     falling = {4}
     #: player index -> outside the drop feed on the two oldest snapshots (ADR-114).
     one_sided = {0}
+    #: player index -> outside the *add* feed on the five oldest snapshots, inside the drop
+    #: feed throughout (ADR-114): his add trend is fitted over a shorter span than the series',
+    #: which is what every surface printing that trend must state (the production shape that
+    #: `verify:board` first met on 2026-10-22).
+    add_late = {5}
     #: The last player on the board is deliberately given no series at all.
     absent = set(players[-1:])
 
@@ -1311,11 +1316,12 @@ def _behavior_series_records(
             # One-sided days: a player observed on both sides today was outside the drop
             # feed on two older snapshots, so his add slope has points his net slope lacks.
             older_drop_gap = index in one_sided and position in (0, 1)
+            older_add_gap = index in add_late and position < 5
             observations.append(
                 BehaviorObservation(
                     player_id=player_id,
                     observed_at=stamps[position],
-                    add_count=max(0, adds) if add_seen else None,
+                    add_count=max(0, adds) if add_seen and not older_add_gap else None,
                     drop_count=(max(0, drops) if drop_seen and not older_drop_gap else None),
                 ),
             )

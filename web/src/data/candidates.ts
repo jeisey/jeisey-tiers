@@ -14,7 +14,7 @@
  * | reading | artifact | field |
  * |---|---|---|
  * | role | `player_usage.json` | `role_changes[<the position's leading metric>]` |
- * | momentum | `behavior_trend_series.json` | `add_trend`, `span_days`, `observations`, `snapshots_in_window` |
+ * | momentum | `behavior_trend_series.json` | `add_trend`, `add_span_days`, `add_observations` (else `span_days`, `observations`), `snapshots_in_window` |
  * | next game | `team_matchups.json` | the team's `next_game_v1` record |
  *
  * The direction beside a role change is `roleReading`'s (the card's own function), and the
@@ -823,7 +823,7 @@ export function momentumCell(signal: MomentumSignal): MomentumCell {
             : momentum.spanLabel,
         sentence:
           `Adds ${direction} at ${formatMomentumRate(momentum.trend).replace("/day", "")} per ` +
-          `day, ${momentum.spanLabel}, from ${String(momentum.record.observations)} ` +
+          `day, ${momentum.spanLabel}, from ${String(momentum.record.add_observations ?? momentum.record.observations)} ` +
           `observations.${ended}${missing}`,
       };
     }

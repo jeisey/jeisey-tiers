@@ -385,43 +385,45 @@
       "observations": 15,
       "observation_days": 8,
       "span_days": 6.9583,
-      "add_trend": 39.9869,
-      "net_trend": 42.9889,
-      "add_observations": 15,
-      "add_span_days": 6.9583,
-      "net_observations": 15,
-      "net_span_days": 6.9583,
-      "quality_flags": [],
+      "add_trend": 39.9779,
+      "net_trend": 42.9671,
+      "add_observations": 10,
+      "add_span_days": 4.0417,
+      "net_observations": 10,
+      "net_span_days": 4.0417,
+      "quality_flags": [
+        "one_sided_points"
+      ],
       "points": [
         {
           "observed_at": "2026-08-11T13:00:00Z",
-          "add_count": 400,
+          "add_count": null,
           "drop_count": 111,
-          "net_add_count": 289
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-12T05:00:00Z",
-          "add_count": 426,
+          "add_count": null,
           "drop_count": 109,
-          "net_add_count": 317
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-13T05:00:00Z",
-          "add_count": 466,
+          "add_count": null,
           "drop_count": 106,
-          "net_add_count": 360
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T08:00:00Z",
-          "add_count": 511,
+          "add_count": null,
           "drop_count": 102,
-          "net_add_count": 409
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T09:00:00Z",
-          "add_count": 513,
+          "add_count": null,
           "drop_count": 102,
-          "net_add_count": 411
+          "net_add_count": null
         },
         {
           "observed_at": "2026-08-14T11:00:00Z",
