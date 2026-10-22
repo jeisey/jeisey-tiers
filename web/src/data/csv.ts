@@ -480,8 +480,9 @@ function signalCells(candidate: OpportunityCandidate): (string | number | null)[
     change?.change ?? null,
     MOMENTUM_READING_EXPORT[momentum.kind],
     series?.add_trend ?? null,
-    series?.span_days ?? null,
-    series?.observations ?? null,
+    // The add trend's own span and count (ADR-114); a 1.0 record's sides were always whole.
+    series === null ? null : (series.add_span_days ?? series.span_days),
+    series === null ? null : (series.add_observations ?? series.observations),
     series?.snapshots_in_window ?? null,
     series?.points.at(-1)?.observed_at ?? null,
     NEXT_GAME_READING_EXPORT[nextGame.kind],

@@ -2682,3 +2682,13 @@ DraftValue number changes; behaviour still decides visibility only.
 - [ ] **Follow-up (pre-existing)**: each ROS selection change retains ~2.3 MB of heap after GC
       (on main too); the bye filter adds a one-time ~6 MB second bundle and no per-cycle growth.
 - [ ] Firefox/WebKit smoke not run locally (CI runs them); no physical-device test.
+
+## daily-refresh `verify:board` momentum span — 2026-10-22 (ADR-114 amendment)
+
+- [x] Diagnosed run 39678490433: all 50 failures were Opportunity momentum spans; the page prints
+      the add trend's `add_span_days`, the verifier expected `span_days`.
+- [x] Verifier, momentum sentence and CSV `add_trend_span_days`/`add_trend_observations` use the
+      add side's span and count (1.0 fallback).
+- [x] Fixtures (Python and browser) carry an add-late player; old verifier fails on the in-season
+      fixture with the production message, new verifier passes all nine builds.
+- [ ] Re-run `daily-refresh` after merge and confirm `verify:board` passes on production data.

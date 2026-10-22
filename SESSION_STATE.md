@@ -4,6 +4,13 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Fix: daily-refresh `verify:board` momentum span — 2026-10-22 (ADR-114 amendment).** Run
+39678490433 failed on 50 Opportunity rows: the page prints the add trend over `add_span_days`
+(series 2.0), the verifier expected `span_days`. Verifier, momentum sentence and the two CSV
+add-trend columns now use the add side's span/count; both fixtures carry an add-late player
+(index/seed 5) so the in-season fixture reproduces it. **Next gate:** merge, re-run
+`daily-refresh`, confirm `verify:board` and the first 1.1 manifest.
+
 **Sleeper per-side observability; card controls, bye filter, methodology on Data — 2026-10-21
 (ADR-114, ADR-115, PRD CR-034/CR-035).** On `claude/magical-maxwell-0s0xat` from `main` at
 `ee863cc`.
@@ -34,7 +41,8 @@ This file is durable cross-session state for coding agents. Keep it concise and 
   * The private store is `jeisey/jeisey-tiers-market-data` (sparse-clone `behavior/` to trace).
   * The browser fixture (`web/tests/fixtures/artifacts.ts`) is 1.3/2.0: rank 16 (Jalen Marsh) is
     add-only, rank 18 (Jaylin Lane) is in neither; SF and PHI are week 9 byes.
-  * `verify-real-build.mjs` re-derives Adds/Drops/Net text from states and floors.
+  * `verify-real-build.mjs` re-derives Adds/Drops/Net text from states and floors, and the
+    momentum span from `add_span_days ?? span_days`.
 * **Next gate:** owner review; after merge the first in-season `daily-refresh` writes the first
   1.1 manifest — check `ros_build_metadata.behavior.coverage`.
 

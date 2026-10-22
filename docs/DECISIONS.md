@@ -8271,6 +8271,26 @@ every window, with no working pagination or filter, so complete counts cannot be
 * A 1.2 artifact is read honestly by the page: a 0 with no feed rank is an absence with no bound.
 * No intrinsic, ROS, weekly, tier or DraftValue number reads behaviour; nothing in them changes.
 
+### Amendment — 2026-10-22: an add trend is printed, exported and verified over its own span
+
+The first production `daily-refresh` after this ADR failed at `verify:board` with 50 Opportunity
+rows reading `momentum: a direction printed with span "over 1 day", artifact over 7 days`. The
+page was right: from series 2.0 the add trend is fitted over the add side's own points, so a
+player who entered the add list late has `add_span_days` (and `add_observations`) below the
+series' `span_days` (and `observations`), and the board prints the former. The verifier still
+derived the span from `span_days`, and no fixture had a player whose adds began later than his
+drops, so CI could not see the difference. Fixed together:
+
+* `verify-real-build.mjs` expects `add_span_days ?? span_days`;
+* the momentum sentence names `add_observations ?? observations`, and the filtered export's
+  `add_trend_span_days` / `add_trend_observations` carry the add side's span and count (a 1.0
+  record falls back, as its sides were always whole) — column names and order unchanged;
+* both fixtures carry one player outside the add list on the five oldest snapshots and inside the
+  drop list throughout (`add_late`), so `verify:board` on the in-season fixture reproduces the
+  production failure against the old verifier and passes on the new one.
+
+No artifact contract, model or number changed.
+
 ## ADR-115 — Three quality-of-life changes: the phone card's controls, a bye-week filter, and methodology on the Data tab
 
 **Status:** accepted, 2026-10-21. **Amends:** ADR-111 (the phone card header), ADR-085 and

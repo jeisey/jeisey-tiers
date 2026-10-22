@@ -32,7 +32,7 @@ import {
 } from "../src/data/candidates";
 import { OPPORTUNITY_EXPORT_COLUMNS, opportunityRowsToCsv } from "../src/data/csv";
 import { buildPotwBoard, selectPotwBoard } from "../src/data/potw";
-import { InSeasonBundle, formatMomentumRate, momentumDirection } from "../src/data/ros";
+import { InSeasonBundle, formatMomentumRate, momentumDirection, spanLabel } from "../src/data/ros";
 import { ROLE_METRICS_BY_POSITION, roleReading } from "../src/data/signals";
 import {
   DEFAULT_STATE,
@@ -655,6 +655,36 @@ describe("the filtered export", () => {
     expect(first[at("role_reading")]).toBe("artifact_not_published");
     expect(first[at("momentum_reading")]).toBe("artifact_not_published");
     expect(first[at("next_game_reading")]).toBe("artifact_not_published");
+  });
+
+  it("prints and exports an add trend over its own span when his adds started late (ADR-114)", () => {
+    // Outside the add list on the five oldest snapshots, inside the drop list throughout: the
+    // add trend was fitted over fewer days than the series spans, and every surface that
+    // prints it has to say so. The production shape `verify:board` met on 2026-10-22.
+    const late = required(
+      behaviorSeriesRecords().find(
+        (record) => record.add_trend !== null && (record.add_span_days ?? 0) < record.span_days,
+      ),
+      "a series whose add span is shorter than its own",
+    );
+    const addSpan = required(late.add_span_days, "an add span");
+    const addObservations = required(late.add_observations, "an add count");
+    expect(spanLabel(addSpan)).not.toBe(spanLabel(late.span_days));
+    expect(addObservations).toBeLessThan(late.observations);
+    const rows = select().candidates;
+    const row = required(
+      rows.find((entry) => entry.row.record.player_id === late.player_id),
+      "his opportunity row",
+    );
+    const cell = momentumCell(row.momentum);
+    expect(cell.span).toBe(spanLabel(addSpan));
+    expect(cell.sentence).toContain(`from ${String(addObservations)} observations`);
+
+    const csv = opportunityRowsToCsv(rows).trim().split("\r\n");
+    const header = required(csv[0], "a header").split(",");
+    const cells = required(csv[rows.indexOf(row) + 1], "his CSV row").split(",");
+    expect(cells[header.indexOf("add_trend_span_days")]).toBe(String(addSpan));
+    expect(cells[header.indexOf("add_trend_observations")]).toBe(String(addObservations));
   });
 
   it("leaves a long absence and its status exactly as published", () => {

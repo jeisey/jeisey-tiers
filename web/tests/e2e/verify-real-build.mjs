@@ -1489,11 +1489,14 @@ if (publishedInSeason && opportunityRecords !== null) {
       const day = last === null
         ? ""
         : new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" }).format(new Date(Date.parse(last)));
+      const addSpan = series.add_span_days ?? series.span_days;
       momentum = {
         kind: current ? "measured" : "ended",
         trend: series.add_trend,
         direction: momentumDirection(series.add_trend),
-        span: current ? spanText(series.span_days) : `${spanText(series.span_days)} \u00b7 to ${day}`,
+        // The add trend is printed with its own span (ADR-114): a day his adds were outside
+        // the list is a gap, so a 2.0 record's add span can be shorter than the window's.
+        span: current ? spanText(addSpan) : `${spanText(addSpan)} \u00b7 to ${day}`,
       };
     }
 
