@@ -90,7 +90,7 @@ describe("the tab", () => {
       expect(screen.getByRole("heading", { name: "Lead stories" })).toBeDefined();
     });
     expect(screen.getByText(/Week 8 edition · through W8 · built/)).toBeDefined();
-    expect(screen.getByText("No story depends on league size: the Teams setting changes nothing here.")).toBeDefined();
+    expect(screen.getByText("Same in every league size: the Teams setting changes nothing here.")).toBeDefined();
     expect(headlines("Lead stories")).toEqual([
       INSIGHT_IDS.upsideLead,
       INSIGHT_IDS.openingObserved,
@@ -191,7 +191,7 @@ describe("filters in the URL", () => {
     expect(screen.queryByRole("radiogroup", { name: /ESPN rostered below/ })).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: /^This week, 5 stories/ }));
     const ceiling = await screen.findByRole("radiogroup", { name: /ESPN rostered below/ });
-    expect(screen.getByText(/below 50% — describes ESPN leagues, not yours; unknown is not 0%/)).toBeDefined();
+    expect(screen.getByText("ESPN leagues, not yours; an unknown share is not 0%.")).toBeDefined();
     fireEvent.click(within(ceiling).getByRole("radio", { name: /fewer than 10%/ }));
     expect(params().get("ceil")).toBe("10");
     await waitFor(() => {
@@ -201,7 +201,7 @@ describe("filters in the URL", () => {
         INSIGHT_IDS.upsideLongName,
       ]);
     });
-    expect(screen.getByText(/below 10% — describes ESPN leagues/)).toBeDefined();
+    expect(within(ceiling).getByRole("radio", { name: /fewer than 10%/ }).getAttribute("aria-checked")).toBe("true");
   });
 
   it("finds a player's stories through the search, and says what is filtering", async () => {

@@ -2692,3 +2692,68 @@ DraftValue number changes; behaviour still decides visibility only.
 - [x] Fixtures (Python and browser) carry an add-late player; old verifier fails on the in-season
       fixture with the production message, new verifier passes all nine builds.
 - [ ] Re-run `daily-refresh` after merge and confirm `verify:board` passes on production data.
+
+## Insights: deterministic weekly stories, a shareable card per finding — 2026-10-28 (ADR-116)
+
+On `claude/kind-pasteur-c8py15`, from `main` at `6f7e617`. Downstream of every value artifact: no
+intrinsic, ROS, weekly, tier, DraftValue, POTW, Trade, My Leagues or WMM output changes (golden
+diff: only `manifest.json`, `ros_build_metadata.json` and the new insights files).
+
+- [x] **Capability matrix and rules** (ADR-116): fixed Last-3 window (`recent_form_v1`'s calendar
+      weeks) against every earlier week; six families with ordered predicates, effect thresholds,
+      orderings and tie-breaks (`insights_v1`, `src/ffdraft/insights/rules.py`), every threshold
+      reused from `breakout_v1` / `usage_signals_v1` / the weekly context where one exists;
+      selection `insights_select_v1` (one story per player per preset, family round-robin with
+      caps, team cap 2, lead ≤ 12, variant cap 8) — no score anywhere.
+- [x] **Builder** `ffdraft.insights` (facts, families, text, select, build): last step of
+      `run_ros_build` and the fixture pipeline; reads only published records plus the frames the
+      build already holds; a family failing in any preset publishes in none; suppression reasons
+      and counts per family; build-time pre-screen (strict subset of ADR-101) with the page
+      re-applying the full policy and kickoff at the reader's clock.
+- [x] **Contract** `insights` (`insight_story` 1.0, `schemas/insight_story.schema.json`),
+      `ros_build_metadata.insights`, envelope enum, spec (sort ends `story_id`), in-season artifact
+      set; served as `insights/<scoring>` (feed + full metadata as slice `meta`) and lazy
+      `insight_evidence/<scoring>`; the manifest carries a summary only.
+- [x] **Validator** (`src/ffdraft/artifacts/insight_checks.py`, independent of the builder): every
+      printed number is an evidence/window scalar in a published format; forbidden claims by stem
+      (names stripped first); identities; every predicate re-checked from evidence by direction;
+      selection caps; cross-checks against usage, recent form (span points and ranks), season
+      actuals, weekly projections (quantiles, kickoff after the build) and ESPN readings.
+- [x] **Firewall**: `test_architecture_boundary.py` (no value package reaches `ffdraft.insights`;
+      insights reaches no market/ownership/behaviour code; the validator does not import the
+      builder); ESPN and recent-form invariance tests assert the dependent families degrade with a
+      reason and nothing else changes.
+- [x] **Tab** (UX_SPEC §6A.23): in-season, lazy, after My Leagues; `ins`, `ceil`, `story`+`ed`,
+      `share` URL state; lead + more groups; filters with counts; search; every story opens the
+      player's card; edition-aware deep links; withdrawal in place at kickoff or by the availability policy
+      (including a page left open across kickoff); family states and the build's account;
+      "Opp"/"Leagues" short labels below 1024px so eight tabs fit.
+- [x] **Visuals and share**: week strips (workload/points, TD split), P10–P90 interval against the
+      typical week, with/without bars, room rows (shares never stacked; counts reconcile), stat
+      line; share view at 1200×675 and 1080×1350 rendered from the validated record with the
+      self-hosted fonts embedded; Download PNG, Copy link (base path, edition, no private state),
+      Copy summary. No new npm dependency.
+- [x] **Tests**: pytest `test_insights.py` (54: hand-checkable leagues for every family and guard,
+      leakage after the cutoff, bye vs missed vs zero, determinism, every review regression) and
+      updated contract/serving (empty and withheld editions)/invariance/fixture-pipeline tests;
+      Vitest `insights-data.test.ts` (55), `insights-view.test.tsx` (22) and bundle/state tests;
+      Playwright `insights.spec.ts` (11: fetch discipline, evidence once, card, URL through
+      back/forward/reload, deep links and editions, base path, withdrawal across kickoff, PNG
+      dimensions, long names) plus a11y (including the degraded build) and mobile updates.
+- [x] **Budgets** (size model, `verify:budget`, base and branch measured on one machine): new
+      `insightsAdds` ≤ 50 kB (45.3), `insightsSlice` ≤ 25 kB (21.1), `insightsEvidenceAdds` ≤ 15 kB
+      (10.8), `insightsShareAdds` ≤ 8 kB (6.0); every earlier budget met, none raised. Shared
+      paths +1.0 kB (WMM cold 443,390 → 444,404 of 450,000): manifest +139 B, app shell ~870 B.
+      Cut from +1.5 kB by trimming the manifest summary to six fields (the account rides in the
+      slice, served for every preset) and un-sharing the clock hook.
+- [x] **Visual QA**: `docs/visual-qa/2026-10-27-insights/` — feed at 320, 390, 390×560, 768, 1024,
+      1440; expanded story; share view; 20 downloaded PNGs (10 stories × 2 layouts) with verified
+      dimensions; `checks.json` (0 overflow, 0 off-screen buttons, 0 clipped share text).
+- [x] **Docs**: ADR-116, PRD CR-036 (A1, A2.4), DATA_CONTRACTS §30, DATA_SOURCES §25, source
+      registry roles, OPERATIONS §16.5, ARCHITECTURE §14, UX_SPEC §6A.23, README.
+- [ ] **Not yet verified, not blocking:** no deployed build has published Insights (the first
+      in-season `daily-refresh` after merge will; the live week-7 run was outside the pipeline);
+      stories are descriptive and not backtested by design; Firefox/WebKit smoke not run locally
+      (CI runs them); PNG export verified in Chromium only (Safari's canvas/font path untested).
+- [ ] **Deferred by decision:** historical-rank comparisons, xFP/expected points (ADR-086/091),
+      route/TPRR/first-read claims, threshold-exceedance probabilities, retained old editions.

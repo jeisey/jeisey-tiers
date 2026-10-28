@@ -186,6 +186,24 @@ describe("the build's account (ros_build_metadata.insights)", () => {
     expect(parseInsightsMetadata({ ...insightsMetadata(), families: { x: { status: "maybe" } } })).toBeNull();
   });
 
+  it("reads the manifest's summary alone, and the slice's full account over it", () => {
+    const full = insightsMetadata();
+    const summary = Object.fromEntries(
+      Object.entries(full).filter(([key]) =>
+        ["status", "withheld_reason", "edition", "through_week", "target_week", "generated_at_utc"].includes(key),
+      ),
+    );
+    const before = parseInsightsMetadata(summary);
+    expect(before?.edition).toBe("2026w08");
+    expect(before?.families).toEqual({});
+    expect(before?.definitions).toEqual({});
+    expect(before?.selection.family_order[0]).toBe("weekly_upside");
+    const after = parseInsightsMetadata(summary, full);
+    expect(after?.families.weekly_upside?.status).toBe("published");
+    expect(after?.definitions.ceiling).toMatch(/one week in ten/);
+    expect(after?.unsupported.length).toBeGreaterThan(0);
+  });
+
   it("names the four states the tab keeps apart", () => {
     expect(insightsState({ published: false, compatible: false, meta: null }).kind).toBe("absent");
     expect(insightsState({ published: true, compatible: true, meta: null }).kind).toBe("absent");
@@ -300,7 +318,10 @@ describe("words around a story", () => {
   it("prints the kicker, context, window, scoring and sources from the story", () => {
     const puka = byId(INSIGHT_IDS.upsideLead);
     expect(kicker(puka)).toBe("This week's upside · Week 9");
-    expect(playerContext(puka)).toEqual(["WR", "LAR", "kickoff Sun, Nov 8, 1:00 PM ET"]);
+    expect(playerContext(puka)).toEqual(["WR", "LAR", "at BAL", "Sun, Nov 8, 1:00 PM ET"]);
+    expect(playerContext(byId(INSIGHT_IDS.upsideDoubtful)).slice(2, 3)).toEqual(["vs LAR"]);
+    // A story about completed weeks names no opponent and no kickoff.
+    expect(playerContext(byId(INSIGHT_IDS.pacePerGame))).toEqual(["QB", "CIN"]);
     expect(windowText(puka)).toBe("W6–W8, baseline W1–W5");
     expect(scoringLabel(puka)).toBe("PPR scoring");
     expect(scoringLabel(byId(INSIGHT_IDS.roleBackfield))).toBe("Same in every scoring");

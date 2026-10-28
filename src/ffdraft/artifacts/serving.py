@@ -234,21 +234,19 @@ FAMILIES: tuple[Family, ...] = (
     ),
 )
 
-#: ADR-116: the fields of ``ros_build_metadata.insights`` the manifest keeps. The rest — the rule's
-#: constants, the definitions, limitations and unsupported claims the Insights tab prints — is
-#: read only by that tab, so it rides in each ``insights/<scoring>`` slice as ``meta`` instead of
-#: in the manifest every visit fetches. The summary is enough to tell "not published",
-#: "withheld", "no story qualified" and a degraded family apart before any slice loads.
+#: ADR-116: the fields of ``ros_build_metadata.insights`` the manifest keeps — its status, edition
+#: and times, which cost the manifest every visit fetches next to nothing. The rest (family
+#: states, counts, the rule's constants, definitions, limitations and unsupported claims) is read
+#: only by the Insights tab, so it rides whole in each ``insights/<scoring>`` slice as ``meta``;
+#: a published build writes that slice for every preset, empty when no story qualified, so the
+#: tab always has the full account and a withheld build needs no more than the summary.
 INSIGHTS_MANIFEST_SUMMARY: tuple[str, ...] = (
     "status",
     "withheld_reason",
-    "rule_version",
     "edition",
     "through_week",
     "target_week",
     "generated_at_utc",
-    "families",
-    "counts",
 )
 
 #: What one card shard carries: every per-player record a card reads, per artifact, with the
@@ -723,8 +721,15 @@ def build_serving_layout(
         groups = partitioned.get(f"{family.artifact}|{family.partition}", {})
         all_fields = _field_order(list(envelope.get("records", ())))
         fields = _select_fields(all_fields, family)
-        for key in sorted(groups):
-            rows = [{name: row[name] for name in fields if name in row} for row in groups[key]]
+        keys = set(groups)
+        # ADR-116: a published build serves every preset's stories slice, an empty one too,
+        # because the slice carries the account (`meta`).
+        if family.name == "insights" and (insights_meta or {}).get("status") == "published":
+            keys.update((insights_meta or {}).get("counts") or {})
+        for key in sorted(keys):
+            rows = [
+                {name: row[name] for name in fields if name in row} for row in groups.get(key, ())
+            ]
             join = None
             if family.join is not None:
                 join_family = next(item for item in FAMILIES if item.name == family.join)

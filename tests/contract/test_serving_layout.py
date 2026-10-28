@@ -298,3 +298,37 @@ def test_layout_is_deterministic() -> None:
     two = build_serving_layout(envelopes, metadata)
     assert one.files == two.files
     assert one.manifest == two.manifest
+
+
+def test_insights_slices_carry_the_account_even_without_a_story() -> None:
+    """ADR-116: a published edition serves each preset's stories slice, an empty one too, since
+    the manifest keeps only status, edition and times; a withheld edition serves none."""
+    from ffdraft.artifacts.serving import _load_sources
+
+    envelopes, metadata = _load_sources(GOLDEN)
+    ros = metadata["ros_build_metadata"]
+    insights = dict(ros["insights"])
+    empty = {**envelopes["insights"], "records": [], "record_count": 0}
+    published = build_serving_layout(
+        {**envelopes, "insights": empty},
+        {**metadata, "ros_build_metadata": {**ros, "insights": insights}},
+    )
+    stories = sorted(key for key in published.manifest["files"] if key.startswith("insights/"))
+    assert stories == [f"insights/{preset}" for preset in sorted(insights["counts"])]
+    assert not any(key.startswith("insight_evidence/") for key in published.manifest["files"])
+    for key in stories:
+        path = f"{SERVE_DIRNAME}/{key}.{published.manifest['files'][key]}.json"
+        served = json.loads(published.files[path])
+        assert served["count"] == 0
+        assert served["meta"] == insights
+    assert published.manifest["ros_build_metadata"]["insights"] == {
+        name: insights[name] for name in INSIGHTS_MANIFEST_SUMMARY if name in insights
+    }
+
+    withheld = {**insights, "status": "withheld", "withheld_reason": "season actuals are withheld"}
+    layout = build_serving_layout(
+        {**envelopes, "insights": empty},
+        {**metadata, "ros_build_metadata": {**ros, "insights": withheld}},
+    )
+    assert not any(key.startswith("insights/") for key in layout.manifest["files"])
+    assert layout.manifest["ros_build_metadata"]["insights"]["status"] == "withheld"

@@ -9,12 +9,12 @@
   "shareLayoutOverflow": 0,
   "exportsWrongSize": 0
  },
- "capturedAt": "2026-10-28T03:02:41.577Z",
+ "capturedAt": "2026-10-28T03:45:41.782Z",
  "clock": "2026-11-05T12:00:00.000Z",
  "screens": {
   "feed-320": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 557,
+   "firstHeadlineTop": 537,
    "viewportHeight": 640,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -23,7 +23,7 @@
   },
   "feed-390": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 516,
+   "firstHeadlineTop": 496,
    "viewportHeight": 844,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -32,7 +32,7 @@
   },
   "share-390": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 516,
+   "firstHeadlineTop": 496,
    "viewportHeight": 844,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -40,7 +40,7 @@
   },
   "feed-short-390x560": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 516,
+   "firstHeadlineTop": 496,
    "viewportHeight": 560,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -49,7 +49,7 @@
   },
   "feed-768": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 604,
+   "firstHeadlineTop": 600,
    "viewportHeight": 1024,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -58,7 +58,7 @@
   },
   "feed-1024": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 580,
+   "firstHeadlineTop": 576,
    "viewportHeight": 800,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -67,7 +67,7 @@
   },
   "feed-1440": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 580,
+   "firstHeadlineTop": 558,
    "viewportHeight": 900,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -76,7 +76,7 @@
   },
   "share-1440": {
    "pageOverflowX": 0,
-   "firstHeadlineTop": 580,
+   "firstHeadlineTop": 558,
    "viewportHeight": 900,
    "offscreenButtons": [],
    "smallTargets": [],
@@ -90,7 +90,7 @@
    "png": {
     "width": 1200,
     "height": 675,
-    "bytes": 176736
+    "bytes": 176356
    },
    "width": 1200,
    "height": 675,
@@ -108,7 +108,7 @@
    "png": {
     "width": 1080,
     "height": 1350,
-    "bytes": 244049
+    "bytes": 244397
    },
    "width": 1080,
    "height": 1350,
@@ -126,7 +126,7 @@
    "png": {
     "width": 1200,
     "height": 675,
-    "bytes": 180420
+    "bytes": 179787
    },
    "width": 1200,
    "height": 675,
@@ -144,7 +144,7 @@
    "png": {
     "width": 1080,
     "height": 1350,
-    "bytes": 252034
+    "bytes": 251939
    },
    "width": 1080,
    "height": 1350,
@@ -270,7 +270,7 @@
    "png": {
     "width": 1200,
     "height": 675,
-    "bytes": 199947
+    "bytes": 200003
    },
    "width": 1200,
    "height": 675,
@@ -288,7 +288,7 @@
    "png": {
     "width": 1080,
     "height": 1350,
-    "bytes": 287617
+    "bytes": 287771
    },
    "width": 1080,
    "height": 1350,

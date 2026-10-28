@@ -317,6 +317,12 @@ describe("what a first paint fetches (ADR-098)", () => {
     expect(calls().some((url) => url.includes("/serve/insight_evidence/"))).toBe(false);
     const source = store.insightsSource("PPR");
     expect(source).toMatchObject({ published: true, compatible: true, loaded: true });
+    // The manifest carries status, edition and times; the stories slice carries the account.
+    expect(Object.keys(source.meta as object).sort()).toEqual(
+      ["edition", "generated_at_utc", "status", "target_week", "through_week", "withheld_reason"],
+    );
+    expect(source.fullMeta).toHaveProperty("families");
+    expect(source.fullMeta).toHaveProperty("definitions");
     expect(source.rows.length).toBe(15);
     // Feed rows carry no record version and no evidence; names come back from the dictionary.
     expect(source.rows[0]).not.toHaveProperty("schema_version");
@@ -332,6 +338,20 @@ describe("what a first paint fetches (ADR-098)", () => {
     expect(evidence[0]).toHaveProperty("qualification");
     expect(evidence[0]).not.toHaveProperty("headline");
     expect(calls().filter((url) => url.includes("/serve/insight_evidence/PPR."))).toHaveLength(1);
+  });
+
+  it("a published edition with no story still serves each preset's account, in an empty slice (ADR-116)", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles(true, { insights: "empty" }) });
+    const store = await openSite();
+    for (const scoring of ["STD", "HALF", "PPR"] as const) {
+      expect(`insights/${scoring}` in store.manifest.files).toBe(true);
+      expect(`insight_evidence/${scoring}` in store.manifest.files).toBe(false);
+    }
+    await store.ensure(requiredKeys(store.manifest, { view: "insights", leaguePreset: "redraft-12", scoring: "HALF", cardPlayerId: null }));
+    const source = store.insightsSource("HALF");
+    expect(source).toMatchObject({ published: true, loaded: true, rows: [] });
+    expect(source.fullMeta).toHaveProperty("families.weekly_upside.status", "empty");
+    expect(await source.loadEvidence()).toEqual([]);
   });
 
   it("a build with no Insights needs no story file, and says it published none (ADR-116)", async () => {

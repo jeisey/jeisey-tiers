@@ -2,13 +2,32 @@
  * Small helpers the My Leagues components share (ADR-106).
  */
 
+import { useEffect, useState } from "react";
+
 import type { WeeklyProjectionRecord } from "../../data/contracts";
 import { EM_DASH } from "../../data/format";
 import { MODE_LABELS } from "../../data/lineup";
 import type { LineupMode } from "../../data/leagueContract";
 
-/** Shared with the Insights feed (ADR-116), which withdraws a start idea at kickoff the same way. */
-export { useClock } from "../../components/useClock";
+/**
+ * The reader's clock, to the minute, for kickoff locks. A test passes a fixed time; otherwise
+ * it ticks every 30 seconds so a game that starts while the page is open locks without a
+ * reload, and memoised readings change at most once a minute.
+ */
+export function useClock(fixed: Date | undefined): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (fixed !== undefined) return;
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 30_000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [fixed]);
+  const value = fixed?.getTime() ?? now;
+  return Math.floor(value / 60_000) * 60_000;
+}
 
 const KICKOFF = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",

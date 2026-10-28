@@ -1883,7 +1883,7 @@ every number it prints is already in its own artifact). Independent of league si
 | `headline`, `dek`, `facts[]`, `counterpoint`, `caveat` | template text from the evidence. `facts[]` (2–4) carry `label`, `value` and `basis` (`observed` nflverse statistic, `model` published model output, `market` ESPN). The dek is the editorial reading; the counterpoint is null unless a rule finds one; the caveat is always printed |
 | `window` | `label`, `first_week`, `last_week`, `weeks`, `baseline_first_week`, `baseline_last_week`; null for a season stat line |
 | `kickoff_utc` | the target-week kickoff of a `this_week` story (after the build, validated); null otherwise |
-| `espn_rostered`, `ceiling_ranks`, `injury` | copies of `evidence.espn_rostered`, `evidence.ceiling_ranks` (upside only) and `evidence.injury` (`this_week` only) for the feed slice, which carries no evidence (validated equal) |
+| `espn_rostered`, `ceiling_ranks`, `injury`, `opponent`, `home_away` | copies of `evidence.espn_rostered`, `evidence.ceiling_ranks` (upside only) and `evidence.injury`, `evidence.opponent`, `evidence.home_away` (`this_week` only) for the feed slice, which carries no evidence (validated equal) |
 | `chart` | one of `week_strip` (per season week: `status` P/B/D, `in_window`, `points`, `td_points`, `opportunity`, `share`, `rank` — numbers only on `P`; `opportunity_label`, `share_label`, `band`), `interval` (`q10`, `q50`, `q90` and the typical week's), `with_without` (`metric` target/carry/pass share, `absent` {share, games, per_game, reason}, `rows` with `share_with`, `games_with`, `share_without`, `games_without`, `latest_share`), `room` (`room`, `metric`, `team_count`, `team_games`, `team_red_zone`, `team_inside_five`, `rows` with window/baseline games, snap shares, `count`, `share` = count / team_count, `share_baseline`, `red_zone`, `inside_five`), `stat_line` (`games`, `team_games`, `points`, `points_per_game`, `pace_17`, `ppg_rank`, `total_rank`, `cohort_size`, `cohort_min_games`) |
 | `evidence` | the exact values the text and chart print, with numerators, denominators, ranks, cohort sizes and the thresholds they were compared with; keys per family below |
 | `qualification[]` | every predicate the story passed, in rule order: `rule`, `label`, `value`, `threshold`, `passed` (always true) |
@@ -1900,9 +1900,10 @@ red-zone opportunities and the team's (null without complete play-by-play), snap
 `terms_q90`, `espn_rostered`, `ceiling`, `ceiling_level` (90), `ceiling_rank`, `eligible`,
 `ceiling_ranks`, `eligible_counts`, the role reading (`role_metric`, `role_level`,
 `role_baseline`, `role_passed`, `role_bar`, `role_weeks`), `injury`, opponent and kickoff.
-`opportunity_opening`: the absent player's share, games, per-game count, reason, designation and
-missed weeks; the focal player's shares with and without him and their games, his window share,
-thresholds. `role_battle`: team counts and games, the riser's count, shares, rise, games and snap
+`opportunity_opening`: the absent player's share, games, per-game count (targets, carries or
+pass attempts, by room), reason, designation and missed weeks; the club's games without him
+(`team_games_without`) and the focal player's own (`games_without`), his shares with and without
+him, his window share, thresholds, opponent, home/away and kickoff when it is this week. `role_battle`: team counts and games, the riser's count, shares, rise, games and snap
 share, the next player's count, an absent member when one explains part of the shift.
 `streak_watch`: category, reason, window and season ranks, band, streak, window points and
 touchdown share, the role measure's level and baseline. `pace_perspective`: games, team games,
@@ -1912,12 +1913,18 @@ missed games, points, points a game, pace, ranks, cohort, `espn_rostered`.
 `insights.text_number_not_in_evidence`, `insights.forbidden_claim`, `insights.identity`
 (edition, window arithmetic, horizon ⇔ kickoff, interval order, strip sums equal the window
 totals, B/D weeks carry no numbers, room shares are count / team count, pace is points a game ×
-17, the feed copies equal the evidence, each family's threshold), `insights.selection` (lead
+17, the feed copies equal the evidence, each family's threshold, and **every qualification
+predicate re-checked against its threshold** by a per-rule direction table — an unknown rule
+fails). The number rule licenses only the story's own evidence scalars and window, never chart
+series; it proves a printed number is one of the story's values, not that it is used in the
+right sentence, which the templates own. The forbidden-claim check strips player names first
+and matches stems with any ending ("routes", "overdue", "expected-points"). `insights.selection` (lead
 ranks 1..n ≤ 12, one story per player and per id per preset, team and family caps, a
 scoring-independent story identical across presets), `insights.disagrees_with_sources` (strip
 points equal the usage series; strip ranks equal recent form's span ranks; pace totals and
 ranks equal season actuals; categories equal recent form's; quantiles and kickoffs equal the
-weekly projections; ESPN shares equal the observed readings; every subject has a usage record)
+weekly projections; every this-week kickoff equals its projection's; strip points equal recent
+form's span points; ESPN shares equal the observed readings; every subject has a usage record)
 and `ros_build_metadata.insights_mismatch` (status, cutoff, counts, family states, every kickoff
 after the build).
 
@@ -1930,7 +1937,8 @@ after the build).
 `family_order`, `family_caps`, `team_cap`, `one_story_per_player`), `families` (per family:
 `status` `published | empty | unavailable`, `reason`, and per preset `qualified` and
 `published`, plus `suppressed` by reason: `duplicate_player`, `variant_cap`, `prescreen`,
-`below_top_per_ceiling`, `missed_latest_game`, `subject_unavailable`, `game_not_upcoming`),
+`below_top_per_ceiling`, `missed_latest_game`, `subject_unavailable`, `game_not_upcoming`,
+`absence_before_window`, `absent_changed_team`),
 `sources` (per source `state` `available | partial | unavailable` and `detail`: nflverse player
 stats, play-by-play, season actuals, recent form, weekly projections, the official injury
 report, ESPN), `counts` (per preset stories and lead), `definitions`, `limitations` and
@@ -1942,7 +1950,15 @@ null means "Insights unavailable" to the page.
 Two families from the one artifact, each partitioned by scoring preset:
 
 * `insights/<scoring>` — every field except `schema_version`, `evidence`, `qualification` and
-  `also_qualifies`; names from the player dictionary. Fetched by the Insights tab only.
+  `also_qualifies`; names from the player dictionary; plus the whole
+  `ros_build_metadata.insights` block as the file's top-level `meta`. Fetched by the Insights tab
+  only. A published edition serves this slice for **every** scoring preset in
+  `ros_build_metadata.insights.counts`, with zero rows when no story qualified, so the tab always
+  has the full account (family states and reasons included). The manifest's inline
+  `ros_build_metadata.insights` keeps only `status`, `withheld_reason`, `edition`,
+  `through_week`, `target_week` and `generated_at_utc` — enough to tell "not published" and
+  "withheld" apart (a withheld edition serves no slice) — so a visit that never opens the tab
+  pays ~20 bytes (gzip) for the block.
 * `insight_evidence/<scoring>` — `scoring_preset`, `story_id`, `player_id`, `evidence`,
   `qualification`, `also_qualifies`. Fetched only when a reader expands a story's evidence.
 

@@ -240,12 +240,18 @@ export interface InsightsSource {
   readonly published: boolean;
   /** Its envelope version is one this page reads. */
   readonly compatible: boolean;
-  /** The preset's slice has loaded, or the build published none for it (zero stories). */
+  /** The preset's slice has loaded, or the build serves none (withheld, or an older build). */
   readonly loaded: boolean;
   /** The preset's decoded rows; empty when it published no story for this preset. */
   readonly rows: readonly Record<string, unknown>[];
-  /** `ros_build_metadata.insights`, verbatim (absent and null are the same unavailable state). */
+  /**
+   * The manifest's `ros_build_metadata.insights` summary, verbatim (absent and null are the same
+   * unavailable state): status, edition and times — enough to tell not published and withheld
+   * apart; the stories slice's `meta` carries the rest.
+   */
   readonly meta: unknown;
+  /** The full account the preset's stories slice carries as `meta`, once loaded; else null. */
+  readonly fullMeta: unknown;
   /**
    * The preset's evidence slice (`insight_evidence/<scoring>`): fetched the first time a reader
    * expands a story's Evidence, once per preset, never when the tab opens. Resolves with its
@@ -309,6 +315,8 @@ export class DataStore {
   private versionValue = 0;
   private readonly boardCache = new Map<string, { stamp: string; index: ArtifactIndex }>();
   private readonly seasonCache = new Map<string, { stamp: string; bundle: InSeasonBundle | null }>();
+  /** A served slice's raw `meta` key, by served key: the Insights account (ADR-116). */
+  private readonly sliceMeta = new Map<string, unknown>();
   /** One evidence loader per preset, so a story's Evidence holds a stable function (ADR-116). */
   private readonly evidenceLoaders = new Map<string, () => Promise<readonly Row[]>>();
 
@@ -443,6 +451,7 @@ export class DataStore {
       loaded: !listed || this.tables.has(key),
       rows: this.tables.get(key) ?? [],
       meta: (this.manifest.ros_build_metadata as { insights?: unknown } | undefined)?.insights ?? null,
+      fullMeta: this.sliceMeta.get(key) ?? null,
       loadEvidence,
     };
   }
@@ -527,6 +536,8 @@ export class DataStore {
       this.cards.set(key, sections);
       return;
     }
+    // ADR-116: the stories slice carries the build's full Insights account beside its table.
+    if (body.family === "insights" && body.meta !== undefined) this.sliceMeta.set(key, body.meta);
     const table = body as unknown as Table & { artifact: ArtifactName; partition: string };
     const header = this.manifest.artifacts[table.artifact];
     if (header === undefined) return;

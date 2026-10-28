@@ -20,7 +20,7 @@ import "../styles/insights.css";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PlayerPickerDialog } from "../components/PlayerPickerDialog";
-import { useClock } from "../components/useClock";
+import { useClock } from "./insights/useClock";
 import { usePrefersReducedMotion } from "../components/useElementWidth";
 import type { InsightsSource } from "../data/store";
 import {
@@ -73,8 +73,14 @@ export interface InsightsViewProps {
 export function InsightsView({ bundle, source, state, onChange, onSelect, now }: InsightsViewProps): React.JSX.Element {
   const clock = useClock(now);
   const status = useMemo(
-    () => insightsState({ published: source.published, compatible: source.compatible, meta: source.meta }),
-    [source.published, source.compatible, source.meta],
+    () =>
+      insightsState({
+        published: source.published,
+        compatible: source.compatible,
+        meta: source.meta,
+        fullMeta: source.fullMeta,
+      }),
+    [source.published, source.compatible, source.meta, source.fullMeta],
   );
   const head = (action: React.ReactNode): React.JSX.Element => (
     <div className="ins-head">
@@ -84,8 +90,9 @@ export function InsightsView({ bundle, source, state, onChange, onSelect, now }:
       </div>
       {status.kind === "published" || status.kind === "withheld" ? (
         <EditionMeta meta={status.meta} clock={clock} bundle={bundle} scoring={SCORING_LABELS[state.scoring]} />
-      ) : null}
-      <p className="ins-note">No story depends on league size: the Teams setting changes nothing here.</p>
+      ) : (
+        <p className="ins-note">{LEAGUE_SIZE_NOTE}</p>
+      )}
     </div>
   );
   return (
@@ -115,6 +122,9 @@ export function InsightsView({ bundle, source, state, onChange, onSelect, now }:
   );
 }
 
+/** Stories read no replacement level or league depth, so the Teams setting has no effect. */
+const LEAGUE_SIZE_NOTE = "Same in every league size: the Teams setting changes nothing here.";
+
 function EditionMeta({
   meta,
   clock,
@@ -136,6 +146,8 @@ function EditionMeta({
           <span data-stale={age.stale || undefined}>{age.stale ? `${age.text} — stale` : age.text}</span>
         )}
         <span>{`${scoring} scoring`}</span>
+        {/* Folded into the edition line so the first story sits higher on a phone. */}
+        <span className="ins-league-note">{LEAGUE_SIZE_NOTE}</span>
       </p>
       {behind && (
         <p className="ins-meta-warn">
@@ -434,7 +446,7 @@ function Feed({
                   }}
                 />
                 <p className="ins-ceiling-note">
-                  {`Upside stories: ESPN rostered below ${String(state.ceil)}% — describes ESPN leagues, not yours; unknown is not 0%.`}
+                  ESPN leagues, not yours; an unknown share is not 0%.
                 </p>
               </>
             )}

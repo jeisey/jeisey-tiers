@@ -2186,6 +2186,9 @@ export interface InsightStoryRecord {
   readonly ceiling_ranks: InsightCeilingRanks | null;
   /** The official report for the target week, on `this_week` stories only. */
   readonly injury: WeeklyProjectionRecord["injury"];
+  /** The target-week opponent of a `this_week` story; null otherwise. */
+  readonly opponent: string | null;
+  readonly home_away: "home" | "away" | null;
   readonly chart: InsightChart;
   readonly evidence: Readonly<Record<string, unknown>>;
   readonly qualification: readonly InsightPredicate[];
@@ -2246,6 +2249,8 @@ export const INSIGHT_STORY_FIELDS = [
   "espn_rostered",
   "ceiling_ranks",
   "injury",
+  "opponent",
+  "home_away",
   "chart",
   "evidence",
   "qualification",
@@ -2262,6 +2267,16 @@ export interface InsightFamilyStatus {
   readonly published: Readonly<Record<string, number>>;
   readonly suppressed: Readonly<Record<string, number>>;
 }
+
+/**
+ * What the manifest keeps of `ros_build_metadata.insights` (`INSIGHTS_MANIFEST_SUMMARY`): enough
+ * to tell "not published", "withheld", "no story qualified" and a family not built apart before
+ * any slice loads. The rest rides in the stories slice as `meta`.
+ */
+export type InsightsSummary = Pick<
+  InsightsMetadata,
+  "status" | "withheld_reason" | "rule_version" | "edition" | "through_week" | "target_week" | "generated_at_utc" | "families" | "counts"
+>;
 
 /** The build's account of Insights (ADR-116), carried in `ros_build_metadata.insights`. */
 export interface InsightsMetadata {
@@ -2494,8 +2509,12 @@ export interface RosBuildMetadata {
   readonly season_actuals?: SeasonActualsMetadata | null;
   /** Recent form (ADR-113). Absent, null or withheld: season columns only on Opportunity. */
   readonly recent_form?: RecentFormMetadata | null;
-  /** Insights (ADR-116). Absent, null or withheld: the Insights tab says why it has no stories. */
-  readonly insights?: InsightsMetadata | null;
+  /**
+   * Insights (ADR-116), as the manifest carries it: a summary (`InsightsSummary`). The full
+   * account rides in each `insights/<scoring>` slice as `meta`. Absent, null or withheld: the
+   * Insights tab says why it has no stories.
+   */
+  readonly insights?: InsightsSummary | null;
   /** The Skill Tree (ADR-107). Absent or null: the card has no Skill Tree section. */
   readonly skill_tree?: SkillTreeMetadata | null;
   /** ESPN roster/start percentages (ADR-112). Absent or null: no ESPN reading anywhere. */

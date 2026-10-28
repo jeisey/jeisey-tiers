@@ -8391,10 +8391,10 @@ undermine it, or produce something a manager can screenshot and share.
 | Family / variant | Qualifies when (in order) | Effect threshold | Ordering |
 |---|---|---|---|
 | `volume_vs_results` / `lagging` (RB/WR/TE) | ≥ 2 window and ≥ 2 baseline games; workload rank (opportunities a game: targets, + carries for RB) ≤ the band among every position player with 2+ window games; window rate ≥ 90% of the earlier rate | points-a-game rank − workload rank ≥ 12 places (TE 6) | most ESPN-rostered first (unknown last), gap, id |
-| `volume_vs_results` / `shrinking` | same samples; earlier pooled share ≥ the *emerging* level | share fell by ≥ *increase* (WR .06, TE .05, RB carry .15) | most rostered, drop, id |
+| `volume_vs_results` / `shrinking` | same samples; earlier pooled share ≥ the *emerging* level; opportunities a game below 90% of the earlier rate (a falling share on more targets is a busier offence, not a smaller role) | share fell by ≥ *increase* (WR .06, TE .05, RB carry .15) | most rostered, drop, id |
 | `weekly_upside` / `ceiling` | upcoming target-week game after the build; observed ESPN reading < 50% (also ranked under 25% and 10%); `breakout_v1` role confirmed over his latest 2 appearances (latest inside the window, no missed game since); build-time pre-screen | top 3 in his position under some ceiling | P90, P50, id within position; positions interleave WR, RB, TE, QB |
-| `opportunity_opening` / `prospective` | a teammate with ≥ 2 games and a substantial share (targets .18, carries .45, QB pass attempts .80) is listed Out/Doubtful for the target week or on a reserve list | next player's share (without him, else the window) ≥ the weekly context's notable share (.10 / .20 / .50) | vacated per game, team, id |
-| `opportunity_opening` / `observed` | the same teammate missed his team's latest games, the absence beginning inside the window, and nothing documents the target week | share without him ≥ *emerging* and ≥ *increase* above his share with him | the same |
+| `opportunity_opening` / `prospective` | a teammate with ≥ 2 games and a substantial share (targets .18, carries .45, QB pass attempts .80) is listed Out/Doubtful for the target week or on a reserve list, and any absence began inside the window; the next player is current and available | his share (without him, else the window) ≥ the weekly context's notable share (.10 / .20 / .50) | share left open, team, id |
+| `opportunity_opening` / `observed` | the same teammate missed his team's latest games, the absence beginning inside the window, and nothing documents the target week; the next player is current and available | share without him ≥ *emerging* and ≥ *increase* above his share with him | the same |
 | `role_battle` / `backfield`, `receiving` | ≥ 2 team games each side; the riser has ≥ 2 games each side and played the team's latest game | share of the **team's** carries/targets rose by ≥ *increase* to ≥ *emerging* | rise, team; identical in every preset |
 | `streak_watch` / `breakout` | `breakout_v1` Takeover or Sneaking over Last 3, as published | — | Takeover first, least rostered, window rank |
 | `streak_watch` / `production_without_role` | `breakout_v1` Eyebrow with `role_not_confirmed` (2+ strong weeks, role failed) | — | streak, least rostered |
@@ -8402,9 +8402,10 @@ undermine it, or produce something a manager can screenshot and share.
 | `pace_perspective` / `per_game_hidden` | ≥ 3 games; points-a-game rank ≤ the band among every position player with 3+ games; missed ≥ 1 team game | season-total rank − per-game rank ≥ 8 | per-game rank, id |
 | `pace_perspective` / `overlooked` | the same per-game rank; observed ESPN reading < 50% | — | per-game rank, id |
 
-   A subject is always a player a card can open (a published usage record) and is not on a
-   reserve list, released, retired or unsigned (`subject_unavailable`); cohorts are every player
-   who appeared. A **QB change** is the passing room of the opening family: the starter's share of
+   A subject — and an opening's next player — is always a player a card can open (a published
+   usage record), with current evidence (no missed team game since his latest appearance), and not
+   on a reserve list, released, retired or unsigned (`subject_unavailable`); cohorts are every
+   player who appeared. A **QB change** is the passing room of the opening family: the starter's share of
    team pass attempts and the attempts that moved — never a claim about receivers' fit.
 4. **Selection (`insights_select_v1`), never a score.** Within a family, variant groups are
    ordered, capped at 8 and interleaved. One story per player per preset: the first family in
@@ -8436,7 +8437,12 @@ undermine it, or produce something a manager can screenshot and share.
    (`insights/<scoring>`: everything a card and its image print, plus top-level copies of the ESPN
    share, the ceiling ranks and the official designation) and the evidence
    (`insight_evidence/<scoring>`: evidence, qualification, `also_qualifies`), fetched only when a
-   reader expands a story. No other view and no card shard fetches either.
+   reader expands a story. No other view and no card shard fetches either. The manifest — which
+   every visit fetches — keeps only the status, withheld reason, edition, cutoff, target week and
+   build time of `ros_build_metadata.insights`; the whole block (family states, counts, rule,
+   definitions, limitations, unsupported claims, sources) rides in each feed slice as `meta`, and
+   a published edition serves that slice for every preset — with zero rows when no story
+   qualified — so the tab always has it. A withheld edition serves no slice.
 
 ### Decision — the page and the shared image
 
@@ -8456,8 +8462,8 @@ retained. Details: `docs/UX_SPEC.md` §6A.23.
 
 * **Real data** (the live week-7 records, decoded from the deployed slices, with 2026 nflverse
   weekly rows, snap counts, schedule and play-by-play loaded through the project's adapters; run
-  outside the pipeline, nothing committed): 73 / 76 / 80 stories (PPR / HALF / STD), 12 in each
-  lead, every family published, every source available; 229 records pass the JSON Schema, the
+  outside the pipeline, nothing committed): 72 / 75 / 79 stories (PPR / HALF / STD), 12 in each
+  lead, every family published, every source available; 226 records pass the JSON Schema, the
   record checks, the cross-checks against usage, actuals, recent form, projections and ESPN, and
   the metadata checks. Representative PPR lead: an upside receiver at 40% rostered with a 19.9-point
   P90; a documented backfield opening (a 45%-carry back on a reserve list); a WR5-in-targets,
@@ -8467,17 +8473,40 @@ retained. Details: `docs/UX_SPEC.md` §6A.23.
   changed rules before they were frozen — observed openings must begin inside the window (a
   four-week absence is a role, not an opening), every watch story needs current evidence and an
   available subject, streak and quiet-growth stories order the least-rostered first, ESPN shares
-  under 10% print one decimal, and a documented QB change became the passing room — and caught two
+  under 10% print one decimal, a documented QB change became the passing room, and a shrinking
+  role needs fewer opportunities a game, not only a smaller share (a falling share on more targets
+  was a busier offence) — and caught two
   defects the validator then refused (an unprinted derived number; a forbidden-phrase list that
   flagged its own negation). It is not evidence of predictive value: no story is a forecast and
   none was backtested.
 * **Fixtures.** The golden build publishes 8 stories per preset (upside, a shrinking role,
-  overlooked pace) and red-zone counts from the synthetic plays; 37 unit tests build hand-checkable
+  overlooked pace) and red-zone counts from the synthetic plays; 54 unit tests build hand-checkable
   leagues for every family and guard (`tests/unit/test_insights.py`); the ESPN and recent-form
   invariance tests now also assert the families that read them say why they are unavailable.
-* **Payload:** see the PR and `SESSION_STATE.md` for the measured budgets (size model: feed
-  18.4 kB gzip at a season-end 17-week strip length against 14.5 kB live at week 7; evidence
-  10.7 kB against 11.1 kB live).
+* **Adversarial review** (a read-only reviewer with repro scripts, before the PR): nine confirmed
+  defects, all fixed with regression tests — a QB opening counted carries as pass attempts; an
+  opening's next player was not checked for currency or availability; opening text confused the
+  club's games without the absentee with the player's and said "rose" without a prior share; a
+  long reserve stint resurfaced as a new opening every week; the shrinking text always said
+  "down"; the validator trusted `passed: true` instead of re-checking each predicate; the
+  forbidden-claim check missed word variants and would have refused a player named Lock; the
+  number check accepted chart series; a story listed itself in `also_qualifies`. Plausible ones
+  fixed too: a family failing in one preset now publishes in none, touchdown share is bounded,
+  pace text no longer names a traded player's current club for his old games.
+* **Payload** (size model, `verify:budget`, both builds measured on the same machine: `main` at
+  `6f7e617` → this change; all budgets met, none raised). Shared paths — the cost every visit pays
+  for the tab existing: first visit 346,628 → 347,634 B (+1,006); cold Win My Matchup 443,390 →
+  444,404 B of 450,000 (+1,014; headroom 6,610 → 5,596 B); cold My Leagues +1,011. Of that,
+  +139 B is the manifest (six hashed slice names, the envelope header and a six-field summary)
+  and ~870 B the app shell (the tab, its URL parameters, the store's loader and the lazy
+  import); no Insights constant, parser or chart code is in the shell. Opening a tab other than
+  Insights adds 0–5 B. A first cut measured +1,505 B on the WMM path; two changes took it to
+  +1,014: the manifest keeps six fields instead of nine (family states and counts moved into the
+  slice, which is now served for every preset, empty when no story qualified), and Insights keeps
+  its own copy of the 12-line clock hook, because sharing My Leagues' split it into a third chunk
+  that My Leagues and WMM fetched too. New, Insights only: opening the tab adds 45.3 kB (budget
+  50), the feed slice 21.1 kB (25; the live week-7 feed is ~17 kB with its `meta`), expanding
+  evidence 10.8 kB (15), the share view's code 6.0 kB (8).
 
 ### Consequences
 

@@ -336,6 +336,8 @@ export function parseInsightStory(raw: unknown): InsightStory | null {
     (row.espn_rostered === null || (isNumber(row.espn_rostered) && row.espn_rostered >= 0 && row.espn_rostered <= 100)) &&
     orNull(isCeilingRanks)(row.ceiling_ranks) &&
     orNull(isInjury)(row.injury) &&
+    orNull(isString)(row.opponent) &&
+    (row.home_away === null || isOneOf(row.home_away, ["home", "away"] as const)) &&
     isChart(row.chart) &&
     every(row.sources, (source) => isOneOf(source, SOURCES), 1) &&
     isSourceTimes(row.source_times) &&
@@ -403,23 +405,28 @@ function isFamilyStatus(value: unknown): boolean {
 }
 
 /**
- * `ros_build_metadata.insights`, or null when it is absent or not an account this page can read
- * (which is the same unavailable state). The parts the page prints are checked; the rule is
- * carried whole for the "How these are chosen" disclosure.
+ * The build's account of Insights, or null when it is absent or not one this page can read
+ * (which is the same unavailable state). `raw` is the manifest's summary
+ * (`ros_build_metadata.insights`: status, edition and times); `full` is the stories slice's
+ * `meta`, which adds the family states, counts, rule, definitions, limitations and unsupported
+ * claims — a published build serves that slice for every preset, empty when no story
+ * qualified. The parts the page prints are checked; missing parts take neutral defaults, never
+ * invented values.
  */
-export function parseInsightsMetadata(raw: unknown): InsightsMetadata | null {
+export function parseInsightsMetadata(raw: unknown, full: unknown = null): InsightsMetadata | null {
+  if (!isObject(raw)) return null;
+  if (isObject(full)) raw = { ...raw, ...full };
   if (!isObject(raw)) return null;
   const valid =
     isOneOf(raw.status, ["published", "withheld"] as const) &&
     orNull(isString)(raw.withheld_reason) &&
     isString(raw.edition) &&
     EDITION.test(raw.edition) &&
-    isInt(raw.season, 2000) &&
+    (raw.season === undefined || isInt(raw.season, 2000)) &&
     isInt(raw.through_week, 1) &&
     nullableInt(1)(raw.target_week) &&
     isTime(raw.generated_at_utc) &&
-    isObject(raw.families) &&
-    Object.values(raw.families).every(isFamilyStatus) &&
+    (raw.families === undefined || (isObject(raw.families) && Object.values(raw.families).every(isFamilyStatus))) &&
     (raw.definitions === undefined || isObject(raw.definitions)) &&
     (raw.limitations === undefined || every(raw.limitations, isString)) &&
     (raw.unsupported === undefined ||
@@ -429,6 +436,9 @@ export function parseInsightsMetadata(raw: unknown): InsightsMetadata | null {
   const selection = isObject(raw.selection) && every(raw.selection.family_order, isString) ? meta.selection : undefined;
   return {
     ...(raw as unknown as InsightsMetadata),
+    rule_version: isString(raw.rule_version) ? raw.rule_version : "insights_v1",
+    selection_rule_version: isString(raw.selection_rule_version) ? raw.selection_rule_version : "insights_select_v1",
+    families: isObject(raw.families) ? (meta.families ?? {}) : {},
     rule: isObject(raw.rule) ? raw.rule : {},
     selection: selection ?? { lead_max: 12, family_order: FAMILIES, family_caps: {}, team_cap: 2, one_story_per_player: true },
     sources: isObject(raw.sources) ? (meta.sources ?? {}) : {},
@@ -455,9 +465,12 @@ export const INSIGHTS_NOT_PUBLISHED =
 export function insightsState(source: {
   readonly published: boolean;
   readonly compatible: boolean;
+  /** The manifest's summary. */
   readonly meta: unknown;
+  /** The loaded stories slice's full account, when there is one. */
+  readonly fullMeta?: unknown;
 }): InsightsState {
-  const meta = parseInsightsMetadata(source.meta);
+  const meta = parseInsightsMetadata(source.meta, source.fullMeta ?? null);
   if (meta !== null && meta.status === "withheld") {
     return {
       kind: "withheld",
@@ -633,15 +646,20 @@ export function kickoffText(iso: string | null): string | null {
   return `${KICKOFF_FORMAT.format(new Date(parsed))} ET`;
 }
 
-/**
- * `WR · LAR · kickoff Sun, Nov 8, 1:00 PM ET`: the card's line under the name. Read from the
- * feed row alone — the opponent is in the evidence slice, which the feed does not load.
- */
+/** `vs DAL` / `at DAL`, for a this-week story that names its opponent; else null. */
+export function opponentText(story: Pick<InsightStory, "opponent" | "home_away">): string | null {
+  if (story.opponent === null || story.opponent === "") return null;
+  return `${story.home_away === "away" ? "at" : "vs"} ${story.opponent}`;
+}
+
+/** `WR · LAR · at BAL · Sun, Nov 8, 1:00 PM ET`: the card's line under the name. */
 export function playerContext(story: InsightStory): readonly string[] {
   const parts: string[] = [story.position, story.team ?? "FA"];
   if (story.horizon === "this_week") {
+    const opponent = opponentText(story);
+    if (opponent !== null) parts.push(opponent);
     const kickoff = kickoffText(story.kickoff_utc);
-    if (kickoff !== null) parts.push(`kickoff ${kickoff}`);
+    if (kickoff !== null) parts.push(opponent === null ? `kickoff ${kickoff}` : kickoff);
   }
   return parts;
 }

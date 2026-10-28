@@ -89,7 +89,7 @@ function signed(value: number): string {
 
 type Base = Omit<
   InsightStoryRecord,
-  "schema_version" | "build_id" | "season" | "through_week" | "edition" | "scoring_preset" | "espn_rostered" | "ceiling_ranks" | "injury"
+  "schema_version" | "build_id" | "season" | "through_week" | "edition" | "scoring_preset" | "espn_rostered" | "ceiling_ranks" | "injury" | "opponent" | "home_away"
 >;
 
 function story(preset: ScoringPreset, base: Base): InsightStoryRecord {
@@ -98,7 +98,10 @@ function story(preset: ScoringPreset, base: Base): InsightStoryRecord {
   const evidence = base.evidence;
   const espnRostered = typeof evidence.espn_rostered === "number" ? evidence.espn_rostered : null;
   const ceilingRanks = base.family === "weekly_upside" ? (evidence.ceiling_ranks as InsightStoryRecord["ceiling_ranks"]) : null;
-  const injury = base.horizon === "this_week" ? ((evidence.injury ?? null) as InsightStoryRecord["injury"]) : null;
+  const thisWeek = base.horizon === "this_week";
+  const injury = thisWeek ? ((evidence.injury ?? null) as InsightStoryRecord["injury"]) : null;
+  const opponent = thisWeek && typeof evidence.opponent === "string" ? evidence.opponent : null;
+  const homeAway = thisWeek && (evidence.home_away === "home" || evidence.home_away === "away") ? evidence.home_away : null;
   // Field order is the contract's (`INSIGHT_STORY_FIELDS`).
   return {
     schema_version: "1.0",
@@ -130,6 +133,8 @@ function story(preset: ScoringPreset, base: Base): InsightStoryRecord {
     espn_rostered: espnRostered,
     ceiling_ranks: ceilingRanks,
     injury,
+    opponent,
+    home_away: homeAway,
     chart: base.chart,
     evidence: base.evidence,
     qualification: base.qualification,
