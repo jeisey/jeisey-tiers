@@ -135,6 +135,14 @@ test.describe("automated scan", () => {
       ".trade-kept",
     ],
     ["trade, nothing qualifies", "/scenario/in-season/?view=trade&give=00-0000001&get=3&range=10&comp=qb.qb.qb", ".trade-none"],
+    // Insights (ADR-116): the feed, a linked story from an older edition with its evidence open,
+    // the upside family under the tightest ceiling, a family the build could not make, and the
+    // share view with its preview drawn.
+    ["insights", "/scenario/in-season/?view=insights", ".ins-story"],
+    ["insights, an older edition's link, evidence open", "/scenario/in-season/?view=insights&story=role-buf-backfield&ed=2026w07", ".ins-link-notice"],
+    ["insights, upside under a 10% ceiling", "/scenario/in-season/?view=insights&ins=week&ceil=10", ".ins-story"],
+    ["insights, a family not built", "/scenario/in-season-insights-degraded/?view=insights", ".ins-degraded"],
+    ["insights, the share view", "/scenario/in-season/?view=insights&story=pace-00-0000009&ed=2026w08&share=land", ".ins-share-preview[data-ready]"],
   ] as const) {
     test(`${name} has no WCAG A or AA violations`, async ({ page }) => {
       await page.goto(path);

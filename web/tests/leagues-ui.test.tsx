@@ -125,6 +125,7 @@ describe("the tab", () => {
     expect(tabs.map((tab) => tab.getAttribute("id"))).toEqual([
       "tab-ros",
       "tab-myleagues",
+      "tab-insights",
       "tab-startsit",
       "tab-trade",
       "tab-opportunity",

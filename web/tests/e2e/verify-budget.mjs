@@ -39,6 +39,18 @@
  * | then evaluating changes, switching tools and simulating again | 0 B |
  * | then turning YOLO on adds | ≤ 125 kB |
  * | a cold first visit straight to Win My Matchup — everything / data | ≤ 450 kB / ≤ 150 kB |
+ * | Insights (ADR-116), opened from the default view, adds | ≤ 50 kB |
+ * | of which the served stories slice (one scoring preset) | ≤ 25 kB |
+ * | then expanding a story's Evidence adds — the evidence slice | ≤ 15 kB |
+ * | then opening the share view adds — its code | ≤ 8 kB |
+ *
+ * Insights' budgets are its measured cost on the size model plus a margin (2026-10-27): opening
+ * the tab 42.6 kB — code 21.5 kB, stylesheet 2.7 kB, one preset's stories 18.4 kB (82 stories,
+ * the late-season worst case); the status slice is the default view's. The evidence slice (10.5
+ * kB) loads the first time a reader expands a story, once per preset. The share view's code
+ * (6.0 kB: the card builder and the PNG export) loads only when a reader opens it; the faces it
+ * embeds are the stylesheet's own files, already in the browser. No other view may fetch a
+ * stories or evidence slice.
  *
  * Win My Matchup's budgets are its measured cost on the size model plus a margin (ADR-110
  * records the numbers): its code and stylesheet, then its worker on the first simulation, then
@@ -115,6 +127,12 @@ export const BUDGETS = {
   // and a window switch, which must re-use it.
   recentSlice: 40_000,
   recentWindowSwitch: 0,
+  // ADR-116: the Insights tab from the default view (code, stylesheet, one preset's stories), the
+  // stories slice alone, and the share view's code.
+  insightsAdds: 50_000,
+  insightsSlice: 25_000,
+  insightsEvidenceAdds: 15_000,
+  insightsShareAdds: 8_000,
 };
 
 function parseArgs(argv) {
@@ -273,6 +291,8 @@ function check(name, value, budget) {
   if (value > budget) failures.push(`${name}: ${String(value)} B exceeds ${String(budget)} B`);
 }
 
+/** The served-log span of the Insights scenarios, `[first, end)`, or null when none ran. */
+let insightsRange = null;
 try {
   // 1-2. A cold first visit to the in-season default view, then Start/Sit.
   const reader = await browser.newContext();
@@ -659,6 +679,79 @@ try {
     failures.push(`Win My Matchup's scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
   }
 
+  // 3h. Insights (ADR-116), in a browser of its own: the tab opened from the default view — its
+  //     code, stylesheet and one scoring preset's stories — then the share view, whose code
+  //     loads only when a reader opens it. A size model with no stories says so and is skipped.
+  try {
+    const manifest = JSON.parse(readFileSync(join(dist, "data", "manifest.json"), "utf-8"));
+    if (manifest.artifacts?.insights === undefined) {
+      results.insightsNote = "this build publishes no insights.json: the Insights budgets were not measured";
+    } else {
+      const reader2 = await browser.newContext();
+      const insightsPage = await newPage(reader2);
+      const insightsLog = record();
+      await openDefault(insightsPage);
+      const start = insightsLog.mark();
+      await insightsPage.getByRole("tab", { name: "Insights" }).click();
+      await insightsPage.getByRole("heading", { name: "Insights", level: 2 }).waitFor();
+      await insightsPage.locator(".ins-story, .ins-state").first().waitFor();
+      await settle(insightsPage);
+      const opened = insightsLog.since(start);
+      check("insightsAdds", sum(opened), BUDGETS.insightsAdds);
+      results.insightsAddsData = sum(opened, isData);
+      results.insightsAddsFiles = opened.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+      check("insightsSlice", sum(opened, (entry) => entry.path.includes("/insights/")), BUDGETS.insightsSlice);
+      for (const heavy of ["weekly_projections", "/serve/card/", "skill_tree", "player_usage", "espn_ownership_series", "/insight_evidence/"]) {
+        if (opened.some((entry) => entry.path.includes(heavy))) failures.push(`opening Insights fetched ${heavy}`);
+      }
+      // A story's Evidence: the preset's evidence slice, once — a second story reuses it.
+      const evidenceMark = insightsLog.mark();
+      const stories = insightsPage.locator(".ins-story");
+      if ((await stories.count()) > 0) {
+        for (const index of [0, 1]) {
+          const story = stories.nth(index);
+          if ((await story.count()) === 0) continue;
+          await story.getByRole("button", { name: "Evidence" }).click();
+          await story.locator(".ins-evidence .ins-table").first().waitFor();
+          await story.getByText("Loading the evidence…").waitFor({ state: "detached" });
+        }
+        await settle(insightsPage);
+        const expanded = insightsLog.since(evidenceMark);
+        check("insightsEvidenceAdds", sum(expanded), BUDGETS.insightsEvidenceAdds);
+        results.insightsEvidenceFiles = expanded.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+        if (expanded.filter((entry) => entry.path.includes("/insight_evidence/")).length > 1) {
+          failures.push("expanding a second story fetched the evidence slice again");
+        }
+      }
+      const shareMark = insightsLog.mark();
+      await insightsPage.locator(".ins-story").first().getByRole("button", { name: "Share" }).click();
+      await insightsPage.locator(".ins-share-preview[data-ready]").waitFor();
+      await settle(insightsPage);
+      const shared = insightsLog.since(shareMark);
+      check("insightsShareAdds", sum(shared, (entry) => entry.path.endsWith(".js")), BUDGETS.insightsShareAdds);
+      results.insightsShareAddsTotal = sum(shared);
+      results.insightsShareFiles = shared.map((entry) => `${entry.path} ${String(entry.status)} ${String(entry.bytes)}`);
+      insightsRange = [start, insightsLog.mark()];
+      await reader2.close();
+
+      // Reported, not budgeted: a cold first visit straight to a shared story link.
+      const linked = await browser.newContext();
+      const linkedPage = await newPage(linked);
+      const coldMark = log.mark();
+      const first = await (async () => {
+        await linkedPage.goto(`${site}?view=insights`, { waitUntil: "domcontentloaded" });
+        await linkedPage.locator(".ins-story, .ins-state").first().waitFor();
+        await settle(linkedPage);
+        return log.since(coldMark);
+      })();
+      results.insightsFirstVisitTotal = sum(first);
+      results.insightsFirstVisitData = sum(first, isData);
+      insightsRange = [insightsRange[0], log.mark()];
+      await linked.close();
+    }
+  } catch (error) {
+    failures.push(`the Insights scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
+  }
   // 4. The same reader returns to the same deploy.
   mark = log.mark();
   await openDefault(page);
@@ -703,6 +796,16 @@ try {
   results.freshDeployShown = fresh > 0;
   if (fresh === 0) failures.push("after a redeploy the page did not show the new deploy's data");
   await reader.close();
+
+  // ADR-116: the stories slice is the Insights tab's alone — every scenario above, first visits,
+  // cards, Start/Sit, Trade, My Leagues, Win My Matchup, the repeat visit and the redeploys, ran
+  // without fetching it.
+  const strays = served.filter(
+    (entry, index) =>
+      (entry.path.includes("/insights/") || entry.path.includes("/insight_evidence/")) &&
+      (insightsRange === null || index < insightsRange[0] || index >= insightsRange[1]),
+  );
+  if (strays.length > 0) failures.push(`a view other than Insights fetched an Insights slice (${strays[0].path})`);
 } finally {
   await browser.close();
   server.close();

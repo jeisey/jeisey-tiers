@@ -11,7 +11,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -98,6 +98,27 @@ export async function prepare(): Promise<void> {
     packageSiteData(dataDir);
   }
 
+  /*
+   * ADR-116: the project-Pages build at `/jeisey-tiers/` with the in-season bundle, for the
+   * Insights share-link test (a copied link must keep the Pages base path). The app is the
+   * `dist-base` build copied unchanged — only its data differs — so it costs no Vite build. It
+   * is not in the static server's mounts (`/jeisey-tiers/` is the draft site there); the spec
+   * serves it itself, at the same base, on a port of its own.
+   */
+  const pagesInSeason = resolve(repo, "web/dist-pages-in-season");
+  rmSync(pagesInSeason, { recursive: true, force: true });
+  cpSync(resolve(repo, "web/dist-base"), pagesInSeason, { recursive: true });
+  writeArtifacts(resolve(pagesInSeason, "data"), { ...fixtures.fixtureFiles(), ...fixtures.inSeasonFixtureFiles() });
+  for (const [name, header] of [
+    ["tiers.csv", "fair_rank,display_name"],
+    ["arbitrage.csv", "fair_rank,display_name"],
+    ["ros_tiers.csv", "ros_fair_rank,player"],
+    ["inseason_opportunity.csv", "ros_fair_rank,player"],
+  ] as const) {
+    writeCsv(resolve(pagesInSeason, "data"), name, header);
+  }
+  packageSiteData(resolve(pagesInSeason, "data"));
+
   /** A build that simply does not publish one artifact; the server then 404s it. */
   const omit = (name: string): Record<string, unknown> =>
     Object.fromEntries(Object.entries(fixtures.fixtureFiles()).filter(([key]) => key !== name));
@@ -161,6 +182,14 @@ export async function prepare(): Promise<void> {
     "in-season-no-recent": {
       ...fixtures.fixtureFiles(),
       ...fixtures.inSeasonFixtureFiles(true, { recent: "absent" }),
+    },
+    /*
+     * ADR-116: a build whose upside family could not be made (no current ESPN readings). The
+     * Insights tab must name the family and its reason, and publish every other family.
+     */
+    "in-season-insights-degraded": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(true, { insights: "degraded" }),
     },
     /*
      * The *other* market condition, as its own site.

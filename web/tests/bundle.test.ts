@@ -291,6 +291,59 @@ describe("what a first paint fetches (ADR-098)", () => {
     }
   });
 
+  it("the Insights tab needs one scoring preset's stories and the shared status slice, nothing heavy (ADR-116)", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles() });
+    const store = await openSite();
+    for (const scoring of ["STD", "HALF", "PPR"] as const) {
+      for (const leaguePreset of ["redraft-10", "redraft-12", "redraft-14"]) {
+        // League size changes nothing: every league preset needs the same three keys.
+        expect(requiredKeys(store.manifest, { view: "insights", leaguePreset, scoring, cardPlayerId: null })).toEqual([
+          "players",
+          "player_availability/all",
+          `insights/${scoring}`,
+        ]);
+      }
+    }
+    // No other view fetches the stories.
+    for (const view of ["ros", "myleagues", "startsit", "trade", "opportunity", "potw", "data", "tiers", "arbitrage"] as const) {
+      const keys = requiredKeys(store.manifest, { view, leaguePreset: "redraft-12", scoring: "PPR", cardPlayerId: "gsis:00-0000012" });
+      expect(keys.some((key) => key.startsWith("insights/"))).toBe(false);
+    }
+    await store.ensure(requiredKeys(store.manifest, { view: "insights", leaguePreset: "redraft-12", scoring: "PPR", cardPlayerId: null }));
+    const calls = (): string[] => vi.mocked(fetch).mock.calls.map((call) => call[0] as string);
+    expect(calls().some((url) => url.includes("/serve/insights/PPR."))).toBe(true);
+    expect(calls().some((url) => /weekly_projections|card\/|skill_tree|player_usage|ros_tiers/.test(url))).toBe(false);
+    // The evidence is its own slice, never fetched when the tab opens.
+    expect(calls().some((url) => url.includes("/serve/insight_evidence/"))).toBe(false);
+    const source = store.insightsSource("PPR");
+    expect(source).toMatchObject({ published: true, compatible: true, loaded: true });
+    expect(source.rows.length).toBe(15);
+    // Feed rows carry no record version and no evidence; names come back from the dictionary.
+    expect(source.rows[0]).not.toHaveProperty("schema_version");
+    expect(source.rows[0]).not.toHaveProperty("evidence");
+    expect(source.rows[0]).not.toHaveProperty("qualification");
+    expect(typeof source.rows[0]?.display_name).toBe("string");
+    // Expanding a story fetches the preset's evidence once; a second expansion reuses it, and the
+    // loader is one function per preset.
+    expect(store.insightsSource("PPR").loadEvidence).toBe(source.loadEvidence);
+    const evidence = await source.loadEvidence();
+    await source.loadEvidence();
+    expect(evidence.length).toBe(15);
+    expect(evidence[0]).toHaveProperty("qualification");
+    expect(evidence[0]).not.toHaveProperty("headline");
+    expect(calls().filter((url) => url.includes("/serve/insight_evidence/PPR."))).toHaveLength(1);
+  });
+
+  it("a build with no Insights needs no story file, and says it published none (ADR-116)", async () => {
+    serve({ ...everything(), ...inSeasonFixtureFiles(true, { insights: "absent" }) });
+    const store = await openSite();
+    expect(requiredKeys(store.manifest, { view: "insights", leaguePreset: "redraft-12", scoring: "PPR", cardPlayerId: null })).toEqual([
+      "players",
+      "player_availability/all",
+    ]);
+    expect(store.insightsSource("PPR")).toMatchObject({ published: false, loaded: true, rows: [], meta: null });
+  });
+
   it("a Trade tab on a build with no rest-of-season board needs nothing but the names", async () => {
     serve(everything());
     const store = await openSite();

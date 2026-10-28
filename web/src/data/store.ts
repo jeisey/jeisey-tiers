@@ -176,6 +176,12 @@ export function requiredKeys(manifest: Manifest, context: NeedContext): readonly
       // view has already loaded — and nothing else.
       wanted.push(`ros_tiers/${block}`);
       break;
+    case "insights":
+      // ADR-116: one scoring preset's stories — no story depends on league size — and the
+      // status slice above, which every in-season view shares. Nothing else: a story carries
+      // its own numbers, so the feed fetches no projection, card, usage or Skill Tree file.
+      wanted.push(`insights/${context.scoring}`);
+      break;
     case "myleagues":
       if (context.leagueFiles === false) break;
       // ADR-106: the active league's block and scoring only. The lineup and matchups read the
@@ -225,8 +231,33 @@ export function ownershipHistoryKeys(manifest: Manifest, playerId: string): read
   return [shard].filter((key) => key in manifest.files);
 }
 
+/**
+ * The Insights feed's input (ADR-116), raw: the lazy view parses every row and the metadata
+ * itself, so the parser and its rules ride the Insights chunk rather than the entry bundle.
+ */
+export interface InsightsSource {
+  /** The build published `insights.json` at all (its envelope is in the manifest). */
+  readonly published: boolean;
+  /** Its envelope version is one this page reads. */
+  readonly compatible: boolean;
+  /** The preset's slice has loaded, or the build published none for it (zero stories). */
+  readonly loaded: boolean;
+  /** The preset's decoded rows; empty when it published no story for this preset. */
+  readonly rows: readonly Record<string, unknown>[];
+  /** `ros_build_metadata.insights`, verbatim (absent and null are the same unavailable state). */
+  readonly meta: unknown;
+  /**
+   * The preset's evidence slice (`insight_evidence/<scoring>`): fetched the first time a reader
+   * expands a story's Evidence, once per preset, never when the tab opens. Resolves with its
+   * decoded rows, or none when the build published no slice for the preset.
+   */
+  readonly loadEvidence: () => Promise<readonly Record<string, unknown>[]>;
+}
+
 /** Families whose arrival changes nothing any subscriber renders (ADR-107, ADR-112). */
 const QUIET_FAMILIES: ReadonlySet<string> = new Set([
+  // ADR-116: a story's Evidence reads the rows from the promise it awaited.
+  "insight_evidence",
   "skill_tree",
   "skill_tree_definitions",
   "espn_ownership_series",
@@ -278,6 +309,8 @@ export class DataStore {
   private versionValue = 0;
   private readonly boardCache = new Map<string, { stamp: string; index: ArtifactIndex }>();
   private readonly seasonCache = new Map<string, { stamp: string; bundle: InSeasonBundle | null }>();
+  /** One evidence loader per preset, so a story's Evidence holds a stable function (ADR-116). */
+  private readonly evidenceLoaders = new Map<string, () => Promise<readonly Row[]>>();
 
   constructor(manifest: Manifest, base?: string) {
     this.manifest = manifest;
@@ -387,6 +420,30 @@ export class DataStore {
         const found = rows.find((row) => row.player_id === playerId);
         return (found as unknown as EspnOwnershipSeriesRecord | undefined) ?? null;
       },
+    };
+  }
+
+  /** The Insights feed's rows and metadata for one scoring preset, as loaded (ADR-116). */
+  insightsSource(scoring: ScoringPreset): InsightsSource {
+    const key = `insights/${scoring}`;
+    const listed = key in this.manifest.files;
+    let loadEvidence = this.evidenceLoaders.get(scoring);
+    if (loadEvidence === undefined) {
+      const evidenceKey = `insight_evidence/${scoring}`;
+      loadEvidence = async () => {
+        if (!(evidenceKey in this.manifest.files)) return [];
+        await this.ensure([evidenceKey]);
+        return this.tables.get(evidenceKey) ?? [];
+      };
+      this.evidenceLoaders.set(scoring, loadEvidence);
+    }
+    return {
+      published: this.manifest.artifacts.insights !== undefined,
+      compatible: this.published("insights"),
+      loaded: !listed || this.tables.has(key),
+      rows: this.tables.get(key) ?? [],
+      meta: (this.manifest.ros_build_metadata as { insights?: unknown } | undefined)?.insights ?? null,
+      loadEvidence,
     };
   }
 

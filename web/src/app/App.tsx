@@ -35,7 +35,15 @@ import {
   type InSeasonBundle,
 } from "../data/ros";
 import { buildUsageCohort } from "../data/signals";
-import { matchupYoloKeys, requiredKeys, risingKeys, type DataStore, type OwnershipHistorySource, type SkillTreeSource } from "../data/store";
+import {
+  matchupYoloKeys,
+  requiredKeys,
+  risingKeys,
+  type DataStore,
+  type InsightsSource,
+  type OwnershipHistorySource,
+  type SkillTreeSource,
+} from "../data/store";
 import { activeLeagueSnapshot, subscribeActiveLeague, subscribeYoloFiles, yoloFilesSnapshot } from "../data/leagueSignal";
 import { addToDuel, selectWeekBoard, startableFor } from "../data/duel";
 import {
@@ -86,6 +94,12 @@ const TradeView = lazy(() => import("./TradeView").then((module) => ({ default: 
 const MyLeaguesView = lazy(() =>
   import("./MyLeaguesView").then((module) => ({ default: module.MyLeaguesView })),
 );
+
+/**
+ * Insights (ADR-116): the week's findings. The view, its parser, its charts and its stylesheet
+ * load when the tab is opened; its share view and PNG export load later still, when used.
+ */
+const InsightsView = lazy(() => import("./InsightsView").then((module) => ({ default: module.InsightsView })));
 
 type LoadState =
   | { readonly status: "loading" }
@@ -326,6 +340,7 @@ function SiteBoard({
       skillTree={skillTree}
       ownershipHistory={ownershipHistory}
       byeFilter={byeFilterFor(view, store)}
+      insights={view === "insights" ? store.insightsSource(scoring) : null}
     />
   );
 }
@@ -367,8 +382,11 @@ function Board({
   skillTree,
   ownershipHistory,
   byeFilter,
+  insights,
 }: {
   readonly leagueView: LeagueViewInputs;
+  /** The Insights feed's rows and metadata while its tab is open (ADR-116), else null. */
+  readonly insights: InsightsSource | null;
   /** ADR-115: the bye filter's control on the two boards it applies to. */
   readonly byeFilter: ByeFilterProps | undefined;
   /** The Skill Tree's on-demand loader (ADR-107), or null when the build published none. */
@@ -777,7 +795,8 @@ function Board({
             arbitrageAvailable={index.hasArbitrage}
             rowCount={rowCount}
             onChange={(next) => {
-              setState({ view: next });
+              // The share view belongs to the Insights tab; leaving the tab closes it.
+              setState(state.share === "" || next === "insights" ? { view: next } : { view: next, share: "" });
             }}
           />
         </div>
@@ -916,6 +935,27 @@ function Board({
                     nameOf={leagueView.nameOf}
                     availableScoring={availableScoring}
                     availableTeams={availableTeams}
+                    now={now}
+                  />
+                </Suspense>
+              ))}
+            {panelReady && view === "insights" &&
+              (inSeason === null || insights === null ? (
+                <NoInSeasonBundle />
+              ) : (
+                <Suspense
+                  fallback={
+                    <section className="section" aria-busy="true">
+                      <p className="startsit-loading">Loading Insights…</p>
+                    </section>
+                  }
+                >
+                  <InsightsView
+                    bundle={inSeason}
+                    source={insights}
+                    state={state}
+                    onChange={setState}
+                    onSelect={onSelect}
                     now={now}
                   />
                 </Suspense>

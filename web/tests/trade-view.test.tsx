@@ -61,6 +61,8 @@ describe("navigation", () => {
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       "ROS tiers",
       "My LeaguesLeagues",
+      // ADR-116: Insights after My Leagues, before the decision tools.
+      "Insights",
       "Start/Sit",
       "Trade",
       "OpportunityOpp",

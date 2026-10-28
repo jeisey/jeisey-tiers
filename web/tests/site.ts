@@ -128,6 +128,52 @@ const FAMILIES: readonly {
       "windows",
     ],
   },
+  // ADR-116: the Insights feed, one slice per scoring preset — what a card prints, no evidence —
+  // and the evidence slice a card fetches when a reader expands it.
+  {
+    name: "insights",
+    artifact: "insights",
+    partition: "scoring",
+    only: [
+      "build_id",
+      "season",
+      "through_week",
+      "target_week",
+      "edition",
+      "scoring_preset",
+      "scoring_dependent",
+      "story_id",
+      "family",
+      "variant",
+      "horizon",
+      "nature",
+      "lead_rank",
+      "family_rank",
+      "player_id",
+      "display_name",
+      "position",
+      "team",
+      "headline",
+      "dek",
+      "facts",
+      "counterpoint",
+      "caveat",
+      "window",
+      "kickoff_utc",
+      "espn_rostered",
+      "ceiling_ranks",
+      "injury",
+      "chart",
+      "sources",
+      "source_times",
+    ],
+  },
+  {
+    name: "insight_evidence",
+    artifact: "insights",
+    partition: "scoring",
+    only: ["scoring_preset", "story_id", "player_id", "evidence", "qualification", "also_qualifies"],
+  },
 ];
 
 const CARD_SECTIONS: readonly (readonly [string, "block" | "scoring" | "all"])[] = [
@@ -164,6 +210,7 @@ const FILENAMES: Readonly<Record<string, string>> = {
   espn_ownership: "espn_ownership.json",
   espn_ownership_series: "espn_ownership_series.json",
   recent_form: "recent_form.json",
+  insights: "insights.json",
 };
 
 function partitionKey(

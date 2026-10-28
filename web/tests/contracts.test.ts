@@ -7,7 +7,7 @@
  * side fails here rather than showing up as an empty table column.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -46,6 +46,7 @@ const SCHEMA_BY_ARTIFACT: Readonly<Record<ArtifactName, string>> = {
   espn_ownership: "espn_ownership_record",
   espn_ownership_series: "espn_ownership_series",
   recent_form: "recent_form_record",
+  insights: "insight_story",
 };
 
 function readJson(path: string): Record<string, unknown> {
@@ -59,6 +60,15 @@ function schemaProperties(name: string): string[] {
 
 const ARTIFACTS = Object.keys(ARTIFACT_FIELDS) as ArtifactName[];
 
+/**
+ * Artifacts with a committed golden. ADR-116's `insights.json` golden is written by the Python
+ * builder (`src/ffdraft/insights/`); until it lands, the schema checks above still pin the
+ * field list, and the golden checks run the moment the file exists.
+ */
+const WITH_GOLDEN = ARTIFACTS.filter(
+  (artifact) => artifact !== "insights" || existsSync(resolve(GOLDEN_DIR, ARTIFACT_FILENAMES[artifact])),
+);
+
 describe("TypeScript record types match the JSON Schemas", () => {
   it.each(ARTIFACTS)("%s field list equals the schema property order", (artifact) => {
     expect([...ARTIFACT_FIELDS[artifact]]).toEqual(
@@ -66,7 +76,7 @@ describe("TypeScript record types match the JSON Schemas", () => {
     );
   });
 
-  it.each(ARTIFACTS)("%s golden records carry exactly the declared fields", (artifact) => {
+  it.each(WITH_GOLDEN)("%s golden records carry exactly the declared fields", (artifact) => {
     const envelope = readJson(resolve(GOLDEN_DIR, ARTIFACT_FILENAMES[artifact]));
     const records = envelope.records as Record<string, unknown>[];
     expect(records.length).toBeGreaterThan(0);
@@ -75,7 +85,7 @@ describe("TypeScript record types match the JSON Schemas", () => {
     }
   });
 
-  it.each(ARTIFACTS)("%s golden envelope declares the supported version", (artifact) => {
+  it.each(WITH_GOLDEN)("%s golden envelope declares the supported version", (artifact) => {
     const envelope = readJson(resolve(GOLDEN_DIR, ARTIFACT_FILENAMES[artifact]));
     expect(envelope.schema_version).toBe(ARTIFACT_SCHEMA_VERSION);
     expect(envelope.artifact).toBe(artifact);
@@ -90,6 +100,7 @@ describe("TypeScript record types match the JSON Schemas", () => {
     const declared = RECORD_SCHEMA_VERSIONS[artifact];
     expect(properties.schema_version?.const).toBe(declared);
 
+    if (!WITH_GOLDEN.includes(artifact)) return;
     const envelope = readJson(resolve(GOLDEN_DIR, ARTIFACT_FILENAMES[artifact]));
     for (const record of envelope.records as Record<string, unknown>[]) {
       expect(record.schema_version).toBe(declared);
