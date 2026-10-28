@@ -86,7 +86,9 @@ def select(
         for draft in ordered[family]:
             first = owner.get(draft.player_id)
             if first is not None:
-                out.also.setdefault(first.story_id, []).append(draft.story_id)
+                # Two variants of one family share a story id; the kept one does not list itself.
+                if draft.story_id != first.story_id:
+                    out.also.setdefault(first.story_id, []).append(draft.story_id)
                 out.suppressed[(family, "duplicate_player")] += 1
                 continue
             owner[draft.player_id] = draft

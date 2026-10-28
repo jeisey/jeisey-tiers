@@ -234,6 +234,23 @@ FAMILIES: tuple[Family, ...] = (
     ),
 )
 
+#: ADR-116: the fields of ``ros_build_metadata.insights`` the manifest keeps. The rest — the rule's
+#: constants, the definitions, limitations and unsupported claims the Insights tab prints — is
+#: read only by that tab, so it rides in each ``insights/<scoring>`` slice as ``meta`` instead of
+#: in the manifest every visit fetches. The summary is enough to tell "not published",
+#: "withheld", "no story qualified" and a degraded family apart before any slice loads.
+INSIGHTS_MANIFEST_SUMMARY: tuple[str, ...] = (
+    "status",
+    "withheld_reason",
+    "rule_version",
+    "edition",
+    "through_week",
+    "target_week",
+    "generated_at_utc",
+    "families",
+    "counts",
+)
+
 #: What one card shard carries: every per-player record a card reads, per artifact, with the
 #: partition that selects the rows for the shard's block.
 CARD_SECTIONS: tuple[tuple[str, Partition], ...] = (
@@ -660,6 +677,16 @@ def build_serving_layout(
     for key in ("build_metadata", "ros_build_metadata"):
         if key in metadata:
             manifest[key] = metadata[key]
+    insights_meta = _insights_metadata(metadata)
+    if insights_meta is not None:
+        manifest["ros_build_metadata"] = {
+            **metadata["ros_build_metadata"],
+            "insights": {
+                name: insights_meta[name]
+                for name in INSIGHTS_MANIFEST_SUMMARY
+                if name in insights_meta
+            },
+        }
     layout = ServingLayout(manifest=manifest)
     entries: dict[str, str] = {}
 
@@ -722,6 +749,8 @@ def build_serving_layout(
                 "partition": key,
                 **table,
             }
+            if family.name == "insights" and insights_meta is not None:
+                payload["meta"] = insights_meta
             add(f"{family.name}/{key}", payload, (family.name, key, rows))
 
     # Card shards: one per block and bucket that holds anyone.
@@ -775,6 +804,11 @@ def build_serving_layout(
 
     manifest["files"] = dict(sorted(entries.items()))
     return layout
+
+
+def _insights_metadata(metadata: Mapping[str, Mapping[str, Any]]) -> Mapping[str, Any] | None:
+    block = (metadata.get("ros_build_metadata") or {}).get("insights")
+    return block if isinstance(block, Mapping) else None
 
 
 def _manifest_bytes(manifest: Mapping[str, Any]) -> bytes:

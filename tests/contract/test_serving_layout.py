@@ -19,6 +19,7 @@ import pytest
 from ffdraft.artifacts import validate_artifact_directory
 from ffdraft.artifacts.serving import (
     CARD_BUCKETS,
+    INSIGHTS_MANIFEST_SUMMARY,
     MANIFEST_FILENAME,
     SERVE_DIRNAME,
     bucket_of,
@@ -58,13 +59,21 @@ def test_golden_bundle_packages_and_validates(site: Path) -> None:
     manifest = json.loads((site / MANIFEST_FILENAME).read_text(encoding="utf-8"))
     assert manifest["format"] == "serving_v1"
     assert manifest["card_buckets"] == CARD_BUCKETS
-    # Both metadata objects travel inline, verbatim.
+    # Both metadata objects travel inline, verbatim — except the Insights block, which the
+    # manifest summarises and each insights slice carries whole (ADR-116).
     assert manifest["build_metadata"] == json.loads(
         (site / "build_metadata.json").read_text(encoding="utf-8"),
     )
-    assert manifest["ros_build_metadata"] == json.loads(
-        (site / "ros_build_metadata.json").read_text(encoding="utf-8"),
-    )
+    ros = json.loads((site / "ros_build_metadata.json").read_text(encoding="utf-8"))
+    insights = ros.pop("insights")
+    inline = dict(manifest["ros_build_metadata"])
+    summary = inline.pop("insights")
+    assert inline == ros
+    assert summary == {name: insights[name] for name in INSIGHTS_MANIFEST_SUMMARY}
+    for key, digest in manifest["files"].items():
+        if key.startswith("insights/"):
+            served = json.loads((site / SERVE_DIRNAME / f"{key}.{digest}.json").read_text("utf-8"))
+            assert served["meta"] == insights
     for key, digest in manifest["files"].items():
         assert (site / SERVE_DIRNAME / f"{key}.{digest}.json").is_file(), key
 

@@ -457,6 +457,7 @@ def test_shrinking_role_reads_the_pooled_share(volume):
         "baseline_games",
         "baseline_role",
         "share_drop",
+        "workload_fell",
     ]
 
 
@@ -848,6 +849,23 @@ def test_per_game_hidden_compares_like_with_like(pace):
     assert statuses == {}  # a stat line, not a strip
 
 
+def test_two_variants_of_one_family_never_list_the_story_itself():
+    """Hidden per-game output and an overlooked reading share ``pace-<id>``: one story, no self."""
+    league = League(byes={3: ("BUF", "NYJ")})
+    league.fillers("WR", 20, base=12.0, step=0.3)
+    pace = league.play(
+        "00-0000050", "BUF", "WR", (1, 6, 7), targets=8.0, receptions=8.0, receiving_yards=140.0
+    )
+    league.play("00-0000051", "BUF", "TE", (1, 2, 4, 5, 6, 7), subject=False, targets=4.0)
+    league.rostered(pace, 12.0)
+    result, _ = league.build()
+    record = story(result, "pace-00-0000050")
+    assert record["variant"] == "per_game_hidden"
+    assert record["also_qualifies"] == []
+    # Standard scoring narrows the per-game gap below 8 places, so only HALF and PPR hold both.
+    assert result.metadata["families"]["pace_perspective"]["suppressed"]["duplicate_player"] == 2
+
+
 def test_bye_missed_game_and_zero_stay_distinct():
     league = League(byes={3: ("MIN", "GB")})
     league.fillers("WR", 24, base=10.0, step=0.2)
@@ -1091,3 +1109,250 @@ def test_cross_check_refuses_numbers_that_disagree_with_usage(volume):
     envelopes["insights"] = {"records": [{**record, "chart": {**record["chart"], "weeks": weeks}}]}
     ids = {c.check_id for c in insight_cross_checks(envelopes) if c.status is CheckStatus.FAIL}
     assert "insights.disagrees_with_sources" in ids
+
+
+# ================================================== review regressions (ADR-116 review)
+
+
+def test_a_quarterback_opening_counts_pass_attempts():
+    """A documented QB change reports the starter's pass attempts, never his carries."""
+    league = League()
+    league.fillers("WR", 4, base=9.0, step=0.2)
+    league.play("00-0000040", "CHI", "QB", range(1, 6), pass_attempts=32.0, carries=3.0, snap=1.0)
+    league.play("00-0000041", "CHI", "QB", range(6, THROUGH + 1), pass_attempts=30.0, snap=1.0)
+    league.play("00-0000042", "CHI", "WR", range(1, THROUGH + 1), subject=False, targets=20.0)
+    result, _ = league.build()
+    record = story(result, "opening-00-0000040")
+    assert record["chart"]["metric"] == "pass_share"
+    assert record["evidence"]["absent_per_game"] == 32.0 == record["chart"]["absent"]["per_game"]
+    # No shared game, so there is no prior share to "rise" from.
+    assert record["headline"] == "Without P 0040, P 0041 has 100% of CHI pass attempts"
+
+
+def test_an_opening_needs_a_current_available_focal_player():
+    league = League()
+    league.fillers("WR", 6, base=9.0, step=0.2)
+    league.play("00-0000020", "CHI", "TE", range(1, 6), targets=8.0)
+    nxt = league.play("00-0000021", "CHI", "WR", range(1, 6), targets=4.0)
+    league.play("00-0000021", "CHI", "WR", (6,), targets=10.0)  # misses W7 himself
+    league.play("00-0000022", "CHI", "WR", range(1, THROUGH + 1), subject=False, targets=18.0)
+    league.board.append({"player_id": nxt, "current_status": "ACT", "employment_status": "signed"})
+    result, _ = league.build()
+    assert stories(result, "opportunity_opening") == []
+    assert (
+        result.metadata["families"]["opportunity_opening"]["suppressed"]["missed_latest_game"] == 3
+    )
+
+
+def test_a_long_reserve_absence_is_not_a_new_opening():
+    """On a reserve list since week 3: an established role, not this week's opening."""
+    league = League()
+    league.fillers("WR", 4, base=9.0, step=0.2)
+    absent = league.play("00-0000020", "CHI", "WR", (1, 2), targets=12.0)
+    nxt = league.play("00-0000021", "CHI", "WR", range(1, THROUGH + 1), targets=6.0)
+    league.play("00-0000022", "CHI", "WR", range(1, THROUGH + 1), subject=False, targets=12.0)
+    league.board.append(
+        {"player_id": absent, "current_status": "RES", "employment_status": "signed"}
+    )
+    league.projection(nxt, "CHI", "WR", q=(2.0, 8.0, 17.0))
+    result, _ = league.build()
+    assert stories(result, "opportunity_opening") == []
+    suppressed = result.metadata["families"]["opportunity_opening"]["suppressed"]
+    assert suppressed["absence_before_window"] == 3
+
+
+def test_opening_text_separates_his_games_from_the_teams():
+    """His club played once without the absentee; he missed that game too."""
+    league = League()
+    league.fillers("WR", 4, base=9.0, step=0.2)
+    absent = league.play("00-0000020", "CHI", "WR", (1, 2, 3, 4, 5, 7), targets=9.0)
+    nxt = league.play("00-0000021", "CHI", "WR", (1, 2, 3, 4, 5, 7), targets=6.0)
+    league.play("00-0000022", "CHI", "WR", range(1, THROUGH + 1), subject=False, targets=15.0)
+    league.context.append(
+        {
+            "team": "CHI",
+            "lineup": {
+                "report_available": True,
+                "report_final": True,
+                "listed": [{"player_id": absent, "designation": "Out"}],
+            },
+        },
+    )
+    league.projection(nxt, "CHI", "WR", q=(2.0, 8.0, 17.0))
+    result, _ = league.build()
+    record = story(result, "opening-00-0000020")
+    e = record["evidence"]
+    assert (e["team_games_without"], e["games_without"]) == (1, 0)
+    assert record["counterpoint"].startswith("P 0021 has not played in CHI's 1 game without him")
+    assert "next-largest" not in record["dek"]
+
+
+def test_a_falling_share_on_more_targets_is_not_a_shrinking_role():
+    league = League()
+    league.fillers("WR", 20, base=10.0, step=0.2)
+    league.play(
+        "00-0000003", "GB", "WR", range(1, 5), targets=8.0, receptions=5.0, receiving_yards=60.0
+    )
+    league.play(
+        "00-0000003",
+        "GB",
+        "WR",
+        range(5, THROUGH + 1),
+        targets=9.0,
+        receptions=5.0,
+        receiving_yards=60.0,
+    )
+    league.play("00-0000004", "GB", "WR", range(1, 5), subject=False, targets=17.0)
+    league.play("00-0000004", "GB", "WR", range(5, THROUGH + 1), subject=False, targets=32.0)
+    result, _ = league.build()
+    # 32% → 22% of a busier team's targets on 8.0 → 9.0 a game: a busier offence, not fewer
+    # chances, so the shrinking variant does not qualify (and the text could not call it one).
+    assert not [
+        r
+        for r in stories(result)
+        if r["story_id"] == "volume-00-0000003" and r["variant"] == "shrinking"
+    ]
+
+
+def test_touchdown_share_is_never_above_one_hundred_percent():
+    league = League()
+    for index in range(30):
+        team = "NE" if index % 2 == 0 else "MIA"
+        yards = round((15 - 0.4 * index - 2.0) * 10, 1)
+        league.play(
+            f"00-09TE{index:03d}",
+            team,
+            "TE",
+            range(1, THROUGH + 1),
+            subject=False,
+            targets=2.0,
+            receptions=2.0,
+            receiving_yards=yards,
+        )
+    league.play(
+        "00-0000040",
+        "NYJ",
+        "TE",
+        range(1, 5),
+        targets=2.0,
+        receptions=1.0,
+        receiving_yards=5.0,
+        snap=0.4,
+    )
+    # A touchdown and two lost fumbles each week: fewer points than touchdown points.
+    league.play(
+        "00-0000040",
+        "NYJ",
+        "TE",
+        range(5, THROUGH + 1),
+        targets=2.0,
+        receptions=2.0,
+        receiving_yards=50.0,
+        receiving_tds=1.0,
+        fumbles_lost=2.0,
+        snap=0.4,
+    )
+    league.play(
+        "00-0000041",
+        "NYJ",
+        "WR",
+        range(1, THROUGH + 1),
+        subject=False,
+        targets=28.0,
+        receptions=10.0,
+    )
+    result, _ = league.build()
+    for record in stories(result, "streak_watch"):
+        share = record["evidence"]["td_share"]
+        assert share is None or 0 <= share <= 100
+
+
+def test_a_family_that_fails_in_any_preset_publishes_in_none(monkeypatch, volume):
+    from ffdraft.insights import build as build_module
+
+    original = build_module.DETECTORS["volume_vs_results"]
+
+    def flaky(ctx):
+        if ctx.preset == "STD":
+            raise TypeError("synthetic failure")
+        return original(ctx)
+
+    monkeypatch.setitem(build_module.DETECTORS, "volume_vs_results", flaky)
+    league = League()
+    league.fillers("WR", 20, base=10.0, step=0.2)
+    league.play(
+        "00-0000001",
+        "MIN",
+        "WR",
+        range(1, THROUGH + 1),
+        targets=12.0,
+        receptions=4.0,
+        receiving_yards=25.0,
+    )
+    league.play(
+        "00-0000002",
+        "MIN",
+        "WR",
+        range(1, THROUGH + 1),
+        subject=False,
+        targets=12.0,
+        receptions=8.0,
+        receiving_yards=100.0,
+    )
+    result, records = league.build()
+    assert not [r for r in result.records if r["family"] == "volume_vs_results"]
+    assert result.metadata["families"]["volume_vs_results"]["status"] == "unavailable"
+    envelopes = {name: {"records": rows} for name, rows in records.items()}
+    envelopes["insights"] = {"records": result.records}
+    assert passed(
+        insight_metadata_checks({"through_week": THROUGH, "insights": result.metadata}, envelopes)
+    )
+
+
+def test_validator_rechecks_every_predicate_against_its_threshold(volume):
+    result, _ = volume
+    record = story(result, "volume-00-0000003")
+    qualification = [
+        {**q, "value": 0} if q["rule"] == "window_games" else q for q in record["qualification"]
+    ]
+    ids = {
+        c.check_id
+        for c in insight_record_checks([{**record, "qualification": qualification}])
+        if c.status is CheckStatus.FAIL
+    }
+    assert "insights.identity" in ids
+
+
+@pytest.mark.parametrize(
+    ("text", "refused"),
+    [
+        ("Drew Lock has 12% of the targets.", False),
+        ("He runs more routes now.", True),
+        ("He is overdue.", True),
+        ("An expected-points gap.", True),
+        ("Guaranteed volume.", True),
+        ("Touchdowns are regressing.", True),
+        ("A duel for the slot role.", False),
+    ],
+)
+def test_forbidden_claims_read_stems_and_skip_names(volume, text, refused):
+    result, _ = volume
+    record = story(result, "volume-00-0000001")
+    tampered = {
+        **record,
+        "display_name": "Drew Lock",
+        "evidence": {**record["evidence"], "name": "Drew Lock"},
+        "counterpoint": text.replace("12", str(record["evidence"]["workload_rank"])),
+    }
+    ids = {c.check_id for c in insight_record_checks([tampered]) if c.status is CheckStatus.FAIL}
+    assert ("insights.forbidden_claim" in ids) is refused
+
+
+def test_chart_series_cannot_license_a_number_in_the_text(volume):
+    """A strip's points are chart data; printing one that is not evidence fails."""
+    result, _ = volume
+    record = story(result, "volume-00-0000001")
+    filler_points = 9.4  # a filler's weekly score: nowhere in this story's evidence
+    tampered = {**record, "dek": f"He scored {filler_points} once."}
+    ids = {c.check_id for c in insight_record_checks([tampered]) if c.status is CheckStatus.FAIL}
+    assert "insights.text_number_not_in_evidence" in ids

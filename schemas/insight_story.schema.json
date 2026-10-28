@@ -35,6 +35,8 @@
     "espn_rostered",
     "ceiling_ranks",
     "injury",
+    "opponent",
+    "home_away",
     "chart",
     "evidence",
     "qualification",
@@ -307,6 +309,21 @@
         }
       },
       "description": "The official report for the target week (the weekly projection's `injury`), on `this_week` stories only, so the page re-applies the availability policy without the weekly slice."
+    },
+    "opponent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The target-week opponent of a `this_week` story (equals `evidence.opponent`); null otherwise."
+    },
+    "home_away": {
+      "enum": [
+        "home",
+        "away",
+        null
+      ],
+      "description": "Home or away in the target-week game of a `this_week` story (equals `evidence.home_away`); null otherwise."
     },
     "chart": {
       "oneOf": [

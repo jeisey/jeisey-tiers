@@ -319,11 +319,12 @@ UNSUPPORTED_CLAIMS: tuple[tuple[str, str], ...] = (
     ),
 )
 
-#: Words the validator refuses in any printed text (case-insensitive, whole words).
+#: Stems the validator refuses in any printed text, names removed first: case-insensitive, from
+#: a word boundary, any ending ("route" also refuses "routes"; "due" also "overdue"), a space
+#: matching a space or hyphen ("expected points", "expected-points").
 FORBIDDEN_PHRASES: tuple[str, ...] = (
     "due",
-    "due for",
-    "regression",
+    "regress",
     "unlucky",
     "luck",
     "xfp",
@@ -332,11 +333,10 @@ FORBIDDEN_PHRASES: tuple[str, ...] = (
     "over expected",
     "route",
     "first read",
-    "first-read",
     "tprr",
     "per route",
     "coverage",
-    "confidence",
+    "confiden",
     "guarantee",
     "lock",
     "boom score",

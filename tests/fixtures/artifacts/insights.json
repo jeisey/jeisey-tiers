@@ -57,6 +57,8 @@
       "espn_rostered": 31.0,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 8,
@@ -176,6 +178,8 @@
       "espn_rostered": 40.2,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 7,
@@ -295,6 +299,8 @@
       "espn_rostered": 25.0,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 8,
@@ -421,6 +427,8 @@
       "espn_rostered": 22.4,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "week_strip",
         "weeks": [
@@ -579,6 +587,13 @@
           "value": 0.098,
           "threshold": 0.06,
           "passed": true
+        },
+        {
+          "rule": "workload_fell",
+          "label": "Opportunities a game, below 90% of the earlier rate",
+          "value": 5.7,
+          "threshold": 8.1,
+          "passed": true
         }
       ],
       "also_qualifies": [
@@ -656,6 +671,8 @@
         "10": null
       },
       "injury": null,
+      "opponent": "GB",
+      "home_away": "home",
       "chart": {
         "type": "interval",
         "q10": 0.55,
@@ -845,6 +862,8 @@
         "10": 1
       },
       "injury": null,
+      "opponent": "HOU",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.73,
@@ -1039,6 +1058,8 @@
         "practice_status": "Limited Participation in Practice",
         "primary_injury": "Hamstring"
       },
+      "opponent": "NO",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.76,
@@ -1234,6 +1255,8 @@
         "10": 1
       },
       "injury": null,
+      "opponent": "MIN",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.55,
@@ -1412,6 +1435,8 @@
       "espn_rostered": 31.0,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 8,
@@ -1531,6 +1556,8 @@
       "espn_rostered": 40.2,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 7,
@@ -1650,6 +1677,8 @@
       "espn_rostered": 25.0,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 8,
@@ -1776,6 +1805,8 @@
       "espn_rostered": 22.4,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "week_strip",
         "weeks": [
@@ -1934,6 +1965,13 @@
           "value": 0.098,
           "threshold": 0.06,
           "passed": true
+        },
+        {
+          "rule": "workload_fell",
+          "label": "Opportunities a game, below 90% of the earlier rate",
+          "value": 5.7,
+          "threshold": 8.1,
+          "passed": true
         }
       ],
       "also_qualifies": [
@@ -2011,6 +2049,8 @@
         "10": null
       },
       "injury": null,
+      "opponent": "GB",
+      "home_away": "home",
       "chart": {
         "type": "interval",
         "q10": 0.6,
@@ -2200,6 +2240,8 @@
         "10": 1
       },
       "injury": null,
+      "opponent": "HOU",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.64,
@@ -2394,6 +2436,8 @@
         "practice_status": "Limited Participation in Practice",
         "primary_injury": "Hamstring"
       },
+      "opponent": "NO",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.75,
@@ -2589,6 +2633,8 @@
         "10": 1
       },
       "injury": null,
+      "opponent": "MIN",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.6,
@@ -2767,6 +2813,8 @@
       "espn_rostered": 31.0,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 8,
@@ -2886,6 +2934,8 @@
       "espn_rostered": 40.2,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 7,
@@ -3005,6 +3055,8 @@
       "espn_rostered": 25.0,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "stat_line",
         "games": 8,
@@ -3131,6 +3183,8 @@
       "espn_rostered": 22.4,
       "ceiling_ranks": null,
       "injury": null,
+      "opponent": null,
+      "home_away": null,
       "chart": {
         "type": "week_strip",
         "weeks": [
@@ -3289,6 +3343,13 @@
           "value": 0.098,
           "threshold": 0.06,
           "passed": true
+        },
+        {
+          "rule": "workload_fell",
+          "label": "Opportunities a game, below 90% of the earlier rate",
+          "value": 5.7,
+          "threshold": 8.1,
+          "passed": true
         }
       ],
       "also_qualifies": [
@@ -3366,6 +3427,8 @@
         "10": null
       },
       "injury": null,
+      "opponent": "GB",
+      "home_away": "home",
       "chart": {
         "type": "interval",
         "q10": 0.35,
@@ -3555,6 +3618,8 @@
         "10": 1
       },
       "injury": null,
+      "opponent": "HOU",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.45,
@@ -3749,6 +3814,8 @@
         "practice_status": "Limited Participation in Practice",
         "primary_injury": "Hamstring"
       },
+      "opponent": "NO",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.33,
@@ -3944,6 +4011,8 @@
         "10": 1
       },
       "injury": null,
+      "opponent": "MIN",
+      "home_away": "away",
       "chart": {
         "type": "interval",
         "q10": 0.34,

@@ -282,6 +282,15 @@ def _share_of(lines: Sequence[Line], metric: str) -> float | None:
     return None if got is None else got[0] / got[1]
 
 
+def _opportunity_count(line: Line, metric: str) -> float:
+    """The count a share is of: targets, carries or pass attempts."""
+    if metric == "carry_share":
+        return line.carries
+    if metric == "pass_share":
+        return line.pass_attempts
+    return line.targets
+
+
 def _mean_snap(lines: Sequence[Line]) -> float | None:
     values = [line.snap_share for line in lines]
     if not values or any(value is None for value in values):
@@ -639,10 +648,23 @@ def _shrinking(ctx: Context, player_id: str, position: str, e: dict[str, Any]) -
     drop = _units(before, 3) - _units(now, 3)
     if drop < _units(step, 3):
         return None
+    # The opposite of the lagging rule's "workload holds": his opportunities a game fell below
+    # 90% of the earlier rate too, so the shrinking share is fewer chances, not a busier team.
+    hold = ctx.rule.volume_hold_percent
+    window_units = _units(e["window_opportunities_per_game"], 1)
+    baseline_units = _units(e["baseline_opportunities_per_game"], 1)
+    if 100 * window_units >= hold * baseline_units:
+        return None
     qualification = [
         *_sample_predicates(ctx, e),
         _predicate("baseline_role", "Share before the window, at least", before, floor),
         _predicate("share_drop", "Share fell by at least", round(drop / 1000, 3), step),
+        _predicate(
+            "workload_fell",
+            f"Opportunities a game, below {hold}% of the earlier rate",
+            e["window_opportunities_per_game"],
+            round(e["baseline_opportunities_per_game"] * hold / 100, 2),
+        ),
     ]
     return _volume_draft(
         ctx,
@@ -921,13 +943,22 @@ def detect_opening(ctx: Context) -> list[Draft]:
             share = _share_of(team_lines, metric)
             if share is None or _units(share, 3) < _units(rule.absent_floor[metric], 3):
                 continue
+            board_team = (ctx.board.get(absent) or {}).get("team")
+            if board_team and board_team != team:
+                # He has changed clubs and not yet played for the new one: his old club's
+                # games are not games "without him", and his absence is not an injury.
+                ctx.suppressed[("opportunity_opening", "absent_changed_team")] += 1
+                continue
             documented = _documented_absence(ctx, absent, team)
             recent = _recent_misses(facts, absent, team)
+            if recent and recent[0] < ctx.window[0]:
+                # An absence that began before the window is an established role — the role
+                # battles describe it — documented for this week or not.
+                ctx.suppressed[("opportunity_opening", "absence_before_window")] += 1
+                continue
             if documented is not None:
                 variant, reason, designation = "prospective", documented[0], documented[1]
-            elif recent and recent[0] >= ctx.window[0]:
-                # Observed only while the change is new: an absence that began before the
-                # window is an established role, which the role battles describe.
+            elif recent:
                 variant = "observed"
                 reason = "missed " + ", ".join(f"W{week}" for week in recent)
                 designation = None
@@ -1031,17 +1062,20 @@ def _opening_draft(
     focal: dict[str, Any] | None = None
     record: Mapping[str, Any] | None = None
     for _, row in eligible:
+        # The focal player must be current and available like every story's subject.
+        if not ctx.current(str(row["player_id"]), "opportunity_opening"):
+            continue
         if variant == "prospective":
+            if ctx.prescreen(row["player_id"]) is not None:
+                ctx.suppressed[("opportunity_opening", "prescreen")] += 1
+                continue
             if ctx.team_on_bye(team):
-                horizon = "stash"
+                horizon, record = "stash", None
             else:
                 horizon = "this_week"
                 record = ctx.upcoming(row["player_id"])
                 if record is None:
                     ctx.suppressed[("opportunity_opening", "game_not_upcoming")] += 1
-                    continue
-                if ctx.prescreen(row["player_id"]) is not None:
-                    ctx.suppressed[("opportunity_opening", "prescreen")] += 1
                     continue
         focal = row
         break
@@ -1055,9 +1089,7 @@ def _opening_draft(
         ),
     )
     shown = ordered[: rule.opening_rows]
-    absent_count = sum(
-        line.targets if metric == "target_share" else line.carries for line in team_lines
-    )
+    absent_count = sum(_opportunity_count(line, metric) for line in team_lines)
     focal_id = str(focal["player_id"])
     rostered, state = ctx.espn_reading(focal_id)
     game = (record or {}).get("game") or {}
@@ -1079,6 +1111,7 @@ def _opening_draft(
         "absent_floor": rule.absent_floor[metric],
         "missed_weeks": list(recent),
         "games_without_weeks": without_weeks,
+        "team_games_without": len(without_weeks),
         "share_with": focal["share_with"],
         "games_with": focal["games_with"],
         "share_without": focal["share_without"],
@@ -1091,6 +1124,7 @@ def _opening_draft(
         "espn_state": state,
         "target_week": ctx.target_week if variant == "prospective" else None,
         "opponent": game.get("opponent"),
+        "home_away": game.get("home_away"),
         "kickoff_utc": game.get("kickoff_utc") if horizon == "this_week" else None,
         "injury": (record or {}).get("injury") if horizon == "this_week" else None,
     }
@@ -1162,7 +1196,8 @@ def _opening_draft(
         position=str(focal["position"]),
         team=team,
         subject=_digits(absent),
-        order=(-evidence["absent_per_game"], team, absent),
+        # By the share left open (unit-free across rooms), then club and player.
+        order=(-evidence["absent_share"], team, absent),
         evidence=evidence,
         chart={
             "type": "with_without",
@@ -1548,7 +1583,10 @@ def _streak_draft(
         "window_points": round(points, 2),
         "window_points_per_game": round(_per_game(points, len(games)), 2),
         "window_td_points": round(td_points, 2),
-        "td_share": round(100 * td_points / points) if points > 0 else None,
+        # A share above 100% (turnovers cost more than the yards earned) is not a share.
+        "td_share": round(100 * td_points / points)
+        if 0 < td_points <= points
+        else (0 if points > 0 and td_points == 0 else None),
         "td_led_percent": rule.td_led_percent,
         "measure": metric,
         "level": None if measure is None else measure.get("level"),

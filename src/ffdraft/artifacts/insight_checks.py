@@ -43,8 +43,7 @@ _STAGE = "artifacts.insights"
 #: :mod:`ffdraft.insights.rules` so the two cannot drift.
 FORBIDDEN_PHRASES: tuple[str, ...] = (
     "due",
-    "due for",
-    "regression",
+    "regress",
     "unlucky",
     "luck",
     "xfp",
@@ -53,11 +52,10 @@ FORBIDDEN_PHRASES: tuple[str, ...] = (
     "over expected",
     "route",
     "first read",
-    "first-read",
     "tprr",
     "per route",
     "coverage",
-    "confidence",
+    "confiden",
     "guarantee",
     "lock",
     "boom score",
@@ -82,12 +80,74 @@ _EPS = 0.0101
 
 
 def _forbidden() -> list[re.Pattern[str]]:
+    """Each stem from a word boundary with any ending; "due" also as "overdue", never "duel"."""
     if not _FORBIDDEN:
-        _FORBIDDEN.extend(
-            re.compile(rf"\b{re.escape(phrase.strip())}\b", re.IGNORECASE)
-            for phrase in FORBIDDEN_PHRASES
-        )
+        for phrase in FORBIDDEN_PHRASES:
+            if phrase == "due":
+                pattern = r"\b(?:over)?due\b"
+            else:
+                pattern = r"\b" + r"[\s-]+".join(map(re.escape, phrase.split())) + r"\w*"
+            _FORBIDDEN.append(re.compile(pattern, re.IGNORECASE))
     return _FORBIDDEN
+
+
+#: How each qualification predicate's value must stand against its threshold. A predicate the
+#: table does not know fails: a new rule cannot ship without saying what it asserts.
+_AT_LEAST = frozenset(
+    {
+        "window_games",
+        "baseline_games",
+        "workload_holds",
+        "production_gap",
+        "baseline_role",
+        "share_drop",
+        "role_confirmed",
+        "latest_current",
+        "absent_games",
+        "absent_role",
+        "share_without",
+        "share_rise",
+        "next_share",
+        "team_games",
+        "riser_games",
+        "share_level",
+        "streak",
+        "role_not_confirmed",
+        "role_growth",
+        "role_level",
+        "games",
+        "hidden_gap",
+        "missed_games",
+    },
+)
+_AT_MOST = frozenset({"workload_rank", "ceiling_rank", "ppg_rank"})
+_BELOW = frozenset({"espn_below_ceiling", "espn_below", "workload_fell"})
+_ABOVE = frozenset({"outside_band"})
+_EQUAL = frozenset({"espn_observed", "prescreen"})
+_STATED = frozenset({"game_upcoming", "absence"})
+
+
+def _predicate_holds(predicate: Mapping[str, Any]) -> bool:
+    rule = predicate.get("rule")
+    value, threshold = predicate.get("value"), predicate.get("threshold")
+    if rule in _EQUAL:
+        return bool(value == threshold)
+    if rule in _STATED:
+        return isinstance(value, str) and bool(value.strip())
+    if rule == "category":
+        return isinstance(value, str) and value in str(threshold).split(" or ")
+    if not isinstance(value, int | float) or not isinstance(threshold, int | float):
+        return False
+    tolerance = 1e-9
+    if rule in _AT_LEAST:
+        return float(value) + tolerance >= float(threshold)
+    if rule in _AT_MOST:
+        return float(value) <= float(threshold) + tolerance
+    if rule in _BELOW:
+        return float(value) < float(threshold)
+    if rule in _ABOVE:
+        return float(value) > float(threshold)
+    return False
 
 
 def _fail(check_id: str, message: str, offenders: Sequence[str], expected: str) -> QualityCheck:
@@ -123,13 +183,22 @@ def _formats(value: float) -> set[str]:
     return out
 
 
-def printed_numbers(record: Mapping[str, Any]) -> list[tuple[str, str]]:
-    """``(field, number)`` for every number the story prints, labels and names removed."""
+def _names(record: Mapping[str, Any]) -> list[str]:
+    """Every player name a story may print, longest first, so a name is never read as text."""
     names = {str(record.get("display_name") or "")}
     evidence = record.get("evidence") or {}
     for key in ("name", "absent_name", "other_name", "absent_member"):
         if evidence.get(key):
             names.add(str(evidence[key]))
+    chart = record.get("chart") or {}
+    for row in [*(chart.get("rows") or ()), chart.get("absent") or {}]:
+        if isinstance(row, Mapping) and row.get("name"):
+            names.add(str(row["name"]))
+    return sorted((name for name in names if name), key=len, reverse=True)
+
+
+def _texts(record: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """``(field, text)`` for everything a story prints, with player names blanked."""
     texts: list[tuple[str, str]] = [
         ("headline", str(record.get("headline") or "")),
         ("dek", str(record.get("dek") or "")),
@@ -138,21 +207,37 @@ def printed_numbers(record: Mapping[str, Any]) -> list[tuple[str, str]]:
     ]
     for fact in record.get("facts") or ():
         texts.append(("fact", f"{fact.get('label', '')} {fact.get('value', '')}"))
-    out: list[tuple[str, str]] = []
+    names = _names(record)
+    blanked: list[tuple[str, str]] = []
     for field, text in texts:
-        for name in sorted(names, key=len, reverse=True):
-            if name:
-                text = text.replace(name, " ")
-        text = _LABELS.sub(" ", text)
-        out.extend((field, number) for number in _NUMBER.findall(text))
+        for name in names:
+            text = text.replace(name, " ")
+        blanked.append((field, text))
+    return blanked
+
+
+def printed_numbers(record: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """``(field, number)`` for every number the story prints, labels and names removed."""
+    out: list[tuple[str, str]] = []
+    for field, text in _texts(record):
+        out.extend((field, number) for number in _NUMBER.findall(_LABELS.sub(" ", text)))
     return out
 
 
 def _allowed(record: Mapping[str, Any]) -> set[str]:
+    """The story's own printable numbers: its evidence scalars (and the scalars of evidence
+    objects, never lists — week lists, other players' readings), its window and target week.
+    Chart series are never printable: a strip's week numbers or a teammate's row cannot license
+    a number in the text."""
     allowed: set[str] = set()
-    for source in (record.get("evidence"), record.get("chart"), record.get("window")):
-        for value in _leaves(source):
-            allowed |= _formats(value)
+    evidence = record.get("evidence") or {}
+    for value in evidence.values():
+        if isinstance(value, list | tuple):
+            continue
+        for leaf in _leaves(value):
+            allowed |= _formats(leaf)
+    for leaf in _leaves(record.get("window")):
+        allowed |= _formats(leaf)
     for key in ("target_week", "through_week"):
         if isinstance(record.get(key), int):
             allowed.add(str(record[key]))
@@ -182,16 +267,10 @@ def insight_record_checks(
         for field, number in printed_numbers(record):
             if number not in allowed:
                 text_problems.append(f"{key} {field} '{number}'")
-        for field in ("headline", "dek", "counterpoint", "caveat"):
-            text = str(record.get(field) or "")
+        for field, text in _texts(record):
             for pattern in _forbidden():
                 if pattern.search(text):
                     forbidden.append(f"{key} {field} /{pattern.pattern}/")
-        for fact in record.get("facts") or ():
-            text = f"{fact.get('label', '')} {fact.get('value', '')}"
-            for pattern in _forbidden():
-                if pattern.search(text):
-                    forbidden.append(f"{key} fact /{pattern.pattern}/")
         identity.extend(f"{key}: {problem}" for problem in _identity(record))
     selection.extend(_selection(records))
     checks: list[QualityCheck] = []
@@ -264,15 +343,20 @@ def _identity(record: Mapping[str, Any]) -> list[str]:  # noqa: C901 - one list 
     upside = record.get("family") == "weekly_upside"
     if record.get("ceiling_ranks") != (evidence_values.get("ceiling_ranks") if upside else None):
         problems.append("ceiling_ranks differs from its evidence")
-    if record.get("injury") != (evidence_values.get("injury") if horizon == "this_week" else None):
-        problems.append("injury differs from its evidence")
+    this_week = horizon == "this_week"
+    for name in ("injury", "opponent", "home_away"):
+        if record.get(name) != (evidence_values.get(name) if this_week else None):
+            problems.append(f"{name} differs from its evidence")
     if (horizon == "this_week") != (record.get("kickoff_utc") is not None):
         problems.append(f"horizon {horizon} with kickoff {record.get('kickoff_utc')}")
     if horizon in ("this_week", "stash") and record.get("target_week") is None:
         problems.append(f"horizon {horizon} without a target week")
     for predicate in record.get("qualification") or ():
-        if predicate.get("passed") is not True:
-            problems.append(f"predicate {predicate.get('rule')} not passed")
+        if predicate.get("passed") is not True or not _predicate_holds(predicate):
+            problems.append(
+                f"predicate {predicate.get('rule')}: {predicate.get('value')!r} vs "
+                f"{predicate.get('threshold')!r}"
+            )
     chart = record.get("chart") or {}
     evidence = record.get("evidence") or {}
     kind = chart.get("type")
@@ -574,6 +658,8 @@ def insight_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Qua
             span = recent.get((preset, pid))
             if span is not None and week_ranks_disagree(record, span):
                 problems.append(f"{key}: weekly ranks disagree with recent form")
+            if span is not None and week_points_disagree(record, span):
+                problems.append(f"{key}: weekly points disagree with recent form")
         if record["family"] == "pace_perspective":
             season = actuals.get((preset, pid))
             if (
@@ -597,9 +683,9 @@ def insight_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Qua
                 for level in ("q10", "q50", "q90")
             ):
                 problems.append(f"{key}: quantiles vs weekly projections")
-            if ((projection or {}).get("game") or {}).get("kickoff_utc") != record.get(
-                "kickoff_utc"
-            ):
+        if record.get("kickoff_utc") is not None:
+            projection = weekly.get((preset, pid))
+            if ((projection or {}).get("game") or {}).get("kickoff_utc") != record["kickoff_utc"]:
                 problems.append(f"{key}: kickoff vs weekly projections")
         rostered = evidence.get("espn_rostered")
         if rostered is not None:
@@ -625,6 +711,21 @@ def insight_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Qua
             observed=f"{len(insights.get('records', ()))} record(s)",
         ),
     ]
+
+
+def week_points_disagree(record: Mapping[str, Any], span: Mapping[str, Any]) -> bool:
+    """A strip's points on played span weeks are recent form's ``span_points``."""
+    weeks = {int(w["week"]): w for w in (record.get("chart") or {}).get("weeks", ())}
+    points = list(span.get("span_points") or [])
+    status = str(span.get("span_status") or "")
+    first = int(record["through_week"]) - len(points) + 1
+    for offset, value in enumerate(points):
+        week = weeks.get(first + offset)
+        if week is None or offset >= len(status) or status[offset] != "P":
+            continue
+        if week.get("status") != "P" or not _close(week.get("points"), value, 0.011):
+            return True
+    return False
 
 
 def week_ranks_disagree(record: Mapping[str, Any], span: Mapping[str, Any]) -> bool:

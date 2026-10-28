@@ -70,6 +70,8 @@ FIELD_ORDER: tuple[str, ...] = (
     "espn_rostered",
     "ceiling_ranks",
     "injury",
+    "opponent",
+    "home_away",
     "chart",
     "evidence",
     "qualification",
@@ -241,7 +243,10 @@ def build_insights(
     published: dict[str, Counter[str]] = {family: Counter() for family in FAMILIES}
     suppressed: dict[str, Counter[str]] = {family: Counter() for family in FAMILIES}
     failed: dict[str, str] = {}
-    shared: dict[str, list[Draft]] = {}
+    shared: dict[str, tuple[list[Draft], Counter[tuple[str, str]]]] = {}
+    # Phase 1: every family in every preset. A family that fails in any preset is dropped from
+    # all of them, so no preset publishes stories of a family the metadata calls unavailable.
+    found_by_preset: dict[str, dict[str, list[Draft]]] = {}
     for preset in presets:
         ctx = Context(
             facts=facts,
@@ -259,39 +264,49 @@ def build_insights(
             generated_at=generated_at,
             target_week=target_week,
         )
-        drafts: dict[str, list[Draft]] = {}
+        found_by_preset[preset] = {}
         for family in FAMILIES:
             if family in unavailable or family in failed:
                 continue
             if family == "role_battle" and family in shared:
-                # Scoring-independent: built once, published identically in every preset.
-                drafts[family] = shared[family]
-                qualified[family][preset] = len(shared[family])
-                continue
-            try:
-                found = DETECTORS[family](ctx)
-            except Exception as exc:  # noqa: BLE001 - one family's failure costs that family only
-                failed[family] = f"{type(exc).__name__}: {exc}"
-                checks.append(
-                    QualityCheck.fail(
-                        "insights.family_failed",
-                        stage="insights",
-                        message=(
-                            f"the {family} stories could not be built; every other family is "
-                            "unaffected"
+                # Scoring-independent: built once, published identically in every preset; its
+                # refusals are counted once per preset, like every other family's.
+                found, refusals = shared[family]
+                ctx.suppressed.update(refusals)
+            else:
+                before = Counter(ctx.suppressed)
+                try:
+                    found = DETECTORS[family](ctx)
+                except Exception as exc:  # noqa: BLE001 - a family's failure costs that family
+                    failed[family] = f"{type(exc).__name__}: {exc}"
+                    checks.append(
+                        QualityCheck.fail(
+                            "insights.family_failed",
+                            stage="insights",
+                            message=(
+                                f"the {family} stories could not be built; every other family "
+                                "is unaffected"
+                            ),
+                            observed=failed[family],
+                            expected="a detector that completes",
+                            severity=Severity.WARNING,
                         ),
-                        observed=failed[family],
-                        expected="a detector that completes",
-                        severity=Severity.WARNING,
-                    ),
-                )
-                continue
-            if family == "role_battle":
-                shared[family] = found
-            drafts[family] = found
+                    )
+                    continue
+                if family == "role_battle":
+                    shared[family] = (found, ctx.suppressed - before)
+            found_by_preset[preset][family] = found
             qualified[family][preset] = len(found)
         for (family, why), number in ctx.suppressed.items():
             suppressed[family][why] += number
+
+    # Phase 2: selection and records, per preset, over the families that held everywhere.
+    for preset in presets:
+        drafts = {
+            family: found
+            for family, found in found_by_preset[preset].items()
+            if family not in failed
+        }
         chosen = select(drafts, rule=rule, selection=selection)
         for (family, why), number in chosen.suppressed.items():
             suppressed[family][why] += number
@@ -315,6 +330,9 @@ def build_insights(
             "stories": len(chosen.stories),
             "lead": len(chosen.lead_rank),
         }
+    for family in failed:
+        qualified[family].clear()
+        suppressed[family].clear()
 
     families: dict[str, Any] = {}
     for family in FAMILIES:
@@ -461,6 +479,8 @@ def _record(
         if draft.family == "weekly_upside"
         else None,
         "injury": draft.evidence.get("injury") if draft.horizon == "this_week" else None,
+        "opponent": draft.evidence.get("opponent") if draft.horizon == "this_week" else None,
+        "home_away": draft.evidence.get("home_away") if draft.horizon == "this_week" else None,
         "chart": draft.chart,
         "evidence": draft.evidence,
         "qualification": draft.qualification,

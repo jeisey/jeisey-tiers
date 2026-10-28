@@ -64,6 +64,15 @@ def _unit(position: str) -> str:
     return "opportunities" if position == "RB" else "targets"
 
 
+def _direction(before: float, after: float) -> str:
+    """'down from', 'up from' or 'level at …' — the words follow the numbers."""
+    if round(after, 1) < round(before, 1):
+        return "down from"
+    if round(after, 1) > round(before, 1):
+        return "up, though his share fell, from"
+    return "unchanged, though his share fell, from"
+
+
 def _signed(value: float) -> str:
     return f"+{pts(value)}" if value >= 0 else f"−{pts(abs(value))}"
 
@@ -155,6 +164,7 @@ def _volume_lagging(e: Mapping[str, Any]) -> dict[str, Any]:
 
 def _volume_shrinking(e: Mapping[str, Any]) -> dict[str, Any]:
     wl, unit = e["window_label"], _unit(e["position"])
+    before, after = e["baseline_opportunities_per_game"], e["window_opportunities_per_game"]
     metric = _metric_name(e["share_metric"])
     facts = [
         {
@@ -206,7 +216,8 @@ def _volume_shrinking(e: Mapping[str, Any]) -> dict[str, Any]:
         ),
         "dek": (
             "A shrinking share is a smaller role, not a cold streak: 'he still gets the ball' "
-            f"no longer holds for these weeks, with {unit} a game down from "
+            f"no longer holds for these weeks, with {unit} a game "
+            f"{_direction(before, after)} "
             f"{pts(e['baseline_opportunities_per_game'])} to "
             f"{pts(e['window_opportunities_per_game'])}."
         ),
@@ -283,7 +294,11 @@ def _opening(e: Mapping[str, Any], variant: str) -> dict[str, Any]:
         e["metric"]
     ]
     absent, focal, team = e["absent_name"], e["name"], e["team"]
+    # His own games without the absent player, and his club's: a different count whenever he
+    # missed one of them too.
     n_without = e["games_without"]
+    team_without = e["team_games_without"]
+    rose = e.get("share_with") is not None and e.get("share_without") is not None
     facts = [
         {
             "label": f"{absent}'s share of {team} {unit}",
@@ -319,11 +334,15 @@ def _opening(e: Mapping[str, Any], variant: str) -> dict[str, Any]:
         facts.append(
             {"label": "Rostered on ESPN", "value": rostered(e["espn_rostered"]), "basis": "market"}
         )
-    if n_without == 0:
+    if team_without == 0:
         counterpoint = (
             f"{team} has not played without him this season, so how his "
-            f"{pts(e['absent_per_game'])} "
-            f"{unit} a game will move is unknown."
+            f"{pts(e['absent_per_game'])} {unit} a game will move is unknown."
+        )
+    elif n_without == 0:
+        counterpoint = (
+            f"{focal} has not played in {team}'s {_games(team_without)} without him, so his "
+            "share without him is not known."
         )
     elif n_without <= 2:
         counterpoint = (
@@ -332,29 +351,35 @@ def _opening(e: Mapping[str, Any], variant: str) -> dict[str, Any]:
         )
     else:
         counterpoint = None
+    played = (
+        f"{team}'s {_games(team_without)} without him"
+        if n_without == team_without
+        else f"the {_games(n_without)} he played of {team}'s {team_without} without him"
+    )
     if variant == "prospective":
         headline = f"{absent} ({pct(e['absent_share'])} of {team} {unit}) is {e['absent_reason']}"
         if n_without:
             dek = (
-                f"In {team}'s {_games(n_without)} without him this season, {focal} took "
-                f"{pct(e['share_without'])} of the {unit}"
-                + (f", against {pct(e['share_with'])} with him." if e.get("games_with") else ".")
-                + " Who absorbs the rest is not known."
+                f"In {played}, {focal} took {pct(e['share_without'])} of the {unit}"
+                + (f", against {pct(e['share_with'])} with him." if rose else ".")
+                + (" Who absorbs the rest is not known." if e["share_without"] < 0.95 else "")
             )
         else:
             dek = (
-                f"That leaves {pts(e['absent_per_game'])} {unit} a game unassigned. "
-                f"{focal} has the "
-                f"room's next-largest share ({pct(e['latest_share'])} over {e['window_label']})."
+                f"That leaves {pts(e['absent_per_game'])} {unit} a game unassigned. {focal} has "
+                f"{pct(e['latest_share'])} of them over {e['window_label']}; who absorbs the rest "
+                "is not known."
             )
     else:
         headline = (
             f"Without {absent}, {focal}'s share of {team} {unit} rose to {pct(e['share_without'])}"
+            if rose
+            else f"Without {absent}, {focal} has {pct(e['share_without'])} of {team} {unit}"
         )
         dek = (
-            f"{absent} {e['absent_reason']}. In {team}'s {_games(n_without)} without him, {focal} "
-            f"took {pct(e['share_without'])} of the {unit}"
-            + (f", against {pct(e['share_with'])} alongside him." if e.get("games_with") else ".")
+            f"{absent} {e['absent_reason']}. In {played}, {focal} took "
+            f"{pct(e['share_without'])} of the {unit}"
+            + (f", against {pct(e['share_with'])} alongside him." if rose else ".")
         )
     return {
         "headline": headline,
@@ -511,7 +536,7 @@ def _streak(e: Mapping[str, Any], variant: str) -> dict[str, Any]:
 
 
 def _pace(e: Mapping[str, Any], variant: str) -> dict[str, Any]:
-    pos, team = e["position"], e["team"]
+    pos = e["position"]
     facts = [
         {
             "label": "Points a game",
@@ -558,12 +583,12 @@ def _pace(e: Mapping[str, Any], variant: str) -> dict[str, Any]:
             f"{e['name']}: {pos}{e['ppg_rank']} in points a game, {pos}{e['total_rank']} in total"
         )
         dek = (
-            f"He has played {e['games']} of {team}'s {e['team_games']} games. Among "
+            f"He has played {e['games']} of his team's {e['team_games']} games. Among "
             f"{e['cohort_size']} {pos}s with {e['cohort_min_games']}+ games he averages "
             f"{pts(e['points_per_game'])}; the total rank reflects the games he missed."
         )
         counterpoint = (
-            f"He missed {e['missed_games']} of {team}'s games: availability is part of "
+            f"He missed {e['missed_games']} of his team's games: availability is part of "
             "a season's value."
         )
     return {
