@@ -89,6 +89,10 @@ RECORD_SCHEMAS: tuple[str, ...] = (
     # independent: without it the Opportunity Board shows season columns only and disables
     # the window and category controls with a reason.
     "recent_form_record",
+    # ADR-116. Insights: deterministic weekly stories over the build's published evidence.
+    # Additive and independent: without it the Insights tab says the stories are unavailable
+    # and every other surface is unchanged.
+    "insight_story",
 )
 
 #: Per-record contract versions. The envelope's ``schema_version`` is the *bundle* version
@@ -133,6 +137,7 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "espn_ownership_record": "1.0",
     "espn_ownership_series": "1.0",
     "recent_form_record": "1.0",
+    "insight_story": "1.0",
 }
 
 

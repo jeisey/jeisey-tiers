@@ -74,6 +74,8 @@ _TIE_BREAK = {
     "weekly_context": "team",
     "player_skill_tree": "metric_id",
     "skill_tree_definitions": "metric_id",
+    # ADR-116: a story, not a player, is the record; one player has at most one per preset.
+    "insights": "story_id",
 }
 
 

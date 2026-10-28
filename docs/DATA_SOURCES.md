@@ -1248,3 +1248,27 @@ The 2026-10-17T11:24:45Z capture (private retained store) carried Tyler Allgeier
 and not in the drop feed, whose smallest count was 17,444. The board published his drops as 0 and
 his net as +549,030. Under ADR-114 the same bytes read: drops outside Sleeper's top 100, at most
 17,444; net at least +531,586.
+
+## 25. Insights inputs — 2026-10-27 (ADR-116)
+
+No new source and no new request. Insights (`ffdraft.insights`) reads, inside the same in-season
+build, sources every other in-season artifact already reads, under roles recorded in
+`config/source-registry.yaml` (`inseason_insights_context`):
+
+* **nflverse** weekly player stats and snap counts (appearances, points per preset, receptions,
+  yards, touchdowns, team totals from the same rows) and the season's play-by-play reduced by
+  `drive_plays` (drive breadth's reduction) to per-player and per-team red-zone (yardline ≤ 20) and
+  inside-five (≤ 5) carries and targets. Red-zone counts are published only when every scheduled
+  team-week through the cutoff is present in play-by-play; otherwise none are. CC-BY 4.0,
+  attributed on every story and exported image that cites them. No raw row is published.
+* **ESPN** rostered % (ADR-112's published readings for Opportunity Board players): printed for a
+  story's subject and used as the upside family's roster ceiling. Only an `observed` reading is a
+  number; every other state is unknown, never 0%. Attribution and "ESPN leagues, not yours" travel
+  with every story and image that shows one (the ADR-112 owner decision's obligations).
+* The weekly start/sit model's published distributions and explanations, the weekly context's
+  listed absences (the league's official report), and the Opportunity Board's roster code and
+  employment reading (the build-time pre-screen) — all published artifacts of the same build.
+
+Not read: Sleeper adds and drops (no story needs a crowd signal; a low ESPN share does not require
+the crowd to have started adding), ffopportunity expected points (ADR-086), participation/routes
+(unavailable for 2026), Next Gen Stats.

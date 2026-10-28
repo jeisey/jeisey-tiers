@@ -209,6 +209,29 @@ FAMILIES: tuple[Family, ...] = (
     # rank, like a season rank, does not depend on league size). Read by the Opportunity Board
     # only — never by another view, never in a card shard — so no other tab pays for it.
     Family("recent_form", "recent_form", "scoring", exclude=("schema_version", "display_name")),
+    # ADR-116: the Insights feed, one slice per scoring preset (no story depends on league
+    # size), fetched only by the Insights tab — never by another view, never in a card shard.
+    # The feed carries what a story card and its share image print; the evidence and the
+    # qualification predicates are their own slice, fetched when a reader expands a story.
+    Family(
+        "insights",
+        "insights",
+        "scoring",
+        exclude=("schema_version", "evidence", "qualification", "also_qualifies"),
+    ),
+    Family(
+        "insight_evidence",
+        "insights",
+        "scoring",
+        only=(
+            "scoring_preset",
+            "story_id",
+            "player_id",
+            "evidence",
+            "qualification",
+            "also_qualifies",
+        ),
+    ),
 )
 
 #: What one card shard carries: every per-player record a card reads, per artifact, with the

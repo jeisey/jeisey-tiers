@@ -21,6 +21,10 @@ from ffdraft.pipeline.fixture_pipeline import load_fixture_inputs, run_fixture_p
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "pipeline"
 ESPN = {"espn_ownership", "espn_ownership_series"}
+#: ADR-116: Insights reads ESPN readings (the upside roster ceiling, the overlooked-pace
+#: reading, roster facts) and is downstream of every value artifact. It is checked for the
+#: degradation it owes, not for byte-identity.
+DOWNSTREAM = {"insights"}
 
 
 def _canonical(value: object) -> str:
@@ -56,7 +60,7 @@ def test_the_comparison_is_not_vacuous(with_espn, without_espn):
 def test_every_other_artifact_is_byte_identical(with_espn, without_espn):
     others = set(with_espn.records) - ESPN
     assert others == set(without_espn.records)
-    for artifact in sorted(others):
+    for artifact in sorted(others - DOWNSTREAM):
         assert _canonical(with_espn.records[artifact]) == _canonical(
             without_espn.records[artifact],
         ), artifact
@@ -64,6 +68,23 @@ def test_every_other_artifact_is_byte_identical(with_espn, without_espn):
 
 def test_both_metadata_objects_differ_only_in_the_espn_block(with_espn, without_espn):
     assert _canonical(with_espn.build_metadata) == _canonical(without_espn.build_metadata)
-    left = {k: v for k, v in with_espn.ros_build_metadata.items() if k != "espn_ownership"}
-    right = {k: v for k, v in without_espn.ros_build_metadata.items() if k != "espn_ownership"}
+    skip = {"espn_ownership", *DOWNSTREAM}
+    left = {k: v for k, v in with_espn.ros_build_metadata.items() if k not in skip}
+    right = {k: v for k, v in without_espn.ros_build_metadata.items() if k not in skip}
     assert _canonical(left) == _canonical(right)
+
+
+def test_insights_degrade_only_where_they_read_espn(with_espn, without_espn):
+    """Without ESPN the upside family says why it is unavailable; no story cites ESPN."""
+    block = without_espn.ros_build_metadata["insights"]
+    assert block["status"] == "published"
+    assert block["families"]["weekly_upside"]["status"] == "unavailable"
+    assert "ESPN" in block["families"]["weekly_upside"]["reason"]
+    assert block["sources"]["espn_fantasy_ownership"]["state"] == "unavailable"
+    assert (
+        with_espn.ros_build_metadata["insights"]["families"]["weekly_upside"]["status"]
+        == "published"
+    )
+    for record in without_espn.records.get("insights", []):
+        assert "espn_fantasy_ownership" not in record["sources"]
+        assert record["evidence"].get("espn_rostered") is None

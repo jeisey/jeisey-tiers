@@ -1438,6 +1438,75 @@ value, rank, tier, role reading or count.
   | Card: "A count of transactions…", role-rail note, moves-strip note, surfaced note | Glyph key, axis and one state line kept → Data: Player card |
   | Tier / Arbitrage table captions and the arbitrage note | Short captions kept → Data: Draft boards |
 
+### 6A.23 Insights (ADR-116)
+
+An in-season tab after *My Leagues* that answers "what changed this week that a manager should
+know — and how sure can I be?" with a compact editorial feed of the build's stories. The page
+writes no story: every story, its order and its lead position come from the artifact. The page
+decides only what a filter shows and one thing at the reader's clock (below).
+
+* **Head.** The edition and its age (`Week 7 edition · through W7 · built … ago`, flagged stale
+  like the rest of the site), the scoring label, and one line saying stories do not depend on
+  league size (the league selector changes nothing here). Unavailable families are named with the
+  build's reason (`ESPN roster readings unavailable: weekly upside not built`).
+* **Filters.** A segmented control, `ins=`: *All · This week · Volume vs results · Openings ·
+  Role battles · Streaks · Pace*. Upside stories add an ESPN ceiling control, `ceil=`: *under 50% ·
+  25% · 10%*, labelled "describes ESPN leagues, not yours; unknown is not 0%"; it shows the
+  stories ranked within the top three of their position under that ceiling. *Find a player* opens
+  the site's player picker over the players with stories (`search=`). Every control is in the URL;
+  back, forward and reload restore it.
+* **Feed.** The lead (up to 12, in the artifact's order) first, then *More findings* grouped by
+  family. The first story's headline sits inside the first phone viewport. No hero, KPI tiles,
+  gradients or decorative motion.
+* **Story card — the screenshot unit.** Kicker (family · variant · *Thesis* when several
+  observations combine, plus the horizon such as *This week · Week 8*), headline, the player's name
+  as a button that opens the player card, position, team and — for this-week ideas — opponent and
+  kickoff; the dek tagged **Reading** (editorial); two to four facts each tagged **Observed**,
+  **Model** or **ESPN**; the family's visual; **What could undermine it** when the artifact has a
+  counterpoint; the caveat, always visible; a source line (window, scoring or *same in every
+  scoring*, edition, nflverse / ESPN / weekly-model attribution) and the brand. Meaning never
+  depends on colour: statuses, bases and strong weeks carry words or glyphs.
+* **Visuals.** Different forms for different questions, honest zero-based scales, direct labels,
+  no dual axis: *workload vs results* — two aligned week strips (opportunities; points split into
+  non-touchdown and touchdown parts by pattern as well as tone) with the window bracketed and B/D
+  weeks lettered; *upside* — the P10–P90 interval with the P50 tick against the typical week's
+  lighter interval, P90 labelled "ceiling, one week in ten"; *openings* — with/without bars per
+  teammate with exact game counts and the absent player's share; *role battles* — aligned player
+  rows of share of the team's carries or targets with a baseline tick, `18 of 52`, snap share in its
+  own column (never stacked), red-zone and inside-five counts when published; *streaks* — points per
+  week with weekly ranks and strong-week marks over a share row; *pace* — a stat line with the
+  cohort definition and "arithmetic: PPG × 17, not a projection". Each drawing is hidden from
+  assistive technology and paired with a sentence or table.
+* **Evidence.** A disclosure per story; the first opening fetches the preset's evidence slice once
+  (`insight_evidence/<scoring>`) and shows *Exact values* and *Why it qualified* (each predicate's
+  value against its threshold) and the player's other qualifying findings.
+* **This week, at the reader's clock.** A `this_week` story re-applies the shared availability
+  policy (ADR-101) with the published status and the story's official designation, and the
+  kickoff, on a 30-second clock: after kickoff, or when the policy would refuse him, it stays in
+  place with "Kickoff passed — no longer a start idea" or the policy's reason, and stops acting as
+  a recommendation; *Questionable* and *uncertain* stay visible with the policy's label.
+* **Links.** *Copy link* writes `…/jeisey-tiers/?view=insights&scoring=…&story=…&ed=…` (the
+  GitHub Pages base path; never a saved league or opponent). Opening it scrolls to and focuses the
+  story and expands its evidence. A link from another edition says "This link is from the Week 6
+  edition; the current edition is Week 7" and shows the current version of the same story labelled
+  *Updated for Week 7*, or says the story is not in the current edition. Old editions are not kept
+  and the page says so. *Copy summary* writes the headline, reading, facts, caveat, edition and
+  link as plain text. Both report success or failure in a polite live region, with a selectable
+  fallback when the clipboard is refused.
+* **Share and export.** *Share* (`share=land|port`) opens a dialog with the story laid out for
+  **1200×675** (landscape) or **1080×1350** (portrait) — reflowed, not stretched — previewed at the
+  screen's size. The preview is the export: the same validated record and formatting helpers drawn
+  as SVG, rasterised at exactly that pixel size with the self-hosted fonts embedded, after the
+  fonts load. *Download PNG* saves `jeisey-tiers-<story>-<edition>-<layout>.png`. The image
+  carries the title, player and team, window, scoring label, chart, caveat, edition and build
+  time, attribution and the brand; no headshot or other cross-origin image.
+* **States.** Not published or incompatible, withheld (the build's reason), published with no
+  story ("No story qualified in the Week 7 edition", with each family's reason), a degraded family, a stale
+  build and a filter with no match are distinct, worded states.
+* **Accessibility.** Every control by keyboard with a visible focus; the share dialog traps and
+  restores focus; reduced motion removes scrolling animation; 44px targets on phones; zero axe
+  violations at WCAG 2.2 AA.
+
 ## 7. Tables
 
 ### 7.1 Tier table columns

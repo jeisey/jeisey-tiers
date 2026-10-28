@@ -600,6 +600,11 @@ def run_fixture_pipeline(
     if skill_tree.records:
         records["player_skill_tree"] = skill_tree.records
         records["skill_tree_definitions"] = skill_tree.definitions
+    # ADR-116: the production story builder over every in-season record above.
+    insights = _insights(records, season=season, app=app, build_id=build_id, generated_at=now)
+    gate.extend(insights.checks)
+    if insights.records:
+        records["insights"] = insights.records
     gate.extend(_published_identity_checks(records, market_outcomes))
 
     metadata = _build_metadata(
@@ -652,6 +657,7 @@ def run_fixture_pipeline(
             recent_form=recent.metadata,
             skill_tree=skill_tree.metadata,
             espn_ownership=espn.metadata,
+            insights=insights.metadata,
             build_id=build_id,
             generated_at=now,
             git_sha=git_sha or _git_sha(),
@@ -1592,6 +1598,60 @@ def _recent_form(
     )
 
 
+def _insights(
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    season: FixtureSeason,
+    app: AppConfig,
+    build_id: str,
+    generated_at: datetime,
+) -> Any:
+    """``insights`` (ADR-116) from the fixture season, by the production builder.
+
+    The Skill Tree's synthetic plays carry no drive or game columns, so they are given one
+    drive per team-game here — enough for the drive reduction the red-zone counts share with
+    drive breadth — without changing what the Skill Tree reads.
+    """
+    from ffdraft.insights import build_insights
+    from ffdraft.pipeline.fixture_season import fixture_skill_plays
+
+    plays = fixture_skill_plays(season.weekly, through_week=FIXTURE_THROUGH_WEEK)
+    extra = {
+        "fixed_drive": pl.lit(1, dtype=pl.Int32),
+        "qb_kneel": pl.lit(0.0),
+        "qb_spike": pl.lit(0.0),
+        "aborted_play": pl.lit(0.0),
+        "special_teams_play": pl.lit(0.0),
+        "play_deleted": pl.lit(0.0),
+    }
+    plays = plays.with_columns(
+        [expr.alias(name) for name, expr in extra.items() if name not in plays.columns]
+        + (
+            [
+                pl.format("{}_{}_{}", pl.col("season"), pl.col("week"), pl.col("posteam")).alias(
+                    "game_id"
+                )
+            ]
+            if "game_id" not in plays.columns
+            else []
+        ),
+    )
+    return build_insights(
+        weekly=season.weekly,
+        snap_counts=season.snap_counts,
+        schedule=season.schedule,
+        scoring=app.league.scoring,
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+        records=records,
+        plays=plays,
+        plays_error=None,
+        generated_at=generated_at,
+        build_id=build_id,
+        schema_version=record_schema_version("insight_story"),
+    )
+
+
 def _skill_tree(
     records: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
@@ -2059,6 +2119,7 @@ def _ros_build_metadata(
     skill_tree: Mapping[str, Any] | None = None,
     espn_ownership: Mapping[str, Any] | None = None,
     recent_form: Mapping[str, Any] | None = None,
+    insights: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The in-season bundle's metadata, carrying the disclosures the UI renders from."""
     from ffdraft.pipeline.ros import (
@@ -2153,6 +2214,7 @@ def _ros_build_metadata(
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
         "recent_form": None if recent_form is None else dict(recent_form),
+        "insights": None if insights is None else dict(insights),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
         "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
         "disclosures": {

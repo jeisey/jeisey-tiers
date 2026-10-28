@@ -38,7 +38,8 @@
         "skill_tree_definitions",
         "espn_ownership",
         "espn_ownership_series",
-        "recent_form"
+        "recent_form",
+        "insights"
       ]
     },
     "record_schema": {

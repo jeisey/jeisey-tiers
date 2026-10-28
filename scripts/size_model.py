@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import shutil
 import sys
 from collections.abc import Mapping
@@ -380,6 +381,178 @@ def _identity(record: dict[str, Any], player: Mapping[str, str]) -> dict[str, An
     return out
 
 
+def _insights(
+    records: dict[str, list[dict[str, Any]]],
+    templates: Mapping[str, list[dict[str, Any]]],
+    profile: Mapping[str, Any],
+    players: list[dict[str, str]],
+    clone: Any,
+    seed: int,
+) -> None:
+    """ADR-116: a late-season Insights edition per scoring preset, last and on its own stream.
+
+    The family mix is the live week-7 build's (counts only); every weekly strip is a full
+    season long (``insight_strip_weeks``), the largest a strip gets. Shapes come from the golden
+    stories; the two chart types the golden fixture does not carry (an opening's with/without
+    rows and a room's player rows) are written out at the published precision.
+    """
+    rng = random.Random(seed + 116)
+    by_chart: dict[str, dict[str, Any]] = {}
+    for template in templates["insights"]:
+        by_chart.setdefault(template["chart"]["type"], template)
+    strip_weeks = int(profile["insight_strip_weeks"])
+    short = {
+        "weekly_upside": "upside",
+        "opportunity_opening": "opening",
+        "volume_vs_results": "volume",
+        "streak_watch": "streak",
+        "role_battle": "role",
+        "pace_perspective": "pace",
+    }
+    base = {
+        "weekly_upside": "interval",
+        "opportunity_opening": "interval",
+        "volume_vs_results": "week_strip",
+        "streak_watch": "week_strip",
+        "role_battle": "week_strip",
+        "pace_perspective": "stat_line",
+    }
+
+    def share() -> float:
+        return round(rng.uniform(0.02, 0.6), 3)
+
+    def strip() -> list[dict[str, Any]]:
+        weeks = []
+        for week in range(1, strip_weeks + 1):
+            status = rng.choices(["P", "B", "D"], weights=[0.86, 0.06, 0.08])[0]
+            played = status == "P"
+            weeks.append(
+                {
+                    "week": week,
+                    "status": status,
+                    "in_window": week > strip_weeks - 3,
+                    "points": round(rng.uniform(0, 30), 2) if played else None,
+                    "td_points": float(rng.choice([0, 0, 6, 12])) if played else None,
+                    "opportunity": float(rng.randrange(0, 14)) if played else None,
+                    "share": share() if played else None,
+                    "rank": rng.randrange(1, 90) if played else None,
+                },
+            )
+        return weeks
+
+    def row_player(index: int) -> dict[str, str]:
+        return players[(index * 7 + 3) % len(players)]
+
+    for scoring in profile["scorings"]:
+        index = 0
+        rows: list[dict[str, Any]] = []
+        for family, count in profile["insights_mix"].items():
+            for rank in range(1, int(count) + 1):
+                player = players[index % len(players)]
+                template = by_chart[base[family]]
+                row = clone("insights", 0, player)
+                for field in ("chart", "evidence", "qualification", "facts"):
+                    row[field] = clone("insights", templates["insights"].index(template), player)[
+                        field
+                    ]
+                old_name = template["display_name"]
+
+                def vary(text: str, old: str = old_name, new: str = player["display_name"]) -> str:
+                    # Real stories print their own numbers; cloned text would compress too well.
+                    text = text.replace(old, new)
+                    return re.sub(
+                        r"\d+(?:\.\d)?",
+                        lambda m: (
+                            f"{rng.uniform(0, 30):.1f}"
+                            if "." in m.group()
+                            else str(rng.randrange(1, 60))
+                        ),
+                        text,
+                    )
+
+                for field in ("headline", "dek", "counterpoint", "caveat"):
+                    if isinstance(template.get(field), str):
+                        row[field] = vary(template[field])
+                row["facts"] = [
+                    {**fact, "label": vary(fact["label"]), "value": vary(fact["value"])}
+                    for fact in row["facts"]
+                ]
+                row["family"], row["scoring_preset"] = family, scoring
+                row["story_id"] = f"{short[family]}-{player['player_id'].split(':')[1]}"
+                row["family_rank"], row["lead_rank"] = rank, None
+                if family in ("volume_vs_results", "streak_watch"):
+                    row["chart"] = {
+                        **row["chart"],
+                        "weeks": strip(),
+                        "band": 24 if family == "streak_watch" else None,
+                    }
+                elif family == "opportunity_opening":
+                    names = [row_player(index + k) for k in range(4)]
+                    row["chart"] = {
+                        "type": "with_without",
+                        "metric": "target_share",
+                        "absent": {
+                            "player_id": names[0]["player_id"],
+                            "name": names[0]["display_name"],
+                            "position": "WR",
+                            "share": share(),
+                            "games": rng.randrange(2, 12),
+                            "per_game": round(rng.uniform(4, 11), 1),
+                            "reason": f"missed W{strip_weeks - 1}, W{strip_weeks}",
+                        },
+                        "rows": [
+                            {
+                                "player_id": other["player_id"],
+                                "name": other["display_name"],
+                                "position": "WR",
+                                "share_with": share(),
+                                "games_with": rng.randrange(1, 12),
+                                "share_without": share(),
+                                "games_without": rng.randrange(0, 4),
+                                "latest_share": share(),
+                            }
+                            for other in names[1:]
+                        ],
+                    }
+                elif family == "role_battle":
+                    team_count = rng.randrange(60, 110)
+                    members = [row_player(index + k) for k in range(4)]
+                    counts = sorted(
+                        (rng.randrange(0, team_count // 3) for _ in members), reverse=True
+                    )
+                    row["chart"] = {
+                        "type": "room",
+                        "room": "receiving",
+                        "metric": "targets",
+                        "team_count": team_count,
+                        "team_games": 3,
+                        "team_red_zone": rng.randrange(6, 20),
+                        "team_inside_five": rng.randrange(1, 6),
+                        "rows": [
+                            {
+                                "player_id": member["player_id"],
+                                "name": member["display_name"],
+                                "position": "WR",
+                                "window_games": 3,
+                                "baseline_games": strip_weeks - 3,
+                                "snap_share": share(),
+                                "snap_share_baseline": share(),
+                                "count": number,
+                                "share": round(number / team_count, 3),
+                                "share_baseline": share(),
+                                "red_zone": rng.randrange(0, 6),
+                                "inside_five": rng.randrange(0, 2),
+                            }
+                            for member, number in zip(members, counts, strict=True)
+                        ],
+                    }
+                rows.append(row)
+                index += 1
+        for lead, row in enumerate(rows[:: max(1, len(rows) // 12)][:12], start=1):
+            row["lead_rank"] = lead
+        records["insights"].extend(rows)
+
+
 def build(out: Path, seed: int = 20260930) -> None:
     profile = json.loads(PROFILE.read_text("utf-8"))
     rng = random.Random(seed)
@@ -632,6 +805,8 @@ def build(out: Path, seed: int = 20260930) -> None:
                         "category": recent_rng.choice(["takeover", "sneaking", "eyebrow"]),
                     }
             records["recent_form"].append(row)
+
+    _insights(records, templates, profile, players, clone, seed)
 
     if out.exists():
         shutil.rmtree(out)
